@@ -3,9 +3,10 @@
      built-at: 8188bad7
      prototype: worktree-ticket-534-ask-options
      amended-at: d641ebdb
-     amendment: #1207 — the settled fold. Approved, NOT yet built: every row of
-                "Settled — the reading" marked `to build` is what #1207 puts there.
-     amendment-prototype: worktree-ticket-1207-settled-ask-fold -->
+     amendment: #1207 — the settled fold. BUILT at 604c0d7f: every row of
+                "Settled — the reading" marked `to build` is now what the app draws.
+     amendment-prototype: worktree-ticket-1207-settled-ask-fold
+     amendment-built-at: 604c0d7f -->
 
 # Answering an ask, in the feed
 
@@ -82,7 +83,9 @@ foot as `ComposerUnavailable` already draws it. The row above stays a reading.
 
 **#1207's two renders are column crops, not window shots**, unlike the six above them: the fold
 changes a row, not a screen, and a half-built shell around it would be a drawing of chrome
-nobody checked. `/pixel-review` judges the built row against the running app.
+nobody checked. `/pixel-review` judges the built row against the running app — the three
+specimens it renders are `feedAskAnswered`, `feedAskAnsweredUnnamed` and `feedAskAnsweredFreeForm`,
+judged against `feedAskOneOf`, which is the same question waiting.
 
 **The row is carried by its ground alone.** No rule around it and no leading accent bar: an
 amber stroke on four edges reads as an alert banner dropped into the column rather than as a row
@@ -181,7 +184,10 @@ what the answer already tells you.
 | The offer | **not drawn** | **to build** | |
 | Between two questions in one call | `ArgoFeedRow.blockStep` 12, unchanged | ships | the fold applies per question; one call is still one ground |
 
-**Heights it settles**, measured at the 672pt column, against what the same row costs waiting:
+**Heights it settles**, measured in the PROTOTYPE at the 672pt column, against what the same row
+costs waiting. The built row was measured again at the same column and comes in lower than the
+drawing promised — one question with three options: **208 waiting, 106 settled today, 62 folded**,
+which is 30% of waiting. `FeedAskFoldTests` is where those numbers are held:
 
 | The ask | waiting | settled today | settled folded |
 |---|---|---|---|
@@ -230,7 +236,7 @@ Frozen names — they become the view files and the ticket titles.
 |---|---|---|
 | `FeedAskLine` | the card: one call, one ground, its questions | exists (#534) — gains the waiting branch, and **loses its stroked edge**. #1207 splits its reading branch in two, on `isAnswered` |
 | `FeedAskOptions` | the offer as a reading, numbered and quieted | exists (#534) — #1207 narrows it to the **pending** reading; a settled row no longer draws it |
-| `FeedAskAnswer` | the settled row: the mark, and the way it went | new — #1207 |
+| `FeedAskAnswer` | the settled row: the mark, and the way it went | new — #1207, built |
 | `FeedMarker` | the marker column, for numbers and marks alike | exists (#534) — unchanged |
 | `FeedAskOfferList` | the pressable options while it waits | new |
 | `FeedAskOfferRow` | one option — number, label, detail, box | new |
