@@ -66,6 +66,20 @@ struct HubJoinRefoldTests {
         #expect(join.sessions.first?.title == "Renamed")
     }
 
+    /// An interrupt is read in PLACE of the prompt on a user message record (`HarnessRecord`), so
+    /// it rides that record's window like the prompt it replaces — a re-tail that folded it again
+    /// would paint a second rule across the feed for one keystroke. The case #1189 added and the
+    /// fold #1204 added were each green alone and did not compile together; this is what says
+    /// which side of the rule it belongs on.
+    @Test
+    func `an interrupt inside a record already folded is not folded twice`() {
+        var join = joinOfOneFile()
+
+        join.apply(twoDelegations, to: transcriptID)
+
+        #expect(interrupts(in: join) == 1)
+    }
+
     private let transcriptID = "delegating-session"
 
     /// One file already read: the two delegations it holds, folded once.
@@ -77,10 +91,13 @@ struct HubJoinRefoldTests {
     }
 
     /// The shape a transcript actually has: each record's identity first, then what that record
-    /// said (`TranscriptReader.read`).
+    /// said (`TranscriptReader.read`). The last record carries an interrupt as well, which is the
+    /// shape a stopped Turn has — the mark is read in place of that record's prompt, so it sits
+    /// INSIDE the record's own window rather than standing as a line of its own.
     private var twoDelegations: [TranscriptEvent] {
         delegation(record: "r1", brief: "Standards review")
             + delegation(record: "r2", brief: "Spec review")
+            + [.interrupted(atMs: 2)]
     }
 
     private func delegation(record uuid: String, brief: String) -> [TranscriptEvent] {
@@ -97,6 +114,13 @@ struct HubJoinRefoldTests {
                 ),
             ),
         ]
+    }
+
+    private func interrupts(in join: HubJoin) -> Int {
+        (join.sessions.first?.events ?? []).count { event in
+            guard case .interrupted = event else { return false }
+            return true
+        }
     }
 
     private func delegations(in join: HubJoin) -> [String] {
