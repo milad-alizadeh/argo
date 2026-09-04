@@ -3,31 +3,28 @@ import CoreGraphics
 /// What turns the eye's own plane into clip space: the zoom that frames the whole picture, and
 /// where its middle sits (#1150).
 ///
-/// Separate from `AtlasCamera` because it answers a different question. The camera is the model's
-/// own geometry and knows nothing about a window; the fit is the one place a viewport is read, and
-/// it is measured off the picture the camera actually draws rather than assumed — the tallest tower
-/// is nowhere near a corner, so a formula reserving the full height at the far corner leaves the
-/// map sitting high with a band of nothing under it.
+/// Measured off the picture the camera actually draws: the tallest tower is nowhere near a corner,
+/// and reserving the full height at the far corner leaves the map sitting high with a band of
+/// nothing under it.
 ///
-/// The zoom is UNIFORM, one number for both axes, because a city stretched to fill a window is a
-/// city whose blocks are no longer square. It reduces to the flat map's own mapping exactly when
-/// the viewport is the shape the plan was tiled into, which is what every caller frames it at —
-/// `AtlasCameraTests` is what holds that.
-public struct AtlasFit: Equatable, Sendable {
+/// The zoom is UNIFORM, one number for both axes. It reduces to the flat map's own clip mapping
+/// EXACTLY when the viewport is the shape the plan was tiled into — an invariant `AtlasSurface`
+/// keeps by framing into `plan.extent`, and `AtlasCameraTests` is what holds it.
+package struct AtlasFit: Equatable, Sendable {
     /// Eye-plane units to clip units, per axis. The two differ only by the viewport's own aspect:
     /// the zoom behind them is one number.
-    public let scale: CGPoint
+    package let scale: CGPoint
 
     /// Where the picture's middle lands in clip space.
-    public let offset: CGPoint
+    package let offset: CGPoint
 
-    public init(scale: CGPoint, offset: CGPoint) {
+    package init(scale: CGPoint, offset: CGPoint) {
         self.scale = scale
         self.offset = offset
     }
 
     /// The fit that frames one plan, seen through one camera, in one viewport.
-    public init(framing plan: AtlasPlan, through camera: AtlasCamera, into viewport: CGSize) {
+    package init(framing plan: AtlasPlan, through camera: AtlasCamera, into viewport: CGSize) {
         var box = AtlasFit.Box()
         // The whole ground, which covers every face at zero height: the projection of a plane is
         // convex, so a rect inside the extent lands inside the extent's own projected quad.
@@ -61,7 +58,7 @@ public struct AtlasFit: Equatable, Sendable {
     }
 
     /// One projected point, in clip space.
-    public func clip(_ point: CGPoint) -> CGPoint {
+    package func clip(_ point: CGPoint) -> CGPoint {
         CGPoint(x: point.x * scale.x + offset.x, y: point.y * scale.y + offset.y)
     }
 

@@ -21,15 +21,13 @@ import SwiftUI
 /// `lines` at all. A city judged on tidy numbers is a city judged on the one repository that does
 /// not exist.
 struct AtlasMapSpecimen: View {
-    /// Size by `lines` and colour by `commits`, which is what the flat picture shipped as and is
-    /// left alone so the two ends of the camera can be compared frame against frame.
+    /// Size by `lines` and colour by `commits`, unchanged from the flat picture so the two ends of
+    /// the camera can be compared frame against frame.
     ///
-    /// Height is `commits` as well, and that is the FIXTURE's limit rather than a preference: of
-    /// the three Measures left, `authors` is 1 for all 89 files and would stand the whole city at
-    /// one height, `age_in_weeks` holds four values and draws plateaus, and `bytes` has one file
-    /// 4.8 MB against a median in the kilobytes — one tower over a plain. `commits` spreads 1 to
-    /// 13 over eleven values, which is the only skyline this measurement can draw, and a skyline
-    /// is what a projection and a depth order have to be judged on.
+    /// Height is `commits` too, which the FIXTURE decides rather than a preference. Its five
+    /// Measures over 89 files: `authors` is 1 for every one of them, `age_in_weeks` holds four
+    /// values, `bytes` runs 359 B to 4.8 MB, `lines` is absent on twenty. `commits` spreads 1 to 13
+    /// over eleven values, and it is the only one of the five that draws a skyline.
     static let channels = AtlasChannels(footprint: "lines", band: "commits", height: "commits")
 
     let ground: CGSize

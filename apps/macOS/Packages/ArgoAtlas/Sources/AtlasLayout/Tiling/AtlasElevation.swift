@@ -16,10 +16,10 @@ enum AtlasElevation {
 
     /// What a file measuring nothing stands: the design's 2 units of the same 1000.
     ///
-    /// A floor and not a fudge, and for a different reason than the footprint's floor next door. A
-    /// file at zero height has its roof in the plane of the plate it stands on, which is a roof and
-    /// a plate the depth buffer has no way to order — the flat tile speckles against its own
-    /// ground. A slab this shallow reads as a flat tile at every camera and has a plane of its own.
+    /// A slab this shallow reads as a flat tile at every camera, and it keeps a roof off the exact
+    /// plane of the plate under it. What ORDERS that pair is the plan's own order — the pipeline is
+    /// `lessEqual` and plates are handed over first — so this is a rounding margin under it rather
+    /// than the thing the picture depends on.
     static let floorShare: CGFloat = 0.002
 
     /// The tallest a file stands on this ground.

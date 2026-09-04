@@ -118,11 +118,15 @@ struct AtlasRoomView: View {
     /// Two DIFFERENT Measures where the repository has both, which is what `AtlasMapSpecimen`
     /// picked for its own reason: with one Measure on both channels, nothing in the picture can be
     /// read off a colour that the size has not already said.
+    ///
+    /// The height channel takes the band's Measure. The room draws flat, where every height is
+    /// scaled to nothing, so this is the channel's name and not a reading — the reader chooses one
+    /// at #1161, and until then a third preference here would be a claim nobody can see.
     private func channels(of map: AtlasMap) -> AtlasChannels {
         let names = map.measureNames
         let footprint = ["lines", "bytes"].first { names.contains($0) } ?? names.first ?? ""
         let band = ["commits", "authors"].first { names.contains($0) } ?? footprint
-        return AtlasChannels(footprint: footprint, band: band)
+        return AtlasChannels(footprint: footprint, band: band, height: band)
     }
 }
 

@@ -7,8 +7,12 @@
 //
 // THERE IS ONE CAMERA AND IT IS A PARAMETER. `relief` runs 1 to 0: it scales every height, gates
 // every wall by making it degenerate, and pushes the eye to infinity by falling out of `away`. At
-// 0 this file draws exactly the treemap the flat shader drew at #1147 — `AtlasCameraTests`
-// asserts that identity on the Swift side of the same arithmetic.
+// 0 this file draws exactly the treemap the flat shader drew at #1147.
+//
+// NOTHING TESTS THIS FILE. `AtlasCameraTests` asserts the identity over `AtlasCamera` and
+// `AtlasFit`, which are a second copy of `atlas_clip` below written in Swift, and `AtlasVolumeTests`
+// asserts only the two struct layouts. An edit to `atlas_clip` alone is caught by no test and by no
+// build: what says the two agree is that they are the same expression, term for term.
 //
 // Nothing here is lit, and that is the design's own rule rather than a stage this shader has not
 // reached yet: NOTHING MAY BE LIT AT THE COST OF ITS BAND. A lambert term multiplied into a
@@ -41,9 +45,7 @@ struct AtlasEye {
     float distance;
 };
 
-/// One quad as two triangles, in its own unit square. A triangle LIST rather than a strip, because
-/// three quads per instance in one draw is either this or degenerate triangles between them, and a
-/// degenerate triangle is a thing to get wrong that draws a seam nobody can find.
+/// One quad as two triangles, in its own unit square.
 constant float2 atlas_quad[6] = {
     float2(0, 0), float2(1, 0), float2(1, 1),
     float2(0, 0), float2(1, 1), float2(0, 1)
@@ -96,11 +98,14 @@ vertex AtlasFragment atlas_volume_vertex(
     float foot = volume.heights.x;
     float roof = volume.heights.y;
 
-    // Which two walls face the reader depends only on the yaw, so every box in one frame shows the
-    // same pair: the near corner is the one the turn puts closest, and the two walls meeting there
-    // are the two that can be seen.
-    float nearX = eye.yaw.x >= 0 ? low.x : high.x;
-    float nearY = eye.yaw.y >= 0 ? high.y : low.y;
+    // The near corner: the plan corner this turn puts closest, and the two walls meeting there are
+    // the two that can be seen. It is the same corner for every box in a frame, because it depends
+    // on the yaw alone. THIS CAMERA CANNOT TURN — `AtlasCamera.yaw` is `cityYaw * relief`, so the
+    // yaw only ever runs 0 to 45° and both its sine and cosine are non-negative. A reader who can
+    // turn the map (#1152) has to pick these two off the SIGNS of `eye.yaw` again, or every box in
+    // the city shows its far walls.
+    float nearX = low.x;
+    float nearY = high.y;
 
     uint face = vertex_id / 6;
     float2 unit = atlas_quad[vertex_id % 6];

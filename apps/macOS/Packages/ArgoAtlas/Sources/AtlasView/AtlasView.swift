@@ -26,9 +26,8 @@ public struct AtlasView: View {
     private let plan: AtlasPlan
     private let camera: AtlasCamera
 
-    /// `relief` is asked for rather than defaulted, because it is the one thing that decides which
-    /// of the two readings a caller is putting on the screen — and a default would let a surface
-    /// draw the wrong one without anybody having chosen it.
+    /// `relief` is 1 for the city and 0 for the treemap, and it has no default: it is the one thing
+    /// that decides which of the two readings reaches the screen.
     public init(plan: AtlasPlan, relief: Double) {
         self.plan = plan
         self.camera = AtlasCamera(relief: relief, over: plan.extent)

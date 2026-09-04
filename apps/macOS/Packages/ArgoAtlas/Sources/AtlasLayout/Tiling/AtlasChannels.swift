@@ -14,13 +14,10 @@ public struct AtlasChannels: Equatable, Sendable {
     /// scaled to nothing, which is what makes the treemap the same picture whatever is on here.
     public let height: String
 
-    /// A height defaulted to the footprint rather than required, because the two channels a
-    /// treemap has are the two every caller already chose — and a caller made to name a third
-    /// before it can tile is a caller that will pass the footprint again anyway.
-    public init(footprint: String, band: String, height: String? = nil) {
+    public init(footprint: String, band: String, height: String) {
         self.footprint = footprint
         self.band = band
-        self.height = height ?? footprint
+        self.height = height
     }
 
     /// One Measure on every channel — the opening reading, before anyone has chosen anything.

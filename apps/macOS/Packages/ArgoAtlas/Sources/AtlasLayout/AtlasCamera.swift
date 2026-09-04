@@ -8,21 +8,17 @@ import CoreGraphics
 /// `AtlasCameraTests` asserts that the flat camera lands a plan rect on exactly the clip
 /// coordinates the flat map was drawn on before any of this existed.
 ///
-/// One expression per term rather than two renderers, because a flat view retrofitted afterwards
-/// is two pictures that drift: the second one is written by reading the first, and every later
-/// change has to be made twice by somebody who can see only one of them.
-///
 /// The projection is PERSPECTIVE at the city end, which is the approved design's own arithmetic —
 /// the eye sits `eyeShare` of the plan away and everything divides by how far off it is. It
 /// becomes orthographic at the flat end, because that is what pushing the eye to infinity means: a
 /// flat picture drawn through a finite eye is a shear rather than a plan.
-public struct AtlasCamera: Equatable, Sendable {
+package struct AtlasCamera: Equatable, Sendable {
     /// Both plan axes across the screen, which is what makes a city read as a city rather than as
     /// a wall.
-    public static let cityYaw = Double.pi / 4
+    package static let cityYaw = Double.pi / 4
 
     /// The true isometric angle, where a unit cube's three visible faces come out equal.
-    public static let cityPitch = 0.6155
+    package static let cityPitch = 0.6155
 
     /// How far off the plan the eye sits, as a share of the plan's longer side: the distance that
     /// frames it at the same 45° field of view the design's own camera uses.
@@ -30,18 +26,18 @@ public struct AtlasCamera: Equatable, Sendable {
 
     /// How much of the third dimension is left: 1 the city, 0 the treemap. Clamped on the way in,
     /// so nothing downstream has to ask whether it holds a number outside the two ends.
-    public let relief: Double
+    package let relief: Double
 
     /// The ground the map was tiled into, in its own points. Both the eye distance and the centre
     /// everything turns about are read off it.
-    public let plan: CGSize
+    package let plan: CGSize
 
     /// How far the eye sits from the plan. Never zero: a map tiled into no ground would divide the
     /// whole picture by nothing, and one NaN reaching the shader takes the city with it.
-    public let eye: Double
+    package let eye: Double
 
     /// The plan point everything turns about.
-    public let centre: CGPoint
+    package let centre: CGPoint
 
     /// The four numbers the projection is really made of, solved once.
     ///
@@ -50,7 +46,7 @@ public struct AtlasCamera: Equatable, Sendable {
     /// point, and the angles change once per camera at most.
     package let turn: AtlasTurn
 
-    public init(relief: Double, over plan: CGSize) {
+    package init(relief: Double, over plan: CGSize) {
         let held = min(1, max(0, relief))
         let yaw = Self.cityYaw * held
         let pitch = Self.cityPitch + (.pi / 2 - Self.cityPitch) * (1 - held)
@@ -62,27 +58,26 @@ public struct AtlasCamera: Equatable, Sendable {
     }
 
     /// The view that ships, and the one every wall and height in the picture is drawn for.
-    public static func city(over plan: CGSize) -> AtlasCamera {
+    package static func city(over plan: CGSize) -> AtlasCamera {
         AtlasCamera(relief: 1, over: plan)
     }
 
     /// The same layout seen straight down.
-    public static func flat(over plan: CGSize) -> AtlasCamera {
+    package static func flat(over plan: CGSize) -> AtlasCamera {
         AtlasCamera(relief: 0, over: plan)
     }
 
     /// Whether the third dimension is far enough gone that the walls, and everything else the city
     /// alone draws, are worth nothing. A threshold rather than an equality, because the parameter
     /// is tweened and a wall one part in a thousand tall is a seam of noise along every roof.
-    public var isFlat: Bool {
+    package var isFlat: Bool {
         relief < 0.02
     }
 
     /// How far along the view axis a point of the model sits — the number the whole picture divides
-    /// by, and the one a depth test orders by. Larger is further away.
-    public func distance(x: CGFloat, y: CGFloat, height: CGFloat) -> Double {
-        let into = turned(x: x, y: y).into
-        return eye + (into * turn.cosPitch - Double(height) * relief * turn.sinPitch) * relief
+    /// by, and the one the depth test orders by. Larger is further away.
+    package func away(x: CGFloat, y: CGFloat, height: CGFloat) -> Double {
+        away(turned(x: x, y: y).into, raised: Double(height) * relief)
     }
 
     /// One point of the model on the eye's own plane, before any fit onto a viewport. The result is
@@ -93,14 +88,21 @@ public struct AtlasCamera: Equatable, Sendable {
     /// everywhere else the expression is the design's. Flipping once here is what keeps the near
     /// corner of the city the bottom-left of the map, which is the corner the reader's own eye
     /// treats as nearest.
-    public func project(x: CGFloat, y: CGFloat, height: CGFloat) -> CGPoint {
+    package func project(x: CGFloat, y: CGFloat, height: CGFloat) -> CGPoint {
         let turned = turned(x: x, y: y)
         let raised = Double(height) * relief
-        let away = eye + (turned.into * turn.cosPitch - raised * turn.sinPitch) * relief
+        let away = away(turned.into, raised: raised)
         return CGPoint(
             x: turned.across / away,
             y: (turned.into * turn.sinPitch + raised * turn.cosPitch) / away,
         )
+    }
+
+    /// The distance both readings above divide by, written once. `relief` appears twice: it scales
+    /// the height into `raised`, and it scales the whole term, which is what pushes the eye to
+    /// infinity as the camera goes flat.
+    private func away(_ into: Double, raised: Double) -> Double {
+        eye + (into * turn.cosPitch - raised * turn.sinPitch) * relief
     }
 
     /// The plan point, turned about the centre: how far across the view it sits, and how far into

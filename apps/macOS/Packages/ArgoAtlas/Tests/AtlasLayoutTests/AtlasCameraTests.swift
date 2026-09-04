@@ -123,10 +123,10 @@ struct AtlasCameraTests {
     /// treemap's own paint order in charge at that end.
     @Test func `the near edge of the plan is nearer than the far edge`() {
         let city = AtlasCamera.city(over: Self.ground)
-        #expect(city.distance(x: 0, y: 0, height: 0) < city.distance(x: 800, y: 600, height: 0))
+        #expect(city.away(x: 0, y: 0, height: 0) < city.away(x: 800, y: 600, height: 0))
 
         let flat = AtlasCamera.flat(over: Self.ground)
-        #expect(flat.distance(x: 0, y: 0, height: 0) == flat.distance(x: 800, y: 600, height: 0))
+        #expect(flat.away(x: 0, y: 0, height: 0) == flat.away(x: 800, y: 600, height: 0))
     }
 
     /// The parameter is one number and it is clamped, so nothing downstream draws a picture from a
