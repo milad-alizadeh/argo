@@ -147,6 +147,7 @@ extension CockpitPresentation.Session {
                     ),
                     isProviderBound: readings.isTicketProviderBound,
                 ),
+                pullRequest: workspace?.branch.flatMap(readings.pullRequest(forBranch:)),
             ),
             spend: Spend(
                 spentTokens: session.spentTokens, cachedTokens: session.cachedTokens,

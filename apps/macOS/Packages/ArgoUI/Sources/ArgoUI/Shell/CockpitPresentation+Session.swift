@@ -85,6 +85,10 @@ public extension CockpitPresentation {
         /// that is true (#894). A reading rather than an optional, so a Session nobody could have
         /// read a link for is never drawn as one nothing named a Ticket for.
         public let ticket: TicketLinkReading
+        /// The code host's pull request for this Session's branch (`CONTEXT.md` L1 · Delivery),
+        /// and `nil` for a branch with none open. DERIVED, off `Readings.deliveries` rather than
+        /// off anything the Hub reports.
+        public let pullRequest: DeliveryPullRequest?
         /// When this Session was last seen to run, in milliseconds since the epoch. The Hub's own
         /// sort key rather than a second reading of it. Absent where neither the records nor the
         /// file behind them could say — a gap, never a moment standing in for one.
@@ -214,6 +218,7 @@ public extension CockpitPresentation {
             self.workspaceLocation = work.location
             self.workspace = work.workspace
             self.ticket = work.ticket
+            self.pullRequest = work.pullRequest
             self.spentTokens = spend.spentTokens
             self.cachedTokens = spend.cachedTokens
             self.subagentTokens = spend.subagentTokens

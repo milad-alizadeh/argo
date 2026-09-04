@@ -48,6 +48,9 @@ extension SpecimenRegistry {
         // catches four rows at four different points (#1291).
         SpecimenEntry("rosterSecondLine") { RosterSecondLineSpecimen() },
         SpecimenEntry("rosterSecondLineStill") { RosterSecondLineSpecimen(isStill: true) },
+        // The trailing edge of line 3 (#1346): an open, a merged, a closed and a draft pull
+        // request beside their Ticket, and a row with neither address.
+        SpecimenEntry("deliveryAddresses") { DeliveryAddressesRosterSpecimen() },
         // Every shape the roster's `PlanBar` comes in: mid-flight, complete, frozen and none
         // (#1345).
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },

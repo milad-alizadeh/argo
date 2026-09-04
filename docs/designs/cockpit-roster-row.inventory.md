@@ -1,8 +1,9 @@
-# The Sessions roster row — build inventory (#1310)
+# The Sessions roster row — build inventory (#1344, #1346)
 
 What each ticket's build actually extracted from
 [`cockpit-roster-row.md`](cockpit-roster-row.md). Names are frozen at approval; renaming one is
-a migration.
+a migration. Later tickets against the same design append their rows here rather than starting
+a second inventory.
 
 ## Extracted — #1344
 
@@ -17,7 +18,7 @@ stayed a value on the projection rather than living inside the view — `Session
 reads `row.state` the same way, and a component computing its own delegation state would be a
 second place the honesty rule (`SessionState.role` returning `nil`) could go wrong.
 
-## What stayed inline
+### What stayed inline
 
 - **The ceiling arithmetic** (`SubagentDots.drawnDots(for:)`, `.overflow(for:)`) — two `static`
   functions on the view itself, not a value type: the number 5 has no other caller and no other
@@ -30,7 +31,7 @@ second place the honesty rule (`SessionState.role` returning `nil`) could go wro
   it as a wrap width and truncated `+7` to `+`. Caught by the specimen render, not by a projection
   test, which is exactly the split `pixel-review` exists for.
 
-## Contract changes these needed
+### Contract changes these needed
 
 Two, both promoted at their first and only caller:
 
@@ -41,7 +42,7 @@ Two, both promoted at their first and only caller:
 The dash and the outline pip snap to existing tokens (`ArgoStroke.border`, `ArgoStroke.hairline`)
 rather than promoting new ones.
 
-## A known gap against rule 1
+### A known gap against rule 1
 
 `SubagentReading` reads `FeedAgents.all(in:of:)` off the Session's own record — three of the
 rail's four facts, matching `FeedAgentReader.agents(in:)` before its `told(_:)` step. It never
@@ -54,3 +55,45 @@ until the row is opened and the fourth fact reaches it too. Flagged rather than 
 wiring live per-child file-growth into every roster row is a larger change than this ticket's
 scope, and the issue's own acceptance criteria are written against `FeedAgents.running(of:)`
 alone.
+
+## Extracted — #1346
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `DeliveryAddresses` | molecule | `ArgoUI/Shell/Sidebar/` — one caller (`SessionRow`) | `ticketNumber: Int?`, `pullRequest: DeliveryPullRequest?` | `ArgoGlyph(.ticketsRoom)` + `Text`, two custom `Shape`s (`OpenPullRequestMark`, `MergedPullRequestMark`) + `Text` | frozen table, `DeliveryAddresses`; `roster-row/{running,merged,spent,unknown}.png` |
+
+Extraction evidence: `DeliveryAddresses` is the design's frozen name, and it is a known
+cross-screen unit already exercised by the two states the happy path (`running`) never renders —
+merged and closed/draft.
+
+The pull request's own mark has no SF Symbol: `checklist` is already spent on the Ticket, and
+nothing on `ArgoSymbol`'s ladder is a fork-and-merge shape. Two private `Shape`s draw it, the way
+`PlanRing` draws the plan's arc rather than reaching for a symbol that does not exist.
+
+### What stayed inline
+
+- **The branch-to-Delivery join** — `CockpitPresentation.Readings.pullRequest(forBranch:)`, one
+  lookup over the array `DeliveryLedger.deliveries(of:)` already reads. A component wrapping a
+  single array lookup would be a second place for the "no Project read yet" rule to drift from
+  the ledger's own.
+- **The ink switch** (`DeliveryPullRequest.ink(in:)`) — four `if`s over
+  `isMerged` / `isDraft` / `state`, beside the type it reads rather than inside the view that
+  draws it (`ArgoOperationalState.tint(in:)` is the same split for a Session's own state).
+  Splitting it into a second file would be a second place for a rule the contract
+  (`DeliveryRoles`) already states in one.
+
+### Contract changes these needed
+
+None. `delivery.open`, `delivery.merged`, `state.failure` and `state.idle` were promoted ahead of
+this build by #1341; `machineCaption` and `text.tertiary` are pre-existing roles.
+
+### What #1346 left for later tickets
+
+- **Nothing populates `Readings.deliveries` in production yet.** `DeliveryLedger` and
+  `DeliveryDerivation` exist and are tested, but no caller in the app target polls a code host and
+  records into the ledger — that is #389's "Build the Code room and Delivery in Swift". Until it
+  lands, every row draws its Ticket mark (where one is linked) and no pull request, which is the
+  honest reading of an unread Project (`cockpit-roster-row.md`: "a row whose branch has no
+  Delivery … draws no pull request — never a placeholder").
+- **Rule 7** ("a ready claim with an open pull request never draws") has no `Ready` state to
+  conflict with yet — that arrives with #1335/#1348.

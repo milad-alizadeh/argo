@@ -18,12 +18,37 @@ extension SessionRosterProjection.Row {
     }
 
     /// What the Session is working on: the folder it runs in, the label the roster SPEAKS that
-    /// folder by, its branch, and the fact its meta line falls back to.
+    /// folder by, its branch, and the facts beyond the branch itself — the meta line's fallback
+    /// and the two addresses line 3 answers to.
     struct Work {
         let location: String?
         let worktree: String?
         let branch: String?
         let toldApart: String?
+        /// The Ticket this row addresses, `nil` for a Session on none (`cockpit-roster-row.md` —
+        /// `DeliveryAddresses`). Read once here rather than a second time off `session.ticket` at
+        /// draw time.
+        let ticketNumber: Int?
+        /// The pull request the same branch is the life of, `nil` for one with none open.
+        let pullRequest: DeliveryPullRequest?
+
+        /// What the row says beyond its own branch: the meta line's fallback and the two
+        /// addresses — one parameter rather than three, since the cap (`rules/house.md`, edge 6)
+        /// never bends for a fourth reading arriving after the first three were already at it.
+        struct Meta {
+            let toldApart: String?
+            let ticketNumber: Int?
+            let pullRequest: DeliveryPullRequest?
+        }
+
+        init(location: String?, worktree: String?, branch: String?, meta: Meta) {
+            self.location = location
+            self.worktree = worktree
+            self.branch = branch
+            self.toldApart = meta.toldApart
+            self.ticketNumber = meta.ticketNumber
+            self.pullRequest = meta.pullRequest
+        }
     }
 
     /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, the

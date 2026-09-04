@@ -101,12 +101,18 @@ public extension CockpitPresentation.Session {
     }
 
     /// Where the Session is working and what it is working ON — the git context, the folder it
-    /// sits in, and the Ticket reading its branch feeds. The three arrive together because one
-    /// half of that reading is DERIVED from the other two.
+    /// sits in, the Ticket reading its branch feeds, and the pull request the same branch is the
+    /// life of. The four arrive together because every one of the last three is DERIVED off the
+    /// branch the first two name.
     struct Work: Equatable, Sendable {
         public let location: String?
         public let workspace: Workspace?
         public let ticket: TicketLinkReading
+        /// The code host's pull request for this branch
+        /// (`CockpitPresentation.Readings.deliveries`),
+        /// and `nil` for a branch with none open — or one Argo has not read a Delivery for yet.
+        /// Never a placeholder: the roster row draws nothing rather than guess.
+        public let pullRequest: DeliveryPullRequest?
 
         /// `unread` is the default because it is the quietest: a Work value built without saying
         /// anything about a Ticket has established nothing about one.
@@ -114,10 +120,12 @@ public extension CockpitPresentation.Session {
             location: String? = nil,
             workspace: Workspace? = nil,
             ticket: TicketLinkReading = .unread,
+            pullRequest: DeliveryPullRequest? = nil,
         ) {
             self.location = location
             self.workspace = workspace
             self.ticket = ticket
+            self.pullRequest = pullRequest
         }
     }
 
