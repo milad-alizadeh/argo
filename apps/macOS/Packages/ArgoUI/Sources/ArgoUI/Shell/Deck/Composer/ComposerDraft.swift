@@ -40,9 +40,16 @@ package struct ComposerDraft: Equatable {
     /// sits here beside the queued follow-ups because it is the same kind of thing: an intent the
     /// running Turn has to end before Argo can carry it out — and it lives exactly as long, which
     /// is to say across a switch and not across a restart.
-    private(set) var heldMode: SessionMode?
+    ///
+    /// Not `private(set)` like its neighbours, for the reason `attachments` is not: the rules that
+    /// mutate it live in `ComposerDraft+Mode.swift`, and Swift's `private` is file-scoped.
+    var heldMode: SessionMode?
     /// Whether the walk for `heldMode` has begun, so no second boundary can start another (#653).
-    private(set) var isWalkingMode = false
+    /// Not `private(set)`, on the same rule as `heldMode` above.
+    var isWalkingMode = false
+    /// Whether this composer's own Stop landed and the record has yet to report it (#1189). Not
+    /// part of `isClear`: it is a claim about an act in flight, never something a reader typed.
+    private var stopAwaitingRecord = false
 
     package init(
         text: String = "",
@@ -153,9 +160,44 @@ package struct ComposerDraft: Equatable {
         } catch {
             return refused(by: ComposerSeamLine(error))
         }
+        // A standing refusal goes, whatever it stood over. Its RETRY is the reason and not
+        // housekeeping: after this act the queue is empty, so `retry(via:)` falls through to the
+        // FIELD — and a reader pressing a button that means "try that again" would send the words
+        // they are still typing as a fresh Turn. That includes the refusal a first, refused Stop
+        // put up, which a landing second Stop has just answered. Left standing it also OUTRANKS
+        // the line below, so the drop the reader needs told about is never drawn.
+        refused(by: nil)
+        // Argo's own Stop drops the queue HERE, at the click, ahead of the record: waiting for the
+        // status to turn would be waiting for the exact moment the follow-ups are released. The
+        // claim is spent by the boundary that follows — see `mustDropQueue(afterInterrupt:)`.
+        stopAwaitingRecord = true
+        dropQueue()
+    }
+
+    /// Drop what was waiting on the Turn, and say so where anything was.
+    ///
+    /// Its own method because Argo's Stop button is not the only way a Turn gets stopped: an `ESC`
+    /// typed at the dock terminal ends it just as truly, and the follow-ups waiting on it were
+    /// written for the run that was killed either way (#1189). That path reaches this through
+    /// `SessionComposer.turnEnded()`, off the record rather than off a click.
+    mutating func dropQueue() {
         guard !queued.isEmpty else { return }
         queued = []
         say(ComposerSeamLine(Self.droppedQueue))
+    }
+
+    /// Whether the queue behind a Turn the RECORD says was stopped still has to be dropped here.
+    ///
+    /// `false` where this composer's own Stop already did it at the click, and that is the one
+    /// case the record cannot settle: a follow-up typed AFTER the Stop, while the status still
+    /// read `running` because the record had not caught up, is the reader's intent for what comes
+    /// next rather than instructions for the run they killed — so it is released, not dropped.
+    ///
+    /// The claim is spent by any boundary, not only by the one it was made for: a Stop whose
+    /// interrupt the record somehow never reports must not go on swallowing the next one's drop.
+    mutating func mustDropQueue(afterInterrupt wasInterrupted: Bool) -> Bool {
+        defer { stopAwaitingRecord = false }
+        return wasInterrupted && !stopAwaitingRecord
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
@@ -165,60 +207,6 @@ package struct ComposerDraft: Equatable {
     /// there: a line saying more went than went would send the reader looking for what they can
     /// already see.
     package static let droppedQueue = "Turn stopped — the queued follow-ups were dropped"
-
-    /// The port's reason a rung did not land (#545), on the seam as a notice rather than a
-    /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.
-    ///
-    /// Given the outcome rather than the act, because the walk is `async` (#653) and a `mutating`
-    /// method cannot hold a draft open across the wait.
-    mutating func modeRefused(_ error: any Error) {
-        heldMode = nil
-        isWalkingMode = false
-        say(ComposerSeamLine(error))
-    }
-
-    /// The port's reason a Model or Effort did not land (#558), on the seam the same way — no words
-    /// are at risk here either, so there is nothing for Retry to put back.
-    ///
-    /// It touches NO held state, which is what separates it from `modeRefused` above: a rung can be
-    /// kept for the Turn's boundary, and these two are not. The composer goes on showing what the
-    /// CLI is still on, which was never wrong.
-    mutating func runFactRefused(_ error: any Error) {
-        say(ComposerSeamLine(error))
-    }
-
-    /// The rung landed. It takes back only the sentence IT put up — a notice about something else,
-    /// the Turn the reader stopped or the one the CLI never heard, is not this act's to erase.
-    mutating func modeLanded(_ mode: SessionMode) {
-        heldMode = nil
-        isWalkingMode = false
-        guard notice == Self.held(mode) else { return }
-        say(nil)
-    }
-
-    /// A rung the port refused because a Turn is running (#653, #940): kept for the boundary
-    /// rather than dropped, and said on the seam.
-    mutating func modeHeld(_ mode: SessionMode) {
-        heldMode = mode
-        isWalkingMode = false
-        say(ComposerSeamLine(Self.held(mode)))
-    }
-
-    /// The rung to walk now the Turn has ended, and `nil` where there is none or a walk is already
-    /// under way. MARKED rather than taken: the picker draws the held rung until the walk lands,
-    /// and a rung taken twice would be walked twice from a stance the first walk had left (#653).
-    mutating func beginModeWalk() -> SessionMode? {
-        guard let heldMode, !isWalkingMode else { return nil }
-        isWalkingMode = true
-        return heldMode
-    }
-
-    /// What the seam says about a rung Argo is holding: the port's own refusal first, verbatim,
-    /// then what Argo did with the intent. Both halves, because a reader who picked a rung needs
-    /// to know it was refused AND that it was not dropped.
-    package static func held(_ mode: SessionMode) -> String {
-        "\(SessionDriveError.modeBusy.detail) — \(mode.label) is held until this Turn ends"
-    }
 
     /// A Turn the CLI never heard, come back to the field it was typed in (#682).
     ///

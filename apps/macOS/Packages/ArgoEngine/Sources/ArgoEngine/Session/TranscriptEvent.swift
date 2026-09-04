@@ -56,6 +56,15 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// A Turn ended, and why. Emitted only where the record's reason SAYS the turn is over: one
     /// that continues into a tool call closes nothing.
     case turnEnded(StopReason)
+    /// Somebody stopped the Turn. Its own case rather than a `.prompt` carrying the CLI's marker
+    /// (#1189), because the marker is the one user entry that is not a thing anybody asked for:
+    /// read as a prompt it opens a Turn on the very act that ended one, and the Session never comes
+    /// back off `running`. The sentence behind it is `ClaudeInterrupt`'s — the reading lives beside
+    /// the keystroke that produces it.
+    ///
+    /// A boundary AND a mark: the Hub closes the Turn `cancelled` on it, and the feed draws it as
+    /// punctuation rather than in the reader's own voice.
+    case interrupted(atMs: Int?)
     /// The host noted that a prompt was QUEUED rather than run. It is the one thing that tells a
     /// queued prompt's file apart from a Session whose agent simply has not answered yet.
     case queued

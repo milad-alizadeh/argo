@@ -1,0 +1,5 @@
+{"type": "last-prompt", "leafUuid": "i-root-1", "sessionId": "interruptedTurn"}
+{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-09-03T10:00:01.000Z", "uuid": "i-root-1", "parentUuid": null, "message": {"role": "user", "content": "Rename the column."}}
+{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-09-03T10:00:04.000Z", "uuid": "i-a-1", "parentUuid": "i-root-1", "message": {"role": "assistant", "stop_reason": "tool_use", "content": [{"type": "tool_use", "id": "call-1", "name": "Read", "input": {"file_path": "/Users/x/tree/a.swift"}}]}}
+{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-09-03T10:00:06.000Z", "uuid": "i-u-2", "parentUuid": "i-a-1", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "call-1", "content": ""}]}}
+{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-09-03T10:00:07.000Z", "uuid": "i-u-3", "parentUuid": "i-u-2", "message": {"role": "user", "content": [{"type": "text", "text": "[Request interrupted by user for tool use]"}]}}

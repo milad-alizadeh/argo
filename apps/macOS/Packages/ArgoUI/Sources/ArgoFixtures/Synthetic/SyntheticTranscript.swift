@@ -122,7 +122,7 @@ package struct SyntheticTranscript {
     /// The whole sentences a reading matches rather than reads — the CLI's own, taken from where
     /// the reader takes them. Scrambled, an interrupt reads as something the reader typed, which
     /// is a prompt row where the source has punctuation.
-    package static let sentences: Set<String> = [ClaudeInterrupt.mark]
+    package static let sentences: Set<String> = ClaudeInterrupt.marks
 
     /// The fields a reader BRANCHES on rather than reads as words. Scrambled, each one is a record
     /// of a different kind, a call of a different tool or a Turn with no clock on it — which is a
