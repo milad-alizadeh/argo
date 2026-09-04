@@ -164,6 +164,10 @@ draw a decision nobody made.
 
 ### Settled — the reading
 
+**A settled ask is a reading of the column, so it sets like one.** It draws no ground, so it takes
+no card padding, and its glyph sits in the same column the verbs above it do — a settled question
+that hangs 15pt right of the `Read` and `Ran` lines it follows is a card pretending to be a card.
+
 **The offer folds out; the question stays whole.** What a settled ask loses is its list of
 options, not the words somebody was asked: a truncated question is a fact the row stops stating,
 and truncating it saves 18pt where dropping the offer saves 96. So the settled block is the
@@ -174,20 +178,31 @@ marker grid the offers were numbered on.
 offer the record has settled is history, and a control to reopen it is a control for reading
 what the answer already tells you.
 
+**Where the answer named no option, the prose stands in only for a call that put ONE question.**
+A call's answer is a single payload covering every question in it, so drawn under each of two it
+would state one fact twice. A question of a longer call whose answer named none of its options
+draws no answer row at all — degrade-down takes the quieter reading over a repeated one. This is
+the one rule here the prototype did not draw: it is invisible until a two-question call is
+answered in prose, which no variant put on screen.
+
 | Measurement | Value | | Source |
 |---|---|---|---|
 | Question | `ArgoFeedRow.proseRung`, `text.primary`, wraps in full, never truncated | ships | the loud half: the answer is meaningless without it |
 | Question → its answer | `ArgoFeedRow.stepBeforeProse` — `hair` 2 | ships | the step the offer used to take |
-| Answer mark | `ArgoSymbol.chosen` at `ArgoIconSize.inline` 10, `text.tertiary` | **to build** | in `markerWidth` 18 trailing, `markerGap` 6 — the column the offers were numbered in |
+| Answer mark | `ArgoSymbol.chosen` at `ArgoIconSize.inline` 10, `text.tertiary` | **to build** | in `callSymbolWidth` 15 **centred**, `callGap` 6 — the column every verb in the feed takes, not the marker column |
 | Answer mark, where the answer named no option | **`ArgoSymbol.answered`** at `.inline`, `text.tertiary` | **to build** | a **promotion** — see below |
 | Answer words | `ArgoFeedRow.proseRung`, `text.secondary`, wraps | **to build** | a step back, not out: it is history, and the question above it is what a reader needs first |
 | The offer | **not drawn** | **to build** | |
+| Answer row, where a call of TWO questions was answered in prose | **not drawn** | **to build** | one payload, one fact: under each question it would be stated twice |
 | Between two questions in one call | `ArgoFeedRow.blockStep` 12, unchanged | ships | the fold applies per question; one call is still one ground |
+| Card padding | **none** | **to build** | `askCardInset` 12 is what holds the words off the GROUND. A settled card draws none, so 12 on four sides is an indent under a card nobody can see |
+| Mark column | **`feedSymbolColumn()`** — 15 centred, `callGap` 6 | **to build** | a settled question has no numbered options left, so its glyph leaves the marker column for the one `FeedCallLine`, `FeedFoldLine` and `SkillLoadedMarker` already draw in. The marker column is 18 **trailing** so `9.` and `10.` set their words on one edge; a glyph has no digits to stack, and trailing-aligning one lands it 3pt right of the icons above and its words 3pt right of theirs |
 
 **Heights it settles**, measured in the PROTOTYPE at the 672pt column, against what the same row
 costs waiting. The built row was measured again at the same column and comes in lower than the
-drawing promised — one question with three options: **208 waiting, 106 settled today, 62 folded**,
-which is 30% of waiting. `FeedAskFoldTests` is where those numbers are held:
+drawing promised, because the prototype kept the card inset a groundless card has no use for —
+one question with three options: **208 waiting, 106 settled today, 38 folded**, which is 18% of
+waiting. `FeedAskFoldTests` is where those numbers are held:
 
 | The ask | waiting | settled today | settled folded |
 |---|---|---|---|

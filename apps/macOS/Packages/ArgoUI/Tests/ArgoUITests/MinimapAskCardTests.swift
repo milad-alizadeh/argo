@@ -22,11 +22,10 @@ struct MinimapAskCardTests {
         #expect(MinimapRowFixture.shape(.ask(ask)) == .card(MinimapAskCard(
             questions: [MinimapAskCard.Question(
                 text: "Which reading?",
-                offers: [
+                under: .offered([
                     MinimapAskCard.Offer(marker: "1.", label: "One"),
                     MinimapAskCard.Offer(marker: "2.", label: "Two"),
-                ],
-                answer: nil,
+                ]),
             )],
             caption: nil,
             ink: .attention,
@@ -83,9 +82,7 @@ struct MinimapAskCardTests {
         let owned = FeedAsk(ask: asked, isAnswered: false, answer: nil)
 
         #expect(MinimapRowFixture.shape(.ask(reported)) == .card(MinimapAskCard(
-            questions: [MinimapAskCard.Question(
-                text: "Which branch?", offers: [], answer: nil,
-            )],
+            questions: [MinimapAskCard.Question(text: "Which branch?", under: .nothing)],
             caption: FeedAskLine.reportedWords,
             ink: .attention,
             isRuled: true,

@@ -24,18 +24,13 @@ package struct FeedAskLine: View {
     package var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
             ForEach(Array(ask.questions.enumerated()), id: \.offset) { index, question in
-                FeedAskQuestion(
-                    question: question,
-                    offers: ask.offers(in: question),
-                    ink: ink,
-                    reading: reading(question, at: index),
-                )
+                FeedAskQuestion(question: question, ink: ink, under: under(question, at: index))
             }
             if ask.isReported {
                 reported
             }
         }
-        .padding(ArgoFeedRow.askCardInset)
+        .padding(inset)
         .background(ground, in: RoundedRectangle(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(spoken)
@@ -77,25 +72,23 @@ package struct FeedAskLine: View {
         return ask.isPending ? "Question, waiting on you" : "Question, answered"
     }
 
-    /// Which of the three readings this question is (#1207).
-    ///
-    /// **The branch between the last two is `isAnswered`, not `waiting == nil`.** Three rows are
-    /// pending and not pressable, and every one of them would be wrecked by folding: a question on
-    /// a Session Argo cannot drive (#546), one whose gate has not raised it yet, and one reported
-    /// over the companion plugin — which `FeedProjection+Ask.reported` builds `isAnswered: false`,
-    /// so it is never a settled row whatever its caption says. None of the three has an answer, so
-    /// a fold there would draw a decision nobody made.
-    private func reading(_ question: Ask.Question, at index: Int) -> FeedAskQuestion.Reading {
-        guard ask.isWaiting else {
-            return ask.isAnswered ? .settled(ask.answered(question)) : .pending
+    /// What stands under one question, per `FeedAsk.reading` — the fork the row's arithmetic
+    /// height and the overview lane take too, so none of the three can drift from the others.
+    private func under(_ question: Ask.Question, at index: Int) -> FeedAskQuestion.Under {
+        switch ask.reading {
+        case .waiting:
+            .waiting(offers: ask.offers(in: question), held: FeedAskQuestion.Waiting(
+                held: Binding(get: { held[index] }, set: { held[index] = $0 }),
+                needsClosing: held.needsClosing(question, at: index),
+                hasSomethingToSend: held.hasSomethingToSend(at: index),
+                pick: { pick($0, in: question, at: index) },
+                send: { close(at: index) },
+            ))
+        case .pending:
+            .offer(ask.offers(in: question))
+        case .settled:
+            .answer(ask.answered(question))
         }
-        return .waiting(FeedAskQuestion.Waiting(
-            held: Binding(get: { held[index] }, set: { held[index] = $0 }),
-            needsClosing: held.needsClosing(question, at: index),
-            hasSomethingToSend: held.hasSomethingToSend(at: index),
-            pick: { pick($0, in: question, at: index) },
-            send: { close(at: index) },
-        ))
     }
 
     /// Taking an option. On a many-of question it ticks a box and nothing else happens; on a one-of
@@ -149,29 +142,31 @@ package struct FeedAskLine: View {
         ask.ink == .attention ? ArgoOperationalState.attention.ground(in: argo.color) : .transparent
     }
 
+    /// The card's padding is what holds its words off its ground. With no ground there is nothing
+    /// to hold them off, and 12 on four sides is an indent under a card nobody can see — a settled
+    /// question then hangs right of the rows above it instead of reading as one of them (#1207).
+    private var inset: CGFloat {
+        ask.hasGround ? ArgoFeedRow.askCardInset : 0
+    }
+
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(ask: FeedAsk) {
         self.ask = ask
     }
 }
 
-// Every shape a call can put a question in, while Argo holds it open. The settled reading is the
-// preview above; these are the states where the row is the thing you press.
-
 /// One question and what stands under it — the offer, pressable or read, or the way it went.
 private struct FeedAskQuestion: View {
-    /// The three readings a question can be in (#1207). #534 and #712 branched on one question —
-    /// *is this row the thing you press?* — and gave everything that was not the same drawing: the
-    /// question, then every option it offered, one line each. That put two different facts in one
-    /// shape, and the fold applies to exactly one of them.
-    enum Reading {
+    /// What one question draws under it, one case per `FeedAsk.Reading` and each carrying what
+    /// only that case can use (#1207).
+    enum Under {
         /// Argo is holding the question open: the pressable cards, the field, `Answer`.
-        case waiting(Waiting)
-        /// Nobody has answered it and nothing here can — the numbered offer, as #534 built it.
-        case pending
-        /// The record has settled it: the question, and the way it went. The offer folds out, and
-        /// the words are absent where nothing readable came back.
-        case settled(FeedAskAnswer.Words?)
+        case waiting(offers: [FeedAskOffer], held: Waiting)
+        /// The options as they were offered, numbered — the reading #534 built. Empty where the
+        /// question offered none, since free-form asks exist.
+        case offer([FeedAskOffer])
+        /// The way the record settled it. Absent where nothing readable came back.
+        case answer(FeedAskAnswer.Words?)
     }
 
     /// What this question offers while Argo holds it open.
@@ -186,19 +181,17 @@ private struct FeedAskQuestion: View {
     @Environment(\.argo) private var argo
 
     let question: Ask.Question
-    /// The options it offered, numbered, in the order it offered them.
-    let offers: [FeedAskOffer]
     let ink: ArgoColor
-    let reading: Reading
+    let under: Under
 
     /// The ask glyph takes the same marker column the option numbers do, so the block is one grid
     /// and the read options need no indent of their own.
     var body: some View {
         VStack(alignment: .leading, spacing: step) {
-            HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
+            HStack(alignment: .firstTextBaseline, spacing: gap) {
                 ArgoGlyph(ArgoSymbol.asked, .inline)
                     .foregroundStyle(ink)
-                    .feedMarkerColumn()
+                    .feedAskMarkColumn(isSettled: isSettled)
                 Text(question.text)
                     .argoText(ArgoFeedRow.proseRung)
                     .foregroundStyle(argo.color.text.primary)
@@ -208,24 +201,32 @@ private struct FeedAskQuestion: View {
         }
     }
 
-    /// Pressable cards need the room a bare list does not. Both readings take the step the offer
-    /// used to, so the fold moves nothing that was already on the grid.
+    /// A settled question has no numbered options left under it, so its glyph takes the column
+    /// every other verb in the feed does and the row reads as one of them. The other two readings
+    /// keep the marker column, because their options ARE numbered into it (#1207).
+    private var isSettled: Bool {
+        if case .answer = under {
+            return true
+        }
+        return false
+    }
+
+    private var gap: CGFloat {
+        isSettled ? ArgoFeedRow.callGap : ArgoFeedRow.markerGap
+    }
+
+    /// Pressable cards need the room a bare list does not; the two readings take the step the
+    /// offer already used.
     private var step: CGFloat {
-        if case .waiting = reading {
+        if case .waiting = under {
             return ArgoSpacing.comfortable
         }
         return ArgoFeedRow.stepBeforeProse
     }
 
-    /// What stands under the question, per reading.
-    ///
-    /// A **settled** question draws the way it went and never its offer, whatever it offered. A
-    /// **pending** one draws the options exactly as they were offered, in the order they were
-    /// offered, and a question that offered none draws nothing — free-form asks exist. While it
-    /// **waits** it draws its field either way, which is the whole of what it offers.
     @ViewBuilder private var options: some View {
-        switch reading {
-        case let .waiting(waiting):
+        switch under {
+        case let .waiting(offers, waiting):
             FeedAskOfferList(
                 question: question,
                 offers: offers,
@@ -235,11 +236,11 @@ private struct FeedAskQuestion: View {
                 pick: waiting.pick,
                 send: waiting.send,
             )
-        case .pending:
+        case let .offer(offers):
             if !offers.isEmpty {
                 FeedAskOptions(offers: offers)
             }
-        case let .settled(answer):
+        case let .answer(answer):
             if let answer {
                 FeedAskAnswer(answer: answer)
             }

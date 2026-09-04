@@ -120,8 +120,31 @@ struct FeedAskFoldTests {
         ).card
         let question = try #require(settled.questions.first)
 
-        #expect(question.offers.isEmpty)
-        #expect(question.answer == "#713 — PlanPill shows the system focus ring on a click")
+        #expect(
+            question.under == .answered("#713 — PlanPill shows the system focus ring on a click"),
+        )
+    }
+
+    /// The card's padding is the ground's, so a card without a ground takes none — the settled
+    /// question sets flush with the call rows above it rather than 15pt right of them.
+    @Test
+    func `only a card with a ground is inset`() {
+        #expect(Self.waiting(Self.decision).hasGround)
+        #expect(!Self.answered(Self.decision, "#711 — Read a Session's subagent transcripts")
+            .hasGround)
+    }
+
+    /// A settled card is its two lines and NOTHING else — no offer, and no inset, because it draws
+    /// no ground to hold words off. Stated as the sum so a padding put back is a failure here.
+    @Test
+    func `a settled card is its question, its answer, and no inset at all`() {
+        let words = "#711 — Read a Session's subagent transcripts"
+        let across = Self.width - ArgoFeedRow.inset * 2
+
+        #expect(Self.height(of: Self.answered(Self.decision, words))
+            == FeedShapeHeight.symbolLine(Self.decision.text, across: across)
+            + ArgoFeedRow.stepBeforeProse
+            + FeedShapeHeight.symbolLine(words, across: across))
     }
 
     private static func waiting(_ question: Ask.Question) -> FeedAsk {

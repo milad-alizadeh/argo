@@ -3,13 +3,11 @@ import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
-/// The way a settled question went, on the marker grid its offers were numbered in.
+/// The way a settled question went, on the glyph column the verbs above it are drawn in (#1207).
 ///
-/// **The offer folds out; the question stays whole** (#1207). Once the record has settled an ask,
-/// the two facts left are what was asked and which way it went — the options nobody took are the
-/// shape of a decision already made, and they stop being lines. Truncating the QUESTION was the
-/// other economy on offer and it is the wrong one: it saves 18pt where dropping the offer saves 96,
-/// and it leaves the row stating a question nobody can finish reading.
+/// The offer folds out and the question stays whole: at the 672pt column, a three-option ask goes
+/// from 106 to 38 — 68 of it the offer and 24 the card inset a groundless card no longer takes —
+/// where truncating the question would have saved 18.
 ///
 /// A step back and not out: the words are `text.secondary`, because the question above them is what
 /// a reader needs first.
@@ -26,10 +24,10 @@ struct FeedAskAnswer: View {
     let answer: Words
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
+        HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
             ArgoGlyph(mark, .inline)
                 .foregroundStyle(argo.color.text.tertiary)
-                .feedMarkerColumn()
+                .feedSymbolColumn()
             Text(answer.words)
                 .argoText(ArgoFeedRow.proseRung)
                 .foregroundStyle(argo.color.text.secondary)
@@ -40,9 +38,8 @@ struct FeedAskAnswer: View {
     }
 
     /// A tick only where an option was named. `FeedAsk.chosen(in:)` is DERIVED and deliberately
-    /// weak, so a free-form answer and one that agreed with nothing on the list name nothing — and
-    /// a tick over words nobody offered claims a pick that never happened, which is the one thing
-    /// degrade-down forbids.
+    /// weak, so a free-form answer and one that agreed with nothing on the list name nothing, and a
+    /// tick over words nobody offered would be a false DIRECT.
     private var mark: String {
         answer.isChosen ? ArgoSymbol.chosen : ArgoSymbol.answered
     }

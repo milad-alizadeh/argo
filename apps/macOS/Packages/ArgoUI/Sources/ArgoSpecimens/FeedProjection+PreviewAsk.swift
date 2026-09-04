@@ -113,19 +113,14 @@ package extension FeedProjection {
         "#713 — PlanPill shows the system focus ring on a click",
     )
 
-    /// The state that reaches the screen for the FIRST time: an answer that named none of the
-    /// options, and a free-form question that offered none to name.
-    ///
-    /// Before the fold neither was drawn at all — `chosen(in:)` matched nothing, so every offer
-    /// stayed full-length and unquieted and the answer appeared nowhere. The mark is
-    /// `ArgoSymbol.answered` and not a tick, because a tick over words nobody offered claims a pick
-    /// that never happened.
+    /// An answer that named none of the options. Its mark is `ArgoSymbol.answered` rather than a
+    /// tick, since `chosen(in:)` matched nothing (#1207).
     static let previewAskAnsweredUnnamed = answeredRows(
         previewAskDecision,
         "None of those — I opened #722 for it instead.",
     )
 
-    /// The free-form half of the same first: what somebody typed, on screen at last.
+    /// The other answer that names no option: a free-form question, which offered none to name.
     static let previewAskAnsweredFreeForm = answeredRows(
         [Ask.Question(text: "What should I call the roll-up?", options: [])],
         "The delivery digest",

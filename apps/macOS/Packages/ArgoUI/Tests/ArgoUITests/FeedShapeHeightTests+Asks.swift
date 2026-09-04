@@ -19,10 +19,10 @@ extension FeedShapeHeightTests {
             "Neither of the two, because the words the record came back with run past the measure "
                 + "the card gives them and have to wrap at least twice.",
         ))),
-        Row(name: "ask, settled with options", content: .ask(pending(oneOf))),
+        Row(name: "ask, pending with options", content: .ask(pending(oneOf))),
         Row(name: "ask, settled two questions", content: .ask(answered(both, "The attention ink"))),
-        Row(name: "ask, two questions", content: .ask(pending(both))),
-        Row(name: "ask, a question that wraps", content: .ask(pending(wrapping))),
+        Row(name: "ask, pending two questions", content: .ask(pending(both))),
+        Row(name: "ask, pending, a question that wraps", content: .ask(pending(wrapping))),
         Row(name: "ask, waiting one-of", content: .ask(waiting(oneOf))),
         Row(name: "ask, waiting many-of", content: .ask(waiting(manyOf))),
         Row(name: "ask, waiting free-form", content: .ask(waiting(freeForm))),

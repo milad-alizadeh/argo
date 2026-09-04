@@ -96,13 +96,8 @@ public enum ArgoSymbol {
     public static let asked = "questionmark.bubble"
     /// The option an answer named — the one tick in the feed, marking a CHOICE and not a success.
     public static let chosen = "checkmark"
-    /// The way a settled question went, where the answer named no option it offered (#1207).
-    ///
-    /// A second role and not a reuse of `delegated`, which carries the same SF name: `delegated`
-    /// means *a subagent went from here*, and one word has one meaning. `chosen` cannot stand here
-    /// — `FeedAsk.chosen(in:)` is DERIVED and deliberately weak, so a free-form answer and one that
-    /// agreed with nothing on the list name nothing, and a tick over words nobody offered claims a
-    /// pick that never happened. This mark says CONTINUES instead.
+    /// The way a settled question went, where the answer named no option it offered (#1207). Says
+    /// CONTINUES, not chosen. Its own role beside `delegated`, which carries the same SF name.
     public static let answered = "arrow.turn.down.right"
     /// A line of the record nothing could parse. Deliberately not a failure's mark: nothing went
     /// wrong with the agent's work here.
