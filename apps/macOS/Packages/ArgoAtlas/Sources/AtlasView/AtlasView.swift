@@ -24,13 +24,27 @@ public struct AtlasView: View {
     @Environment(\.argo) private var argo
 
     private let plan: AtlasPlan
-    private let camera: AtlasCamera
-
     /// `relief` is 1 for the city and 0 for the treemap, and it has no default: it is the one thing
-    /// that decides which of the two readings reaches the screen.
-    public init(plan: AtlasPlan, relief: Double) {
+    /// that decides which of the two readings reaches the screen. `var` rather than `let`: this is
+    /// the whole of `animatableData` below, which is what lets a caller drive it through
+    /// `withAnimation` and have every frame in between drawn as its own camera, rather than a jump
+    /// from one end to the other (#1152).
+    private var relief: Double
+    /// The city's own turn and tilt (#1152). Not animated here — a drag or a key press moves this
+    /// live, one frame at a time, and a caller re-rendering this view on every one of those frames
+    /// is a rate `Animatable` has no reason to also own.
+    private let orientation: AtlasOrientation
+
+    public init(plan: AtlasPlan, relief: Double, orientation: AtlasOrientation = .opening) {
         self.plan = plan
-        self.camera = AtlasCamera(relief: relief, over: plan.extent)
+        self.relief = relief
+        self.orientation = orientation
+    }
+
+    /// Solved fresh from `relief` and `orientation` on every draw rather than stored, because
+    /// `relief` changes under `Animatable` between the values a caller ever set it to.
+    private var camera: AtlasCamera {
+        AtlasCamera(relief: relief, orientation: orientation, over: plan.extent)
     }
 
     public var body: some View {
@@ -65,6 +79,18 @@ public struct AtlasView: View {
     }
 }
 
+extension AtlasView: @MainActor Animatable {
+    /// `relief` alone. SwiftUI interpolates this between an old value and a new one over whatever
+    /// animation a caller's `withAnimation` set, and every step lands back in `camera` above — so
+    /// a city-to-treemap toggle tweens the whole projection rather than cutting between two static
+    /// pictures. No animation at the call site means no interpolation here either, which is what
+    /// makes Reduce Motion's answer "call it with none" rather than a branch this view has to hold.
+    public var animatableData: Double {
+        get { relief }
+        set { relief = newValue }
+    }
+}
+
 /// The two states the map has: one with ground to stand a city on, and one with none.
 ///
 /// The empty case is the one worth a render rather than an assertion — a 0×0 rectangle draws
@@ -73,9 +99,10 @@ public struct AtlasView: View {
 private struct AtlasPreview: View {
     let plan: AtlasPlan
     var relief: Double = 1
+    var orientation: AtlasOrientation = .opening
 
     var body: some View {
-        AtlasView(plan: plan, relief: relief)
+        AtlasView(plan: plan, relief: relief, orientation: orientation)
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
             .argoAppearance()
@@ -125,4 +152,9 @@ private let previewPlan = AtlasPlan(
 
 #Preview("Atlas — the empty map") {
     AtlasPreview(plan: .empty)
+}
+
+// A turn and a tilt away from the opening view — the reader having driven the camera (#1152).
+#Preview("Atlas — the city, turned") {
+    AtlasPreview(plan: previewPlan, orientation: AtlasOrientation(yaw: 2.1, pitch: 1.1))
 }
