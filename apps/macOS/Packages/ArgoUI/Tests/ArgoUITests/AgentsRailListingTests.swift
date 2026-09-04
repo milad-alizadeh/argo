@@ -99,6 +99,30 @@ struct AgentsRailListingTests {
         #expect(listing.finished.map(\.id) == [0])
     }
 
+    /// #1204's second symptom: the rail drew `0 running` over four listed chips and three held
+    /// back, which the split above says cannot happen — with nothing running and nothing scoped,
+    /// every chip is held. The heading is derived HERE now, off the same array, so the two figures
+    /// are one reading of one value and a disagreement is not expressible.
+    @Test
+    func `the heading counts the array the split was taken from`() {
+        let listing = AgentsRailListing(of: Self.agents, scopedOnto: nil)
+
+        #expect(listing.running == 2)
+        #expect(listing.listed.count == listing.running)
+        #expect(listing.listed.count + listing.finished.count == Self.agents.count)
+    }
+
+    /// The other end of it: none running is an empty column under a heading that says so.
+    @Test
+    func `a heading saying none are running lists none of them`() {
+        let landed = Self.agents.map { Self.agent($0.id, $0.label, isRunning: false) }
+        let listing = AgentsRailListing(of: landed, scopedOnto: nil)
+
+        #expect(listing.running == 0)
+        #expect(listing.listed.isEmpty)
+        #expect(listing.finished.count == 3)
+    }
+
     // MARK: - Fixtures
 
     /// Two out and one landed, with the landed one in the MIDDLE — a split that kept the record's

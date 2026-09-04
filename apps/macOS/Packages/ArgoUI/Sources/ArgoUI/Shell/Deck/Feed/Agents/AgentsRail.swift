@@ -73,7 +73,7 @@ package struct AgentsRail: View {
     private var header: some View {
         Button { control.isCollapsed = true } label: {
             HStack(spacing: ArgoSpacing.snug) {
-                Text(AgentsRailCopy.header(running: running))
+                Text(AgentsRailCopy.header(running: listing.running))
                     .argoText(ArgoTypography.sectionLabel)
                     .foregroundStyle(argo.color.text.tertiary)
                     .lineLimit(1)
@@ -90,12 +90,9 @@ package struct AgentsRail: View {
         .accessibilityLabel(AgentsRailCopy.hide)
     }
 
-    private var running: Int {
-        FeedAgents.running(of: agents)
-    }
-
-    /// Which of them the column holds, drawn from the WHOLE list every time: the count line still
-    /// counts every delegation's state, so the heading cannot disagree with a list that hides some.
+    /// Which of them the column holds AND how many are running — one value, taken once per pass.
+    /// The heading counts every delegation's state where the list hides some, and both readings
+    /// come out of the same array, so the two cannot disagree (#1204).
     private var listing: AgentsRailListing {
         AgentsRailListing(
             of: agents,
