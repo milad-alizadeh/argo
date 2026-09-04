@@ -79,6 +79,10 @@ scaffold` installs from it. `skills add` only adds, so renaming or deleting a sk
 the installed copy by hand, and editing one of Argo's own skills needs a push to `main` before a
 reinstall sees it. Add/sweep workflow: `packages/argo-skills/README.md`.
 
+A `/command` that "does nothing" is usually one whose turns end in a question: from the composer
+that is indistinguishable from one that never ran, so count them before theorising —
+`scripts/slash-outcomes.mjs` (#1208).
+
 ## Code review
 
 An implement run reviews its diff before the PR opens. The review only works in a **fresh
