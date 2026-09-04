@@ -115,11 +115,44 @@ struct TranscriptWatchTests {
         async let admitA: Void = try watch.startTailing(watch.observe(url, reading: .excerpt))
         async let admitB: Void = try watch.startTailing(watch.observe(url, reading: .excerpt))
         _ = try await (admitA, admitB)
-        await settle { openDescriptorCount(for: url) <= 2 }
+        await settle { openDescriptorCount(for: url) == 2 }
 
         // Two: the one live tail's cursor and its watcher. Four would be the loser still holding
         // the file it opened, which is the leak the early return could have made.
         #expect(openDescriptorCount(for: url) == 2)
+    }
+
+    /// The second hole of the same shape. `drain` used to end with a bare
+    /// `tails.removeValue(forKey:)` and an unconditional `settle`, so a tail ending under an id
+    /// that has since moved on could take the NEWER tail's entry out of the table — leaving that
+    /// one untracked — and `abandonReread` the reading it is standing on (#1237).
+    ///
+    /// So the race is run and then the transcript KEEPS SPEAKING: a survivor whose key was cleared
+    /// is no longer observed, and one whose reread was abandoned never lands what it says next.
+    @Test
+    func `the tail that survives a race keeps its entry and its reading`() async {
+        let watch = Self.watch()
+        let (first, backfill) = hubLiveObservation(id: "one")
+        await watch.startTailing(first)
+        backfill.yield([.message(markdown: "backfill")])
+        await settle { watch.sessions.first?.events.isEmpty == false }
+
+        let (viaA, spokenToA) = hubLiveObservation(id: "one")
+        let (viaB, spokenToB) = hubLiveObservation(id: "one")
+        async let admitA: Void = watch.startTailing(viaA)
+        async let admitB: Void = watch.startTailing(viaB)
+        _ = await (admitA, admitB)
+
+        // The superseded stream is closed, which is what runs its drain to the end — the moment an
+        // unowned drain would have reached into the table for a key it does not hold.
+        backfill.finish()
+        spokenToA.yield([.message(markdown: "still here")])
+        spokenToB.yield([.message(markdown: "still here")])
+        let spoken = { watch.sessions.first.map(said(by:)) ?? [] }
+        await settle { spoken().contains("still here") }
+
+        #expect(watch.isObserving(transcriptID: "one"))
+        #expect(spoken() == ["still here"])
     }
 
     /// A watch reading one transcript to the end, so every case above starts from a standing

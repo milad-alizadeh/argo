@@ -206,13 +206,13 @@ final class TranscriptWatch {
     ) async {
         // Stamped BEFORE the wait below, which is what makes the guard after it mean anything:
         // the wait is where a second admit of this transcript overtakes this one (#1237).
-        let admission = admissions.admit(observation.id)
+        let admission = admissions.stamp(observation.id)
         await pauseObserving(transcriptID: observation.id)
         // Overtaken while waiting. Nothing is admitted and no tail is started: the admit that took
-        // the id is reading this same file, at the same extent, and a second reader of it is the
-        // duplicate this guard exists to prevent. The observation goes out of scope here, which is
-        // what releases the descriptors it opened (`TranscriptTail`).
-        guard admissions.holds(admission, for: observation.id) else { return }
+        // the id is reading this same file, and a second reader of it is the duplicate this guard
+        // exists to prevent. The observation goes out of scope here, which is what releases the
+        // descriptors it opened (`TranscriptTail`).
+        guard admissions.owns(admission, observation.id) else { return }
         mutate(admit)
         // A connection reading `failed` over a live source is a stale claim.
         failureMessage = nil
@@ -249,7 +249,10 @@ final class TranscriptWatch {
         SubagentTails(engine: engine, readings: readings)
     }
 
-    private func drain(_ observation: TranscriptObservation, admitted admission: Int) async {
+    private func drain(
+        _ observation: TranscriptObservation,
+        admitted admission: TranscriptAdmissions.Admission,
+    ) async {
         for await events in observation.events {
             await land(events, of: observation.id)
             // After the join, never before: reconciliation retires a spawned Session's own row, and
@@ -260,7 +263,7 @@ final class TranscriptWatch {
         // was dropped, or a later admit owns it and is reading it now. Either way this reading is
         // not the one the roster is standing on, and `abandonReread` here would take away the
         // reread that admit is holding (#1237).
-        guard admissions.holds(admission, for: observation.id) else { return }
+        guard admissions.owns(admission, observation.id) else { return }
         // A tail that ended without delivering a backfill — an unopenable file, or one stopped
         // mid-read — still has to settle, or the roster waits on a transcript that never speaks.
         mutate { $0.settle(transcriptID: observation.id) }
