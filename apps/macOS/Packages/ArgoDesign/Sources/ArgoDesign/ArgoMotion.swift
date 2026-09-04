@@ -104,7 +104,7 @@ public extension ArgoMotion {
     /// Motion because a loop has no shorter answer: it stops, and the surface holds a still that
     /// still reads as live.
     static let working = ArgoMotion(
-        duration: 1.9,
+        duration: 1.2,
         curve: .linear,
         reducedDuration: nil,
         repeats: true,

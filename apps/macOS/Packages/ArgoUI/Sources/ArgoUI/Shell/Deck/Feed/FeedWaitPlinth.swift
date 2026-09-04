@@ -150,7 +150,7 @@ private struct FeedWaitIon: View {
 
     /// The filament, at the column's share, wherever this rail happens to be drawn.
     private var length: CGFloat {
-        ArgoFeedRow.column * ArgoFeedRow.workingThreadShare
+        ArgoFeedRow.workingThreadLength
     }
 
     var body: some View {

@@ -11,7 +11,7 @@ struct WorkingAgeTests {
     @Test
     func `the ladder is the four rungs the design states`() {
         #expect(ArgoWaitAge.all.map(\.after) == [0, 10, 60, 300])
-        #expect(ArgoWaitAge.all.map(\.period) == [1.9, 2.8, 3.8, 4.9])
+        #expect(ArgoWaitAge.all.map(\.period) == [1.2, 1.8, 2.4, 3.1])
         #expect(ArgoWaitAge.all.map(\.glow) == [0.60, 0.49, 0.40, 0.30])
     }
 
@@ -40,8 +40,8 @@ struct WorkingAgeTests {
     /// Each rung takes over AT its threshold, not after it — the boundary belongs to the colder
     /// rung, so a wait that has run ten seconds is already reading as one.
     @Test(arguments: [
-        (0.0, 1.9), (9.9, 1.9), (10.0, 2.8), (59.9, 2.8),
-        (60.0, 3.8), (299.9, 3.8), (300.0, 4.9), (3600.0, 4.9),
+        (0.0, 1.2), (9.9, 1.2), (10.0, 1.8), (59.9, 1.8),
+        (60.0, 2.4), (299.9, 2.4), (300.0, 3.1), (3600.0, 3.1),
     ])
     func `a wait of this age reads at this period`(age: Double, period: Double) {
         #expect(ArgoWaitAge.rung(at: age).period == period)

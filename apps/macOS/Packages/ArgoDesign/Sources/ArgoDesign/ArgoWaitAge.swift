@@ -34,10 +34,10 @@ public extension ArgoWaitAge {
     /// The ladder, youngest first. The first rung is what `ArgoMotion.working` and
     /// `ArgoElevation.bloom` already say, so a short wait draws exactly as it did.
     static let all: [ArgoWaitAge] = [
-        ArgoWaitAge(after: 0, period: 1.9, glow: 0.60),
-        ArgoWaitAge(after: 10, period: 2.8, glow: 0.49),
-        ArgoWaitAge(after: 60, period: 3.8, glow: 0.40),
-        ArgoWaitAge(after: 300, period: 4.9, glow: 0.30),
+        ArgoWaitAge(after: 0, period: 1.2, glow: 0.60),
+        ArgoWaitAge(after: 10, period: 1.8, glow: 0.49),
+        ArgoWaitAge(after: 60, period: 2.4, glow: 0.40),
+        ArgoWaitAge(after: 300, period: 3.1, glow: 0.30),
     ]
 
     /// The rung a wait of this age reads at. The threshold belongs to the COLDER rung, and an age
