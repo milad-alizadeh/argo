@@ -75,7 +75,9 @@ extension SessionRosterProjection {
             switch event {
             case let .prompt(_, _, atMs):
                 start = atMs
-            case .turnEnded:
+            // An interrupt is a boundary like any other, and the commoner one on a Session
+            // somebody is watching: the walk stops at it (#1189).
+            case .turnEnded, .interrupted:
                 return start
             default:
                 break

@@ -331,6 +331,27 @@ chips are still drawn, both for reasons stated where they are measured.)
    **A refused interrupt clears nothing**, on decision 8's rule exactly: nothing was stopped, so
    the reason goes on the seam with a Retry and every character stays where it was typed. The
    composer must not report a Turn stopped on the strength of having asked.
+
+   **A landed one takes the standing refusal down** (amended in build, #1189). The Retry is the
+   reason and not housekeeping: with the queue now empty, Retry falls through to the FIELD, so a
+   reader pressing a button that means *try that again* would send the words they are still
+   typing as a fresh Turn. Left standing it also outranks the line above, so the drop the reader
+   needs told about is never drawn.
+
+   **A Turn stopped ANYWHERE drops the queue**, not only one stopped from this composer (#1189).
+   An `ESC` at the dock terminal, or a Stop pressed in another window, ends the Turn just as
+   truly and the follow-ups waiting on it were written for the run that was killed either way.
+   The one case the record cannot settle is the composer's own to answer: a follow-up typed
+   *after* Argo's own Stop, while the status still read `running` because the record had not
+   caught up, is the reader's intent for what comes next and is released rather than destroyed.
+
+   **The status has to come back off `running`** (#1189). The CLI files the interrupt as a plain
+   user entry — `[Request interrupted by user]`, or `[Request interrupted by user for tool use]`
+   where the Turn was stopped inside a call — and writes no stop reason anywhere. Read as a
+   prompt, that entry OPENS a Turn on the very act that ended one, and the Session never comes
+   back off `running`: the control stays on the Stop square and the field goes on offering to
+   queue behind a Turn that is over. It is read as the boundary it is, closing the Turn
+   `cancelled` — which is also what makes every rule above this one reachable at all.
 5. **A prompt whose hook has gone leaves without a word; a prompt that ran out says so** (#573).
    The two are told apart by making one of them Argo's own act: the gate keeps a clock **shorter
    than the hook's**, so a call nobody answers is refused by Argo — DIRECT, published as a

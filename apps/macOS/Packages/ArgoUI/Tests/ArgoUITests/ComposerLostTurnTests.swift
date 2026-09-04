@@ -1,4 +1,5 @@
 import ArgoEngine
+@testable import ArgoSpecimens
 @testable import ArgoUI
 import Foundation
 import Testing
@@ -15,9 +16,8 @@ struct ComposerLostTurnTests {
     func `the words come back into a field the reader has left empty`() {
         var draft = ComposerDraft()
 
-        let told = draft.turnLost("what is @README.md about?", whileRunning: false)
+        draft.turnLost("what is @README.md about?", whileRunning: false)
 
-        #expect(told)
         #expect(draft.text == "what is @README.md about?")
         #expect(draft.notice == ComposerDraft.lost)
     }
@@ -28,9 +28,8 @@ struct ComposerLostTurnTests {
     func `a field the reader is already using is left exactly as it is`() {
         var draft = ComposerDraft(text: "Something else entirely")
 
-        let told = draft.turnLost("what is @README.md about?", whileRunning: false)
+        draft.turnLost("what is @README.md about?", whileRunning: false)
 
-        #expect(told)
         #expect(draft.text == "Something else entirely")
         #expect(draft.notice == ComposerDraft.lost)
     }
@@ -41,26 +40,36 @@ struct ComposerLostTurnTests {
     func `a tray with attachments on it counts as a field in use`() {
         var draft = ComposerDraft(attachments: [Self.dropped])
 
-        let told = draft.turnLost("what is @README.md about?", whileRunning: false)
+        draft.turnLost("what is @README.md about?", whileRunning: false)
 
-        #expect(told)
         #expect(draft.text.isEmpty)
         #expect(draft.notice == ComposerDraft.lost)
     }
 
-    /// The news is spent once it has been taken in. Told twice, a reader would put the same Turn
-    /// back twice — and the second one would land on the field the first one filled.
+    /// Told twice, a reader must not have the same Turn put back on top of itself. The field it
+    /// filled is what refuses the second one, not the standing notice (#1183).
     @Test
-    func `the same lost Turn is not put back a second time`() {
+    func `the same lost Turn is not put back on top of itself`() {
         var draft = ComposerDraft()
 
-        let told = draft.turnLost("Off you go.", whileRunning: false)
-        draft.text = ""
-        let toldAgain = draft.turnLost("Off you go.", whileRunning: false)
+        draft.turnLost("Off you go.", whileRunning: false)
+        draft.turnLost("Off you go.", whileRunning: false)
 
-        #expect(told)
-        #expect(!toldAgain)
-        #expect(draft.text.isEmpty)
+        #expect(draft.text == "Off you go.")
+    }
+
+    /// A second, genuinely new lost Turn is news of its own: whether the field is free is the
+    /// only question a standing notice does not answer.
+    @Test
+    func `a second lost Turn reports into a field the reader has since emptied`() {
+        var draft = ComposerDraft()
+        draft.turnLost("Off you go.", whileRunning: false)
+
+        draft.text = ""
+        draft.turnLost("And again.", whileRunning: false)
+
+        #expect(draft.text == "And again.")
+        #expect(draft.notice == ComposerDraft.lost)
     }
 
     /// The bug the watch's re-key blindness produced (#1176): the Turn landed, the feed is drawing
@@ -70,9 +79,8 @@ struct ComposerLostTurnTests {
     func `a Turn the feed is drawing running puts nothing back`() {
         var draft = ComposerDraft()
 
-        let told = draft.turnLost("what is @README.md about?", whileRunning: true)
+        draft.turnLost("what is @README.md about?", whileRunning: true)
 
-        #expect(told)
         #expect(draft.text.isEmpty)
         #expect(draft.notice == nil)
     }
@@ -82,7 +90,7 @@ struct ComposerLostTurnTests {
     @Test
     func `the lost note reads as a notice on the seam`() {
         var draft = ComposerDraft()
-        _ = draft.turnLost("Off you go.", whileRunning: false)
+        draft.turnLost("Off you go.", whileRunning: false)
 
         let note = ComposerSeamNote.note(for: draft, enteredAtMs: 0)
 

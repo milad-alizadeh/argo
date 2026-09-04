@@ -81,7 +81,7 @@ struct SeamRefusalOutputTests {
         Notice(name: "a rung held for the boundary", said: { $0.modeHeld(.auto) }),
         Notice(
             name: "a Turn the CLI never heard",
-            said: { _ = $0.turnLost("Carry on.", whileRunning: false) },
+            said: { $0.turnLost("Carry on.", whileRunning: false) },
         ),
     ])
     func `a notice Argo wrote itself carries no output`(notice: Notice) {

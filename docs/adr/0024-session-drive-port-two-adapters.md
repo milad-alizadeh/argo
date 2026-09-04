@@ -240,8 +240,18 @@ undecided; the key means deciding it costs nothing here.
   never times out on its own (a 60s unanswered hold stayed open; openai/codex#11816), so the
   adapter imposes its own deny-on-timeout — verified: a late `decline` refuses the operation, the
   turn ends cleanly, and the thread answers a follow-up turn.
-- **The composer must be cleared after an interrupt** before the next `send`, or leftover text
-  concatenates onto the injected turn.
+- ~~**The composer must be cleared after an interrupt** before the next `send`, or leftover text
+  concatenates onto the injected turn.~~ **Struck by #1189.** Built in #541 as a clearing of
+  ARGO's composer, which cannot be what this is about: `send` pastes the whole draft as one
+  bracketed paste, so there is nothing for a leftover word in Argo's own field to concatenate
+  onto. What it cost was real — Stop became the one control in the composer that destroys what
+  the reader typed. The queue is a different fact and still goes; design decision 4 in
+  `docs/designs/cockpit-session-composer.md` carries both halves now.
+
+  Read instead as the CLI's OWN input line, the hazard is untested either way: nothing here
+  clears that line before a paste, and #541 never did. Left as a question rather than a
+  consequence, because this note has never had evidence behind it — no adapter test writes at a
+  prompt with text already sitting in it.
 - **`CLAUDE_CODE_CHILD_SESSION` must never reach a spawned session.** Inheriting it silently
   disables transcript persistence — which would kill the feed with no error anywhere. Argo scrubs
   its environment before spawn.

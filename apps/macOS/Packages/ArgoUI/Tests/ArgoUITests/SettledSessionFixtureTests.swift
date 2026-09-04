@@ -82,7 +82,12 @@ struct SettledSessionFixtureTests {
             "ownerAccountUuid", "ownerOrganizationUuid", "agentId", "sourceToolAssistantUUID",
         ])
         #expect(SyntheticTranscript.pixels == ["data", "base64"])
-        #expect(SyntheticTranscript.sentences == [ClaudeInterrupt.mark])
+        // Both spellings, spelled out like every list above it: the `for tool use` half is 99 of
+        // this machine's 532 real markers, and scrambled it draws as a prompt row (#1189).
+        #expect(SyntheticTranscript.sentences == [
+            "[Request interrupted by user]",
+            "[Request interrupted by user for tool use]",
+        ])
         // The markers are on this list for the same reason and were the likelier omission: the
         // rule that keeps them is what carried a tool's own `<hosted-invoice-url>` through.
         #expect(SyntheticLorem.markers == [

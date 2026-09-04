@@ -99,6 +99,27 @@ struct AgentsRailListingTests {
         #expect(listing.finished.map(\.id) == [0])
     }
 
+    /// The heading and the split are one reading of one array now (#1204), so they cannot disagree.
+    @Test
+    func `the heading counts the array the split was taken from`() {
+        let listing = AgentsRailListing(of: Self.agents, scopedOnto: nil)
+
+        #expect(listing.running == 2)
+        #expect(listing.listed.count == listing.running)
+        #expect(listing.listed.count + listing.finished.count == Self.agents.count)
+    }
+
+    /// The other end of it: none running is an empty column under a heading that says so.
+    @Test
+    func `a heading saying none are running lists none of them`() {
+        let landed = Self.agents.map { Self.agent($0.id, $0.label, isRunning: false) }
+        let listing = AgentsRailListing(of: landed, scopedOnto: nil)
+
+        #expect(listing.running == 0)
+        #expect(listing.listed.isEmpty)
+        #expect(listing.finished.count == 3)
+    }
+
     // MARK: - Fixtures
 
     /// Two out and one landed, with the landed one in the MIDDLE — a split that kept the record's

@@ -73,7 +73,18 @@ extension SessionComposer {
 
     /// The Turn has ended, so what was waiting on it goes — the rung first, then the queue, for
     /// the reason `honour(_:)` states.
+    ///
+    /// Unless somebody STOPPED it, in which case the queue is dropped rather than released
+    /// (#1189, design decision 4). Argo's own Stop already did that at the click; this is the same
+    /// rule for an interrupt made anywhere else — an `ESC` at the dock terminal ends the Turn just
+    /// as truly, and until the record was read as closing the Turn, no such Session ever came off
+    /// `running` for this to fire on. The rung is NOT among what goes: it is about how the Session
+    /// works next rather than about the Turn that was killed, and the boundary it waited for is
+    /// the one the interrupt just made.
     func turnEnded() {
+        if draft.mustDropQueue(afterInterrupt: composer.endedByInterrupt) {
+            draft.dropQueue()
+        }
         guard let held = draft.beginModeWalk() else { return draft.flush(via: sending) }
         Task { await honour(held) }
     }
@@ -122,6 +133,24 @@ extension SessionComposer {
                 draft.runFactRefused(error)
             }
         }
+    }
+
+    /// Arriving at this Session, which is where a line the reader has already read comes down
+    /// (#1183). Paired with `lostTurnArrived(_:)` below and safe in either order: what it reads is
+    /// the Hub's own standing news, which neither pass moves.
+    func arrived() {
+        guard draft.isLostTurnStale(newsStanding: composer.lostTurn != nil) else { return }
+        draft.say(nil)
+    }
+
+    /// News that the CLI never heard a Turn, taken in and spent in one act (#682, #1183).
+    ///
+    /// Neither half is conditional on the other (#1183). The draft decides what to do with the
+    /// WORDS; the Hub is told the news landed either way — news left filed is re-announced by the
+    /// `initial: true` pass every time the composer comes back on screen for that Session.
+    func lostTurnArrived(_ text: String) {
+        draft.turnLost(text, whileRunning: composer.isRunning)
+        intents.lostTurnSeen()
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

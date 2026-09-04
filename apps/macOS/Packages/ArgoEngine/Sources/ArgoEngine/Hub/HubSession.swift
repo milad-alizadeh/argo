@@ -188,8 +188,6 @@ extension HubSession {
     mutating func apply(_ event: TranscriptEvent) {
         transcript.append(event)
         switch event {
-        case .recordIdentity:
-            break
         case let .headLeaf(uuid):
             headLeafUUID = uuid
         case let .originSession(id):
@@ -209,26 +207,31 @@ extension HubSession {
         case let .mode(cli):
             observe(mode: cli)
         case let .prompt(text, _, atMs):
-            name.observe(prompt: text)
-            turn.opened()
-            observeActivity(atMs)
+            observe(prompt: text, atMs: atMs)
         case let .turnEnded(reason):
             hasAgentActivity = true
             turn.ended(reason)
+        // A Turn somebody stopped is a Turn that ended, and `cancelled` is the word for why
+        // (#1189). No `hasAgentActivity`: the marker says what the READER did, and an agent that
+        // never spoke is not shown to have worked by being interrupted. The moment counts all the
+        // same — something happened on this Session, and recency is about the Session.
+        //
+        // Deliberate where it meets `HubSessionChain.isPublished`: a QUEUED prompt stopped before
+        // any agent picked it up stays off the roster. That pair still means what it says — a file
+        // nothing will ever write to again — and stopping a prompt no agent ever answered is the
+        // reader agreeing with it, not evidence against it.
+        case let .interrupted(atMs):
+            turn.ended(.cancelled)
+            observeActivity(atMs)
         case let .toolCall(call):
             observe(call: call)
         case let .toolCallOutcome(outcome):
-            hasAgentActivity = true
-            turn.answered(outcome.id)
-            observeActivity(outcome.endedAtMs)
-            spend.observe(subagent: outcome.usage)
+            observe(outcome: outcome)
         case let .compaction(atMs):
             hasAgentActivity = true
             observeActivity(atMs)
         case let .usage(usage):
-            hasAgentActivity = true
-            contextTokens = usage.contextTokens
-            spend.observe(usage)
+            observe(usage: usage)
         case .message, .thought, .plan:
             hasAgentActivity = true
         case .queued:
@@ -239,11 +242,38 @@ extension HubSession {
         // does not count either — the reading below it is where the activity shows up.
         case .unreadableLine, .skillLoaded:
             break
+        // Read by `HubRecordFold` before this fold ever sees it (`HubTranscript`), and by
+        // `HubJoin` for chain ownership — never by the Session itself.
+        case .recordIdentity:
+            break
         case .excerpted:
             // One way only: reading the missing stretch means reading the file again, and that
             // arrives as a fresh Session rather than as more events on this one.
             transcriptExtent = .excerpt
         }
+    }
+
+    /// What someone asked for: a name where the Session has none, and a Turn opened under it.
+    private mutating func observe(prompt text: String, atMs: Int?) {
+        name.observe(prompt: text)
+        turn.opened()
+        observeActivity(atMs)
+    }
+
+    /// A call answered. The spend rides along because a delegated Turn reports its whole cost on
+    /// the result of the call that delegated it, and nowhere else.
+    private mutating func observe(outcome: ToolCallOutcome) {
+        hasAgentActivity = true
+        turn.answered(outcome.id)
+        observeActivity(outcome.endedAtMs)
+        spend.observe(subagent: outcome.usage)
+    }
+
+    /// What one request reported spending, and the context it left behind it.
+    private mutating func observe(usage: Usage) {
+        hasAgentActivity = true
+        contextTokens = usage.contextTokens
+        spend.observe(usage)
     }
 
     private mutating func observe(call: ToolCall) {

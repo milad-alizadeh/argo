@@ -171,7 +171,7 @@ struct HubJoin {
         // cockpit compares two readings by, and an event moves that.
         guard !events.isEmpty || moved else { return false }
         for event in events {
-            transcripts[index].session.apply(event)
+            transcripts[index].applyToCurrent(event)
             if case let .recordIdentity(uuid) = event {
                 moved = rememberOwner(of: uuid, transcriptID: transcriptID) || moved
             }

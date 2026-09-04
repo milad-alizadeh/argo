@@ -207,5 +207,11 @@ func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
     }
     let images = embeddedMedia(message.content, in: location)
     guard let text = promptText(message.content, carrying: images.count) else { return [] }
+    // The one user entry nobody asked for. Read here rather than by whoever draws it, because it
+    // is a BOUNDARY as well as a mark: a Turn is over, and every surface reading this stream needs
+    // that fact, not only the one that paints a rule across the feed (#1189).
+    guard !ClaudeInterrupt.isMark(text) else {
+        return [.interrupted(atMs: message.timestampMs)]
+    }
     return [.prompt(text: text, images: images, atMs: message.timestampMs)]
 }

@@ -73,11 +73,14 @@ struct ComposerInterruptTests {
         #expect(draft.text == "Carry on with the plan.")
     }
 
-    /// A refusal stands over the words it was refused for, and those words are still in the field
-    /// — so the reason for them is still true and the seam's Retry still has something to put
-    /// back.
+    /// A landed Stop takes the standing refusal down, whatever it stood over — and the seam's
+    /// RETRY is the reason rather than housekeeping (#1189). After the act the queue is empty, so
+    /// `retry(via:)` falls through to the FIELD: a reader pressing a button that means "try that
+    /// again" would send the words they are still typing as a fresh Turn nobody asked for. Left
+    /// standing it also outranks the drop's own notice, so the one line the reader needs — that
+    /// the follow-ups went — is never drawn.
     @Test
-    func `stopping leaves a standing refusal over the words it still stands over`() {
+    func `a landed Stop takes down the refusal standing over the field`() {
         var draft = ComposerDraft(
             text: "Carry on with the plan.",
             refusal: SessionDriveError.notDrivable.detail,
@@ -85,7 +88,26 @@ struct ComposerInterruptTests {
 
         draft.stopped {}
 
+        #expect(draft.refusal == nil)
+        #expect(draft.text == "Carry on with the plan.")
+    }
+
+    /// The same at the act that produces the trap: a first Stop refused, a second that lands. The
+    /// reason the first put up is answered by the second, and a queue it never had cannot be what
+    /// clears it.
+    @Test
+    func `a Stop that lands answers the refusal a refused Stop left`() {
+        let driver = InMemorySessionDriver()
+        driver.refusal = .notDrivable
+        var draft = ComposerDraft(text: "Stop, stop.")
+        draft.stopped { try driver.interrupt("session-a") }
         #expect(draft.refusal == SessionDriveError.notDrivable.detail)
+
+        driver.refusal = nil
+        draft.stopped { try driver.interrupt("session-a") }
+
+        #expect(draft.refusal == nil)
+        #expect(draft.text == "Stop, stop.")
     }
 
     /// A stop that never landed stopped nothing, so it may clear nothing. The vessel would
@@ -109,11 +131,14 @@ struct ComposerInterruptTests {
 
     /// The record files the interrupt on the USER side, so read as written it would be a row in the
     /// reader's own voice saying something they never typed. It is punctuation instead.
+    ///
+    /// The marker is read into `.interrupted` upstream, by the engine (#1189) — the feed is handed
+    /// the boundary rather than the sentence, and never sees a prompt to test here.
     @Test
     func `the interrupt reads as a mark in the feed, never as a prompt`() {
         let rows = FeedProjection.rows(from: [
             .prompt(text: "Fix the caption.", images: [], atMs: 0),
-            .prompt(text: ClaudeInterrupt.mark, images: [], atMs: 1),
+            .interrupted(atMs: 1),
         ])
 
         #expect(rows.map(\.content) == [
