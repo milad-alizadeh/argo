@@ -245,6 +245,14 @@
   .bar-fixed .lbl { font: 600 9px/1 var(--mono); letter-spacing: .6px; text-transform: uppercase;
                     color: var(--text-off); padding-right: 2px; }
   .bar-fixed .sp { width: 1px; height: 18px; background: var(--hairline); }
+
+  /* ---------- render mode ---------- *
+   * `?render=1` drops the comparison scaffolding and leaves the settled row in a feed column,
+   * which is what a spec render is: the state, in its surface, and nothing explaining it. */
+  body.render .lane, body.render .side, body.render .bar-fixed { display: none; }
+  body.render .window { grid-template-columns: 1fr; inset: 0; border: 0; border-radius: 0;
+                        box-shadow: none; min-width: 0; }
+  body.render .cap, body.render .rule { display: none; }
 </style>
 </head>
 <body>
@@ -370,8 +378,13 @@ const CASES = {
     }],
     answer: 'Neither of those — quieten the ground and keep the mark where it is.',
   },
+  /* The two rows the fold must LEAVE ALONE. Both are pending — nothing has answered them — so
+     there is no answer to fold to, and the numbered offer stays exactly as #534 shipped it.
+     They are here because today's code branches on `waiting == nil`, which lumps them in with
+     the settled row; the fold has to branch on `isAnswered` instead. */
   reported: {
-    name: 'asked over the companion plugin (#1205)',
+    name: 'asked over the companion plugin (#1205) — PENDING',
+    pending: true,
     questions: [{
       text: 'Which ink should a settled ask take in the feed?',
       options: [
@@ -379,8 +392,19 @@ const CASES = {
         { label: 'The ordinary ink', detail: null },
       ],
     }],
-    answer: 'The ordinary ink',
     caption: 'asked over the companion plugin · answer in the composer',
+  },
+  unavailable: {
+    name: 'a question on a Session Argo cannot drive (#546) — PENDING',
+    pending: true,
+    questions: [{
+      text: 'Which ink should a settled ask take in the feed?',
+      options: [
+        { label: 'The attention ink', detail: null },
+        { label: 'The ordinary ink', detail: null },
+        { label: 'Neither — drop the ground and the mark together', detail: null },
+      ],
+    }],
   },
 };
 
@@ -508,7 +532,7 @@ function answerRun(q, answer, asChip) {
   return { run, chipped: asChip && s.isLabel };
 }
 
-function foldQuestion(q, answer, state) {
+function foldQuestion(q, answer, state, isPending) {
   const block = el('div', 'askq');
   const row = el('div', 'grid');
   row.append(markerCell('asked'));
@@ -518,7 +542,9 @@ function foldQuestion(q, answer, state) {
 
   const loudAnswer = state.ink === 'answer';
 
-  if (state.variant === 'now') {
+  /* Nothing has answered it, so there is nothing to fold to. The row keeps the numbered offer
+     as a reading — the state #534 shipped, and the one this ticket must not touch. */
+  if (isPending || state.variant === 'now') {
     words.style.color = 'var(--text-1)';
     words.textContent = q.text;
     if (q.options.length) block.append(fullOffer(q, answer));
@@ -581,7 +607,9 @@ function attachDisclosure(host, block, stackLine, q, answer) {
 
 function drawSettled(kase, state) {
   const card = el('div', 'ask');
-  for (const q of kase.questions) card.append(foldQuestion(q, kase.answer, state));
+  for (const q of kase.questions) {
+    card.append(foldQuestion(q, kase.answer, state, kase.pending === true));
+  }
   if (kase.caption) card.append(caption(kase.caption));
   return card;
 }
@@ -625,7 +653,31 @@ const state = {
 
 let refs = {};
 
+/* The render: the settled row in a feed column and nothing else, for the PNG the design cites.
+   The scaffolding that makes the prototype ARGUABLE is exactly what a spec render must not have
+   in it — `pixel-review` judges the state, not the case for it. */
+function renderOnly() {
+  const kase = CASES[state.case];
+  const col = document.getElementById('col');
+  col.replaceChildren();
+  col.append(el('div', 'prose q',
+    'Which ink should a settled ask take in the feed? I can go either way.'));
+  const call = el('div', 'call');
+  call.append(el('span', 'sym', '⌁'));
+  call.append(el('span', 'mono', 'Read  FeedAskOptions.swift'));
+  col.append(call);
+  const folded = drawSettled(kase, state);
+  col.append(folded);
+  col.append(el('div', 'prose', 'Right — I’ll take the ordinary ink, and fold the offer out.'));
+  const after = el('div', 'call');
+  after.append(el('span', 'sym', '⌁'));
+  after.append(el('span', 'mono', 'Edit  FeedAskOptions.swift'));
+  col.append(after);
+  refs = { waiting: folded, today: folded, folded, kase };
+}
+
 function render() {
+  if (params.get('render')) { document.body.classList.add('render'); return renderOnly(); }
   const kase = CASES[state.case];
   const col = document.getElementById('col');
   col.replaceChildren();
@@ -737,8 +789,13 @@ const CASE_NOTES = {
       + 'today every offer stays full-length and unquieted, and the answer is again nowhere. The '
       + 'folds draw the record’s own prose, the mark says CONTINUES rather than CHOSEN, and the '
       + 'chip treatment declines to draw a capsule around words nobody offered.',
-  reported: 'Argo answered this call the moment it arrived, so the row is settled by definition '
-          + '— which makes the fold the state this row is ALWAYS in. The caption stays.',
+  reported: 'NOT a settled row. FeedProjection+Ask.reported builds it isAnswered: false, so it '
+          + 'is PENDING with no live handle — the offer stays, and the fold never applies. It is '
+          + 'here because today’s code branches on `waiting == nil`, which draws it and a settled '
+          + 'row identically; the fold has to branch on isAnswered instead.',
+  unavailable: 'The same trap from the other side (#546): a driveable-less Session’s question is '
+             + 'pending, draws no cards, and keeps its offer. Fold this one and the row would '
+             + 'claim an answer nobody gave.',
 };
 
 /* ------------------------------------------------------------------ *
