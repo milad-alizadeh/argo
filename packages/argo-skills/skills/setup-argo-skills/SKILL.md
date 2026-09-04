@@ -51,6 +51,19 @@ Maintain a live to-do list for any task with **three or more distinct steps**, e
 - Keep single-step edits, lookups, and conversational turns off the list.
 ```
 
+**Issue writing style** is a section, not a skill, and only applies when `docs/agents/issue-tracker.md`
+exists (written by `setup-matt-pocock-skills`, a vendored skill this project cannot edit in
+place). If that file exists, append this section verbatim, replacing any existing `## Writing
+style` section in place:
+
+```markdown
+## Writing style
+
+Before you create an issue, edit an issue body, or write a comment, run the `simple-english`
+skill on the title and body text. Do this every time, not only when the text reads badly —
+apply it before the first draft goes out, not as a later cleanup pass.
+```
+
 ## Phase 4: report
 
 Skills installed or updated (lock delta), infra installed per piece, anything deferred with
