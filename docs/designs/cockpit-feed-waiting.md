@@ -12,6 +12,12 @@ reader is waiting for it. It gives `/handoff` and a resume the rendering neither
 **The renders in [`waiting/`](waiting/) are the spec.** The measurements below are the numbers a
 ticket must carry — prose that omits them cannot be failed for getting them wrong.
 
+**This is Markdown and renders, not an HTML design.** `prototype-to-design` asks for an HTML
+file that speaks only the token contract; ADR-0022 retired committed HTML studies from this
+folder when the runtime locked to Swift, and `docs/designs/README.md` records that the contract
+itself lives in `ArgoDesign`. So the design is written the way every other approved design here
+is — measurements, frozen names and renders — and the explorable stays on its throwaway branch.
+
 The study lives on the throwaway branch `worktree-ticket-1246-feed-loading-row`
 (`docs/designs/prototypes/feed-loading-row-prototype.html`), where the two rejected variants are
 still switchable and every state is reachable by URL. It is there to be re-explored, not built
@@ -186,6 +192,39 @@ These become component files and ticket titles.
 | `FeedWaitPlinth` | the plinth at the foot |
 | `FeedWaitRow` | the settled row that drops into the reading |
 | `FeedWaitWords` | the words, the mark and the past tense per case — where `FeedWorking.startingWords` goes |
+
+## Every value snaps; nothing is promoted
+
+The raw-value sweep over the approved variant, family by family. A **promotion** is a contract
+change, and this design earns none — which is the point: a surface that needs a value the
+contract lacks is usually a surface that has drifted.
+
+| Raw in the study | Snapped to |
+|---|---|
+| `#252729` | `surface.raised` |
+| `rgba(255,255,255,.08)` | `edge.hairline` |
+| `#A8AEB5` · `#929AA1` · `#4E545A` | `text.secondary` · `text.tertiary` · `text.disabled` |
+| `#3E9BFF` | `interaction.accent` |
+| `#F2555C` | `state.failure` |
+| `#1E6FD4` `#3E9BFF` `#6FB6FF` `#46D3A8` | `ArgoPalette.ion`, the four-stop ramp |
+| 4 · 6 · 8 · 12 · 16 · 24 | `ArgoSpacing` tight · snug · base · comfortable · loose · section |
+| 6pt radius | `ArgoRadius.control` |
+| 1pt · 2pt | `ArgoStroke.border` · `ArgoStroke.indicator` |
+| 13pt | `ArgoTypography.body` |
+| 11pt mono | `ArgoTypography.machineCaption` |
+| 15pt mark column · 20pt line | `ArgoFeedRow.callSymbolWidth` · `ArgoFeedRow.lineHeight` |
+| 216pt filament | `ArgoFeedRow.column × workingThreadShare` |
+| blur 4, opacity 0.6 | `ArgoElevation.bloom` |
+| −105% … 340% | `ArgoFeedRow.workingThreadTravel` |
+| 0.4 parked | `ArgoFeedRow.workingThreadStillGlow` |
+| `999px` | a capsule — height ÷ 2, as the thread's ends already are |
+
+**Exactly two values in the study were neither a token nor a derivation**: the failed plinth's
+ground and border. Both died with the dismissible plinth, before they could be promoted. A raw
+value that survives to the promotion table is worth re-reading as a question about the design,
+not only about the contract.
+
+The four periods below are **edits to existing roles**, not promotions.
 
 ## The contract changes this needs
 
