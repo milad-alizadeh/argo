@@ -51,8 +51,13 @@ extension SpecimenRegistry {
         // The trailing edge of line 3 (#1346): an open, a merged, a closed and a draft pull
         // request beside their Ticket, and a row with neither address.
         SpecimenEntry("deliveryAddresses") { DeliveryAddressesRosterSpecimen() },
+        // Every shape the roster's `PlanBar` comes in: mid-flight, complete, frozen and none
+        // (#1345).
+        SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
+        // The leading column's four Subagent readings and the ceiling, one row each (#1344).
+        SpecimenEntry("subagentDots") { SubagentDotsRosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
         // The strip's edge, which only a SCROLLED roster can be judged on: at rest the first row
         // sits flush with the control whether the list clips there or not (#1235).

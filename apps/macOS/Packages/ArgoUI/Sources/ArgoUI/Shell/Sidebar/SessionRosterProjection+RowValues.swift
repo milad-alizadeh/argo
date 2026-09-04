@@ -54,6 +54,14 @@ extension SessionRosterProjection.Row {
     /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, the
     /// one age slot in both forms, and the newest call in its record while it is running (#1199).
     struct Activity {
+        /// The state dot's own reading, in both its forms — the colour role `SessionState.role`
+        /// settles and the word `SessionState.word` spends, read off the same status at the same
+        /// time, which is what makes them one parameter rather than two.
+        struct Dot {
+            let state: ArgoOperationalState?
+            let word: String?
+        }
+
         /// The one age slot in both its forms. They are read off the same moment at the same
         /// time and no call site names one without the other, which is what makes them one
         /// parameter rather than two.
@@ -63,6 +71,16 @@ extension SessionRosterProjection.Row {
             let spoken: String?
         }
 
+        /// What the Session is doing right now, in both the words it left behind and the list it
+        /// is working from — read off the same tail of events at the same time (`row(for:)`).
+        struct Doing {
+            let activity: String?
+            /// The agent's live to-do list, read off the same events `activity` already walked
+            /// (`PlanProjection.reading(from:)`) — `nil` for a Session that has never written
+            /// one, drawn exactly alike (`cockpit-roster-row.md`, `PlanBar`).
+            let plan: PlanReading?
+        }
+
         let state: ArgoOperationalState?
         let stateWord: String?
         let clock: SessionRosterProjection.Clock?
@@ -70,18 +88,25 @@ extension SessionRosterProjection.Row {
         /// `nil` on every row that is not a running Session with a call behind it — see
         /// `SessionRosterProjection.activity(of:in:)`.
         let activity: String?
+        let plan: PlanReading?
+        /// What runs under this Session, or a fold of several
+        /// (`SessionRosterProjection.subagents`).
+        /// `nil` where `state` is, and for the same reason (rule 5).
+        let subagents: SessionRosterProjection.SubagentReading?
 
         init(
-            state: ArgoOperationalState?,
-            stateWord: String?,
+            dot: Dot,
             age: Age,
-            activity: String?,
+            doing: Doing,
+            subagents: SessionRosterProjection.SubagentReading? = nil,
         ) {
-            self.state = state
-            self.stateWord = stateWord
+            self.state = dot.state
+            self.stateWord = dot.word
             self.clock = age.clock
             self.spokenClock = age.spoken
-            self.activity = activity
+            self.activity = doing.activity
+            self.plan = doing.plan
+            self.subagents = subagents
         }
     }
 

@@ -43,6 +43,9 @@ let package = Package(
             dependencies: [
                 "AtlasLayout",
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
+                // The icon button, focus ring and key-press atoms the camera control is built
+                // from (#1152) — the same pair every other room's chrome takes.
+                .product(name: "ArgoAtoms", package: "ArgoDesign"),
             ],
             // `AtlasVolume.metal` is declared because the two build systems that read this manifest
             // disagree about it, and only one of them says so (#1144). Xcode compiles it — that is

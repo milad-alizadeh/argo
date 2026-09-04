@@ -16,8 +16,9 @@ struct AtlasPigments {
     /// `edge.hairline` is the contract's own answer to this exact question — a separator between
     /// two surfaces of the SAME tone — and the map needs it for the reason a document does: three
     /// plate tones repeat past the third level of nesting, so beyond that the ground alone stops
-    /// saying where one folder ends. Not a lit rim, which is what the approved render draws: this
-    /// map is flat, and light arrives at #1151.
+    /// saying where one folder ends. Not a lit rim: the light model (#1151) runs in the shader, on
+    /// this flat pigment, never here — resolving it before the GPU sees it is what the design's
+    /// own rule forbids.
     private let edge: ArgoColor
 
     init(_ atlas: ArgoPalette.AtlasRoles, rim: ArgoColor) {

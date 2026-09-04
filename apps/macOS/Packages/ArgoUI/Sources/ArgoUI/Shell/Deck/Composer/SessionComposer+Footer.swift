@@ -29,7 +29,7 @@ extension SessionComposer {
                     setEffort: askForEffort,
                     reset: resetRunFacts,
                 ),
-                takesTypedLine: composer.takesTypedLine,
+                held: RunFactsHeld(model: draft.heldModel, effort: draft.heldEffort),
                 isOpenForRender: opening == .runSettings,
             ),
             send: SendButtonControl(

@@ -121,6 +121,7 @@ package struct SessionComposer: View {
             ComposerField(
                 text: $draft.text,
                 placeholder: composer.placeholder,
+                canRunCommands: line.canRunCommands,
                 submit: submit,
                 walk: { menus.walk($0, on: line) },
                 dismiss: { menus.dismissed(on: line) },

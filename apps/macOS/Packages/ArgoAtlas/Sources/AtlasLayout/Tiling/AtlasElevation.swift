@@ -9,10 +9,10 @@ import CoreGraphics
 ///
 /// The share is measured off the SHORTER side. A tower measured off the longer side of a wide map
 /// overhangs the short one, and a skyline that leaves the frame is a skyline nobody can compare.
-enum AtlasElevation {
+package enum AtlasElevation {
     /// How much of the ground the tallest file stands: the design's own 150 units of a 1000-unit
     /// plan (`docs/designs/cockpit-atlas.html`, `HMAX`).
-    static let ceilingShare: CGFloat = 0.15
+    package static let ceilingShare: CGFloat = 0.15
 
     /// What a file measuring nothing stands: the design's 2 units of the same 1000.
     ///
@@ -22,8 +22,11 @@ enum AtlasElevation {
     /// than the thing the picture depends on.
     static let floorShare: CGFloat = 0.002
 
-    /// The tallest a file stands on this ground.
-    static func ceiling(of extent: CGSize) -> CGFloat {
+    /// The tallest a file stands on this ground. `package` because a cast shadow (#1151) reads a
+    /// file's height as a SHARE of this same ceiling — the shadow's own throw is a plan-relative
+    /// number for the reason the height it answers to is, and the drawing half has no ceiling of
+    /// its own to duplicate this one with.
+    package static func ceiling(of extent: CGSize) -> CGFloat {
         min(extent.width, extent.height) * ceilingShare
     }
 

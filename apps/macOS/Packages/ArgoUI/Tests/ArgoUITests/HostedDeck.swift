@@ -23,6 +23,10 @@ import Testing
         /// How many lines the Session has said since the deck opened — a running transcript, which
         /// moves the stamp the readings are remembered under.
         var grown = 0
+        /// Which room `InstrumentDeckShell` is showing — `.sessions` by default, so every suite
+        /// that never touches this reads the deck exactly as before. A suite proving a room round
+        /// trip (#1356) drives it directly.
+        var room = CockpitRoom.sessions
     }
 
     let asked: Asked
@@ -113,6 +117,12 @@ import Testing
         await settled()
     }
 
+    /// A room switch, the way the sidebar's strip drives it — see `CockpitRoom`.
+    func show(_ room: CockpitRoom) async {
+        asked.room = room
+        await settled()
+    }
+
     /// Turns the run loop, then lays out. SwiftUI applies a state write on a turn of its own, so a
     /// layout pass is a request for the update rather than a promise of it.
     ///
@@ -188,7 +198,7 @@ private struct HostedDeckWrapper: View {
 
     var body: some View {
         InstrumentDeckShell(
-            room: .sessions,
+            room: asked.room,
             session: "one",
             feed: reading.feed,
             header: reading.header,

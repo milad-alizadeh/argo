@@ -22,9 +22,11 @@ struct AtlasVolumeTests {
         #expect(MemoryLayout<AtlasVolume>.offset(of: \.origin) == 0)
         #expect(MemoryLayout<AtlasVolume>.offset(of: \.size) == 8)
         #expect(MemoryLayout<AtlasVolume>.offset(of: \.heights) == 16)
-        // 32 rather than 24: the `float3` aligns to 16, so the three `float2`s ahead of it leave
-        // eight bytes of padding that BOTH languages insert. Put a scalar in that gap and the two
-        // still agree — put one after the pigment and only Metal rounds the struct up.
+        // 24, not 32: `shade` is the scalar that spends the eight bytes of padding the `float3`
+        // ahead of it would otherwise leave — the gap BOTH languages insert the same way. A
+        // scalar put after `pigment` instead would leave Metal rounding the struct up somewhere
+        // Swift's `MemoryLayout` does not follow it.
+        #expect(MemoryLayout<AtlasVolume>.offset(of: \.shade) == 24)
         #expect(MemoryLayout<AtlasVolume>.offset(of: \.pigment) == 32)
         // The stride, not the size: it is what the instance buffer is indexed by, and Metal's own
         // size for this struct is 48 — the number Swift only reaches by rounding up.

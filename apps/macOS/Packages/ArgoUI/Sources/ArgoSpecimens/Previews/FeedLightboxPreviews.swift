@@ -6,7 +6,7 @@ import SwiftUI
         .argoDeckSurface()
         .overlay {
             if let shot = FeedProjection.previewShots.first {
-                FeedLightbox(shot: shot, dismiss: {})
+                FeedLightbox(shot: shot, step: { _ in }, dismiss: {})
             }
         }
         .frame(width: 900, height: 620)

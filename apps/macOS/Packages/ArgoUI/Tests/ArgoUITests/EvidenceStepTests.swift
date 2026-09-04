@@ -93,6 +93,35 @@ struct EvidenceStepTests {
         #expect(aimed == calls.map { Optional($0.caption) })
     }
 
+    /// The inverse of `step(_:of:)`: every step of a call, wherever it falls in the pane, resolves
+    /// back to that one call — never to its neighbour, even the step right after a boundary.
+    @Test
+    func `every step resolves back to the call that produced it`() throws {
+        let calls = try [
+            Self.edited("first.swift", patches: 1),
+            Self.edited("middle.swift", patches: 3),
+            Self.edited("last.swift", patches: 2),
+        ]
+
+        let owners = (0 ..< 6).map { FeedFold.call(ofStep: $0, of: calls) }
+
+        #expect(owners == [0, 1, 1, 1, 2, 2])
+    }
+
+    /// A call the record answered with nothing owns no step, so the inverse skips straight past it
+    /// to the call whose results actually sit there.
+    @Test
+    func `a step skips past a call that produced nothing`() throws {
+        let calls = try [
+            Self.edited("first.swift", patches: 1),
+            Self.edited("silent.swift", patches: 0),
+            Self.edited("last.swift", patches: 1),
+        ]
+
+        #expect(FeedFold.call(ofStep: 0, of: calls) == 0)
+        #expect(FeedFold.call(ofStep: 1, of: calls) == 2)
+    }
+
     // MARK: - Fixtures
 
     private static var looking: [TranscriptEvent] {

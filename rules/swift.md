@@ -54,9 +54,11 @@ and the row-height rule are `scripts/swift-boundaries.sh` (AGENTS.md, Module bou
 - **Every string the user reads is set by a role** through `argoText(_:)` / `argoMono(_:)`;
   the type scale is Apple's and `size` is read, never set.
 - **Hue is rationed.** Ion Blue is brand, selection and focus; the text ramp is neutral; a
-  kind of thing gets a ground, a weight or a face, never a hue. Two sealed exemptions:
-  `SyntaxTheme` inside the evidence panel, and a provider's own label colour through
-  `LabelInk`. Where the accent is spent: `docs/designs/selection-accent.md`.
+  kind of thing gets a ground, a weight or a face, never a hue. Three sealed exemptions:
+  `SyntaxTheme` inside the evidence panel, a provider's own label colour through `LabelInk`,
+  and the composer field's command mark (`ComposerTextView.ink`, #1256) — the one substring
+  of a draft the CLI will run, told apart from every other word in it, which is a fact about
+  execution and not a decoration. Where the accent is spent: `docs/designs/selection-accent.md`.
 - **Roles, not values**: `ArgoSpacing.comfortable`, not `space12`. A raw value found in a
   view is snapped or promoted, never patched locally or allowlisted outside tracked debt.
 - **Runtime-derived numbers and a measure with no home yet** are the only raw numbers allowed

@@ -89,9 +89,13 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         encoder.setRenderPipelineState(pipeline)
         encoder.setDepthStencilState(depth)
         encoder.setVertexBuffer(volumes, offset: 0, index: 0)
-        // `setVertexBytes` for the camera: a dozen floats are far under the 4 KB the method takes,
-        // and a buffer nothing outlives the encoder is a lifetime to get wrong.
+        // `setVertexBytes` for the camera and the light: a dozen floats each are far under the
+        // 4 KB the method takes, and a buffer nothing outlives the encoder is a lifetime to get
+        // wrong. The light never depends on the camera, so it is solved once and shared here
+        // rather than rebuilt per draw.
         encoder.setVertexBytes(&eye, length: MemoryLayout<AtlasEye>.stride, index: 1)
+        var lighting = AtlasLighting.city
+        encoder.setVertexBytes(&lighting, length: MemoryLayout<AtlasLighting>.stride, index: 2)
         // One instanced draw for the whole map, in the order `AtlasVolumes` painted them: a nested
         // plate over the one it stands on, and the files over the plate they stand on. What the
         // order cannot settle — a near tower over a far plate — the depth buffer does.

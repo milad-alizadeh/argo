@@ -33,6 +33,13 @@ package struct FeedRowSelection {
         step = result
     }
 
+    /// Told which result the panel has scrolled to, on its own — the write-back half of
+    /// `openEvidence(of:at:)`. A selection and never a scroll: the row stays exactly where it is,
+    /// only the highlight follows (#1355).
+    func scrolled(to result: Int) {
+        step = result
+    }
+
     /// Close the panel and hand the keyboard back to the row that opened it, derived from what is
     /// open rather than remembered.
     func close() {
@@ -48,6 +55,18 @@ package struct FeedRowSelection {
     func light(_ shot: FeedShot) {
         lit = shot
         focus.wrappedValue = .lightbox
+    }
+
+    /// Move the lightbox to the picture beside the one it holds — `-1` for the one before, `1`
+    /// for the one after — within whichever row's shots carry it. Clamped rather than wrapping:
+    /// an arrow key at either end should stop, not loop the reader back around unannounced.
+    func stepLightbox(by delta: Int, within feed: [FeedRow]) {
+        guard let shot = lit, let row = feed.first(where: { $0.shows(shot) }) else { return }
+        let shots = row.kind.shots
+        guard let index = shots.firstIndex(of: shot), shots.indices.contains(index + delta) else {
+            return
+        }
+        lit = shots[index + delta]
     }
 
     /// Close the lightbox and hand the keyboard back to the gallery the picture was in.

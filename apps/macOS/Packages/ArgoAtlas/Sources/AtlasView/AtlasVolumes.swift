@@ -47,6 +47,13 @@ enum AtlasVolumes {
                 ),
             ]
         }
+        // Cast between the plates and the tiles: after every plate, so a shadow always lands on
+        // ground already drawn, and before every file, so a file standing where its own shadow
+        // falls draws over it rather than under it (#1151).
+        let ceiling = AtlasElevation.ceiling(of: plan.extent)
+        let shadows = plan.tiles.compactMap {
+            AtlasShadow.decal(of: $0, on: plan.plates, ceiling: ceiling, in: pigments)
+        }
         let tiles = plan.tiles.map {
             AtlasVolume(
                 $0.rect.shrunk(by: gap),
@@ -54,7 +61,7 @@ enum AtlasVolumes {
                 pigment: pigments.pigment(of: $0.band),
             )
         }
-        return plates + tiles
+        return plates + shadows + tiles
     }
 }
 

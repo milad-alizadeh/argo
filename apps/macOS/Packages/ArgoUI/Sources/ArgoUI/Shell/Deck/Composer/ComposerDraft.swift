@@ -68,6 +68,18 @@ package struct ComposerDraft: Equatable {
     /// Whether the walk for `heldMode` has begun, so no second boundary can start another (#653).
     /// Not `private(set)`, on the same rule as `heldMode` above.
     var isWalkingMode = false
+    /// A Model picked while a Turn was running, waiting on the boundary to be walked (#1329) — the
+    /// same kind of intent `heldMode` is, and held on the same rule.
+    ///
+    /// Not `private(set)`, for the reason `heldMode` is not: the rules that mutate it live in
+    /// `ComposerDraft+Mode.swift`, and Swift's `private` is file-scoped.
+    var heldModel: String?
+    /// An Effort rung picked while a Turn was running, held the same way.
+    var heldEffort: SessionEffort?
+    /// Whether the walk for `heldModel` and `heldEffort` has begun, so no second boundary can
+    /// start another — `isWalkingMode`'s own rule, read for both knobs at once because they walk
+    /// together, one line apart, at the same boundary.
+    var isWalkingRunFacts = false
     /// How many Stops this composer has landed that no boundary has answered yet (#1189, #1234).
     /// Not part of `isEmpty`: it is a claim about an act in flight, never something a reader typed.
     ///
@@ -123,7 +135,7 @@ package struct ComposerDraft: Equatable {
     /// holds a rung is one whose rung is never walked.
     var isEmpty: Bool {
         text.isEmpty && queued.isEmpty && attachments.isEmpty && refusal == nil && notice == nil
-            && heldMode == nil
+            && heldMode == nil && heldModel == nil && heldEffort == nil
     }
 
     /// Put the draft to the Session through `deliver`. A refusal keeps every character where it

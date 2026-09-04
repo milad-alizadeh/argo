@@ -1,7 +1,7 @@
 import ArgoEngine
 
 /// What the composer holds about the RUNG the Session is on, and about the two knobs beside it
-/// (#545, #558, #653, #940).
+/// (#545, #558, #653, #940, #1329).
 ///
 /// Its own file for the reason `ComposerDraft+Attachments.swift` is one, and split off by #1189
 /// when the interrupt's own rules pushed the type past its body ceiling. The seam is real rather
@@ -17,16 +17,6 @@ extension ComposerDraft {
     mutating func modeRefused(_ error: any Error) {
         heldMode = nil
         isWalkingMode = false
-        say(ComposerSeamLine(error))
-    }
-
-    /// The port's reason a Model or Effort did not land (#558), on the seam the same way — no words
-    /// are at risk here either, so there is nothing for Retry to put back.
-    ///
-    /// It touches NO held state, which is what separates it from `modeRefused` above: a rung can be
-    /// kept for the Turn's boundary, and these two are not. The composer goes on showing what the
-    /// CLI is still on, which was never wrong.
-    mutating func runFactRefused(_ error: any Error) {
         say(ComposerSeamLine(error))
     }
 
@@ -61,5 +51,83 @@ extension ComposerDraft {
     /// to know it was refused AND that it was not dropped.
     package static func held(_ mode: SessionMode) -> String {
         "\(SessionDriveError.modeBusy.detail) — \(mode.label) is held until this Turn ends"
+    }
+
+    // MARK: Model and Effort (#1329)
+    //
+    // The same four acts `heldMode` answers to, kept apart because the two knobs land as two
+    // separate lines at the prompt rather than one walk — `beginRunFactsWalk()` marks both at
+    // once, and `SessionComposer.honourRunFacts(_:)` awaits each in turn.
+
+    /// The port's reason a Model did not land, refused for anything OTHER than the busy prompt: a
+    /// held Model is not this failure's to keep, on `modeRefused`'s own rule.
+    mutating func modelRefused(_ error: any Error) {
+        heldModel = nil
+        isWalkingRunFacts = false
+        say(ComposerSeamLine(error))
+    }
+
+    /// The port's reason an Effort rung did not land, on the same rule `modelRefused` states.
+    mutating func effortRefused(_ error: any Error) {
+        heldEffort = nil
+        isWalkingRunFacts = false
+        say(ComposerSeamLine(error))
+    }
+
+    /// The Model landed. Takes back only the sentence IT put up — `modeLanded`'s own rule.
+    mutating func runFactLanded(model: String) {
+        heldModel = nil
+        isWalkingRunFacts = false
+        guard notice == Self.held(model: model) else { return }
+        say(nil)
+    }
+
+    /// The Effort rung landed, on the same rule `runFactLanded(model:)` states.
+    mutating func runFactLanded(effort: SessionEffort) {
+        heldEffort = nil
+        isWalkingRunFacts = false
+        guard notice == Self.held(effort: effort) else { return }
+        say(nil)
+    }
+
+    /// A Model the port refused because the CLI's prompt was not free (#558, #1217, #1329): held
+    /// for the boundary rather than dropped, and said on the seam — `modeHeld`'s own rule.
+    ///
+    /// `package`, for the reason `held(_:)` is: a specimen builds the held state by CALLING it
+    /// rather than by setting the fields behind one, on `putNext(via:)`'s own rule — `heldModel`
+    /// stays package-invisible so no cross-module writer can set it without the notice that
+    /// belongs beside it.
+    package mutating func runFactHeld(model: String) {
+        heldModel = model
+        isWalkingRunFacts = false
+        say(ComposerSeamLine(Self.held(model: model)))
+    }
+
+    /// An Effort rung the port refused for the same reason, held the same way.
+    package mutating func runFactHeld(effort: SessionEffort) {
+        heldEffort = effort
+        isWalkingRunFacts = false
+        say(ComposerSeamLine(Self.held(effort: effort)))
+    }
+
+    /// The Model and the Effort rung to walk now the Turn has ended, and `nil` where there is
+    /// neither or a walk is already under way — `beginModeWalk()`'s own rule, read for both knobs
+    /// at once because one boundary carries both.
+    mutating func beginRunFactsWalk() -> (model: String?, effort: SessionEffort?)? {
+        guard heldModel != nil || heldEffort != nil, !isWalkingRunFacts else { return nil }
+        isWalkingRunFacts = true
+        return (heldModel, heldEffort)
+    }
+
+    /// What the seam says about a Model Argo is holding — `held(_:)`'s own shape, read for the
+    /// CLI's own two knobs.
+    package static func held(model: String) -> String {
+        "\(SessionDriveError.runFactsBusy.detail) — "
+            + "\(ReadableModelName.readable(model)) is held until this Turn ends"
+    }
+
+    /// What the seam says about an Effort rung Argo is holding.
+    package static func held(effort: SessionEffort) -> String {
+        "\(SessionDriveError.runFactsBusy.detail) — \(effort.label) is held until this Turn ends"
     }
 }

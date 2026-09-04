@@ -2,23 +2,19 @@ import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
-/// What the run-settings popover says while a Turn is running, and what it does to the two
-/// sections under it (#1217).
+/// What the run-settings popover says while it holds a Model or an Effort rung for the Turn's end
+/// (#1329, formerly #1217).
 ///
 /// The CLI takes Model and Effort as lines typed at its own prompt, and a line typed mid-Turn is
 /// QUEUED as the next prompt rather than run — so the port refuses both knobs until the Turn ends
-/// (`SessionDriveError.runFactsBusy`). That refusal was already true before this; what was missing
-/// was any sign of it. A reader clicked `Sonnet 5`, the row did not tick, and the sentence the
-/// refusal put on the composer's seam was behind the popover still open over it.
-///
-/// **Inert with the reason ON it, rather than absent.** A knob the adapter does not declare is left
-/// OUT of the popover (#558, criterion 4), because that section can never work and a greyed control
-/// gives no reason. This one works again in a moment, and naming the moment is the whole
-/// affordance.
+/// (`SessionDriveError.runFactsBusy`). Argo used to leave the two sections GHOSTED under that
+/// refusal, with a sentence naming why the click did nothing (#1217). It Held the pick instead: a
+/// reader who clicks `Sonnet 5` mid-Turn sees the row taken and carried to the boundary, and this
+/// line NAMES what is held rather than why a click failed — see `RunFactsControl.lockWords`.
 struct RunSettingsLock: View {
     @Environment(\.argo) private var argo
 
-    /// The port's own sentence, passed through untouched — see `RunFactsControl.lockWords`.
+    /// What is held, and until when — see `RunFactsControl.lockWords`.
     let words: String
 
     var body: some View {
@@ -35,31 +31,14 @@ struct RunSettingsLock: View {
     }
 }
 
-extension View {
-    /// A whole section that is live again in a moment, drawn as one that cannot be driven now
-    /// (#1217).
-    ///
-    /// Both halves together and never one alone: `disabled` by itself leaves rows that look
-    /// clickable and are not, and the opacity by itself leaves rows that take a click nothing can
-    /// honour. `ghosted` is the contract's own rung for a surface the reader cannot drive.
-    ///
-    /// For a SECTION, never a control that already draws its own inert state — see the reset in
-    /// `RunSettingsPopover`, which changes ink instead. Two dims stacked on one control say the
-    /// same thing twice at two strengths.
-    func runSettingsInert(_ isInert: Bool) -> some View {
-        disabled(isInert).opacity(isInert ? ArgoOpacity.ghosted : ArgoOpacity.full)
-    }
-}
-
-// The state the ticket is about, rendered: the two sections ghosted, the reset with them, and one
-// sentence saying when they come back.
-#Preview("Run settings — locked while a Turn is running") {
-    RunSettingsPopover(
-        control: RunFactsControl(
-            facts: bothKnobs("claude-opus-5", .exactly(.medium, cli: "medium")),
-            takesTypedLine: false,
-        ),
-        mode: .exactly(.code, cli: "acceptEdits"),
-    )
-    .argoAppearance()
+// The state #1329 replaced: see "Run settings — a Model held until the Turn ends" in
+// `RunSettingsPopover.swift`, where the two sections stay live rather than ghosted.
+#Preview("Run settings lock — an Effort held until the Turn ends") {
+    RunSettingsLock(words: RunFactsControl(
+        facts: bothKnobs("claude-opus-5", .exactly(.medium, cli: "medium")),
+        held: RunFactsHeld(effort: .xhigh),
+    ).lockWords ?? "")
+        .padding(ArgoSpacing.section)
+        .argoDeckSurface()
+        .argoAppearance()
 }

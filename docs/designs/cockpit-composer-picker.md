@@ -163,8 +163,14 @@ more.
    the `+` menu it opens the row's section, exactly as `⏎` does there (decision 11). With no row
    under the cursor — no menu, or a filter that matched nothing (decision 8) — `⇥` is the focus
    walk it has always been, and `⇧⇥` never touches the menu at all.
-2. **`/` opens only at the head of the line; `@` at any token boundary.** A slash inside `src/foo`
-   is a path, not a command — `codex.png` types `/usr/local` and opens nothing.
+2. **`/` opens at any token boundary; `@` always has.** A slash inside `src/foo` is a path, not a
+   command — `codex.png` types `/usr/local` and opens nothing. **Amended during #1256's build:**
+   `/` was head-of-line only, and a two-line draft with `/` on its second line opened no menu at
+   all. It now opens wherever `@` already does — the head of the draft, the head of a later line,
+   or after a space — for the same reason `@` never was head-only: the reader composes a draft
+   over several lines before naming the command they mean. The second-slash rule that keeps
+   `/usr/local` closed is unchanged, and closes the SAME way at every boundary, not only the
+   first.
 3. **Filtering narrows *and* reorders.** Prefix matches first in origin order, then name-substring
    matches under their own header, so a good match never slides down the list as the reader types.
    The matched characters are inked in the name — `slash-filter.png`.
@@ -222,6 +228,17 @@ more.
     built-in's own line is already in the reader's bubble, and its output is already a Tool Call
     row. The marker with nothing behind it is still drawn, for the case that really has nothing:
     a `SKILL.md` that is all frontmatter.
+19. **The field inks the command it will actually run, in the accent, and nothing else — added
+    during #1256's build.** Decision 2's own token boundary lets a `/` open the menu anywhere in
+    the draft, but the CLI reads the WHOLE draft as one prompt and runs it as a command only when
+    a `/` name starts that draft. `go with these\n\n/prototype-to-design` opens the menu on its
+    second line so the reader can still complete it, but sending it hands the CLI two lines of
+    prose ending in a literal `/prototype-to-design` — nothing runs. The mark would lie there, so
+    it stands only at index 0: `ComposerMenu.commandMark(in:)` is a stricter, separate question
+    from `command(in:)`'s (which token opens the menu). The mark covers the whole name past any
+    arguments too — `/implement 745 ` stays inked over `implement` — because the CLI is still
+    going to run it. `canRunCommands: false` (a codex Session) withholds the mark exactly as it
+    withholds the menu.
 
 ## Token reconciliation
 

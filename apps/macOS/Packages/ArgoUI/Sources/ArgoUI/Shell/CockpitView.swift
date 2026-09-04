@@ -59,17 +59,17 @@ public struct CockpitView: View {
     /// Which Agent the feed is scoped to. Beside the two above, and for their reason: what the
     /// toggle opens on is the newest evidence in the rows this names.
     @State var feedScope = FeedScope.session
-    /// Every recently-read Session's measured row heights, one store per reading. Held HERE because
-    /// this is the one view above `InstrumentDeckShell`'s room `switch`, which destroys the feed's
-    /// table whole — the heights are the same measurement on the way back, and are only dropped by
-    /// what actually changes one: a width or a re-ink. Per reading and not one store shared, or the
-    /// Session looked at last overwrites the one the reader is coming back to. See `FeedGeometries`
-    /// (#858).
+    /// Every recently-read Session's measured row heights, one store per reading. Held HERE, above
+    /// `InstrumentDeckShell`, so a SESSION switch below finds the same measurement on the way back
+    /// rather than remeasuring — dropped only by what actually changes one: a width or a re-ink.
+    /// Per reading and not one store shared, or the Session looked at last overwrites the one the
+    /// reader is coming back to. See `FeedGeometries` (#858). The room `switch` this was first
+    /// written against no longer tears the table down at all (#1356); the heights survive a
+    /// Session switch regardless of which room draws it.
     @State var feedGeometries = FeedGeometries()
     /// Every Session the reader has opened this launch, each with its own deck — table, scroll
     /// position and folds — kept off screen while they are elsewhere and shown again unchanged
-    /// (ADR-0030, Rule 4). Held HERE for the reason the heights beside it are: this is the one view
-    /// above `InstrumentDeckShell`'s room `switch`, which destroys the whole feed zone.
+    /// (ADR-0030, Rule 4). Held HERE for the reason the heights beside it are.
     ///
     /// A tighter bound than the heights: six decks against twenty readings, so a Session pushed out
     /// of the decks still re-opens over geometry nothing has to measure again. See `KeptDecks`.
@@ -177,11 +177,19 @@ public struct CockpitView: View {
         // Whether the shell has caught up with the row that was clicked — see `DrawnSession`.
         let isDrawn = drawn.isDrawn(navigation.session)
         // Assembled ONCE for the whole pass and handed to all four readers — the column's
-        // visibility, the sidebar, the toolbar row and the deck. `nil` outside the Tickets room,
-        // which is also what keeps the projection from running at all in the other two.
-        let tickets = navigation.room == .tickets ? ticketsRoom : nil
+        // visibility, the sidebar, the toolbar row and the deck. Assembled in EVERY room, not only
+        // Tickets: both the sidebar and the deck keep the room's view mounted through a switch
+        // (#1356), and a value handed only in its own room would leave the other three drawing
+        // nothing where the room they left off in should still be standing. `TicketsRoomMemo` is
+        // what keeps the PROJECTION cheap in the rooms it is not drawn in — the tree, the bands
+        // and the Next-Up ranking derive once per stamp and every other pass reads them back.
+        // What it does NOT cover is assembling the stamp itself: `TicketsReading.live` still runs
+        // every pass, in every room, which costs one filter over the roster (`claimants`) — linear
+        // in Sessions rather than in tickets or a transcript, and small enough that no cost gate
+        // watches it the way `SessionSelectionCostTests` watches the feed's reads.
+        let tickets = ticketsRoom
 
-        NavigationSplitView(columnVisibility: sidebarColumn(for: tickets)) {
+        NavigationSplitView(columnVisibility: sidebarColumn(for: tickets, in: navigation.room)) {
             sidebar(tickets: tickets)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,

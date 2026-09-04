@@ -3,13 +3,15 @@ import ArgoDesign
 import ArgoUI
 import SwiftUI
 
-/// The list an open fold puts out, in the four states its shape has to be judged in (#1228): the
-/// row at rest, its list out, the pointer on one name, and the panel open on one name.
+/// The list an open fold puts out, in the five states its shape has to be judged in (#1228,
+/// #1355): the row at rest, its list out, the pointer on one name, the panel open on one name,
+/// and the panel scrolled onto a LATER result of a name that stands for more than one.
 ///
-/// One fold drawn four times rather than four rows of a reading. Three of the four are states a
-/// pointer or a click produces and a screenshot cannot reach, and the question being settled — that
-/// the header and every name under it are one size, one weight and one rhythm — is only answerable
-/// with the four stacked at one measure.
+/// One fold drawn five times rather than five rows of a reading. Four of the five are states a
+/// pointer, a click or a scroll produces and a screenshot cannot reach, and the question being
+/// settled — that the header and every name under it are one size, one weight and one rhythm, and
+/// that a scroll mid-call lights the same one name a press on it would — is only answerable with
+/// the five stacked at one measure.
 ///
 /// The fold chosen is the one in the shipping fixture whose list holds a call the record answered
 /// with NOTHING, so the inert name is in every one of these stills beside the names that work.
@@ -21,6 +23,11 @@ struct FeedFoldNamesSpecimen: View {
                 drawn("Open", of: fold, opened())
                 drawn("Pointer on a name", of: fold, opened(pointingAt: Self.named?.id))
                 drawn("Panel open on that name", of: fold, opened(showing: Self.named?.goesTo))
+                drawn(
+                    "Panel scrolled onto that name's later result",
+                    of: fold,
+                    opened(showing: Self.midCall),
+                )
             }
         }
         .padding(ArgoSpacing.section)
@@ -70,9 +77,18 @@ struct FeedFoldNamesSpecimen: View {
     /// is never the inert name and never the first in the box. Walked once — the still needs the
     /// name's own id AND the panel step behind it, and two walks could answer about two names.
     private static let named = fold?.steps.last { $0.goesTo != nil }
+
+    /// A step one past the first result of whichever call produced more than one — never that
+    /// call's own `goesTo`, so this state proves the claim #1355 makes: every step between a
+    /// call's own start and the next call's start lights that one name, not only its first.
+    private static let midCall: Int? = fold.flatMap { theFold in
+        guard let index = theFold.calls.firstIndex(where: { $0.evidence.count > 1 }),
+              let start = theFold.steps.first(where: { $0.id == index })?.goesTo else { return nil }
+        return start + 1
+    }
 }
 
-#Preview("Fold names — the four states of the list an open fold puts out") {
+#Preview("Fold names — the five states of the list an open fold puts out") {
     FeedFoldNamesSpecimen()
         .argoAppearance()
 }

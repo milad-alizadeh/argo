@@ -209,4 +209,11 @@ public enum ArgoSymbol {
     public static let stepPending = "circle"
     public static let stepInProgress = "circle.lefthalf.filled"
     public static let stepCompleted = "checkmark.circle.fill"
+
+    /// The Atlas's own view toggle (#1152) — the city standing, and the same tiling seen straight
+    /// down.
+    public static let atlasCity = "building.2"
+    public static let atlasTreemap = "square.grid.2x2"
+    /// The orbit handle that turns and tilts the city.
+    public static let atlasOrbit = "rotate.3d"
 }

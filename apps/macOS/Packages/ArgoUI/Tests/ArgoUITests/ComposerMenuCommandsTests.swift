@@ -5,22 +5,34 @@ import Testing
 /// Where the `/` menu opens, what it lists, and in what order (#685).
 @Suite("Composer menu — commands")
 struct ComposerMenuCommandsTests {
-    /// Decision 2. A slash inside a path is a path, and the space that starts the arguments is what
-    /// puts the menu away — `slash-args.png` is a sendable line with no menu over it.
+    /// Decision 2, amended for #1256. A slash inside a path is a path, and the space that starts
+    /// the arguments is what puts the menu away — `slash-args.png` is a sendable line with no
+    /// menu over it.
     @Test(arguments: [
         ("/", ""),
         ("/impl", "impl"),
         ("/code-review", "code-review"),
     ])
-    func `a slash at the head of the line opens the menu`(text: String, query: String) {
+    func `a slash at the head of the draft opens the menu`(text: String, query: String) {
+        #expect(ComposerMenu.command(in: text) == query)
+    }
+
+    /// #1256: `/` opens at ANY token boundary now, not only the head of the draft — a space or a
+    /// newline before it is enough, the same rule `@` has always used.
+    @Test(arguments: [
+        (" /impl", "impl"),
+        ("install /help", "help"),
+        ("go with these variations\n\n/prototype-to-design", "prototype-to-design"),
+    ])
+    func `a slash after a space or a newline opens the menu too`(text: String, query: String) {
         #expect(ComposerMenu.command(in: text) == query)
     }
 
     /// A second slash means a path, which is decision 2's own example: `/usr/local` opens nothing.
     /// No command carries a slash in its name, so nothing real is lost by the rule.
     @Test(arguments: [
-        "", "look in src/foo", "hello", "/code-review since main", " /impl",
-        "/usr/local", "/usr/local/bin",
+        "", "look in src/foo", "hello", "/code-review since main",
+        "/usr/local", "/usr/local/bin", "cd /usr/local",
     ])
     func `nothing else opens it`(text: String) {
         #expect(ComposerMenu.command(in: text) == nil)
@@ -158,6 +170,30 @@ struct ComposerMenuCommandsTests {
         #expect(menu.rows.first?.badges == [
             ComposerMenu.Badge(words: ComposerMenu.shadows, tone: .attention),
         ])
+    }
+
+    /// #1256's open question: the CLI runs a command only when it starts the WHOLE draft, so the
+    /// mark stands only at index 0 — never on a `/` the menu still opens for further down.
+    @Test(arguments: [
+        ("/implement", "/implement"),
+        ("/implement 745", "/implement"),
+        ("/implement 745 with notes", "/implement"),
+    ])
+    func `a command at the head of the draft is marked, arguments and all`(
+        text: String,
+        marked: String,
+    ) {
+        let mark = ComposerMenu.commandMark(in: text)
+        #expect(mark.map { String(text[$0]) } == marked)
+    }
+
+    /// A command opened after the first line, a path, or plain prose never marks — none of them is
+    /// text the CLI will run as a command.
+    @Test(arguments: [
+        "", "hello", "go with these\n\n/prototype-to-design", "/usr/local",
+    ])
+    func `nothing else is marked`(text: String) {
+        #expect(ComposerMenu.commandMark(in: text) == nil)
     }
 
     /// Over a list of commands with both halves of the catalog already read, which is what every

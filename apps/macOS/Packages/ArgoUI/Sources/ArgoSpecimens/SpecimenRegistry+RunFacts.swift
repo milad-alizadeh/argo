@@ -55,10 +55,15 @@ extension SpecimenRegistry {
                 opening: .runSettings,
             )
         },
-        // The state #1217 reported as a dead click: mid-Turn the port refuses both knobs, so the
-        // two sections and the reset are drawn inert under the refusal's own sentence.
+        // The state #1329 replaced #1217's dead click with: a Model and an Effort picked mid-Turn
+        // stay live in the popover, drawn under `≈`, and held for the boundary rather than
+        // refused and forgotten.
         SpecimenEntry("composerRunSettingsRunning") {
-            ComposerSpecimen(composer: ComposerSpecimen.runFactsRunning, opening: .runSettings)
+            ComposerSpecimen(
+                composer: ComposerSpecimen.runFactsRunning,
+                draft: ComposerSpecimen.runFactsHeld,
+                opening: .runSettings,
+            )
         },
         // And the limit of that rule: an adapter declaring NEITHER draws no trigger at all, so the
         // facts are words on the footer with nothing behind them.

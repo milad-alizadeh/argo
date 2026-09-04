@@ -102,7 +102,12 @@ struct SessionsRoomReading {
                 // nothing is a Session nobody here started, and a plinth over it would claim an act
                 // Argo did not perform.
                 wait: FeedWorking.isStarting(stamp.status) ? .starting : nil,
-                showing: PlanShowing(plan: PlanProjection.reading(from: session?.events ?? [])),
+                showing: PlanShowing(
+                    plan: PlanProjection.reading(from: session?.events ?? []),
+                    // The same reading the row's own `PlanBar` freezes on (#1345): a Session
+                    // that is not running is not progressing.
+                    isStill: !FeedWorking.isWorking(stamp.status),
+                ),
                 worked: .read(across: session?.events ?? []),
             )
         }

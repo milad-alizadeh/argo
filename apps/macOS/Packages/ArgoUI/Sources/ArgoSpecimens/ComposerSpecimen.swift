@@ -115,6 +115,16 @@ struct ComposerSpecimen: View {
     /// took a click and moved somewhere nobody asked for.
     static let modeHeld = ComposerDraft(notice: ComposerDraft.held(.auto), heldMode: .auto)
 
+    /// A Model and an Effort rung both picked while the Turn was running (#1329) — the popover's
+    /// own state: the two sections stay live, the picked rows draw under `≈`, and the lock line
+    /// names what is held rather than why a click did nothing (#1217's old picture).
+    static var runFactsHeld: ComposerDraft {
+        var draft = ComposerDraft()
+        draft.runFactHeld(model: "claude-sonnet-5")
+        draft.runFactHeld(effort: .xhigh)
+        return draft
+    }
+
     /// The refused state's draft: the message still where it was typed, the reason above it —
     /// in the port's own words, so the render and the seam cannot drift apart.
     static let refused = ComposerDraft(

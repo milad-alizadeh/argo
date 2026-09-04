@@ -49,12 +49,6 @@ extension ComposerMenu {
         return Mention(query: String(typed))
     }
 
-    /// Whether the sigil stands at a token boundary rather than inside a word.
-    private static func opensToken(_ text: String, at index: String.Index) -> Bool {
-        guard index > text.startIndex else { return true }
-        return text[text.index(before: index)].isWhitespace
-    }
-
     private static let fileSigil: Character = "@"
 
     /// How many matches the derive will build rows for.

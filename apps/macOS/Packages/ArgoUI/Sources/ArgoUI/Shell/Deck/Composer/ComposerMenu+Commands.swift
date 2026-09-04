@@ -34,16 +34,38 @@ extension ComposerMenu {
 
     /// What the reader has typed after the `/`, and `nil` where there is no `/` to be after.
     ///
-    /// Three rules, all decision 2's. **Head of the line only.** **Closed by the first space** —
-    /// that is what says the command is settled and its arguments have begun, and it is the whole
-    /// of what makes `slash-args.png` a sendable line rather than a menu standing over one.
-    /// **Closed by a second slash**, because a second one means a path: the design names
-    /// `/usr/local` as the line that opens nothing, and no command carries a slash in its name.
+    /// Three rules, all decision 2's. **At any token boundary** — the head of the draft, the head
+    /// of a later line, or after a space, the same rule `mention(in:)` uses for `@` (#1256).
+    /// **Closed by the first space** — that is what says the command is settled and its arguments
+    /// have begun, and it is the whole of what makes `slash-args.png` a sendable line rather than
+    /// a menu standing over one. **Closed by a second slash**, because a second one means a path:
+    /// the design names `/usr/local` as the line that opens nothing, and no command carries a
+    /// slash in its name.
+    ///
+    /// The LAST such token, because that is the one being typed — `mention(in:)`'s own reason.
     static func command(in text: String) -> String? {
-        guard text.hasPrefix("/") else { return nil }
-        let typed = text.dropFirst()
+        guard let slash = text.lastIndex(of: "/"), opensToken(text, at: slash) else { return nil }
+        let typed = text[text.index(after: slash)...]
         guard !typed.contains(where: \.isWhitespace), !typed.contains("/") else { return nil }
         return String(typed)
+    }
+
+    /// The range of the command name the CLI will actually run as one, or `nil` where the draft
+    /// opens with none — the answer to #1256's open question. `command(in:)` finds whichever `/`
+    /// token the reader is CURRENTLY typing, anywhere a token boundary allows one; this looks only
+    /// at index 0, because the CLI reads the whole draft as one prompt and runs it as a command
+    /// only when a `/` name starts the draft. `/prototype-to-design` two lines down opens the menu
+    /// so the reader can still complete it, but it is never what this returns, and the field must
+    /// not colour it as a command that will run.
+    ///
+    /// The mark stands past the first space, unlike `command(in:)`: `/implement 745 ` is still the
+    /// command `implement` with an argument after it, not a settled line with nothing to mark.
+    static func commandMark(in text: String) -> Range<String.Index>? {
+        guard text.hasPrefix("/") else { return nil }
+        let head = text.index(after: text.startIndex)
+        let name = text[head...].prefix { !$0.isWhitespace }
+        guard !name.isEmpty, !name.contains("/") else { return nil }
+        return text.startIndex ..< name.endIndex
     }
 
     /// The word an origin goes by. Upper-casing is the badge's own, because it is a face and not a

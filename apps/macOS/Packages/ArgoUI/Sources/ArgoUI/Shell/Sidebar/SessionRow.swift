@@ -164,21 +164,32 @@ package struct SessionRow: View {
         }
     }
 
-    /// Line 3 — how it is going, with the clock at its leading edge (#1343) and the two addresses
-    /// this run answers to at its trailing one (#1346). One more `hair` above it than the two
-    /// lines take between them, because it changes subject.
+    /// Line 3 — how it is going, with the clock at its leading edge (#1343), the Plan's own
+    /// `PlanBar` beside it (#1345), and the two addresses this run answers to at the trailing
+    /// edge (#1346). One more `hair` above it than the two lines take between them, because it
+    /// changes subject.
     @ViewBuilder private var progressLine: some View {
-        if row.clock != nil || row.ticketNumber != nil || row.pullRequest != nil {
+        if hasProgressLine {
             HStack(spacing: ArgoSpacing.base) {
                 if let clock = row.clock {
                     RosterTurnClock(clock: clock)
-                        .foregroundStyle(argo.color.text.tertiary)
+                }
+                if let plan = row.plan {
+                    // A Session that is not running is not progressing (`cockpit-roster-row.md`,
+                    // rule 3): the fill freezes to `progress.still` rather than the accent.
+                    PlanBar(plan: plan, isStill: row.state != .running)
                 }
                 Spacer(minLength: ArgoSpacing.tight)
                 DeliveryAddresses(ticketNumber: row.ticketNumber, pullRequest: row.pullRequest)
             }
             .padding(.top, ArgoSpacing.hair)
+            .foregroundStyle(argo.color.text.tertiary)
         }
+    }
+
+    /// Whether line 3 has anything at all to draw — a clock, a Plan, or either address.
+    private var hasProgressLine: Bool {
+        row.clock != nil || row.plan != nil || row.ticketNumber != nil || row.pullRequest != nil
     }
 
     /// Ahead of the clock, because the leading edge is where the eye lands and this is the slot
