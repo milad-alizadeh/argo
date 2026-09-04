@@ -23,8 +23,13 @@ struct SessionSpend: Equatable, Sendable {
 
     /// Read off the DELEGATING call's result — the only place that spend is ever reported, since a
     /// sidechain's own records carry none. Absent, never zero: a zero would claim no Subagent ran.
+    ///
+    /// The fresh half, like `spentTokens` beside it. A Subagent's reported usage is itself a
+    /// roll-up over its own requests, so the billed sum carries the same re-read once per Turn
+    /// (#1177) — and it is drawn on one line with `spentTokens`, where two grains an order of
+    /// magnitude apart is the contradiction that line exists to avoid.
     var subagentTokens: Int? {
-        subagent?.billedTokens
+        subagent?.spentTokens
     }
 
     /// What one record priced, which is the Session's own.

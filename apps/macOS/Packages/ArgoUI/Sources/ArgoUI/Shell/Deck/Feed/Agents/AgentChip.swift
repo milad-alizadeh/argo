@@ -54,7 +54,7 @@ package struct AgentChip: View {
             agent.label,
             agent.isRunning ? "running" : "finished",
             agent.durationMs.map { TurnClockPhrase.spoken(seconds: $0 / 1000) },
-            agent.spend.map(FeedSpend.agent),
+            agent.spend.map(FeedSpend.agentWords),
             scope == nil ? "nothing read" : nil,
         ]
         .compactMap(\.self)

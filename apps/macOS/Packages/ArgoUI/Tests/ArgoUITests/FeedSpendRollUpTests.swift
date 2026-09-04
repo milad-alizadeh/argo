@@ -87,8 +87,10 @@ struct FeedSpendRollUpTests {
         #expect(reread.words == "session · 79.9k tokens spent · 2.22M cached")
     }
 
-    /// The header's own words and the header's own figures, so a reader holding the two side by
-    /// side cannot read them as measuring different things.
+    /// Pins the SPELLING, which is the half that can drift: both surfaces reach the same
+    /// `TokenCount`, and this fails the moment one of them grows its own phrase. That the two
+    /// pipelines agree on the NUMBERS is a separate fact, held where they are summed —
+    /// `SessionSpendTests` and the roll-up members above.
     @Test
     func `the roll-up spells its spend the way the deck header spells the same one`() throws {
         let usage = Usage(
@@ -105,7 +107,7 @@ struct FeedSpendRollUpTests {
             spend: .init(spentTokens: usage.spentTokens, cachedTokens: usage.cachedTokens),
         )))
 
-        #expect(FeedSpend.session(usage) == "1.83M tokens spent · 28.1M cached")
+        #expect(FeedSpend.sessionWords(usage) == "1.83M tokens spent · 28.1M cached")
         #expect(header.hasPrefix("1.83M tokens spent · 28.1M cached"))
     }
 
@@ -120,7 +122,7 @@ struct FeedSpendRollUpTests {
             cacheCreationTokens: 0,
         )
 
-        #expect(FeedSpend.agent(usage) == "43.6k tokens spent")
+        #expect(FeedSpend.agentWords(usage) == "43.6k tokens spent")
     }
 
     /// The withholding `HubSession` and the header already make (`SessionHeaderProjection+Spend`),

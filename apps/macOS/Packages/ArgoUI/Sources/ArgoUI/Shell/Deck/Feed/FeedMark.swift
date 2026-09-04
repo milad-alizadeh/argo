@@ -71,7 +71,7 @@ extension FeedMark {
         // Every OTHER reason keeps its word: a turn cut off by a token ceiling or ended in a
         // refusal is not the same event as one that finished.
         case let .turnEnded(reason): "turn ended · \(reason.rawValue)"
-        case let .spent(usage): "session · \(FeedSpend.session(usage))"
+        case let .spent(usage): "session · \(FeedSpend.sessionWords(usage))"
         // One word where the record has five: the rule it is let into already says a turn ended
         // here, so `[Request interrupted by user]` would restate the feed's own punctuation.
         case .interrupted: "interrupted"
