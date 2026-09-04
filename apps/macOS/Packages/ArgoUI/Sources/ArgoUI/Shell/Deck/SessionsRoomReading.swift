@@ -14,6 +14,11 @@ struct SessionsRoomReading {
     /// carries no row for. DIRECT and managed-only by construction: it is read off the engine's own
     /// `starting`, which no observed Session can reach.
     let wait: FeedWait?
+    /// Whether Argo itself submitted the Turn now in flight (#1179, #1323) — the DIRECT gate
+    /// `EnvironmentValues.argoTurnIsDirect` carries down to `FeedColumn`. Read straight off the
+    /// stamp rather than through the memoized `body` below: it is a status fact and not a stream
+    /// walk, on the same ground `stamp.status` itself is.
+    let hasUnansweredTurn: Bool
     let header: SessionHeaderProjection.Header?
     let showing: PlanShowing
     /// Which version of the Session's record this reading was taken at, handed on so the Subagent
@@ -57,6 +62,7 @@ struct SessionsRoomReading {
     private init() {
         self.feed = []
         self.wait = nil
+        self.hasUnansweredTurn = false
         self.header = nil
         self.showing = PlanShowing()
         self.stamp = nil
@@ -102,6 +108,7 @@ struct SessionsRoomReading {
         }
         self.feed = body.feed
         self.wait = body.wait
+        self.hasUnansweredTurn = stamp.hasUnansweredTurn
         self.showing = body.showing
         // Taken every pass, and only its one stream walk remembered: the header reads facts that
         // move with no event appended — spend, context, what the roster calls the Session — so

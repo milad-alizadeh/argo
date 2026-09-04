@@ -15,6 +15,8 @@ struct FeedWaitTests {
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         settledWaits: [SessionWaitSettled] = [],
+        events: [TranscriptEvent] = [],
+        hasUnansweredTurn: Bool = false,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -26,6 +28,7 @@ struct FeedWaitTests {
                 program: .init(cli: .claude),
                 span: .init(settledWaits: settledWaits),
             ),
+            transcript: .init(events: events, hasUnansweredTurn: hasUnansweredTurn),
         )
     }
 
@@ -34,13 +37,21 @@ struct FeedWaitTests {
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         settledWaits: [SessionWaitSettled] = [],
+        events: [TranscriptEvent] = [],
+        hasUnansweredTurn: Bool = false,
     )
         -> SessionsRoomReading {
         SessionsRoomReading(
             presentation: CockpitPresentation(
                 projects: [],
                 activeProjectID: nil,
-                sessions: [session(access: access, status: status, settledWaits: settledWaits)],
+                sessions: [session(
+                    access: access,
+                    status: status,
+                    settledWaits: settledWaits,
+                    events: events,
+                    hasUnansweredTurn: hasUnansweredTurn,
+                )],
                 connection: .idle,
             ),
             sessionID: "session-1",
@@ -151,13 +162,14 @@ struct FeedWaitTests {
         #expect(FeedWaitWords.starting.symbol == ArgoSymbol.startSession)
     }
 
-    /// The waits read off the rows have not reached this surface yet, and no words are invented for
-    /// them: each arrives with its own ticket.
+    /// A lit call takes the ion on its own line instead of a plinth — the one wait read off the
+    /// rows that has not reached this surface, because it never stands beside `.thinking`
+    /// (`FeedWorking.startingWords` comment, `cockpit-feed-waiting.md`).
     @Test
-    func `a wait with no words raises no plinth`() {
-        #expect(FeedWaitWords(.thinking) == nil)
+    func `a lit call raises no plinth`() {
         #expect(FeedWaitWords(.call(3)) == nil)
         #expect(FeedWaitWords(.starting) == .starting)
+        #expect(FeedWaitWords(.thinking) == .thinking)
     }
 
     // MARK: - The row's own shape

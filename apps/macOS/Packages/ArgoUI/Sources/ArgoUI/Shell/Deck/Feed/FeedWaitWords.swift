@@ -9,23 +9,30 @@ import ArgoEngine
 /// foot must find `Started the agent` in the reading. Written apart from `FeedWait` because that
 /// type is an identity the reading is compared BY, and words are not part of an identity.
 ///
-/// One case today. The design names four waits (`cockpit-feed-waiting.md`), and each of the other
-/// three arrives as a case here on its own ticket.
+/// Two cases today. The design names four waits (`cockpit-feed-waiting.md`), and each of the other
+/// two arrives as a case here on its own ticket.
 enum FeedWaitWords: Equatable {
     /// Argo started a CLI and has not heard it (#587).
     case starting
+    /// A Turn is in flight (#1323). The thread already carries this live, wordless — the plinth
+    /// says it again in words, which is the one place the design says a thing twice on purpose.
+    case thinking
 
     /// The wait, live, on the plinth.
     var running: String {
         switch self {
         case .starting: "Starting the agent"
+        case .thinking: "Waiting for the agent to answer"
         }
     }
 
-    /// The same wait, over, in the settled row.
+    /// The same wait, over, in the settled row. Unreachable for `.thinking`: the agent's answer IS
+    /// the record of it, so a Turn that ends the way it was meant to drops no row for this to say
+    /// (`cockpit-feed-waiting.md`) — defined only so the switch stays exhaustive.
     var settled: String {
         switch self {
         case .starting: "Started the agent"
+        case .thinking: "The agent answered"
         }
     }
 
@@ -34,6 +41,7 @@ enum FeedWaitWords: Equatable {
     var failed: String {
         switch self {
         case .starting: "The agent did not start"
+        case .thinking: "The turn ended without an answer"
         }
     }
 
@@ -41,10 +49,12 @@ enum FeedWaitWords: Equatable {
     ///
     /// `nil` for a wait with no mark, and no default is invented for one: a mark is a claim about
     /// what happened, and the mark column is drawn empty rather than filled with a guess, exactly
-    /// as `FeedCallLine` draws a call whose kind Argo could not read.
+    /// as `FeedCallLine` draws a call whose kind Argo could not read. `.thinking` takes no mark on
+    /// the same ground `FeedMark.working` does: "thinking" is not something that happened.
     var symbol: String? {
         switch self {
         case .starting: ArgoSymbol.startSession
+        case .thinking: nil
         }
     }
 
@@ -55,18 +65,21 @@ enum FeedWaitWords: Equatable {
     var spokenRunning: String {
         switch self {
         case .starting: "The agent is starting"
+        case .thinking: "Waiting for the agent to answer"
         }
     }
 
     /// Which words a wait Argo is HOLDING takes.
     ///
     /// Exhaustive with no `default`, so a wait added to `FeedWait` has to say what it is called
-    /// rather than inheriting a sentence written for another one. `nil` for the two waits read off
-    /// the rows: neither has reached this surface yet, and each arrives with its own ticket.
+    /// rather than inheriting a sentence written for another one. `nil` for the one wait read off
+    /// the rows that has not reached this surface yet: a lit call takes the ion on its own line
+    /// instead of a plinth.
     init?(_ wait: FeedWait) {
         switch wait {
         case .starting: self = .starting
-        case .thinking, .call: return nil
+        case .thinking: self = .thinking
+        case .call: return nil
         }
     }
 
@@ -74,6 +87,7 @@ enum FeedWaitWords: Equatable {
     init(_ wait: SessionWaitSettled.Wait) {
         switch wait {
         case .starting: self = .starting
+        case .thinking: self = .thinking
         }
     }
 }

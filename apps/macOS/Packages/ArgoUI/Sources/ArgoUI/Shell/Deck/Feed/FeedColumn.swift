@@ -8,6 +8,9 @@ import SwiftUI
 struct FeedColumn: View {
     /// The wait ARGO ITSELF is holding, from above the deck — see `EnvironmentValues.argoFeedWait`.
     @Environment(\.argoFeedWait) private var argoHeldWait
+    /// Whether the Turn in flight is one Argo itself submitted — see
+    /// `EnvironmentValues.argoTurnIsDirect`.
+    @Environment(\.argoTurnIsDirect) private var argoTurnIsDirect
 
     /// Which reading the column is drawing — see `FeedReading`. Passed on down; nothing here reads
     /// it.
@@ -65,8 +68,14 @@ struct FeedColumn: View {
     /// has to come from somewhere, because it draws no row for this view to read it off. The rest
     /// are read against the rows this column actually draws: the rail may have scoped them onto a
     /// Subagent, and a wait is a fact about the reading on screen.
+    ///
+    /// The ROWS are read at all only where `argoTurnIsDirect` says the Turn in flight is one Argo
+    /// itself submitted — `.mark(.working)` is drawn at exactly `SessionStatus.running`'s own
+    /// confidence (`FeedWorking`), which is DERIVED for every reading but one, and the plinth may
+    /// not be. Gated here rather than on `.thinking`'s own words, so a Session observed from
+    /// outside never reaches this surface however its rows are posed.
     private var waiting: FeedWait? {
-        argoHeldWait ?? FeedWait.showing(in: feed)
+        argoHeldWait ?? (argoTurnIsDirect ? FeedWait.showing(in: feed) : nil)
     }
 
     /// What the reading owes its own foot — see `FeedBottomEdge`. Assembled here because this is
