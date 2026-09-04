@@ -173,7 +173,11 @@ not already name it, #1072).
 Each row exists to make a variant answer something:
 
 - **3 running Agents, PR open** — the ordinary case.
-- **12 running** — question 5, the ceiling. A row cannot draw 12 marks.
+- **12 running** — question 5, the ceiling. A row cannot draw 12 marks. **Five dots, then
+  `+7`**: five is where a stack stops being countable at a glance, and the overflow is exact
+  where a longer stack would be texture. The label is taken out of the flow and centred on the
+  column, so it costs the title not one point of its width — every title on the roster stays on
+  one x, measured.
 - **Delegated nothing** vs **delegated 5, all landed** — question 4. Two different facts, and
   one of them may want no mark at all.
 - **An external Session** — question 6. The count is DERIVED and Argo cannot resolve it

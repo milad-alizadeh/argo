@@ -185,7 +185,7 @@
      is the line it is a state for, and a dot floating above it reads as a bullet. Everything
      under it — the Subagent dots — then hangs from that one x and y. */
   .marker { width: var(--dot); flex: none; display: flex; flex-direction: column;
-            align-items: center; gap: 3px; padding-top: var(--dot-inset); }
+            align-items: center; gap: 3px; padding-top: var(--dot-inset); position: relative; }
   .pip { width: 4px; height: 4px; border-radius: 1px; background: var(--running); flex: none; }
   .pip.more { width: 5px; height: 4px; border-radius: 1px; background: var(--text-off);
               box-shadow: 0 0 0 0; }
@@ -193,6 +193,13 @@
   /* A landed delegation is a DASH, never an outlined pip: an outline here is already spoken for
      by the unknown state, and two outlines under one dot read as two dots. */
   .pip.spent { width: 5px; height: 1px; border-radius: 0; background: var(--text-off); }
+  /* Past five dots the column says how many it is NOT drawing. Taken out of the flow and
+     centred on the column, so the overflow costs the title not one point of its width — the
+     count is the rarest thing on the row and the title is the widest. */
+  .pipmore {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 2px; font: 9px var(--mono); color: var(--text-3); white-space: nowrap;
+  }
 
   /* B / C / D — a labelled figure. Never a bare number: `3` beside a title is a number
      nobody can name, which is the trap AgentMeter.swift already names. */
@@ -643,12 +650,7 @@ const roster = {
      activity, so the clock at the trailing edge is untouched.
      GIVES UP: the exact figure above 3, and some of line 2's width for the activity. */
   A: s => {
-    const pips = s.agents == null
-      ? `<span class="pip unknown" title="Argo cannot say how many run here"></span>`
-      : s.agents === 0
-        ? (s.spent ? `<span class="pip spent" title="${s.spent} delegations, all landed"></span>` : '')
-        : Array.from({length: Math.min(s.agents, 3)}, () => `<span class="pip"></span>`).join('')
-          + (s.agents > 3 ? `<span class="pip more" title="${s.agents} running"></span>` : '');
+    const pips = subDots(s);
     return `
     <div class="flex g8" style="align-items:flex-start">
       <span class="marker">
@@ -1040,13 +1042,21 @@ const planStep = s => STEPS[s.id] ?? 'No step in progress';
 
 /* The Subagents, as the smaller dots under the state dot. Same column, half the size: what runs
    UNDER this Session is drawn under its state, and nothing else on the row claims that column. */
+const DOT_CEILING = 5;
+
 function subDots(s) {
   if (s.agents == null)
     return `<span class="pip unknown" title="Argo cannot say how many run here"></span>`;
   if (!s.agents)
     return s.spent ? `<span class="pip spent" title="${s.spent} delegations, all landed"></span>` : '';
-  return Array.from({length: Math.min(s.agents, 3)}, () => `<span class="pip"></span>`).join('')
-       + (s.agents > 3 ? `<span class="pip more" title="${s.agents} running"></span>` : '');
+  /* Five dots, and then the column says how many more rather than drawing them. Five is where a
+     stack stops being countable at a glance, and `+7` is exact where a longer stack is texture —
+     so the row never asks the reader to count past five and never rounds the truth off either. */
+  const drawn = Math.min(s.agents, DOT_CEILING);
+  return Array.from({length: drawn}, () => `<span class="pip"></span>`).join('')
+       + (s.agents > DOT_CEILING
+            ? `<span class="pipmore" title="${s.agents} running">+${s.agents - DOT_CEILING}</span>`
+            : '');
 }
 
 /* ============ WHAT EACH VARIANT ANSWERS ============ */
@@ -1059,7 +1069,7 @@ const ANSWERS = {
     'The activity line': 'Kept. It shares line 2 with the PR badge and gives up its tail.',
     'Project total': 'Sidebar foot: <em>22 across 9 sessions</em>.',
     '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one dash.',
-    'Above the ceiling': '3 pips, then a wider grey bar. The exact figure is in the rail, never on the row.',
+    'Above the ceiling': 'Five pips, then <em>+7</em> under the column. Exact, and it costs the title no width.',
     'Cannot tell': 'One hollow round pip. No count, because there is none to give.',
     'The Fold': 'Pips summed across the runs it hides, same ceiling.',
     'Motion': 'None. Toggle it on to see why.',
@@ -1140,7 +1150,7 @@ const ANSWERS = {
     'Subagents': 'Smaller dots under the state dot, in the leading column. Never on line 3.',
     'Project total': 'Sidebar foot.',
     '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one dash.',
-    'Above the ceiling': '3 dots then a bar, as in A. The figure stays in the rail.',
+    'Above the ceiling': 'Five dots, then <em>+7</em> under the column — exact, and out of the flow so no title moves.',
     'Cannot tell': 'One hollow round dot, in the same column.',
     'The Fold': 'No plan — a fold stands for several runs and their lists do not add up.',
     'Motion': 'None. The bar moves when the list does, which is rarely.',
