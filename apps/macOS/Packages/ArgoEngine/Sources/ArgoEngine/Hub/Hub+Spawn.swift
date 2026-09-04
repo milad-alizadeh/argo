@@ -177,6 +177,11 @@ public extension Hub {
     private func startupWaitRanOut(_ claim: SessionOwnership.ClaimID) {
         guard let spawn = spawns[claim], spawn.startup == AgentSpawn.Startup() else { return }
         guard terminals.isRunning(claim) else {
+            // Signalled before the row is retired, because this death is INFERRED rather than
+            // watched: `isRunning` reads the child's own descriptor, which can go quiet under a
+            // process that is still alive, and one dropped from the table unasked would outlive
+            // the window that started it.
+            terminals.terminate(claim)
             // No code: nothing reported one, and absent is not zero.
             processEnded(claim, exitCode: nil)
             return

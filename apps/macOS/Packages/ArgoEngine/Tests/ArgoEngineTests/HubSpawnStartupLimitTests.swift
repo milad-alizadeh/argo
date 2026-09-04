@@ -75,6 +75,38 @@ struct HubSpawnStartupLimitTests {
         #expect(fixture.hub.sessions.map(\.startedQuietlyAtMs) == [nil])
     }
 
+    /// The limit says how long the silence has run, never that it ended — so #1048's rule survives
+    /// it. A Turn typed at a process Argo has still never heard a byte from may not report
+    /// `running` at DIRECT: that tier is owed to a PTY that has spoken, and this one has not.
+    @Test
+    func `a Turn typed after the limit is not reported running`() async throws {
+        let fixture = try SpawnFixture(startupPatience: .immediate)
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        await fixture.hub.awaitStartupWait(claim)
+
+        try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
+
+        #expect(fixture.hub.session(id: claim.value)?.statusReading
+            == SessionStatusReading(tier: .derived, status: .idle))
+    }
+
+    /// And the rule lifts the moment the CLI does speak, which is what `HubSubmittedTurnTests`
+    /// asserts throughout: the bytes are what the DIRECT tier was ever owed to.
+    @Test
+    func `a Turn typed after the CLI finally speaks reads running again`() async throws {
+        let fixture = try SpawnFixture(startupPatience: .immediate)
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        await fixture.hub.awaitStartupWait(claim)
+        try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
+
+        try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
+
+        #expect(fixture.hub.session(id: claim.value)?.statusReading
+            == SessionStatusReading(tier: .direct, status: .running))
+    }
+
     /// The default patience is long enough that the clock is never the thing that decides for a CLI
     /// coming up normally — so a spawn under it still reads `starting`.
     @Test

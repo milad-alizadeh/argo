@@ -79,6 +79,11 @@ package enum FeedProjection {
     /// The row that takes the place of the one above once the wait runs out (#1245). Never beside
     /// it: the engine publishes the two on either side of one limit, so the feed can no more draw
     /// both than the Session can be in both states.
+    ///
+    /// Never beside the WORKING row either, and that is the engine's doing rather than this
+    /// function's: a Turn typed at a PTY Argo has never heard is not reported `running`
+    /// (`HubSession.statusReading`), so a reading cannot arrive here claiming both that the agent
+    /// is thinking and that it has printed nothing.
     private static func wentQuiet(_ startedQuietly: Bool) -> [FeedRow.Content] {
         startedQuietly ? [.mark(.startedQuietly)] : []
     }

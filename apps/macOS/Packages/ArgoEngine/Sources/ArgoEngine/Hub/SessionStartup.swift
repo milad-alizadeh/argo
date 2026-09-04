@@ -20,6 +20,13 @@ enum SessionStartup: Sendable, Equatable {
 }
 
 extension SessionStartup {
+    /// Whether Argo has heard nothing at all off this row's PTY. True on BOTH sides of the limit:
+    /// the limit says how long the silence has run, never that it ended. What #1048's rule is read
+    /// off — a CLI Argo has not heard cannot be shown to have heard a Turn either.
+    var heardNothing: Bool {
+        self != .notWaiting
+    }
+
     /// When the wait ran out on a process that was still up, and `nil` for every other state.
     var quietAtMs: Int? {
         guard case let .quiet(atMs) = self else { return nil }
