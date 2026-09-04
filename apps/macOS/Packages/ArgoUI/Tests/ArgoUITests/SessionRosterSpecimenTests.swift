@@ -109,7 +109,7 @@ struct SessionRosterSpecimenTests {
         #expect(rows.contains { $0.isReadOnly && $0.activity != nil && $0.clock != nil })
         // A row with nothing on its second line but an age is the shortest thing the roster draws,
         // and ghosting has to reach it.
-        #expect(rows.contains { $0.isReadOnly && $0.leadingFact == nil && $0.clock != nil })
+        #expect(rows.contains { $0.isReadOnly && $0.secondaryFact == nil && $0.clock != nil })
         // Including the loudest ink the roster has: a live dot on a Session nobody can steer.
         #expect(rows.contains { $0.isReadOnly && $0.state == .running })
     }

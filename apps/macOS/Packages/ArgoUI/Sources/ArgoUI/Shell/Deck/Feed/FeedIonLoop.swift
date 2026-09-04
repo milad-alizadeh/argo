@@ -1,8 +1,10 @@
 import ArgoDesign
 import SwiftUI
 
-/// The one loop, driven ONE PASS AT A TIME, and the rung the wait's age has cooled it to. Both live
-/// surfaces run off this: the thread across the measure, and the wash over a call in flight.
+/// The one loop, driven ONE PASS AT A TIME, and the rung the wait's age has cooled it to. Every
+/// live surface runs off this: the thread across the measure, the wash over a call in flight, and
+/// the roster dot's pulse (#1291), which is in the sidebar rather than the feed — the loop belongs
+/// to `ArgoMotion.working`, not to the room that first drew it.
 ///
 /// A pass at a time is what lets the period change without the pass on screen restarting: the rung
 /// is re-read at each boundary, so a wait that turns ten seconds mid-pass finishes the pass it is

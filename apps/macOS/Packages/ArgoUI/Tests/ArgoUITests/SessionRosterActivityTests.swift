@@ -16,7 +16,7 @@ struct SessionRosterActivityTests {
         // The verb comes off `FeedCall.Kind.verb` and the subject off the feed's own reading:
         // one table of words, read by both surfaces.
         #expect(row.activity == "Ran bun run quality")
-        #expect(row.leadingFact == "Ran bun run quality")
+        #expect(row.secondaryFact == "Ran bun run quality")
     }
 
     @Test(arguments: [
@@ -57,7 +57,7 @@ struct SessionRosterActivityTests {
         ).first)
 
         #expect(row.activity == nil)
-        #expect(row.leadingFact == "/implement")
+        #expect(row.secondaryFact == "/implement")
     }
 
     @Test
@@ -67,7 +67,7 @@ struct SessionRosterActivityTests {
         ]).first)
 
         #expect(row.activity == nil)
-        #expect(row.leadingFact == "/implement")
+        #expect(row.secondaryFact == "/implement")
     }
 
     @Test
@@ -87,7 +87,7 @@ struct SessionRosterActivityTests {
         // First match wins: the ticket is the fact this row is missing while it is idle, and
         // what it is doing right now outranks it while it runs.
         #expect(row.toldApart == "#1199")
-        #expect(row.leadingFact == "Ran bun run quality")
+        #expect(row.secondaryFact == "Ran bun run quality")
     }
 
     @Test
@@ -134,7 +134,7 @@ struct SessionRosterActivityTests {
         ]).first)
 
         #expect(row.activity == nil)
-        #expect(row.leadingFact == "/implement")
+        #expect(row.secondaryFact == "/implement")
     }
 
     @Test

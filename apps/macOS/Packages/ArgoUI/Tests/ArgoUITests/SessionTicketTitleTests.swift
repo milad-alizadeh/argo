@@ -18,8 +18,8 @@ struct SessionTicketTitleTests {
 
         let row = try #require(SessionRosterProjection.rows(from: [linked]).first)
 
-        #expect(row.title == "#741 — Anchor the feed")
-        #expect(SessionHeaderProjection.header(from: linked).title == "#741 — Anchor the feed")
+        #expect(row.title == "#741: Anchor the feed")
+        #expect(SessionHeaderProjection.header(from: linked).title == "#741: Anchor the feed")
     }
 
     @Test
@@ -63,7 +63,7 @@ struct SessionTicketTitleTests {
 
         #expect(row.title == "Tonight's run")
         // And Reset lands on the ticket, which is where the Session would be without the rename.
-        #expect(row.rename?.derived == "#741 — Anchor the feed")
+        #expect(row.rename?.derived == "#741: Anchor the feed")
     }
 
     @Test
@@ -105,7 +105,7 @@ struct SessionTicketTitleTests {
         // Every row reads differently, which is the judgement the render is for (#1072).
         #expect(Set(rows.map(\.title)).count == rows.count)
         #expect(rows.contains { $0.toldApart == "#741" })
-        #expect(rows.contains { $0.title.hasPrefix("#736 — ") })
+        #expect(rows.contains { $0.title.hasPrefix("#736: ") })
     }
 
     private static func session(

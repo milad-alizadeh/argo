@@ -1,3 +1,5 @@
+import Foundation
+
 /// How a linked Ticket is worded wherever it is read as one thing — the house form, in the one
 /// place every surface asks for it.
 ///
@@ -5,10 +7,15 @@
 /// the deck header's (#745). A second composition anywhere would let them disagree about a fact
 /// they are all reading off the same link.
 enum IssueReading {
-    /// `#476 — Anchor the feed on its newest line`, and `#510` alone where the provider named
+    /// `#476: Anchor the feed on its newest line`, and `#510` alone where the provider named
     /// nothing.
+    ///
+    /// A colon and not the em dash this form carried until #1291: these words are a title wherever
+    /// `SessionTitle` resolves to them, and no title the cockpit draws carries an em dash. Spelling
+    /// the house form itself is what keeps the panel's Issue fact and the row's title one reading
+    /// rather than two — the guarantee this type exists for.
     static func words(number: Int, title: String?) -> String {
-        [mark(number), title].compactMap(\.self).joined(separator: " — ")
+        [mark(number), title].compactMap(\.self).joined(separator: ": ")
     }
 
     /// `#1261` — the number on its own, as the provider writes it: a `#` and the digits, and never
@@ -29,9 +36,14 @@ enum IssueReading {
     ///
     /// A word and not a substring: the `852` inside `…/issues/852` is not a number the row is
     /// saying to anyone, and a row reading exactly that is what #1072 was reported against.
+    ///
+    /// The word is read without the punctuation it sits between, because the separator `words`
+    /// joins with rides on the number's own word — `#741:` since #1291, and a title carrying
+    /// `(#741)` says the number just as plainly. A path is untouched by that: `…/issues/852`
+    /// ends on a digit, so nothing is trimmed off its tail and it still names no number.
     static func names(number: Int, in title: String) -> Bool {
-        let spellings = Set([mark(number), "\(number)"])
-        let words = title.split(whereSeparator: \.isWhitespace)
-        return words.contains { spellings.contains(String($0)) }
+        title
+            .split(whereSeparator: \.isWhitespace)
+            .contains { $0.trimmingCharacters(in: .punctuationCharacters) == "\(number)" }
     }
 }

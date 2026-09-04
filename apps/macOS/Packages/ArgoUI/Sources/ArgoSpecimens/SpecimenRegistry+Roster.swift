@@ -29,6 +29,13 @@ extension SpecimenRegistry {
         // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
+        // The second line in every shape it comes in (#1291), and the running dot beating on
+        // three of the four rows. The pass itself only shows in motion.
+        SpecimenEntry("rosterSecondLine") { RosterSecondLineSpecimen() },
+        // The same rows with movement off. A loop has no shorter answer, so the dot holds its full
+        // running tint and stops — the judgement is whether those rows still read as working with
+        // nothing moving.
+        SpecimenEntry("rosterSecondLineStill") { RosterSecondLineSpecimen(isStill: true) },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },

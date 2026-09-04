@@ -11,6 +11,11 @@ package struct SessionRow: View {
     private static let focusAttempts = 20
     private static let focusRetry = Duration.milliseconds(20)
 
+    /// What the marker column costs the title, and so what the second line owes to start under the
+    /// title's first letter rather than under the dot (#1291). Derived from the two tokens
+    /// `primaryLine` is built out of, so a wider marker or a looser gap moves both lines together.
+    private static let secondaryLineInset = ArgoIconSize.statusDot + ArgoSpacing.snug
+
     @Environment(\.argo) private var argo
 
     let row: SessionRosterProjection.Row
@@ -158,31 +163,27 @@ package struct SessionRow: View {
         isRenaming.wrappedValue = false
     }
 
-    /// The line's one fact at the leading edge, and the clock at one of the two ends — read off
-    /// one condition (#1199): an activity line is the width of a sentence and pushes the clock
-    /// right, so the two facts sit at the two ends of the row; the shorter fact the slot otherwise
-    /// carries keeps the clock beside it (`/implement  just now`).
+    /// The duration first and the fact after it, on one x with the title above — one arrangement
+    /// for every row (#1291, superseding the two-ends rule #1199 landed). The clock at the far end
+    /// made the line read as a third column rather than as the title's own second line, and which
+    /// end it sat at depended on what the other slot happened to be holding.
     ///
     /// Absent entirely when neither is there — an empty `Text` would leave a gap of the font's
     /// height.
     @ViewBuilder private var secondaryLine: some View {
-        if row.leadingFact != nil || row.clock != nil {
+        if row.secondaryFact != nil || row.clock != nil {
             HStack(spacing: ArgoSpacing.snug) {
-                leadingFactLabel
-                if !row.drawsActivity {
-                    clockLabel
-                }
-                Spacer(minLength: ArgoSpacing.tight)
-                if row.drawsActivity {
-                    clockLabel
-                }
+                clockLabel
+                secondaryFactLabel
+                Spacer(minLength: 0)
             }
+            .padding(.leading, Self.secondaryLineInset)
             .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
-    /// The one age slot. It never gives up a character: a clock cut to a width says a different
-    /// duration, where the fact beside it only loses its tail.
+    /// The one age slot, at the head of the line. It never gives up a character: a clock cut to a
+    /// width says a different duration, where the fact beside it only loses its tail.
     @ViewBuilder private var clockLabel: some View {
         if let clock = row.clock {
             RosterTurnClock(clock: clock)
@@ -217,16 +218,18 @@ package struct SessionRow: View {
 /// The row's own labels, beside the body rather than in it: the body is at the house ceiling for
 /// a type, and what the two lines are made of is one subject of its own.
 private extension SessionRow {
-    /// The one fact the line leads with, on one line and cut at the tail. An activity line is a
-    /// sentence and gives its tail up to the clock; the shorter fact the slot otherwise carries
-    /// outranks the clock, because there is room for both.
-    @ViewBuilder private var leadingFactLabel: some View {
-        if let fact = row.leadingFact {
+    /// The fact after the clock, on one line and cut at the tail. It is the slot that gives, at
+    /// every width: the clock's own reading may not lose a character, and a fact that loses its
+    /// tail still says what it was about.
+    ///
+    /// The same `rowMeta` at the same weight as the clock beside it — one type treatment across
+    /// the line, so ink is the only difference it carries (#1291).
+    @ViewBuilder private var secondaryFactLabel: some View {
+        if let fact = row.secondaryFact {
             Text(fact)
                 .argoText(ArgoTypography.rowMeta)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .layoutPriority(row.drawsActivity ? 0 : 1)
         }
     }
 
