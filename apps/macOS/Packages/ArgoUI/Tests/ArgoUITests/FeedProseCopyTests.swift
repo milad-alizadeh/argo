@@ -27,7 +27,7 @@ struct FeedProseCopyTests {
             .message("Found it."),
             .call(RowKindFixture.answeredCall),
             .message(Self.fence),
-            .mark(.turnEnded(.endTurn)),
+            .mark(.turnEnded),
         )
 
         #expect(Self.offers(rows) == [4: .init(
@@ -43,7 +43,7 @@ struct FeedProseCopyTests {
         let rows = Self.feed(
             .prompt(text: "Fix the seam", shots: []),
             .thought("Weighing it."),
-            .mark(.turnEnded(.endTurn)),
+            .mark(.turnEnded),
         )
 
         #expect(Self.offers(rows).isEmpty)

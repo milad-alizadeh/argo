@@ -64,7 +64,7 @@ struct FeedRowActivationTests {
     /// feed's Copy turn are both cut by it.
     @Test
     func `only the two marks that finish a Turn end one`() {
-        let marks: [FeedMark] = [.turnEnded(.endTurn), .interrupted, .compacted, .working]
+        let marks: [FeedMark] = [.turnEnded, .interrupted, .compacted, .working]
 
         #expect(marks.map { FeedRow.Content.mark($0).kind.endsTurn } == [true, true, false, false])
     }

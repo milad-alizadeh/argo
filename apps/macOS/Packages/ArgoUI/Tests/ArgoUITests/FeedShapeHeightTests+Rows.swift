@@ -39,9 +39,8 @@ extension FeedShapeHeightTests {
     ]
 
     private static let marks: [Row] = [
-        Row(name: "mark, a rule with no words", content: .mark(.turnEnded(.endTurn))),
+        Row(name: "mark, a rule with no words", content: .mark(.turnEnded)),
         Row(name: "mark, compacted", content: .mark(.compacted)),
-        Row(name: "mark, a reason", content: .mark(.turnEnded(.maxTokens))),
         Row(name: "mark, handed off", content: .mark(.handedOff(
             FeedHandoff(sessionID: "other", title: "The Session it went to"),
         ))),

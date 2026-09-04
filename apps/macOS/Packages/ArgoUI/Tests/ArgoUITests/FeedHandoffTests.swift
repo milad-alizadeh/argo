@@ -7,14 +7,14 @@ import Testing
 /// memory of a handoff.
 @Suite("Feed handoff")
 struct FeedHandoffTests {
-    /// The last row of all, under the spend.
+    /// The last row of all, under the record's own last row.
     @Test
     func `a handed-off reading ends with the link to the Session that took the work`() throws {
         let rows = FeedProjection.rows(from: Self.transcript, handedOff: Self.handoff)
 
         let last = try #require(rows.last)
         #expect(last.content == .mark(.handedOff(Self.handoff)))
-        #expect(rows.dropLast().last?.content == .mark(.spent(Self.spend)))
+        #expect(rows.dropLast().last?.content == .mark(.turnEnded))
     }
 
     /// Named in the roster's own words rather than in a sentence written here.
@@ -24,12 +24,12 @@ struct FeedHandoffTests {
         #expect(FeedMark.handedOff(Self.handoff).handoff == Self.handoff)
     }
 
-    /// The other three marks lead nowhere and must not become pressable.
+    /// Every other mark leads nowhere and must not become pressable.
     @Test
     func `every other mark leads nowhere`() {
         #expect(FeedMark.compacted.handoff == nil)
-        #expect(FeedMark.turnEnded(.endTurn).handoff == nil)
-        #expect(FeedMark.spent(Self.spend).handoff == nil)
+        #expect(FeedMark.turnEnded.handoff == nil)
+        #expect(FeedMark.interrupted.handoff == nil)
     }
 
     /// The row is not an empty slot at the foot of every reading in the app.
@@ -37,7 +37,7 @@ struct FeedHandoffTests {
     func `a Session that handed nothing over ends where its record does`() {
         let rows = FeedProjection.rows(from: Self.transcript)
 
-        #expect(rows.last?.content == .mark(.spent(Self.spend)))
+        #expect(rows.last?.content == .mark(.turnEnded))
         #expect(!rows.contains { $0.content.isHandoff })
     }
 
@@ -74,8 +74,9 @@ struct FeedHandoffTests {
         cacheCreationTokens: 0,
     )
 
-    /// A reading with something in it and a spend under it, so the link's PLACE is asserted
-    /// against the row it has to sit below rather than against an empty list.
+    /// A reading with something in it, so the link's PLACE is asserted against the row it has to
+    /// sit below rather than against an empty list. The spend is reported and drawn nowhere, which
+    /// is the point of it being here (#1248).
     private static let transcript: [TranscriptEvent] = [
         .prompt(text: "Take this on", images: [], atMs: 1000),
         .message(markdown: "On it."),
