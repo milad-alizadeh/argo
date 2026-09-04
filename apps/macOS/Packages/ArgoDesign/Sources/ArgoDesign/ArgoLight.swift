@@ -61,24 +61,40 @@ public enum ArgoLight {
     /// it, and a control lit as hard as its subject competes with it.
     public static let orbDim = 0.74
 
+    /// How much of a wall's own light survives at its foot, where everything standing around it
+    /// blocks the sky and the fill both: a wall takes its full share of the light near the roof
+    /// and keeps only this fraction at the ground, which is what a reader calls a contact shadow.
+    /// A scalar like every other term here, so the gradient it draws never turns a wall's hue —
+    /// only how dark the same colour gets nearer the floor.
+    public static let contactFoot = 0.44
+
+    /// The share of the tallest file's own height a file has to clear before it casts anything —
+    /// short enough not to bother, in the same units `AtlasElevation.ceiling(of:)` scales heights
+    /// in. Below it a shadow would be a smudge on the plate with nothing worth casting one.
+    public static let shadowFloorShare = 4.0 / 150
+
+    /// The share at which a shadow reaches its full strength, past `shadowFloorShare`. The span
+    /// between the two is where the shadow ramps from nothing to `shadowDepth`.
+    public static let shadowFullShare = 38.0 / 150
+
+    /// How far a shadow is pushed across the plan, as a multiple of the caster's own height. Real
+    /// sunlight at this pitch would throw a shadow longer than the plate it lands on and read as
+    /// somebody else's, so the throw is compressed — the same compression for every box.
+    public static let shadowSlope = 0.40
+
+    /// What a fully-shadowed patch of plate is left at, at full strength — the shadow's own
+    /// `contactFoot`. Never zero: a shadow that reached black would be a second ground colour the
+    /// legend does not name.
+    public static let shadowDepth = 0.45
+
     /// Every lamp, for the contract sheet.
     public static let all: [(name: String, lamp: Lamp)] = [
         ("key", key), ("fill", fill), ("ambient", ambient),
     ]
 
-    /// The two scalars, which are not lamps and are drawn as what they do to a pigment.
+    /// The scalars that are not lamps, and are drawn as what they do to a pigment.
     public static let shades: [(name: String, value: Double)] = [
         ("planShade", planShade), ("orbDim", orbDim),
-    ]
-
-    /// Roles nothing draws yet, and what each is waiting on. (See `ArgoMotion.unwired` for why an
-    /// unwired role stays and why it says so.)
-    ///
-    /// The map draws FLAT until the light model lands, because nothing may be lit at the cost of
-    /// its band (#1147).
-    public static let unwired: [String: String] = [
-        "key": "#1151 — the light model, once the volumes of #1150 have faces to light",
-        "fill": "#1151 — the same",
-        "ambient": "#1151 — the same",
+        ("contactFoot", contactFoot), ("shadowDepth", shadowDepth),
     ]
 }

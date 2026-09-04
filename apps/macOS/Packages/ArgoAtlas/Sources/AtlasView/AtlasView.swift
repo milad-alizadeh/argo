@@ -9,8 +9,8 @@ import SwiftUI
 /// ONE camera draws both readings. `relief` runs 1 to 0 — at 1 the city, at 0 the treemap — and
 /// there is no second view here, only that parameter.
 ///
-/// Nothing here is lit: nothing may be lit at the cost of its band, which `AtlasVolume.metal`
-/// states in full. The light model arrives at #1151.
+/// Lit by one warm key and one cool fill, never at the cost of a band: `AtlasVolume.metal` states
+/// the rule in full, and `AtlasLighting` is what answers it (#1151).
 ///
 /// The rectangles are Metal and the words are SwiftUI, which is the split every part of this view
 /// follows: the GPU draws the city, and the one thing a GPU has no cheap answer for — a name that

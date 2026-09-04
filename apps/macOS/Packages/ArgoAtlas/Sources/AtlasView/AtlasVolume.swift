@@ -17,14 +17,25 @@ struct AtlasVolume {
     /// the two AT THE SAME height, which is what makes it a flat face rather than a slab: its
     /// walls come out degenerate and rasterise nothing.
     var heights: SIMD2<Float>
+    /// A baked-in darkening, spent on top of the light model rather than instead of it (#1151). 1
+    /// for an ordinary face; below 1 for a cast shadow's decal, where it is the one thing that
+    /// tells the decal from the ground it sits on. Placed HERE, in the gap `AtlasVolumeTests`
+    /// already names between `heights` and `pigment` — a scalar put after `pigment` instead would
+    /// leave Metal rounding the struct up somewhere Swift's `MemoryLayout` does not follow it.
+    var shade: Float = 1
     /// The pigment as it will be drawn. Whatever a face is painted in is already decided by the
     /// time it gets here.
     var pigment: SIMD3<Float>
 
-    init(_ rect: CGRect, foot: CGFloat = 0, roof: CGFloat = 0, pigment: ArgoColor) {
+    /// No caller ever stands a box off the ground: a plate's foot is its own roof, and a file's
+    /// foot is the plate under it — 0, always. `foot` is not a parameter for that reason, not
+    /// because the shader could not use one: `AtlasVolume.metal`'s wall still reads it as its own
+    /// field, ready for the caller that first needs a box that does not start at the ground.
+    init(_ rect: CGRect, roof: CGFloat = 0, shade: CGFloat = 1, pigment: ArgoColor) {
         self.origin = SIMD2<Float>(Float(rect.minX), Float(rect.minY))
         self.size = SIMD2<Float>(Float(rect.width), Float(rect.height))
-        self.heights = SIMD2<Float>(Float(foot), Float(roof))
+        self.heights = SIMD2<Float>(0, Float(roof))
+        self.shade = Float(shade)
         self.pigment = pigment.simd
     }
 }

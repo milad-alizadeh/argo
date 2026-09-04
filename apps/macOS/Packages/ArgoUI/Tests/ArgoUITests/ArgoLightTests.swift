@@ -76,12 +76,25 @@ struct ArgoLightTests {
         #expect(lit.blue <= 1)
     }
 
-    /// An `unwired` entry naming no lamp is deleted, not left to excuse a future one — the same
-    /// guard `VisualContractCoverageTests` runs over the other derived families.
+    /// A wall keeps some of its light at the foot, never all of it and never none — never all, or
+    /// there is no gradient to read as contact; never none, or the foot is a second ground colour.
+    /// And a shadow answers the same question about a plate: never black, or it is a colour the
+    /// legend does not name.
     @Test
-    func `every unwired note names a lamp that exists`() {
-        for name in ArgoLight.unwired.keys {
-            #expect(ArgoLight.all.map(\.name).contains(name))
-        }
+    func `the foot and the shadow both dim, neither to black`() {
+        #expect(ArgoLight.contactFoot > 0)
+        #expect(ArgoLight.contactFoot < 1)
+        #expect(ArgoLight.shadowDepth > 0)
+        #expect(ArgoLight.shadowDepth < 1)
+    }
+
+    /// The shadow ramps up over a real span, and reaches full strength above where it starts —
+    /// a floor equal to or past its own ceiling casts nothing on the short end and never finishes
+    /// ramping on the long one.
+    @Test
+    func `the shadow's span is a real span`() {
+        #expect(ArgoLight.shadowFloorShare > 0)
+        #expect(ArgoLight.shadowFullShare > ArgoLight.shadowFloorShare)
+        #expect(ArgoLight.shadowSlope > 0)
     }
 }
