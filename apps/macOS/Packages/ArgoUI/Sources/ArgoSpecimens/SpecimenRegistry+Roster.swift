@@ -29,8 +29,8 @@ extension SpecimenRegistry {
         // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
-        // The pass itself only shows in motion; the halo's reach and its glow are what a still
-        // catches (#1291).
+        // The travel only shows in motion; a still catches the light at one point along it, and
+        // catches four rows at four different points (#1291).
         SpecimenEntry("rosterSecondLine") { RosterSecondLineSpecimen() },
         SpecimenEntry("rosterSecondLineStill") { RosterSecondLineSpecimen(isStill: true) },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
