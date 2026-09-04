@@ -26,7 +26,12 @@ struct VisualContractLegibilityTests {
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let base = appearance.palette.surface.base
-        let inks = (appearance.palette.state.all + appearance.palette.diff.all).map(\.color)
+        // The delivery pair is in here for the reason the diff inks are: `⑂ #1291` is a word on a
+        // line, not a dot, and it was borrowed from the code host rather than picked for this
+        // ground.
+        let named = appearance.palette.state.all + appearance.palette.diff.all
+            + appearance.palette.delivery.all
+        let inks = named.map(\.color)
         for ink in inks + [appearance.palette.interaction.accent] {
             #expect(ink.contrastRatio(on: base) >= VisualContractFixture.floor)
         }
@@ -43,8 +48,10 @@ struct VisualContractLegibilityTests {
         let floor = appearance.palette.text.disabled.contrastRatio(on: base)
         // The state inks are the LOUDEST thing a ghosted row takes down — an amber `Needs input`,
         // a red `Stopped`, a live dot — so they are in this loop too.
+        // An observed Session's row is ghosted whole, and the two addresses on its third line go
+        // down with it, so the delivery pair is held to the same floor.
         let ghosted = [appearance.palette.text.primary, appearance.palette.text.tertiary]
-            + appearance.palette.state.all.map(\.color)
+            + (appearance.palette.state.all + appearance.palette.delivery.all).map(\.color)
         for ink in ghosted {
             #expect(ink.opacity(ArgoOpacity.ghosted).contrastRatio(on: base) >= floor)
         }

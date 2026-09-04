@@ -23,6 +23,8 @@ struct ContractSpecimen: View, SpecimenSheet {
                 edges
                 states
                 diff
+                delivery
+                progress
                 series
                 ramps
                 brand
