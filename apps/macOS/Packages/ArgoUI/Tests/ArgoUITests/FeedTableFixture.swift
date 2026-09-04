@@ -120,6 +120,32 @@ import Testing
         coordinator.scroller?.layoutSubtreeIfNeeded()
     }
 
+    /// The same wait, taken to the line the MINIMAP gates on rather than the feed's own.
+    ///
+    /// `settled` above waits for the whole-document pass, which is `geometry.isSettled`. The lane
+    /// reads `readingStamp()`, and that is provisional on `!geometry.isSettled || isMeasuring` —
+    /// two terms, of which `settled` covers one. After a width burst the second is the live one:
+    /// the pass has landed, a re-measure is still running, and a suite that asserted on the first
+    /// term alone is asserting inside a measure the lane is deliberately holding across (#1363).
+    ///
+    /// Bounded and on the stamp itself, never a sleep count: what makes a wait honest is that it
+    /// ends on the condition under test. A suite that instead waits a fixed number of turns passes
+    /// on a loaded machine and fails alone, which is exactly how #1363 read as a product bug.
+    static func settledForReading(
+        _ coordinator: FeedTableCoordinator,
+        layingOut view: NSView?,
+    ) async {
+        await settled(coordinator)
+        for _ in 0 ..< 200 {
+            view?.layoutSubtreeIfNeeded()
+            if coordinator.readingStamp()?.isProvisional == false {
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(2))
+        }
+        Issue.record("the feed never left provisional across 200 turns")
+    }
+
     /// A frame change as AppKit posts it — the seam the deck's ONE frame observer is registered
     /// at, the feed's on the clip view.
     static func postFrameChange(on view: NSView) {
