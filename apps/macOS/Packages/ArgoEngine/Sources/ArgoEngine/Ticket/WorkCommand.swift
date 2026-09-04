@@ -1,9 +1,20 @@
 /// What a Session started on a Ticket opens on — the rule that picks its command (#899), and
 /// the rung it stands on (#941).
 ///
-/// Five rules, FIRST MATCH WINS, and a sixth outcome that is no command at all. A Ticket matching
-/// nothing opens an empty composer, because a wrong `/implement` on a decision Ticket is a Session
-/// that does the wrong work — and that is worse than one waiting to be told what to do.
+/// Seven rules, FIRST MATCH WINS. Rules 1 to 5 read a Ticket that says what it wants; rule 6 is a
+/// named set of REFUSALS that opens an empty composer; rule 7 is the default, and it is
+/// `/implement`.
+///
+/// Rule 7 used to be the refusal, on the reasoning that a wrong `/implement` on a decision Ticket
+/// is a Session that does the wrong work. That reasoning only holds where the labels are
+/// maintained, and in this tracker they are not: most tickets are filed with no labels at all, so
+/// the fall-through written for decision Tickets was in practice the fall-through for MOST
+/// Tickets, and `/implement` — the whole point of pressing Start — almost never fired (#1182).
+///
+/// So the burden moved. A Ticket no longer has to say it is build work; it has to say it is NOT,
+/// and rule 6 is the closed set of ways to say so. The cost of the swap is bounded in the
+/// direction that matters: a Session opened on the wrong `/implement` is one a reader can see and
+/// stop, whereas the empty composer it replaced looked exactly like a Start that did nothing.
 ///
 /// The raw value is the command's own name, so the prompt and the mapping cannot say two things.
 public enum WorkCommand: String, Sendable {
@@ -56,13 +67,17 @@ public enum WorkCommand: String, Sendable {
     /// Why the resolver picked this command, in the reader's words, and `nil` for one no rule ever
     /// picks. Said only beside the command that DID match — `StartSkillMenu` enforces that, because
     /// a rule printed beside a command nobody picked reads as a claim about that command.
+    ///
+    /// `implement`'s reason is worded for BOTH ways it is reached, the build label and the default
+    /// under it (#1182). It used to read "matched by label", which an unlabelled Ticket would have
+    /// made into a straight falsehood printed beside the command it explains.
     public static func why(_ command: WorkCommand) -> String? {
         switch command {
         case .designToCode: "the screen has a design"
         case .grillMe: "labelled wayfinder:grilling"
         case .wayfinder: "labelled wayfinder:map"
         case .prototype: "labelled wayfinder:prototype"
-        case .implement: "matched by label"
+        case .implement: "no label says otherwise"
         // No rule resolves it, so there is never a reason to give beside it.
         case .triage: nil
         }
@@ -82,7 +97,10 @@ public enum WorkCommand: String, Sendable {
         if let asked = asked.first(where: { labels.contains($0.label) }) {
             return asked.command
         }
-        return labels.isDisjoint(with: builds) ? nil : .implement
+        if !labels.isDisjoint(with: builds) {
+            return .implement
+        }
+        return labels.isDisjoint(with: refusals) ? .implement : nil
     }
 
     /// Rule 1: does this Ticket NAME a screen the tree has a design for?
@@ -115,9 +133,25 @@ public enum WorkCommand: String, Sendable {
         ("wayfinder:prototype", .prototype),
     ]
 
-    /// Rule 5's labels, which are a NAMED SET and not a catch-all: a Ticket carrying none of them
-    /// and matching no rule above gets no command, which is the honest empty composer.
+    /// Rule 5's labels: a Ticket that SAYS it is build work. It is checked before rule 6 so that a
+    /// refusal riding along beside a build label loses — `needs-triage` sits on a great many
+    /// Tickets that are plainly bugs, and a Ticket that says `bug` has said what it is.
     private static let builds: Set<String> = [
         "bug", "enhancement", "ready-for-agent", "wayfinder:task",
+    ]
+
+    /// Rule 6: the labels that say this Ticket is NOT build work, and the only way to get no
+    /// command. Each is a different way of saying it — it is a question (`question`), it is not
+    /// settled (`needs-triage`, `needs-info`), it is somebody else's (`ready-for-human`), it is
+    /// reading rather than building (`wayfinder:research`), or it is not going to be actioned at
+    /// all (`wontfix`, `duplicate`, `invalid`).
+    ///
+    /// This set is the one that must stay maintained, and it is the closed one BY DESIGN: a label
+    /// added to the tracker tomorrow reads as build work until it is named here, which fails
+    /// towards the Session a reader can see rather than the empty composer they cannot tell from a
+    /// broken button.
+    private static let refusals: Set<String> = [
+        "question", "needs-triage", "needs-info", "ready-for-human", "wayfinder:research",
+        "wontfix", "duplicate", "invalid",
     ]
 }

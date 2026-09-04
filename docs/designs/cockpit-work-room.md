@@ -706,7 +706,7 @@ shape:
   test #872 applied and the precise test the Mode menu failed.
 
 **The menu names why the default matched**, so the guess is inspectable rather than magic —
-`/implement · matched by label`, `/design-to-code · the screen has a design`. It ends with **Fresh
+`/implement · no label says otherwise`, `/design-to-code · the screen has a design`. It ends with **Fresh
 Session**, which opens the composer with no command in it.
 
 #### The Session carries the ticket, whichever skill runs
@@ -807,8 +807,13 @@ half is beginning the work. It is trailing-aligned below the chips and spells th
 as the toolbar's Start does — the word, then the command after it in `text.tertiary` on
 `machineCaption`, because it **says which command it will send** — `/implement`,
 `/design-to-code`, `/grill-me`, `/prototype`, `/wayfinder`. A press that silently dispatched one of
-five different jobs is a press nobody can aim. A ticket that matches no rule reads `Start` alone
-and opens an empty composer, which is the honest answer rather than a wrong one.
+five different jobs is a press nobody can aim. **Amended #1182: a ticket reads `Start` alone, and
+opens an empty composer, only where its labels SAY it is not build work** — `question`,
+`needs-triage`, `needs-info`, `ready-for-human`, `wayfinder:research`, `wontfix`, `duplicate`,
+`invalid`. Everything else, an unlabelled ticket included, sends `/implement`. The empty composer
+was written as the answer for decision tickets and became the answer for most tickets, because
+most tickets here are filed with no labels at all; a Start that reliably did nothing is not a more
+honest answer than a wrong one, it is an indistinguishable one.
 
 **Its vessel is its own, and it answers the pointer on its own account.** It cannot borrow the
 `.quiet` control's flat `surface.overlay`: that fill is a fixed ink and the card under it is not, so

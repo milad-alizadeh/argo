@@ -26,7 +26,18 @@ struct TicketStartTests {
         Ticket(number: 609, title: "The work room", status: "Todo", closure: .open, labels: [
             TicketLabel(name: "work-room"),
         ]),
-        Ticket(number: 607, title: "The destination", status: "Todo", closure: .open),
+        // Carries a REFUSAL rather than no labels at all: since #1182 those are two different
+        // tickets, and this is the one that opens the empty composer.
+        Ticket(number: 607, title: "The destination", status: "Todo", closure: .open, labels: [
+            TicketLabel(name: "question"),
+        ]),
+        // #1175 as filed — no labels at all, which is how most tickets in this tracker are filed.
+        Ticket(
+            number: 1175,
+            title: "A New Session opens on a remembered Model",
+            status: "Todo",
+            closure: .open,
+        ),
     ]
 
     private func start(_ spawn: Spawn) -> TicketStart {
@@ -56,6 +67,16 @@ struct TicketStartTests {
         await start(spawn).run(on: 609, in: CockpitNavigationModel())
 
         #expect(spawn.asked?.opening == "/design-to-code 609")
+    }
+
+    /// The fault #1182 reports, at the level the reader met it: Start on an unlabelled ticket came
+    /// up with an empty composer and an agent with nothing to do. It sends `/implement` now.
+    @Test func `an unlabelled ticket starts on implement`() async {
+        let spawn = Spawn()
+
+        await start(spawn).run(on: 1175, in: CockpitNavigationModel())
+
+        #expect(spawn.asked?.opening == "/implement 1175")
     }
 
     @Test func `a ticket that asks for no command starts with an empty composer`() async {
@@ -106,7 +127,7 @@ struct TicketStartTests {
 
     /// The press must be aimable, so the command is a value the control can draw before it is
     /// pressed — not something only the act knows.
-    @Test(arguments: [(899, WorkCommand.implement), (609, .designToCode)])
+    @Test(arguments: [(899, WorkCommand.implement), (609, .designToCode), (1175, .implement)])
     func `the command Start will send is readable before it is pressed`(
         ticket: Int, command: WorkCommand,
     ) {
