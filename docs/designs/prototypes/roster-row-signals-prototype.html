@@ -48,6 +48,10 @@
     /* accent + state */
     --accent: #3E9BFF;
     --accent-bright: #6FB6FF;
+    /* The accent, banked. A plan that stopped moving must still read as far as it GOT — grey
+       erases the one thing the bar is for, and a 6-of-6 drawn in the dead ink looks like a plan
+       nobody started. Same hue, dropped to where it cannot be mistaken for live. */
+    --accent-still: #2F5C89;
     --running:   #46D3A8;
     --idle:      #868E96;
     --attention: #E8B24A;
@@ -246,6 +250,49 @@
      drawing it solid red would say the work landed. */
   .track.closed i.on { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
 
+
+  /* ---------- G / H / I — the third line is PROGRESS ---------- */
+  /* The segments turned out to be worth more than the lifecycle they were drawn for. What a
+     roster reader actually wants to know is how far through its own work the Session is, and
+     Argo already holds that: the Plan (`CONTEXT.md` L3), the agent's live to-do list, session
+     scoped and replaced whole. One segment per item, filled to what is done.
+
+     The ink is the ACCENT and not the running teal. The plan is the Session's own progress, not
+     its state, and the row already spends teal on the dot and on a live Turn clock. A third
+     teal thing would make the row one colour. */
+  .plan { display: inline-flex; gap: 2px; flex: none; align-items: center; }
+  .plan i {
+    height: 3px; border-radius: 1px; background: rgba(255,255,255,.13);
+    width: var(--seg, 6px);
+  }
+  .plan i.done  { background: var(--accent); }
+  /* Exactly one item is in progress at a time — the house rule the list is written under. It
+     is the brightest thing on the bar, because it is the only item anybody can act on. */
+  .plan i.doing { background: var(--accent-bright); }
+  /* A Session that is not running is not progressing. Its plan is frozen where it stopped, and
+     drawing it in the live ink would say the work goes on — the untruth #1269 was written for. */
+  .plan.frozen i.done, .plan.frozen i.doing { background: var(--accent-still); }
+
+  /* H's continuous form, for comparison: one bar and a figure instead of countable segments. */
+  .plan.solid { width: 64px; height: 3px; border-radius: 1px;
+                background: rgba(255,255,255,.13); display: inline-block; position: relative; }
+  .plan.solid b { position: absolute; inset: 0 auto 0 0; border-radius: 1px; background: var(--accent); }
+  .plan.solid.frozen b { background: var(--accent-still); }
+  .planfig { font: 10.5px var(--mono); color: var(--text-3); flex: none; }
+
+  /* I draws the plan as the row's own bottom edge rather than as an object on a line. */
+  .row.edge { padding-bottom: 9px; }
+  .edgebar {
+    position: absolute; left: var(--s-base); right: var(--s-base); bottom: 4px; height: 2px;
+    border-radius: 1px; background: rgba(255,255,255,.10); overflow: hidden;
+  }
+  .edgebar b { display: block; height: 100%; background: var(--accent); }
+  .edgebar.frozen b { background: var(--accent-still); }
+
+  /* The pull request on line 3 is a GLYPH and a colour. No number: the title above it already
+     opens with the Ticket number, and a second number on the row is a second ticket. */
+  .prmark { display: inline-flex; align-items: center; flex: none; }
+
   /* D's trailing gutter: one fixed column, one fact, ranked. */
   .gutter { width: 46px; flex: none; display: flex; flex-direction: column;
             align-items: flex-end; gap: 3px; }
@@ -406,55 +453,55 @@ const sessions = [
      (`IssueReading.names(number:in:)`, #1072). */
   { id:'s1', title:'#1269 — The rail reads the Subagents’ own records', state:'running', access:'managed',
     act:'Ran Edit FeedAgentReader.swift', clock:'4m 12s',
-    agents:3, spent:1, pr:{n:1312,state:'open'}, ready:null },
+    plan:{done:3,total:7}, agents:3, spent:1, pr:{n:1312,state:'open'}, ready:null },
 
   /* Q5 — the ceiling. Twelve marks do not fit on a 320pt row in ANY variant. */
   { id:'s2', title:'#1204 — Sweep every stop reason in the corpus', state:'running', access:'managed',
     act:'Ran Read 41 transcripts', clock:'22m 07s',
-    agents:12, spent:4, pr:null, ready:null },
+    plan:{done:5,total:12}, agents:12, spent:4, pr:null, ready:null },
 
   /* Q4a — delegated NOTHING. The honest mark here is no mark at all. */
   { id:'s3', title:'#1289 — Fix the worktree naming guard', state:'running', access:'managed',
     act:'Ran scripts/swift-boundaries.sh', clock:'1m 30s',
-    agents:0, spent:0, pr:{n:1291,state:'merged'}, ready:null },
+    plan:{done:2,total:3}, agents:0, spent:0, pr:{n:1291,state:'merged'}, ready:null },
 
   /* Q4b — delegated five, and all five are home. Different fact from the row above. */
   { id:'s4', title:'#375 — Graphite and Ion Blue across the shell', state:'idle', access:'managed',
     act:null, clock:'18m',
-    agents:0, spent:5, pr:{n:1301,state:'closed'}, ready:null },
+    plan:null, agents:0, spent:5, pr:{n:1301,state:'closed'}, ready:null },
 
   /* THE SHIP CASE — the Session says it is done and there is no pull request yet. The one
      title shape that is NOT a ticket: a run opened by a slash command (#745). */
   { id:'s5', title:'/implement 1288', state:'idle', access:'managed',
     act:null, clock:'2m',
-    agents:0, spent:2, pr:null,
+    plan:{done:6,total:6}, agents:0, spent:2, pr:null,
     ready:{ why:'8 files · 2 commits · quality green' } },
 
   /* Q6 — the DERIVED, cannot-tell count, on an external Session Argo owns no terminal of. */
   { id:'s6', title:'codex — refactor the relay', state:'unknown', access:'external',
     act:null, told:'external', clock:'6m ago',
-    agents:null, spent:0, pr:{n:1305,state:'draft'}, ready:null },
+    plan:null, agents:null, spent:0, pr:{n:1305,state:'draft'}, ready:null },
 
   /* An orphaned run: ghosted, and its pull request outlives the process that opened it. */
   { id:'s7', title:'#1276 — The checkout mark’s previews pass the worktree', state:'idle', access:'orphaned',
     act:null, clock:'3d',
-    agents:0, spent:3, pr:{n:1279,state:'open'}, ready:null },
+    plan:{done:4,total:9}, agents:0, spent:3, pr:{n:1279,state:'open'}, ready:null },
 
   { id:'s8', title:'#1282 — Screenshots go in the ticket body and the PR body', state:'attn', access:'managed',
     word:'Needs input', act:'Ran gh auth status', clock:'40s',
-    agents:1, spent:0, pr:{n:1286,state:'open'}, ready:null },
+    plan:{done:1,total:4}, agents:1, spent:0, pr:{n:1286,state:'open'}, ready:null },
 
   /* The edge that decides where the ship claim may draw: the Session claims ready AND a pull
      request is already open. The claim is stale; the pull request outranks it. */
   { id:'s9', title:'#1232 — The branch control goes; Refresh checkout moves', state:'idle', access:'managed',
     act:null, clock:'1h',
-    agents:0, spent:1, pr:{n:1285,state:'open'}, reviewed:true,
+    plan:{done:8,total:8}, agents:0, spent:1, pr:{n:1285,state:'open'}, reviewed:true,
     ready:{ why:'12 files · 3 commits' } },
 
   /* Q7 — the fold. It stands for four headless runs at once, so every fact on it is a SUM or
      it is a claim about runs it is hiding. */
   { id:'f1', fold:true, title:'4 runs', told:'ticket-1194-fold', clock:'12m',
-    state:null, access:'managed', agents:6, spent:9, prs:{open:2,merged:1}, ready:null },
+    state:null, access:'managed', plan:null, agents:6, spent:9, prs:{open:2,merged:1}, ready:null },
 ];
 
 let selected = 's1';
@@ -516,6 +563,9 @@ const NAMES = {
   D: 'One trailing gutter, one ranked fact',
   E: 'A third line, only when there is a delivery',
   F: 'A third line on every row',
+  G: 'Progress as segments, one per to-do item',
+  H: 'Progress as one bar and a figure',
+  I: 'Progress as the row’s own bottom edge',
 };
 
 /* Ready to ship, as a WORD in the state slot — the slot that already carries `Needs input` and
@@ -692,7 +742,105 @@ const roster = {
       </div>` : ''}
       ${deliveryLine(s, {always: true, clock: !linesOf(s).hasActivity})}
     </div>`,
+
+  /* == G, H and I: THE THIRD LINE IS PROGRESS ==========================================
+     The row now reads top to bottom as three questions a person actually asks in order:
+
+       line 1   which run is this        — the title, which opens with its Ticket number
+       line 2   what is it doing         — the newest call, in the feed's own words
+       line 3   how is it going          — how long, how far, and what came out
+
+     Line 3 holds the clock, the Plan's own progress, and the pull request as a mark. The
+     Subagents are NOT on it: what runs under this Session is drawn under its state dot, in
+     the leading column, as smaller dots. That column belongs to the machinery and nothing
+     else on the row claims it.
+
+     The pull request is a GLYPH and a colour here, never a number. The title above already
+     opens with the Ticket number, and a second number on the row is a second ticket. */
+
+  /* ── G ────────────────────────────────────────────────────────────────────────────────
+     One segment per to-do item, at a fixed total width. A 12-item plan and a 3-item plan
+     occupy the same space, so a reader compares two rows by how far the fill got and never
+     by how long the bar is. The item count is readable at a glance up to about eight.
+     GIVES UP: countable segments past eight, where they become texture. */
+  G: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${subDots(s)}
+      </span>
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        ${fact(s) ? `<span class="meta">${fact(s)}</span>` : ''}
+        <span class="flex g8" style="margin-top:var(--s-hair)">
+          ${clockOf(s)}
+          ${planBar(s)}
+          <span class="grow"></span>
+          ${s.fold ? foldPRs(s) : prMark(s)}
+        </span>
+      </span>
+    </div>`,
+
+  /* ── H ────────────────────────────────────────────────────────────────────────────────
+     The same line, with the plan drawn as one bar and stated as a figure. `3/7` is exact at
+     any size where segments have already become texture, and it is the one form that does
+     not lie about a twenty-item list.
+     GIVES UP: the shape of the work. A reader can no longer see that a run is two items from
+     done without reading the figure. */
+  H: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${subDots(s)}
+      </span>
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        ${fact(s) ? `<span class="meta">${fact(s)}</span>` : ''}
+        <span class="flex g8" style="margin-top:var(--s-hair)">
+          ${clockOf(s)}
+          ${planSolid(s)}
+          <span class="grow"></span>
+          ${s.fold ? foldPRs(s) : prMark(s)}
+        </span>
+      </span>
+    </div>`,
+
+  /* ── I ────────────────────────────────────────────────────────────────────────────────
+     The progress is not an object on a line — it IS the row's bottom edge, full width. The
+     roster then reads as a stack of runs each carrying its own fill, and the third line
+     spends its width on the clock and the pull request alone.
+     GIVES UP: the item count entirely, and it draws a rule on every row, which is the
+     furniture the flat row was designed without. */
+  I: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${subDots(s)}
+      </span>
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        ${fact(s) ? `<span class="meta">${fact(s)}</span>` : ''}
+        <span class="flex g8">
+          ${clockOf(s)}
+          ${s.plan ? `<span class="planfig">${s.plan.done}/${s.plan.total}</span>` : ''}
+          <span class="grow"></span>
+          ${s.fold ? foldPRs(s) : prMark(s)}
+        </span>
+      </span>
+    </div>
+    ${s.plan ? `<span class="edgebar ${s.state === 'running' ? '' : 'frozen'}"><b style="width:${
+      Math.round(s.plan.done / s.plan.total * 100)}%"></b></span>` : ''}`,
 };
+
 
 /* The labelled figure B, C and D share. The glyph IS the label — a bare `3` on a row is the
    unnamed number AgentMeter.swift refuses. `?` for the count Argo cannot establish, because a
@@ -762,6 +910,56 @@ function deliveryLine(s, { always = false, clock = false } = {}) {
    whose Delivery is not would otherwise draw a line holding nothing but a clock, and a hollow
    line between two full ones is the one thing a three-line row cannot afford. */
 const linesOf = s => ({ hasActivity: fact(s) != null });
+
+
+/* ============ THE PROGRESS LINE (G, H, I) ============ */
+/* The Plan, as the roster can see it: how many items the agent's to-do list holds and how many
+   it has finished. `null` where the Session published no list at all, which is most short runs —
+   and a bar drawn for a Session with no plan would be a claim that it has one. */
+const PLAN_WIDTH = 64;   /* the bar is the same width whatever the item count, so the roster
+                            reads as a column rather than as bars of different lengths */
+
+/* Segments share one fixed width, so a 12-item plan and a 3-item plan occupy the same space and
+   a reader compares two rows by how FAR the fill got, never by how long the bar is. */
+function planBar(s) {
+  if (!s.plan) return '';
+  const { done, total } = s.plan;
+  const frozen = s.state !== 'running';
+  const seg = Math.max(2, (PLAN_WIDTH - 2 * (total - 1)) / total);
+  const items = Array.from({length: total}, (_, i) =>
+    `<i class="${i < done ? 'done' : i === done && !frozen ? 'doing' : ''}"></i>`).join('');
+  return `<span class="plan ${frozen ? 'frozen' : ''}" style="--seg:${seg}px"
+    title="${done} of ${total} done${frozen ? ', and not moving' : ''}">${items}</span>`;
+}
+
+/* H's form: one bar and the figure, for the reading where the item count is not worth drawing. */
+function planSolid(s) {
+  if (!s.plan) return '';
+  const { done, total } = s.plan;
+  const frozen = s.state !== 'running';
+  return `<span class="plan solid ${frozen ? 'frozen' : ''}"><b style="width:${
+    Math.round(done / total * 100)}%"></b></span>
+    <span class="planfig">${done}/${total}</span>`;
+}
+
+/* The pull request as its mark alone. Merged has its own glyph, because purple and green are one
+   colour to a reader who cannot tell them apart and the shapes are not. */
+function prMark(s) {
+  if (!s.pr) return '';
+  const mark = s.pr.state === 'merged' ? SVG.merged : SVG.pr;
+  return `<span class="prmark pr ${s.pr.state}" title="Pull request ${s.pr.n} — ${s.pr.state}">${glyph(mark)}</span>`;
+}
+
+/* The Subagents, as the smaller dots under the state dot. Same column, half the size: what runs
+   UNDER this Session is drawn under its state, and nothing else on the row claims that column. */
+function subDots(s) {
+  if (s.agents == null)
+    return `<span class="pip unknown" title="Argo cannot say how many run here"></span>`;
+  if (!s.agents)
+    return s.spent ? `<span class="pip spent" title="${s.spent} delegations, all landed"></span>` : '';
+  return Array.from({length: Math.min(s.agents, 3)}, () => `<span class="pip"></span>`).join('')
+       + (s.agents > 3 ? `<span class="pip more" title="${s.agents} running"></span>` : '');
+}
 
 /* ============ WHAT EACH VARIANT ANSWERS ============ */
 /* The ticket's eight questions, plus the two the PR badge and the ready state add. Rendered
@@ -847,6 +1045,54 @@ const ANSWERS = {
     'Ready to ship': 'As E.',
     'The line appears': 'Always. A row with nothing to deliver reads <em>no delivery yet</em> against an empty track — which is a fact, and it costs a third of the roster to say it.',
   },
+  G: {
+    'Shape': 'One segment per to-do item on the agent’s Plan, filled to what is done.',
+    'Where it sits': 'Line 3, after the clock. Line 1 is the title, line 2 is what it is doing.',
+    'The activity line': 'Kept, on line 2, with the full width of the row.',
+    'Subagents': 'Smaller dots under the state dot, in the leading column. Never on line 3.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one dash.',
+    'Above the ceiling': '3 dots then a bar, as in A. The figure stays in the rail.',
+    'Cannot tell': 'One hollow round dot, in the same column.',
+    'The Fold': 'No plan — a fold stands for several runs and their lists do not add up.',
+    'Motion': 'None. The bar moves when the list does, which is rarely.',
+    'PR badge': 'A glyph and a colour at the trailing edge. Never a number: the title already opens with one.',
+    'Ready to ship': 'A full bar and no pull request mark. The word says it; the bar shows it.',
+    'No plan': 'No bar. Most short runs publish no list, and a bar drawn for them would claim one.',
+    'A frozen plan': 'A Session that is not running is not progressing, so its fill drops to the banked accent — still legible as how far it got, never as live.',
+  },
+  H: {
+    'Shape': 'One continuous bar and the figure <em>3/7</em>.',
+    'Where it sits': 'As G.',
+    'The activity line': 'Kept, on line 2.',
+    'Subagents': 'As G.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'As G.',
+    'Above the ceiling': 'As G.',
+    'Cannot tell': 'As G.',
+    'The Fold': 'As G.',
+    'Motion': 'None.',
+    'PR badge': 'As G.',
+    'Ready to ship': 'A full bar, <em>8/8</em>, and no pull request mark.',
+    'No plan': 'No bar and no figure.',
+    'A frozen plan': 'As G, and the figure stays exact — which is what H buys over G at twenty items.',
+  },
+  I: {
+    'Shape': 'The progress IS the row’s bottom edge, full width.',
+    'Where it sits': 'Under the row. Line 3 spends its width on the clock and the pull request alone.',
+    'The activity line': 'Kept, on line 2.',
+    'Subagents': 'As G.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'As G.',
+    'Above the ceiling': 'As G.',
+    'Cannot tell': 'As G.',
+    'The Fold': 'No edge bar.',
+    'Motion': 'None.',
+    'PR badge': 'As G.',
+    'Ready to ship': 'A full edge and no pull request mark.',
+    'No plan': 'No edge at all, so the row loses its rule and reads a step lighter than its neighbours.',
+    'A frozen plan': 'The edge drops to the banked accent.',
+  },
 };
 
 const RISK = `<b>Open risk, all six variants.</b> The three PR inks are the code host's, not
@@ -860,8 +1106,8 @@ const RISK = `<b>Open risk, all six variants.</b> The three PR inks are the code
 
 /* ============ RENDER ============ */
 function current() {
-  const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
-  return ['A','B','C','D','E','F'].includes(v) ? v : 'A';
+  const v = (new URLSearchParams(location.search).get('variant') || 'G').toUpperCase();
+  return ['A','B','C','D','E','F','G','H','I'].includes(v) ? v : 'G';
 }
 
 /* The Project total, as A, B and D each spend it. Summed the ONE way the rail counts:
@@ -874,7 +1120,7 @@ function render() {
   const s = sessions.find(x => x.id === selected) ?? sessions[0];
 
   document.getElementById('roster').innerHTML = sessions.map(x => `
-    <div class="row ${x.id === selected ? 'sel' : ''} ${x.access !== 'managed' ? 'ext' : ''} ${x.fold ? 'fold' : ''}"
+    <div class="row ${x.id === selected ? 'sel' : ''} ${x.access !== 'managed' ? 'ext' : ''} ${x.fold ? 'fold' : ''} ${v === 'I' ? 'edge' : ''}"
          onclick="selected='${x.id}';render()">${roster[v](x)}</div>`).join('');
 
   document.getElementById('eyebrow').textContent =
@@ -917,7 +1163,7 @@ function render() {
 }
 
 function cycle(d) {
-  const ks = ['A','B','C','D','E','F'];
+  const ks = ['G','H','I','A','B','C','D','E','F'];
   history.replaceState(null, '', '?variant=' + ks[(ks.indexOf(current()) + d + ks.length) % ks.length]);
   render();
 }

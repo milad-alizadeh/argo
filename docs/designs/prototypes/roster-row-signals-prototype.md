@@ -2,7 +2,8 @@
 
 **Throwaway.** Lives on `argo/#1310-roster-agent-count`, not on `main`.
 Open `roster-row-signals-prototype.html` beside it; switch with the floating bar, `←` / `→`,
-or `?variant=A|B|C|D|E|F`.
+or `?variant=A|B|C|D|E|F|G|H|I`. **G is the default and the live direction**; A to F are the
+earlier passes, kept for comparison.
 
 ## The question
 
@@ -47,10 +48,54 @@ sentence, and the clock at the trailing edge (`SessionRosterProjection+Row.swift
 | **D** | One trailing gutter, one ranked fact | labelled figure, but only when it wins the slot | second in the ranking | seeing the count and the PR at once |
 | **E** | A third line, only when there is a delivery | figure on line 1 trailing | on line 3, after the lifecycle track | a uniform row height |
 | **F** | A third line on every row | as E | as E | about a third of the roster's vertical space |
+| **G** | Progress as segments, one per to-do item | dots under the state dot | glyph and colour, line 3 trailing | countable segments past about eight |
+| **H** | Progress as one bar and a figure | as G | as G | the shape of the work — you read the figure, not the bar |
+| **I** | Progress as the row's own bottom edge | as G | as G | the item count, and it draws a rule on every row |
 
 In A to D, ready-to-ship is the word `Ready` in the state slot on line 1.
 
-### E and F — the third line
+### G, H and I — the third line is progress (the live direction)
+
+The segmented bar drawn for E's lifecycle turned out to be worth more than the thing it was
+drawn for. What a roster reader wants to know is **how far through its own work a Session is**,
+and Argo already holds that: the **Plan** (`CONTEXT.md` L3), the agent's live to-do list, session
+scoped and replaced whole. One segment per item, filled to what is done.
+
+The row then reads top to bottom as three questions a person asks in that order:
+
+```
+line 1   which run is this      — the title, which opens with its Ticket number
+line 2   what is it doing       — the newest call, in the feed's own words
+line 3   how is it going        — how long · how far · what came out
+```
+
+**The Subagents are not on line 3.** What runs *under* a Session is drawn under its state dot,
+in the leading column, as smaller dots. That column belongs to the machinery, and nothing else
+on the row claims it.
+
+**The pull request is a glyph and a colour, never a number.** The title above already opens with
+a Ticket number.
+
+Three treatments of the same line:
+
+- **G** — one segment per item, at a **fixed total width**. A 12-item plan and a 3-item plan
+  occupy the same space, so a reader compares two rows by how far the fill got and never by how
+  long the bar is. Readable as a count up to about eight; texture past that.
+- **H** — one continuous bar and the figure `3/7`. Exact at any list length, and the only form
+  that does not lie about a twenty-item list.
+- **I** — the progress *is* the row's bottom edge, full width.
+
+Three rules the shape has to keep:
+
+1. **The ink is the accent, not the running teal.** The plan is the Session's own progress, not
+   its state, and the row already spends teal on the dot and on a live Turn clock. A third teal
+   thing would make the row one colour. Blue also pulls the row back from the green pile-up the
+   PR badge caused.
+2. **Exactly one item is in progress**, which is the rule the list is written under. It draws
+   brightest, because it is the only item anybody can act on.
+3. **A Session that is not running is not progressing.** Its plan is frozen where it stopped.
+
+### E and F — the third line, first pass
 
 E and F split the row by **subject** rather than by slot, which is the argument for a third line
 at all:
@@ -153,6 +198,16 @@ Rendered and looked at, all four:
 - **F barely differs from E on a real roster.** Nearly every Session has a Delivery, so F's
   extra line lands on one row in ten and says `no delivery yet`. F is the honest counter-position
   and the pixels do not support it.
+
+- **A finished plan drawn dead reads as a plan nobody started.** The first pass greyed a frozen
+  bar to `--text-off`, and `6/6 · Ready to ship` came out looking empty. The fill now drops to a
+  **banked accent** (`#2F5C89`) — same hue, unmistakably not live, still legible as how far the
+  work got.
+- **I's full-width edges read as row separators first.** The eye takes them for dividers and
+  only then for progress, and they put a rule on every row — the furniture the flat row was
+  designed without.
+- **H beats G past about eight items.** G's segments become texture; `5/12` stays exact. G wins
+  below that, because the shape of the work is visible without reading anything.
 
 ## Two numbers, one row
 
