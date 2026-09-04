@@ -2,6 +2,14 @@
 
 Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
+## Writing style
+
+Any text you write into the tracker — an issue or PR title, a body, a comment, a close message —
+goes through the `simple-english` skill first: `gh issue create`, `gh issue edit`, `gh issue
+comment`, `gh issue close --comment`, and their `gh pr` equivalents all count. Do this every
+time, not only when the text reads badly — apply it before the first draft goes out, not as a
+later cleanup pass.
+
 ## Conventions
 
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
