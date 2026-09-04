@@ -245,7 +245,14 @@ lost:
    a hand-rolled grey is a second selection vocabulary the reader has to learn. **One rule for
    every list in the app: the Sessions roster and the Tickets room both.** Still no leading
    accent rule — the ground carries it, as D30 asks.
-2. **The state dot sits on the title's optical centre**, and it is derived rather than nudged:
+2. **`PlanRing` takes the accent, not the running teal.** `PlanPill.swift` strokes its arc in
+   `argo.color.state.running` today. The roster's bar and the pill's ring are **the same fact
+   about the same list** — how far through its Plan the Session is — so drawing them in two
+   colours makes a reader work out whether they are saying different things. Teal is what the
+   state dot and a live Turn clock spend, so a teal ring reads as a *state* rather than as
+   progress. One line in `PlanRing.body`, and the prototype's deck draws the pill beside the
+   roster so the two can be checked in one glance.
+3. **The state dot sits on the title's optical centre**, and it is derived rather than nudged:
    `(line box − dot) / 2`, off one token. A marker aligned by a magic number drifts the moment
    the type scale moves. Every variant here measures 0px offset on every row, fold disclosures
    included; the first pass was 2.4px high and it read as a bullet floating above the title.

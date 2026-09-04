@@ -361,6 +361,26 @@
   .chip .cn { font-size: 11.5px; color: var(--text-2); overflow: hidden;
               text-overflow: ellipsis; white-space: nowrap; }
 
+  /* The plan pill, as `PlanPill.swift` draws it above the dock — here so the ring and the
+     roster's bar can be judged in one glance. THE RING TAKES THE ACCENT, not the running teal it
+     strokes today: the two are the same fact about the same list, and a reader seeing them in
+     two colours has to work out whether they are saying different things. Teal is what the state
+     dot and a live Turn clock spend, so a teal ring reads as a state rather than as progress. */
+  .pill {
+    display: inline-flex; align-items: center; gap: var(--s-base);
+    padding: var(--s-snug) var(--s-comfortable) var(--s-snug) var(--s-base);
+    border-radius: 999px; background: var(--overlay);
+    box-shadow: inset 0 0 0 1px var(--subtle), 0 8px 24px rgba(0,0,0,.4);
+    font-size: 12.5px;
+  }
+  .ring { width: 15px; height: 15px; flex: none; transform: rotate(-90deg); display: block; }
+  .ring circle { fill: none; }
+  .ring .track { stroke: rgba(255,255,255,.13); stroke-width: 1.4; }
+  .ring .arc { stroke: var(--accent); stroke-width: 2.6; }
+  .pill .count { font: 12.5px var(--mono); color: var(--text-3); flex: none; }
+  .pill .step { color: var(--text-1); }
+  .pill .step.none { color: var(--text-3); }
+
   /* the answers card — the prototype's own readout, not part of the design */
   .answers { padding: var(--s-loose) var(--s-section); overflow-y: auto; }
   .answers h4 {
@@ -425,7 +445,9 @@
       </div>
       <div class="deck-body">
         <div class="rail" id="rail"></div>
-        <div class="answers" id="answers"></div>
+        <div class="answers" id="answers">
+          <div id="pill-slot"></div>
+        </div>
       </div>
     </section>
   </div>
@@ -1003,6 +1025,19 @@ function addresses(s) {
     : '');
 }
 
+/* What the pill's current step says. Invented text — the pill is here for its RING, and a bare
+   pill with no sentence would not be the thing the app draws. */
+const STEPS = {
+  s1: 'Read the Subagent records off disk',
+  s2: 'Sweep the stop reasons in batch three',
+  s3: 'Run the boundary script',
+  s5: 'No step in progress',
+  s7: 'Crop the checkout previews',
+  s8: 'Wait on gh auth',
+  s9: 'No step in progress',
+};
+const planStep = s => STEPS[s.id] ?? 'No step in progress';
+
 /* The Subagents, as the smaller dots under the state dot. Same column, half the size: what runs
    UNDER this Session is drawn under its state, and nothing else on the row claims that column. */
 function subDots(s) {
@@ -1207,8 +1242,25 @@ function render() {
         + (s.spent ? `<div class="chip"><span class="cn" style="color:var(--text-3)">${s.spent} finished</span></div>` : '')
         + (!running && !s.spent ? `<div class="chip"><span class="cn" style="color:var(--text-off)">Nothing delegated</span></div>` : '')}`;
 
+  /* The plan pill of the selected Session, drawn beside the answers so the ring and the row's
+     own bar are on screen at once. */
+  const pill = document.getElementById('pill-slot');
+  pill.innerHTML = s.plan
+    ? `<div class="pill" title="The ring takes the accent, exactly as the roster's bar does">
+         <svg class="ring" viewBox="0 0 16 16">
+           <circle class="track" cx="8" cy="8" r="6.6"/>
+           <circle class="arc" cx="8" cy="8" r="5.6"
+                   stroke-dasharray="${(2 * Math.PI * 5.6).toFixed(2)}"
+                   stroke-dashoffset="${(2 * Math.PI * 5.6 * (1 - s.plan.done / s.plan.total)).toFixed(2)}"/>
+         </svg>
+         <span class="count">Step ${Math.min(s.plan.done + 1, s.plan.total)}/${s.plan.total}</span>
+         <span class="step">${planStep(s)}</span>
+       </div>`
+    : `<div class="pill"><span class="step none">No plan on this Session</span></div>`;
+
   const a = ANSWERS[v];
   document.getElementById('answers').innerHTML = `
+    <div style="margin-bottom:var(--s-loose)">${pill.innerHTML}</div>
     <h4>Variant ${v} — ${NAMES[v]}</h4>
     <div class="qa">
       ${Object.entries(a).map(([q, ans]) => `<span class="q">${q}</span><span class="a">${ans}</span>`).join('')}
