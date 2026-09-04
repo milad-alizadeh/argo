@@ -81,14 +81,19 @@
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   /* ---- Surface measures. NOT tokens — these belong beside the surface. ---- */
+  --control-vessel: 36px;     /* ArgoControlBox.vessel = icon 26 + inset 5 × 2 */
   --search-width: 210px;      /* ArgoTicketsChrome.searchWidth */
-  --ask-width: 268px;         /* ArgoTicketsChrome.askWidth — NEW, see the .md */
-  --search-height: 28px;      /* ArgoTicketsChrome.searchHeight */
+  --ask-width: 268px;         /* ArgoTicketsChrome.askWidth — NEW, derived in the .md */
   --sidebar-width: 320px;     /* ArgoLayout.sidebarIdealWidth */
   --backlog-width: 520px;     /* ArgoBacklogList.width */
-  --band-height: 44px;        /* ArgoBacklogList.bandHeight */
+  --backlog-floor: 342px;     /* ArgoLayout.backlogWidths.lowerBound — where askWidth is derived */
+  /* The pane band is the window's own strip (TicketsPaneHeader `reach`), never a constant.
+     52 is its FLOOR — one control plus air either side — and is what a render draws. */
+  --pane-band: 52px;
+  --band-height: 44px;        /* ArgoBacklogList.bandHeight — the two-line heading UNDER the band */
   --row-height: 30px;         /* ArgoBacklogList.rowHeight */
-  --gutter: 12px;             /* ArgoBacklogList.gutter */
+  --gutter: 12px;             /* ArgoBacklogList.bandInsetX / gutter */
+  --detail-inset: 24px;       /* ArgoTicketDetail.inset = ArgoSpacing.section */
   --indent-step: 16px;        /* ArgoBacklogList.indentStep */
   --wait-bar-width: 40px;     /* BacklogAskWait */
   --wait-bar-height: 2px;
@@ -131,9 +136,7 @@ body.render .window { inset: 0; }
   background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.028) 42%, rgba(255,255,255,.02));
   border-right: var(--stroke-border) solid var(--edge-hairline);
 }
-.lights { display: flex; align-items: center; gap: var(--s-base); height: var(--band-height); padding: 0 var(--s-loose); }
-.lights i { width: 12px; height: 12px; border-radius: 50%; background: #3A3D42; display: block; }
-.lights .toggle { margin-left: auto; color: var(--text-tertiary); }
+.light { width: 12px; height: 12px; border-radius: 50%; background: #3A3D42; display: block; flex: none; }
 
 .rooms {
   display: flex; margin: var(--s-tight) var(--s-loose) var(--s-comfortable);
@@ -182,24 +185,40 @@ body.render .window { inset: 0; }
 }
 .side-foot i { width: 6px; height: 6px; border-radius: 50%; background: var(--state-running); display: block; }
 
-.deck { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.deck { flex: 1; min-width: 0; display: flex; min-height: 0; }
 
-.toolbar {
-  height: var(--band-height); flex: none; display: flex; align-items: center;
-  gap: var(--s-base); padding: 0 var(--s-loose) 0 var(--s-comfortable);
+/* Each pane draws the controls that act on IT, on a band inside the window's own
+   strip (#1242). The three bands are ONE sheet — no ground of their own and no
+   rule of their own, because a per-band rule breaks the bar across the seams. */
+.pane-band {
+  min-height: var(--pane-band); flex: none;
+  display: flex; align-items: center; gap: var(--s-base);
 }
-.tb-item {
-  display: flex; align-items: center; gap: var(--s-snug); height: var(--search-height);
-  padding: 0 var(--s-base); border-radius: calc(var(--search-height) / 2);
+.pane-band.list { padding: 0 var(--gutter); }
+.pane-band.ticket { padding: 0 var(--detail-inset); }
+.pane-band.side { padding: 0 var(--s-loose); }
+.band-spacer { flex: 1; min-width: var(--s-base); }
+
+/* A control's vessel. ONE height on this band — a field is a container here like
+   any other, which is why the field is ArgoControlBox.vessel and not a 28 of its own. */
+.vessel {
+  display: flex; align-items: center; gap: var(--s-snug);
+  height: var(--control-vessel); padding: 0 var(--s-comfortable);
+  border-radius: calc(var(--control-vessel) / 2);
   background: var(--surface-control);
   box-shadow: inset 0 0 0 var(--stroke-hairline) var(--edge-hairline);
   font-size: var(--t-callout); font-weight: 500; color: var(--text-secondary); white-space: nowrap;
 }
-.tb-spacer { flex: 1; }
+.vessel.icon { width: var(--control-vessel); padding: 0; justify-content: center; color: var(--text-tertiary); }
+.vessel .rule { width: 1px; height: 15px; background: var(--edge-subtle); }
+.vessel .skill { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--text-tertiary); }
 
-.panes { flex: 1; display: flex; min-height: 0; }
-.listpane { width: var(--backlog-width); flex: none; display: flex; flex-direction: column; min-height: 0; }
-.detailpane { flex: 1; min-width: 0; border-left: var(--stroke-border) solid var(--edge-hairline); position: relative; overflow: hidden; }
+.listpane { width: var(--backlog-width); flex: none; display: flex; flex-direction: column; min-height: 0; position: relative; }
+.detailpane { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0;
+              border-left: var(--stroke-border) solid var(--edge-hairline); }
+/* The pane's content, under its band. The sheet is absolute inside THIS, which is
+   what keeps the band above it. */
+.pane-body { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 
 .band { min-height: var(--band-height); padding: 0 var(--gutter); display: flex; flex-direction: column; justify-content: center; }
 .band h1 { margin: 0; font-size: var(--t-headline); font-weight: 600; color: var(--text-primary); }
@@ -242,7 +261,10 @@ body.render .window { inset: 0; }
 }
 
 .detail { padding: var(--s-section) var(--s-region); }
-.detail .id { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--text-tertiary); }
+/* The ticket's NUMBER is the link (#1242), which is why the two link verbs left
+   the band. It draws in the accent because it is pressable. */
+.detail .id { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--accent-bright); }
+.detail .blocker .id { color: var(--text-tertiary); }
 .detail h2 { margin: var(--s-base) 0 0; font-size: var(--t-title2); font-weight: 600; color: var(--text-primary); }
 .detail .status { margin-top: var(--s-base); font-size: var(--t-body); color: var(--text-secondary); }
 .detail .facts { display: flex; flex-wrap: wrap; gap: var(--s-loose); align-items: center; margin-top: var(--s-section); }
@@ -264,8 +286,8 @@ body.render .window { inset: 0; }
    ONCE — when the text stops looking like a term. --- */
 [data-component="BacklogSearchField"] {
   position: relative; display: flex; align-items: center; gap: var(--s-snug);
-  width: var(--search-width); height: var(--search-height);
-  padding: 0 var(--s-base); border-radius: calc(var(--search-height) / 2);
+  width: var(--search-width); height: var(--control-vessel);
+  padding: 0 var(--s-comfortable); border-radius: calc(var(--control-vessel) / 2);
   background: var(--surface-control);
   box-shadow: inset 0 0 0 var(--stroke-hairline) var(--edge-glass-rim);
   font-size: var(--t-body); color: var(--text-primary);
@@ -294,7 +316,7 @@ body.render .window { inset: 0; }
    return key; the ask takes a modifier. A reader who never looks down here has
    lost nothing. --- */
 [data-component="BacklogAskAffordance"] {
-  position: absolute; top: calc(var(--band-height) - var(--s-snug)); right: var(--s-loose);
+  position: absolute; top: calc(var(--pane-band) - var(--s-snug)); right: var(--gutter);
   width: var(--ask-width); z-index: 20; padding: var(--s-tight);
   background: var(--surface-overlay); border-radius: var(--r-control);
   box-shadow: 0 0 0 var(--stroke-hairline) var(--edge-glass-rim), 0 16px 40px rgba(0,0,0,.6);
@@ -326,6 +348,9 @@ body.render .window { inset: 0; }
 
 /* --- BacklogAnswerSheet. Over the ticket pane, never over the list: the list
    holds the tickets the reader asked about. --- */
+/* Over the ticket pane's CONTENT and not its band — #1242 put the ticket's verbs
+   on that band, and an answer that covered them would take Start away to show you
+   a ticket you cannot start. */
 [data-component="BacklogAnswerSheet"] {
   position: absolute; inset: 0; z-index: 15; background: var(--surface-base);
   display: flex; flex-direction: column;
@@ -544,7 +569,8 @@ function listRows(opts = {}) {
 }
 
 const sidebar = () => `<aside class="sidebar">
-  <div class="lights"><i></i><i></i><i></i><span class="toggle">${ICON.side}</span></div>
+  <div class="pane-band side"><i class="light"></i><i class="light"></i><i class="light"></i>
+    <span class="band-spacer"></span><span style="color:var(--text-tertiary)">${ICON.side}</span></div>
   <div class="rooms">
     <div>${ICON.term}Sessions</div><div class="on">${ICON.list}Tickets</div><div>${ICON.code}Code</div>
   </div>
@@ -565,14 +591,20 @@ const sidebar = () => `<aside class="sidebar">
   <div class="side-foot"><i></i>GitHub · milad-alizadeh</div>
 </aside>`;
 
-/* The row of controls. ONE ROW, and the asking surface adds nothing to it: that
-   is the whole argument for this variant over a wand. */
-const toolbar = (field, verbs = true) => `<div class="toolbar">
-  <div class="tb-item">${ICON.folder} argo ⌄</div>
-  <div class="tb-item">${ICON.dots}</div>
-  <div class="tb-item">${ICON.pencil}</div>
-  ${verbs ? `<div class="tb-item">${ICON.play} Start</div><div class="tb-item">${ICON.out}</div><div class="tb-item">${ICON.link}</div>` : ''}
-  <div class="tb-spacer"></div>${field}
+/* The LIST pane's band: New ticket at the pane's leading edge, the field at its
+   trailing one. Both act on the list, which is why both are here (#1242).
+
+   The asking surface adds NOTHING to this band — that is the whole argument for
+   this variant. The field it widens is the field that was already there. */
+const listBand = fieldHTML => `<div class="pane-band list">
+  <div class="vessel icon">${ICON.pencil}</div>
+  <span class="band-spacer"></span>${fieldHTML}
+</div>`;
+
+/* The TICKET pane's band: the Start pill at the pane's leading edge, and nothing
+   else. The two link verbs are gone — the ticket's number is the link (#1242). */
+const ticketBand = (verbs = true) => `<div class="pane-band ticket">
+  ${verbs ? `<div class="vessel">${ICON.play} Start<span class="rule"></span><span class="skill">pick a skill ⌄</span></div>` : ''}
 </div>`;
 
 function field({ text = null, asks = false, focused = false }) {
@@ -641,13 +673,18 @@ function sheet(question, paras, { wrong = false, waiting = false, vacancy = fals
   </div>`;
 }
 
-const shell = (tb, list, detail, overlay = '') => `<div class="win-body">
+const shell = (fieldHTML, list, detail, overlay = '', { verbs = true } = {}) => `<div class="win-body">
   ${sidebar()}
-  <div class="deck">${tb}
-    <div class="panes">
-      <div class="listpane">${list}</div>
-      <div class="detailpane">${detail}</div>
-    </div>${overlay}
+  <div class="deck">
+    <div class="listpane">
+      ${listBand(fieldHTML)}
+      <div class="pane-body" style="display:flex;flex-direction:column">${list}</div>
+      ${overlay}
+    </div>
+    <div class="detailpane">
+      ${ticketBand(verbs)}
+      <div class="pane-body">${detail}</div>
+    </div>
   </div>
 </div>`;
 
@@ -666,19 +703,23 @@ const STATED_EMPTY = q => `<div class="nomatch">No ticket in All open matches �
 
 function draw() {
   if (state === 'vacant') {
+    /* No provider, so no list — and the band that would carry the field goes with
+       it. The vacancy replaces the whole deck, so there is nowhere to ask FROM. */
     return `<div class="win-body">${sidebar()}
       <div class="deck">
-        <div class="toolbar"><div class="tb-item">${ICON.folder} argo ⌄</div><div class="tb-item">${ICON.dots}</div><div class="tb-spacer"></div></div>
-        <div class="panes"><div style="flex:1" class="vacancy">
-          <h2>No Ticket provider is connected to argo</h2>
-          <p>Argo reads tickets through a provider you connect per Project. Nothing here has been read yet — this is not an empty backlog.</p>
-          <div class="cta">Connect a provider…</div>
-        </div></div>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <div class="pane-band list"></div>
+          <div class="pane-body"><div class="vacancy">
+            <h2>No Ticket provider is connected to argo</h2>
+            <p>Argo reads tickets through a provider you connect per Project. Nothing here has been read yet — this is not an empty backlog.</p>
+            <div class="cta">Connect a provider…</div>
+          </div></div>
+        </div>
       </div></div>`;
   }
 
   if (state === 'rest') {
-    return shell(toolbar(field({})),
+    return shell(field({}),
       band('Backlog', 'All open · by priority · 12 tickets') + `<div class="rows">${listRows()}</div>`,
       ticketDetail());
   }
@@ -686,14 +727,14 @@ function draw() {
   if (state === 'term') {
     /* The plain path, untouched: `canvas` matches one title, and the two ancestors
        it hangs from are kept as rails (#873). */
-    return shell(toolbar(field({ text: 'canvas' })),
+    return shell(field({ text: 'canvas' }),
       band('Searching', 'All open · by priority · 1 result')
         + `<div class="rows">${listRows({ keep: new Set([607, 334, 336]), rails: new Set([607, 334]), plain: true })}</div>`,
       ticketDetail());
   }
 
   if (state === 'found') {
-    return shell(toolbar(field({ text: QUESTION, asks: true, focused: true })),
+    return shell(field({ text: QUESTION, asks: true, focused: true }),
       band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
       ticketDetail(), askAffordance());
   }
@@ -701,13 +742,13 @@ function draw() {
   if (state === 'asking') {
     /* The list is NOT cleared and NOT dimmed: it still holds the honest answer to
        the query, and the question has not answered anything yet. */
-    return shell(toolbar(field({ text: QUESTION, asks: true })),
+    return shell(field({ text: QUESTION, asks: true }),
       band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
       sheet(QUESTION, [], { waiting: true }));
   }
 
   if (state === 'answered') {
-    return shell(toolbar(field({ text: QUESTION, asks: true })),
+    return shell(field({ text: QUESTION, asks: true }),
       band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
       sheet(QUESTION, ANSWER));
   }
@@ -716,13 +757,13 @@ function draw() {
     /* The one act that drops the query. The answer names tickets the query had
        filtered out, so the list cannot honour it and show #336 at once — and the
        FIELD clears with it, so nothing on screen claims a narrowing not in force. */
-    return shell(toolbar(field({})),
+    return shell(field({}),
       band('Backlog', 'All open · by priority · 12 tickets') + `<div class="rows">${listRows({ pick: 336 })}</div>`,
       sheet(QUESTION, ANSWER));
   }
 
   if (state === 'empty') {
-    return shell(toolbar(field({ text: 'is anything here about deployment?', asks: true })),
+    return shell(field({ text: 'is anything here about deployment?', asks: true }),
       band('Backlog', 'All open · by priority · 12 tickets') + `<div class="rows">${listRows()}</div>`,
       sheet('is anything here about deployment?', [
         'Nothing in All open is about deployment. Twelve tickets, and none of them names a deploy, a release or an environment.',
@@ -731,7 +772,7 @@ function draw() {
   }
 
   if (state === 'wrong') {
-    return shell(toolbar(field({ text: QUESTION, asks: true })),
+    return shell(field({ text: QUESTION, asks: true }),
       band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
       sheet(QUESTION, [
         'The chart\'s spacing is <a data-component="BacklogAnswerCitation" class="dead">#511</a>, <b>Chart canvas spacing rules</b> — high priority, unblocked, ready to start.',
@@ -739,7 +780,7 @@ function draw() {
   }
 
   /* unbound */
-  return shell(toolbar(field({ text: QUESTION, asks: true })),
+  return shell(field({ text: QUESTION, asks: true }),
     band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
     sheet(QUESTION, [], { vacancy: true }));
 }

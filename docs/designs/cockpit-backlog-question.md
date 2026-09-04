@@ -22,10 +22,13 @@ notes in `docs/designs/prototypes/backlog-question-prototype.md`.
 This file covers the asking surface **only**. The room around it in the HTML is drawn to what
 the app **ships today**, not to `cockpit-work-room.html`.
 
-> **`cockpit-work-room.html` is stale on this exact region.** It puts the two-line heading in
-> the window's toolbar row (#836 moved it into the list pane), draws a Filter button (#900
-> deleted the funnel) and a Mode chevron on Start (#1232), puts Next-up in the deck rather than
-> the sidebar, and never draws a query at all (#873 added one). Re-basing it is #1304.
+> **`cockpit-work-room.html` is stale on this exact region, and #1242 widened the gap.** It draws
+> one window-wide row of controls; the app now gives every pane its own band inside the window's
+> strip. It draws a Filter button (#900 deleted the funnel), a Mode chevron on Start (#1232), and
+> the two link verbs (#1242 cut them — the ticket's number is the link). It puts the two-line
+> heading in that row (#836 moved it into the pane) and Next-up in the deck (it is in the
+> sidebar). It never draws a query at all (#873 added one). Re-basing it is #1304, and this
+> design's own chrome was corrected against `ARGO_SPECIMEN=ticketsRoom` after #1242 landed.
 > Nothing here approves what that file currently says about the toolbar.
 
 The room's own vocabulary — views, the backlog, the ticket, rails, the stated empty — is that
@@ -46,7 +49,7 @@ Names are frozen: they become component files and ticket titles.
 
 | `data-component` | What it is |
 |---|---|
-| `BacklogSearchField` | the shipped field, amended — it widens and swaps its leading glyph while it holds a question |
+| `BacklogSearchField` | the shipped field, amended — it widens and swaps its leading glyph while it holds a question. It stays at the list pane's trailing edge on `BacklogPaneHeader`, at `ArgoControlBox.vessel` tall |
 | `BacklogAskAffordance` | the two-line offer under the field: Search on `⏎`, Ask on `⌘⏎` |
 | `BacklogAskWait` | the pulse and its sentence, while a model reads |
 | `BacklogAnswerSheet` | the sheet over the ticket pane |
@@ -75,8 +78,14 @@ Every one is reachable by URL, because a state nobody can link to is a state nob
 
 ### The ask is found, never switched to
 
-There is **no new control**. The row of controls stays one row, which is the rule the room
-cannot break, and a reader who never notices this feature has lost nothing at all.
+There is **no new control**. The list pane's band keeps exactly what #1242 put on it — New
+ticket at the leading edge, the field at the trailing one — and the asking surface adds nothing
+beside them. A reader who never notices this feature has lost nothing at all.
+
+That argument got *stronger* under #1242, not weaker. The band is now scoped to one pane and
+holds almost nothing, so the room's rule is sharper than "one row": **a control sits at the
+leading edge of the pane it acts on, a field at the trailing edge of the pane it searches.** A
+wand would have had to be a second mark on a band that deliberately carries one.
 
 The field notices the text has stopped looking like a term and offers the ask underneath it.
 **Search keeps `⏎`.** The ask takes `⌘⏎`. The default never moves, so a reader who types a
@@ -93,11 +102,32 @@ when the text stops being a question. It never animates and never flickers withi
 
 ### The field widens, and only while it asks
 
-`210 → 268`, over `ArgoMotion.stateChange`. 268 still clears the trailing edge at the 1280
-window, which is the same arithmetic that set 210.
+`210 → 268`, over `ArgoMotion.stateChange`.
+
+**268 is derived at the list pane's FLOOR, not at the 1280 window.** #1242 moved the field out of
+the window's row and onto the list pane's own band, so the edge it has to clear is the pane's,
+and the pane is draggable. The binding case is `ArgoLayout.backlogWidths.lowerBound`:
+
+```
+342   ArgoLayout.backlogWidths.lowerBound — 960 − 280 − 320 − 9×2
+− 12  the band's leading inset (ArgoBacklogList.bandInsetX)
+− 36  New ticket's vessel (ArgoControlBox.vessel)
+−  8  the minimum gap between them (ArgoSpacing.base)
+− 12  the band's trailing inset
+─────
+274   and the field asks for 268, with 6 to spare
+```
+
+Six points of margin is thin, so the rule is **`min(268, what the pane affords)`** rather than a
+flat 268. Below the floor there is no pane to afford anything, and above it nothing more is
+wanted: a field wider than 268 is a field a reader stops reading as a field.
 
 **The tail of the question stays visible**, not the head: the caret is at the tail, and a field
 that showed you the part you are not editing is a field showing you the wrong half.
+
+**The field is `ArgoControlBox.vessel` tall (36), not a 28 of its own.** #1242 made that true for
+the shipped field — a field is a container on this band like any other, and its own height made
+the band three heights of container.
 
 ### The answer is prose, on a sheet over the ticket pane
 
@@ -106,8 +136,12 @@ the thing they were looking for. Not a popover — three sentences fill one at 3
 is regularly longer. The ticket pane already holds prose, and it is the pane a reader searching
 the backlog has stopped reading.
 
-**The cost is real:** the open ticket goes behind the sheet, so comparing the two means closing
-one. That is the trade this design accepts.
+**The sheet covers the pane's content, never its band.** #1242 put the ticket's verbs on that
+band, so a sheet drawn over the whole pane would take `Start` away in order to show you a ticket
+you cannot start. The band stands and the answer sits under it.
+
+**The cost is real:** the open ticket's body goes behind the sheet, so comparing the two means
+closing one. That is the trade this design accepts.
 
 **Rows are the follow-through, not the answer.** Pressing a citation selects the row. The
 prototype's variant D made rows the whole answer and could only ever answer *which tickets* —
@@ -217,11 +251,12 @@ Surface measures, not tokens — per `rules/swift.md` they live beside the surfa
 
 | Measure | Value | Where it goes | Why |
 |---|---|---|---|
-| `askWidth` | `268` | `ArgoTicketsChrome` | the field while it holds a question; the widest that still clears the trailing edge at 1280 |
-| affordance width | `= askWidth` | `BacklogAskAffordance` | it is the field's own footprint, so it aligns to the field rather than to the window |
+| `askWidth` | `min(268, pane affords)` | `ArgoTicketsChrome` | the field while it holds a question; 268 is what fits beside New ticket at the list pane's floor of 342, with 6 to spare |
+| affordance width | `= the field's` | `BacklogAskAffordance` | it is the field's own footprint, so it aligns to the field and moves with the pane's seam, never to the window |
 | affordance row | `⏎` / `⌘⏎` | `BacklogAskAffordance` | Search keeps the default key |
 | wait bar | `40 × 2` | `BacklogAskWait` | a bar, not a spinner: it sits inline in a sentence |
-| sheet insets | `24 / 32` (`section` / `region`) | `BacklogAnswerSheet` | the ticket pane's own insets, because the sheet stands in for that pane |
+| sheet insets | `24 / 32` (`section` / `region`) | `BacklogAnswerSheet` | the ticket pane's own insets, because the sheet stands in for that pane's content |
+| sheet's top edge | under `TicketsPaneHeader` | `BacklogAnswerSheet` | the band stays, so `Start` is never covered by an answer |
 | sheet rise | `ArgoMotion.stateChange` | `BacklogAnswerSheet` | 0.18s easeOut, exact |
 | pulse | `ArgoMotion.working` | `BacklogAskWait` | the token for an indeterminate wait |
 
@@ -257,6 +292,31 @@ contract does not change.**
   reads. It does not promise what a model would say.
 - **Latency is drawn at one value.** `2.4s` is plausible, not measured. What the design fixes is
   that the elapsed time is *stated*, not what it is.
+
+## What #1242 changed, and what survived it
+
+This design was approved against the room before #1242 (#1302) and re-based onto it. Recorded
+because a reader coming from the PR will see both.
+
+**Changed:**
+
+- The window-wide row of controls is gone. Three per-pane bands, drawn *inside* the window's
+  strip, so no pane loses a line. The design's chrome was redrawn.
+- `askWidth`'s derivation is completely different: the field's trailing edge is the list pane's,
+  not the window's. The number came out at 268 again, from arithmetic that shares no term with
+  the old one.
+- The field is `ArgoControlBox.vessel` (36) tall, not 28.
+- The sheet stops at the ticket pane's band instead of covering the pane, so `Start` survives an
+  open answer.
+- The ticket's number draws as the link, so the ticket detail's `#272` is accent-coloured here.
+
+**Survived unchanged:** every decision about the asking surface itself — found not switched to,
+Search keeps `⏎`, prose on a sheet, the read line, the dead citation, the refused `results`
+count, the query rule, which Account pays, and the `narrows` gate on the empty room.
+
+That is the useful result of the re-base: **#1242 moved everything around this surface and
+nothing inside it.** The one argument it strengthened is the case against a wand — the band it
+would have sat on now deliberately carries one control.
 
 ## Next
 
