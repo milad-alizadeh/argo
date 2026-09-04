@@ -62,6 +62,29 @@ public extension Hub {
         }
     }
 
+    /// ONE Session Argo owns, ended: its PTY closed, its claim given up, and every channel it
+    /// spoke over forgotten. What archiving a `managed` Session calls (#1290).
+    ///
+    /// A Session with no live claim is `external` or `orphaned`, and there is no process here to
+    /// end. `ownerOf` answers both in one read — an unowned Session was never bound, and an
+    /// orphaned one's claim has stood down — so nothing switches on `SessionProvenance` a second
+    /// way.
+    func endSession(id sessionID: String) {
+        guard let claim = ownership.ownerOf(sessionID: sessionID) else { return }
+        end(claim)
+    }
+
+    /// What the archive gesture asks of the Hub (#1290): archiving a Session Argo owns ends it,
+    /// and putting one back starts nothing.
+    ///
+    /// The `guard` is here rather than at the gesture because it is a RULE about archiving and not
+    /// a step in performing one — the app layer composes the two writes, and what each of them
+    /// means is the engine's to state and a test's to hold.
+    func endSession(archiving isArchived: Bool, id sessionID: String) {
+        guard isArchived else { return }
+        endSession(id: sessionID)
+    }
+
     /// Every process this Hub owns, ended, and every channel with them. What window close and app
     /// quit call: an agent Argo started must not outlive the Argo that started it.
     ///
@@ -69,11 +92,14 @@ public extension Hub {
     /// `relinquish`, which is also the only thing that releases a claim, so no gate can be open
     /// behind a claim this loop does not reach.
     func endOwnedSessions() {
-        terminals.terminateAll()
-        delivery.forgetAll()
         for claim in ownership.liveClaims {
-            relinquish(claim)
+            end(claim)
         }
+        // Kept as a sweep even though `end` forgets each claim's own watches, and deliberately not
+        // folded into it. Per-claim forgetting resolves a Session by the two ids a claim answers
+        // to; this is the quit path, where being one id short means a watch outliving the Hub that
+        // owns it. One call, and the guarantee stops resting on that resolution being exhaustive.
+        delivery.forgetAll()
     }
 
     /// The act of ownership this spawn opens, and the three things a claim can know about its
@@ -191,9 +217,25 @@ public extension Hub {
         spawns[claim] = quiet
     }
 
+    /// One owned Session, ended at the claim that owns it: the PTY closed first, then the claim
+    /// given up. What both ends call, so a Session ended alone and a Session ended with the window
+    /// are one act with one teardown.
+    ///
+    /// The claim is given up HERE rather than left to the exit the PTY is about to report. The
+    /// report arrives whenever the child gets round to dying, and until it does the claim would go
+    /// on covering a folder Argo no longer holds an agent in. The report still runs `relinquish` a
+    /// second time, and that is harmless: releasing a claim that has already stood down does
+    /// nothing, and the exit code it carries is written to the spawn either way.
+    private func end(_ claim: SessionOwnership.ClaimID) {
+        // `end` and not `terminate`: this death is Argo's own decision, so the PTY's entry goes
+        // with it. `terminate` is the inference path above, which keeps the entry on purpose.
+        terminals.end(claim)
+        relinquish(claim)
+    }
+
     /// One claim, given up: Argo's hold on it, the process behind it, and every channel it spoke
-    /// over. The three sites that give a claim up are a launch that failed, a process that exited,
-    /// and the app quitting.
+    /// over. The four sites that give a claim up are a launch that failed, a process that exited,
+    /// a Session ended by hand, and the app quitting.
     private func relinquish(_ claim: SessionOwnership.ClaimID) {
         // Before the claim is released, because the watch is keyed by Session and the id is read
         // back through the claim that is about to stop answering.

@@ -140,7 +140,20 @@ final class CockpitCoordinator {
 
     /// Archive a Session, or put one back. Only ever a gesture on a row; nothing derived from a
     /// merge or a transcript calls this (#502, story 14).
+    ///
+    /// Archiving a Session Argo OWNS ends its agent first (#1290). The roster is the honest list of
+    /// what is running, so a Session that is running and not on it breaks that — and the failure is
+    /// silent in the worst way: the row was archived to tidy up and the agent kept working.
+    ///
+    /// Which way the gesture goes is the Hub's rule, not this method's: archiving a Session Argo
+    /// owns ends it, putting one back starts nothing, and a Session it does not own has no process
+    /// to end either way. This composes the two writes and decides neither.
+    ///
+    /// Ended BEFORE the annotation, so the two never disagree in the order that matters. A write
+    /// that landed first would take the row off the roster while its agent was still being asked to
+    /// stop, which is the state this ticket exists to remove.
     func setArchived(_ isArchived: Bool, sessionID: String) async {
+        hub.endSession(archiving: isArchived, id: sessionID)
         annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
     }
 

@@ -161,7 +161,28 @@ extension CockpitView {
         return SessionCommands(
             for: session,
             rename: { renamingSessionID = $0 },
-            archive: { actions.sessions.setArchived($0, $1) },
+            archive: { archive(sessionID: $0, isArchived: $1) },
         )
+    }
+
+    /// The archive gesture, wherever it is made: the menu bar's item and the roster row's swipe
+    /// both come through here, so one prompt covers both (#1290).
+    ///
+    /// Archiving a Session Argo owns ends its agent, so an archive that would end LIVE work raises
+    /// the prompt instead of performing; everything else performs at once. The decision and its
+    /// words are `SessionArchiveProjection`'s — this only asks.
+    ///
+    /// A Session the presentation cannot name is archived without a prompt rather than dropped: it
+    /// is a row that exists (the gesture came off one), and a gesture that silently did nothing is
+    /// worse than one that skips a question about a Session nothing can describe.
+    func archive(sessionID: String, isArchived: Bool) {
+        guard let session = presentation.session(sessionID),
+              SessionArchiveProjection.confirms(
+                  access: session.access,
+                  status: session.status,
+                  archiving: isArchived,
+              )
+        else { return actions.sessions.setArchived(sessionID, isArchived) }
+        archiveConfirmation = ArchiveConfirmation(id: session.id, name: session.title)
     }
 }
