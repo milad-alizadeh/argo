@@ -113,8 +113,17 @@ if (stepNames.length > 0) {
   }
 }
 
+// A hit is priced at what a full run of the same thing costs, so a window holding no full run
+// prices nothing. Saying that is the honest answer; printing 0m00s would read as "saved
+// nothing", which is the opposite of what a window of pure hits means.
 console.log('\nWhat that saved')
-console.log(`  gate runs not taken   ${hits.length} × ${mmss(medianFull)} = ${mmss(gateSaved)}`)
+if (full.length === 0) {
+  console.log(
+    `  ${hits.length} gate runs not taken, and no full run in this window to price them against`,
+  )
+} else {
+  console.log(`  gate runs not taken   ${hits.length} × ${mmss(medianFull)} = ${mmss(gateSaved)}`)
+}
 console.log(`  steps not re-run      ${mmss(stepSaved)}`)
 console.log(`  total                 ${mmss(gateSaved + stepSaved)}`)
 
@@ -126,14 +135,17 @@ console.log('\nFull gate runs per branch')
 console.log(`  branches seen     ${branches.length}`)
 console.log(`  median per branch ${median(perBranch)}   worst ${Math.max(0, ...perBranch)}`)
 
-const waits = full.map((r) => r.waited)
-const loads = full.map((r) => r.load).filter((n) => n > 0)
+// Every gate row, not only the full ones: a window of pure hits still says what the machine
+// looked like, and reading zeros off an empty set would say the opposite.
+const waits = gates.map((r) => r.waited)
+const loads = gates.map((r) => r.load).filter((n) => n > 0)
+const freeGb = gates.map((r) => r.freeGb).filter((n) => n > 0)
 console.log('\nThe machine while it ran')
 console.log(
   `  queued for a build slot   median ${mmss(median(waits))}, worst ${mmss(Math.max(0, ...waits))}`,
 )
 console.log(`  load average              median ${median(loads).toFixed(1)}`)
-console.log(`  free disk                 ${median(full.map((r) => r.freeGb))} GB`)
+console.log(`  free disk                 ${median(freeGb)} GB`)
 
 // The targets, so a reader does not have to remember what good looks like. These are the
 // numbers #1377 set out to move, and the baseline column is what was measured before it.
@@ -141,7 +153,7 @@ console.log('\nAgainst the baseline (#1377, 2026-09-04)')
 const rowsOut = [
   ['full gate runs per branch', 'lanes × merges (~8 × 90/day)', median(perBranch)],
   ['load average while gating', '178 on 12 cores', median(loads).toFixed(1)],
-  ['free disk', '9 GB', `${median(full.map((r) => r.freeGb))} GB`],
+  ['free disk', '9 GB', `${median(freeGb)} GB`],
 ]
 for (const [what, was, now] of rowsOut) {
   console.log(`  ${what.padEnd(28)} was ${String(was).padEnd(30)} now ${now}`)
