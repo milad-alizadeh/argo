@@ -20,8 +20,7 @@ struct AtlasTiler {
     init(channels: AtlasChannels, map: AtlasMap) {
         self.channels = channels
         self.banding = AtlasBanding(of: channels.band, over: map)
-        let measured = map.plots.compactMap { $0.measures[channels.footprint] }.filter { $0 > 0 }
-        self.floor = measured.min() ?? 1
+        self.floor = map.values(of: channels.footprint).filter { $0 > 0 }.min() ?? 1
     }
 
     /// The plan for one Map on one ground.
@@ -42,15 +41,22 @@ struct AtlasTiler {
             tiles.append(AtlasTile(
                 path: plot.path,
                 rect: rect,
-                band: banding.band(of: plot.measures[channels.band]),
+                band: banding.band(of: plot.value(of: channels.band)),
             ))
         case let .plate(plate):
             plates.append(AtlasPlateFrame(path: plate.path, rect: rect, depth: depth))
-            let ordered = plate.children.sorted(by: heaviestFirst)
-            let inside = AtlasMeasure.interior(of: rect)
-            let rects = AtlasSquarify.rects(of: ordered.map(weight(of:)), in: inside)
-            for (child, childRect) in zip(ordered, rects) {
-                place(child, in: childRect, depth: depth + 1)
+            // Weighed ONCE and then sorted, rather than weighed inside the comparator: a Plate's
+            // weight is a walk of its whole subtree, and a comparator that took one would re-walk
+            // the deep half of the tree on every comparison, at every level.
+            let weighed = plate.children
+                .map { (node: $0, weight: weight(of: $0)) }
+                .sorted(by: heaviestFirst)
+            let rects = AtlasSquarify.rects(
+                of: weighed.map(\.weight),
+                in: AtlasFraming.interior(of: rect),
+            )
+            for (child, childRect) in zip(weighed, rects) {
+                place(child.node, in: childRect, depth: depth + 1)
             }
         }
     }
@@ -60,9 +66,14 @@ struct AtlasTiler {
     /// The path is what makes the order TOTAL, and a total order is the whole claim that a map
     /// tiles the same way twice: leave it out and two equal-weight files are ordered by whatever
     /// the sort happened to do, which is how a map comes out different on every launch.
-    private func heaviestFirst(_ one: AtlasNode, _ other: AtlasNode) -> Bool {
-        let (first, second) = (weight(of: one), weight(of: other))
-        return first == second ? one.path < other.path : first > second
+    private func heaviestFirst(
+        _ one: (node: AtlasNode, weight: Double),
+        _ other: (node: AtlasNode, weight: Double),
+    )
+        -> Bool {
+        one.weight == other.weight
+            ? one.node.path < other.node.path
+            : one.weight > other.weight
     }
 
     /// What a node asks for, in units of the footprint Measure — its own value against the floor,
@@ -72,7 +83,7 @@ struct AtlasTiler {
     private func weight(of node: AtlasNode) -> Double {
         switch node {
         case let .plot(plot):
-            max(plot.measures[channels.footprint] ?? 0, floor)
+            max(plot.value(of: channels.footprint) ?? 0, floor)
         case let .plate(plate):
             max(plate.children.reduce(0) { $0 + weight(of: $1) }, floor)
         }

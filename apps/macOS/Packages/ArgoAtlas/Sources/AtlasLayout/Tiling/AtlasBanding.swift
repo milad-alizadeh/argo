@@ -8,11 +8,12 @@ public struct AtlasBanding: Equatable, Sendable {
     ///
     /// A Plot that does not carry the Measure is ABSENT rather than zero — a PNG has no lines to
     /// count rather than zero of them — so it is left out of the distribution instead of dragging
-    /// its bottom down.
+    /// its bottom down. So is a value no rectangle can be made from; `AtlasReading` is where both
+    /// are judged.
     private let ascending: [Double]
 
     public init(of measure: String, over map: AtlasMap) {
-        self.ascending = map.plots.compactMap { $0.measures[measure] }.sorted()
+        self.ascending = map.values(of: measure).sorted()
     }
 
     /// Where a value sits in the repository's own distribution: the share of measured Plots

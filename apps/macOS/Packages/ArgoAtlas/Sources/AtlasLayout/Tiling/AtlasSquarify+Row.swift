@@ -34,6 +34,13 @@ extension AtlasSquarify {
         -> ([CGRect], CGRect) {
         let area = weights.reduce(0, +) * scale
         let width = last ? free.width : min(CGFloat(area / Double(free.height)), free.width)
+        // A row that asks for the whole of what is left leaves the next one nothing to stand on.
+        // Exact arithmetic forbids it — the rows sum to the ground — but at this repository's 78x
+        // spread the rounding does not, and dividing by a zero width makes every height after it
+        // infinite and then NaN, which draws a plausible wrong picture rather than failing.
+        guard width > 0 else {
+            return (Array(repeating: .zero, count: weights.count), free)
+        }
         var rects: [CGRect] = []
         var top = free.minY
         for (offset, weight) in weights.enumerated() {
@@ -52,7 +59,7 @@ extension AtlasSquarify {
     }
 }
 
-extension CGRect {
+private extension CGRect {
     /// The rect with its axes swapped. Only ever applied in pairs, so nothing outside the tiler
     /// ever sees one.
     var transposed: CGRect {

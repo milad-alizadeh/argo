@@ -54,6 +54,23 @@ struct AtlasTilingTests {
         }
     }
 
+    /// And a folder stands on ITS folder's plate. Without this a nested plate could escape its
+    /// parent and take every file under it out with nothing above saying so — the shape of the
+    /// failure that lost 532 files, one level up from where the test above looks.
+    @Test func `every folder stands on the plate of the folder it is in`() throws {
+        let plan = try Self.plan(of: AtlasMapFixture.argo())
+        let plates = Dictionary(uniqueKeysWithValues: plan.plates.map { ($0.path, $0.rect) })
+        var nested = 0
+
+        for frame in plan.plates where frame.depth > 0 {
+            let folder = String(frame.path.dropLast(frame.name.count + 1))
+            let parent = try #require(plates[folder], "\(frame.path) has a plate to stand on")
+            nested += 1
+            #expect(parent.contains(frame.rect), "\(frame.path)")
+        }
+        #expect(nested > 20, "the fixture put real folders through this")
+    }
+
     /// The failure this guards is a dictionary iterated in its own order, whose seed is fresh on
     /// every launch — which is how a map comes out different every time it is opened. Decoded
     /// TWICE rather than tiled twice: one value tiled twice would agree even if the walk read a

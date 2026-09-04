@@ -74,6 +74,42 @@ struct AtlasFootprintTests {
         #expect(drawn.allSatisfy { $0.rect.area > 0 })
     }
 
+    /// The other half of the same claim, and the one the fixture cannot make: every file in this
+    /// repository has a size, so a Measure that is present and ZERO has to be written by hand.
+    /// Absent and zero reach the tiler down different paths and only one of them is real data.
+    @Test func `a file measuring zero still gets a rectangle`() throws {
+        let map = try AtlasMap(decoding: Data("""
+        {"version": 1, "measuredAt": "2026-09-04T00:00:00Z", "commit": null,
+         "root": {"name": "zero", "children": [
+           {"kind": "plot", "name": "empty", "measures": {"lines": 0}},
+           {"kind": "plot", "name": "full", "measures": {"lines": 500}}]}}
+        """.utf8))
+
+        let tiles = Self.plan(of: map).tiles
+
+        #expect(tiles.count == 2)
+        #expect(tiles.allSatisfy { $0.rect.area > 0 })
+    }
+
+    /// A Map file cannot carry one — JSON has no literal for it — but a Map built in memory can,
+    /// and a NaN weight is not a bad rectangle: `max` returns it, the tiler's `total > 0` guard
+    /// then fails, and every file under that Plate is drawn at zero with nothing saying one went
+    /// missing. Refused at the boundary instead, where it reads as a file nobody measured.
+    @Test func `a measure that is not a number takes nothing off the map with it`() {
+        let map = AtlasMap(measuredAt: Date(), commit: nil, root: AtlasPlate(
+            path: "broken",
+            children: [
+                .plot(AtlasPlot(path: "broken/divided", measures: ["lines": .nan])),
+                .plot(AtlasPlot(path: "broken/ordinary", measures: ["lines": 120])),
+            ],
+        ))
+
+        let tiles = Self.plan(of: map).tiles
+
+        #expect(tiles.count == 2)
+        #expect(tiles.allSatisfy { $0.rect.area > 0 })
+    }
+
     /// The claim squarifying is FOR, made where it is hard rather than where it is easy: on the
     /// resting whole map, with every level drawn at once. A thread is a file nobody can point at,
     /// so a tiler that draws threads has lost the file as surely as if it had dropped it.

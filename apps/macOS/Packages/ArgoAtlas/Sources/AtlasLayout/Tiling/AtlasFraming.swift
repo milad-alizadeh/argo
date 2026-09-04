@@ -1,10 +1,14 @@
 import CoreGraphics
 
-/// What a tiled map is measured at. `MermaidMeasure`'s sibling, and deliberately NOT a reader of
-/// `ArgoDesign`: this half of the package depends on no contract, because the numbers here are the
-/// tiling's own arithmetic rather than the rhythm a document is set on. What a plate is PAINTED in
-/// is a token, and it is spent in `AtlasView`.
-enum AtlasMeasure {
+/// What a Plate spends on being readable as a folder: the ring around what stands on it, and the
+/// strip its name is drawn in.
+///
+/// `MermaidMeasure`'s sibling, and deliberately NOT a reader of `ArgoDesign`: this half of the
+/// package depends on no contract, because the numbers here are the tiling's own arithmetic rather
+/// than the rhythm a document is set on. What a plate is PAINTED in is a token, spent in
+/// `AtlasView`. Named for framing rather than measuring, because Measure is taken: in this package
+/// it is one named number about a Plot (`docs/domain/atlas.md`).
+enum AtlasFraming {
     /// The ring a Plate keeps around what stands on it, so a file at the edge of one folder does
     /// not touch a file at the edge of the next.
     static let plateInset: CGFloat = 2
