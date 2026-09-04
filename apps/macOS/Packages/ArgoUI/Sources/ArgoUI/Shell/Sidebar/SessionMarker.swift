@@ -12,18 +12,25 @@ struct SessionMarker: View {
     let row: SessionRosterProjection.Row
 
     var body: some View {
-        Group {
-            if let fold = row.fold {
-                ArgoDisclosure(fold.isOpen ? .below : .beside)
-                    .foregroundStyle(argo.color.text.tertiary)
-                    .padding(.top, Self.inset(for: ArgoIconSize.chevron.rawValue))
-                    .accessibilityHidden(true)
-            } else {
-                SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
-                    .padding(.top, Self.inset(for: ArgoIconSize.statusDot))
-            }
+        VStack(spacing: SubagentDots.stackGap) {
+            mark
+            SubagentDots(delegation: row.delegation)
         }
         .frame(width: Self.columnWidth)
+        .accessibilityHidden(true)
+    }
+
+    /// The Session's own state, or — on a fold — whether it is open. What runs BENEATH it is
+    /// `SubagentDots`, which is a different subject in the same column.
+    @ViewBuilder private var mark: some View {
+        if let fold = row.fold {
+            ArgoDisclosure(fold.isOpen ? .below : .beside)
+                .foregroundStyle(argo.color.text.tertiary)
+                .padding(.top, Self.inset(for: ArgoIconSize.chevron.rawValue))
+        } else {
+            SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
+                .padding(.top, Self.inset(for: ArgoIconSize.statusDot))
+        }
     }
 }
 

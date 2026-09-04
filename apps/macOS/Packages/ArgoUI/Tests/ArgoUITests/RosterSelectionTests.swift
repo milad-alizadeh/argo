@@ -16,7 +16,7 @@ struct RosterSelectionTests {
         let sessions = RosterFoldFixture.runs(3, at: loop)
             + [RosterFoldFixture.run(at: nil, entry: .interactive, index: 9)]
         return SessionRosterProjection.rows(
-            from: sessions, opened: [], selection: selection,
+            from: sessions, viewing: .init(selection: selection),
         )
     }
 

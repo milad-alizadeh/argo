@@ -55,7 +55,7 @@ Everything below is a token or is derived from one. Nothing is a number a builde
 | column width | `ArgoIconSize.statusDot` = **6** | every title on the roster hangs off this one x |
 | dot inset from the row's top | `(row line − statusDot) / 2` | the dot sits on the **title's optical centre**. Derived, never nudged: a marker aligned by a magic number drifts the moment the type scale moves. The row line is `rowTitle`'s box |
 | what "`rowTitle`'s box" is | `ArgoTypeScale.drawnLineBox` | amended in the build (#1343). The `.html` sets `--row-line: 13 × 1.45`, which is CSS's own leading and stands ~1.6pt over the box SwiftUI actually draws a `Text` in; centring against it puts the dot visibly under the title. The box is the resolved face's `ascender − descender`, measured on the render at 12px dot centre against a 106–125px cap band |
-| Subagent dot | **4** | half the state dot. What runs *under* a Session is drawn smaller than the Session's own state |
+| Subagent dot | **3** | half the state dot, and the build takes the halving: the table and the `.html` both said 4, which is not half of a 6pt dot. `ArgoIconSize.statusDot / 2` is what ships, so the mark tracks the dot it sits under (#1344) |
 | gap between marks | **3** | tighter than `hair` would place them; the stack has to read as one column, not as a list |
 | ceiling | **5**, then `+n` | five is where a stack stops being countable at a glance, and the figure is exact where a longer stack is texture |
 | the `+n` label | `machineCaption`, `text.tertiary` | in the column's **flow** at `width: 100%` of a fixed 6pt column, so it overflows evenly on both sides and the column does not grow by a point. Measured: every title stays on one x |
@@ -108,6 +108,15 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
    outline and **no** delegation mark: a Session Argo cannot place cannot be claimed to be
    delegating either. Where a *managed* Session holds a delegation Argo cannot resolve (#1076),
    the mark is an outline pip and never a number.
+
+   **Amended in the build (#1344): Argo counts what it can place, and draws the outline only for
+   what is left.** The prototype had one figure per row, so "cannot resolve" was a property of the
+   whole column; the shipped reading is per child, because `SubagentWriting` lifts one child at a
+   time on the evidence of its own file growing (#1269). An idle Session with one child writing and
+   two silent therefore draws **one dot**, not an outline: "never a number" is about a reading with
+   no number in it, not about suppressing one Argo actually holds. Reading it the other way puts
+   the two silent children in front of the one Argo is watching write, which is #1269 pointed
+   sideways.
 6. **The row carries no control.** The roster has exactly one click and it selects the Session.
    `Ready` is a **state**, drawn where the states the row derives are drawn; the **Create PR**
    control that runs `/ship` lives in the deck header, where the Session is already open. A
@@ -117,8 +126,11 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
    request wins.
 8. **The row does not move.** No animation on any mark. A list where every row pulses out of
    phase is a list nobody can scan.
-9. **A fold sums or says nothing.** Its Subagent dots are summed across the runs it hides. It
-   draws **no Plan**: four to-do lists do not add up to one.
+9. **A fold sums or says nothing.** Its Subagent dots are summed across the runs it hides — in the
+   build, by reading the joined lists through the same rule one Session's list goes through, so the
+   sum cannot drift into a second piece of arithmetic. A fold that can place none of its runs draws
+   the outline; one that can place some draws those. It draws **no Plan**: four to-do lists do not
+   add up to one.
 
 ## The Ticket number leaves the title
 

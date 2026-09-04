@@ -39,6 +39,16 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// A reader that has nothing to ask.
     public static let unread = FeedAgentReader()
 
+    /// Whether one Subagent's own file is growing — the reading `FeedAgents.told(_:writing:at:)`
+    /// is handed, offered here so the ROSTER can ask it too (#1344).
+    ///
+    /// The rail asks it through `told(_:)` below, which reads one moment for the whole list. This
+    /// takes its own, because the roster asks per Session and there is no list here to share one
+    /// across.
+    @MainActor package func writing(of subagentID: String) -> SubagentWriting {
+        SubagentWriting.read(lastGrewAtMs: grewAtMs(subagentID), nowMs: Date().epochMs)
+    }
+
     /// The shipping reader: `source` is the object the closure asks, and two readers on one source
     /// are the same reader however many times the shell rebuilds the closure.
     ///

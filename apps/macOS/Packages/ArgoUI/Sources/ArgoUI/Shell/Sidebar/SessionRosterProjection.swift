@@ -11,16 +11,41 @@ package enum SessionRosterProjection {
     /// `now` is a parameter so an age is arithmetic against a fixed moment rather than the clock.
     package static func rows(
         from sessions: [CockpitPresentation.Session],
-        opened: Set<String> = [],
-        selection: String? = nil,
+        viewing: Viewing = .none,
         now: Date = Date(),
     )
         -> [Row] {
-        rows(
-            from: sessions,
-            in: Pass(isArchived: false, opened: opened, selection: selection),
-            now: now,
-        )
+        rows(from: sessions, in: Pass(isArchived: false, viewing: viewing), now: now)
+    }
+
+    /// What the WINDOW is doing, as against which Sessions there are: the folds the reader has
+    /// opened, what the deck is drawing, and whether each Subagent's own file is growing.
+    ///
+    /// One value because the cap on a parameter list is four and these three arrive together from
+    /// one place — and because every one of them is a fact about the surface rather than about the
+    /// roster, so a call site reading `viewing:` is reading them under the name they share.
+    package struct Viewing {
+        let opened: Set<String>
+        let selection: String?
+        /// Whether Argo has watched this Subagent's own file grow (#1269) — the evidence the
+        /// parent's record does not hold, and the fourth fact behind every running claim
+        /// (`FeedAgents.told(_:writing:at:)`). Handed IN because reading it is the engine's, and
+        /// `@MainActor`: this projection is a pure function and stays one.
+        let writing: @Sendable (String) -> SubagentWriting
+
+        /// A window doing nothing in particular, and the honest default: no fold opened, nothing
+        /// selected, and no child watched growing. A specimen and a suite are exactly that.
+        package static let none = Viewing()
+
+        package init(
+            opened: Set<String> = [],
+            selection: String? = nil,
+            writing: @escaping @Sendable (String) -> SubagentWriting = { _ in .quiet },
+        ) {
+            self.opened = opened
+            self.selection = selection
+            self.writing = writing
+        }
     }
 
     /// One pass over the roster: which of the two lists it is drawing, which folds the reader has
@@ -28,24 +53,26 @@ package enum SessionRosterProjection {
     /// reader did, for the reason the archive foot is.
     struct Pass {
         let isArchived: Bool
-        let opened: Set<String>
-        let selection: String?
+        let viewing: Viewing
+
+        var opened: Set<String> {
+            viewing.opened
+        }
+
+        var selection: String? {
+            viewing.selection
+        }
     }
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
     /// of sight is not a Session described differently.
     package static func archivedRows(
         from sessions: [CockpitPresentation.Session],
-        opened: Set<String> = [],
-        selection: String? = nil,
+        viewing: Viewing = .none,
         now: Date = Date(),
     )
         -> [Row] {
-        rows(
-            from: sessions,
-            in: Pass(isArchived: true, opened: opened, selection: selection),
-            now: now,
-        )
+        rows(from: sessions, in: Pass(isArchived: true, viewing: viewing), now: now)
     }
 
     private static func rows(
@@ -62,11 +89,26 @@ package enum SessionRosterProjection {
         // kept half, so a fold's count is what the reader can see rather than what is behind the
         // foot as well.
         let folding = Folding(of: kept.map { pair in pair.0 }, in: pass)
+        // Once per Session and read twice: the Session's own row reads its own list, and the fold
+        // above it reads the lists it hides joined (`Folding.subagents(under:from:)`).
+        let subagents = Dictionary(uniqueKeysWithValues: kept.map { session, _ in
+            (session.id, self.subagents(
+                of: session, in: session.events, writing: pass.viewing.writing, nowMs: nowMs,
+            ))
+        })
         return kept.flatMap { session, decided -> [Row] in
             [
-                folding.fold(opening: session).map { foldRow($0, at: session, nowMs: nowMs) },
+                folding.fold(opening: session).map {
+                    foldRow(
+                        $0, at: session, nowMs: nowMs,
+                        delegation: reading(of: folding.subagents(under: session, from: subagents)),
+                    )
+                },
                 folding.drawsOwnRow(session)
-                    ? row(for: session, decided: decided, nowMs: nowMs) : nil,
+                    ? row(
+                        for: session, decided: decided, nowMs: nowMs,
+                        delegation: reading(of: subagents[session.id] ?? []),
+                    ) : nil,
             ]
             .compactMap(\.self)
         }

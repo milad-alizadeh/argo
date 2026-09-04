@@ -23,7 +23,33 @@ package enum FeedAgents {
         of session: DelegatingSession,
     )
         -> [FeedAgent] {
-        rows.compactMap(delegation(in:)).enumerated().map { position, call in
+        agents(handedOver: rows.compactMap(delegation(in:)), of: session)
+    }
+
+    /// The same list off the Session's own STREAM, for a surface that has no feed rows to read and
+    /// cannot afford to build them: the roster draws this per row, and `FeedProjection.rows` is a
+    /// dozen folds over the whole record (#1344).
+    ///
+    /// Honest to walk separately because none of those folds can reach a delegation: a delegation
+    /// is never collapsed into another (`FeedCall.stands(for:)`), so the delegate calls in a
+    /// reading are exactly the delegate calls in the stream. Both entry points then hand the same
+    /// calls to `agents(handedOver:of:)`, which is what keeps the roster's count and the rail's
+    /// count one answer rather than two — the disagreement rule 1 of `cockpit-roster-row.md`
+    /// forbids, and the one #1269 was written for.
+    package static func all(
+        in events: [TranscriptEvent],
+        of session: DelegatingSession,
+        within path: FeedPath,
+    )
+        -> [FeedAgent] {
+        agents(handedOver: delegations(in: events, within: path), of: session)
+    }
+
+    /// One `FeedAgent` per delegation, in the order the work was handed over. The single place a
+    /// `FeedAgent` is built, so neither entry point can grow a reading of its own.
+    private static func agents(handedOver calls: [FeedCall], of session: DelegatingSession)
+        -> [FeedAgent] {
+        calls.enumerated().map { position, call in
             FeedAgent(
                 id: position,
                 // The disambiguated address: a row here stands alone in a column of its own, with
@@ -35,6 +61,27 @@ package enum FeedAgents {
                 durationMs: call.durationMs,
                 startedAtMs: call.startedAtMs,
             )
+        }
+    }
+
+    /// The delegate calls in the stream, paired with the outcomes that answered them.
+    ///
+    /// Forwards, and the outcomes are gathered in the same pass: a call and its result sit
+    /// arbitrarily far apart, and a backgrounded delegation is answered twice — a receipt at once
+    /// and a report later (#908) — so the LAST outcome under an id is the one that decides it.
+    private static func delegations(in events: [TranscriptEvent], within path: FeedPath)
+        -> [FeedCall] {
+        var outcomes: [String: ToolCallOutcome] = [:]
+        var handedOver: [ToolCall] = []
+        for event in events {
+            switch event {
+            case let .toolCallOutcome(outcome): outcomes[outcome.id] = outcome
+            case let .toolCall(call) where call.kind == .delegate: handedOver.append(call)
+            default: break
+            }
+        }
+        return handedOver.compactMap {
+            FeedCallReading.call($0, outcome: outcomes[$0.id], within: path)
         }
     }
 

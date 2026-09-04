@@ -31,17 +31,16 @@ struct RosterListing {
     /// value is rebuilt every pass.
     func reading(
         of sessions: [CockpitPresentation.Session],
-        opened: Set<String> = [],
-        selection: String? = nil,
+        viewing: SessionRosterProjection.Viewing = .none,
         now: Date = Date(),
     )
         -> Reading {
         Reading(
             rows: order.published(SessionRosterProjection.rows(
-                from: sessions, opened: opened, selection: selection, now: now,
+                from: sessions, viewing: viewing, now: now,
             )),
             archived: SessionRosterProjection.archivedRows(
-                from: sessions, opened: opened, selection: selection, now: now,
+                from: sessions, viewing: viewing, now: now,
             ),
         )
     }

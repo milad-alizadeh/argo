@@ -63,6 +63,9 @@ extension SessionRosterProjection {
         /// What this row stands for, where it is not one Session — see `Fold`. `nil` on every
         /// ordinary row, which is what every surface reads to tell the two apart.
         let fold: Fold?
+        /// What runs UNDER this Session, in the leading column (#1344). The rail's own count,
+        /// through the rail's own reading, so the two can never disagree about one Session.
+        let delegation: Delegation
 
         /// `fileprivate`, so `rows(from:)` is the only way a Row comes into being. Taken as one
         /// value per reading (`SessionRosterProjection+RowValues.swift`) and unpacked onto the flat
@@ -73,6 +76,7 @@ extension SessionRosterProjection {
             activity: Activity,
             availability: Availability,
         ) {
+            self.delegation = activity.delegation
             self.id = identity.id
             self.title = identity.title
             self.rename = identity.rename
@@ -136,7 +140,10 @@ extension SessionRosterProjection {
     /// The row a fold draws: what it stands for in the title, the folder it folded in the slot the
     /// roster tells rows apart by, and its newest run's own clock.
     static func foldRow(
-        _ fold: Fold, at newest: CockpitPresentation.Session, nowMs: Int,
+        _ fold: Fold,
+        at newest: CockpitPresentation.Session,
+        nowMs: Int,
+        delegation: Delegation,
     )
         -> Row {
         let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
@@ -151,13 +158,16 @@ extension SessionRosterProjection {
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
                 // of them drawn for all of them is a claim about the others.
-                state: nil, stateWord: nil,
+                state: Row.Activity.State(role: nil, word: nil),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 // A fold stands for several runs at once, so one run's call drawn for all of
                 // them is the same claim about the others its dot and its word decline to make.
                 activity: nil,
+                // The one fact a fold does state for its runs, because it is the SUM of them and
+                // not one of them stood in for the rest (rule 9).
+                delegation: delegation,
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -168,7 +178,10 @@ extension SessionRosterProjection {
     }
 
     static func row(
-        for session: CockpitPresentation.Session, decided: Decided, nowMs: Int,
+        for session: CockpitPresentation.Session,
+        decided: Decided,
+        nowMs: Int,
+        delegation: Delegation,
     )
         -> Row {
         // Handed out ONCE and walked twice: the clock and the activity both read the tail of the
@@ -191,12 +204,15 @@ extension SessionRosterProjection {
                 toldApart: toldApart(for: session, naming: decided.naming),
             ),
             activity: Row.Activity(
-                state: SessionState.role(for: session.status),
-                stateWord: SessionState.word(for: session.status),
+                state: Row.Activity.State(
+                    role: SessionState.role(for: session.status),
+                    word: SessionState.word(for: session.status),
+                ),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 activity: activity(of: session, in: events),
+                delegation: delegation,
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

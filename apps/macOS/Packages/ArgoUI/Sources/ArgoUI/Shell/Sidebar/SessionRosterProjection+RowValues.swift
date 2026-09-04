@@ -38,6 +38,14 @@ extension SessionRosterProjection.Row {
             let spoken: String?
         }
 
+        /// The dot's reading and the word beside it. One value because they are one fact drawn
+        /// twice — the word takes the dot's own ink — and no call site names one without the
+        /// other.
+        struct State {
+            let role: ArgoOperationalState?
+            let word: String?
+        }
+
         let state: ArgoOperationalState?
         let stateWord: String?
         let clock: SessionRosterProjection.Clock?
@@ -45,18 +53,22 @@ extension SessionRosterProjection.Row {
         /// `nil` on every row that is not a running Session with a call behind it — see
         /// `SessionRosterProjection.activity(of:in:)`.
         let activity: String?
+        /// What runs under the Session, decided once across the roster pass so a fold and the runs
+        /// it hides read one answer (`SessionRosterProjection.delegation(of:in:writing:nowMs:)`).
+        let delegation: SessionRosterProjection.Delegation
 
         init(
-            state: ArgoOperationalState?,
-            stateWord: String?,
+            state: State,
             age: Age,
             activity: String?,
+            delegation: SessionRosterProjection.Delegation = .none,
         ) {
-            self.state = state
-            self.stateWord = stateWord
+            self.state = state.role
+            self.stateWord = state.word
             self.clock = age.clock
             self.spokenClock = age.spoken
             self.activity = activity
+            self.delegation = delegation
         }
     }
 

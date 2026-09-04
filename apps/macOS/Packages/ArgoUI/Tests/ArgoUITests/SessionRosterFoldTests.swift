@@ -89,7 +89,7 @@ struct SessionRosterFoldTests {
         let sessions = runs(3, at: loop)
         let shut = try #require(SessionRosterProjection.rows(from: sessions).first)
 
-        let rows = SessionRosterProjection.rows(from: sessions, opened: [shut.id])
+        let rows = SessionRosterProjection.rows(from: sessions, viewing: .init(opened: [shut.id]))
 
         #expect(rows.count == 4)
         #expect(rows.first?.fold?.isOpen == true)
@@ -121,7 +121,7 @@ struct SessionRosterFoldTests {
         #expect(shut.announcement.contains("Headless runs"))
 
         let open = try #require(
-            SessionRosterProjection.rows(from: sessions, opened: [shut.id]).first,
+            SessionRosterProjection.rows(from: sessions, viewing: .init(opened: [shut.id])).first,
         )
         #expect(open.announcement.contains("Expanded"))
     }

@@ -72,7 +72,10 @@ struct SessionRosterFoldRulesTests {
 
         #expect(onRoster.id != behindFoot.id)
         // Opening the archived one leaves the roster's shut.
-        let rows = SessionRosterProjection.rows(from: sessions, opened: [behindFoot.id])
+        let rows = SessionRosterProjection.rows(
+            from: sessions,
+            viewing: .init(opened: [behindFoot.id]),
+        )
         #expect(rows.count == 1)
         #expect(rows.first?.fold?.isOpen == false)
     }
@@ -82,7 +85,10 @@ struct SessionRosterFoldRulesTests {
     /// `isArchiveOpen` refuses for the archive, refused here for the same reason.
     @Test
     func `a fold holding the selection is open whether or not the reader opened it`() throws {
-        let rows = SessionRosterProjection.rows(from: runs(3, at: loop), selection: "run-1")
+        let rows = SessionRosterProjection.rows(
+            from: runs(3, at: loop),
+            viewing: .init(selection: "run-1"),
+        )
 
         #expect(rows.count == 4)
         #expect(try #require(rows.first).fold?.isOpen == true)

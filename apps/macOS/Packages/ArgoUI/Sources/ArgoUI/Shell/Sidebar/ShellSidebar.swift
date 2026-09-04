@@ -50,7 +50,18 @@ package struct ShellSidebar: View {
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
         let reading = roster.reading(
-            of: presentation.sessions, opened: openFolds, selection: selection,
+            of: presentation.sessions,
+            viewing: SessionRosterProjection.Viewing(
+                opened: openFolds,
+                selection: selection,
+                // The same evidence the rail reads, so the roster's count and the rail's are one
+                // answer about one Session (#1269, #1344). The reader is the main actor's and the
+                // projection is a pure function that stays nonisolated, so the hop is asserted
+                // here — this closure is called from `rows(from:viewing:now:)`, which a body calls.
+                writing: { id in
+                    MainActor.assumeIsolated { presentation.subagents.writing(of: id) }
+                },
+            ),
         )
 
         return SessionNavigator(

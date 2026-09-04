@@ -20,7 +20,7 @@ import ArgoEngine
 /// `DelegationCeiling` has had since #1090, unchanged in kind: both are read WHEN THE LIST IS
 /// DERIVED, and a clock in the room's stamp would expire every memo in it on a timer, which is the
 /// cost #858 and #875 exist to have removed.
-enum SubagentWriting: Equatable, Sendable {
+package enum SubagentWriting: Equatable, Sendable {
     /// Argo saw this file grow inside the window below.
     case writing
     /// It has not — including the ordinary case of a file Argo never watched grow at all. Absence
@@ -31,11 +31,11 @@ enum SubagentWriting: Equatable, Sendable {
     /// is the same one that constant was measured for — a live agent sits quiet mid-tool, so only a
     /// record touched inside this window corroborates one actively working — and a Subagent is an
     /// Agent. A figure of its own here would be a second answer to one question, drifting.
-    static let growthWindowMs = SessionLiveness.recentActivityWindowMs
+    package static let growthWindowMs = SessionLiveness.recentActivityWindowMs
 
     /// `quiet` for a file Argo never watched grow: `lastGrewAtMs` is `nil` until a batch lands
     /// AFTER the backfill, so a child that finished before the cockpit opened dates nothing.
-    static func read(lastGrewAtMs: Int?, nowMs: Int) -> SubagentWriting {
+    package static func read(lastGrewAtMs: Int?, nowMs: Int) -> SubagentWriting {
         guard let lastGrewAtMs else { return .quiet }
         return nowMs - lastGrewAtMs <= growthWindowMs ? .writing : .quiet
     }

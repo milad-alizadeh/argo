@@ -38,7 +38,7 @@ struct FoldedRosterSpecimen: View {
 
     /// The rows this specimen renders, which is what `SessionRosterSpecimenTests` asserts on.
     static func rows(opened: Set<String>) -> [SessionRosterProjection.Row] {
-        SessionRosterProjection.rows(from: sessions, opened: opened)
+        SessionRosterProjection.rows(from: sessions, viewing: .init(opened: opened))
     }
 
     private static let sessions =

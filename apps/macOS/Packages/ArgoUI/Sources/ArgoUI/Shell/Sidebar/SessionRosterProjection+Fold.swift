@@ -40,6 +40,9 @@ extension SessionRosterProjection {
             let count: Int
             let label: String
             let leader: String
+            /// The ids of the runs this fold hides. Kept so a fold can SUM what it stands for
+            /// rather than read one run and claim it for the others (#1344).
+            let runs: [String]
         }
 
         /// Which directory each FOLDED run belongs to. A run drawn on its own row is absent.
@@ -80,6 +83,21 @@ extension SessionRosterProjection {
             return Fold(
                 id: id, count: reading.count, label: reading.label, isOpen: opened.contains(id),
             )
+        }
+
+        /// The Subagents of every run this fold hides, joined — which is how rule 9's "a fold sums"
+        /// is kept structural: the joined list goes through the same
+        /// `SessionRosterProjection.reading(of:)` a single Session's does, so a fold cannot grow a
+        /// second piece of arithmetic to drift from the first.
+        func subagents(
+            under session: CockpitPresentation.Session,
+            from subagents: [String: [FeedAgent]],
+        )
+            -> [FeedAgent] {
+            guard let directory = membership[session.id], let reading = folds[directory] else {
+                return []
+            }
+            return reading.runs.flatMap { subagents[$0] ?? [] }
         }
 
         /// Whether this Session is drawn on a row of its own: every run outside a fold, and every
@@ -132,6 +150,7 @@ private extension SessionRosterProjection.Folding {
                     runs: candidate.runs,
                     reading: Reading(
                         count: candidate.runs.count, label: label, leader: leader,
+                        runs: candidate.runs,
                     ),
                 )
             }
