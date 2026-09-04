@@ -248,7 +248,11 @@ final class TranscriptWatch {
     ///
     /// A change that MOVED nothing publishes nothing (#858). Whether it moved is the change's own
     /// answer, because only the write knows — every mutating method on `HubJoin` reports it.
-    private func mutate(_ change: (inout HubJoin) -> Bool) {
+    ///
+    /// Internal rather than private for the reason the three stored properties above are: the
+    /// reading half of this watch is another file, and `private` in Swift is file-scoped. It is
+    /// still the only write there is.
+    func mutate(_ change: (inout HubJoin) -> Bool) {
         guard change(&join) else { return }
         joinRevision += 1
     }
@@ -265,7 +269,7 @@ final class TranscriptWatch {
 
     private func drain(_ observation: TranscriptObservation) async {
         for await events in observation.events {
-            mutate { $0.apply(events, to: observation.id) }
+            await land(events, of: observation.id)
             // After the join, never before: reconciliation retires a spawned Session's own row, and
             // it may only do that once the observed row it is standing in for is published.
             await onApplied()

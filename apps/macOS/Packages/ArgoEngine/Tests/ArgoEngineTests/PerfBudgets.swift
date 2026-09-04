@@ -1,3 +1,5 @@
+@testable import ArgoEngine
+
 /// Every figure this package's cost suites were RECORDED at, and the bound each gate derives from
 /// one (ADR-0028 Rule 7, #953). `ArgoUITests` has its own, for `CostMeasure`'s reason.
 ///
@@ -32,6 +34,32 @@ enum PerfBudgets {
     /// the larger arm in every trial — so it read 1.53 on a hosted runner while the code stood
     /// still.
     static let batchRebuilds = 0
+
+    /// `TranscriptSliceCostTests` — no single write may take more of a read than one slice,
+    /// whatever the file's length.
+    ///
+    /// Recorded: 200 events a slice against a batch of 4 801 · exact. The count is the gate; the
+    /// seconds below are why the count is 200 and BIND nothing (ADR-0028 Rule 8). Read off the
+    /// shipped constant rather than restating it, so the figures and the bound cannot drift apart.
+    ///
+    /// Measured as the longest the main actor was unavailable while one whole read landed, by a
+    /// clock only the main actor advances — a wall clock, for `MainActorWatch`'s reason: what is
+    /// being measured IS a wait, and what it is held against is a frame. Over a 60 MB transcript of
+    /// 4 801 records at 13 KB — the shape `SessionSelectionCostTests` records its own figures at —
+    /// the gap is **3.6 ms taken whole against 0.5 ms in slices**, least of 3 each · M4 Pro ·
+    /// debug. Neither is a dropped frame at that size; the point is that the first grows with the
+    /// file and the second does not.
+    ///
+    /// **The same run is also what says #1166's two seconds are not here.** That read takes 0.70 s
+    /// wall against 3.6 ms of work under the write, so 99.5% of the wait is the read itself — off
+    /// the main actor, and untouched by this. EXTRAPOLATED and not measured: the ticket's own repro
+    /// at 238 MB is about four times that file, which puts it near the two seconds it reported.
+    ///
+    /// **Why the gate is a count and not the frame budget #1166 asked for.** A frame-budget case
+    /// only discriminates where the unsliced arm exceeds a frame, and at 0.75 µs an event that
+    /// needs ~22 000 events — a 286 MB fixture, which no suite can carry. So the count is the gate
+    /// and this is the reading behind it, which is ADR-0028 Rule 8's first instruction anyway.
+    static let foldSlice = TranscriptSlice.events
 
     /// `HubRosterCostTests` — one `session(id:)` may not cost more as the roster grows.
     ///
