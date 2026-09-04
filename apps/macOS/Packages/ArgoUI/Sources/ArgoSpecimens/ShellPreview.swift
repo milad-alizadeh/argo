@@ -50,7 +50,13 @@ public extension CockpitPresentation {
                 ),
                 // A real reading off this machine, past the first line.
                 spend: .init(contextTokens: 216_764),
-                transcript: .init(events: TranscriptFixtures.previewTranscript),
+                // A Turn still open under everything that has already happened: this Session is
+                // `running`, and a running Session with no call in flight has nothing for the
+                // roster's activity line to say (#1199).
+                transcript: .init(
+                    events: TranscriptFixtures.previewTranscript
+                        + TranscriptFixtures.stillWorking,
+                ),
             ),
             Session(
                 id: "engine",

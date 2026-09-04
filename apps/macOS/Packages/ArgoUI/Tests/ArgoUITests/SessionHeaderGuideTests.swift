@@ -33,8 +33,10 @@ struct SessionHeaderGuideTests {
         #expect(said["Started"] == "2h ago")
         #expect(said["Worked"] == "20m")
         #expect(said["Agent"] == "Claude Code")
-        // The marks hang off the branch, because nothing else in the deck renders them.
-        #expect(said["Branch"] == "argo/#694-context-guide · 3 uncommitted files")
+        // The marks hang off the branch, because nothing else in the deck renders them — and the
+        // worktree folder sits between the two, now that the roster row has stopped naming it
+        // (#1199).
+        #expect(said["Branch"] == "argo/#694-context-guide · in tkt-694 · 3 uncommitted files")
         // The term is already `Issue`, so the value is not `Issue #694` a second time.
         #expect(said["Issue"] == "#694 — The ⓘ panel says what the header stopped saying")
         #expect(said["Access"] == "Read-only")
@@ -113,7 +115,7 @@ struct SessionHeaderGuideTests {
                 span: .init(startedAtMs: 0, lastSeenAtMs: 120 * minute),
             ),
             work: .init(
-                location: "/Users/milad/Developer/argo",
+                location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-694",
                 workspace: .init(kind: .worktree, branch: "argo/#694-context-guide", dirty: 3),
                 ticket: .linked(.init(
                     number: 694,

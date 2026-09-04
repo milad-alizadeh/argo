@@ -20,21 +20,11 @@ package struct FeedCallSubject: View {
 
     package var body: some View {
         switch subject {
-        case let .file(file): named(file)
-        case let .command(command): typed(command)
-        case let .plain(text): plain(text)
+        case .command: typed(subject.drawn)
         // Prose, drawn as prose. The command it stands in for is the panel's, and setting a
         // sentence in a mono chip would say the agent's words were something to be run.
-        case let .narration(text, _): plain(text)
+        case .file, .plain, .narration: plain(subject.drawn)
         }
-    }
-
-    /// The filename, and nothing after it: no trailing parent folder, and no destination trailing
-    /// a move. The panel is where a reader gets the whole path and where a move's patch landed.
-    private func named(_ file: FeedCall.FileName) -> some View {
-        Text(file.name)
-            .argoText(subject.style)
-            .foregroundStyle(ink)
     }
 
     /// A command takes a ground of its own as well as the machine face — it is the one subject a
@@ -42,8 +32,11 @@ package struct FeedCallSubject: View {
     ///
     /// The ground is the one part of the row an ion mask must not see, or the pass lights the whole
     /// chip instead of the command on it.
+    ///
+    /// Takes the words already read off the subject — `drawn` is where the command's head is cut,
+    /// once, for this view and the roster row alike.
     private func typed(_ command: String) -> some View {
-        Text(FeedCommandLine.head(of: command))
+        Text(command)
             .argoText(subject.style)
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.tight)
@@ -74,6 +67,22 @@ package struct FeedCallSubject: View {
 }
 
 extension FeedCall.Subject {
+    /// The subject as a line DRAWS it: the filename and nothing after it — no trailing parent
+    /// folder, and no destination trailing a move — the command's head, and everything else
+    /// verbatim. The panel is where a reader gets the whole path and where a move's patch landed.
+    ///
+    /// Beside `captioned` rather than instead of it: that one is what a listener hears with no row
+    /// beside it to borrow from, so it qualifies a filename this leaves bare. Read by the roster
+    /// row as well as by the feed (#1199), which is what keeps the two saying one thing.
+    var drawn: String {
+        switch self {
+        case let .file(file): file.name
+        case let .command(command): FeedCommandLine.head(of: command)
+        case let .plain(text): text
+        case let .narration(text, _): text
+        }
+    }
+
     /// Which of the two faces the subject sets in. Mono is for the one subject a reader might
     /// retype; everything else is the interface sans, a narration included.
     var style: ArgoTextStyle {

@@ -79,7 +79,9 @@ enum SessionHeaderFixture {
             span: .init(startedAtMs: 0, lastSeenAtMs: 48 * 60000),
         ),
         work: .init(
-            location: "/Users/milad/Developer/argo",
+            // The folder the branch does NOT name, so the checkout reading spends its worktree
+            // clause (#1199) — the reading a worktree named after its branch never reaches.
+            location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-476",
             workspace: .init(kind: .worktree, branch: "argo/#476-feed-scroll-anchor"),
             ticket: .linked(.init(number: 476, title: "Anchor the feed on its newest line")),
         ),
@@ -117,7 +119,9 @@ enum SessionHeaderFixture {
         status: .idle,
         chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
         work: .init(
-            location: "/Users/milad/Developer/argo",
+            // The folder the branch DOES name, which is the common shape on this machine: the
+            // checkout reading says it is a worktree and names it no second time (#1199).
+            location: "/Users/milad/argo/.claude/worktrees/worktree-parallel-workitem-edges",
             workspace: .init(kind: .worktree, branch: "worktree-parallel-workitem-edges"),
             ticket: .unlinked,
         ),
@@ -133,7 +137,7 @@ enum SessionHeaderFixture {
         status: .idle,
         chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
         work: .init(
-            location: "/Users/milad/Developer/argo",
+            location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-1092",
             workspace: .init(kind: .worktree, branch: "argo/#1092-session-ticket-link"),
             ticket: .unread,
         ),
@@ -215,7 +219,7 @@ extension SessionHeaderFixture {
                 handedOffTo: handedOffTo,
             ),
             work: .init(
-                location: "/Users/milad/Developer/argo",
+                location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-510",
                 workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
                 // A link with no title read through it, which is every Session in this build: no
                 // provider is connected (#414), so nothing answers with one.

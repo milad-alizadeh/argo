@@ -34,10 +34,10 @@ extension SessionRow {
         }
     }
 
-    /// The full path, which the line above stands in for — absolute paths never appear in the
-    /// default presentation (#377). The branch is not here: it is the header's. On a fold it is
-    /// the folder its runs share, which is the one thing the row is not saying in full.
+    /// The title alone, which is the one thing on the row that truncates (#1199). The location is
+    /// NOT here: an absolute path is the widest thing a hover could hand a reader and says least
+    /// about which run to open next — **Copy full location** above keeps it one action away.
     var inspectionText: String {
-        [row.title, row.location].compactMap(\.self).joined(separator: "\n")
+        row.title
     }
 }

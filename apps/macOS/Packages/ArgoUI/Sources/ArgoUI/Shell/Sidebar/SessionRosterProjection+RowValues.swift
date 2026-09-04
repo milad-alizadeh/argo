@@ -17,8 +17,8 @@ extension SessionRosterProjection.Row {
         let fold: SessionRosterProjection.Fold?
     }
 
-    /// What the Session is working on: the folder it runs in, the label the roster tells that
-    /// folder apart by, its branch, and the one fact its meta line leads with.
+    /// What the Session is working on: the folder it runs in, the label the roster SPEAKS that
+    /// folder by, its branch, and the fact its meta line falls back to.
     struct Work {
         let location: String?
         let worktree: String?
@@ -26,13 +26,38 @@ extension SessionRosterProjection.Row {
         let toldApart: String?
     }
 
-    /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, and
-    /// the one age slot in both forms.
+    /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, the
+    /// one age slot in both forms, and the newest call in its record while it is running (#1199).
     struct Activity {
+        /// The one age slot in both its forms. They are read off the same moment at the same
+        /// time and no call site names one without the other, which is what makes them one
+        /// parameter rather than two.
+        struct Age {
+            let clock: SessionRosterProjection.Clock?
+            /// The clock as words, fixed at projection time — what the announcement says for it.
+            let spoken: String?
+        }
+
         let state: ArgoOperationalState?
         let stateWord: String?
         let clock: SessionRosterProjection.Clock?
         let spokenClock: String?
+        /// `nil` on every row that is not a running Session with a call behind it — see
+        /// `SessionRosterProjection.activity(of:in:)`.
+        let activity: String?
+
+        init(
+            state: ArgoOperationalState?,
+            stateWord: String?,
+            age: Age,
+            activity: String?,
+        ) {
+            self.state = state
+            self.stateWord = stateWord
+            self.clock = age.clock
+            self.spokenClock = age.spoken
+            self.activity = activity
+        }
     }
 
     /// What the reader may do with the row: drive the Session or only watch it, and whether the

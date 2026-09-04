@@ -16,11 +16,16 @@ extension SessionRosterProjection {
     /// One slot, three readings, degrade-down: a managed running Session whose Turn start the
     /// records do not stamp takes the seen reading, never a guess — and an observed one never
     /// takes a duration at all.
+    ///
+    /// The stream is passed IN rather than reached for: the row's other reading walks the same
+    /// tail (`activity(of:in:)`), and the count that gates the selection pass is of stream
+    /// hand-outs (`PerfBudgets.selectionPassReads`), so a second reach would cost a read whether
+    /// or not the walk behind it is bounded.
     static func clock(
-        for session: CockpitPresentation.Session, nowMs: Int,
+        for session: CockpitPresentation.Session, in events: [TranscriptEvent], nowMs: Int,
     )
         -> Clock? {
-        if session.status == .running, let live = liveReading(session) {
+        if session.status == .running, let live = liveReading(session, in: events) {
             return live
         }
         return session.lastSeenAtMs.map { .seen(AgePhrase.phrase(sinceMs: $0, nowMs: nowMs)) }
@@ -28,10 +33,13 @@ extension SessionRosterProjection {
 
     /// A `switch` and not an access test, so a posture added to this axis has to answer which
     /// reading its Turn has earned.
-    private static func liveReading(_ session: CockpitPresentation.Session) -> Clock? {
+    private static func liveReading(
+        _ session: CockpitPresentation.Session, in events: [TranscriptEvent],
+    )
+        -> Clock? {
         switch session.access {
         case .managed:
-            openTurnStartMs(session.events).map { .turn(startedAtMs: $0) }
+            openTurnStartMs(events).map { .turn(startedAtMs: $0) }
         case .external, .orphaned:
             session.lastSeenAtMs.map { .output(sinceMs: $0) }
         }

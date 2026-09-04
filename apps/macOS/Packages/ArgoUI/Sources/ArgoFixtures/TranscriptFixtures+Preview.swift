@@ -77,6 +77,26 @@ package extension TranscriptFixtures {
         ]
         + fannedOut
 
+    /// A Turn still open, with a call still in flight — what a `running` Session actually looks
+    /// like at the moment somebody glances at the roster (#1199).
+    ///
+    /// It goes AFTER the fixture above, whose last Turn has ended: the roster's activity line is
+    /// read out of the OPEN Turn, so without a Turn that is open there is nothing for it to say
+    /// and the row falls back to the fact it always carried. A long command on purpose — the line
+    /// has to be seen giving up its tail to the clock beside it.
+    /// **Neither event is stamped**, unlike every prompt above it. A stamp here would be an open
+    /// Turn's start, and the roster's live clock would then count from a moment in 2024 — the
+    /// live reading has a specimen of its own (`TurnClockRosterSpecimen`), which stamps relative
+    /// to now for exactly that reason.
+    static let stillWorking: [TranscriptEvent] = [
+        .prompt(text: "Run the gates before you open the PR.", images: [], atMs: nil),
+        .toolCall(ToolCall(
+            id: "gates", name: "Bash", kind: .execute,
+            target: "bun run quality && swift test --package-path Packages/ArgoUI",
+            atMs: nil,
+        )),
+    ]
+
     /// The skill the marker's own fixtures are built from (#688). NOT in the transcript above: the
     /// ticket asks that every existing feed fixture project identically, and a marker let into this
     /// stream moves the prose sets and the cursor stills that are filtered out of it.

@@ -16,7 +16,8 @@ struct SessionHeaderTooltipTests {
         #expect(lines.count == 6)
         #expect(lines[0] == "Claude Code")
         // The marks hang off the branch, on the line the fact line drew them on.
-        #expect(lines[1] == "On argo/#692-titlebar-title, in a worktree of its own "
+        // The worktree folder is named here too (#1199): the roster row stopped drawing it.
+        #expect(lines[1] == "On argo/#692-titlebar-title, in the worktree tkt-692 "
             + "· 3 uncommitted files")
         #expect(lines[2] == "Issue #692 — Titlebar title")
         #expect(lines[3] == "Argo never owned this Session's terminal, "
@@ -94,7 +95,7 @@ struct SessionHeaderTooltipTests {
                 span: .init(startedAtMs: 0, lastSeenAtMs: 3_600_000),
             ),
             work: .init(
-                location: "/Users/milad/Developer/argo",
+                location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-692",
                 workspace: .init(kind: .worktree, branch: "argo/#692-titlebar-title", dirty: 3),
                 ticket: .linked(.init(number: 692, title: "Titlebar title")),
             ),
