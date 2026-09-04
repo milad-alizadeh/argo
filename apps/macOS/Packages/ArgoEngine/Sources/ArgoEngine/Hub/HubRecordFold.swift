@@ -1,15 +1,8 @@
 /// Which records one reading has already folded — what keeps a file read TWICE from being counted
-/// twice (#1204).
-///
-/// A tail always re-reads its transcript from the start, and the row it lands in is the one the
-/// join already holds: `HubJoin.add` keeps the reading of a transcript already in the set, so a
-/// transcript re-tailed hands the same records to the same reading again. Only `HubJoin.reread`
-/// drops a reading, and that is the SELECTION path — everywhere else a second read used to be a
-/// second of everything: two chips for one delegation, two of every token, two of every Turn.
-///
-/// RECORDS and not calls, because the duplication is of the record: a repeat is skipped whole, so
-/// the spend, the Turns and the calls inside it are all the one fact they always were. Its own
-/// value rather than two fields on `HubSession`, so the rule and its state are read together.
+/// twice (#1204). `HubJoin.add` keeps the reading of a transcript already in the set, so a
+/// re-tailed transcript hands the same records to the same reading again; only `HubJoin.reread`
+/// drops one. RECORDS and not calls: a repeat is skipped whole, so the spend, the Turns and the
+/// calls inside it stay the one fact they always were.
 struct HubRecordFold: Equatable, Sendable {
     /// Every record uuid this reading has folded.
     private var folded: Set<String> = []
@@ -21,19 +14,31 @@ struct HubRecordFold: Equatable, Sendable {
     /// Whether this event is one the reading has not folded before.
     ///
     /// A record's uuid opens the window and closes it: an identity never seen is admitted, along
-    /// with everything up to the next identity, and one already held skips the same stretch. A
-    /// record the host writes without a uuid — a title, a head leaf, a queue operation — has no
-    /// identity to be told apart by, so it rides in the window the record before it opened.
+    /// with everything up to the next identity — every event a message record carries, since
+    /// `TranscriptReader` always emits its identity first — and one already held skips the same
+    /// stretch.
+    ///
+    /// A record the host writes with no uuid at all is never inside that window: it is its own
+    /// line, and the identity that opened the standing window belongs to a DIFFERENT record. A
+    /// re-tail resends its file's past and then keeps going live, so riding a stale window would
+    /// silently drop the first fresh one of these that lands right after — a title renamed, a
+    /// stance cycled. Always admitted instead; every reader of them is latest-wins or sticky-true
+    /// (`HubSession.apply`, `SessionModeSet`), so the remaining risk — a literal repeat landing
+    /// twice — cannot move anything.
     mutating func admits(_ event: TranscriptEvent) -> Bool {
+        switch event {
+        case let .recordIdentity(uuid):
+            isRefolding = !folded.insert(uuid).inserted
+            return !isRefolding
         // The seam a bounded read leaves is a fact about the READING and not about any record, so
-        // it is never skipped: an extent that has degraded may never read whole again.
-        if case .excerpted = event {
+        // it is never skipped: an extent that has degraded may never read whole again. The rest
+        // are the host's own uuid-less lines, per the doc above.
+        case .excerpted, .headLeaf, .title, .queued, .mode:
             return true
-        }
-        guard case let .recordIdentity(uuid) = event else {
+        case .originSession, .cwd, .model, .effort, .branch, .entry, .prompt, .message, .thought,
+             .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .usage, .plan, .compaction,
+             .unreadableLine:
             return !isRefolding
         }
-        isRefolding = !folded.insert(uuid).inserted
-        return !isRefolding
     }
 }

@@ -17,10 +17,8 @@ struct AgentsRailListing {
     /// HIDDEN and not simply what has landed, so the count on the control matches what appears when
     /// it is used, revealed or not.
     let finished: [FeedAgent]
-    /// How many of them are running — the heading's figure, derived HERE off the very array the
-    /// split above was taken from (#1204). Read off the listing rather than counted again beside
-    /// it: two derivations of one fact can be taken a moment apart, and a heading that says none
-    /// are running over a list holding some back is a rail contradicting itself.
+    /// How many of them are running — the heading's figure, derived off the same array the split
+    /// above was taken from (#1204), so the two cannot disagree.
     let running: Int
 
     /// `scopedOnto` is the Agent the feed is currently reading, which is listed whatever its state:

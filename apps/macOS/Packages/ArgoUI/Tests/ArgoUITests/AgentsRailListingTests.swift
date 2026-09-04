@@ -99,10 +99,7 @@ struct AgentsRailListingTests {
         #expect(listing.finished.map(\.id) == [0])
     }
 
-    /// #1204's second symptom: the rail drew `0 running` over four listed chips and three held
-    /// back, which the split above says cannot happen — with nothing running and nothing scoped,
-    /// every chip is held. The heading is derived HERE now, off the same array, so the two figures
-    /// are one reading of one value and a disagreement is not expressible.
+    /// The heading and the split are one reading of one array now (#1204), so they cannot disagree.
     @Test
     func `the heading counts the array the split was taken from`() {
         let listing = AgentsRailListing(of: Self.agents, scopedOnto: nil)

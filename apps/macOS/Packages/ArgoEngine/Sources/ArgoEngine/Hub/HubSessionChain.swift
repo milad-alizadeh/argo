@@ -10,6 +10,12 @@ struct HubTranscript {
     /// a run whose file MOVED keeps its uuid while its path changes (#770).
     let sessionID: String
     var session: HubSession
+    /// Which records `session`'s reading has already folded, so a file read twice into the same
+    /// row is folded once (#1204) — see `HubRecordFold`. Held here and not on `HubSession`
+    /// itself: the Session's own equality is what the cockpit diffs a render against, the same
+    /// ground `TranscriptStream` keeps its write count off of, and this is a fact about the READ
+    /// rather than about what it read.
+    private var fold = HubRecordFold()
     /// Whether the tail has delivered what the file already held. Until it has, this transcript is
     /// in the join — so the records it claims are attributed in tail-start order — but the roster
     /// it belongs to is not published.
@@ -19,6 +25,9 @@ struct HubTranscript {
     /// stale reading stays published until the new one lands, so a refold taken for some other
     /// transcript's batch in the meantime cannot drop the row (#1134).
     private(set) var rereading: HubSession?
+    /// The fold `rereading` is being read into, on the same terms as `fold` above and swapped
+    /// alongside it in `beginBatch`.
+    private var rereadingFold = HubRecordFold()
     /// Whether part of the read in flight has been folded into the reading above without being
     /// published — see `HubJoin.stage`. The apply that closes the read publishes the whole of it,
     /// so it moves the row whatever its own last slice held.
@@ -32,9 +41,11 @@ struct HubTranscript {
     }
 
     /// Begin reading again from the start. The reading on screen stands; the one that replaces
-    /// it is empty until a batch arrives.
+    /// it is empty until a batch arrives, and folds are read from a start too — nothing the stale
+    /// reading already folded stands against the fresh one.
     mutating func reread(_ observation: TranscriptObservation) {
         rereading = HubSession(observation: observation)
+        rereadingFold = HubRecordFold()
     }
 
     /// Fold part of a read into the reading it belongs to, publishing nothing: the fresh reading
@@ -47,8 +58,10 @@ struct HubTranscript {
         isStaged = true
         for event in events {
             if rereading == nil {
+                guard fold.admits(event) else { continue }
                 session.apply(event)
             } else {
+                guard rereadingFold.admits(event) else { continue }
                 rereading?.apply(event)
             }
         }
@@ -67,7 +80,9 @@ struct HubTranscript {
     mutating func beginBatch() -> Bool {
         guard let fresh = rereading else { return false }
         session = fresh
+        fold = rereadingFold
         rereading = nil
+        rereadingFold = HubRecordFold()
         return true
     }
 
@@ -75,7 +90,16 @@ struct HubTranscript {
     /// slices staged into the fresh one, which go with the reading they were folded into.
     mutating func abandonReread() {
         rereading = nil
+        rereadingFold = HubRecordFold()
         isStaged = false
+    }
+
+    /// Fold one event of a whole batch into the reading it closes — always `session`, since
+    /// `HubJoin.apply` calls `beginBatch()` before this, which already made the swap a mid-flight
+    /// reread needed.
+    mutating func applyToCurrent(_ event: TranscriptEvent) {
+        guard fold.admits(event) else { return }
+        session.apply(event)
     }
 }
 

@@ -1,14 +1,9 @@
 @testable import ArgoEngine
 import Testing
 
-/// A file folded into one reading TWICE.
-///
-/// A tail always re-reads a transcript from the start, and the row it lands in is the one the join
-/// already holds — `HubJoin.add` keeps the reading of a transcript already in the set. So a
-/// transcript re-tailed without its reading being dropped hands the same records to the same
-/// reading a second time, and before #1204 every one of them was counted again: two chips for one
-/// delegation, two of every token, two of every Turn. Only `HubJoin.reread` drops a reading, and
-/// that is the SELECTION path.
+/// A file folded into one reading TWICE (#1204). `HubJoin.add` keeps the reading of a transcript
+/// already in the set, so a re-tailed transcript hands the same records to the same reading again;
+/// only `HubJoin.reread` drops one.
 @Suite("Hub join refold")
 struct HubJoinRefoldTests {
     /// The claim, at the grain the rail draws: one `tool_use` of a delegating kind is one call,
@@ -56,6 +51,19 @@ struct HubJoinRefoldTests {
 
         #expect(delegations(in: join) == ["Standards review", "Spec review"])
         #expect(join.sessions.first?.spentTokens == 300)
+    }
+
+    /// The record-less events are their own lines (`TranscriptReader.events(of:)`), never bundled
+    /// under the record before them — so a duplicate stretch closing must not swallow a genuinely
+    /// fresh one landing right after it. A re-tail resends its file's PAST and then keeps going
+    /// live, and a title renamed the moment after is exactly that shape.
+    @Test
+    func `a title renamed right after a duplicate stretch still lands`() {
+        var join = joinOfOneFile()
+
+        join.apply(twoDelegations + [.title("Renamed")], to: transcriptID)
+
+        #expect(join.sessions.first?.title == "Renamed")
     }
 
     private let transcriptID = "delegating-session"

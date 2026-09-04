@@ -134,9 +134,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// public, because it is an input to the status fold rather than a fact a surface draws:
     /// ADR-0027 has none of it to project.
     var submittedTurn: SessionTurnSubmission?
-    /// Which records this reading has already folded, so a file read twice is folded once — see
-    /// `HubRecordFold`.
-    private var records = HubRecordFold()
     /// Whether this row is a spawn Argo has heard nothing from yet — what `statusReading` reads
     /// `starting` off (#587). Set by `init(spawn:)` alone, so no observed Session reaches the
     /// state: a record existing at all is proof the CLI has spoken.
@@ -189,7 +186,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 /// are `private(set)`, which Swift scopes to the declaring file.
 extension HubSession {
     mutating func apply(_ event: TranscriptEvent) {
-        guard records.admits(event) else { return }
         transcript.append(event)
         switch event {
         case let .headLeaf(uuid):
@@ -238,9 +234,12 @@ extension HubSession {
         // An unreadable line says a file was written, never who wrote it — which is exactly the
         // claim `hasAgentActivity` is about, so it deliberately does not count. A skill load is the
         // CLI expanding a body in front of the agent, and the agent has not answered yet, so it
-        // does not count either — the reading below it is where the activity shows up. A record's
-        // identity is read by `HubRecordFold` and by `HubJoin`, and says nothing about the Session.
-        case .unreadableLine, .skillLoaded, .recordIdentity:
+        // does not count either — the reading below it is where the activity shows up.
+        case .unreadableLine, .skillLoaded:
+            break
+        // Read by `HubRecordFold` before this fold ever sees it (`HubTranscript`), and by
+        // `HubJoin` for chain ownership — never by the Session itself.
+        case .recordIdentity:
             break
         case .excerpted:
             // One way only: reading the missing stretch means reading the file again, and that
