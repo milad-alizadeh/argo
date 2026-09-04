@@ -35,7 +35,9 @@ the same scan by hand.
 
 `test:hooks` is `scripts/run-suites.mjs`, and its suites are **the directory, not a list**: every
 `scripts/*.test.mjs` runs, so a new suite is added by writing the file and nothing else. It runs
-them in a pool rather than in sequence, which is worth about 3x, and it is fail-closed three ways
+them in a pool rather than in sequence, which took it from 101s to 21s on a 12-core machine
+(least-of-2, interleaved — almost none of the chain's time was work, it was suites waiting on
+subprocesses one at a time). It is fail-closed three ways
 — a non-zero exit, an empty directory, and a suite that exits 0 without printing the
 `all N checks passed` line that `check-harness.mjs` ends on.
 

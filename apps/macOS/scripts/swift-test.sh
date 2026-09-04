@@ -9,6 +9,57 @@ set -eu
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
+# Every package with a test target, not just the engine: ArgoUI carries the visual contract's
+# tests (#375), ArgoMermaid the renderer's layout suites (#1087) and ArgoAtlas the map's (#1143).
+# A `test` script that silently covered some of them would be worse than none.
+ALL_PACKAGES='ArgoEngine ArgoUI ArgoMermaid ArgoAtlas'
+
+# `swift-test.sh [Package…] [--filter PATTERN]` narrows the inner loop, and the point of routing a
+# narrow run through here is `verdict` below: `swift test --filter` FAILS OPEN (#1358). It matches
+# type names, not the `@Suite` display names, so `--filter "Minimap reshape"` selects nothing, runs
+# 0 tests and exits 0 — a fast loop that reports success for a pattern that never found the suite
+# it named. `verdict` already refuses a 0-test report per package, and a filtered run inherits it.
+#
+# Which is why a filter has to name its package. Unfiltered, all four run and each must report
+# tests. Filtered, the three packages the pattern does not live in would each report nothing, and
+# the guard that makes the filter safe would fire on them instead of on a typo.
+PACKAGES=''
+FILTER=''
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --filter)
+      [ $# -ge 2 ] || { echo "swift-test: --filter takes a pattern" >&2; exit 1; }
+      FILTER=$2
+      shift 2
+      ;;
+    --filter=*)
+      FILTER=${1#--filter=}
+      shift
+      ;;
+    -*)
+      echo "swift-test: unknown option $1" >&2
+      exit 1
+      ;;
+    *)
+      case " $ALL_PACKAGES " in
+        *" $1 "*) PACKAGES="$PACKAGES $1" ;;
+        *)
+          echo "swift-test: $1 is not one of: $ALL_PACKAGES" >&2
+          exit 1
+          ;;
+      esac
+      shift
+      ;;
+  esac
+done
+
+if [ -n "$FILTER" ] && [ -z "$PACKAGES" ]; then
+  echo "swift-test: --filter needs a package, one of: $ALL_PACKAGES" >&2
+  echo "swift-test: e.g. sh scripts/swift-test.sh ArgoUI --filter MinimapReshapeTests" >&2
+  exit 1
+fi
+[ -n "$PACKAGES" ] || PACKAGES=$ALL_PACKAGES
+
 # shellcheck source=scripts/swift-tool-guard.sh
 . "$APP_DIR/../../scripts/swift-tool-guard.sh"
 
@@ -68,7 +119,14 @@ verdict() {
   tests=$(sum_attribute tests "$found")
   bad=$(($(sum_attribute failures "$found") + $(sum_attribute errors "$found")))
   if [ "$tests" -eq 0 ]; then
-    echo "swift-test: $1 reported 0 tests — nothing ran" >&2
+    if [ -n "$FILTER" ]; then
+      # The fail-open case this guard exists for: `swift test` selected nothing and exited 0.
+      # Naming the pattern is the whole message, because the pattern is what was wrong.
+      echo "swift-test: $1 matched no test for --filter $FILTER — nothing ran" >&2
+      echo "swift-test: --filter matches type names, not the names in @Suite(\"…\")" >&2
+    else
+      echo "swift-test: $1 reported 0 tests — nothing ran" >&2
+    fi
     return 1
   fi
   if [ "$bad" -ne 0 ]; then
@@ -80,17 +138,16 @@ verdict() {
   echo "swift-test: $1 clean, 0 failures across $tests reported tests"
 }
 
-# Every package with a test target, not just the engine: ArgoUI carries the visual contract's
-# tests (#375), ArgoMermaid the renderer's layout suites (#1087) and ArgoAtlas the map's (#1143).
-# A `test` script that silently covered some of them would be worse than none.
-for package in ArgoEngine ArgoUI ArgoMermaid ArgoAtlas; do
-  echo "swift-test: $package ($CONFIGURATION)"
+for package in $PACKAGES; do
+  echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
   status=0
   # The report path stays third, ahead of the configuration flags: swift-tooling.test.mjs stubs
-  # `swift` positionally, and a stub that wrote nowhere would pass by reporting nothing.
+  # `swift` positionally, and a stub that wrote nowhere would pass by reporting nothing. The
+  # filter goes last, so an unfiltered run's argv is the one those tests already assert on.
   # shellcheck disable=SC2086 # CONFIGURATION_FLAGS is a word list, not one argument.
   (cd "$APP_DIR/Packages/$package" &&
-    swift test --xunit-output "$REPORT_DIR/$package.xml" $CONFIGURATION_FLAGS) ||
+    swift test --xunit-output "$REPORT_DIR/$package.xml" $CONFIGURATION_FLAGS \
+      ${FILTER:+--filter "$FILTER"}) ||
     status=$?
   # The STATUS first. A compile failure or a signalled `swift` never reaches a report, and
   # `verdict`'s "wrote no test report" would bury the reason it did not.

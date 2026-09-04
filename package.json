@@ -25,6 +25,7 @@
     "app:release": "sh apps/macOS/scripts/run-release.sh",
     "check:design-tokens": "sh scripts/check-design-tokens-swift.sh",
     "contract:sweep": "node scripts/contract-readers.mjs",
+    "warm": "sh scripts/warm-build.sh",
     "worktrees:gc": "sh scripts/worktree-gc.sh",
     "load:orphans": "sh scripts/load-burst.sh --orphans",
     "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mjs",

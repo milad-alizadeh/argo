@@ -124,6 +124,51 @@ for (const [configuration, environment, flags] of [
   })
 }
 
+// `swift-test.sh [Package…] [--filter PATTERN]`, the narrow inner loop. Its whole reason to exist
+// is the case below where the pattern matches nothing: `swift test --filter` runs 0 tests and
+// exits 0 (#1358), and `verdict` is what turns that back into a failure.
+check('swift-test.sh runs one named package alone', () => {
+  swiftWriting(suite('errors="0" tests="9" failures="0"'))
+  const result = run(TEST, { ...REPORTING, args: ['ArgoUI'] })
+  assert.equal(result.status, 0, result.output)
+  assert.match(result.output, /ArgoUI clean/)
+  for (const name of PACKAGES.filter((p) => p !== 'ArgoUI')) {
+    assert.doesNotMatch(result.output, new RegExp(name))
+  }
+})
+
+check('swift-test.sh passes a filter through, last', () => {
+  swiftWriting(suite('errors="0" tests="9" failures="0"'))
+  const result = run(TEST, { ...REPORTING, args: ['ArgoUI', '--filter', 'MinimapReshapeTests'] })
+  assert.equal(result.status, 0, result.output)
+  // Last, so an unfiltered run's argv stays the one the configuration cases above assert on.
+  assert.deepEqual(result.argv.slice(-2), ['--filter', 'MinimapReshapeTests'])
+})
+
+check('swift-test.sh fails a filter that matched nothing, though swift test exits 0', () => {
+  swiftWriting(suite('errors="0" tests="0" failures="0"'))
+  const result = run(TEST, { ...REPORTING, args: ['ArgoUI', '--filter', 'Minimap reshape'] })
+  assert.equal(result.status, 1, result.output)
+  assert.match(result.output, /matched no test for --filter Minimap reshape/)
+  // The reason it matched nothing, not just that it did: the display name is the mistake people
+  // make, because it is the name the test output prints.
+  assert.match(result.output, /matches type names/)
+})
+
+check('swift-test.sh refuses a filter with no package to run it in', () => {
+  swiftWriting(suite('errors="0" tests="9" failures="0"'))
+  const result = run(TEST, { ...REPORTING, args: ['--filter', 'MinimapReshapeTests'] })
+  assert.equal(result.status, 1, result.output)
+  assert.match(result.output, /--filter needs a package/)
+})
+
+check('swift-test.sh refuses a package it does not carry', () => {
+  swiftWriting(suite('errors="0" tests="9" failures="0"'))
+  const result = run(TEST, { ...REPORTING, args: ['ArgoTerminal'] })
+  assert.equal(result.status, 1, result.output)
+  assert.match(result.output, /is not one of/)
+})
+
 check('swift-test.sh refuses a configuration it does not carry', () => {
   swiftWriting(suite('errors="0" tests="9" failures="0"'))
   const result = run(TEST, { ...REPORTING, env: { ARGO_TEST_CONFIGURATION: 'fastest' } })
