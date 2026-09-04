@@ -32,7 +32,12 @@ struct AtlasTiler {
         -> AtlasPlan {
         var tiler = AtlasTiler(channels: channels, map: map)
         tiler.place(.plate(map.root), in: CGRect(origin: .zero, size: extent), depth: 0)
-        return AtlasPlan(extent: extent, plates: tiler.plates, tiles: tiler.tiles)
+        return AtlasPlan(
+            extent: extent,
+            plates: tiler.plates,
+            tiles: tiler.tiles,
+            legend: AtlasLegend(measure: channels.band, over: tiler.banding),
+        )
     }
 
     private mutating func place(_ node: AtlasNode, in rect: CGRect, depth: Int) {
@@ -44,11 +49,17 @@ struct AtlasTiler {
                 band: banding.band(of: plot.value(of: channels.band)),
             ))
         case let .plate(plate):
-            plates.append(AtlasPlateFrame(path: plate.path, rect: rect, depth: depth))
+            let run = AtlasTiler.folding(from: plate)
+            plates.append(AtlasPlateFrame(
+                path: run.plate.path,
+                name: run.name,
+                rect: rect,
+                depth: depth,
+            ))
             // Weighed ONCE and then sorted, rather than weighed inside the comparator: a Plate's
             // weight is a walk of its whole subtree, and a comparator that took one would re-walk
             // the deep half of the tree on every comparison, at every level.
-            let weighed = plate.children
+            let weighed = run.plate.children
                 .map { (node: $0, weight: weight(of: $0)) }
                 .sorted(by: heaviestFirst)
             let rects = AtlasSquarify.rects(
@@ -59,6 +70,26 @@ struct AtlasTiler {
                 place(child.node, in: childRect, depth: depth + 1)
             }
         }
+    }
+
+    /// A folder holding nothing but one folder, folded into the one below it, as far down as the
+    /// run goes.
+    ///
+    /// It has no files to stand on it and no choice to offer the reader, so a plate of its own
+    /// spends a name strip and a ring on nothing and takes that room off everything below it —
+    /// seven in a row, in this repository, before the first file is drawn. What the reader loses
+    /// is nothing: the run is written into the name the way a path is written.
+    ///
+    /// A folder holding a folder AND a file of its own is NOT folded. The file has to stand
+    /// somewhere, and folding would put it on a plate named for a folder it is not in.
+    static func folding(from plate: AtlasPlate) -> (plate: AtlasPlate, name: String) {
+        var deepest = plate
+        var run = [plate.name]
+        while deepest.children.count == 1, case let .plate(only) = deepest.children[0] {
+            deepest = only
+            run.append(only.name)
+        }
+        return (deepest, run.joined(separator: "/"))
     }
 
     /// Heaviest first, and by path where two weigh the same.

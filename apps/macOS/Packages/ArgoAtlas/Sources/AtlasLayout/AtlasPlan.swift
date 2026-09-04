@@ -21,10 +21,21 @@ public struct AtlasPlan: Equatable, Sendable {
     /// Every file, in the order the walk placed them.
     public let tiles: [AtlasTile]
 
-    public init(extent: CGSize, plates: [AtlasPlateFrame] = [], tiles: [AtlasTile] = []) {
+    /// The key the map is read with: the banded Measure, and the value at each end of its ramp.
+    /// Nothing for a map with no repository behind it yet, because a key over no measurement is a
+    /// claim about a repository nobody scanned.
+    public let legend: AtlasLegend?
+
+    public init(
+        extent: CGSize,
+        plates: [AtlasPlateFrame] = [],
+        tiles: [AtlasTile] = [],
+        legend: AtlasLegend? = nil,
+    ) {
         self.extent = extent
         self.plates = plates
         self.tiles = tiles
+        self.legend = legend
     }
 
     /// The map of a repository nothing has been scanned from yet. Not an optional and not a

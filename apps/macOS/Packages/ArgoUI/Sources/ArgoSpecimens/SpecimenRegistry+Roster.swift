@@ -18,10 +18,14 @@ extension SpecimenRegistry {
         // The contract's icon buttons, on a sheet of their own: the sheet above is longer than any
         // window, and a section nobody can render is not the drift check #1243 asked for.
         SpecimenEntry("iconButtons") { IconButtonSpecimen() },
-        // The map's first drawn pixels: one Metal-shaded plate on the desktop (#1144). Rendered
-        // from the running app rather than a preview, because what is being asked is whether the
-        // SHIPPED binary carries a compiled shader at all.
-        SpecimenEntry("atlasQuad") { AtlasQuadSpecimen() },
+        // The map's first picture: this repository tiled flat, drawn by the shader (#1147).
+        // Rendered from the running app rather than a preview, because what is being asked is
+        // whether the SHIPPED binary carries a compiled shader at all.
+        SpecimenEntry("atlasTreemap") { AtlasTreemapSpecimen() },
+        // The map before anything has been scanned: the floor, and no city on it. Worth a render
+        // rather than an assertion, because it is also what every way Metal can be ABSENT degrades
+        // to — so this is the frame the one above is told apart from.
+        SpecimenEntry("emptyAtlas") { AtlasTreemapSpecimen(map: nil) },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
         // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in

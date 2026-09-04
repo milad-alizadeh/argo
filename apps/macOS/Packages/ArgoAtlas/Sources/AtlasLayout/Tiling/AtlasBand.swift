@@ -3,7 +3,7 @@
 /// The cuts are the contract's (`ArgoPalette.MeasureRoles`), spelled again here because
 /// `AtlasLayout` depends on no contract: the layout half decides sizes and bands, and the pigment a
 /// band resolves to is spent on a pixel. `AtlasBandContractTests`, over in the drawing half, is
-/// what holds the two declarations together — the arrangement `AtlasUniformsTests` already holds
+/// what holds the two declarations together — the arrangement `AtlasFaceTests` already holds
 /// the shader's struct with.
 public enum AtlasBand: Equatable, Sendable {
     /// Half the files.
