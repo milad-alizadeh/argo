@@ -35,9 +35,12 @@ struct HubRecordFold: Equatable, Sendable {
         // are the host's own uuid-less lines, per the doc above.
         case .excerpted, .headLeaf, .title, .queued, .mode:
             return true
-        case .originSession, .cwd, .model, .effort, .branch, .entry, .prompt, .message, .thought,
-             .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .usage, .plan, .compaction,
-             .unreadableLine:
+        // `.interrupted` sits with `.prompt` because it IS one: `HarnessRecord` reads the
+        // interrupt marker off a message record's user entry and emits this in its place (#1189),
+        // so it arrives inside that record's own window like every other line below.
+        case .originSession, .cwd, .model, .effort, .branch, .entry, .prompt, .interrupted,
+             .message, .thought, .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .usage,
+             .plan, .compaction, .unreadableLine:
             return !isRefolding
         }
     }
