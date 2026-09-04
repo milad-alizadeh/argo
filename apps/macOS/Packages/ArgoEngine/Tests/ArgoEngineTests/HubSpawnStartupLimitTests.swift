@@ -30,10 +30,14 @@ struct HubSpawnStartupLimitTests {
     /// child itself rather than the process table, and writes the exit nobody reported.
     @Test
     func `a process gone at the limit is written as the exit nobody reported`() async throws {
-        let fixture = try SpawnFixture(startupPatience: .immediate)
+        // Held rather than immediate: the child has to be GONE before the limit fires, and a wait
+        // of zero seconds is armed at the spawn and races the line below (`StartupGate`).
+        let gate = StartupGate()
+        let fixture = try SpawnFixture(startupPatience: .held(by: gate))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         try #require(fixture.host.started.last).vanish()
+        await gate.open()
 
         await fixture.hub.awaitStartupWait(claim)
 
@@ -48,10 +52,14 @@ struct HubSpawnStartupLimitTests {
     /// the clock that fires afterwards has nothing left to say.
     @Test
     func `a CLI that printed inside the limit is never called quiet`() async throws {
-        let fixture = try SpawnFixture(startupPatience: .immediate)
+        // Held for the same reason, and here it is what makes the test its own name: with a wait
+        // of zero seconds the bytes might land after the limit, which is the NEXT test's claim.
+        let gate = StartupGate()
+        let fixture = try SpawnFixture(startupPatience: .held(by: gate))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
+        await gate.open()
 
         await fixture.hub.awaitStartupWait(claim)
 
