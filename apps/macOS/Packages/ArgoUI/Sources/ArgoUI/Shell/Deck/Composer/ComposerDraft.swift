@@ -237,9 +237,17 @@ package struct ComposerDraft: Equatable {
     /// rules out. Where they are typing, the notice alone says the Turn is gone, and the words are
     /// theirs to send again.
     ///
+    /// A Turn the feed is drawing RUNNING is not a Turn the CLI never heard, so the news is spent
+    /// without a word and without the words (#1176). The vessel's own invariant and not the fix:
+    /// what MADE the watch report a landed Turn lost is fixed in the engine, at `recordCount`.
+    /// This says the weaker thing the composer can answer for by itself — that a sentence never
+    /// goes back into the field directly below the sentence answering it, which is a state the
+    /// reader can act on twice — and it holds however the watch comes to be wrong next.
+    ///
     /// `true` when the news has been taken in, which is what spends it: reported twice, a reader
     /// would put the same Turn back twice.
-    mutating func turnLost(_ text: String) -> Bool {
+    mutating func turnLost(_ text: String, whileRunning isRunning: Bool) -> Bool {
+        guard !isRunning else { return true }
         guard notice != Self.lost else { return false }
         say(ComposerSeamLine(Self.lost))
         guard !isSendable else { return true }

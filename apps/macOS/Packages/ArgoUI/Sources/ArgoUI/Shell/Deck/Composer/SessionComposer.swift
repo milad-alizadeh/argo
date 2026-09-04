@@ -83,7 +83,8 @@ package struct SessionComposer: View {
         // the flush above has it: the news lands while the reader may be looking at another
         // Session, and it is still theirs when they come back to this one.
         .onChange(of: composer.lostTurn, initial: true) { _, lost in
-            guard let lost, draft.turnLost(lost) else { return }
+            guard let lost, draft.turnLost(lost, whileRunning: composer.isRunning)
+            else { return }
             intents.lostTurnSeen()
         }
         .accessibilityElement(children: .contain)

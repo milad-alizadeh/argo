@@ -48,7 +48,10 @@ final class TurnDelivery {
         let lost: (String, String) -> Void
     }
 
-    private let watch: Watch
+    /// The four answers this watch was built with. Readable rather than `private` so a suite can
+    /// assert what the Hub WIRED — the count that follows the re-key is the whole of #1176, and a
+    /// test of the resolution alone would not notice this closure being pointed back at the row.
+    let watch: Watch
     /// Held rather than read off `Self.patience`, so a test can watch a Turn without waiting the
     /// nine seconds a real one is given.
     private let patience: Duration
@@ -79,6 +82,13 @@ final class TurnDelivery {
     /// is not news the composer can act on.
     func forget(_ sessionID: String) {
         watching.removeValue(forKey: sessionID)?.cancel()
+    }
+
+    /// Whether a Turn is still being watched at that Session. What a suite asserts a `forget` by:
+    /// the alternative is waiting out every attempt to watch nothing happen, and a wall-clock guess
+    /// is how a test goes green on the race it meant to run.
+    func isWatching(_ sessionID: String) -> Bool {
+        watching[sessionID] != nil
     }
 
     func forgetAll() {

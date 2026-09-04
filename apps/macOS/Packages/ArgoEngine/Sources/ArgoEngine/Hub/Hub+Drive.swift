@@ -90,13 +90,27 @@ public extension Hub {
     /// JSON-RPC and corrupt a protocol stream rather than fail.
     internal func makeDelivery() -> TurnDelivery {
         TurnDelivery(TurnDelivery.Watch(
-            records: { [weak self] sessionID in self?.session(id: sessionID)?.events.count ?? 0 },
+            records: { [weak self] sessionID in self?.recordCount(writtenBy: sessionID) ?? 0 },
             submitted: { [weak self] submission, sessionID in
                 self?.rememberSubmittedTurn(submission, for: sessionID)
             },
             retype: { [weak self] sessionID in self?.adapters.resubmit(sessionID) ?? false },
             lost: { [weak self] text, sessionID in self?.rememberLostTurn(text, for: sessionID) },
         ))
+    }
+
+    /// How much the Session behind this id has written, FOLLOWED ACROSS THE RE-KEY (#1176).
+    ///
+    /// The watch holds the id the row had when the Turn was typed, and for a fresh Session that is
+    /// its claim's — the row is re-keyed to the CLI's own id the moment its first record lands, and
+    /// the provisional row stands down. Read straight, the count would come back 0 both before the
+    /// record and after it, so the first Turn of every fresh Session would read as silence and be
+    /// called lost while the feed drew it running.
+    ///
+    /// `rowID(ofClaim:)` is the same resolution the handoff edge takes for the same reason, and it
+    /// answers an unclaimed id unchanged — so a steady-state Session reads exactly as before.
+    internal func recordCount(writtenBy sessionID: String) -> Int {
+        session(id: ownership.rowID(ofClaim: sessionID))?.events.count ?? 0
     }
 
     /// File the Turn Argo just typed at a Session (#1048), against the CLAIM for the reason
@@ -128,6 +142,11 @@ public extension Hub {
 
     /// How many stance records a Session has written, read before a walk begins — see
     /// `SessionModeSet` for why the count and not the value.
+    ///
+    /// Read STRAIGHT where `recordCount(writtenBy:)` above resolves the re-key, and immune to it:
+    /// this is a baseline taken and used before the `await`, never a reading held across one. A
+    /// fresh Session's pre-key row has written no stance record, so the 0 it answers is the true
+    /// count rather than a dead row's silence.
     internal func observedModeCount(of sessionID: String) -> Int {
         session(id: sessionID)?.observedModeCount ?? 0
     }
