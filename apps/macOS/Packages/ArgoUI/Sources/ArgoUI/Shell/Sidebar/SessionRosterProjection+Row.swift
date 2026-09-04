@@ -57,6 +57,9 @@ extension SessionRosterProjection {
         /// Session that has never written a Plan, and always `nil` on a fold (`foldRow`): four
         /// to-do lists do not add up to one.
         let plan: PlanReading?
+        /// What runs under this Session, drawn beneath the state dot (`SessionMarker`,
+        /// `SubagentDots`).
+        let subagents: SubagentReading?
         /// Which of the roster's two lists this row belongs to — and, on the row itself, which
         /// way its swipe goes: a row on the roster archives, a row under the foot comes back.
         let isArchived: Bool
@@ -94,6 +97,7 @@ extension SessionRosterProjection {
             self.stateWord = activity.stateWord
             self.activity = activity.activity
             self.plan = activity.plan
+            self.subagents = activity.subagents
         }
 
         /// The one fact line 2 carries, first match wins (#1199): what the Session is doing right
@@ -141,7 +145,10 @@ extension SessionRosterProjection {
     /// The row a fold draws: what it stands for in the title, the folder it folded in the slot the
     /// roster tells rows apart by, and its newest run's own clock.
     static func foldRow(
-        _ fold: Fold, at newest: CockpitPresentation.Session, nowMs: Int,
+        _ fold: Fold,
+        at newest: CockpitPresentation.Session,
+        of runs: [CockpitPresentation.Session],
+        nowMs: Int,
     )
         -> Row {
         let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
@@ -156,16 +163,22 @@ extension SessionRosterProjection {
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
                 // of them drawn for all of them is a claim about the others.
-                marking: Row.Activity.Marking(state: nil, stateWord: nil),
+                dot: Row.Activity.Dot(state: nil, word: nil),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
-                // A fold stands for several runs at once, so one run's call drawn for all of
-                // them is the same claim about the others its dot and its word decline to make.
-                activity: nil,
-                // A fold sums or says nothing: its Plan is nobody's to draw, and four to-do
-                // lists do not add up to one (`cockpit-roster-row.md`, rule 9).
-                plan: nil,
+                doing: Row.Activity.Doing(
+                    // A fold stands for several runs at once, so one run's call drawn for all of
+                    // them is the same claim about the others its dot and its word decline to
+                    // make.
+                    activity: nil,
+                    // A fold sums or says nothing: its Plan is nobody's to draw, and four to-do
+                    // lists do not add up to one (`cockpit-roster-row.md`, rule 9).
+                    plan: nil,
+                ),
+                // A fold sums or says nothing (rule 9): its dots are pooled across every run it
+                // hides, under the same ceiling, and never the other three readings.
+                subagents: foldedSubagents(of: runs),
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -199,17 +212,20 @@ extension SessionRosterProjection {
                 toldApart: toldApart(for: session, naming: decided.naming),
             ),
             activity: Row.Activity(
-                marking: Row.Activity.Marking(
+                dot: Row.Activity.Dot(
                     state: SessionState.role(for: session.status),
-                    stateWord: SessionState.word(for: session.status),
+                    word: SessionState.word(for: session.status),
                 ),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
-                activity: activity(of: session, in: events),
-                // Off the same hand-out the clock and the activity above already walked, not a
-                // second `session.events` (`PerfBudgets`).
-                plan: PlanProjection.reading(from: events),
+                doing: Row.Activity.Doing(
+                    activity: activity(of: session, in: events),
+                    // Off the same hand-out the clock and the activity above already walked,
+                    // not a second `session.events` (`PerfBudgets`).
+                    plan: PlanProjection.reading(from: events),
+                ),
+                subagents: subagents(of: session, in: events),
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

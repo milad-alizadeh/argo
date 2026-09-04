@@ -167,4 +167,33 @@ struct AtlasCameraTests {
         let right = camera.project(x: rect.maxX, y: rect.midY, height: 0)
         return Double(hypot(right.x - left.x, right.y - left.y))
     }
+
+    /// The flat end of the identity does not depend on `orientation` — a turned city still lies
+    /// down onto exactly the treemap, which is what lets the reader turn the city, drop to the
+    /// treemap and come back without the turn having leaked into the flat picture (#1152).
+    @Test func `a turned city still reduces to the treemap at the flat end`() {
+        let plan = Self.plan()
+        let turned = AtlasOrientation(yaw: 1.4, pitch: 1.0)
+        let camera = AtlasCamera(relief: 0, orientation: turned, over: plan.extent)
+
+        for tile in plan.tiles {
+            let corner = CGPoint(x: tile.rect.minX, y: tile.rect.minY)
+            let drawn = Self.clip(corner, through: camera, of: plan)
+            let before = Self.treemapClip(corner, in: plan.extent)
+            #expect(abs(drawn.x - before.x) < 0.000_001)
+            #expect(abs(drawn.y - before.y) < 0.000_001)
+        }
+    }
+
+    /// The city end reads the turn back exactly, so a reader who drags the orbit ball sees the
+    /// angle they set rather than one damped or offset by the camera around it.
+    @Test func `the city camera turns to the orientation it is given`() {
+        let turned = AtlasOrientation(yaw: AtlasOrientation.opening.yaw + 0.3, pitch: 0.9)
+        let camera = AtlasCamera.city(over: Self.ground, orientation: turned)
+
+        #expect(camera.turn.sinYaw == sin(turned.yaw))
+        #expect(camera.turn.cosYaw == cos(turned.yaw))
+        #expect(camera.turn.sinPitch == sin(turned.pitch))
+        #expect(camera.turn.cosPitch == cos(turned.pitch))
+    }
 }

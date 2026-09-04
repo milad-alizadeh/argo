@@ -115,8 +115,12 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
 7. **A ready claim with an open pull request never draws.** The claim is CONVENTION, arriving
    over the companion channel (#1335); the pull request is DERIVED from the code host. The pull
    request wins.
-8. **The row does not move.** No animation on any mark. A list where every row pulses out of
-   phase is a list nobody can scan.
+8. **No mark on the row moves.** Not the Plan, not the addresses, not the Subagent dots — a list
+   where every row pulses out of phase is a list nobody can scan. The **state dot is the one
+   exception and predates this design** (#1291): a Turn is the operation D12 lets a live signal
+   repeat for, and it is the only fact on the row with an operation to report. Its halo *breathes*
+   — one rise and fall per pass of `ArgoMotion.working`, never below `restingGlow` of the rung.
+   It may not blink: a light that reaches zero says a Turn started and stopped.
 9. **A fold sums or says nothing.** Its Subagent dots are summed across the runs it hides. It
    draws **no Plan**: four to-do lists do not add up to one.
 

@@ -32,6 +32,10 @@ public enum ArgoIconSize: CGFloat, Sendable, CaseIterable {
     /// rather than beside a surface because three unrelated surfaces draw it, which is what makes
     /// a value a token.
     public static let statusDot: CGFloat = 6
+
+    /// The dot in the roster's Subagent stack (`SubagentDots`, `cockpit-roster-row.md`), smaller
+    /// than `statusDot`: what runs under a Session is drawn smaller than the Session's own state.
+    public static let subagentDot: CGFloat = 4
 }
 
 public extension View {

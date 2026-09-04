@@ -95,28 +95,45 @@ extension CockpitView {
     /// onboarding and every Project bound to nothing after it.
     ///
     /// Takes the room already assembled rather than reading `ticketsRoom` again — see the note
-    /// there. `nil` is every other room, where nothing hides anything.
-    func roomHidesSidebar(_ tickets: TicketsRoom?) -> Bool {
-        tickets?.room.vacancy == .unbound
+    /// there. `room` is the WINDOW's room and not read off `navigation` in here, so a claim about
+    /// this can be checked without hosting a view: the room is assembled in EVERY room now
+    /// (#1356), and an unbound Tickets room must only hide the sidebar while Tickets is the one on
+    /// screen. Without that gate, a reader who has never bound a Ticket provider would lose the
+    /// roster while sitting in Sessions — the room the vacancy names is not necessarily the room
+    /// being drawn.
+    func roomHidesSidebar(_ tickets: TicketsRoom, in room: CockpitRoom) -> Bool {
+        room == .tickets && tickets.room.vacancy == .unbound
     }
 
     /// The column the split view opens with — the room's answer where it has one, and the reader's
     /// own otherwise. The setter always writes the reader's, so a rail they closed in one room is
     /// still closed after a room that hid it.
-    func sidebarColumn(for tickets: TicketsRoom?) -> Binding<NavigationSplitViewVisibility> {
+    func sidebarColumn(
+        for tickets: TicketsRoom, in room: CockpitRoom,
+    )
+        -> Binding<NavigationSplitViewVisibility> {
         let reader = $sidebarVisibility
-        guard roomHidesSidebar(tickets) else { return reader }
+        guard roomHidesSidebar(tickets, in: room) else { return reader }
         return Binding(get: { .detailOnly }, set: { reader.wrappedValue = $0 })
     }
 
-    /// The sidebar is the ROOM's, not the app's. Sessions and Code are unchanged; Work replaces the
-    /// roster with its views, because a rail of ticket titles was the thing the design rejected.
-    @ViewBuilder func sidebar(tickets: TicketsRoom?) -> some View {
+    /// The sidebar is the ROOM's, not the app's. Both halves are kept mounted and gated with
+    /// `.room(isActive:)` rather than an `if`/`else` (#1356): `ShellSidebar` holds the roster's
+    /// settled order and its open folds, and a switch into Tickets used to tear that down the same
+    /// way the deck's `switch` tore down the feed.
+    ///
+    /// `Group`, not `ZStack`: the split view's sidebar slot hosts a `Group`'s children overlaid
+    /// exactly the way a `ZStack` would — same frame, same size, checked by hand off the split
+    /// view's own view tree — but a bare `ZStack` here cost the split view coordinator a second
+    /// pass over `ShellSidebar.body` on every click, doubling the roster's read of the roster
+    /// (`SessionSelectionCostTests`, ADR-0028 Rule 1). `InstrumentDeckShell`'s own `ZStack` does
+    /// not pay this, because a `NavigationSplitView` detail pane is not a `NavigationSplitView`
+    /// sidebar.
+    @ViewBuilder func sidebar(tickets: TicketsRoom) -> some View {
         @Bindable var navigation = navigation
+        let isTickets = navigation.room == .tickets
 
-        if let tickets {
-            tickets.sidebar
-        } else {
+        Group {
             ShellSidebar(
                 presentation: presentation,
                 selection: $navigation.session,
@@ -128,6 +145,10 @@ extension CockpitView {
                 rename: actions.sessions.setName,
                 renamingSessionID: $renamingSessionID,
             )
+            .room(isActive: !isTickets)
+
+            tickets.sidebar
+                .room(isActive: isTickets)
         }
     }
 

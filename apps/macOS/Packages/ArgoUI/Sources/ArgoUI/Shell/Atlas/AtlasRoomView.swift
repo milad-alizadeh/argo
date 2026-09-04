@@ -13,6 +13,24 @@ struct AtlasRoomView: View {
     @Environment(\.argo) private var argo
     /// Injected from above the deck rather than taken as a parameter — `argoAtlasRoom` says why.
     @Environment(\.argoAtlasRoom) private var resolved
+    @Environment(\.argoReduceMotion) private var reduceMotion
+
+    /// Whether this is the room on screen. `InstrumentDeckShell` keeps every room mounted so a
+    /// switch destroys nothing (#1356), which makes this the one thing that still tells the map's
+    /// tiling and its Metal surface not to redraw for a reader who cannot see them — existence is
+    /// no longer the gate, so activity has to be.
+    var isActive = true
+
+    /// The turn and tilt the reader has driven the city to (#1152) — held here rather than in
+    /// `AtlasView`, which stays a pure function of what it is handed.
+    @State private var orientation = AtlasOrientation.opening
+    /// Whether the map is showing the city or the treemap. The room ships flat (below), so this
+    /// starts `false` until the reader reaches for the toggle.
+    @State private var isCity = false
+
+    init(isActive: Bool = true) {
+        self.isActive = isActive
+    }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
     private var room: AtlasRoom {
@@ -22,7 +40,11 @@ struct AtlasRoomView: View {
     var body: some View {
         Group {
             if case let .measured(map) = room.reading {
-                measured(map)
+                if isActive {
+                    measured(map)
+                } else {
+                    Color.clear
+                }
             } else {
                 AtlasRoomVacancy(
                     reading: room.reading,
@@ -48,10 +70,10 @@ struct AtlasRoomView: View {
     /// Tiled in the BODY rather than inside the view, because a plan is recomputed when the size
     /// moves and a body is not a frame (ADR-0028 rule 3).
     ///
-    /// Drawn at the FLAT end of the camera, which is the reading the room ships with: the plates
-    /// carry their names here, and a name is laid out in plan coordinates — turned, every caption
-    /// would sit over a building it does not name. The room reaches the city when the reader can
-    /// turn it (#1152), which is also when the names get a place in the picture.
+    /// The room ships at the FLAT end of the camera: the plates carry their names there, and a
+    /// name is laid out in plan coordinates — turned, every caption would sit over a building it
+    /// does not name, which is why the city draws with none. `AtlasCameraControl` is what moves
+    /// `relief` and `orientation` from here (#1152); the room only holds the state it drives.
     private func ground(_ map: AtlasMap) -> some View {
         GeometryReader { proxy in
             AtlasView(
@@ -63,9 +85,14 @@ struct AtlasRoomView: View {
                         height: proxy.size.height - Self.keyRoom,
                     ),
                 ),
-                relief: 0,
+                relief: isCity ? 1 : 0,
+                orientation: orientation,
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .overlay(alignment: .topTrailing) {
+                AtlasCameraControl(orientation: $orientation, isCity: animatedIsCity)
+                    .padding(ArgoSpacing.base)
+            }
         }
         .padding(.horizontal, ArgoSpacing.loose)
         .padding(.bottom, ArgoSpacing.base)
@@ -75,6 +102,21 @@ struct AtlasRoomView: View {
     /// rather than a token (`rules/swift.md`): it is what `AtlasLegendKey` stands in, not a rhythm
     /// step, and it comes off the ground so the two do not overrun the room between them.
     private static let keyRoom: CGFloat = 76
+
+    /// The toggle's own write to `isCity`, wrapped so the flip carries an animation `AtlasView`
+    /// can tween `relief` through — plain assignment changes the value with nothing to interpolate
+    /// between the old picture and the new one. Nil under Reduce Motion, which is `resettle`'s own
+    /// answer to it (#1152's "reduced motion is honoured: the transition becomes instant").
+    private var animatedIsCity: Binding<Bool> {
+        Binding(
+            get: { isCity },
+            set: { newValue in
+                withAnimation(ArgoMotion.resettle.resolved(reduceMotion: reduceMotion)) {
+                    isCity = newValue
+                }
+            },
+        )
+    }
 
     private func strip(_ map: AtlasMap) -> some View {
         HStack(spacing: ArgoSpacing.comfortable) {

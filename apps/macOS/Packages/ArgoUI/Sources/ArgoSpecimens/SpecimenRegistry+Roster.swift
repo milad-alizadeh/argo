@@ -53,6 +53,8 @@ extension SpecimenRegistry {
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
+        // The leading column's four Subagent readings and the ceiling, one row each (#1344).
+        SpecimenEntry("subagentDots") { SubagentDotsRosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
         // The strip's edge, which only a SCROLLED roster can be judged on: at rest the first row
         // sits flush with the control whether the list clips there or not (#1235).
