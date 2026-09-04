@@ -5,14 +5,16 @@ import SwiftUI
 /// the order they are read in (design decision 4).
 struct QueuedTurnStack: View {
     let turns: [QueuedTurn]
-    /// Take one back, by id. The whole point of drawing a queued turn is that it is still
-    /// recallable.
-    let cancel: (UUID) -> Void
+    /// Where each one has got to, asked per turn — `ComposerDraft.standing(of:)` is the answer, and
+    /// a closure rather than a dictionary so the draft stays the one place that decides.
+    var standing: (QueuedTurn.ID) -> QueuedTurnStanding = { _ in .queued }
+    /// What the reader can do to one of them — see `QueuedTurnActs`.
+    var acts = QueuedTurnActs()
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             ForEach(turns) { turn in
-                QueuedTurnChip(turn: turn) { cancel(turn.id) }
+                QueuedTurnChip(turn: turn, standing: standing(turn.id), acts: acts)
             }
         }
         .padding(.bottom, ArgoSpacing.snug)
@@ -20,7 +22,7 @@ struct QueuedTurnStack: View {
 }
 
 #Preview("Queued turns — one waiting") {
-    QueuedTurnStack(turns: [QueuedTurn(text: "Run the suite once more.")], cancel: { _ in })
+    QueuedTurnStack(turns: [QueuedTurn(text: "Run the suite once more.")])
         .padding(ArgoSpacing.section)
         .frame(width: 640)
         .argoDeckSurface()
@@ -34,7 +36,37 @@ struct QueuedTurnStack: View {
             QueuedTurn(text: "Then open the PR against main."),
             QueuedTurn(text: "And put the ticket number in the title."),
         ],
-        cancel: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Queued turns — the first refused, the rest still waiting") {
+    let turns = [
+        QueuedTurn(text: "Run the suite once more."),
+        QueuedTurn(text: "Then open the PR against main."),
+    ]
+    return QueuedTurnStack(
+        turns: turns,
+        standing: { $0 == turns[0].id ? .notSent : .queued },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Queued turns — the second steered past the first") {
+    let turns = [
+        QueuedTurn(text: "Run the suite once more."),
+        QueuedTurn(text: "Then open the PR against main."),
+    ]
+    return QueuedTurnStack(
+        turns: turns,
+        standing: { $0 == turns[1].id ? .steering : .queued },
+        acts: QueuedTurnActs(canSteer: true),
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)

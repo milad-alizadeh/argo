@@ -66,20 +66,20 @@ package struct SessionComposer: View {
             enteredAtMs = WallClock.nowMs()
             arrived()
         }
-        // What was waiting on the Turn goes — `SessionComposer.turnEnded()` owns the order.
-        // `initial` is what makes it survive a switch: the composer is only on screen for the
-        // SELECTED Session, so a Turn that ends while the reader is looking elsewhere changes
-        // nothing here, and arriving is what delivers what was waiting, held rung included.
-        .onChange(of: composer.isRunning, initial: true) { _, isRunning in
-            guard !isRunning else { return }
-            turnEnded()
+        // Both edges of the Turn's reading — `SessionComposer.turnRead(_:)` owns what each means,
+        // and they are the only edges here. `initial` is what makes them survive a switch: the
+        // composer is only on screen for the SELECTED Session, so a Turn that ends while the
+        // reader is looking elsewhere changes nothing here, and arriving is what carries it out.
+        .onChange(of: composer.hasTurnEnded, initial: true) { _, hasTurnEnded in
+            turnRead(hasTurnEnded)
         }
-        // A rung held against a Turn that ended between the pick and the port's answer has no
-        // boundary left to wait for, so the rung arriving is itself the trigger (#940).
-        .onChange(of: draft.heldMode) { _, held in
-            guard held != nil, !composer.isRunning else { return }
-            turnEnded()
-        }
+        // …and everything the release reads, watched as a LEVEL beside it (#1238). A boundary is
+        // one edge and a queue stranded by it has nothing to try it again: a walk can hold the
+        // release, a refusal can stop it, and the Turn can pause on a permission and come back. So
+        // every movement in what the release reads is another chance to make it, held rung
+        // included — which is also the trigger for a rung answered after the boundary went by
+        // (#940).
+        .onChange(of: ComposerRelease.Awaiting(draft)) { _, _ in release() }
         // A Turn the CLI never heard, put back where it was typed (#682). `initial` for the reason
         // the flush above has it: the news lands while the reader may be looking at another
         // Session, and it is still theirs when they come back to this one.
@@ -104,7 +104,15 @@ package struct SessionComposer: View {
                 AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
             }
             if !draft.queued.isEmpty {
-                QueuedTurnStack(turns: draft.queued) { draft.cancel($0) }
+                QueuedTurnStack(
+                    turns: draft.queued,
+                    standing: draft.standing,
+                    acts: QueuedTurnActs(
+                        canSteer: canSteer,
+                        steer: steer,
+                        cancel: { draft.cancel($0) },
+                    ),
+                )
             }
             ComposerField(
                 text: $draft.text,
@@ -158,11 +166,21 @@ package struct SessionComposer: View {
     /// anything (design decision 11), the same act a click makes; see `open(_:)`.
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
+    /// Where it goes is `isRunning` and NOT `hasTurnEnded`, which the release reads (#1238). The
+    /// two are deliberately different questions at one reading: `asking` holds a live question the
+    /// composer is the only way to answer, so what is typed there goes NOW, while the follow-ups
+    /// queued behind the Turn go on waiting for its end. A Return queued at that moment would be
+    /// an answer the agent never hears.
+    ///
+    /// A steer in flight counts as running whatever the status says, and for the opposite reason:
+    /// its own `ESC` has ended the Turn, so `isRunning` reads false for the whole of the pause
+    /// before the paste lands. A Return sent straight through there would reach the CLI AHEAD of
+    /// the follow-up the reader had just chosen to send first.
     func submit() {
         if menus.completes(on: line), complete() {
             return
         }
-        draft.submit(whileRunning: composer.isRunning, via: sending)
+        draft.submit(whileRunning: composer.isRunning || draft.steeringTurn != nil, via: sending)
     }
 
     /// Tab, which takes the row under the cursor exactly as ⏎ does over the same menu (#1181) —
@@ -189,6 +207,20 @@ package struct SessionComposer: View {
         guard let picked = menus.picked(on: line) else { return false }
         draft.take(picked)
         return true
+    }
+
+    /// Whether a follow-up may be steered at all right now.
+    ///
+    /// Only into a Turn that is actually RUNNING. On a Session at rest there is nothing to
+    /// overtake — the ordinary release is already carrying the queue, or a refusal is standing and
+    /// Retry is the remedy — and an `ESC` there would land at an idle prompt, changing nothing
+    /// while Argo claimed a boundary that never arrives. That claim is the one that answers the
+    /// NEXT interrupt, so a steer offered at rest would quietly cost a later Stop its drop (#541).
+    ///
+    /// And one at a time: a second `ESC` into a Turn the first already ended would put its words
+    /// at a prompt the first is still pasting at.
+    private var canSteer: Bool {
+        !composer.hasTurnEnded && draft.steeringTurn == nil
     }
 
     /// Which of the seam's three sentences is up. The order is `ComposerSeamNote`'s.

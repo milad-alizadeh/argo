@@ -22,7 +22,11 @@ struct ComposerStoppingSpecimen: View {
         ComposerStage {
             SessionComposer(
                 composer: isRunning ? ComposerSpecimen.running : ComposerSpecimen.composer,
-                intents: DeckIntents(send: { _, _ in }, stop: stop, draft: $draft),
+                intents: DeckIntents(
+                    send: { _, _ in },
+                    turn: SessionTurnIntents(stop: stop),
+                    draft: $draft,
+                ),
             )
         }
     }

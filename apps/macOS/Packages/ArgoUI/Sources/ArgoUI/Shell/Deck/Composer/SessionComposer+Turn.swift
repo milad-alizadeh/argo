@@ -42,7 +42,31 @@ extension SessionComposer {
     ///
     /// The field itself is left alone — see `ComposerDraft.stopped(via:)`.
     func interrupt() {
-        draft.stopped(via: intents.stop)
+        draft.stopped(via: intents.turn.stop)
+    }
+
+    /// Put one waiting follow-up into the running Turn, instead of waiting for it (#1238).
+    ///
+    /// In a `Task` for the reason `ask(for:)` is: the port's act is an interrupt, a pause and a
+    /// Turn, and the click cannot wait on it.
+    func steer(_ id: QueuedTurn.ID) {
+        Task { await steering(id) }
+    }
+
+    /// The steer, and what each of its endings leaves. Awaitable and internal so a test can make
+    /// the claim the `Task` above only fires and forgets.
+    ///
+    /// The interrupt is taken FIRST and synchronously, which is what makes the chip honest: by the
+    /// time this awaits anything the Turn is already ending, and the chip says `SENDING` rather
+    /// than going on claiming the follow-up is queued behind a Turn that is over.
+    func steering(_ id: QueuedTurn.ID) async {
+        guard let turn = draft.beginSteer(id, via: intents.turn.stop) else { return }
+        do {
+            try await intents.turn.steer(turn.text, turn.attachments)
+            draft.steerLanded(id)
+        } catch {
+            draft.steerRefused(id, error)
+        }
     }
 
     /// How long a landed Stop gets before its silence is worth saying (#1234).
@@ -96,8 +120,26 @@ extension SessionComposer {
         }
     }
 
-    /// The Turn has ended, so what was waiting on it goes — the rung first, then the queue, for
-    /// the reason `honour(_:)` states.
+    /// One reading of whether the Turn is over, and what each of its two edges means.
+    ///
+    /// A Turn STARTING matters as much as one ending, and only since the steer: a steer puts a
+    /// Turn the record has not caught up with, and until it does, `hasTurnEnded` reads `true` for
+    /// the Turn the steer's own interrupt ended. Seeing one RUN again is what makes the status
+    /// trustworthy for this Session again, so the claim is spent here and the boundary that
+    /// follows is a real one (#1238).
+    func turnRead(_ hasTurnEnded: Bool) {
+        guard hasTurnEnded else { return draft.turnStarted() }
+        turnEnded()
+    }
+
+    /// The Turn's boundary: the one EDGE in the release, and the only place the drop claim is
+    /// spent. Everything else the release does is `release()` below, which is a level.
+    ///
+    /// It answers `hasTurnEnded` and never `!isRunning` (#1238): a Turn paused on a permission or
+    /// on a question is not a Turn that ended, and dropping a queue there would destroy follow-ups
+    /// the reader still means.
+    ///
+    /// What was waiting goes rung first, then the queue, for the reason `honour(_:)` states.
     ///
     /// Unless somebody STOPPED it, in which case the queue is dropped rather than released
     /// (#1189, design decision 4). Argo's own Stop already did that at the click; this is the same
@@ -107,14 +149,37 @@ extension SessionComposer {
     /// works next rather than about the Turn that was killed, and the boundary it waited for is
     /// the one the interrupt just made.
     func turnEnded() {
-        // First, so a drop reported below is not the line this takes down (#1234): the boundary
-        // that arrives IS the answer the wait gave up on.
+        guard composer.hasTurnEnded else { return }
+        // Then, and inside that guard: a Turn merely PAUSED on a permission is one the Stop
+        // genuinely has not taken yet, so the line stands until a real boundary answers it
+        // (#1234, #1238). Ahead of the drop below, so a drop reported there is not the line this
+        // takes down — the boundary that arrives IS the answer the wait gave up on.
         draft.stopTookAfterAll()
         if draft.mustDropQueue(afterInterrupt: composer.endedByInterrupt) {
             draft.dropQueue()
         }
-        guard let held = draft.beginModeWalk() else { return draft.flush(via: sending) }
-        Task { await honour(held) }
+        release()
+    }
+
+    /// Put what is waiting, if it may go now — `ComposerRelease` is the whole of the decision, and
+    /// this is only the acts behind it.
+    ///
+    /// Asked at every movement in what the release reads rather than at the boundary alone
+    /// (#1238), which is what makes a queue impossible to strand: a release the boundary could not
+    /// make — because a walk held it, or because a refusal was standing, or because the boundary
+    /// fired at a `permission` the Turn came back from — is simply made at the next reading.
+    ///
+    /// It is safe to ask as often as SwiftUI likes: every act below takes something out of what
+    /// `ComposerRelease` reads, so a release that happens cannot happen twice, and the boundary's
+    /// own once-per-Turn claim is spent in `turnEnded()` above rather than here.
+    func release() {
+        let release = ComposerRelease(composer, draft)
+        if release.walks, let held = draft.beginModeWalk() {
+            Task { await honour(held) }
+            return
+        }
+        guard release.flushes else { return }
+        draft.flush(via: sending)
     }
 
     /// The held rung and then the queue, and the ORDER is the whole of what this decides: a
@@ -122,7 +187,10 @@ extension SessionComposer {
     /// moved, and it would put the Session back to running, which is what refuses the walk.
     func honour(_ held: SessionMode) async {
         await walk(to: held)
-        draft.flush(via: sending)
+        // Through the level rather than straight to `flush`, so the walk's own follow-through obeys
+        // the same rule every other release does — a refusal standing here is still the reader's to
+        // answer, and the walk clearing `isWalkingMode` is what opens this one.
+        release()
     }
 
     /// Ask the Session for a model, and for an effort rung (#558).

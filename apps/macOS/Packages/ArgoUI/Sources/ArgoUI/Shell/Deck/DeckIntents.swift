@@ -16,8 +16,10 @@ package struct DeckIntents {
     /// Saying the Turn reported lost has been put back in the field (#682), so the Hub stops
     /// reporting it. The composer's own act: it is the thing that took the news in.
     var lostTurnSeen: () -> Void = {}
-    /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
-    package var stop: () throws -> Void = {}
+    /// What can be done to the Turn already in flight — stopping it, and steering a waiting
+    /// follow-up into it. One value for the reason `settings` below is one: they are one reading
+    /// of the Session, and both begin with the same `ESC`.
+    package var turn = SessionTurnIntents()
     /// The three standing things the footer can put the Session on — its Mode rung, its Model and
     /// its Effort (#545, #558). One value because they are one row of controls and one act binds
     /// them: the popover's reset sets all three.
@@ -49,7 +51,7 @@ package struct DeckIntents {
         decide: @escaping (PermissionDecision) -> Void = { _ in },
         revoke: @escaping (String) -> Void = { _ in },
         lostTurnSeen: @escaping () -> Void = {},
-        stop: @escaping () throws -> Void = {},
+        turn: SessionTurnIntents = SessionTurnIntents(),
         settings: SessionSettingIntents = SessionSettingIntents(),
         spawnBeside: @escaping () async -> Void = {},
         commands: @escaping () async -> CommandCatalog = { CommandCatalog.empty },
@@ -60,7 +62,7 @@ package struct DeckIntents {
         self.decide = decide
         self.revoke = revoke
         self.lostTurnSeen = lostTurnSeen
-        self.stop = stop
+        self.turn = turn
         self.settings = settings
         self.spawnBeside = spawnBeside
         self.commands = commands

@@ -101,12 +101,16 @@ struct ComposerModeHeldTests {
 
     /// The order is the whole of what the boundary decides: a follow-up released ahead of the walk
     /// would run under a boundary its author had already moved.
+    ///
+    /// Over a Session whose Turn has ENDED, which is the only state `honour` is ever reached from:
+    /// the boundary is what calls it, and the queue behind it is released on the same reading
+    /// (#1238).
     @Test
     func `the held rung is walked before the queue goes`() async {
         let log = Log()
         log.draft = ComposerDraft(queued: [QueuedTurn(text: "carry on")])
 
-        await composer(log, refusing: nil).honour(.auto)
+        await composer(log, refusing: nil, isRunning: false).honour(.auto)
 
         #expect(log.acts == ["walk auto", "send carry on"])
         #expect(log.draft.heldMode == nil)
@@ -128,15 +132,32 @@ struct ComposerModeHeldTests {
     /// The trigger the vessel actually calls, and the one nothing else covers. It marks the walk
     /// begun synchronously, which is what stops a second boundary starting another (#653) — and it
     /// leaves the rung ON the draft, so the picker goes on drawing it while the walk runs.
+    ///
+    /// Over a Session whose Turn has ended, which is what a boundary IS (#1238) — mid-Turn the
+    /// same call answers nothing, which is the case below.
     @Test
     func `the boundary begins the walk without dropping the rung`() {
+        let log = Log()
+        log.draft = ComposerDraft(heldMode: .auto)
+
+        composer(log, isRunning: false).turnEnded()
+
+        #expect(log.draft.heldMode == .auto)
+        #expect(log.draft.isWalkingMode)
+    }
+
+    /// The same call over a Turn still in flight begins nothing. The rung waits for a boundary,
+    /// and a Session merely off `.running` — paused on a permission, or on a question — has not
+    /// reached one (#1238).
+    @Test
+    func `no walk begins while the Turn is still in flight`() {
         let log = Log()
         log.draft = ComposerDraft(heldMode: .auto)
 
         composer(log).turnEnded()
 
         #expect(log.draft.heldMode == .auto)
-        #expect(log.draft.isWalkingMode)
+        #expect(!log.draft.isWalkingMode)
     }
 
     /// Begun once: a rung walked twice would count its second distance from a stance the first

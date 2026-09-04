@@ -70,6 +70,19 @@ package enum SessionComposerProjection {
         /// relative to `workspaceRoot`. They sort to the top of the `@` menu, because the file the
         /// reader means next is nearly always one the agent has just been in.
         var touchedFiles: [String] = []
+        /// Whether the Turn is OVER — the question the queue above the field waits on, and a
+        /// different one from `isRunning` (#1238).
+        ///
+        /// `permission` and `asking` are mid-Turn PAUSES: no Turn is running at either, and
+        /// neither is the Turn's end. Releasing a follow-up there would put it to a CLI holding a
+        /// question open. `starting` is not an end either: Argo started the process and has not
+        /// heard it yet.
+        ///
+        /// Set after the init rather than through it, for the reason `endedByInterrupt` below is.
+        /// It defaults to the negation of `isRunning`, which is the reading every fixture built
+        /// before this existed meant: production always states it off the status.
+        var hasTurnEnded: Bool
+
         /// Whether the last Turn boundary the record carries is somebody STOPPING the Turn
         /// (#1189) — see `SessionComposerProjection.endedByInterrupt(_:)`. What the composer
         /// answers a Turn's end with: a Turn that simply finished releases what was queued behind
@@ -119,6 +132,7 @@ package enum SessionComposerProjection {
             self.resolvesMentions = resolvesMentions
             self.workspaceRoot = workspaceRoot
             self.touchedFiles = touchedFiles
+            self.hasTurnEnded = !isRunning
         }
     }
 
@@ -161,9 +175,26 @@ package enum SessionComposerProjection {
             workspaceRoot: session.workspaceLocation,
             touchedFiles: TouchedFiles.touched(in: events, within: session.workspaceLocation),
         )
+        composer.hasTurnEnded = hasTurnEnded(session.status)
         composer.endedByInterrupt = endedByInterrupt(events)
         composer.takesTypedLine = session.status.takesTypedLine
         return composer
+    }
+
+    /// Whether this status says the Turn is over (#1238).
+    ///
+    /// `running` and `starting` are a Turn in flight. `permission` and `asking` are a Turn PAUSED
+    /// on a question — the CLI's prompt is holding it, and nothing waiting may be put yet. The
+    /// four quiet readings are the Turn's end.
+    ///
+    /// `unknown` is an end, which is degrade-down read at this seam rather than against it: it is
+    /// the reading this composer already treated as not-running, and holding the queue there would
+    /// strand it behind a status that, by its own definition, nothing will ever move.
+    package static func hasTurnEnded(_ status: SessionStatus) -> Bool {
+        switch status {
+        case .running, .starting, .permission, .asking: false
+        case .idle, .stopped, .ended, .unknown: true
+        }
     }
 
     /// What the field invites while a Turn is running: send holds the words until the Turn ends.
