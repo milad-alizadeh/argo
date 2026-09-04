@@ -200,6 +200,20 @@ struct ComposerSpecimen: View {
         return draft
     }
 
+    /// A follow-up being steered into the running Turn (#1238): the interrupt has gone and the
+    /// words have not, so this one says `SENDING` and offers no controls while the one behind it
+    /// still says `QUEUED` and offers both.
+    ///
+    /// Reached by RUNNING the act, for the reason `queueRefused` above is.
+    static var queueSteering: ComposerDraft {
+        var draft = ComposerDraft(queued: [
+            QueuedTurn(text: "And when that is green, open the PR against main."),
+            QueuedTurn(text: "Then put the ticket number in the title."),
+        ])
+        _ = draft.beginSteer(draft.queued[1].id, via: {})
+        return draft
+    }
+
     /// A draft that survived leaving the Session and coming back. Measured back from whenever the
     /// case is rendered rather than stamped once, for the reason the roster's ages are: a fixed
     /// millisecond would age into `3y ago` in the render it is meant to prove.

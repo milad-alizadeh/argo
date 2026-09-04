@@ -129,6 +129,15 @@ public enum ArgoSymbol {
     // The composer's Stop (#541) has no entry: no rung of the icon scale reaches the size it is
     // drawn at, so it is a drawn square measured in `ArgoComposerVessel.stopMark`.
 
+    /// Steering one queued follow-up into the running Turn instead of waiting for it to end
+    /// (#1238) — the chip's own control, beside its `×`.
+    ///
+    /// A skip-ahead and NOT the send arrow above: what this does is overtake, and a second arrow
+    /// pointing the same way as the vessel's would say the two acts were the same one. It is not
+    /// the Stop mark either, though it begins with the same keystroke — the reader's intent here
+    /// is to deliver, and a square would promise the opposite.
+    public static let steer = "forward.fill"
+
     /// The composer's attach control (#540) — a `+`, not a paperclip, since drop and paste are the
     /// same act.
     public static let attach = "plus"

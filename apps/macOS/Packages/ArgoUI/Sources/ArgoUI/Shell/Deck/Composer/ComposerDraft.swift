@@ -32,7 +32,10 @@ package struct ComposerDraft: Equatable {
     private(set) var noticeOutput: RawOutput?
     /// The follow-ups typed while a Turn was running, oldest first — they are sent in the order
     /// they were typed.
-    private(set) var queued: [QueuedTurn]
+    ///
+    /// `package` to READ and nowhere to write: a specimen names one of these to build a state, and
+    /// every act that moves the list is still in here.
+    package private(set) var queued: [QueuedTurn]
     /// The follow-up a refused release stopped at, so its chip can say it was HELD BACK rather
     /// than simply not reached (#1238). Without it a refused release and one that never ran draw
     /// the same picture, which is the state #1238 was reported from.
@@ -40,7 +43,17 @@ package struct ComposerDraft: Equatable {
     /// The id and not a flag on the head of the queue: cancelling the refused chip must not hand
     /// the word to the one behind it, which no release ever reached. A dangling id draws nothing,
     /// because nothing in the queue matches it any more.
-    private(set) var refusedTurn: QueuedTurn.ID?
+    ///
+    /// Not `private(set)` like its neighbours, for the reason `heldMode` is not: a refused STEER
+    /// names it too, from `ComposerDraft+Steer.swift`, and Swift's `private` is file-scoped.
+    var refusedTurn: QueuedTurn.ID?
+    /// The follow-up being steered into the running Turn right now — the interrupt has gone and
+    /// the words have not. It sits here for the length of one `SessionSteer.gap`, which is long
+    /// enough for a reader to see nothing happen if the chip did not say so.
+    ///
+    /// Not `private(set)` like its neighbours, for the reason `heldMode` is not: the rules that
+    /// move it live in `ComposerDraft+Steer.swift`, and Swift's `private` is file-scoped.
+    var steeringTurn: QueuedTurn.ID?
     /// When the field was last typed in, as the roster spells a time; `nil` for a draft nobody has
     /// touched.
     var editedAtMs: Int?
@@ -62,6 +75,10 @@ package struct ComposerDraft: Equatable {
     /// on this value moving (`SessionComposer.watchStop(patience:)`), and a flag already true would
     /// leave a second Stop watched by nobody.
     private(set) var unansweredStops = 0
+    /// How many of this composer's STEER interrupts the record has yet to report (#1238) — the
+    /// same claim `unansweredStops` makes about the boundary, kept apart because only that one
+    /// arms the wait. See `claimSteerInterrupt()`.
+    private var steerInterrupts = 0
 
     package init(
         text: String = "",
@@ -111,7 +128,11 @@ package struct ComposerDraft: Equatable {
     /// port to have printed anything.
     /// It also takes the refused follow-up down, so nothing outlives the refusal it belonged to.
     /// The one caller that has a follow-up to name puts it back straight after — see `flush`.
-    private mutating func refused(by line: ComposerSeamLine?) {
+    ///
+    /// Not `private`, on the same rule `say(_:)` below is not: the acts in `ComposerDraft+Mode` and
+    /// `ComposerDraft+Steer` stand under refusals too, and Swift's `private` is file-scoped. It is
+    /// still the ONE writer of the pair, which is the invariant that matters here.
+    mutating func refused(by line: ComposerSeamLine?) {
         refusal = line?.detail
         refusalOutput = line?.output
         refusedTurn = nil
@@ -196,6 +217,20 @@ package struct ComposerDraft: Equatable {
         dropQueue()
     }
 
+    /// Say that a STEER's interrupt has landed and the record has yet to report it (#1238).
+    ///
+    /// Its own count and never `unansweredStops`, though both are an `ESC` this composer put on
+    /// the wire. They agree about the boundary — either one answers it, so `mustDropQueue` reads
+    /// both — and disagree about everything else. `unansweredStops` also arms the wait above, and
+    /// a steer counted there would post "Stop did not take. The Session is still running." over a
+    /// reader who pressed no Stop, about a Session running exactly what they just steered it onto.
+    ///
+    /// Here rather than in `ComposerDraft+Steer.swift` only because the count is `private` and
+    /// Swift's `private` is file-scoped.
+    mutating func claimSteerInterrupt() {
+        steerInterrupts += 1
+    }
+
     /// The wait after a Stop went by and no boundary came with it (#1234).
     ///
     /// Given the OUTCOME rather than the act, for the reason `turnLost(_:whileRunning:)` is: the
@@ -257,8 +292,11 @@ package struct ComposerDraft: Equatable {
     /// The claim is spent by any boundary, not only by the one it was made for: a Stop whose
     /// interrupt the record somehow never reports must not go on swallowing the next one's drop.
     mutating func mustDropQueue(afterInterrupt wasInterrupted: Bool) -> Bool {
-        defer { unansweredStops = 0 }
-        return wasInterrupted && unansweredStops == 0
+        defer {
+            unansweredStops = 0
+            steerInterrupts = 0
+        }
+        return wasInterrupted && unansweredStops == 0 && steerInterrupts == 0
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that

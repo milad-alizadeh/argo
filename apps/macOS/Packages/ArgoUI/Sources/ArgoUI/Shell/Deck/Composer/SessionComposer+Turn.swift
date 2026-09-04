@@ -42,7 +42,31 @@ extension SessionComposer {
     ///
     /// The field itself is left alone — see `ComposerDraft.stopped(via:)`.
     func interrupt() {
-        draft.stopped(via: intents.stop)
+        draft.stopped(via: intents.turn.stop)
+    }
+
+    /// Put one waiting follow-up into the running Turn, instead of waiting for it (#1238).
+    ///
+    /// In a `Task` for the reason `ask(for:)` is: the port's act is an interrupt, a pause and a
+    /// Turn, and the click cannot wait on it.
+    func steer(_ id: QueuedTurn.ID) {
+        Task { await steering(id) }
+    }
+
+    /// The steer, and what each of its endings leaves. Awaitable and internal so a test can make
+    /// the claim the `Task` above only fires and forgets.
+    ///
+    /// The interrupt is taken FIRST and synchronously, which is what makes the chip honest: by the
+    /// time this awaits anything the Turn is already ending, and the chip says `SENDING` rather
+    /// than going on claiming the follow-up is queued behind a Turn that is over.
+    func steering(_ id: QueuedTurn.ID) async {
+        guard let turn = draft.beginSteer(id, via: intents.turn.stop) else { return }
+        do {
+            try await intents.turn.steer(turn.text, turn.attachments)
+            draft.steerLanded(id)
+        } catch {
+            draft.steerRefused(id, error)
+        }
     }
 
     /// How long a landed Stop gets before its silence is worth saying (#1234).

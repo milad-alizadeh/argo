@@ -18,7 +18,7 @@ extension CockpitView {
             decide: decide(answering: vessel.prompt),
             revoke: revoke,
             lostTurnSeen: lostTurnSeen(driven),
-            stop: stop(driven),
+            turn: turn(driven),
             settings: settings(for: driven),
             spawnBeside: spawnBeside,
             commands: actions.composer.skills,
@@ -48,10 +48,16 @@ extension CockpitView {
         return { actions.sessions.clearLostTurn(sessionID) }
     }
 
-    /// Stopping the Turn that Session is running (#541), bound the way `send` is.
-    private func stop(_ sessionID: String?) -> () throws -> Void {
-        guard let sessionID else { return {} }
-        return { try actions.drive.interrupt(sessionID) }
+    /// What can be done to the Turn that Session is running (#541, #1238), bound the way `send`
+    /// is and inert together with nothing selected — which is also the state with no Stop to press
+    /// and no chip to steer. `steer` is `async` because the port's is: the interrupt and the Turn
+    /// are two writes with a pause between them, and the pause belongs beside the keystrokes.
+    private func turn(_ sessionID: String?) -> SessionTurnIntents {
+        guard let sessionID else { return SessionTurnIntents() }
+        return SessionTurnIntents(
+            stop: { try actions.drive.interrupt(sessionID) },
+            steer: { try await actions.drive.steer($0, attaching: $1, to: sessionID) },
+        )
     }
 
     /// The three standing things the footer can put that Session on (#545, #558), bound the way

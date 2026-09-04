@@ -102,9 +102,12 @@ package struct SessionComposer: View {
                 AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
             }
             if !draft.queued.isEmpty {
-                QueuedTurnStack(turns: draft.queued, refused: draft.refusedTurn) {
-                    draft.cancel($0)
-                }
+                QueuedTurnStack(
+                    turns: draft.queued,
+                    standing: draft.standing,
+                    steer: steer,
+                    cancel: { draft.cancel($0) },
+                )
             }
             ComposerField(
                 text: $draft.text,

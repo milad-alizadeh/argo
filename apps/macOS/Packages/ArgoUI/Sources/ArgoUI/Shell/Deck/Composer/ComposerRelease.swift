@@ -24,12 +24,15 @@ struct ComposerRelease {
         let isWalkingMode: Bool
         /// Whether a refusal is standing over the draft.
         let isRefused: Bool
+        /// Whether a follow-up is being steered into the running Turn (#1238).
+        let isSteering: Bool
 
         init(_ draft: ComposerDraft) {
             self.waiting = draft.queued.count
             self.heldMode = draft.heldMode
             self.isWalkingMode = draft.isWalkingMode
             self.isRefused = draft.refusal != nil
+            self.isSteering = draft.steeringTurn != nil
         }
     }
 
@@ -45,7 +48,7 @@ struct ComposerRelease {
     /// Whether the held rung may be walked now. Ahead of `flushes` in the order the composer acts,
     /// for the reason `SessionComposer.honour(_:)` states.
     var walks: Bool {
-        hasTurnEnded && awaiting.heldMode != nil && !awaiting.isWalkingMode
+        hasTurnEnded && awaiting.heldMode != nil && !awaiting.isWalkingMode && !awaiting.isSteering
     }
 
     /// Whether the queue may be put now.
@@ -56,7 +59,13 @@ struct ComposerRelease {
     ///
     /// A walk in flight stops it too — it ends in a release of its own, and a second one racing it
     /// would deliver the follow-up under the stance the walk was moving away from.
+    ///
+    /// So does a STEER in flight, and that one is the sharpest of the three: a steer's own
+    /// interrupt ENDS the Turn, so the boundary arrives while the steered follow-up is still in
+    /// the queue with its paste not yet written. Released there it would go twice, and every
+    /// follow-up behind it would go early, into a Turn the reader had just redirected (#1238).
     var flushes: Bool {
         hasTurnEnded && awaiting.waiting > 0 && !awaiting.isRefused && !awaiting.isWalkingMode
+            && !awaiting.isSteering
     }
 }

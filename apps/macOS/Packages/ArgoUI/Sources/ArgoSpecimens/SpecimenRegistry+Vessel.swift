@@ -60,6 +60,16 @@ extension SpecimenRegistry {
         SpecimenEntry("composerQueued") {
             ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
         },
+        // A follow-up overtaking the boundary it was waiting for (#1238) — the second chip steered
+        // past the first, drawn mid-Turn because that is the only time the act exists. The
+        // judgement is whether SENDING reads as a moment passing rather than as an outcome, and
+        // whether a row that has quietly dropped both its controls still looks like a row.
+        SpecimenEntry("composerQueueSteering") {
+            ComposerSpecimen(
+                composer: ComposerSpecimen.running,
+                draft: ComposerSpecimen.queueSteering,
+            )
+        },
         // A release the port refused (#1238), which is the one state where a chip and the seam say
         // one thing together: the reason and its Retry above, and the follow-up the release
         // actually reached marked NOT SENT while the one behind it still reads QUEUED. The
