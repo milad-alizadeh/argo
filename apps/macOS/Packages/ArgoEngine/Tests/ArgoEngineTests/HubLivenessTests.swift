@@ -49,8 +49,8 @@ struct HubLivenessTests {
         await hubObserveToEnd(hub, Self.working(id: "gone"))
 
         // The degrade-down rule at the only place it can fire: a transcript whose writer died
-        // mid-turn is quiet, not working.
-        #expect(hub.sessions.first?.status == .idle)
+        // mid-turn is not working — and not finished either, which is what `idle` would say.
+        #expect(hub.sessions.first?.status == .unknown)
     }
 
     @Test
@@ -59,7 +59,27 @@ struct HubLivenessTests {
 
         await hubObserveToEnd(hub, Self.working(id: "elsewhere"))
 
-        #expect(hub.sessions.first?.status == .idle)
+        #expect(hub.sessions.first?.status == .unknown)
+    }
+
+    /// Neither thing the process table is joined ON reaches a Session Argo spawned: the folder
+    /// match is not asked for, and neither is the record write that corroborates one (#1261).
+    @Test(arguments: [0, SessionLiveness.recentActivityWindowMs + 1000])
+    func `a Session Argo holds the PTY of is live, whatever the machine says`(
+        wroteAgoMs: Int,
+    ) async {
+        // No agent anywhere in the process table, and — at the second argument — a record silent
+        // for longer than any match would be corroborated over, which is one long tool call.
+        let hub = await Self.hub()
+        _ = hub.ownership.claim(naming: "ours")
+
+        await hubObserveToEnd(hub, hubTestObservation(id: "ours", events: [
+            .cwd(Self.cwd),
+            .prompt(text: "Refactor it", images: [], atMs: Self.nowMs - wroteAgoMs),
+        ]))
+
+        #expect(hub.sessions.first?.liveness == .live)
+        #expect(hub.sessions.first?.status == .running)
     }
 
     @Test

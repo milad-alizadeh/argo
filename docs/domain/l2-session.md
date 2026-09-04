@@ -58,6 +58,14 @@
     on one posture only. It is also adapter-gated in practice: only the `claude` adapter types at a
     PTY, so a managed `codex` Session reports over its own drive port instead.
 
+    **What corroborates a Turn is posture-split** (#1261). For a `managed` Session it is the PTY
+    Argo holds: that posture IS the claim that the process Argo started has not reported its exit,
+    and the exit is the one thing about it Argo witnesses first-hand. The process table is asked
+    about no managed row, and could not answer for one honestly — it joins on a working directory,
+    which two agents in one worktree share and neither owns, and it is corroborated by a record
+    write that a long tool call leaves untouched past the recency window. `orphaned` and `external`
+    have no such process to ask about, so both stay on what the machine can be observed to say.
+
     That claim ends where Argo can WITNESS it ending, never on a clock: **the record growing at
     all** — the CLI has spoken, so what the Session is doing is the record's to say from then on —
     the delivery watch reporting a Turn the CLI never heard (#682), or the process behind the PTY
@@ -69,8 +77,11 @@
     is filed against a claim, and a Session Argo holds no claim on is one it cannot type at.
   - **permission** — blocked on an agent `request_permission` prompt.
   - **asking** — blocked on a structured `AskUserQuestion`.
-  - **idle** — Turn ended `end_turn`, or no live signal; **includes an agent's free-form
-    question** (indistinguishable from idle in the record — never fabricated as `asking`).
+  - **idle** — a Turn that ENDED `end_turn`, or one that ended with no live signal since;
+    **includes an agent's free-form question** (indistinguishable from idle in the record — never
+    fabricated as `asking`). An **open** Turn nothing corroborates is `unknown` and never this
+    (#1261): `idle` is the word a finished Session spends, so spending it on a Turn the record says
+    was started and never finished hides a wrong liveness rather than showing it.
   - **stopped** — Turn ended on `max_tokens · max_turn_requests · refusal`.
   - **ended** — session terminated (`cancelled` or process exit).
 
@@ -79,16 +90,19 @@
   resolved question reads as `idle`). `stopped` needs a stop-reason an external transcript may
   not carry — where the record **does** carry one it is read DERIVED and rendered; where it
   carries none, or one outside the vocabulary, the status is **`unknown`**, never the nearest
-  guess. **External floors at `running · asking? · idle · ended`**; managed `permission` collapses
-  to `idle` when observed externally.
+  guess. **External floors at `running · asking? · idle · unknown`**; managed `permission` collapses
+  to `idle` when observed externally, and `ended` needs an exit Argo witnessed, which no external
+  posture has.
 
   `starting` is unreachable for every other posture, and for a `managed` Session it is unreachable
   once anything at all has spoken: a Permission, a question, a drive report or a companion report
   is itself proof the CLI is up, and each of them outranks it.
 
-  An **eighth value, `unknown`**, is the degrade-down rule made reachable: a Session whose record
-  carries no Turn boundary at all is `unknown`, not `idle` — nothing observed is a different claim
-  from observed to be quiet.
+  An **eighth value, `unknown`**, is the degrade-down rule made reachable. Two readings land on
+  it: a Session whose record carries no Turn boundary at all — nothing observed is a different
+  claim from observed to be quiet — and a Session whose record carries an OPEN Turn that no
+  liveness corroborates, where the boundary before it belongs to the previous Turn and says
+  nothing about this one (#1261).
 
 - **Entry** — how the process behind a Session was STARTED: **`interactive`**, a person at a
   terminal, or **`headless`**, a program started it and nobody is at it (`claude -p` and everything

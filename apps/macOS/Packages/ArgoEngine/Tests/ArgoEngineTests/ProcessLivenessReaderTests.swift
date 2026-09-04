@@ -10,6 +10,7 @@ struct ProcessLivenessReaderTests {
       1202 /Applications/Argo.app/Contents/MacOS/Argo --project /Users/me/.claude/projects
       1203 node /Users/me/.claude/local/claude-code/cli.js
       1204 claude
+      1205 /Users/me/.local/bin/codex app-server
     """
 
     /// One canned answer per command, matched on the tool name — which is all a reader that only
@@ -24,7 +25,7 @@ struct ProcessLivenessReaderTests {
     }
 
     @Test
-    func `only the claude executable itself counts as an agent`() async {
+    func `only an agent executable itself counts as an agent`() async {
         // 1202 is Argo, whose arguments merely mention `.claude`; 1203 is node running a script
         // under the same folder. Neither is an agent, and both would manufacture a false running.
         let reader = ProcessLivenessReader(run: Self.shell(cwds: [
@@ -35,6 +36,14 @@ struct ProcessLivenessReaderTests {
         ]))
 
         #expect(await reader.liveCwds() == ["/Users/me/one", "/Users/me/four"])
+    }
+
+    @Test
+    func `a codex agent is read too, because Argo spawns that CLI as well`() async {
+        // 1205 is `codex app-server`, which is how a spawn runs that CLI (#1261).
+        let reader = ProcessLivenessReader(run: Self.shell(cwds: ["1205": "/Users/me/five"]))
+
+        #expect(await reader.liveCwds() == ["/Users/me/five"])
     }
 
     @Test

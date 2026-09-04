@@ -99,13 +99,8 @@ extension Hub {
     /// about the process behind it and its own claim on it.
     func observed(_ session: HubSession) -> HubSession {
         var published = session
-        published.liveness = readings.liveness(
-            inCwd: session.cwd,
-            // The records' own times where they carry any, and the file's last write behind them —
-            // a transcript that timestamps nothing still says when it was written to.
-            lastActivityAtMs: session.lastSeenAtMs,
-        )
         published.provenance = ownership.provenance(sessionID: session.id)
+        published.liveness = liveness(of: session, ownedAs: published.provenance)
         // A spawn already knows its own program; a swept record's is the store it came out of.
         published.cli = session.cli ?? discovery.cli
         // The tier applied here and not in the reader: git answers the same counts whoever is in
@@ -146,6 +141,39 @@ extension Hub {
         // own id the moment its record appears, and the link has to follow it there.
         published.handedOffTo = handoff.edge(of: session.id).map(ownership.rowID(ofClaim:))
         return published
+    }
+
+    /// What says this Session's agent is up.
+    ///
+    /// For a Session Argo spawned, Argo's own PTY says it: `managed` IS the claim that the process
+    /// Argo started has not reported its exit, and an exit is the one thing about it Argo witnesses
+    /// first-hand. So the process table is not asked about these rows at all (#1261). It could not
+    /// answer for them honestly either — it is joined on a working directory, which two agents in
+    /// one worktree share and neither owns, and it is corroborated by a record write that a long
+    /// tool call leaves untouched for longer than `SessionLiveness.recentActivityWindowMs`.
+    ///
+    /// No other posture has such a process to ask about: `orphaned` is a PTY Argo watched die and
+    /// `external` is one it never held, so both fall to what the machine can be observed to say.
+    ///
+    /// The PTY rather than a pid, though the pid is there for the taking (`LocalProcess.shellPid`):
+    /// a pid is recycled and a descriptor is not, and the exit reaches `relinquish` down three
+    /// paths — the child monitor, a failed read, and Argo's own `terminate`. A pid tested against
+    /// the process table would add a fourth witness that only fires where all three missed, and
+    /// would retire every managed row on a host where `ps` cannot be run at all.
+    private func liveness(
+        of session: HubSession,
+        ownedAs provenance: SessionProvenance,
+    )
+        -> SessionLiveness {
+        switch provenance {
+        case .managed: .live
+        case .orphaned, .external: readings.liveness(
+                inCwd: session.cwd,
+                // The records' own times where they carry any, and the file's last write behind
+                // them — a transcript that timestamps nothing still says when it was written to.
+                lastActivityAtMs: session.lastSeenAtMs,
+            )
+        }
     }
 
     /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a

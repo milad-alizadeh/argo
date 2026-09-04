@@ -6,8 +6,9 @@ import Testing
 ///
 /// For a managed Session, Argo performed the submit and holds the PTY it went down, so a Turn is a
 /// thing it WITNESSED rather than a thing the 5-second liveness poll has to corroborate. Every test
-/// here runs on a machine with no agent process on it at all — so the reading being asserted cannot
-/// be the DERIVED one, which reads `idle` throughout.
+/// here runs on a machine with no agent process on it at all, so nothing here is read off the
+/// process table. What separates the two readings is the TIER: DIRECT while Argo answers for the
+/// Turn it typed, DERIVED once the record has taken it back.
 ///
 /// The claim covers one window, and it has to: a Turn opened on Argo's own act and closed by
 /// nothing would stand over an agent that finished hours ago (#585). Three things end it — the
@@ -44,8 +45,11 @@ struct HubSubmittedTurnTests {
         session.yield([.prompt(text: "Fix the caption, not the sort.", images: [], atMs: 2000)])
 
         await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 4 }
+        // DERIVED is the whole assertion: Argo has stopped answering for this Turn, and what the
+        // row says now is the record's plus the PTY Argo holds — which is `running`, because the
+        // record's Turn is open and the process behind it is Argo's own (#1261).
         #expect(fixture.hub.session(id: spawnedSessionID)?.statusReading
-            == SessionStatusReading(tier: .derived, status: .idle))
+            == SessionStatusReading(tier: .derived, status: .running))
     }
 
     /// The claim is over for good, not merely dormant. A Turn typed at the dock terminal opens a
@@ -66,8 +70,11 @@ struct HubSubmittedTurnTests {
         session.yield([.prompt(text: "Typed at the terminal instead.", images: [], atMs: 3000)])
 
         await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 6 }
+        // DERIVED, not DIRECT: the second Turn is the record's to report, and Argo states nothing
+        // about a submit it never performed. The word is `running` on the record's own open Turn,
+        // over a PTY Argo is holding — which is true of a Turn typed at the dock terminal too.
         #expect(fixture.hub.session(id: spawnedSessionID)?.statusReading
-            == SessionStatusReading(tier: .derived, status: .idle))
+            == SessionStatusReading(tier: .derived, status: .running))
     }
 
     /// The second end. A Return the file-mention popup ate leaves the record exactly as it was, so
@@ -103,8 +110,9 @@ struct HubSubmittedTurnTests {
 
     /// The posture gate, and it is structural rather than a guard: the submission is filed against
     /// a CLAIM, and a Session Argo never spawned has none to file one against. So an external
-    /// Session mid-Turn reads exactly what it read before #1048 — DERIVED, and quiet, because
-    /// nothing corroborates the open Turn its record carries.
+    /// Session mid-Turn reads exactly what it read before #1048 — DERIVED, and never `running`,
+    /// because nothing corroborates the open Turn its record carries. `unknown` rather than the
+    /// calm `idle` a finished Session draws: Argo cannot say either way (#1261).
     @Test
     func `an external Session mid-Turn gains no claim of Argo's own`() async {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo-external-turn"))
@@ -115,7 +123,7 @@ struct HubSubmittedTurnTests {
         await hubObserveToEnd(hub, observed)
 
         #expect(hub.sessions.first?.statusReading
-            == SessionStatusReading(tier: .derived, status: .idle))
+            == SessionStatusReading(tier: .derived, status: .unknown))
     }
 
     /// A spawned Session whose CLI has written a record, with the stream still open so a test can
