@@ -132,18 +132,27 @@ struct MinimapCostTests {
     }
 
     /// And what a coarsened band costs in glyph work, which is the half no count over the rows can
-    /// say: nothing at all. A Turn's mark is its rows' extent and its one ink, both of which the
-    /// reading already reported, so the whole of #1173's paint is arithmetic (ADR-0028 Rule 7).
+    /// say: nothing at all. A Turn's mark is its rows' extent, its one ink and its share, all of
+    /// which the reading already reported, so the whole of #1173's coarse paint is arithmetic
+    /// (ADR-0028 Rule 7).
+    ///
+    /// Both regimes in one case, and that is what makes the zero a gate rather than a fact about
+    /// the fixture: the same setup at row grain typesets the band it paints, so a zero here says
+    /// the coarsening happened rather than that nothing was left to measure.
     @Test
-    func `a band drawn a mark a Turn costs no glyph work`() async throws {
-        let geometry = try await Fixture.geometry(over: Fixture.rows(2408, tag: "coarse"))
-        #expect(geometry.granularity == .turns)
+    func `a band drawn a mark a Turn costs no glyph work, where a mark a row does`() async throws {
+        let fine = try await Fixture.geometry(over: Fixture.rows(Self.rowGrained, tag: "fine"))
+        let coarse = try await Fixture.geometry(over: Fixture.rows(2408, tag: "coarse"))
+        #expect(fine.granularity == .rows)
+        #expect(coarse.granularity == .turns)
 
-        let typeset = ProseMetrics.typesets
-        let marks = geometry.rects(in: Fixture.band)
+        var typeset = ProseMetrics.typesets
+        #expect(!fine.rects(in: Fixture.band).isEmpty)
+        #expect(ProseMetrics.typesets - typeset > 0)
 
-        #expect(!marks.isEmpty)
-        #expect(ProseMetrics.typesets - typeset == 0)
+        typeset = ProseMetrics.typesets
+        #expect(!coarse.rects(in: Fixture.band).isEmpty)
+        #expect(ProseMetrics.typesets - typeset == PerfBudgets.coarsePaintTypesets)
     }
 
     /// And the OTHER regime, which #1132 added and which has no band to be bounded by: a session
@@ -241,17 +250,22 @@ struct MinimapCostTests {
     /// character-count arithmetic paid nothing for, so it earns its own gate.
     ///
     /// The cliff the old `cost < 1.5` was watching for is a drag that re-measures the SESSION per
-    /// frame instead of the band. Two counts say it did not: the whole burst costs less than the
-    /// band's rows once a frame, and — the half no bound on the short session could see — a session
-    /// four times as long costs the same burst. The readings, and why the bound is twice rather
-    /// than equality, are `PerfBudgets.seamOverSessionSlack`.
+    /// frame instead of the band. Two counts say it did not, one per regime: at a mark a row the
+    /// whole burst costs less than the band's marks once a frame, and at a mark a Turn it costs no
+    /// glyph work at all. The readings are `PerfBudgets.coarsePaintTypesets`.
+    ///
+    /// Twelve times the session on the second arm rather than four, because the length at which
+    /// this fixture stops fitting a mark a row moved up with #1173 — a ratio between the two arms
+    /// would say nothing now that the longer one is a different regime, so each is bounded on its
+    /// own terms.
     @Test
     func `dragging the seam re-measures the band and not the session`() async throws {
         let short = try await Self.dragged(over: Fixture.rows(Self.rowGrained, tag: "seam"))
         let long = try await Self.dragged(over: Fixture.rows(2408, tag: "seamwide"))
 
+        #expect(short.typesets > 0)
         #expect(short.typesets < Self.frames * short.rows)
-        #expect(long.typesets < PerfBudgets.seamOverSessionSlack * short.typesets)
+        #expect(long.typesets == PerfBudgets.coarsePaintTypesets)
     }
 
     /// How many frames of a seam drag one burst is.

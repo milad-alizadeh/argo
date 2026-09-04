@@ -13,7 +13,7 @@ import Testing
 /// story: 12,000 points of reading fitted into a 600pt lane compresses exactly twenty to one.
 @Suite("Minimap geometry")
 struct MinimapGeometryTests {
-    private static let lane = CGSize(width: 100, height: 600)
+    static let lane = CGSize(width: 100, height: 600)
 
     /// 120 rows of 100pt in an 800pt column: 12,000pt of reading, 600 of it on screen. Long enough
     /// that the widths' ratio would not fit it, and short enough that the lane fits it anyway —

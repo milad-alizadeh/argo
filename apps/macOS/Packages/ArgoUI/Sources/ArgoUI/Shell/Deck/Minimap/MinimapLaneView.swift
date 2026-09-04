@@ -71,15 +71,16 @@ package final class MinimapLaneView: NSView {
     /// the lane back onto the reading through the geometry a scrub froze.
     private(set) var geometry = MinimapGeometry(MinimapReading(), lane: .zero)
 
-    /// The lane size the reading was last coarsened at, and `nil` while it is still drawn a mark a
-    /// row — the latch #1173 asks for.
+    /// Whether this reading has already crossed into a mark a Turn — the latch #1173 asks for.
     ///
     /// A running Session only grows, so a bare comparison against the grain would flip the lane's
     /// whole appearance mid-scroll, and could flip it back and forth near the boundary. Once a
-    /// reading has crossed, it stays crossed. Held as the SIZE rather than as a flag because a lane
-    /// the reader has widened is a different question, and answering the old one there would keep a
-    /// session coarse in a lane that now fits it whole.
-    private var coarsenedAt: CGSize?
+    /// reading has crossed, it stays crossed until another document arrives (`forgetReading`).
+    ///
+    /// Deliberately NOT keyed to the lane's size, though a lane the reader widened could fit the
+    /// session a mark a row again: the size moves a point at a time under a window drag, and a
+    /// latch that cleared on it would flap through exactly the boundary it exists to hold.
+    private var isCoarsened = false
 
     /// The reading height the lane has already answered a reshape at. The reading reports every
     /// `setFrame` on itself, so this is what tells a reshape from a report carrying nothing.
@@ -198,10 +199,8 @@ package final class MinimapLaneView: NSView {
         // Read off the same view the reshape notice carries, so the two cannot disagree about
         // which height the lane has already answered.
         reshapedTo = watched?.documentView?.frame.height
-        geometry = MinimapGeometry(
-            reading, lane: bounds.size, coarsened: coarsenedAt == bounds.size,
-        )
-        coarsenedAt = geometry.granularity == .turns ? bounds.size : nil
+        geometry = MinimapGeometry(reading, lane: bounds.size, coarsened: isCoarsened)
+        isCoarsened = geometry.granularity == .turns
         nameLane()
         derivation += 1
         settleViewport()
@@ -350,7 +349,7 @@ extension MinimapLaneView {
     func forgetReading() {
         read = nil
         readAt = nil
-        coarsenedAt = nil
+        isCoarsened = false
         geometry = MinimapGeometry(MinimapReading(), lane: .zero)
         nameLane()
         derivation += 1

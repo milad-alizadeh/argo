@@ -173,15 +173,16 @@ enum PerfBudgets {
     /// repaint that had stopped coming off the caches costs all 32.
     static let repaintOffCachesFraction = 4
 
-    /// `MinimapCostTests` — a seam drag re-measures the band and not the session, so a session four
-    /// times as long costs the same burst.
+    /// `MinimapCostTests` — what a paint drawn a mark a TURN costs in glyph work (#1173).
     ///
-    /// Recorded: 1 291 Core Text passes over the 200-row session, 0 over the 2 408-row one ·
-    /// M4 Pro · either · exact. Twice rather than equality because the frames change the scale, so
-    /// the band's last row is a boundary the two sessions can fall either side of; a drag paying
-    /// for the session would cost 12x. Re-recorded for #1173: the long arm is now past the row
-    /// grain, where a mark is a Turn's extent and its ink and the drag typesets nothing at all.
-    static let seamOverSessionSlack = 2
+    /// Recorded: 0 Core Text passes over the 2 408-row reading, painting a band and over a
+    /// thirty-frame seam drag alike · M4 Pro · either · exact. The same fixture at 200 rows, which
+    /// still draws a mark a row, reads 87 for the band and 1 291 for the drag — which is why zero
+    /// is gated EXACTLY rather than with slack, and why both cases carry the row-grain arm beside
+    /// it. A coarse mark is a Turn's extent, its ink and its share, all of them already reported by
+    /// the reading, so a pass that measured a glyph here would be measuring something nobody asked
+    /// for.
+    static let coarsePaintTypesets = 0
 
     /// `MinimapCostTests` — a session of nothing but long markdown still pays only for the band. A
     /// heading and a paragraph a row, so a row is worth more than one pass.

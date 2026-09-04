@@ -9,10 +9,10 @@ import Testing
 /// one mark of the lane STANDS for. The rows are built with its fixture.
 @Suite("Minimap granularity")
 struct MinimapGranularityTests {
-    private static let lane = CGSize(width: 100, height: 600)
+    private static let lane = MinimapGeometryTests.lane
 
     private static func geometry(_ reading: MinimapReading) -> MinimapGeometry {
-        MinimapGeometry(reading, lane: lane)
+        MinimapGeometryTests.geometry(reading)
     }
 
     /// 120 rows of 100pt in an 800pt column: short enough that the lane holds it a mark a row.

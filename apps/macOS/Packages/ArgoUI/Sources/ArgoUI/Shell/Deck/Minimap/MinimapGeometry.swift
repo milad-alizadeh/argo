@@ -47,17 +47,22 @@ struct MinimapGeometry: Equatable {
         let turns = MinimapTurn.extents(of: reading.rows)
         self.starts = starts
         self.turns = turns
-        let document = starts.last ?? 0
-        self.shortRowHeight = Self.quarterHeight(
-            count: reading.rows.count, over: document,
-        ) { max(0, reading.rows[$0].height) }
-        // A Turn is worth its rows together, so its extents are tens or hundreds of times a row's —
-        // which is exactly why the bucket width is taken off the MEAN rather than fixed. A quantum
-        // wider than the quartile itself would round the whole lower quarter of the reading into
-        // the first bucket and answer nothing.
-        self.shortTurnHeight = Self.quarterHeight(count: turns.count, over: document) {
-            starts[turns[$0].rows.upperBound + 1] - starts[turns[$0].rows.lowerBound]
+        // A row at a bucket a point wide, which is what #1132 landed and what every reading the
+        // lane already answered was measured at: heights are ceiled to whole points, so a bucket
+        // is exact up to the cap.
+        self.shortRowHeight = Self.quarterHeight(count: reading.rows.count, quantum: 1) {
+            max(0, reading.rows[$0].height)
         }
+        // A Turn is worth its rows together, so its extents are tens or hundreds of times a row's,
+        // and a point-wide bucket would put every one of them past the cap — where a lower quartile
+        // stops being a lower quartile. The width is taken off the MEAN instead, which is the one
+        // scale that suits either question.
+        let extent = { starts[turns[$0].rows.upperBound + 1] - starts[turns[$0].rows.lowerBound] }
+        self.shortTurnHeight = Self.quarterHeight(
+            count: turns.count,
+            quantum: Self.quantum(mean: (starts.last ?? 0) / CGFloat(max(1, turns.count))),
+            height: extent,
+        )
         self.isCoarsened = coarsened
         self.reading = reading
         self.lane = CGSize(width: max(0, lane.width), height: max(0, lane.height))
@@ -78,12 +83,11 @@ struct MinimapGeometry: Equatable {
     /// cap shares the last one, which cannot move a LOWER quartile.
     private static func quarterHeight(
         count: Int,
-        over document: CGFloat,
+        quantum: CGFloat,
         height: (Int) -> CGFloat,
     )
         -> CGFloat {
-        guard count > 0 else { return 0 }
-        let quantum = Self.quantum(mean: document / CGFloat(count))
+        guard count > 0, quantum > 0 else { return 0 }
         var counts = [Int](repeating: 0, count: Self.tallestBucket + 1)
         for at in 0 ..< count {
             counts[min(Self.tallestBucket, max(0, Int((height(at) / quantum).rounded(.down))))] += 1

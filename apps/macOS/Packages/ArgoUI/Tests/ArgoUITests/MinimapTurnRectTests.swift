@@ -51,4 +51,24 @@ struct MinimapTurnRectTests {
         // And the state is what colours it, whichever half is the larger.
         #expect(marks[1].ink == .failure)
     }
+
+    /// The two facts a coarse mark carries answer different questions, and this is the case where
+    /// they disagree: one failed call inside a long Turn colours the mark, and the mark still runs
+    /// as far across as the Turn's LARGEST part. Coloured by the state's own share it would be a
+    /// hairline, which is the thing the state rule exists to stop (#1173).
+    @Test @MainActor
+    func `a Turn holding one failure is drawn red at its largest part's width`() {
+        let heights = Array(repeating: CGFloat(40), count: 1031)
+        var rows = MinimapGeometryTests.rows(heights, turnedEvery: 10)
+        rows[10].shape = .whole(.failure)
+        let lane = MinimapGeometry(
+            MinimapReading(rows: rows, columnWidth: 620, viewportHeight: 600),
+            lane: CGSize(width: 112, height: 600),
+        )
+        let marks = lane.rects(in: 0 ... 600)
+
+        #expect(marks[1].ink == .failure)
+        // Nine rows of ten are the one other thing the Turn is, and that is the width.
+        #expect(marks[1].span == 0 ... 0.9)
+    }
 }
