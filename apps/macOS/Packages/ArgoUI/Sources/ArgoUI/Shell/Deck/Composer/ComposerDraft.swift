@@ -78,47 +78,15 @@ package struct ComposerDraft: Equatable {
     /// How many of this composer's STEER interrupts the record has yet to report (#1238) — the
     /// same claim `unansweredStops` makes about the boundary, kept apart because only that one
     /// arms the wait. See `claimSteerInterrupt()`.
-    private var steerInterrupts = 0
-    /// Whether a STEER has just put a Turn to the Session and the record has yet to show it
-    /// running (#1238).
     ///
-    /// It answers the one place the status is not merely stale but actively WRONG. `hasTurnEnded`
-    /// is DERIVED off the record; a steer's own interrupt ended the Turn, so it reads `true`, and
-    /// it goes on reading `true` for as long as the record takes to catch up with the Turn the
-    /// steer has just started. A release asked in that window sees a Session at rest with a queue
-    /// waiting on it, and empties the whole queue into the Turn the reader just redirected —
-    /// which is the very thing steering one follow-up was meant to avoid.
-    ///
-    /// So the claim stands until the record shows a Turn RUNNING again, and the boundary after
-    /// that one is what releases what is left. Read through `isAwaitingSteeredTurn`, spent by
-    /// `turnStarted()`.
-    private var steerAwaitingRecord = false
-
-    /// Whether a steered Turn is still waiting to be seen by the record — see
-    /// `steerAwaitingRecord`. What `ComposerRelease` reads, so no release is made on a status that
-    /// has not caught up with Argo's own act.
-    var isAwaitingSteeredTurn: Bool {
-        steerAwaitingRecord
-    }
-
-    /// Say that a steer has put a Turn, so nothing is released until the record has seen it.
-    ///
-    /// Here rather than in `ComposerDraft+Steer.swift` only because `steerAwaitingRecord` is
-    /// `private` and Swift's `private` is file-scoped — the reason `claimSteerInterrupt()` is here.
-    mutating func claimSteeredTurn() {
-        steerAwaitingRecord = true
-    }
-
-    /// The record shows a Turn running, so the claim above is spent: the steered Turn is one the
-    /// status can now be read for, and its own boundary is what releases what is still queued.
-    ///
-    /// Spent on the Turn STARTING and not on the boundary, because the boundary is exactly what
-    /// the stale reading was already claiming — waiting for one would spend the claim on the
-    /// reading it exists to distrust.
-    mutating func turnStarted() {
-        steerAwaitingRecord = false
-    }
-
+    /// Not `private` like its neighbour, for the reason `heldMode` is not: the rules that move it
+    /// live in `ComposerDraft+Steer.swift`, and Swift's `private` is file-scoped.
+    var steerInterrupts = 0
+    /// Whether a STEER has put a Turn to the Session and the record has yet to show it running
+    /// (#1238) — the one place the status is not merely stale but actively WRONG. Read through
+    /// `isAwaitingSteeredTurn`; the rules that move it live in `ComposerDraft+Steer.swift`, for
+    /// the reason `steerInterrupts` above is not `private` either.
+    var steerAwaitingRecord = false
     package init(
         text: String = "",
         refusal: String? = nil,
@@ -254,20 +222,6 @@ package struct ComposerDraft: Equatable {
         // claim is spent by the boundary that follows — see `mustDropQueue(afterInterrupt:)`.
         unansweredStops += 1
         dropQueue()
-    }
-
-    /// Say that a STEER's interrupt has landed and the record has yet to report it (#1238).
-    ///
-    /// Its own count and never `unansweredStops`, though both are an `ESC` this composer put on
-    /// the wire. They agree about the boundary — either one answers it, so `mustDropQueue` reads
-    /// both — and disagree about everything else. `unansweredStops` also arms the wait above, and
-    /// a steer counted there would post "Stop did not take. The Session is still running." over a
-    /// reader who pressed no Stop, about a Session running exactly what they just steered it onto.
-    ///
-    /// Here rather than in `ComposerDraft+Steer.swift` only because the count is `private` and
-    /// Swift's `private` is file-scoped.
-    mutating func claimSteerInterrupt() {
-        steerInterrupts += 1
     }
 
     /// The wait after a Stop went by and no boundary came with it (#1234).

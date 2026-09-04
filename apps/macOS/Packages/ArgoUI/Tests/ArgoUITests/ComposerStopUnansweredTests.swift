@@ -144,4 +144,50 @@ struct ComposerStopUnansweredTests {
         _ = draft.mustDropQueue(afterInterrupt: true)
         #expect(draft.unansweredStops == 0)
     }
+
+    /// Where #1234 and #1238 meet, first half: a Turn merely PAUSED is not a boundary, so it must
+    /// not take this line down. A permission the agent is waiting on is a Turn still very much
+    /// alive — which is the line's own claim — and clearing it there would answer a Stop that
+    /// genuinely has not taken.
+    @Test
+    func `a Turn paused on a permission does not answer the Stop`() {
+        let log = Log()
+        log.draft.stopped(via: {})
+        log.draft.stopDidNotTake()
+
+        // The vessel's own boundary act, over a Session whose Turn is paused rather than over.
+        composer(log).turnEnded()
+
+        #expect(log.draft.notice == ComposerDraft.stopDidNotTakeNotice)
+    }
+
+    /// …and the second half: a STEER writes an `ESC` too, but the reader pressed no Stop. Counted
+    /// with the Stops it would arm this wait, and five seconds later post "Stop did not take. The
+    /// Session is still running." over a Session running exactly what they steered it onto.
+    @Test
+    func `a steer arms no Stop wait`() async {
+        let log = Log()
+        log.draft.text = "And then open the PR."
+        log.draft.submit(whileRunning: true) { _, _ in }
+
+        _ = log.draft.beginSteer(log.draft.queued[0].id, via: {})
+        await composer(log).watchStop(patience: .milliseconds(1))
+
+        #expect(log.draft.unansweredStops == 0)
+        #expect(log.draft.notice != ComposerDraft.stopDidNotTakeNotice)
+    }
+
+    /// The claim a steer DOES make is the boundary one, which it shares with Stop: the follow-ups
+    /// behind it are not dropped by the marker its own interrupt puts in the record (#541).
+    @Test
+    func `a steer still answers the boundary its interrupt makes`() {
+        let log = Log()
+        log.draft.text = "And then open the PR."
+        log.draft.submit(whileRunning: true) { _, _ in }
+        _ = log.draft.beginSteer(log.draft.queued[0].id, via: {})
+
+        let mustDrop = log.draft.mustDropQueue(afterInterrupt: true)
+
+        #expect(!mustDrop)
+    }
 }
