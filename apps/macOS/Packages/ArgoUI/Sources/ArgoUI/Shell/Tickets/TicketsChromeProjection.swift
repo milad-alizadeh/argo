@@ -12,7 +12,7 @@ package enum TicketsChromeProjection {
         let subtitle: String
         /// Whether the list-scoped controls stand: the ordering menu and search. They go together
         /// — both address the same list, and with no list there is nothing to address.
-        let narrows: Bool
+        package let narrows: Bool
         /// Whether the chrome draws at all, which is also whether New ticket does: the two
         /// coincide, because New ticket survives an empty backlog and the only thing that empties
         /// the chrome is having nothing to create into.

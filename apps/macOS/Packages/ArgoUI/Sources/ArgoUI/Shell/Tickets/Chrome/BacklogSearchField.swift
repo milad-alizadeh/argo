@@ -11,12 +11,18 @@ import SwiftUI
 ///
 /// **It sits over the ticket and searches the list.** That is Mail's own split, and for Mail's
 /// reason: the toolbar is one row, not three.
-struct BacklogSearchField: View {
+package struct BacklogSearchField: View {
     @Environment(\.argo) private var argo
 
     @Binding var query: String
 
-    var body: some View {
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal`, and the
+    /// specimens build this from their own target (#1085).
+    package init(query: Binding<String>) {
+        _query = query
+    }
+
+    package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             ArgoGlyph(ArgoSymbol.searchBacklog, .inline)
                 .foregroundStyle(argo.color.text.tertiary)

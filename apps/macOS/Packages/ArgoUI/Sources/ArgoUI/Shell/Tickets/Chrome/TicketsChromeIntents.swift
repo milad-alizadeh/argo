@@ -1,16 +1,21 @@
 import ArgoEngine
 
-/// What the Tickets room's toolbar controls DO, grouped by the thing each acts on.
+/// What the Tickets room's controls DO, grouped by the thing each acts on — and so by the pane
+/// whose header draws them (#1242).
 ///
 /// Inert by default, for a `#Preview` and a specimen; the shell passes the live ones (#872). The
 /// room reads live end to end since #820, and every verb here addresses that reading: New ticket
-/// writes through `TicketWriter`, `Start` spawns a Session seeded with the open ticket, and the
-/// two link verbs open the address `TicketAddress` derives from the Binding.
+/// writes through `TicketWriter`, and `Start` spawns a Session seeded with the open ticket — on
+/// the command the resolver guessed, or on the one the reader picked instead.
+///
+/// **The two link verbs are gone with the window's row** (#1242). The ticket's number IS the link
+/// (`TicketHead`), so a pair of vessels re-deriving one address was two more controls saying what
+/// the head already says.
 ///
 /// One value rather than four closures, because the cap is three parameters and these travel
 /// together anyway. Every slot is assigned in `ticketsIntents`; a slot nothing assigns is what let
 /// the funnel draw live and do nothing (#900).
-package struct TicketsToolbarIntents {
+package struct TicketsChromeIntents {
     /// The call-to-action, which belongs to no ticket — it makes one, through a provider. So it is
     /// this room's one provider-port write control, and the verb travels with what the control
     /// renders (#275).
@@ -42,15 +47,13 @@ package struct TicketsToolbarIntents {
         /// Which command `Start` will send, drawn beside the word so the press can be aimed (#899),
         /// and `nil` where the ticket asks for none — an empty composer, said as `Start` alone.
         var command: WorkCommand?
-        /// The two link verbs, and `nil` where this Binding cannot address the ticket in a browser
-        /// at all — a Linear team id names no page (`TicketAddress`). Optional rather than an
-        /// empty closure, because a control that draws live and does nothing is the thing #872 is
-        /// about: absent behaviour has to reach the control as absence, so it can disable.
-        var openOnHost: (() -> Void)?
-        var copyLink: (() -> Void)?
+        /// Start on a command the reader picked in the menu instead of the resolved one, and `nil`
+        /// for the fresh Session that carries the ticket and no command (#1242). One closure and
+        /// not a second `start`: the two differ only in what is sent, and `start` is this one
+        /// called with what `command` already says.
+        var startOn: (WorkCommand?) -> Void = { _ in }
 
-        /// Verbs with nothing behind them, for a preview and for a room whose ticket has no link
-        /// to open.
+        /// Verbs with nothing behind them, for a preview and for a room with no ticket open.
         @MainActor static let inert = Verbs()
 
         /// Spelled out because Swift synthesises no memberwise initializer above
@@ -58,17 +61,15 @@ package struct TicketsToolbarIntents {
         package init(
             start: @escaping () -> Void = {},
             command: WorkCommand? = nil,
-            openOnHost: (() -> Void)? = nil,
-            copyLink: (() -> Void)? = nil,
+            startOn: @escaping (WorkCommand?) -> Void = { _ in },
         ) {
             self.start = start
             self.command = command
-            self.openOnHost = openOnHost
-            self.copyLink = copyLink
+            self.startOn = startOn
         }
     }
 
-    /// A toolbar whose controls perform nothing, for a `#Preview` and a specimen. Not a state the
-    /// app ships: `ticketsIntents` assigns every slot.
-    @MainActor static let inert = TicketsToolbarIntents()
+    /// Controls that perform nothing, for a `#Preview` and a specimen. Not a state the app ships:
+    /// `ticketsIntents` assigns every slot.
+    @MainActor static let inert = TicketsChromeIntents()
 }

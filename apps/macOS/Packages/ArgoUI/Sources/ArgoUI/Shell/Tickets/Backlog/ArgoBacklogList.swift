@@ -28,7 +28,7 @@ package enum ArgoBacklogList {
     static let bandHeight: CGFloat = 44
     /// Inside the heading, either edge. The gutter again, so the title starts on the vertical the
     /// rows under it start on.
-    static let bandInsetX: CGFloat = ArgoSpacing.comfortable
+    package static let bandInsetX: CGFloat = ArgoSpacing.comfortable
     /// A FLOOR, not a frame — the same reason `ArgoTicketsSidebar.viewRowHeight` is one. It grew
     /// from 28 when the title snapped up to `body` 13.
     static let rowHeight: CGFloat = 30

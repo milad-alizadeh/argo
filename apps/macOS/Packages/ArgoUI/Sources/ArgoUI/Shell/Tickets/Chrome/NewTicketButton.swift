@@ -14,7 +14,7 @@ import SwiftUI
 package struct NewTicketButton: View {
     @Environment(\.argo) private var argo
 
-    var creation = TicketsToolbarIntents.Creation()
+    var creation = TicketsChromeIntents.Creation()
 
     package var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
@@ -34,7 +34,7 @@ package struct NewTicketButton: View {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(creation: TicketsToolbarIntents.Creation = TicketsToolbarIntents.Creation()) {
+    package init(creation: TicketsChromeIntents.Creation = TicketsChromeIntents.Creation()) {
         self.creation = creation
     }
 }

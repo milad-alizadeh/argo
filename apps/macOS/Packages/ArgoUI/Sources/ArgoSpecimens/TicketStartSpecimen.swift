@@ -11,11 +11,10 @@ import SwiftUI
 struct TicketStartSpecimen: View {
     private static let commands: [WorkCommand?] = [.implement, .designToCode, .grillMe, nil]
 
-    /// The two link verbs are PRESENT here, so the row renders the one a bound Project draws. Left
-    /// absent they render disabled (#872), which is a different state and not the one this specimen
-    /// is about.
-    private static func verbs(sending command: WorkCommand?) -> TicketsToolbarIntents.Verbs {
-        TicketsToolbarIntents.Verbs(command: command, openOnHost: {}, copyLink: {})
+    /// The picker's act is inert: this specimen is about what the pill SAYS for each resolved
+    /// command, and a menu that spawned would take the render off the screen it is shooting.
+    private static func verbs(sending command: WorkCommand?) -> TicketsChromeIntents.Verbs {
+        TicketsChromeIntents.Verbs(command: command)
     }
 
     var body: some View {

@@ -6,7 +6,7 @@ import SwiftUI
     VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
         ForEach(WriteControlSpecimen.states, id: \.name) { state in
             NewTicketButton(
-                creation: TicketsToolbarIntents.Creation(control: state.control, reconnect: {}),
+                creation: TicketsChromeIntents.Creation(control: state.control, reconnect: {}),
             )
         }
     }
