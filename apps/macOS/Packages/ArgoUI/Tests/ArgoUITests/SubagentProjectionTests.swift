@@ -72,13 +72,13 @@ struct SubagentProjectionTests {
     }
 
     private func agent(named subagentID: String?) -> FeedAgent {
-        FeedAgent(id: 0, label: "Review", isRunning: false, spend: nil, subagentID: subagentID)
+        FeedAgent(id: 0, label: "Review", activity: .finished, spend: nil, subagentID: subagentID)
     }
 
     /// The reading the shell is handed — the same closure `ArgoApp` builds, so what this suite
     /// asserts is the path that ships.
     private static func readings(of hub: Hub) -> FeedAgentReader {
-        FeedAgentReader(asking: hub) { hub.subagentReading(of: $0) }
+        FeedAgentReader.reading(hub)
     }
 
     /// Whether the Hub has read what the test wrote — the tails run off this actor's own turns, so

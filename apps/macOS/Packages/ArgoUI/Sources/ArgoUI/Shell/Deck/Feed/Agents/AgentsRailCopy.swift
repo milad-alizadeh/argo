@@ -16,6 +16,17 @@ enum AgentsRailCopy {
         "\(agents) · \(running) running"
     }
 
+    /// What a chip's dot says, for a reader who cannot see it. The third is a state and not a
+    /// hedge: Argo is holding an open delegation under a Session whose silence says nothing about
+    /// it, and `finished` there would be the untruth #1269 was written for.
+    static func state(_ activity: AgentActivity) -> String {
+        switch activity {
+        case .running: "running"
+        case .finished: "finished"
+        case .unknown: "state unknown"
+        }
+    }
+
     /// The Session's own reading, at the head of the rail (#1013). `Main` and not `Session`: the
     /// chip names one of the readings this Session has rather than the Session, and the reader is
     /// already inside it.
@@ -44,5 +55,6 @@ enum AgentsRailCopy {
     static let all = [
         agents, header(running: 2), main, collapsed, hide, show,
         finished(3), revealFinished(3), hideFinished(3),
+        state(.running), state(.finished), state(.unknown),
     ]
 }

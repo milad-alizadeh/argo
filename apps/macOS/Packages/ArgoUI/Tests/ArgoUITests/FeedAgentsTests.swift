@@ -18,7 +18,7 @@ struct FeedAgentsTests {
     func `a delegation the record has not answered is a subagent still running`() {
         let chips = agents(in: handedOver())
 
-        #expect(chips.map(\.isRunning) == [true, false])
+        #expect(chips.map(\.activity) == [.running, .finished])
         #expect(FeedAgents.running(of: chips) == 1)
     }
 
@@ -115,7 +115,7 @@ struct FeedAgentsTests {
     func `two subagents handed the same brief keep their own endings and spends`() {
         let chips = agents(in: sameBrief())
 
-        #expect(chips.map(\.isRunning) == [true, false])
+        #expect(chips.map(\.activity) == [.running, .finished])
         #expect(chips.map(\.spend) == [nil, Self.reported])
     }
 

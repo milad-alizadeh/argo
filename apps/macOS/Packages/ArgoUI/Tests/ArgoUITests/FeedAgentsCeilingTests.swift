@@ -9,14 +9,18 @@ import Testing
 /// `DelegatingSession` closed the case where the delegating Session had gone. It cannot reach this
 /// one — the Session is running, so `session.isRunning && call.ending == .pending` was still true
 /// at 33h and at 47h, and the rail drew a green dot and a clock counting up from each.
+///
+/// Read on the DATED pass since #1269 (`FeedAgents.told(_:writing:at:)`) rather than inside the
+/// memoised walk, so every claim here goes through the same seam the rail does. Whether an
+/// observation of the child outranks it is `FeedAgentsWritingTests`.
 @Suite("Feed agents ceiling")
 struct FeedAgentsCeilingTests {
     /// The bug, in one claim: 33 hours is not a Subagent working, it is a report that was lost.
     @Test
     func `a delegation open past the ceiling is not running`() {
-        let chips = FeedAgents.all(in: Self.rows(hoursAgo: 33), of: .running, at: Self.now)
+        let chips = Self.chips(in: Self.rows(hoursAgo: 33), of: .running)
 
-        #expect(chips.map(\.isRunning) == [false])
+        #expect(chips.map(\.activity) == [.finished])
         #expect(FeedAgents.running(of: chips) == 0)
     }
 
@@ -24,9 +28,9 @@ struct FeedAgentsCeilingTests {
     /// inside it is a Subagent still out, and reads as one.
     @Test
     func `a delegation open inside the ceiling is still running`() {
-        let chips = FeedAgents.all(in: Self.rows(hoursAgo: 1), of: .running, at: Self.now)
+        let chips = Self.chips(in: Self.rows(hoursAgo: 1), of: .running)
 
-        #expect(chips.map(\.isRunning) == [true])
+        #expect(chips.map(\.activity) == [.running])
         #expect(FeedAgents.running(of: chips) == 1)
     }
 
@@ -51,51 +55,79 @@ struct FeedAgentsCeilingTests {
 
     /// One-directional, which is what keeps the ceiling from inventing a state of its own: it only
     /// ever TAKES a running claim away. A delegation the record never timestamped has no age to
-    /// judge, so it is left to the two facts that were already there.
+    /// judge, so it is left to the facts that were already there.
     @Test
     func `a delegation the record never timestamped is left to the other two facts`() {
         #expect(!DelegationCeiling.passed(sinceMs: nil, nowMs: Self.now))
-        #expect(FeedAgents.all(in: Self.undated, of: .running, at: Self.now)
-            .map(\.isRunning) == [true])
-        #expect(FeedAgents.all(in: Self.undated, of: .notRunning, at: Self.now)
-            .map(\.isRunning) == [false])
+        #expect(Self.chips(in: Self.undated, of: .running).map(\.activity) == [.running])
+        #expect(Self.chips(in: Self.undated, of: .notRunning).map(\.activity) == [.finished])
     }
 
     /// The ceiling never revives anything either. Twice, because the two are different claims: a
     /// Session that has gone stays quiet however fresh the handover ...
     @Test
     func `a fresh handover in a session that has gone is still quiet`() {
-        #expect(FeedAgents.all(in: Self.rows(hoursAgo: 1), of: .notRunning, at: Self.now)
-            .map(\.isRunning) == [false])
+        #expect(Self.chips(in: Self.rows(hoursAgo: 1), of: .notRunning)
+            .map(\.activity) == [.finished])
     }
 
     /// ... and a delegation the record ANSWERED stays landed however old it is.
     @Test
     func `a delegation the record answered stays landed however old`() {
-        #expect(FeedAgents.all(in: Self.landed(hoursAgo: 33), of: .running, at: Self.now)
-            .map(\.isRunning) == [false])
+        #expect(Self.chips(in: Self.landed(hoursAgo: 33), of: .running)
+            .map(\.activity) == [.finished])
     }
 
-    /// The clock goes with the dot: `AgentMeter` draws the count-up only while `isRunning`, and a
+    /// The clock goes with the dot: `AgentMeter` draws the count-up only while `.running`, and a
     /// backgrounded Agent reports no total to draw instead (#908). So a chip past the ceiling has
     /// nothing there rather than a `33h 07m` still ticking up.
     @Test
     func `a chip past the ceiling has nothing for the meter to draw`() throws {
-        let chip = try #require(FeedAgents.all(
-            in: Self.rows(hoursAgo: 33),
-            of: .running,
-            at: Self.now,
-        )
-        .first)
+        let chip = try #require(Self.chips(in: Self.rows(hoursAgo: 33), of: .running).first)
 
-        #expect(!chip.isRunning)
+        #expect(chip.activity == .finished)
         #expect(chip.durationMs == nil)
+    }
+
+    /// The ranking the ORDER in `FeedAgents.told(_:writing:at:)` encodes: an OBSERVATION outranks
+    /// a stated figure. This ceiling names itself a stated one — how long a report can still be in
+    /// flight — so a Subagent Argo can watch writing at five hours is a slow Subagent rather than a
+    /// lost report, and it keeps its dot (#1269).
+    @Test
+    func `a child still writing past the ceiling keeps its dot`() {
+        #expect(Self.told(Self.stale(.running), writing: .writing).map(\.activity) == [.running])
+        #expect(Self.told(Self.stale(.running), writing: .quiet).map(\.activity) == [.finished])
+    }
+
+    /// And it reaches the undecided chips too: silence that old is a report that was lost, which is
+    /// a thing Argo CAN say — so this is one of the few places `unknown` resolves downward.
+    @Test
+    func `an unknown chip past the ceiling is finished, not left unknown`() {
+        #expect(Self.told(Self.stale(.unknown), writing: .quiet).map(\.activity) == [.finished])
     }
 
     // MARK: - Fixtures
 
     /// A fixed clock, so the claims above are about the ceiling and not about when the suite ran.
     private static let now = 1_733_000_000_000
+
+    /// The rail's list at that clock, with nothing writing — which is what the ceiling is for. The
+    /// walk knows no clock, so the age is judged where the shipping path judges it.
+    private static func chips(in rows: [FeedRow], of session: DelegatingSession) -> [FeedAgent] {
+        told(FeedAgents.all(in: rows, of: session), writing: .quiet)
+    }
+
+    /// One chip handed over a millisecond past the ceiling, in whatever state the record left it.
+    private static func stale(_ activity: AgentActivity) -> [FeedAgent] {
+        [FeedAgent(
+            id: 0, label: "out", activity: activity, spend: nil, subagentID: "a-out",
+            startedAtMs: now - DelegationCeiling.reportWindowMs - 1,
+        )]
+    }
+
+    private static func told(_ agents: [FeedAgent], writing: SubagentWriting) -> [FeedAgent] {
+        FeedAgents.told(agents, writing: { _ in writing }, at: now)
+    }
 
     private static func handover(_ hoursAgo: Int) -> Int {
         now - hoursAgo * 60 * 60 * 1000

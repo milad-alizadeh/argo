@@ -67,7 +67,7 @@ package struct AgentsRailStrip: View {
     /// The dot carries the whole row's meaning here, so its label says what the chip's name would.
     @ViewBuilder private func dot(_ agent: FeedAgent) -> some View {
         let isSelected = control.scope.agent == agent.id
-        let indicator = SessionStateIndicator(state: agent.isRunning ? .running : .idle)
+        let indicator = SessionStateIndicator(state: agent.activity.dot)
             .padding(ArgoSpacing.tight)
             .background(
                 isSelected ? argo.color.surface.selected : .transparent,
@@ -77,11 +77,17 @@ package struct AgentsRailStrip: View {
         if let select = control.select(agent) {
             Button(action: select) { indicator }
                 .buttonStyle(.plain)
-                .accessibilityLabel(agent.label)
+                .accessibilityLabel(spoken(agent))
                 .accessibilityAddTraits(isSelected ? [.isSelected] : [])
         } else {
-            indicator.accessibilityLabel(agent.label)
+            indicator.accessibilityLabel(spoken(agent))
         }
+    }
+
+    /// The dot IS the row here, so the label has to carry the state as well as the name — a bare
+    /// name would drop the one thing this form of the rail draws.
+    private func spoken(_ agent: FeedAgent) -> String {
+        "\(agent.label), \(AgentsRailCopy.state(agent.activity))"
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

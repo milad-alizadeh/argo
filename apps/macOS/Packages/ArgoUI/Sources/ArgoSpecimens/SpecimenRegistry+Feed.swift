@@ -126,6 +126,9 @@ extension SpecimenRegistry {
         // A running Session holding yesterday's delegations — the lie #1089 could not reach, and
         // the disclosure the finished ones now sit behind (#1090).
         SpecimenEntry("agentsRailStale") { AgentsRailSpecimen(subject: .stale) },
+        // An idle parent waiting on its fan-out, two chips running off the children's own
+        // records and one unknown (#1269).
+        SpecimenEntry("agentsRailWaiting") { AgentsRailSpecimen(subject: .waiting) },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
         // missing, since the strip has no room for the word Main (#1013).

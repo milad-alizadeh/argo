@@ -36,7 +36,7 @@ package struct AgentChip: View {
 
     private var line: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
-            SessionStateIndicator(state: agent.isRunning ? .running : .idle)
+            SessionStateIndicator(state: agent.activity.dot)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
                 Text(agent.label)
                     .argoText(ArgoTypography.rowTitle)
@@ -52,7 +52,7 @@ package struct AgentChip: View {
     private var spoken: String {
         [
             agent.label,
-            agent.isRunning ? "running" : "finished",
+            AgentsRailCopy.state(agent.activity),
             agent.durationMs.map { TurnClockPhrase.spoken(seconds: $0 / 1000) },
             agent.spend.map(FeedSpend.agentWords),
             scope == nil ? "nothing read" : nil,

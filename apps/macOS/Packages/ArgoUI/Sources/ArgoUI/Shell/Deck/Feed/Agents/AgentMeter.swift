@@ -12,10 +12,13 @@ import SwiftUI
 /// slot stays empty rather than drawing a `0` that would claim a busy agent had spent nothing.
 ///
 /// A backgrounded Agent is never reported either figure, at either end (#908) — so a finished one
-/// draws NOTHING here. The count-up is gated on `isRunning` for exactly that: a clock still growing
-/// beside an idle dot would say the work goes on, which is the untruth the rail was fixed to stop.
+/// draws NOTHING here. The count-up is gated on `.running` for exactly that: a clock still growing
+/// beside a quiet dot would say the work goes on, which is the untruth the rail was fixed to stop.
 /// That gate carries the delegating Session's own status too (`DelegatingSession`), so a stale
 /// delegation draws no duration rather than a frozen one.
+///
+/// `.running` and not "anything but finished": an UNKNOWN chip gets no clock either. Argo cannot
+/// say the work is going on, and a duration counting up is that sentence written in numbers.
 struct AgentMeter: View {
     @Environment(\.argo) private var argo
 
@@ -43,7 +46,7 @@ struct AgentMeter: View {
     @ViewBuilder private var duration: some View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
-        } else if agent.isRunning, let startedAtMs = agent.startedAtMs {
+        } else if agent.activity == .running, let startedAtMs = agent.startedAtMs {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(counted(from: startedAtMs, at: context.date))
             }
@@ -74,7 +77,7 @@ struct AgentMeter: View {
         AgentMeter(agent: FeedAgent(
             id: 0,
             label: "Verify the fold",
-            isRunning: false,
+            activity: .finished,
             spend: Usage(
                 inputTokens: 3600,
                 outputTokens: 40000,
@@ -86,7 +89,7 @@ struct AgentMeter: View {
         AgentMeter(agent: FeedAgent(
             id: 1,
             label: "Sweep the stop reasons",
-            isRunning: true,
+            activity: .running,
             spend: nil,
             startedAtMs: Date().epochMs - 42000,
         ))

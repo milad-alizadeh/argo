@@ -64,7 +64,10 @@ enum AgentsRailFixture {
 
     /// One Subagent's own turn: what it was handed, what it did, and how it ended. Short on purpose
     /// — the claim a render of this settles is that the feed re-scopes, not how long a child runs.
-    private static let verifier: [TranscriptEvent] = [
+    ///
+    /// Reachable from this type's other files, which is why it is not private: `+Stale` and
+    /// `+Waiting` put the same child behind their own delegations.
+    static let verifier: [TranscriptEvent] = [
         .prompt(text: "Verify: the fold breaks at every mark", images: [], atMs: 1_733_000_200_000),
         .thought(
             markdown: "The break rule is the survey's, so read `FeedSurveyFold` before the marks.",

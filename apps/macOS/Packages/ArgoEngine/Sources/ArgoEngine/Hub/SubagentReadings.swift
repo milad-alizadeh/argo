@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 /// Each Subagent's own reading, published BESIDE the roster rather than inside it (#858).
@@ -24,6 +25,22 @@ final class SubagentReadings {
     /// transcript the CLI MOVED are tailed (#770): its Subagent files stay at the path it left, and
     /// both halves carry the same ids.
     private var filesByAgent: [String: Set<String>] = [:]
+    /// When Argo last watched each file GROW (#1269). The evidence a delegation is live that the
+    /// parent's own record does not hold: a parent that has delegated and is now waiting writes
+    /// nothing, so its status reads `idle` while its children work.
+    ///
+    /// GROWTH and not "when Argo last read this", which are different claims. A tail re-reads its
+    /// file from the first byte, so the backfill of a child that finished yesterday arrives now —
+    /// dating that would draw every long-dead delegation live for ten minutes after the cockpit
+    /// opened. Only the batches AFTER the backfill are writes Argo saw happen.
+    private var grewAtMsByFile: [String: Int] = [:]
+    /// What dates a batch. Injected so a suite can name the moment; every shipping caller wants the
+    /// real one.
+    private let clock: @Sendable () -> Int
+
+    init(clock: @escaping @Sendable () -> Int = { Date().epochMs }) {
+        self.clock = clock
+    }
 
     /// One Subagent's reading, or nothing where Argo has not read its file. The two are different
     /// claims — no rows would say the Agent did nothing — and `FeedAgentReadings` is what turns the
@@ -46,19 +63,39 @@ final class SubagentReadings {
         return byFile[path]
     }
 
+    /// When Argo last watched this Agent's file grow, or nothing where it has not seen it grow at
+    /// all. Answered under the SAME one-file rule the reading above is, and for the same reason: an
+    /// Agent Argo cannot resolve to one file is an Agent it can say nothing about, and a growing
+    /// half would otherwise date an id that names two.
+    func lastGrewAtMs(of agentID: String) -> Int? {
+        guard let files = filesByAgent[agentID], files.count == 1, let path = files.first
+        else { return nil }
+        return grewAtMsByFile[path]
+    }
+
     /// A fresh read of one file starts here, and drops whatever the last read of it left. A tail
     /// re-reads from the first byte, so a transcript that aged out of the working set and came back
     /// appended its Subagents' rows a second time.
     func beginReading(of agentID: String, from path: String) {
         filesByAgent[agentID, default: []].insert(path)
         byFile[path] = nil
+        grewAtMsByFile[path] = nil
     }
 
     /// One batch, appended. A read carrying nothing publishes nothing: a file that exists and has
     /// said nothing yet is a Subagent with no reading rather than one with an empty reading.
+    ///
+    /// Every batch but the FIRST dates the file, per the note on `grewAtMsByFile`: the first is
+    /// what the file already held when the tail opened it, and the rest are Argo watching it grow.
+    /// Which batch that is takes no table of its own — a file with bytes already in it has had its
+    /// backfill, and `beginReading` is what empties it again.
     func apply(_ read: [TranscriptEvent], from path: String) {
         guard !read.isEmpty else { return }
+        let isBackfill = byFile[path] == nil
         byFile[path, default: []] += read
+        if !isBackfill {
+            grewAtMsByFile[path] = clock()
+        }
     }
 
     /// Forget these readings — what a transcript leaving the set for good takes with it, the way
@@ -67,6 +104,7 @@ final class SubagentReadings {
     func forget(claims: [String: String]) {
         for (agentID, path) in claims {
             byFile[path] = nil
+            grewAtMsByFile[path] = nil
             filesByAgent[agentID]?.remove(path)
             if filesByAgent[agentID]?.isEmpty == true {
                 filesByAgent[agentID] = nil
@@ -79,5 +117,6 @@ final class SubagentReadings {
     func forgetAll() {
         byFile = [:]
         filesByAgent = [:]
+        grewAtMsByFile = [:]
     }
 }

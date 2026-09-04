@@ -25,7 +25,10 @@ struct AgentsRailListing {
     /// hiding it would strand the reader in a Subagent's feed with no chip to come back from, the
     /// same trap `FeedAgentReader.rows(under:of:otherwise:)` is written against.
     init(of agents: [FeedAgent], scopedOnto: Int?, revealing: Bool = false) {
-        let held = agents.filter { !$0.isRunning && $0.id != scopedOnto }
+        // `.finished` and not "not running": a chip Argo cannot place is not one that has landed,
+        // and filing it behind a control counting FINISHED work would be the claim the tri-state
+        // exists to refuse (#1269). It stays in the column, drawn as unknown.
+        let held = agents.filter { $0.activity == .finished && $0.id != scopedOnto }
         let heldIDs = Set(held.map(\.id))
         self.finished = held
         self.listed = revealing ? agents : agents.filter { !heldIDs.contains($0.id) }

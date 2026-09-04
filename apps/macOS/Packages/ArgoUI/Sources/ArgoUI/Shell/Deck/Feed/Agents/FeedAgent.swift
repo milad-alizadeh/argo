@@ -8,13 +8,16 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     package let id: Int
     /// What it was handed, verbatim — the brief the delegating call named.
     let label: String
-    /// Whether the delegation is still unresolved, AND the Session that delegated it is running,
-    /// AND its handover is inside `DelegationCeiling` — see `FeedAgents.running(of:)`.
-    /// Synchronously the first is the gap between the call and its result; a backgrounded launch is
-    /// answered at once and stays unresolved until its report lands as a second outcome (#908),
-    /// which is why the other two are here at all: a report that never lands leaves a pending call
-    /// nothing will ever close, in a dead Session (#1076) and in a live one alike (#1090).
-    let isRunning: Bool
+    /// Working, landed, or a state Argo cannot establish — see `FeedAgents.activity(_:of:at:)` for
+    /// the facts behind each, and `AgentActivity` for why there are three.
+    ///
+    /// Synchronously, `pending` is the gap between the call and its result; a backgrounded launch
+    /// is answered at once and stays unresolved until its report lands as a second outcome (#908),
+    /// which is why the Session's own status and `DelegationCeiling` are read beside it: a report
+    /// that never lands leaves a pending call nothing will ever close, in a dead Session (#1076)
+    /// and in a live one alike (#1090). And where those cannot decide, the child's OWN file can —
+    /// `SubagentWriting`, applied by `FeedAgents.told(_:writing:)` (#1269).
+    package var activity: AgentActivity
     /// What it reported spending, where anything is reported at all. Synchronously `nil` means
     /// still working — the figure arrives with the result. A backgrounded agent never reports one:
     /// the launch receipt carries no `usage`, and the late report's spend is a shape Argo will not
@@ -37,7 +40,7 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     package init(
         id: Int,
         label: String,
-        isRunning: Bool,
+        activity: AgentActivity,
         spend: Usage?,
         subagentID: String? = nil,
         durationMs: Int? = nil,
@@ -45,7 +48,7 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     ) {
         self.id = id
         self.label = label
-        self.isRunning = isRunning
+        self.activity = activity
         self.spend = spend
         self.subagentID = subagentID
         self.durationMs = durationMs

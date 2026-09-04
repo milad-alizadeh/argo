@@ -12,13 +12,14 @@ enum AgentsFanOutFixture {
         // Two in every three are still out, so the column still overflows now that it holds only
         // the live ones (#1090). The other third are what the disclosure at the foot counts.
         let isRunning = !position.isMultiple(of: 3)
+        let activity: AgentActivity = isRunning ? .running : .finished
         // Every second one was launched in the BACKGROUND, so the column holds both shapes: an
         // async agent is named by its launch receipt, which reports nothing else ever (#908).
         let isAsync = position.isMultiple(of: 2)
         return FeedAgent(
             id: position,
             label: brief,
-            isRunning: isRunning,
+            activity: activity,
             // Synchronously the figures arrive TOGETHER, on the record that answers the handover —
             // so a running chip has none of them and counts up from `startedAtMs` instead. Varied
             // per position, because a column of twenty identical figures proves nothing about the
