@@ -83,9 +83,8 @@ extension SessionRosterProjection {
             switch event {
             case let .prompt(_, _, atMs):
                 start = atMs
-            // A Turn nobody typed starts where the report that woke it landed (#1299) — the only
-            // record a fan-out's next Turn has. Overwritten by an earlier prompt like any other
-            // start, so a run that was woken and then steered still clocks from the steer.
+            // A Turn nobody typed starts where the report that woke it landed (#1299), and is
+            // overwritten by an earlier prompt like any other start.
             case let .turnResumed(atMs):
                 start = atMs
             // An interrupt is a boundary like any other, and the commoner one on a Session

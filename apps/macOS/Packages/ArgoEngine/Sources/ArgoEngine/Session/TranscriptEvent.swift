@@ -57,17 +57,11 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// that continues into a tool call closes nothing.
     case turnEnded(StopReason)
     /// A Turn started again with nobody typing: a background agent reported, and the CLI put the
-    /// agent back to work on it (#1299).
+    /// agent back to work on it (#1299). A fan-out ends its Turn to wait for its delegates, so the
+    /// report is the only record that says the next one began.
     ///
-    /// The other end of `.turnEnded`, and the one opening a `.prompt` cannot carry. A fan-out ends
-    /// its Turn to wait for its delegates, so the record that wakes the run is the report — and a
-    /// reading that only ever opened a Turn on a prompt left three long `/implement` Sessions
-    /// reading `idle` for the whole time they then worked, which took their newest call off the
-    /// roster row with the status (`SessionRosterProjection+Activity`).
-    ///
-    /// A boundary and nothing else — there is nothing here for anyone to DRAW. It carries the
-    /// moment all the same, because the Turn it opens is one the roster clocks: with no prompt
-    /// behind it, a woken Turn has no other record of when it started
+    /// A boundary and nothing else — there is nothing here for anyone to DRAW. The moment rides
+    /// along because the Turn it opens has no prompt behind it to be clocked from
     /// (`SessionRosterProjection+Clock`).
     case turnResumed(atMs: Int?)
     /// Somebody stopped the Turn. Its own case rather than a `.prompt` carrying the CLI's marker
