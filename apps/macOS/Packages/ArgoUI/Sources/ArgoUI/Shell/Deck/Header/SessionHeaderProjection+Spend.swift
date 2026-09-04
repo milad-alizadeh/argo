@@ -34,10 +34,10 @@ extension SessionHeaderProjection {
         -> String? {
         let read = worked ?? .read(across: session.events)
         let parts = [
-            // Cache split off the spend, not summed into it: every request re-reads the whole
-            // conversation from cache, so one figure would read tens of millions as fresh spend.
-            session.spentTokens.map { "\(TokenCount.short($0)) tokens spent" },
-            session.cachedTokens.map { "\(TokenCount.short($0)) cached" },
+            // Cache split off the spend, not summed into it — `TokenCount.cached` carries why, and
+            // the feed's own roll-up spells both halves with the same two.
+            session.spentTokens.map(TokenCount.spent),
+            session.cachedTokens.map(TokenCount.cached),
             // The reader's word, never the model's (#1014); said as a spend, not as a count.
             session.subagentTokens.map { "\(TokenCount.short($0)) in background agents" },
             ran(from: session).map { "started \(ElapsedTime.phrase(milliseconds: $0)) ago" },

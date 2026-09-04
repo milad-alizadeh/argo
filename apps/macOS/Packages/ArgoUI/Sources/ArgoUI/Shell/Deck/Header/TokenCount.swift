@@ -7,6 +7,24 @@ import Foundation
 /// Not `NumberFormatter`'s `.short` style: that is locale-shaped prose ("218K"), and these are
 /// machine facts set in the machine face beside a `/`.
 enum TokenCount {
+    /// The fresh half of a bill, labelled: `1.83M tokens spent`.
+    ///
+    /// Spelled here rather than at each surface, because the header and the foot of a reading have
+    /// to be readable side by side (#1177) and a phrase pasted twice drifts once.
+    static func spent(_ count: Int) -> String {
+        "\(short(count)) tokens spent"
+    }
+
+    /// The cache half of the same bill, labelled: `28.1M cached`.
+    ///
+    /// Never summed into the half above. Every request re-reads the whole conversation from cache,
+    /// so one figure counts the same context once per Turn: it grows with the number of REQUESTS
+    /// rather than with the work, and reached `2.3M tokens` beside a context gauge reading
+    /// `79.9k / 1M` (#1177).
+    static func cached(_ count: Int) -> String {
+        "\(short(count)) cached"
+    }
+
     /// Coarser as the number grows: a tenth of a thousand is usable, a tenth of a hundred thousand
     /// is noise on a reading that changes every turn.
     static func short(_ count: Int) -> String {

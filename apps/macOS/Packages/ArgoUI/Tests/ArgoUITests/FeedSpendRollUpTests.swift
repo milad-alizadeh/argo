@@ -68,7 +68,61 @@ struct FeedSpendRollUpTests {
             cacheCreationTokens: 0,
         ))
 
-        #expect(mark.words == "session · 143.6K tokens")
+        #expect(mark.words == "session · 43.6k tokens spent · 100k cached")
+    }
+
+    /// The bug the split was made for (#1177): a Session whose context held 80k read `2.3M tokens`
+    /// at the foot, because every request re-reads the whole conversation from cache and the
+    /// roll-up counted each of those reads. The fresh half is what a reader means by spend, and it
+    /// is stated first.
+    @Test
+    func `the roll-up never sums the cache into the spend`() {
+        let reread = FeedMark.spent(Usage(
+            inputTokens: 60000,
+            outputTokens: 19900,
+            cacheReadTokens: 2_200_000,
+            cacheCreationTokens: 20000,
+        ))
+
+        #expect(reread.words == "session · 79.9k tokens spent · 2.22M cached")
+    }
+
+    /// Pins the SPELLING, which is the half that can drift: both surfaces reach the same
+    /// `TokenCount`, and this fails the moment one of them grows its own phrase. That the two
+    /// pipelines agree on the NUMBERS is a separate fact, held where they are summed —
+    /// `SessionSpendTests` and the roll-up members above.
+    @Test
+    func `the roll-up spells its spend the way the deck header spells the same one`() throws {
+        let usage = Usage(
+            inputTokens: 1_800_000,
+            outputTokens: 30000,
+            cacheReadTokens: 28_100_000,
+            cacheCreationTokens: 0,
+        )
+        let header = try #require(SessionHeaderProjection.spend(from: CockpitPresentation.Session(
+            id: "session",
+            title: "Session",
+            access: .managed,
+            status: .idle,
+            spend: .init(spentTokens: usage.spentTokens, cachedTokens: usage.cachedTokens),
+        )))
+
+        #expect(FeedSpend.sessionWords(usage) == "1.83M tokens spent · 28.1M cached")
+        #expect(header.hasPrefix("1.83M tokens spent · 28.1M cached"))
+    }
+
+    /// A chip states the fresh half alone, labelled — never the billed sum. A Subagent's reported
+    /// usage is itself a roll-up over its own requests, so it carries the same re-read.
+    @Test
+    func `an agent chip states the fresh half, labelled, and never the billed sum`() {
+        let usage = Usage(
+            inputTokens: 3600,
+            outputTokens: 40000,
+            cacheReadTokens: 100_000,
+            cacheCreationTokens: 0,
+        )
+
+        #expect(FeedSpend.agentWords(usage) == "43.6k tokens spent")
     }
 
     /// The withholding `HubSession` and the header already make (`SessionHeaderProjection+Spend`),

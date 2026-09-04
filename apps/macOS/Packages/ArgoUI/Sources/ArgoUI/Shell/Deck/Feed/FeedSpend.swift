@@ -1,33 +1,21 @@
 import ArgoEngine
 
-/// What a spend reads as, in words.
+/// What a spend reads as, in words — the two readings a feed states, at the two grains it has.
 ///
-/// One place, because two surfaces say it — the rail's chips and the reading's own roll-up.
-///
-/// The UNIT is part of the reading and never dropped: a bare `143.6K` could be tokens, dollars or
-/// lines.
+/// Both are spelled by `TokenCount`, which the deck header spells the same one with, so a reader
+/// holding a reading against its header finds the same number in the same words. Cache is SPLIT
+/// off the spend and never summed into it: `TokenCount.cached` carries why (#1177).
 enum FeedSpend {
-    /// Every token the record attributed to the work — what was sent, what came back, and the cache
-    /// either way.
-    static func total(_ usage: Usage) -> Int {
-        usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
+    /// The whole Session, both halves. The cache half belongs at the foot of a reading, which is
+    /// the one place a reader asks what the Session as a whole has cost: the half that dwarfs the
+    /// other has to be named to be discounted.
+    static func sessionWords(_ usage: Usage) -> String {
+        "\(TokenCount.spent(usage.spentTokens)) · \(TokenCount.cached(usage.cachedTokens))"
     }
 
-    /// The figure with its unit on it. Rounded once it passes a thousand, because the exact count
-    /// of a hundred thousand tokens is precision nobody reads and width the row cannot spare.
-    static func words(_ usage: Usage) -> String {
-        "\(figure(total(usage))) tokens"
-    }
-
-    private static func figure(_ tokens: Int) -> String {
-        switch tokens {
-        case ..<1000: "\(tokens)"
-        case ..<1_000_000: rounded(Double(tokens) / 1000, "K")
-        default: rounded(Double(tokens) / 1_000_000, "M")
-        }
-    }
-
-    private static func rounded(_ value: Double, _ scale: String) -> String {
-        String(format: "%.1f", value) + scale
+    /// One Agent, the fresh half alone. A rail holds thirty of these at a column's width on one
+    /// line each, and the Session's cache is stated once in the deck header already.
+    static func agentWords(_ usage: Usage) -> String {
+        TokenCount.spent(usage.spentTokens)
     }
 }

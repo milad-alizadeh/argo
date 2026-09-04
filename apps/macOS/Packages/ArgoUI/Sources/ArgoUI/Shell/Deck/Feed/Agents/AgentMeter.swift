@@ -60,10 +60,11 @@ struct AgentMeter: View {
     }
 
     /// Absent for an Agent still out, and absent for a record that priced nothing — the two read
-    /// alike here, because neither is a claim that the work was free.
+    /// alike here, because neither is a claim that the work was free. The fresh half only, and
+    /// `FeedSpend.agentWords` carries why.
     @ViewBuilder private var spend: some View {
         if let spend = agent.spend {
-            Text(FeedSpend.words(spend))
+            Text(FeedSpend.agentWords(spend))
         }
     }
 }

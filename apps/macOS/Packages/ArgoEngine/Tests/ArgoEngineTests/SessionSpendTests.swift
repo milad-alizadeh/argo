@@ -72,15 +72,20 @@ struct SessionSpendTests {
                     result: nil,
                     endedAtMs: 2000,
                 ),
-                delegated: ToolCallOutcome.Delegated(usage: usage(40000)),
+                delegated: ToolCallOutcome.Delegated(usage: usage(40000, cacheRead: 900_000)),
             )),
         ])
 
         await hubObserveToEnd(hub, observed)
 
         let session = try #require(hub.sessions.first)
+        // The FRESH half, like `spentTokens` beside it on the same header line. A Subagent's
+        // reported usage rolls up its own requests, so the billed sum would carry the whole
+        // conversation once per Turn and read an order of magnitude above the line's other
+        // figure (#1177) — 940k where the Session itself spent 41k.
         #expect(session.subagentTokens == 40000)
         #expect(session.spentTokens == 41000)
+        #expect(session.cachedTokens == 900_000)
     }
 
     /// An ordinary call reports no usage of its own, which must leave the subagent line ABSENT
