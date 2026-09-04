@@ -337,7 +337,7 @@ picker now, not this room's.
 | ~~`BacklogToolbarLabel`~~ | molecule | — | — | — | **#836**: renamed `BacklogHeader` and moved into the list pane |
 | `ArgoIconButtonGroup` | atom | `ArgoDesign/ArgoAtoms/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
 | `ArgoIconButton` | atom | `ArgoDesign/ArgoAtoms/` | `symbol: String`, `voice: ArgoControlVoice`, `face: ArgoControlFace`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
-| `TicketsPaneHeader` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `reach: CGFloat`, `inset: CGFloat`, `leading`, `trailing` | `argoChromeBar` | **#1242**, from `ticket-verbs-prototype.html` `.paneheader`. The band is the window's title strip, reached into — no constant |
+| `TicketsPaneHeader` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `reach: CGFloat`, `inset: CGFloat`, `leading`, `trailing` | — (it paints nothing) | **#1242**, from `ticket-verbs-prototype.html` `.paneheader`. The band is the window's title strip, reached into — no constant, and no material of its own: `argoChromeBar` per pane drew the window's one sheet three times |
 | `BacklogPaneHeader` | molecule | `ArgoUI/Shell/Tickets/Chrome/` | `creation: Creation`, `query: Binding<String>` | `TicketsPaneHeader`, `NewTicketButton`, `BacklogSearchField` | **#1242**, `.backlog .paneheader` |
 | `TicketPaneHeader` | molecule | `ArgoUI/Shell/Tickets/Chrome/` | `verbs: Verbs?` | `TicketsPaneHeader`, `StartControl` | **#1242**, `.pane .paneheader` |
 | `NewTicketButton` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `creation: Creation` | `ArgoIconButtonGroup`, `ArgoIconButton` | `ibtn('compose')`. **#1242**: a 36pt circle at the list pane's leading edge |

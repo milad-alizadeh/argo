@@ -498,6 +498,18 @@ searches**, at that pane's trailing edge. It was over the ticket only because th
 the window's width; a field that narrows one column while standing over another was the same
 mis-placement the verbs had, and it goes for the same reason.
 
+**The band paints nothing, and every container on it is one height.** `pane-headers.png` is the
+arrangement as built, from `prototypes/ticket-verbs-prototype.html` variant H. Two things the
+first build got wrong and the render caught:
+
+- **No ground and no rule.** The window's chrome is one sheet from the top edge to the single
+  hairline where it stops. A band per pane wearing that same modifier drew the sheet three times —
+  a hairline under every header, and the one bar broken at each column seam. The band lays its
+  controls out and paints nothing.
+- **One container height, `ArgoControlBox.vessel`.** The compose circle, the `Start` pill and the
+  search field are the same object at three widths. The field had named a 28 of its own, which is
+  the per-surface measuring #1243 removed from the icon box; it is gone the same way.
+
 **New Session is not in this room's band (#836).** Mail's window creates one kind of thing and
 spends one compose mark on it. This room creates a ticket, so `ShellToolbar` draws New Session in
 every other room and `⌘N` and the menu bar reach it from this one. Two compose marks a finger
@@ -988,6 +1000,7 @@ and this sheet holds what `ArgoBacklogList` declares.
 | ~~`iconButton`~~ | **gone — `ArgoControlBox` (#1243)** | it was 26 × 24 inside a 3pt inset, a box this room measured for itself. Four headers measured four, so the box left this sheet: it is `ArgoControlBox.icon` now — 26 SQUARE in a 5pt vessel inset — and the inset is what makes a capsule of them stand at the band's own 36. The 30pt capsule beside the shell row's 36pt circle was the whole of what looked wrong. **#1242 depends on this**: the compose CIRCLE in the list's header and the Start pill in the ticket's are one height only because both are derived from that box |
 | `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make. **Amended #1243**: the rung is not this room's to pass either — `ArgoIconButton` draws at `control` |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
+| ~~`searchHeight`~~ | **gone (#1242) — `ArgoControlBox.vessel` 36** | the field named a 28 of its own, which made one row of controls two heights of container. A field on this band is a container like the compose circle and the Start pill, so it takes the number they are derived from. Deleted rather than set to 36: a height nobody can write down cannot drift, which is why #1243 took the icon box off the four surfaces that each named one |
 | Vessel shape | `Capsule()` | a capsule is a shape, not a radius — no `ArgoRadius` rung applies |
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
 | ~~Menu offset~~ | **gone (#872)** | it measured `ModeMenu`'s popover, which was never implementable — AppKit positions and draws its own — and the menu it described is deleted. The skill picker's popover is AppKit's on the same terms |
@@ -1030,7 +1043,7 @@ for; anything not listed is stock used directly.
 | `BacklogMore` | atom | a full-width `Button` at the foot of the list | **Added #1075**: there is another page of closed tickets, and this reads it. Drawn only on a cursor the provider served, so it cannot outlive the last page |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | ~~`TicketsToolbar`~~ | — | **gone (#1242)** | the window row, and every control the room had. Three answers: #816 claimed the column boundary from one region, #836 split it into bands under the panes, then it was reassembled as one row. The fourth answer gives each pane its own header, so this room contributes nothing to `.toolbar` at all — see the column question |
-| `TicketsPaneHeader` | atom | an `HStack` in the pane, reaching into the title strip | **Added #1242.** The band itself: the window's own strip height via `reach`, the pane's own column inset, a leading slot and a trailing one. No rule at its foot — the pane's glass edge is what separates it |
+| `TicketsPaneHeader` | atom | an `HStack` in the pane, reaching into the title strip | **Added #1242.** The band itself: the window's own strip height via `reach`, the pane's own column inset, a leading slot and a trailing one. **It paints nothing** — no ground and no rule. The window's chrome is ONE sheet ending in a single hairline (`ArgoChromeBar`), and this sits inside it; worn per pane it drew that sheet three times, putting a hairline under every header and breaking the bar across the column seams |
 | `BacklogPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** New ticket leading, search trailing. It is the LIST's, so both act on the list |
 | `TicketPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** The `StartControl` pill, leading, and nothing else. Empty of controls with no ticket open — it keeps its band, because a band that collapsed would move every pane beside it |
 | ~~`BacklogControls`~~ | — | **gone (#1242)** | it wrapped `BacklogMenu` alone, and the menu is gone with it |
