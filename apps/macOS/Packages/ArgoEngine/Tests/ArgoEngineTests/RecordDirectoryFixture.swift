@@ -70,6 +70,15 @@ struct RecordDirectoryFixture {
         return url
     }
 
+    /// Say one more thing at the end of a transcript already written — the append an agent makes,
+    /// which also puts the file back inside the working set.
+    func append(_ words: String, to url: URL) throws {
+        let handle = try FileHandle(forWritingTo: url)
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data((Self.said(words) + "\n").utf8))
+    }
+
     /// Move a transcript's mtime back, which is the only way a file leaves the working set.
     func age(_ url: URL, by interval: TimeInterval) throws {
         try FileManager.default.setAttributes(

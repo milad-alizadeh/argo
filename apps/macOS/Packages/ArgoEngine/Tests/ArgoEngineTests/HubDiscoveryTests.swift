@@ -111,6 +111,43 @@ struct HubDiscoveryTests {
         await hub.disconnect()
     }
 
+    /// A tail always re-reads its file from the first byte, so a transcript re-admitted to the set
+    /// delivers a backfill of everything it already said. Folded onto the reading it was paused
+    /// holding, that is every Message in the file drawn twice (#1213).
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a paused transcript re-read on resume holds one copy of what it said`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
+        let spoken = FixtureTranscript(name: "spoken", cwd: projectURL.path, fillerRecords: 2)
+        let url = try fixture.write(spoken)
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        await hub.connect(to: LaunchConfiguration(
+            projectURL: projectURL,
+            transcriptURLs: [],
+        ))
+        await hubSettle { hub.sessions.count == 1 }
+        let firstReading = said(by: hub.sessions[0])
+        #expect(firstReading.count == 3)
+
+        try fixture.age(url, by: Self.wellOutsideTheWindow)
+        await hub.refreshWorkingSet()
+        #expect(hub.observations.map(\.state) == [.stopped])
+        // A word only the resumed file holds, so the wait below settles on the RE-READ having
+        // landed rather than on the reading that was already there.
+        try fixture.write(FixtureTranscript(
+            name: spoken.name,
+            cwd: spoken.cwd,
+            fillerRecords: 3,
+        ))
+        await hub.refreshWorkingSet()
+        await hubSettle { said(by: hub.sessions[0]).contains { $0.hasPrefix("\(fillerPrefix)2") } }
+
+        #expect(said(by: hub.sessions[0]).count == 4)
+        await hub.disconnect()
+    }
+
     /// `--transcript` is the render harness's explicit override. A named transcript means the
     /// caller has said what to read, so nothing is swept for and nothing else appears.
     @Test(.timeLimit(.minutes(1)))
