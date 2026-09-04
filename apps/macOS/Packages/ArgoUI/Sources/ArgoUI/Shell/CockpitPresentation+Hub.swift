@@ -97,7 +97,10 @@ extension CockpitPresentation.Session {
     /// view the inputs invites a second reading of a fact the Hub has already read.
     ///
     /// not-projected: liveness — an input to the status fold; `status` below is its result.
-    /// not-projected: convention — the same input at the CONVENTION tier.
+    /// not-projected: convention — the same input at the CONVENTION tier. The one thing on it a
+    ///   surface draws is the question the agent asked, and that lands below under its own name:
+    ///   `reportedAsk` is the engine's reading of it, taken there rather than here so no surface
+    ///   is handed the report to read a second status off (#1203).
     /// not-projected: driveStatus — the same input again, at DIRECT, where the CLI's own protocol
     ///   reported it (#683).
     /// not-projected: signals — the tuple that fold reads, and nothing else.
@@ -166,7 +169,9 @@ extension CockpitPresentation.Session {
                 mode: session.mode,
                 modeDidNotTake: session.modeDidNotTake,
                 permission: session.permission,
-                ask: session.ask,
+                // Both questions in one value, because a reader with one up has the same thing to
+                // do about it either way — see `Autonomy.Asks` for why they stay apart inside it.
+                asks: Autonomy.Asks(ask: session.ask, reportedAsk: session.reportedAsk),
                 standingAllows: session.standingAllows,
                 expiredPermissions: session.expiredPermissions,
             ),

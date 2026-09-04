@@ -23,6 +23,18 @@ public extension HubSession {
     var startedAtMs: Int? {
         moments.startedAtMs
     }
+
+    /// The question this Session's agent asked over the companion channel and nobody has answered
+    /// (#1203) — CONVENTION, and the reason `NEEDS INPUT` can stand over a feed the record put no
+    /// question in.
+    ///
+    /// Published as a reading of its own rather than by projecting `convention` whole: the report
+    /// is an INPUT to the status fold, and the one thing on it a surface has to draw is the words
+    /// that were asked. Beside `ask` above it, never folded into it — that one is a live handle the
+    /// gate can be answered through, and this one is answered in the composer.
+    var reportedAsk: CompanionAsk? {
+        convention?.pendingAsk
+    }
 }
 
 extension HubSession {

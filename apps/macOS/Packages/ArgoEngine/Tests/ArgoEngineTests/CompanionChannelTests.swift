@@ -35,11 +35,11 @@ struct CompanionChannelTests {
 
     @Test
     func `the channel answers an MCP handshake and lists its tools`() async throws {
-        try await Self.withChannel { _, client in
+        try await CompanionChannelHarness.withChannel { _, client in
             client.send(["jsonrpc": "2.0", "id": 1, "method": "initialize", "params": [:]])
-            let handshake = try await Self.reply(to: client)
+            let handshake = try await CompanionChannelHarness.reply(to: client)
             client.send(["jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": [:]])
-            let catalog = try await Self.reply(to: client)
+            let catalog = try await CompanionChannelHarness.reply(to: client)
 
             #expect(handshake["result"]?.stringField("protocolVersion") != nil)
             let tools = catalog["result"]?["tools"]?.array ?? []
@@ -50,8 +50,8 @@ struct CompanionChannelTests {
 
     @Test
     func `a reported status reaches the roster at the CONVENTION tier`() async throws {
-        try await Self.withChannel { fixture, client in
-            try await Self.report(client, "report_status", ["status": "running"])
+        try await CompanionChannelHarness.withChannel { fixture, client in
+            try await CompanionChannelHarness.report(client, "report_status", ["status": "running"])
             await settle { fixture.hub.sessions.first?.convention?.status != nil }
 
             let session = try #require(fixture.hub.sessions.first)
@@ -64,8 +64,8 @@ struct CompanionChannelTests {
     /// never the nearest guess.
     @Test
     func `a status word the channel does not know reads unknown`() async throws {
-        try await Self.withChannel { fixture, client in
-            try await Self.report(client, "report_status", ["status": "vibing"])
+        try await CompanionChannelHarness.withChannel { fixture, client in
+            try await CompanionChannelHarness.report(client, "report_status", ["status": "vibing"])
             await settle { fixture.hub.sessions.first?.convention?.status != nil }
 
             #expect(fixture.hub.sessions.first?.status == .unknown)
@@ -74,8 +74,8 @@ struct CompanionChannelTests {
 
     @Test
     func `a reported Outcome is kept verbatim against the Session`() async throws {
-        try await Self.withChannel { fixture, client in
-            try await Self.report(client, "report_outcome", [
+        try await CompanionChannelHarness.withChannel { fixture, client in
+            try await CompanionChannelHarness.report(client, "report_outcome", [
                 "target": "code",
                 "reference": "abc1234",
                 "summary": "Read the PTY",
@@ -93,9 +93,9 @@ struct CompanionChannelTests {
 
     @Test
     func `a tool call missing its required argument records nothing`() async throws {
-        try await Self.withChannel { fixture, client in
+        try await CompanionChannelHarness.withChannel { fixture, client in
             client.send(CompanionClient.toolCall(id: 1, name: "report_status", arguments: [:]))
-            let reply = try await Self.reply(to: client)
+            let reply = try await CompanionChannelHarness.reply(to: client)
 
             #expect(reply["result"]?["isError"]?.bool == true)
             #expect(fixture.hub.sessions.first?.convention == nil)
@@ -125,7 +125,7 @@ struct CompanionChannelTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        let socketPath = Self.socketPath(fixture, claim)
+        let socketPath = CompanionChannelHarness.socketPath(fixture, claim)
 
         fixture.host.endLastProcess(exitCode: 0)
 
@@ -138,8 +138,8 @@ struct CompanionChannelTests {
     /// tier whose channel has gone (#799).
     @Test
     func `a status reported before the PTY exited stops being read at CONVENTION`() async throws {
-        try await Self.withChannel { fixture, client in
-            try await Self.report(client, "report_status", ["status": "running"])
+        try await CompanionChannelHarness.withChannel { fixture, client in
+            try await CompanionChannelHarness.report(client, "report_status", ["status": "running"])
             // Required, not settled-and-forgotten: a status that never arrives would otherwise fail
             // below as "never degraded", sending the reader after the wrong bug.
             try #require(await settle { fixture.hub.sessions.first?.convention?.status != nil })
@@ -155,48 +155,5 @@ struct CompanionChannelTests {
             await settle(until: degraded)
             #expect(degraded())
         }
-    }
-
-    /// A spawned Session with a client on its channel, torn down after. A closure because `defer`
-    /// cannot be lifted into a helper that returns.
-    private static func withChannel(
-        _ body: (SpawnFixture, CompanionClient) async throws -> Void,
-    ) async throws {
-        let fixture = try SpawnFixture()
-        defer { fixture.remove() }
-        let claim = try await fixture.hub.spawnSession()
-        let client = try await CompanionClient.dialled(socketPath(fixture, claim))
-        defer { client.close() }
-        try await body(fixture, client)
-    }
-
-    /// One tool call, answered — the shape every report below takes.
-    private static func report(
-        _ client: CompanionClient,
-        _ name: String,
-        _ arguments: [String: Any],
-    ) async throws {
-        client.send(CompanionClient.toolCall(id: 1, name: name, arguments: arguments))
-        _ = try await reply(to: client)
-    }
-
-    private static func socketPath(
-        _ fixture: SpawnFixture,
-        _ claim: SessionOwnership.ClaimID,
-    )
-        -> String {
-        fixture.companionSocketPath(claim)
-    }
-
-    /// Let the server's run loop turn, then read its answer. The socket is served on the main
-    /// actor, so a test that read without yielding would read before anything was written.
-    private static func reply(to client: CompanionClient) async throws -> JSONValue {
-        await Task.yield()
-        var reply: JSONValue?
-        await settle {
-            reply = client.receive()
-            return reply != nil
-        }
-        return try #require(reply)
     }
 }

@@ -120,10 +120,26 @@ public extension CockpitPresentation.Session {
     /// Autonomy (`CONTEXT.md`): the standing stance, and everything the Session is blocked on or
     /// has stopped being blocked on.
     struct Autonomy: Equatable, Sendable {
+        /// The questions this Session has up, one per channel they arrive on (#1203). Together
+        /// because they are the same thing to the reader — a question waiting on them — and apart
+        /// because nothing may answer one the way it answers the other: `ask` is a hook Argo holds
+        /// open and can reply down, and `reportedAsk` is words the agent sent over a channel that
+        /// already replied, which are answered in the composer.
+        public struct Asks: Equatable, Sendable {
+            public let ask: SessionAsk?
+            public let reportedAsk: CompanionAsk?
+
+            public init(ask: SessionAsk? = nil, reportedAsk: CompanionAsk? = nil) {
+                self.ask = ask
+                self.reportedAsk = reportedAsk
+            }
+        }
+
         public let mode: SessionModeReading
         public let modeDidNotTake: SessionMode?
         public let permission: PermissionRequest?
         public let ask: SessionAsk?
+        public let reportedAsk: CompanionAsk?
         public let standingAllows: [StandingAllow]
         public let expiredPermissions: [PermissionExpiry]
 
@@ -131,14 +147,15 @@ public extension CockpitPresentation.Session {
             mode: SessionModeReading = .unknown(cli: nil),
             modeDidNotTake: SessionMode? = nil,
             permission: PermissionRequest? = nil,
-            ask: SessionAsk? = nil,
+            asks: Asks = .init(),
             standingAllows: [StandingAllow] = [],
             expiredPermissions: [PermissionExpiry] = [],
         ) {
             self.mode = mode
             self.modeDidNotTake = modeDidNotTake
             self.permission = permission
-            self.ask = ask
+            self.ask = asks.ask
+            self.reportedAsk = asks.reportedAsk
             self.standingAllows = standingAllows
             self.expiredPermissions = expiredPermissions
         }

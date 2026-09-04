@@ -64,6 +64,18 @@ sends where there is something to send.
 **An undriveable Session draws no affordance at all** (#546), and the reason takes the deck's
 foot as `ComposerUnavailable` already draws it. The row above stays a reading.
 
+**A question the record does not carry is drawn at the foot of the work**, in the same card and
+at the same measurements. Two channels raise one: Argo's own gate holds an `AskUserQuestion` the
+CLI has not written yet (#1190), and the companion channel carries an `ask_user` the record shows
+only as the call that sent it (#1203). Either way the roster already says `Needs input`, so the
+alternative to this row is a badge over a column with nothing in it to answer.
+
+**The reported one is the exception to the paragraph at the top of this file.** It is answered in
+the COMPOSER, not on the row: the channel replied `Recorded` the moment the question arrived, so
+the agent was never blocked and no answer can go back the way it came. The card therefore draws
+its options as the reading they are — the state the table calls *reported* — and keeps the
+attention ground, because the question is genuinely still waiting on the reader.
+
 ## States
 
 | State | Render | Ground | Glyph ink |
@@ -74,6 +86,16 @@ foot as `ComposerUnavailable` already draws it. The row above stays a reading.
 | free-form, waiting | [`free-form.png`](feed-ask/free-form.png) | `state.muted(attention)` | `state.attention` |
 | answered | [`answered.png`](feed-ask/answered.png) | none | `text.tertiary` |
 | undriveable (#546) | [`unavailable.png`](feed-ask/unavailable.png) | none — the row is a reading | `text.tertiary` |
+| reported over the channel (#1203) | [`reported.png`](feed-ask/reported.png) | `state.muted(attention)` | `state.attention` |
+
+The reported row is the one waiting card with no cards to press. Its ground is the waiting one
+because it IS waiting; what it does not draw is the affordance, since the answer goes in the
+composer. On an undriveable Session it falls to the row above it, ground and all.
+
+`reported.png` is rendered from the shipping `feedAskReported` specimen, so it is the app rather
+than the prototype the five renders above it came out of. Judged against `feedAskUnreached`, its
+sibling state, the two are the same card at the same measurements — which is the claim, since the
+only thing that differs between them is which channel raised the question.
 
 **The row is carried by its ground alone.** No rule around it and no leading accent bar: an
 amber stroke on four edges reads as an alert banner dropped into the column rather than as a row

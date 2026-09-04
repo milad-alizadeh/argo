@@ -139,6 +139,14 @@ public extension CockpitPresentation {
         /// DIRECT, on the same ground the Permission above is. Absent for every Session that is not
         /// waiting on one, which is what returns the feed's ask row to being a reading.
         public let ask: SessionAsk?
+        /// The question the Session's agent asked over the companion channel (#1203), verbatim
+        /// from the engine — CONVENTION, because the agent said it rather than Argo observing it.
+        /// Absent for every Session whose agent has not used the tool, which is nearly all of them.
+        ///
+        /// Beside `ask` above rather than folded into it: that one is a hook Argo is holding open,
+        /// and this one was answered `Recorded` the moment it arrived, so the agent is not blocked
+        /// and no answer can go back the way it came.
+        public let reportedAsk: CompanionAsk?
         /// The tools this Session has stopped asking about (#572), verbatim from the engine and in
         /// the order they were granted. Empty for a Session that has granted none, which is every
         /// Session until somebody says otherwise.
@@ -204,6 +212,7 @@ public extension CockpitPresentation {
             self.contextTokens = spend.contextTokens
             self.permission = autonomy.permission
             self.ask = autonomy.ask
+            self.reportedAsk = autonomy.reportedAsk
             self.standingAllows = autonomy.standingAllows
             self.expiredPermissions = autonomy.expiredPermissions
             self.mode = autonomy.mode

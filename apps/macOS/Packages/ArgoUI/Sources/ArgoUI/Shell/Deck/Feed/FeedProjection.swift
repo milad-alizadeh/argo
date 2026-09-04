@@ -7,11 +7,12 @@ import ArgoEngine
 package enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
-    /// `working`, `handedOff`, `expired` and the question `asking` is holding are the inputs that
-    /// are not the record's — a Turn in progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), a
-    /// Permission Argo's own gate refused (#573), and a question it is still holding (#1190). No
-    /// CLI wrote a word about any of them, so they arrive beside the stream rather than being
-    /// looked for inside it.
+    /// `working`, `handedOff`, `expired`, `reported` and the question `asking` is holding are the
+    /// inputs that are not the record's — a Turn in progress (`FeedWorking`), a handoff
+    /// (`CONTEXT.md` L2), a Permission Argo's own gate refused (#573), a question the agent sent
+    /// over the companion channel (#1203), and one Argo is still holding (#1190). No CLI wrote a
+    /// word about any of them, so they arrive beside the stream rather than being looked for
+    /// inside it.
     package static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
@@ -19,6 +20,7 @@ package enum FeedProjection {
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
+        reported: Ask? = nil,
     )
         -> [FeedRow] {
         let read = contents(of: events)
@@ -36,7 +38,8 @@ package enum FeedProjection {
         let shown = FeedUnreadableRun.folded(FeedGalleryFold.galleried(looked))
         let work = offering(FeedSurveyFold.rejoined(FeedWorkFold.folded(shown)), asking)
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + standing(asking, over: work) + startingUp(starting) +
+        return (work + standing(asking, over: work) + Self.reported(reported, asking) +
+            startingUp(starting) +
             inFlight(working, over: work) + unanswered(expired) +
             rolledUp(events) + chained(handedOff)).enumerated()
             .map { position, content in
@@ -49,9 +52,10 @@ package enum FeedProjection {
     /// the next row will take when the record catches up — which is what makes it read as the
     /// reading continuing rather than as a footnote about it.
     ///
-    /// A question the gate is holding sits above it on the same argument and wins the tie: a Turn
-    /// waiting on an answer is not thinking, and the thing the reader has to act on goes nearer the
-    /// work than the thing they only have to watch.
+    /// A question sits above it on the same argument and wins the tie, whichever channel raised
+    /// it: a Turn waiting on an answer is not thinking, and the thing the reader has to act on goes
+    /// nearer the work than the thing they only have to watch. The gate's own question goes above
+    /// the reported one, because it is the one that can be answered where it stands.
     ///
     /// A Turn in flight is EITHER running a tool or thinking, never both, so the row stands down
     /// while a call is pending: the ion crosses that call's own line instead (`FeedCallLineIon`).

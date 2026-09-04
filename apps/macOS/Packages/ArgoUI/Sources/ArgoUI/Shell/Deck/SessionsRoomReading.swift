@@ -83,6 +83,7 @@ struct SessionsRoomReading {
                     handedOff: handedOff,
                     expired: stamp.expired,
                     asking: asking,
+                    reported: stamp.reportedAsk,
                 ),
                 showing: PlanShowing(plan: PlanProjection.reading(from: session?.events ?? [])),
                 worked: .read(across: session?.events ?? []),

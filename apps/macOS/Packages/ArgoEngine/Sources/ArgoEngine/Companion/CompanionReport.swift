@@ -34,6 +34,16 @@ public struct CompanionAsk: Sendable, Equatable {
         self.question = question
         self.options = options
     }
+
+    /// The same question as the domain states one (`CONTEXT.md` L3 · Ask), so no surface above the
+    /// engine has to know the channel's flatter shape (#1203).
+    ///
+    /// ONE question, because the tool takes one: an agent with two of them asks twice. The options
+    /// carry no second line and no `multiSelect` — the tool offers neither, and inventing either
+    /// here would draw an affordance the agent never asked for.
+    public var ask: Ask {
+        Ask(questions: [Ask.Question(text: question, options: Ask.Option.labelled(options))])
+    }
 }
 
 /// A durable record of what a Session produced (CONTEXT.md L4, "Outcome"), pointing at a typed

@@ -79,6 +79,16 @@ package extension FeedProjection {
         ),
     )
 
+    /// A question the agent sent over the companion channel (#1203), at the foot of a reading whose
+    /// record holds only the MCP call that carried it. Driveable and waiting, and pressable
+    /// nowhere: the channel replied `Recorded` before the row existed, so the answer goes in the
+    /// composer. The render's job is that the words read as a question under work that never
+    /// mentions one.
+    static let previewAskReported = rows(
+        from: reportedAskTranscript,
+        reported: previewReportedAsk.ask,
+    )
+
     /// The Session those renders are drawn for, blocked on the one-of question.
     internal static let previewAskWaiting = SessionAsk(
         id: previewAskID,
@@ -96,6 +106,28 @@ package extension FeedProjection {
     }
 
     private static let previewAskID = "ask-preview"
+
+    private static let previewReportedAsk = CompanionAsk(
+        id: "reported-preview",
+        question: "Which branch should I cut the worktree from?",
+        options: ["main", "the release branch"],
+    )
+
+    /// What the record holds while the question above is up: the MCP call, drawn as the call it is
+    /// — the mechanism, never the question. The row at the foot is the only thing that asks.
+    private static let reportedAskTranscript: [TranscriptEvent] = [
+        .prompt(text: "implement 1203", images: [], atMs: nil),
+        .message(markdown: "The worktree has to branch from somewhere, and this repo has two "
+            + "candidates. I'll ask before cutting it."),
+        .toolCall(ToolCall(
+            id: "read-worktrees", name: "Read", kind: .read,
+            target: "docs/agents/worktrees.md", atMs: nil,
+        )),
+        .toolCall(ToolCall(
+            id: previewReportedAsk.id, name: "mcp__argo__ask_user", kind: .other,
+            target: nil, atMs: nil,
+        )),
+    ]
 
     private static let previewAskDecision = [Ask.Question(
         text: "Issue #721 doesn't exist. Which ticket should I implement?",

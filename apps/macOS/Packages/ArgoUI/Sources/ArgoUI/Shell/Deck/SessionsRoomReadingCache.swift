@@ -33,6 +33,10 @@ enum SessionsRoomReadingCache {
         let asking: FeedAskProjection.Asking
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
+        /// The question the agent reported over the companion channel (#1203), by VALUE like the
+        /// four beside it: nothing about it is append-only, and a report that replaced its question
+        /// with another leaves the stream's own length exactly where it was.
+        let reportedAsk: Ask?
         /// The Session's own status, stored as the STATUS rather than as either reading taken of
         /// it: the feed's live row wants a Turn in progress (`FeedWorking`) and the rail's dots
         /// want a Session that can still be driving work (`DelegatingSession`, #1076), and those
@@ -52,6 +56,7 @@ enum SessionsRoomReadingCache {
             self.asking = asking
             self.handedOff = handedOff
             self.expired = session?.expiredPermissions ?? []
+            self.reportedAsk = session?.reportedAsk?.ask
             self.status = session?.status
         }
     }

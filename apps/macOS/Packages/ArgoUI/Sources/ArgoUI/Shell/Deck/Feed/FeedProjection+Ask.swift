@@ -21,6 +21,33 @@ extension FeedProjection {
         return [.ask(FeedAsk(ask: live.ask, isAnswered: false, answer: nil, offer: asking))]
     }
 
+    /// The question the agent asked over the companion channel, which the record draws as the
+    /// MECHANISM and never as the question (#1203).
+    ///
+    /// The call IS in the transcript — `mcp__argo__ask_user`, an ordinary call line — but
+    /// `FeedAskReading.asked` is gated on the tool name `AskUserQuestion`, and widening that gate
+    /// would read a tool free to send any object at all as a question the moment its arguments
+    /// happened to fit. So the words arrive beside the stream, off the report that carries them.
+    ///
+    /// **Never live.** The channel is one line in, one reply out, decided in place: `ask_user` was
+    /// answered `Recorded` before this row existed, so there is no held connection an answer could
+    /// go back down and no option here is pressable. The reader answers in the composer, which is
+    /// why the composer is not replaced. Driveability still reaches the row, and does the same work
+    /// it does above: a question on a Session nothing can reach is not waiting on anybody (#546).
+    static func reported(
+        _ ask: Ask?,
+        _ asking: FeedAskProjection.Asking,
+    )
+        -> [FeedRow.Content] {
+        guard let ask else { return [] }
+        return [.ask(FeedAsk(
+            ask: ask,
+            isAnswered: false,
+            answer: nil,
+            offer: FeedAskProjection.Asking(live: nil, isDriveable: asking.isDriveable),
+        ))]
+    }
+
     /// Whether `offering` already handed the gate's question to a row of the record's own.
     private static func isDrawingLiveAsk(_ content: FeedRow.Content) -> Bool {
         guard case let .ask(ask) = content else { return false }

@@ -35,6 +35,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedAskStanding") {
             SpecimenScene.sessions(FeedProjection.previewAskStanding)
         },
+        // The other channel (#1203): a question the agent REPORTED, under a record that carries
+        // only the call which carried it. Waiting, and pressable nowhere — the composer takes the
+        // answer, so this is the one waiting row with no cards and no gate behind it.
+        SpecimenEntry("feedAskReported") {
+            SpecimenScene.sessions(FeedProjection.previewAskReported)
+        },
     ]
 
     private static let rows: [SpecimenEntry] = [
