@@ -32,12 +32,14 @@ fi
 # a gate that skips exactly when it is needed.
 if [ -z "$BASE" ]; then
   echo "swift-gate: no base to diff against — running the full gate"
+  CHANGED=""
 else
   # A git pathspec glob spans '/', so ':(exclude)*.md' drops nested markdown too.
   # Kept identical to ci.yml's `changes` job.
-  if [ -z "$(git diff --name-only "$BASE...HEAD" -- \
+  CHANGED=$(git diff --name-only "$BASE...HEAD" -- \
        apps/macOS 'scripts/swift-*.sh' package.json turbo.json \
-       .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md')" ]; then
+       .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md')
+  if [ -z "$CHANGED" ]; then
     echo "swift-gate: nothing in the Swift scope changed — skipping"
     exit 0
   fi
@@ -47,6 +49,53 @@ fi
 ARGO_REQUIRE_SWIFT_TOOLS=1
 export ARGO_REQUIRE_SWIFT_TOOLS
 
+GATE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+# Which packages this change can reach, through the package graph. ALL when the change is
+# outside the packages at all, or when there was no base to diff against.
+#
+# The formatter, the linter, the boundary gate and the app build stay whole whatever this
+# says. They are cheap next to the suites, they read the tree rather than a diff, and the app
+# target links every package anyway — so scoping them would buy little and could hide a lot.
+# What it scopes is the suites, which is where the duplicated work is: `swift test` builds
+# each package again in its OWN scratch path, so four packages is four subgraphs compiled.
+if [ -z "$CHANGED" ]; then
+  PACKAGES=ALL
+else
+  PACKAGES=$(printf '%s\n' "$CHANGED" | sh "$GATE_DIR/swift-scope.sh")
+fi
+
+if [ "$PACKAGES" = ALL ]; then
+  echo "swift-gate: the change reaches every package"
+else
+  # ARGO_TEST_SCOPE, not ARGO_TEST_PACKAGES: the latter is the constant list of packages that
+  # HAVE tests, set by swift-tool-guard.sh, and writing it here would be overwritten a moment
+  # later by the guard swift-test.sh sources before it reads anything.
+  ARGO_TEST_SCOPE=$(printf '%s\n' "$PACKAGES" | tr '\n' ' ')
+  export ARGO_TEST_SCOPE
+  echo "swift-gate: the change reaches ${ARGO_TEST_SCOPE}"
+fi
+
+# Has this exact tree, under this exact scope, already passed? A rebase onto a base whose
+# Swift content the branch does not touch produces a tree the gate has seen, and the honest
+# answer to it is the one it gave before. The check comes BEFORE the build slot: a run with
+# nothing to do must not queue behind a run that has.
+# shellcheck source=scripts/gate-cache.sh
+. "$GATE_DIR/gate-cache.sh"
+GATE_KEY=$(gate_cache_key "$PACKAGES")
+if gate_cache_hit "$GATE_KEY"; then
+  echo "swift-gate: this tree passed the gate at $(gate_cache_read "$GATE_KEY") — nothing changed since"
+  exit 0
+fi
+
+# One of a fixed number of machine-wide build slots, held for the rest of this script. Every
+# command below fans out to all twelve cores, and eight lanes doing that at once is how a
+# gate that takes minutes comes to take an hour (#1377). Waiting here is not lost time: it
+# is time the other lane was going to take from this one anyway.
+# shellcheck source=scripts/build-lock.sh
+. "$GATE_DIR/build-lock.sh"
+build_lock_acquire
+
 echo "swift-gate: SwiftFormat · SwiftLint · module boundaries"
 bun run quality:swift
 
@@ -55,3 +104,7 @@ bun run build --filter=@argo/macos
 
 echo "swift-gate: swift tests"
 bun run test --filter=@argo/macos
+
+# Only here, with `set -e` having let every command above pass. A verdict is recorded for the
+# tree that earned it and for the scope it was earned under.
+gate_cache_record "$GATE_KEY" "${PACKAGES}"

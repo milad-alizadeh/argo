@@ -27,6 +27,31 @@ Two things follow from where it now runs, and both are load-bearing:
 Run the gate by hand any time with `sh scripts/swift-gate.sh`, and skip it for a deliberate
 work-in-progress push with `ARGO_SKIP_SWIFT_GATE=1 git push`.
 
+## What the gate does before it does anything (#1377)
+
+Three things happen ahead of the first command, and all three exist because eight lanes were
+running this gate against each other. The arithmetic and the measurements are in
+`docs/agents/landing.md`; what each one is, and how to turn it off:
+
+1. **It asks whether this tree already passed.** `scripts/gate-cache.sh` keys a pass on the
+   content of `apps/macOS` and `scripts`, on `package.json` and `turbo.json`, on the toolchain
+   version, and on the package scope the run covered. A rebase that reproduces a gated tree
+   costs a hash lookup. It refuses to answer at all over a DIRTY tree, because HEAD's hash then
+   describes bytes that are not the ones on disk. `ARGO_GATE_CACHE=off` runs it regardless.
+2. **It takes one of two machine-wide build slots.** `scripts/build-lock.sh`. Every command in
+   the gate fans out to all cores, so unserialised lanes do not build in parallel, they build
+   each other slowly. `ARGO_BUILD_LOCK_SLOTS` raises the count on a bigger machine.
+3. **It works out which packages the change reaches.** `scripts/swift-scope.sh` reads the
+   `.package(path:)` edges and answers ALL for anything it cannot place. Only the SUITES are
+   scoped by it; the formatter, the linter, the boundary gate and the app build stay whole.
+
+None of the three can make the gate pass something it would otherwise fail. The cache records
+only after every command has passed, the lock changes when work runs and never whether, and the
+scope widens to ALL in every case where it cannot see the whole picture. Each of those claims
+has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs` and
+`scripts/swift-scope.test.mjs`, and each of those suites is written the same way round: what it
+proves is that a MISS still happens when one must.
+
 Linux CI runs biome, duplication and `test:hooks` — the only executable suite there, and the
 suite that gates the push-time gate. Pre-commit runs lint-staged: biome, then SwiftFormat,
 SwiftLint and boundaries over staged Swift. The design-token gate is inside boundaries as edge 7

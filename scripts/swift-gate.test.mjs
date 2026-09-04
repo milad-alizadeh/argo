@@ -13,12 +13,11 @@
 // The scope case below re-reads ci.yml and compares the two pathspecs literally, and the
 // invocation cases run the script against a real temporary repository rather than reading it.
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { check, report } from './check-harness.mjs'
+import { gateScenario } from './gate-scenario.harness.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const GATE = path.join(ROOT, 'scripts/swift-gate.sh')
@@ -77,65 +76,11 @@ check('the pre-push hook exists and calls the gate', () => {
 
 // --- the script, run for real -------------------------------------------------------------
 
-// A throwaway git repository with one commit on `main` and one commit on a branch touching
-// `files`. The gate is copied in, and the commands it would run are replaced by a stub `bun`
-// on PATH that records its arguments, so a case costs no Xcode build.
-function scenario(files) {
-  const dir = mkdtempSync(path.join(tmpdir(), 'swift-gate-'))
-  const git = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'pipe' })
-  git('init', '-q', '-b', 'main')
-  git('config', 'user.email', 'test@example.com')
-  git('config', 'user.name', 'test')
-  writeFileSync(path.join(dir, 'seed.txt'), 'seed\n')
-  git('add', '-A')
-  git('commit', '-qm', 'seed')
-  // `origin/main` is what the script falls back to; a remote-tracking ref is enough.
-  git('update-ref', 'refs/remotes/origin/main', 'HEAD')
-  git('checkout', '-qb', 'work')
-  for (const [file, body] of Object.entries(files)) {
-    const target = path.join(dir, file)
-    mkdirSync(path.dirname(target), { recursive: true })
-    writeFileSync(target, body)
-  }
-  git('add', '-A')
-  git('commit', '-qm', 'change')
-
-  mkdirSync(path.join(dir, 'scripts'), { recursive: true })
-  writeFileSync(path.join(dir, 'scripts/swift-gate.sh'), readFileSync(GATE, 'utf8'))
-
-  // The stub records every `bun run ...` and can be told to fail, which is how the
-  // "a breach blocks the push" case gets a red gate without a real lint breach.
-  const bin = path.join(dir, 'bin')
-  mkdirSync(bin, { recursive: true })
-  const log = path.join(dir, 'bun.log')
-  writeFileSync(
-    path.join(bin, 'bun'),
-    `#!/bin/sh\necho "$@" >> ${JSON.stringify(log)}\nexit \${STUB_BUN_STATUS:-0}\n`,
-  )
-  execFileSync('chmod', ['+x', path.join(bin, 'bun')])
-
-  const run = (env = {}) => {
-    try {
-      const output = execFileSync('sh', ['scripts/swift-gate.sh'], {
-        cwd: dir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ...env },
-      })
-      return { status: 0, output }
-    } catch (err) {
-      return { status: err.status, output: `${err.stdout ?? ''}${err.stderr ?? ''}` }
-    }
-  }
-  const ran = () => {
-    try {
-      return readFileSync(log, 'utf8').trim().split('\n').filter(Boolean)
-    } catch {
-      return []
-    }
-  }
-  return { dir, run, ran, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
-}
+// The repository, the stubs and the runner live in `gate-scenario.harness.mjs`, shared with
+// `gate-cache.test.mjs` (#1377): both suites want the same throwaway repository, and a second
+// copy of one is a second thing to keep true. Here a scenario is only ever the files the branch
+// changed.
+const scenario = (files) => gateScenario({ change: files })
 
 check('a Swift change runs all three commands, formatter first', () => {
   const s = scenario({ 'apps/macOS/Sources/A.swift': 'let a = 1\n' })

@@ -33,6 +33,13 @@ else
   signing="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM="
 fi
 
+# The module cache is the machine's, not this worktree's (#1377). `-derivedDataPath build`
+# puts DerivedData inside the tree, which is what keeps two lanes from writing one build
+# directory — but it took the module cache in with it, so each of 75 worktrees precompiled the
+# same SwiftUI and Foundation modules for itself. That cache is content-addressed and shared
+# by every target of every project by default; MODULE_CACHE_DIR puts it back where it was.
+SWIFT_CACHE_DIR=${ARGO_SWIFT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/Library/Caches}/argo-swift}
+
 # shellcheck disable=SC2086 # $signing is a deliberate argument list, empty when signing stays on.
 exec xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" \
-  -derivedDataPath build build $signing
+  -derivedDataPath build "MODULE_CACHE_DIR=$SWIFT_CACHE_DIR/modules" build $signing

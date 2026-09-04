@@ -151,3 +151,20 @@ never something a sub-agent takes on its own.
 `bun run worktrees:gc` (`scripts/worktree-gc.sh`) removes only what is provably safe: PR merged,
 tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is reported and left
 alone. `--dry-run` reports without removing.
+
+`sh scripts/worktree-gc.sh --artifacts` is the other sweep and reaps no worktree at all. It
+deletes the build output inside every worktree — `apps/macOS/build` and `Packages/*/.build` —
+holding back only the ones built in the last 30 minutes. It needs no merged branch, because
+nothing it deletes is the only copy of anything. When #1377 measured it, that was 104 GB of the
+106 GB under `.claude/worktrees`, against 9.1 GB of free space on the volume, and a near-full
+APFS volume slows every write the compiler makes. Run it when the disk is tight, which on this
+machine is most weeks.
+
+## One file has one lane
+
+Lanes are split by domain vocabulary, and that decides what a lane is *for*. It does not decide
+what a lane may *touch*: the vocabulary nearly all lives under `ArgoUI/Sources/ArgoUI/Shell/`, so
+two lanes split by term still meet in `CockpitView.swift` and conflict there. Split the file
+ownership too, and give one file one lane at a time. Of everything #1377 changed, this is the
+only part that removes a conflict rather than making it cheaper to recover from —
+`docs/agents/landing.md` is the rest.
