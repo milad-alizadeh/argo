@@ -1,10 +1,16 @@
 import XCTest
 
-/// What Stop leaves behind at the real control (#541).
+/// What Stop takes and what it leaves, at the real control (#541).
 ///
 /// Here and nowhere else. `ComposerInterruptTests` proves what the draft does, and a package test
-/// can neither press the button nor read the field back afterwards — which is exactly the seam the
-/// bug lived in: the draft was right and the control under it was not.
+/// can neither press the button nor read the field back afterwards — which is the seam this lived
+/// in: the draft was right and the control under it was not.
+///
+/// **What it does NOT cover.** `ComposerStoppingSpecimen` turns `isRunning` off at the click, so
+/// the Session's own status is never in play here. #1189's other two faults — the control stuck on
+/// the Stop square, and the field taking no keys afterwards — are both faults in that status and in
+/// the shell around it, and neither can reproduce against this entry. A green run here says the
+/// composer's own seam is sound, and says nothing at all about those.
 ///
 /// `@MainActor` for the reason every case in this target carries it: `XCUIApplication()` is
 /// isolated to it under Swift 6.
@@ -15,8 +21,9 @@ final class ComposerStopE2ETests: E2ECase {
     }
 
     /// One launch for the whole gesture, in the order a reader meets it: queue a follow-up, type
-    /// the next thing, stop the Turn — and then keep typing, which is the claim.
-    func testStopKeepsTheFieldAndLeavesItTypeable() {
+    /// the next thing, stop the Turn. A launch is the whole cost of a case in this target, which is
+    /// why the steps up to the claim are not cases of their own.
+    func testStopLeavesTheWordsInTheField() {
         let field = app.textViews[Self.running]
         XCTAssertTrue(field.waitForExistence(timeout: 20), "The composer drew no field.")
         field.click()
@@ -35,35 +42,14 @@ final class ComposerStopE2ETests: E2ECase {
         XCTAssertTrue(stop.waitForExistence(timeout: 10), "The composer drew no Stop control.")
         stop.click()
 
-        XCTAssertTrue(
-            settles(field, on: "no, not that file"),
-            "Stop emptied the field: it reads \(read(field)).",
-        )
-
-        // The field is addressed afresh, because the placeholder it answers to changes with the
-        // Turn ending — and the whole claim is that this is the same live field either way.
+        // Addressed afresh, because the placeholder the field answers to changes with the Turn
+        // ending — and that it is the SAME live field either way is half of what is being claimed.
         let idle = app.textViews[Self.idle]
         XCTAssertTrue(idle.waitForExistence(timeout: 10), "The field went with the Turn.")
-        idle.click()
-        idle.typeText(" — the one under Sources")
         XCTAssertTrue(
-            settles(idle, on: "no, not that file — the one under Sources"),
-            "The field took no keystrokes after Stop: it reads \(read(idle)).",
+            settles(idle, on: "no, not that file"),
+            "Stop emptied the field: it reads \(read(idle)).",
         )
-    }
-
-    /// The field's own words, waited for rather than read once: a keystroke crosses AppKit, the
-    /// draft and SwiftUI's next layout before the value here can change.
-    private func settles(_ field: XCUIElement, on words: String) -> Bool {
-        let reads = expectation(
-            for: NSPredicate(format: "value == %@", words),
-            evaluatedWith: field,
-        )
-        return XCTWaiter.wait(for: [reads], timeout: 10) == .completed
-    }
-
-    private func read(_ field: XCUIElement) -> String {
-        String(describing: field.value)
     }
 
     /// What the field is called to a screen reader, which is what addresses it here: the composer

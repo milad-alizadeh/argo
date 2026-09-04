@@ -38,13 +38,13 @@ struct ComposerModeAskTests {
     func `a rung that landed says nothing of its own`() {
         var held = ComposerDraft()
         held.modeHeld(.auto)
-        var stopped = ComposerDraft(notice: ComposerDraft.cleared)
+        var stopped = ComposerDraft(notice: ComposerDraft.droppedQueue)
 
         held.modeLanded(.auto)
         stopped.modeLanded(.auto)
 
         #expect(held.notice == nil)
         #expect(held.heldMode == nil)
-        #expect(stopped.notice == ComposerDraft.cleared)
+        #expect(stopped.notice == ComposerDraft.droppedQueue)
     }
 }

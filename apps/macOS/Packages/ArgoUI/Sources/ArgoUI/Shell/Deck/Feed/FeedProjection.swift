@@ -9,7 +9,7 @@ package enum FeedProjection {
     /// with no row yet contributes none rather than a placeholder.
     /// `working`, `handedOff`, `expired` and the question `asking` is holding are the inputs that
     /// are not the record's — a Turn in progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), a
-    /// Permission Argo's own gate refused (#573), and a question it is still holding (#712). No
+    /// Permission Argo's own gate refused (#573), and a question it is still holding (#1190). No
     /// CLI wrote a word about any of them, so they arrive beside the stream rather than being
     /// looked for inside it.
     package static func rows(
@@ -45,10 +45,14 @@ package enum FeedProjection {
             }
     }
 
-    /// The Turn still running, directly under what it has done and ABOVE the three statements below
-    /// it. Those are facts about the whole reading and this is the newest moment of it, so it keeps
-    /// the place the next row will take when the record catches up — which is what makes it read as
-    /// the reading continuing rather than as a footnote about it.
+    /// The Turn still running, under what it has done and ABOVE the statements at the foot. Those
+    /// are facts about the whole reading and this is the newest moment of it, so it keeps the place
+    /// the next row will take when the record catches up — which is what makes it read as the
+    /// reading continuing rather than as a footnote about it.
+    ///
+    /// A question the gate is holding sits above it on the same argument and wins the tie: a Turn
+    /// waiting on an answer is not thinking, and the thing the reader has to act on goes nearer the
+    /// work than the thing they only have to watch.
     ///
     /// A Turn in flight is EITHER running a tool or thinking, never both, so the row stands down
     /// while a call is pending: the ion crosses that call's own line instead (`FeedCallLineIon`).

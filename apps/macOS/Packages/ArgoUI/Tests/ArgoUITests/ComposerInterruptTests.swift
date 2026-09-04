@@ -55,9 +55,9 @@ struct ComposerInterruptTests {
 
         draft.stopped {}
 
-        #expect(draft.notice == ComposerDraft.cleared)
+        #expect(draft.notice == ComposerDraft.droppedQueue)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0)
-            == .notice(ComposerSeamLine(ComposerDraft.cleared)))
+            == .notice(ComposerSeamLine(ComposerDraft.droppedQueue)))
     }
 
     /// Stopping with nothing queued says nothing. The control is live for the whole of a run and

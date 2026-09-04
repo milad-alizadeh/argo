@@ -811,6 +811,7 @@ Surface sheets, beside the surface, per `rules/swift.md` — a measure is not a 
 | `heroPadding` | `ArgoSpacing.comfortable` 12 | inside it |
 | Hero radius | `ArgoRadius.control` 6 | a card, not a popover |
 | `footPadding` | `ArgoSpacing.base` 8 / `railInset` 16 | around the provider chip, above a hairline |
+| Section label | **14.5**, AppKit's own | the one element deliberately left off `railInset`. It is the header inset `.listStyle(.sidebar)` gives a `Section` label, and forcing it onto 16 costs a magic pad on every section to close 1.5pt nobody can see. Recorded so a later render reading 14.5 is not filed as the drift the `railInset` row warns about |
 
 ### `ArgoBacklogList` — `ArgoUI/Shell/Tickets/Backlog/`
 

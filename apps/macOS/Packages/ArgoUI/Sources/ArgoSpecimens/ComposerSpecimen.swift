@@ -9,10 +9,6 @@ import SwiftUI
 struct ComposerSpecimen: View {
     let composer: SessionComposerProjection.Composer
 
-    /// Where the window's opening focus is parked. Left to itself the field is the first key
-    /// view, and macOS select-alls a focused field's text — which renders a draft as a selection,
-    /// a state this case is not about.
-    @FocusState private var parked: Bool
     /// The vessel writes through a binding now, so a case that renders one has to hold the value.
     @State private var held: ComposerDraft
 
@@ -50,24 +46,14 @@ struct ComposerSpecimen: View {
     }
 
     var body: some View {
-        VStack(spacing: ArgoSpacing.flush) {
-            Color.clear
-                .frame(height: ArgoStroke.border)
-                .focusable()
-                .focused($parked)
-                .focusEffectDisabled()
+        ComposerStage {
             SessionComposer(
                 composer: composer,
                 intents: intents,
                 isDropTargeted: isDropTargeted,
                 opening: opening,
             )
-            .padding(.horizontal, ArgoSpacing.section)
-            .padding(.bottom, ArgoSpacing.loose)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .argoDeckSurface()
-        .defaultFocus($parked, true)
     }
 
     /// The typing state's draft: multi-line, because the growth past one line IS the state.
@@ -114,13 +100,13 @@ struct ComposerSpecimen: View {
     /// A drop an adapter would not take, refused on the seam with the reason (design decision 9).
     static let refusedAttachment = ComposerDraft(notice: SessionDriveError.cannotAttach.detail)
 
-    /// What an interrupt leaves (#541, amended): the words still in the field, no chips above it,
-    /// and one quiet line saying which of the two went. A state of its own because the PAIRING is
-    /// the whole claim — the reader has to read the line as being about the follow-ups they can no
-    /// longer see rather than about the message they can, and only a render settles that.
+    /// What an interrupt leaves (#541): the words still in the field, no chips above it, and one
+    /// quiet line saying which of the two went. A state of its own because the PAIRING is the whole
+    /// claim — the reader has to read the line as being about the follow-ups they can no longer see
+    /// rather than about the message they can, and only a render settles that.
     static let stopped = ComposerDraft(
         text: "No, not that file — the one under Sources.",
-        notice: ComposerDraft.cleared,
+        notice: ComposerDraft.droppedQueue,
     )
 
     /// A rung picked while the Turn was running (#940). The picker draws it under `≈` and ticks

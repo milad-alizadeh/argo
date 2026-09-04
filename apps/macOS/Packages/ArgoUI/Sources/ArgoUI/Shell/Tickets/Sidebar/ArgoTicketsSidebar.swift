@@ -14,9 +14,9 @@ enum ArgoTicketsSidebar {
     ///
     /// OBSERVED, not documented: `.listStyle(.sidebar)` insets its rows' content, and this is that
     /// inset MEASURED off the `ticketsRoom` render — the mark, the count, the rule and the card's
-    /// border all standing on 16 with nothing here spending it. AppKit publishes no number, so
-    /// nothing may be derived from this one: a row spends nothing to sit on the rail, and what is
-    /// outside the `List` — the provider foot — spends it by hand. `.listRowInsets(EdgeInsets())`
+    /// border all standing on 16 with nothing here spending it. A row therefore spends nothing to
+    /// sit on the rail, and only what is outside the `List` — the provider foot — spends it by
+    /// hand, reading THIS rather than restating the number. `.listRowInsets(EdgeInsets())`
     /// on the hero zeroes the ROW's own insets and the platform's own stays, which is why the card
     /// lands on that same vertical rather than at the sidebar's edge.
     ///

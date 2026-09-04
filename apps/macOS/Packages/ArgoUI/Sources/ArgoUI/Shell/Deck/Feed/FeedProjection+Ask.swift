@@ -1,7 +1,7 @@
 import ArgoEngine
 
 extension FeedProjection {
-    /// The question Argo's own gate is holding, where no row above is drawing it (#712).
+    /// The question Argo's own gate is holding, where no row above is drawing it (#1190).
     ///
     /// The two sides arrive independently: Argo holds the question the moment the hook does, and
     /// the CLI writes the call whenever it writes it. Without this the roster says `Needs input`
@@ -9,8 +9,9 @@ extension FeedProjection {
     /// before the record catches up, since a Turn that ends drops the question from the record's
     /// side while the gate goes on holding it.
     ///
-    /// Beside the stream rather than in it, on `unanswered`'s ground and with its limit: the hook
-    /// payload names no record id, so the foot of the work is the only honest position for it.
+    /// Beside the stream rather than in it, and at the foot of the work: the hook payload names no
+    /// record id, so there is no row it can be placed relative to and the newest moment of the
+    /// reading is the only honest position left.
     static func standing(
         _ asking: FeedAskProjection.Asking,
         over rows: [FeedRow.Content],

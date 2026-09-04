@@ -19,8 +19,8 @@ package struct ComposerDraft: Equatable {
     /// `ComposerDraft+Attachments.swift`, and Swift's `private` is file-scoped.
     var attachments: [SessionAttachment]
     /// What Argo did to this draft that the reader did not do — a drop the adapter would not take
-    /// (#540), or the clearing an interrupt leaves behind (#541). Quieter than `refusal` and
-    /// outranked by it.
+    /// (#540), or the follow-ups an interrupt dropped (#541). Quieter than `refusal` and outranked
+    /// by it.
     ///
     /// Mutated through `say(_:)`, so it and the output behind it move together.
     private(set) var notice: String?
@@ -132,22 +132,15 @@ package struct ComposerDraft: Equatable {
         }
     }
 
-    /// What an interrupt leaves in the composer: the QUEUE goes and nothing else does (#541,
-    /// amended in build; design decision 4).
+    /// What an interrupt takes from the composer: the QUEUE, and nothing else (#541).
     ///
-    /// The queue is the half that would bite, and the only half. A follow-up typed while the Turn
-    /// ran is released the moment that Turn ends — and an interrupt IS it ending, so without this
-    /// the very next thing the Session received would be instructions written for the run somebody
-    /// had just killed.
+    /// A follow-up typed while the Turn ran is released the moment that Turn ends — and an
+    /// interrupt IS it ending, so without this the very next thing the Session received would be
+    /// instructions written for the run somebody had just killed. Words still in the field were
+    /// never handed over, so nothing releases them and there is nothing to take back.
     ///
-    /// The FIELD is not that. Words still in the field were never handed over, so nothing releases
-    /// them and nothing is at risk — and emptying them made Stop the one control in the composer
-    /// that destroys what the reader typed, which is decision 8's rule broken by the act it was
-    /// written for. Stopping and being about to say something else are the same gesture often
-    /// enough that the words are usually the reason the reader reached for Stop at all.
-    ///
-    /// What it does take, it says rather than taking quietly — and a queue that was empty is
-    /// nothing to report, so an interrupt with no follow-ups behind it leaves the seam alone.
+    /// It says what it took rather than taking it quietly, and only when it took something: an
+    /// interrupt with no follow-ups behind it leaves the seam alone.
     ///
     /// A refusal takes NOTHING, which is decision 8's rule read at this act: nothing was stopped,
     /// so the reason goes on the seam and every character stays where it was typed. The composer
@@ -162,7 +155,7 @@ package struct ComposerDraft: Equatable {
         }
         guard !queued.isEmpty else { return }
         queued = []
-        say(ComposerSeamLine(Self.cleared))
+        say(ComposerSeamLine(Self.droppedQueue))
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
@@ -171,7 +164,7 @@ package struct ComposerDraft: Equatable {
     /// It names the follow-ups and not "the composer", because the words in the field are still
     /// there: a line saying more went than went would send the reader looking for what they can
     /// already see.
-    package static let cleared = "Turn stopped — the queued follow-ups were dropped"
+    package static let droppedQueue = "Turn stopped — the queued follow-ups were dropped"
 
     /// The port's reason a rung did not land (#545), on the seam as a notice rather than a
     /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.
