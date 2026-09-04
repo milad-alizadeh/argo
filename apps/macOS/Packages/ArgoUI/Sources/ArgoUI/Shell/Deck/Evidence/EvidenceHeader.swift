@@ -15,7 +15,6 @@ struct EvidenceHeader: View {
     /// How the panel is reading its patches. Bound rather than owned: the control lives up here
     /// and what it changes is drawn below the separator.
     @Binding var reading: EvidenceReading
-    let dismiss: () -> Void
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
@@ -28,13 +27,6 @@ struct EvidenceHeader: View {
             Spacer(minLength: ArgoSpacing.snug)
             outcome
             readingToggle
-            Button(action: dismiss) {
-                ArgoGlyph(ArgoSymbol.dismiss, .inline)
-                    .argoHitTarget()
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(argo.color.text.tertiary)
-            .accessibilityLabel("Close evidence")
         }
         .lineLimit(1)
         .padding(.horizontal, ArgoSpacing.comfortable)
@@ -100,9 +92,9 @@ private struct EvidenceHeaderSpecimen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-            EvidenceHeader(evidence: edited, reading: $reading, dismiss: {})
-            EvidenceHeader(evidence: ran, reading: $reading, dismiss: {})
-            EvidenceHeader(evidence: looked, reading: $reading, dismiss: {})
+            EvidenceHeader(evidence: edited, reading: $reading)
+            EvidenceHeader(evidence: ran, reading: $reading)
+            EvidenceHeader(evidence: looked, reading: $reading)
         }
     }
 
