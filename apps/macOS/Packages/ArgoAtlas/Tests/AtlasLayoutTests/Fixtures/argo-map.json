@@ -1,0 +1,1113 @@
+{
+  "version": 1,
+  "measuredAt": "2026-09-04T00:37:17Z",
+  "commit": "4478553597b9f54568ed277d3753aba87ab1d980",
+  "root": {
+    "name": "argo",
+    "children": [
+      {
+        "kind": "plate",
+        "name": "apps",
+        "children": [
+          {
+            "kind": "plate",
+            "name": "macOS",
+            "children": [
+              {
+                "kind": "plate",
+                "name": "Packages",
+                "children": [
+                  {
+                    "kind": "plate",
+                    "name": "ArgoAtlas",
+                    "children": [
+                      {
+                        "kind": "plot",
+                        "name": "Package.swift",
+                        "measures": {
+                          "bytes": 1605,
+                          "lines": 39,
+                          "commits": 1,
+                          "authors": 1,
+                          "age_in_weeks": 0
+                        }
+                      },
+                      {
+                        "kind": "plate",
+                        "name": "Sources",
+                        "children": [
+                          {
+                            "kind": "plate",
+                            "name": "AtlasLayout",
+                            "children": [
+                              {
+                                "kind": "plot",
+                                "name": "AtlasPlan.swift",
+                                "measures": {
+                                  "bytes": 1202,
+                                  "lines": 25,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "plate",
+                            "name": "AtlasView",
+                            "children": [
+                              {
+                                "kind": "plot",
+                                "name": "AtlasView.swift",
+                                "measures": {
+                                  "bytes": 1477,
+                                  "lines": 49,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "plate",
+                        "name": "Tests",
+                        "children": [
+                          {
+                            "kind": "plate",
+                            "name": "AtlasLayoutTests",
+                            "children": [
+                              {
+                                "kind": "plot",
+                                "name": "AtlasPlanTests.swift",
+                                "measures": {
+                                  "bytes": 760,
+                                  "lines": 19,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "plate",
+                    "name": "ArgoUI",
+                    "children": [
+                      {
+                        "kind": "plate",
+                        "name": "Sources",
+                        "children": [
+                          {
+                            "kind": "plate",
+                            "name": "ArgoFixtures",
+                            "children": [
+                              {
+                                "kind": "plate",
+                                "name": "Fixtures",
+                                "children": [
+                                  {
+                                    "kind": "plot",
+                                    "name": "settled-session.jsonl",
+                                    "measures": {
+                                      "bytes": 4799264,
+                                      "lines": 4800,
+                                      "commits": 1,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  },
+                                  {
+                                    "kind": "plot",
+                                    "name": "settled-session.shape.json",
+                                    "measures": {
+                                      "bytes": 1566,
+                                      "lines": 48,
+                                      "commits": 1,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "plate",
+                                "name": "Synthetic",
+                                "children": [
+                                  {
+                                    "kind": "plot",
+                                    "name": "SettledSessionFixture.swift",
+                                    "measures": {
+                                      "bytes": 1909,
+                                      "lines": 37,
+                                      "commits": 1,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  },
+                                  {
+                                    "kind": "plot",
+                                    "name": "SyntheticIdentifiers.swift",
+                                    "measures": {
+                                      "bytes": 2983,
+                                      "lines": 61,
+                                      "commits": 1,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  },
+                                  {
+                                    "kind": "plot",
+                                    "name": "SyntheticLorem.swift",
+                                    "measures": {
+                                      "bytes": 3868,
+                                      "lines": 82,
+                                      "commits": 1,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  },
+                                  {
+                                    "kind": "plot",
+                                    "name": "SyntheticShape.swift",
+                                    "measures": {
+                                      "bytes": 4094,
+                                      "lines": 92,
+                                      "commits": 1,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  },
+                                  {
+                                    "kind": "plot",
+                                    "name": "SyntheticTranscript.swift",
+                                    "measures": {
+                                      "bytes": 7762,
+                                      "lines": 147,
+                                      "commits": 2,
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Commands.swift",
+                                "measures": {
+                                  "bytes": 5223,
+                                  "lines": 110,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Fanout.swift",
+                                "measures": {
+                                  "bytes": 4477,
+                                  "lines": 94,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Fold.swift",
+                                "measures": {
+                                  "bytes": 6174,
+                                  "lines": 131,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Long.swift",
+                                "measures": {
+                                  "bytes": 5827,
+                                  "lines": 143,
+                                  "commits": 2,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Looking.swift",
+                                "measures": {
+                                  "bytes": 2697,
+                                  "lines": 56,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Preview.swift",
+                                "measures": {
+                                  "bytes": 4860,
+                                  "lines": 106,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Prose.swift",
+                                "measures": {
+                                  "bytes": 3138,
+                                  "lines": 52,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Shots.swift",
+                                "measures": {
+                                  "bytes": 7385,
+                                  "lines": 137,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures+Work.swift",
+                                "measures": {
+                                  "bytes": 9478,
+                                  "lines": 194,
+                                  "commits": 1,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              },
+                              {
+                                "kind": "plot",
+                                "name": "TranscriptFixtures.swift",
+                                "measures": {
+                                  "bytes": 5134,
+                                  "lines": 114,
+                                  "commits": 2,
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "plate",
+                            "name": "ArgoUI",
+                            "children": [
+                              {
+                                "kind": "plate",
+                                "name": "Shell",
+                                "children": [
+                                  {
+                                    "kind": "plate",
+                                    "name": "Deck",
+                                    "children": [
+                                      {
+                                        "kind": "plate",
+                                        "name": "Evidence",
+                                        "children": [
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceDiff.swift",
+                                            "measures": {
+                                              "bytes": 6246,
+                                              "lines": 171,
+                                              "commits": 12,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceDocument.swift",
+                                            "measures": {
+                                              "bytes": 1034,
+                                              "lines": 31,
+                                              "commits": 2,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceHeader.swift",
+                                            "measures": {
+                                              "bytes": 4910,
+                                              "lines": 135,
+                                              "commits": 9,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceLength.swift",
+                                            "measures": {
+                                              "bytes": 2752,
+                                              "lines": 65,
+                                              "commits": 1,
+                                              "authors": 1,
+                                              "age_in_weeks": 3
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceMedia.swift",
+                                            "measures": {
+                                              "bytes": 3758,
+                                              "lines": 85,
+                                              "commits": 9,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceOutput.swift",
+                                            "measures": {
+                                              "bytes": 4315,
+                                              "lines": 103,
+                                              "commits": 9,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidencePanel.swift",
+                                            "measures": {
+                                              "bytes": 4766,
+                                              "lines": 121,
+                                              "commits": 13,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceReading.swift",
+                                            "measures": {
+                                              "bytes": 1219,
+                                              "lines": 33,
+                                              "commits": 4,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceSource.swift",
+                                            "measures": {
+                                              "bytes": 2215,
+                                              "lines": 54,
+                                              "commits": 5,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceStepHeader.swift",
+                                            "measures": {
+                                              "bytes": 4348,
+                                              "lines": 118,
+                                              "commits": 5,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "EvidenceToggling.swift",
+                                            "measures": {
+                                              "bytes": 2722,
+                                              "lines": 59,
+                                              "commits": 3,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "FeedEvidence+Reading.swift",
+                                            "measures": {
+                                              "bytes": 2003,
+                                              "lines": 41,
+                                              "commits": 4,
+                                              "authors": 1,
+                                              "age_in_weeks": 1
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "FeedEvidence.swift",
+                                            "measures": {
+                                              "bytes": 7116,
+                                              "lines": 158,
+                                              "commits": 11,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaBitmap.swift",
+                                            "measures": {
+                                              "bytes": 2468,
+                                              "lines": 55,
+                                              "commits": 2,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaBox.swift",
+                                            "measures": {
+                                              "bytes": 2604,
+                                              "lines": 55,
+                                              "commits": 2,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaCache.swift",
+                                            "measures": {
+                                              "bytes": 5520,
+                                              "lines": 102,
+                                              "commits": 4,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaDecode.swift",
+                                            "measures": {
+                                              "bytes": 6742,
+                                              "lines": 123,
+                                              "commits": 4,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaHeader.swift",
+                                            "measures": {
+                                              "bytes": 2325,
+                                              "lines": 49,
+                                              "commits": 1,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaPicture.swift",
+                                            "measures": {
+                                              "bytes": 1920,
+                                              "lines": 44,
+                                              "commits": 5,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaProvenance.swift",
+                                            "measures": {
+                                              "bytes": 4032,
+                                              "lines": 90,
+                                              "commits": 4,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaScale.swift",
+                                            "measures": {
+                                              "bytes": 1637,
+                                              "lines": 32,
+                                              "commits": 1,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaShape.swift",
+                                            "measures": {
+                                              "bytes": 2422,
+                                              "lines": 48,
+                                              "commits": 1,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaShowing.swift",
+                                            "measures": {
+                                              "bytes": 5472,
+                                              "lines": 110,
+                                              "commits": 4,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plot",
+                                            "name": "MediaStore.swift",
+                                            "measures": {
+                                              "bytes": 3477,
+                                              "lines": 78,
+                                              "commits": 1,
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
+                                          },
+                                          {
+                                            "kind": "plate",
+                                            "name": "Syntax",
+                                            "children": [
+                                              {
+                                                "kind": "plot",
+                                                "name": "EvidenceLanguage.swift",
+                                                "measures": {
+                                                  "bytes": 2974,
+                                                  "lines": 81,
+                                                  "commits": 5,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 0
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "EvidenceListing.swift",
+                                                "measures": {
+                                                  "bytes": 5340,
+                                                  "lines": 110,
+                                                  "commits": 4,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 0
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "SyntaxColoured.swift",
+                                                "measures": {
+                                                  "bytes": 900,
+                                                  "lines": 26,
+                                                  "commits": 1,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "SyntaxColouring.swift",
+                                                "measures": {
+                                                  "bytes": 3046,
+                                                  "lines": 76,
+                                                  "commits": 1,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "SyntaxHighlight.swift",
+                                                "measures": {
+                                                  "bytes": 3924,
+                                                  "lines": 88,
+                                                  "commits": 6,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "SyntaxPatch.swift",
+                                                "measures": {
+                                                  "bytes": 1936,
+                                                  "lines": 44,
+                                                  "commits": 2,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 3
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "SyntaxRequest.swift",
+                                                "measures": {
+                                                  "bytes": 1351,
+                                                  "lines": 22,
+                                                  "commits": 1,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
+                                              },
+                                              {
+                                                "kind": "plot",
+                                                "name": "SyntaxTheme.swift",
+                                                "measures": {
+                                                  "bytes": 744,
+                                                  "lines": 14,
+                                                  "commits": 1,
+                                                  "authors": 1,
+                                                  "age_in_weeks": 3
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "plate",
+        "name": "docs",
+        "children": [
+          {
+            "kind": "plate",
+            "name": "designs",
+            "children": [
+              {
+                "kind": "plate",
+                "name": "composer-picker",
+                "children": [
+                  {
+                    "kind": "plot",
+                    "name": "at-filter.png",
+                    "measures": {
+                      "bytes": 325070,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "at-inserted.png",
+                    "measures": {
+                      "bytes": 285728,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "at.png",
+                    "measures": {
+                      "bytes": 445989,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "codex.png",
+                    "measures": {
+                      "bytes": 254864,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "external.png",
+                    "measures": {
+                      "bytes": 222872,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "loaded.png",
+                    "measures": {
+                      "bytes": 284069,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "orphaned.png",
+                    "measures": {
+                      "bytes": 237038,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "perm.png",
+                    "measures": {
+                      "bytes": 306405,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "plus-files.png",
+                    "measures": {
+                      "bytes": 448849,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "plus.png",
+                    "measures": {
+                      "bytes": 278460,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "queued.png",
+                    "measures": {
+                      "bytes": 317753,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "running.png",
+                    "measures": {
+                      "bytes": 452269,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-args.png",
+                    "measures": {
+                      "bytes": 247406,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-builtin.png",
+                    "measures": {
+                      "bytes": 251955,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-edge.png",
+                    "measures": {
+                      "bytes": 301482,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-fail.png",
+                    "measures": {
+                      "bytes": 437714,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-filter.png",
+                    "measures": {
+                      "bytes": 296558,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-late.png",
+                    "measures": {
+                      "bytes": 433100,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash-zero.png",
+                    "measures": {
+                      "bytes": 269086,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  },
+                  {
+                    "kind": "plot",
+                    "name": "slash.png",
+                    "measures": {
+                      "bytes": 422348,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "plate",
+            "name": "domain",
+            "children": [
+              {
+                "kind": "plot",
+                "name": "autonomy-cluster.md",
+                "measures": {
+                  "bytes": 3526,
+                  "lines": 43,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 3
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "experience.md",
+                "measures": {
+                  "bytes": 1910,
+                  "lines": 23,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 1
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "files-editing-and-shell.md",
+                "measures": {
+                  "bytes": 876,
+                  "lines": 14,
+                  "commits": 1,
+                  "authors": 1,
+                  "age_in_weeks": 3
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "honesty-tier.md",
+                "measures": {
+                  "bytes": 3167,
+                  "lines": 45,
+                  "commits": 4,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "l1-organisation-entities.md",
+                "measures": {
+                  "bytes": 6740,
+                  "lines": 92,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "l2-session.md",
+                "measures": {
+                  "bytes": 9639,
+                  "lines": 130,
+                  "commits": 9,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "l3-runtime-tree.md",
+                "measures": {
+                  "bytes": 5557,
+                  "lines": 78,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "l4-delivery-detail.md",
+                "measures": {
+                  "bytes": 2093,
+                  "lines": 31,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "not-domain-entities.md",
+                "measures": {
+                  "bytes": 1155,
+                  "lines": 16,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "observation-surface.md",
+                "measures": {
+                  "bytes": 359,
+                  "lines": 6,
+                  "commits": 1,
+                  "authors": 1,
+                  "age_in_weeks": 3
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "ports.md",
+                "measures": {
+                  "bytes": 4210,
+                  "lines": 56,
+                  "commits": 4,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "rationale.md",
+                "measures": {
+                  "bytes": 15547,
+                  "lines": 243,
+                  "commits": 8,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "relationships.md",
+                "measures": {
+                  "bytes": 2873,
+                  "lines": 37,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              },
+              {
+                "kind": "plot",
+                "name": "storage-and-ownership.md",
+                "measures": {
+                  "bytes": 851,
+                  "lines": 14,
+                  "commits": 2,
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "plate",
+        "name": "rules",
+        "children": [
+          {
+            "kind": "plot",
+            "name": "house.md",
+            "measures": {
+              "bytes": 2777,
+              "lines": 45,
+              "commits": 1,
+              "authors": 1,
+              "age_in_weeks": 0
+            }
+          },
+          {
+            "kind": "plot",
+            "name": "swift.md",
+            "measures": {
+              "bytes": 4419,
+              "lines": 72,
+              "commits": 1,
+              "authors": 1,
+              "age_in_weeks": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

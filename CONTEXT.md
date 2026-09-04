@@ -8,7 +8,7 @@
 -->
 
 Layers: **L1 Organisation · L2 Session · Honesty tier · L3 Runtime tree · L4 Delivery detail ·
-Ports · Experience · Relationships.**
+Atlas · Ports · Experience · Relationships.**
 
 ## Sections
 
@@ -25,6 +25,7 @@ find the section in this list, then open its file.
 - **Observation surface (cross-cutting)** — [`docs/domain/observation-surface.md`](docs/domain/observation-surface.md)
 - **Autonomy cluster (cross-cutting)** — [`docs/domain/autonomy-cluster.md`](docs/domain/autonomy-cluster.md)
 - **Files, editing & shell (Argo as a light agentic IDE)** — [`docs/domain/files-editing-and-shell.md`](docs/domain/files-editing-and-shell.md)
+- **Atlas (cross-cutting)** — [`docs/domain/atlas.md`](docs/domain/atlas.md)
 - **Ports** — [`docs/domain/ports.md`](docs/domain/ports.md)
 - **Experience** — [`docs/domain/experience.md`](docs/domain/experience.md)
 - **Not domain entities** — [`docs/domain/not-domain-entities.md`](docs/domain/not-domain-entities.md)
