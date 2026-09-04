@@ -135,6 +135,76 @@ struct SubagentReadingsTests {
         #expect(readings.reading(of: "b") == [Self.said])
     }
 
+    /// The GROWTH clock (#1269), and the whole reason it is not simply "when Argo last read this
+    /// file": a tail re-reads from the first byte, so the backfill of a child that finished
+    /// yesterday arrives NOW. Stamping that would draw every long-dead delegation live for ten
+    /// minutes after the cockpit opened.
+    @Test
+    func `the backfill of a file is not a write Argo saw`() {
+        let readings = SubagentReadings(clock: { 1000 })
+
+        readings.beginReading(of: agentID, from: Self.file)
+        readings.apply([Self.said], from: Self.file)
+
+        #expect(readings.reading(of: agentID) == [Self.said])
+        #expect(readings.lastGrewAtMs(of: agentID) == nil)
+    }
+
+    /// And the claim it is for: a batch AFTER the backfill is Argo watching the child write.
+    @Test
+    func `a batch after the backfill is dated`() {
+        let readings = SubagentReadings(clock: { 1000 })
+
+        readings.beginReading(of: agentID, from: Self.file)
+        readings.apply([Self.said], from: Self.file)
+        readings.apply([Self.saidAgain], from: Self.file)
+
+        #expect(readings.lastGrewAtMs(of: agentID) == 1000)
+    }
+
+    /// A re-read starts the file over, backfill and all — the same rule the reading itself follows,
+    /// for the same reason.
+    @Test
+    func `a file read again is backfilled again`() {
+        let readings = SubagentReadings(clock: { 1000 })
+        readings.beginReading(of: agentID, from: Self.file)
+        readings.apply([Self.said], from: Self.file)
+        readings.apply([Self.saidAgain], from: Self.file)
+
+        readings.beginReading(of: agentID, from: Self.file)
+        readings.apply([Self.said], from: Self.file)
+
+        #expect(readings.lastGrewAtMs(of: agentID) == nil)
+    }
+
+    /// Answered per Agent under the rule the reading is answered by: two files carrying one id
+    /// answer nothing, so a growing half cannot date an Agent Argo cannot resolve.
+    @Test
+    func `an Agent two files are being read for has no growth`() {
+        let readings = SubagentReadings(clock: { 1000 })
+        readings.beginReading(of: agentID, from: Self.file)
+        readings.apply([Self.said], from: Self.file)
+        readings.apply([Self.saidAgain], from: Self.file)
+
+        readings.beginReading(of: agentID, from: Self.moved)
+
+        #expect(readings.lastGrewAtMs(of: agentID) == nil)
+    }
+
+    /// What a dropped transcript takes with it takes the date too — a reading that is gone cannot
+    /// leave a stamp behind saying its Agent was writing.
+    @Test
+    func `forgetting a reading forgets when it grew`() {
+        let readings = SubagentReadings(clock: { 1000 })
+        readings.beginReading(of: agentID, from: Self.file)
+        readings.apply([Self.said], from: Self.file)
+        readings.apply([Self.saidAgain], from: Self.file)
+
+        readings.forget(claims: [agentID: Self.file])
+
+        #expect(readings.lastGrewAtMs(of: agentID) == nil)
+    }
+
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-subagent-readings")
 
     private static func file(of agent: String) -> String {

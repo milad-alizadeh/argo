@@ -35,6 +35,9 @@ struct FeedAgentsHonestyTests {
     /// produces a green dot. Nor do the two the ticket was written from, nor an ORPHANED Session —
     /// which is an `Access` and not a status, so what makes it quiet is the status its record left
     /// behind (`CONTEXT.md` L2, ADR-0026).
+    ///
+    /// `idle` is beside them because it produces no running chip EITHER — what changed with #1269
+    /// is that it produces no finished one, which `FeedAgentsWritingTests` is where.
     @Test
     func `a session that cannot be driving anything produces no running chip`() {
         for status in [SessionStatus.unknown, .stopped, .ended, .idle] {
@@ -56,7 +59,7 @@ struct FeedAgentsHonestyTests {
 
     /// The clock, which is the same untruth with the animation removed: a chip whose Session is
     /// dead and which reported no total has NOTHING to draw — `AgentMeter` draws the count-up only
-    /// while `isRunning`, and the reported total only where the record states one.
+    /// while `.running`, and the reported total only where the record states one.
     @Test
     func `a stale chip has neither a total nor a clock to draw`() throws {
         let chip = try #require(FeedAgents.all(in: Self.rows, of: .notRunning).first)
@@ -107,8 +110,8 @@ struct FeedAgentsHonestyTests {
     /// honest without any surface below it asking a second question.
     @Test
     func `the reader lists a quiet session's delegations as not running`() {
-        #expect(Self.listing(of: .idle).map(\.isRunning) == [false])
-        #expect(Self.listing(of: .running).map(\.isRunning) == [true])
+        #expect(Self.listing(of: .ended).map(\.activity) == [.finished])
+        #expect(Self.listing(of: .running).map(\.activity) == [.running])
     }
 
     // MARK: - Fixtures

@@ -16,19 +16,19 @@ struct DelegatingSessionTests {
     @Test
     func `each status says whether the session can still be driving a subagent`() {
         let expected: [Reading] = [
-            Reading(status: .starting, isRunning: false),
-            Reading(status: .running, isRunning: true),
-            Reading(status: .permission, isRunning: true),
-            Reading(status: .asking, isRunning: true),
-            Reading(status: .idle, isRunning: false),
-            Reading(status: .stopped, isRunning: false),
-            Reading(status: .ended, isRunning: false),
-            Reading(status: .unknown, isRunning: false),
+            Reading(status: .starting, reads: .notRunning),
+            Reading(status: .running, reads: .running),
+            Reading(status: .permission, reads: .running),
+            Reading(status: .asking, reads: .running),
+            Reading(status: .idle, reads: .undecided),
+            Reading(status: .stopped, reads: .notRunning),
+            Reading(status: .ended, reads: .notRunning),
+            Reading(status: .unknown, reads: .notRunning),
         ]
 
         #expect(expected.map(\.status) == SessionStatus.allCases)
         for row in expected {
-            #expect(DelegatingSession.of(row.status).isRunning == row.isRunning, "\(row.status)")
+            #expect(DelegatingSession.of(row.status) == row.reads, "\(row.status)")
         }
     }
 
@@ -42,13 +42,24 @@ struct DelegatingSessionTests {
 
     /// degrade-down: the contract has no colour for "we cannot say", so a Session Argo cannot
     /// observe reads as not running rather than as a green dot nothing witnessed. `stopped` and
-    /// `ended` are the Sessions the ticket was written from.
+    /// `ended` are the Sessions #1076 was written from — they have GONE, and a Session that has
+    /// gone leaves nothing to be undecided about.
     @Test
     func `a session that cannot be driving anything is quiet`() {
         #expect(DelegatingSession.of(.unknown) == .notRunning)
         #expect(DelegatingSession.of(.stopped) == .notRunning)
         #expect(DelegatingSession.of(.ended) == .notRunning)
-        #expect(DelegatingSession.of(.idle) == .notRunning)
+        #expect(DelegatingSession.of(.starting) == .notRunning)
+    }
+
+    /// And the one that is neither, which is what #1269 was written from: a parent that handed its
+    /// whole fan-out over and is now waiting on it writes nothing, so it reads `idle` for exactly
+    /// as long as its children work. Its silence is not an ending — reading it as one is what drew
+    /// `0 running` over a feed the reader could watch move.
+    @Test
+    func `a session that has fallen quiet while waiting decides nothing`() {
+        #expect(DelegatingSession.of(.idle) == .undecided)
+        #expect(!DelegatingSession.of(.idle).isRunning)
     }
 
     /// The rail is drawn in rooms that resolve no Session at all, and no Session is the same
@@ -61,6 +72,6 @@ struct DelegatingSessionTests {
     /// One status and what it says about the Subagents under it.
     private struct Reading {
         let status: SessionStatus
-        let isRunning: Bool
+        let reads: DelegatingSession
     }
 }

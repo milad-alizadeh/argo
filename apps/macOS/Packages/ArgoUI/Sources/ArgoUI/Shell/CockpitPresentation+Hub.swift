@@ -243,3 +243,19 @@ extension CockpitPresentation.Session.Chain.Program {
         )
     }
 }
+
+/// The shipping Subagent reader, assembled from the Hub.
+///
+/// Here rather than beside `FeedAgentReader` because this is the one file that may name the Hub
+/// (ADR-0005), and here rather than at the app target's call site because WHICH of the Hub's calls
+/// a reader is made of is not the app target's knowledge — when the second one arrived it was the
+/// app target that had to be edited for it (#1269).
+public extension FeedAgentReader {
+    static func reading(_ hub: Hub) -> FeedAgentReader {
+        FeedAgentReader(
+            asking: hub,
+            read: hub.subagentReading(of:),
+            grewAtMs: hub.subagentGrewAtMs(of:),
+        )
+    }
+}

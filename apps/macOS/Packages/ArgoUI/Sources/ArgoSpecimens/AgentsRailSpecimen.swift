@@ -33,6 +33,12 @@ struct AgentsRailSpecimen: View {
         /// the Session had gone. The rail lists the one live Agent, says `1 running`, and holds the
         /// three stale ones behind the disclosure at the foot (`AgentsRailFixture.staleRows`).
         case stale
+        /// A parent that handed its whole fan-out over and is now WAITING on it, so its own
+        /// status reads `idle` and its record says nothing about any of them (#1269). Two chips
+        /// drawn running off the children's OWN files, and one drawn unknown because Argo has
+        /// watched neither its file grow nor its delegation close. The state `quiet` and `stale`
+        /// cannot show: in both of those the parent's status decided the chips.
+        case waiting
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed
         /// The strip while the feed is scoped onto an Agent — the state that proves the way back
@@ -61,15 +67,20 @@ struct AgentsRailSpecimen: View {
         }
     }
 
-    /// A quiet Session's records read as a quiet Session's — see `AgentsRailFixture`.
+    /// Each state's records read as that state's Session — see `AgentsRailFixture`.
     private var readings: FeedAgentReader {
-        subject == .quiet ? AgentsRailFixture.quietReadings : AgentsRailFixture.readings
+        switch subject {
+        case .quiet: AgentsRailFixture.quietReadings
+        case .waiting: AgentsRailFixture.waitingReadings
+        default: AgentsRailFixture.readings
+        }
     }
 
     private var feed: [FeedRow] {
         switch subject {
         case .sole: AgentsRailFixture.soleAgentRows
         case .stale: AgentsRailFixture.staleRows
+        case .waiting: AgentsRailFixture.waitingRows
         case .scoped, .rescoped, .quiet, .collapsed, .collapsedScoped:
             FeedProjection.previewRows
         }
@@ -108,6 +119,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — a running session holding yesterday's delegations") {
     AgentsRailSpecimen(subject: .stale)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — an idle parent whose children are still writing") {
+    AgentsRailSpecimen(subject: .waiting)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

@@ -13,4 +13,14 @@ public extension Hub {
     func subagentReading(of agentID: String) -> [TranscriptEvent]? {
         subagents.reading(of: agentID)
     }
+
+    /// When Argo last watched this Subagent's own file GROW, or nothing where it has not seen it
+    /// grow. The evidence the parent's record cannot hold: a Session that delegated and is now
+    /// waiting writes nothing itself, so its status reads `idle` while its children work (#1269).
+    ///
+    /// Read through a call for the reason the reading above is: it moves whenever any fan-out
+    /// writes, and off the roster it would republish the roster with it (#858).
+    func subagentGrewAtMs(of agentID: String) -> Int? {
+        subagents.lastGrewAtMs(of: agentID)
+    }
 }

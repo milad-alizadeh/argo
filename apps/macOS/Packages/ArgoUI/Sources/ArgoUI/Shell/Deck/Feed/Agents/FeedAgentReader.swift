@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 /// Where the deck gets a Subagent's reading from — a reader, not the readings themselves (#858).
 ///
@@ -22,6 +23,10 @@ import ArgoEngine
 public struct FeedAgentReader: Equatable, Sendable {
     private let identity: Identity
     private let read: @MainActor @Sendable (String) -> [TranscriptEvent]?
+    /// When Argo last watched one Subagent's own file GROW, per id — `Hub.subagentGrewAtMs(of:)`.
+    /// Beside `read` rather than folded into it: the rail asks this per chip on every pass, and
+    /// projecting a child's whole file to date it is the cost `hasReading(of:)` exists to avoid.
+    private let grewAtMs: @MainActor @Sendable (String) -> Int?
     /// Which version of the Session's record this reader was handed down at, and `nil` for one
     /// nobody stamped — a specimen, a `#Preview`, a suite. The two derivations below are memoised
     /// under it so the deck's zones and the toolbar's evidence toggle ask the same question once
@@ -36,21 +41,36 @@ public struct FeedAgentReader: Equatable, Sendable {
 
     /// The shipping reader: `source` is the object the closure asks, and two readers on one source
     /// are the same reader however many times the shell rebuilds the closure.
+    ///
+    /// Both closures are required. A defaulted `grewAtMs` would be a shipping reader that quietly
+    /// answers "nothing is writing" — the reading this ticket exists to have stopped being the
+    /// default (#1269).
     public init(
         asking source: AnyObject,
         read: @escaping @MainActor @Sendable (String) -> [TranscriptEvent]?,
+        grewAtMs: @escaping @MainActor @Sendable (String) -> Int?,
     ) {
         self.identity = .source(ObjectIdentifier(source))
         self.read = read
+        self.grewAtMs = grewAtMs
         self.stamp = nil
         self.liveness = .notRunning
     }
 
     /// The readings a fixture or a specimen has in hand, which are a dictionary and never a live
     /// file — so a state rendered for review is the state that ships.
-    package init(events: [String: [TranscriptEvent]], of session: DelegatingSession = .notRunning) {
-        self.identity = .fixture(events)
+    ///
+    /// `writing` names the Subagents whose files are growing as the state is drawn. A set rather
+    /// than a date, because what a fixture is stating is the CLAIM — this child is writing — and a
+    /// moment it had to pick relative to a clock is a moment that ages.
+    package init(
+        events: [String: [TranscriptEvent]],
+        of session: DelegatingSession = .notRunning,
+        writing: Set<String> = [],
+    ) {
+        self.identity = .fixture(events, writing: writing)
         self.read = { events[$0] }
+        self.grewAtMs = { writing.contains($0) ? Date().epochMs : nil }
         self.stamp = nil
         self.liveness = session
     }
@@ -58,6 +78,7 @@ public struct FeedAgentReader: Equatable, Sendable {
     private init() {
         self.identity = .nothing
         self.read = { _ in nil }
+        self.grewAtMs = { _ in nil }
         self.stamp = nil
         self.liveness = .notRunning
     }
@@ -65,6 +86,7 @@ public struct FeedAgentReader: Equatable, Sendable {
     private init(_ other: FeedAgentReader, stamp: SessionsRoomReadingCache.Stamp?) {
         self.identity = other.identity
         self.read = other.read
+        self.grewAtMs = other.grewAtMs
         self.stamp = stamp
         self.liveness = DelegatingSession.of(stamp?.status)
     }
@@ -141,10 +163,26 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// stamped one answers with the list the cache derived from its OWN rows, which is what keeps
     /// the answer a fact about the reading rather than about whoever asked first.
     @MainActor func agents(in feed: [FeedRow]) -> [FeedAgent] {
-        guard let stamp, let known = SessionsRoomReadingCache.agents(at: stamp) else {
-            return FeedAgents.all(in: feed, of: liveness)
+        let walked = stamp.flatMap { SessionsRoomReadingCache.agents(at: $0) }
+            ?? FeedAgents.all(in: feed, of: liveness)
+        return told(walked)
+    }
+
+    /// What the walk above cannot answer, answered off the children's own files (#1269).
+    ///
+    /// OUTSIDE the memo on purpose: the room's stamp does not move for a child's bytes (#858), so a
+    /// growth reading held inside it would freeze at whatever the child was doing when its parent
+    /// last wrote — the same staleness the rail was reported for, one level down. This is a
+    /// dictionary lookup per chip, so it is taken every pass.
+    ///
+    /// `nowMs` is read here rather than threaded: this is the only caller, and every one of them
+    /// wants the real clock.
+    @MainActor private func told(_ agents: [FeedAgent]) -> [FeedAgent] {
+        let nowMs = Date().epochMs
+        return FeedAgents.told(agents) { agent in
+            guard let id = agent.subagentID else { return .quiet }
+            return SubagentWriting.read(lastGrewAtMs: grewAtMs(id), nowMs: nowMs)
         }
-        return known
     }
 
     @MainActor private func derived(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
@@ -170,6 +208,9 @@ public struct FeedAgentReader: Equatable, Sendable {
     private enum Identity: Equatable, Sendable {
         case nothing
         case source(ObjectIdentifier)
-        case fixture([String: [TranscriptEvent]])
+        /// The writing set rides along because two fixtures with the same events and different
+        /// children writing are two different states, and a `#Preview` that swapped one for the
+        /// other would otherwise fail SwiftUI's comparison and never redraw.
+        case fixture([String: [TranscriptEvent]], writing: Set<String>)
     }
 }

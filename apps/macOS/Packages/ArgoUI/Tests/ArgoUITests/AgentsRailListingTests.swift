@@ -71,8 +71,8 @@ struct AgentsRailListingTests {
     @Test
     func `two agents handed the same brief are told apart by identity, not by words`() {
         let twins = [
-            Self.agent(0, "Standards review PR1032", isRunning: true),
-            Self.agent(1, "Standards review PR1032", isRunning: false),
+            Self.agent(0, "Standards review PR1032", .running),
+            Self.agent(1, "Standards review PR1032", .finished),
         ]
         let listing = AgentsRailListing(of: twins, scopedOnto: nil)
 
@@ -84,7 +84,7 @@ struct AgentsRailListingTests {
     /// landed are three, never one folded row.
     @Test
     func `identical briefs that landed are counted once each`() {
-        let same = (0 ..< 3).map { Self.agent($0, "Rebase onto main", isRunning: false) }
+        let same = (0 ..< 3).map { Self.agent($0, "Rebase onto main", .finished) }
 
         #expect(AgentsRailListing(of: same, scopedOnto: nil).finished.count == 3)
     }
@@ -92,7 +92,7 @@ struct AgentsRailListingTests {
     /// The scoped Agent is held out by its id too, so its twin is not held out with it.
     @Test
     func `scoping onto one twin does not list the other`() {
-        let twins = (0 ..< 2).map { Self.agent($0, "Spec review PR1032", isRunning: false) }
+        let twins = (0 ..< 2).map { Self.agent($0, "Spec review PR1032", .finished) }
         let listing = AgentsRailListing(of: twins, scopedOnto: 1)
 
         #expect(listing.listed.map(\.id) == [1])
@@ -112,7 +112,7 @@ struct AgentsRailListingTests {
     /// The other end of it: none running is an empty column under a heading that says so.
     @Test
     func `a heading saying none are running lists none of them`() {
-        let landed = Self.agents.map { Self.agent($0.id, $0.label, isRunning: false) }
+        let landed = Self.agents.map { Self.agent($0.id, $0.label, .finished) }
         let listing = AgentsRailListing(of: landed, scopedOnto: nil)
 
         #expect(listing.running == 0)
@@ -125,12 +125,17 @@ struct AgentsRailListingTests {
     /// Two out and one landed, with the landed one in the MIDDLE — a split that kept the record's
     /// order would be indistinguishable from one that sorted the running to the top otherwise.
     private static let agents = [
-        agent(0, "out", isRunning: true),
-        agent(1, "landed", isRunning: false),
-        agent(2, "still out", isRunning: true),
+        agent(0, "out", .running),
+        agent(1, "landed", .finished),
+        agent(2, "still out", .running),
     ]
 
-    private static func agent(_ id: Int, _ label: String, isRunning: Bool) -> FeedAgent {
-        FeedAgent(id: id, label: label, isRunning: isRunning, spend: nil)
+    private static func agent(
+        _ id: Int,
+        _ label: String,
+        _ activity: AgentActivity,
+    )
+        -> FeedAgent {
+        FeedAgent(id: id, label: label, activity: activity, spend: nil)
     }
 }
