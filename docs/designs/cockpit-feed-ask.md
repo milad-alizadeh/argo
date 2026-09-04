@@ -3,10 +3,10 @@
      built-at: 8188bad7
      prototype: worktree-ticket-534-ask-options
      amended-at: d641ebdb
-     amendment: #1207 — the settled fold. BUILT at 604c0d7f: every row of
+     amendment: #1207 — the settled fold. BUILT at 072a1010: every row of
                 "Settled — the reading" marked `to build` is now what the app draws.
      amendment-prototype: worktree-ticket-1207-settled-ask-fold
-     amendment-built-at: 604c0d7f -->
+     amendment-built-at: 072a1010 -->
 
 # Answering an ask, in the feed
 
