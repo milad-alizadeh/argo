@@ -75,6 +75,14 @@ public final class Hub {
     /// spawn reaches the roster in the same update that opened its PTY.
     var spawns: [SessionOwnership.ClaimID: AgentSpawn] = [:]
 
+    /// The clock each spawn's `starting` wait runs on (#1245), one per claim. Held rather than
+    /// fired and forgotten, because every way the wait ends but the clock itself has to cancel it —
+    /// and because a suite driving `StartupPatience.immediate` needs the moment to await.
+    ///
+    /// Not observed: what it writes is on `spawns`, which is, and a clock in the stamp would move
+    /// the roster for a task starting rather than for a fact changing.
+    @ObservationIgnored var startupClocks: [SessionOwnership.ClaimID: Task<Void, Never>] = [:]
+
     /// Which Session handed its work to which — the ones this process made and the ones any Argo
     /// did, under one answer (#634).
     let handoff: HandoffLedger
@@ -111,16 +119,16 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
-        self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
-        self.runStore = SessionRunStore(fileURL: spawnServices.runFileURL)
+        self.modeStore = SessionModeStore(fileURL: spawnServices.files.modeFileURL)
+        self.runStore = SessionRunStore(fileURL: spawnServices.files.runFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has
         // one.
         self.handoff = HandoffLedger(
-            store: HandoffChainStore(fileURL: spawnServices.chainFileURL),
+            store: HandoffChainStore(fileURL: spawnServices.files.chainFileURL),
         )
         self.ownership = SessionOwnership(
-            ledgerStore: SessionOwnershipLedgerStore(fileURL: spawnServices.ownershipFileURL),
+            ledgerStore: SessionOwnershipLedgerStore(fileURL: spawnServices.files.ownershipFileURL),
         )
         self.companionScope = CompanionScope(under: spawnServices.companionRoot)
         openCompanionChannel()

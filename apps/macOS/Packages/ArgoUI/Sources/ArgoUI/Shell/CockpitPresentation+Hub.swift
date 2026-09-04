@@ -131,12 +131,7 @@ extension CockpitPresentation.Session {
             title: session.title,
             access: Access(provenance: session.provenance),
             status: session.status,
-            chain: Chain(
-                program: Chain.Program(observed: session),
-                span: .init(startedAtMs: session.startedAtMs, lastSeenAtMs: session.lastSeenAtMs),
-                handedOffTo: session.handedOffTo,
-                companionChannel: session.companionChannel,
-            ),
+            chain: Chain(observed: session),
             work: Work(
                 location: session.cwd,
                 workspace: workspace,
@@ -180,6 +175,25 @@ extension CockpitPresentation.Session {
                 pinnedTicket: readings.annotations.pinnedTicket(session.id),
             ),
             transcript: Transcript(observed: session),
+        )
+    }
+}
+
+extension CockpitPresentation.Session.Chain {
+    /// The resume chain behind a Session: what runs it, the three moments it is dated by, what it
+    /// handed to, and whether Argo's own channel to it is up. Assembled here rather than inline
+    /// above for the reason `Workspace` and `Transcript` are — the Session's own init reads one
+    /// value per reading, and every one of them is built from the Session it came off.
+    init(observed session: HubSession) {
+        self.init(
+            program: Program(observed: session),
+            span: Span(
+                startedAtMs: session.startedAtMs,
+                lastSeenAtMs: session.lastSeenAtMs,
+                startedQuietlyAtMs: session.startedQuietlyAtMs,
+            ),
+            handedOffTo: session.handedOffTo,
+            companionChannel: session.companionChannel,
         )
     }
 }

@@ -83,7 +83,7 @@ struct HandoffChainTests {
         }
 
         #expect(store.load() == HandoffChain())
-        #expect(SpawnServices.none.chainFileURL == nil)
+        #expect(SpawnServices.none.files.chainFileURL == nil)
     }
 
     /// Where a Session has handed off twice, the reading follows the NEWEST link.

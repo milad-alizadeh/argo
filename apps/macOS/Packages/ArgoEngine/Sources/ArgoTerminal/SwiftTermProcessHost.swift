@@ -57,6 +57,12 @@ final class SwiftTermAgentProcess: NSObject, AgentProcess, LocalProcessDelegate 
         }
     }
 
+    /// `LocalProcess`'s own answer, and `false` once the exit has been reported — `reportExit`
+    /// drops the process, so a child Argo already watched go cannot read as up.
+    var isRunning: Bool {
+        process?.running ?? false
+    }
+
     func write(_ text: String) {
         process?.send(data: ArraySlice(Array(text.utf8)))
     }

@@ -134,10 +134,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// public, because it is an input to the status fold rather than a fact a surface draws:
     /// ADR-0027 has none of it to project.
     var submittedTurn: SessionTurnSubmission?
-    /// Whether this row is a spawn Argo has heard nothing from yet — what `statusReading` reads
-    /// `starting` off (#587). Set by `init(spawn:)` alone, so no observed Session reaches the
-    /// state: a record existing at all is proof the CLI has spoken.
-    private(set) var awaitingFirstOutput = false
+    /// Where this row's spawn is in the wait for its CLI's first byte — see `SessionStartup`, which
+    /// owns the fold and the reason the two waits are one value. Set by `init(spawn:)` alone, so no
+    /// observed Session reaches either waiting state.
+    private(set) var startup = SessionStartup.notWaiting
 
     public init(observation: TranscriptObservation) {
         self.id = observation.id
@@ -169,14 +169,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.ticket = spawn.ticket
         self.moments = SessionMoments(
             startedAtMs: spawn.spawnedAtMs,
-            lastActivityAtMs: spawn.exit?.atMs ?? spawn.spawnedAtMs,
+            lastActivityAtMs: spawn.startup.exit?.atMs ?? spawn.spawnedAtMs,
         )
-        self.turn = SessionTurnState(lastStop: spawn.exit == nil ? .endTurn : .cancelled)
+        self.turn = SessionTurnState(lastStop: spawn.startup.exit == nil ? .endTurn : .cancelled)
         // DIRECT: Argo started this process, so the row belongs on the roster from the moment it
         // exists.
         self.hasAgentActivity = true
-        // An exit outranks it: a spawn that died having never spoken reads `ended`, not `starting`.
-        self.awaitingFirstOutput = spawn.exit == nil && spawn.firstOutputAtMs == nil
+        self.startup = SessionStartup(spawn)
     }
 }
 

@@ -149,6 +149,41 @@ public extension Hub {
             ownership.record(startingRung: rung, ofClaim: plan.claim)
         }
         spawns[plan.claim] = AgentSpawn(spawning: plan, atMs: Date().epochMs)
+        armStartupWait(plan.claim)
+    }
+
+    /// Put a limit on the `starting` wait (#1245). Argo started this process and has heard nothing
+    /// from it, and before this the only two ways out were bytes and an exit — so a child that came
+    /// up and printed nothing held the row until the window closed.
+    ///
+    /// Weak, and guarded again at the far end: the whole point of the wait is that it may be
+    /// answered while it runs, and the answer is read at the moment it fires rather than captured
+    /// when it is armed.
+    private func armStartupWait(_ claim: SessionOwnership.ClaimID) {
+        startupClocks[claim] = Task { [weak self, patience = spawnServices.patience.startup] in
+            await patience.elapse()
+            guard !Task.isCancelled else { return }
+            self?.startupWaitRanOut(claim)
+        }
+    }
+
+    /// The wait ran out. Two answers, and Argo can tell them apart because it owns the process:
+    /// the child is up and has printed nothing, or it is gone and its exit was never reported.
+    ///
+    /// A gone child is written as the exit it is, through the one path every process that ended
+    /// already takes — the row it publishes says `claude exited` and reads `ended`, which is what
+    /// "it is gone" looks like on screen. A live one leaves the row to fall through to the DERIVED
+    /// reading it would have taken had the CLI printed a prompt, with the quiet recorded beside it.
+    private func startupWaitRanOut(_ claim: SessionOwnership.ClaimID) {
+        guard let spawn = spawns[claim], spawn.startup == AgentSpawn.Startup() else { return }
+        guard terminals.isRunning(claim) else {
+            // No code: nothing reported one, and absent is not zero.
+            processEnded(claim, exitCode: nil)
+            return
+        }
+        var quiet = spawn
+        quiet.startup.quietAtMs = Date().epochMs
+        spawns[claim] = quiet
     }
 
     /// One claim, given up: Argo's hold on it, the process behind it, and every channel it spoke
@@ -163,6 +198,9 @@ public extension Hub {
         // the transcript's after (#1176). Dropping only the resolved one leaves a first Turn still
         // watched at a PTY that has just gone, and the watch would report lost the one thing
         // `forget` exists to keep quiet.
+        // The startup wait has its answer — the claim is being given up — and a clock left armed
+        // would ask a retired spawn whether its process is up (#1245).
+        startupClocks.removeValue(forKey: claim)?.cancel()
         delivery.forget(claim.value)
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)
@@ -188,9 +226,13 @@ public extension Hub {
     /// sits on a row `rosterStamp` reads, so restamping it per chunk would rebuild the whole roster
     /// for every byte the agent prints.
     private func noteFirstOutput(of claim: SessionOwnership.ClaimID) {
-        guard var spawn = spawns[claim], spawn.firstOutputAtMs == nil else { return }
-        spawn.firstOutputAtMs = Date().epochMs
+        guard var spawn = spawns[claim], spawn.startup.firstOutputAtMs == nil else { return }
+        spawn.startup.firstOutputAtMs = Date().epochMs
+        // A child that speaks LATE is starting late rather than quiet, so the bytes take back the
+        // word the limit wrote (#1245). Cancelled here as well: the wait has its answer.
+        spawn.startup.quietAtMs = nil
         spawns[claim] = spawn
+        startupClocks[claim]?.cancel()
     }
 
     /// The process is gone. Ownership cannot be re-adopted, so the claim closes and the Session
@@ -201,13 +243,21 @@ public extension Hub {
         // The spawn itself stays: it is a ROW rather than a fact about one, and the exit code is
         // what this writes into it.
         guard var spawn = spawns[claim] else { return }
-        spawn.exit = AgentSpawn.Exit(code: exitCode, atMs: Date().epochMs)
+        spawn.startup.exit = AgentSpawn.Exit(code: exitCode, atMs: Date().epochMs)
         spawns[claim] = spawn
     }
 }
 
 @MainActor
 extension Hub {
+    /// The startup wait for one claim, awaited to its end (#1245). The seam a suite drives
+    /// `StartupPatience.immediate` through: the clock is the real one, and this is only the moment
+    /// it finishes. Returns at once where no clock is armed, which is every claim whose wait has
+    /// already been answered.
+    func awaitStartupWait(_ claim: SessionOwnership.ClaimID) async {
+        await startupClocks[claim]?.value
+    }
+
     /// Retire the row a spawn published, now that the record it turned out to be has appeared.
     /// Safe on every batch: a Session binds to at most one claim, so a re-observation of a bound
     /// one reports nothing and the row cannot be retired twice. The observed Session is never

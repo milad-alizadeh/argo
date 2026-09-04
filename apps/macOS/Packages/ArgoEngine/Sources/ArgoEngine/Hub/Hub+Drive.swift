@@ -40,7 +40,7 @@ extension Hub {
                 terminals: terminals,
                 claims: claims,
                 attachments: AttachmentStore(root: Self.attachmentRoot),
-                patience: spawnServices.permissionPatience,
+                patience: spawnServices.patience.permission,
                 // `nil` takes the engine's own pipe host, which needs no window.
                 serverHost: spawnServices.codexHost ?? CodexProcessHost(),
             ),

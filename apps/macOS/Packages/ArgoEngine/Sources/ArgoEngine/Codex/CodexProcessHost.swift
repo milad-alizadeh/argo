@@ -51,6 +51,12 @@ final class CodexServerProcess: AgentProcess {
         }
     }
 
+    /// `Process`'s own answer, and `false` once the exit has been reported: a broken pipe reports
+    /// an exit the process table has not caught up with, and the reported one is the stronger fact.
+    var isRunning: Bool {
+        !hasExited && process.isRunning
+    }
+
     /// One JSON-RPC line.
     ///
     /// A write that fails means the pipe is broken, which means the server is gone — so it is

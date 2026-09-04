@@ -32,6 +32,10 @@ final class FakeAgentProcess: AgentProcess {
     private let events: AgentProcessEvents
     private(set) var written: [String] = []
     private(set) var isTerminated = false
+    /// Whether the child is still there. Settable, because the whole of #1245 is a spawn whose
+    /// process said nothing — and the two answers to that are a process still up and one that went
+    /// without reporting an exit.
+    var isRunning = true
 
     init(events: AgentProcessEvents) {
         self.events = events
@@ -45,6 +49,7 @@ final class FakeAgentProcess: AgentProcess {
 
     func terminate() {
         isTerminated = true
+        isRunning = false
     }
 
     func emit(_ chunk: String) {
@@ -52,7 +57,14 @@ final class FakeAgentProcess: AgentProcess {
     }
 
     func end(exitCode: Int32?) {
+        isRunning = false
         events.onExit(exitCode)
+    }
+
+    /// The child gone with no exit reported — the spawn whose `onExit` never fires, which is one of
+    /// the two shapes #1245 names.
+    func vanish() {
+        isRunning = false
     }
 }
 
@@ -92,6 +104,7 @@ struct SpawnFixture {
     init(
         liveness: @escaping LivenessRead = noLiveProcesses,
         permissionPatience: PermissionPatience = .default,
+        startupPatience: StartupPatience = .default,
     ) throws {
         let token = String(UUID().uuidString.prefix(8))
         self.root = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -122,11 +135,16 @@ struct SpawnFixture {
             // than against whatever this Mac happens to have installed.
             launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),
             companionRoot: companionRoot,
-            chainFileURL: chainFileURL,
-            ownershipFileURL: ownershipFileURL,
-            modeFileURL: modeFileURL,
-            runFileURL: runFileURL,
-            permissionPatience: permissionPatience,
+            files: SpawnServices.Files(
+                chainFileURL: chainFileURL,
+                ownershipFileURL: ownershipFileURL,
+                modeFileURL: modeFileURL,
+                runFileURL: runFileURL,
+            ),
+            patience: SpawnServices.Patience(
+                permission: permissionPatience,
+                startup: startupPatience,
+            ),
             // Every spawn in these suites is told to write THIS transcript, which is the one
             // `spawnedSessionObservation` stands in for (#742). A random uuid would leave the
             // fixture's record answering to a name no claim is waiting for.

@@ -46,7 +46,7 @@ public extension HubSession {
         }
         // Below every channel above it, because a channel that has SPOKEN is itself proof the CLI
         // is up — and above the record, which has no word for a Session that has written none.
-        if awaitingFirstOutput {
+        if startup == .awaitingFirstOutput {
             return SessionStatusReading(tier: .direct, status: .starting)
         }
         // Below `starting` and not above it, though this is the louder word: a CLI Argo has heard

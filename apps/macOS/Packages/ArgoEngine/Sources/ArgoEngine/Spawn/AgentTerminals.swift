@@ -77,6 +77,13 @@ final class AgentTerminals {
         }
     }
 
+    /// Whether the process behind one claim is still there — asked of the child itself, never of
+    /// the process table (`AgentProcess.isRunning`). `false` where no PTY answers to that claim at
+    /// all, which is the same answer for the same reason: nothing of it is left.
+    func isRunning(_ id: SessionOwnership.ClaimID) -> Bool {
+        agents[id]?.process.isRunning ?? false
+    }
+
     /// The PTY exited: there is nothing left to steer.
     func drop(_ id: SessionOwnership.ClaimID) {
         agents.removeValue(forKey: id)
