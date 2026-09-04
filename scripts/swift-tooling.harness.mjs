@@ -63,7 +63,11 @@ export function run(script, { args = [], env = {}, pathValue, cwd = REPO_ROOT })
   const result = spawnSync('/bin/sh', [script, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { PATH: pathValue, HOME: process.env.HOME, ...env },
+    // The verdict cache OFF. These suites run the real entrypoints against the real repository
+    // (`cwd` is REPO_ROOT), and what they assert is the command each one INVOKES — so a
+    // recorded pass from an earlier real run would answer for the stub and the argv log would
+    // be empty (#1377). Whether the cache itself is sound is `step-cache.test.mjs`'s question.
+    env: { PATH: pathValue, HOME: process.env.HOME, ARGO_GATE_CACHE: 'off', ...env },
   })
   const argv = existsSync(ARGV_LOG) ? readFileSync(ARGV_LOG, 'utf8').trim().split('\n') : []
   return { ...result, argv, output: `${result.stdout}${result.stderr}` }

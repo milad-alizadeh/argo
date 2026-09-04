@@ -11,6 +11,11 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
 # shellcheck source=scripts/swift-tool-guard.sh
 . "$APP_DIR/../../scripts/swift-tool-guard.sh"
+# The per-step memory, and the one place the shared cache roots are spelled (#1377).
+# shellcheck source=scripts/gate-cache.sh
+. "$APP_DIR/../../scripts/gate-cache.sh"
+# shellcheck source=scripts/metrics.sh
+. "$APP_DIR/../../scripts/metrics.sh"
 
 # Every package with a test target, not just the engine: ArgoUI carries the visual contract's
 # tests (#375), ArgoMermaid the renderer's layout suites (#1087) and ArgoAtlas the map's (#1143).
@@ -110,9 +115,8 @@ fi
 #
 # The scratch path stays per worktree and is not made shared here. Two lanes writing one
 # scratch path is not a cache, it is a race.
-SWIFT_CACHE_DIR=${ARGO_SWIFT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/Library/Caches}/argo-swift}
-CACHE_FLAGS="--cache-path $SWIFT_CACHE_DIR/spm"
-CACHE_FLAGS="$CACHE_FLAGS -Xswiftc -module-cache-path -Xswiftc $SWIFT_CACHE_DIR/modules"
+CACHE_FLAGS="--cache-path $ARGO_SWIFT_CACHE_DIR/spm"
+CACHE_FLAGS="$CACHE_FLAGS -Xswiftc -module-cache-path -Xswiftc $ARGO_SWIFT_CACHE_DIR/modules"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   swift_unavailable "not macOS" "the default CI jobs are Linux; the suites run locally"
@@ -190,7 +194,33 @@ verdict() {
 }
 
 for package in $PACKAGES; do
+  # Has this exact tree already passed this package's suite? (#1377)
+  #
+  # The pair this closes: an agent finishes a ticket, runs the suites itself, and then `git
+  # push` fires the pre-push gate, which ran the same suites over the same bytes again. The
+  # second run is the one a person waits on, and it can learn nothing the first did not.
+  # Whoever runs first records the verdict here; the other reads it.
+  #
+  # The key covers `apps/macOS` whole, not this package's directory. A package's suite compiles
+  # its dependencies too, and its behaviour depends on this script and on the lint and format
+  # configs beside it — all of which live under that path. Coarse, and coarse in the safe
+  # direction: a change anywhere in the app re-runs every suite.
+  #
+  # A FILTERED run is never cached, in either direction. It proves less than a full one, so it
+  # must not record a pass; and it is asked for precisely when somebody wants that suite run
+  # again, so it must not read one either.
+  package_key=""
+  if [ -z "$FILTER" ]; then
+    package_key=$(step_key "swift-test:$package:$CONFIGURATION" apps/macOS)
+    if step_cached "$package_key"; then
+      echo "swift-test: $package passed this tree at $(step_recorded_at "$package_key") — not run again"
+      metric_append step "swift-test:$package:$CONFIGURATION" hit 0 0
+      continue
+    fi
+  fi
+
   echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
+  package_started=$(metric_now)
   status=0
   # The report path stays third, ahead of the configuration flags: swift-tooling.test.mjs stubs
   # `swift` positionally, and a stub that wrote nowhere would pass by reporting nothing. The
@@ -206,5 +236,11 @@ for package in $PACKAGES; do
     echo "swift-test: $package exited $status" >&2
     exit "$status"
   fi
+  # `verdict` is what decides a package passed — the xUnit counts, not the exit status, because
+  # `swift test` exits 0 on a failed run (#918). So the record goes after it and only after it,
+  # and `set -e` means a failing verdict never reaches this line.
   verdict "$package"
+  step_record "$package_key" "swift-test:$package:$CONFIGURATION" apps/macOS
+  metric_append step "swift-test:$package:$CONFIGURATION" run \
+    "$(($(metric_now) - package_started))" 0
 done

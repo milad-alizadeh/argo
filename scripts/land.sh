@@ -66,9 +66,13 @@ REPO_ROOT=$(dirname "$git_common")
 # slots, with a root of its own and exactly one slot: two landings racing would rebase two
 # branches onto the same tip and merge both, which is how a merge queue produces a `main`
 # that neither branch was ever tested against.
+#
+# NOT exported, and unset for the gate below. `build_lock_acquire` is a function in THIS
+# shell, so it needs no export — and exporting would hand the gate a lock root with one slot
+# that its own parent is holding. The gate would wait for a slot only its parent can release,
+# `kill -0` would find that parent very much alive, and every landing would hang for ever.
 ARGO_BUILD_LOCK_ROOT=${ARGO_LAND_LOCK_ROOT:-${TMPDIR:-/tmp}/argo-land-lock}
 ARGO_BUILD_LOCK_SLOTS=1
-export ARGO_BUILD_LOCK_ROOT ARGO_BUILD_LOCK_SLOTS
 # shellcheck source=scripts/build-lock.sh
 . "$SCRIPT_DIR/build-lock.sh"
 build_lock_acquire
@@ -136,9 +140,15 @@ for pr in $QUEUE; do
     continue
   fi
 
-  # The gate, on the rebased tree. It holds its own build slot and consults its own content
-  # key, so a rebase that changed nothing under `apps/macOS` costs a hash lookup here.
-  if ! (cd "$LANDING" && sh "$LANDING/scripts/swift-gate.sh"); then
+  # The gate, on the rebased tree. It takes a BUILD slot of its own, from the machine-wide
+  # pool the lanes use — which is why the landing lock's variables are unset here rather than
+  # inherited. It also consults its own content key, so a rebase that changed nothing under
+  # `apps/macOS` costs a hash lookup.
+  if ! (
+    cd "$LANDING" || exit 1
+    unset ARGO_BUILD_LOCK_ROOT ARGO_BUILD_LOCK_SLOTS
+    sh "$LANDING/scripts/swift-gate.sh"
+  ); then
     echo "land: #$pr fails the gate on the current $BASE — left for its lane" >&2
     skipped=$((skipped + 1))
     continue

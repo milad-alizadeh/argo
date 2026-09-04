@@ -84,6 +84,23 @@ check('--dry-run gates but merges nothing', () => {
   s.cleanup()
 })
 
+// The bug this catches, found in review: land.sh took a one-slot lock and EXPORTED its root
+// and count, so the gate it ran as a child inherited them, waited for slot-1, and found it
+// held by a process `kill -0` reports as very much alive — its own parent. Every landing hung.
+// It survived the first round of these tests because the stub gate did not take a lock at all.
+check('the gate does not wait for the landing lock its own parent holds', () => {
+  const s = scenario()
+  const result = s.run(['1'])
+  assert.equal(result.timedOut, false, result.output)
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 1, 'the gate must have got through')
+  // And it queued for a BUILD slot rather than for the landing one, which is what puts a
+  // landing in the same queue as the lanes instead of beside it.
+  for (const line of s.lockLines()) {
+    assert.doesNotMatch(line, /land-lock/, `the gate inherited the landing lock: ${line}`)
+  }
+})
+
 check('only one landing runs at a time', () => {
   // Asserted from the script rather than by racing two of them: the lock itself is proved in
   // build-lock.test.mjs, and what matters here is that the landing lane asks for ONE slot.

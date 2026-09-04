@@ -24,6 +24,10 @@
 BUILD_LOCK_ROOT=${ARGO_BUILD_LOCK_ROOT:-${TMPDIR:-/tmp}/argo-build-lock}
 BUILD_LOCK_SLOTS=${ARGO_BUILD_LOCK_SLOTS:-2}
 BUILD_LOCK_HELD=""
+# Seconds this process spent waiting for a slot, for the caller to record. A cap that made
+# things slower would show up here and nowhere else: every other number would just say the
+# gate took longer, without saying it was queueing rather than working.
+BUILD_LOCK_WAITED=0
 
 # Release the slot this process holds, if any. Idempotent, so the EXIT trap and an explicit
 # call cannot double-free a slot another process has since taken.
@@ -56,6 +60,7 @@ build_lock_acquire() {
       if mkdir "$_bl_slot" 2>/dev/null; then
         echo $$ > "$_bl_slot/pid"
         BUILD_LOCK_HELD="$_bl_slot"
+        BUILD_LOCK_WAITED=$_bl_waited
         trap 'build_lock_release' EXIT
         trap 'build_lock_release; exit 130' INT
         trap 'build_lock_release; exit 143' TERM
@@ -67,10 +72,16 @@ build_lock_acquire() {
       _bl_holder=$(cat "$_bl_slot/pid" 2>/dev/null) || _bl_holder=""
       if [ -n "$_bl_holder" ]; then
         kill -0 "$_bl_holder" 2>/dev/null || rm -rf "$_bl_slot"
-      elif [ -z "$(find "$_bl_slot" -maxdepth 0 -newermt '-5 minutes' 2>/dev/null)" ]; then
+      elif _bl_fresh=$(find "$_bl_slot" -mmin -5 -print -quit 2>/dev/null) &&
+        [ -z "$_bl_fresh" ]; then
         # No pid file at all. That is either a slot half a second old, whose holder is
         # between the `mkdir` and the `echo`, or one whose holder died in that same window
         # and will never write it. Five minutes tells them apart.
+        #
+        # The probe has to SUCCEED before its silence counts. A `find` that errored also
+        # prints nothing, and taking that for "old" would hand this slot to a second lane
+        # while the first is building in it — so the reaping branch is the one that needs
+        # the evidence, and the waiting branch is where an unknown answer goes.
         rm -rf "$_bl_slot"
       fi
 

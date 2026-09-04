@@ -21,7 +21,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // The gate and everything it reaches for. Copied rather than stubbed, so a scenario runs the
 // real ones: the lock takes a slot under the scenario's own root, and the scope answers ALL
 // because a scenario has no packages directory to read.
-const GATE_SCRIPTS = ['swift-gate.sh', 'build-lock.sh', 'swift-scope.sh', 'gate-cache.sh']
+const GATE_SCRIPTS = [
+  'swift-gate.sh',
+  'build-lock.sh',
+  'swift-scope.sh',
+  'gate-cache.sh',
+  'metrics.sh',
+]
 
 function writeAll(dir, files) {
   for (const [file, body] of Object.entries(files)) {
@@ -95,6 +101,9 @@ export function gateScenario({ seed = { 'seed.txt': 'seed\n' }, change = {} } = 
           PATH: `${bin}:${process.env.PATH}`,
           ARGO_BUILD_LOCK_ROOT: path.join(dir, 'lock'),
           ARGO_GATE_CACHE_DIR: path.join(dir, 'gate-cache'),
+          // And a metrics file of its own: a suite appending to the machine's record would
+          // put stub timings into the report a person reads to judge the real gate.
+          ARGO_METRICS_FILE: path.join(dir, 'metrics.tsv'),
           ...env,
         },
       })

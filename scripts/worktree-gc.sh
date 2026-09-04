@@ -81,21 +81,38 @@ if [ "$ARTIFACTS" = 1 ]; then
 
     # The build trees, never the worktree: Xcode's DerivedData for the app target, and one
     # SPM scratch path per package.
-    targets=""
-    [ -d "$wt/apps/macOS/build" ] && targets="$wt/apps/macOS/build"
+    #
+    # They are collected as positional parameters rather than a space-joined string. This
+    # list is the argument to `rm -rf`, and a string would be word-split on its way there —
+    # so one worktree with a space in its path would delete two directories neither of which
+    # was named (found in review).
+    set --
+    [ -d "$wt/apps/macOS/build" ] && set -- "$wt/apps/macOS/build"
     for scratch in "$wt"/apps/macOS/Packages/*/.build; do
-      [ -d "$scratch" ] && targets="$targets $scratch"
+      [ -d "$scratch" ] && set -- "$@" "$scratch"
     done
-    [ -n "$targets" ] || continue
+    [ $# -gt 0 ] || continue
 
     # A build in flight writes into its scratch path constantly, so an artifact touched
     # inside the quiet window is one somebody is still producing. This is the ONLY check,
     # and it is deliberately the conservative one: deleting under a live `swift build`
     # fails it with an error that reads like a compiler bug.
+    #
+    # It searches the TREE, not the top directory. `-maxdepth 0` stats the root alone, whose
+    # mtime moves only when a top-level entry is added or removed — and a compiler forty
+    # minutes into a build is rewriting files deep inside a directory structure that has not
+    # changed shape since the first minute. That root reads as quiet, and the check that this
+    # comment calls the only one would have deleted the tree under it (found in review).
+    #
+    # `-mmin`, not `-newermt`: both `find`s that turn up on this machine take it, and the
+    # relative timestamp form of `-newermt` is rejected by one of them. `-print -quit` stops
+    # at the first hit, so the usual answer costs one directory read rather than a walk of
+    # three gigabytes. A probe that FAILS counts as live: the reason it failed is unknown,
+    # and the destructive branch is not the one to take on unknown.
     live=0
-    for target in $targets; do
-      [ -n "$(find "$target" -maxdepth 0 -newermt "-$QUIET_MINUTES minutes" 2>/dev/null)" ] &&
-        live=1
+    for target in "$@"; do
+      probe=$(find "$target" -mmin "-$QUIET_MINUTES" -print -quit 2>/dev/null) || probe=probe-failed
+      [ -n "$probe" ] && live=1
     done
     if [ "$live" = 1 ]; then
       echo "  hold $name — built within the last $QUIET_MINUTES min"
@@ -104,14 +121,14 @@ if [ "$ARTIFACTS" = 1 ]; then
     fi
 
     kb=0
-    for target in $targets; do
+    for target in "$@"; do
       kb=$((kb + $(disk_kb "$target")))
     done
 
     if [ "$DRY_RUN" = 1 ]; then
       echo "  sweep $name — $((kb / 1024)) MB of build output (dry run)"
     else
-      for target in $targets; do
+      for target in "$@"; do
         rm -rf "$target"
       done
       echo "  swept $name — $((kb / 1024)) MB"

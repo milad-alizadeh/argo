@@ -29,53 +29,90 @@
 #
 # Turn it off for a run with ARGO_GATE_CACHE=off.
 
-GATE_CACHE_DIR=${ARGO_GATE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/Library/Caches}/argo-gate}
+# The one place either cache root is spelled. `swift-test.sh` and `build.sh` read
+# ARGO_SWIFT_CACHE_DIR from here rather than repeating the expression, so the two cannot drift.
+ARGO_CACHE_ROOT=${ARGO_CACHE_ROOT:-${XDG_CACHE_HOME:-$HOME/Library/Caches}}
+GATE_CACHE_DIR=${ARGO_GATE_CACHE_DIR:-$ARGO_CACHE_ROOT/argo-gate}
+ARGO_SWIFT_CACHE_DIR=${ARGO_SWIFT_CACHE_DIR:-$ARGO_CACHE_ROOT/argo-swift}
 
-# Print the key for the current tree under the scope in $1, or nothing at all when the tree
-# cannot be keyed honestly. Callers treat the empty string as "no cache this run".
-gate_cache_key() {
+# --- one step, keyed by content -------------------------------------------------------------
+#
+# The gate is not the only thing that runs these commands. An agent finishing a ticket runs the
+# suites itself, and then `git push` runs the pre-push gate, which ran them again — the same
+# suites over the same bytes, twice, and the second time is the one the person is waiting on.
+# So the memory is per STEP as well as per gate: whoever gets there first records the verdict,
+# and the other one reads it.
+#
+# `step_key <name> <path>…` is the whole mechanism. The key covers the step's name, the content
+# of each path at HEAD, and the toolchain. It is EMPTY — meaning "no cache this run" — whenever
+# the answer could not be honest: the cache is off, any named path is dirty, or `shasum` is
+# missing. Empty is never a hit and never recorded, so every one of those falls back to running
+# the step.
+step_key() {
   [ "${ARGO_GATE_CACHE:-on}" = off ] && return 0
-
-  # Only the paths the key covers. A dirty README is no reason to refuse.
-  dirty=$(git status --porcelain -- apps/macOS scripts package.json turbo.json 2>/dev/null) ||
-    return 0
-  [ -n "$dirty" ] && return 0
-
   command -v shasum >/dev/null 2>&1 || return 0
 
+  name=$1
+  shift
+
+  # Every path is read from the REPOSITORY ROOT, whatever directory the caller is standing in.
+  # `swift-test.sh` runs from `apps/macOS`, where a bare `apps/macOS` pathspec would match
+  # nothing at all — and a `git status` that matches nothing reports a clean tree, which is the
+  # answer that lets a dirty one be cached. `:(top)` is what anchors it; `HEAD:<path>` is
+  # already root-relative.
+  #
+  # Dirty is judged over the named paths only. A dirty README is no reason to refuse.
+  #
+  # A tree hash that cannot be read gives up on the key rather than standing a constant in for
+  # it: a constant is stable, and a stable key is one a previous broken run could have recorded
+  # a pass against.
+  hashes=""
+  for path in "$@"; do
+    dirty=$(git status --porcelain -- ":(top)$path" 2>/dev/null) || return 0
+    [ -n "$dirty" ] && return 0
+    hash=$(git rev-parse "HEAD:$path" 2>/dev/null) || return 0
+    [ -n "$hash" ] || return 0
+    hashes="$hashes$hash "
+  done
+
   {
-    git rev-parse 'HEAD:apps/macOS' 2>/dev/null || echo missing-app-tree
-    git rev-parse 'HEAD:scripts' 2>/dev/null || echo missing-scripts-tree
-    git rev-parse 'HEAD:package.json' 2>/dev/null || echo missing-package-json
-    git rev-parse 'HEAD:turbo.json' 2>/dev/null || echo missing-turbo-json
+    echo "step:$name"
+    echo "$hashes"
     swift --version 2>/dev/null || echo no-swift
-    echo "scope:$1"
   } | shasum -a 256 | cut -d' ' -f1
 }
 
-# 0 when this key has already passed the gate. A key of "" is never a hit.
-gate_cache_hit() {
+# 0 when this key has already passed. A key of "" is never a hit.
+step_cached() {
   [ -n "$1" ] || return 1
   [ -f "$GATE_CACHE_DIR/$1" ]
 }
 
-# Record a pass for key $1, earned under scope $2. Failure to write is not failure to gate, so
-# nothing here is fatal.
-gate_cache_record() {
-  [ -n "$1" ] || return 0
+# When it passed, for the message a hit prints.
+step_recorded_at() {
+  cut -f1 "$GATE_CACHE_DIR/$1" 2>/dev/null || echo unknown
+}
 
-  # The key is recomputed and compared, because the gate tests the WORKING TREE and the key
-  # describes HEAD. Those agree at the start of a run — `gate_cache_key` refuses a dirty tree —
-  # and a run long enough to build Xcode is long enough for somebody to save a file inside it.
-  # Recording then would certify a tree that was never gated, which is the one thing a cache in
-  # front of a gate must not do.
-  [ "$(gate_cache_key "$2")" = "$1" ] || {
-    echo "gate-cache: the tree moved while the gate ran — recording nothing" >&2
+# Record a pass for key $1, labelled $2, over the paths $3… — the same paths the key was taken
+# over. Failure to write is not failure to gate, so nothing here is fatal.
+step_record() {
+  key=$1
+  label=$2
+  shift 2
+  [ -n "$key" ] || return 0
+
+  # The key is recomputed and compared, because a step tests the WORKING TREE while the key
+  # describes HEAD. Those agree when a step starts — `step_key` refuses a dirty tree — and a
+  # run long enough to build Xcode is long enough for somebody to save a file inside it.
+  # Recording then would certify a tree nothing gated, which is the one thing a cache in front
+  # of a gate must never do.
+  [ "$(step_key "$label" "$@")" = "$key" ] || {
+    echo "gate-cache: the tree moved while $label ran — recording nothing" >&2
     return 0
   }
 
   mkdir -p "$GATE_CACHE_DIR" 2>/dev/null || return 0
-  printf '%s\t%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "${2:-}" > "$GATE_CACHE_DIR/$1" 2>/dev/null ||
+  printf '%s\t%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$label" > "$GATE_CACHE_DIR/$key" 2>/dev/null ||
     return 0
   # Entries are tiny and a stale one is only ever a miss, but a directory nothing sweeps is
   # a directory that grows for the life of the machine.
@@ -83,7 +120,26 @@ gate_cache_record() {
   return 0
 }
 
-# What a recorded pass says, for the message a hit prints.
+# --- the whole gate, which is one step with a scope ------------------------------------------
+
+GATE_PATHS='apps/macOS scripts package.json turbo.json'
+
+# Print the key for the current tree under the scope in $1, or nothing when the tree cannot be
+# keyed honestly.
+gate_cache_key() {
+  # shellcheck disable=SC2086 # GATE_PATHS is a list of paths, not one path.
+  step_key "gate:$1" $GATE_PATHS
+}
+
+gate_cache_hit() {
+  step_cached "$1"
+}
+
+gate_cache_record() {
+  # shellcheck disable=SC2086 # GATE_PATHS is a list of paths, not one path.
+  step_record "$1" "gate:$2" $GATE_PATHS
+}
+
 gate_cache_read() {
-  cut -f1 "$GATE_CACHE_DIR/$1" 2>/dev/null || echo unknown
+  step_recorded_at "$1"
 }

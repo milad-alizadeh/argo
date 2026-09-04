@@ -56,6 +56,10 @@ check('build.sh shares the module cache and keeps DerivedData in the worktree', 
   assert.equal(result.argv[derived + 1], 'build', 'DerivedData stays inside the worktree')
 })
 
+// A build is believed only when it produced an app, and only then is a verdict recorded for
+// it (#1377). Both halves are exercised in `step-cache.test.mjs`, which builds in a repository
+// of its own: these cases run against the real tree, where the app is already on disk.
+
 rmSync(scratch, { recursive: true, force: true })
 
 report('swift build')

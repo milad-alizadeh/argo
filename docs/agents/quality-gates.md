@@ -45,12 +45,38 @@ running this gate against each other. The arithmetic and the measurements are in
    `.package(path:)` edges and answers ALL for anything it cannot place. Only the SUITES are
    scoped by it; the formatter, the linter, the boundary gate and the app build stay whole.
 
-None of the three can make the gate pass something it would otherwise fail. The cache records
+### The steps remember too
+
+The gate is not the only thing that runs these commands. An agent finishing a ticket runs the
+suites itself, and then `git push` fires the gate, which ran the same suites over the same bytes
+again — and the second run is the one a person waits on. So the memory is per STEP as well as
+per gate: whichever runs first records the verdict, and the other reads it.
+
+- `swift-test.sh` keys each package's suite on the content of `apps/macOS`, the configuration
+  and the toolchain. A **filtered** run is never cached in either direction: it proves less than
+  a full one, and it is asked for precisely when somebody wants that suite run again.
+- `build.sh` keys the app build the same way, and believes a recorded pass **only when the app
+  is still on disk** — `worktree-gc --artifacts` deletes products, and a verdict is not a
+  product. An `xcodebuild` that exits 0 having written no app is a failure, not a pass.
+
+So the shape of a push after an agent has already run the suites is: the boundary gate and the
+linters run, the build and the four suites do not, and the whole thing is under a minute.
+
+### Measuring whether any of it worked
+
+Every run appends a row to `~/Library/Caches/argo-gate/metrics.tsv` (`scripts/metrics.sh`), and
+`bun run gate:report` turns the rows into the four numbers that matter: how often a run learned
+nothing, what that saved, whether a full run is getting slower, and how long anything queued for
+a build slot. It prints them against the baseline #1377 measured, so the claim stays checkable
+rather than remembered. `ARGO_METRICS=off` writes nothing; nothing reads the file back, so it can
+never change what the gate decides.
+
+None of these can make the gate pass something it would otherwise fail. The cache records
 only after every command has passed, the lock changes when work runs and never whether, and the
 scope widens to ALL in every case where it cannot see the whole picture. Each of those claims
-has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs` and
-`scripts/swift-scope.test.mjs`, and each of those suites is written the same way round: what it
-proves is that a MISS still happens when one must.
+has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs`,
+`scripts/step-cache.test.mjs` and `scripts/swift-scope.test.mjs`, and each of those suites is
+written the same way round: what it proves is that a MISS still happens when one must.
 
 Linux CI runs biome, duplication and `test:hooks` — the only executable suite there, and the
 suite that gates the push-time gate. Pre-commit runs lint-staged: biome, then SwiftFormat,

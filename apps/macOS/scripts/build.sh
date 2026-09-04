@@ -16,6 +16,15 @@ set -eu
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 cd "$APP_DIR"
 
+# The per-step memory, and the one place the shared cache roots are spelled (#1377). The
+# module cache below is the machine's, not this worktree's: `-derivedDataPath build` keeps two
+# lanes from writing one build directory, and took the module cache in with it, so each of 75
+# worktrees precompiled the same SwiftUI and Foundation modules for itself.
+# shellcheck source=scripts/gate-cache.sh
+. "$APP_DIR/../../scripts/gate-cache.sh"
+# shellcheck source=scripts/metrics.sh
+. "$APP_DIR/../../scripts/metrics.sh"
+
 case "${ARGO_BUILD_CONFIGURATION:-debug}" in
   debug) configuration=Debug ;;
   release) configuration=Release ;;
@@ -33,13 +42,31 @@ else
   signing="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM="
 fi
 
-# The module cache is the machine's, not this worktree's (#1377). `-derivedDataPath build`
-# puts DerivedData inside the tree, which is what keeps two lanes from writing one build
-# directory — but it took the module cache in with it, so each of 75 worktrees precompiled the
-# same SwiftUI and Foundation modules for itself. That cache is content-addressed and shared
-# by every target of every project by default; MODULE_CACHE_DIR puts it back where it was.
-SWIFT_CACHE_DIR=${ARGO_SWIFT_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/Library/Caches}/argo-swift}
+# Has this exact tree already been built? (#1377)
+#
+# The same duplicate `swift-test.sh` closes: an agent builds the app to look at it, and then
+# the pre-push gate builds it again. Unlike a suite, though, a build has a PRODUCT, and a
+# verdict says nothing about whether that product is still on disk — `worktree-gc --artifacts`
+# may have swept it since. So the recorded pass is believed only when the app is there to
+# point at, and the two conditions are checked together.
+BUILD_KEY=$(step_key "xcodebuild:$configuration" apps/macOS)
+PRODUCT="build/Build/Products/$configuration/Argo.app"
+if step_cached "$BUILD_KEY" && [ -d "$PRODUCT" ]; then
+  echo "build: $configuration is up to date for this tree ($(step_recorded_at "$BUILD_KEY"))"
+  metric_append step "xcodebuild:$configuration" hit 0 0
+  exit 0
+fi
 
+BUILD_STARTED=$(metric_now)
 # shellcheck disable=SC2086 # $signing is a deliberate argument list, empty when signing stays on.
-exec xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" \
-  -derivedDataPath build "MODULE_CACHE_DIR=$SWIFT_CACHE_DIR/modules" build $signing
+xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" \
+  -derivedDataPath build "MODULE_CACHE_DIR=$ARGO_SWIFT_CACHE_DIR/modules" build $signing
+
+# Only a build that produced the app counts. `xcodebuild` exiting 0 having written nothing is
+# not a build, and a verdict recorded for it would skip the next one too.
+[ -d "$PRODUCT" ] || {
+  echo "build: xcodebuild exited 0 but wrote no $PRODUCT" >&2
+  exit 1
+}
+step_record "$BUILD_KEY" "xcodebuild:$configuration" apps/macOS
+metric_append step "xcodebuild:$configuration" run "$(($(metric_now) - BUILD_STARTED))" 0

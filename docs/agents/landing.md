@@ -31,6 +31,7 @@ changed.
 | every gate tests everything | `scripts/swift-scope.sh`: the suites run for the packages the diff can reach |
 | every worktree its own caches | a shared SPM cache and module cache; the scratch path stays per tree |
 | every lane rebases | `scripts/land.sh`: one serialized lane rebases, gates and merges |
+| an agent runs the suites, then the push runs them again | per-step verdicts in `gate-cache.sh`, read by `swift-test.sh` and `build.sh` |
 | 104 GB of build output | `sh scripts/worktree-gc.sh --artifacts` |
 
 Lanes plus merges, rather than lanes times merges.
@@ -61,6 +62,21 @@ than in any lane's tree or the shared checkout, and for each PR rebases onto the
 branch, runs the gate, force-pushes with a lease, and squash-merges. Anything that does not go
 cleanly is reported and left: a branch that conflicts, one that fails the gate on the new base,
 one that moved while it was being landed. Nothing is merged that was not just gated green.
+
+## Knowing whether it worked
+
+Every gate run and every step appends a row to `~/Library/Caches/argo-gate/metrics.tsv`, and
+`bun run gate:report` reads them. The four questions it answers, and what a good answer is:
+
+| question | the number | before #1377 | good |
+| --- | --- | --- | --- |
+| how often does a run learn nothing? | hit rate | 0%, every run was full | above 40% |
+| how many full gates does one branch pay for? | full runs per branch | lanes × merges | 1 or 2 |
+| is the machine being fought over? | load average while gating, seconds queued for a slot | 178 on 12 cores | under 24, and a queue in seconds |
+| is there room to work? | free disk | 9 GB | above 50 GB |
+
+The report prints those against the baseline column, so nobody has to remember what the numbers
+were. A claim about throughput that cannot be re-measured stops being true quietly.
 
 **What it does not do yet: batching.** It gates once per PR, which is the floor for a queue that
 merges one at a time. A real merge queue rebases several branches together, gates the tip once

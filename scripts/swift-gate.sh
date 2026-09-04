@@ -20,6 +20,11 @@
 # Called by .husky/pre-push. Run it by hand any time: `sh scripts/swift-gate.sh`.
 set -e
 
+GATE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck source=scripts/metrics.sh
+. "$GATE_DIR/metrics.sh"
+GATE_STARTED=$(metric_now)
+
 # The base to compare against. pre-push passes the remote ref it is about to update; by hand
 # there is none, so fall back to the fork point with main.
 BASE="${1:-}"
@@ -41,6 +46,7 @@ else
        .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md')
   if [ -z "$CHANGED" ]; then
     echo "swift-gate: nothing in the Swift scope changed — skipping"
+    metric_append gate gate skip "$(($(metric_now) - GATE_STARTED))" 0
     exit 0
   fi
 fi
@@ -49,7 +55,6 @@ fi
 ARGO_REQUIRE_SWIFT_TOOLS=1
 export ARGO_REQUIRE_SWIFT_TOOLS
 
-GATE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 # Which packages this change can reach, through the package graph. ALL when the change is
 # outside the packages at all, or when there was no base to diff against.
@@ -85,6 +90,7 @@ fi
 GATE_KEY=$(gate_cache_key "$PACKAGES")
 if gate_cache_hit "$GATE_KEY"; then
   echo "swift-gate: this tree passed the gate at $(gate_cache_read "$GATE_KEY") — nothing changed since"
+  metric_append gate gate hit "$(($(metric_now) - GATE_STARTED))" 0
   exit 0
 fi
 
@@ -108,3 +114,7 @@ bun run test --filter=@argo/macos
 # Only here, with `set -e` having let every command above pass. A verdict is recorded for the
 # tree that earned it and for the scope it was earned under.
 gate_cache_record "$GATE_KEY" "${PACKAGES}"
+
+# What it cost, for `scripts/gate-report.mjs`. Last, because a row for a run that failed would
+# be a row saying the gate takes less time than it does.
+metric_append gate gate run "$(($(metric_now) - GATE_STARTED))" "$BUILD_LOCK_WAITED"

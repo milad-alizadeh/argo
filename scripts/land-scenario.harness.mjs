@@ -8,7 +8,7 @@
 // `conflicting: true` makes the branch and `main` touch the same file, so the rebase fails the
 // way a real one does rather than by being told to.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,7 +17,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 // The gate, stubbed inside the repository CONTENT — which is where land.sh reads it from,
 // deliberately: the gate that runs is the one on the branch being landed.
-const GATE_STUB = `#!/bin/sh\necho "gate ran" >> "$STUB_GATE_LOG"\nexit \${STUB_GATE_STATUS:-0}\n`
+//
+// It takes a build slot, exactly as the real gate does, and records the lock it was given.
+// Without that the stub could not see the deadlock the real pair had: land.sh held a one-slot
+// lock and exported it, so the gate waited for a slot only its own live parent could release.
+// A stub that skipped the lock passed that bug through in silence.
+const GATE_STUB = `#!/bin/sh
+. "$(dirname "$0")/build-lock.sh"
+build_lock_acquire
+echo "lock root \${ARGO_BUILD_LOCK_ROOT:-unset} slots \${ARGO_BUILD_LOCK_SLOTS:-unset}" >> "$STUB_GATE_LOG"
+echo "gate ran" >> "$STUB_GATE_LOG"
+exit \${STUB_GATE_STATUS:-0}
+`
 
 // Only the four questions land.sh asks of `gh`, and a log of everything it was asked.
 const ghStub = (log) => `#!/bin/sh
@@ -92,6 +103,10 @@ export function landScenario({ conflicting = false } = {}) {
     const result = spawnSync('sh', [path.join(clone, 'scripts/land.sh'), ...args], {
       cwd: clone,
       encoding: 'utf8',
+      // A timeout, because the failure this suite exists to catch is a HANG: a lock waited on
+      // for a slot nobody will release blocks for ever and would take the suite with it. Sixty
+      // seconds is far past what any case here needs and far short of a wait a person accepts.
+      timeout: 60_000,
       env: {
         ...process.env,
         PATH: `${bin}:${process.env.PATH}`,
@@ -100,7 +115,12 @@ export function landScenario({ conflicting = false } = {}) {
         ...env,
       },
     })
-    return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
+    const timedOut = result.signal === 'SIGTERM'
+    return {
+      status: result.status,
+      timedOut,
+      output: `${timedOut ? 'land.sh did not finish inside the timeout\n' : ''}${result.stdout ?? ''}${result.stderr ?? ''}`,
+    }
   }
   const read = (file) => {
     try {
@@ -116,7 +136,9 @@ export function landScenario({ conflicting = false } = {}) {
     run,
     git,
     gh: () => read(ghLog),
-    gated: () => (existsSync(gateLog) ? read(gateLog).trim().split('\n').length : 0),
+    // Occurrences of the marker, not lines: the stub writes the lock it was handed as well.
+    gated: () => (read(gateLog).match(/gate ran/g) ?? []).length,
+    lockLines: () => read(gateLog).match(/^lock root .*$/gm) ?? [],
     cleanup: () => rmSync(dir, { recursive: true, force: true }),
   }
 }
