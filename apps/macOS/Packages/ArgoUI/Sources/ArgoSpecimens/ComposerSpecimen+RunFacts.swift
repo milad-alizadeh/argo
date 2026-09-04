@@ -27,6 +27,26 @@ extension ComposerSpecimen {
         canRunCommands: false,
     )
 
+    /// The same Session off both defaults and mid-Turn (#1217). Off the defaults deliberately: at
+    /// them the reset is already inert for its own reason, and a state whose subject is what the
+    /// LOCK dims has to be drawn where all three controls would otherwise be live.
+    static let runFactsRunning: SessionComposerProjection.Composer = {
+        var running = SessionComposerProjection.Composer(
+            sessionID: composer.sessionID,
+            placeholder: SessionComposerProjection.queuePlaceholder,
+            facts: runFactsChanged.facts,
+            standingAllows: [],
+            isRunning: true,
+            mode: runFactsChanged.mode,
+            modeDidNotTake: nil,
+            lostTurn: nil,
+            canAttach: true,
+            canRunCommands: false,
+        )
+        running.takesTypedLine = false
+        return running
+    }()
+
     /// A Session on a model and a level Argo's own tables have never heard of (#558, criterion 2).
     /// Both are stated VERBATIM: the model earns a row of its own so the tick has somewhere to
     /// land, and the level ticks no segment at all rather than rounding to a neighbour.

@@ -42,19 +42,24 @@ extension ComposerSpecimen {
     )
 
     /// The same Session mid-Turn: the field invites a follow-up rather than a message, and what is
-    /// typed waits above it instead of going.
-    static let running = SessionComposerProjection.Composer(
-        sessionID: composer.sessionID,
-        placeholder: SessionComposerProjection.queuePlaceholder,
-        facts: composer.facts,
-        standingAllows: [],
-        isRunning: true,
-        mode: composer.mode,
-        modeDidNotTake: nil,
-        lostTurn: nil,
-        canAttach: true,
-        canRunCommands: false,
-    )
+    /// typed waits above it instead of going. Its prompt takes no typed line either, which is what
+    /// locks the run-settings knobs (#1217) — set after the init, as the projection sets it.
+    static let running: SessionComposerProjection.Composer = {
+        var running = SessionComposerProjection.Composer(
+            sessionID: composer.sessionID,
+            placeholder: SessionComposerProjection.queuePlaceholder,
+            facts: composer.facts,
+            standingAllows: [],
+            isRunning: true,
+            mode: composer.mode,
+            modeDidNotTake: nil,
+            lostTurn: nil,
+            canAttach: true,
+            canRunCommands: false,
+        )
+        running.takesTypedLine = false
+        return running
+    }()
 
     /// The same vessel on a Session that has stopped asking about two tools (#572). Its own state
     /// because the tray is only ever seen at rest, the turn AFTER the grant.
@@ -138,18 +143,22 @@ extension ComposerSpecimen {
     /// The same Session mid-Turn, with the command surface: the menu opens over a running Turn
     /// exactly as at rest, and coexists with a queued follow-up above the field (design decision
     /// 17, `running.png` and `queued.png`).
-    static let commandsRunning = SessionComposerProjection.Composer(
-        sessionID: composer.sessionID,
-        placeholder: SessionComposerProjection.queuePlaceholder,
-        facts: composer.facts,
-        standingAllows: [],
-        isRunning: true,
-        mode: composer.mode,
-        modeDidNotTake: nil,
-        lostTurn: nil,
-        canAttach: true,
-        canRunCommands: true,
-    )
+    static let commandsRunning: SessionComposerProjection.Composer = {
+        var running = SessionComposerProjection.Composer(
+            sessionID: composer.sessionID,
+            placeholder: SessionComposerProjection.queuePlaceholder,
+            facts: composer.facts,
+            standingAllows: [],
+            isRunning: true,
+            mode: composer.mode,
+            modeDidNotTake: nil,
+            lostTurn: nil,
+            canAttach: true,
+            canRunCommands: true,
+        )
+        running.takesTypedLine = false
+        return running
+    }()
 
     /// The same Session with a Workspace to name files in (#687). It declares the command surface
     /// too, because a `claude` Session has both — what the `@` cases settle is the file menu, not

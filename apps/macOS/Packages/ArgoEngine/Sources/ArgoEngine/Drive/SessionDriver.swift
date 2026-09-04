@@ -149,9 +149,11 @@ public enum SessionDriveError: Error, Equatable {
     /// the composer, which draws no control an adapter has not declared — so this answers the race
     /// where a Session's surface changed under a popover that was already open.
     case runFactsUnsupported
-    /// Model or Effort was asked for mid-Turn (#558). The CLI takes each as a line typed at its own
-    /// prompt, and a line typed mid-Turn is QUEUED as the next prompt rather than run — so it would
-    /// land in the feed as something the user said, long after the popover said it had been set.
+    /// Model or Effort was asked for while the CLI's prompt was not free (#558, #1217). The CLI
+    /// takes each as a line typed at that prompt: mid-Turn the line is QUEUED as the next prompt
+    /// rather than run, so it lands in the feed as something the user said long after the popover
+    /// said it was set — and under a Permission or a question the DIALOG takes it instead, Return
+    /// and all. `SessionStatus.takesTypedLine` is the one answer both halves are read off.
     case runFactsBusy
     /// A rung was asked for while a walk was still under way (#653). The ring is stepped one
     /// keystroke at a time, so a second walk would count its distance from a stance the first has
@@ -177,9 +179,11 @@ public enum SessionDriveError: Error, Equatable {
         case .runFactsUnsupported:
             "This adapter does not choose its own Model or Effort"
         // The remedy is left unnamed for the reason `modeBusy` leaves it: stopping the Turn is not
-        // the only way past this, and the wait is the expected way.
+        // the only way past this, and the wait is the expected way. It names the STATE the Session
+        // has to reach rather than the three it must not be in, because a reader who is told to
+        // wait for an idle prompt can see when that has happened.
         case .runFactsBusy:
-            "Model and Effort cannot be changed while a Turn is running"
+            "Model and Effort can only be changed at an idle prompt"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "
                 + "silently dropped."
