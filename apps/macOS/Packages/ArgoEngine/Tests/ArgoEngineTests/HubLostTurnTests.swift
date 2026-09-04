@@ -72,13 +72,31 @@ struct HubLostTurnTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        let records = fixture.hub.delivery.watch.records
+        let records = fixture.hub.delivery.watch.says.records
 
         try await Self.record(landsFor: fixture)
 
         let written = try #require(fixture.hub.session(id: spawnedSessionID)?.events.count)
         #expect(written > 0)
         #expect(records(claim.value) == written)
+    }
+
+    /// The composer reading the Hub WIRED (#1266), for the same reason the record count above is
+    /// asserted through the watch: what tells a command the CLI took from a Turn it dropped is
+    /// this closure reaching the claim's own PTY, and a test of `ComposerEcho` alone would not
+    /// notice it pointed at another Session's screen — or at none.
+    @Test
+    func `the watch the Hub wired reads the composer at the claim's own PTY`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        let echo = fixture.hub.delivery.watch.says.echo
+
+        try #require(fixture.host.started.last).emit("scrollback\n❯ /clear\n")
+        #expect(echo("/clear", claim.value) == .unheard)
+
+        try #require(fixture.host.started.last).emit("\n❯\n")
+        #expect(echo("/clear", claim.value) == .heard)
     }
 
     /// A Turn nobody can retype is not news the composer could act on, so the PTY going has to

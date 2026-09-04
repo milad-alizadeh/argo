@@ -12,7 +12,7 @@ struct TurnDeliveryTests {
     /// A record is the CLI saying it heard: nothing more is typed, and nothing is reported.
     @Test
     func `a Turn the CLI wrote a record for is left alone`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
         delivery.typed("Fix the caption.", to: "session-a")
@@ -27,7 +27,7 @@ struct TurnDeliveryTests {
     /// this same watch measures silence against, and not from a second reading of its own.
     @Test
     func `the Turn reported and the silence watched are counted from one record`() {
-        let watch = Recorder(records: 7)
+        let watch = DeliveryRecorder(records: 7)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
         delivery.typed("Fix the caption.", to: "session-a")
@@ -40,7 +40,7 @@ struct TurnDeliveryTests {
     /// another one rather than leaving a Turn that looks sent and never ran.
     @Test
     func `silence is answered with another Return`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
         delivery.typed("what is @README.md about?", to: "session-a")
@@ -52,7 +52,7 @@ struct TurnDeliveryTests {
     /// watch stops rather than going on typing at a Session that is now running.
     @Test
     func `a Return that lands stops the watch where it is`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
         watch.onRetype = { watch.records += 1 }
 
@@ -69,7 +69,7 @@ struct TurnDeliveryTests {
     /// about timing and another keystroke will not fix it.
     @Test
     func `a Turn that is never heard is reported with its words`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
         delivery.typed("what is @README.md about?", to: "session-a")
@@ -84,7 +84,7 @@ struct TurnDeliveryTests {
     /// than after the remaining waits: the answer cannot change.
     @Test
     func `a Session whose PTY has gone is reported without waiting out the retries`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         watch.canRetype = false
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
@@ -99,7 +99,7 @@ struct TurnDeliveryTests {
     /// Without this the older watch would go on typing Returns at a Turn nobody is waiting for.
     @Test
     func `a second Turn replaces the first as the one being watched`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
         delivery.typed("First", to: "session-a")
@@ -118,7 +118,7 @@ struct TurnDeliveryTests {
     /// (#1040).
     @Test
     func `a forgotten Session is left alone`() async {
-        let watch = Recorder(records: 1)
+        let watch = DeliveryRecorder(records: 1)
         let delivery = TurnDelivery(watch.watch, patience: Self.patience)
 
         delivery.typed("Off you go.", to: "session-a")
@@ -126,6 +126,68 @@ struct TurnDeliveryTests {
         await Self.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.retyped == 0)
+        #expect(watch.lost.isEmpty)
+    }
+
+    /// The ticket's own report: a local command is heard the instant it is typed and writes no
+    /// record at all, so the composer letting it go is the only thing that says it arrived.
+    @Test
+    func `a command that writes no record is not reported lost`() async {
+        let watch = DeliveryRecorder(records: 4)
+        watch.echo = .heard
+        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+
+        delivery.typed("/clear", to: "session-a")
+        await Self.pauseLongEnoughForTheWholeWatch()
+
+        #expect(watch.lost.isEmpty)
+        #expect(watch.retyped == 0)
+    }
+
+    /// A Session slow to write its first record — a resume reading 295k of context — has still
+    /// taken the Turn, and its composer says so.
+    @Test
+    func `a Session that has taken the Turn gets no further Return`() async {
+        let watch = DeliveryRecorder(records: 0)
+        watch.echo = .heard
+        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+
+        delivery.typed("Carry on where you left off.", to: "session-a")
+        await Self.pauseLongEnoughForTheWholeWatch()
+
+        #expect(watch.retyped == 0)
+        #expect(watch.lost.isEmpty)
+    }
+
+    /// Nothing to read the composer off — no screen wired, or none drawn yet. The Returns still go,
+    /// because one at a composer holding nothing does nothing; the notice does not, because a Turn
+    /// wrongly called lost is sent twice by the reader who believes it.
+    @Test
+    func `a Turn Argo cannot read the composer for is left standing`() async {
+        let watch = DeliveryRecorder(records: 1)
+        watch.echo = .unreadable
+        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+
+        delivery.typed("what is @README.md about?", to: "session-a")
+        #expect(await settle { watch.retyped == TurnDelivery.attempts })
+        await Self.pauseLongEnoughForTheWholeWatch()
+
+        #expect(watch.lost.isEmpty)
+    }
+
+    /// The composer let the Turn go on the second Return: heard, so the watch stops there and says
+    /// nothing.
+    @Test
+    func `a composer that empties mid-watch ends it`() async {
+        let watch = DeliveryRecorder(records: 1)
+        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        watch.onRetype = { watch.echo = .heard }
+
+        delivery.typed("what is @README.md about?", to: "session-a")
+        #expect(await settle { watch.retyped == 1 })
+        await Self.pauseLongEnoughForTheWholeWatch()
+
+        #expect(watch.retyped == 1)
         #expect(watch.lost.isEmpty)
     }
 
@@ -144,37 +206,4 @@ struct TurnDeliveryTests {
 
     /// One more wait than the watch takes, so the pause outlasts it.
     private static let attempts = TurnDelivery.attempts + 1
-
-    /// The Hub's four answers, written down instead of acted on.
-    @MainActor
-    private final class Recorder {
-        var records: Int
-        var canRetype = true
-        var onRetype: (() -> Void)?
-        private(set) var retyped = 0
-        private(set) var submitted: [SessionTurnSubmission] = []
-        private(set) var lost: [(text: String, sessionID: String)] = []
-
-        init(records: Int) {
-            self.records = records
-        }
-
-        var watch: TurnDelivery.Watch {
-            TurnDelivery.Watch(
-                records: { [weak self] _ in self?.records ?? 0 },
-                submitted: { [weak self] submission, _ in
-                    self?.submitted.append(submission)
-                },
-                retype: { [weak self] _ in
-                    guard let self, canRetype else { return false }
-                    retyped += 1
-                    onRetype?()
-                    return true
-                },
-                lost: { [weak self] text, sessionID in
-                    self?.lost.append((text: text, sessionID: sessionID))
-                },
-            )
-        }
-    }
 }

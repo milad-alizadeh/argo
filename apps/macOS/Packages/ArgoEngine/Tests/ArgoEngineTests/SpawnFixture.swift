@@ -127,10 +127,17 @@ struct SpawnFixture {
         self.runFileURL = root.appending(path: "run.json")
         self.engine = Engine(reads: .init(checkout: CheckoutFixture().read, liveness: liveness))
         self.services = SpawnServices(
-            host: host,
-            // The same stand-in for both surfaces: what a Codex spawn does with its pipes is the
-            // adapter's claim, and starting a real `codex app-server` per assertion is not.
-            codexHost: host,
+            hosts: SpawnHosts(
+                pty: host,
+                // The same stand-in for both surfaces: what a Codex spawn does with its pipes is
+                // the adapter's claim, and starting a real `codex app-server` per assertion is not.
+                codex: host,
+                // Rows straight off the bytes, because what these suites assert is the WIRING —
+                // that the reading reaches this claim's own PTY. Whether a real emulator paints a
+                // real `claude` the way `ComposerEcho` reads it is `ArgoTerminalTests`' claim, and
+                // an emulator here would link AppKit into the engine's own suite.
+                screen: PlainTextScreen(),
+            ),
             // A `PATH` the test owns, so the launch resolves against a folder it wrote rather
             // than against whatever this Mac happens to have installed.
             launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),
@@ -185,5 +192,13 @@ struct SpawnFixture {
         let url = directory.appending(path: name)
         try "#!/bin/sh\n".write(to: url, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+    }
+}
+
+/// A "terminal" that does no emulation at all: every line the agent wrote, in the order it wrote
+/// them. Enough to stand for a screen wherever the claim is that a reading found the right PTY.
+struct PlainTextScreen: TerminalScreen {
+    func rows(painted output: [UInt8], columns _: Int, rows _: Int) -> [String] {
+        (String(bytes: output, encoding: .utf8) ?? "").components(separatedBy: "\n")
     }
 }

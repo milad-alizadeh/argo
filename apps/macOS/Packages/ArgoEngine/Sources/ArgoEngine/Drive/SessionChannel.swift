@@ -22,6 +22,10 @@ protocol SessionChannel {
     /// that cannot exist.
     func received(_ chunk: [UInt8], from claim: SessionOwnership.ClaimID) -> Bool
 
+    /// What this channel's own surface says about the Turn just typed at it (#1266) —
+    /// `unreadable` where the channel has no surface a person could be looking at.
+    func echo(of text: String, at sessionID: String) -> TurnEcho
+
     /// Submit again what was already typed (#682). `false` where this channel has no such act: only
     /// a keystroke can be eaten by a popup, and a request either reached the server or did not.
     func resubmit(_ sessionID: String) -> Bool

@@ -54,11 +54,8 @@ public struct SpawnServices {
         }
     }
 
-    public let host: AgentProcessHost?
-    /// What starts a `codex app-server`, where the engine's own pipe host is not what should run —
-    /// a suite that must not launch a real CLI. `nil` takes `CodexProcessHost`, which is what the
-    /// app wants and what needs no window.
-    public let codexHost: AgentProcessHost?
+    /// What this window can start and see, all three from the app layer — see `SpawnHosts`.
+    public let hosts: SpawnHosts
     public let launcher: AgentLauncher
     /// Where the companion channel writes its sockets and plugin directories. Beside the files
     /// above rather than in them: it is a directory Argo owns and always has one, where each of
@@ -72,16 +69,14 @@ public struct SpawnServices {
     public let mintTranscriptID: @MainActor () -> String
 
     public init(
-        host: AgentProcessHost?,
-        codexHost: AgentProcessHost? = nil,
+        hosts: SpawnHosts,
         launcher: AgentLauncher = AgentLauncher(),
         companionRoot: URL = CompanionChannel.defaultRoot,
         files: Files = Files(),
         patience: Patience = Patience(),
         mintTranscriptID: @MainActor @escaping () -> String = { UUID().uuidString.lowercased() },
     ) {
-        self.host = host
-        self.codexHost = codexHost
+        self.hosts = hosts
         self.launcher = launcher
         self.companionRoot = companionRoot
         self.files = files
@@ -90,5 +85,5 @@ public struct SpawnServices {
     }
 
     /// A Hub that observes and never spawns.
-    public static let none = SpawnServices(host: nil)
+    public static let none = SpawnServices(hosts: .none)
 }

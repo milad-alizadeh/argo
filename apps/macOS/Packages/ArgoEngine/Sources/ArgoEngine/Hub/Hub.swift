@@ -51,7 +51,7 @@ public final class Hub {
     public let ownership: SessionOwnership
 
     /// The PTYs behind those claims. Held for the life of this process, and ended with it.
-    let terminals = AgentTerminals()
+    let terminals: AgentTerminals
 
     /// The Turns typed at those PTYs that the CLI has not yet answered for (#682). Built lazily
     /// because its three closures read this Hub, and stored because a watch has to outlive the
@@ -119,6 +119,7 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
+        self.terminals = AgentTerminals(screen: spawnServices.hosts.screen)
         self.modeStore = SessionModeStore(fileURL: spawnServices.files.modeFileURL)
         self.runStore = SessionRunStore(fileURL: spawnServices.files.runFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain

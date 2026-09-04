@@ -103,8 +103,8 @@ function_parameter_count:
   # INIT: Ticket+Copy.swift 10 — Ticket's memberwise copy, one slot per field it carries
   # INIT: CockpitPresentation+Session.swift 10 — the projected Session, one group per reading
   # INIT: ArgoPalette.swift 10 — one ground per surface layer
-  # INIT: SpawnServices.swift 7 — the Hub's spawn collaborators; the four files it remembers in
-  # and the two waits it runs are grouped (#1245)
+  # INIT: SpawnServices.swift 6 — the Hub's spawn collaborators; the four files it remembers in
+  # and the two waits it runs are grouped (#1245), and so are the three the app composes (#1266)
   # INIT: ConnectReading.swift 9 — the connect panel's whole reading
   # INIT: ConnectPanelActions.swift 8 — one closure per connect step
   # INIT: ToolCall.swift 7 — a call as the transcript declares it

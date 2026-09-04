@@ -42,7 +42,7 @@ extension Hub {
                 attachments: AttachmentStore(root: Self.attachmentRoot),
                 patience: spawnServices.patience.permission,
                 // `nil` takes the engine's own pipe host, which needs no window.
-                serverHost: spawnServices.codexHost ?? CodexProcessHost(),
+                serverHost: spawnServices.hosts.codex ?? CodexProcessHost(),
             ),
         )
     }
@@ -51,7 +51,7 @@ extension Hub {
     /// harness and every suite about observation. So a Codex spawn is refused here too, for want of
     /// a host it will not itself use.
     func ptyHost() throws -> AgentProcessHost {
-        guard let pty = spawnServices.host else {
+        guard let pty = spawnServices.hosts.pty else {
             throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
         }
         return pty
@@ -91,7 +91,12 @@ public extension Hub {
     /// JSON-RPC and corrupt a protocol stream rather than fail.
     internal func makeDelivery() -> TurnDelivery {
         TurnDelivery(TurnDelivery.Watch(
-            records: { [weak self] sessionID in self?.recordCount(writtenBy: sessionID) ?? 0 },
+            says: TurnDelivery.Watch.Says(
+                records: { [weak self] id in self?.recordCount(writtenBy: id) ?? 0 },
+                echo: { [weak self] text, id in
+                    self?.adapters.echo(of: text, at: id) ?? .unreadable
+                },
+            ),
             submitted: { [weak self] submission, sessionID in
                 self?.rememberSubmittedTurn(submission, for: sessionID)
             },

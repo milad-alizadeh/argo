@@ -18,7 +18,7 @@ public extension Hub {
         seed: SessionSeed = .unseeded,
     ) async throws
         -> SessionOwnership.ClaimID {
-        guard spawnServices.host != nil else {
+        guard spawnServices.hosts.pty != nil else {
             throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
         }
         let cwd = seed.cwd ?? project.url.path

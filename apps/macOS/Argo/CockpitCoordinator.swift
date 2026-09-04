@@ -54,7 +54,12 @@ final class CockpitCoordinator {
             // The real PTY host is composed in at the app layer: `ArgoTerminal` links SwiftTerm and
             // therefore AppKit, and nothing under `ArgoEngine` may name either.
             spawnServices: SpawnServices(
-                host: SwiftTermProcessHost(),
+                hosts: SpawnHosts(
+                    pty: SwiftTermProcessHost(),
+                    // And the emulator the delivery watch reads a composer on (`ComposerEcho`).
+                    // A Hub given none never reports a Turn lost at all (#1266).
+                    screen: SwiftTermScreen(),
+                ),
                 files: SpawnServices.Files(
                     // The one place the real chain file is named. A Hub given none remembers no
                     // handoff.

@@ -108,7 +108,12 @@ final class LiveClaudeFixture {
         let hub = Hub(
             projectURL: root,
             spawnServices: SpawnServices(
-                host: host,
+                hosts: SpawnHosts(
+                    pty: host,
+                    // The real emulator, because the composer reading is only as true as the
+                    // screen a real CLI paints (#1266) — a live run is where that is exercised.
+                    screen: SwiftTermScreen(),
+                ),
                 companionRoot: companionRoot,
                 patience: SpawnServices.Patience(permission: patience),
             ),
