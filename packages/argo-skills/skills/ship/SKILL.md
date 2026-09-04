@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Close out an implemented ticket: commit the work, rebase its branch onto the base, push, and open one PR that closes the ticket. Run after the diff has been reviewed."
+description: "Close out an implemented ticket: commit the work, rebase its branch onto the base and resolve what conflicts, push, and open one PR that closes the ticket. Run after the diff has been reviewed."
 disable-model-invocation: true
 ---
 
@@ -18,7 +18,8 @@ Merging stays with the human.
 - **A PR is already open for this branch**
   (`gh pr list --head "$(git rev-parse --abbrev-ref HEAD)"`). Run everything below anyway — the
   push is what brings that PR onto a fresh base — then report its URL and open no second one.
-- **The rebase conflicts** (below).
+- **A conflict you cannot resolve from the diff** (below). An ordinary conflict is not one of
+  these: you resolve that one yourself and carry on to the PR.
 
 ## Bring the branch onto its base
 
@@ -33,16 +34,31 @@ carries other people's merged work.
    unless you stacked this branch on another ticket branch, which is then the base.
 3. `git fetch origin` — the whole remote, so that step 2 of **Then ship** has a current
    remote-tracking ref to lease against — then `git rebase origin/<base>`.
-4. **If it conflicts**, leave the rebase where it stopped, report
-   `git diff --name-only --diff-filter=U`, and hand the caller to `resolving-merge-conflicts`.
-   Resolving it is their step, not yours.
+4. **If it conflicts, resolve it.** Run `resolving-merge-conflicts` and follow it: it is the
+   method, and `ship` does not carry a second one. Then `git rebase --continue` until the rebase
+   is finished. Never `--abort`, and never hand back a conflict you could have resolved — a list
+   of paths returned to the caller is the question this skill does not end in.
+5. **Say it in the PR body**: the base the branch was rebased onto, and every path that
+   conflicted. A reviewer must be able to find each resolution without reading the reflog.
+
+### The one conflict that stops the run
+
+Both sides changed the **same behaviour** for different reasons, and nothing you can read says
+which behaviour is wanted now — not the two commit messages, not the tickets they close, not the
+PRs behind them. Picking a side there is inventing the answer. Leave the rebase where it stands,
+report `git diff --name-only --diff-filter=U`, and name the file and the decision it needs.
+
+That is the whole test, and it is about intent. Difficulty is not the test and size is not the
+test. Two edits on neighbouring lines, an import list, a list of cases, a changelog, the same
+rename made twice — these collide in text and agree in intent. Resolve them and carry on.
 
 ## Before the push
 
 Nothing here is a reason to stop.
 
-- **Gates.** Run them on the rebased tree, whatever they did before it. For UI work, look at the
-  affected states; unit tests do not show you a screen.
+- **Gates.** Run them on the tree the rebase left, whatever they did before it. A conflict you
+  resolved is an edit like any other, and an edit that nothing ran is how a PR passes review and
+  fails to build. For UI work, look at the affected states; unit tests do not show you a screen.
 - **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
   per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
