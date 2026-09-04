@@ -153,7 +153,7 @@ import Testing
             ),
             held: held,
             isResizing: false,
-            isUnderComposer: false,
+            bottomEdge: .bare,
             washed: nil,
             unfolded: .constant(unfolded),
             environment: FeedCellEnvironment(),

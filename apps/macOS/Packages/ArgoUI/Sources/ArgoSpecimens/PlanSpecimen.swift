@@ -16,6 +16,10 @@ struct PlanSpecimen: View {
     var isRevealed = false
     /// Whether the keyboard is on the pill, ring and all — see `PlanPill.isCursored`.
     var isCursored = false
+    /// What floats under the pill, if anything — see `DeckVessel`. A parameter because the state
+    /// #1225 was reported in has the composer there: the pill answers to the vessel's own top edge,
+    /// and over a bare deck that edge is the deck's foot instead.
+    var vessel = DeckVessel.none
 
     /// What the reader said before this specimen spoke for it. `ArgoFocusVisibility.shared` is
     /// process-wide, so a host rendering a second entry after this one inherits whatever it left.
@@ -26,6 +30,7 @@ struct PlanSpecimen: View {
             room: .sessions,
             feed: FeedProjection.previewRows,
             showing: PlanShowing(plan: plan, isRevealed: isRevealed, isCursored: isCursored),
+            vessel: vessel,
         )
         // The app's one reader, told the key a still cannot show being pressed.
         .onAppear {
@@ -48,6 +53,12 @@ struct PlanSpecimen: View {
 
 #Preview("Plan specimen — the list open") {
     PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Plan specimen — over the composer") {
+    PlanSpecimen(plan: PlanFixture.working, vessel: .composer(ComposerSpecimen.composer))
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

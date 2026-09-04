@@ -20,6 +20,13 @@ public enum ArgoPlanPill {
         insetY * 2 + ArgoFeedRow.lineHeight
     }
 
+    /// The room the pill asks of the edge it floats over — its lane, plus the lift under it.
+    /// Derived for `laneHeight`'s reason: the rows below have to be given exactly what the pill
+    /// takes, and a fixed guess drifts from it the moment the type does (#1225).
+    public static var footprint: CGFloat {
+        lift + laneHeight
+    }
+
     /// The ring that carries how far the plan has got. Larger than a status dot: it says a
     /// fraction, which needs an arc long enough to read as one.
     public static let ringSize: CGFloat = 12

@@ -27,10 +27,10 @@ package struct FeedView: View {
     /// Which row the reading opens HELD at, as though the reader had scrolled up to it. A parameter
     /// because a screenshot cannot scroll, and the detached state is otherwise unreachable.
     var held: FeedRow.ID?
-    /// Whether the composer floats over this reading. It decides the gutter at the end
-    /// (`FeedTail`), the fade that lets rows run under the vessel, and how far the way-back control
-    /// lifts — all three being one fact about the column's bottom edge.
-    var isUnderComposer = false
+    /// What floats over this reading's foot — see `FeedBottomEdge`. It decides the gutter at the
+    /// end (`FeedTail`), the fade that lets rows run under a vessel, and how far the way-back
+    /// control lifts, all three being one fact about the column's bottom edge.
+    var bottomEdge = FeedBottomEdge.bare
     /// This reading's deck — see `KeptDeck`. Taken rather than owned, because the overview lane
     /// beside the reading reads the same one's scroll authority, and because a deck has to outlive
     /// every view identity a switch destroys.
@@ -80,7 +80,7 @@ package struct FeedView: View {
             selection: selection,
             held: held,
             isResizing: isResizing,
-            isUnderComposer: isUnderComposer,
+            bottomEdge: bottomEdge,
             washed: washed,
             unfolded: folds,
             deck: deck,
@@ -153,10 +153,7 @@ package struct FeedView: View {
                 )
                 .padding(.trailing, ArgoFeedRow.inset)
                 // Lifted clear of the vessel when one floats there.
-                .padding(
-                    .bottom,
-                    isUnderComposer ? ArgoComposerVessel.feedClearance : ArgoFeedRow.tailLift,
-                )
+                .padding(.bottom, bottomEdge.tailLift)
                 .transition(.opacity)
             }
         }
@@ -178,7 +175,7 @@ package struct FeedView: View {
         rows: [FeedRow],
         selection: FeedRowSelection,
         held: FeedRow.ID? = nil,
-        isUnderComposer: Bool = false,
+        bottomEdge: FeedBottomEdge = .bare,
         deck: KeptDeck,
         opensUnfolded: Set<FeedRow.ID> = [],
         washed: FeedRow.ID? = nil,
@@ -187,7 +184,7 @@ package struct FeedView: View {
         self.rows = rows
         self.selection = selection
         self.held = held
-        self.isUnderComposer = isUnderComposer
+        self.bottomEdge = bottomEdge
         self.deck = deck
         self.opensUnfolded = opensUnfolded
         _washed = State(wrappedValue: washed)
