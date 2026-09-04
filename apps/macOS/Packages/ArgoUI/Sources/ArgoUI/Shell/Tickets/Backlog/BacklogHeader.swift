@@ -1,17 +1,17 @@
 import ArgoDesign
 import SwiftUI
 
-/// What you are looking at and how many, over the list it counts — **inside the pane, not in the
-/// window's toolbar** (#836).
+/// What you are looking at and how many, over the list it counts — **inside the pane, under that
+/// pane's own header band** (#836, #1242).
 ///
 /// **Two lines, and the second is not decoration.** A title without its count can lie about what
 /// you are filtered to: `Backlog` alone reads the same over twelve tickets and over the four that
 /// survived a filter. Mail's own band says `Inbox — …` over `All Mail · 290 messages, 149 unread`
 /// for this reason.
 ///
-/// **Words only.** The controls that narrow this list are in the window's row with every other
-/// control the room has, because a row of marks met at three different heights reads as three
-/// unrelated rows — see `TicketsToolbar`.
+/// **Words only.** The controls that narrow this list are on the band above it — New ticket at the
+/// pane's leading edge, the search field at its trailing one — so a control sits over the pane it
+/// acts on and this says only what the list IS (`TicketsPaneHeader`, #1242).
 package struct BacklogHeader: View {
     @Environment(\.argo) private var argo
 

@@ -29,22 +29,27 @@ struct StartSkillMenu: View {
     /// The command the ticket resolved to, and `nil` where it asks for none. It is checked in the
     /// menu, so the guess is inspectable rather than magic.
     let command: WorkCommand?
-    /// Start on a command the reader picked instead — `nil` is the Fresh Session, which carries
-    /// the ticket and no command.
-    let pick: (WorkCommand?) -> Void
+    /// Start on a command the reader picked instead — its own argument is `nil` for the Fresh
+    /// Session, which carries the ticket and no command. The CLOSURE being `nil` is the other
+    /// thing: nothing is wired behind the menu, so it draws disabled rather than offering six rows
+    /// that swallow a press (#872, #900).
+    let pick: ((WorkCommand?) -> Void)?
 
     var body: some View {
         Menu {
-            Section("Start a Session on this ticket") {
-                ForEach(WorkCommand.offered, id: \.self) { offer in
-                    Button { pick(offer) } label: { row(for: offer) }
+            if let pick {
+                Section("Start a Session on this ticket") {
+                    ForEach(WorkCommand.offered, id: \.self) { offer in
+                        Button { pick(offer) } label: { row(for: offer) }
+                    }
                 }
+                Divider()
+                Button("Fresh Session") { pick(nil) }
             }
-            Divider()
-            Button("Fresh Session") { pick(nil) }
         } label: {
             label
         }
+        .disabled(pick == nil)
         .menuStyle(.button)
         .buttonStyle(.plain)
         .menuIndicator(.hidden)

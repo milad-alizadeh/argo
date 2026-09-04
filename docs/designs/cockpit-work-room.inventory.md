@@ -343,10 +343,10 @@ picker now, not this room's.
 | `NewTicketButton` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `creation: Creation` | `ArgoIconButtonGroup`, `ArgoIconButton` | `ibtn('compose')`. **#1242**: a 36pt circle at the list pane's leading edge |
 | `StartControl` | molecule | `ArgoUI/Shell/Tickets/Chrome/` | `verbs: Verbs` | `ArgoIconButtonGroup`, `StartVerb`, `StartSkillMenu` | `.icap.split`, then the prototype's `.as-line`. **#1242**: ONE pill, two segments, no rule between them |
 | `StartSkillMenu` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `command: WorkCommand?`, `pick: (WorkCommand?) -> Void` | stock `Menu` | **#1242**, the prototype's `.menu`. Which skill the Session opens on; the command segment IS the control |
-| `ModeMenu` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `mode: Binding<SessionMode>` (4 rungs) | stock `Menu` + `Picker(.inline)` | `.menu` / `MODE_MENU` |
+| ~~`ModeMenu`~~ | molecule | **deleted (#872)**; its directory went with #1242 | `mode: Binding<SessionMode>` (4 rungs) | stock `Menu` + `Picker(.inline)` | `.menu` / `MODE_MENU` |
 | `BacklogSearchField` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `query: Binding<String>` | stock `TextField`, `argoFloatingGlass` | `.search.glass`. **#1242**: at the LIST pane's trailing edge, not the window's |
 | `TicketsChromeProjection` | value | `ArgoUI/Shell/Tickets/` | `reading(of:in:showing:) -> Reading` | — | the `titlebarHTML()` branches |
-| `TicketsToolbarIntents` | value | `ArgoUI/Shell/Tickets/Chrome/` | a `Creation` and a `Verbs`, both inert by default | — | the buttons' `title=` strings |
+| `TicketsChromeIntents` | value | `ArgoUI/Shell/Tickets/Chrome/` | a `Creation` and a `Verbs`, both inert by default | — | the buttons' `title=` strings |
 
 `ArgoTicketsToolbar` beside them is the surface sheet, not a component: the block width and the
 search field's measure. **#1243** took the icon button's slot, the vessel inset and the split rule

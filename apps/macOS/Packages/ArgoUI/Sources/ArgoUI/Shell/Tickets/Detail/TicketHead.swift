@@ -3,6 +3,7 @@ import ArgoEngine
 import SwiftUI
 
 /// The ticket's head: id, title, the status pair, then which live Session is on it (#1092).
+/// The id is the LINK out to the code host (`TicketNumberLink`, #1242).
 /// Title-FIRST — no scope badge and no produced-by field (#272), because the largest line in the
 /// pane should be the thing the pane is about.
 package struct TicketHead: View {
@@ -15,9 +16,7 @@ package struct TicketHead: View {
 
     package var body: some View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.headStep) {
-            Text(IssueReading.mark(ticket.id))
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+            TicketNumberLink(number: ticket.id)
             Text(ticket.title)
                 .argoText(ArgoTypography.sessionTitle)
                 .fixedSize(horizontal: false, vertical: true)

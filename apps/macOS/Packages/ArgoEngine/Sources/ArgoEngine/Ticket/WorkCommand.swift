@@ -6,7 +6,7 @@
 /// that does the wrong work — and that is worse than one waiting to be told what to do.
 ///
 /// The raw value is the command's own name, so the prompt and the mapping cannot say two things.
-public enum WorkCommand: String, Sendable, CaseIterable, Hashable {
+public enum WorkCommand: String, Sendable {
     case designToCode = "design-to-code"
     case grillMe = "grill-me"
     case wayfinder

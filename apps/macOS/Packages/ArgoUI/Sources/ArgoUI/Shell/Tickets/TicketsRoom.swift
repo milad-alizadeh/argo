@@ -171,15 +171,12 @@ package struct TicketsRoom {
         return HStack(spacing: ArgoSpacing.flush) {
             let seated = ArgoLayout.seated(backlogWidth, in: limits)
             VStack(spacing: ArgoSpacing.flush) {
-                TicketsPaneHeader(reach: reach, inset: ArgoBacklogList.bandInsetX) {
-                    NewTicketButton(creation: intents.creation)
-                } trailing: {
-                    // `narrows` and not `draws`: the field goes with the list it searches, so an
-                    // empty backlog loses it where New ticket survives.
-                    if chrome.narrows {
-                        BacklogSearchField(query: held.query)
-                    }
-                }
+                BacklogPaneHeader(
+                    reach: reach,
+                    creation: intents.creation,
+                    narrows: chrome.narrows,
+                    query: held.query,
+                )
                 BacklogList(
                     rows: room.backlog,
                     held: BacklogList.Held(selection: $ticket, shut: $shut),
@@ -196,14 +193,9 @@ package struct TicketsRoom {
             .environment(\.backlogPaneWidth, seated)
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
             VStack(spacing: ArgoSpacing.flush) {
-                TicketsPaneHeader(reach: reach, inset: ArgoTicketDetail.inset) {
-                    // The verbs address the ticket the pane is OPEN on. With none open there is
-                    // nothing for `Start` to name, and the pill goes rather than standing there
-                    // addressing nobody.
-                    if chrome.ticket != nil {
-                        StartControl(verbs: intents.verbs)
-                    }
-                }
+                // The verbs reach the header only where a ticket is OPEN. With none, the band
+                // stands and the pill does not.
+                TicketPaneHeader(reach: reach, verbs: chrome.ticket == nil ? nil : intents.verbs)
                 TicketDetail(
                     ticket: room.ticket,
                     unreadNumber: room.unreadNumber,

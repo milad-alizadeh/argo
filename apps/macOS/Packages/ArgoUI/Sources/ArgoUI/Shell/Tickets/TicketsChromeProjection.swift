@@ -1,5 +1,5 @@
-/// What the Tickets room's CHROME draws, off the same room value both panes take — the window's row
-/// of controls and the heading over the list, which are two surfaces reading one value.
+/// What the Tickets room's CHROME draws, off the same room value both panes take — each pane's
+/// header band and the heading over the list, which are surfaces reading one value.
 ///
 /// A VALUE and not a read of the panes: the count under the heading has to be the count of the rows
 /// the list is drawing, and two surfaces counting the same set separately is how a heading comes to
@@ -10,8 +10,9 @@ package enum TicketsChromeProjection {
         let heading: String
         /// …and how many, which is the half that stops the heading lying about the filter.
         let subtitle: String
-        /// Whether the list-scoped controls stand: the ordering menu and search. They go together
-        /// — both address the same list, and with no list there is nothing to address.
+        /// Whether the list-scoped control stands: the search field. It goes with the list it
+        /// searches, and with no list there is nothing to address. The ordering menu that used to
+        /// stand beside it is deleted (#1242), so this now governs one control.
         package let narrows: Bool
         /// Whether the chrome draws at all, which is also whether New ticket does: the two
         /// coincide, because New ticket survives an empty backlog and the only thing that empties

@@ -54,8 +54,6 @@ public enum ArgoSymbol {
     public static let newTicket = newSession
     /// Re-ordering the backlog. A MENU and not a mark of its own: Mail keeps sort and group inside
     /// the ellipsis beside its filter, and the banded-rows glyph that stood here was invented for
-    /// an act the platform already has a home for (#836).
-    public static let backlogMenu = projectMenu
     public static let searchBacklog = "magnifyingglass"
     /// Starting a Session on the open ticket — the verb the room is for. A play triangle rather
     /// than a bolt: the bolt was read as speed or as power, and neither is the act.

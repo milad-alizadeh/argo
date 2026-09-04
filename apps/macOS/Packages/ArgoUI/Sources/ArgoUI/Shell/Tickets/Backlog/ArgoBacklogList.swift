@@ -22,9 +22,9 @@ package enum ArgoBacklogList {
     /// Since #844 it is the SEAM's floor, so the derivation lives with the other seam limits and
     /// this reads it — one number, one place.
     static let minimumWidth = ArgoLayout.backlogWidths.lowerBound
-    /// The heading over the list — its title and its count, and nothing else since the controls
-    /// went back to the window's row. A FLOOR and not a frame, for the reason the row height below
-    /// is one: the two lines inside it are set at the reader's own type size.
+    /// The heading over the list — its title and its count, and nothing else: the controls sit on
+    /// the pane's header band above it (#1242). A FLOOR and not a frame, for the reason the row
+    /// height below is one: the two lines inside it are set at the reader's own type size.
     static let bandHeight: CGFloat = 44
     /// Inside the heading, either edge. The gutter again, so the title starts on the vertical the
     /// rows under it start on.

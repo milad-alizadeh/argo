@@ -47,11 +47,15 @@ package struct TicketsChromeIntents {
         /// Which command `Start` will send, drawn beside the word so the press can be aimed (#899),
         /// and `nil` where the ticket asks for none — an empty composer, said as `Start` alone.
         var command: WorkCommand?
-        /// Start on a command the reader picked in the menu instead of the resolved one, and `nil`
-        /// for the fresh Session that carries the ticket and no command (#1242). One closure and
-        /// not a second `start`: the two differ only in what is sent, and `start` is this one
-        /// called with what `command` already says.
-        var startOn: (WorkCommand?) -> Void = { _ in }
+        /// Start on a command the reader picked in the menu instead of the resolved one — its own
+        /// argument is `nil` for the fresh Session that carries the ticket and no command (#1242).
+        /// One closure and not a second `start`: the two differ only in what is sent, and `start`
+        /// is this one called with what `command` already says.
+        ///
+        /// OPTIONAL, which is the shape #872 and #900 settled for absent behaviour: the picker
+        /// draws six live rows, so one left unassigned would be six controls that highlight,
+        /// accept the press and do nothing. Absence has to reach the control AS absence.
+        var startOn: ((WorkCommand?) -> Void)?
 
         /// Verbs with nothing behind them, for a preview and for a room with no ticket open.
         @MainActor static let inert = Verbs()
@@ -61,7 +65,7 @@ package struct TicketsChromeIntents {
         package init(
             start: @escaping () -> Void = {},
             command: WorkCommand? = nil,
-            startOn: @escaping (WorkCommand?) -> Void = { _ in },
+            startOn: ((WorkCommand?) -> Void)? = nil,
         ) {
             self.start = start
             self.command = command
