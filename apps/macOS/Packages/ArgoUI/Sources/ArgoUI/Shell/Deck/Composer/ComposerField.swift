@@ -17,6 +17,10 @@ struct ComposerField: View {
 
     @Binding var text: String
     let placeholder: String
+    /// Whether the draft's head, if it names a `/` command, is one the CLI will actually run —
+    /// `false` for a codex Session, which declares no command surface and gets no mark either
+    /// (design decision 14). Defaults `true`, the ordinary case.
+    var canRunCommands = true
     let submit: () -> Void
     /// An arrow, offered to whichever composer menu is open. `false` leaves the key to the caret,
     /// so a line that opens no menu keeps the platform's own movement.
@@ -34,6 +38,7 @@ struct ComposerField: View {
         ComposerTextView(
             text: $text,
             placeholder: placeholder,
+            canRunCommands: canRunCommands,
             submit: submit,
             walk: walk,
             dismiss: dismiss,

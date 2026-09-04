@@ -107,10 +107,13 @@ final class ComposerFieldHost {
             .flatMap(Int.init) ?? 10,
     )
 
-    static func hosted() throws -> ComposerFieldHost {
+    static func hosted(
+        over projection: SessionComposerProjection.Composer = ComposerSpecimen.composer,
+    ) throws
+        -> ComposerFieldHost {
         let store = Store()
         let composer = SessionComposer(
-            composer: ComposerSpecimen.composer,
+            composer: projection,
             intents: DeckIntents(
                 send: { text, _ in store.sent.append(text) },
                 draft: Binding(get: { store.draft }, set: { store.draft = $0 }),

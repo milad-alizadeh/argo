@@ -16,6 +16,9 @@ struct ComposerTextView: NSViewRepresentable {
     /// What a screen reader is told this field is. Set on the AppKit view itself: SwiftUI's
     /// accessibility modifiers do not reach inside a representable's own subview.
     let placeholder: String
+    /// Whether a `/` at the draft's head is a command the CLI will run — `ComposerField`'s own
+    /// doc.
+    var canRunCommands = true
     let submit: () -> Void
     let walk: (ComposerKeyIntent) -> Bool
     let dismiss: () -> Bool
@@ -32,8 +35,8 @@ struct ComposerTextView: NSViewRepresentable {
     func updateNSView(_ scroller: NSScrollView, context: Context) {
         guard let input = scroller.documentView as? ComposerTextInput else { return }
         input.setAccessibilityLabel(placeholder)
-        Self.ink(input, argo: argo)
-        Self.write(text, into: input, argo: argo)
+        Self.ink(input, argo: argo, canRunCommands: canRunCommands)
+        Self.write(text, into: input, argo: argo, canRunCommands: canRunCommands)
         input.submit = submit
         input.walk = walk
         input.dismiss = dismiss
@@ -41,6 +44,7 @@ struct ComposerTextView: NSViewRepresentable {
         input.attach = attach
         context.coordinator.text = $text
         context.coordinator.argo = argo
+        context.coordinator.canRunCommands = canRunCommands
     }
 
     static func dismantleNSView(_: NSScrollView, coordinator: Coordinator) {
@@ -75,6 +79,9 @@ struct ComposerTextView: NSViewRepresentable {
         var text: Binding<String>
         /// The theme the last update carried, so a reconciliation inks what it writes.
         var argo: ArgoTheme = .graphite
+        /// The last update's own, so a reconciliation marks a command exactly as the update that
+        /// asked for it would.
+        var canRunCommands = true
 
         let storage = NSTextStorage()
         let container: NSTextContainer
@@ -118,7 +125,12 @@ struct ComposerTextView: NSViewRepresentable {
             let queued = reconciliation
             RunLoop.main.perform(inModes: [.common]) { [weak self, weak input] in
                 guard let self, let input, queued == reconciliation else { return }
-                ComposerTextView.write(text.wrappedValue, into: input, argo: argo)
+                ComposerTextView.write(
+                    text.wrappedValue,
+                    into: input,
+                    argo: argo,
+                    canRunCommands: canRunCommands,
+                )
             }
         }
 
@@ -169,23 +181,41 @@ private extension ComposerTextView {
     /// string carries none of them. The HEIGHT needs nothing of the sort: the field is
     /// `isVerticallyResizable`, so TextKit resizes the document view under the write and AppKit
     /// carries that up to the next layout pass.
-    static func write(_ draft: String, into input: ComposerTextInput, argo: ArgoTheme) {
+    static func write(
+        _ draft: String,
+        into input: ComposerTextInput,
+        argo: ArgoTheme,
+        canRunCommands: Bool,
+    ) {
         guard input.string != draft, !input.hasMarkedText() else { return }
         input.string = draft
-        ink(input, argo: argo)
+        ink(input, argo: argo, canRunCommands: canRunCommands)
     }
 
     /// The face and the two inks, reapplied on every update because the theme can turn under a
-    /// field that is already holding a draft.
-    static func ink(_ input: ComposerTextInput, argo: ArgoTheme) {
+    /// field that is already holding a draft. The command mark is a THIRD ink, over the same
+    /// range every other pass here already re-colours: `ComposerMenu.commandMark(in:)` names the
+    /// one substring the CLI will run as a command, and nothing else in the draft is ever this
+    /// colour (#1256).
+    static func ink(_ input: ComposerTextInput, argo: ArgoTheme, canRunCommands: Bool) {
         input.font = face
         input.defaultParagraphStyle = paragraph
         input.typingAttributes = [.font: face, .paragraphStyle: paragraph]
         input.textColor = argo.color.text.primary.nsColor
         input.insertionPointColor = argo.color.text.primary.nsColor
         input.textStorage?.addAttributes(
-            [.font: face, .paragraphStyle: paragraph],
+            [
+                .font: face,
+                .paragraphStyle: paragraph,
+                .foregroundColor: argo.color.text.primary.nsColor,
+            ],
             range: NSRange(location: 0, length: input.string.utf16.count),
+        )
+        guard canRunCommands, let mark = ComposerMenu.commandMark(in: input.string) else { return }
+        input.textStorage?.addAttribute(
+            .foregroundColor,
+            value: argo.color.interaction.accent.nsColor,
+            range: NSRange(mark, in: input.string),
         )
     }
 

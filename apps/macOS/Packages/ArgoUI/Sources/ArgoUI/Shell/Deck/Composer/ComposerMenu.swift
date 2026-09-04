@@ -40,9 +40,9 @@ enum ComposerMenu {
 
         /// What picking this row does to the line.
         ///
-        /// The token is the TAIL of the line for both sigils, by construction: `/` opens at the
-        /// head and is closed by the first space, and `@` is the last token with no space in it.
-        /// So the sigil plus what was typed after it is exactly what a pick replaces.
+        /// The token is the TAIL of the line for both sigils, by construction: each opens at a
+        /// token boundary and is closed by the first space, so the sigil plus what was typed
+        /// after it is exactly what a pick replaces.
         func pick(_ row: Row) -> Pick {
             Pick(text: row.insert, dropping: dropping)
         }
@@ -144,6 +144,17 @@ enum ComposerMenu {
             label: "Files in this Workspace",
             nothingMatched: "No file in this Workspace matches ",
         )
+    }
+
+    /// Whether a sigil stands at a token boundary rather than inside a word — the head of the
+    /// text, or a character whose predecessor is whitespace (a space OR the newline Shift-Return
+    /// makes, so a sigil at the head of a later line opens too). Shared by `/` and `@`:
+    /// `command(in:)`
+    /// and `mention(in:)` each find their own sigil's last occurrence and ask this the same
+    /// question.
+    static func opensToken(_ text: String, at index: String.Index) -> Bool {
+        guard index > text.startIndex else { return true }
+        return text[text.index(before: index)].isWhitespace
     }
 
     /// What a picked row does to the line: the last `dropping` characters go, and `text` lands in
