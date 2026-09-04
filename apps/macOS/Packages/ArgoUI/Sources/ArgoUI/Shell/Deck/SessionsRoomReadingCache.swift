@@ -12,15 +12,20 @@ import ArgoEngine
 /// pass, and a reading holds roughly one row per event.
 ///
 /// Keyed by a STAMP rather than by a Session, because a remembered reading must never draw a
-/// transcript as it stood when the reader last looked at it. The stamp is sound because the streams
-/// are append-only within a Session — `HubSession.apply` only ever appends, and a resume merges by
-/// `+=` — so a count names a prefix and a count that has not moved names the same prefix.
+/// transcript as it stood when the reader last looked at it.
+///
+/// It is the stream's OWN stamp and not its length, because a Session's stream is no longer
+/// append-only: a Turn put twice takes the abandoned branch back out of it (#1202), and a fork
+/// drops exactly what it re-adds — the abandoned record's three events for the superseding
+/// record's three — so a length would name two different streams with one number and the deck
+/// would keep drawing the branch that was removed. `TranscriptStamp` counts WRITES beside the
+/// length for this reason, so any write at all moves it, appending or not.
 @MainActor
 enum SessionsRoomReadingCache {
     /// The version of a Session's record a reading was taken at.
     ///
-    /// Everything `FeedProjection` and `PlanProjection` read is here: the stream by length, and the
-    /// five small facts by VALUE, since none of them is append-only. The header is deliberately
+    /// Everything `FeedProjection` and `PlanProjection` read is here: the stream by its STAMP, and
+    /// the five small facts by VALUE, since none of them is append-only. The header is deliberately
     /// absent — see `SessionsRoomReading.init`.
     ///
     /// A Subagent's reading is absent too, and that is #858 rather than an omission: a child's
@@ -29,7 +34,9 @@ enum SessionsRoomReadingCache {
     /// on is carried beside this — see `Scoping`.
     struct Stamp: Equatable, Sendable {
         let sessionID: String?
-        let events: Int
+        /// Which version of the stream the reading was taken at. Moved by every write the engine
+        /// makes, drops included — see the note above on why a length is not enough.
+        let stream: TranscriptStamp
         let asking: FeedAskProjection.Asking
         let handedOff: FeedHandoff?
         let expired: [PermissionExpiry]
@@ -52,7 +59,7 @@ enum SessionsRoomReadingCache {
             handedOff: FeedHandoff?,
         ) {
             self.sessionID = session?.id
-            self.events = session?.events.count ?? 0
+            self.stream = session?.transcript.stream.stamp ?? TranscriptStamp()
             self.asking = asking
             self.handedOff = handedOff
             self.expired = session?.expiredPermissions ?? []

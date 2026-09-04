@@ -111,12 +111,19 @@ public actor TranscriptReader {
         }
         switch record {
         case let .user(message):
-            let opened = identity(of: message) + stance(of: message)
-                + context.events(for: message) + userEvents(message)
-            // BEFORE what it opens, never after: the branch it supersedes is everything the
-            // reading holds up to this moment, and a marker behind this record's own events would
-            // take them back too.
-            return superseded(by: message, opening: opened) + opened
+            // The record's own content is read FIRST, because whether it forks a branch depends on
+            // whether it is a prompt — and the answer has to be known before the context cursor
+            // runs, so a fork can make that cursor re-state what the dropped branch had announced.
+            let said = userEvents(message)
+            let fork = superseded(by: message, opening: said)
+            if !fork.isEmpty {
+                context.restate()
+            }
+            // The marker goes BEFORE what this record opens, never after: the branch it supersedes
+            // is everything the reading holds up to this moment, and a marker behind this record's
+            // own events would take them back too.
+            return fork + identity(of: message) + stance(of: message)
+                + context.events(for: message) + said
         case let .assistant(message):
             return identity(of: message) + context.events(for: message) + assistantEvents(message)
         case let .attachment(message):
@@ -136,16 +143,18 @@ public actor TranscriptReader {
 
     /// The branch this record abandons, where it forks one (`TranscriptForks`).
     ///
-    /// A SIDECHAIN record is never asked, and a Session's reading is the reason: a fan-out puts
-    /// several delegated agents under one call, and siblings there are the shape of the work rather
-    /// than a Turn put twice. `attributes(_:)` is the same guard the Turn fold takes, so the two
-    /// cannot drift.
+    /// A SESSION's reading only, and nothing about a Subagent's file is being claimed: the marker
+    /// is spent by `HubSession.apply`, and a Subagent's reading is appended raw beside the roster
+    /// (`SubagentReadings`), so one emitted there would be a dead event in a stream that is
+    /// compared by its length. `attributes(_:)` answers the same question for the Turn fold, and
+    /// it carries the sidechain half of this guard — a fan-out puts several delegated agents under
+    /// one call, and siblings there are the shape of the work rather than a Turn put twice.
     private func superseded(
         by message: MessageRecord,
         opening events: [TranscriptEvent],
     )
         -> [TranscriptEvent] {
-        guard attributes(message) else { return [] }
+        guard subject == .session, attributes(message) else { return [] }
         return forks.superseded(by: message, opening: events)
     }
 
