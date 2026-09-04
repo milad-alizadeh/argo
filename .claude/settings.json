@@ -21,6 +21,16 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/task-list-nudge.mjs\""
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

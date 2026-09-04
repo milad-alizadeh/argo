@@ -1,12 +1,13 @@
-// The stdin/stdout half of a PreToolUse guardrail hook, shared by the guards in scripts/.
-// Each guard keeps its own pure decide(); this is the plumbing around it.
+// The stdin/stdout half of a hook, shared by the guards in scripts/ and by the task-list nudge.
+// Each hook keeps its own pure decide(); this is the plumbing around it.
 
 /** True when a tool call is an agent's rather than the human's — guards never touch the human.
  * The marker is Claude's own CLAUDECODE, or the ARGO_HOOK_AGENT the projection injects for
  * markerless harnesses (Codex). */
 export const underAgent = () => Boolean(process.env.CLAUDECODE || process.env.ARGO_HOOK_AGENT)
 
-async function readStdin() {
+/** The hook payload the harness pipes in, as text. Exported: every hook here reads the same one. */
+export async function readStdin() {
   const chunks = []
   for await (const chunk of process.stdin) chunks.push(chunk)
   return Buffer.concat(chunks).toString('utf8')

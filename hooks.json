@@ -16,6 +16,12 @@
       "agentGated": true
     },
     {
+      "$comment": "The to-do-list nudge. AGENTS.md carries the same rule, but a rule that competes with a whole file for attention is one sessions skip: measured over 2981 transcripts, only 38% of sessions with three or more file edits wrote a list at all, and the rate fell over time (#1254). The script reads the session's own transcript and goes quiet the moment a list exists, and gives up after three prompts either way. It only ever adds context — it can never block a prompt.",
+      "event": "user-prompt-submit",
+      "command": "node \"$(git rev-parse --show-toplevel)/scripts/task-list-nudge.mjs\"",
+      "agentGated": true
+    },
+    {
       "event": "session-end",
       "command": "sh \"$(git rev-parse --show-toplevel)/scripts/worktree-gc.sh\"",
       "timeout": 60,

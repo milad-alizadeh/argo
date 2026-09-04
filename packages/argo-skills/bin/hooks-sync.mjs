@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 // Code, so one map serves both; a future harness that renames events overrides here.
 const EVENT_MAP = {
   'pre-tool': 'PreToolUse',
+  'user-prompt-submit': 'UserPromptSubmit',
   'session-end': 'SessionEnd',
 }
 
@@ -27,7 +28,12 @@ const HARNESSES = {
 // Every script hooks.json names belongs here: one missing entry reads our own hook as the
 // consumer's, so the sync preserves it AND appends a fresh copy, and the file grows a
 // duplicate per run. `scripts/hooks-sync.test.mjs` derives this list from hooks.json.
-const MANAGED_MARKERS = ['worktree-guard.mjs', 'worktree-name-guard.mjs', 'worktree-gc.sh']
+const MANAGED_MARKERS = [
+  'worktree-guard.mjs',
+  'worktree-name-guard.mjs',
+  'worktree-gc.sh',
+  'task-list-nudge.mjs',
+]
 
 /**
  * Build one harness's hook block from the neutral descriptor. Pure — no IO.

@@ -20,6 +20,16 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/task-list-nudge.mjs\""
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

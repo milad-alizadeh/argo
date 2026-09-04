@@ -17,12 +17,20 @@ Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both C
 ## Task tracking
 
 Maintain a live to-do list for any task with **three or more distinct steps**, edits across
-**multiple files**, or **a plan the user approved**. Claude Code: `TodoWrite`. Codex:
-`update_plan`.
+**multiple files**, or **a plan the user approved**. Claude Code: `TaskCreate` one call per item,
+then `TaskUpdate` for each status change. Codex: `update_plan`.
+
+`TaskCreate` and `TaskUpdate` are **deferred** tools in Claude Code: they cannot be called until
+their schemas are loaded, so a qualifying task starts with one
+`ToolSearch("select:TaskCreate,TaskUpdate")` before the first edit. Load them once, at the top of
+the task; a session that waits until it wants the list writes no list at all.
 
 - Write the list **before the first edit**, not as a retrospective summary.
 - Exactly **one** item `in_progress` at a time; mark it `completed` the moment it is done, not
   in a batch at the end.
+- Work the items **in the order the list gives them**, and mark an item `in_progress` **before**
+  starting it. A list that jumps from item 1 to item 3 is a list nobody can read progress from.
+  If the real order turns out to be different, reorder the list rather than skip an item.
 - One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
 - Keep single-step edits, lookups, and conversational turns off the list — a one-item list is
   noise, and a list nobody needed teaches the next session to ignore lists.
@@ -62,8 +70,9 @@ Naming, resuming, recovery, the sub-agent rule and `bun run worktrees:gc`:
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the three guardrail hooks (worktree edit
-guard, worktree naming guard, worktree-gc), projected per-harness. **Edit
+`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hooks — three guardrails
+(worktree edit guard, worktree naming guard, worktree-gc) and the to-do-list nudge, which only
+ever adds context and can never block — projected per-harness. **Edit
 `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
 `.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
 and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.

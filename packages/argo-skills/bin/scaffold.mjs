@@ -47,6 +47,8 @@ const HOOK_ASSETS = [
   'scripts/worktree-guard.mjs',
   'scripts/worktree-name-guard.mjs',
   'scripts/worktree-gc.sh',
+  'scripts/task-list-nudge.mjs',
+  'scripts/transcript-plans.mjs',
   'docs/agents/worktrees.md',
 ]
 // Seeded on every install (not only --hooks: RTK filters are inert until the consumer runs
