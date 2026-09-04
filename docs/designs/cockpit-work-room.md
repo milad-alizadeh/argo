@@ -10,7 +10,7 @@
 > cite them by path.
 
 The approved design for the **Tickets room** (#609) — the views sidebar, the backlog list, the
-ticket detail, the Next-up hero, the room's toolbar, its empty and degraded states, and the
+ticket detail, the Next-up hero, the panes' headers, its empty and degraded states, and the
 Route's re-skin. Before this, every design in `docs/designs/` was a Sessions surface and
 `InstrumentDeckShell` drew `Color.clear` for `.work`, so a session sent at #272 would have
 invented the pixels.
@@ -350,23 +350,50 @@ points is small but honest, and the window is the thing to widen.
 Five states on one 6pt mark, which is `ArgoLayout.statusDotSize` — the same mark the roster uses
 for a Session, read here for a Delivery.
 
-## The toolbar — Mail's placement, transposed
+## The toolbar — every pane carries its own header (#1242)
 
-Mail puts **every** control in the window's one toolbar row, and places each by what it acts on.
-The Tickets room does the same, in the same order:
+**Amended #1242, and this reverses the section that stood here.** There is no window-wide row in
+this room. Each pane draws its **own** header, and the three sit on ONE band at the height the
+window already spends on its title strip. What stood here before — "Mail puts every control in
+the window's one toolbar row, and places each by what it acts on" — is kept in **the column
+question** below as the third of four answers, because the reasons it was right for are the
+reasons the fourth answer has to satisfy.
 
-**Amended again — the bands are gone, and every control is back in the window's one row.** #836
-split them across a band per pane; see **the column question** below for what that bought and what
-it cost. The heading stays in the list pane, because it is words about the list rather than a
-control.
+**The rule, and it is readable off the screen without knowing it:** *a control sits at the leading
+edge of the pane it acts on, and a field sits at the trailing edge of the pane it searches.* That
+is the whole rule. #836 failed because its rule was legible only to somebody who already knew it;
+this one is legible because there is nothing else on a pane's band to confuse it with.
 
 | position | control | scope | drawn by |
 |---|---|---|---|
-| leading the list pane | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many | the list pane |
-| after the scope vessel | the ordering menu, alone in its vessel | list-scoped | the window row |
-| next | **New ticket** | the call-to-action, its own vessel — the one thing this window creates | the window row |
-| next | `▶ Start`, open-on-host, copy link | the ticket's own verbs | the window row |
-| trailing edge | search | a real field at 210, not an icon that becomes one | the window row |
+| the sidebar's band | nothing but the traffic lights' zone, kept clear | — | the window |
+| leading the list pane's header | **New ticket**, one mark in a circular container of its own | the call-to-action — the one thing this window creates | the list pane |
+| trailing the list pane's header | search | a real field at 210, not an icon that becomes one | the list pane |
+| under the header, in the list | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many | the list pane |
+| leading the ticket pane's header | `▶ Start` and the command it will send, in ONE pill | the ticket's own verbs | the ticket pane |
+| on the ticket's id line | `#607`, as a link | the ticket's address | the ticket pane |
+
+**The Project scope stays a `.navigation` toolbar item.** It is the WINDOW's scope, not a pane's,
+and `.navigation` already draws it over the sidebar — which is the leading edge of the thing it
+scopes. Only the DECK's two panes stop being toolbar items. Nothing about this room touches
+`ShellToolbar`.
+
+**The ordering menu is deleted with the row that carried it (#1242).** It opened onto one row,
+`Group by priority`, which #900 had already demoted from a button to a stated fact because there
+was no second thing to group by. A menu whose only content is a sentence is a sentence behind a
+click. It returns the day a port reads a second grouping, which is #388 — and `ArgoSymbol.backlogMenu`
+goes with it, so nothing can draw the mark again without first naming what it offers.
+
+**Every render in `work-room/` and `cockpit-work-room.html` predates this and draws the window
+row** — as with the Mode menu #872 cut and the funnel #900 cut, they are superseded on the row's
+placement and remain the spec for everything else in the frame. The primary source for this shape
+is `prototypes/ticket-verbs-prototype.html`, which measures itself.
+
+**The two link verbs are deleted too (#1242).** `open on host` and `copy link` were two unlabelled
+marks saying what the ticket's own number already says. The number becomes the link — `#607` in
+`interaction.accent` on the head's id line, the ink this app spends on every other route — and copy
+is the browser's own gesture on a link, not a second mark beside it. This does not weaken "nothing
+in this room is behind an unlabelled control"; it removes two unlabelled controls.
 
 **A title without its count can lie about what you are filtered to**, which is why the heading is
 two lines and Mail's is too (`Searching / Inbox — …, 11 results`).
@@ -376,7 +403,12 @@ reading `by priority` over an ungrouped list is the exact lie the second line ex
 the term arrived with the headers that justify it (#819). Through #812 and #814 — nesting is not a
 grouping — the line read `All open · 12 tickets`.
 
-### The column question, settled (#836)
+### The column question, settled four times (#836, then #1242)
+
+**Read this section as a history.** Three answers were tried and each was wrong in its own
+direction; the fourth is at the foot, and it is the one that ships. The three failures are kept
+because the fourth has to answer all of them, and a doc that deleted them could not show that it
+does.
 
 macOS gives per-column toolbar regions only to a genuine three-column `NavigationSplitView`, and
 the shell's split view is unconditional — a room fills its slots rather than replacing them (#812).
@@ -403,14 +435,53 @@ four more over the ticket — and read three unrelated rows rather than one row 
 placement was legible only to somebody who already knew the rule. It also cost both panes a 44pt
 band, which is the height a room this dense can least spare.
 
-**So the controls are back in the window's one row, in scope order left to right**: the list's own,
-then the one thing the window creates, then the open ticket's verbs, then search at the trailing
-edge. That is Mail's own row read literally, and it is the arrangement #836 set out to reach before
-`.primaryAction`'s geometry defeated it — reached now by giving up the column boundary rather than
-by claiming it. **The boundary was never the point; one legible row was.**
+**The third answer put every control back in the window's one row, in scope order left to right**:
+the list's own, then the one thing the window creates, then the open ticket's verbs, then search at
+the trailing edge. That is Mail's own row read literally, reached by giving up the column boundary
+rather than by claiming it, on the premise that the boundary was never the point and one legible
+row was.
 
-The heading stays in the list pane. It is not a control: it says what the list is and how many, and
-words about a column belong over that column.
+**And the premise was false, which is what #1242 measured.** The ticket's verbs act on ONE ticket,
+and that ticket is in the trailing pane. In a window-wide row the verbs' position is measured off
+the window's trailing edge; the pane's leading edge is measured off a seam the reader can drag.
+Two independent numbers, coinciding by luck. The prototype measured the luck: the cluster sat
+**+42 inside the pane** at the 1280 window with the seam at rest, and **−116** at every floor —
+over the list, beside the list's own heading, which is the screenshot on #1242. A control that is
+over the thing it acts on only at one window width is not placed by scope. It is placed by
+accident.
+
+**The fourth answer: each pane draws its own header, and the three sit on one band at the height
+the window already spends on its title strip.** The ticket's verbs are over the ticket **by
+construction** — the header is the pane's, so there is no arithmetic to get wrong and no seam to
+be out of step with. The list's compose mark and its search field are the list pane's, on the same
+band, for the same reason.
+
+**This answers #836's two failures, which is the bar it had to clear.**
+
+*Height.* #836's bands cost each pane 44pt because they were drawn **under** the title strip. These
+are drawn **in** it: the deck climbs past the safe area to the window's top edge, which
+`DeckCanopy` already does today with `reach: window.safeAreaInsets.top` — the Session's title is
+drawn by the detail pane and lands in the toolbar band. The strip is spent either way, so no pane
+loses a line. **This is the load-bearing difference between the two shapes, and if the band is ever
+drawn below the strip it has become #836 again.**
+
+*Three heights of marks.* #836 put the same family of marks at three heights and left the reader to
+infer a scope rule from their positions. There is one height now — one band — and one rule stated
+above the table: a control sits at the leading edge of the pane it acts on. What made the rule
+unreadable was never the height; it was that a filter mark and a compose mark and a chevron all
+look alike and none of them says which column it means. So the room stopped relying on the marks to
+say it: **the list's band holds one mark and a field, the ticket's band holds one pill, and the
+sidebar's holds nothing.** There is nothing on a pane's band to mistake for another pane's control.
+
+**What it costs, and this is a real cost, not a rounding.** The row stops being `ToolbarItem`s, so
+the search field, the compose button and the drag region become the app's to place, and the traffic
+lights' zone has to be kept clear in the sidebar's band. `.principal` stays closed for the reason
+`ShellToolbar` records. The trade is accepted because the alternative is a control that is over its
+subject at one width — and #816 and #836 each spent a ticket learning that the geometry does not
+bend.
+
+The heading stays in the list pane, under the band. It is not a control: it says what the list is
+and how many, and words about a column belong over that column.
 
 **When the window cannot afford three columns, the LIST is what yields.** 520 is where the list
 rests; since #844 it is neither a ceiling nor a floor, because the seam between the panes is the
@@ -422,10 +493,12 @@ squeezed under its own controls is a control you cannot reach at all. Every cont
 present and whole at `windowMinimumWidth` 960. The width that yield stops at is the seam's floor
 now — one number, named once in `ArgoLayout.backlogWidths`.
 
-**Search sits over the ticket but searches the list.** That is Mail's own split, and for the
-same reason: the toolbar is one row, not three.
+**~~Search sits over the ticket but searches the list.~~ Amended #1242 — it sits over the list it
+searches**, at that pane's trailing edge. It was over the ticket only because the row it was in ran
+the window's width; a field that narrows one column while standing over another was the same
+mis-placement the verbs had, and it goes for the same reason.
 
-**New Session is not in this room's row (#836).** Mail's window creates one kind of thing and
+**New Session is not in this room's band (#836).** Mail's window creates one kind of thing and
 spends one compose mark on it. This room creates a ticket, so `ShellToolbar` draws New Session in
 every other room and `⌘N` and the menu bar reach it from this one. Two compose marks a finger
 apart, each making a different thing, is the confusion the plus was originally chosen to avoid —
@@ -565,9 +638,63 @@ started on a ticket.
 **A Session the user starts BY HAND is untouched.** It opens on the rung last picked (#629), and a
 ticket's `Auto` is never filed as a pick — only a rung chosen on a live Session is.
 
-The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
-copy link — are icons beside `Start`, past a hairline. Nothing in this room is behind an unlabelled
-control.
+~~The two link verbs that would otherwise have hidden in that ellipsis — open on the code host,
+copy link — are icons beside `Start`, past a hairline.~~ **Deleted #1242** — see the toolbar
+section. The number is the link.
+
+### `Start` is ONE pill, and the command in it is the picker (#1242)
+
+**`Start` and the command it will send are one capsule, not two controls side by side.** The pill
+is the control; the word and the token are its segments, at `ArgoSpacing.hair`. Inside it `Start`
+draws no ground of its own — the capsule IS the ground, and a second fill inside it would be an
+edge within an edge, which is the thing `ArgoElevation.vessel` already refuses on the outside.
+
+**It answers the pointer on the neutral control ground, not in accent.** #899 spelled the command
+after the word because the press has to be aimable; making the word a filled accent chip inside a
+glass capsule put two grounds in one control and drew the eye to the half that is not the fact.
+
+**The token is the picker.** Pressing the command opens the menu; pressing the word starts. The
+thing you read is the thing you press to change, which is the only arrangement in which a chevron
+beside a fact is not a second control over the same fact.
+
+#### The picker offers SKILLS, and this is not #872 coming back
+
+**#872 deleted a chevron, and it is fair to ask whether this is the same chevron.** It is not, and
+the difference has to be stated here or the next reader cannot tell a reversal from a regression.
+
+#872's menu offered **Mode rungs** — `Read Only · Plan · Code · Auto` — over a Session that did
+not exist yet. Every open of it was a reader confirming the value that was already there, and the
+rung is honestly changeable one place downstream, over a live Session whose rung the control reads
+back. That reasoning is untouched: **`ArgoTicketsChrome` still draws no Mode picker, and the rung a
+ticket starts on is still `WorkCommand.startingMode` `Auto` (#941).**
+
+This menu offers **which skill the Session opens on**, which is a different fact with a different
+shape:
+
+- **It has more than one answer in practice.** `/implement`, `/design-to-code`, `/grill-me`,
+  `/triage`, `/prototype`, `/wayfinder` — and the resolved default is a *guess off a label*, not a
+  value the reader set. A guess a reader cannot override is a guess that is wrong in silence.
+- **Nothing downstream can change it.** A Mode is a live property of a running CLI and the composer
+  owns it. A command is the FIRST thing sent; once the Session has opened on `/implement` there is
+  no control anywhere that re-opens it on `/grill-me`. This is the only place the fact exists.
+- **The default is unchanged and still the press.** The word starts the resolved command, exactly
+  as it does today. The menu costs nothing to anyone who wants the default, which is the precise
+  test #872 applied and the precise test the Mode menu failed.
+
+**The menu names why the default matched**, so the guess is inspectable rather than magic —
+`/implement · matched by label`, `/design-to-code · the screen has a design`. It ends with **Fresh
+Session**, which opens the composer with no command in it.
+
+#### The Session carries the ticket, whichever skill runs
+
+**Every Session started from this room is attached to the ticket it was started on**, and the menu
+says so in its own foot. That is what makes the picker worth having: the agent has the ticket in
+context, so `/grill-me` grills *this* ticket, `/triage` triages *this* ticket, and a Fresh Session
+opens already knowing what it is about.
+
+The attachment is the Session's, not the command's. A Session opened with no command carries the
+ticket too — it was still started on one, which is the same reasoning #941 used to give the
+no-command case the same starting rung as every other.
 
 ### The marks, re-cut
 
@@ -579,22 +706,26 @@ that has to be learned costs more than the space a familiar mark saves.
 |---|---|---|---|
 | Start | `bolt` | `play.fill` | a bolt reads as speed or as power; neither is the act. Play is the one mark every transport control in the OS uses for *begin* |
 | New ticket | `square.and.pencil` | `plus`, then **`square.and.pencil` again (#836)** | the compose mark was given up to keep it off the same row as New Session. #836 took New Session out of this room instead, so the mark is free and this is the one thing the window creates — which is exactly what Mail spends its compose mark on |
-| Group by | `list.bullet.indent`, then `rectangle.grid.1x2` | **an `ellipsis` menu (#836)** | both were marks invented for an act the platform already houses: Mail keeps sort and group inside the ellipsis beside its filter. A mark a reader has to learn costs more than the row it saves |
+| Group by | `list.bullet.indent`, then `rectangle.grid.1x2`, then an `ellipsis` menu (#836) | **no mark at all (#1242)** | all three were answers to "how do we draw a control offering one option". The answer is that you do not draw it. `ArgoSymbol.backlogMenu` is deleted with the menu, so the mark cannot return without a second grouping to put behind it (#388) |
+| Open on host, Copy link | `arrow.up.forward.square`, `link` | **no marks at all (#1242)** | two unlabelled glyphs saying what the ticket's own number says. `#607` is the link, in `interaction.accent`; copy is the browser's gesture on a link |
 
 Filter kept `line.3.horizontal.decrease` — a funnel is the one glyph here nobody had to learn, and
 it is Mail's own. **Deleted #900**: the mark was never the problem, and a familiar glyph over an
 empty act is a worse trade than an unfamiliar one over a real act. See **the funnel is deleted**
 above.
 
-**An `ellipsis` menu is not the unlabelled overflow this design rules out.** It is a named control
-with named rows behind it; the overflow the study cut was the system's own last resort, holding
-controls nobody could see and nobody could name.
+~~**An `ellipsis` menu is not the unlabelled overflow this design rules out.**~~ **Moot #1242** —
+the argument was sound and the control it defended is gone anyway. It stands for the skill picker,
+which is the one menu this room still draws: a named control with named rows behind it, opened by
+pressing the fact it changes, is not the system's last-resort overflow.
 
 **The filter/group capsule took a rule between its two marks.** Sharing a vessel with no divider
-made a pair of unrelated acts read as one unfamiliar control — the same failure the `Start` split
-already avoids, and it takes the same hairline to fix. **Amended #900**: with the funnel gone the
-list's vessel holds one mark, and the rule went with the pair it was there to separate. `Start`
-keeps its own, because it still has two segments.
+made a pair of unrelated acts read as one unfamiliar control, and it took a hairline to fix.
+**Amended #900**: with the funnel gone the list's vessel holds one mark, and the rule went with the
+pair it was there to separate. **Amended #1242**: `Start`'s rule goes too, and the reason is the
+opposite of #900's. A rule separates two acts that happen to share a vessel; `Start` and the
+command it will send are **one** act said in two halves, so a rule between them would divide what
+the pill exists to join. `vesselGap` is the whole seam a segmented control needs.
 
 ### Liquid Glass, one material, every vessel
 
@@ -692,6 +823,15 @@ nothing is centred; past it the deck grows and the line length does not.
 **The head is title-first**: id in the machine caption, title on `sessionTitle`, then the status
 pair. No scope badge, no produced-by field (#272).
 
+**Amended #1242: the id IS the link, and it is drawn as one.** `#607` takes `interaction.accent`
+and opens the ticket on its code host — the ink this app already spends on the claimant line, the
+Delivery chips and every other route out. It replaces two unlabelled marks that said the same
+thing from the toolbar; the number was always the address, and the room was spending a glyph to
+repeat it. **Where the Binding cannot address the ticket in a browser at all** — a Linear team id
+names no page, which is what `TicketAddress` returns `nil` for — the id stays `machineCaption` and
+is not a control. Drawn as a link and inert is the fault #872 is about; drawn as a fact is the
+truth.
+
 **Amended #1092: the head names its live claimant.** A fourth line, under the status pair, in the
 same `headStep` rhythm the three above it already keep — no new measurement, because the head's
 own spacing already fits a fourth child. It is the ticket's own route to the Session working it,
@@ -752,7 +892,8 @@ happens at leaves.
 
 **No provider bound: the room hides whole** (#272). No sidebar views, no list, no ticket — one
 centred panel saying nothing has been read yet, and a Connect action. The connection chip goes
-quiet with it, and **the toolbar empties**: there is nothing to create into.
+quiet with it, and **the panes' headers go with the panes**: there is nothing to create into, and
+no pane left to draw a header on.
 
 **An empty backlog is a different page.** The provider answered, and the answer was nothing. The
 sidebar and its views stay (all reading zero), the hero shows the backlog-clear tier, and the
@@ -787,8 +928,9 @@ colour and material:
   dependent, whose edge is drawn dashed in the same ink.
 - Closed work behind the line is `text.disabled` and draws no edges.
 - The canvas is an opaque Tickets-room surface on `surface.base`. It is not glass and not a card.
-- The Route replaces both deck panes and carries its own head, so the room's toolbar empties for
-  it too.
+- The Route replaces both deck panes and carries its own head, so **both pane headers go with the
+  panes they belong to** — which is the shape doing what it says: a header that survived the pane
+  under it would be a control over nothing.
 
 `route.png` is shot at a 1600 window rather than 1280, because #334's canvas **widens when the
 work needs room** rather than compressing to fit.
@@ -819,7 +961,7 @@ Surface sheets, beside the surface, per `rules/swift.md` — a measure is not a 
 |---|---|---|
 | List width | **520**, where it RESTS | the smallest width at which all twelve real titles read whole at depth three; at 480 three of them clip. Not a ceiling since #844 — the reader drags the seam from here, to 760 — see **the seam between the panes** |
 | `minimumWidth` | **342**, derived | what the pane gives up to when the window cannot afford 520 (#836): the narrowest window less the sidebar, less a pane of prose, less the two seams between them. Titles truncate at the tail, which they already do — the ticket pane is what must not be squeezed. Since #844 this is also the SEAM's floor, and it is named once in `ArgoLayout.backlogWidths` |
-| `bandHeight` | **44**, a FLOOR | the heading at the head of the pane — the title and its count. A floor because the two lines are set at the reader's own type size. The controls that narrow the list are in the window's row now, so this measures words only |
+| `bandHeight` | **44**, a FLOOR | the HEADING at the head of the pane — the title and its count. A floor because the two lines are set at the reader's own type size. This measures words only. **Amended #1242**: the list's two controls sit above it in `BacklogPaneHeader`, which is the title strip and adds nothing to this number — the name stays `bandHeight` for the heading it has always measured, and it is not #836's band |
 | `bandInsetX` | `ArgoSpacing.comfortable` 12 | the gutter again, so the title starts on the vertical its rows do |
 | `labelsAppearAt` | **440** | the narrowest pane that still carries a row's label chips (#844). The chips are rigid, so under this they take the title's characters rather than give up their own |
 | `labelLimit` | **2**, then a `+n` chip | the row DISTINGUISHES one ticket from the next; the whole set is the ticket pane's |
@@ -840,20 +982,22 @@ and this sheet holds what `ArgoBacklogList` declares.
 
 | Measurement | Value | Reason |
 |---|---|---|
-| Row height | **46** | the shell's existing titlebar strip, unchanged — not restated in code, where `ArgoToolbarVessel` already names the band |
+| Band height | **the window's own title strip** | **Amended #1242.** A pane's header is drawn IN the strip, not under it: the deck climbs past the safe area and the band is `window.safeAreaInsets.top` tall, the way `DeckCanopy` already reaches. There is no number here to disagree with the system's, and a header measured to a constant instead would be #836's 44pt band again |
+| `paneHeaderInset` | the pane's **own** column inset — 16 in the list, `ArgoTicketDetail.inset` in the ticket | **Added #1242.** A header belongs to its pane, so it starts where that pane's content starts. A control carrying its own container is judged by the CONTAINER's edge; the mark inside sits inboard by the vessel's inset, which is the vessel's business |
 | ~~`listBlockWidth`~~ | **gone (#836)** | it claimed 520 inside one toolbar region to reach the column boundary, and macOS begins that region after the shell's own items. The list's controls are in the list's band now, aligned by construction — which is also what makes the pane safe to drag (#844): a band has no width to keep in step with the seam |
-| `iconButton` | **26 × 26** inside a 5pt vessel inset — **amended #1243** | it was 26 × 24 inside a 3pt inset, a box this room measured for itself. Four headers measured four, so the box left this sheet: it is `ArgoControlBox.icon` now, and the inset is what makes a capsule of them stand at the band's own 36 — the 30pt capsule beside the shell row's 36pt circle was the whole of what looked wrong |
+| ~~`iconButton`~~ | **gone — `ArgoControlBox` (#1243)** | it was 26 × 24 inside a 3pt inset, a box this room measured for itself. Four headers measured four, so the box left this sheet: it is `ArgoControlBox.icon` now — 26 SQUARE in a 5pt vessel inset — and the inset is what makes a capsule of them stand at the band's own 36. The 30pt capsule beside the shell row's 36pt circle was the whole of what looked wrong. **#1242 depends on this**: the compose CIRCLE in the list's header and the Start pill in the ticket's are one height only because both are derived from that box |
 | `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make. **Amended #1243**: the rung is not this room's to pass either — `ArgoIconButton` draws at `control` |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
 | Vessel shape | `Capsule()` | a capsule is a shape, not a radius — no `ArgoRadius` rung applies |
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
-| ~~Menu offset~~ | **gone (#872)** | it measured `ModeMenu`'s popover, which was never implementable — AppKit positions and draws its own — and the menu it described is deleted. `BacklogMenu`'s popover is AppKit's on the same terms |
+| ~~Menu offset~~ | **gone (#872)** | it measured `ModeMenu`'s popover, which was never implementable — AppKit positions and draws its own — and the menu it described is deleted. The skill picker's popover is AppKit's on the same terms |
+| `splitDividerHeight` | ~~15~~ **gone (#1242)** | it ruled the Start vessel off the two link verbs, and those are deleted. One pill has one seam, and that seam is `vesselGap`, not a drawn rule |
 
 ### `ArgoTicketDetail` — `ArgoUI/Shell/Tickets/Detail/`
 
 | Measurement | Value | Reason |
 |---|---|---|
-| ~~`bandHeight`~~ | **gone** | this pane has no band: the ticket's verbs are in the window's row with the rest of the room's controls, which is a line of height back for the words |
+| ~~`bandHeight`~~ | **still gone (#1242)** | the pane carries a header again, but it states no height of its own. #836's band declared 44 and drew below the title strip, which is the line the words lost. `TicketPaneHeader` is the window's strip, reached into — `window.safeAreaInsets.top` and no constant. **A number here would be the bug returning**, because a constant cannot be the strip |
 | Reading measure | `ArgoFeedRow.column` 720 | reused, not redeclared: the feed already settled what a line of Argo's prose runs to |
 | `inset` | `ArgoSpacing.section` 24 | the column off the deck's edges |
 | `factStripGap` | `ArgoSpacing.section` 24 column / `ArgoSpacing.base` 8 row | between fact pairs; the pair's own key-to-value gap is `snug` 6 |
@@ -885,17 +1029,21 @@ for; anything not listed is stock used directly.
 | `ClosureMark` | atom | a `Text` in the trailing region | **Added #1075**: how a closed row stopped being open — `resolved`, `ruled out`, or `closed` where the port could not read which. A word rather than a glyph, on `text.tertiary`. It never contends with `BlockageMark`: a closed ticket's edges are not read, and an open one has no closure to draw |
 | `BacklogMore` | atom | a full-width `Button` at the foot of the list | **Added #1075**: there is another page of closed tickets, and this reads it. Drawn only on a cursor the provider served, so it cannot outlive the last page |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
-| `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
-| `BacklogControls` | molecule | an `ArgoIconButtonGroup` | `BacklogMenu`, alone. Split out of `BacklogHeader` when the controls returned to the row. **Amended #900**: the funnel and the rule beside it are gone |
-| `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading and its count, and nothing else. **Renamed #836** from `BacklogToolbarLabel`; the controls left it when the row was reassembled |
-| ~~`TicketBand`~~ | — | **gone** | added by #836 to carry New ticket and the ticket's verbs over their column; both are toolbar items again |
-| `BacklogMenu` | atom | `Menu` under an `ellipsis` | how the list is ordered. **Added #836**: Mail keeps sort and group here rather than on a mark of their own |
+| ~~`TicketsToolbar`~~ | — | **gone (#1242)** | the window row, and every control the room had. Three answers: #816 claimed the column boundary from one region, #836 split it into bands under the panes, then it was reassembled as one row. The fourth answer gives each pane its own header, so this room contributes nothing to `.toolbar` at all — see the column question |
+| `TicketsPaneHeader` | atom | an `HStack` in the pane, reaching into the title strip | **Added #1242.** The band itself: the window's own strip height via `reach`, the pane's own column inset, a leading slot and a trailing one. No rule at its foot — the pane's glass edge is what separates it |
+| `BacklogPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** New ticket leading, search trailing. It is the LIST's, so both act on the list |
+| `TicketPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** The `StartControl` pill, leading, and nothing else. Empty of controls with no ticket open — it keeps its band, because a band that collapsed would move every pane beside it |
+| ~~`BacklogControls`~~ | — | **gone (#1242)** | it wrapped `BacklogMenu` alone, and the menu is gone with it |
+| `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading and its count, and nothing else. **Renamed #836** from `BacklogToolbarLabel`; the controls left it when the row was reassembled. **Amended #1242**: it sits UNDER the pane's header now, which is where words about a list belong relative to the controls on it |
+| ~~`TicketBand`~~ | — | **gone** | added by #836 to carry New ticket and the ticket's verbs over their column, then deleted when both became toolbar items. `TicketPaneHeader` is not it coming back: #836's band was drawn UNDER the title strip and cost the pane 44pt, and this one is drawn IN it |
+| ~~`BacklogMenu`~~ | — | **gone (#1242)** | how the list is ordered. It opened onto one stated row after #900, and a menu whose only content is a sentence is a sentence behind a click. It returns with a second grouping (#388) |
 | ~~`ToolbarVessel`~~ | atom | **lifted to `ArgoIconButtonGroup` (#1243)** | it grouped icon buttons in a capsule with no border and no shadow, and it did it well — but it was `internal` to this room, so every other header hand-rolled the same stack at its own size. Same shape, in `ArgoAtoms`, where the shell row and the composer can reach it |
 | ~~`ToolbarIcon`~~ | atom | **lifted to `ArgoIconButton` (#1243)** | one glyph in the settled box, with the press, the tooltip and the spoken label |
-| `NewTicketButton` | atom | an `ArgoIconButton` in its own `ArgoIconButtonGroup` | the call-to-action; survives the empty backlog |
-| `StartControl` | molecule | `Button` in one vessel, with the two link icons | the verb, spawning in `Auto` (**amended #941**). **Amended #872**: it was `Button` + `Menu`, and the chevron is gone |
+| `NewTicketButton` | atom | an `ArgoIconButton` in its own `ArgoIconButtonGroup` | the call-to-action; survives the empty backlog. **Amended #1242**: one mark in a container of its own is a 36pt CIRCLE, exactly as tall as the Start pill in the pane beside it |
+| `StartControl` | molecule | ONE `Capsule` with two segments | the verb and the command it will send, spawning in `Auto` (**amended #941**). **Amended #872**: it was `Button` + a Mode chevron, and that chevron is gone. **Amended #1242**: the two link icons and their rule are deleted, and the word and the command are segments of one pill rather than a button with a label — the command segment is the skill picker |
+| `StartSkillMenu` | atom | `Menu` on the command segment | **Added #1242.** Which skill the Session opens on, and a Fresh Session with none. Not #872's chevron: that offered a Mode with one honest answer and a downstream control that owns it; this offers a command with six, and nothing downstream can change it |
 | ~~`ModeMenu`~~ | — | **gone (#872)** | the four Mode rungs. The rung is the composer's, over a live Session (#608) |
-| `BacklogSearchField` | atom | `.searchable` field | searches the list; sits at the trailing edge |
+| `BacklogSearchField` | atom | `.searchable` field | searches the list. **Amended #1242**: at the trailing edge of the LIST pane rather than of the window — it was over the ticket only because the row it sat in ran the window's width |
 | `TicketDetail` | organism | a `ScrollView` | one column; no inner split |
 | `TicketHead` | molecule | a `VStack` of `Text` | id, title, status pair, then the claimant line (#1092) |
 | `StatusPair` | atom | `HStack` + `Divider` | the provider's word, and Argo's bucket only where it is not the same word (#893) |
