@@ -118,6 +118,72 @@ struct VisualContractTests {
         )
     }
 
+    // MARK: - The code host's own two inks
+
+    /// The pair is BORROWED — green for open, purple for merged, because that is what a reader
+    /// arrives already knowing — so the claim here is that borrowing them cost nothing: neither
+    /// resolves near a state, the brand or a diff ink, all of which a roster row draws inches
+    /// away.
+    ///
+    /// `open` is the pair's nearest miss, one hue from `state.running`, and this is where that
+    /// number is held rather than waived.
+    @Test(arguments: VisualContractFixture.palettes)
+    func `a pull request never reads as a state, the brand or a diffstat`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        let neighbours = palette.state.all + palette.diff.all
+            + [("accent", palette.interaction.accent)]
+        for ink in palette.delivery.all {
+            for neighbour in neighbours {
+                #expect(
+                    ink.color.distance(to: neighbour.color) > 0.25,
+                    "delivery.\(ink.name) resolves onto \(neighbour.name)",
+                )
+            }
+        }
+    }
+
+    @Test(arguments: VisualContractFixture.palettes)
+    func `open and merged are told apart by more than a hue nobody can name`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        #expect(
+            appearance.palette.delivery.open
+                .distance(to: appearance.palette.delivery.merged) > 0.25,
+        )
+    }
+
+    // MARK: - The Plan's ink is the brand, banked
+
+    /// Progress is not a state, so it takes the brand hue rather than a status colour — and
+    /// `still` is that hue at rest, not a second colour. Held as SAME HUE rather than as a
+    /// literal, so a light appearance re-banks it without being allowed to re-choose it.
+    @Test(arguments: VisualContractFixture.palettes)
+    func `a stopped plan is the accent banked, not a colour of its own`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        #expect(palette.progress.still.hueDistance(to: palette.interaction.accent) <= 5)
+        #expect(
+            palette.progress.still.relativeLuminance < palette.interaction.accent
+                .relativeLuminance,
+        )
+    }
+
+    /// The banking has a floor: `still` says HOW FAR THE WORK GOT, and `text.disabled` is the ink
+    /// of an absence. Drop it to there and a finished plan reads as a plan nobody started.
+    @Test(arguments: VisualContractFixture.palettes)
+    func `a stopped plan stays more present than the ramp's own inert rung`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let base = appearance.palette.surface.base
+        #expect(
+            appearance.palette.progress.still.contrastRatio(on: base)
+                > appearance.palette.text.disabled.contrastRatio(on: base),
+        )
+    }
+
     /// A hue in this palette means something — brand, one of four operational states, one of two
     /// diff inks — and a rung of the text ramp is a loudness, not a meaning.
     @Test(arguments: VisualContractFixture.palettes)

@@ -42,6 +42,8 @@ struct VisualContractCoverageTests {
             Group("interaction", palette.interaction, palette.interaction.all),
             Group("state", palette.state, palette.state.all),
             Group("diff", palette.diff, palette.diff.all),
+            Group("delivery", palette.delivery, palette.delivery.all),
+            Group("progress", palette.progress, palette.progress.all),
             // The map's own two colour groups. They are drawn by `AtlasContractSpecimen` rather
             // than by `ContractSpecimen` — one sheet per subject, and the Atlas promoted five
             // families at once (#1142) — but the guard is the same one: a role missing from its

@@ -176,6 +176,31 @@ public extension ArgoColor {
         return (lighter + 0.05) / (darker + 0.05)
     }
 
+    /// Where the colour sits on the wheel, in degrees — the inverse of
+    /// `init(hue:saturation:lightness:)`, and the measure a claim about SAME HUE is made in. A
+    /// grey has no hue, and reads as zero rather than as a number nobody should trust.
+    var hue: Double {
+        let highest = max(red, green, blue)
+        let spread = chromaticSpread
+        guard spread > 0 else { return 0 }
+        let sixths: Double = if highest == red {
+            (green - blue) / spread
+        } else if highest == green {
+            2 + (blue - red) / spread
+        } else {
+            4 + (red - green) / spread
+        }
+        let degrees = sixths * 60
+        return degrees < 0 ? degrees + 360 : degrees
+    }
+
+    /// How far two hues are apart on the wheel, the short way round — so 359° and 1° are two
+    /// degrees apart rather than three hundred and fifty-eight.
+    func hueDistance(to other: ArgoColor) -> Double {
+        let apart = abs(hue - other.hue).truncatingRemainder(dividingBy: 360)
+        return min(apart, 360 - apart)
+    }
+
     /// How far the channels spread. Zero is a pure grey; a navy would push this open.
     var chromaticSpread: Double {
         max(red, green, blue) - min(red, green, blue)
