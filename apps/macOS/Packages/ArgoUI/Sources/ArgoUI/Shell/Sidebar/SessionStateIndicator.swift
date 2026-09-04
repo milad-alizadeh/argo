@@ -11,21 +11,20 @@ import SwiftUI
 struct SessionStateIndicator: View {
     @Environment(\.argo) private var argo
 
-    /// The lane the glow crosses, in the dot's own widths — the same way `ArgoFeedRow` states the
-    /// thread's travel, and for the same reason: the sweep is read against the thing it crosses.
-    ///
-    /// It reaches less than the gap to the title (`ArgoSpacing.base`) on each side, so a pass
-    /// leaving the dot dies in the gutter rather than washing the first letter of a name.
-    private static let sweepLane: CGFloat = 2.5
+    /// How big the glow is, in the dot's own widths. Wider than the dot, or the light would be
+    /// entirely behind it — measured on the render, where a glow at the dot's own width read as a
+    /// flicker. It stays inside the gap to the title (`ArgoSpacing.base`), so the halo dies in the
+    /// gutter rather than washing the first letter of a name.
+    private static let glowSpread: CGFloat = 1.7
 
-    /// How big the travelling light is, in the same unit. Wider than the dot, or a pass sitting
-    /// over the dot would be entirely behind it and the sweep would only ever show at its ends —
-    /// measured on the render, where a light at the dot's own width read as a flicker.
-    private static let sweepLight: CGFloat = 1.7
+    /// The share of the rung's glow the breath never goes below. The light rises and falls; it does
+    /// not switch. A halo that reached zero would read as a blink, which says a Turn started and
+    /// stopped rather than one that is running.
+    private static let restingGlow: Double = 0.4
 
     let state: ArgoOperationalState?
     /// When the Turn this dot is reporting began, where Argo owns that stamp. It is what the loop
-    /// ages the pass off; `nil` leaves it ageing from the row's own first frame, which is all a
+    /// ages the breath off; `nil` leaves it ageing from the row's own first frame, which is all a
     /// Session Argo only observes has ever earned.
     var turnStartedAt: Date?
 
@@ -34,10 +33,10 @@ struct SessionStateIndicator: View {
             if let state {
                 Circle()
                     .fill(state.tint(in: argo.color))
-                    // BEHIND the dot, and wider than it: the glow is light crossing the dot, and
-                    // the dot keeps its own ink whatever the pass is doing. A background takes no
+                    // BEHIND the dot, and wider than it: the glow is light around the dot, and the
+                    // dot keeps its own ink whatever the breath is doing. A background takes no
                     // part in layout, so nothing here moves a title.
-                    .background { sweep(of: state) }
+                    .background { breath(of: state) }
             } else {
                 Circle().strokeBorder(argo.color.text.tertiary, lineWidth: ArgoStroke.hairline)
             }
@@ -46,72 +45,79 @@ struct SessionStateIndicator: View {
         .accessibilityHidden(true)
     }
 
-    /// One pass of light ACROSS the dot, driven by `ArgoMotion.working` one pass at a time through
-    /// the loop the feed's live surfaces already run off. The same sweep as the thread across the
-    /// measure and the wash over a call in flight, at the width of a 6pt mark: a light that
-    /// travels at one strength and leaves, never a ring that expands and dies. Argo's live surfaces
-    /// are one family, and a second idiom on the roster would read as a second claim.
+    /// The dot BREATHING: one rise and fall of the halo per pass of `ArgoMotion.working`, through
+    /// the loop the feed's live surfaces already run off. Argo's live surfaces are one family, and
+    /// a second clock on the roster would read as a second claim.
     ///
     /// The period is `ArgoWaitAge`'s, read off `turnStartedAt`, so a dot on a Turn six minutes in
-    /// sweeps slower than one three seconds in and glows lower with it.
+    /// breathes slower than one three seconds in and glows lower with it.
     ///
-    /// Under Reduce Motion the loop stops and no light crosses at all — a loop has no shorter
-    /// answer. The dot keeps its FULL running tint there, so the still still reads as running:
-    /// what the reader loses is the movement, not the state.
-    @ViewBuilder private func sweep(of state: ArgoOperationalState) -> some View {
+    /// Under Reduce Motion the loop stops and the halo parks at its resting strength: the still is
+    /// the breath's own floor, so a reader who turned movement off loses the movement, not the
+    /// state.
+    @ViewBuilder private func breath(of state: ArgoOperationalState) -> some View {
         if state == .running {
             FeedIonLoop { phase, aged in
-                if let phase {
-                    glow(of: state)
-                        .offset(x: travelled(to: phase))
-                        .opacity(aged.glow)
-                }
+                glow(of: state)
+                    .modifier(BreathingGlow(
+                        phase: phase ?? 0,
+                        peak: aged.glow,
+                        resting: Self.restingGlow,
+                        isStill: phase == nil,
+                    ))
             }
-            .frame(width: lane, height: lane)
-            // The lane falls off in every direction, not just along the travel: a straight-edged
-            // mask on a blurred thing cuts a visible band above and below the dot, which reads as
-            // a drawn plate rather than as light.
-            .mask { fade }
-            // The loop ages the pass off this. Without it a window opened onto a Turn six minutes
-            // in would sweep at the freshest rung, and scrolling the row off and back would restart
-            // the wait — the two readings the feed can only degrade to and the roster need not.
+            // The loop ages the breath off this. Without it a window opened onto a Turn six
+            // minutes in would breathe at the freshest rung, and scrolling the row off and back
+            // would restart the wait.
             .environment(\.argoWaitStarted, turnStartedAt)
         }
     }
 
-    /// The light itself: the dot's own ink, blurred once. The same shape as
-    /// `FeedWorkingThread`'s filament — a blurred copy that takes the transform, never a filter
-    /// over a moving element, which repaints every frame of a loop that never ends.
+    /// The light itself: the dot's own ink, blurred once. The same shape as `FeedWorkingThread`'s
+    /// filament — a blurred copy, never a filter over a moving element, which repaints every frame
+    /// of a loop that never ends.
     private func glow(of state: ArgoOperationalState) -> some View {
-        let size = ArgoIconSize.statusDot * Self.sweepLight
+        let size = ArgoIconSize.statusDot * Self.glowSpread
         return Circle()
             .fill(state.tint(in: argo.color))
             .frame(width: size, height: size)
             .blur(radius: ArgoElevation.bloom.blur)
     }
+}
 
-    /// Where along the lane the pass sits, measured from the dot. Both ends are a half-lane out, so
-    /// the light enters and leaves rather than appearing on top of the dot.
-    private func travelled(to phase: Double) -> CGFloat {
-        (phase - 0.5) * lane
+/// One breath of the halo, as a function of the loop's phase.
+///
+/// `Animatable` is the whole point. SwiftUI interpolates a modifier's `animatableData` and rebuilds
+/// its body at each step, so the curve below is evaluated ALONG the pass. An opacity computed in a
+/// view body would instead be interpolated between its two end values, and a curve that starts and
+/// ends in the same place would not animate at all.
+private struct BreathingGlow: ViewModifier, Animatable {
+    var phase: Double
+    /// The rung's own glow, which is the strength at the top of the breath.
+    let peak: Double
+    /// The share of `peak` the bottom of the breath holds.
+    let resting: Double
+    /// Whether movement is off, in which case the halo parks at the bottom of the breath.
+    let isStill: Bool
+
+    /// `nonisolated` because `ViewModifier` is main-actor isolated and `Animatable` is not:
+    /// SwiftUI interpolates this off the main actor, and the conformance does not compile without
+    /// saying so.
+    nonisolated var animatableData: Double {
+        get { phase }
+        set { phase = newValue }
     }
 
-    private var lane: CGFloat {
-        ArgoIconSize.statusDot * Self.sweepLane
+    func body(content: Content) -> some View {
+        content.opacity(peak * (isStill ? resting : strength))
     }
 
-    /// Full strength over the dot and gone by the lane's edge, so a pass gathers as it arrives and
-    /// dies as it leaves without an edge anywhere for the eye to catch.
-    private var fade: some View {
-        RadialGradient(
-            gradient: Gradient(stops: [
-                .init(color: .white, location: 0.5),
-                .init(color: .clear, location: 1),
-            ]),
-            center: .center,
-            startRadius: 0,
-            endRadius: lane / 2,
-        )
+    /// A cosine rise and fall over the pass: `resting` at both ends, full in the middle. Equal ends
+    /// are what makes the loop's re-entry invisible — the phase snaps back to 0 between passes, and
+    /// a curve that did not close would snap the light with it.
+    private var strength: Double {
+        let rise = (1 - cos(2 * .pi * phase)) / 2
+        return resting + (1 - resting) * rise
     }
 }
 
@@ -125,7 +131,7 @@ struct SessionStateIndicator: View {
     .argoAppearance()
 }
 
-// The half a still cannot carry: light has to cross the running dot and the other three have to sit
+// The half a still cannot carry: the running dot has to breathe and the other three have to sit
 // there, in one frame, so the difference is watchable rather than asserted.
 #Preview("State dot — the running dot with movement off") {
     HStack(spacing: ArgoSpacing.comfortable) {
