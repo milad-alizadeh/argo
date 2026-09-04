@@ -13,6 +13,19 @@
 set -eu
 
 APP_DIR="apps/macOS"
+
+# This one scans the whole tree and ignores its arguments, so every run of it is the same
+# question about the same content — which makes it the easiest of the three to answer from a
+# verdict already given (#1377). Measured at 43 s of wall-clock for 29 s of CPU on the day
+# that ticket was written, and it runs on every push and every pre-commit.
+# shellcheck source=scripts/gate-cache.sh
+. "$(dirname "$0")/gate-cache.sh"
+# shellcheck source=scripts/metrics.sh
+. "$(dirname "$0")/metrics.sh"
+if step_begin swift-boundaries apps/macOS scripts; then
+  echo "swift-boundaries: ok (this tree passed at $STEP_SINCE)"
+  exit 0
+fi
 # Edge 7's own script, which owns the patterns a design constant is recognised by. Called rather
 # than copied: two greps for one rule are two rules the day one of them is edited.
 TOKENS="$(dirname "$0")/check-design-tokens-swift.sh"
@@ -726,4 +739,5 @@ if [ "$failed" -eq 1 ]; then
   exit 1
 fi
 
+step_end swift-boundaries apps/macOS scripts
 echo "swift-boundaries: ok"

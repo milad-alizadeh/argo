@@ -64,6 +64,23 @@ for path in "$@"; do
   esac
 done
 
+# A whole-tree lint is a verdict about content, so one already given can be read back (#1377).
+# A run naming staged paths is asking about those paths and is never answered from a cache.
+if [ "$#" -eq 0 ]; then
+  # shellcheck source=scripts/gate-cache.sh
+  . "$(dirname "$0")/gate-cache.sh"
+  # shellcheck source=scripts/metrics.sh
+  . "$(dirname "$0")/metrics.sh"
+  if step_begin swiftlint apps/macOS scripts; then
+    echo "swift-lint: this tree was linted at $STEP_SINCE — not linted again"
+    exit 0
+  fi
+  # `cd` in a subshell, so the paths step_end reads are still relative to the repo root.
+  (cd "$APP_DIR" && swiftlint lint --strict --quiet)
+  step_end swiftlint apps/macOS scripts
+  exit 0
+fi
+
 cd "$APP_DIR"
 # --strict makes every warning an error. The config declares errors already; this catches
 # the rules whose severity is not configurable.
