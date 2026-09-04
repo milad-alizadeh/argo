@@ -36,6 +36,9 @@ extension SpecimenRegistry {
         // the system's neutral grey whatever the accent says, so an inactive render here proves
         // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
+        // The strip at the sidebar's narrowest — where its four segments have least room, and
+        // where a fifth room would first go wrong (#1163).
+        SpecimenEntry("narrowRoomStrip") { NarrowRoomStripSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
         // The travel only shows in motion; a still catches the light at one point along it, and
         // catches four rows at four different points (#1291).

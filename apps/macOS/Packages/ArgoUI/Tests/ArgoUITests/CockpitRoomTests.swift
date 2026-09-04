@@ -11,6 +11,7 @@ struct CockpitRoomTests {
         #expect(CockpitRoom.sessions.tooltip == "Sessions — Command 1")
         #expect(CockpitRoom.tickets.tooltip == "Tickets — Command 2")
         #expect(CockpitRoom.code.tooltip == "Code — Command 3")
+        #expect(CockpitRoom.atlas.tooltip == "Atlas — Command 4")
     }
 
     @Test
@@ -18,6 +19,7 @@ struct CockpitRoomTests {
         #expect(CockpitRoom.sessions.voiceOverLabel == "Sessions, Command 1")
         #expect(CockpitRoom.tickets.voiceOverLabel == "Tickets, Command 2")
         #expect(CockpitRoom.code.voiceOverLabel == "Code, Command 3")
+        #expect(CockpitRoom.atlas.voiceOverLabel == "Atlas, Command 4")
     }
 
     /// The literal, not the token: `symbol` is an unchecked name from an EXTERNAL catalog, and a
@@ -40,5 +42,11 @@ struct CockpitRoomTests {
     func `no two rooms draw the same mark`() {
         let marks = Set(CockpitRoom.allCases.map(\.symbol))
         #expect(marks.count == CockpitRoom.allCases.count)
+    }
+
+    /// The strip's agreed order, and the fourth segment the Atlas took (#1163).
+    @Test
+    func `the strip runs Sessions, Tickets, Code, Atlas`() {
+        #expect(CockpitRoom.allCases == [.sessions, .tickets, .code, .atlas])
     }
 }
