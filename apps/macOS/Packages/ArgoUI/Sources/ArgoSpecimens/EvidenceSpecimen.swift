@@ -24,7 +24,7 @@ struct EvidenceSpecimen: View {
     /// command is the most header the narrowest panel ever has to carry.
     @ViewBuilder private func panel(_ evidence: FeedEvidence?) -> some View {
         if let evidence {
-            EvidencePanel(evidence: evidence, dismiss: {})
+            EvidencePanel(evidence: evidence)
                 .frame(width: ArgoLayout.evidencePanelMinimumWidth)
         }
     }

@@ -10,19 +10,19 @@ package struct EvidencePanel: View {
     let evidence: FeedEvidence
     /// Which step the feed pointed at, if any. A position rather than a scroll offset.
     var current: Int?
-    let dismiss: () -> Void
 
     /// Which way the patches are being read. Re-seeded whenever the evidence changes.
     @State private var reading: EvidenceReading = .source
 
     /// The header rides INSIDE the scroll, above the results, rather than pinned over them: a
-    /// pinned bar below the canopy would hide this column's content from the glass. Escape and the
-    /// row that opened the panel both still close it once the ✕ has scrolled away.
+    /// pinned bar below the canopy would hide this column's content from the glass. The panel
+    /// carries no close button of its own: Escape and the row that opened it both close it, and
+    /// the toolbar's evidence toggle is the affordance that shows.
     package var body: some View {
         ScrollViewReader { pane in
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-                    EvidenceHeader(evidence: evidence, reading: $reading, dismiss: dismiss)
+                    EvidenceHeader(evidence: evidence, reading: $reading)
                     DeckSeparator()
                     results
                 }
@@ -66,10 +66,9 @@ package struct EvidencePanel: View {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(evidence: FeedEvidence, current: Int? = nil, dismiss: @escaping () -> Void) {
+    package init(evidence: FeedEvidence, current: Int? = nil) {
         self.evidence = evidence
         self.current = current
-        self.dismiss = dismiss
     }
 }
 
