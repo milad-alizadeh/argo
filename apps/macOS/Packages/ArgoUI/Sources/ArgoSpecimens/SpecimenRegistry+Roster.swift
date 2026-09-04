@@ -33,7 +33,9 @@ extension SpecimenRegistry {
         SpecimenEntry("roster") { RosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
         // No swiped-row entry: `.swipeActions` opens only from a real gesture, so there is no state
-        // to hand the harness. It is an XCUITest claim (`ArgoE2ETests`), not a PNG.
+        // to hand the harness. Nor is it an XCUITest claim: neither `XCUIElement.scroll(byDeltaX:)`
+        // nor a phased `CGEvent` scroll opens the action, so it is a hand's frame or nothing
+        // (#1257).
         SpecimenEntry("archivedRoster") { ArchivedRosterSpecimen() },
         // Reachable only by clicking the foot.
         SpecimenEntry("openArchivedRoster") { ArchivedRosterSpecimen(isRevealed: true) },

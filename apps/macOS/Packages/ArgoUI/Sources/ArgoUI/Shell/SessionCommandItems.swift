@@ -26,6 +26,6 @@ public struct SessionCommandItems: View {
 
     private var archiveTitle: String {
         guard let commands else { return SessionArchiveProjection.fallbackTitle }
-        return SessionArchiveProjection.title(isArchived: commands.isArchived)
+        return SessionArchiveProjection.menuTitle(isArchived: commands.isArchived)
     }
 }
