@@ -99,7 +99,20 @@ extension FeedTableCoordinator {
         // nothing will ever correct AppKit's row geometry afterwards (#1132). Whole document,
         // because a table built fresh over a kept store has resolved none of it.
         converge(table)
+        #if DEBUG
+            let last: Int = table.numberOfRows - 1
+            let lastRect: NSRect = table.rect(ofRow: last)
+            let asked: CGFloat = measuredHeight(at: last, in: table)
+            print("ADOPT-DIAG rows=\(table.numberOfRows) doc=\(document.totalHeight) " +
+                "afterWalk=\(table.frame.height) lastRect=\(lastRect) " +
+                "delegateLast=\(asked) rowHeight=\(table.rowHeight)")
+        #endif
         adopt(document.totalHeight, on: table)
+        #if DEBUG
+            print("ADOPT-DIAG afterAdopt=\(table.frame.height)")
+            scroller?.layoutSubtreeIfNeeded()
+            print("ADOPT-DIAG afterLayout=\(table.frame.height) last=\(table.rect(ofRow: last))")
+        #endif
         place()
     }
 
