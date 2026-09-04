@@ -56,8 +56,11 @@ public struct FoundationSpecimen: View {
                 Button("Checkout…") {}
                 Button("Fetch") {}
             } label: {
-                // The word an unnameable checkout degrades to. The roster's own answer — draw no
-                // line — is not open to a control that must be labelled.
+                // A stand-in vessel for the token contract, not a control the shell ships — the
+                // branch chrome this was drawn against went with #1232. It stays because what
+                // #375 measures here is a second toolbar vessel and its glass, and a labelled
+                // control cannot answer an absent branch the way the roster does, by drawing
+                // no line.
                 Label(
                     selected.workspace?.branch ?? "unknown",
                     systemImage: "arrow.trianglehead.branch",

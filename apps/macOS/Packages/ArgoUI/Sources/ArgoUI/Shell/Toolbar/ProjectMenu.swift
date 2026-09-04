@@ -28,17 +28,15 @@ package struct ProjectMenu: View {
                 }
             }
             .pickerStyle(.inline)
-        }
-        if !rows.isEmpty {
             Divider()
-            // The one verb that acts on the Project already picked above, rather than on the
-            // registered set below — so it sits with the picker, not with `Add Project…`. It was
-            // the only item in the header's branch control, which promised a choice of branch it
-            // never had (#1232); the shortcut is the same one that control carried.
+            // Inside the `else`, so it is absent rather than disabled when nothing is registered:
+            // with no active Project there is no checkout to read again, and a live verb over a
+            // checkout Argo does not have is the `CONTEXT.md` degrade-down rule broken. It sits
+            // with the picker because it acts on the Project already chosen, not on the registered
+            // set below (#1232).
             //
-            // Absent, not disabled, when nothing is registered: with no active Project there is no
-            // checkout to read again, and a live item over a checkout Argo does not have is the
-            // `CONTEXT.md` degrade-down rule broken.
+            // The shortcut only fires while this menu is open — a `keyboardShortcut` outside the
+            // menu bar reaches no further, which is the reach it had on the control it came from.
             Button(
                 "Refresh checkout",
                 systemImage: ArgoSymbol.retry,

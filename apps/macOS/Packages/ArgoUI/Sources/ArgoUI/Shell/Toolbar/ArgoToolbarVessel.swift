@@ -22,7 +22,6 @@ public enum ArgoToolbarVessel {
     /// the deck's whole leading edge.
     public static let connectionSlotMaximumWidth: CGFloat = 320
 
-    /// The Project in the toolbar's scope capsule: a folder can be named anything, and past this
-    /// one name would take the deck's whole leading edge, so the name truncates here instead.
+    /// Past this, one Project name would take the deck's whole leading edge.
     public static let projectVesselMaximumWidth: CGFloat = 220
 }

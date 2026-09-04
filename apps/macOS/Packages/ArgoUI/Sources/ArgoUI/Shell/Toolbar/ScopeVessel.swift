@@ -1,16 +1,10 @@
 import ArgoDesign
 import SwiftUI
 
-/// This Project, as one control on the toolbar.
+/// This Project, as one control on the toolbar (#1232).
 ///
 /// No glass of its own: the single toolbar item hosting it supplies that, and one capsule around
 /// the Project is the whole claim.
-///
-/// **One half, since #1232.** It carried a checkout half beside the Project — a menu whose only
-/// item was `Refresh checkout`, so it offered a branch it could not switch to. The verb moved into
-/// the Project menu with its shortcut, and the half, the rule beside it and the space both took
-/// went with it. The Session's own branch is not lost with them: the Session header states it
-/// (`SessionHeaderProjection.checkout(for:)`), which is where a per-Session fact belongs.
 package struct ScopeVessel: View {
     let project: ProjectVesselReading
     /// The menu hangs off the Project, so its rows arrive with it.
