@@ -84,6 +84,38 @@ struct SessionSelectionReadTests {
         await hub.disconnect()
     }
 
+    /// A Session read whole and then aged out of the working set comes back read whole. The
+    /// descriptors are what a sweep bounds, not the reading — and the re-tail replaces the reading
+    /// rather than adding to it (#1213), so an excerpt taken here would take the middle of the file
+    /// away from a feed that already had it.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a Session read whole keeps its whole reading across a pause`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let hub = try await Self.connected(to: fixture)
+        let chosen = try #require(hub.sessions.first?.id)
+        let url = try #require(hub.sessions.first?.sourceURL)
+        await hub.readSelected(sessionID: chosen)
+        await hubSettle { Self.middleWasRead(of: chosen, in: hub) }
+
+        try fixture.age(url, by: SessionDiscovery.workingSetWindow * 2)
+        await hub.refreshWorkingSet()
+        #expect(hub.observations.map(\.state) == [.stopped])
+        // One more record, so the wait below settles on the RE-READ rather than on the reading the
+        // pause left standing. Appending it also puts the file back inside the window.
+        try fixture.append(Self.resumedWords, to: url)
+        await hub.refreshWorkingSet()
+        await hubSettle { said(by: hub.sessions[0]).contains(Self.resumedWords) }
+
+        #expect(Self.middleWasRead(of: chosen, in: hub))
+        #expect(hub.session(id: chosen)?.transcriptExtent == .whole)
+        await hub.disconnect()
+    }
+
+    /// What the resumed file says and the paused reading cannot.
+    private static let resumedWords = "Said after the pause"
+
     /// Whether the stretch only a whole reading reaches has landed.
     @MainActor
     private static func middleWasRead(of sessionID: String, in hub: Hub) -> Bool {

@@ -4,21 +4,23 @@ import Foundation
 /// its own connection. Every one of those is derived on READ, so no second copy can fall out of
 /// step with the state it came from.
 ///
-/// The sweep that moves the working set and the Subagent files tailed beside it are held here.
+/// The sweep and the Subagent tails are HELD here and driven from `TranscriptWatch+Sweeping.swift`,
+/// the way the reading extents are driven from `TranscriptWatch+Reading.swift`.
 @MainActor
 @Observable
 final class TranscriptWatch {
-    /// Internal rather than private, with the two below it: the reading half of this watch — what
-    /// it is reading and at what extent — is `TranscriptWatch+Reading.swift`, and `private` in
-    /// Swift is file-scoped. Every write to the join still goes through `mutate` alone.
+    /// Internal rather than private, with `subagents`, `whole` and `reads` below it: the reading
+    /// and sweeping halves of this watch are other files, and `private` in Swift is file-scoped.
+    /// Every write to the join still goes through `mutate` alone.
     @ObservationIgnored let engine: Engine
     @ObservationIgnored private let sweep: WorkingSetSweep
     /// Where a Subagent's bytes go — beside the join rather than into it, so a child's batch
     /// invalidates the lane that draws it and not everything that draws a Session (#858).
     @ObservationIgnored private let readings: SubagentReadings
     /// Built lazily because the batches it reads land in the join below, and stored because a
-    /// Subagent tail has to outlive the call that started it.
-    @ObservationIgnored private lazy var subagents = makeSubagentTails()
+    /// Subagent tail has to outlive the call that started it. Internal for `engine`'s reason: the
+    /// sweeping half of this watch is another file, and `private` in Swift is file-scoped.
+    @ObservationIgnored lazy var subagents = makeSubagentTails()
 
     /// What must run once a batch has landed in the join. Reconciliation is the Hub's answer and
     /// not this type's, but it may only happen after the join has been written.
@@ -180,15 +182,6 @@ final class TranscriptWatch {
         }
     }
 
-    /// Start tailing one transcript, keeping whatever row the roster already holds for it.
-    ///
-    /// The join resolves a record's owner by which transcript claimed it FIRST, so re-adding a
-    /// paused resume-chain root would put it behind its own continuation and re-attribute the
-    /// records it authored. A tail re-reads from the start of the file.
-    private func startTailing(_ observation: TranscriptObservation) async {
-        await tail(observation) { $0.add(observation) }
-    }
-
     /// Start a tail for one transcript, under the one join write that admits its reading —
     /// `HubJoin.add` for a transcript joining the set, `HubJoin.reread` for one being read again at
     /// a different extent (`TranscriptWatch+Reading.swift`).
@@ -204,42 +197,6 @@ final class TranscriptWatch {
         // Whatever the fan-out has written SO FAR. The rest arrives with the sweep, which is what
         // sees the file for a delegation handed over after this moment.
         subagents.refresh(of: observation.id, beside: observation.sourceURL)
-    }
-
-    /// Move the tails onto the sweep's answer: a transcript recorded since the last one starts
-    /// being tailed, and one that has aged out of the window stops — keeping its row, because it is
-    /// the descriptors that are bounded and not the roster.
-    private func move(onto wanted: [URL]) async {
-        let wantedIDs = Set(wanted.map(\.path))
-        for transcript in join.transcripts where !wantedIDs.contains(transcript.id) {
-            await stopReading(transcript)
-        }
-        for url in wanted where !isObserving(transcriptID: url.path) {
-            // A file the sweep saw a moment ago can be gone by the time it is opened. Skipping it
-            // is the honest answer: nobody named this file, and the next sweep sees it again if it
-            // comes back — where a named transcript that cannot be read is a failed connection.
-            // BOUNDED: a sweep reads the two ends of every transcript it admits and nothing
-            // between them, which is what makes a week-wide working set affordable
-            // (`TranscriptExcerpt`). The whole file is read on the click that selects it.
-            guard let observation = try? observe(url, reading: .excerpt) else { continue }
-            await startTailing(observation)
-        }
-        // Every sweep, not only the ones that moved a tail: a fan-out's files appear beside a
-        // transcript that is already in the working set, so nothing above would notice them.
-        for transcript in join.transcripts where isObserving(transcriptID: transcript.id) {
-            subagents.refresh(of: transcript.id, beside: transcript.sourceURL)
-        }
-    }
-
-    /// Stop reading a transcript the sweep no longer names. Aged out of the window it keeps its
-    /// row; GONE FROM DISK it loses it, because a vanished path can never say anything again — and
-    /// Claude Code MOVES a transcript into the worktree's own record directory (#770).
-    private func stopReading(_ transcript: HubTranscript) async {
-        guard FileManager.default.fileExists(atPath: transcript.sourceURL.path) else {
-            await stopObserving(transcriptID: transcript.id)
-            return
-        }
-        await pauseObserving(transcriptID: transcript.id)
     }
 
     /// The ONE write to the join. In place, so a batch costs no copy of the transcripts it lands

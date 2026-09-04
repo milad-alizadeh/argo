@@ -66,16 +66,25 @@ struct HubJoin {
         Dictionary(transcripts.map { ($0.id, $0.session.events.count) }) { first, _ in first }
     }
 
+    /// Whether this transcript is already in the set — under any reading, settled or not.
+    ///
+    /// What a re-tail asks before it admits one: a tail reads its file from the first byte, so a
+    /// transcript coming back to the set is being read AGAIN and takes `reread` below rather than
+    /// `add` (#1213).
+    func holds(transcriptID: String) -> Bool {
+        position(of: transcriptID) != nil
+    }
+
     /// Admit a transcript to the working set, unsettled — present for the records it is about to
     /// claim, absent from the roster until its file has been read. Re-adding one already here
-    /// changes nothing.
+    /// changes nothing, and is not how a transcript is read again: see `holds` and `reread`.
     ///
     /// Answers whether anything MOVED, which is what `TranscriptWatch.mutate` publishes on (#858).
     /// The four writes a test drives directly carry `@discardableResult`; the two that exist only
     /// for that answer do not, so the compiler holds them.
     @discardableResult
     mutating func add(_ observation: TranscriptObservation) -> Bool {
-        guard positions[observation.id] == nil else { return false }
+        guard !holds(transcriptID: observation.id) else { return false }
         positions[observation.id] = transcripts.count
         transcripts.append(HubTranscript(observation: observation))
         // The set has moved and nothing has refolded the roster — this transcript can be a chain's
