@@ -140,10 +140,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// public, because it is an input to the status fold rather than a fact a surface draws:
     /// ADR-0027 has none of it to project.
     var submittedTurn: SessionTurnSubmission?
-    /// Where this row's spawn is in the wait for its CLI's first byte — see `SessionStartup`, which
-    /// owns the fold and the reason the two waits are one value. Set by `init(spawn:)` alone, so no
-    /// observed Session reaches either waiting state.
-    private(set) var startup = SessionStartup.notWaiting
+    /// Where this row's spawn is in the wait for its CLI's first byte (#1328) — see
+    /// `SessionStartup`. Set by `init(spawn:)` for a spawn's own row, and by a resume's own claim
+    /// otherwise — the one wait that reaches an EXISTING row rather than a provisional one.
+    var startup = SessionStartup.notWaiting
+    /// Whether the wait above is a resume rather than a plain start (#10, ADR-0026, #1328) — what
+    /// tells the plinth which of the two identical waits it is drawing.
+    public internal(set) var resuming = false
 
     public init(observation: TranscriptObservation) {
         self.id = observation.id
@@ -181,6 +184,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // DIRECT: Argo started this process, so the row belongs on the roster from the moment it
         // exists.
         self.hasAgentActivity = true
+        // `resuming` stays `false`: `provisionalSessions` never builds this row for a resuming
+        // spawn (#1328) — `Hub.observed(_:)` merges that wait onto the Session's own row instead.
         self.startup = SessionStartup(spawn)
         // Off the spawn itself, because the ledger cannot answer for a row that has not bound yet:
         // a claim is keyed to a Session id at the CLI's first record, and the wait for the first
@@ -237,10 +242,10 @@ extension HubSession {
         case let .interrupted(atMs):
             turn.ended(.cancelled)
             observeActivity(atMs)
-        case let .toolCall(call):
-            observe(call: call)
-        case let .toolCallOutcome(outcome):
-            observe(outcome: outcome)
+        // Another pair spent one line each, on the same ground as the two above (#1328 spent the
+        // fact this file's headroom bought).
+        case let .toolCall(call): observe(call: call)
+        case let .toolCallOutcome(outcome): observe(outcome: outcome)
         case let .compaction(atMs):
             hasAgentActivity = true
             observeActivity(atMs)

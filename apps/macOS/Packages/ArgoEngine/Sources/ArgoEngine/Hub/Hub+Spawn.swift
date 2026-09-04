@@ -141,8 +141,7 @@ public extension Hub {
     ///
     /// A resume continues a Session that has already written stance records, so the set is counted
     /// from THAT: from zero, its very next record would read as the CLI overruling a flag it had in
-    /// fact honoured. It already has its row, too, so publishing a second one would draw that
-    /// Session twice until the CLI wrote a record.
+    /// fact honoured.
     private func publish(_ plan: AgentSpawnPlan) {
         claims.setMode(
             SessionModeSet(
@@ -166,14 +165,19 @@ public extension Hub {
             // (#894).
             ownership.record(ticket: ticket, ofClaim: plan.claim)
         }
-        guard plan.seed.resuming == nil else { return }
         // The rung this Session was STARTED on, into the ledger for the reason the ticket goes
         // there: a resume runs in a later process, and only the file crosses that gap (#966).
-        // Only a rung the SEED named — a spawn that took the rung last picked started on nobody's
-        // choice for this Session, and a resume must not read an old pick as one.
-        if let rung = plan.seed.mode {
+        // Only a rung the SEED named, and never for a resume — a spawn that took the rung last
+        // picked started on nobody's choice for this Session, and a resume must not read an old
+        // pick as one.
+        if plan.seed.resuming == nil, let rung = plan.seed.mode {
             ownership.record(startingRung: rung, ofClaim: plan.claim)
         }
+        // The wait for this spawn's first byte (#587, ADR-0026, #1328) — filed under the claim
+        // either way, because `armStartupWait` and the settle it ends in both key off the claim
+        // rather than the row. A resume publishes no ROW of its own, though: it already has one
+        // (`resumeSession`), so `provisionalSessions` drops every resuming spawn and `observed(_:)`
+        // merges this wait straight onto the Session's existing row instead.
         spawns[plan.claim] = AgentSpawn(spawning: plan, atMs: Date().epochMs)
         armStartupWait(plan.claim)
     }
@@ -305,6 +309,13 @@ public extension Hub {
     private func settleStartupWait(of spawn: AgentSpawn, for claim: SessionOwnership.ClaimID) {
         guard let settled = SessionWaitSettled.startup(of: spawn) else { return }
         claims.settle(settled, for: claim)
+        // A resume's spawn is never bound to a record — its Session already had one before the
+        // claim opened, so `reconcileSpawns` never finds it and never retires it (#1328). The
+        // settle just above is everything worth keeping; this is where a resume's spawn goes
+        // instead.
+        if spawn.startup.resuming {
+            spawns.removeValue(forKey: claim)
+        }
     }
 }
 

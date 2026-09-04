@@ -129,6 +129,10 @@ public extension CockpitPresentation {
         /// `SessionWaitSettled`. Each drops into the reading as one settled row. Empty for every
         /// Session Argo did not start, which is what keeps the plinth DIRECT.
         public let settledWaits: [SessionWaitSettled]
+        /// Whether this Session is continuing a chain rather than opening one (#1328) — DIRECT, off
+        /// the engine's own `resuming`. `false` for every Session Argo did not start, which is what
+        /// keeps the plinth off a resume nobody performed.
+        public let resuming: Bool
         /// Whether the user cleared this Session off the roster. Argo's own fact and not a
         /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,
         /// which is why new activity on an archived Session leaves it archived (#502, story 16)
@@ -215,6 +219,7 @@ public extension CockpitPresentation {
             self.companionChannel = chain.companionChannel
             self.startedQuietlyAtMs = chain.startedQuietlyAtMs
             self.settledWaits = chain.settledWaits
+            self.resuming = chain.resuming
             self.workspaceLocation = work.location
             self.workspace = work.workspace
             self.ticket = work.ticket

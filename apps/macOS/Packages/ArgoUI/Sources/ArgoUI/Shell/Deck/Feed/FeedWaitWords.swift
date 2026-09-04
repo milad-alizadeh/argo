@@ -9,20 +9,23 @@ import ArgoEngine
 /// foot must find `Started the agent` in the reading. Written apart from `FeedWait` because that
 /// type is an identity the reading is compared BY, and words are not part of an identity.
 ///
-/// Two cases today. The design names four waits (`cockpit-feed-waiting.md`), and each of the other
-/// two arrives as a case here on its own ticket.
+/// Three cases today — `/handoff` (#1229) is the one the design names that still arrives with its
+/// own ticket.
 enum FeedWaitWords: Equatable {
     /// Argo started a CLI and has not heard it (#587).
     case starting
     /// A Turn is in flight (#1323). The thread already carries this live, wordless — the plinth
     /// says it again in words, which is the one place the design says a thing twice on purpose.
     case thinking
+    /// Argo continued an orphaned Session's chain and has not heard it (#10, ADR-0026, #1328).
+    case resuming
 
     /// The wait, live, on the plinth.
     var running: String {
         switch self {
         case .starting: "Starting the agent"
         case .thinking: "Waiting for the agent to answer"
+        case .resuming: "Resuming the session"
         }
     }
 
@@ -33,6 +36,7 @@ enum FeedWaitWords: Equatable {
         switch self {
         case .starting: "Started the agent"
         case .thinking: "The agent answered"
+        case .resuming: "Resumed the session"
         }
     }
 
@@ -42,10 +46,12 @@ enum FeedWaitWords: Equatable {
         switch self {
         case .starting: "The agent did not start"
         case .thinking: "The turn ended without an answer"
+        case .resuming: "The session did not resume"
         }
     }
 
-    /// The act, as a mark — never the state. `startSession`'s play triangle is what Argo DID.
+    /// The act, as a mark — never the state. `startSession`'s play triangle and `retry`'s clockwise
+    /// arrow are what Argo DID — the chain picked up again, for `resuming`.
     ///
     /// `nil` for a wait with no mark, and no default is invented for one: a mark is a claim about
     /// what happened, and the mark column is drawn empty rather than filled with a guess, exactly
@@ -55,6 +61,7 @@ enum FeedWaitWords: Equatable {
         switch self {
         case .starting: ArgoSymbol.startSession
         case .thinking: nil
+        case .resuming: ArgoSymbol.retry
         }
     }
 
@@ -66,6 +73,7 @@ enum FeedWaitWords: Equatable {
         switch self {
         case .starting: "The agent is starting"
         case .thinking: "Waiting for the agent to answer"
+        case .resuming: "The session is resuming"
         }
     }
 
@@ -79,6 +87,7 @@ enum FeedWaitWords: Equatable {
         switch wait {
         case .starting: self = .starting
         case .thinking: self = .thinking
+        case .resuming: self = .resuming
         case .call: return nil
         }
     }
@@ -88,6 +97,7 @@ enum FeedWaitWords: Equatable {
         switch wait {
         case .starting: self = .starting
         case .thinking: self = .thinking
+        case .resuming: self = .resuming
         }
     }
 }

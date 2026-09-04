@@ -10,14 +10,18 @@ import Foundation
 /// DIRECT throughout, and by construction: every wait here is one Argo started and held itself, so
 /// nothing observed from outside can produce one.
 public struct SessionWaitSettled: Sendable, Equatable {
-    /// Which wait this was. One case today — the other three the design names arrive with their
-    /// own tickets, and each is a case here rather than a second shape.
+    /// Which wait this was. Three cases today — `/handoff` (#1229) is the one the design names that
+    /// still arrives with its own ticket.
     public enum Wait: Sendable, Equatable {
         /// Argo started a CLI and waited for the first byte off its PTY (#587).
         case starting
         /// A Turn in flight, ended without an answer (#1323). Never settles to a row on its own —
         /// the agent's answer IS the record of it — so this Wait only ever reaches here failed.
         case thinking
+        /// Argo continued an orphaned Session's chain in a fresh process and waited for the first
+        /// byte off its PTY (#10, ADR-0026, #1328) — the same wait as `starting`, named for what
+        /// Argo was doing.
+        case resuming
     }
 
     public let wait: Wait
@@ -47,13 +51,17 @@ extension SessionWaitSettled {
     /// Bytes first: a child that spoke and then died started, and the death that follows is a
     /// separate piece of news the roster already carries. Only a PTY that closed with nothing ever
     /// out of it is a start that FAILED.
+    ///
+    /// `spawn.startup.resuming` decides which `Wait` case this becomes — the wait itself is timed
+    /// and settled identically either way.
     static func startup(of spawn: AgentSpawn) -> SessionWaitSettled? {
+        let wait: Wait = spawn.startup.resuming ? .resuming : .starting
         if let heard = spawn.startup.firstOutputAtMs {
-            return SessionWaitSettled(wait: .starting, tookMs: heard - spawn.spawnedAtMs)
+            return SessionWaitSettled(wait: wait, tookMs: heard - spawn.spawnedAtMs)
         }
         guard let exit = spawn.startup.exit else { return nil }
         return SessionWaitSettled(
-            wait: .starting,
+            wait: wait,
             tookMs: exit.atMs - spawn.spawnedAtMs,
             failure: reason(of: exit),
         )

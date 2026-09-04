@@ -13,7 +13,7 @@ struct HubResumeTests {
     func `a Session the last Argo owned comes back orphaned, not external`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
 
         // `external` would be a false claim: Argo started this agent, it just cannot reach it.
         #expect(relaunched.sessions.map(\.provenance) == [.orphaned])
@@ -23,7 +23,7 @@ struct HubResumeTests {
     func `resuming continues the chain and takes the Session back`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
 
         try await relaunched.resumeSession(sessionID: sessionID)
 
@@ -39,7 +39,7 @@ struct HubResumeTests {
     func `resuming the same Session twice yields one agent`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
 
         async let first: Void = relaunched.resumeSession(sessionID: sessionID)
         async let second: Void = relaunched.resumeSession(sessionID: sessionID)
@@ -54,7 +54,7 @@ struct HubResumeTests {
     func `a Turn sent after a resume reaches the agent`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
         #expect(!relaunched.steer(sessionID: sessionID, typing: "before"))
 
         try await relaunched.resumeSession(sessionID: sessionID)
@@ -117,7 +117,7 @@ struct HubResumeTests {
     func `a resume whose spawn fails leaves the Session read-only`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
         fixture.host.refusal = .hostRefused(detail: "no pty")
 
         await #expect(throws: AgentSpawnError.hostRefused(detail: "no pty")) {
@@ -134,7 +134,7 @@ struct HubResumeTests {
     func `an external Session started under an open resume claim stays external`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
         try await relaunched.resumeSession(sessionID: sessionID)
 
         // Somebody's own terminal, in the folder the resume claim covers, writing its first prompt
@@ -160,7 +160,7 @@ struct HubResumeTests {
     func `a relaunch after a resume still reads the Session as Argo's`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
         try await relaunched.resumeSession(sessionID: sessionID)
         relaunched.endOwnedSessions()
 
@@ -176,7 +176,7 @@ struct HubResumeTests {
     func `a relaunch starts no agent of its own`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let relaunched = try await quitWithOneOwnedSession(fixture)
+        let relaunched = try await Self.quitWithOneOwnedSession(fixture)
 
         #expect(relaunched.sessions.count == 1)
         #expect(Self.resumed(in: fixture).isEmpty)
@@ -184,7 +184,10 @@ struct HubResumeTests {
 
     /// One Argo spawns a Session, sees the record it wrote, and quits. The Hub that comes back
     /// shares the fixture's folders and files and nothing else — which is what a relaunch is.
-    private func quitWithOneOwnedSession(_ fixture: SpawnFixture) async throws -> Hub {
+    ///
+    /// Static, and shared with `HubResumeWaitTests`: it names no `self`, and a resume's own suite
+    /// needs the same relaunch this one's tests build.
+    static func quitWithOneOwnedSession(_ fixture: SpawnFixture) async throws -> Hub {
         _ = try await fixture.hub.spawnSession()
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
         fixture.hub.endOwnedSessions()
