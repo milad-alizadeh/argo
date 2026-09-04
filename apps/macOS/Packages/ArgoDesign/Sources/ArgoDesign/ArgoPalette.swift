@@ -6,11 +6,10 @@ public struct ArgoPalette: Sendable {
     public let edge: EdgeRoles
     public let interaction: InteractionRoles
     public let state: StateRoles
-    /// What the work amounts to — the diffstat, the pull request, the Plan's progress — held
-    /// together rather than spread across this list, for the reason `atlas` is: none of the three
-    /// says what a Session is DOING, and that is the one line the palette's groups are drawn on.
-    /// Read through `diff`, `delivery` and `progress` below; nothing spells it as a path.
-    private let product: ProductRoles
+    /// The diffstat, the pull request and the Plan's progress, held together for the reason
+    /// `atlas` is: none of the three says what a Session is DOING (#1341). Private, so the three
+    /// accessors below stay the only spelling of a role path.
+    private let work: WorkRoles
     public let series: SeriesRoles
     /// The map's own families, held together rather than spread across this list: a measure ramp,
     /// a domain wheel and the materials the place is made of are one reading (#1142), and none of
@@ -23,7 +22,7 @@ public struct ArgoPalette: Sendable {
         edge: EdgeRoles,
         interaction: InteractionRoles,
         state: StateRoles,
-        product: ProductRoles,
+        work: WorkRoles,
         series: SeriesRoles,
         atlas: AtlasRoles,
     ) {
@@ -32,23 +31,23 @@ public struct ArgoPalette: Sendable {
         self.edge = edge
         self.interaction = interaction
         self.state = state
-        self.product = product
+        self.work = work
         self.series = series
         self.atlas = atlas
     }
 
-    /// The three families `product` holds, each by the name every surface and every assertion
+    /// The three families `work` holds, each by the name every surface and every assertion
     /// already spells it — the grouping is the shape of the init, never a second role path.
     public var diff: DiffRoles {
-        product.diff
+        work.diff
     }
 
     public var delivery: DeliveryRoles {
-        product.delivery
+        work.delivery
     }
 
     public var progress: ProgressRoles {
-        product.progress
+        work.progress
     }
 }
 

@@ -197,7 +197,7 @@ public extension ArgoColor {
     /// How far two hues are apart on the wheel, the short way round — so 359° and 1° are two
     /// degrees apart rather than three hundred and fifty-eight.
     func hueDistance(to other: ArgoColor) -> Double {
-        let apart = abs(hue - other.hue).truncatingRemainder(dividingBy: 360)
+        let apart = abs(hue - other.hue)
         return min(apart, 360 - apart)
     }
 

@@ -68,7 +68,7 @@ public extension ArgoPalette {
         ),
         // What the work amounts to. Every hue here is read on one roster row inches from a state
         // dot, so each is held the contract's own distance from all four.
-        product: ProductRoles(
+        work: WorkRoles(
             // Held clear of `state.running` and `state.failure`, or a `+8` reads as a live
             // Session.
             diff: DiffRoles(
@@ -82,9 +82,9 @@ public extension ArgoPalette {
                 open: ArgoColor(hex: 0x3FB950),
                 merged: ArgoColor(hex: 0xA371F7),
             ),
-            // `accent` at the same hue — 211° on both — dropped in lightness until it cannot be
-            // mistaken for live, and held above `text.disabled` on the deck so a finished plan
-            // still reads as work done. `VisualContractTests` re-derives both halves.
+            // The accent's own hue — 210.0° against its 211.1° — dropped in lightness until it
+            // cannot be mistaken for live, and held above `text.disabled` on the deck so a
+            // finished plan still reads as work done. `VisualContractTests` re-derives both.
             progress: ProgressRoles(still: ArgoColor(hex: 0x2F5C89)),
         ),
         // Eight muted jewel tones. Each is held a state's own distance from all four states,

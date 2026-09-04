@@ -43,15 +43,23 @@ extension ContractSpecimen {
         }
     }
 
+    /// A short Plan, part way through: enough segments for the eye to read a proportion, and
+    /// fewer than a real list so the row stays one line.
+    private static let planItems = 5
+    private static let planDone = 3
+
     /// A Plan as the row draws it: one segment per to-do item, done ones in `done` and the rest in
     /// the ground they are cut out of.
     private func plan(_ name: String, done: ArgoColor, note: String?) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
             label(name)
             HStack(spacing: ArgoSpacing.tight) {
-                ForEach(0 ..< 5, id: \.self) { index in
+                ForEach(0 ..< Self.planItems, id: \.self) { index in
                     RoundedRectangle(cornerRadius: ArgoRadius.marker)
-                        .fill(index < 3 ? done : argo.color.surface.raised)
+                        // A segment has no home in `ArgoLayout` yet — #1345 draws the real one on
+                        // the row and is where the measure lands. Big enough here to judge the
+                        // ink, which is all this sheet is for.
+                        .fill(index < Self.planDone ? done : argo.color.surface.raised)
                         .frame(width: 18, height: 6)
                 }
             }
