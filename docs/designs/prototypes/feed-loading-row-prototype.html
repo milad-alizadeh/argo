@@ -149,7 +149,7 @@
   /* A filament crossing a lane — the thread, and the rule's own pass. */
   .lane { position:relative; overflow:hidden; height:var(--line-h); }
   .lane.thin { height:var(--st-indicator); }
-  .fil { position:absolute; top:50%; height:var(--st-indicator); width:30%;
+  .fil { position:absolute; top:50%; height:var(--st-indicator); width:216px;
          border-radius:999px; transform:translateY(-50%);
          animation:filpass var(--period) linear infinite; }
   .fil .halo { position:absolute; inset:0; border-radius:999px; filter:blur(4px); opacity:var(--glow); }
@@ -205,10 +205,6 @@
   .plinth .took { font-family:var(--mono); font-size:11px; color:var(--text-off); }
   .plinth .rail { position:absolute; left:0; right:0; bottom:0; height:var(--st-indicator);
                   overflow:hidden; }
-  .plinth.failed .box { border-color:rgba(242,85,92,.5); background:rgba(242,85,92,.10); }
-  .plinth.failed .sym, .plinth.failed .words { color:var(--failure); }
-  .plinth .dismiss { color:var(--text-3); background:none; border:none; cursor:pointer;
-                     font:inherit; padding:0 var(--s-tight); }
 
   /* ---------- composer — scenery ---------- */
   .composer { padding:var(--s-comfortable) var(--s-loose) var(--s-loose); }
