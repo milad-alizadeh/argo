@@ -39,10 +39,22 @@ struct HubSessionCompanionAskTests {
         #expect(session(reporting: ask, over: .dropped).companionAsk == nil)
     }
 
-    /// Every external Session, and every CLI that takes no plugin.
+    /// Only a channel that was HELD and lost stops the tier. Nothing dialled this one, so nothing
+    /// was lost — and a report standing over it is a report nothing has contradicted.
     @Test
-    func `a Session with no channel of Argo's reports no question`() {
-        #expect(session(reporting: ask, over: .notApplicable).companionAsk == nil)
+    func `a question over a channel nothing has lost is published`() {
+        #expect(session(reporting: ask, over: .neverDialled).companionAsk == ask)
+    }
+
+    /// The other half of the same rule, and the half #1205 was narrowed to without it: the roster
+    /// reads `Needs input` off `convention?.status`, so a status left standing over a channel that
+    /// dropped would badge a Session whose question the feed no longer draws.
+    @Test
+    func `a status left standing on a dropped channel is not read either`() {
+        var session = session(reporting: ask, over: .dropped)
+        session.liveness = .quiet
+
+        #expect(session.statusReading.status != .asking)
     }
 
     @Test

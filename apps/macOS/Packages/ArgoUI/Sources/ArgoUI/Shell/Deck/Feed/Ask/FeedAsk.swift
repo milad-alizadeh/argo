@@ -136,6 +136,9 @@ package struct FeedAsk: Equatable, Sendable {
                     },
                 )
             },
+            // The row's own caption, so the lane says the same thing about the channel the row
+            // does — and takes the same height for saying it.
+            caption: isReported ? FeedAskLine.reportedWords : nil,
             ink: ink,
             // Off the same reading the ROW's ground is, not off `isPending`: a lane still ruled
             // beside a question nobody here can answer is the map disagreeing with the reading.
