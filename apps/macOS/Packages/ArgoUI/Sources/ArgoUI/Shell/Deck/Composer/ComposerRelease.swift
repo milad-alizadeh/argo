@@ -22,6 +22,12 @@ struct ComposerRelease {
         /// Whether a walk is already under way, which no second reading may start another of
         /// (#653).
         let isWalkingMode: Bool
+        /// A Model waiting on the same boundary (#1329).
+        let heldModel: String?
+        /// An Effort rung waiting on the same boundary.
+        let heldEffort: SessionEffort?
+        /// Whether a walk for `heldModel` and `heldEffort` is already under way.
+        let isWalkingRunFacts: Bool
         /// Whether a refusal is standing over the draft.
         let isRefused: Bool
         /// Whether a follow-up is being steered into the running Turn (#1238).
@@ -34,6 +40,9 @@ struct ComposerRelease {
             self.waiting = draft.queued.count
             self.heldMode = draft.heldMode
             self.isWalkingMode = draft.isWalkingMode
+            self.heldModel = draft.heldModel
+            self.heldEffort = draft.heldEffort
+            self.isWalkingRunFacts = draft.isWalkingRunFacts
             self.isRefused = draft.refusal != nil
             self.isSteering = draft.steeringTurn != nil
             self.isAwaitingPutTurn = draft.isAwaitingPutTurn
@@ -53,6 +62,17 @@ struct ComposerRelease {
     /// for the reason `SessionComposer.honour(_:)` states.
     var walks: Bool {
         hasTurnEnded && awaiting.heldMode != nil && !awaiting.isWalkingMode && !awaiting.isSteering
+    }
+
+    /// Whether a held Model or Effort may be walked now (#1329). Behind `walks` in the order the
+    /// composer acts (`SessionComposer.release()`): the rung goes first, and `heldMode == nil`
+    /// here is what holds this step off until that walk has fully landed — a second walk starting
+    /// while the first is still under way would count Model and Effort's own "prompt is free"
+    /// gate against a Session the rung's own keystrokes are still moving.
+    var walksRunFacts: Bool {
+        hasTurnEnded && awaiting.heldMode == nil && !awaiting.isWalkingMode
+            && (awaiting.heldModel != nil || awaiting.heldEffort != nil)
+            && !awaiting.isWalkingRunFacts && !awaiting.isSteering
     }
 
     /// Whether the queue may be put now.
@@ -77,5 +97,7 @@ struct ComposerRelease {
     var putsNext: Bool {
         hasTurnEnded && awaiting.waiting > 0 && !awaiting.isRefused && !awaiting.isWalkingMode
             && !awaiting.isSteering && !awaiting.isAwaitingPutTurn
+            && awaiting.heldModel == nil && awaiting.heldEffort == nil
+            && !awaiting.isWalkingRunFacts
     }
 }
