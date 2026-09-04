@@ -59,9 +59,9 @@ package enum TicketsView: String, Sendable, CaseIterable, Identifiable {
     /// list ordered one way under a heading naming another is the exact lie that line exists to
     /// prevent (`TicketsChromeProjection`).
     enum Order: Equatable, Sendable {
-        /// LOWEST number first, banded by priority over the roots (#819, #892, #1171). A map's
-        /// tickets are filed in the order they are meant to be read, so the backlog reads forwards.
-        case oldestNumber
+        /// Highest number first, banded by priority over the roots: the row a reader is looking
+        /// for is the one just filed (#819, #892, #1171, #1195).
+        case newestNumber
         /// Last touched first, flat. Priority banding and recency cannot both be the list's
         /// structure, and for a set nobody is picking work out of, recency is the question.
         case lastTouched
@@ -69,7 +69,7 @@ package enum TicketsView: String, Sendable, CaseIterable, Identifiable {
 
     var order: Order {
         switch self {
-        case .allOpen, .unblocked, .inProgress, .blocked: .oldestNumber
+        case .allOpen, .unblocked, .inProgress, .blocked: .newestNumber
         case .closed: .lastTouched
         }
     }
@@ -78,7 +78,7 @@ package enum TicketsView: String, Sendable, CaseIterable, Identifiable {
     /// order where the list is flat.
     var grouping: String {
         switch order {
-        case .oldestNumber: "by priority"
+        case .newestNumber: "by priority"
         case .lastTouched: "by last touched"
         }
     }
@@ -86,6 +86,6 @@ package enum TicketsView: String, Sendable, CaseIterable, Identifiable {
     /// Whether the list draws the priority headers. False in `Closed`, whose rows are in recency
     /// order: banding them would scatter last week's finished work across three headers.
     var groupsByPriority: Bool {
-        order == .oldestNumber
+        order == .newestNumber
     }
 }

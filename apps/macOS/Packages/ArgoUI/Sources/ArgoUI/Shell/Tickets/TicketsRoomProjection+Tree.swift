@@ -107,8 +107,8 @@ extension TicketsRoomProjection {
     /// number would not be transitive, and `sorted` is undefined on an order that is not.
     private static func ordered(_ items: [Ticket], by order: TicketsView.Order) -> [Ticket] {
         switch order {
-        case .oldestNumber:
-            items.sorted { $0.number < $1.number }
+        case .newestNumber:
+            items.sorted { $0.number > $1.number }
         case .lastTouched:
             items.sorted {
                 ($0.updatedAt ?? .distantPast, $0.number) > (
