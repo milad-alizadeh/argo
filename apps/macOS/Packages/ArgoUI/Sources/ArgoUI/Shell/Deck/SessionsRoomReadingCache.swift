@@ -61,6 +61,11 @@ enum SessionsRoomReadingCache {
         /// stopping at the events would keep drawing the reading as it stood before the wait
         /// settled.
         let settledWaits: [SessionWaitSettled]
+        /// Whether Argo itself submitted the Turn now in flight (#1179, #1323) — the DIRECT gate
+        /// the plinth's `.thinking` wait stands behind. By VALUE beside the status, and not read
+        /// off it: two Sessions can both read `running` while only one of them is a Turn Argo
+        /// itself typed.
+        let hasUnansweredTurn: Bool
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -78,6 +83,7 @@ enum SessionsRoomReadingCache {
             self.status = session?.status
             self.startedQuietly = session?.startedQuietlyAtMs != nil
             self.settledWaits = session?.settledWaits ?? []
+            self.hasUnansweredTurn = session?.hasUnansweredTurn ?? false
         }
     }
 

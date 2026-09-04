@@ -43,4 +43,13 @@ package extension EnvironmentValues {
     /// `nil` in a preview, a specimen and a suite, where nothing above sets one — and `nil` for
     /// every Session Argo did not start, which is what keeps this surface DIRECT.
     @Entry var argoFeedWait: FeedWait?
+
+    /// Whether the Turn in flight on this reading is one ARGO ITSELF submitted (#1179, #1323) —
+    /// the DIRECT half of "is a Turn running", off `HubSession.hasUnansweredTurn`. Read by
+    /// `FeedColumn` before it falls back to the ROWS to tell `.thinking` from a lit call: a Session
+    /// observed from outside can show the very same `.mark(.working)` row for a Turn nobody here
+    /// submitted, and a plinth over that would claim an act Argo did not perform.
+    ///
+    /// `false` by default — in a preview, a specimen, a suite, and every external Session.
+    @Entry var argoTurnIsDirect = false
 }

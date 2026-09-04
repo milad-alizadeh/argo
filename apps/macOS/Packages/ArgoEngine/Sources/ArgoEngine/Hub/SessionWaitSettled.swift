@@ -15,6 +15,9 @@ public struct SessionWaitSettled: Sendable, Equatable {
     public enum Wait: Sendable, Equatable {
         /// Argo started a CLI and waited for the first byte off its PTY (#587).
         case starting
+        /// A Turn in flight, ended without an answer (#1323). Never settles to a row on its own —
+        /// the agent's answer IS the record of it — so this Wait only ever reaches here failed.
+        case thinking
     }
 
     public let wait: Wait

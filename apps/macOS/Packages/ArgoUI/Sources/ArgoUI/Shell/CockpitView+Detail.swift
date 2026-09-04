@@ -91,6 +91,10 @@ extension CockpitView {
         // view that has the reading in hand, and it reaches a column four views down that could not
         // derive it: a wait is not written into the rows while it runs.
         .environment(\.argoFeedWait, reading.wait)
+        // Whether the Turn in flight is one Argo itself submitted (#1179, #1323) — the DIRECT gate
+        // `FeedColumn` stands the `.thinking` plinth behind, injected beside the wait above for
+        // the same reason.
+        .environment(\.argoTurnIsDirect, reading.hasUnansweredTurn)
         // Injected from ABOVE the deck, which is the whole point of it: the room switch below
         // destroys the table that measured them (#858).
         .environment(\.argoFeedGeometries, feedGeometries)

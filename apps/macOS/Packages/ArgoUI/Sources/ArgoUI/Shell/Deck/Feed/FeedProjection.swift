@@ -128,15 +128,66 @@ package enum FeedProjection {
 
     /// Every row the record itself could put in the feed, in the record's own order, BEFORE any
     /// fold takes one out of it. The stage every pass above runs over.
+    ///
+    /// A Turn that ends without an answer lands one EXTRA row here beside the ordinary
+    /// `.mark(.turnEnded)` rule — the settled half of the plinth's `.thinking` wait
+    /// (`cockpit-feed-waiting.md`). A Turn that answers drops nothing: the agent's own words are
+    /// the record of it.
     static func contents(of events: [TranscriptEvent]) -> [FeedRow.Content] {
         let answered = outcomes(in: events)
         let within = workingDirectory(in: events)
         let opening = openingRunFacts(in: events)
-        return events.enumerated().compactMap { index, event in
+        // Where the Turn now ending last opened, and the last moment anything of it was clocked —
+        // both read off the stream in the order it happened, since nothing outside it is in hand
+        // here. Reset at every open so a Turn that runs long is timed from ITS OWN start rather
+        // than the one before it.
+        var turnOpenedAtMs: Int?
+        var lastClockedAtMs: Int?
+        return events.enumerated().flatMap { index, event -> [FeedRow.Content] in
             if let fact = runFact(of: event) {
-                return opening.contains(index) ? nil : .mark(.runFactChanged(fact))
+                return opening.contains(index) ? [] : [.mark(.runFactChanged(fact))]
             }
-            return content(of: event, answeredBy: answered, within: within)
+            switch event {
+            case let .prompt(_, _, atMs), let .turnResumed(atMs):
+                turnOpenedAtMs = atMs
+                lastClockedAtMs = atMs ?? lastClockedAtMs
+            case let .toolCall(call):
+                lastClockedAtMs = call.atMs ?? lastClockedAtMs
+            case let .toolCallOutcome(outcome):
+                lastClockedAtMs = outcome.endedAtMs ?? lastClockedAtMs
+            case let .interrupted(atMs), let .compaction(atMs):
+                lastClockedAtMs = atMs ?? lastClockedAtMs
+            // Nothing this pass clocks a Turn by: none of these is a moment work happened at, or
+            // the moment already rides on a case above (`.turnEnded`'s own reading is `atMs`-less;
+            // the failed row's duration is read off the LAST clocked activity instead).
+            case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort,
+                 .branch, .entry, .mode, .message, .thought, .skillLoaded, .turnEnded, .queued,
+                 .usage, .plan, .unreadableLine, .superseded, .excerpted:
+                break
+            }
+            var produced: [FeedRow.Content] = []
+            if let one = content(of: event, answeredBy: answered, within: within) {
+                produced.append(one)
+            }
+            if case let .turnEnded(reason) = event, let hostWord = answerlessReason(reason) {
+                produced.append(.settledWait(SessionWaitSettled(
+                    wait: .thinking,
+                    tookMs: max((lastClockedAtMs ?? 0) - (turnOpenedAtMs ?? 0), 0),
+                    failure: hostWord,
+                )))
+            }
+            return produced
+        }
+    }
+
+    /// The host's own word for a Turn that ended with nothing to show for it — never `endTurn`,
+    /// which is the agent finishing, and never `cancelled`, which the feed already draws as
+    /// `.interrupted` (#1189). `nil` for `unknown` too: a word this vocabulary could not read is
+    /// not evidence the Turn went unanswered.
+    private static func answerlessReason(_ reason: StopReason) -> String? {
+        switch reason {
+        case .maxTokens, .maxTurnRequests, .refusal: reason.rawValue
+        case .endTurn, .cancelled, .unknown: nil
         }
     }
 
