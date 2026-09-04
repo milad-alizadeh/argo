@@ -37,6 +37,12 @@ extension SessionRosterProjection {
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
         let branch: String?
+        /// The Ticket this row addresses, drawn at the trailing edge of line 3 — `nil` for a
+        /// Session on none, and for a fold, which stands for several at once (`DeliveryAddresses`).
+        let ticketNumber: Int?
+        /// The pull request the same branch is the life of, beside `ticketNumber` on line 3 —
+        /// `nil` for a branch with none open, and for a fold.
+        let pullRequest: DeliveryPullRequest?
         /// True of every Session Argo does not own the terminal of, and always announced. Drawn by
         /// ghosting the whole row — title, branch, age and dot.
         let isReadOnly: Bool
@@ -81,6 +87,8 @@ extension SessionRosterProjection {
             self.spokenWorktree = work.worktree
             self.toldApart = work.toldApart
             self.branch = work.branch
+            self.ticketNumber = work.ticketNumber
+            self.pullRequest = work.pullRequest
             self.isReadOnly = availability.isReadOnly
             self.lock = availability.lock
             self.isArchived = availability.isArchived
@@ -146,7 +154,9 @@ extension SessionRosterProjection {
             ),
             work: Row.Work(
                 location: newest.workspaceLocation, worktree: nil, branch: nil,
-                toldApart: fold.label,
+                // A fold stands for several runs at once — see the doc comment on `Row`, which is
+                // why it draws neither address.
+                meta: Row.Work.Meta(toldApart: fold.label, ticketNumber: nil, pullRequest: nil),
             ),
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
@@ -188,7 +198,11 @@ extension SessionRosterProjection {
                 location: session.workspaceLocation,
                 worktree: decided.worktree,
                 branch: session.workspace?.branch,
-                toldApart: toldApart(for: session, naming: decided.naming),
+                meta: Row.Work.Meta(
+                    toldApart: toldApart(for: session, naming: decided.naming),
+                    ticketNumber: session.ticket.link?.number,
+                    pullRequest: session.pullRequest,
+                ),
             ),
             activity: Row.Activity(
                 state: SessionState.role(for: session.status),
