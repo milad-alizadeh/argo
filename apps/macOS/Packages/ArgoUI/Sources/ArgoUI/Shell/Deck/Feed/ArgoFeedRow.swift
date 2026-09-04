@@ -90,6 +90,13 @@ public enum ArgoFeedRow {
     }
 
     /// How wide that control is drawn — the pill's own lane; the diameter is the whole hit area.
+    ///
+    /// The icon button that keeps a box of its own rather than taking `ArgoControlBox.icon`
+    /// (#1243), and the derivation above is the reason: this number answers to the OTHER float over
+    /// the feed's bottom edge, not to the button. At the settled 26 the circle would stand shorter
+    /// than the pill beside it and read as something inside that lane rather than beside it — and
+    /// it would drop under the 28pt pointer target `FeedTailContractTests` holds it to, which
+    /// nothing here has words to grow it back past.
     public static var tailDiameter: CGFloat {
         ArgoPlanPill.laneHeight
     }

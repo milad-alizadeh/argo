@@ -12,8 +12,8 @@ import SwiftUI
 /// One control and not two, and the position is the reason. What the pointer is over when a Turn
 /// starts must be the thing that acts on that run — a second button appearing beside this one would
 /// move the send under the hand of somebody reaching for it, at the one moment they are reaching
-/// fast. Stop is therefore a STATE of this control: same 26pt circle, same place, the attention ink
-/// in place of the accent.
+/// fast. Stop is therefore a STATE of this control: same box, same place, the attention ink in
+/// place of the accent.
 struct SendButton: View {
     @Environment(\.argo) private var argo
 
@@ -25,22 +25,20 @@ struct SendButton: View {
     package var stop: () -> Void = {}
 
     var body: some View {
-        Button(action: isRunning ? stop : send) {
-            mark
-                .foregroundStyle(ink)
-                .frame(
-                    width: ArgoComposerVessel.controlDiameter,
-                    height: ArgoComposerVessel.controlDiameter,
-                )
-                .background(ground, in: .circle)
-                .contentShape(.circle)
-        }
-        .buttonStyle(.plain)
+        ArgoIconButton(
+            // The tooltip says MORE than the label rather than something else: the key that
+            // presses this, and what a stop actually stops.
+            voice: ArgoControlVoice(
+                isRunning ? "Stop" : "Send",
+                help: isRunning ? "Stop the running Turn" : "Send — Return",
+            ),
+            face: ArgoControlFace(ink: argo.color.text.onAccent, ground: .fill(ground)),
+            act: isRunning ? stop : send,
+            mark: { mark },
+        )
         // Never disabled while a Turn runs: stopping one has nothing to do with whether there is
         // anything in the field, and the empty field is the commonest state to be stopping from.
         .disabled(!isRunning && !isSendable)
-        .help(isRunning ? "Stop the running Turn" : "Send — Return")
-        .accessibilityLabel(isRunning ? "Stop" : "Send")
     }
 
     /// A symbol for one state and a drawn square for the other, which is not the inconsistency it
@@ -67,10 +65,6 @@ struct SendButton: View {
         } else {
             argo.color.surface.raised
         }
-    }
-
-    private var ink: ArgoColor {
-        isRunning || isSendable ? argo.color.text.onAccent : argo.color.text.disabled
     }
 }
 

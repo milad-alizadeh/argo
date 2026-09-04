@@ -15,6 +15,9 @@ extension SpecimenRegistry {
         // The map's own five families (#1142), on the desktop rather than the deck — the ground
         // they are really read against, and one no other room has.
         SpecimenEntry("atlasContract") { AtlasContractSpecimen() },
+        // The contract's icon buttons, on a sheet of their own: the sheet above is longer than any
+        // window, and a section nobody can render is not the drift check #1243 asked for.
+        SpecimenEntry("iconButtons") { IconButtonSpecimen() },
         // The map's first drawn pixels: one Metal-shaded plate on the desktop (#1144). Rendered
         // from the running app rather than a preview, because what is being asked is whether the
         // SHIPPED binary carries a compiled shader at all.

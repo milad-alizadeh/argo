@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
@@ -7,7 +8,7 @@ import SwiftUI
 /// controls that act on it read in scope order along one line rather than at three heights.
 struct BacklogControls: View {
     var body: some View {
-        ToolbarVessel {
+        ArgoIconButtonGroup {
             BacklogMenu()
         }
     }

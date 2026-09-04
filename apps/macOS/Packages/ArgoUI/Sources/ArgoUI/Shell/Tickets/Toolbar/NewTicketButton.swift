@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
@@ -11,12 +12,19 @@ import SwiftUI
 /// its state: never hidden, disabled in place while a create is on the wire or the token is dead,
 /// and untouched by mere staleness.
 package struct NewTicketButton: View {
+    @Environment(\.argo) private var argo
+
     var creation = TicketsToolbarIntents.Creation()
 
     package var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
-            ToolbarVessel {
-                ToolbarIcon(symbol: ArgoSymbol.newTicket, label: "New ticket", act: creation.act)
+            ArgoIconButtonGroup {
+                ArgoIconButton(
+                    ArgoSymbol.newTicket,
+                    voice: ArgoControlVoice("New ticket"),
+                    face: ArgoControlFace(ink: argo.color.text.tertiary),
+                    act: creation.act,
+                )
             }
             .disabled(!creation.control.isEnabled)
             // Beside the vessel, so the vessel's own geometry is untouched by either disabling or

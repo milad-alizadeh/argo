@@ -95,7 +95,10 @@ grows by — then scrolls inside itself. The feed above is never squeezed.
 > the box is set at `19.5 − leading` and a fragment then measures 19.5 exactly. Without that, six
 > lines measure 121 against a 117pt ceiling and the sixth is drawn cut in half.
 
-**The footer row** — `base` (8) gap, `base` (8) top padding. Controls left to right: `+` (26pt),
+**The footer row** — `base` (8) gap, `base` (8) top padding. The 26pt below is no longer this
+study's own number: it is `ArgoControlBox.icon`, the box every icon button in the app is drawn in
+since #1243, and both controls here draw through `ArgoIconButton`. Controls left to right: `+`
+(26pt),
 spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
 
 **`ModePicker`'s closed control** — **the platform's, measured by nobody here** (amended in build,

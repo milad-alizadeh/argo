@@ -6,9 +6,6 @@ import SwiftUI
 /// (`docs/designs/cockpit-session-composer.md`). Values a token already owns are spelled through
 /// that token at the call site and are not restated here.
 public enum ArgoComposerVessel {
-    /// The circle the send arrow sits in, and the attach control when an adapter carries one.
-    public static let controlDiameter: CGFloat = 26
-
     /// The stop mark inside that circle while a Turn runs (#541) — a quarter of the disc it sits
     /// in, measured off `docs/designs/composer/running.png`.
     ///

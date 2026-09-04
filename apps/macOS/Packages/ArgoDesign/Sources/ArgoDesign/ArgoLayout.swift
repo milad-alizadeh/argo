@@ -61,6 +61,13 @@ public enum ArgoLayout {
     /// The square a small mark answers clicks over (`argoHitTarget`). The mark keeps its rung; this
     /// is the shape UNDER it, which is what a pointer actually has to find — the same distinction
     /// `seamGrabWidth` draws for a hairline.
+    ///
+    /// It kept its own number through #1243, which settled the icon BUTTON's box at
+    /// `ArgoControlBox.icon`, because the two are not the same thing: this square is `Color.clear`
+    /// laid over a mark that is not a control of its own — a chevron, a dismiss — and it draws
+    /// nothing, takes no ground and moves nothing in the row's rhythm. A button's box is painted
+    /// and carries the press. Snapping this to 26 would widen a target nobody can see, which is a
+    /// change to what a row swallows rather than to what it draws.
     public static let controlHitTarget: CGFloat = 24
     /// A draggable seam's hit area. The line stays a hairline; this is the width of the invisible
     /// strip over it, which is what a pointer actually has to find.

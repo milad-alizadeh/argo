@@ -46,7 +46,7 @@ column-placement question** below for what the bands bought and what they cost.
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `BacklogHeader` | molecule | `ArgoUI/Shell/Tickets/Backlog/` | `reading: TicketsChromeProjection.Reading` | — | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt. **#855**: words only, the controls left it |
-| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | — | `ToolbarVessel`, `BacklogMenu` | **#855**: split out of `BacklogHeader` when the controls returned to the row. **#900**: the funnel it also held was bound to `{}`, so the mark, its `narrowing` intent and the rule beside it are deleted |
+| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | — | `ArgoIconButtonGroup`, `BacklogMenu` | **#855**: split out of `BacklogHeader` when the controls returned to the row. **#900**: the funnel it also held was bound to `{}`, so the mark, its `narrowing` intent and the rule beside it are deleted |
 | `BacklogMenu` | atom | `ArgoUI/Shell/Tickets/Backlog/` | — | stock `Menu` | Mail's `⋯` beside its filter. **#900**: its one row is a `Text`, so the `grouping` closure it took is gone too |
 | ~~`TicketBand`~~ | — | — | — | — | added by #836 to carry New ticket and the ticket's verbs over their column. **Deleted by #855**: both are toolbar items again |
 
@@ -335,23 +335,24 @@ picker now, not this room's.
 |---|---|---|---|---|---|
 | `TicketsToolbar` | organism | `ArgoUI/Shell/Tickets/Toolbar/` | `reading: Reading`, `intents: TicketsToolbarIntents`, `held: TicketsRoom.Held` | `BacklogControls`, `NewTicketButton`, `StartControl`, `BacklogSearchField` | the `.titlebar.three` grid. **#836**: search alone, the rest went to the bands. **#855**: every control the room has, on one line |
 | ~~`BacklogToolbarLabel`~~ | molecule | — | — | — | **#836**: renamed `BacklogHeader` and moved into the list pane |
-| `ToolbarVessel` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
-| `ToolbarIcon` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `symbol: String`, `label: String`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
-| `NewTicketButton` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `act: () -> Void` | `ToolbarVessel`, `ToolbarIcon` | `ibtn('compose')` |
-| `StartControl` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `verbs: Verbs`, `mode: Binding<SessionMode>` | `ToolbarVessel`, `ModeMenu`, `DeckSeparator`, `ToolbarIcon` | `.icap.split` |
+| `ArgoIconButtonGroup` | atom | `ArgoDesign/ArgoAtoms/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
+| `ArgoIconButton` | atom | `ArgoDesign/ArgoAtoms/` | `symbol: String`, `voice: ArgoControlVoice`, `face: ArgoControlFace`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
+| `NewTicketButton` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `act: () -> Void` | `ArgoIconButtonGroup`, `ArgoIconButton` | `ibtn('compose')` |
+| `StartControl` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `verbs: Verbs`, `mode: Binding<SessionMode>` | `ArgoIconButtonGroup`, `ModeMenu`, `ArgoIconButtonRule`, `ArgoIconButton` | `.icap.split` |
 | `ModeMenu` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `mode: Binding<SessionMode>` (4 rungs) | stock `Menu` + `Picker(.inline)` | `.menu` / `MODE_MENU` |
 | `BacklogSearchField` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `query: Binding<String>` | stock `TextField`, `argoFloatingGlass` | `.search.glass` |
 | `TicketsToolbarProjection` | value | `ArgoUI/Shell/Tickets/Toolbar/` | `reading(of:in:showing:) -> Reading` | — | the `titlebarHTML()` branches |
 | `TicketsToolbarIntents` | value | `ArgoUI/Shell/Tickets/Toolbar/` | four closures plus a `Verbs` triple, all inert by default | — | the buttons' `title=` strings |
 
-`ArgoTicketsToolbar` beside them is the surface sheet, not a component: the block width, the icon
-button's slot, the vessel inset, the split rule and the search field's measure.
+`ArgoTicketsToolbar` beside them is the surface sheet, not a component: the block width and the
+search field's measure. **#1243** took the icon button's slot, the vessel inset and the split rule
+off it — four headers each measured their own, and all four now read `ArgoControlBox`.
 
 ## What stayed inline
 
-- **The two link verbs.** `ToolbarIcon` twice inside `StartControl`, single-use each.
+- **The two link verbs.** `ArgoIconButton` twice inside `StartControl`, single-use each.
 - **The `Start` verb itself.** A `Button` with a glyph and a word, in the one control that spends
-  a word. Extracted it would be a `ToolbarIcon` with a label bolted on.
+  a word. Extracted it would be an `ArgoIconButton` with a label bolted on.
 - **The row's flexible spacer.** `ToolbarSpacer(.flexible, placement: .primaryAction)`, stock.
 
 ## The column-placement question — answered, and what the wrong answer showed (#836)
