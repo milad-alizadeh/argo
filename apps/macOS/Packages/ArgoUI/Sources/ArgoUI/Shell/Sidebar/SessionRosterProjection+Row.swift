@@ -55,6 +55,10 @@ extension SessionRosterProjection {
         let clock: Clock?
         /// The clock as words, fixed at projection time — what `announcement` says for it.
         private let spokenClock: String?
+        /// The OPEN Turn's own start, kept apart from `clock`'s Session-wide reading (#1330) —
+        /// what the dot's pulse ages off (#1291). `nil` wherever `clock` is, and also on a
+        /// managed Session running for hours whose newest Turn Argo cannot anchor.
+        private let turnStartedAtMs: Int?
         let state: ArgoOperationalState?
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning.
@@ -101,6 +105,7 @@ extension SessionRosterProjection {
             self.isArchived = availability.isArchived
             self.clock = activity.clock
             self.spokenClock = activity.spokenClock
+            self.turnStartedAtMs = activity.turnStartedAtMs
             self.state = activity.state
             self.stateWord = activity.stateWord
             self.activity = activity.activity
@@ -123,8 +128,7 @@ extension SessionRosterProjection {
         /// a record last LANDED, and ageing a wait off that would claim a Turn start Argo never
         /// saw. Those rows fall back to when the row appeared, which is the feed's own answer.
         var turnStartedAt: Date? {
-            guard case let .turn(startedAtMs) = clock else { return nil }
-            return Date(epochMs: startedAtMs)
+            turnStartedAtMs.map(Date.init(epochMs:))
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
@@ -176,6 +180,8 @@ extension SessionRosterProjection {
                 dot: Row.Activity.Dot(state: nil, word: nil),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
+                    // No dot on a fold either (above), so no Turn pulse to pace.
+                    turnStartedAtMs: nil,
                 ),
                 doing: Row.Activity.Doing(
                     // A fold stands for several runs at once, so one run's call drawn for all of
@@ -232,6 +238,7 @@ extension SessionRosterProjection {
                 ),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
+                    turnStartedAtMs: openTurnStartedAtMs(for: session, in: events),
                 ),
                 doing: Row.Activity.Doing(
                     activity: activity(of: session, in: events),

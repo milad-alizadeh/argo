@@ -11,6 +11,11 @@ package extension TranscriptFixtures {
     ///
     /// The unreadable line is in here for the opposite reason: it IS drawn, and a record has to be
     /// truncated or corrupt to produce one, so without it the surface is never looked at.
+    ///
+    /// **Its own first prompt carries no stamp** (#1330). This is the fixture `ShellPreview`
+    /// hangs a `running` managed Session off, and the roster's clock now counts from the
+    /// resume-chain's FIRST prompt rather than the open Turn's — a stamp here would be a fixed
+    /// point in 2024, and the shared preview would draw a Session that has run for months.
     static let previewTranscript: [TranscriptEvent] = [
         .prompt(
             text: "Read the anatomy study before you start, then wire the feed's prose through "
@@ -18,7 +23,7 @@ package extension TranscriptFixtures {
                 + "every other kind arrives with its own ticket, so ignore them cleanly rather "
                 + "than drawing a placeholder where a surface has not been decided yet.",
             images: [],
-            atMs: 1_733_000_000_000,
+            atMs: nil,
         ),
         .thought(
             markdown: "The study puts prose at a reading measure and reasoning in the same "
@@ -84,10 +89,9 @@ package extension TranscriptFixtures {
     /// read out of the OPEN Turn, so without a Turn that is open there is nothing for it to say
     /// and the row falls back to the fact it always carried. A long command on purpose — the line
     /// has to be seen giving up its tail to the clock beside it.
-    /// **Neither event is stamped**, unlike every prompt above it. A stamp here would be an open
-    /// Turn's start, and the roster's live clock would then count from a moment in 2024 — the
-    /// live reading has a specimen of its own (`TurnClockRosterSpecimen`), which stamps relative
-    /// to now for exactly that reason.
+    /// **Neither event is stamped** — the live reading has a specimen of its own
+    /// (`TurnClockRosterSpecimen`), which stamps relative to now for exactly that reason; this
+    /// fixture is not it, and its own opening prompt above stays unstamped for the same reason.
     static let stillWorking: [TranscriptEvent] = [
         .prompt(text: "Run the gates before you open the PR.", images: [], atMs: nil),
         .toolCall(ToolCall(

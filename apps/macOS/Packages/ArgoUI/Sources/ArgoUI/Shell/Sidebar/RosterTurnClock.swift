@@ -17,7 +17,7 @@ struct RosterTurnClock: View {
         switch clock {
         case let .seen(phrase):
             reading { _ in phrase }
-        case let .turn(startedAtMs):
+        case let .session(startedAtMs):
             // The dot's own ink as a figure — the one running-ink text in the sidebar.
             reading { now in TurnClockPhrase.figure(seconds: seconds(since: startedAtMs, at: now)) }
                 .foregroundStyle(ArgoOperationalState.running.tint(in: argo.color))
@@ -47,7 +47,7 @@ struct RosterTurnClock: View {
 
 #Preview("Turn clock — the three readings of the one slot") {
     VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-        RosterTurnClock(clock: .turn(startedAtMs: Date().epochMs - 252_000))
+        RosterTurnClock(clock: .session(startedAtMs: Date().epochMs - 252_000))
         RosterTurnClock(clock: .output(sinceMs: Date().epochMs - 12000))
         RosterTurnClock(clock: .seen("2m ago"))
     }

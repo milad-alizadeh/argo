@@ -62,13 +62,16 @@ extension SessionRosterProjection.Row {
             let word: String?
         }
 
-        /// The one age slot in both its forms. They are read off the same moment at the same
-        /// time and no call site names one without the other, which is what makes them one
-        /// parameter rather than two.
+        /// The one age slot in both its forms, plus the OPEN Turn's own start the dot's pulse
+        /// paces off (`SessionRosterProjection.openTurnStartedAtMs(for:in:)`, #1291) — kept apart
+        /// from `clock`'s Session-wide reading since #1330. All three are read off the same
+        /// moment at the same time and no call site names one without the others, which is what
+        /// makes them one parameter rather than three.
         struct Age {
             let clock: SessionRosterProjection.Clock?
             /// The clock as words, fixed at projection time — what the announcement says for it.
             let spoken: String?
+            let turnStartedAtMs: Int?
         }
 
         /// What the Session is doing right now, in both the words it left behind and the list it
@@ -85,6 +88,9 @@ extension SessionRosterProjection.Row {
         let stateWord: String?
         let clock: SessionRosterProjection.Clock?
         let spokenClock: String?
+        /// The OPEN Turn's own start, independent of `clock`'s Session-wide reading — what the
+        /// dot's pulse paces off (#1291).
+        let turnStartedAtMs: Int?
         /// `nil` on every row that is not a running Session with a call behind it — see
         /// `SessionRosterProjection.activity(of:in:)`.
         let activity: String?
@@ -104,6 +110,7 @@ extension SessionRosterProjection.Row {
             self.stateWord = dot.word
             self.clock = age.clock
             self.spokenClock = age.spoken
+            self.turnStartedAtMs = age.turnStartedAtMs
             self.activity = doing.activity
             self.plan = doing.plan
             self.subagents = subagents

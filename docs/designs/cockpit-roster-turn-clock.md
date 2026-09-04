@@ -13,6 +13,13 @@ stays silent, and the feed stays silent, which
 **The renders in [`roster-clock/`](roster-clock/) are the spec.** The measurements below are the
 numbers a ticket must carry.
 
+**The reading counts the Session, not any one Turn (#1330).** It runs from the resume-chain's
+first prompt to now, and a Turn boundary in between changes nothing — the gaps between Turns
+count too, which is the simpler rule and the one every render here already shows: nothing in
+`roster-clock/` draws a reset at a Turn boundary. The dot's own pulse (#1291, its sweep speed)
+still paces off the CURRENT Turn's freshness; that is a different fact and did not move with
+this one.
+
 The study lives on the throwaway branch `worktree-prototype-618-turn-elapsed`
 (`docs/designs/prototypes/turn-elapsed-prototype.html`), where the three rejected placements are
 still switchable (`?variant=A|C|D`) and the clocks actually tick. It is there to be re-explored,
@@ -40,12 +47,13 @@ no new vocabulary — it *uses* the distinction the wording already carried.
 
 | Condition | Reading | Ink | Tier |
 |---|---|---|---|
-| managed and `running`, Turn start known | `4m 12s` — live duration, ticking | `state.running` | DIRECT |
+| managed and `running`, Session start known | `4m 12s` — live duration, ticking from the resume-chain's first prompt, unbroken by any Turn boundary in between | `state.running` | DIRECT |
 | observed (external) and mid-turn per its transcript | `output 12s ago` — resets as records land | `text.tertiary` | DERIVED |
 | anything else | `2m ago` — the existing seen reading, unchanged | `text.tertiary` | as today |
 
-**Degrade-down is the row's rule.** A managed Session whose Turn start Argo cannot vouch for
-(resumed mid-turn, record missing) takes the seen reading, never a guessed duration. An observed
+**Degrade-down is the row's rule.** A managed Session whose start Argo cannot vouch for (the
+resume-chain's first prompt unstamped, record missing) takes the seen reading, never a guessed
+duration. An observed
 Session never shows a duration at all — Argo has only the last record's arrival, and a quiet
 mid-turn genuinely reads as idle, so `output … ago` states exactly what is known and nothing
 more. It never takes `state.running` ink: mint on a derived reading would render a false DIRECT.

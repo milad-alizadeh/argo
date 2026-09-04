@@ -10,19 +10,19 @@ struct TurnClockProjectionTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
     @Test
-    func `a managed running Session's slot counts from its open Turn's prompt`() throws {
+    func `a managed running Session's slot counts from its first prompt`() throws {
         let row = try #require(rows(session(
             status: .running,
             events: [.prompt(text: "go", images: [], atMs: msAgo(252))],
         )).first)
 
-        #expect(row.clock == .turn(startedAtMs: msAgo(252)))
+        #expect(row.clock == .session(startedAtMs: msAgo(252)))
     }
 
     @Test
     func `a steer typed mid-turn does not restart the clock`() throws {
-        // A steer is a prompt into the same sequence (`TranscriptEvent.prompt`), so the Turn's
-        // start is the FIRST prompt after the last boundary, never the latest one.
+        // A steer is a prompt into the same sequence (`TranscriptEvent.prompt`), so the Session's
+        // start is the FIRST prompt of the whole chain, never the latest one.
         let row = try #require(rows(session(
             status: .running,
             events: [
@@ -31,11 +31,13 @@ struct TurnClockProjectionTests {
             ],
         )).first)
 
-        #expect(row.clock == .turn(startedAtMs: msAgo(300)))
+        #expect(row.clock == .session(startedAtMs: msAgo(300)))
     }
 
     @Test
-    func `a prompt before the last boundary belongs to a Turn already over`() throws {
+    func `a Turn boundary between two prompts does not restart the clock`() throws {
+        // Unbroken by a Turn boundary (#1330): the reading is how long the SESSION has run, the
+        // gap included, not how long the newest Turn alone has been open.
         let row = try #require(rows(session(
             status: .running,
             lastSeenAtMs: msAgo(120),
@@ -46,16 +48,20 @@ struct TurnClockProjectionTests {
             ],
         )).first)
 
-        #expect(row.clock == .turn(startedAtMs: msAgo(45)))
+        #expect(row.clock == .session(startedAtMs: msAgo(600)))
     }
 
     @Test
-    func `a Turn whose prompt carries no stamp degrades to the seen reading`() throws {
-        // Degrade-down: a duration Argo cannot anchor is never guessed at.
+    func `a Session whose first prompt carries no stamp degrades to the seen reading`() throws {
+        // Degrade-down: a duration Argo cannot anchor is never guessed at, however many stamped
+        // prompts follow it.
         let row = try #require(rows(session(
             status: .running,
             lastSeenAtMs: msAgo(120),
-            events: [.prompt(text: "go", images: [], atMs: nil)],
+            events: [
+                .prompt(text: "go", images: [], atMs: nil),
+                .prompt(text: "also check the tests", images: [], atMs: msAgo(30)),
+            ],
         )).first)
 
         #expect(row.clock == .seen("2m ago"))

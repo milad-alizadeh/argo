@@ -37,7 +37,7 @@ struct SessionRosterSpecimenTests {
         let rows = TurnClockRosterSpecimen.rows
 
         #expect(rows.contains {
-            if case .turn = $0.clock {
+            if case .session = $0.clock {
                 true
             } else {
                 false

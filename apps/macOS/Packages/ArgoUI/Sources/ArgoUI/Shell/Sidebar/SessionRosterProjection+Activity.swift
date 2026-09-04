@@ -26,7 +26,7 @@ extension SessionRosterProjection {
     }
 
     /// **Backwards, and it stops at the OPEN Turn's boundary** (ADR-0028 Rule 1), the way
-    /// `openTurnStartMs` does. Two things ride on that bound and neither is the arithmetic:
+    /// `openTurnStartedAtMs` does. Two things ride on that bound and neither is the arithmetic:
     ///
     /// A call before the last `turnEnded` belongs to a Turn that finished, and drawing it while
     /// the next one runs is the same stale reading the `running` guard above exists to refuse —
