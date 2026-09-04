@@ -99,7 +99,7 @@ text can share one real mask — do that rather than porting the keyframe.
 | Lane width | 720pt | `ArgoFeedRow.column` — **the full measure**, not the 672pt text column |
 | Lane bleed | 24pt each side | cancels `ArgoFeedRow.inset` |
 | Lane height | 20pt | `ArgoFeedRow.lineHeight` |
-| Filament length | 30% of the measure = 216pt | `ArgoFeedRow.workingThreadShare` **(new)** |
+| Filament length | 30% of the COLUMN = 216pt, in any lane (#1246) | `ArgoFeedRow.workingThreadShare` **(new)** |
 | Filament thickness | 2pt | `ArgoStroke.indicator` |
 | Filament ends | capsule | height ÷ 2 |
 | Glow | blur 4, no offset, opacity 0.6 | `ArgoElevation.bloom` **(new)** |
@@ -127,12 +127,17 @@ once.
 Past roughly 10s a wait stops being part of the interaction, so a 6-minute think must not look
 like a 3-second one.
 
-| Age | Period | Glow |
-|---|---|---|
-| under 10s | 1.9s | 0.60 |
-| 10s – 60s | 2.8s | 0.49 |
-| 1m – 5m | 3.8s | 0.40 |
-| over 5m | 4.9s | 0.30 |
+> **Superseded by [`cockpit-feed-waiting.md`](cockpit-feed-waiting.md) (#1246).** The ladder's
+> *shape* stands — the glows are untouched and it still cools and never warms — but its base
+> period drops from 1.9s to 1.2s and the rungs re-base on it. Read that doc's table, not this
+> one, and build to it. The old column is kept beside the new so the change can be seen.
+
+| Age | Period, superseded | Period | Glow |
+|---|---|---|---|
+| under 10s | 1.9s | **1.2s** | 0.60 |
+| 10s – 60s | 2.8s | **1.8s** | 0.49 |
+| 1m – 5m | 3.8s | **2.4s** | 0.40 |
+| over 5m | 4.9s | **3.1s** | 0.30 |
 
 The ion **cools and slows**; it never warms. Claude Code warms its spinner to amber at 10s, and
 Argo must not: `state.attention` means *something needs you*, and a long think needs nothing.
@@ -172,13 +177,17 @@ that has to change, and the change was chosen deliberately over a separate `Argo
    than shorten it, and so the contract sheet can render loops as loops.
 2. **`ArgoMotion.Curve.linear`** — new case. The row's wash is linear; an eased text sweep reads
    as a stutter.
-3. **`ArgoMotion.working`** — the first repeating role. Period 1.9s at rest, `.linear`,
-   `reducedDuration: nil`, `repeats: true`.
+3. **`ArgoMotion.working`** — the first repeating role. `.linear`, `reducedDuration: nil`,
+   `repeats: true`. Period 1.9s at rest as approved here, **re-based to 1.2s by #1246** — the
+   1.9s pass read as dawdling once a second ion ran beside it at the same length.
 4. **`durationCeiling` amended** — the 0.5s cap holds for every non-repeating role and stops
    applying to repeating ones. The doc comment saying nothing loops is rewritten, not deleted:
    it should now say there is exactly one loop and why.
 5. **`ArgoFeedRow.workingThreadShare: CGFloat = 0.3`** — a share of the column, following
-   `bubbleShare: 0.78`, so the filament tracks `column` instead of freezing at 216pt.
+   `bubbleShare: 0.78`, so the filament tracks `column` instead of freezing at 216pt. #1246
+   pins where the share is APPLIED: to the column, once, and never to whatever lane the ion
+   happens to run in. Travel is stated in the filament's own lengths, so two lanes only read at
+   one speed if the filament is one length.
 6. **`ArgoElevation.bloom = ArgoElevation(blur: 4, yOffset: 0, opacity: 0.6)`** — a glow is an
    elevation with no offset, and the struct already has that shape.
 7. **`ArgoPalette.ion`** — the ordered four-stop ramp. `ArgoPalette` has no gradient roles today,

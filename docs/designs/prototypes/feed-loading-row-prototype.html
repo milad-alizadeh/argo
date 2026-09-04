@@ -18,6 +18,7 @@
     &age=0|10|60|300                     how long it has run — the ArgoWaitAge ladder.
     &speed=1.2|1.5|1.9|1.0|0.8           the ladder's BASE period. 1.2 is approved; 1.9 shipped.
     &still=1                             Reduce Motion.
+    &bare=1                              render mode: the design alone, no bar and no readout.
 -->
 <style>
   :root {
@@ -240,6 +241,10 @@
   .bar select { font:12px var(--sans); border-radius:999px; border:1px solid rgba(0,0,0,.2);
                 background:#fff; padding:var(--s-tight) var(--s-snug); }
   .bar label { display:flex; align-items:center; gap:var(--s-tight); padding-left:var(--s-snug); }
+
+  /* ---------- render mode (&bare=1) — the design with the study's chrome taken away ---------- */
+  body.bare .bar, body.bare .readout { display:none; }
+  body.bare .window { inset:0; border:none; border-radius:0; box-shadow:none; min-width:0; }
 </style>
 </head>
 <body>
@@ -423,7 +428,7 @@ const VARIANTS = {
       persists: 'ARRIVES at the end. The reading is written once, after the fact, never edited.',
       ion: 'the thread STAYS in the feed, and the plinth names the same wait in words. Two sayings of one wait — look hard at this.',
       symbol: 'one per named wait, at body size. The unnamed wait takes no mark and the plinth still speaks.',
-      failure: 'the plinth turns failure and does not leave until dismissed; the settled row lands in failure ink.',
+      failure: 'the plinth CLEARS and the row lands in failure ink — a plinth still standing over the row that says it is the alert #1229 is trying to leave behind.',
     },
     draw: drawC,
   },
@@ -438,6 +443,7 @@ let caseKey = CASES[params.get('case')] ? params.get('case') : 'starting';
 let state   = ['running','done','failed'].includes(params.get('state')) ? params.get('state') : 'running';
 let age     = AGES[params.get('age')] ? params.get('age') : '0';
 let still   = params.get('still') === '1';
+const bare  = params.get('bare') === '1';
 let speed   = SPEEDS[params.get('speed')] ? params.get('speed') : '1.2';
 
 /* The rung's period, scaled off the base. The ladder's RATIOS are what `ArgoWaitAge` settled;
@@ -576,19 +582,20 @@ function drawC(feed) {
 function drawPlinth(slot) {
   if (variant !== 'C') return;
   const c = theCase();
-  if (state === 'done') return;                     /* it dropped into the feed and cleared */
+  /* Every wait that ENDS drops into the reading and the plinth clears — a failure included.
+     #1229 asks for the failure to be said in the feed rather than in an alert alone, and a
+     plinth still standing over the row that says it IS that alert. */
+  if (state !== 'running') return;
 
-  const p = el('div', 'plinth ' + (state === 'running' ? 'live' : state));
+  const p = el('div', 'plinth live');
   const box = el('div', 'box');
   box.innerHTML =
     `${c.sym === 'none' ? '' : `<span class="sym">${SYM[c.sym]}</span>`}` +
-    `<span class="words">${state === 'failed' ? c.failed + ' — ' + c.why : c.running}</span>` +
-    (state === 'running' ? `<span class="took">${AGES[age].elapsed}</span>` : `<button class="dismiss">✕</button>`);
-  if (state === 'running') {
-    const rail = el('div', 'rail');
-    rail.appendChild(filament(ION_SHARE));
-    box.appendChild(rail);
-  }
+    `<span class="words">${c.running}</span>` +
+    `<span class="took">${AGES[age].elapsed}</span>`;
+  const rail = el('div', 'rail');
+  rail.appendChild(filament(ION_SHARE));
+  box.appendChild(rail);
   p.appendChild(box);
   slot.appendChild(p);
 }
@@ -598,6 +605,7 @@ function drawPlinth(slot) {
  * ------------------------------------------------------------------ */
 function draw() {
   document.body.classList.toggle('still', still);
+  document.body.classList.toggle('bare', bare);
   document.documentElement.style.setProperty('--period', periodAt(age).toFixed(2) + 's');
   document.documentElement.style.setProperty('--glow', AGES[age].glow);
 
