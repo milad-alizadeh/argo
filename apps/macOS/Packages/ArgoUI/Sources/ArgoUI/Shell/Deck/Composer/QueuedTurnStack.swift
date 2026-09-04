@@ -5,6 +5,9 @@ import SwiftUI
 /// the order they are read in (design decision 4).
 struct QueuedTurnStack: View {
     let turns: [QueuedTurn]
+    /// The one a refused release stopped at, and `nil` where nothing was refused (#1238). At most
+    /// one: the flush stops where it was refused, so every turn behind it is simply still waiting.
+    var refused: QueuedTurn.ID?
     /// Take one back, by id. The whole point of drawing a queued turn is that it is still
     /// recallable.
     let cancel: (UUID) -> Void
@@ -12,7 +15,7 @@ struct QueuedTurnStack: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             ForEach(turns) { turn in
-                QueuedTurnChip(turn: turn) { cancel(turn.id) }
+                QueuedTurnChip(turn: turn, isRefused: turn.id == refused) { cancel(turn.id) }
             }
         }
         .padding(.bottom, ArgoSpacing.snug)
@@ -40,4 +43,16 @@ struct QueuedTurnStack: View {
     .frame(width: 640)
     .argoDeckSurface()
     .argoAppearance()
+}
+
+#Preview("Queued turns — the first refused, the rest still waiting") {
+    let turns = [
+        QueuedTurn(text: "Run the suite once more."),
+        QueuedTurn(text: "Then open the PR against main."),
+    ]
+    return QueuedTurnStack(turns: turns, refused: turns[0].id, cancel: { _ in })
+        .padding(ArgoSpacing.section)
+        .frame(width: 640)
+        .argoDeckSurface()
+        .argoAppearance()
 }

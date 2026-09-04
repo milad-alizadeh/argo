@@ -13,14 +13,18 @@ struct QueuedTurnChip: View {
     @Environment(\.argo) private var argo
 
     let turn: QueuedTurn
+    /// Whether a release reached this follow-up and the port would not take it (#1238). Only the
+    /// word and its ink move: the words are still here and Retry still sends them, so a chip that
+    /// changed shape would read as something the reader had lost.
+    var isRefused = false
     /// Take it back — the whole point of drawing a queued turn is that it is still recallable.
     let cancel: () -> Void
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
-            Text(Self.label)
+            Text(label)
                 .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.interaction.accent)
+                .foregroundStyle(labelInk)
             Text(turn.text)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.primary)
@@ -40,16 +44,45 @@ struct QueuedTurnChip: View {
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
         .clipShape(.rect(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(Self.label): \(turn.text)")
+        .accessibilityLabel("\(label): \(turn.text)")
+    }
+
+    /// Which of the two words this chip is wearing. A `var` on the view rather than a ternary in
+    /// the `body`, so the accessibility label below reads the same one the eye does.
+    private var label: String {
+        isRefused ? Self.refusedLabel : Self.label
+    }
+
+    /// The refused word takes the seam's own failure ink, so the chip and the sentence above it
+    /// read as ONE fact rather than as two things that happened.
+    private var labelInk: ArgoColor {
+        isRefused ? argo.color.state.failure : argo.color.interaction.accent
     }
 
     /// Said once, on the row, in the machine face the rest of the vessel's meta is set in.
     static let label = "QUEUED"
+
+    /// What the same word becomes when a release reached this follow-up and the port refused it
+    /// (#1238). It states the OUTCOME and not the port's reason: the reason is one line above, on
+    /// the seam, with the Retry that answers it.
+    static let refusedLabel = "NOT SENT"
 }
 
 #Preview("Queued turn — one follow-up waiting") {
     QueuedTurnChip(
         turn: QueuedTurn(text: "And when that is green, open the PR against main."),
+        cancel: {},
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Queued turn — one the port would not take") {
+    QueuedTurnChip(
+        turn: QueuedTurn(text: "And when that is green, open the PR against main."),
+        isRefused: true,
         cancel: {},
     )
     .padding(ArgoSpacing.section)

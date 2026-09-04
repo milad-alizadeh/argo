@@ -66,20 +66,18 @@ package struct SessionComposer: View {
             enteredAtMs = WallClock.nowMs()
             arrived()
         }
-        // What was waiting on the Turn goes — `SessionComposer.turnEnded()` owns the order.
-        // `initial` is what makes it survive a switch: the composer is only on screen for the
-        // SELECTED Session, so a Turn that ends while the reader is looking elsewhere changes
-        // nothing here, and arriving is what delivers what was waiting, held rung included.
-        .onChange(of: composer.isRunning, initial: true) { _, isRunning in
-            guard !isRunning else { return }
-            turnEnded()
-        }
-        // A rung held against a Turn that ended between the pick and the port's answer has no
-        // boundary left to wait for, so the rung arriving is itself the trigger (#940).
-        .onChange(of: draft.heldMode) { _, held in
-            guard held != nil, !composer.isRunning else { return }
-            turnEnded()
-        }
+        // The Turn's boundary — `SessionComposer.turnEnded()` owns what it means, and it is the
+        // one edge here. `initial` is what makes it survive a switch: the composer is only on
+        // screen for the SELECTED Session, so a Turn that ends while the reader is looking
+        // elsewhere changes nothing here, and arriving is what carries out the boundary.
+        .onChange(of: composer.hasTurnEnded, initial: true) { _, _ in turnEnded() }
+        // …and everything the release reads, watched as a LEVEL beside it (#1238). A boundary is
+        // one edge and a queue stranded by it has nothing to try it again: a walk can hold the
+        // release, a refusal can stop it, and the Turn can pause on a permission and come back. So
+        // every movement in what the release reads is another chance to make it, held rung
+        // included — which is also the trigger for a rung answered after the boundary went by
+        // (#940).
+        .onChange(of: ComposerRelease.Awaiting(draft)) { _, _ in release() }
         // A Turn the CLI never heard, put back where it was typed (#682). `initial` for the reason
         // the flush above has it: the news lands while the reader may be looking at another
         // Session, and it is still theirs when they come back to this one.
@@ -104,7 +102,9 @@ package struct SessionComposer: View {
                 AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
             }
             if !draft.queued.isEmpty {
-                QueuedTurnStack(turns: draft.queued) { draft.cancel($0) }
+                QueuedTurnStack(turns: draft.queued, refused: draft.refusedTurn) {
+                    draft.cancel($0)
+                }
             }
             ComposerField(
                 text: $draft.text,

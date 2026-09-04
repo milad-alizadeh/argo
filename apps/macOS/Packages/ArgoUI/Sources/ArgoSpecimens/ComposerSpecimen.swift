@@ -181,6 +181,21 @@ struct ComposerSpecimen: View {
         queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],
     )
 
+    /// A release the port would not take (#1238): two follow-ups still above the field, the seam
+    /// carrying the reason with the Retry that answers it, and the ONE the release reached wearing
+    /// a different word.
+    ///
+    /// Its own state because the pairing is the whole claim — a chip that says only `QUEUED` after
+    /// a refused release is indistinguishable from one nothing ever tried, which is the picture
+    /// the defect was reported from.
+    static let queueRefused = ComposerDraft(
+        refusal: SessionDriveError.notDrivable.detail,
+        queued: [
+            QueuedTurn(text: "And when that is green, open the PR against main."),
+            QueuedTurn(text: "Then put the ticket number in the title."),
+        ],
+    )
+
     /// A draft that survived leaving the Session and coming back. Measured back from whenever the
     /// case is rendered rather than stamped once, for the reason the roster's ages are: a fixed
     /// millisecond would age into `3y ago` in the render it is meant to prove.

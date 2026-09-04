@@ -60,6 +60,14 @@ extension SpecimenRegistry {
         SpecimenEntry("composerQueued") {
             ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
         },
+        // A release the port refused (#1238), which is the one state where a chip and the seam say
+        // one thing together: the reason and its Retry above, and the follow-up the release
+        // actually reached marked NOT SENT while the one behind it still reads QUEUED. The
+        // judgement is whether the two words separate at a glance without the row growing a second
+        // colour scheme.
+        SpecimenEntry("composerQueueRefused") {
+            ComposerSpecimen(draft: ComposerSpecimen.queueRefused)
+        },
         // The other half of #541: the vessel a moment after Stop, the words still in the field and
         // the follow-ups gone, with the one line saying which went. The claim is that the line is
         // quiet enough not to read as a failure and specific enough that nobody reads it as being

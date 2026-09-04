@@ -143,6 +143,21 @@ package struct ComposerDraft: Equatable {
         }
     }
 
+    /// The follow-up a refused release stopped at, so its chip can say it was HELD BACK rather
+    /// than simply not reached yet (#1238).
+    ///
+    /// The head of the queue by construction: `flush` stops where it was refused, and everything
+    /// ahead of that one has gone. Derived rather than stored for exactly that reason — a second
+    /// field saying which turn it was could come to disagree with the queue it points into.
+    ///
+    /// Without it a refused release and a release that never ran draw the same picture, which is
+    /// the state #1238 was reported from: chips above the field, and no way to tell whether the
+    /// seam's Retry is the remedy or whether nothing tried at all.
+    var refusedTurn: QueuedTurn.ID? {
+        guard refusal != nil else { return nil }
+        return queued.first?.id
+    }
+
     /// What an interrupt takes from the composer: the QUEUE, and nothing else (#541).
     ///
     /// A follow-up typed while the Turn ran is released the moment that Turn ends — and an
