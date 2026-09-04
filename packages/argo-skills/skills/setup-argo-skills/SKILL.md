@@ -42,11 +42,14 @@ harnesses this project uses, replacing any existing `## Task tracking` section i
 ## Task tracking
 
 Maintain a live to-do list for any task with **three or more distinct steps**, edits across
-**multiple files**, or **a plan the user approved**. Claude Code: `TodoWrite`. Codex:
-`update_plan`.
+**multiple files**, or **a plan the user approved**. Claude Code: `TaskCreate` one call per item,
+then `TaskUpdate` for each status change — both are deferred, so load them once with
+`ToolSearch("select:TaskCreate,TaskUpdate")` before the first edit. Codex: `update_plan`.
 
 - Write the list **before the first edit**, not as a retrospective summary.
 - Exactly **one** item `in_progress` at a time; mark it `completed` the moment it is done.
+- Work the items **in the order the list gives them**, and mark an item `in_progress` **before**
+  starting it. If the real order turns out to be different, reorder rather than skip an item.
 - One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
 - Keep single-step edits, lookups, and conversational turns off the list.
 ```
