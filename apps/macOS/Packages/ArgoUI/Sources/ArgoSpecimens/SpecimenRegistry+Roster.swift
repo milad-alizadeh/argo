@@ -26,6 +26,10 @@ extension SpecimenRegistry {
         // rather than an assertion, because it is also what every way Metal can be ABSENT degrades
         // to — so this is the frame the one above is told apart from.
         SpecimenEntry("emptyAtlas") { AtlasTreemapSpecimen(map: nil) },
+        // The same picture inside the ROOM: the strip that says what was measured, and the page a
+        // Project with no atlas gets instead (#1148). The treemap above is the drawing on its own.
+        SpecimenEntry("atlasRoom") { AtlasRoomSpecimen() },
+        SpecimenEntry("atlasRoomUnmeasured") { AtlasRoomVacancySpecimen() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
         // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in

@@ -53,7 +53,7 @@ actor WorkspaceReader {
     /// nothing rather than a base Argo can always state — asking a second question to guess at the
     /// default branch would invent the very fact the absence is honest about.
     private func baseRef(at directoryURL: URL) -> String? {
-        answer(["rev-parse", "--abbrev-ref", "origin/HEAD"], at: directoryURL)
+        gitValue(git, ["rev-parse", "--abbrev-ref", "origin/HEAD"], at: directoryURL)
     }
 
     /// Both counts from one range. Left of the three dots is what the upstream has and HEAD does
@@ -62,19 +62,10 @@ actor WorkspaceReader {
     /// A branch with no upstream makes git exit non-zero, and that absence is carried all the way
     /// to the header rather than being read as two zeroes.
     private func divergence(at directoryURL: URL) -> UpstreamDivergence? {
-        let counts = answer(
-            ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"], at: directoryURL,
+        let counts = gitValue(
+            git, ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"], at: directoryURL,
         )?.split(whereSeparator: \.isWhitespace).compactMap { Int($0) }
         guard let counts, counts.count == 2 else { return nil }
         return UpstreamDivergence(ahead: counts[1], behind: counts[0])
-    }
-
-    /// git ends its answers with a newline, and an answer with nothing left in it is one git did
-    /// not give.
-    private func answer(_ arguments: [String], at directoryURL: URL) -> String? {
-        guard let output = git(arguments, directoryURL)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !output.isEmpty
-        else { return nil }
-        return output
     }
 }

@@ -5,6 +5,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
     case sessions
     case tickets
     case code
+    case atlas
 
     public var id: Self {
         self
@@ -15,6 +16,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
         case .sessions: "Sessions"
         case .tickets: "Tickets"
         case .code: "Code"
+        case .atlas: "Atlas"
         }
     }
 
@@ -23,6 +25,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
         case .sessions: ArgoSymbol.sessionsRoom
         case .tickets: ArgoSymbol.ticketsRoom
         case .code: ArgoSymbol.codeRoom
+        case .atlas: ArgoSymbol.atlasRoom
         }
     }
 
@@ -31,6 +34,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
         case .sessions: "1"
         case .tickets: "2"
         case .code: "3"
+        case .atlas: "4"
         }
     }
 
@@ -39,6 +43,7 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
         case .sessions: "Command 1"
         case .tickets: "Command 2"
         case .code: "Command 3"
+        case .atlas: "Command 4"
         }
     }
 

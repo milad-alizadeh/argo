@@ -45,6 +45,7 @@ extension CockpitView {
     /// Session that is very much selected — see `DrawnSession`.
     @ViewBuilder func detail(
         tickets: TicketsRoom?,
+        atlas: AtlasRoom,
         reading: SessionsRoomReading,
         isDrawn: Bool,
     )
@@ -70,6 +71,8 @@ extension CockpitView {
             scope: $feedScope,
             tickets: tickets,
         )
+        // The Atlas room, injected from ABOVE the deck for the reason `argoAtlasRoom` states.
+        .environment(\.argoAtlasRoom, atlas)
         // What the chain link at the foot of a handed-off reading does. Injected here because
         // this is the one view that holds the navigation.
         .environment(\.argoOpenSession) { fresh in navigation.session = fresh }

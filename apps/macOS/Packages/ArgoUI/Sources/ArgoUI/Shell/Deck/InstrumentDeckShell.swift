@@ -94,6 +94,8 @@ package struct InstrumentDeckShell: View {
             )
         case .tickets:
             tickets?.deck
+        case .atlas:
+            AtlasRoomView()
         case .code:
             Color.clear
         }
