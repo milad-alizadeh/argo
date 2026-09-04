@@ -69,6 +69,17 @@ says nothing about Swift**: never read one as proof the app builds.
 Where an exemption goes, why the hook only fires once it is on `main`, and the verification
 recipe: `docs/agents/quality-gates.md`.
 
+### Landing
+
+**A lane never rebases to open a PR.** It gates once on the base it was cut from and opens its
+PR there; `sh scripts/land.sh` is the one place a branch is rebased onto the current default
+branch, gated and merged, one at a time. Rebasing per lane made the gate cost lanes multiplied by
+merges, and `main` takes about ninety commits a day (#1377). The exception is a PR GitHub reports
+`CONFLICTING`, which only that branch's own session can resolve.
+
+Two lanes never own the same file, whatever the vocabulary split says. The arithmetic, the
+measurements and what the gate now does before its first command: `docs/agents/landing.md`.
+
 ## Session isolation
 
 **Every** change runs in a worktree under `.claude/worktrees/`, never in the shared main

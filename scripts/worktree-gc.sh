@@ -20,12 +20,32 @@
 #
 # Anything failing a check is reported, never removed. --dry-run reports only.
 #
+# --artifacts is the other sweep, and it reaps no worktree at all. It deletes the BUILD
+# OUTPUT inside every worktree — `apps/macOS/build` and `Packages/*/.build` — which is
+# regenerable by definition and is where the disk actually goes: 104 GB of the 106 GB under
+# .claude/worktrees on the day #1377 was written, against 9.1 GB of free space on the volume.
+# A near-full APFS volume slows every write the compiler makes, so this is a throughput
+# sweep as much as a disk one. It applies the quiet check and nothing else: a landed branch
+# is not required, because nothing here is the only copy of anything.
+#
 # Usage: sh scripts/worktree-gc.sh [--dry-run]
+#        sh scripts/worktree-gc.sh --artifacts [--dry-run]
 set -u
 
 QUIET_MINUTES=30
 DRY_RUN=0
-[ "${1:-}" = "--dry-run" ] && DRY_RUN=1
+ARTIFACTS=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --artifacts) ARTIFACTS=1 ;;
+    *)
+      echo "worktree-gc: unknown option $arg" >&2
+      echo "usage: worktree-gc.sh [--artifacts] [--dry-run]" >&2
+      exit 2
+      ;;
+  esac
+done
 
 # A hook can invoke this from any cwd, so the repo is located from the script's own
 # path rather than from wherever the caller happens to be standing.
@@ -38,6 +58,88 @@ git_common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) 
 }
 repo_root=$(dirname "$git_common")
 here=$(git rev-parse --show-toplevel)
+
+# --artifacts: the build-output sweep. It runs before anything that talks to the network,
+# because it needs neither a fetch nor `gh` — what it deletes is reproducible by running
+# the build again, so no signal about a branch could make it safer than it already is.
+if [ "$ARTIFACTS" = 1 ]; then
+  swept=0
+  held=0
+  freed_kb=0
+
+  # Kilobytes on disk under $1, or 0 when it is not there. `du -sk` rather than `-sh`:
+  # this gets summed, and a human-readable unit cannot be.
+  disk_kb() {
+    [ -e "$1" ] || { echo 0; return; }
+    du -sk "$1" 2>/dev/null | awk '{ print $1 + 0 }'
+  }
+
+  for wt in "$repo_root"/.claude/worktrees/*/; do
+    [ -d "$wt" ] || continue
+    wt=${wt%/}
+    name=${wt##*/}
+
+    # The build trees, never the worktree: Xcode's DerivedData for the app target, and one
+    # SPM scratch path per package.
+    #
+    # They are collected as positional parameters rather than a space-joined string. This
+    # list is the argument to `rm -rf`, and a string would be word-split on its way there —
+    # so one worktree with a space in its path would delete two directories neither of which
+    # was named (found in review).
+    set --
+    [ -d "$wt/apps/macOS/build" ] && set -- "$wt/apps/macOS/build"
+    for scratch in "$wt"/apps/macOS/Packages/*/.build; do
+      [ -d "$scratch" ] && set -- "$@" "$scratch"
+    done
+    [ $# -gt 0 ] || continue
+
+    # A build in flight writes into its scratch path constantly, so an artifact touched
+    # inside the quiet window is one somebody is still producing. This is the ONLY check,
+    # and it is deliberately the conservative one: deleting under a live `swift build`
+    # fails it with an error that reads like a compiler bug.
+    #
+    # It searches the TREE, not the top directory. `-maxdepth 0` stats the root alone, whose
+    # mtime moves only when a top-level entry is added or removed — and a compiler forty
+    # minutes into a build is rewriting files deep inside a directory structure that has not
+    # changed shape since the first minute. That root reads as quiet, and the check that this
+    # comment calls the only one would have deleted the tree under it (found in review).
+    #
+    # `-mmin`, not `-newermt`: both `find`s that turn up on this machine take it, and the
+    # relative timestamp form of `-newermt` is rejected by one of them. `-print -quit` stops
+    # at the first hit, so the usual answer costs one directory read rather than a walk of
+    # three gigabytes. A probe that FAILS counts as live: the reason it failed is unknown,
+    # and the destructive branch is not the one to take on unknown.
+    live=0
+    for target in "$@"; do
+      probe=$(find "$target" -mmin "-$QUIET_MINUTES" -print -quit 2>/dev/null) || probe=probe-failed
+      [ -n "$probe" ] && live=1
+    done
+    if [ "$live" = 1 ]; then
+      echo "  hold $name — built within the last $QUIET_MINUTES min"
+      held=$((held + 1))
+      continue
+    fi
+
+    kb=0
+    for target in "$@"; do
+      kb=$((kb + $(disk_kb "$target")))
+    done
+
+    if [ "$DRY_RUN" = 1 ]; then
+      echo "  sweep $name — $((kb / 1024)) MB of build output (dry run)"
+    else
+      for target in "$@"; do
+        rm -rf "$target"
+      done
+      echo "  swept $name — $((kb / 1024)) MB"
+    fi
+    swept=$((swept + 1))
+    freed_kb=$((freed_kb + kb))
+  done
+
+  echo "worktree-gc: $swept swept, $held held, $((freed_kb / 1024)) MB of build output"
+  exit 0
+fi
 
 git -C "$repo_root" fetch --prune --quiet origin 2>/dev/null
 

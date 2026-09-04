@@ -39,6 +39,27 @@ for (const [asked, expected] of ASKED) {
   )
 }
 
+// The module cache is the machine's and the DerivedData path is the worktree's (#1377). Both
+// halves are asserted, because getting either backwards is invisible: a private module cache
+// only costs time, and a shared DerivedData only corrupts under two lanes at once.
+check('build.sh shares the module cache and keeps DerivedData in the worktree', () => {
+  const result = run(BUILD, {
+    ...STUBBED,
+    env: { ARGO_SWIFT_CACHE_DIR: '/tmp/argo-swift-cache-under-test' },
+  })
+  assert.ok(
+    result.argv.includes('MODULE_CACHE_DIR=/tmp/argo-swift-cache-under-test/modules'),
+    `no shared module cache in: ${result.argv.join(' ')}`,
+  )
+  const derived = result.argv.indexOf('-derivedDataPath')
+  assert.notEqual(derived, -1, 'DerivedData must still be given a path')
+  assert.equal(result.argv[derived + 1], 'build', 'DerivedData stays inside the worktree')
+})
+
+// A build is believed only when it produced an app, and only then is a verdict recorded for
+// it (#1377). Both halves are exercised in `step-cache.test.mjs`, which builds in a repository
+// of its own: these cases run against the real tree, where the app is already on disk.
+
 rmSync(scratch, { recursive: true, force: true })
 
 report('swift build')

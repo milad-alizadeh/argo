@@ -22,6 +22,20 @@ import {
   swiftWriting,
 } from './swift-tooling.harness.mjs'
 
+// The shared caches swift-test.sh passes on every invocation (#1377), pinned to a directory of
+// this suite's own: the script's default is under the runner's home, and a test that spelled
+// that out would be asserting the machine rather than the script.
+const CACHE_DIR = '/tmp/argo-swift-cache-under-test'
+const CACHE_ENV = { ARGO_SWIFT_CACHE_DIR: CACHE_DIR }
+const CACHE_FLAGS = [
+  '--cache-path',
+  `${CACHE_DIR}/spm`,
+  '-Xswiftc',
+  '-module-cache-path',
+  '-Xswiftc',
+  `${CACHE_DIR}/modules`,
+]
+
 const LINT = 'scripts/swift-lint.sh'
 const FORMAT = 'scripts/swift-format.sh'
 const TEST = 'apps/macOS/scripts/swift-test.sh'
@@ -93,7 +107,7 @@ for (const [configuration, environment, flags] of [
 ]) {
   check(`swift-test.sh runs ${configuration} on a clean report, for every package`, () => {
     swiftWriting(suite('errors="0" tests="9" failures="0"'))
-    const result = run(TEST, { ...REPORTING, env: environment })
+    const result = run(TEST, { ...REPORTING, env: { ...environment, ...CACHE_ENV } })
     assert.equal(result.status, 0, result.output)
     assert.match(result.output, new RegExp(`${PACKAGES[0]} \\(${configuration}\\)`))
     for (const name of PACKAGES.slice(1)) {
@@ -105,10 +119,26 @@ for (const [configuration, environment, flags] of [
     const passed = result.argv.filter((arg) => arg !== 'test' && !arg.endsWith('.xml'))
     assert.deepEqual(
       passed,
-      PACKAGES.flatMap(() => ['--xunit-output', ...flags]),
+      PACKAGES.flatMap(() => ['--xunit-output', ...flags, ...CACHE_FLAGS]),
     )
   })
 }
+
+// The shared caches ride on every invocation, in both configurations (#1377). They are named
+// here rather than merely allowed for, because their absence is invisible: a run without them
+// is correct, just slower, and nothing else in this repo would ever notice they had been
+// dropped. The scratch path is the one that must NOT be shared, so it is asserted absent.
+check("swift-test.sh shares the caches that are the machine's, and not the scratch path", () => {
+  swiftWriting(suite('errors="0" tests="9" failures="0"'))
+  const result = run(TEST, { ...REPORTING, env: CACHE_ENV })
+  assert.equal(result.status, 0, result.output)
+  assert.ok(result.argv.includes('--cache-path'), `no --cache-path in: ${result.argv.join(' ')}`)
+  assert.ok(result.argv.includes('-module-cache-path'), 'no shared module cache')
+  assert.ok(
+    !result.argv.includes('--scratch-path'),
+    'the scratch path is per worktree: two lanes writing one is a race, not a cache',
+  )
+})
 
 check('swift-test.sh refuses a configuration it does not carry', () => {
   swiftWriting(suite('errors="0" tests="9" failures="0"'))
