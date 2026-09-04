@@ -179,6 +179,13 @@ private func promptText(_ content: [ContentBlock], carrying images: Int) -> Stri
 ///
 /// The output comes back as a Tool Call rather than as prose: a command ran and printed something,
 /// which is exactly what a Tool Call is.
+///
+/// And then the Turn is over (#1234). A local command is typed at the prompt like a Turn and the
+/// CLI writes a prompt record for it, but no agent ever answers one: the whole exchange is that
+/// record and this one. Nothing else in the file will ever close it, so a reader that leaves the
+/// Turn open leaves the Session `running` for good — and the Stop the reader then reaches for has
+/// no Turn to stop. The fault `.interrupted` was read for in #1189, and the same fix: the record
+/// that ENDS the exchange is read as the boundary it is.
 func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
     -> [TranscriptEvent] {
     if let printed = localCommandOutput(message.content) {
@@ -203,6 +210,10 @@ func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
                     endedAtMs: message.timestampMs,
                 ),
             )),
+            // `endTurn` and not `cancelled`: nothing was stopped and no wall was hit. The command
+            // was asked for, it answered, and that is a Turn that simply finished — which is what
+            // the roster reads `idle` off and what releases the follow-ups queued behind it.
+            .turnEnded(.endTurn),
         ]
     }
     let images = embeddedMedia(message.content, in: location)

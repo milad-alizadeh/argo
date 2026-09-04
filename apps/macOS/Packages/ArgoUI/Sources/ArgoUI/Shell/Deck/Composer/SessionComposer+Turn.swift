@@ -45,6 +45,31 @@ extension SessionComposer {
         draft.stopped(via: intents.stop)
     }
 
+    /// How long a landed Stop gets before its silence is worth saying (#1234).
+    ///
+    /// What is being waited on is the CLI writing a boundary and Argo reading it, which is the file
+    /// watch plus a fold — the same road `TurnDelivery.patience` allows three seconds for, and one
+    /// step longer. Generous on purpose, and in the direction that costs least: waiting too long
+    /// delays a line nobody is depending on, while ending early posts a false one over a Stop that
+    /// was landing all along.
+    static let stopPatience = Duration.seconds(5)
+
+    /// The wait after Stop, and what its ending leaves on the seam.
+    ///
+    /// Awaitable and internal for the reason `walk(to:)` is: the vessel only fires it, and a claim
+    /// about what it decides has to be one a test can make without a wall-clock guess.
+    ///
+    /// What it reads afterwards is the DRAFT and never `composer`, which is this View's own value
+    /// from the render that started the wait and says nothing about where the Session stands now.
+    /// The draft is a `@Binding` into the store, so its count is the live one — and it is the same
+    /// count any boundary clears, whoever made the Stop it stood for.
+    func watchStop(patience: Duration = stopPatience) async {
+        guard draft.unansweredStops > 0 else { return }
+        try? await Task.sleep(for: patience)
+        guard !Task.isCancelled else { return }
+        draft.stopDidNotTake()
+    }
+
     /// Ask the Session for a rung.
     ///
     /// In a `Task` because the picker's setter cannot wait: the walk takes a keystroke per rung

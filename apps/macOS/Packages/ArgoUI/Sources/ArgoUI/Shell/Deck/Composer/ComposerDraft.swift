@@ -47,9 +47,14 @@ package struct ComposerDraft: Equatable {
     /// Whether the walk for `heldMode` has begun, so no second boundary can start another (#653).
     /// Not `private(set)`, on the same rule as `heldMode` above.
     var isWalkingMode = false
-    /// Whether this composer's own Stop landed and the record has yet to report it (#1189). Not
-    /// part of `isClear`: it is a claim about an act in flight, never something a reader typed.
-    private var stopAwaitingRecord = false
+    /// How many Stops this composer has landed that no boundary has answered yet (#1189, #1234).
+    /// Not part of `isEmpty`: it is a claim about an act in flight, never something a reader typed.
+    ///
+    /// A COUNT and not a flag, though only `> 0` is ever asked of it here: it is what the vessel
+    /// keys its wait on (`SessionComposer.watchStop(patience:)`), and two Stops with no boundary
+    /// between them are two acts. A flag already true the second time would not move, so the second
+    /// click would be watched by nobody.
+    private(set) var unansweredStops = 0
 
     package init(
         text: String = "",
@@ -170,9 +175,33 @@ package struct ComposerDraft: Equatable {
         // Argo's own Stop drops the queue HERE, at the click, ahead of the record: waiting for the
         // status to turn would be waiting for the exact moment the follow-ups are released. The
         // claim is spent by the boundary that follows — see `mustDropQueue(afterInterrupt:)`.
-        stopAwaitingRecord = true
+        unansweredStops += 1
         dropQueue()
     }
+
+    /// The wait after a Stop went by and no boundary came with it (#1234).
+    ///
+    /// Given the OUTCOME rather than the act, for the reason `turnLost(_:whileRunning:)` is: the
+    /// waiting happens seconds after the click returned, and a `mutating` method cannot hold a
+    /// draft open across it. The vessel does the waiting; this decides what to say about it.
+    ///
+    /// It says nothing where a boundary has already answered — the wait is keyed to a value that
+    /// moves, but the vessel and the record race and the record is allowed to win.
+    ///
+    /// A NOTICE and not a refusal: nothing was sent and no unsent words are at risk, which is the
+    /// rule `dropQueue` states. And it does not stand over a refusal, which is the louder and more
+    /// exact answer to the same click — `ComposerSeamNote` already ranks the two, so a refused Stop
+    /// keeps the port's own reason rather than having it replaced by this vaguer one.
+    mutating func stopDidNotTake() {
+        guard unansweredStops > 0 else { return }
+        say(ComposerSeamLine(Self.stopDidNotTake))
+    }
+
+    /// What the seam says about it. Two claims, and neither is one Argo cannot stand behind: the
+    /// keystroke went and the Session has not come off `running`. Never that the agent is still
+    /// working, which is a DERIVED reading Argo does not own, and never that the Stop failed, which
+    /// nothing here can see.
+    package static let stopDidNotTake = "Stop did not take. The Session is still running."
 
     /// Drop what was waiting on the Turn, and say so where anything was.
     ///
@@ -196,8 +225,8 @@ package struct ComposerDraft: Equatable {
     /// The claim is spent by any boundary, not only by the one it was made for: a Stop whose
     /// interrupt the record somehow never reports must not go on swallowing the next one's drop.
     mutating func mustDropQueue(afterInterrupt wasInterrupted: Bool) -> Bool {
-        defer { stopAwaitingRecord = false }
-        return wasInterrupted && !stopAwaitingRecord
+        defer { unansweredStops = 0 }
+        return wasInterrupted && unansweredStops == 0
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
