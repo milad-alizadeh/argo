@@ -10,6 +10,30 @@ comment`, `gh issue close --comment`, and their `gh pr` equivalents all count. D
 time, not only when the text reads badly — apply it before the first draft goes out, not as a
 later cleanup pass.
 
+## Screenshots
+
+A screenshot is evidence. It belongs in the tracker, not only in the session.
+
+- When you create an issue from a bug report, put the user's screenshot in the body under a
+  `## Screenshot` heading.
+- A PR that changes how a screen looks carries one screenshot per changed state. If the change
+  is a fix, carry the before image and the after image.
+
+`gh issue` and `gh pr` cannot attach a file. Publish the PNGs to a ref instead, then embed a raw
+URL pinned to that commit. The recipe is in
+`packages/argo-skills/skills/pixel-review/PR-EVIDENCE.md`; use it for both cases. The namespace
+differs, because the lifetime does:
+
+- `refs/pr-screenshots/<branch-slug>` for a PR. `bun run worktrees:gc` deletes the ref once the
+  PR closes, and the image then goes 404. This is review-time evidence.
+- `refs/evidence/issue-<N>` for an issue. Nothing sweeps that namespace, because a closed bug
+  report is where the picture matters most.
+
+The raw URL renders on a public repo only. On a private repo, ask the user to drag the file into
+the body on github.com.
+
+You cannot read a pasted image as a file. Ask the user to save it and give you the path.
+
 ## Conventions
 
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.

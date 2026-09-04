@@ -5,7 +5,8 @@ Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both C
 ## Agent skills
 
 - **Issue tracker** — Issues and PRDs live in GitHub Issues on `milad-alizadeh/argo`, via the
-  `gh` CLI. See `docs/agents/issue-tracker.md`.
+  `gh` CLI. A screenshot goes in the issue body, and in the PR body when a screen
+  changes. See `docs/agents/issue-tracker.md`.
 - **Triage labels** — five canonical triage roles, each label string equal to its name. See
   `docs/agents/triage-labels.md`.
 - **Domain docs** — single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See
