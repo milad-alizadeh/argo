@@ -70,6 +70,9 @@ extension SpecimenRegistry {
                 open: FeedProjection.previewFailedWorkRowID,
             )
         },
+        // The list an open fold puts out, in the four states the pointer and the panel put it in
+        // (#1228) — none of which a still of the reading reaches.
+        SpecimenEntry("feedFoldNames") { FeedFoldNamesSpecimen() },
         SpecimenEntry("feedProse") { SpecimenScene.sessions(FeedProjection.previewProseRows) },
         // The two states of one long prompt (#946). Rendered at the feed's own measure: the fold is
         // a question about the column the bubble landed in, so a still taken at any other width

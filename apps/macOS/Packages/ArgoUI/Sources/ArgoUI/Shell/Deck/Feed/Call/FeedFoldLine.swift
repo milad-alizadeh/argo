@@ -18,20 +18,49 @@ package struct FeedFoldLine: View {
     let opening: FeedFoldOpening
 
     package var body: some View {
-        VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             Button(action: opening.expand) {
                 sentence
             }
-            .buttonStyle(FeedRowButtonStyle(isOpen: opening.isExpanded))
+            // No open ground of its own: while the list is out the BOX is what says the row is
+            // open, and a second wash inside it reads as a header selected against its own names.
+            .buttonStyle(FeedRowButtonStyle(isOpen: false))
             .disabled(fold.disclosure == .none)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(fold.spoken)
             .accessibilityHint(
                 fold.disclosure == .available ? "Lists what these calls were" : "",
             )
+            // The step the names take, less what the row style already gives the header: one
+            // rhythm down the box, without the header's own line moving when the list is folded
+            // away again.
+            .padding(
+                .vertical,
+                opening.isExpanded
+                    ? ArgoFeedRow.foldLineInsetY - FeedRowButtonStyle.groundInsetY : 0,
+            )
             if opening.isExpanded {
                 listed
             }
+        }
+        .background { box }
+    }
+
+    /// What holds the header and its names together while the row is open: ONE box, drawn exactly
+    /// where the header's own ground would have been.
+    ///
+    /// Behind the stack rather than around it, and outset by the row style's own inset, so nothing
+    /// inside moves a point when the list comes out — a box that laid its children out would shift
+    /// the header's words off the vertical every other row in the feed sets them on.
+    @ViewBuilder private var box: some View {
+        if opening.isExpanded {
+            RoundedRectangle(cornerRadius: ArgoRadius.control)
+                .fill(argo.color.surface.raised)
+                .overlay {
+                    RoundedRectangle(cornerRadius: ArgoRadius.control)
+                        .strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.hairline)
+                }
+                .padding(.horizontal, -FeedRowButtonStyle.groundInsetX)
         }
     }
 
@@ -75,28 +104,43 @@ package struct FeedFoldLine: View {
 
     /// Turned down while the list is out: the row is an accordion, and the mark says which way it
     /// opens rather than that a panel is up somewhere.
+    ///
+    /// The TURN is the whole of what it says, and it keeps one ink through it — an accent here
+    /// would read as a panel being up, which is a name's answer and never the header's. Standing
+    /// off the words by more than the sentence's own gap, because a mark that turns sits nearer
+    /// what is beside it in one of its two directions.
     @ViewBuilder private var chevron: some View {
         if fold.disclosure == .available {
             ArgoDisclosure(opening.isExpanded ? .below : .beside)
-                .foregroundStyle(
-                    opening.isExpanded ? argo.color.interaction.accent : argo.color.text.disabled,
-                )
+                .foregroundStyle(argo.color.text.disabled)
+                .padding(.leading, ArgoFeedRow.foldChevronGap)
         }
     }
 
     /// What the run actually did, listed under the count — but only while the reader has the list
     /// out.
+    ///
+    /// Stacked FLUSH, with a hairline over every name: each is a single line that ENDS, so what
+    /// parts one from the next is the rule rather than air, and the rule over the first is what
+    /// parts the whole list from the header it belongs to. `lineSpacing` is stated flush for the
+    /// same reason — it is inherited, and a list carrying the paragraph's leading stands as far
+    /// apart as the sentences of a message (#1228).
     private var listed: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             ForEach(fold.steps) { step in
                 FeedFoldStepName(
                     step: step,
-                    isCurrent: step.goesTo == opening.current,
+                    isCurrent: step.goesTo != nil && step.goesTo == opening.current,
+                    isPointedAt: step.id == opening.pointsAt,
                     look: opening.look,
                 )
+                .overlay(alignment: .top) {
+                    ArgoRule(ink: argo.color.edge.hairline)
+                        .padding(.horizontal, -FeedRowButtonStyle.groundInsetX)
+                }
             }
         }
-        .padding(.leading, ArgoFeedRow.callSymbolWidth + ArgoFeedRow.callGap)
+        .lineSpacing(ArgoSpacing.flush)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("What this run did")
     }
@@ -105,53 +149,5 @@ package struct FeedFoldLine: View {
     package init(fold: any FeedFolded, opening: FeedFoldOpening) {
         self.fold = fold
         self.opening = opening
-    }
-}
-
-/// One name in a fold's list, and a way into the pane beside it.
-///
-/// A call the record answered with nothing is still listed — it happened — and is inert: there is
-/// nothing behind it to go to. A call that FAILED keeps its name and takes the failure's ink, which
-/// is the same answer a call row gives.
-struct FeedFoldStepName: View {
-    @Environment(\.argo) private var argo
-
-    let step: FeedFoldStep
-    let isCurrent: Bool
-    let look: (Int) -> Void
-
-    var body: some View {
-        Button { step.goesTo.map(look) } label: {
-            HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
-                Text(step.caption)
-                    .argoText(ArgoFeedRow.proseRung)
-                    .lineLimit(1)
-                    .truncationMode(.head)
-                repeats
-            }
-            .foregroundStyle(ink)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .disabled(step.goesTo == nil)
-        .accessibilityLabel(step.spoken)
-        .accessibilityHint(step.goesTo == nil ? "" : "Shows what this call produced")
-    }
-
-    /// How many calls this one name stands for. Without it the list would not add up to the counts
-    /// on the line above, which are in calls (`FeedFold.listed`).
-    @ViewBuilder private var repeats: some View {
-        if step.repeats > 1 {
-            Text("×\(step.repeats, format: .machine)")
-                .argoMono(ArgoFeedRow.proseRung)
-                .monospacedDigit()
-        }
-    }
-
-    private var ink: ArgoColor {
-        if step.hasFailed {
-            return argo.color.state.failure
-        }
-        return isCurrent ? argo.color.interaction.accentBright : argo.color.text.tertiary
     }
 }
