@@ -65,9 +65,19 @@ public struct TicketCreator: Sendable {
         else { return .unreachable(.unreachable) }
         let writer = writes.writer(for: binding, items: items, health: health)
         do {
-            _ = try await writer.apply(
+            let written = try await writer.apply(
                 intent, to: number, on: PortReadTarget(binding: binding, projectID: projectID),
             )
+            // `TicketWriter` adopts a ticket that just closed by dropping it from the listing it
+            // left — right for a poll's own writes (`TicketAdoptionTests`), because the listing
+            // holds the open ones and the very next poll would take it out anyway. A closure write
+            // pressed from the pane the reader is standing ON needs the survival a followed link
+            // gets past its own close (#895), or the room goes blank under them until a second
+            // read brings the ticket back — so it is followed here, at the act's own end, rather
+            // than in the write primitive every intent shares.
+            if intent.write == .closure {
+                await items.follow(written, for: projectID)
+            }
             return nil
         } catch let refusal as TicketWriteError {
             return refusal
