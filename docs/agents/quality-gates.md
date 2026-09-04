@@ -33,6 +33,12 @@ SwiftLint and boundaries over staged Swift. The design-token gate is inside boun
 (#1088), so it runs in the push gate rather than on pre-commit alone — `check:design-tokens` is
 the same scan by hand.
 
+`test:hooks` is `scripts/run-suites.mjs`, and its suites are **the directory, not a list**: every
+`scripts/*.test.mjs` runs, so a new suite is added by writing the file and nothing else. It runs
+them in a pool rather than in sequence, which is worth about 3x, and it is fail-closed three ways
+— a non-zero exit, an empty directory, and a suite that exits 0 without printing the
+`all N checks passed` line that `check-harness.mjs` ends on.
+
 Nothing here is optimised by default: `bun run build` is Debug unless asked otherwise, and
 `swift-test.sh` takes no configuration at all, so every suite runs `-Onone`. What each
 configuration names, how to build the optimised app, and what that is worth:

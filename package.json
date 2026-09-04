@@ -20,7 +20,7 @@
     "quality:duplication": "jscpd --config .jscpd.json apps packages scripts",
     "quality:swift": "sh scripts/swift-format.sh --check && sh scripts/swift-lint.sh && sh scripts/swift-boundaries.sh",
     "test": "turbo run test",
-    "test:hooks": "node scripts/hook-io.test.mjs && node scripts/shell-writes.test.mjs && node scripts/worktree-guard.test.mjs && node scripts/worktree-name-guard.test.mjs && node scripts/task-list-nudge.test.mjs && node scripts/hooks-sync.test.mjs && node scripts/protect-owned-skills.test.mjs && node scripts/swift-tooling.test.mjs && node scripts/swift-lint-config.test.mjs && node scripts/swift-build.test.mjs && node scripts/load-burst.test.mjs && node scripts/screenshot-scope.test.mjs && node scripts/swift-boundaries.test.mjs && node scripts/swift-boundaries.slots.test.mjs && node scripts/swift-boundaries.direction.test.mjs && node scripts/swift-boundaries.cap.test.mjs && node scripts/swift-boundaries.memberwise.test.mjs && node scripts/swift-boundaries.memberwise-parsing.test.mjs && node scripts/swift-boundaries.memberwise-lexing.test.mjs && node scripts/swift-boundaries.headless.test.mjs && node scripts/swift-boundaries.tokens.test.mjs && node scripts/contract-readers.test.mjs && node scripts/record-figures.test.mjs && node scripts/slash-outcomes.test.mjs && node scripts/swift-gate.test.mjs",
+    "test:hooks": "node scripts/run-suites.mjs",
     "test:e2e": "turbo run test:e2e",
     "app:release": "sh apps/macOS/scripts/run-release.sh",
     "check:design-tokens": "sh scripts/check-design-tokens-swift.sh",
