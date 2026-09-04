@@ -77,6 +77,49 @@ struct AtlasMapRoundTripTests {
         }
     }
 
+    @Test func `the couplings come back naming the same two files`() throws {
+        // Couplings are written as positions in the Plot order and read back as paths, so this is
+        // the one claim that a tie drawn on the map joins the files the counting joined.
+        let map = AtlasMap(
+            measuredAt: Date(timeIntervalSince1970: 1_756_951_037),
+            commit: nil,
+            root: AtlasPlate(path: "argo", children: [
+                .plot(AtlasPlot(path: "argo/a.swift", measures: [:])),
+                .plate(AtlasPlate(path: "argo/rules", children: [
+                    .plot(AtlasPlot(path: "argo/rules/house.md", measures: [:])),
+                ])),
+            ]),
+            couplings: [AtlasCoupling(
+                first: "argo/a.swift", second: "argo/rules/house.md", strength: 0.5,
+            )],
+        )
+        #expect(try AtlasMap(decoding: map.encoded()) == map)
+    }
+
+    @Test func `a Map file written before couplings were counted reads as none`() throws {
+        // The field is absent from every Map file this repository wrote before #1149, and those
+        // are valid measurements: a reader that refused them would fail on app data it wrote.
+        let json = #"{"version":1,"measuredAt":"2026-09-04T00:37:17Z","commit":null,"#
+            + #""root":{"name":"argo","children":[]}}"#
+        #expect(try AtlasMap(decoding: Data(json.utf8)).couplings.isEmpty)
+    }
+
+    @Test func `a coupling naming a file the Map does not hold is refused`() throws {
+        // A caller can build one, and writing it would put a position in the file that means a
+        // different file on the way back in.
+        let map = AtlasMap(
+            measuredAt: Date(timeIntervalSince1970: 0),
+            commit: nil,
+            root: AtlasPlate(path: "argo", children: [
+                .plot(AtlasPlot(path: "argo/a.swift", measures: [:])),
+            ]),
+            couplings: [AtlasCoupling(first: "argo/a.swift", second: "argo/b.swift", strength: 1)],
+        )
+        #expect(throws: AtlasMapError.danglingCoupling("argo/a.swift / argo/b.swift")) {
+            try map.encoded()
+        }
+    }
+
     @Test func `a measure JSON cannot spell is refused rather than written`() throws {
         // A generator that divided by zero reaches here, and a file half-written to app data is
         // worse than a write that did not happen: the next open reads it as corrupt.

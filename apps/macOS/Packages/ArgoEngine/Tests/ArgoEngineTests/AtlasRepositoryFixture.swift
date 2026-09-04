@@ -62,6 +62,29 @@ struct AtlasRepositoryFixture {
         return repositoryURL.standardizedFileURL
     }
 
+    /// A repository whose whole history is its first commit. Two files that arrived together and
+    /// have never once changed together, which is the case the co-change counting must state
+    /// nothing about (#1149).
+    func repositoryWithOneCommit() throws -> URL {
+        let repositoryURL = rootURL.appending(path: "first", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(
+            at: repositoryURL,
+            withIntermediateDirectories: true,
+        )
+        try run(["git", "init", "--quiet", repositoryURL.path])
+        try write("a.swift", saying: "let a = 1\n", in: repositoryURL)
+        try write("b.swift", saying: "let b = 2\n", in: repositoryURL)
+        try run(["git", "-C", repositoryURL.path, "add", "-A"])
+        // The machine's own config is out of the way, so an identity is given here or git refuses
+        // to commit at all.
+        try run([
+            "git", "-C", repositoryURL.path,
+            "-c", "user.name=Ada Lovelace", "-c", "user.email=ada@example.com",
+            "commit", "--quiet", "-m", "the first files",
+        ])
+        return repositoryURL.standardizedFileURL
+    }
+
     /// Adds a file to a repository's index without committing it — a path git tracks and has no
     /// history for.
     func stage(_ name: String, saying text: String, in repositoryURL: URL) throws {
@@ -105,6 +128,11 @@ extension AtlasMap {
     /// Test-only: the Plot at a path, which is how these suites name one.
     func plot(_ path: String) -> AtlasPlot? {
         plots.first { $0.path == path }
+    }
+
+    /// Test-only: how tightly two Plots are coupled, `nil` where the Map states no tie.
+    func strength(between first: String, and second: String) -> Double? {
+        couplings.first { $0.partner(of: first) == second }?.strength
     }
 
     /// Test-only: the Plate at a path.

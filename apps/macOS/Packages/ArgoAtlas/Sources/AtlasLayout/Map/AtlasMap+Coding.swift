@@ -36,10 +36,12 @@ public extension AtlasMap {
         // child off. `inside: ""` is what an error at the root reads as.
         let path = try AtlasMap.path(of: wire.root.name, inside: "")
         let children = try AtlasMap.nodes(wire.root.children, inside: path)
-        self.init(
+        let root = AtlasPlate(path: path, children: children)
+        try self.init(
             measuredAt: wire.measuredAt,
             commit: wire.commit,
-            root: AtlasPlate(path: path, children: children),
+            root: root,
+            couplings: AtlasMap.couplings(wire.couplings ?? [], joining: root.plots),
         )
     }
 
@@ -59,6 +61,29 @@ public extension AtlasMap {
 }
 
 private extension AtlasMap {
+    /// The Couplings a file states, read back against the Plots it counted them over. A position
+    /// the Map has no Plot at is refused rather than dropped: it means the two halves of the file
+    /// disagree about which repository was measured, and a coupling read off by one would draw a
+    /// tie between two files that never changed together.
+    static func couplings(
+        _ wire: [AtlasCouplingWire],
+        joining plots: [AtlasPlot],
+    ) throws(AtlasMapError)
+        -> [AtlasCoupling] {
+        var built: [AtlasCoupling] = []
+        for coupling in wire {
+            guard plots.indices.contains(coupling.first),
+                  plots.indices.contains(coupling.second)
+            else { throw .danglingCoupling("\(coupling.first)/\(coupling.second)") }
+            built.append(AtlasCoupling(
+                first: plots[coupling.first].path,
+                second: plots[coupling.second].path,
+                strength: coupling.strength,
+            ))
+        }
+        return built
+    }
+
     /// Where a node sits, given what it is called and where its Plate sits.
     static func path(of name: String, inside parent: String) throws(AtlasMapError) -> String {
         guard !name.isEmpty, !name.contains("/") else {
@@ -102,15 +127,39 @@ private extension AtlasMap {
     /// alone would re-parent the whole subtree under it on the next read, silently.
     func wire() throws(AtlasMapError) -> AtlasMapWire {
         guard !root.path.contains("/") else { throw .misplacedNode(root.path) }
+        var position: [String: Int] = [:]
+        for (index, plot) in root.plots.enumerated() {
+            position[plot.path] = index
+        }
         return try AtlasMapWire(
-            version: AtlasMap.version,
             measuredAt: measuredAt,
             commit: commit,
             root: AtlasPlateWire(
                 name: root.path,
                 children: AtlasMap.wire(root.children, inside: root.path),
             ),
+            couplings: AtlasMap.wire(couplings, at: position),
         )
+    }
+
+    /// The Couplings as the file spells them: two positions in the Map's own Plot order. A
+    /// Coupling naming a path the Map holds no Plot at is refused rather than dropped, because it
+    /// has no position to be written at and a file that quietly lost ties is one nothing can
+    /// audit.
+    static func wire(
+        _ couplings: [AtlasCoupling],
+        at position: [String: Int],
+    ) throws(AtlasMapError)
+        -> [AtlasCouplingWire] {
+        var built: [AtlasCouplingWire] = []
+        for coupling in couplings {
+            guard let first = position[coupling.first], let second = position[coupling.second]
+            else { throw .danglingCoupling(coupling.first + " / " + coupling.second) }
+            built.append(AtlasCouplingWire(
+                first: first, second: second, strength: coupling.strength,
+            ))
+        }
+        return built
     }
 
     static func wire(

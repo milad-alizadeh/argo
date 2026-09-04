@@ -30,6 +30,12 @@ struct AtlasHistory: Sendable {
 
     private let paths: [String: AtlasPathHistory]
 
+    /// What each commit touched, in the order git answered in and each path once (#1149). The
+    /// co-change counting reads this rather than asking git a second time: the pairs and the
+    /// per-path measures are the same walk, so they cannot come from two readings of a repository
+    /// that was committed to in between.
+    let commits: [[String]]
+
     subscript(path: String) -> AtlasPathHistory? {
         paths[path]
     }
@@ -44,8 +50,19 @@ struct AtlasHistory: Sendable {
     /// is git's.
     init(readingLog output: String) {
         var paths: [String: AtlasPathHistory] = [:]
+        var commits: [[String]] = []
+        var touched: [String] = []
+        var seen: Set<String> = []
         var commit: AtlasCommit?
         var afterCommit = false
+        /// One commit's paths, closed off when the next commit record arrives and at the end of
+        /// git's answer. A path is kept ONCE: a path listed twice under one commit would pair with
+        /// itself and count as two commits' worth of company for everything beside it.
+        func closeCommit() {
+            commits.append(touched)
+            touched = []
+            seen = []
+        }
         // The trailing newline git ends the whole answer with would otherwise read as a path.
         let answer = output.trimmingCharacters(in: .newlines)
         for field in answer.split(separator: "\0", omittingEmptySubsequences: false) {
@@ -56,16 +73,27 @@ struct AtlasHistory: Sendable {
             afterCommit = false
             guard !text.isEmpty else { continue }
             if text.hasPrefix("\u{01}") {
+                if commit != nil {
+                    closeCommit()
+                }
                 commit = AtlasHistory.commit(text.dropFirst())
                 afterCommit = true
                 continue
             }
             guard let commit else { continue }
-            paths[String(text), default: AtlasPathHistory(
+            let path = String(text)
+            if seen.insert(path).inserted {
+                touched.append(path)
+            }
+            paths[path, default: AtlasPathHistory(
                 commits: 0, authors: [], lastCommittedAt: .distantPast,
             )].touched(by: commit)
         }
+        if commit != nil {
+            closeCommit()
+        }
         self.paths = paths
+        self.commits = commits
     }
 
     /// One commit record: the SHA, the author and the date, divided by `\u{1f}`. The SHA is read

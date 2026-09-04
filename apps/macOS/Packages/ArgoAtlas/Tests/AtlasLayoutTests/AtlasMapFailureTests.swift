@@ -75,6 +75,18 @@ struct AtlasMapFailureTests {
         }
     }
 
+    @Test func `a coupling pointing past the last file is refused`() throws {
+        // Couplings are positions in the Plot order, so a file whose two halves disagree about
+        // how many files were measured would otherwise draw a tie between the wrong two, or
+        // between one file and nothing.
+        let json = #"{"version":1,"measuredAt":"2026-09-04T00:37:17Z","commit":null,"#
+            + #""root":{"name":"argo","children":[{"kind":"plot","name":"a.swift","#
+            + #""measures":{}}]},"couplings":[{"first":0,"second":7,"strength":0.5}]}"#
+        #expect(throws: AtlasMapError.danglingCoupling("0/7")) {
+            try AtlasMap(decoding: map(json))
+        }
+    }
+
     @Test func `a Map file this reader cannot parse still says which version wrote it`() throws {
         // The case the version field exists for: a newer Argo whose node shape this reader does
         // not know. Read as part of the whole file the version could only be checked against a
