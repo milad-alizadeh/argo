@@ -115,6 +115,23 @@ struct SpawnRunTests {
         #expect(session.effort == "xhigh")
     }
 
+    /// A Session already STARTED on a placeholder states no model rather than that one (#1223) —
+    /// the ledger entry a launch before this guard left behind. `nil` is what the composer draws as
+    /// `unknown` and ticks no row for, so the picker has a real model to land on.
+    @Test
+    func `a launch value that is a placeholder states no model`() {
+        var session = HubSession(spawn: AgentSpawn(
+            claim: .init(value: "claim-1"),
+            cli: .claude,
+            cwd: "/tmp",
+            spawnedAtMs: 0,
+        ))
+        session.launchedRun = SessionRun(model: "<synthetic>", effort: .medium)
+
+        #expect(session.model == nil)
+        #expect(session.effort == "medium")
+    }
+
     /// A resume continues one Session's work, so it comes back on what THAT Session was running
     /// at — never on whatever was last picked app-wide, which would move it off its own model
     /// without anyone asking (the rule `rung(resuming:)` already holds for the ladder).
