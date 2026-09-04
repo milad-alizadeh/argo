@@ -16,7 +16,7 @@
     &case=starting|handoff|resume|turn   which wait.
     &state=running|done|failed           where that wait got to.
     &age=0|10|60|300                     how long it has run — the ArgoWaitAge ladder.
-    &speed=1.9|1.5|1.2|1.0|0.8           the ladder's BASE period. 1.9 is what ships today.
+    &speed=1.2|1.5|1.9|1.0|0.8           the ladder's BASE period. 1.2 is approved; 1.9 shipped.
     &still=1                             Reduce Motion.
 -->
 <style>
@@ -369,22 +369,24 @@ const ION_SHARE = '216px';   /* 0.3 × ArgoFeedRow.column (720). A LENGTH, not a
                                 lengths covers less ground per pass, which is exactly the speed
                                 mismatch this is fixing. */
 
-/* The base period — ArgoMotion.working, 1.9s today. `&speed=` scales the WHOLE ArgoWaitAge
-   ladder by the same ratio, so the cooling holds its shape while the ion gets quicker. */
+/* The base period. APPROVED at 1.2s — the shipped 1.9s read slow against the plinth once both
+   ions ran at one length, and 1.2 is where the pass stopped looking like it was dawdling without
+   starting to look urgent. `&speed=` scales the WHOLE ladder off that base, so the cooling holds
+   its shape; 1.9 is kept only so the change can still be seen against what shipped. */
 const SPEEDS = {
-  '1.9': 'ArgoMotion.working — 1.9s',
+  '1.2': '1.2s — approved',
   '1.5': '1.5s',
-  '1.2': '1.2s',
+  '1.9': '1.9s — was shipped',
   '1.0': '1.0s',
   '0.8': '0.8s',
 };
 
 /* ArgoWaitAge.all — the ladder the ion cools down. */
 const AGES = {
-  '0':   { period:1.9, glow:.60, label:'under 10s', elapsed:'3s'     },
-  '10':  { period:2.8, glow:.49, label:'10s – 60s',  elapsed:'24s'    },
-  '60':  { period:3.8, glow:.40, label:'1m – 5m',    elapsed:'2m 10s' },
-  '300': { period:4.9, glow:.30, label:'over 5m',    elapsed:'6m 41s' },
+  '0':   { period:1.2, glow:.60, label:'under 10s', elapsed:'3s'     },
+  '10':  { period:1.8, glow:.49, label:'10s – 60s',  elapsed:'24s'    },
+  '60':  { period:2.4, glow:.40, label:'1m – 5m',    elapsed:'2m 10s' },
+  '300': { period:3.1, glow:.30, label:'over 5m',    elapsed:'6m 41s' },
 };
 
 /* ------------------------------------------------------------------ *
@@ -436,11 +438,11 @@ let caseKey = CASES[params.get('case')] ? params.get('case') : 'starting';
 let state   = ['running','done','failed'].includes(params.get('state')) ? params.get('state') : 'running';
 let age     = AGES[params.get('age')] ? params.get('age') : '0';
 let still   = params.get('still') === '1';
-let speed   = SPEEDS[params.get('speed')] ? params.get('speed') : '1.9';
+let speed   = SPEEDS[params.get('speed')] ? params.get('speed') : '1.2';
 
 /* The rung's period, scaled off the base. The ladder's RATIOS are what `ArgoWaitAge` settled;
    the base is what is being re-judged here. */
-const periodAt = key => AGES[key].period * (Number(speed) / 1.9);
+const periodAt = key => AGES[key].period * (Number(speed) / 1.2);
 
 const theCase = () => CASES[caseKey];
 
@@ -621,7 +623,7 @@ function drawReadout() {
     <span class="k">wait</span> ${c.label}<br>
     <span class="k">state</span> ${state}<br>
     <span class="k">age</span> ${AGES[age].label} · period ${periodAt(age).toFixed(2)}s · glow ${AGES[age].glow}<br>
-    <span class="k">speed</span> base ${speed}s ${speed === '1.9' ? '(shipped)' : `— ${(1.9 / Number(speed)).toFixed(2)}× the shipped ion`}<br>
+    <span class="k">speed</span> base ${speed}s — ${(1.9 / Number(speed)).toFixed(2)}× the 1.9s that shipped<br>
     <span class="k">motion</span> ${still ? 'off (Reduce Motion)' : 'on'}<br>
     <span class="k">today</span> ${c.today}
     <hr>

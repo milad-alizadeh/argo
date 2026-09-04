@@ -34,6 +34,7 @@ Today there are three shapes for that idea and one case with no shape at all:
 | `&case=starting\|handoff\|resume\|turn` | Which of the four waits. |
 | `&state=running\|done\|failed` | Where that wait got to. |
 | `&age=0\|10\|60\|300` | The `ArgoWaitAge` ladder — period and glow move with it. |
+| `&speed=1.2\|1.5\|1.9\|1.0\|0.8` | The ladder's base period. **1.2s is approved**; 1.9s is what shipped. |
 | `&still=1` | Reduce Motion. |
 
 Every state is reachable by URL, which is the point: a state you cannot link to is a state
@@ -84,13 +85,38 @@ a clean screen.
 An unnamed wait therefore gets **no default symbol** in any variant. The three that differ are
 what they do with the empty column.
 
+## The ion's speed, settled here
+
+One filament of **216pt** — `0.3 × ArgoFeedRow.column`, stated as a **length and not a share** —
+wherever the ion runs: the thread across the measure, the plinth's rail, the rule's own pass.
+That is the whole of why the plinth read slower than the feed at one period:
+`ArgoFeedRow.workingThreadTravel` is stated in multiples of the filament's OWN length, so a
+shorter filament in a narrower lane covers less ground per pass. One length is what makes one
+period one velocity.
+
+The base period drops from **1.9s to 1.2s**, and the `ArgoWaitAge` ratios are held and rebased
+on it. Rounded to a tenth: a period is something a person feels, not a figure anything computes
+against.
+
+| Age | `ArgoMotion.working` shipped | approved | Glow |
+|---|---|---|---|
+| under 10s | 1.9s | **1.2s** | 0.60 |
+| 10s – 60s | 2.8s | **1.8s** | 0.49 |
+| 1m – 5m | 3.8s | **2.4s** | 0.40 |
+| over 5m | 4.9s | **3.1s** | 0.30 |
+
+The cooling still cools and never warms, and the floor is still a floor — 3.1s is slow enough to
+read as patient and fast enough to read as travel, which is the pair `ArgoWaitAge.coldest`
+exists to hold.
+
 ## What it is faithful to
 
 Every colour, radius, spacing step and type role is transcribed from
 `apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/` (`GraphitePalette`, `ArgoSpacing`,
 `ArgoRadius`, `ArgoStroke`, `ArgoWaitAge`) and from `ArgoFeedRow.swift`. The ion ramp is
-`docs/designs/cockpit-feed-working.md`'s, stop for stop; the age ladder is `ArgoWaitAge.all`,
-rung for rung. Nothing is invented.
+`docs/designs/cockpit-feed-working.md`'s, stop for stop. Nothing is invented — except the two
+numbers this study was run to re-judge: the ion's length and the ladder's base period, both
+settled above.
 
 Two things it is **not** faithful to, both known:
 
