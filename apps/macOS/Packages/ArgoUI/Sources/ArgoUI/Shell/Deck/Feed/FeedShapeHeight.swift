@@ -52,10 +52,15 @@ struct FeedShapeHeight {
     /// the reader has the row's accordion out. One formula over both folds — the survey's stretch
     /// of looking and the Turn's card of work are the same anatomy, and a second copy of it would
     /// drift.
+    ///
+    /// Every line in the open row stands at ONE height — the header's as much as each name's,
+    /// since the header takes the list's own step while the list is out. They stack FLUSH, and
+    /// neither the hairline over a name nor the box's border takes a point: the rule is an overlay
+    /// and the border is a stroke inside its own bounds (#1228).
     private func folded(_ calls: Int) -> CGFloat {
         guard standing.isUnfolded else { return pressedLine }
-        return pressedLine + ArgoFeedRow.callStep + Self.stackedLines(
-            calls, at: Self.bodyLine, step: ArgoSpacing.hair,
+        return Self.stackedLines(
+            calls + 1, at: Self.foldLine, step: ArgoSpacing.flush,
         )
     }
 
@@ -101,7 +106,12 @@ extension FeedShapeHeight {
     /// A row drawn as a pressable line: its words, and `FeedRowButtonStyle`'s own step above and
     /// below them.
     var pressedLine: CGFloat {
-        Self.bodyLine + ArgoSpacing.hair * 2
+        Self.bodyLine + FeedRowButtonStyle.groundInsetY * 2
+    }
+
+    /// One line of an OPEN fold — its header and each of its names alike.
+    static var foldLine: CGFloat {
+        bodyLine + ArgoFeedRow.foldLineInsetY * 2
     }
 
     /// A skill load's chip — one line of its own quieter rung, inside the chip's padding.

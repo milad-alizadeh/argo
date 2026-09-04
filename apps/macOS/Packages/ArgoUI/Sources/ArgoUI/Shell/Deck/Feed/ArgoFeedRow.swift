@@ -15,6 +15,21 @@ public enum ArgoFeedRow {
     public static let callStep: CGFloat = ArgoSpacing.tight
     /// Between the parts of a call's own sentence — its mark, its verb, what it named.
     public static let callGap: CGFloat = ArgoSpacing.snug
+    /// How far a name in an open fold's list hangs in from the row's leading edge: the mark's
+    /// column and the gap after it. A name hangs under the header's WORDS and not under its mark —
+    /// the mark is the run's, and the list is what the run was (#1228).
+    public static let foldNameIndent: CGFloat = callSymbolWidth + callGap
+    /// The extra air before a fold's own chevron, on top of `callGap`. That mark TURNS, and a
+    /// chevron pointing down sits nearer the words beside it than one pointing across — so the gap
+    /// that reads right for the rest of the sentence reads tight here (#1228).
+    public static let foldChevronGap: CGFloat = ArgoSpacing.tight
+    /// What every line of an OPEN fold stands at, above and below — the header's own line as much
+    /// as each name under it, so the box has one rhythm all the way down.
+    ///
+    /// A step over `FeedRowButtonStyle.groundInsetY`, which is the closed row's. One line among the
+    /// feed's other lines needs no more than a hair; a box of ten of them that the reader is meant
+    /// to aim at needs the air (#1228).
+    public static let foldLineInsetY: CGFloat = ArgoSpacing.snug
     /// Between two blocks of one message. Tighter than `gap`.
     public static let blockStep: CGFloat = ArgoSpacing.comfortable
     /// Between a list item's marker and its words.
