@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Argo — the Sessions roster row</title>
+<!--
+  THE APPROVED DESIGN for the Sessions roster row (#1310). Not a prototype: the variants it was
+  chosen from are on the throwaway branch `argo/#1310-roster-agent-count`, and
+  `docs/designs/prototypes/roster-row-signals-prototype.html` is where they live.
+
+  Every state is reachable by URL: ?state=<name>. `?state=all` draws the roster with one row
+  per state, which is what the renders are cut from.
+
+  EVERY VALUE HERE IS A TOKEN. The contract is Swift —
+  apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/ — and the block below mirrors it by name so
+  the design can be read in a browser. Nothing here is invented: three values were promoted into
+  the contract to write this design, and they are marked PROMOTED where they are defined.
+-->
+<style>
+  :root {
+    /* ---- GraphitePalette.swift · surface ---- */
+    --surface-sunken:   #191A1D;
+    --surface-base:     #1E2024;
+    --surface-raised:   #252729;
+    --surface-overlay:  #2E3136;
+    --surface-hover:    rgba(255,255,255,.045);
+
+    /* ---- TextRoles ---- */
+    --text-primary:   #F2F4F6;
+    --text-secondary: #A8AEB5;
+    --text-tertiary:  #929AA1;
+    --text-disabled:  #4E545A;
+
+    /* ---- EdgeRoles ---- */
+    --edge-hairline: rgba(255,255,255,.08);
+    --edge-subtle:   rgba(255,255,255,.13);
+
+    /* ---- InteractionRoles ---- */
+    --accent:        #3E9BFF;
+    --accent-bright: #6FB6FF;
+    /* The ground under a selected row, in both rails and the backlog, and the ONLY selection
+       paint in that row (#1165, D30 as amended by #875/#906/#922). Resolved: accent at 0.18
+       over sunken. */
+    --selection-ground: #203146;
+
+    /* ---- StateRoles ---- */
+    --state-running:   #46D3A8;
+    --state-idle:      #868E96;
+    --state-attention: #E8B24A;
+    --state-failure:   #F2555C;
+
+    /* ---- PROMOTED by this design (#1310) ---- */
+    /* A pull request the code host holds open, and one it merged. The host's own inks: a reader
+       arrives already knowing that merged is purple, and the domain says a code-host fact keeps
+       the host's vocabulary. Closed takes `state.failure` and draft takes `state.idle` rather
+       than promoting two more near-duplicates. */
+    --delivery-open:   #3FB950;
+    --delivery-merged: #A371F7;
+    /* The accent, banked: a Plan that has stopped moving. Same hue, unmistakably not live, and
+       still legible as how far the work GOT — `text.disabled` there makes a finished plan read
+       as a plan nobody started. */
+    --progress-still:  #2F5C89;
+
+    /* ---- ArgoSpacing ---- */
+    --hair: 2px; --tight: 4px; --snug: 6px; --base: 8px;
+    --comfortable: 12px; --loose: 16px; --section: 24px;
+
+    /* ---- ArgoRadius ---- */
+    --r-marker: 3px; --r-control: 6px;
+
+    /* ---- ArgoStroke ---- */
+    --stroke-border: 1px; --stroke-indicator: 2px;
+
+    /* ---- ArgoIconSize ---- */
+    --icon-inline: 10px;
+    --icon-chevron: 8px;
+    --status-dot: 6px;
+
+    /* ---- ArgoLayout ---- */
+    --sidebar-w: 320px;
+
+    /* ---- ArgoTypeScale · sizes are READ, the platform draws them ---- */
+    --rung-body: 13px;         /* rowTitle */
+    --rung-subheadline: 11px;  /* rowMeta, machineCaption */
+    --rung-caption1: 10px;     /* badge */
+    --line-ratio: 1.21;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+    /* ---- SessionRow's own measures. Not contract: `rules/swift.md` puts a surface's own
+            measures in that surface's directory, and every one of these is drawn by this row
+            and nothing else. ---- */
+    /* The state dot sits on the TITLE's optical centre. Derived, never nudged: a marker aligned
+       by a magic number drifts the moment the type scale moves. */
+    --row-line:   calc(var(--rung-body) * 1.45);
+    --dot-inset:  calc((var(--row-line) - var(--status-dot)) / 2);
+    /* Half the state dot: what runs UNDER a Session is drawn smaller than the Session's own
+       state, in the Session's own column. */
+    --subagent-dot: 4px;
+    --subagent-ceiling: 5;
+    /* The Plan bar is the same width whatever the item count, so the roster reads as a column
+       rather than as bars of different lengths. */
+    --plan-width: 64px;
+    --plan-height: 3px;
+    /* The leading column's width, which every title on the roster hangs off. */
+    --marker-w: var(--status-dot);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--surface-sunken);
+    color: var(--text-primary);
+    font: var(--rung-body)/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ================= the roster ================= */
+  .roster {
+    width: var(--sidebar-w);
+    padding: var(--comfortable) var(--base);
+    /* The sidebar is native Liquid Glass and paints no ground of its own (D2/D3/D14). Stood in
+       for here, because a browser has no system material. */
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+    min-height: 100%;
+  }
+
+  /* ---------------- SessionRow ---------------- */
+  [data-component="SessionRow"] {
+    position: relative;
+    display: flex; align-items: flex-start; gap: var(--base);
+    padding: 7px var(--base);
+    margin-bottom: 1px;
+    border-radius: var(--r-control);
+    cursor: default;
+  }
+  [data-component="SessionRow"]:hover { background: var(--surface-hover); }
+  /* The ground carries the selection and nothing else does: no leading accent rule (D30). */
+  [data-component="SessionRow"].is-selected { background: var(--selection-ground); }
+  /* Every Session Argo does not own the terminal of, ghosted whole — title, marks, clock. */
+  [data-component="SessionRow"].is-readonly { opacity: .58; }
+
+  .row-body { display: flex; flex-direction: column; gap: var(--hair); flex: 1; min-width: 0; }
+  .line { display: flex; align-items: center; gap: var(--snug); min-width: 0; }
+  .grow { flex: 1; min-width: 0; }
+
+  /* ---------------- SessionMarker ----------------
+     The leading column: the Session's state, and under it what runs beneath the Session. It is
+     the machinery's column, and nothing else on the row may claim it. */
+  [data-component="SessionMarker"] {
+    position: relative;
+    width: var(--marker-w); flex: none;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding-top: var(--dot-inset);
+  }
+  .dot { width: var(--status-dot); height: var(--status-dot); border-radius: 50%; flex: none; }
+  .dot.is-running   { background: var(--state-running); box-shadow: 0 0 var(--snug) rgba(70,211,168,.5); }
+  .dot.is-idle      { background: var(--state-idle); }
+  .dot.is-attention { background: var(--state-attention); }
+  .dot.is-failure   { background: var(--state-failure); }
+  /* "Argo cannot say" is an outline and never a colour, exactly as SessionStateIndicator draws
+     it: the contract holds no ink for that, and inventing one would be the claim itself. */
+  .dot.is-unknown   { background: transparent; box-shadow: inset 0 0 0 var(--stroke-border) var(--text-disabled); }
+
+  [data-component="SessionMarker"] .chevron svg { width: 100%; height: 100%; display: block; }
+  [data-component="SessionMarker"] .chevron {
+    width: var(--icon-chevron); height: var(--icon-chevron);
+    color: var(--text-tertiary); flex: none;
+    margin-top: calc((var(--row-line) - var(--icon-chevron)) / 2 - var(--dot-inset));
+  }
+
+  /* ---------------- SubagentDots ----------------
+     One dot per Subagent RUNNING under this Session, at the count `FeedAgents.running(of:)`
+     gives the Agents rail — the two must never disagree (#1269). */
+  [data-component="SubagentDots"] { display: contents; }
+  .pip {
+    width: var(--subagent-dot); height: var(--subagent-dot);
+    border-radius: 50%; background: var(--state-running); flex: none;
+  }
+  /* Delegated, and every one of them is home. A DASH: an outline here is already spoken for by
+     the unknown state, and two outlines under one dot read as two dots. */
+  .pip.is-spent { width: 5px; height: var(--stroke-border); border-radius: 0; background: var(--text-disabled); }
+  /* An open delegation Argo cannot resolve (#1076). Never a number. */
+  .pip.is-unknown { background: transparent; box-shadow: inset 0 0 0 var(--stroke-border) var(--text-disabled); }
+  /* Past five, the column says how many it is NOT drawing. Out of the flow and centred on the
+     column, so the overflow costs the title not one point of its width. */
+  /* IN the column's flow, so it can never land on the row below, and `width:100%` of a column
+     whose width is fixed — the label overflows the 6pt column evenly on both sides and the
+     column does not grow by a point. Every title on the roster stays on one x. */
+  .pip-more {
+    width: 100%; overflow: visible; text-align: center; white-space: nowrap;
+    margin-top: var(--hair);
+    font: var(--rung-subheadline) var(--mono); color: var(--text-tertiary);
+  }
+
+  /* ---------------- the three lines ---------------- */
+  /* rowTitle — body 13, medium. */
+  .title {
+    font-size: var(--rung-body); font-weight: 500; color: var(--text-primary);
+    letter-spacing: -.05px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* rowMeta — subheadline 11, INTERFACE face. What the Session is doing is a sentence, not a
+     machine fact, and setting it in the mono made it read as output. */
+  .activity {
+    font-size: var(--rung-subheadline); color: var(--text-tertiary);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* badge — caption1 10, semibold, tracking. The word spent where the reader has to stop
+     scanning. */
+  .badge {
+    flex: none; font-size: var(--rung-caption1); font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--state-attention);
+  }
+  .badge.is-failure { color: var(--state-failure); }
+  /* The Session claimed it is done and there is no pull request yet. A STATE, drawn where the
+     states the row derives are drawn — the control that opens the PR is in the deck header, and
+     never on a row: the roster has one click and it selects a Session. */
+  .badge.is-ready { color: var(--delivery-open); display: inline-flex; align-items: center; gap: var(--tight); }
+
+  /* Line 3 — how it is going. */
+  .progress-line { display: flex; align-items: center; gap: var(--base); margin-top: var(--hair); }
+
+  /* machineCaption — mono, subheadline 11. A live Turn duration takes the running ink, exactly
+     as RosterTurnClock spends it. */
+  .clock { font: var(--rung-subheadline) var(--mono); color: var(--text-tertiary); flex: none; }
+  .clock.is-live { color: var(--state-running); }
+
+  /* ---------------- PlanBar ----------------
+     One segment per item on the agent's Plan (`CONTEXT.md` L3), filled to what is done. The ink
+     is the ACCENT and not the running teal: the plan is the Session's own progress, not its
+     state, and the row already spends teal on the dot and on a live clock. */
+  [data-component="PlanBar"] { display: inline-flex; gap: var(--hair); flex: none; align-items: center; }
+  [data-component="PlanBar"] i {
+    height: var(--plan-height); width: var(--seg, var(--snug));
+    /* Capsule: ArgoRadius has no rung under `marker`, and `marker` on a 3px bar IS a capsule. */
+    border-radius: 999px;
+    background: var(--edge-subtle);
+  }
+  [data-component="PlanBar"] i.is-done { background: var(--accent); }
+  /* Exactly one item is in progress at a time — the rule the list is written under. It draws
+     brightest, because it is the only item anybody can act on. */
+  [data-component="PlanBar"] i.is-doing { background: var(--accent-bright); }
+  /* A Session that is not running is not progressing. */
+  [data-component="PlanBar"].is-still i.is-done,
+  [data-component="PlanBar"].is-still i.is-doing { background: var(--progress-still); }
+
+  /* ---------------- DeliveryAddresses ----------------
+     The two addresses this run answers to, side by side. Both keep the `#`: the mark says which
+     space a number lives in, the hash says it is a number at all — without it `1269` sits beside
+     `4m 12s` as one more quantity on a line of quantities.
+
+     The TICKET NUMBER IS NOT IN THE TITLE. It used to be (`IssueReading.words`), which put two
+     hash numbers on one row the moment a pull request landed beside it. */
+  [data-component="DeliveryAddresses"] { display: inline-flex; align-items: center; gap: var(--base); flex: none; }
+  .addr {
+    display: inline-flex; align-items: center; gap: var(--tight); flex: none;
+    font: var(--rung-subheadline) var(--mono); color: var(--text-tertiary);
+  }
+  /* A Ticket is an address and nothing more. A pull request is an address WITH a state. */
+  .addr.is-open   { color: var(--delivery-open); }
+  .addr.is-merged { color: var(--delivery-merged); }
+  .addr.is-closed { color: var(--state-failure); }
+  .addr.is-draft  { color: var(--state-idle); }
+  .addr svg { width: var(--icon-inline); height: var(--icon-inline); flex: none; stroke: currentColor; }
+
+  /* ================= the harness, not the design ================= */
+  .harness { display: flex; gap: var(--section); padding: var(--section); align-items: flex-start; }
+  .caption {
+    font-size: var(--rung-subheadline); color: var(--text-tertiary);
+    max-width: 46ch; line-height: 1.6;
+  }
+  .caption h1 { font-size: var(--rung-body); color: var(--text-primary); margin-bottom: var(--base); }
+  .caption code { font-family: var(--mono); color: var(--text-secondary); }
+  .caption ul { margin: var(--base) 0 0 var(--comfortable); }
+  /* `?bare=1` — the roster alone, which is what the renders are cut from. */
+  body.bare .caption { display: none; }
+  body.bare .harness { padding: var(--base); }
+  body.bare .roster { min-height: 0; }
+</style>
+</head>
+<body>
+<div class="harness">
+  <div class="roster" id="roster"></div>
+  <div class="caption" id="caption"></div>
+</div>
+
+<script>
+/* ============ marks ============ */
+const SVG = {
+  /* ArgoSymbol.ticketsRoom — SF `checklist`. A number that addresses a Ticket carries the mark
+     the reader clicks to go and read it; a second glyph for the same thing is a second
+     vocabulary. */
+  ticket: `<path d="M2.3 5 3.5 6.2 5.9 3.6"/><path d="M8.4 5h5.3"/>
+           <path d="M2.6 11h3.3"/><path d="M8.4 11h5.3"/>`,
+  /* The code host's own pull-request and merge marks: they differ from the ticket in SHAPE, so
+     the two addresses separate before their colours do. */
+  pr: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
+       <circle cx="11.8" cy="12.2" r="1.7"/><path d="M11.8 10.5V6.6a2 2 0 0 0-2-2H7.2"/>
+       <path d="M8.8 3 7.2 4.6l1.6 1.6"/>`,
+  merged: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
+           <circle cx="11.8" cy="4" r="1.7"/><path d="M11.8 5.7v.8a4 4 0 0 1-4 4H5.9"/>`,
+  ship: `<path d="M8 12.6V3.4"/><path d="M4.6 6.8 8 3.4l3.4 3.4"/><path d="M3.4 13.6h9.2"/>`,
+  chevron: `<path d="M6.5 4 10.5 8l-4 4"/>`,
+};
+const glyph = d => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+/* ============ the states this design answers for ============ */
+/* Each row is a state a ticket has to build and `pixel-review` has to judge. */
+const STATES = {
+  running: {
+    caption: 'A managed Session, working, with three Subagents under it and an open pull request.',
+    row: {
+      title: 'The rail reads the Subagents’ own records', state: 'running',
+      activity: 'Ran Edit FeedAgentReader.swift', clock: '4m 12s',
+      agents: 3, plan: {done: 3, total: 7}, ticket: 1269, pr: {n: 1312, state: 'open'},
+      selected: true,
+    },
+  },
+  ceiling: {
+    caption: 'Twelve Subagents. Five dots, then the column says how many more — five is where a stack stops being countable, and the figure is exact where a longer stack would be texture.',
+    row: {
+      title: 'Sweep every stop reason in the corpus', state: 'running',
+      activity: 'Ran Read 41 transcripts', clock: '22m 07s',
+      agents: 12, plan: {done: 5, total: 12}, ticket: 1204, pr: null,
+    },
+  },
+  merged: {
+    caption: 'Delegated nothing, which draws no mark at all. Its pull request merged, and the Plan is complete.',
+    row: {
+      title: 'Fix the worktree naming guard', state: 'running',
+      activity: 'Ran scripts/swift-boundaries.sh', clock: '1m 30s',
+      agents: 0, plan: {done: 3, total: 3}, ticket: 1289, pr: {n: 1291, state: 'merged'},
+    },
+  },
+  spent: {
+    caption: 'Delegated five, and all five are home — a different fact from "delegated nothing", and it draws a dash rather than a dot. Idle, so the Plan is frozen where it stopped: the fill is banked, never grey, or a finished plan reads as one nobody started.',
+    row: {
+      title: 'Graphite and Ion Blue across the shell', state: 'idle',
+      activity: null, clock: '18m',
+      agents: 0, spent: 5, plan: {done: 4, total: 6}, ticket: 375, pr: {n: 1301, state: 'closed'},
+    },
+  },
+  ready: {
+    caption: 'The Session reported it is ready to ship (#1335) and there is no pull request yet — a full bar and no PR mark. READY is a state in the word slot; the Create PR control lives in the deck header, because the roster has one click and it selects a Session.',
+    row: {
+      title: '/implement 1288', state: 'idle',
+      activity: null, clock: '2m',
+      agents: 0, spent: 2, plan: {done: 6, total: 6}, ticket: null, pr: null, ready: true,
+    },
+  },
+  unknown: {
+    caption: 'An external Session: ghosted whole, and its state an outline rather than a colour. It draws NO delegation mark — a Session whose own state Argo cannot place cannot be claimed to be delegating either, and a second outline in that column reads as a second dot. Where a managed Session holds a delegation Argo cannot resolve (#1076), the mark is an outline pip and never a number: `finished` there is the untruth #1269 was written for.',
+    row: {
+      title: 'codex — refactor the relay', state: 'unknown', readonly: true,
+      activity: 'external', clock: '6m ago',
+      agents: null, plan: null, ticket: null, pr: {n: 1305, state: 'draft'},
+    },
+  },
+  attention: {
+    caption: 'A Session waiting on the reader. The word is spent where the reader has to stop scanning.',
+    row: {
+      title: 'Screenshots go in the ticket body and the PR body', state: 'attention',
+      word: 'Needs input', activity: 'Ran gh auth status', clock: '40s',
+      agents: 1, plan: {done: 1, total: 4}, ticket: 1282, pr: {n: 1286, state: 'open'},
+    },
+  },
+  fold: {
+    caption: 'A fold, standing for four headless runs at once. Every fact on it is a sum or it is a claim about runs it is hiding: the Subagent dots are summed across the runs it hides, and it draws no Plan at all, because four to-do lists do not add up to one.',
+    row: {
+      title: '4 runs', fold: true, state: null, readonly: true,
+      activity: 'ticket-1194-fold', clock: '12m',
+      agents: 6, plan: null, ticket: null, pr: null,
+    },
+  },
+  empty: {
+    caption: 'A Session with nothing under it and nothing out of it: no delegation, no Plan, no addresses. Line 3 carries the clock alone, and every absent thing draws nothing rather than a zero.',
+    row: {
+      title: 'Read the composer’s focus rules', state: 'idle',
+      activity: null, clock: '3d',
+      agents: 0, plan: null, ticket: null, pr: null,
+    },
+  },
+};
+
+/* ============ the row ============ */
+const DOT_STATE = {running: 'is-running', idle: 'is-idle', attention: 'is-attention',
+                   failure: 'is-failure', unknown: 'is-unknown'};
+
+function subagentDots(r) {
+  const ceiling = 5;
+  /* A Session whose own state Argo cannot place cannot be claimed to be delegating either, and
+     the outline that would say so stacks under the outline that already said it — two outlines
+     in one column read as two dots. The state's own mark carries the whole claim. */
+  if (r.state === 'unknown') return '';
+  if (r.agents == null) return `<span class="pip is-unknown"></span>`;
+  if (!r.agents) return r.spent ? `<span class="pip is-spent"></span>` : '';
+  const drawn = Math.min(r.agents, ceiling);
+  return Array.from({length: drawn}, () => `<span class="pip"></span>`).join('')
+       + (r.agents > ceiling ? `<span class="pip-more">+${r.agents - ceiling}</span>` : '');
+}
+
+function planBar(r) {
+  if (!r.plan) return '';
+  const {done, total} = r.plan;
+  const still = r.state !== 'running';
+  const seg = Math.max(2, (64 - 2 * (total - 1)) / total);
+  const items = Array.from({length: total}, (_, i) =>
+    `<i class="${i < done ? 'is-done' : i === done && !still ? 'is-doing' : ''}"></i>`).join('');
+  return `<span data-component="PlanBar" class="${still ? 'is-still' : ''}"
+    style="--seg:${seg}px" title="${done} of ${total} done">${items}</span>`;
+}
+
+function addresses(r) {
+  const parts = [];
+  if (r.ticket) parts.push(`<span class="addr">${glyph(SVG.ticket)}#${r.ticket}</span>`);
+  if (r.pr) parts.push(`<span class="addr is-${r.pr.state}">${
+    glyph(r.pr.state === 'merged' ? SVG.merged : SVG.pr)}#${r.pr.n}</span>`);
+  return parts.length ? `<span data-component="DeliveryAddresses">${parts.join('')}</span>` : '';
+}
+
+function trailingWord(r) {
+  if (r.ready) return `<span class="badge is-ready">${glyph(SVG.ship)}Ready</span>`;
+  if (r.word) return `<span class="badge">${r.word}</span>`;
+  return '';
+}
+
+function row(r) {
+  const marker = r.fold
+    ? `<span class="chevron">${glyph(SVG.chevron)}</span>`
+    : `<span class="dot ${DOT_STATE[r.state] ?? 'is-idle'}"></span>`;
+  return `
+  <div data-component="SessionRow"
+       class="${r.selected ? 'is-selected' : ''} ${r.readonly ? 'is-readonly' : ''}">
+    <span data-component="SessionMarker">
+      ${marker}
+      <span data-component="SubagentDots">${r.fold ? subagentDots(r) : subagentDots(r)}</span>
+    </span>
+    <span class="row-body">
+      <span class="line">
+        <span class="title grow">${r.title}</span>
+        ${trailingWord(r)}
+      </span>
+      ${r.activity ? `<span class="activity">${r.activity}</span>` : ''}
+      <span class="line progress-line">
+        <span class="clock ${r.state === 'running' ? 'is-live' : ''}">${r.clock}</span>
+        ${planBar(r)}
+        <span class="grow"></span>
+        ${addresses(r)}
+      </span>
+    </span>
+  </div>`;
+}
+
+/* ============ render ============ */
+const params = new URLSearchParams(location.search);
+if (params.get('bare') === '1') document.body.classList.add('bare');
+const asked = params.get('state') || 'all';
+const keys = asked === 'all' ? Object.keys(STATES) : [asked in STATES ? asked : 'running'];
+
+document.getElementById('roster').innerHTML = keys.map(k => row(STATES[k].row)).join('');
+document.getElementById('caption').innerHTML = asked === 'all'
+  ? `<h1>The Sessions roster row — every state</h1>
+     <p>One row per state this design answers for. Each is reachable on its own with
+     <code>?state=</code>:</p>
+     <ul>${keys.map(k => `<li><code>${k}</code> — ${STATES[k].caption}</li>`).join('')}</ul>`
+  : `<h1>?state=${keys[0]}</h1><p>${STATES[keys[0]].caption}</p>`;
+</script>
+</body>
+</html>

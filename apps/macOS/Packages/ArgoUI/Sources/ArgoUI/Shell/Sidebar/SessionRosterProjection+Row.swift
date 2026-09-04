@@ -91,9 +91,9 @@ extension SessionRosterProjection {
             self.activity = activity.activity
         }
 
-        /// The one fact the second line carries beside the clock, first match wins (#1199): what
-        /// the Session is doing right now while it is running, and the fact that tells it apart
-        /// from its neighbours otherwise. One slot, so the line never says both.
+        /// The one fact line 2 carries, first match wins (#1199): what the Session is doing right
+        /// now while it is running, and the fact that tells it apart from its neighbours
+        /// otherwise. One slot, so the line never says both, and no fact means no line (#1343).
         var secondaryFact: String? {
             activity ?? toldApart
         }

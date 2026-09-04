@@ -3,10 +3,10 @@ import ArgoEngine
 import ArgoUI
 import SwiftUI
 
-/// The second line in every shape it comes in (#1291): a row carrying both facts, a row with only
-/// the clock, a row with only the activity, and a row whose activity is longer than the sidebar.
+/// Every shape the row comes in once the clock is on line 3 (#1343): three lines, two lines with
+/// no activity, two lines with no clock, and an activity longer than the sidebar.
 ///
-/// Its own fixture rather than the shared preview, which has no row carrying both facts at once.
+/// Its own fixture rather than the shared preview, which has no row drawing all three lines.
 struct RosterSecondLineSpecimen: View {
     /// Whether movement is off — `argoStillsMotion`, which is the only way a PNG catches the still.
     var isStill = false
@@ -27,14 +27,14 @@ struct RosterSecondLineSpecimen: View {
                 ran: "bun run quality",
             ),
             running(
-                id: "clock-only",
+                id: "no-activity",
                 title: "Retire Electron, set new design foundations",
                 startedAtMs: nowMs - 21000,
                 ran: nil,
             ),
-            // No prompt Argo has a stamp for, and nothing seen either, so the slot has no reading
-            // to give: the fact stands on the line alone.
-            running(id: "fact-only", title: "Restore the sessions Warp closed", ran: "swift test"),
+            // No prompt Argo has a stamp for and nothing seen either, so there is no clock: the
+            // row is a title and an activity, and line 3 goes with the reading.
+            running(id: "no-clock", title: "Restore the sessions Warp closed", ran: "swift test"),
             running(
                 id: "long-fact",
                 title: "A Turn deep in a long command",
@@ -44,8 +44,8 @@ struct RosterSecondLineSpecimen: View {
         ]
     }
 
-    /// A managed Session mid-Turn. `startedAtMs` is the prompt the clock counts from — without one
-    /// the row has no reading for the slot at all, which is the third shape above.
+    /// A managed Session mid-Turn. `startedAtMs` is the prompt the clock counts from; without one
+    /// the row has no clock, which is the third shape above.
     private static func running(
         id: String, title: String, startedAtMs: Int? = nil, ran: String?,
     )
@@ -89,13 +89,13 @@ struct RosterSecondLineSpecimen: View {
     }
 }
 
-#Preview("Second line — the shapes it comes in") {
+#Preview("The roster row — the shapes it comes in") {
     RosterSecondLineSpecimen()
         .frame(height: 300)
         .argoAppearance()
 }
 
-#Preview("Second line — with movement off") {
+#Preview("The roster row — with movement off") {
     RosterSecondLineSpecimen(isStill: true)
         .frame(height: 300)
         .argoAppearance()

@@ -11,11 +11,6 @@ package struct SessionRow: View {
     private static let focusAttempts = 20
     private static let focusRetry = Duration.milliseconds(20)
 
-    /// What the marker column costs the title, and so what the second line owes to start under the
-    /// title's first letter rather than under the dot (#1291). Derived from the two tokens
-    /// `primaryLine` is built out of, so a wider marker or a looser gap moves both lines together.
-    private static let secondaryLineInset = ArgoIconSize.statusDot + ArgoSpacing.snug
-
     @Environment(\.argo) private var argo
 
     let row: SessionRosterProjection.Row
@@ -32,9 +27,13 @@ package struct SessionRow: View {
     @FocusState private var isFieldFocused: Bool
 
     package var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
-            primaryLine
-            secondaryLine
+        HStack(alignment: .top, spacing: ArgoSpacing.base) {
+            SessionMarker(row: row)
+            VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+                titleLine
+                activityLine
+                progressLine
+            }
         }
         .padding(.vertical, ArgoSpacing.tight)
         // Applied over the assembled row, so nothing added to it is left behind at full strength.
@@ -58,27 +57,14 @@ package struct SessionRow: View {
         }
     }
 
-    private var primaryLine: some View {
+    /// Line 1 — which run this is: the title, and the one word spent where a reader has to stop
+    /// scanning. The mark is not on it; it is the column beside the whole body (`SessionMarker`).
+    private var titleLine: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            marker
             title
             lock
             Spacer(minLength: ArgoSpacing.tight)
             stateWord
-        }
-    }
-
-    /// The leading column: what the Session is DOING, or — on a fold — whether it is open. One of
-    /// the two is a state and the other is a control, and no row is both. Framed to the dot's own
-    /// box either way, so every title on the roster stays on one x.
-    @ViewBuilder private var marker: some View {
-        if let fold = row.fold {
-            ArgoDisclosure(fold.isOpen ? .below : .beside)
-                .frame(width: ArgoIconSize.statusDot, height: ArgoIconSize.statusDot)
-                .foregroundStyle(argo.color.text.tertiary)
-                .accessibilityHidden(true)
-        } else {
-            SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
         }
     }
 
@@ -163,31 +149,29 @@ package struct SessionRow: View {
         isRenaming.wrappedValue = false
     }
 
-    /// The duration first and the fact after it, on one x with the title above — one arrangement
-    /// for every row (#1291, superseding the two-ends rule #1199 landed). The clock at the far end
-    /// made the line read as a third column rather than as the title's own second line, and which
-    /// end it sat at depended on what the other slot happened to be holding.
+    /// Line 2 — what the Session is doing, at the full width of the row (#1343). Absent entirely
+    /// when the slot is empty: an empty `Text` would leave a gap of the font's height.
     ///
-    /// Absent entirely when neither is there — an empty `Text` would leave a gap of the font's
-    /// height.
-    @ViewBuilder private var secondaryLine: some View {
-        if row.secondaryFact != nil || row.clock != nil {
-            HStack(spacing: ArgoSpacing.snug) {
-                clockLabel
-                secondaryFactLabel
-                Spacer(minLength: 0)
-            }
-            .padding(.leading, Self.secondaryLineInset)
-            .foregroundStyle(argo.color.text.tertiary)
+    /// One line and cut at the tail, in `rowMeta`'s INTERFACE face and not the mono — what a
+    /// Session is doing is a sentence, not machine output.
+    @ViewBuilder private var activityLine: some View {
+        if let fact = row.secondaryFact {
+            Text(fact)
+                .argoText(ArgoTypography.rowMeta)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
-    /// The one age slot, at the head of the line. It never gives up a character: a clock cut to a
-    /// width says a different duration, where the fact beside it only loses its tail.
-    @ViewBuilder private var clockLabel: some View {
+    /// Line 3 — how it is going, with the clock at its leading edge (#1343). One more `hair` above
+    /// it than the two lines take between them, because it changes subject.
+    @ViewBuilder private var progressLine: some View {
         if let clock = row.clock {
             RosterTurnClock(clock: clock)
-                .layoutPriority(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, ArgoSpacing.hair)
+                .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
@@ -216,23 +200,8 @@ package struct SessionRow: View {
 }
 
 /// The row's own labels, beside the body rather than in it: the body is at the house ceiling for
-/// a type, and what the two lines are made of is one subject of its own.
+/// a type, and what the three lines are made of is one subject of its own.
 private extension SessionRow {
-    /// The fact after the clock, on one line and cut at the tail. It is the slot that gives, at
-    /// every width: the clock's own reading may not lose a character, and a fact that loses its
-    /// tail still says what it was about.
-    ///
-    /// The same `rowMeta` at the same weight as the clock beside it — one type treatment across
-    /// the line, so ink is the only difference it carries (#1291).
-    @ViewBuilder private var secondaryFactLabel: some View {
-        if let fact = row.secondaryFact {
-            Text(fact)
-                .argoText(ArgoTypography.rowMeta)
-                .lineLimit(1)
-                .truncationMode(.tail)
-        }
-    }
-
     /// Beside the name, because what it says is about the Session and the far column is the
     /// state's. Hidden from a screen reader, which hears the fact in `row.announcement`.
     @ViewBuilder private var lock: some View {

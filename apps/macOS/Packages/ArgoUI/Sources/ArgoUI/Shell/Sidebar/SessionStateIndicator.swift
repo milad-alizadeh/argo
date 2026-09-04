@@ -14,7 +14,7 @@ struct SessionStateIndicator: View {
     /// The lane the glow crosses, in the dot's own widths — the same way `ArgoFeedRow` states the
     /// thread's travel, and for the same reason: the sweep is read against the thing it crosses.
     ///
-    /// It reaches less than the gap to the title (`ArgoSpacing.snug`) on each side, so a pass
+    /// It reaches less than the gap to the title (`ArgoSpacing.base`) on each side, so a pass
     /// leaving the dot dies in the gutter rather than washing the first letter of a name.
     private static let sweepLane: CGFloat = 2.5
 
