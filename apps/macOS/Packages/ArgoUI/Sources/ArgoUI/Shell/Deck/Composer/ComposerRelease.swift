@@ -11,7 +11,7 @@ struct ComposerRelease {
     ///
     /// The Session's side is deliberately NOT in here. A boundary carries out its own release, and
     /// it has a once-per-Turn claim to spend first (`ComposerDraft.mustDropQueue(afterInterrupt:)`)
-    /// — a level watching the boundary too would race that drop with a flush of the very
+    /// — a level watching the boundary too would race that drop with a put of the very
     /// follow-ups it is about to take away.
     struct Awaiting: Equatable {
         /// How many follow-ups are waiting. A count and not the turns themselves: what the release
@@ -49,7 +49,7 @@ struct ComposerRelease {
         self.awaiting = Awaiting(draft)
     }
 
-    /// Whether the held rung may be walked now. Ahead of `flushes` in the order the composer acts,
+    /// Whether the held rung may be walked now. Ahead of `putsNext` in the order the composer acts,
     /// for the reason `SessionComposer.honour(_:)` states.
     var walks: Bool {
         hasTurnEnded && awaiting.heldMode != nil && !awaiting.isWalkingMode && !awaiting.isSteering
@@ -74,7 +74,7 @@ struct ComposerRelease {
     /// queue would follow it into that Turn — which is a steer's queue emptying into the run it
     /// was redirecting (#1238), and, at the boundary, every follow-up after the first written to a
     /// CLI busy with the first (#1337).
-    var flushes: Bool {
+    var putsNext: Bool {
         hasTurnEnded && awaiting.waiting > 0 && !awaiting.isRefused && !awaiting.isWalkingMode
             && !awaiting.isSteering && !awaiting.isAwaitingPutTurn
     }

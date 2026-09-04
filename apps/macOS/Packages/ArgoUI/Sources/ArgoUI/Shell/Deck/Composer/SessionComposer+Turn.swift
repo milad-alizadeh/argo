@@ -37,7 +37,7 @@ extension SessionComposer {
     ///
     /// The dropping happens HERE rather than off the Session going idle, and the order is what
     /// makes it work: the queue is emptied at the click, before the record catches up and the
-    /// flush the body watches for fires. Waiting for the status to turn would be waiting for the
+    /// put the body watches for happens. Waiting for the status to turn would be waiting for the
     /// exact moment the queued follow-ups are released.
     ///
     /// The field itself is left alone — see `ComposerDraft.stopped(via:)`.
@@ -92,6 +92,29 @@ extension SessionComposer {
         try? await Task.sleep(for: patience)
         guard !Task.isCancelled else { return }
         draft.stopDidNotTake()
+    }
+
+    /// How long a put Turn gets to appear in the record before the queue stops waiting on it
+    /// (#1337). `stopPatience`'s road and so its number: the CLI writing a boundary and Argo
+    /// reading it, which is the file watch plus a fold.
+    static let putPatience = stopPatience
+
+    /// The wait on a put Turn reaching the record, so a claim cannot strand the queue (#1337).
+    /// `turnStarted()` is the only other thing that spends one, and a Turn the record never shows
+    /// running — one short enough that no reading caught it, one the CLI never heard (#682) —
+    /// never fires it.
+    ///
+    /// It only spends the claim, and the release is made by the level: spending it is a movement
+    /// in what `ComposerRelease.Awaiting` reads, so the next render asks against the status as it
+    /// stands THEN rather than the one this View was built from.
+    ///
+    /// Awaitable and internal for the reason `watchStop(patience:)` is: the vessel only fires it,
+    /// and a claim about what it decides has to be one a test can make without a wall-clock guess.
+    func watchPut(patience: Duration = putPatience) async {
+        guard draft.isAwaitingPutTurn else { return }
+        try? await Task.sleep(for: patience)
+        guard !Task.isCancelled, draft.isAwaitingPutTurn else { return }
+        draft.putTurnDidNotAppear()
     }
 
     /// Ask the Session for a rung.
@@ -178,8 +201,8 @@ extension SessionComposer {
             Task { await honour(held) }
             return
         }
-        guard release.flushes else { return }
-        draft.flush(via: sending)
+        guard release.putsNext else { return }
+        draft.putNext(via: sending)
     }
 
     /// The held rung and then the queue, and the ORDER is the whole of what this decides: a
@@ -187,9 +210,9 @@ extension SessionComposer {
     /// moved, and it would put the Session back to running, which is what refuses the walk.
     func honour(_ held: SessionMode) async {
         await walk(to: held)
-        // Through the level rather than straight to `flush`, so the walk's own follow-through obeys
-        // the same rule every other release does — a refusal standing here is still the reader's to
-        // answer, and the walk clearing `isWalkingMode` is what opens this one.
+        // Through the level rather than straight to `putNext`, so the walk's own follow-through
+        // obeys the same rule every other release does — a refusal standing here is still the
+        // reader's to answer, and the walk clearing `isWalkingMode` is what opens this one.
         release()
     }
 
@@ -250,7 +273,7 @@ extension SessionComposer {
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is
-    /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
+    /// whatever the refusal stopped, and after a refused put that is the queue, not the field.
     func retry() {
         draft.retry(via: sending)
     }

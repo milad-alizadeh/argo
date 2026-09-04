@@ -196,7 +196,7 @@ struct ComposerSpecimen: View {
             QueuedTurn(text: "And when that is green, open the PR against main."),
             QueuedTurn(text: "Then put the ticket number in the title."),
         ])
-        draft.flush { _, _ in throw SessionDriveError.notDrivable }
+        draft.putNext { _, _ in throw SessionDriveError.notDrivable }
         return draft
     }
 

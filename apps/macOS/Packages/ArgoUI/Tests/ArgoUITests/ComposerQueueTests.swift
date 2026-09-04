@@ -32,11 +32,11 @@ struct ComposerQueueTests {
         #expect(draft.queued.isEmpty)
     }
 
-    /// Oldest first, and ONE to each flush: a follow-up that goes starts a Turn, and the one
+    /// Oldest first, and ONE to each put: a follow-up that goes starts a Turn, and the one
     /// behind it waits for that Turn's own boundary (#1337). Three boundaries, three follow-ups,
     /// in the order they were typed.
     @Test
-    func `queued turns are delivered in the order they were typed, one to each flush`() {
+    func `queued turns are delivered in the order they were typed, one to each boundary`() {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft()
         for text in ["First", "Second", "Third"] {
@@ -48,7 +48,7 @@ struct ComposerQueueTests {
         }
 
         for _ in draft.queued.indices {
-            draft.flush { text, _ in try driver.send(text, to: "session-a") }
+            draft.putNext { text, _ in try driver.send(text, to: "session-a") }
             // The record catching up with the Turn that put started — what a boundary waits on.
             draft.turnStarted()
         }
@@ -57,7 +57,7 @@ struct ComposerQueueTests {
         #expect(draft.queued.isEmpty)
     }
 
-    /// Why one flush is enough: the put claims the Turn it started, and the claim is what the
+    /// Why one put is enough: the put claims the Turn it started, and the claim is what the
     /// release reads to decline until the record has seen that Turn run. Without it the reading
     /// straight after this one still says the Session is at rest, and the rest of the queue goes
     /// to a CLI already busy with what just went (#1337).
@@ -67,7 +67,7 @@ struct ComposerQueueTests {
         var draft = ComposerDraft(text: "First")
         draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
 
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
         #expect(draft.isAwaitingPutTurn)
         draft.turnStarted()
 
@@ -83,7 +83,7 @@ struct ComposerQueueTests {
         draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
         driver.refusal = .notDrivable
 
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(!draft.isAwaitingPutTurn)
     }
@@ -102,10 +102,10 @@ struct ComposerQueueTests {
         #expect(draft.queued.map(\.text) == ["First", "Third"])
     }
 
-    /// A flush that hits a refusal stops there; the rest stay queued and the seam carries the
+    /// A put that hits a refusal stops there; the rest stay queued and the seam carries the
     /// reason.
     @Test
-    func `a refused flush keeps the turns it never reached`() {
+    func `a refused put keeps the turns it never reached`() {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft()
         for text in ["First", "Second"] {
@@ -117,28 +117,28 @@ struct ComposerQueueTests {
         }
         driver.refusal = .notDrivable
 
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(draft.queued.map(\.text) == ["First", "Second"])
         #expect(draft.refusal == SessionDriveError.notDrivable.detail)
     }
 
-    /// Nothing to flush is not an event: a Turn ending on a Session nobody queued anything for
+    /// Nothing to put is not an event: a Turn ending on a Session nobody queued anything for
     /// must not clear a refusal the user has not read yet.
     @Test
-    func `flushing an empty queue changes nothing`() {
+    func `putting from an empty queue changes nothing`() {
         var draft = ComposerDraft(text: "Carry on.", refusal: "Argo no longer holds this Session")
 
-        draft.flush { _, _ in }
+        draft.putNext { _, _ in }
 
         #expect(draft.text == "Carry on.")
         #expect(draft.refusal == "Argo no longer holds this Session")
     }
 
-    /// The seam's Retry after a refused flush. The words went into the queue before they were ever
+    /// The seam's Retry after a refused put. The words went into the queue before they were ever
     /// put to the Session, so the field is empty and Retry must read the queue.
     @Test
-    func `retrying a refused flush puts the queue back, not the empty field`() {
+    func `retrying a refused put reads the queue, not the empty field`() {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft()
         for text in ["First", "Second"] {
@@ -149,7 +149,7 @@ struct ComposerQueueTests {
                 }
         }
         driver.refusal = .notDrivable
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
         driver.refusal = nil
 
         draft.retry { text, _ in try driver.send(text, to: "session-a") }

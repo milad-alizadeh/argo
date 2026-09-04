@@ -25,7 +25,7 @@ extension ComposerDraft {
     /// the follow-ups behind it still mean what they meant and still wait for the boundary — which
     /// is why the interrupt is claimed here, so the record's own marker does not drop them (#541,
     /// design decision 4).
-    /// `package` for the reason `flush(via:)` is: a specimen reaches the state by RUNNING the act
+    /// `package` for the reason `putNext(via:)` is: a specimen reaches the state by RUNNING the act
     /// rather than by setting the fields behind one.
     package mutating func beginSteer(
         _ id: QueuedTurn.ID,
@@ -56,7 +56,7 @@ extension ComposerDraft {
         // Before anything else moves: taking the follow-up out of the queue is itself a movement
         // the release watches, and the status it would be read against is still the one this
         // steer's own interrupt produced. The claim is the release's own — see
-        // `ComposerDraft+Release.swift`, where a follow-up put at the boundary makes the same one.
+        // `ComposerDraft+PutTurn.swift`, where a follow-up put at the boundary makes the same one.
         claimPutTurn()
         // The chip's own `×` act: one follow-up leaves the queue by id, and a delivered steer
         // takes it out exactly as a cancel would have.
@@ -68,7 +68,7 @@ extension ComposerDraft {
     ///
     /// The follow-up stays queued, in the place it was already in. What carries it next is the
     /// seam's Retry and not the ordinary release: a refusal is standing now, and the release
-    /// declines while one does (`ComposerRelease.flushes`) precisely so the same words are not put
+    /// declines while one does (`ComposerRelease.putsNext`) precisely so the same words are not put
     /// to the same port at every reading. The chip says which one was reached.
     mutating func steerRefused(_ id: QueuedTurn.ID, _ error: any Error) {
         steeringTurn = nil

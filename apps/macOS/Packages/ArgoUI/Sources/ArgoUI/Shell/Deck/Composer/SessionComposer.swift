@@ -81,7 +81,7 @@ package struct SessionComposer: View {
         // (#940).
         .onChange(of: ComposerRelease.Awaiting(draft)) { _, _ in release() }
         // A Turn the CLI never heard, put back where it was typed (#682). `initial` for the reason
-        // the flush above has it: the news lands while the reader may be looking at another
+        // the put above has it: the news lands while the reader may be looking at another
         // Session, and it is still theirs when they come back to this one.
         .onChange(of: composer.lostTurn, initial: true) { _, lost in
             guard let lost else { return }
@@ -91,6 +91,10 @@ package struct SessionComposer: View {
         // the count moving, which is what starts a second Stop's wait and cancels this one the
         // moment a boundary answers.
         .task(id: draft.unansweredStops) { await watchStop() }
+        // A Turn Argo put that the record has yet to show running (#1337). `.task(id:)` restarts
+        // on the count moving, which arms a second put's wait and cancels this one the moment a
+        // Turn starting spends the claim.
+        .task(id: draft.putTurnsAwaitingRecord) { await watchPut() }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Composer")
     }
