@@ -19,9 +19,11 @@ extension SpecimenRegistry {
     static let header: [SpecimenEntry] = postures + contexts + handoffs + [
         // A popover is its own window and never lands in a screenshot of this one.
         SpecimenEntry("contextGuide") { ContextGuideSpecimen(header: SessionHeaderFixture.guided) },
-        // The same panel where almost nothing could be read: the block collapses to its one
-        // permanent row rather than drawing a column of dashes (#694).
-        SpecimenEntry("contextGuideUnread") {
+        // The same panel where almost nothing could be read: the block collapses to the rows Argo
+        // has rather than drawing a column of dashes (#694). `Unreadable` and not `Unread` since
+        // #1249, which is what the Session's spend now is — the panel opens off the instrument,
+        // and a Session with no instrument has no panel to render.
+        SpecimenEntry("contextGuideUnreadable") {
             ContextGuideSpecimen(header: SessionHeaderFixture.unguided)
         },
         // The Issue row over a branch that names no ticket (#894). It used to VANISH here, which a

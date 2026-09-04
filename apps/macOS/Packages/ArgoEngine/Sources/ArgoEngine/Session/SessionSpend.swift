@@ -32,8 +32,10 @@ struct SessionSpend: Equatable, Sendable {
         subagent?.spentTokens
     }
 
-    /// What one record priced, which is the Session's own.
-    mutating func observe(_ usage: Usage) {
+    /// What one record priced, which is the Session's own. A spend Argo could not read adds
+    /// nothing rather than zero — the same withholding the subagent line below makes.
+    mutating func observe(_ usage: Usage?) {
+        guard let usage else { return }
         total = Self.summed(total, usage)
     }
 

@@ -23,7 +23,7 @@ public extension CockpitPresentation {
                     location: "/Users/milad/Developer/argo",
                     workspace: .init(kind: .worktree, branch: "argo/#\(1113 + at)-reading"),
                 ),
-                spend: .init(contextTokens: 100_000 + at * 20000),
+                spend: .init(context: .held(100_000 + at * 20000)),
                 transcript: .init(events: TranscriptFixtures.longTranscript(from: at * 1000)),
             )
         },

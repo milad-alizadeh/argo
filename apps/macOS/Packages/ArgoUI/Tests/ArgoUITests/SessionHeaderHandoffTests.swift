@@ -29,10 +29,12 @@ struct SessionHeaderHandoffTests {
     }
 
     /// Story 39's sibling. A context Argo could not read is not a context past a line — the offer
-    /// degrades to absent rather than to the nearest guess.
+    /// degrades to absent rather than to the nearest guess. Neither absence carries one: nor is a
+    /// Session Argo has heard nothing from (#1249).
     @Test
     func `a Session whose context could not be read is offered nothing`() {
-        #expect(header(tokens: nil).handoff == nil)
+        #expect(header(.unreadable).handoff == nil)
+        #expect(header(.unread).handoff == nil)
     }
 
     /// Story 49, and the assertion #502 names. Both read-only postures, at a reading that WOULD
@@ -44,7 +46,7 @@ struct SessionHeaderHandoffTests {
 
             // The warning is still there: read-only is a fact about the remedy, not about how full
             // the Session is.
-            #expect(header.context.tier == .warn)
+            #expect(header.context?.tier == .warn)
             #expect(header.handoff == nil)
         }
     }
@@ -55,7 +57,7 @@ struct SessionHeaderHandoffTests {
     func `a Session that has handed off keeps the reading and loses the button`() {
         let header = header(tokens: Self.pastCrit, handedOffTo: "fresh-session")
 
-        #expect(header.context.tier == .crit)
+        #expect(header.context?.tier == .crit)
         #expect(header.handoff == nil)
     }
 
@@ -63,15 +65,16 @@ struct SessionHeaderHandoffTests {
     @Test
     func `the offer is exactly managed-and-past-a-line`() {
         let offered = CockpitPresentation.Session.Access.allCases.map { access in
-            [67175, Self.pastWarn, Self.pastCrit, nil].map {
-                header(tokens: $0, access: access).handoff != nil
-            }
+            [.held(67175), .held(Self.pastWarn), .held(Self.pastCrit), .unreadable, .unread]
+                .map { (context: ContextReading) in
+                    header(context, access: access).handoff != nil
+                }
         }
 
         #expect(offered == [
-            [false, true, true, false],
-            [false, false, false, false],
-            [false, false, false, false],
+            [false, true, true, false, false],
+            [false, false, false, false, false],
+            [false, false, false, false, false],
         ])
     }
 
@@ -83,8 +86,8 @@ struct SessionHeaderHandoffTests {
 
         #expect(warned.tier == .warn)
         #expect(critical.tier == .crit)
-        #expect(warned.tier == header(tokens: Self.pastWarn).context.tier)
-        #expect(critical.tier == header(tokens: Self.pastCrit).context.tier)
+        #expect(warned.tier == header(tokens: Self.pastWarn).context?.tier)
+        #expect(critical.tier == header(tokens: Self.pastCrit).context?.tier)
     }
 
     /// Story 46. One sentence, saying what the control DOES.
@@ -120,7 +123,7 @@ struct SessionHeaderHandoffTests {
                 access: .managed,
                 status: .idle,
                 chain: .init(program: .init(model: "claude-opus-5")),
-                spend: .init(contextTokens: Self.pastWarn),
+                spend: .init(context: .held(Self.pastWarn)),
             )).handoff,
         )
 
@@ -149,7 +152,16 @@ struct SessionHeaderHandoffTests {
     }
 
     private func header(
-        tokens: Int?,
+        tokens: Int,
+        access: CockpitPresentation.Session.Access = .managed,
+        handedOffTo: String? = nil,
+    )
+        -> SessionHeaderProjection.Header {
+        header(.held(tokens), access: access, handedOffTo: handedOffTo)
+    }
+
+    private func header(
+        _ context: ContextReading,
         access: CockpitPresentation.Session.Access = .managed,
         handedOffTo: String? = nil,
     )
@@ -164,7 +176,7 @@ struct SessionHeaderHandoffTests {
                 handedOffTo: handedOffTo,
             ),
             work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
-            spend: .init(contextTokens: tokens),
+            spend: .init(context: context),
         ))
     }
 }

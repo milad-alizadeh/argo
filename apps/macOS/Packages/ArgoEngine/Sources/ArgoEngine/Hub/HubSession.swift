@@ -109,8 +109,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// How full the Session's context is: the tokens the LATEST reported spend was made against,
     /// not a sum — every request re-sends the whole conversation, so summing would count the same
     /// context once per turn. Falls as well as rises: the reading after a compaction is the
-    /// compacted one. Absent until a record carries a `usage` object at all.
-    public private(set) var contextTokens: Int?
+    /// compacted one. `unread` until a record carries a `usage` object at all, which a surface
+    /// draws as nothing rather than as a word (#1249) — see `ContextReading`.
+    public private(set) var context = ContextReading.unread
     /// Every spend the records reported, at both grains — see `SessionSpend`, which owns the
     /// arithmetic and the three token readings the header draws from it.
     private(set) var spend = SessionSpend()
@@ -275,10 +276,10 @@ extension HubSession {
     }
 
     /// What one request reported spending, and the context it left behind it.
-    private mutating func observe(usage: Usage) {
+    private mutating func observe(usage: UsageReading) {
         hasAgentActivity = true
-        contextTokens = usage.contextTokens
-        spend.observe(usage)
+        context = context.updated(by: usage)
+        spend.observe(usage.usage)
     }
 
     private mutating func observe(call: ToolCall) {
@@ -317,7 +318,7 @@ extension HubSession {
         observedEffort = continuation.observedEffort ?? observedEffort
         // The later half of the chain wins where it read one, and says nothing where it did not: a
         // resume file with no `usage` in it yet is not a Session that has emptied its context.
-        contextTokens = continuation.contextTokens ?? contextTokens
+        context = context.merged(with: continuation.context)
         spend.merge(continuation.spend)
         branch = continuation.branch ?? branch
         // A resume is a fresh `claude` with its own flag, so the later half's stance is the live

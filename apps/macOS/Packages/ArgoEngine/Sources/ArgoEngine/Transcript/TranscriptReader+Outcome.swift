@@ -56,7 +56,8 @@ extension TranscriptReader {
         // above it already reports the whole subtree. Reading both would bill a nested delegation
         // twice — the same guard, and the same reason, as `.usage` and the turn end have.
         guard attributes(message) else { return nil }
-        return message.usage ?? Usage(reported: message.toolUseResult?["usage"])
+        return message.usage?.usage ?? UsageReading(reported: message.toolUseResult?["usage"])?
+            .usage
     }
 
     /// What one resolved call produced, kinded — its patch where it mutated, its image where it

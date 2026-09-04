@@ -27,42 +27,46 @@ enum SessionHeaderFixture {
     /// what the instrument actually has to fit. Each carries the name it renders under, so the
     /// registry builds an entry per tier rather than looking one up.
     static let contexts: [(name: String, header: SessionHeaderProjection.Header)] = [
-        ("contextOk", header(context: 67175)),
-        ("contextWarn", header(context: 216_764)),
-        ("contextCrit", header(context: 472_233)),
-        ("contextUnknown", header(context: nil)),
+        ("contextOk", header(context: .held(67175))),
+        ("contextWarn", header(context: .held(216_764))),
+        ("contextCrit", header(context: .held(472_233))),
+        ("contextUnknown", header(context: .unreadable)),
+        // A Session Argo has not heard from yet: the zone is EMPTY, no reading and no meter
+        // (#1249).
+        ("contextUnread", header(context: .unread)),
     ]
 
-    /// Just the readings, for the preview that judges the four side by side.
-    static let contextReadings = contexts.map(\.header.context)
+    /// Just the readings, for the preview that judges them side by side. The unread one has none,
+    /// which is the whole of what it draws.
+    static let contextReadings = contexts.compactMap(\.header.context)
 
     /// Every state the OFFER has, each carrying the name it renders under. The first is the one
     /// with NOTHING in it; then the same reading on a Session Argo cannot drive — the warning
     /// without the button (story 49).
     static let handoffs: [(name: String, header: SessionHeaderProjection.Header)] = [
-        ("handoffWithheld", header(context: 67175)),
-        ("handoffAtWarn", header(context: 216_764)),
-        ("handoffAtCrit", header(context: 472_233)),
-        ("handoffOnReadOnly", header(context: 216_764, access: .external)),
-        ("handoffOnOrphaned", header(context: 472_233, access: .orphaned)),
+        ("handoffWithheld", header(context: .held(67175))),
+        ("handoffAtWarn", header(context: .held(216_764))),
+        ("handoffAtCrit", header(context: .held(472_233))),
+        ("handoffOnReadOnly", header(context: .held(216_764), access: .external)),
+        ("handoffOnOrphaned", header(context: .held(472_233), access: .orphaned)),
     ]
 
     /// The remedy already taken, at a reading that stays red. Apart from the offers above because
     /// it is not one: the button is gone and what is left is the link to the Session it went to.
-    static let handedOff = header(context: 472_233, handedOffTo: "fresh-session")
+    static let handedOff = header(context: .held(472_233), handedOffTo: "fresh-session")
 
     /// The button's own states for the preview that judges the three side by side — amber, red, and
     /// the one that is drawn and out of reach.
     static let handoffOffers: [SessionHeaderProjection.Handoff] = [
-        header(context: 216_764).handoff,
-        header(context: 472_233).handoff,
+        header(context: .held(216_764)).handoff,
+        header(context: .held(472_233)).handoff,
         SessionHeaderProjection.handoff(from: CockpitPresentation.Session(
             id: "header-folderless",
             title: "A Session whose folder Argo never read",
             access: .managed,
             status: .idle,
             chain: .init(program: .init(model: "claude-opus-5")),
-            spend: .init(contextTokens: 216_764),
+            spend: .init(context: .held(216_764)),
         )),
     ].compactMap(\.self)
 
@@ -85,7 +89,7 @@ enum SessionHeaderFixture {
             workspace: .init(kind: .worktree, branch: "argo/#476-feed-scroll-anchor"),
             ticket: .linked(.init(number: 476, title: "Anchor the feed on its newest line")),
         ),
-        spend: .init(spentTokens: 22_470_000, cachedTokens: 20_400_000, contextTokens: 163_912),
+        spend: .init(spentTokens: 22_470_000, cachedTokens: 20_400_000, context: .held(163_912)),
         transcript: .init(
             // A call a minute for 41 of the 48 minutes: every gap under the away cutoff, so the
             // worked reading is the 41m the render prints beside the 48m it ran.
@@ -101,13 +105,16 @@ enum SessionHeaderFixture {
         ),
     ))
 
-    /// The same panel over a Session almost nothing was read off — the block collapses to the one
-    /// row it always has rather than drawing a column of dashes.
+    /// The same panel over a Session almost nothing was read off — the block collapses to the two
+    /// rows Argo has rather than drawing a column of dashes. Its spend is `unreadable` and not
+    /// `unread`: the panel opens off the instrument, and a Session with no instrument has no panel
+    /// to render (#1249).
     static let unguided = SessionHeaderProjection.header(from: CockpitPresentation.Session(
         id: "header-unguided",
-        title: "A Session read off a record that carried no usage",
+        title: "A Session whose record carried a spend Argo cannot use",
         access: .external,
         status: .idle,
+        spend: .init(context: .unreadable),
     ))
 
     /// A Session on a branch that names no ticket, with a provider bound to have read one (#894).
@@ -125,7 +132,7 @@ enum SessionHeaderFixture {
             workspace: .init(kind: .worktree, branch: "worktree-parallel-workitem-edges"),
             ticket: .unlinked,
         ),
-        spend: .init(contextTokens: 67175),
+        spend: .init(context: .held(67175)),
     ))
 
     /// No Ticket provider bound at all (#1092): the tab line's Issue link and the panel's `Issue`
@@ -141,7 +148,7 @@ enum SessionHeaderFixture {
             workspace: .init(kind: .worktree, branch: "argo/#1092-session-ticket-link"),
             ticket: .unread,
         ),
-        spend: .init(contextTokens: 67175),
+        spend: .init(context: .held(67175)),
     ))
 
     /// A backlog to attach the `unlinked` Session above to (#1092) — this repo's own open tickets,
@@ -170,7 +177,7 @@ enum SessionHeaderFixture {
     /// A Session at a given fullness, with every other fact held still — so a PNG of two tiers
     /// differs in the one thing the tier decides.
     static func header(
-        context tokens: Int?,
+        context reading: ContextReading,
         access: CockpitPresentation.Session.Access = .managed,
         handedOffTo: String? = nil,
     )
@@ -179,70 +186,8 @@ enum SessionHeaderFixture {
             access: access,
             title: "Ship the native Liquid Glass application shell",
             branch: "argo/#511-header-context-fullness",
-            contextTokens: tokens,
+            context: reading,
             handedOffTo: handedOffTo,
         ))
-    }
-}
-
-/// The private builders behind the fixtures above. Split from the enum body so the catalog of
-/// named fixtures can keep growing without the type itself hitting the length cap that exists to
-/// keep a body readable in one screen — these are read once, not browsed.
-extension SessionHeaderFixture {
-    /// The external posture is given the branch that does not fit, deliberately: the branch sits
-    /// immediately BEFORE the access mark on the line, so a long name is what crowds the mark out.
-    private static func branch(for access: CockpitPresentation.Session.Access) -> String {
-        switch access {
-        case .external: longBranchName
-        case .managed, .orphaned: "argo/#510-session-header-facts"
-        }
-    }
-
-    /// The Workspace and the issue are drawn on every posture on purpose: whether a read-only
-    /// Session still says what it is working on is exactly what a PNG is for.
-    private static func session(
-        access: CockpitPresentation.Session.Access,
-        title: String,
-        branch: String,
-        contextTokens: Int? = 216_764,
-        handedOffTo: String? = nil,
-        status: SessionStatus = .idle,
-    )
-        -> CockpitPresentation.Session {
-        CockpitPresentation.Session(
-            id: "header-\(access)",
-            title: title,
-            access: access,
-            status: status,
-            chain: .init(
-                program: .init(cli: .claude, model: "claude-opus-5"),
-                handedOffTo: handedOffTo,
-            ),
-            work: .init(
-                location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-510",
-                workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
-                // A link with no title read through it, which is every Session in this build: no
-                // provider is connected (#414), so nothing answers with one.
-                ticket: .linked(.init(number: 510)),
-            ),
-            spend: .init(contextTokens: contextTokens),
-        )
-    }
-
-    /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: what
-    /// a PNG has to show is that it is cut at the tail rather than wrapping into the line below.
-    private static func title(
-        for access: CockpitPresentation.Session.Access,
-    )
-        -> String {
-        switch access {
-        case .managed:
-            "Ship the native Liquid Glass application shell with a deliberately long title"
-        case .external:
-            "Review a Session nobody here started, and decide whether the reading it left "
-                + "behind is worth keeping or should be archived tonight"
-        case .orphaned:
-            "Resume a Session whose terminal Argo lost"
-        }
     }
 }

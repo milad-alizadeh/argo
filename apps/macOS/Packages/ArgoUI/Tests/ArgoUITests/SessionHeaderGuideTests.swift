@@ -42,7 +42,8 @@ struct SessionHeaderGuideTests {
         #expect(said["Access"] == "Read-only")
     }
 
-    /// A fact nobody reported is ABSENT — `0 cached` would claim a figure nobody measured.
+    /// A fact nobody reported is ABSENT — `0 cached` would claim a figure nobody measured. A
+    /// Session read off an EMPTY record has not one fact in it, the context included (#1249).
     @Test
     func `a fact Argo does not have leaves the block rather than rendering a zero`() {
         let facts = SessionHeaderProjection.header(from: CockpitPresentation.Session(
@@ -52,9 +53,23 @@ struct SessionHeaderGuideTests {
             status: .idle,
         )).facts
 
-        // The reading survives alone: an unreadable context is still a context, said as `unknown`.
+        #expect(facts.isEmpty)
+    }
+
+    /// A spend Argo DID read and cannot use is the one case that words the gap: the panel says
+    /// `unknown` there, because a record was read and it gave a value no window fits.
+    @Test
+    func `a context read and unusable is the one gap the panel words`() {
+        let facts = SessionHeaderProjection.header(from: CockpitPresentation.Session(
+            id: "guide-unreadable",
+            title: "A Session whose spend Argo cannot use",
+            access: .managed,
+            status: .idle,
+            spend: .init(context: .unreadable),
+        )).facts
+
         #expect(facts.map(\.term) == ["Context"])
-        #expect(facts[0].value == "unknown")
+        #expect(facts.first?.value == "unknown")
     }
 
     /// A managed Session is the plain one, so it spends no `Access` row at all.
@@ -126,7 +141,7 @@ struct SessionHeaderGuideTests {
                 spentTokens: 1_830_000,
                 cachedTokens: 28_100_000,
                 subagentTokens: subagentTokens,
-                contextTokens: 216_764,
+                context: .held(216_764),
             ),
             transcript: .init(
                 events: events ?? calls(at: burst(from: 0) + burst(from: 110 * minute)),

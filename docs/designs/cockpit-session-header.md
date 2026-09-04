@@ -49,7 +49,7 @@ trailing edge takes the group named `TabLineInstruments`, in this order:
 | | Member | When it draws |
 |---|---|---|
 | 1 | the state word — `Needs input`, `Stopped` | `permission`, `asking`, `stopped` only |
-| 2 | the context instrument, 200pt, with ⓘ inside it | always, including `unknown` |
+| 2 | the context instrument, 200pt, with ⓘ inside it | once a spend has been reported, `unknown` included |
 | 3 | Hand off | past 150k **and** managed |
 
 **Hand off takes the trailing edge, so the instrument slides inward when it appears.** That is
@@ -158,11 +158,29 @@ corrected to it. A tier's colour is spent on a word and a rim, never on a ground
 
 ## An unreadable context reads `unknown` over an empty track
 
-The instrument is never absent — an unreadable context is still a context, and the absence lives
-inside the reading. A Session whose records carried no usage draws the `CONTEXT` label, the word
-`unknown` in `text.tertiary`, and the 3pt track with **no fill and no ticks**. The empty track
-says Argo does not have the number without inventing one, which is `CONTEXT.md`'s degrade-down
-rule.
+An unreadable context is still a context, and the absence lives inside the reading. A Session
+whose records reported a spend Argo could not take one token off draws the `CONTEXT` label, the
+word `unknown` in `text.tertiary`, and the 3pt track with **no fill and no ticks**. The empty
+track says Argo does not have the number without inventing one, which is `CONTEXT.md`'s
+degrade-down rule.
+
+**A spend of zero is not that.** The CLI writes records of its own and prices them at nothing,
+and no real request is made against an empty window — so such a record says nothing about the
+context and moves no reading. It is the same record whose model the feed drops (#1249), and the
+two halves of it are read the same way. What reaches `unknown` is a `usage` object naming not one
+token field this reader knows: the host's keys moved, and Argo read something it cannot use.
+
+## A Session Argo has not heard from draws no instrument at all
+
+`unknown` is for a record Argo READ and cannot use. A Session that has reported no spend yet —
+which every Session is for its first seconds — has said nothing about its window, and the zone
+is **empty**: no label, no reading, no track, and no `Context` row in the ⓘ panel (#1249). The
+reading appears with the first spend the records carry.
+
+An absent fact is not an unreadable one. Worn on a Session that has only just started, `unknown`
+reads as a fault the reader is being asked to do something about, and it is the one word on the
+header that says Argo tried and failed. `contextUnread.png` is the empty zone;
+`contextUnknown.png` is the word.
 
 **What triggers it is the absent reading, not the access posture.** Argo reads an external
 Session's context off its transcript, so it often has the number — DERIVED rather than DIRECT,
@@ -189,9 +207,9 @@ a convenience rather than the only route — a tooltip is unreachable by keyboar
 screenshot.
 
 **A fact Argo does not have is absent from the block**, never a zero and never a dash: `0 cached`
-would claim a figure nobody measured. The one permanent row is the context reading, which says
-`unknown` where it cannot be read — the same degrade-down the instrument draws. A Session read off
-an empty record therefore shows a block of exactly one row.
+would claim a figure nobody measured. The context row is no exception (#1249): it says `unknown`
+where a spend was read and cannot be used, and it is gone where none has been reported. A Session
+read off an empty record therefore shows an empty block.
 
 **The block says the same facts as the hover, in the panel's own register.** The hover is prose and
 speaks in sentences; a column speaks in readings. So the row reads `Issue` · `#476 — …`, because

@@ -43,7 +43,7 @@ package extension SessionHeaderProjection {
     static func handoff(from session: CockpitPresentation.Session) -> Handoff? {
         guard session.access == .managed,
               session.handedOffTo == nil,
-              let tier = context(tokens: session.contextTokens).tier,
+              let tier = context(reading: session.context)?.tier,
               tier != .okay
         else { return nil }
         return Handoff(

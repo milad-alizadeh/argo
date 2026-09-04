@@ -24,7 +24,8 @@ extension SessionHeaderProjection {
         worked: Worked? = nil,
     )
         -> [Fact] {
-        [Fact(term: "Context", value: context(tokens: session.contextTokens).reading)]
+        [context(reading: session.context).map { Fact(term: "Context", value: $0.reading) }]
+            .compactMap(\.self)
             + telemetry(from: session, worked: worked ?? .read(across: session.events))
             + [
                 // The CLI alone here too (#558): the guide is the header's own surface, and

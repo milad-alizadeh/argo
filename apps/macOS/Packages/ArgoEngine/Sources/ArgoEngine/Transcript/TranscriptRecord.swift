@@ -23,7 +23,8 @@ public struct MessageRecord: Sendable, Equatable {
     /// because they are read together and travel together everywhere after this.
     public let run: RunReading
     public let stopReason: String?
-    public let usage: Usage?
+    /// What its `usage` object came to, and `nil` where it carried none (#1249).
+    public let usage: UsageReading?
     public let content: [ContentBlock]
     /// The host's own result object, unread. Where a mutation's patch and an image's bytes live.
     public let toolUseResult: JSONValue?
@@ -157,22 +158,8 @@ extension MessageRecord {
             effort: record.stringField("effort"),
         )
         self.stopReason = message?.stringField("stop_reason")
-        self.usage = Usage(reported: message?["usage"])
+        self.usage = UsageReading(reported: message?["usage"])
         self.content = ContentBlock.blocks(from: message?["content"])
         self.toolUseResult = record["toolUseResult"]
-    }
-}
-
-extension Usage {
-    /// The host's own `usage` object. Absent where the record carried none — a zeroed Usage would
-    /// claim the turn spent nothing, which is a different statement from not knowing what it spent.
-    init?(reported: JSONValue?) {
-        guard let reported, reported.object != nil else { return nil }
-        self.init(
-            inputTokens: reported["input_tokens"]?.int ?? 0,
-            outputTokens: reported["output_tokens"]?.int ?? 0,
-            cacheReadTokens: reported["cache_read_input_tokens"]?.int ?? 0,
-            cacheCreationTokens: reported["cache_creation_input_tokens"]?.int ?? 0,
-        )
     }
 }

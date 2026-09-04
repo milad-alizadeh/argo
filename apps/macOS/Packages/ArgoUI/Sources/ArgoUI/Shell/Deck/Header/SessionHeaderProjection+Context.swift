@@ -1,3 +1,4 @@
+import ArgoEngine
 import Foundation
 
 /// How full the Session's context is, and how alarmed to be about it. A surface receives a reading
@@ -17,7 +18,9 @@ extension SessionHeaderProjection {
         /// written into the string.
         let label = "Context"
         let tier: Tier?
-        /// `217k / 1M`, or `unknown` where there is nothing to put against the window.
+        /// `217k / 1M`, or `unknown` where the record gave a value Argo cannot put against the
+        /// window. A Session that has reported no spend at all gets no `Context` at all, so this
+        /// never stands for one Argo has simply not heard from yet.
         let reading: String
         /// How much of the bar is filled, `0...1`. Absent — an EMPTY indicator — for an unreadable
         /// context, and clamped at full so a Session past a window Argo guessed wrong does not draw
@@ -47,16 +50,30 @@ extension SessionHeaderProjection {
         static let crit = 300_000
     }
 
-    static func context(tokens: Int?) -> Context {
-        guard let tokens else {
-            return Context(
+    /// The instrument for a reading, and **`nil` for a Session that has said nothing about its
+    /// window yet** (#1249) — the surface draws no reading, no meter and no fact row for it. An
+    /// absent fact is not an unreadable one: `unknown` belongs to a spend Argo DID read and cannot
+    /// use, and a new Session wearing it reads as a fault (`CONTEXT.md` Honesty tier).
+    static func context(reading: ContextReading) -> Context? {
+        switch reading {
+        case .unread:
+            nil
+        case .unreadable:
+            Context(
                 tier: nil,
                 reading: "unknown",
                 fill: nil,
                 marks: [],
                 detail: "Context unknown",
             )
+        case let .held(tokens):
+            instrument(at: tokens)
         }
+    }
+
+    /// The reading, the meter and the two lines drawn across it, for a window Argo can put a
+    /// number against.
+    private static func instrument(at tokens: Int) -> Context {
         let capacity = Double(ContextPolicy.capacity)
         let held = TokenCount.short(tokens)
         let window = TokenCount.short(ContextPolicy.capacity)

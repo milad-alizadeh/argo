@@ -7,8 +7,8 @@ import SwiftUI
 package struct SessionContextGuide: View {
     @Environment(\.argo) private var argo
 
-    /// The Session's own facts, already composed. Never empty: the context reading is always one
-    /// row, said as `unknown` where it cannot be read.
+    /// The Session's own facts, already composed — the block collapses to whichever of them Argo
+    /// has, and is absent entirely for a Session nothing could be read off (#1249).
     let facts: [SessionHeaderProjection.Fact]
 
     package var body: some View {
@@ -23,9 +23,13 @@ package struct SessionContextGuide: View {
                 .foregroundStyle(argo.color.text.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             DeckSeparator()
-            section("This Session") {
-                ForEach(facts) { fact in
-                    row(fact)
+            // The heading goes with its rows: a Session nothing could be read off has no block
+            // rather than a heading over nothing (#1249).
+            if !facts.isEmpty {
+                section("This Session") {
+                    ForEach(facts) { fact in
+                        row(fact)
+                    }
                 }
             }
         }

@@ -115,18 +115,19 @@ public extension CockpitPresentation.Session {
         public let spentTokens: Int?
         public let cachedTokens: Int?
         public let subagentTokens: Int?
-        public let contextTokens: Int?
+        /// How full the window is, with its own absence in it (#1249) — see `ContextReading`.
+        public let context: ContextReading
 
         public init(
             spentTokens: Int? = nil,
             cachedTokens: Int? = nil,
             subagentTokens: Int? = nil,
-            contextTokens: Int? = nil,
+            context: ContextReading = .unread,
         ) {
             self.spentTokens = spentTokens
             self.cachedTokens = cachedTokens
             self.subagentTokens = subagentTokens
-            self.contextTokens = contextTokens
+            self.context = context
         }
     }
 

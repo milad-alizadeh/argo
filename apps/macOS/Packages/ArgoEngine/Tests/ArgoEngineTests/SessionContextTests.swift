@@ -30,7 +30,7 @@ struct SessionContextTests {
         await hubObserveToEnd(hub, observed)
 
         // 5000 + 300 + 90000 + 2000 — all four terms of the second reading and none of the first.
-        #expect(try #require(hub.sessions.first).contextTokens == 97300)
+        #expect(try #require(hub.sessions.first).context == .held(97300))
     }
 
     /// A cached token is a cheaper token, not a smaller one: the model still reads it, and on an
@@ -45,7 +45,7 @@ struct SessionContextTests {
 
         await hubObserveToEnd(hub, observed)
 
-        #expect(try #require(hub.sessions.first).contextTokens == 250_020)
+        #expect(try #require(hub.sessions.first).context == .held(250_020))
     }
 
     /// A zero here would render as an empty window — the opposite claim from an unread one.
@@ -60,7 +60,75 @@ struct SessionContextTests {
 
         await hubObserveToEnd(hub, observed)
 
-        #expect(try #require(hub.sessions.first).contextTokens == nil)
+        #expect(try #require(hub.sessions.first).context == .unread)
+    }
+
+    /// A record priced at nothing is the CLI writing a record of its OWN — a `<synthetic>` message,
+    /// not a request — and no real request is made against an empty window. It says nothing about
+    /// the context, so the reading does not move (#1249). Drawing `unknown` off it would put the
+    /// reported placeholder back on a Session that has only just started.
+    @Test
+    @MainActor
+    func `a record priced at nothing leaves the context exactly where it was`() async throws {
+        let hub = testHub(projectURL: Self.projectURL)
+        let observed = hubTestObservation(id: "synthetic", events: [
+            .usage(usage(input: 0, output: 0, cacheRead: 0, cacheCreation: 0)),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(try #require(hub.sessions.first).context == .unread)
+    }
+
+    /// The same record after a real reading: a note the CLI wrote to itself did not empty the
+    /// conversation it was written into.
+    @Test
+    @MainActor
+    func `a record priced at nothing leaves a reading already taken standing`() async throws {
+        let hub = testHub(projectURL: Self.projectURL)
+        let observed = hubTestObservation(id: "after", events: [
+            .usage(usage(input: 4000, output: 200, cacheRead: 60000, cacheCreation: 1000)),
+            .usage(usage(input: 0, output: 0, cacheRead: 0, cacheCreation: 0)),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(try #require(hub.sessions.first).context == .held(65200))
+    }
+
+    /// The two absences, told apart (#1249) — the pair the header words differently. Nothing
+    /// reported yet is a Session with NOTHING to say about its window and draws no instrument at
+    /// all; a spend Argo READ and could not take one token off is `unknown`.
+    @Test
+    @MainActor
+    func `a spend Argo cannot read is unreadable, where none reported is unread`() async {
+        let hub = testHub(projectURL: Self.projectURL)
+        let silent = hubTestObservation(id: "silent", events: [
+            .prompt(text: "Read the contract", images: [], atMs: 1000),
+        ])
+        let unusable = hubTestObservation(id: "unusable", events: [.usage(.unreadable)])
+
+        await hubObserveToEnd(hub, silent)
+        await hubObserveToEnd(hub, unusable)
+
+        let byID = Dictionary(uniqueKeysWithValues: hub.sessions.map { ($0.id, $0.context) })
+        #expect(byID["silent"] == .unread)
+        #expect(byID["unusable"] == .unreadable)
+    }
+
+    /// A window Argo once read is the last thing the Session truthfully said about itself.
+    @Test
+    @MainActor
+    func `a spend Argo cannot read does not unsay a reading already taken`() async throws {
+        let hub = testHub(projectURL: Self.projectURL)
+        let observed = hubTestObservation(id: "degraded", events: [
+            .usage(usage(input: 1000, output: 100, cacheRead: 30000, cacheCreation: 0)),
+            .usage(.unreadable),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(try #require(hub.sessions.first).context == .held(31100))
     }
 
     /// A resumed file with no spend in it yet must not blank what the root already read.
@@ -80,6 +148,6 @@ struct SessionContextTests {
         await hubObserveToEnd(hub, child)
         await hubObserveToEnd(hub, root)
 
-        #expect(try #require(hub.sessions.first).contextTokens == 31100)
+        #expect(try #require(hub.sessions.first).context == .held(31100))
     }
 }

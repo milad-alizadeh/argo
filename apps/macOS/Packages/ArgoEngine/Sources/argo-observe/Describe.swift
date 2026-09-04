@@ -61,7 +61,9 @@ func describe(_ event: TranscriptEvent) -> String {
     case let .turnEnded(reason): "turn ended  \(reason.rawValue)"
     case .interrupted: "interrupted somebody stopped the Turn"
     case let .plan(plan): describe(plan)
-    case let .usage(usage): "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
+    case let .usage(.read(usage)):
+        "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
+    case .usage(.unreadable): "usage       unreadable"
     case .queued: "queued      a prompt queued rather than run"
     case let .superseded(record): "superseded  the branch opened by \(record) was put again"
     case .excerpted: "excerpt     a stretch of the file was not read"
