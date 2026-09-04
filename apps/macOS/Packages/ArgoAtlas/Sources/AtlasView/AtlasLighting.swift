@@ -60,10 +60,13 @@ struct AtlasLighting: Equatable {
     }
 
     /// A lamp's own colour, spent as the one number a direction and a strength cannot carry
-    /// between them: how bright the lamp reads, independent of which channel it leans on. Rec.
-    /// 709's own weights — the ones `ArgoColor.relativeLuminance` is built from — but without the
-    /// gamma curve: a lamp's tint is a plain multiplier here, not a displayed colour to linearise.
+    /// between them: how bright the lamp reads, independent of which channel it leans on.
+    /// `ArgoColor.rec709Weights` — the same three numbers `relativeLuminance` reads — but without
+    /// its gamma curve: a lamp's tint is a plain multiplier here, not a displayed colour to
+    /// linearise.
     private static func luminance(_ tint: ArgoColor) -> Double {
-        0.2126 * tint.red + 0.7152 * tint.green + 0.0722 * tint.blue
+        ArgoColor.rec709Weights.red * tint.red
+            + ArgoColor.rec709Weights.green * tint.green
+            + ArgoColor.rec709Weights.blue * tint.blue
     }
 }

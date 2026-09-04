@@ -143,12 +143,20 @@ extension ArgoColor: ShapeStyle {
 
 /// The measures the contract's colour claims are made of. No surface draws one.
 public extension ArgoColor {
+    /// Rec. 709's own weights: how much each channel counts toward how bright a colour reads,
+    /// named once so a gamma-corrected reading (`relativeLuminance`) and a plain-multiplier one
+    /// (`ArgoLight`'s own lamp brightness) spend the same three numbers rather than each keeping
+    /// a private copy that could drift.
+    static let rec709Weights = (red: 0.2126, green: 0.7152, blue: 0.0722)
+
     /// WCAG relative luminance.
     var relativeLuminance: Double {
         func linear(_ channel: Double) -> Double {
             channel <= 0.03928 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
         }
-        return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+        return Self.rec709Weights.red * linear(red)
+            + Self.rec709Weights.green * linear(green)
+            + Self.rec709Weights.blue * linear(blue)
     }
 
     /// Source-over compositing, so a translucent edge or wash can be measured against the

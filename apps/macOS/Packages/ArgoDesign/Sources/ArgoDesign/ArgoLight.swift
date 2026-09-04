@@ -18,7 +18,9 @@ public enum ArgoLight {
         /// Which way the light travels from, in the map's own space. The shader normalises it —
         /// what is written here is a direction, not a unit vector.
         public let direction: SIMD3<Double>
-        /// The lamp's own colour, spent as a per-channel multiplier on the pigment it lands on.
+        /// The lamp's own colour. Spent as its LUMINANCE — one number, not three — because the
+        /// rule above is absolute: a per-channel multiply on the pigment would be the hue shift
+        /// the rule forbids the moment the tint and the pigment disagree on a channel.
         public let tint: ArgoColor
         /// How hard it is driven.
         public let intensity: Double
@@ -86,6 +88,14 @@ public enum ArgoLight {
     /// `contactFoot`. Never zero: a shadow that reached black would be a second ground colour the
     /// legend does not name.
     public static let shadowDepth = 0.45
+
+    /// How far a fully-lit roof may drift from its own legend swatch, in `ArgoColor.distance(to:)`
+    /// units — the key's own intensity is driven above one on purpose, so the city's roof reads
+    /// brighter than the swatch beside it, not merely darker. The legend stays one fixed reading
+    /// across both cameras rather than tracking `relief`, so this bounds how far apart the two are
+    /// ever allowed to read rather than asking them to match exactly. `AtlasLightingTests` is what
+    /// spends it.
+    public static let legendTolerance = 0.15
 
     /// Every lamp, for the contract sheet.
     public static let all: [(name: String, lamp: Lamp)] = [

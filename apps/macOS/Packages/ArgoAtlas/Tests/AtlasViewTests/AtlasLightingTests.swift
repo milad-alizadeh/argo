@@ -58,4 +58,18 @@ struct AtlasLightingTests {
         #expect(AtlasLighting.city.nearX != AtlasLighting.city.nearY)
         #expect(AtlasLighting.city.roof > max(AtlasLighting.city.nearX, AtlasLighting.city.nearY))
     }
+
+    /// The roof is what the legend is held against — the flat swatch beside a map whose roofs are
+    /// fully lit — and `ArgoLight.legendTolerance` is the stated bound on how far apart they may
+    /// read: never exact, since the roof rides the key's own brightening and the legend does not
+    /// track `relief`, but never far enough to look like a different band.
+    @Test(arguments: palettes)
+    func `a lit roof stays within the legend's stated tolerance`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        for band in appearance.palette.atlas.measure.all {
+            let lit = band.color.scaled(by: Double(AtlasLighting.city.roof))
+            #expect(lit.distance(to: band.color) < ArgoLight.legendTolerance)
+        }
+    }
 }
