@@ -44,24 +44,25 @@ let package = Package(
                 "AtlasLayout",
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
             ],
-            // `AtlasFace.metal` is declared because the two build systems that read this manifest
+            // `AtlasVolume.metal` is declared because the two build systems that read this manifest
             // disagree about it, and only one of them says so (#1144). Xcode compiles it — that is
             // what `CompileMetalFile` in an `xcodebuild` log is — while SwiftPM's own build does
             // not know the extension at all and drops it with an "unhandled file" warning.
             // Declaring it settles both: Xcode still compiles it into the target's
             // `default.metallib`, and `swift build` stops warning and starts generating
-            // `Bundle.module`, which is what `AtlasFaceRenderer` loads the library from. A
+            // `Bundle.module`, which is what `AtlasVolumeRenderer` loads the library from. A
             // `swift test` binary therefore carries the source and no metallib, and the renderer
             // answers that the way it answers a machine with no GPU: it returns nil and the map
             // shows its floor.
-            resources: [.process("AtlasFace.metal")],
+            resources: [.process("AtlasVolume.metal")],
         ),
         .testTarget(
             name: "AtlasLayoutTests",
             dependencies: ["AtlasLayout", "AtlasFixtures"],
         ),
         // Everything about the drawing half that fails SILENTLY: the face struct declared twice,
-        // once here and once in `AtlasFace.metal`; the band cuts declared once in each half of the
+        // once here and once in `AtlasVolume.metal`; the band cuts declared once in each half of
+        // the
         // package; and what a plan is painted in. Every one of them draws a plausible wrong
         // picture rather than failing (#1144, #1147).
         //

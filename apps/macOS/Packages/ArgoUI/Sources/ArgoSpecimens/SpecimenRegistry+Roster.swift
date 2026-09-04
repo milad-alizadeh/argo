@@ -18,14 +18,18 @@ extension SpecimenRegistry {
         // The contract's icon buttons, on a sheet of their own: the sheet above is longer than any
         // window, and a section nobody can render is not the drift check #1243 asked for.
         SpecimenEntry("iconButtons") { IconButtonSpecimen() },
-        // The map's first picture: this repository tiled flat, drawn by the shader (#1147).
+        // The map as it ships: this repository standing up, drawn by the shader (#1150).
         // Rendered from the running app rather than a preview, because what is being asked is
         // whether the SHIPPED binary carries a compiled shader at all.
-        SpecimenEntry("atlasTreemap") { AtlasTreemapSpecimen() },
+        SpecimenEntry("atlasCity") { AtlasMapSpecimen() },
+        // The SAME camera at its flat end, which is the whole claim the two views rest on: this
+        // frame and the one above are one drawing with one number changed, and if the flat one
+        // ever stops being the treemap it is this pair that shows it.
+        SpecimenEntry("atlasTreemap") { AtlasMapSpecimen(relief: 0) },
         // The map before anything has been scanned: the floor, and no city on it. Worth a render
         // rather than an assertion, because it is also what every way Metal can be ABSENT degrades
         // to — so this is the frame the one above is told apart from.
-        SpecimenEntry("emptyAtlas") { AtlasTreemapSpecimen(map: nil) },
+        SpecimenEntry("emptyAtlas") { AtlasMapSpecimen(map: nil) },
         // The same picture inside the ROOM: the strip that says what was measured, and the page a
         // Project with no atlas gets instead (#1148). The treemap above is the drawing on its own.
         SpecimenEntry("atlasRoom") { AtlasRoomSpecimen() },

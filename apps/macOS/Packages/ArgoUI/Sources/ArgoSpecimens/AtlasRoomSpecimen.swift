@@ -6,7 +6,7 @@ import SwiftUI
 /// The Atlas room over a generated atlas: the treemap of #1147 with the strip that says what was
 /// measured, and the one lever that measures it again (#1148).
 ///
-/// It draws the committed measurement, which is the same fixture `AtlasTreemapSpecimen` and the
+/// It draws the committed measurement, which is the same fixture `AtlasMapSpecimen` and the
 /// Atlas suite read. The picture on its own is that specimen; this one is the ROOM, so what it is
 /// worth a look for is the strip, the key under the map, and how the two sit around the tiling.
 struct AtlasRoomSpecimen: View {

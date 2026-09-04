@@ -14,13 +14,24 @@ struct AtlasTiler {
     /// measured is the one size that says "the least there is" without inventing a number.
     let floor: Double
 
+    /// The greatest value any Plot measures on the height channel — what the tallest volume
+    /// stands, and what every other one is a share of. Zero for a Measure no Plot carries, which
+    /// `AtlasElevation` answers rather than divides by.
+    let tallest: Double
+
+    /// The ground the map is tiled into. Held because the two ends of the height channel are a
+    /// share of it, and a volume's height is resolved in the same points its rect is.
+    let extent: CGSize
+
     private var plates: [AtlasPlateFrame] = []
     private var tiles: [AtlasTile] = []
 
-    init(channels: AtlasChannels, map: AtlasMap) {
+    init(channels: AtlasChannels, map: AtlasMap, extent: CGSize) {
         self.channels = channels
         self.banding = AtlasBanding(of: channels.band, over: map)
         self.floor = map.values(of: channels.footprint).filter { $0 > 0 }.min() ?? 1
+        self.tallest = map.values(of: channels.height).max() ?? 0
+        self.extent = extent
     }
 
     /// The plan for one Map on one ground.
@@ -30,7 +41,7 @@ struct AtlasTiler {
         into extent: CGSize,
     )
         -> AtlasPlan {
-        var tiler = AtlasTiler(channels: channels, map: map)
+        var tiler = AtlasTiler(channels: channels, map: map, extent: extent)
         tiler.place(.plate(map.root), in: CGRect(origin: .zero, size: extent), depth: 0)
         return AtlasPlan(
             extent: extent,
@@ -47,6 +58,11 @@ struct AtlasTiler {
                 path: plot.path,
                 rect: rect,
                 band: banding.band(of: plot.value(of: channels.band)),
+                height: AtlasElevation.height(
+                    of: plot.value(of: channels.height),
+                    tallest: tallest,
+                    on: extent,
+                ),
             ))
         case let .plate(plate):
             let run = AtlasTiler.folding(from: plate)

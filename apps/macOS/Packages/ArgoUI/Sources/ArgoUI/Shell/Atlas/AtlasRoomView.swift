@@ -47,16 +47,24 @@ struct AtlasRoomView: View {
     ///
     /// Tiled in the BODY rather than inside the view, because a plan is recomputed when the size
     /// moves and a body is not a frame (ADR-0028 rule 3).
+    ///
+    /// Drawn at the FLAT end of the camera, which is the reading the room ships with: the plates
+    /// carry their names here, and a name is laid out in plan coordinates — turned, every caption
+    /// would sit over a building it does not name. The room reaches the city when the reader can
+    /// turn it (#1152), which is also when the names get a place in the picture.
     private func ground(_ map: AtlasMap) -> some View {
         GeometryReader { proxy in
-            AtlasView(plan: AtlasPlan(
-                tiling: map,
-                by: channels(of: map),
-                into: CGSize(
-                    width: proxy.size.width - ArgoSpacing.loose * 2,
-                    height: proxy.size.height - Self.keyRoom,
+            AtlasView(
+                plan: AtlasPlan(
+                    tiling: map,
+                    by: channels(of: map),
+                    into: CGSize(
+                        width: proxy.size.width - ArgoSpacing.loose * 2,
+                        height: proxy.size.height - Self.keyRoom,
+                    ),
                 ),
-            ))
+                relief: 0,
+            )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(.horizontal, ArgoSpacing.loose)
@@ -107,7 +115,7 @@ struct AtlasRoomView: View {
     /// this week to nothing. `bytes` was tried next and is worse on a real repository: one 4.8 MB
     /// fixture takes most of the map and everything else becomes a sliver.
     ///
-    /// Two DIFFERENT Measures where the repository has both, which is what `AtlasTreemapSpecimen`
+    /// Two DIFFERENT Measures where the repository has both, which is what `AtlasMapSpecimen`
     /// picked for its own reason: with one Measure on both channels, nothing in the picture can be
     /// read off a colour that the size has not already said.
     private func channels(of map: AtlasMap) -> AtlasChannels {
