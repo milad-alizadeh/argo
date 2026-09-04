@@ -62,6 +62,15 @@ enum FeedFold {
         return calls.prefix(call).reduce(0) { $0 + $1.evidence.count }
     }
 
+    /// The call that owns a given step — the inverse of `step(_:of:)`. One call can produce several
+    /// steps, so every step between its own start and the next call's start belongs to it. `nil`
+    /// for a step before the run's first result, which the panel itself never produces.
+    static func call(ofStep target: Int, of calls: [FeedCall]) -> Int? {
+        calls.indices.compactMap { index in step(index, of: calls).map { (index, $0) } }
+            .last { $0.1 <= target }
+            .map(\.0)
+    }
+
     /// The run's calls as the row lists them while the panel is open on it: what to call each, the
     /// step it goes to, how many calls it stands for, and whether it is the one that failed.
     ///

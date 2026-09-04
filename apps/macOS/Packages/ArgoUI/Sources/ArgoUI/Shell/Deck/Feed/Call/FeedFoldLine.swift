@@ -122,7 +122,7 @@ package struct FeedFoldLine: View {
             ForEach(fold.steps) { step in
                 FeedFoldStepName(
                     step: step,
-                    isCurrent: step.goesTo != nil && step.goesTo == opening.current,
+                    isCurrent: isCurrent(step),
                     isPointedAt: step.id == opening.pointsAt,
                     look: opening.look,
                 )
@@ -135,6 +135,15 @@ package struct FeedFoldLine: View {
         .lineSpacing(ArgoSpacing.flush)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("What this run did")
+    }
+
+    /// Whether the name this step is standing for is the one the panel is open on — not by an
+    /// exact match on `goesTo`, but by which call OWNS whatever step is at the top of the panel:
+    /// a scroll inside the panel can leave it open on a call's third result, and every step of
+    /// that one call still lights this one name (`FeedFold.call(ofStep:of:)`, #1355).
+    private func isCurrent(_ step: FeedFoldStep) -> Bool {
+        guard step.goesTo != nil, let current = opening.current else { return false }
+        return FeedFold.call(ofStep: current, of: fold.calls) == step.id
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
