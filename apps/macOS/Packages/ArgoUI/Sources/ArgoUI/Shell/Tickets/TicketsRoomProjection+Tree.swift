@@ -82,7 +82,12 @@ extension TicketsRoomProjection {
                 labels: item.labels,
                 children: ordered(siblings, by: view.order).map(node),
                 marks: Marks(
-                    isClaimed: reading.claims.numbers.contains(item.number),
+                    // Through `TicketState`, so closure outranks the claim in the one place that
+                    // rule is written (#1191): closing a ticket does not end the Session that
+                    // named it, so the number stays claimed — and the mark on a CLOSED row would
+                    // state about the TICKET what is only true of the Session.
+                    isClaimed: item.state(claimed: reading.claims.numbers.contains(item.number))
+                        == .claimed,
                     blockage: blockage(of: item),
                     closure: item.closure == .open ? nil : item.closure,
                 ),
