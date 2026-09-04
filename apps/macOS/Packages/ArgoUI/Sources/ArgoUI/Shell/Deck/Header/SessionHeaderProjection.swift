@@ -19,6 +19,13 @@ package enum SessionHeaderProjection {
             /// the plain branch mark says "not a worktree", which is a claim, and `CONTEXT.md`'s
             /// degrade-down rule renders an unestablished fact as absent, not as a guess.
             let symbol: String?
+            /// The worktree folder's own name, where it is not the branch's (#1199). The roster
+            /// row used to carry this and no longer does, so the header is now the only place a
+            /// reader can learn WHICH folder a Session is checked out in.
+            ///
+            /// `nil` for a checkout that is not a worktree, for one whose kind Argo has not read,
+            /// and — the common case — for a worktree the branch already names.
+            let worktree: String?
             let detail: String
         }
 
@@ -208,7 +215,7 @@ package enum SessionHeaderProjection {
                 title: SessionTitle.resolved(for: session),
                 agent: agent(cli: session.cli),
                 issue: row(for: session.ticket),
-                checkout: checkout(for: session.workspace),
+                checkout: checkout(for: session.workspace, at: session.workspaceLocation),
                 marks: marks(for: session.workspace),
                 access: mark(for: session.access),
             ),

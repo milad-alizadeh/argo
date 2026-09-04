@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import ArgoFixtures
 import ArgoUI
 import Foundation
 import SwiftUI
@@ -10,7 +11,7 @@ import SwiftUI
 /// Its own case because ghosting is a claim about a row's NEIGHBOURS: one dimmed row alone is just
 /// a row. `sessionRows` carries one read-only Session among four; this one alternates, and puts
 /// every element a row can draw on a ghosted one — a long title, a worktree, an age, and a state
-/// word in the loudest ink the roster has.
+/// word in the loudest ink the roster has, and the activity line a running Session draws (#1199).
 struct GhostedRosterSpecimen: View {
     var body: some View {
         List {
@@ -74,10 +75,14 @@ struct GhostedRosterSpecimen: View {
             title: "Watch an externally launched agent work",
             access: .external,
             status: .running,
+            chain: .init(span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(0))),
             work: .init(
                 location: "/Users/milad/Experiments/argo/.claude/worktrees/ticket-311-spike",
                 workspace: .init(kind: .worktree),
             ),
+            // Running, so the row draws an activity line — the one thing on the second line that
+            // pushes the clock to the far edge, and it has to ghost with the rest of the row.
+            transcript: .init(events: TranscriptFixtures.previewTranscript),
         ),
         CockpitPresentation.Session(
             id: "observed-unknown",

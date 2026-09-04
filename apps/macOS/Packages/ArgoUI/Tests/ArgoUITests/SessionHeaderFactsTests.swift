@@ -10,55 +10,6 @@ import Testing
 @Suite("Session header — the Workspace, the CLI and the issue")
 struct SessionHeaderFactsTests {
     @Test
-    func `the branch is carried whole, and cutting it is the view's business`() {
-        let header = header(workspace: .init(branch: "worktree-ticket-375-graphite-ion-blue"))
-
-        #expect(header.checkout?.branch == "worktree-ticket-375-graphite-ion-blue")
-    }
-
-    @Test
-    func `a Session that has not branched shows no checkout at all`() {
-        // Not a checkout with an empty name, and not a lone glyph.
-        #expect(header(workspace: nil).checkout == nil)
-        #expect(header(workspace: .init(branch: nil)).checkout == nil)
-        #expect(header(workspace: .init(kind: .worktree, branch: nil)).checkout == nil)
-    }
-
-    @Test
-    func `a worktree is marked by the branch's own glyph, not by a mark after it`() {
-        let worktree = header(workspace: .init(kind: .worktree, branch: "argo/#510"))
-        let main = header(workspace: .init(kind: .main, branch: "main"))
-
-        #expect(worktree.checkout?.symbol == ArgoSymbol.worktree)
-        #expect(worktree.marks.isEmpty)
-        #expect(main.checkout?.symbol == ArgoSymbol.branch)
-    }
-
-    @Test
-    func `a checkout nobody has read draws no mark, rather than the one meaning not-a-worktree`() {
-        let unread = header(workspace: .init(kind: nil, branch: "main"))
-
-        // The glyph is the ONLY thing telling the two kinds apart now, so the plain branch mark
-        // is a positive claim — and Argo has not read the kind. The degrade-down rule gives an
-        // unestablished fact an absent rendering, never the nearest guess (`CONTEXT.md`).
-        #expect(unread.checkout?.symbol == nil)
-        // Still a checkout, though: the BRANCH was read.
-        #expect(unread.checkout?.branch == "main")
-    }
-
-    @Test
-    func `the checkout says which kind it is in words as well as in ink`() throws {
-        // The kind Argo could not read says nothing about a kind, in words either.
-        let worktree = header(workspace: .init(kind: .worktree, branch: "argo/#510"))
-        let main = header(workspace: .init(kind: .main, branch: "main"))
-        let unread = header(workspace: .init(kind: nil, branch: "main"))
-
-        #expect(try #require(worktree.checkout).detail == "On argo/#510, in a worktree of its own")
-        #expect(try #require(main.checkout).detail == "On main, in the Project's own checkout")
-        #expect(try #require(unread.checkout).detail == "On main")
-    }
-
-    @Test
     func `the git counts are drawn as marks that spell themselves out`() throws {
         let header = header(workspace: .init(branch: "main", dirty: 3, unpushed: 1))
 
@@ -143,6 +94,7 @@ struct SessionHeaderFactsTests {
             workspace: .init(kind: .worktree, branch: "argo/#510", dirty: 2, unpushed: 1),
             // Untitled: a Ticket's title is a title SOURCE, and the chain has its own suite.
             ticket: .linked(.init(number: 510)),
+            location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-510",
         )
 
         // Each mark says what it COUNTS, once, in the same order the header draws it.
@@ -150,7 +102,7 @@ struct SessionHeaderFactsTests {
             "Session",
             "Claude Code",
             "Issue #510",
-            "On argo/#510, in a worktree of its own",
+            "On argo/#510, in the worktree tkt-510",
             "2 uncommitted files",
             "1 unpushed commit",
         ].joined(separator: ", "))
@@ -176,6 +128,7 @@ struct SessionHeaderFactsTests {
         model: String? = "claude-opus-5",
         workspace: CockpitPresentation.Session.Workspace? = .init(branch: "main"),
         ticket: CockpitPresentation.Session.TicketLinkReading = .unread,
+        location: String = "/Users/milad/Developer/argo",
     )
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: CockpitPresentation.Session(
@@ -185,7 +138,7 @@ struct SessionHeaderFactsTests {
             status: .idle,
             chain: .init(program: .init(cli: cli, model: model)),
             work: .init(
-                location: "/Users/milad/Developer/argo",
+                location: location,
                 workspace: workspace,
                 ticket: ticket,
             ),

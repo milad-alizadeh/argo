@@ -15,14 +15,16 @@ struct SessionRosterSpecimenTests {
         #expect(Set(rows.map(\.state)) == [.running, .attention, .idle, .failure, nil])
         // The ghosted row is also the long one: a title truncating on a quieter row.
         #expect(rows.contains { $0.isReadOnly && $0.title.count > 40 })
-        // Both worktree renderings, so a one-line row sits between two-line ones.
-        #expect(rows.contains { $0.worktree == nil })
-        // A real ticket worktree, not a folder called `argo`.
-        #expect(rows.contains { $0.worktree?.hasPrefix("ticket-") == true })
-        // A long label beside a clock: the worktree must truncate rather than push it off.
-        #expect(rows.contains { ($0.worktree?.count ?? 0) > 30 && $0.clock != nil })
+        // Both edges the clock takes (#1199), so the PNG is evidence of the rule and not of one
+        // side of it: an activity line pushes the clock right, and a row without one keeps it
+        // beside the fact the slot carries.
+        #expect(rows.contains { $0.activity != nil && $0.clock != nil })
+        #expect(rows.contains { $0.activity == nil && $0.clock != nil })
+        // A long activity beside a clock: the line must give up its tail rather than push the
+        // clock off the row.
+        #expect(rows.contains { ($0.activity?.count ?? 0) > 30 && $0.clock != nil })
         // A Session on a detached checkout, located without a branch to name.
-        #expect(rows.contains { $0.branch == nil && $0.worktree != nil })
+        #expect(rows.contains { $0.branch == nil })
         // A row with no clock that is not the running one, which would satisfy a bare `== nil`.
         #expect(rows.contains { $0.clock == nil && $0.state != .running })
     }
@@ -104,10 +106,10 @@ struct SessionRosterSpecimenTests {
         // Every element a row can draw has to appear ON a ghosted row, or the claim that the
         // row degrades as one is only rendered for half of it.
         #expect(rows.contains { $0.isReadOnly && $0.stateWord != nil })
-        #expect(rows.contains { $0.isReadOnly && $0.worktree != nil && $0.clock != nil })
+        #expect(rows.contains { $0.isReadOnly && $0.activity != nil && $0.clock != nil })
         // A row with nothing on its second line but an age is the shortest thing the roster draws,
         // and ghosting has to reach it.
-        #expect(rows.contains { $0.isReadOnly && $0.worktree == nil })
+        #expect(rows.contains { $0.isReadOnly && $0.leadingFact == nil && $0.clock != nil })
         // Including the loudest ink the roster has: a live dot on a Session nobody can steer.
         #expect(rows.contains { $0.isReadOnly && $0.state == .running })
     }

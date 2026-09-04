@@ -8,15 +8,25 @@ extension SessionRosterProjection {
     package struct Row: Identifiable, Sendable {
         package let id: String
         let title: String
-        /// Never drawn — the worktree label stands in for it — but the tooltip and the copy
-        /// actions still address the Session by it.
+        /// Never drawn, and no longer hovered either (#1199): an absolute path is the widest
+        /// thing a row could hand a reader and says least about which run to open. The copy
+        /// action is what still addresses the Session by it.
         let location: String?
-        /// The row's second line: which worktree this Session is in, named by the shortest
-        /// suffix that tells it apart from the others on the roster.
+        /// Which worktree this Session is in, named by the shortest suffix that tells it apart
+        /// from the others on the roster. **Spoken and never drawn** (#1199) — the header is
+        /// where a reader who has selected the Session reads the checkout.
         ///
         /// Absent for a Session in the Project's own checkout, and absent again where Argo has
         /// not read git — a label is a claim that the folder IS a worktree.
-        let worktree: String?
+        private let spokenWorktree: String?
+        /// What the Session is doing at this second, while it is running: the newest call in its
+        /// record, verb and subject, in the feed's own words (`activity(of:)`). `nil` for every
+        /// other status and for a running Session that has emitted no call — the slot then keeps
+        /// `toldApart` below.
+        ///
+        /// Read on its own as well as through `leadingFact`: an activity line is the one thing on
+        /// the row that pushes the clock to the trailing edge.
+        let activity: String?
         /// The one fact on that second line that tells this Session from the rows beside it, at
         /// the leading edge: the slash command it opened with where the Ticket holds the title
         /// (#745), and the Ticket itself where the title fell back to the Session's own derived
@@ -67,7 +77,7 @@ extension SessionRosterProjection {
             self.rename = identity.rename
             self.fold = identity.fold
             self.location = work.location
-            self.worktree = work.worktree
+            self.spokenWorktree = work.worktree
             self.toldApart = work.toldApart
             self.branch = work.branch
             self.isReadOnly = availability.isReadOnly
@@ -77,6 +87,14 @@ extension SessionRosterProjection {
             self.spokenClock = activity.spokenClock
             self.state = activity.state
             self.stateWord = activity.stateWord
+            self.activity = activity.activity
+        }
+
+        /// The one fact the second line leads with, first match wins (#1199): what the Session is
+        /// doing right now while it is running, and the fact that tells it apart from its
+        /// neighbours otherwise. One slot, so the line never says both.
+        var leadingFact: String? {
+            activity ?? toldApart
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
@@ -87,8 +105,8 @@ extension SessionRosterProjection {
                 stateWord,
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
-                toldApart,
-                worktree.map { "in \($0)" },
+                leadingFact,
+                spokenWorktree.map { "in \($0)" },
                 spokenClock,
             ]
             .compactMap(\.self)
@@ -108,7 +126,7 @@ extension SessionRosterProjection {
         _ fold: Fold, at newest: CockpitPresentation.Session, nowMs: Int,
     )
         -> Row {
-        let clock = clock(for: newest, nowMs: nowMs)
+        let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
                 id: fold.id, title: "\(fold.count) runs", rename: nil, fold: fold,
@@ -120,8 +138,13 @@ extension SessionRosterProjection {
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
                 // of them drawn for all of them is a claim about the others.
-                state: nil, stateWord: nil, clock: clock,
-                spokenClock: spokenClock(clock, nowMs: nowMs),
+                state: nil, stateWord: nil,
+                age: Row.Activity.Age(
+                    clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
+                ),
+                // A fold stands for several runs at once, so one run's call drawn for all of
+                // them is the same claim about the others its dot and its word decline to make.
+                activity: nil,
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -135,7 +158,10 @@ extension SessionRosterProjection {
         for session: CockpitPresentation.Session, decided: Decided, nowMs: Int,
     )
         -> Row {
-        let clock = clock(for: session, nowMs: nowMs)
+        // Handed out ONCE and walked twice: the clock and the activity both read the tail of the
+        // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`).
+        let events = session.events
+        let clock = clock(for: session, in: events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
                 id: session.id,
@@ -154,8 +180,10 @@ extension SessionRosterProjection {
             activity: Row.Activity(
                 state: SessionState.role(for: session.status),
                 stateWord: SessionState.word(for: session.status),
-                clock: clock,
-                spokenClock: spokenClock(clock, nowMs: nowMs),
+                age: Row.Activity.Age(
+                    clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
+                ),
+                activity: activity(of: session, in: events),
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

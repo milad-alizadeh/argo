@@ -7,8 +7,12 @@ extension SessionHeaderProjection {
     /// SWAPPING the branch's own mark, not by a second mark after it — so an unread kind draws NO
     /// mark, since the plain branch mark would then read as "not a worktree" (`CONTEXT.md`
     /// degrade-down).
+    ///
+    /// A worktree the branch does not name is named in full (#1199): the roster row no longer
+    /// carries the folder, and a reader who has selected the Session reads the checkout here.
     static func checkout(
         for workspace: CockpitPresentation.Session.Workspace?,
+        at location: String? = nil,
     )
         -> Header.Checkout? {
         guard let branch = workspace?.branch else { return nil }
@@ -16,20 +20,32 @@ extension SessionHeaderProjection {
         // whichever glyph the mapping happens to end on.
         return switch workspace?.kind {
         case .worktree:
-            Header.Checkout(
-                branch: branch,
-                symbol: ArgoSymbol.worktree,
-                detail: "On \(branch), in a worktree of its own",
-            )
+            worktreeCheckout(on: branch, at: location)
         case .main:
             Header.Checkout(
                 branch: branch,
                 symbol: ArgoSymbol.branch,
+                worktree: nil,
                 detail: "On \(branch), in the Project's own checkout",
             )
         case nil:
-            Header.Checkout(branch: branch, symbol: nil, detail: "On \(branch)")
+            Header.Checkout(branch: branch, symbol: nil, worktree: nil, detail: "On \(branch)")
         }
+    }
+
+    /// The worktree, named where its folder is not the branch over again. A folder whose name IS
+    /// the branch says nothing the line has not said, and the sentence stays the one it was.
+    private static func worktreeCheckout(on branch: String, at location: String?)
+        -> Header.Checkout {
+        let folder = location.flatMap { $0.split(separator: "/").last }.map(String.init)
+        let named = folder == branch ? nil : folder
+        return Header.Checkout(
+            branch: branch,
+            symbol: ArgoSymbol.worktree,
+            worktree: named,
+            detail: named.map { "On \(branch), in the worktree \($0)" }
+                ?? "On \(branch), in a worktree of its own",
+        )
     }
 
     /// The Workspace's counts as drawn marks, in reading order: what is uncommitted in it, then

@@ -31,7 +31,7 @@ extension SessionHeaderProjection {
                 // the header does not repeat what the composer states.
                 agent(cli: session.cli)
                     .map { Fact(term: "Agent", value: $0) },
-                checkout(for: session.workspace)
+                checkout(for: session.workspace, at: session.workspaceLocation)
                     .map { Fact(term: "Branch", value: branchReading($0, in: session)) },
                 row(for: session.ticket).map { Fact(term: "Issue", value: issueReading($0)) },
                 mark(for: session.access).map { Fact(term: "Access", value: $0.word) },
@@ -59,15 +59,20 @@ extension SessionHeaderProjection {
         ].compactMap(\.self)
     }
 
-    /// `argo/#476-feed-scroll-anchor · 3 uncommitted files`. The marks hang off the branch, the way
-    /// the fact line drew them and the hover still says them — nothing else in the deck renders
-    /// them now that the band is gone. The checkout KIND stays off: the roster row marks it.
+    /// `argo/#476-feed-scroll-anchor · in tkt-476 · 3 uncommitted files`. The marks hang off the
+    /// branch, the way the fact line drew them and the hover still says them — nothing else in the
+    /// deck renders them now that the band is gone.
+    ///
+    /// The worktree folder goes between the two, and only where the branch does not already name
+    /// it (#1199): the roster row used to carry the folder and no longer does, so this row is
+    /// where the fact now lives. The checkout KIND is still not spelled out — the glyph is that.
     private static func branchReading(
         _ checkout: Header.Checkout,
         in session: CockpitPresentation.Session,
     )
         -> String {
-        ([checkout.branch] + marks(for: session.workspace).map(\.detail)).joined(separator: " · ")
+        ([checkout.branch] + [checkout.worktree.map { "in \($0)" }].compactMap(\.self)
+            + marks(for: session.workspace).map(\.detail)).joined(separator: " · ")
     }
 
     /// `#476 — Anchor the feed on its newest line`. The number is bare here, unlike the line's own

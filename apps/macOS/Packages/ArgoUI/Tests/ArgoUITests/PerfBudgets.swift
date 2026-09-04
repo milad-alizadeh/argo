@@ -49,8 +49,10 @@ enum PerfBudgets {
     /// events each and at 5 824 · M4 Pro · either · exact. The three are NAMED, because a count
     /// nobody can account for is a budget rather than a finding:
     ///
-    /// - two `SessionRosterProjection.openTurnStartMs`, one per running managed row, each bounded
-    ///   by the OPEN Turn since it started walking backwards from the tail;
+    /// - two roster-row hand-outs, one per running managed row, each walked twice and bounded by
+    ///   the tail both times: `openTurnStartMs` stops at the open Turn's boundary, and
+    ///   `activity(of:in:)` at the newest call (#1199). Two walks, one hand-out — which is why
+    ///   the row reads `session.events` into a local rather than reaching for it twice;
     /// - one `TouchedFiles.touched`, the composer's `@` picker over the selected Session — the one
     ///   walk left on this pass that is still linear in the transcript, and named here rather than
     ///   cut because the composer is drawn from the pass and cannot be deferred without the deck's

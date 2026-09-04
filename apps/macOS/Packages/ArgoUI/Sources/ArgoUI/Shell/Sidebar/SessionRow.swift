@@ -158,23 +158,35 @@ package struct SessionRow: View {
         isRenaming.wrappedValue = false
     }
 
-    /// The row's distinguishing fact and the clock take the leading edge, the worktree the right
-    /// under the state word. Absent entirely when none of the three is there — an empty `Text`
-    /// would leave a gap of the font's height.
+    /// The line's one fact at the leading edge, and the clock at one of the two ends — read off
+    /// one condition (#1199): an activity line is the width of a sentence and pushes the clock
+    /// right, so the two facts sit at the two ends of the row; the shorter fact the slot otherwise
+    /// carries keeps the clock beside it (`/implement  just now`).
+    ///
+    /// Absent entirely when neither is there — an empty `Text` would leave a gap of the font's
+    /// height.
     @ViewBuilder private var secondaryLine: some View {
-        if row.worktree != nil || row.clock != nil || row.toldApart != nil {
+        if row.leadingFact != nil || row.clock != nil {
             HStack(spacing: ArgoSpacing.snug) {
-                toldApartLabel
-                if let clock = row.clock {
-                    RosterTurnClock(clock: clock)
-                        // A width shortfall lands on the worktree instead, which gives up its
-                        // middle.
-                        .layoutPriority(1)
+                leadingFactLabel
+                if row.activity == nil {
+                    clock
                 }
                 Spacer(minLength: ArgoSpacing.tight)
-                worktreeLabel
+                if row.activity != nil {
+                    clock
+                }
             }
             .foregroundStyle(argo.color.text.tertiary)
+        }
+    }
+
+    /// The one age slot. It never gives up a character: a clock cut to a width says a different
+    /// duration, where the fact beside it only loses its tail.
+    @ViewBuilder private var clock: some View {
+        if let clock = row.clock {
+            RosterTurnClock(clock: clock)
+                .layoutPriority(1)
         }
     }
 
@@ -202,25 +214,19 @@ package struct SessionRow: View {
     }
 }
 
-/// The second line's own labels, beside the row rather than in it: the body is at the house
-/// ceiling for a type, and what a row says about its Workspace is one subject of its own.
+/// The row's own labels, beside the body rather than in it: the body is at the house ceiling for
+/// a type, and what the two lines are made of is one subject of its own.
 private extension SessionRow {
-    @ViewBuilder private var toldApartLabel: some View {
-        if let toldApart = row.toldApart {
-            Text(toldApart)
+    /// The one fact the line leads with, on one line and cut at the tail. An activity line is a
+    /// sentence and gives its tail up to the clock; the shorter fact the slot otherwise carries
+    /// outranks the clock, because there is room for both.
+    @ViewBuilder private var leadingFactLabel: some View {
+        if let fact = row.leadingFact {
+            Text(fact)
                 .argoText(ArgoTypography.rowMeta)
                 .lineLimit(1)
-                .layoutPriority(1)
-        }
-    }
-
-    /// The mark is unconditional here where the session header's is not: the projection populates
-    /// `worktree` only for a checkout git answered `worktree` for.
-    @ViewBuilder private var worktreeLabel: some View {
-        if let worktree = row.worktree {
-            ArgoKindedName(
-                symbol: ArgoSymbol.worktree, name: worktree, style: ArgoTypography.rowMeta,
-            )
+                .truncationMode(.tail)
+                .layoutPriority(row.activity == nil ? 1 : 0)
         }
     }
 
