@@ -204,7 +204,7 @@ function_parameter_count:
   # INIT: SessionHeaderProjection+Context.swift 5 — Context, the context gauge's reading, its tier
   # INIT: SessionHeaderProjection+Handoff.swift 5 — Handoff, the hand-off control's words, its tier
   # INIT: SessionOwnershipLedger.swift 5 — Window, one stretch of ownership, open while the PTY
-  # INIT: TicketsReading+Ranking.swift 5 — Rank, the ranking keys in the order they decide, so the
+  # INIT: TicketsReading+Ranking.swift 6 — Rank, the ranking keys in the order they decide, so the
 
   #
   # And the ones #1085 made visible. Spelling out a memberwise initializer is what lifting the

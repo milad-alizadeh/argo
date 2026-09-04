@@ -185,6 +185,7 @@ struct NextUpTests {
         #expect(NextUp.Reason.highPriority.isUrgent)
         #expect(!NextUp.Reason.unblocked.isUrgent)
         #expect(!NextUp.Reason.next(chart: "#607").isUrgent)
+        #expect(!NextUp.Reason.lowConflict.isUrgent)
     }
 
     private func pick(in room: TicketsRoomProjection.Room) throws -> NextUp.Pick {
