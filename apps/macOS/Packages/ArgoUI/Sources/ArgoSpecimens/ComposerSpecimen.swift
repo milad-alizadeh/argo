@@ -114,11 +114,14 @@ struct ComposerSpecimen: View {
     /// A drop an adapter would not take, refused on the seam with the reason (design decision 9).
     static let refusedAttachment = ComposerDraft(notice: SessionDriveError.cannotAttach.detail)
 
-    /// What an interrupt leaves (#541): an empty vessel back at rest, and one quiet line saying
-    /// where the words went. A state of its own because the EMPTINESS is the whole claim — a reader
-    /// who typed a follow-up and stopped the Turn has to find out from the seam rather than from
-    /// noticing their message is gone, and only a render can settle whether the line is enough.
-    static let stopped = ComposerDraft(notice: ComposerDraft.cleared)
+    /// What an interrupt leaves (#541, amended): the words still in the field, no chips above it,
+    /// and one quiet line saying which of the two went. A state of its own because the PAIRING is
+    /// the whole claim — the reader has to read the line as being about the follow-ups they can no
+    /// longer see rather than about the message they can, and only a render settles that.
+    static let stopped = ComposerDraft(
+        text: "No, not that file — the one under Sources.",
+        notice: ComposerDraft.cleared,
+    )
 
     /// A rung picked while the Turn was running (#940). The picker draws it under `≈` and ticks
     /// nothing; the seam carries the port's refusal beside what Argo did with the intent. What the

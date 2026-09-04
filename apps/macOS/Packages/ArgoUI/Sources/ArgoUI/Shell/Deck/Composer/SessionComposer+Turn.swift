@@ -33,12 +33,14 @@ extension SessionComposer {
         draft.attach(incoming, canAttach: composer.canAttach)
     }
 
-    /// Stop the Turn, and empty the composer behind it (#541, ADR-0024).
+    /// Stop the Turn, and drop what was queued behind it (#541, design decision 4).
     ///
-    /// The clearing happens HERE rather than off the Session going idle, and the order is what
+    /// The dropping happens HERE rather than off the Session going idle, and the order is what
     /// makes it work: the queue is emptied at the click, before the record catches up and the
     /// flush the body watches for fires. Waiting for the status to turn would be waiting for the
     /// exact moment the queued follow-ups are released.
+    ///
+    /// The field itself is left alone — see `ComposerDraft.stopped(via:)`.
     func interrupt() {
         draft.stopped(via: intents.stop)
     }

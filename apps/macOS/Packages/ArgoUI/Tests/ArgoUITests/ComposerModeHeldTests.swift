@@ -87,8 +87,8 @@ struct ComposerModeHeldTests {
         #expect(!drafts.isEmpty)
     }
 
-    /// Stop clears the field; it does not clear the rung, and it must not claim to have cleared a
-    /// vessel that held only one.
+    /// Stop drops the queue; it does not touch the rung, and it must not claim to have dropped
+    /// anything from a vessel that held only one.
     @Test
     func `an interrupt leaves a held rung alone and says nothing about it`() {
         var draft = ComposerDraft(heldMode: .auto)
