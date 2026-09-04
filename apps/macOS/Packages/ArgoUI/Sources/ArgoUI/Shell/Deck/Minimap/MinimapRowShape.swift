@@ -32,3 +32,21 @@ enum MinimapRowShape: Equatable, Sendable {
     /// that read the same way.
     case whole(FeedInk)
 }
+
+extension MinimapRowShape {
+    /// The one ink this row stands for — what a mark coarser than a row is coloured from (#1173).
+    ///
+    /// Every case already carries it or IS it: a bubble is a prompt's words whatever is in them, a
+    /// gallery is pictures, and the three that hold an ink hold the one the row reports its rects
+    /// in. Nothing here re-derives a colour, so the lane cannot disagree with the row about it.
+    var ink: FeedInk {
+        switch self {
+        case let .composed(_, ink): ink
+        case .bubble: .prompt
+        case let .line(_, ink): ink
+        case .shots: .media
+        case let .card(card): card.ink
+        case let .whole(ink): ink
+        }
+    }
+}

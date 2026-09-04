@@ -30,13 +30,13 @@ extension MinimapGeometry {
     }
 
     /// Where a place in the miniature falls in the reading.
-    private func documentY(atMiniatureY miniatureY: CGFloat) -> CGFloat {
+    func documentY(atMiniatureY miniatureY: CGFloat) -> CGFloat {
         miniatureY / scale - reading.topInset
     }
 
     /// The Turn holding a row, by binary search — the extents are in reading order and do not
     /// overlap, so the last one starting at or before the row is the one it is in.
-    private func turn(holding row: Int) -> Int {
+    func turn(holding row: Int) -> Int {
         var low = 0
         var high = turns.count - 1
         while low < high {

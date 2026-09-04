@@ -113,7 +113,19 @@ struct MinimapSettledDocumentTests {
         let rows = try await Self.rows()
         let handle = FeedTableHandle()
         let table = await FeedTableFixture.laidOut(rows, in: Self.pane, through: handle)
-        let geometry = try MinimapGeometry(#require(table.reading()), lane: Self.lane)
+        let reading = try #require(table.reading())
+
+        // In a lane tall enough to hold this session a mark a ROW, which the cap is a claim about.
+        // A real 459-row session is far past what a deck-sized lane can hold at that granularity,
+        // and since #1173 one there is drawn a mark a Turn instead — `MinimapRectTests` is what
+        // states the cap at THAT granularity. The height is derived rather than chosen: it is
+        // exactly the compression the row grain asks for, plus the point that keeps the division
+        // off its own boundary.
+        let asked = MinimapGeometry(reading, lane: Self.lane)
+        let geometry = MinimapGeometry(reading, lane: CGSize(
+            width: Self.lane.width, height: asked.scrollableHeight * asked.rowGrain + 1,
+        ))
+        #expect(geometry.granularity == .rows)
 
         // The whole miniature, so every row of the fixture is walked — the lane itself only ever
         // builds the band in front of the reader.

@@ -16,14 +16,20 @@ enum MinimapLaneFixture {
     /// wherever the average row still earns a mark and a gap, so the claims about a miniature that
     /// SLIDES — and about the band that holds only part of it — need a session past that grain.
     ///
-    /// Past it by the band's own three lane-heights, which is what the redraw claims turn on: at
-    /// the grain a row is worth two points, so a band of 3 × 480 points is 720 rows and the travel
-    /// has to leave it. The rows are `FeedProjection.longRows` taken round again with their text
-    /// made distinct, because two rows of identical prose share a wrapped store entry and would
-    /// measure a cache rather than a session.
+    /// Past it by the band's own three lane-heights, which is what the redraw claims turn on: the
+    /// miniature has to stand taller than 3 × 480 points before there is a band to leave.
+    ///
+    /// Thirty-six times `FeedProjection.longRows` since #1173, where it was three. A session that
+    /// will not fit a mark a row is now drawn a mark a Turn, and these rows run about six to a
+    /// Turn — so the length at which the lane runs out of lane moved up by roughly that factor, and
+    /// the length at which the MINIATURE outgrows a band of three lane-heights moved with it.
+    ///
+    /// The rows are `FeedProjection.longRows` taken round again with their text made distinct,
+    /// because two rows of identical prose share a wrapped store entry and would measure a cache
+    /// rather than a session.
     static let deepRows: [FeedRow] = {
         let base = FeedProjection.longRows
-        return (0 ..< 900).map { at in
+        return (0 ..< 10800).map { at in
             let row = base[at % base.count]
             guard case let .message(text) = row.content else {
                 return FeedRow(id: at, content: row.content)

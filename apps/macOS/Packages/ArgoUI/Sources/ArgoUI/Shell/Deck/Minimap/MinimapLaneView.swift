@@ -71,6 +71,16 @@ package final class MinimapLaneView: NSView {
     /// the lane back onto the reading through the geometry a scrub froze.
     private(set) var geometry = MinimapGeometry(MinimapReading(), lane: .zero)
 
+    /// The lane size the reading was last coarsened at, and `nil` while it is still drawn a mark a
+    /// row — the latch #1173 asks for.
+    ///
+    /// A running Session only grows, so a bare comparison against the grain would flip the lane's
+    /// whole appearance mid-scroll, and could flip it back and forth near the boundary. Once a
+    /// reading has crossed, it stays crossed. Held as the SIZE rather than as a flag because a lane
+    /// the reader has widened is a different question, and answering the old one there would keep a
+    /// session coarse in a lane that now fits it whole.
+    private var coarsenedAt: CGSize?
+
     /// The reading height the lane has already answered a reshape at. The reading reports every
     /// `setFrame` on itself, so this is what tells a reshape from a report carrying nothing.
     var reshapedTo: CGFloat?
@@ -119,7 +129,7 @@ package final class MinimapLaneView: NSView {
     let rectsLayer = CALayer()
     /// What holds the rects inside the lane. The band hangs off both ends of it by several lane
     /// heights, and without this it would paint over the deck header above and the row below.
-    private let rectsClip = CALayer()
+    let rectsClip = CALayer()
     /// How many times the geometry has been derived. Everything the rects are built from lives in
     /// it, so a band painted at this number is already the pixels a fresh build would produce.
     private(set) var derivation = 0
@@ -148,7 +158,7 @@ package final class MinimapLaneView: NSView {
 
     /// The lit rectangle, which IS this reading's scrollbar — the feed's own overlay scroller stays
     /// off, because it would draw between the reading and its map.
-    private let viewportLayer = CALayer()
+    let viewportLayer = CALayer()
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -174,23 +184,6 @@ package final class MinimapLaneView: NSView {
         NotificationCenter.default.removeObserver(self)
     }
 
-    /// Where the viewport rectangle is drawn — the lane's one moving part.
-    var viewportFrame: CGRect {
-        viewportLayer.frame
-    }
-
-    /// Where the rects bitmap currently sits, band and all.
-    var rectsFrame: CGRect {
-        rectsLayer.frame
-    }
-
-    /// Whether the rects are held inside the lane while the annotations are let OUT of it. Both
-    /// halves at once, because that is the claim: the band may not paint over the deck around it,
-    /// and a Turn's label must still reach the reading beside it.
-    var clipsRectsOnly: Bool {
-        rectsClip.masksToBounds && layer?.masksToBounds == false
-    }
-
     /// The reading re-read and the lane put where it now sits.
     ///
     /// Called when the reading changes shape, when the lane is resized, and when a scrub lets go.
@@ -205,9 +198,26 @@ package final class MinimapLaneView: NSView {
         // Read off the same view the reshape notice carries, so the two cannot disagree about
         // which height the lane has already answered.
         reshapedTo = watched?.documentView?.frame.height
-        geometry = MinimapGeometry(reading, lane: bounds.size)
+        geometry = MinimapGeometry(
+            reading, lane: bounds.size, coarsened: coarsenedAt == bounds.size,
+        )
+        coarsenedAt = geometry.granularity == .turns ? bounds.size : nil
+        nameLane()
         derivation += 1
         settleViewport()
+    }
+
+    /// What the lane calls itself, which says what a mark on it stands for.
+    ///
+    /// The honesty half of #1173. A lane that quietly changed what a mark MEANS — a row one moment
+    /// and a whole Turn the next — would be telling the reader a different thing in the same shapes
+    /// without saying so. There is nothing to draw for it, because the lane is read at a glance
+    /// beside the reading and a legend on it would be a second wall of content; so it is said where
+    /// a reader can ask for it.
+    func nameLane() {
+        setAccessibilityLabel(
+            geometry.granularity == .turns ? "Minimap lane, one mark a Turn" : "Minimap lane",
+        )
     }
 
     /// The document as it stands — walked only where the stamp says a walk would find something
@@ -340,7 +350,9 @@ extension MinimapLaneView {
     func forgetReading() {
         read = nil
         readAt = nil
+        coarsenedAt = nil
         geometry = MinimapGeometry(MinimapReading(), lane: .zero)
+        nameLane()
         derivation += 1
         drawnBand = nil
         paintedAt = nil

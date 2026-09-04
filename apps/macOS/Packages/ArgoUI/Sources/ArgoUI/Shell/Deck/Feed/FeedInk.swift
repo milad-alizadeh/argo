@@ -8,7 +8,7 @@ import Foundation
 ///
 /// Every role must stay opaque: the lane applies its own alpha on top, and a translucent role would
 /// be dimmed twice.
-enum FeedInk: Equatable, Sendable, CaseIterable {
+enum FeedInk: Hashable, Sendable, CaseIterable {
     /// What someone asked for.
     case prompt
     /// What the agent said.

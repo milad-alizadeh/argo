@@ -94,20 +94,21 @@ struct MinimapRectTests {
     @Test
     func `a session at a real length still has rects that can be told apart`() {
         let reading = MinimapReading(
-            rows: MinimapGeometryTests.rows(Array(repeating: 40, count: 1031)),
+            rows: MinimapGeometryTests.rows(Array(repeating: 40, count: 1031), turnedEvery: 10),
             columnWidth: 620,
             viewportHeight: 600,
         )
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: 600))
         let head = lane.rects(in: 0 ... 600)
-        let rows = lane.row(startingAtOrBefore: 600 / lane.scale)
         let apart = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
 
-        // DISTINCT positions, not marks. Every row contributes at least one rect at any scale —
-        // `rects(at:)` resets its crowding watermark per row, so a mark per row is true of a lane
-        // squeezed to one smear too, and counting marks would be a claim about nothing.
-        #expect(Set(head.map(\.y)).count >= rows, "\(head.count) marks for \(rows) rows")
-        #expect(zip(head, head.dropFirst()).allSatisfy { $1.y == $0.y || $1.y - $0.y >= apart })
+        // A session this long is drawn a mark a Turn (#1173), so the claim is #658's at the new
+        // granularity: one mark per Turn, the whole reading in the lane, and no two marks closer
+        // than a mark and the gap under it.
+        #expect(lane.granularity == .turns)
+        #expect(lane.miniatureHeight <= 600)
+        #expect(head.count == lane.turns.count, "\(head.count) marks for \(lane.turns.count) Turns")
+        #expect(zip(head, head.dropFirst()).allSatisfy { $1.y - $0.y >= apart })
     }
 
     /// Two rows of one line each read as the same weight, whatever spacing the feed put around

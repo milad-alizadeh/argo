@@ -33,9 +33,12 @@ struct MinimapLaneTests {
         #expect(deck.lane.viewportFrame != atRest)
     }
 
+    /// Over the DEEP session, because the miniature has to have somewhere to slide: since #1132 a
+    /// reading the lane fits into itself never moves its rects layer at all, and since #1173 the
+    /// shorter fixture is one of those (`MinimapLaneFixture.deepRows`).
     @Test
     func `scrolling inside the rasterised band repaints nothing in the lane`() async {
-        let deck = await Self.mounted(over: FeedProjection.longRows)
+        let deck = await Self.mounted(over: MinimapLaneFixture.deepRows)
         let drawn = deck.lane.rectRedraws
         let rects = deck.lane.rectsFrame
 
@@ -50,7 +53,7 @@ struct MinimapLaneTests {
     @Test
     func `the miniature is taller than the lane and slides the head of it off the top`(
     ) async throws {
-        let deck = await Self.mounted(over: FeedProjection.longRows)
+        let deck = await Self.mounted(over: MinimapLaneFixture.deepRows)
         let lane = deck.lane.geometry
         #expect(lane.miniatureHeight > Self.column.height)
         #expect(lane.laneOffset(at: lane.offsetRange.lowerBound) == 0)
@@ -67,7 +70,7 @@ struct MinimapLaneTests {
     /// which lets a Turn's label out to the reading beside it.
     @Test
     func `the band is clipped to the lane it hangs out of`() async {
-        let deck = await Self.mounted(over: FeedProjection.longRows)
+        let deck = await Self.mounted(over: MinimapLaneFixture.deepRows)
 
         #expect(deck.lane.rectsFrame.height > Self.column.height)
         #expect(deck.lane.clipsRectsOnly)
@@ -254,7 +257,7 @@ extension MinimapLaneTests {
         let rows = FeedProjection.longRows
         let deck = await Self.mounted(over: Array(rows.dropLast(20)))
         deck.lane.layoutSubtreeIfNeeded()
-        let short = try #require(deck.lane.drawnRects.last).y
+        let short = try #require(deck.lane.drawnBand).range.upperBound
 
         deck.table.apply(FeedTableFixture.model(showing: rows))
         await FeedTableFixture.settled(deck.table)
@@ -264,9 +267,13 @@ extension MinimapLaneTests {
         // showing a reading of: same rows, same widths, so the same pixels or the map is wrong.
         let fresh = await Self.mounted(over: rows)
         fresh.lane.layoutSubtreeIfNeeded()
-        let grown = try #require(deck.lane.drawnRects.last).y
+        let grown = try #require(deck.lane.drawnBand).range.upperBound
 
-        #expect(grown > short, "the band ends at \(grown), and ended at \(short) before")
+        // The BAND's foot rather than the last mark's head, because a fitted miniature compresses
+        // as it grows: every mark moves up a little to make room, so the last one is no longer the
+        // thing that says whether the lane painted the rows the session gained. What says it is
+        // that the pixels reach the end of the reading — which a kept, shorter band does not.
+        #expect(grown == deck.lane.geometry.miniatureHeight && grown != short, "at \(grown)")
         #expect(deck.lane.drawnRects == fresh.lane.drawnRects)
     }
 }
