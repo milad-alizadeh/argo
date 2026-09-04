@@ -70,10 +70,24 @@ package struct InstrumentDeckShell: View {
             .accessibilityLabel("\(room.title) Instrument Deck")
     }
 
-    /// Code is bare ground on purpose: a placeholder deck there would claim a structure nobody has
-    /// decided. Work is no longer one of them (#812).
-    @ViewBuilder private var content: some View {
-        switch room {
+    /// All four rooms, kept mounted and gated with `.room(isActive:)` rather than built by a
+    /// `switch` — see `RoomStage`. `ForEach` over every case rather than four independent
+    /// `room == .x` checks, so a fifth `CockpitRoom` case fails the exhaustive `switch` in
+    /// `view(for:)` below rather than compiling and silently rendering nothing (`house.md`,
+    /// "branch on a closed set with the exhaustive construct").
+    private var content: some View {
+        ZStack {
+            ForEach(CockpitRoom.allCases) { candidate in
+                view(for: candidate)
+                    .room(isActive: room == candidate)
+            }
+        }
+    }
+
+    /// One room's deck, over its own case. Code is bare ground on purpose: a placeholder deck
+    /// there would claim a structure nobody has decided. Work is no longer one of them (#812).
+    @ViewBuilder private func view(for candidate: CockpitRoom) -> some View {
+        switch candidate {
         case .sessions:
             SessionsDeck(
                 session: session,
@@ -93,9 +107,11 @@ package struct InstrumentDeckShell: View {
                 scope: scope,
             )
         case .tickets:
-            tickets?.deck
+            if let tickets {
+                tickets.deck
+            }
         case .atlas:
-            AtlasRoomView()
+            AtlasRoomView(isActive: room == .atlas)
         case .code:
             Color.clear
         }
