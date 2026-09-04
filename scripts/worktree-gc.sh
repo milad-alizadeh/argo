@@ -135,6 +135,8 @@ done < "$list"
 # Prune stale visual-review refs on the remote. pixel-review publishes screenshots to
 # refs/pr-screenshots/<slug> (slug = head branch with / → -), and the CI baselines job to
 # refs/visual-baselines/pr-N. Both are ephemeral: once the PR is gone, so is their purpose.
+# refs/evidence/* is a third namespace and is deliberately NOT swept: it holds
+# screenshots embedded in issue bodies, which must outlive the issue.
 # Reap them on the same provably-safe footing as worktrees — but only with gh to say which
 # PRs are still open. Without it, or if the query fails, never delete: incomplete info is
 # not a reason to reap.

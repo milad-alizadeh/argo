@@ -25,6 +25,8 @@ Nothing here is a reason to stop.
 
 - **Gates.** If they have not run since your last edit, run them now. For UI work, look at the
   affected states; unit tests do not show you a screen.
+- **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
+  per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
 - **Review findings.** Fix each in the diff, or carry it.
