@@ -7,6 +7,6 @@ extension ComposerDraft {
     ///
     /// Everything before the token survives, which is what a mention said mid-sentence needs.
     mutating func take(_ pick: ComposerMenu.Pick) {
-        text = String(text.dropLast(pick.dropping)) + pick.text
+        text = pick.taken(over: text)
     }
 }

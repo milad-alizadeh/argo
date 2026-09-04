@@ -142,10 +142,12 @@ package struct SessionComposer: View {
     /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
     /// and the send control ask for the same thing.
     ///
-    /// With a menu up and a row under the cursor, ⏎ INSERTS instead (design decision 1): a command
-    /// with arguments is the common case, and sending on ⏎ makes the argument impossible to type.
-    /// Answered here rather than by an `onKeyPress` above the field, because a `TextField` takes
-    /// Return itself and there is no intercepting it from outside.
+    /// With a menu up and a row that would extend the line under the cursor, ⏎ INSERTS instead
+    /// (design decision 1): a command with arguments is the common case, and sending on ⏎ makes the
+    /// argument impossible to type. A row that would add nothing but the trailing space is a
+    /// command already typed in full, and ⏎ sends it — `ComposerMenus.completes(on:)` draws that
+    /// line (#1208). Answered here rather than by an `onKeyPress` above the field, because a
+    /// `TextField` takes Return itself and there is no intercepting it from outside.
     ///
     /// What a menu makes of the key is `complete()` below, which ⇥ asks the same question of —
     /// that includes `AddMenu`, where a pick OPENS the row's section rather than inserting
@@ -153,7 +155,9 @@ package struct SessionComposer: View {
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
     func submit() {
-        guard !complete() else { return }
+        if menus.completes(on: line), complete() {
+            return
+        }
         draft.submit(whileRunning: composer.isRunning, via: sending)
     }
 
@@ -171,7 +175,8 @@ package struct SessionComposer: View {
     ///
     /// `false` is what leaves Tab alone, and the field walks focus with it as #718 built: there is
     /// no menu at all, or the filter matched nothing and there is no row under the cursor to take
-    /// (design decision 8). It is also what sends the Turn, since ⏎ asks the same question.
+    /// (design decision 8). ⏎ asks the same question, but only over a row `completes(on:)` says
+    /// would extend the line; anything else it leaves to the Turn (#1208).
     private func complete() -> Bool {
         if let row = menus.addMenuPick(on: line) {
             open(row)

@@ -152,5 +152,11 @@ enum ComposerMenu {
     struct Pick: Equatable {
         let text: String
         let dropping: Int
+
+        /// The line this pick leaves. `ComposerDraft.take(_:)` writes it back, and
+        /// `ComposerMenus.completes(on:)` asks it what ⏎ would change.
+        func taken(over line: String) -> String {
+            String(line.dropLast(dropping)) + text
+        }
     }
 }
