@@ -132,6 +132,8 @@ extension Hub {
         // The rung falls back to the row's own, which is where a spawn's lives until something
         // sets a second one.
         published.modeSet = facts.modeSet ?? session.modeSet
+        // And the pair it was started at, which falls back the same way (#1175).
+        published.launchedRun = facts.run ?? session.launchedRun
         // The ticket falls back to the row's own for the reason the rung does: a provisional row
         // carries what it was spawned with until the claim is bound to a Session id (#872). And
         // then to the durable ledger, which is all a relaunch has left: both readings above die

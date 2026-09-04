@@ -30,11 +30,22 @@ enum ReadableModelName {
         "claude-3-haiku": "Haiku 3",
     ]
 
+    /// The CLI's own ALIASES, which no transcript ever spells: `--model` takes one, so a launch
+    /// value is written in them (#1175). Read off the composer's own rows rather than typed a
+    /// second time — the row already says which model `opus` asks for, and two tables would be two
+    /// answers.
+    static let aliases: [String: String] = Dictionary(
+        uniqueKeysWithValues: RunFactsModel.offered.map { ($0.id, $0.name) },
+    )
+
     /// An id the table knows, said the way a person says it; an id it does not, VERBATIM. The date
     /// suffix a provider pins a snapshot with is dropped before the second lookup, so a dated id of
     /// a model the table DOES know still reads as that model.
+    ///
+    /// The aliases come after the provider ids and before the undated lookup: an id is what a
+    /// record reports, and an alias is only ever what Argo itself asked for.
     static func readable(_ id: String) -> String {
-        table[id] ?? table[undated(id)] ?? id
+        table[id] ?? aliases[id] ?? table[undated(id)] ?? id
     }
 
     /// The id with a provider's pinned-snapshot date taken off the end: `claude-opus-4-1-20250805`

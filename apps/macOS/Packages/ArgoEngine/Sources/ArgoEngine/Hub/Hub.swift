@@ -84,6 +84,10 @@ public final class Hub {
     /// only place the two of them meet.
     @ObservationIgnored let modeStore: SessionModeStore
 
+    /// The Model and Effort a spawn opens on (#1175). Read at the spawn for the reason the rung
+    /// above is: the file is where two windows meet.
+    @ObservationIgnored let runStore: SessionRunStore
+
     @ObservationIgnored let spawnServices: SpawnServices
     /// This Hub's own corner of the shared companion root: two Hubs mint the same claim ids, so
     /// the corner is what keeps their socket paths apart (#987).
@@ -108,6 +112,7 @@ public final class Hub {
         self.discovery = discovery
         self.spawnServices = spawnServices
         self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
+        self.runStore = SessionRunStore(fileURL: spawnServices.runFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has
         // one.

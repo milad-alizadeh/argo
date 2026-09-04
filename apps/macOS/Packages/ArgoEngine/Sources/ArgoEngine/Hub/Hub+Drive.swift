@@ -18,6 +18,7 @@ public extension Hub {
             remember: { [weak self] set, sessionID in
                 self?.rememberMode(set, for: sessionID)
             },
+            rememberRun: { [weak self] pick in self?.runStore.remember(pick) },
         )
     }
 }

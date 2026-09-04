@@ -103,7 +103,8 @@ function_parameter_count:
   # INIT: Ticket+Copy.swift 10 — Ticket's memberwise copy, one slot per field it carries
   # INIT: CockpitPresentation+Session.swift 10 — the projected Session, one group per reading
   # INIT: ArgoPalette.swift 10 — one ground per surface layer
-  # INIT: SpawnServices.swift 9 — the Hub's spawn collaborators and the files they own
+  # INIT: SpawnServices.swift 10 — the Hub's spawn collaborators and the files they own, widened
+  # for the last-picked run's file (#1175)
   # INIT: ConnectReading.swift 9 — the connect panel's whole reading
   # INIT: ConnectPanelActions.swift 8 — one closure per connect step
   # INIT: ToolCall.swift 7 — a call as the transcript declares it
@@ -144,7 +145,8 @@ function_parameter_count:
   # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
   # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it
   # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
-  # INIT: ClaimFacts.swift 11 — everything Argo knows about one claim, under one key
+  # INIT: ClaimFacts.swift 12 — everything Argo knows about one claim, under one key, widened for
+  # the run Argo started it at (#1175)
   # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
   # INIT: FeedTableModel.swift 8 — everything the AppKit half of the feed needs from the SwiftUI
   # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at
@@ -163,7 +165,8 @@ function_parameter_count:
   # INIT: ProjectMenuProjection.swift 7 — Row, one project in the menu, a field per thing the row
   # INIT: TicketsChromeProjection.swift 7 — Reading, the Tickets chrome's whole reading, heading
   # INIT: AgentSpawn.swift 7 — what Argo just started, before its CLI has written a record
-  # INIT: AgentSpawnPlan.swift 6 — everything one spawn was decided to be, before anything has
+  # INIT: AgentSpawnPlan.swift 7 — everything one spawn was decided to be, before anything has
+  # happened, widened for the Model and Effort it opens on (#1175)
   # INIT: ClaudeSessionDriver.swift 6 — the driver's collaborators, one per thing a Claude Session
   # INIT: CodexSessionDriver.swift 6 — the driver's collaborators, one per thing a Codex Session is
   # INIT: ComposerMenu.swift 6 — Row, one pickable thing, its words beside what picking it inserts

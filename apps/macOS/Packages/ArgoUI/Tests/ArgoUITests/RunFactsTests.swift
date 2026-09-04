@@ -102,6 +102,29 @@ struct RunFactsTests {
         #expect(facts(model: nil).models.count == 3)
     }
 
+    /// The launch value a spawn puts on argv is the CLI's own ALIAS, and the composer states it as
+    /// the model that alias asks for — the same words, and the same ticked row, as the record's
+    /// later reading of it (#1175).
+    @Test
+    func `the alias a spawn is started on reads as the model it names`() {
+        let launched = facts(model: SessionRun.unpicked.model)
+
+        #expect(launched.words == "Opus 5 · Medium")
+        #expect(launched.tickedModel?.id == "opus")
+        // And it earns no row of its own: the alias IS the offered row's own id.
+        #expect(launched.models.count == 3)
+        #expect(launched.isDefault)
+    }
+
+    /// The words the reset names and the pair a spawn is started at are one answer, held here
+    /// because they live in two packages: a second constant would let the sentence and the argv
+    /// drift apart (#1175).
+    @Test
+    func `the reset names the pair a New Session actually opens on`() {
+        #expect(RunFactsModel.default.id == SessionRun.unpicked.model)
+        #expect(RunFacts.defaultEffort == SessionRun.unpicked.effort)
+    }
+
     /// The reset NAMES what it restores rather than saying "default" — a reader should not have to
     /// open it to find out. All three, Mode included, because it sets all three.
     ///

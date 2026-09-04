@@ -45,6 +45,26 @@ public extension Hub {
     }
 }
 
+extension Hub {
+    /// What a resumed Session comes back RUNNING AT (#1175), on the rule the rung above follows:
+    /// the Session's own reading where it has one, and the pair last picked where it has none.
+    ///
+    /// Read per half rather than as a pair, because the two are read off different records and a
+    /// Session can honestly have one and not the other. An effort word off Argo's ladder falls back
+    /// too — `--effort` takes a level, so a word Argo cannot place is a word it cannot pass on.
+    ///
+    /// Without this a resume would relaunch the process on whatever was last picked app-wide and
+    /// move a Session off what it was working at, which is the friction #941 removed for the rung.
+    func run(resuming sessionID: String) -> SessionRun {
+        let picked = runStore.lastPicked()
+        guard let session = session(id: sessionID) else { return picked }
+        return SessionRun(
+            model: session.model ?? picked.model,
+            effort: session.effort.flatMap(SessionEffort.init(rawValue:)) ?? picked.effort,
+        )
+    }
+}
+
 /// Why a resume did not happen — as opposed to `AgentSpawnError`, which is a process that would not
 /// start.
 public enum SessionResumeError: Error, Equatable {

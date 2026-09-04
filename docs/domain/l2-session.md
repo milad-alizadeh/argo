@@ -113,8 +113,20 @@
   interprets: which model the Session runs on, and how hard it is told to think. **DERIVED** on the
   way in — `model` off an assistant record, `effort` off a top-level record field — and rendered
   VERBATIM either way: a model id Argo's readable table has never heard of is a model, not an
-  error, and an effort word off the scale is a level a newer CLI grew. Either unread is `unknown`
-  rather than a plausible value.
+  error, and an effort word off the scale is a level a newer CLI grew.
+
+  A **launch value** is the one exception, and it is DIRECT (#1175): Argo spelled both on the argv
+  of the process it started, so a managed Session states what it was started at from the moment it
+  exists rather than `unknown`. It is the OPENING reading and never more: the first record's own
+  reading supersedes it verbatim, including a value Argo did not ask for, which is what a `/model`
+  typed at the prompt looks like from outside. An external Session has no argv to read, and a CLI
+  that takes neither flag is given neither — a default that could not be applied would be a value
+  stated about a Session nothing put it on. Unread and unlaunched is still `unknown`, never a
+  plausible value.
+
+  Which pair a New Session opens on is remembered app-wide — one value for the whole app beside the
+  last-picked Mode, `Opus 5 · Medium` where nothing has ever been picked, and written where a pick
+  LANDED so one the CLI refused is not the one the next Session opens on.
 
   **Neither is Mode**, and the separation is load-bearing (#558): Mode is Argo's standing autonomy
   stance and settles how far the agent may act before it stops, while these two settle what does

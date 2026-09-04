@@ -30,9 +30,12 @@ struct HubRelinquishTests {
             // happened, and the orphaned row is where it is worth saying (#493). `neverDialled`
             // because this fixture's client dials the permission gate rather than the companion
             // channel — the two are separate sockets.
+            // The run Argo started the CLI at stays for the same reason as the rung: it is what
+            // went on argv, and the orphaned row still states what it was started at (#1175).
             #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts(
                 companionLiveness: .neverDialled,
                 modeSet: rung,
+                run: .unpicked,
             ))
         }
     }

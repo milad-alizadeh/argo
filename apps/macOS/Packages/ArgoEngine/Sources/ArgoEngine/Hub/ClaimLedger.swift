@@ -78,6 +78,12 @@ final class ClaimLedger {
         update(claim) { $0.modeSet = modeSet }
     }
 
+    /// The Model and Effort this claim's CLI was STARTED at (#1175). Never taken back: what Argo
+    /// put on argv is something that happened, and the record's own reading is what supersedes it.
+    func setRun(_ run: SessionRun, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.run = run }
+    }
+
     /// A Turn Argo typed at this claim's PTY (#1048). Nothing takes one back when the record
     /// answers it — that reading is derived — so the only writes that clear it are the two below,
     /// where the Turn was never heard at all or the PTY it went down has gone.

@@ -64,6 +64,9 @@ final class CockpitCoordinator {
                 // And the one place the real preference is. A Hub given none opens every New
                 // Session on `Code` (#629).
                 modeFileURL: SessionModeStore.defaultFileURL,
+                // And of the Model and Effort last picked. A Hub given none opens every New
+                // Session on `Opus 5 · Medium` (#1175).
+                runFileURL: SessionRunStore.defaultFileURL,
             ),
         )
         // Composed here for the PTY host's reason, and with a terminal to paint on for the same

@@ -38,6 +38,10 @@ public extension Hub {
             cli: cli,
             cwd: cwd,
             mode: seed.mode ?? modeStore.lastPicked(),
+            // The pair the user last picked, resolved here for the reason the rung is: the argv
+            // and the row this spawn publishes must state one answer (#1175). A resume answers off
+            // the Session it continues instead — see `run(resuming:)`.
+            run: seed.resuming.map { run(resuming: $0.sessionID) } ?? runStore.lastPicked(),
             seed: seed,
             claim: claim(for: seed, naming: namedUUID),
             namedUUID: namedUUID,
@@ -121,6 +125,12 @@ public extension Hub {
             ),
             for: plan.claim,
         )
+        // What Argo put on this Session's argv (#1175). DIRECT for as long as it is the only thing
+        // that has spoken: the first record's own reading supersedes it, and the composer states
+        // this in the meantime rather than `unknown`. Filed under the claim like the rung above.
+        if plan.cli.takesRunFlags {
+            claims.setRun(plan.run, for: plan.claim)
+        }
         // Filed under the claim for the reason the rung is: it must survive the re-key to the id
         // the CLI picks, or the Tickets room would show the ticket claimed only until the
         // transcript appeared (#872). A resume names one too — it is the same work, continued.
