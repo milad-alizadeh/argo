@@ -67,6 +67,29 @@ skill on the title and body text. Do this every time, not only when the text rea
 apply it before the first draft goes out, not as a later cleanup pass.
 ```
 
+**Labels** is a section too, under the same condition: only when `docs/agents/issue-tracker.md`
+exists. Append it verbatim, replacing any existing `## Labels` section in place. It names the
+five triage labels that `docs/agents/triage-labels.md` maps; if that file does not exist, install
+it first or drop the first bullet's label names for whatever the host uses.
+
+```markdown
+## Labels
+
+Every issue you create carries a label before you hand the number back. There is no unlabelled
+issue, and a bug report is no exception.
+
+- **One triage label, always**, from `docs/agents/triage-labels.md`: `ready-for-agent` when the
+  issue is specified well enough for an AFK agent to build it, `ready-for-human` when a person
+  must do the work, `needs-info` when the report is short of a fact only the reporter holds, and
+  `needs-triage` when you cannot tell.
+- **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
+  for behaviour that is new, `documentation` for docs, designs and ADRs.
+
+Pass them in the create call — `gh issue create --label ready-for-agent --label bug ...` — not in
+a later `gh issue edit`. An issue that reaches the list unlabelled is invisible to every triage
+query that reads this repo.
+```
+
 **Screenshot evidence** is a section too, under the same condition: only when
 `docs/agents/issue-tracker.md` exists. Append it verbatim, replacing any existing
 `## Screenshots` section in place. The block is GitHub. If the code host is not GitHub, append

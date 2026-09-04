@@ -10,6 +10,22 @@ comment`, `gh issue close --comment`, and their `gh pr` equivalents all count. D
 time, not only when the text reads badly — apply it before the first draft goes out, not as a
 later cleanup pass.
 
+## Labels
+
+Every issue you create carries a label before you hand the number back. There is no unlabelled
+issue, and a bug report is no exception.
+
+- **One triage label, always**, from `docs/agents/triage-labels.md`: `ready-for-agent` when the
+  issue is specified well enough for an AFK agent to build it, `ready-for-human` when a person
+  must do the work, `needs-info` when the report is short of a fact only the reporter holds, and
+  `needs-triage` when you cannot tell.
+- **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
+  for behaviour that is new, `documentation` for docs, designs and ADRs.
+
+Pass them in the create call — `gh issue create --label ready-for-agent --label bug ...` — not in
+a later `gh issue edit`. An issue that reaches the list unlabelled is invisible to every triage
+query that reads this repo.
+
 ## Screenshots
 
 A screenshot is evidence. It belongs in the tracker, not only in the session.
