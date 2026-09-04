@@ -176,7 +176,7 @@ struct FeedAskFoldTests {
             ),
             held: nil,
             isResizing: false,
-            isUnderComposer: false,
+            bottomEdge: .bare,
             washed: nil,
             unfolded: .constant([]),
             environment: FeedCellEnvironment(),
