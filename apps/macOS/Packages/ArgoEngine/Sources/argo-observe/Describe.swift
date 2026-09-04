@@ -40,52 +40,33 @@ private func describe(sentWith images: [MediaEvidence]) -> String {
 
 func describe(_ event: TranscriptEvent) -> String {
     switch event {
-    case let .recordIdentity(uuid):
-        "record      \(uuid)"
-    case let .headLeaf(uuid):
-        "head-leaf   \(uuid)"
-    case let .originSession(id):
-        "origin      \(id)"
-    case let .title(title):
-        "title       \(title)"
-    case let .cwd(cwd):
-        "cwd         \(cwd)"
-    case let .model(model):
-        "model       \(model)"
-    case let .effort(cli):
-        "effort      \(cli)"
-    case let .branch(branch):
-        "branch      \(branch)"
-    case let .mode(cli):
-        "mode        \(cli)"
-    case let .entry(cli):
-        "entry       \(cli)"
-    case let .prompt(text, images, _):
-        "prompt      \(oneLine(text))\(describe(sentWith: images))"
-    case let .message(markdown):
-        "message     \(oneLine(markdown))"
-    case let .thought(markdown):
-        "thought     \(oneLine(markdown))"
-    case let .skillLoaded(load):
-        "skill       \(load.name) → \(load.directory)"
+    case let .recordIdentity(uuid): "record      \(uuid)"
+    case let .headLeaf(uuid): "head-leaf   \(uuid)"
+    case let .originSession(id): "origin      \(id)"
+    case let .title(title): "title       \(title)"
+    case let .cwd(cwd): "cwd         \(cwd)"
+    case let .model(model): "model       \(model)"
+    case let .effort(cli): "effort      \(cli)"
+    case let .branch(branch): "branch      \(branch)"
+    case let .mode(cli): "mode        \(cli)"
+    case let .entry(cli): "entry       \(cli)"
+    case let .prompt(text, images, _): "prompt      \(oneLine(text))\(describe(sentWith: images))"
+    case let .message(markdown): "message     \(oneLine(markdown))"
+    case let .thought(markdown): "thought     \(oneLine(markdown))"
+    case let .skillLoaded(load): "skill       \(load.name) → \(load.directory)"
     case let .toolCall(call):
         "call        \(call.name) (\(call.kind.rawValue))\(call.target.map { " → \($0)" } ?? "")"
     case let .toolCallOutcome(outcome):
         "  ↳ \(outcome.status.rawValue)  \(outcome.result.map(describe) ?? "")"
-    case let .turnEnded(reason):
-        "turn ended  \(reason.rawValue)"
+    case let .turnEnded(reason): "turn ended  \(reason.rawValue)"
+    case .interrupted: "interrupted somebody stopped the Turn"
     case let .plan(plan):
         "plan        \(plan.entries.count) entries, "
             + plan.entries.filter { $0.status == .completed }.count.description + " done"
-    case let .usage(usage):
-        "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
-    case .queued:
-        "queued      a prompt queued rather than run"
-    case .excerpted:
-        "excerpt     a stretch of the file was not read"
-    case .compaction:
-        "compaction  history condensed here"
-    case let .unreadableLine(raw):
-        "unreadable  \(oneLine(raw, width: 60))"
+    case let .usage(usage): "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
+    case .queued: "queued      a prompt queued rather than run"
+    case .excerpted: "excerpt     a stretch of the file was not read"
+    case .compaction: "compaction  history condensed here"
+    case let .unreadableLine(raw): "unreadable  \(oneLine(raw, width: 60))"
     }
 }

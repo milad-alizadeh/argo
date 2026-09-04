@@ -40,14 +40,9 @@ struct FeedPromptImageTests {
         #expect(row?.kind.opensEvidence == false)
     }
 
-    /// An interrupt arrives on the user side of the record too, and it is punctuation rather than
-    /// something anyone asked for — so it wins over the picture path as well.
-    @Test
-    func `an interrupt is still a mark`() {
-        let content = Self.rows(ClaudeInterrupt.mark, []).first?.content
-
-        #expect(content == .mark(.interrupted))
-    }
+    // The interrupt's own claim against this path — that the marker wins over the pictures — moved
+    // to `InterruptReadingTests` with the reading itself (#1189): the marker never reaches a
+    // `.prompt` any more, so there is nothing left for this surface to answer.
 
     /// A picture pasted into a prompt has no path: the CLI moved the bytes into the record and
     /// named no file, so the shot says what it IS rather than borrowing an address it has not got.

@@ -93,6 +93,9 @@ extension SessionHeaderProjection {
             case let .toolCall(call): call.atMs
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs
+            // The agent was working right up to the keystroke that stopped it, so the moment
+            // counts — as it did while this arrived as a prompt (#1189).
+            case let .interrupted(atMs): atMs
             // A skill load carries no moment of its own: the CLI expands a body as part of the
             // prompt beside it, and that prompt's own timestamp is already counted. The seam is
             // handled above, where it withholds the figure entire.

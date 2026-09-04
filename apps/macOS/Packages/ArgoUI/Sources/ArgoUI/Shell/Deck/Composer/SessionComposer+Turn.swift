@@ -73,7 +73,18 @@ extension SessionComposer {
 
     /// The Turn has ended, so what was waiting on it goes — the rung first, then the queue, for
     /// the reason `honour(_:)` states.
+    ///
+    /// Unless somebody STOPPED it, in which case the queue is dropped rather than released
+    /// (#1189, design decision 4). Argo's own Stop already did that at the click; this is the same
+    /// rule for an interrupt made anywhere else — an `ESC` at the dock terminal ends the Turn just
+    /// as truly, and until the record was read as closing the Turn, no such Session ever came off
+    /// `running` for this to fire on. The rung is NOT among what goes: it is about how the Session
+    /// works next rather than about the Turn that was killed, and the boundary it waited for is
+    /// the one the interrupt just made.
     func turnEnded() {
+        if draft.mustDropQueue(afterInterrupt: composer.endedByInterrupt) {
+            draft.dropQueue()
+        }
         guard let held = draft.beginModeWalk() else { return draft.flush(via: sending) }
         Task { await honour(held) }
     }

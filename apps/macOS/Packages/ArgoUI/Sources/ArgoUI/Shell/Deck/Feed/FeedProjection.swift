@@ -108,7 +108,8 @@ package enum FeedProjection {
         case let .toolCallOutcome(outcome): outcome.usage
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .originSession,
              .title, .cwd,
-             .model, .effort, .branch, .mode, .entry, .turnEnded, .plan, .compaction, .queued,
+             .model, .effort, .branch, .mode, .entry, .turnEnded, .interrupted, .plan, .compaction,
+             .queued,
              .unreadableLine, .skillLoaded, .excerpted: nil
         }
     }
@@ -155,16 +156,13 @@ package enum FeedProjection {
     )
         -> FeedRow.Content? {
         switch event {
-        // An interrupt arrives on the user side of the record, so it is read here and turned into
-        // punctuation rather than drawn as something the reader said (#541). The sentence is the
-        // CLI's, which is why the engine owns it: this is a READING of the record, and a second
-        // spelling of the marker living up here could drift from the keystroke that produces it.
         case let .prompt(text, images, _):
-            if ClaudeInterrupt.isMark(text) {
-                .mark(.interrupted)
-            } else {
-                .prompt(text: text, shots: images.map(FeedShot.pasted))
-            }
+            .prompt(text: text, shots: images.map(FeedShot.pasted))
+        // An interrupt arrives on the user side of the record, and the ENGINE is what reads it as
+        // the boundary it is (#1189) — a Turn ended there, which is a fact this surface is not the
+        // only one that needs. All that is left here is the punctuation it draws as, in place of a
+        // row in the reader's own voice saying something they never typed (#541).
+        case .interrupted: .mark(.interrupted)
         // In the sequence it happened, beside the user's own line rather than instead of it: a
         // command is just a prompt, and the feed invents no third way of showing one (#688).
         case let .skillLoaded(load): .skillLoaded(FeedSkillLoad(load, within: path))

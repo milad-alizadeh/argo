@@ -7,6 +7,10 @@ public enum StopReason: String, Sendable, Equatable {
     case maxTokens = "max_tokens"
     case maxTurnRequests = "max_turn_requests"
     case refusal
+    /// The one word here no host writes: it is Argo's for a Turn ended by something other than the
+    /// agent finishing. A PTY that died having never spoken is one (`HubSession.init(spawn:)`), and
+    /// somebody pressing Stop is the common one — the CLI files that as a user entry carrying no
+    /// reason at all, and `TranscriptEvent.interrupted` is what turns it into this (#1189).
     case cancelled
     case unknown
 }

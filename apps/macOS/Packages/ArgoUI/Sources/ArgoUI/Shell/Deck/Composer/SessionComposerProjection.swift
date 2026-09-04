@@ -70,6 +70,15 @@ package enum SessionComposerProjection {
         /// relative to `workspaceRoot`. They sort to the top of the `@` menu, because the file the
         /// reader means next is nearly always one the agent has just been in.
         var touchedFiles: [String] = []
+        /// Whether the last Turn boundary the record carries is somebody STOPPING the Turn
+        /// (#1189) — see `SessionComposerProjection.endedByInterrupt(_:)`. What the composer
+        /// answers a Turn's end with: a Turn that simply finished releases what was queued behind
+        /// it, and a Turn that was stopped drops it.
+        ///
+        /// Set after the init rather than through it, and deliberately: that list is at the count
+        /// it is grandfathered at (`swift-boundaries` edge 6), and one more would authorise the
+        /// next one. A specimen that wants this state sets it the same way.
+        var endedByInterrupt = false
 
         /// Spelled out because Swift synthesises no memberwise initializer above
         /// `internal`, and the specimens build this from their own target (#1085).
@@ -117,7 +126,12 @@ package enum SessionComposerProjection {
         -> Composer? {
         guard let session, unavailable(for: session) == nil else { return nil }
         let isRunning = session.status == .running
-        return Composer(
+        // Handed out ONCE and walked twice. The count that gates the selection pass is of stream
+        // hand-outs (`PerfBudgets.selectionPassReads`), so reaching for `session.events` a second
+        // time would cost a read whether or not the walk behind it is cheap — and this one is
+        // bounded by the open Turn where the other is linear in the whole transcript.
+        let events = session.events
+        var composer = Composer(
             sessionID: session.id,
             placeholder: isRunning ? queuePlaceholder : placeholder(addressing: session.cli),
             facts: RunFacts(
@@ -136,15 +150,38 @@ package enum SessionComposerProjection {
             canRunCommands: can.canRunCommands,
             resolvesMentions: can.resolvesMentions,
             workspaceRoot: session.workspaceLocation,
-            touchedFiles: TouchedFiles.touched(
-                in: session.events,
-                within: session.workspaceLocation,
-            ),
+            touchedFiles: TouchedFiles.touched(in: events, within: session.workspaceLocation),
         )
+        composer.endedByInterrupt = endedByInterrupt(events)
+        return composer
     }
 
     /// What the field invites while a Turn is running: send holds the words until the Turn ends.
     package static let queuePlaceholder = "Queue a follow-up…"
+
+    /// Whether the last Turn boundary the record carries is somebody STOPPING the Turn (#1189).
+    ///
+    /// Read off the RECORD rather than off Argo's own Stop button, which is the whole point: an
+    /// `ESC` typed at the dock terminal, or a Stop pressed in another window, ends the Turn just
+    /// as truly — and until the marker was read as CLOSING the Turn, no such Session ever came off
+    /// `running`, so the composer never had to answer for one. Left unanswered it would RELEASE
+    /// the follow-ups waiting on that Turn, which is what design decision 4 forbids.
+    ///
+    /// Backwards to the nearest boundary and no further: what ended the LAST Turn is the question,
+    /// and every Turn before it has its own answer that no longer matters.
+    package static func endedByInterrupt(_ events: [TranscriptEvent]) -> Bool {
+        for event in events.reversed() {
+            switch event {
+            case .interrupted:
+                return true
+            case .turnEnded:
+                return false
+            default:
+                break
+            }
+        }
+        return false
+    }
 
     /// Addressed to the agent when the record has named one, and to the role when it has not: a
     /// managed Session's first moments are a claim without a CLI's own record behind it.

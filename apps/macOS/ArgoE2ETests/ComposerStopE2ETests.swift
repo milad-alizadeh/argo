@@ -7,10 +7,15 @@ import XCTest
 /// in: the draft was right and the control under it was not.
 ///
 /// **What it does NOT cover.** `ComposerStoppingSpecimen` turns `isRunning` off at the click, so
-/// the Session's own status is never in play here. #1189's other two faults — the control stuck on
-/// the Stop square, and the field taking no keys afterwards — are both faults in that status and in
-/// the shell around it, and neither can reproduce against this entry. A green run here says the
-/// composer's own seam is sound, and says nothing at all about those.
+/// the Session's own status is never in play here, and neither of #1189's other two faults can
+/// reproduce against this entry. A green run says the composer's own seam is sound and nothing at
+/// all about those.
+///
+/// The control stuck on the Stop square is answered elsewhere and at its own level: the CLI writes
+/// no stop reason for an interrupt, the marker was read as a PROMPT and so opened a Turn on the act
+/// that ended one, and `InterruptReadingTests` is where closing it is proved. The field taking no
+/// keys afterwards is still undiagnosed — a status stuck on `running` does not by itself stop a
+/// text view taking keys, so it stays a separate fault until one is shown to cause the other.
 ///
 /// `@MainActor` for the reason every case in this target carries it: `XCUIApplication()` is
 /// isolated to it under Swift 6.
