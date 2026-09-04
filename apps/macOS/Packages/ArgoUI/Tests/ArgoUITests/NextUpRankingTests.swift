@@ -151,6 +151,53 @@ struct NextUpRankingTests {
         try #expect(Self.pick(in: TicketsFixture.reading(of: reading.items.reversed())).number == 4)
     }
 
+    /// A fourth key, ahead of the PRD sequence: #1's own chart already holds a claimed ticket
+    /// (#99), so #2 wins the pick even though #1's chart was served first (#1384).
+    @Test
+    func `an in-flight conflict outranks the PRD sequence beneath it`() throws {
+        let pool = [
+            TicketsFixture.candidate(1, priority: "medium", day: 1),
+            TicketsFixture.candidate(2, priority: "medium", day: 1),
+        ]
+        let charts = [
+            TicketsFixture.chart(7, sequencing: [1, 99]),
+            TicketsFixture.chart(8, sequencing: [2]),
+        ]
+        var reading = TicketsFixture.reading(of: charts + pool)
+        reading.claims = TicketClaims(numbers: [99])
+
+        try #expect(Self.pick(in: reading).number == 2)
+    }
+
+    /// Priority is still the FIRST key: #1 conflicts with the claimed #99 sharing its chart, and
+    /// still wins over a `low`-priority #2 that conflicts with nothing.
+    @Test
+    func `priority still outranks an in-flight conflict`() throws {
+        let pool = [
+            TicketsFixture.candidate(1, priority: "high", day: 1),
+            TicketsFixture.candidate(2, priority: "low", day: 1),
+        ]
+        let charts = [TicketsFixture.chart(7, sequencing: [1, 99])]
+        var reading = TicketsFixture.reading(of: charts + pool)
+        reading.claims = TicketClaims(numbers: [99])
+
+        try #expect(Self.pick(in: reading).number == 1)
+    }
+
+    /// With nothing claimed there is no footprint to compare against, so the new key reads `0` for
+    /// both candidates and the PRD sequence beneath it decides exactly as it did before #1384.
+    @Test
+    func `with nothing claimed the conflict key leaves the PRD sequence deciding`() throws {
+        let pool = [TicketsFixture.candidate(2, priority: "medium", day: 1)]
+            + [TicketsFixture.candidate(1, priority: "medium", day: 9)]
+        let charts = [
+            TicketsFixture.chart(7, sequencing: [99, 1]),
+            TicketsFixture.chart(8, sequencing: [2]),
+        ]
+
+        try #expect(Self.pick(in: TicketsFixture.reading(of: charts + pool)).number == 1)
+    }
+
     private static func pick(in reading: TicketsReading) throws -> NextUp.Pick {
         try NextUpPick.of(reading)
     }

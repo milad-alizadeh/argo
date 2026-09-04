@@ -32,6 +32,11 @@ package enum NextUp: Sendable, Equatable {
         case highPriority
         case unblocked
         case next(chart: String)
+        /// Earned only where a running Session's own claim named a chart AND this pick's chart is
+        /// known and sits outside every one of them — the ranking's in-flight-conflict input, said
+        /// out loud. With no in-flight chart to compare against, this is suppressed rather than
+        /// asserted: "low conflict" against nothing read is not a claim this card may make.
+        case lowConflict
         /// The design's honest fallback, earned only where the other three were not AND a timestamp
         /// was actually read: it is the age tie-break of the ranking, said out loud.
         case oldestUntouched
@@ -45,6 +50,7 @@ extension NextUp.Reason {
         case .highPriority: "high priority"
         case .unblocked: "unblocked"
         case let .next(chart): "next in \(chart)"
+        case .lowConflict: "low conflict"
         case .oldestUntouched: "oldest untouched"
         }
     }

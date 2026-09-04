@@ -23,16 +23,23 @@ extension TicketsReading {
         // the claim is the roster join the room already makes.
         let pool = unblocked
             .filter { $0.state(claimed: claims.numbers.contains($0.number)) == .open }
+        let places = TicketChartPlaces(of: items)
+        let conflicted = inFlightCharts(in: places)
         guard let pick = ranked(pool).first else { return .allRunning }
         return .pick(NextUp.Pick(
-            number: pick.number, title: pick.title, reasons: reasons(for: pick, in: pool),
+            number: pick.number, title: pick.title,
+            reasons: reasons(for: pick, in: pool, places: places, conflicted: conflicted),
         ))
     }
 
-    /// `high priority` → `unblocked` → `next in <PRD>`, cut to `chipLimit`, with `oldest untouched`
-    /// where none of the three was earned. Order is the priority, so the cut drops the weakest
-    /// claim rather than an arbitrary one.
-    private func reasons(for pick: Ticket, in pool: [Ticket]) -> [NextUp.Reason] {
+    /// `high priority` → `unblocked` → `next in <PRD>` → `low conflict`, cut to `chipLimit`, with
+    /// `oldest untouched` where none of the four was earned. Order is the priority, so the cut
+    /// drops the weakest claim rather than an arbitrary one.
+    @MainActor
+    private func reasons(
+        for pick: Ticket, in pool: [Ticket], places: TicketChartPlaces, conflicted: Set<Int>,
+    )
+        -> [NextUp.Reason] {
         var earned: [NextUp.Reason] = []
         // The same rung the ranking sorted by, so the chip and the pick's place cannot disagree.
         if pick.priorityRung == .high {
@@ -45,6 +52,11 @@ extension TicketsReading {
         }
         if let chart = chart(holding: pick.number) {
             earned.append(.next(chart: chart))
+        }
+        // The same input the ranking's `conflict` key reads, said out loud — and only where a
+        // running Session's own claim actually named a chart to compare against (#1384).
+        if isLowConflict(pick, in: places, conflicted: conflicted) {
+            earned.append(.lowConflict)
         }
         // A FALLBACK, and still checked: the card says why this ticket rather than the rest, so
         // with nothing else earned it names the one input left — and only where that was read.
