@@ -63,7 +63,11 @@ export function scenario() {
   mkdirSync(bin, { recursive: true })
   const ranLog = path.join(dir, 'swift.log')
   writeFileSync(path.join(bin, 'swift'), SWIFT_STUB(ranLog))
-  execFileSync('chmod', ['+x', path.join(bin, 'swift')])
+  // `uname` says Darwin, so these cases run on the Linux CI too. Without it `swift-test.sh`
+  // takes its "not macOS" skip and every assertion about what ran sees nothing having run —
+  // green on this machine, eight failures on the runner.
+  writeFileSync(path.join(bin, 'uname'), '#!/bin/sh\necho Darwin\n')
+  execFileSync('chmod', ['+x', path.join(bin, 'swift'), path.join(bin, 'uname')])
 
   const run = (args = [], env = {}) => {
     const result = spawnSync('sh', [path.join(dir, 'apps/macOS/scripts/swift-test.sh'), ...args], {
