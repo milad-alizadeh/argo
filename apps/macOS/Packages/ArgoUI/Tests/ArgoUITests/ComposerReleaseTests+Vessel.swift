@@ -64,6 +64,11 @@ extension ComposerReleaseTests {
     /// Spelled here rather than driven through SwiftUI because nothing in a test can make SwiftUI
     /// render: what these cases claim is that the CHAIN releases the queue for every path the
     /// status takes, and the chain is these two watches over these two values.
+    ///
+    /// So this replay is the one thing in the suite nothing proves. Change the watches on
+    /// `SessionComposer.body` — drop the `Awaiting` level, widen what the boundary reads — and
+    /// every case here stays green while the reported defect comes back. Move the two together, or
+    /// the render is the only place left that would tell.
     func walk(
         _ statuses: [SessionStatus],
         _ log: Log,

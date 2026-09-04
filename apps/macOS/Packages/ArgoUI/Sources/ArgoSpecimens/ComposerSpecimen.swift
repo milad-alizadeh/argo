@@ -188,13 +188,17 @@ struct ComposerSpecimen: View {
     /// Its own state because the pairing is the whole claim — a chip that says only `QUEUED` after
     /// a refused release is indistinguishable from one nothing ever tried, which is the picture
     /// the defect was reported from.
-    static let queueRefused = ComposerDraft(
-        refusal: SessionDriveError.notDrivable.detail,
-        queued: [
+    /// Reached by RUNNING a release the port refuses, rather than by setting the fields behind
+    /// one: which follow-up wears the word is the draft's own answer, and a fixture that stated it
+    /// could draw a pairing the app never produces.
+    static var queueRefused: ComposerDraft {
+        var draft = ComposerDraft(queued: [
             QueuedTurn(text: "And when that is green, open the PR against main."),
             QueuedTurn(text: "Then put the ticket number in the title."),
-        ],
-    )
+        ])
+        draft.flush { _, _ in throw SessionDriveError.notDrivable }
+        return draft
+    }
 
     /// A draft that survived leaving the Session and coming back. Measured back from whenever the
     /// case is rendered rather than stamped once, for the reason the roster's ages are: a fixed

@@ -99,10 +99,9 @@ extension SessionComposer {
     /// The Turn's boundary: the one EDGE in the release, and the only place the drop claim is
     /// spent. Everything else the release does is `release()` below, which is a level.
     ///
-    /// It answers `hasTurnEnded` and never `!isRunning` (#1238). A Turn paused on a permission or
-    /// on a question is not a Turn that ended: dropping a queue there would destroy follow-ups the
-    /// reader still means, and — because the old edge was spent by that reading — the true end
-    /// would then arrive with nothing left to fire.
+    /// It answers `hasTurnEnded` and never `!isRunning` (#1238): a Turn paused on a permission or
+    /// on a question is not a Turn that ended, and dropping a queue there would destroy follow-ups
+    /// the reader still means.
     ///
     /// What was waiting goes rung first, then the queue, for the reason `honour(_:)` states.
     ///

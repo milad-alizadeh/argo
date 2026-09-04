@@ -215,4 +215,20 @@ struct ComposerReleaseTests {
 
         #expect(log.draft.refusedTurn == nil)
     }
+
+    /// Cancelling the refused chip must not hand its word to the one behind it. That one was never
+    /// reached, and a `NOT SENT` over a follow-up nothing tried is the very mislabel the word
+    /// exists to prevent — one click away, in the same row.
+    @Test
+    func `cancelling the refused follow-up leaves the next one merely queued`() {
+        let log = Log()
+        queue("And then open the PR.", in: log)
+        queue("Then tag it.", in: log)
+        walk([.running, .idle], log, refusing: .notDrivable)
+
+        log.draft.cancel(log.draft.queued[0].id)
+
+        #expect(log.draft.queued.map(\.text) == ["Then tag it."])
+        #expect(log.draft.refusedTurn != log.draft.queued[0].id)
+    }
 }

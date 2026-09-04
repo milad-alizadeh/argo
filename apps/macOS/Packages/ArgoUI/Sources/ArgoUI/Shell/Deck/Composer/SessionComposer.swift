@@ -158,6 +158,11 @@ package struct SessionComposer: View {
     /// anything (design decision 11), the same act a click makes; see `open(_:)`.
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
+    /// Where it goes is `isRunning` and NOT `hasTurnEnded`, which the release reads (#1238). The
+    /// two are deliberately different questions at one reading: `asking` holds a live question the
+    /// composer is the only way to answer, so what is typed there goes NOW, while the follow-ups
+    /// queued behind the Turn go on waiting for its end. A Return queued at that moment would be
+    /// an answer the agent never hears.
     func submit() {
         if menus.completes(on: line), complete() {
             return

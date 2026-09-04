@@ -75,9 +75,8 @@ package enum SessionComposerProjection {
         ///
         /// `permission` and `asking` are mid-Turn PAUSES: no Turn is running at either, and
         /// neither is the Turn's end. Releasing a follow-up there would put it to a CLI holding a
-        /// question open, and — worse — it spends the one boundary the release used to watch for,
-        /// so the true end later finds nothing left to fire and the chips stay for good.
-        /// `starting` is not an end either: Argo started the process and has not heard it yet.
+        /// question open. `starting` is not an end either: Argo started the process and has not
+        /// heard it yet.
         ///
         /// Set after the init rather than through it, for the reason `endedByInterrupt` below is.
         /// It defaults to the negation of `isRunning`, which is the reading every fixture built

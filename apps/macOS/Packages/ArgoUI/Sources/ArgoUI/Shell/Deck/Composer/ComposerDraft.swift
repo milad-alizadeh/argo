@@ -33,6 +33,14 @@ package struct ComposerDraft: Equatable {
     /// The follow-ups typed while a Turn was running, oldest first — they are sent in the order
     /// they were typed.
     private(set) var queued: [QueuedTurn]
+    /// The follow-up a refused release stopped at, so its chip can say it was HELD BACK rather
+    /// than simply not reached (#1238). Without it a refused release and one that never ran draw
+    /// the same picture, which is the state #1238 was reported from.
+    ///
+    /// The id and not a flag on the head of the queue: cancelling the refused chip must not hand
+    /// the word to the one behind it, which no release ever reached. A dangling id draws nothing,
+    /// because nothing in the queue matches it any more.
+    private(set) var refusedTurn: QueuedTurn.ID?
     /// When the field was last typed in, as the roster spells a time; `nil` for a draft nobody has
     /// touched.
     var editedAtMs: Int?
@@ -101,9 +109,12 @@ package struct ComposerDraft: Equatable {
     /// through here, so the seam's gesture cannot open one refusal's output under another's line.
     /// The memberwise init is the one other writer, and it takes a bare sentence: a fixture has no
     /// port to have printed anything.
+    /// It also takes the refused follow-up down, so nothing outlives the refusal it belonged to.
+    /// The one caller that has a follow-up to name puts it back straight after — see `flush`.
     private mutating func refused(by line: ComposerSeamLine?) {
         refusal = line?.detail
         refusalOutput = line?.output
+        refusedTurn = nil
     }
 
     /// Say something about this draft that the reader did not do, or take back what was said. Pairs
@@ -128,7 +139,11 @@ package struct ComposerDraft: Equatable {
 
     /// Deliver what was waiting, oldest first, when the Turn it was waiting on ends. A refusal
     /// stops the run where it happened — the turns it never reached stay queued.
-    mutating func flush(via deliver: ComposerSend) {
+    ///
+    /// `package` for the reason `send(via:)` is: a specimen builds the refused state by RUNNING a
+    /// refused release rather than by setting the fields behind one, so the render cannot come to
+    /// draw a state the app never produces.
+    package mutating func flush(via deliver: ComposerSend) {
         guard !queued.isEmpty else { return }
         while let next = queued.first {
             if let line = Self.refusal(
@@ -136,26 +151,14 @@ package struct ComposerDraft: Equatable {
                 attaching: next.attachments,
                 via: deliver,
             ) {
-                return refused(by: line)
+                refused(by: line)
+                // After, never before: standing under a refusal is what takes the last one down.
+                refusedTurn = next.id
+                return
             }
             queued.removeFirst()
             refused(by: nil)
         }
-    }
-
-    /// The follow-up a refused release stopped at, so its chip can say it was HELD BACK rather
-    /// than simply not reached yet (#1238).
-    ///
-    /// The head of the queue by construction: `flush` stops where it was refused, and everything
-    /// ahead of that one has gone. Derived rather than stored for exactly that reason — a second
-    /// field saying which turn it was could come to disagree with the queue it points into.
-    ///
-    /// Without it a refused release and a release that never ran draw the same picture, which is
-    /// the state #1238 was reported from: chips above the field, and no way to tell whether the
-    /// seam's Retry is the remedy or whether nothing tried at all.
-    var refusedTurn: QueuedTurn.ID? {
-        guard refusal != nil else { return nil }
-        return queued.first?.id
     }
 
     /// What an interrupt takes from the composer: the QUEUE, and nothing else (#541).

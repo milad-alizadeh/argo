@@ -2,12 +2,10 @@ import ArgoEngine
 
 /// Whether what is waiting on a Turn may go NOW, read off one Session and one draft (#1238).
 ///
-/// A LEVEL and not an edge, which is the whole of what this type changes. The release used to be
-/// one `onChange` on "a Turn is no longer running": a single edge, spent by whichever reading came
-/// off `.running` first — and `permission` and `asking` both do, mid-Turn. Spent early, the true
-/// end fired nothing, and the follow-up stayed a chip for ever with no second chance to go.
-///
-/// So the composer asks this at every movement in `Awaiting` instead, as well as at the boundary.
+/// A LEVEL and not an edge, which is the whole of what this type is for. One edge is one chance:
+/// whatever consumes it — a walk holding the release, a standing refusal, a boundary that fired at
+/// a pause the Turn came back from — strands the queue with nothing left to try it again. So the
+/// composer asks this at every movement in `Awaiting`, as well as at the boundary.
 struct ComposerRelease {
     /// What the draft brings to the decision, as one `Equatable` value the vessel can watch.
     ///
