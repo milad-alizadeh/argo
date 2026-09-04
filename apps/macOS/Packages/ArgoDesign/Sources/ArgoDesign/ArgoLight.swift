@@ -71,12 +71,9 @@ public enum ArgoLight {
         ("planShade", planShade), ("orbDim", orbDim),
     ]
 
-    /// Roles nothing draws yet. The whole family waits on the Metal renderer; it is declared here
-    /// because this is where it was decided, and because the ticket that writes the shader may not
-    /// re-derive a number it can read (see `ArgoMotion.unwired` for why an unwired role stays and
-    /// why it says so).
-    public static let unwired: [String: String] = [
-        "key": "the Metal renderer", "fill": "the Metal renderer",
-        "ambient": "the Metal renderer",
-    ]
+    /// Roles nothing draws yet — none, since #1144. All three lamps are spent by `AtlasQuad.metal`,
+    /// which takes them as uniforms rather than re-deriving them, which is what this family was
+    /// written down ahead of the shader for. (See `ArgoMotion.unwired` for why an unwired role
+    /// stays and why it says so.)
+    public static let unwired: [String: String] = [:]
 }
