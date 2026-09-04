@@ -115,8 +115,11 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
 7. **A ready claim with an open pull request never draws.** The claim is CONVENTION, arriving
    over the companion channel (#1335); the pull request is DERIVED from the code host. The pull
    request wins.
-8. **The row does not move.** No animation on any mark. A list where every row pulses out of
-   phase is a list nobody can scan.
+8. **The row does not move, except the running dot's own halo.** No animation on any mark but the
+   one operation the row has to report: the running dot's halo breathes, one rise and fall in
+   place per pass of `ArgoMotion.working`, never reaching the row's ground. It never travels and
+   it never switches, so it never reads as a second pulse out of phase with the row beside it — a
+   list where every row pulsed out of phase would be a list nobody could scan.
 9. **A fold sums or says nothing.** Its Subagent dots are summed across the runs it hides. It
    draws **no Plan**: four to-do lists do not add up to one.
 
