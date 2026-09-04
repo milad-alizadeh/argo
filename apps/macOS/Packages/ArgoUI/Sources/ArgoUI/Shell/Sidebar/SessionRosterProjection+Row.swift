@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import Foundation
 
 /// One roster row and the two passes that build one — split off `SessionRosterProjection.swift`
 /// so neither file owns two subjects. The `Row` and everything that constructs one sit together,
@@ -95,6 +96,18 @@ extension SessionRosterProjection {
         /// from its neighbours otherwise. One slot, so the line never says both.
         var secondaryFact: String? {
             activity ?? toldApart
+        }
+
+        /// When the open Turn began, where Argo owns the stamp — what the dot's pulse ages off, so
+        /// a Turn six minutes in beats at the rung its age has earned rather than at the one the
+        /// row's own first frame would give it (#1291).
+        ///
+        /// `nil` for every other reading of the slot: an observed Session's `output … ago` is when
+        /// a record last LANDED, and ageing a wait off that would claim a Turn start Argo never
+        /// saw. Those rows fall back to when the row appeared, which is the feed's own answer.
+        var turnStartedAt: Date? {
+            guard case let .turn(startedAtMs) = clock else { return nil }
+            return Date(epochMs: startedAtMs)
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only

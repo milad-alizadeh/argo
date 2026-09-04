@@ -78,7 +78,7 @@ package struct SessionRow: View {
                 .foregroundStyle(argo.color.text.tertiary)
                 .accessibilityHidden(true)
         } else {
-            SessionStateIndicator(state: row.state)
+            SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
         }
     }
 

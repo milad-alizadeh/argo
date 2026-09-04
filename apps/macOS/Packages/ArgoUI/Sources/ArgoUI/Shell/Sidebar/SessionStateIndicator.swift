@@ -17,6 +17,10 @@ struct SessionStateIndicator: View {
     private static let haloReach: CGFloat = 3
 
     let state: ArgoOperationalState?
+    /// When the Turn this dot is reporting began, where Argo owns that stamp. It is what the loop
+    /// ages the pass off; `nil` leaves it ageing from the row's own first frame, which is all a
+    /// Session Argo only observes has ever earned.
+    var turnStartedAt: Date?
 
     var body: some View {
         Group {
@@ -36,8 +40,8 @@ struct SessionStateIndicator: View {
     }
 
     /// The pulse, driven by `ArgoMotion.working` one pass at a time through the loop the feed's
-    /// live surfaces already run off. The period is the ladder's, so a dot on a Turn six minutes
-    /// in beats slower than one three seconds in, and the glow cools with it.
+    /// live surfaces already run off. The period is `ArgoWaitAge`'s, read off `turnStartedAt`, so a
+    /// dot on a Turn six minutes in beats slower than one three seconds in and glows lower with it.
     ///
     /// Under Reduce Motion the loop stops and there is no halo at all — a loop has no shorter
     /// answer. The dot keeps its FULL running tint there, so the still still reads as running:
@@ -57,6 +61,10 @@ struct SessionStateIndicator: View {
                         .blur(radius: ArgoElevation.bloom.blur)
                 }
             }
+            // The loop ages the pass off this. Without it a window opened onto a Turn six minutes
+            // in would beat at the freshest rung, and scrolling the row off and back would restart
+            // the wait — the two readings the feed can only degrade to and the roster need not.
+            .environment(\.argoWaitStarted, turnStartedAt)
         }
     }
 }

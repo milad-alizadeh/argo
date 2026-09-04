@@ -195,12 +195,13 @@ package enum SessionHeaderProjection {
         /// The label alone is what the line SAID; the title was on the label's own hover, and with
         /// that hover gone this is the only place left for it.
         ///
-        /// Joined the way `IssueReading.words` joins — the label already spells `Issue #692`, so
-        /// this cannot go through it, but a Ticket read here and a Ticket read on the ⓘ panel must
-        /// not be punctuated two ways (#1291).
+        /// The label already spells `Issue #692`, so this cannot go through `IssueReading.words` —
+        /// it takes that reading's own `joiner` instead, or a Ticket read here and a Ticket read on
+        /// the ⓘ panel would be punctuated two ways (#1291).
         private var issueLine: String? {
             guard let issue else { return nil }
-            return [issue.label, issue.detail].compactMap(\.self).joined(separator: ": ")
+            return [issue.label, issue.detail].compactMap(\.self)
+                .joined(separator: IssueReading.joiner)
         }
     }
 

@@ -6,16 +6,9 @@ import SwiftUI
 /// The second line in every shape it comes in (#1291): a row carrying both facts, a row with only
 /// the clock, a row with only the activity, and a row whose activity is longer than the sidebar.
 ///
-/// The claims a still can make here are the two the design turns on — that the line's first
-/// character sits on the title's x rather than the dot's, and that the duration reads first and
-/// keeps every character while the fact beside it gives up its tail.
-///
-/// Its own fixture rather than the shared preview: that roster has no row with both facts at once,
-/// and "both" is the arrangement the two-ends rule #1199 landed was built around.
+/// Its own fixture rather than the shared preview, which has no row carrying both facts at once.
 struct RosterSecondLineSpecimen: View {
-    /// Whether movement is off. The running dot's pulse has no shorter answer under Reduce Motion,
-    /// so this is the OTHER half of that design — the dot at its full running tint with nothing
-    /// moving, which is the half a PNG can judge.
+    /// Whether movement is off — `argoStillsMotion`, which is the only way a PNG catches the still.
     var isStill = false
 
     static var rows: [SessionRosterProjection.Row] {

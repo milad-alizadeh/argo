@@ -75,13 +75,10 @@ enum SessionTitle {
     /// CLI's own derived summary, a provider's issue title, and a name somebody typed — so it is
     /// taken out HERE, where the chain resolves, rather than three times over.
     ///
-    /// A colon and not a hyphen: the dash was setting a subject against what is said about it,
-    /// which is the colon's own job, and a hyphen at that width reads as part of a word. The space
-    /// before it goes with it, so `Roster row — the pulse` reads `Roster row: the pulse`.
-    ///
-    /// It is a rule about a TITLE and not about the house form: `IssueReading.words` still joins a
-    /// number to its words with a dash, because the ⓘ panel's Issue fact and the link picker's
-    /// options are readings of a Ticket rather than names of a Session.
+    /// `IssueReading.joiner` and not a hyphen: the dash was setting a subject against what is said
+    /// about it, which is that separator's own job, and a hyphen at that width reads as part of a
+    /// word. The space before it goes with it, so `Roster row — the pulse` reads
+    /// `Roster row: the pulse`.
     private static func spelled(_ title: String) -> String {
         guard title.contains(emDash) else { return title }
         let parts = title
@@ -90,7 +87,7 @@ enum SessionTitle {
             .filter { !$0.isEmpty }
         // A title that was nothing BUT dashes keeps what it had: a blank row says less than a
         // strange one, and there is no reading behind an empty name to fall back to.
-        return parts.isEmpty ? title : parts.joined(separator: ": ")
+        return parts.isEmpty ? title : parts.joined(separator: IssueReading.joiner)
     }
 
     private static let emDash: Character = "—"

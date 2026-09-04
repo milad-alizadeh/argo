@@ -26,4 +26,10 @@ public extension Date {
     var epochMs: Int {
         Int(timeIntervalSince1970 * 1000)
     }
+
+    /// The same conversion back, for the surfaces that hand a stamp to something taking a `Date` —
+    /// SwiftUI's environment among them. Beside its inverse, so the two cannot round differently.
+    init(epochMs: Int) {
+        self.init(timeIntervalSince1970: Double(epochMs) / 1000)
+    }
 }
