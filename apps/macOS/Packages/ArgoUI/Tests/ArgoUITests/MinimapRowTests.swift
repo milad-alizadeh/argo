@@ -128,7 +128,7 @@ struct MinimapRowTests {
     }
 
     @Test(arguments: [
-        (FeedMark.turnEnded(.endTurn), true),
+        (FeedMark.turnEnded, true),
         (FeedMark.interrupted, true),
         (FeedMark.compacted, false),
         (FeedMark.working, false),

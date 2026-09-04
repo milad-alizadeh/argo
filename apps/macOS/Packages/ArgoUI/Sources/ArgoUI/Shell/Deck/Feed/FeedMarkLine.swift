@@ -23,7 +23,7 @@ package struct FeedMarkLine: View {
     package var body: some View {
         switch mark {
         case .working: FeedWorkingThread()
-        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .permissionExpired,
+        case .compacted, .turnEnded, .handedOff, .interrupted, .permissionExpired,
              .starting, .excerpted, .runFactChanged:
             punctuation
         }
@@ -89,9 +89,9 @@ package struct FeedMarkLine: View {
     }
 }
 
-// A stop reason outside the vocabulary reads `unknown` rather than the nearest guess.
-#Preview("Marks — a turn that ended for a reason nothing could read") {
-    FeedMarkLine(mark: .turnEnded(.unknown))
+// A turn's end is the rule alone, whatever reason the host reported for it (#1248).
+#Preview("Marks — a turn that ended") {
+    FeedMarkLine(mark: .turnEnded)
         .padding(ArgoFeedRow.inset)
         .frame(width: 720)
         .argoDeckSurface()

@@ -15,7 +15,7 @@ import SwiftUI
 
 #Preview("Marks — a Permission the gate refused because nobody answered") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
-        FeedMarkLine(mark: .turnEnded(.endTurn))
+        FeedMarkLine(mark: .turnEnded)
         FeedMarkLine(mark: .permissionExpired(FeedProjection.previewExpiry))
     }
     .padding(ArgoFeedRow.inset)

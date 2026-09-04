@@ -13,15 +13,10 @@ extension FeedProjection {
     /// fact about how many BYTES were read, and every fixture here is handed to the projection
     /// whole.
     ///
-    /// A spend is reported on EACH end, and that is the point of the fixture rather than dressing:
-    /// `longTranscript` reports none anywhere, so a still built on its ends alone shows no roll-up
-    /// at the foot whether the withholding is there or not. With these two, the reading a reader
-    /// would have been shown is `session · 2×` what either end says.
+    /// A spend is reported on EACH end, so the reading carries the two figures a record read in two
+    /// halves really does report. No feed row sums them: the deck header is the one surface that
+    /// states a Session's spend (#1248).
     static let previewExcerptedRows = rows(from: excerptedEvents)
-
-    /// The same two ends WITHOUT the seam between them — the reading whose foot does carry the
-    /// roll-up, so a suite can hold the pair against each other.
-    static let previewWholeOfExcerptEvents = excerptedEvents.filter { $0 != .excerpted }
 
     private static let excerptedEvents: [TranscriptEvent] =
         TranscriptFixtures.longTranscript.prefix(excerptEndRows)
@@ -33,9 +28,9 @@ extension FeedProjection {
     /// work rather than at the top of an otherwise empty column.
     private static let excerptEndRows = 16
 
-    /// What one end of that record reported spending. One value on both ends, so the total a
-    /// reader must NOT be shown is exactly double it — the easiest wrong number to recognise in a
-    /// still.
+    /// What one end of that record reported spending. One value on both ends, so a surface that
+    /// wrongly sums the two halves reads exactly double it — the easiest wrong number to recognise
+    /// in a still.
     private static let excerptEndSpend = Usage(
         inputTokens: 4000,
         outputTokens: 500,

@@ -23,7 +23,7 @@ struct FeedCopyTests {
         .thought(words)
     }
 
-    private static let ended = FeedRow.Content.mark(.turnEnded(.endTurn))
+    private static let ended = FeedRow.Content.mark(.turnEnded)
 
     private static func feed(_ contents: FeedRow.Content...) -> [FeedRow] {
         contents.enumerated().map { FeedRow(id: $0.offset, content: $0.element) }

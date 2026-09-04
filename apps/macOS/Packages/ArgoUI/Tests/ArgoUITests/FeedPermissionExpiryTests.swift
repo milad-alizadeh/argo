@@ -28,14 +28,14 @@ struct FeedPermissionExpiryTests {
         )
     }
 
-    /// Above the roll-up and below the work, and it leads nowhere — the handoff link stays the one
-    /// pressable row in the feed.
+    /// Below the work, and it leads nowhere — the handoff link stays the one pressable row in the
+    /// feed.
     @Test
-    func `the row sits under the work and above what the Session spent`() {
+    func `the row sits under the work the record holds`() {
         let rows = FeedProjection.rows(from: Self.transcript, expired: [Self.expiry])
 
-        #expect(rows.last?.content == .mark(.spent(Self.spend)))
-        #expect(rows.dropLast().last?.content == .mark(.permissionExpired(Self.expiry)))
+        #expect(rows.last?.content == .mark(.permissionExpired(Self.expiry)))
+        #expect(rows.dropLast().last?.content == .mark(.turnEnded))
         #expect(FeedMark.permissionExpired(Self.expiry).handoff == nil)
     }
 
@@ -54,7 +54,7 @@ struct FeedPermissionExpiryTests {
     func `a Session that lost no call reads exactly as it did before`() {
         let rows = FeedProjection.rows(from: Self.transcript)
 
-        #expect(rows.last?.content == .mark(.spent(Self.spend)))
+        #expect(rows.last?.content == .mark(.turnEnded))
         #expect(rows.allSatisfy { $0.content.expiry == nil })
     }
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// A Turn thinking, drawn as one ion filament crossing the whole measure.
 ///
 /// **Nothing is drawn at rest.** The line exists only where the ion is, and that is not a
-/// flourish: `FeedMark.turnEnded(.endTurn)` already draws as a full-width hairline with no words,
+/// flourish: `FeedMark.turnEnded` already draws as a full-width hairline with no words,
 /// so a resting track under this would read as the mark meaning the opposite.
 ///
 /// The lane is the zone's full width — `FeedTableModel` holds this one row to no gutter and no

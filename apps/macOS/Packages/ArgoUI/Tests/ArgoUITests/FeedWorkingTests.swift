@@ -114,15 +114,15 @@ struct FeedWorkingTests {
         #expect(FeedMark.working.spoken == "The agent is working")
     }
 
-    /// Under the work and above the three whole-session statements. It is the newest moment of the
-    /// reading, so it holds the place the next row will take — which is what makes it read as the
-    /// reading continuing rather than as a footnote about it.
+    /// Under the work the record holds. It is the newest moment of the reading, so it holds the
+    /// place the next row will take — which is what makes it read as the reading continuing rather
+    /// than as a footnote about it.
     @Test
-    func `the row sits under the work and above what the Session spent`() {
+    func `the row sits under the work the record holds`() {
         let rows = FeedProjection.rows(from: Self.transcript, working: true)
 
-        #expect(rows.last?.content == .mark(.spent(Self.spend)))
-        #expect(rows.dropLast().last?.content == .mark(.working))
+        #expect(rows.last?.content == .mark(.working))
+        #expect(rows.dropLast().last?.content == .message("Running that now."))
     }
 
     /// The commonest case by far, and the one a slot at the foot of every reading would break.
@@ -130,7 +130,7 @@ struct FeedWorkingTests {
     func `a Session that is doing nothing reads exactly as it did before`() {
         let rows = FeedProjection.rows(from: Self.transcript)
 
-        #expect(rows.last?.content == .mark(.spent(Self.spend)))
+        #expect(rows.last?.content == .message("Running that now."))
         #expect(rows.allSatisfy { $0.content != .mark(.working) })
     }
 

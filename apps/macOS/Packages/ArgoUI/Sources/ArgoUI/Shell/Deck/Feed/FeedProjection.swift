@@ -37,14 +37,14 @@ package enum FeedProjection {
         let looked = FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read)).contents)
         let shown = FeedUnreadableRun.folded(FeedGalleryFold.galleried(looked))
         let work = offering(FeedSurveyFold.rejoined(FeedWorkFold.folded(shown)), asking)
-        // The link goes BELOW the roll-up, at the very foot.
+        // The link goes at the very foot.
         // The gate's question first, and the reported one read against the work AND it: the two
         // channels share no id, so the only thing that can tell one question from two is the words.
         let held = standing(asking, over: work)
         return (work + held + self.reported(reported, asking, over: work + held) +
             startingUp(starting) +
             inFlight(working, over: work) + unanswered(expired) +
-            rolledUp(events) + chained(handedOff)).enumerated()
+            chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
             }
@@ -79,45 +79,14 @@ package enum FeedProjection {
         handedOff.map { [.mark(.handedOff($0))] } ?? []
     }
 
-    /// The calls the gate refused because nobody answered, at the foot of the work they interrupted
-    /// and above the roll-up, in the order they expired.
+    /// The calls the gate refused because nobody answered, at the foot of the work they
+    /// interrupted, in the order they expired.
     ///
     /// At the foot rather than in place, and that is a limit: the hook payload names a tool and its
     /// input, never the record's own id for the call, so there is no honest position in the stream
     /// to put the row at.
     private static func unanswered(_ expired: [PermissionExpiry]) -> [FeedRow.Content] {
         expired.map { .mark(.permissionExpired($0)) }
-    }
-
-    /// What the Session spent, at the foot of the reading.
-    ///
-    /// At the FOOT, the one thing in the feed not in chronological position. A Session whose record
-    /// reported no spend gets no marker at all: a roll-up reading zero would claim the work was
-    /// free rather than that nobody said what it cost.
-    ///
-    /// BOTH grains: the turns' own spend, and the delegated spend that only ever appears on the
-    /// call that handed the work over. Summed from what the record reported and nothing else.
-    ///
-    /// Nothing at all on a BOUNDED reading — the withholding named once, on the predicate, and
-    /// spent here and by the header alike (`[TranscriptEvent].isBoundedReading`).
-    private static func rolledUp(_ events: [TranscriptEvent]) -> [FeedRow.Content] {
-        guard !events.isBoundedReading else { return [] }
-        let spent = events.reduce(nil) { running, event -> Usage? in
-            Usage.total(running, reported(in: event))
-        }
-        return spent.map { [.mark(.spent($0))] } ?? []
-    }
-
-    private static func reported(in event: TranscriptEvent) -> Usage? {
-        switch event {
-        case let .usage(usage): usage
-        case let .toolCallOutcome(outcome): outcome.usage
-        case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .originSession,
-             .title, .cwd,
-             .model, .effort, .branch, .mode, .entry, .turnEnded, .interrupted, .plan, .compaction,
-             .queued,
-             .unreadableLine, .skillLoaded, .superseded, .excerpted: nil
-        }
     }
 
     /// Where the Session is working, which is what every address in the feed is said relative to.
@@ -183,13 +152,14 @@ package enum FeedProjection {
         // Punctuation: what happened TO the reading rather than in it. Each stays exactly where the
         // record put it.
         case .compaction: .mark(.compacted)
-        case let .turnEnded(reason): .mark(.turnEnded(reason))
+        case .turnEnded: .mark(.turnEnded)
         // A line nothing could parse. It gets a row rather than being dropped: the line existed,
         // something wrote it, and a feed that skips it silently cannot tell a Session that was
         // quiet from a record this reader came up short on.
         case let .unreadableLine(raw): .unreadable(FeedUnreadable(lines: [raw]))
-        // None of these is news of its own: an outcome is carried by the call's row, a spend is one
-        // term of the roll-up at the foot, and a queue note says how the prompt below it arrived.
+        // None of these is news of its own: an outcome is carried by the call's row, a spend is
+        // the deck header's to state (#1248), and a queue note says how the prompt below it
+        // arrived.
         // The stance is one of these too, and pointedly: Mode is standing rather than something
         // that happened, so it belongs on the composer's footer and not as a row in the reading.
         // The seam of a bounded read, drawn where it happened: everything above it is older than

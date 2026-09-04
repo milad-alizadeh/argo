@@ -3,9 +3,8 @@ import ArgoEngine
 import Testing
 
 /// The marks a reading is punctuated by, each read where its event happened: where history was
-/// condensed, where a turn ended and why, and where a bounded read cut the record. Nothing here is
-/// about the spend rolled up at the foot of the reading, which — the seam's withholding of it
-/// included — is `FeedSpendRollUpTests`.
+/// condensed, where a turn ended, and where a bounded read cut the record. Nothing here is about
+/// what a reading says a Session spent, which is `FeedSpendTests`.
 @Suite("Feed punctuation")
 struct FeedPunctuationTests {
     @Test
@@ -21,43 +20,37 @@ struct FeedPunctuationTests {
         ])
     }
 
-    /// The host's own word for why, carried through — `unknown` included, since the nearest-looking
-    /// guess is what degrade-down forbids.
+    /// Every reason the host can report, and one it cannot read at all, land on the same mark: the
+    /// reason is not news to the reader, and `turn ended · unknown` on a fresh Session says less
+    /// than the rule alone (#1248).
     @Test(arguments: [
         StopReason.endTurn, .maxTokens, .maxTurnRequests, .refusal, .cancelled, .unknown,
     ])
-    func `a turn's end names the reason that ended it`(reason: StopReason) {
+    func `a turn's end is one mark, whatever reason ended it`(reason: StopReason) {
         let rows = FeedProjection.rows(from: [.turnEnded(reason)])
 
-        #expect(FeedFixture.marks(in: rows) == [.turnEnded(reason)])
+        #expect(FeedFixture.marks(in: rows) == [.turnEnded])
     }
 
+    /// The reason the record could not read is dropped here rather than guessed at, exactly as the
+    /// readable ones are.
     @Test
-    func `an unreadable stop reason reads unknown rather than the nearest guess`() {
+    func `an unreadable stop reason draws the same rule as a readable one`() {
         let rows = FeedProjection.rows(from: [.turnEnded(StopReason(reported: "wandered off"))])
 
-        #expect(FeedFixture.marks(in: rows).first?.words == "turn ended · unknown")
+        #expect(FeedFixture.marks(in: rows) == [.turnEnded])
     }
 
     @Test
-    func `a turn that simply ended is the rule alone`() {
-        #expect(FeedMark.turnEnded(.endTurn).words == nil)
-    }
-
-    /// The bound on the silence above: a turn cut off by a ceiling or ended in a refusal is a
-    /// different event from one that finished.
-    @Test(arguments: [
-        StopReason.maxTokens, .maxTurnRequests, .refusal, .cancelled, .unknown,
-    ])
-    func `an end that was not ordinary keeps its reason on screen`(reason: StopReason) {
-        #expect(FeedMark.turnEnded(reason).words == "turn ended · \(reason.rawValue)")
+    func `a turn that ended is the rule alone`() {
+        #expect(FeedMark.turnEnded.words == nil)
     }
 
     /// Silence on screen is not silence to a screen reader: the hairline is a shape, and a shape
     /// does not carry.
     @Test
-    func `the ordinary end is still spoken`() {
-        #expect(FeedMark.turnEnded(.endTurn).spoken == "Turn ended")
+    func `the end is still spoken`() {
+        #expect(FeedMark.turnEnded.spoken == "Turn ended")
     }
 
     /// The seam a bounded read leaves, at the place the record was cut: a head stitched to a tail

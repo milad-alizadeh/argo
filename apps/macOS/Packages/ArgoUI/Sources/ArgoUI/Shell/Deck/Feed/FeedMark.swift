@@ -6,11 +6,10 @@ import ArgoEngine
 package enum FeedMark: Equatable, Sendable {
     /// History was condensed here. The resume chain stitches across it; the reading says so.
     case compacted
-    /// A Turn ended, and which reason ended it. An unreadable reason arrives as `.unknown` and is
-    /// drawn as the word `unknown`.
-    case turnEnded(StopReason)
-    /// What the Session has spent, as the record reported it.
-    case spent(Usage)
+    /// A Turn ended. The rule alone, with no words let into it: the reason the host reported is
+    /// not news to the person reading, and a caption on every turn breaks the reading into pieces
+    /// (#1248). The reason itself is not lost — it stays on the event, where the engine reads it.
+    case turnEnded
     /// The work left here for a fresh Session, and where it went — see `FeedHandoff`. The feed's
     /// one row that is a way out of the reading rather than a part of it.
     case handedOff(FeedHandoff)
@@ -53,7 +52,7 @@ extension FeedMark {
     var ink: FeedInk {
         switch self {
         case .permissionExpired: .attention
-        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working, .starting,
+        case .compacted, .turnEnded, .handedOff, .interrupted, .working, .starting,
              .excerpted, .runFactChanged:
             .boundary
         }
@@ -65,13 +64,10 @@ extension FeedMark {
     var words: String? {
         switch self {
         case .compacted: "compacted"
-        // An ordinary end is punctuation and nothing else — a word on it would repeat, once per
-        // turn, what the rule already says.
-        case .turnEnded(.endTurn): nil
-        // Every OTHER reason keeps its word: a turn cut off by a token ceiling or ended in a
-        // refusal is not the same event as one that finished.
-        case let .turnEnded(reason): "turn ended · \(reason.rawValue)"
-        case let .spent(usage): "session · \(FeedSpend.sessionWords(usage))"
+        // An end is punctuation and nothing else — a word on it would repeat, once per turn, what
+        // the rule already says, and `turn ended · unknown` on a fresh Session says less than the
+        // rule alone (#1248).
+        case .turnEnded: nil
         // One word where the record has five: the rule it is let into already says a turn ended
         // here, so `[Request interrupted by user]` would restate the feed's own punctuation.
         case .interrupted: "interrupted"
@@ -102,7 +98,7 @@ extension FeedMark {
     var endsTurn: Bool {
         switch self {
         case .turnEnded, .interrupted: true
-        case .compacted, .spent, .handedOff, .permissionExpired, .working, .starting,
+        case .compacted, .handedOff, .permissionExpired, .working, .starting,
              .excerpted, .runFactChanged: false
         }
     }
@@ -120,7 +116,7 @@ extension FeedMark {
     /// what it SOUNDS like rather than inheriting a fallback written for turn boundaries.
     package var spoken: String {
         switch self {
-        case .compacted, .turnEnded, .spent, .handedOff: words ?? "Turn ended"
+        case .compacted, .turnEnded, .handedOff: words ?? "Turn ended"
         // A sentence rather than the caption: "interrupted" alone read out is an adjective with
         // nothing to attach to.
         case .interrupted: "The Turn was interrupted"

@@ -118,7 +118,7 @@ struct FeedTypesetCostTests {
                 id: at,
                 content: at.isMultiple(of: 2)
                     ? .call(RowKindFixture.answeredCall)
-                    : .mark(.turnEnded(.endTurn)),
+                    : .mark(.turnEnded),
             )
         }
     }
