@@ -7,11 +7,31 @@ prove a change to them.
 ## What runs where
 
 `bun run quality` is biome, duplication and Swift. `quality:swift` (SwiftFormat in check mode,
-SwiftLint, package boundaries) needs a macOS runner, so it sits on the `macos` CI job alongside
-the build and the swift-testing suites. Linux CI runs biome, duplication and `test:hooks` — the
-only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint and
-boundaries over staged Swift. The design-token gate is inside boundaries as edge 7 (#1088), so it
-runs on CI now rather than on pre-commit alone — `check:design-tokens` is the same scan by hand.
+SwiftLint, package boundaries) needs a Mac, so it runs **at push time, not on CI**:
+`.husky/pre-push` calls `scripts/swift-gate.sh`, which runs `quality:swift`, the app build and the
+swift-testing suites, in that order, under `ARGO_REQUIRE_SWIFT_TOOLS=1`. A failing check refuses
+the push. It was a `macos-26` CI job until #1340, where it was measured at about 99% of this
+repo's Actions bill for repeating, from a cold cache, what the author's Mac had already built.
+
+Two things follow from where it now runs, and both are load-bearing:
+
+- **It is scoped by `ci.yml`'s old pathspec**, kept character for character inside
+  `swift-gate.sh`, so a markdown-only or docs-only push skips the Swift work exactly as the CI
+  job did. `scripts/swift-gate.test.mjs` compares the two and fails if they drift.
+- **`core.hooksPath` is absolute into the main checkout**, so a push from any worktree runs the
+  main checkout's `.husky/pre-push`. The hook only gates anything once it is on `main`; the
+  script it calls is resolved from the pushing tree, so the checks are always of the pushed code.
+  Husky also exits 0 when the hook file is missing, which makes deleting it a silent pass —
+  `swift-gate.test.mjs` is the case that catches that.
+
+Run the gate by hand any time with `sh scripts/swift-gate.sh`, and skip it for a deliberate
+work-in-progress push with `ARGO_SKIP_SWIFT_GATE=1 git push`.
+
+Linux CI runs biome, duplication and `test:hooks` — the only executable suite there, and the
+suite that gates the push-time gate. Pre-commit runs lint-staged: biome, then SwiftFormat,
+SwiftLint and boundaries over staged Swift. The design-token gate is inside boundaries as edge 7
+(#1088), so it runs in the push gate rather than on pre-commit alone — `check:design-tokens` is
+the same scan by hand.
 
 Nothing here is optimised by default: `bun run build` is Debug unless asked otherwise, and
 `swift-test.sh` takes no configuration at all, so every suite runs `-Onone`. What each
@@ -19,7 +39,7 @@ configuration names, how to build the optimised app, and what that is worth:
 `docs/agents/build-configurations.md`.
 
 Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the
-optimiser has seen (ADR-0028). It is deliberately not on the `macos` job: the counts are the half a
+optimiser has seen (ADR-0028). It is deliberately not in the push gate: the counts are the half a
 debug build cannot get wrong, and they gate every push.
 
 One optimised run has a workflow of its own — `figures.yml`, on `macos-26`, on manual dispatch,

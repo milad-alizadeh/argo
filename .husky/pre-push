@@ -1,0 +1,31 @@
+# The gate that used to be a macOS runner (#1340).
+#
+# ci.yml's `macos` job is gone: it billed about $50 a day to repeat, from a cold cache, work
+# the author's own Mac does. This hook is where that gate went. It blocks — a push that
+# fails it does not leave the machine, which catches a breach one step EARLIER than CI did,
+# not later.
+#
+# Override, for the rare deliberate push of work in progress:
+#   ARGO_SKIP_SWIFT_GATE=1 git push ...
+# A skip has a name and lands in the shell history that took it. There is no silent one.
+#
+# Two mechanics worth knowing, because both can make this file look like it ran when it did
+# not:
+#
+#   - `core.hooksPath` is an absolute path into the SHARED MAIN CHECKOUT's `.husky/_`, so a
+#     push from any worktree runs the main checkout's copy of THIS file. It therefore only
+#     starts gating anything once this change is on `main`. The script it calls is resolved
+#     below from the pushing tree, so the checks themselves are always the pushed code's.
+#   - husky's wrapper does `[ ! -f "$s" ] && exit 0`: delete this file and every push passes
+#     silently. `scripts/swift-gate.test.mjs` is what proves the gate still fires.
+if [ -n "$ARGO_SKIP_SWIFT_GATE" ]; then
+  echo "pre-push: swift gate skipped by ARGO_SKIP_SWIFT_GATE" >&2
+else
+  # GIT_DIR is set by git for the hook and would send `--show-toplevel` to the wrong tree.
+  # The working directory is the tree being pushed, which is the one whose code to check.
+  root=$(unset GIT_DIR GIT_WORK_TREE; git rev-parse --show-toplevel)
+  # No ref list is read from stdin: the script's base is the fork point with origin/main,
+  # which is the range CI compared too, and consuming stdin here would eat what git feeds
+  # the hook.
+  sh "$root/scripts/swift-gate.sh"
+fi

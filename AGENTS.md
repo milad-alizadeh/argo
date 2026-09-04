@@ -58,8 +58,16 @@ message states its rule. The edges and their reasoning: `docs/agents/module-boun
 Every rule in `bun run quality` is an **error, never a warning**, and the caps live in
 `biome.jsonc` and `.swiftlint.yml`, not in prose. When a gate fires, fix it or ratchet it in the
 config: **never suppress inline, never raise a global cap.** Two of the configs fail open when
-commented, so no gate is proved by exit code alone. What runs on which CI job, where an exemption
-goes, and the verification recipe: `docs/agents/quality-gates.md`.
+commented, so no gate is proved by exit code alone.
+
+**The Swift gate runs at push time, not on CI** — `.husky/pre-push` calls `scripts/swift-gate.sh`
+(`quality:swift`, the build, the swift-testing suites), and a failure refuses the push (#1340).
+Run it by hand with `sh scripts/swift-gate.sh`; skip it deliberately, and only for
+work in progress, with `ARGO_SKIP_SWIFT_GATE=1 git push`. CI is Linux only now, so **a green PR
+says nothing about Swift**: never read one as proof the app builds.
+
+Where an exemption goes, why the hook only fires once it is on `main`, and the verification
+recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 
