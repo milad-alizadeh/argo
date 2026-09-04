@@ -19,6 +19,15 @@ public enum AtlasMapError: Error, Equatable {
     /// Two nodes on one Plate with the same name, which is one path naming two files.
     case repeatedName(String)
 
+    /// A node labelled one kind and carrying the other's contents — a Plot holding children, or
+    /// a Plate holding measures. Refused rather than read past, because reading past a mislabelled
+    /// folder takes every file under it off the map with nothing saying one went missing.
+    case contradictoryNode(String)
+
+    /// A node whose path is not the one the Plate it stands on gives it. A write-side failure: a
+    /// caller can build such a tree in memory, and writing it would re-parent the subtree.
+    case misplacedNode(String)
+
     /// The Map in hand cannot be written out. JSON has no literal for a measure that is not a
     /// finite number, so a generator that divided by zero is caught here rather than at the read.
     case unwritable(String)

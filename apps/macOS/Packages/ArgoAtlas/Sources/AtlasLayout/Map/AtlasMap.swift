@@ -15,8 +15,16 @@ public struct AtlasMap: Equatable, Sendable {
     public let commit: String?
     public let root: AtlasPlate
 
+    /// `measuredAt` is held to the whole second the file can spell.
+    ///
+    /// ISO 8601 as written here carries no fraction, so a generator stamping a Map with `Date()`
+    /// would otherwise hold a value the file cannot keep: the Map read back would differ from the
+    /// Map written, by up to a second, on the one field a later ticket reads for staleness.
+    /// Truncating on the way in makes the type carry only what the file carries.
     public init(measuredAt: Date, commit: String?, root: AtlasPlate) {
-        self.measuredAt = measuredAt
+        self.measuredAt = Date(
+            timeIntervalSince1970: measuredAt.timeIntervalSince1970.rounded(.down),
+        )
         self.commit = commit
         self.root = root
     }

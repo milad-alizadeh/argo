@@ -74,6 +74,54 @@ struct AtlasMapFailureTests {
         }
     }
 
+    @Test func `a Map file this reader cannot parse still says which version wrote it`() throws {
+        // The case the version field exists for: a newer Argo whose node shape this reader does
+        // not know. Read as part of the whole file the version could only be checked against a
+        // file that already parsed, so this one would come back as corrupt instead.
+        let json = #"{"version":2,"measuredAt":"2026-09-04T00:37:17Z","#
+            + #""root":{"named":"argo","volumes":[{"sort":"plot"}]}}"#
+        #expect(throws: AtlasMapError.unsupportedVersion(2)) {
+            try AtlasMap(decoding: map(json))
+        }
+    }
+
+    @Test func `nesting deeper than the parser accepts is refused, never a crash`() throws {
+        // Measured at 50,000 levels: Foundation's own parser stops first, so the reader's walk
+        // is never reached with a tree it could not stand and carries no depth cap of its own.
+        var node = #"{"kind":"plot","name":"a.swift","measures":{}}"#
+        for level in 0 ..< 50000 {
+            node = #"{"kind":"plate","name":"n\#(level)","children":[\#(node)]}"#
+        }
+        let error = try #require(throws: AtlasMapError.self) {
+            try AtlasMap(decoding: wrapping(#"{"name":"argo","children":[\#(node)]}"#))
+        }
+        guard case .unreadable = error else {
+            Issue.record("a Map file nested 50,000 deep read as \(error)")
+            return
+        }
+    }
+
+    @Test func `a Plot carrying children is refused rather than read past`() throws {
+        // A mislabelled folder read as a Plot would take every file under it off the map, and
+        // nothing anywhere would say one went missing.
+        let json = """
+        {"name":"argo","children":[
+          {"kind":"plot","name":"Sources","children":[
+            {"kind":"plot","name":"A.swift","measures":{"lines":3}}]}]}
+        """
+        #expect(throws: AtlasMapError.contradictoryNode("argo/Sources")) {
+            try AtlasMap(decoding: wrapping(json))
+        }
+    }
+
+    @Test func `a Plate carrying measures is refused, because a Plate stores no number`() throws {
+        let json = #"{"name":"argo","children":["#
+            + #"{"kind":"plate","name":"rules","measures":{"lines":3}}]}"#
+        #expect(throws: AtlasMapError.contradictoryNode("argo/rules")) {
+            try AtlasMap(decoding: wrapping(json))
+        }
+    }
+
     @Test func `a Plot that measured nothing is a Plot, not a failure`() throws {
         // A generator that could measure nothing about a file still found the file, and a map
         // that dropped it would be a map of a repository missing a file nobody deleted.

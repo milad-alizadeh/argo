@@ -6,6 +6,11 @@ import Foundation
 /// matters: the file nests names and the value tree carries paths. Parsing the bytes into this,
 /// then building the value tree from it, is the one place a path is derived — the boundary rule,
 /// and the reason `AtlasPlot.path` cannot disagree with where the node sits.
+/// The one field read before anything else: which shape the rest of the file is in.
+struct AtlasVersionWire: Codable {
+    let version: Int
+}
+
 struct AtlasMapWire: Codable {
     let version: Int
     let measuredAt: Date
