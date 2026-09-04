@@ -43,10 +43,24 @@ struct RunFactsControl {
     /// What the Session runs at, and which of its two knobs can be reached at all.
     var facts = RunFacts(model: nil, effort: .unknown(cli: nil))
     var acts = RunFactsActs()
+    /// Whether the CLI's prompt is free to take a line typed at it. The port refuses both knobs
+    /// while it is not (`runFactsBusy`), so this is what the popover draws inert rather than a
+    /// click it cannot honour (#1217).
+    var takesTypedLine = true
     /// Whether the popover should already be open the instant the footer appears — a Specimen's own
     /// hook, the way `ComposerMenusOpening` is (#689). Production always leaves it `false`: every
     /// render that opens something does it through the click a reader would.
     var isOpenForRender = false
+
+    /// Why the two knobs are inert, or `nil` where they are not (#1217).
+    ///
+    /// The PORT's own sentence and never a second spelling of it: what the popover says about a
+    /// refusal has to be what the refusal says, or the two drift the first time one is reworded.
+    /// Words rather than a flag, because a control drawn inert without a reason is the silent
+    /// click this ticket is about wearing a lower opacity.
+    var lockWords: String? {
+        takesTypedLine ? nil : SessionDriveError.runFactsBusy.detail
+    }
 }
 
 /// What the run-settings popover's three controls do.

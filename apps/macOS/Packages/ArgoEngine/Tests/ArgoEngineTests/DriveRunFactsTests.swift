@@ -97,6 +97,21 @@ struct DriveRunFactsTests {
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
+    /// The other prompt nothing may be typed at (#1217). A Session blocked on a Permission or a
+    /// question has no Turn in flight, so the mid-Turn guard above never saw it — and its keyboard
+    /// belongs to a DIALOG, which takes the line and the Return behind it. `starting` is not among
+    /// them: the prompt is on its way rather than held, and a Session is set up in that moment.
+    @Test
+    func `a typed line is refused wherever the prompt is not the CLI's own`() {
+        #expect(!SessionStatus.running.takesTypedLine)
+        #expect(!SessionStatus.permission.takesTypedLine)
+        #expect(!SessionStatus.asking.takesTypedLine)
+        #expect(SessionStatus.starting.takesTypedLine)
+        #expect(SessionStatus.idle.takesTypedLine)
+        #expect(SessionStatus.stopped.takesTypedLine)
+        #expect(SessionStatus.unknown.takesTypedLine)
+    }
+
     /// Unlike a rung, neither is remembered. A rung is filed because the ring is walked from a
     /// reading a set invalidates; these are named, and the CLI's own next record states where they
     /// landed — so a copy here would be a second answer to the transcript's question.

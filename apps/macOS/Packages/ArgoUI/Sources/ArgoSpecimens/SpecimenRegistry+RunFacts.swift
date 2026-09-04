@@ -4,9 +4,10 @@ import SwiftUI
 /// The states of what a Session RUNS AT — the fact line on the footer and the popover it opens
 /// (#558), drawn against `docs/designs/composer/run.png` and `rest.png`.
 ///
-/// Eight cases and not one per combination: what each is about is a rule, and the rules are the
+/// Nine cases and not one per combination: what each is about is a rule, and the rules are the
 /// trigger's two inks, the two read-backs that must survive verbatim, the pair a spawn opens on
-/// before any record (#1175), an adapter that declares one knob, and one that declares neither.
+/// before any record (#1175), an adapter that declares one knob, one that declares neither, and a
+/// Turn in flight, which locks both (#1217).
 extension SpecimenRegistry {
     static let runFacts: [SpecimenEntry] = [
         // `rest.png`. The closed state at the defaults — chromeless, quiet, `Opus 5 · Medium`.
@@ -53,6 +54,11 @@ extension SpecimenRegistry {
                 composer: ComposerSpecimen.runFactsEffortOnly,
                 opening: .runSettings,
             )
+        },
+        // The state #1217 reported as a dead click: mid-Turn the port refuses both knobs, so the
+        // two sections and the reset are drawn inert under the refusal's own sentence.
+        SpecimenEntry("composerRunSettingsRunning") {
+            ComposerSpecimen(composer: ComposerSpecimen.runFactsRunning, opening: .runSettings)
         },
         // And the limit of that rule: an adapter declaring NEITHER draws no trigger at all, so the
         // facts are words on the footer with nothing behind them.

@@ -79,6 +79,15 @@ package enum SessionComposerProjection {
         /// it is grandfathered at (`swift-boundaries` edge 6), and one more would authorise the
         /// next one. A specimen that wants this state sets it the same way.
         var endedByInterrupt = false
+        /// Whether the CLI's prompt is free to take a line typed at it —
+        /// `SessionStatus.takesTypedLine` (#1217). WIDER than `isRunning`: a Session blocked on a
+        /// Permission or a question has no Turn to queue behind, and its keyboard still belongs to
+        /// a dialog. It is what the run-settings popover draws its two knobs inert under.
+        ///
+        /// Set after the init for the reason `endedByInterrupt` above is: that list is at the count
+        /// it is grandfathered at (`swift-boundaries` edge 6). The default is the FREE prompt,
+        /// which is the state a fixture that has said nothing about this is in.
+        package var takesTypedLine = true
 
         /// Spelled out because Swift synthesises no memberwise initializer above
         /// `internal`, and the specimens build this from their own target (#1085).
@@ -153,6 +162,7 @@ package enum SessionComposerProjection {
             touchedFiles: TouchedFiles.touched(in: events, within: session.workspaceLocation),
         )
         composer.endedByInterrupt = endedByInterrupt(events)
+        composer.takesTypedLine = session.status.takesTypedLine
         return composer
     }
 

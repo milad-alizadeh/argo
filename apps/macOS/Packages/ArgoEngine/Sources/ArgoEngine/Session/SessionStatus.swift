@@ -70,3 +70,23 @@ public extension SessionStatus {
         }
     }
 }
+
+public extension SessionStatus {
+    /// Whether the CLI's own prompt is free to take a line somebody types at it (#1217).
+    ///
+    /// `running` is the obvious one: the CLI queues a line typed mid-Turn as the NEXT prompt rather
+    /// than running it. The other two matter more. A `permission` or an `asking` Session has its
+    /// keyboard held by a DIALOG, so a `/model` line typed then is eaten by that dialog — and the
+    /// Return behind it answers whatever the dialog had highlighted. That is worse than a line
+    /// going nowhere, which is why the three answer together.
+    ///
+    /// `starting` is deliberately NOT among them. Argo has written the argv and has not heard the
+    /// child yet; the prompt is on its way rather than held by something else, and refusing there
+    /// would refuse the one moment a Session is being set up in.
+    var takesTypedLine: Bool {
+        switch self {
+        case .running, .permission, .asking: false
+        case .starting, .idle, .stopped, .ended, .unknown: true
+        }
+    }
+}

@@ -156,7 +156,11 @@ public extension Hub {
     /// rung a change is counted from cannot disagree with the rung the footer states.
     private func stance(of sessionID: String) -> SessionStance {
         guard let session = session(id: sessionID) else { return .unknown }
-        return SessionStance(mode: session.mode, isRunning: session.status == .running)
+        return SessionStance(
+            mode: session.mode,
+            isRunning: session.status == .running,
+            takesTypedLine: session.status.takesTypedLine,
+        )
     }
 
     /// Where a pasted attachment's bytes land: Argo's own per-machine data, beside `handoffs/`.

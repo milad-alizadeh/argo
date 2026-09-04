@@ -29,6 +29,7 @@ extension SessionComposer {
                     setEffort: askForEffort,
                     reset: resetRunFacts,
                 ),
+                takesTypedLine: composer.takesTypedLine,
                 isOpenForRender: opening == .runSettings,
             ),
             send: SendButtonControl(

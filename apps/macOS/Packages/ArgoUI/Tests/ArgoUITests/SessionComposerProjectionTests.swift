@@ -162,7 +162,9 @@ struct SessionComposerProjectionTests {
         #expect(composer.mode == mode)
     }
 
-    private func session(
+    /// Internal rather than private: the prompt claims live in
+    /// `SessionComposerProjectionTests+Prompt.swift`, which builds its Sessions with this one.
+    func session(
         access: CockpitPresentation.Session.Access,
         status: SessionStatus = .running,
         cli: AgentCLI? = .claude,

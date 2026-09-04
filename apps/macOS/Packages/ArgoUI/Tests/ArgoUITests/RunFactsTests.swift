@@ -135,4 +135,21 @@ struct RunFactsTests {
         #expect(RunFacts.resetWords == "Reset to Code · Opus 5 · Medium")
         #expect(RunFacts.defaultMode == .code)
     }
+
+    /// What a click on a busy prompt does now (#1217). The port refuses both knobs whenever the
+    /// CLI's prompt is not free, so the popover says so in the port's OWN sentence and draws the
+    /// two sections inert — a second spelling here would drift from the refusal it describes.
+    @Test
+    func `both knobs are locked on a busy prompt, in the port's own words`() {
+        let busy = RunFactsControl(facts: facts(), takesTypedLine: false)
+
+        #expect(busy.lockWords == SessionDriveError.runFactsBusy.detail)
+    }
+
+    /// And a Session at its own prompt locks nothing: the sections are live, and no sentence is
+    /// spent saying that they are.
+    @Test
+    func `a free prompt locks neither knob`() {
+        #expect(RunFactsControl(facts: facts()).lockWords == nil)
+    }
 }

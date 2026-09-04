@@ -164,6 +164,26 @@ anything.
 > segmented because the scale is *ordered*, and one more rung does not make it a set of equals.
 > The render is stale on this one measurement and current on everything else in the popover.
 
+> **Added in build (#1217): the popover has a locked state while the CLI's prompt is busy.** The
+> CLI takes Model and Effort as lines typed at that prompt, and a line typed mid-Turn is queued as
+> the next prompt rather than run — so the port has always refused both knobs then (`runFactsBusy`).
+> The study drew no state for that refusal, so a click on `Sonnet 5` mid-Turn ticked nothing and
+> said nothing: the refusal's sentence went to the composer's seam, behind the popover still open
+> over it. The popover now states the refusal at its top, under the `clock` mark a held draft wears,
+> and draws the whole Model and Effort sections — headings included — at `ArgoOpacity.ghosted` and
+> disabled. The reset goes inert the way it already does at the defaults, on `text.tertiary`: it
+> draws its own inert state, and a second dim over it would say the same thing twice.
+>
+> The lock covers more than a Turn. A Session blocked on a Permission or a question has its keyboard
+> held by a dialog, so a `/model` line typed then is eaten by the dialog and the Return behind it
+> answers whatever was highlighted — `SessionStatus.takesTypedLine` is the one answer the port and
+> the popover are both read off.
+>
+> It is drawn inert rather than left out, which is the OPPOSITE of what an undeclared knob gets
+> (criterion 4). The rules differ because the states do: a knob the adapter does not declare can
+> never work, and a greyed control there would give no reason. This one works again when the Turn
+> ends, and naming that moment is the whole affordance.
+
 ## Controls are stock, not bespoke
 
 | In the study | In the app |

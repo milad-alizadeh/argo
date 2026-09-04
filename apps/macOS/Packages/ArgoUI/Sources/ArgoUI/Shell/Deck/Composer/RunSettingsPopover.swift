@@ -27,11 +27,20 @@ struct RunSettingsPopover: View {
 
     var body: some View {
         Form {
+            // First, because it is the CONDITION the sections below are drawn under, and a reason
+            // met after the control it explains is one the reader has already clicked past.
+            if let lockWords = control.lockWords {
+                RunSettingsLock(words: lockWords)
+            }
+            // Whole sections and not their rows: a full-strength `Model` heading over ghosted rows
+            // would read as a live section that had lost its contents. The heading is spelled as a
+            // view rather than as `Section("Model")` because a Form draws a string header itself,
+            // and what it draws does not take the section's opacity.
             if facts.chooses.model {
-                Section("Model") { models }
+                Section { models } header: { heading("Model") }.runSettingsInert(isLocked)
             }
             if facts.chooses.effort {
-                Section("Effort") { efforts }
+                Section { efforts } header: { heading("Effort") }.runSettingsInert(isLocked)
             }
             resetRow
         }
@@ -40,6 +49,12 @@ struct RunSettingsPopover: View {
         // the Model rows' trailing notes would otherwise size the popover off whichever is longer.
         .frame(width: ArgoRunSettings.width)
         .scrollContentBackground(.hidden)
+    }
+
+    /// One section's heading. The Form styles it exactly as it styles the string it replaces; what
+    /// it is here for is to be a view the section's own ghosting can reach (#1217).
+    private func heading(_ words: String) -> some View {
+        Text(words).runSettingsInert(isLocked)
     }
 
     /// Rows with a checkmark, drawn rather than picked (#558).
@@ -100,8 +115,18 @@ struct RunSettingsPopover: View {
                 .argoText(ArgoTypography.caption)
         }
         .buttonStyle(.plain)
-        .disabled(isAtDefaults)
-        .foregroundStyle(isAtDefaults ? argo.color.text.tertiary : argo.color.text.secondary)
+        .disabled(isInert)
+        .foregroundStyle(isInert ? argo.color.text.tertiary : argo.color.text.secondary)
+    }
+
+    /// Whether the reset does nothing when pressed — because there is nothing left to restore, or
+    /// because the port would refuse all three (#1217). It SETS the two locked knobs, so a live
+    /// reset under a locked pair would promise exactly what the port has just refused.
+    ///
+    /// One ink for both reasons and no ghosting on top: this button already draws its own inert
+    /// state, and a second dim over it would say the same thing twice at two strengths.
+    private var isInert: Bool {
+        isAtDefaults || isLocked
     }
 
     /// Whether there is anything left for the reset to do. All THREE, because it sets all three:
@@ -109,6 +134,12 @@ struct RunSettingsPopover: View {
     /// Auto, whose Mode this act would very much have moved.
     private var isAtDefaults: Bool {
         facts.isDefault && mode.rung == RunFacts.defaultMode
+    }
+
+    /// Whether the knobs are inert (#1217). Read off the lock's WORDS rather than a flag beside
+    /// them, so what dims the controls and what explains the dimming cannot come apart.
+    private var isLocked: Bool {
+        control.lockWords != nil
     }
 
     /// What this popover says, unwrapped once so the body above reads as the design does.

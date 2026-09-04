@@ -126,7 +126,11 @@ struct ClaudeSessionDriver: SessionDriver {
         }
         // Mid-Turn the CLI queues a typed line as the NEXT prompt rather than running it, so it
         // would surface in the feed as something the user said. Refused with the reason instead.
-        guard !stance(sessionID).isRunning else { throw SessionDriveError.runFactsBusy }
+        //
+        // And on the same guard, a Session blocked on a Permission or a question (#1217): there
+        // the keyboard belongs to a DIALOG, so the line is eaten by it and the Return behind the
+        // line answers whatever it had highlighted — see `SessionStatus.takesTypedLine`.
+        guard stance(sessionID).takesTypedLine else { throw SessionDriveError.runFactsBusy }
         guard terminals.write(ClaudeTurn.keystrokes(for: line), to: claim) else {
             throw SessionDriveError.notDrivable
         }
