@@ -27,6 +27,11 @@ extension TranscriptWatch {
             // launch: a Session whose reading was read whole and then paused would otherwise come
             // back as an excerpt, and — the reading now being replaced rather than appended to
             // (#1213) — silently lose the middle of the file the feed is drawing.
+            //
+            // A reading nobody SELECTED is not held whole, and comes back bounded even where the
+            // live tail had since filled it in. That is the honest answer rather than a gap: the
+            // row keeps saying `.excerpt`, which is what it said before, and the alternative is
+            // the duplicate this ticket is about. What a reader opens is read whole on the click.
             let held: SessionTranscriptExtent = whole.holds(url.path) ? .whole : .excerpt
             guard let observation = try? observe(url, reading: held) else { continue }
             await startTailing(observation)

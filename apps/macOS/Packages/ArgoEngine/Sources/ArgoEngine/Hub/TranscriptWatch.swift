@@ -91,15 +91,22 @@ final class TranscriptWatch {
         await repoint()
     }
 
-    /// Take back the join retained for a Project, or start a fresh one. Keyed by the RESOLVED
+    /// Take back the reading retained for a Project, or start a fresh one. Keyed by the RESOLVED
     /// Project, which is the key it was retained under.
+    ///
+    /// The EXTENTS come back with the join, and that is not bookkeeping: the sweep that follows a
+    /// repoint re-opens every transcript it finds, at the extent this table says it is held at, and
+    /// a re-tail replaces the reading rather than adding to it (#1213). Restoring the join alone
+    /// would re-read a Session the reader had open bounded, and take the middle of its file away.
     func restore(for key: String) {
-        mutate { $0.replace(with: retained.take(for: key) ?? HubJoin()) }
+        let reading = retained.take(for: key)
+        whole = reading?.whole ?? WholeReadings()
+        mutate { $0.replace(with: reading?.join ?? HubJoin()) }
     }
 
-    /// Keep this Project's join, before the tails are torn down — which is what empties it.
+    /// Keep this Project's reading, before the tails are torn down — which is what empties it.
     func retain(for key: String) {
-        retained.retain(join, for: key)
+        retained.retain(HubJoinCache.Retained(join: join, whole: whole), for: key)
     }
 
     /// The whole named set is validated before any tail starts, and one unreadable name fails the

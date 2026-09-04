@@ -113,6 +113,40 @@ struct SessionSelectionReadTests {
         await hub.disconnect()
     }
 
+    /// The join is retained across a switch of Project, and so are the extents its readings were
+    /// taken at. Without the second half the sweep on the way back re-opens every restored
+    /// transcript bounded, and — the re-tail replacing the reading rather than adding to it
+    /// (#1213) — a Session the reader had open loses the middle of its file on a round trip.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a Session read whole keeps its whole reading across a switch of Project`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let hub = try await Self.connected(to: fixture)
+        let chosen = try #require(hub.sessions.first?.id)
+        let url = try #require(hub.sessions.first?.sourceURL)
+        await hub.readSelected(sessionID: chosen)
+        await hubSettle { Self.middleWasRead(of: chosen, in: hub) }
+
+        await hub.connect(to: LaunchConfiguration(
+            projectURL: URL(fileURLWithPath: fixture.path("other-checkout")),
+            transcriptURLs: [],
+        ))
+        #expect(hub.sessions.isEmpty)
+        // Said while the window is pointed away, so NO tail is running to deliver it: the wait
+        // below settles on the sweep's own re-read rather than on the reading the switch retained.
+        try fixture.append(Self.resumedWords, to: url)
+        await hub.connect(to: LaunchConfiguration(
+            projectURL: URL(fileURLWithPath: fixture.path("checkout")),
+            transcriptURLs: [],
+        ))
+        await hubSettle { said(by: hub.sessions[0]).contains(Self.resumedWords) }
+
+        #expect(Self.middleWasRead(of: chosen, in: hub))
+        #expect(hub.session(id: chosen)?.transcriptExtent == .whole)
+        await hub.disconnect()
+    }
+
     /// What the resumed file says and the paused reading cannot.
     private static let resumedWords = "Said after the pause"
 
