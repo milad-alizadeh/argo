@@ -185,19 +185,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 /// Both folds in this file are here rather than in files of their own because the facts they write
 /// are `private(set)`, which Swift scopes to the declaring file.
 extension HubSession {
-    /// One event into the reading, and the one event that is not: `superseded` takes the reading
-    /// BACK to where a branch the CLI abandoned opened (#1202), so it is answered in front of the
-    /// append rather than inside the fold — appended first, its marker would be left standing at
-    /// the end of exactly what it had just removed.
     mutating func apply(_ event: TranscriptEvent) {
-        guard case let .superseded(fromRecord) = event else {
-            transcript.append(event)
-            return fold(event)
-        }
-        supersede(fromRecord)
-    }
-
-    private mutating func fold(_ event: TranscriptEvent) {
+        transcript.append(event)
         switch event {
         case let .headLeaf(uuid):
             headLeafUUID = uuid
@@ -251,8 +240,12 @@ extension HubSession {
         // claim `hasAgentActivity` is about, so it deliberately does not count. A skill load is the
         // CLI expanding a body in front of the agent, and the agent has not answered yet, so it
         // does not count either — the reading below it is where the activity shows up.
-        // `superseded` is answered by `apply` above and never reaches this fold; the arm is here
-        // for the compiler's exhaustiveness and for the next event added beside it.
+        // `superseded` is spent by the STREAM, which takes the abandoned branch back out rather
+        // than appending it (#1202, `TranscriptStream.append`). Nothing is folded off it here: the
+        // scalars below are claims about what this Session DID, and the agent really did speak on
+        // the branch it abandoned, so un-saying its spend or its activity would be a quieter
+        // reading than the truth. The Turn needs no unwinding either — the record that supersedes
+        // is a prompt, and it opens the Turn again in the same act.
         case .unreadableLine, .skillLoaded, .superseded:
             break
         // Read by `HubRecordFold` before this fold ever sees it (`HubTranscript`), and by
@@ -287,20 +280,6 @@ extension HubSession {
         hasAgentActivity = true
         contextTokens = usage.contextTokens
         spend.observe(usage)
-    }
-
-    /// Take the reading back to before a branch the CLI abandoned (#1202).
-    ///
-    /// The STREAM alone, and that is deliberate. The scalars folded off it are claims about what
-    /// this Session has done, not about what its feed draws: the agent really did speak on the
-    /// abandoned branch, and the tokens it spent were really billed. Un-saying either would be a
-    /// quieter reading than the truth, where a doubled row is a louder one — so the fold that
-    /// draws goes back and the fold that counts stands.
-    ///
-    /// The Turn needs no unwinding either: the record superseding this branch is a prompt, and it
-    /// opens the Turn again in the same act.
-    private mutating func supersede(_ record: String) {
-        _ = transcript.dropBranch(openedBy: record)
     }
 
     private mutating func observe(call: ToolCall) {
