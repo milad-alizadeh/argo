@@ -188,8 +188,6 @@ extension HubSession {
     mutating func apply(_ event: TranscriptEvent) {
         transcript.append(event)
         switch event {
-        case .recordIdentity:
-            break
         case let .headLeaf(uuid):
             headLeafUUID = uuid
         case let .originSession(id):
@@ -243,6 +241,10 @@ extension HubSession {
         // CLI expanding a body in front of the agent, and the agent has not answered yet, so it
         // does not count either — the reading below it is where the activity shows up.
         case .unreadableLine, .skillLoaded:
+            break
+        // Read by `HubRecordFold` before this fold ever sees it (`HubTranscript`), and by
+        // `HubJoin` for chain ownership — never by the Session itself.
+        case .recordIdentity:
             break
         case .excerpted:
             // One way only: reading the missing stretch means reading the file again, and that

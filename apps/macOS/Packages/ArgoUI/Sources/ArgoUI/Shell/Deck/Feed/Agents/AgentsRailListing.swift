@@ -17,6 +17,9 @@ struct AgentsRailListing {
     /// HIDDEN and not simply what has landed, so the count on the control matches what appears when
     /// it is used, revealed or not.
     let finished: [FeedAgent]
+    /// How many of them are running — the heading's figure, derived off the same array the split
+    /// above was taken from (#1204), so the two cannot disagree.
+    let running: Int
 
     /// `scopedOnto` is the Agent the feed is currently reading, which is listed whatever its state:
     /// hiding it would strand the reader in a Subagent's feed with no chip to come back from, the
@@ -26,5 +29,6 @@ struct AgentsRailListing {
         let heldIDs = Set(held.map(\.id))
         self.finished = held
         self.listed = revealing ? agents : agents.filter { !heldIDs.contains($0.id) }
+        self.running = FeedAgents.running(of: agents)
     }
 }

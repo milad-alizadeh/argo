@@ -68,14 +68,17 @@ struct HubJoinCostTests {
 
     /// The batch a tail actually delivers between two writes: one record's worth of identity, prose
     /// and time. Always against the same transcript, so what the arms differ by is the ROSTER.
+    ///
+    /// A record identity PER BATCH, because that is what a live tail writes — and since #1204 a
+    /// reading folds each record once, so five hundred batches under one uuid would be one record
+    /// and four hundred and ninety-nine skips.
     private static func rebuildsOfBatches(against join: inout HubJoin) -> Int {
-        let batch: [TranscriptEvent] = [
-            .recordIdentity(uuid: "session-0-live"),
-            .message(markdown: "said"),
-        ]
         let before = join.rebuilds
-        for _ in 0 ..< batches {
-            join.apply(batch, to: "session-0")
+        for batch in 0 ..< batches {
+            join.apply(
+                [.recordIdentity(uuid: "session-0-live-\(batch)"), .message(markdown: "said")],
+                to: "session-0",
+            )
         }
         return join.rebuilds - before
     }
