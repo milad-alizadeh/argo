@@ -33,6 +33,13 @@ package struct FeedRowSelection {
         step = result
     }
 
+    /// Told which result the panel has scrolled to, on its own — the write-back half of
+    /// `openEvidence(of:at:)`. A selection and never a scroll: the row stays exactly where it is,
+    /// only the highlight follows (#1355).
+    func scrolled(to result: Int) {
+        step = result
+    }
+
     /// Close the panel and hand the keyboard back to the row that opened it, derived from what is
     /// open rather than remembered.
     func close() {

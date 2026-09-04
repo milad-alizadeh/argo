@@ -188,7 +188,7 @@ struct DeckContentRow: View {
                     isDragging: { isResizing = $0 },
                 )
                 .argoUnderCanopy()
-                EvidencePanel(evidence: evidence, current: routed.step)
+                EvidencePanel(evidence: evidence, current: routed.step, onScroll: routed.scrolled)
                     .frame(width: zoning.panelWidth.wrappedValue)
                     .focusable()
                     .focused(selection.focus, equals: .panel)
