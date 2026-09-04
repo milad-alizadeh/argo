@@ -23,10 +23,17 @@ let package = Package(
         // Xcode build require a separately-downloaded Metal Toolchain, on every machine and on the
         // macOS CI runner. `LocalProcess` is identical either side of the pin.
         .package(url: "https://github.com/migueldeicaza/SwiftTerm", "1.2.0" ..< "1.12.0"),
+        // The Map's value types, for the generator that writes one (#1148). Only `AtlasLayout` is
+        // linked, and it is the one module in the tree that depends on nothing at all — no
+        // framework, no sibling — which is what makes an edge from below it harmless. The
+        // alternative was a second spelling of the Map file here, and a file format written in one
+        // module and read in another is two formats the day one of them is edited.
+        .package(path: "../ArgoAtlas"),
     ],
     targets: [
         .target(
             name: "ArgoEngine",
+            dependencies: [.product(name: "AtlasLayout", package: "ArgoAtlas")],
             // The companion plugin the spawn loads: a real `.claude-plugin` directory, carried as
             // a resource so the built app ships the same bytes a checkout runs against.
             resources: [.copy("Companion/Plugin")],

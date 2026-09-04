@@ -20,6 +20,13 @@ picks without drawing (#1143). Each package's other target — `MermaidView`, `A
 and is not a subject; each is instead named in the edge's own forbidden-import pattern, because
 that sibling import is how a `Path` reaches a layout without any framework name appearing.
 
+`ArgoEngine` links `AtlasLayout`, which is the one edge that reads against the arrow above. It is
+there because the Map file is written by the engine and read by the map (#1148), and a file format
+spelled in two modules is two formats the day one of them is edited. It stays harmless because
+`AtlasLayout` depends on nothing at all — no framework, no sibling — so nothing arrives with it;
+`ArgoDesign` hangs off `AtlasView` alone. It is not a gate: nothing counts a package's
+dependencies, so widening this one is a review note.
+
 Five types are `public` out of the mermaid pair — `MermaidDiagram`, `MermaidView`, `MermaidPlan`,
 `MermaidMeasure`, `MermaidFigure` — and everything the two targets share between themselves is
 `package`, which `ArgoUI` cannot see. `ArgoAtlas` takes the same convention. That split is a
