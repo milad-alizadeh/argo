@@ -10,6 +10,16 @@
 /// tool name, and this row is addressed by its summary wherever it has one.
 private let unjoinedAgent = "background agent"
 
+/// What a report does to the Turn, ahead of whatever it says about the call (#1299).
+///
+/// The CLI files a report to put the agent back to work on it, and a fan-out that ended its Turn to
+/// wait has no other record that says the run is going again — so this is the boundary, whether or
+/// not the report can be joined to a call. It leads the events either way: the Turn is open before
+/// anything inside it is folded.
+private func woken(at message: MessageRecord) -> [TranscriptEvent] {
+    [.turnResumed(atMs: message.timestampMs)]
+}
+
 extension TranscriptReader {
     /// A delegating call's outcome, arriving late — a SECOND outcome for a call the launch receipt
     /// only OPENED, and a resumed agent files a third. This is what resolves a backgrounded
@@ -29,9 +39,9 @@ extension TranscriptReader {
         // (#908) stays open, which is honest — no id means Argo cannot know this report is that
         // call's ending.
         guard let callID = report.callID, openCalls[callID] != nil else {
-            return unattached(report, in: message)
+            return woken(at: message) + unattached(report, in: message)
         }
-        return [.toolCallOutcome(ToolCallOutcome(
+        return woken(at: message) + [.toolCallOutcome(ToolCallOutcome(
             id: callID,
             resolution: ToolCallOutcome.Resolution(
                 status: report.status,

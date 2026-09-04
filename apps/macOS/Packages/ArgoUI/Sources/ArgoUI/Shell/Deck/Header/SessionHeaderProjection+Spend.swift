@@ -98,11 +98,13 @@ extension SessionHeaderProjection {
             case let .interrupted(atMs): atMs
             // A skill load carries no moment of its own: the CLI expands a body as part of the
             // prompt beside it, and that prompt's own timestamp is already counted. The seam is
-            // handled above, where it withholds the figure entire.
+            // handled above, where it withholds the figure entire. A wake carries one and it is
+            // not counted HERE for the same reason: the report's own outcome beside it is stamped
+            // at the same instant, and counting both would put the same moment in twice (#1299).
             case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort,
                  .branch, .mode, .entry,
-                 .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
-                 .skillLoaded, .superseded, .excerpted: nil
+                 .message, .thought, .turnEnded, .turnResumed, .usage, .plan, .queued,
+                 .unreadableLine, .skillLoaded, .superseded, .excerpted: nil
             }
         }
         .sorted()

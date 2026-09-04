@@ -53,7 +53,7 @@ struct TaskNotificationReadingTests {
     }
 
     @Test
-    func `A notification opens no Turn and renders no prompt`() async throws {
+    func `A notification renders no prompt`() async throws {
         let read = try await prompts()
 
         #expect(!read.contains { $0.hasPrefix("<task-notification>") })

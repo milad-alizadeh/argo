@@ -27,6 +27,41 @@ extension TurnClockProjectionTests {
         #expect(row.clock == .seen("2m ago"))
     }
 
+    /// A Turn nobody typed: the fan-out in #1299 ended its Turn to wait for its delegates, and the
+    /// report that woke it is the only record of when the next Turn began. Without it the row on a
+    /// working Session says how long ago it was last seen, which is the calm phrase a finished
+    /// Session draws.
+    @Test
+    func `a Turn a report woke is clocked from the report`() throws {
+        let row = try #require(rows(session(
+            status: .running,
+            lastSeenAtMs: msAgo(120),
+            events: [
+                .prompt(text: "go", images: [], atMs: msAgo(600)),
+                .turnEnded(.endTurn),
+                .turnResumed(atMs: msAgo(90)),
+            ],
+        )).first)
+
+        #expect(row.clock == .turn(startedAtMs: msAgo(90)))
+    }
+
+    /// A wake INSIDE a Turn somebody typed changes nothing: the walk keeps going back and the
+    /// prompt that opened the Turn overwrites it, so the clock still reads from what was asked.
+    @Test
+    func `a wake inside a typed Turn does not restart its clock`() throws {
+        let row = try #require(rows(session(
+            status: .running,
+            lastSeenAtMs: msAgo(120),
+            events: [
+                .prompt(text: "go", images: [], atMs: msAgo(600)),
+                .turnResumed(atMs: msAgo(90)),
+            ],
+        )).first)
+
+        #expect(row.clock == .turn(startedAtMs: msAgo(600)))
+    }
+
     /// The boundary is where the walk STOPS, and every Turn behind it is a Turn already over —
     /// including one whose prompt is the only stamped thing in the record.
     @Test

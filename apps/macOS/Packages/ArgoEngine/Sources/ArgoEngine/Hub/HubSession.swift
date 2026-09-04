@@ -210,6 +210,12 @@ extension HubSession {
         case let .turnEnded(reason):
             hasAgentActivity = true
             turn.ended(reason)
+        // A report put the agent back to work, so the Turn is open again (#1299). No
+        // `hasAgentActivity` and no moment: the wake is the CLI's doing, and the report's own
+        // outcome beside it carries both. Opening one already open takes nothing back — a delegate
+        // that reports while the root is still working leaves the Turn exactly as it found it.
+        // One line, for the reason the two knobs above are: the body has a ceiling.
+        case .turnResumed: turn.opened()
         // A Turn somebody stopped is a Turn that ended, and `cancelled` is the word for why
         // (#1189). No `hasAgentActivity`: the marker says what the READER did, and an agent that
         // never spoke is not shown to have worked by being interrupted. The moment counts all the
@@ -233,8 +239,7 @@ extension HubSession {
             observe(usage: usage)
         case .message, .thought, .plan:
             hasAgentActivity = true
-        case .queued:
-            isQueued = true
+        case .queued: isQueued = true
         // An unreadable line says a file was written, never who wrote it — which is exactly the
         // claim `hasAgentActivity` is about, so it deliberately does not count. A skill load is the
         // CLI expanding a body in front of the agent, and the agent has not answered yet, so it
