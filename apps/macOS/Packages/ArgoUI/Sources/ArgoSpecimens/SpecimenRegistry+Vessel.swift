@@ -60,6 +60,15 @@ extension SpecimenRegistry {
         SpecimenEntry("composerQueued") {
             ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
         },
+        // The same chip under a Session with a Turn in flight that does NOT read `running` (#1179)
+        // — `starting` here, resolved through the projection rather than stated. Its own entry
+        // because it is the case that used to draw nothing at all: the words left the field, went
+        // down a busy PTY, and appeared on no chip and in no row. The judgement is that this render
+        // is indistinguishable from `composerQueued` above — a follow-up is held the same way
+        // whichever word the Session happens to read.
+        SpecimenEntry("composerQueuedNotRunning") {
+            ComposerSpecimen(composer: ComposerSpecimen.working, draft: ComposerSpecimen.queued)
+        },
         // A follow-up overtaking the boundary it was waiting for (#1238) — the second chip steered
         // past the first, drawn mid-Turn because that is the only time the act exists. The
         // judgement is whether SENDING reads as a moment passing rather than as an outcome, and

@@ -17,7 +17,10 @@ struct ComposerInterruptTests {
         var draft = ComposerDraft()
         for text in ["And then open the PR.", "Then tell me what moved."] {
             draft.text = text
-            draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
+            draft
+                .submit(whileTurnInFlight: true) { text, _ in
+                    try driver.send(text, to: "session-a")
+                }
         }
 
         draft.stopped {}
@@ -51,7 +54,7 @@ struct ComposerInterruptTests {
     @Test
     func `what the interrupt dropped is reported on the seam`() {
         var draft = ComposerDraft(text: "And then open the PR.")
-        draft.submit(whileRunning: true) { _, _ in }
+        draft.submit(whileTurnInFlight: true) { _, _ in }
 
         draft.stopped {}
 
@@ -118,7 +121,7 @@ struct ComposerInterruptTests {
         let driver = InMemorySessionDriver()
         driver.refusal = .notDrivable
         var draft = ComposerDraft(text: "No, not that file —")
-        draft.submit(whileRunning: true) { _, _ in }
+        draft.submit(whileTurnInFlight: true) { _, _ in }
         draft.text = "Stop, stop."
 
         draft.stopped { try driver.interrupt("session-a") }

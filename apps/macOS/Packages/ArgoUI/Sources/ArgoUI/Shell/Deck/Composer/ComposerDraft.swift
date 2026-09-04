@@ -155,9 +155,9 @@ package struct ComposerDraft: Equatable {
     /// The one way a Turn leaves the field: it goes now if the Session is free and waits if it is
     /// not. Guarded here rather than in the driver — Return lands here from an empty field too,
     /// and a bare Return at a live prompt must never leak.
-    mutating func submit(whileRunning isRunning: Bool, via deliver: ComposerSend) {
+    mutating func submit(whileTurnInFlight isTurnInFlight: Bool, via deliver: ComposerSend) {
         guard isSendable else { return }
-        guard isRunning else { return send(via: deliver) }
+        guard isTurnInFlight else { return send(via: deliver) }
         queued.append(QueuedTurn(text: text, attachments: attachments))
         text = ""
         attachments = []

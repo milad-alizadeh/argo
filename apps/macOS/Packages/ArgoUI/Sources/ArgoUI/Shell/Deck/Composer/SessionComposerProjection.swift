@@ -6,7 +6,10 @@ package enum SessionComposerProjection {
     /// What the Session's adapter declares about itself. One type rather than three parallel flags
     /// because they travel together from `CockpitView` down to the vessel, and each is read off the
     /// drive port for the same Session at the same moment.
-    struct Capabilities: Equatable {
+    /// `package` so the specimen deck can ask for the WHOLE projection rather than hand-building a
+    /// `Composer` (#1179): a case about what the projection derives off a status proves nothing
+    /// when the fixture states the derivation itself.
+    package struct Capabilities: Equatable {
         /// Whether this adapter takes attachments at all (#540).
         var canAttach = false
         /// Whether a `/command` fires the CLI's own command handling (#685).
@@ -18,6 +21,20 @@ package enum SessionComposerProjection {
         /// the port declares it: a knob it does not answer for leaves its section OUT of the
         /// run-settings popover — absent, not disabled.
         var chooses = RunFactKnobs()
+
+        /// Spelled out because Swift's synthesised memberwise init for a `package` struct is
+        /// `internal`, and the specimens build this from their own target.
+        package init(
+            canAttach: Bool = false,
+            canRunCommands: Bool = false,
+            resolvesMentions: Bool = false,
+            chooses: RunFactKnobs = RunFactKnobs(),
+        ) {
+            self.canAttach = canAttach
+            self.canRunCommands = canRunCommands
+            self.resolvesMentions = resolvesMentions
+            self.chooses = chooses
+        }
     }
 
     package struct Composer: Equatable {
@@ -92,6 +109,21 @@ package enum SessionComposerProjection {
         /// it is grandfathered at (`swift-boundaries` edge 6), and one more would authorise the
         /// next one. A specimen that wants this state sets it the same way.
         var endedByInterrupt = false
+        /// Whether a Turn is in flight, which is where the NEXT one goes: straight to the Session,
+        /// or onto the queue above the field (#1179).
+        ///
+        /// A third question at this reading, and none of the other two. `isRunning` is the status
+        /// WORD, which is DERIVED and one of eight: a Session Argo has just typed a Turn at, or one
+        /// whose process has not spoken yet, is working and does not read `running`. Each of those
+        /// took the straight-send branch, so the words went down a busy PTY, no chip was drawn and
+        /// the field had already cleared — submitted into the void. `hasTurnEnded` is the RELEASE,
+        /// and deliberately wider still: a Turn paused on a question has not ended, but what is
+        /// typed at one goes now, because the composer is the only way to answer it (#1238).
+        ///
+        /// Set after the init for the reason `endedByInterrupt` below is. It defaults to
+        /// `isRunning`, which is the reading every fixture built before this existed meant.
+        var isTurnInFlight: Bool
+
         /// Whether the CLI's prompt is free to take a line typed at it —
         /// `SessionStatus.takesTypedLine` (#1217). WIDER than `isRunning`: a Session blocked on a
         /// Permission or a question has no Turn to queue behind, and its keyboard still belongs to
@@ -124,6 +156,7 @@ package enum SessionComposerProjection {
             self.facts = facts
             self.standingAllows = standingAllows
             self.isRunning = isRunning
+            self.isTurnInFlight = isRunning
             self.mode = mode
             self.modeDidNotTake = modeDidNotTake
             self.lostTurn = lostTurn
@@ -142,7 +175,7 @@ package enum SessionComposerProjection {
     /// Refused through `unavailable(for:)` rather than by a guard of its own, so the vessel and the
     /// line that replaces it cannot come to disagree about who can be driven — one of them is on
     /// screen for every Session, and never both.
-    static func composer(
+    package static func composer(
         for session: CockpitPresentation.Session?,
         can: Capabilities = Capabilities(),
     )
@@ -156,7 +189,9 @@ package enum SessionComposerProjection {
         let events = session.events
         var composer = Composer(
             sessionID: session.id,
-            placeholder: isRunning ? queuePlaceholder : placeholder(addressing: session.cli),
+            placeholder: isTurnInFlight(session)
+                ? queuePlaceholder
+                : placeholder(addressing: session.cli),
             facts: RunFacts(
                 model: session.model,
                 // Read here rather than held: `effort` comes off the records verbatim, and what it
@@ -175,10 +210,33 @@ package enum SessionComposerProjection {
             workspaceRoot: session.workspaceLocation,
             touchedFiles: TouchedFiles.touched(in: events, within: session.workspaceLocation),
         )
+        composer.isTurnInFlight = isTurnInFlight(session)
         composer.hasTurnEnded = hasTurnEnded(session.status)
         composer.endedByInterrupt = endedByInterrupt(events)
         composer.takesTypedLine = session.status.takesTypedLine
         return composer
+    }
+
+    /// Whether a Turn is in flight, asked of BOTH readings that can answer (#1179).
+    ///
+    /// `hasUnansweredTurn` is Argo's own submit — DIRECT, and the half the status word drops
+    /// wherever a drive port or a companion reports `idle` over it. The two statuses beside it are
+    /// the ones a Turn can be running under with nothing yet on record to say so: `starting` is a
+    /// process Argo launched that has not spoken, and `permission` is a CLI holding a prompt open
+    /// that a typed line would be eaten by.
+    ///
+    /// `asking` is NOT here, and that is #1238's rule read at this seam rather than against it: a
+    /// live question is answered THROUGH this field, so a Return queued there is an answer the
+    /// agent never hears. Nor is `unknown`, which by its own definition nothing will move — a
+    /// follow-up held against it would wait forever.
+    private static func isTurnInFlight(_ session: CockpitPresentation.Session) -> Bool {
+        if session.hasUnansweredTurn {
+            return true
+        }
+        return switch session.status {
+        case .running, .starting, .permission: true
+        case .asking, .idle, .stopped, .ended, .unknown: false
+        }
     }
 
     /// Whether this status says the Turn is over (#1238).

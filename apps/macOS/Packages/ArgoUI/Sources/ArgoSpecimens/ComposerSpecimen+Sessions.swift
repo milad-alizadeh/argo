@@ -198,4 +198,31 @@ extension ComposerSpecimen {
         workspaceRoot: WorkspaceFileFixture.root,
         touchedFiles: WorkspaceFileFixture.touched,
     )
+
+    /// A Session with a Turn in flight that does NOT read `running` (#1179) — here `starting`, the
+    /// word a process Argo has launched and not yet heard carries. Every fixture above STATES what
+    /// the vessel should show; this one is resolved by the PROJECTION off a Session, because what
+    /// the case is about is the projection's own answer to "is a Turn in flight". A fixture
+    /// asserting `isTurnInFlight: true` would draw the same pixels whatever the projection did.
+    static var working: SessionComposerProjection.Composer {
+        // A `nil` here is the projection refusing this Session a composer, and quietly drawing the
+        // idle fixture instead is the one way this case could pass while saying nothing.
+        guard let composer = SessionComposerProjection.composer(
+            for: workingSession,
+            can: .init(canAttach: true, chooses: .both),
+        ) else {
+            preconditionFailure("ComposerSpecimen.working: the projection drew no composer")
+        }
+        return composer
+    }
+
+    /// The Session behind it: managed, driveable, and reading a status other than `running`.
+    private static let workingSession = CockpitPresentation.Session(
+        id: composer.sessionID,
+        title: "Restore the sessions Warp closed",
+        access: .managed,
+        status: .starting,
+        chain: .init(program: .init(cli: .claude, model: "claude-opus-5", effort: "medium")),
+        autonomy: .init(mode: composer.mode),
+    )
 }

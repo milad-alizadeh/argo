@@ -126,6 +126,37 @@ struct HubSubmittedTurnTests {
             == SessionStatusReading(tier: .derived, status: .unknown))
     }
 
+    /// The same claim asked on its own (#1179). The composer needs the NEWS rather than the word
+    /// it usually produces, because the word can be overruled above it — so it is read separately,
+    /// and it has to answer the same thing at the same moment.
+    @Test
+    func `a Turn Argo typed reads unanswered while it is reading running`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
+
+        try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
+
+        #expect(fixture.hub.session(id: claim.value)?.hasUnansweredTurn == true)
+    }
+
+    /// And it ends where the claim ends: the record answered the Turn, so what the Session is doing
+    /// is the record's to say. A reading that outlived the claim would hold the composer's queue
+    /// shut against a Turn nothing was running.
+    @Test
+    func `the record answering the Turn ends the unanswered reading too`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await Self.boundSession(of: fixture)
+        try fixture.hub.driver.send("Fix the caption, not the sort.", to: spawnedSessionID)
+
+        session.yield([.prompt(text: "Fix the caption, not the sort.", images: [], atMs: 2000)])
+
+        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 4 }
+        #expect(fixture.hub.session(id: spawnedSessionID)?.hasUnansweredTurn == false)
+    }
+
     /// A spawned Session whose CLI has written a record, with the stream still open so a test can
     /// say what lands next. The claim binds to it on the chain uuid inside the path (#742).
     private static func boundSession(

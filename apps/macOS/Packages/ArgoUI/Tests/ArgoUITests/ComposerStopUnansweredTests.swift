@@ -89,7 +89,7 @@ struct ComposerStopUnansweredTests {
     func `the retraction leaves another line standing`() {
         var draft = ComposerDraft()
         draft.text = "And then open the PR."
-        draft.submit(whileRunning: true) { _, _ in }
+        draft.submit(whileTurnInFlight: true) { _, _ in }
         draft.stopped(via: {})
         #expect(draft.notice == ComposerDraft.droppedQueue)
 
@@ -168,7 +168,7 @@ struct ComposerStopUnansweredTests {
     func `a steer arms no Stop wait`() async {
         let log = Log()
         log.draft.text = "And then open the PR."
-        log.draft.submit(whileRunning: true) { _, _ in }
+        log.draft.submit(whileTurnInFlight: true) { _, _ in }
 
         _ = log.draft.beginSteer(log.draft.queued[0].id, via: {})
         await composer(log).watchStop(patience: .milliseconds(1))
@@ -183,7 +183,7 @@ struct ComposerStopUnansweredTests {
     func `a steer still answers the boundary its interrupt makes`() {
         let log = Log()
         log.draft.text = "And then open the PR."
-        log.draft.submit(whileRunning: true) { _, _ in }
+        log.draft.submit(whileTurnInFlight: true) { _, _ in }
         _ = log.draft.beginSteer(log.draft.queued[0].id, via: {})
 
         let mustDrop = log.draft.mustDropQueue(afterInterrupt: true)

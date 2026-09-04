@@ -166,11 +166,16 @@ package struct SessionComposer: View {
     /// anything (design decision 11), the same act a click makes; see `open(_:)`.
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
-    /// Where it goes is `isRunning` and NOT `hasTurnEnded`, which the release reads (#1238). The
-    /// two are deliberately different questions at one reading: `asking` holds a live question the
-    /// composer is the only way to answer, so what is typed there goes NOW, while the follow-ups
-    /// queued behind the Turn go on waiting for its end. A Return queued at that moment would be
-    /// an answer the agent never hears.
+    /// Where it goes is `isTurnInFlight`, and NOT `hasTurnEnded`, which the release reads (#1238).
+    /// The two are deliberately different questions at one reading: `asking` holds a live question
+    /// the composer is the only way to answer, so what is typed there goes NOW, while the
+    /// follow-ups queued behind the Turn go on waiting for its end. A Return queued at that moment
+    /// would be an answer the agent never hears.
+    ///
+    /// Nor is it the status WORD (#1179). A Session Argo has just typed a Turn at, and one whose
+    /// process has not spoken yet, are both working and neither reads `running` — and both used to
+    /// take the branch below that puts the words down a busy PTY, files no queued Turn and draws
+    /// no chip, leaving what was typed nowhere at all.
     ///
     /// A steer in flight counts as running whatever the status says, and for the opposite reason:
     /// its own `ESC` has ended the Turn, so `isRunning` reads false for the whole of the pause
@@ -180,7 +185,10 @@ package struct SessionComposer: View {
         if menus.completes(on: line), complete() {
             return
         }
-        draft.submit(whileRunning: composer.isRunning || draft.steeringTurn != nil, via: sending)
+        draft.submit(
+            whileTurnInFlight: composer.isTurnInFlight || draft.steeringTurn != nil,
+            via: sending,
+        )
     }
 
     /// Tab, which takes the row under the cursor exactly as ⏎ does over the same menu (#1181) —

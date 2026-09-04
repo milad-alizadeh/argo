@@ -85,7 +85,7 @@ struct ComposerAttachmentTests {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft(text: "And this one.", attachments: [Self.dropped])
 
-        draft.submit(whileRunning: true) { _, _ in }
+        draft.submit(whileTurnInFlight: true) { _, _ in }
 
         #expect(draft.attachments.isEmpty)
         #expect(draft.queued.first?.attachments.map(\.name) == ["notes.md"])

@@ -12,7 +12,7 @@ struct ComposerQueueTests {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft(text: "And then open the PR.")
 
-        draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
+        draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(driver.sent(to: "session-a").isEmpty)
         #expect(draft.queued.map(\.text) == ["And then open the PR."])
@@ -25,7 +25,7 @@ struct ComposerQueueTests {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft(text: "Fix the caption.")
 
-        draft.submit(whileRunning: false) { text, _ in try driver.send(text, to: "session-a") }
+        draft.submit(whileTurnInFlight: false) { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(driver.sent(to: "session-a") == ["Fix the caption."])
         #expect(draft.queued.isEmpty)
@@ -37,7 +37,10 @@ struct ComposerQueueTests {
         var draft = ComposerDraft()
         for text in ["First", "Second", "Third"] {
             draft.text = text
-            draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
+            draft
+                .submit(whileTurnInFlight: true) { text, _ in
+                    try driver.send(text, to: "session-a")
+                }
         }
 
         draft.flush { text, _ in try driver.send(text, to: "session-a") }
@@ -52,7 +55,7 @@ struct ComposerQueueTests {
         var draft = ComposerDraft()
         for text in ["First", "Second", "Third"] {
             draft.text = text
-            draft.submit(whileRunning: true) { _, _ in }
+            draft.submit(whileTurnInFlight: true) { _, _ in }
         }
 
         draft.cancel(draft.queued[1].id)
@@ -68,7 +71,10 @@ struct ComposerQueueTests {
         var draft = ComposerDraft()
         for text in ["First", "Second"] {
             draft.text = text
-            draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
+            draft
+                .submit(whileTurnInFlight: true) { text, _ in
+                    try driver.send(text, to: "session-a")
+                }
         }
         driver.refusal = .notDrivable
 
@@ -98,7 +104,10 @@ struct ComposerQueueTests {
         var draft = ComposerDraft()
         for text in ["First", "Second"] {
             draft.text = text
-            draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
+            draft
+                .submit(whileTurnInFlight: true) { text, _ in
+                    try driver.send(text, to: "session-a")
+                }
         }
         driver.refusal = .notDrivable
         draft.flush { text, _ in try driver.send(text, to: "session-a") }
@@ -134,8 +143,8 @@ struct ComposerQueueTests {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft(text: "   \n ")
 
-        draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
-        draft.submit(whileRunning: false) { text, _ in try driver.send(text, to: "session-a") }
+        draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
+        draft.submit(whileTurnInFlight: false) { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(draft.queued.isEmpty)
         #expect(driver.sent(to: "session-a").isEmpty)
