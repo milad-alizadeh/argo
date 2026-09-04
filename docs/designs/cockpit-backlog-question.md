@@ -1,6 +1,19 @@
-<!-- status: approved
+<!-- status: reopened
      approved-at: 3ed1c522
+     reopened-at: #1316
      prototype: worktree-ticket-1293-backlog-question -->
+
+> **Reopened by #1316 — the glyph does not hold still.** The ticket that was meant to test
+> "ends in `?`, or six words and up" against a realistic corpus (`BacklogQueryIntentCorpus`, 106
+> queries in `apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/`) found both risks this file names
+> below. A long term reads as a question: `19/106` — roughly one term in six, every one a pasted
+> title or a long plain phrase — is misread. A short question reads as a term: `2/106` carry no
+> mark and fall under six words, and the rule misses them outright. The leading glyph also
+> changes its mind at least once on the way to being typed for `51/106` queries — three of those
+> (an embedded `?` inside a URL query string) flip it twice. `docs/designs/cockpit-backlog-
+> question.html?variant=B` — the wand at the field's edge, on `worktree-ticket-1293-backlog-
+> question` — is the drawn fallback this file names as the alternative to variant C. The evidence
+> is `BacklogQueryIntentProjectionTests.swift` in that same test target.
 
 # A question asked of the backlog
 
