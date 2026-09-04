@@ -64,12 +64,16 @@ extension TicketsRoomProjection {
     @MainActor
     static func ticket(_ showing: Int?, in listing: TicketsListing) -> Detail? {
         guard let number = showing, let item = listing.item(number) else { return nil }
+        // Read once and used twice, which is what keeps the head's two halves from disagreeing:
+        // the bucket already lets closure outrank the claim (`TicketState.init`), so the
+        // claimants have to answer to the bucket rather than to the claim set beneath it (#1191).
+        let bucket = item.state(claimed: listing.isClaimed(number))
         return Detail(
             id: number,
             title: item.title,
             status: item.status,
-            bucket: item.state(claimed: listing.isClaimed(number)),
-            claimants: listing.claimants(of: number),
+            bucket: bucket,
+            claimants: bucket == .claimed ? listing.claimants(of: number) : [],
             priority: item.priority,
             type: item.type,
             labels: item.labels,

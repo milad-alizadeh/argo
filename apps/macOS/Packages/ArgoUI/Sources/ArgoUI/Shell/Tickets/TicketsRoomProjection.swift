@@ -150,6 +150,10 @@ package enum TicketsRoomProjection {
         /// Whether a LIVE Session is on this ticket (#1074). Off the same `TicketClaims.numbers`
         /// the sidebar's `In progress` counts, and `TicketsBacklogMarkTests` holds the two in step
         /// over the whole open set — the way it already does for `blockage`.
+        ///
+        /// False on every CLOSED row, whatever view it stands in (#1191). The claim outlives the
+        /// closure — a Session does not stop because its ticket did — so the number stays claimed
+        /// and the row is the wrong place to say so: `TicketState` settles which of the two wins.
         var isClaimed = false
         /// What the blockage mark draws, and `nil` where it draws none (#896).
         ///

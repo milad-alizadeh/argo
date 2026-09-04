@@ -39,6 +39,17 @@ extension SpecimenRegistry {
                 reading: TicketsFixture.closedMore, seed: .init(opening: .closed),
             )
         },
+        // A closed row under a live Session that never stopped (#1191). The claim outlives the
+        // closure, so both of these rows are still in `claims.numbers` — and neither draws the
+        // mark, because the claim is a fact about the SESSION and the row would state it about
+        // the TICKET. Opened on #690, so the pane's head is in the same shot: it files the ticket
+        // `resolved` and names no claimant either.
+        SpecimenEntry("claimedAfterClosingView") {
+            TicketsPanesSpecimen(
+                reading: TicketsFixture.claimedAfterClosing.opened(at: 690),
+                seed: .init(opening: .closed),
+            )
+        },
         // The `Closed` view before its own read has landed. The count is ABSENT rather than zero
         // and the deck says nothing has been read — opening onto `0` is the number that tells a
         // reader they have finished nothing, and nobody asked.
@@ -153,6 +164,13 @@ extension SpecimenRegistry {
         // rather than silently picking one to route to.
         SpecimenEntry("twoClaimantsTicketHead") {
             TicketDetailSpecimen(reading: TicketsFixture.claimedAndBlocked)
+        },
+        // …and the state the head must NOT draw either of those in (#1191): the ticket closed
+        // while its Session kept running, so the claim is still in the join. The head files it
+        // `resolved` and names no claimant — the route is gone with the mark, because a head that
+        // kept it would state in prose what the row was stopped from stating in a glyph.
+        SpecimenEntry("claimedAfterClosingHead") {
+            TicketDetailSpecimen(reading: TicketsFixture.claimedAfterClosing.opened(at: 690))
         },
         // …and what that count OPENS onto (#1092): a row per claimant, each a route of its own,
         // each led by the roster's state dot so the list says which of the two is running. The

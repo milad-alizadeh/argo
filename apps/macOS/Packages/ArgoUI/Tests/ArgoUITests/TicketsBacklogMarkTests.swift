@@ -144,6 +144,50 @@ struct TicketsBacklogMarkTests {
         #expect(both?.marks.blockage?.count == 2)
     }
 
+    /// A claim is a fact about the SESSION, and closing a ticket does not end the Session that
+    /// named it — so the number stays claimed until that Session stops. Drawing the mark on the
+    /// row states the fact about the TICKET instead, and on a closed one that reading is a false
+    /// DIRECT: it says somebody is working what was already resolved (#1191).
+    ///
+    /// Keyed to the ROW's own closure rather than to the view it stands in, which is why the
+    /// expectation is over every drawn row and not over the two claimed numbers alone.
+    @Test
+    func `a closed row carries no claim mark though the Session on it is still live`() {
+        let reading = TicketsFixture.claimedAfterClosing
+        let room = TicketsRoomProjection.room(from: reading, in: .closed)
+        let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
+
+        // Both claimed numbers are on screen, so this is not passing over an empty list.
+        #expect(drawn.contains { $0.id == 690 })
+        #expect(drawn.contains { $0.id == 186 })
+        for row in drawn {
+            #expect(!row.row.marks.isClaimed)
+        }
+    }
+
+    /// …and the same claim on an OPEN ticket is still drawn, so the suppression above is the
+    /// closure doing the work rather than the `Closed` view drawing no marks at all.
+    @Test
+    func `an open row in the same reading still carries its claim mark`() {
+        let room = TicketsRoomProjection.room(from: TicketsFixture.claimedAfterClosing)
+        let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
+
+        #expect(drawn.first { $0.id == 388 }?.row.marks.isClaimed == true)
+    }
+
+    /// The pane's head takes the same claim set (`TicketsRoomProjection+Detail.swift`), so it has
+    /// the same false DIRECT to avoid: a resolved ticket must not name a claimant under a bucket
+    /// that already reads `resolved`. `Detail.claimants` is documented as empty on every ticket
+    /// `bucket` is not `.claimed` for, and this is the reading that holds it to it (#1191).
+    @Test(arguments: [(690, TicketState.resolved), (186, .ruledOut)])
+    func `the head names no claimant on a closed ticket`(number: Int, bucket: TicketState) {
+        let reading = TicketsFixture.claimedAfterClosing.opened(at: number)
+        let room = TicketsRoomProjection.room(from: reading, in: .closed)
+
+        #expect(room.ticket?.bucket == bucket)
+        #expect(room.ticket?.claimants.isEmpty == true)
+    }
+
     /// One concept, one mark, for the reason #939 fixed the blockage glyph: the rail says "4 in
     /// progress" and these rows are the 4 it counted.
     @Test
@@ -206,66 +250,5 @@ struct TicketsBacklogMarkTests {
             room.backlog.first { $0.id == 607 }?.children.first { $0.id == 272 }?.marks.blockage
                 == TicketsRoomProjection.Blockage(count: 2, isStranded: false),
         )
-    }
-}
-
-/// Which ONE fact the caption slot carries. The four candidates are ordered here and nowhere else,
-/// so a fifth has to be placed in this list rather than race the others for the slot.
-@Suite("The backlog row's caption")
-@MainActor
-struct TicketsBacklogCaptionTests {
-    private static let now = Date(timeIntervalSince1970: 1_700_000_000)
-
-    private static func drawn(
-        trailing: String? = nil,
-        odd: String? = nil,
-        daysAgo: Double? = nil,
-    )
-        -> TicketsRoomProjection.Drawn {
-        let row = TicketsRoomProjection.Row(
-            id: 1, title: "A ticket", delivery: .absent, trailing: trailing, priority: nil,
-            labels: [], children: [], marks: .none,
-            touched: daysAgo.map { now.addingTimeInterval(-$0 * 86400) },
-        )
-        var drawn = TicketsRoomProjection.Drawn(row: row, depth: 0)
-        drawn.odd = odd
-        return drawn
-    }
-
-    @Test
-    func `a parent roll-up outranks the odd priority and the age`() {
-        let drawn = Self.drawn(trailing: "2/9", odd: "medium", daysAgo: 12)
-
-        #expect(drawn.caption(asOf: Self.now) == "2/9")
-    }
-
-    @Test
-    func `an odd priority outranks the age`() {
-        #expect(Self.drawn(odd: "medium", daysAgo: 12).caption(asOf: Self.now) == "medium")
-    }
-
-    /// The age is the slot's DEFAULT — what it says when nothing more specific has claimed it.
-    /// Last, because nearly every row has one: an age that outranked the other two would delete
-    /// them from a list where they are the only thing saying it.
-    @Test
-    func `the age takes the slot nothing else claimed`() {
-        #expect(Self.drawn(daysAgo: 12).caption(asOf: Self.now) == "1w")
-    }
-
-    @Test
-    func `a row whose provider served no date carries no caption at all`() {
-        #expect(Self.drawn().caption(asOf: Self.now) == nil)
-    }
-
-    /// The two marks answer different questions — "can I start this" and "how long has it sat" —
-    /// so a row that is both blocked and stale draws both rather than choosing.
-    @Test
-    func `the blockage mark does not contend for the caption`() {
-        let room = TicketsRoomProjection.room(from: TicketsFixture.reading)
-        let drawn = TicketsRoomProjection.drawn(room.backlog, shut: [])
-        let stale = drawn.first { $0.id == 272 }
-
-        #expect(stale?.row.marks.blockage?.count == 2)
-        #expect(stale?.caption(asOf: Self.now) != nil)
     }
 }

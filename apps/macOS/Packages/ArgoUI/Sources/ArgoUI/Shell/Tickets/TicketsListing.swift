@@ -32,13 +32,19 @@ struct TicketsListing {
         return byNumber[number]
     }
 
-    /// Whether a Session has taken this ticket — the roster join, by number.
+    /// Whether a Session has taken this ticket — the roster join, by number, and nothing more.
+    ///
+    /// RAW: it answers about the Session, which is the only thing the join knows. A Session does
+    /// not stop when its ticket closes, so this stays true on a closed ticket (#1191) — and no
+    /// caller may render it as-is. Both readers put it through `Ticket.state(claimed:)` first,
+    /// where closure outranks the claim, and draw off the bucket that comes back.
     func isClaimed(_ number: Int) -> Bool {
         reading.claims.numbers.contains(number)
     }
 
     /// Which live Session(s) took this ticket, named well enough to route to (#1092). Empty on
-    /// every ticket `isClaimed` reads false for — the two come off one `TicketClaims` value.
+    /// every ticket `isClaimed` reads false for — the two come off one `TicketClaims` value, and
+    /// so carry the same rawness: the head empties this wherever its bucket is not `.claimed`.
     func claimants(of number: Int) -> [TicketClaims.Claimant] {
         reading.claims.claimants[number] ?? []
     }
