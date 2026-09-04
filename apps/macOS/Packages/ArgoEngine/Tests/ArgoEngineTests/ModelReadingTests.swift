@@ -43,9 +43,6 @@ struct ModelReadingTests {
         #expect(read == ["claude-mythos-6"])
     }
 
-    /// The bug. A placeholder reached the composer's model picker as a pickable row, and a resume
-    /// then put it on `--model` — where no such model exists, so every turn failed and no turn
-    /// could write the real reading that would have replaced it.
     @Test(arguments: ["<synthetic>", "<unknown>", "", "   "])
     func `a placeholder is not a model reading`(placeholder: String) async {
         let read = await ids(TranscriptReader().read(line: line(model: placeholder)))

@@ -7,8 +7,12 @@
 public extension HubSession {
     /// The model id, verbatim and unread — the record's where one has landed, and otherwise what
     /// Argo put on argv. `nil` for an external Session, which Argo did not start.
+    /// A placeholder here reads as NO model rather than as one (#1223, `ModelID`). The reading side
+    /// drops one as it parses, so this is the launch side: a Session already started on
+    /// `<synthetic>` — off a ledger entry written before that guard existed — would otherwise keep
+    /// offering it as the composer's ticked row, which is where the picker can never land.
     var model: String? {
-        observedModel ?? launchedRun?.model
+        ModelID.named(in: observedModel ?? launchedRun?.model)
     }
 
     /// The CLI's own word for the effort level, on the same terms as `model` above. The launch

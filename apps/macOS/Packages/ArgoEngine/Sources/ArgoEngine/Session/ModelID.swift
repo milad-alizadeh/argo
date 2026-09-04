@@ -1,27 +1,20 @@
 import Foundation
 
-/// Whether a value naming a model is a MODEL ID at all (#1223).
+/// Whether a value standing where a model id goes NAMES a model (#1223).
 ///
 /// Not a list of models, and it must never become one: #558's rule is that an id Argo's readable
-/// table has never heard of is exactly the id a newer CLI knows, so the only thing that can be
-/// judged here is the value's SHAPE. Two shapes are not ids:
-///
-/// - nothing at all — an empty or blank value names no model;
-/// - `<something>` — the angle brackets are how a CLI writes a placeholder, and `<synthetic>` is
-///   the one `claude` puts on a record it composed itself rather than got from a provider (an API
-///   error, a rate-limit notice). It is the host saying NO model answered, in the field where a
-///   model would go.
-///
-/// Argo took such a value as the Session's model, offered it in the composer's model picker, and
-/// put it back on `--model` at every resume. No such model exists, so every turn then failed — and
-/// a failed turn writes another synthetic record, so the Session could never read its way out.
-public enum ModelID {
-    /// `false` for a value that is a placeholder rather than an id. A caller reading a model off a
-    /// record or a file drops the value on `false` and KEEPS what it already had: the last real
-    /// reading is a truer answer than the host's word for having none.
-    public static func isReal(_ id: String) -> Bool {
-        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        return !(trimmed.hasPrefix("<") && trimmed.hasSuffix(">"))
+/// table has never heard of is exactly the id a newer CLI knows, so only the value's SHAPE can be
+/// judged here. Two shapes name nothing: a blank value, and `<something>` — the angle brackets are
+/// how a CLI writes a placeholder. `claude` 2.1.257 puts `<synthetic>` in the field on a record it
+/// composed itself rather than got from a provider, beside `"isApiErrorMessage": true`.
+enum ModelID {
+    /// The id the value names, or `nil` where it names none. Verbatim on the way through: the
+    /// blanks are judged on a trimmed copy, but what comes back is what went in (#558).
+    static func named(in value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        guard !(trimmed.hasPrefix("<") && trimmed.hasSuffix(">")) else { return nil }
+        return value
     }
 }

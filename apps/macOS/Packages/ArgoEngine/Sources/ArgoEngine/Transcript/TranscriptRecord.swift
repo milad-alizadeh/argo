@@ -52,6 +52,8 @@ public struct MessageRecord: Sendable, Equatable {
 /// record's own field beside `cwd` — and that difference is the host's filing, not a difference in
 /// what they are.
 public struct RunReading: Sendable, Equatable {
+    /// `nil` where the record named no model — including where it carried a PLACEHOLDER, which is
+    /// dropped as the record is parsed rather than by each reader in turn (#1223, `ModelID`).
     public let model: String?
     public let effort: String?
 
@@ -151,7 +153,7 @@ extension MessageRecord {
         self.entrypoint = record.stringField("entrypoint")
         self.permissionMode = record.stringField("permissionMode")
         self.run = RunReading(
-            model: message?.stringField("model"),
+            model: ModelID.named(in: message?.stringField("model")),
             effort: record.stringField("effort"),
         )
         self.stopReason = message?.stringField("stop_reason")

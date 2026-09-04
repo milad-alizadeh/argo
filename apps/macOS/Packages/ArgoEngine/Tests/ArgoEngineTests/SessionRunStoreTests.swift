@@ -93,9 +93,7 @@ struct SessionRunStoreTests {
             == SessionRun(model: "sonnet", effort: .medium))
     }
 
-    /// The crash leg of #1223. A file naming a placeholder is a file naming no model, so the next
-    /// launch opens on Opus 5 rather than putting `<synthetic>` back on `--model` — where it broke
-    /// every turn of the Session that read it.
+    /// The crash leg of #1223: a file naming a placeholder names no model.
     @Test(arguments: ["<synthetic>", "<unknown>", "   "])
     func `a placeholder in the file opens on Opus 5`(placeholder: String) throws {
         let file = Self.temporaryFileURL()
@@ -107,8 +105,7 @@ struct SessionRunStoreTests {
             == SessionRun(model: SessionRun.unpicked.model, effort: .high))
     }
 
-    /// And the placeholder never gets INTO the file either, so a launch that read one cannot hand
-    /// it to the launch after that.
+    /// And it never gets INTO the file either, so one launch cannot hand it to the next.
     @Test func `a placeholder is not remembered as a pick`() {
         let file = Self.temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: file) }

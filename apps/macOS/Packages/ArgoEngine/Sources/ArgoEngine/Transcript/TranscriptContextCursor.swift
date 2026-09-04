@@ -47,10 +47,7 @@ struct TranscriptContextCursor {
             lastBranch = branch
             events.append(.branch(branch))
         }
-        // A placeholder is DROPPED rather than announced, and `lastModel` is left where it was: the
-        // last real reading stays the Session's model, and the next real one still announces
-        // itself (#1223, `ModelID`).
-        if let model = message.run.model, ModelID.isReal(model), model != lastModel {
+        if let model = message.run.model, model != lastModel {
             lastModel = model
             events.append(.model(model))
         }
