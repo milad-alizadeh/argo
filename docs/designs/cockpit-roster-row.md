@@ -54,6 +54,7 @@ Everything below is a token or is derived from one. Nothing is a number a builde
 |---|---|---|
 | column width | `ArgoIconSize.statusDot` = **6** | every title on the roster hangs off this one x |
 | dot inset from the row's top | `(row line − statusDot) / 2` | the dot sits on the **title's optical centre**. Derived, never nudged: a marker aligned by a magic number drifts the moment the type scale moves. The row line is `rowTitle`'s box |
+| what "`rowTitle`'s box" is | `ArgoTypeScale.drawnLineBox` | amended in the build (#1343). The `.html` sets `--row-line: 13 × 1.45`, which is CSS's own leading and stands ~1.6pt over the box SwiftUI actually draws a `Text` in; centring against it puts the dot visibly under the title. The box is the resolved face's `ascender − descender`, measured on the render at 12px dot centre against a 106–125px cap band |
 | Subagent dot | **4** | half the state dot. What runs *under* a Session is drawn smaller than the Session's own state |
 | gap between marks | **3** | tighter than `hair` would place them; the stack has to read as one column, not as a list |
 | ceiling | **5**, then `+n` | five is where a stack stops being countable at a glance, and the figure is exact where a longer stack is texture |

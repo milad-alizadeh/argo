@@ -4,44 +4,36 @@ import ArgoEngine
 import CoreGraphics
 import Testing
 
-/// The three-line roster row (#1343, `cockpit-roster-row.md`): which line each fact is on, and
-/// where the leading column's mark sits against the title it answers to.
+/// Which of the row's three lines each fact is on (#1343, `cockpit-roster-row.md`).
 @Suite("The roster row's three lines")
 struct SessionRowLinesTests {
-    /// The rule the second line reads off. It is the whole fact slot and not the activity alone:
-    /// a fold's folder label and an idle Session's `/implement` are the same slot, and the line
-    /// goes only when the slot is empty.
     @Test
-    func `a Session with something to say draws its second line`() throws {
+    func `a Session with something to say fills line 2`() throws {
         let row = try #require(rows(status: .running, events: [ran("bun run quality")]).first)
 
         #expect(row.secondaryFact == "Ran bun run quality")
-        #expect(row.drawsActivityLine)
-        // Line 3 is there either way — the clock left line 2 and never comes back to it.
-        #expect(row.clock != nil)
     }
 
     @Test
-    func `a Session with nothing to say draws no second line, and keeps its clock`() throws {
-        // A title that already carries both the command and the number, so `toldApart` says
-        // nothing either: the slot is empty rather than merely activity-less.
-        let row = try #require(SessionRosterProjection.rows(from: [
-            RosterSessionFixture.session(
-                id: "one", title: "/implement 1343", status: .idle, lastSeenAtMs: 0,
-            ),
-        ]).first)
-
-        #expect(row.secondaryFact == nil)
-        #expect(!row.drawsActivityLine)
-        // The two-line row is a title and a clock, never a title and a gap.
-        #expect(row.clock != nil)
+    func `a Session with nothing to say draws no line 2`() throws {
+        #expect(try rowWithNothingToSay().secondaryFact == nil)
     }
 
-    /// The leading column carries a fold's disclosure where it carries a Session's dot, so the
-    /// centring below has to answer for both marks.
+    /// The clock left line 2 for line 3 and does not come back to it, so a row that draws no
+    /// line 2 still draws its clock.
     @Test
-    func `a fold draws its second line from the folder it stands for`() throws {
-        let fold = try #require(SessionRosterProjection.rows(from: (0 ..< 3).map { index in
+    func `the clock is there whether or not line 2 is drawn`() throws {
+        let running = try #require(rows(status: .running, events: [ran("swift test")]).first)
+
+        #expect(running.clock != nil)
+        #expect(try rowWithNothingToSay().clock != nil)
+    }
+
+    /// A fold's own second line is the folder it stands for, which is why line 2 goes on an empty
+    /// slot rather than on an absent activity.
+    @Test
+    func `a fold fills line 2 with the folder it stands for`() throws {
+        let row = try #require(SessionRosterProjection.rows(from: (0 ..< 3).map { index in
             RosterSessionFixture.session(
                 id: "headless-\(index)",
                 workspaceLocation: RosterSessionFixture.checkout,
@@ -52,7 +44,17 @@ struct SessionRowLinesTests {
             )
         }).first { $0.fold != nil })
 
-        #expect(fold.drawsActivityLine)
+        #expect(row.secondaryFact == row.fold?.label)
+    }
+
+    /// A title already carrying both the command and the number, so `toldApart` says nothing
+    /// either: the slot is empty rather than merely activity-less.
+    private func rowWithNothingToSay() throws -> SessionRosterProjection.Row {
+        try #require(SessionRosterProjection.rows(from: [
+            RosterSessionFixture.session(
+                id: "one", title: "/implement 1343", status: .idle, lastSeenAtMs: 0,
+            ),
+        ]).first)
     }
 
     private func rows(status: SessionStatus, events: [TranscriptEvent])
@@ -70,9 +72,8 @@ struct SessionRowLinesTests {
     }
 }
 
-/// Where the leading column puts its mark. Every case reads the offset off the type role rather
-/// than off a number, which is the point: a marker aligned by a magic number drifts the moment the
-/// scale moves, and no case here can be satisfied by pinning the drift.
+/// Where the leading column puts its mark. Every case reads the offset off the type role, which is
+/// the point: a mark aligned by a magic number drifts the moment the scale moves.
 @MainActor
 @Suite("The roster marker's centring")
 struct SessionMarkerTests {
@@ -83,15 +84,13 @@ struct SessionMarkerTests {
         #expect(abs(centre - SessionMarker.titleLineBox / 2) < 0.001)
     }
 
-    /// The derivation itself, so a later edit cannot keep the centring while quietly swapping the
-    /// box it is centred in for a constant.
+    /// The box the centring is measured in, so a later edit cannot keep the arithmetic while
+    /// swapping the drawn line for the ladder's nominal number — a different value, and larger or
+    /// smaller depending on the machine (`ArgoTypeScale.drawnLineBox`).
     @Test
-    func `the offset is derived from the title's own line box`() {
+    func `the box is the title role's drawn line, not its nominal one`() {
         #expect(SessionMarker.titleLineBox == ArgoTypography.rowTitle.rung.drawnLineBox)
-        #expect(
-            SessionMarker.inset(for: ArgoIconSize.statusDot)
-                == (SessionMarker.titleLineBox - ArgoIconSize.statusDot) / 2,
-        )
+        #expect(SessionMarker.titleLineBox != ArgoTypography.rowTitle.nominalLineBox)
     }
 
     /// The chevron is wider than the column it sits in, and the column does not grow for it: every
