@@ -90,10 +90,12 @@ struct ComposerSteerTests {
         #expect(!release.walks)
     }
 
-    /// …and it comes back the moment the steer lands, because the queue behind it is still waiting
-    /// on a Turn that is over.
+    /// The same race one step later, and the one a first pass got wrong. The paste has LANDED, so
+    /// the steered follow-up leaves the queue — but the status is still the one this steer's own
+    /// interrupt produced, and it reads `idle`. Released on that reading the whole queue would
+    /// follow the steered follow-up into the very Turn it was steering.
     @Test
-    func `the release comes back once the steer has landed`() {
+    func `nothing is released on the status a steer's own interrupt produced`() {
         let log = Log()
         queue(["Run the suite.", "And then open the PR."], in: log)
         let steered = log.draft.queued[1].id
@@ -101,7 +103,42 @@ struct ComposerSteerTests {
 
         log.draft.steerLanded(steered)
 
+        #expect(!ComposerRelease(Self.session(at: .idle), log.draft).flushes)
+    }
+
+    /// …and it comes back once the record has caught up: a Turn seen RUNNING is what makes the
+    /// status trustworthy again, and the boundary after that one is a real one.
+    @Test
+    func `the release comes back once the record has seen the steered Turn`() {
+        let log = Log()
+        queue(["Run the suite.", "And then open the PR."], in: log)
+        let steered = log.draft.queued[1].id
+        _ = log.draft.beginSteer(steered, via: {})
+        log.draft.steerLanded(steered)
+
+        // The record shows the steered Turn running — the vessel's own `hasTurnEnded` false edge.
+        composer(log).turnRead(false)
+
         #expect(ComposerRelease(Self.session(at: .idle), log.draft).flushes)
+    }
+
+    /// A steer in flight is a Turn in flight, whatever the status says: its own `ESC` ended the
+    /// last one, so `isRunning` reads false for the whole of the pause. A Return sent straight
+    /// through there would reach the CLI AHEAD of the follow-up the reader chose to send first.
+    @Test
+    func `a follow-up typed during the pause queues behind the steered one`() {
+        let log = Log()
+        queue(["Run the suite."], in: log)
+        _ = log.draft.beginSteer(log.draft.queued[0].id, via: {})
+
+        log.draft.text = "Actually, do the caption first."
+        // The reading `submit()` makes while a steer is in flight.
+        log.draft.submit(whileRunning: log.draft.steeringTurn != nil) { text, _ in
+            log.acts.append("send \(text)")
+        }
+
+        #expect(log.acts.isEmpty)
+        #expect(log.draft.queued.map(\.text).contains("Actually, do the caption first."))
     }
 
     /// The chip says what is happening to it. Without this the reader clicks and watches nothing
@@ -122,10 +159,10 @@ struct ComposerSteerTests {
     /// longer a Turn to keep the words back from, and a cancel racing the paste would take back a
     /// follow-up the agent may already have.
     @Test
-    func `a steer in flight offers no cancel`() {
-        #expect(!QueuedTurnStanding.steering.isCancellable)
-        #expect(QueuedTurnStanding.queued.isCancellable)
-        #expect(QueuedTurnStanding.notSent.isCancellable)
+    func `a steer in flight offers no control at all`() {
+        #expect(!QueuedTurnStanding.steering.isActionable)
+        #expect(QueuedTurnStanding.queued.isActionable)
+        #expect(QueuedTurnStanding.notSent.isActionable)
     }
 
     /// One at a time. A second steer would put a second `ESC` into a Turn the first already ended,

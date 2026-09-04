@@ -25,10 +25,13 @@ enum QueuedTurnStanding: Equatable {
         }
     }
 
-    /// Whether the chip's `×` is offered. A steer in flight has none: the interrupt has already
-    /// landed, so there is no longer a Turn to keep these words back from, and a cancel that
-    /// raced the paste would take back a follow-up the agent may already have.
-    var isCancellable: Bool {
+    /// Whether this follow-up is still the reader's to act on — whether the chip offers ANY
+    /// control, which is what its two mean together rather than either one by itself.
+    ///
+    /// A steer in flight offers none: the interrupt has already landed, so there is no longer a
+    /// Turn to keep these words back from, and a cancel that raced the paste would take back a
+    /// follow-up the agent may already have.
+    var isActionable: Bool {
         self != .steering
     }
 

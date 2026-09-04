@@ -26,6 +26,8 @@ struct ComposerRelease {
         let isRefused: Bool
         /// Whether a follow-up is being steered into the running Turn (#1238).
         let isSteering: Bool
+        /// Whether a steered Turn has gone and the record has yet to show it running (#1238).
+        let isAwaitingSteeredTurn: Bool
 
         init(_ draft: ComposerDraft) {
             self.waiting = draft.queued.count
@@ -33,6 +35,7 @@ struct ComposerRelease {
             self.isWalkingMode = draft.isWalkingMode
             self.isRefused = draft.refusal != nil
             self.isSteering = draft.steeringTurn != nil
+            self.isAwaitingSteeredTurn = draft.isAwaitingSteeredTurn
         }
     }
 
@@ -64,8 +67,12 @@ struct ComposerRelease {
     /// interrupt ENDS the Turn, so the boundary arrives while the steered follow-up is still in
     /// the queue with its paste not yet written. Released there it would go twice, and every
     /// follow-up behind it would go early, into a Turn the reader had just redirected (#1238).
+    /// And a steer that has just LANDED stops it too, which is the sharpest of the four: the
+    /// paste has gone but the record has not caught up, so `hasTurnEnded` is still reading `true`
+    /// for the Turn the steer ended rather than the one it started. Released on that reading the
+    /// whole queue would follow the steered follow-up into the Turn it was steering.
     var flushes: Bool {
         hasTurnEnded && awaiting.waiting > 0 && !awaiting.isRefused && !awaiting.isWalkingMode
-            && !awaiting.isSteering
+            && !awaiting.isSteering && !awaiting.isAwaitingSteeredTurn
     }
 }

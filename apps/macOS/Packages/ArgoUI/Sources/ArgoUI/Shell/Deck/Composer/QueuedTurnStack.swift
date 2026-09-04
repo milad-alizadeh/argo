@@ -8,21 +8,13 @@ struct QueuedTurnStack: View {
     /// Where each one has got to, asked per turn — `ComposerDraft.standing(of:)` is the answer, and
     /// a closure rather than a dictionary so the draft stays the one place that decides.
     var standing: (QueuedTurn.ID) -> QueuedTurnStanding = { _ in .queued }
-    /// Put one into the running Turn now, by id (#1238).
-    var steer: (UUID) -> Void = { _ in }
-    /// Take one back, by id. The whole point of drawing a queued turn is that it is still
-    /// recallable.
-    let cancel: (UUID) -> Void
+    /// What the reader can do to one of them — see `QueuedTurnActs`.
+    var acts = QueuedTurnActs()
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             ForEach(turns) { turn in
-                QueuedTurnChip(
-                    turn: turn,
-                    standing: standing(turn.id),
-                    steer: { steer(turn.id) },
-                    cancel: { cancel(turn.id) },
-                )
+                QueuedTurnChip(turn: turn, standing: standing(turn.id), acts: acts)
             }
         }
         .padding(.bottom, ArgoSpacing.snug)
@@ -30,7 +22,7 @@ struct QueuedTurnStack: View {
 }
 
 #Preview("Queued turns — one waiting") {
-    QueuedTurnStack(turns: [QueuedTurn(text: "Run the suite once more.")], cancel: { _ in })
+    QueuedTurnStack(turns: [QueuedTurn(text: "Run the suite once more.")])
         .padding(ArgoSpacing.section)
         .frame(width: 640)
         .argoDeckSurface()
@@ -44,7 +36,6 @@ struct QueuedTurnStack: View {
             QueuedTurn(text: "Then open the PR against main."),
             QueuedTurn(text: "And put the ticket number in the title."),
         ],
-        cancel: { _ in },
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -60,7 +51,6 @@ struct QueuedTurnStack: View {
     return QueuedTurnStack(
         turns: turns,
         standing: { $0 == turns[0].id ? .notSent : .queued },
-        cancel: { _ in },
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -76,7 +66,7 @@ struct QueuedTurnStack: View {
     return QueuedTurnStack(
         turns: turns,
         standing: { $0 == turns[1].id ? .steering : .queued },
-        cancel: { _ in },
+        acts: QueuedTurnActs(canSteer: true),
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)

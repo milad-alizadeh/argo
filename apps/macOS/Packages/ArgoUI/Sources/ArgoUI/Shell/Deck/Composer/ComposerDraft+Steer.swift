@@ -53,6 +53,10 @@ extension ComposerDraft {
     /// the boundary.
     mutating func steerLanded(_ id: QueuedTurn.ID) {
         steeringTurn = nil
+        // Before anything else moves: taking the follow-up out of the queue is itself a movement
+        // the release watches, and the status it would be read against is still the one this
+        // steer's own interrupt produced.
+        claimSteeredTurn()
         // The chip's own `×` act: one follow-up leaves the queue by id, and a delivered steer
         // takes it out exactly as a cancel would have.
         cancel(id)
@@ -61,9 +65,10 @@ extension ComposerDraft {
 
     /// The interrupt landed and the words did not.
     ///
-    /// The follow-up stays queued, in the place it was already in: the Turn it was overtaking is
-    /// over now, so the ordinary release is what carries it next, oldest first. The seam says why
-    /// with the Retry that puts the whole queue, and the chip says which one was reached.
+    /// The follow-up stays queued, in the place it was already in. What carries it next is the
+    /// seam's Retry and not the ordinary release: a refusal is standing now, and the release
+    /// declines while one does (`ComposerRelease.flushes`) precisely so the same words are not put
+    /// to the same port at every reading. The chip says which one was reached.
     mutating func steerRefused(_ id: QueuedTurn.ID, _ error: any Error) {
         steeringTurn = nil
         refused(by: ComposerSeamLine(error))

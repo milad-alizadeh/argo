@@ -120,6 +120,18 @@ extension SessionComposer {
         }
     }
 
+    /// One reading of whether the Turn is over, and what each of its two edges means.
+    ///
+    /// A Turn STARTING matters as much as one ending, and only since the steer: a steer puts a
+    /// Turn the record has not caught up with, and until it does, `hasTurnEnded` reads `true` for
+    /// the Turn the steer's own interrupt ended. Seeing one RUN again is what makes the status
+    /// trustworthy for this Session again, so the claim is spent here and the boundary that
+    /// follows is a real one (#1238).
+    func turnRead(_ hasTurnEnded: Bool) {
+        guard hasTurnEnded else { return draft.turnStarted() }
+        turnEnded()
+    }
+
     /// The Turn's boundary: the one EDGE in the release, and the only place the drop claim is
     /// spent. Everything else the release does is `release()` below, which is a level.
     ///

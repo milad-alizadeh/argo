@@ -17,12 +17,13 @@ struct QueuedTurnChip: View {
     @Environment(\.argo) private var argo
 
     let turn: QueuedTurn
-    /// Where this follow-up has got to — the word it wears, and which controls it offers.
+    /// Where this follow-up has got to — the word it wears, and whether it is still the reader's
+    /// to act on.
     var standing = QueuedTurnStanding.queued
-    /// Put it into the running Turn now, ahead of the boundary it is waiting for.
-    var steer: () -> Void = {}
-    /// Take it back — the whole point of drawing a queued turn is that it is still recallable.
-    let cancel: () -> Void
+    /// What the reader can do to it — see `QueuedTurnActs`. Beside `standing` rather than folded
+    /// into it: one is about this follow-up, the other about the Turn and the acts themselves, and
+    /// only both together say whether a control is drawn.
+    var acts = QueuedTurnActs()
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
@@ -46,16 +47,21 @@ struct QueuedTurnChip: View {
 
     /// Both gone while a steer is in flight: the interrupt has landed, so there is no longer a Turn
     /// to keep these words back from, and neither act means anything until the paste has gone.
+    ///
+    /// The steer goes on its own besides, wherever there is no running Turn to overtake — a
+    /// control that would put an `ESC` at an idle prompt and change nothing.
     @ViewBuilder private var controls: some View {
-        if standing.isCancellable {
-            Button(action: steer) {
-                ArgoGlyph(ArgoSymbol.steer, .inline)
-                    .argoHitTarget()
-                    .foregroundStyle(argo.color.text.tertiary)
+        if standing.isActionable {
+            if acts.canSteer {
+                Button(action: steer) {
+                    ArgoGlyph(ArgoSymbol.steer, .inline)
+                        .argoHitTarget()
+                        .foregroundStyle(argo.color.text.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Self.steerLabel)
+                .help(Self.steerLabel)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Self.steerLabel)
-            .help(Self.steerLabel)
             Button(action: cancel) {
                 ArgoGlyph(ArgoSymbol.dismiss, .inline)
                     .argoHitTarget()
@@ -65,6 +71,17 @@ struct QueuedTurnChip: View {
             .accessibilityLabel(Self.cancelLabel)
             .help(Self.cancelLabel)
         }
+    }
+
+    /// The two acts, bound to this chip's own follow-up. Named rather than written inline at the
+    /// controls: a `Button` given a trailing closure beside its action reads as two closures to
+    /// the linter and as one to a person, and neither reading is worth the argument.
+    private func steer() {
+        acts.steer(turn.id)
+    }
+
+    private func cancel() {
+        acts.cancel(turn.id)
     }
 
     /// The word's ink, resolved from the role the standing names — the contract's colours come off
@@ -86,7 +103,7 @@ struct QueuedTurnChip: View {
 #Preview("Queued turn — one follow-up waiting") {
     QueuedTurnChip(
         turn: QueuedTurn(text: "And when that is green, open the PR against main."),
-        cancel: {},
+        acts: QueuedTurnActs(canSteer: true),
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -98,7 +115,6 @@ struct QueuedTurnChip: View {
     QueuedTurnChip(
         turn: QueuedTurn(text: "And when that is green, open the PR against main."),
         standing: .steering,
-        cancel: {},
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -110,7 +126,6 @@ struct QueuedTurnChip: View {
     QueuedTurnChip(
         turn: QueuedTurn(text: "And when that is green, open the PR against main."),
         standing: .notSent,
-        cancel: {},
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
@@ -123,7 +138,6 @@ struct QueuedTurnChip: View {
         turn: QueuedTurn(
             text: String(repeating: "And then check the anchor survives a compaction. ", count: 6),
         ),
-        cancel: {},
     )
     .padding(ArgoSpacing.section)
     .frame(width: 480)
