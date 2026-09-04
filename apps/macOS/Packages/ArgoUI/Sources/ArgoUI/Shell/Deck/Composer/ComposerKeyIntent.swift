@@ -13,6 +13,10 @@ enum ComposerKeyIntent: Equatable {
     /// Offered to whichever menu is open; the caret keeps it where there is none.
     case walkDown
     case walkUp
+    /// Take the row under an open menu's cursor, whatever ⏎ takes there — the completion key every
+    /// other such menu answers (#1181). With no row to take it is the focus walk's, so the field
+    /// only answers it where a menu has one.
+    case complete
     /// Put an open menu away, leaving the draft as it was.
     case dismiss
     /// Not the field's to answer.
@@ -25,6 +29,7 @@ enum ComposerKeyIntent: Equatable {
     static let escapeKey: UInt16 = 53
     static let downArrowKey: UInt16 = 125
     static let upArrowKey: UInt16 = 126
+    static let tabKey: UInt16 = 48
 
     /// The modifiers that change what a key MEANS here. The keypad and function flags ride along on
     /// every arrow press and say nothing about intent, so they are masked out rather than tested.
@@ -38,6 +43,9 @@ enum ComposerKeyIntent: Equatable {
         case downArrowKey: return held.isEmpty ? .walkDown : .pass
         case upArrowKey: return held.isEmpty ? .walkUp : .pass
         case escapeKey: return held.isEmpty ? .dismiss : .pass
+        // Only the bare key. Shift-Tab is #718's walk backwards and every other modifier is a
+        // shortcut being reached for, and neither is a completion.
+        case tabKey: return held.isEmpty ? .complete : .pass
         default: return .pass
         }
     }

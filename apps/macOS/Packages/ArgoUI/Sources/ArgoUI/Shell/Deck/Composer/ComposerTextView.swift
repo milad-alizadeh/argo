@@ -19,6 +19,7 @@ struct ComposerTextView: NSViewRepresentable {
     let submit: () -> Void
     let walk: (ComposerKeyIntent) -> Bool
     let dismiss: () -> Bool
+    let complete: () -> Bool
     let attach: ([SessionAttachment]) -> Void
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -36,6 +37,7 @@ struct ComposerTextView: NSViewRepresentable {
         input.submit = submit
         input.walk = walk
         input.dismiss = dismiss
+        input.complete = complete
         input.attach = attach
         context.coordinator.text = $text
         context.coordinator.argo = argo

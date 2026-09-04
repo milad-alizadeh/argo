@@ -12,6 +12,10 @@ final class ComposerTextInput: NSTextView {
     /// An arrow offered to whichever menu is open. `false` hands it back to the caret, so a line
     /// that opens no menu keeps the platform's own movement.
     var walk: (ComposerKeyIntent) -> Bool = { _ in false }
+    /// Tab, offered to whichever composer menu is open. `false` says there was no row under a
+    /// cursor to take, and the key falls through to `insertTab` — the focus walk, unchanged
+    /// (#1181).
+    var complete: () -> Bool = { false }
     /// Escape. `false` says no menu was open, and the key goes on up the responder chain — the
     /// permission footer's `esc denies` and the deck's own dismissals are all above this field.
     var dismiss: () -> Bool = { false }
@@ -24,13 +28,15 @@ final class ComposerTextInput: NSTextView {
         case .newline: insertNewline(nil)
         case .walkDown where walk(.walkDown), .walkUp where walk(.walkUp): return
         case .dismiss where dismiss(): return
-        case .walkDown, .walkUp, .dismiss, .pass: super.keyDown(with: event)
+        case .complete where complete(): return
+        case .walkDown, .walkUp, .dismiss, .complete, .pass: super.keyDown(with: event)
         }
     }
 
-    // Tab moves focus, as it did at the stock field. A text view that is not a field editor inserts
-    // a tab character instead, which costs every keyboard-only reader the footer's controls (#718's
-    // walk) and quietly puts a `\t` in the draft.
+    // Tab moves focus, as it did at the stock field, wherever `complete` above left it to. A text
+    // view that is not a field editor inserts a tab character instead, which costs every
+    // keyboard-only reader the footer's controls (#718's walk) and quietly puts a `\t` in the
+    // draft.
 
     override func insertTab(_ sender: Any?) {
         window?.selectNextKeyView(sender)

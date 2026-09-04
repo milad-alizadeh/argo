@@ -43,6 +43,18 @@ struct ComposerMenuKeyboardTests {
         #expect(walked == false)
     }
 
+    /// Tab takes the row Return would (#1181), so the two keys can never take different rows: the
+    /// one spelling of the pick answers both.
+    @Test
+    func `the Tab key is not a walk, and takes what Return takes`() {
+        let line = Self.line("/imp")
+        var menus = Self.opened(on: line)
+        menus.settle(on: line)
+
+        #expect(menus.walk(.complete, on: line) == false)
+        #expect(menus.picked(on: line) == ComposerMenu.Pick(text: "/implement ", dropping: 4))
+    }
+
     @Test
     func `the Return key takes the row under the cursor`() throws {
         let line = Self.line("/imp")

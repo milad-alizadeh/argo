@@ -65,7 +65,23 @@ struct ComposerKeyIntentTests {
         #expect(Self.intent(ComposerKeyIntent.escapeKey) == .dismiss)
     }
 
-    /// `a` on a US layout, standing for every key that is not one of the five above.
+    /// Tab is a completion key wherever a completion menu is open, which is what every other
+    /// such menu does and what the hand reaches for (#1181). Whether a row is there to take is
+    /// the menus' to answer; the meaning of the key is not.
+    @Test
+    func `a bare Tab completes the row under an open menu's cursor`() {
+        #expect(Self.intent(ComposerKeyIntent.tabKey) == .complete)
+    }
+
+    /// Shift-Tab is the focus walk backwards, which #718 built and this must not take.
+    @Test
+    func `a modified Tab is still the focus walk's`() {
+        #expect(Self.intent(ComposerKeyIntent.tabKey, .shift) == .pass)
+        #expect(Self.intent(ComposerKeyIntent.tabKey, .option) == .pass)
+        #expect(Self.intent(ComposerKeyIntent.tabKey, .command) == .pass)
+    }
+
+    /// `a` on a US layout, standing for every key that is not one of the six above.
     private static let letterKey: UInt16 = 0
 
     @Test

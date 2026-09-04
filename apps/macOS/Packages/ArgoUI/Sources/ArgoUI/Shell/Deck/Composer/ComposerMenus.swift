@@ -130,7 +130,8 @@ struct ComposerMenus {
         switch key {
         case .walkDown: cursor.down(over: ids)
         case .walkUp: cursor.up(over: ids)
-        case .submit, .newline, .dismiss, .pass: return false
+        // Tab takes a row rather than moving between them — `picked(on:)` is what answers it.
+        case .complete, .submit, .newline, .dismiss, .pass: return false
         }
         return true
     }
