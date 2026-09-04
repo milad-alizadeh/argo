@@ -47,9 +47,13 @@ package struct ComposerDraft: Equatable {
     /// Whether the walk for `heldMode` has begun, so no second boundary can start another (#653).
     /// Not `private(set)`, on the same rule as `heldMode` above.
     var isWalkingMode = false
-    /// Whether this composer's own Stop landed and the record has yet to report it (#1189). Not
-    /// part of `isClear`: it is a claim about an act in flight, never something a reader typed.
-    private var stopAwaitingRecord = false
+    /// How many Stops this composer has landed that no boundary has answered yet (#1189, #1234).
+    /// Not part of `isEmpty`: it is a claim about an act in flight, never something a reader typed.
+    ///
+    /// Counted rather than flagged though only `> 0` is asked of it here: the vessel keys its wait
+    /// on this value moving (`SessionComposer.watchStop(patience:)`), and a flag already true would
+    /// leave a second Stop watched by nobody.
+    private(set) var unansweredStops = 0
 
     package init(
         text: String = "",
@@ -170,8 +174,47 @@ package struct ComposerDraft: Equatable {
         // Argo's own Stop drops the queue HERE, at the click, ahead of the record: waiting for the
         // status to turn would be waiting for the exact moment the follow-ups are released. The
         // claim is spent by the boundary that follows — see `mustDropQueue(afterInterrupt:)`.
-        stopAwaitingRecord = true
+        unansweredStops += 1
         dropQueue()
+    }
+
+    /// The wait after a Stop went by and no boundary came with it (#1234).
+    ///
+    /// Given the OUTCOME rather than the act, for the reason `turnLost(_:whileRunning:)` is: the
+    /// waiting happens seconds after the click returned, and a `mutating` method cannot hold a
+    /// draft open across it. The vessel does the waiting; this decides what to say about it.
+    ///
+    /// It says nothing where a boundary has already answered: the vessel's wait and the record
+    /// race, and the record wins. A refused Stop is silent here on the same count —
+    /// `stopped(via:)` leaves it untouched when the port throws, so there is nothing outstanding
+    /// for this to speak about and the port's own reason stands alone.
+    ///
+    /// A notice rather than a refusal, which is the rule `dropQueue` states: nothing was sent, and
+    /// no unsent words are at risk.
+    mutating func stopDidNotTake() {
+        guard unansweredStops > 0 else { return }
+        say(ComposerSeamLine(Self.stopDidNotTakeNotice))
+    }
+
+    /// What the seam says about it. Two claims, and neither is one Argo cannot stand behind: the
+    /// keystroke went and the Session has not come off `running`. Never that the agent is still
+    /// working, which is a DERIVED reading Argo does not own, and never that the Stop failed, which
+    /// nothing here can see.
+    package static let stopDidNotTakeNotice = "Stop did not take. The Session is still running."
+
+    /// Take back the line the wait put up, now that a boundary has answered the Stop after all
+    /// (#1234).
+    ///
+    /// The line is a claim about what is happening NOW, and a claim like that cannot outlive the
+    /// news that answers it — the wait gives a Stop five seconds, and a slow file watch or an `ESC`
+    /// the CLI took a while to unwind both land later than that. Without this the seam goes on
+    /// saying the Session is running over one that has been idle for minutes, which is the false
+    /// DIRECT the honesty rule exists to stop.
+    ///
+    /// Its OWN line and no other: a drop the same boundary reported is news the reader still needs.
+    mutating func stopTookAfterAll() {
+        guard notice == Self.stopDidNotTakeNotice else { return }
+        say(nil)
     }
 
     /// Drop what was waiting on the Turn, and say so where anything was.
@@ -196,8 +239,8 @@ package struct ComposerDraft: Equatable {
     /// The claim is spent by any boundary, not only by the one it was made for: a Stop whose
     /// interrupt the record somehow never reports must not go on swallowing the next one's drop.
     mutating func mustDropQueue(afterInterrupt wasInterrupted: Bool) -> Bool {
-        defer { stopAwaitingRecord = false }
-        return wasInterrupted && !stopAwaitingRecord
+        defer { unansweredStops = 0 }
+        return wasInterrupted && unansweredStops == 0
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
