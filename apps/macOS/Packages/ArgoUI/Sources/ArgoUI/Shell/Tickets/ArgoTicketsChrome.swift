@@ -7,9 +7,8 @@ import SwiftUI
 /// The row height is NOT here. It is the shell's existing titlebar strip and `ArgoToolbarVessel`
 /// already names it, so a second number for the same band could only ever disagree with it.
 ///
-/// The icon buttons and their capsule are NOT here either. This row measured its own box, three
-/// other headers measured three more, and one mark read as four different controls (#1243) —
-/// `ArgoControlBox` and `ArgoIconButtonGroup` own all of it now.
+/// The icon buttons and their capsule are not here either, for the same reason: `ArgoControlBox`
+/// and `ArgoIconButtonGroup` own them for every header at once (#1243).
 enum ArgoTicketsChrome {
     /// Wide enough for `Search the backlog`, and no wider — at 260 the field clipped the trailing
     /// edge at the 1280 window.

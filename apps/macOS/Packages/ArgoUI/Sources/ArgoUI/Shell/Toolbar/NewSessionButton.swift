@@ -34,7 +34,13 @@ package struct NewSessionButton: View {
             voice: ArgoControlVoice(
                 isStarting ? Self.starting : NewSessionOffer.label, help: helpText,
             ),
-            face: ArgoControlFace(box: ArgoControlBox.vessel, ink: ink, ground: .glass),
+            // The LIVE ink only: the atom spells the disabled state in `text.disabled` for every
+            // icon button at once, and a plain button dims nothing of a label it did not draw.
+            face: ArgoControlFace(
+                box: ArgoControlBox.vessel,
+                ink: argo.color.text.primary,
+                ground: .glass,
+            ),
             act: start,
             mark: { mark },
         )
@@ -86,14 +92,6 @@ package struct NewSessionButton: View {
             await spawn()
             isStarting = false
         }
-    }
-
-    /// The LIVE ink only. A disabled plain button dims nothing of a label it did not draw, and the
-    /// atom spells that state in `text.disabled` for every icon button at once — this control used
-    /// to answer it in `text.tertiary` and the Tickets row in `text.disabled`, which was two inks
-    /// for one state (#1243).
-    private var ink: ArgoColor {
-        argo.color.text.primary
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

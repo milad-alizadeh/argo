@@ -49,12 +49,12 @@ struct ControlBoxContractTests {
         #expect(ArgoControlBox.vesselRuleHeight < ArgoControlBox.icon)
     }
 
-    /// The one surface that keeps a box of its own, and the direction it keeps it in. Its number
-    /// answers to the plan pill's lane, so what is assertable here is that the exception is a
-    /// bigger control and never a smaller one — a float under the settled box would be an icon
+    /// The float over the feed keeps a box of its own, and this is the direction it keeps it in.
+    /// Its number answers to the plan pill's lane, so what is assertable here is that the exception
+    /// is a bigger control and never a smaller one — a float under the settled box would be an icon
     /// button that had simply been missed.
     @Test
-    func `the feed's float is the one box of its own, and it is larger`() {
+    func `the feed's float keeps a box of its own, and it is larger`() {
         #expect(ArgoFeedRow.tailDiameter > ArgoControlBox.icon)
     }
 }

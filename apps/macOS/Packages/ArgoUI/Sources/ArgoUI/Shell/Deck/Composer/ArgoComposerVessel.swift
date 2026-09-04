@@ -6,10 +6,6 @@ import SwiftUI
 /// (`docs/designs/cockpit-session-composer.md`). Values a token already owns are spelled through
 /// that token at the call site and are not restated here.
 public enum ArgoComposerVessel {
-    // The circle the send arrow sits in is NOT here. The study's 26pt is `ArgoControlBox.icon`,
-    // which every icon button in the app now draws at (#1243) — the composer was one of four
-    // surfaces naming its own box for the same control.
-
     /// The stop mark inside that circle while a Turn runs (#541) — a quarter of the disc it sits
     /// in, measured off `docs/designs/composer/running.png`.
     ///

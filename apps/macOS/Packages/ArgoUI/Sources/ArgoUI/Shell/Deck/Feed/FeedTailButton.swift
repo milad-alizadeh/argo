@@ -17,10 +17,7 @@ struct FeedTailButton: View {
     let follow: () -> Void
 
     var body: some View {
-        // The one icon button in the app that does NOT take `ArgoControlBox.icon`, and the reason
-        // is beside `tailDiameter`: this control's box answers to the plan pill's lane rather than
-        // to the button, because the two float over the same edge and a mark narrower than the lane
-        // would sit inside a float rather than beside one.
+        // A box of its own rather than `ArgoControlBox.icon`; the reason is beside `tailDiameter`.
         ArgoIconButton(
             ArgoSymbol.latest,
             voice: ArgoControlVoice("Newest"),
