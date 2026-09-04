@@ -2,7 +2,7 @@
 
 **Throwaway.** Lives on `argo/#1310-roster-agent-count`, not on `main`.
 Open `roster-row-signals-prototype.html` beside it; switch with the floating bar, `←` / `→`,
-or `?variant=A|B|C|D`.
+or `?variant=A|B|C|D|E|F`.
 
 ## The question
 
@@ -45,14 +45,60 @@ sentence, and the clock at the trailing edge (`SessionRosterProjection+Row.swift
 | **B** | Trailing meta column on line 1 | labelled figure, no ceiling | filled chip beside it | the title's width — the widest thing on the row |
 | **C** | Grouped with the clock, line 2 trailing | labelled figure in the trailing group | between the count and the clock | the activity's tail, and three facts where the eye expects one |
 | **D** | One trailing gutter, one ranked fact | labelled figure, but only when it wins the slot | second in the ranking | seeing the count and the PR at once |
+| **E** | A third line, only when there is a delivery | figure on line 1 trailing | on line 3, after the lifecycle track | a uniform row height |
+| **F** | A third line on every row | as E | as E | about a third of the roster's vertical space |
 
-Ready-to-ship is the same in all four: the word `Ready` in the state slot on line 1.
+In A to D, ready-to-ship is the word `Ready` in the state slot on line 1.
+
+### E and F — the third line
+
+E and F split the row by **subject** rather than by slot, which is the argument for a third line
+at all:
+
+```
+line 1   who this is, and what machinery is under it   — title, agent count, state
+line 2   what it is doing at this second               — activity, clock
+line 3   what it has produced                          — the Delivery
+```
+
+Lines 1 and 2 are the **Session**: a process, running now. Line 3 is the **Delivery**: a product
+on a branch that outlives the process. Nothing on line 3 competes with the activity, because the
+activity is a different subject and now has a line to itself. The register change carries the
+split — the utility face, one step down, the PR's own ink — so no hairline rule is needed. A
+rule inside a row inside a list is furniture; a change of voice is not.
+
+**The line leads with the Delivery's own lifecycle.** Five segments for `commits · pr · ci ·
+review · merge`, the nodes `CONTEXT.md` L4 already names, filled to where the work actually got.
+That is a structural device that encodes something true rather than decorating: the reader can
+see at a glance that one run is at review and another has not opened a PR. A closed PR draws its
+reached segments **hollow**, because filling them solid would say the work landed.
+
+**Ready-to-ship needs no badge in this shape.** It *is* a filled `commits` beside an empty `pr`
+— the gap is the state. The words beside the track say it in full, with the reason the Session
+gave.
+
+E draws the line **only where there is a Delivery**, so most rows stay two lines and the
+*presence* of a third line is itself the signal. F draws it on every row, so the Delivery sits on
+one x down the whole list.
+
+**Line 2 disappears when there is no activity**, in both. A quiet Session with a Delivery would
+otherwise draw a line holding nothing but a clock, and a hollow line between two full ones is the
+one thing a three-line row cannot afford. The clock moves to the trailing edge of line 3, which
+does not break the scan column: the clock is right-aligned to the row's edge on either line, so
+only its *y* changes.
 
 The prototype renders the **answers card** beside the roster: every variant's position on each
 of the ticket's eight questions plus the two the PR badge and the ready state add. Nothing has
 to be held in the reader's head.
 
 ## What the fixtures force
+
+**The titles are the real shape.** A Session titled from its Ticket leads with the number —
+`#1269 — The rail reads …` — exactly as the app draws it. The first fixtures used short invented
+titles, and they hid two things that change the judgement. Titles are **long**, so every variant
+that spends line 1's width costs more than it looked; and the meta slot is **empty** on most
+rows, which is the projection's own rule (`toldApart` gives the Ticket only where the title does
+not already name it, #1072).
 
 Each row exists to make a variant answer something:
 
@@ -63,7 +109,8 @@ Each row exists to make a variant answer something:
 - **An external Session** — question 6. The count is DERIVED and Argo cannot resolve it
   (#1076), so the shape needs a state that is not a number. Every variant draws an outline or a
   `?`, never a figure. `finished` there would be the #1269 untruth.
-- **Ready to ship with no PR** — the `Ready` word on the row, and the control in the deck header.
+- **Ready to ship with no PR** — the `Ready` word on the row (E and F: an empty `pr` node), and
+  the control in the deck header.
 - **Ready to ship with a PR already open** — the stale claim. The claim is CONVENTION, arriving
   over the companion channel; the PR is DERIVED from the code host. **The PR wins and the word
   never draws**, in all four variants.
@@ -103,12 +150,28 @@ Rendered and looked at, all four:
 - **Motion is wrong.** The switcher has a **Motion** toggle that breathes the marks. Turn it on
   once: nine rows pulsing out of phase is a list nobody can scan. Question 8 answers itself.
 
-## The open risk, all four variants
+- **F barely differs from E on a real roster.** Nearly every Session has a Delivery, so F's
+  extra line lands on one row in ten and says `no delivery yet`. F is the honest counter-position
+  and the pixels do not support it.
+
+## Two numbers, one row
+
+**A pull request must never be addressed `#1312` on this roster.** The title already opens with
+the Ticket number, so `#1269 — The rail reads …` above `#1312 open` reads as one run against two
+tickets. Tickets and pull requests live in different spaces and the row has to say which one it
+is addressing.
+
+The prototype draws it `PR 1312`, and drops the word where a glyph is already carrying it. This
+is the one finding here that is not a preference: it is a misreading, and it appears on every
+variant that draws a PR number at all.
+
+## The open risk, all six variants
 
 **The PR inks are not in the visual contract.** `GraphitePalette.swift` has no purple at all, and
 `--pr-open` (`#3FB950`) sits one hue from `--running` (`#46D3A8`) — the ink the state dot spends
 on a Session that is working. A green PR number beside a teal running dot is **two greens on one
-row saying two unrelated things**.
+row saying two unrelated things** — and on a running row with a live Turn clock it is **three**,
+because `RosterTurnClock` spends the running ink on the duration too.
 
 The prototype draws it the risky way on purpose so the collision is visible rather than argued
 about. Three ways out, and this is the decision the review has to make:

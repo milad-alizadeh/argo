@@ -6,7 +6,7 @@
 <title>PROTOTYPE — Roster row signals: agents, PR, ready to ship</title>
 <!--
   THROWAWAY PROTOTYPE (#1310, plus the PR badge and the ready-to-ship affordance).
-  Four variants of the Sessions roster row, switchable via ?variant=A|B|C|D, the floating
+  Six variants of the Sessions roster row, switchable via ?variant=A|B|C|D|E|F, the floating
   bar, or the ← / → keys.
 
   THE QUESTION
@@ -148,6 +148,10 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  /* A live Turn duration is the one figure on the row drawn in the running ink — the same
+     spend `RosterTurnClock` makes today. It is also a THIRD green on a row that carries a
+     PR badge, which is the collision the .md names. */
+  .time.live { color: var(--running); }
   .badge {
     flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
     text-transform: uppercase; color: var(--attention);
@@ -215,6 +219,32 @@
   /* The reason the Session gave, in the deck header beside the control. */
   .shipwhy { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
              text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- E / F — the third line ---------- */
+  /* A DIFFERENT SUBJECT from the two lines above it. Lines 1 and 2 are the Session: a process,
+     running now. This line is the Delivery: a product on a branch, which outlives the process.
+     The register change carries that — the utility face, one step down, and the PR's own ink —
+     so no hairline rule is needed to separate them. A rule inside a row inside a list is
+     furniture; a change of voice is not. */
+  .delivery {
+    display: flex; align-items: center; gap: var(--s-snug);
+    margin-top: var(--s-hair); padding-left: 14px;
+    font: 10.5px var(--mono); color: var(--text-3); min-width: 0;
+  }
+  .delivery .n { flex: none; }
+  .delivery .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .delivery.none { color: var(--text-off); }
+
+  /* THE SIGNATURE. The Delivery's own lifecycle, in miniature: commits · pr · ci · review ·
+     merge, the five nodes `CONTEXT.md` L4 already names. Filled to where the work has actually
+     got, in the PR state's ink. Ready-to-ship needs no badge in this shape — it IS the gap
+     between a filled `commits` and an empty `pr`. */
+  .track { display: inline-flex; gap: 2px; flex: none; }
+  .track i { width: 6px; height: 3px; border-radius: 1px; background: rgba(255,255,255,.13); }
+  .track i.on { background: currentColor; }
+  /* A closed pull request reached its nodes and then stopped counting. Hollow, not filled:
+     drawing it solid red would say the work landed. */
+  .track.closed i.on { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
 
   /* D's trailing gutter: one fixed column, one fact, ranked. */
   .gutter { width: 46px; flex: none; display: flex; flex-direction: column;
@@ -361,28 +391,42 @@ const glyph = (d, cls = 'g') => `<svg class="${cls}" viewBox="0 0 16 16" fill="n
    pr:     { n, state } or null. state ∈ open | merged | closed | draft, the host's own words.
    ready:  what the Session CLAIMED over the companion channel, or null. CONVENTION tier. */
 const sessions = [
-  { id:'s1', title:'The rail reads the Subagents’ own records', state:'running', access:'managed',
-    act:'Editing FeedAgentReader.swift', clock:'4m 12s',
+  /* THE TITLES ARE THE REAL SHAPE. A Session titled from its Ticket leads with the number:
+     `#1269 — The rail reads …`, exactly as the app draws it. Two consequences the earlier
+     fixtures hid, and both change the judgement:
+
+       1. Titles are LONG. Every variant that spends line 1's width is far more expensive than
+          a short invented title made it look.
+       2. A pull request drawn as `#1312` puts a SECOND hash number on a row whose title
+          already opens with one. `#1269 — … #1312` reads as one run against two tickets.
+          The PR is addressed as `PR 1312` here for that reason — see the .md.
+
+     The meta slot is empty on most rows, and that is the projection's own rule, not a
+     shortcut: `toldApart` gives the Ticket only where the title does NOT already name it
+     (`IssueReading.names(number:in:)`, #1072). */
+  { id:'s1', title:'#1269 — The rail reads the Subagents’ own records', state:'running', access:'managed',
+    act:'Ran Edit FeedAgentReader.swift', clock:'4m 12s',
     agents:3, spent:1, pr:{n:1312,state:'open'}, ready:null },
 
   /* Q5 — the ceiling. Twelve marks do not fit on a 320pt row in ANY variant. */
-  { id:'s2', title:'Sweep every stop reason in the corpus', state:'running', access:'managed',
-    act:'Reading 41 transcripts', clock:'22m 07s',
+  { id:'s2', title:'#1204 — Sweep every stop reason in the corpus', state:'running', access:'managed',
+    act:'Ran Read 41 transcripts', clock:'22m 07s',
     agents:12, spent:4, pr:null, ready:null },
 
   /* Q4a — delegated NOTHING. The honest mark here is no mark at all. */
-  { id:'s3', title:'Fix the worktree naming guard', state:'running', access:'managed',
-    act:'Running scripts/swift-boundaries.sh', clock:'1m 30s',
-    agents:0, spent:0, pr:{n:1289,state:'merged'}, ready:null },
+  { id:'s3', title:'#1289 — Fix the worktree naming guard', state:'running', access:'managed',
+    act:'Ran scripts/swift-boundaries.sh', clock:'1m 30s',
+    agents:0, spent:0, pr:{n:1291,state:'merged'}, ready:null },
 
   /* Q4b — delegated five, and all five are home. Different fact from the row above. */
-  { id:'s4', title:'Graphite and Ion Blue across the shell', state:'idle', access:'managed',
-    act:null, told:'#375', clock:'18m',
+  { id:'s4', title:'#375 — Graphite and Ion Blue across the shell', state:'idle', access:'managed',
+    act:null, clock:'18m',
     agents:0, spent:5, pr:{n:1301,state:'closed'}, ready:null },
 
-  /* THE SHIP CASE — the Session says it is done and there is no PR yet. */
-  { id:'s5', title:'Roster archive foot', state:'idle', access:'managed',
-    act:null, told:'/implement 1288', clock:'2m',
+  /* THE SHIP CASE — the Session says it is done and there is no pull request yet. The one
+     title shape that is NOT a ticket: a run opened by a slash command (#745). */
+  { id:'s5', title:'/implement 1288', state:'idle', access:'managed',
+    act:null, clock:'2m',
     agents:0, spent:2, pr:null,
     ready:{ why:'8 files · 2 commits · quality green' } },
 
@@ -391,20 +435,20 @@ const sessions = [
     act:null, told:'external', clock:'6m ago',
     agents:null, spent:0, pr:{n:1305,state:'draft'}, ready:null },
 
-  /* An orphaned run: ghosted, and its PR outlives the process that opened it. */
-  { id:'s7', title:'The checkout mark’s previews', state:'idle', access:'orphaned',
-    act:null, told:'#1276', clock:'3d',
+  /* An orphaned run: ghosted, and its pull request outlives the process that opened it. */
+  { id:'s7', title:'#1276 — The checkout mark’s previews pass the worktree', state:'idle', access:'orphaned',
+    act:null, clock:'3d',
     agents:0, spent:3, pr:{n:1279,state:'open'}, ready:null },
 
-  { id:'s8', title:'Screenshots go in the ticket body', state:'attn', access:'managed',
-    word:'Needs input', act:'Waiting on gh auth', clock:'40s',
+  { id:'s8', title:'#1282 — Screenshots go in the ticket body and the PR body', state:'attn', access:'managed',
+    word:'Needs input', act:'Ran gh auth status', clock:'40s',
     agents:1, spent:0, pr:{n:1286,state:'open'}, ready:null },
 
-  /* The edge that decides where the ship affordance may live: the Session claims ready AND a
-     PR is already open. The claim is stale; the PR outranks it and the strip must not draw. */
-  { id:'s9', title:'The branch control goes', state:'idle', access:'managed',
-    act:null, told:'#1232', clock:'1h',
-    agents:0, spent:1, pr:{n:1285,state:'open'},
+  /* The edge that decides where the ship claim may draw: the Session claims ready AND a pull
+     request is already open. The claim is stale; the pull request outranks it. */
+  { id:'s9', title:'#1232 — The branch control goes; Refresh checkout moves', state:'idle', access:'managed',
+    act:null, clock:'1h',
+    agents:0, spent:1, pr:{n:1285,state:'open'}, reviewed:true,
     ready:{ why:'12 files · 3 commits' } },
 
   /* Q7 — the fold. It stands for four headless runs at once, so every fact on it is a SUM or
@@ -424,6 +468,8 @@ const shipsNow = s => s.ready != null && s.pr == null;
 const word = s => s.word ?? null;
 const dotClass = s => s.access === 'external' ? 'unknown' : (s.state ?? 'idle');
 const fact = s => s.act ?? s.told ?? null;
+/* The clock, in the ink its state earns. */
+const clockOf = s => `<span class="time ${s.state === 'running' ? 'live' : ''}">${s.clock}</span>`;
 
 /* The count line the RAIL draws for the same Session, so a variant can be checked against it. */
 const railHeader = s =>
@@ -431,11 +477,15 @@ const railHeader = s =>
 
 /* The PR badge, in the two weights the variants need. `#1312` and a state ink — the number is
    the thing the reader is looking for, and the colour is what the state costs nothing to say. */
+/* `PR 1312` and never `#1312`. The title of a Session already opens with its Ticket number, so
+   a second hash on the same row reads as a second ticket. The two live in different spaces and
+   the row has to say which space it is addressing. Where a glyph is drawn the word is dropped —
+   the mark is the label there. */
 function prBadge(s, { fill = false, glyphOn = true } = {}) {
   if (!s.pr) return '';
   const mark = s.pr.state === 'merged' ? SVG.merged : SVG.pr;
-  return `<span class="pr ${s.pr.state} ${fill ? 'fill' : ''}" title="Pull request #${s.pr.n} — ${s.pr.state}">
-    ${glyphOn ? glyph(mark) : ''}#${s.pr.n}</span>`;
+  return `<span class="pr ${s.pr.state} ${fill ? 'fill' : ''}" title="Pull request ${s.pr.n} — ${s.pr.state}">
+    ${glyphOn ? glyph(mark) : 'PR&nbsp;'}${s.pr.n}</span>`;
 }
 
 /* The fold's PR reading: never one badge, because a fold has no one PR. A tally or nothing. */
@@ -464,6 +514,8 @@ const NAMES = {
   B: 'Trailing meta column on line 1',
   C: 'Grouped with the clock, line 2 trailing',
   D: 'One trailing gutter, one ranked fact',
+  E: 'A third line, only when there is a delivery',
+  F: 'A third line on every row',
 };
 
 /* Ready to ship, as a WORD in the state slot — the slot that already carries `Needs input` and
@@ -502,7 +554,7 @@ const roster = {
         <span class="flex g6">
           ${s.fold ? foldPRs(s) : prBadge(s)}
           <span class="meta grow">${fact(s) ?? ''}</span>
-          <span class="time">${s.clock}</span>
+          ${clockOf(s)}
         </span>
       </span>
     </div>`;
@@ -526,7 +578,7 @@ const roster = {
       </div>
       <div class="flex g6">
         <span class="meta grow">${fact(s) ?? ''}</span>
-        <span class="time">${s.clock}</span>
+        ${clockOf(s)}
       </div>
     </div>`,
 
@@ -549,7 +601,7 @@ const roster = {
         <span class="meta grow">${fact(s) ?? ''}</span>
         ${agentFigure(s)}
         ${s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false})}
-        <span class="time">${s.clock}</span>
+        ${clockOf(s)}
       </div>
     </div>`,
 
@@ -571,13 +623,74 @@ const roster = {
         <span class="meta">${fact(s) ?? ''}</span>
       </span>
       <span class="gutter">
-        <span class="slot"><span class="time">${s.clock}</span></span>
+        <span class="slot">${clockOf(s)}</span>
         <span class="slot">${
           (s.agents == null || s.agents > 0)
             ? agentFigure(s)
             : (s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false}))
         }</span>
       </span>
+    </div>`,
+
+  /* == E and F: THE THIRD LINE ==========================================================
+     Both split the row by SUBJECT rather than by slot, which is the argument for a third
+     line at all:
+
+       line 1   who this is, and what machinery is under it   — title, agent count, state
+       line 2   what it is doing at this second               — activity, clock
+       line 3   what it has produced                          — the Delivery
+
+     Lines 1 and 2 are the Session, a process running now. Line 3 is the Delivery, a product
+     on a branch that outlives the process. Nothing on line 3 competes with the activity,
+     because the activity is a different subject and now has a line to itself.
+
+     The line leads with the Delivery's own lifecycle — commits · pr · ci · review · merge,
+     the five nodes `CONTEXT.md` L4 names — filled to where the work actually got. Ready to
+     ship needs no badge in this shape: it IS a filled `commits` beside an empty `pr`. */
+
+  /* ── E ────────────────────────────────────────────────────────────────────────────────
+     The line appears ONLY where there is something to deliver. Most rows stay two lines, so
+     the PRESENCE of a third line is itself the signal — the reader finds the runs that made
+     something without reading a word.
+     GIVES UP: a uniform row height, and with it the ability to judge the list's length at a
+     glance. */
+  E: s => `
+    <div class="col" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${agentFigure(s)}
+        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+      </div>
+      ${linesOf(s).hasActivity ? `
+      <div class="flex g6" style="padding-left:14px">
+        <span class="meta grow">${fact(s)}</span>
+        ${clockOf(s)}
+      </div>` : ''}
+      ${deliveryLine(s, {always: false, clock: !linesOf(s).hasActivity})}
+    </div>`,
+
+  /* ── F ────────────────────────────────────────────────────────────────────────────────
+     The same line on EVERY row, including the rows with nothing to say, which read `no
+     delivery yet` against an empty track. The counter-position to E: a fixed three-line row
+     puts the delivery on one x down the whole list, and a reader compares two runs by
+     reading across rather than by hunting for which rows grew a line.
+     GIVES UP: about a third of the roster's vertical space, on rows that had nothing to
+     add. */
+  F: s => `
+    <div class="col" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${agentFigure(s)}
+        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+      </div>
+      ${linesOf(s).hasActivity ? `
+      <div class="flex g6" style="padding-left:14px">
+        <span class="meta grow">${fact(s)}</span>
+        ${clockOf(s)}
+      </div>` : ''}
+      ${deliveryLine(s, {always: true, clock: !linesOf(s).hasActivity})}
     </div>`,
 };
 
@@ -593,6 +706,62 @@ function agentFigure(s) {
     return `<span class="agents spent" title="${s.spent} delegations, all landed">${glyph(SVG.agents)}0</span>`;
   return '';  /* delegated nothing — no mark at all */
 }
+
+
+/* ============ THE THIRD LINE (E and F) ============ */
+/* How far the Delivery has actually got, as a count of the five lifecycle nodes. A RULE and not
+   a table on each fixture: the stage is derived from the pull request's own state, so no row can
+   claim a stage its PR does not support. */
+const NODES = ['commits', 'pr', 'ci', 'review', 'merge'];
+function stage(s) {
+  if (!s.pr) return s.ready ? 1 : 0;          /* commits and nothing else, or nothing at all */
+  switch (s.pr.state) {
+    case 'draft':  return 2;
+    case 'merged': return 5;
+    case 'closed': return 3;
+    default:       return s.reviewed ? 4 : 3;
+  }
+}
+
+/* The track. Five segments, filled to the stage, in the pull request state's ink — and in the
+   ship green before there is a pull request at all, because that is the one state where the NEXT
+   node is the whole point. */
+function track(s) {
+  const n = stage(s);
+  const state = s.pr ? s.pr.state : 'open';
+  const reached = NODES.slice(0, n).join(' · ') || 'nothing yet';
+  return `<span class="pr ${state}" title="${reached}"><span class="track ${state}">${
+    NODES.map((_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')
+  }</span></span>`;
+}
+
+/* What the line SAYS beside the track. One job each: the track carries how far the work got, the
+   words carry which pull request it is and what state it is in. Never both in one place. */
+function deliveryWords(s) {
+  if (s.fold) return `<span class="n">${s.prs.open + s.prs.merged} pull requests below</span>`;
+  if (s.pr) return `<span class="pr ${s.pr.state} n">PR ${s.pr.n}</span><span class="n">${s.pr.state}</span>`;
+  return `<span class="ready n">Ready to ship</span><span class="why">${s.ready.why}</span>`;
+}
+
+/* E draws this line only where there IS something to deliver; F draws it on every row. */
+function deliveryLine(s, { always = false, clock = false } = {}) {
+  /* The clock rides here when line 2 has no activity to carry it. Its x does not move — the
+     clock is right-aligned to the row's trailing edge on either line, so the column a reader
+     scans times down is the same one. Only its y changes. */
+  const tail = clock ? `<span class="grow"></span>${clockOf(s)}` : '';
+  const has = s.fold ? !!s.prs : (s.pr != null || shipsNow(s));
+  if (!has) {
+    if (!always && !clock) return '';
+    return `<div class="delivery none"><span class="track">${
+      NODES.map(() => '<i></i>').join('')}</span><span class="n">no delivery yet</span>${tail}</div>`;
+  }
+  return `<div class="delivery">${s.fold ? '' : track(s)}${deliveryWords(s)}${tail}</div>`;
+}
+
+/* Line 2 exists only where there is an activity to put on it. A row whose Session is quiet and
+   whose Delivery is not would otherwise draw a line holding nothing but a clock, and a hollow
+   line between two full ones is the one thing a three-line row cannot afford. */
+const linesOf = s => ({ hasActivity: fact(s) != null });
 
 /* ============ WHAT EACH VARIANT ANSWERS ============ */
 /* The ticket's eight questions, plus the two the PR badge and the ready state add. Rendered
@@ -650,9 +819,37 @@ const ANSWERS = {
     'PR badge': 'Second in the ranking. Visible only when nothing is delegated.',
     'Ready to ship': 'A word in the state slot on line 1 — it never touches the gutter.',
   },
+  E: {
+    'Shape': 'A labelled figure on line 1, and a third line for the Delivery.',
+    'Where it sits': 'Row split by subject: line 1 who and what machinery, line 2 what it is doing, line 3 what it produced.',
+    'The activity line': 'Kept, and it gets line 2 to itself — nothing on line 3 competes with it.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'Nothing, versus a dimmed 0.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>.',
+    'The Fold': 'The third line tallies the pull requests below it, with no track — a fold has no one Delivery.',
+    'Motion': 'None.',
+    'PR badge': 'On the third line, after the lifecycle track, addressed <em>PR 1312</em>.',
+    'Ready to ship': 'The track itself: a filled <em>commits</em> beside an empty <em>pr</em>, and the words say so.',
+    'The line appears': 'Only when there is a Delivery. Its presence is the signal, so a reader finds the runs that made something without reading a word.',
+  },
+  F: {
+    'Shape': 'The same as E, drawn on every row.',
+    'Where it sits': 'The same three lines, at a fixed height — the Delivery sits on one x down the whole list.',
+    'The activity line': 'Kept, on line 2.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'Nothing, versus a dimmed 0.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>.',
+    'The Fold': 'As E.',
+    'Motion': 'None.',
+    'PR badge': 'As E.',
+    'Ready to ship': 'As E.',
+    'The line appears': 'Always. A row with nothing to deliver reads <em>no delivery yet</em> against an empty track — which is a fact, and it costs a third of the roster to say it.',
+  },
 };
 
-const RISK = `<b>Open risk, all four variants.</b> The three PR inks are the code host's, not
+const RISK = `<b>Open risk, all six variants.</b> The three PR inks are the code host's, not
   Argo's — the visual contract has no purple at all, and <code>--pr-open</code> (#3FB950) sits one
   hue from <code>--running</code> (#46D3A8), the ink the state dot spends on a Session that is
   working. A green PR number beside a teal running dot is two greens on one row saying two
@@ -664,7 +861,7 @@ const RISK = `<b>Open risk, all four variants.</b> The three PR inks are the cod
 /* ============ RENDER ============ */
 function current() {
   const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
-  return ['A','B','C','D'].includes(v) ? v : 'A';
+  return ['A','B','C','D','E','F'].includes(v) ? v : 'A';
 }
 
 /* The Project total, as A, B and D each spend it. Summed the ONE way the rail counts:
@@ -720,7 +917,7 @@ function render() {
 }
 
 function cycle(d) {
-  const ks = ['A','B','C','D'];
+  const ks = ['A','B','C','D','E','F'];
   history.replaceState(null, '', '?variant=' + ks[(ks.indexOf(current()) + d + ks.length) % ks.length]);
   render();
 }
