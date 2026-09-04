@@ -84,6 +84,10 @@ extension CockpitView {
         // reason above: the rows are hosted per table cell, and this is where the Session the
         // answer addresses is known.
         .environment(\.feedAskAnswering, answer(on: reading.asking.live))
+        // The wait Argo is holding on this reading (#1323). Injected here because this is the one
+        // view that has the reading in hand, and it reaches a column four views down that could not
+        // derive it: a wait is not written into the rows while it runs.
+        .environment(\.argoFeedWait, reading.wait)
         // Injected from ABOVE the deck, which is the whole point of it: the room switch below
         // destroys the table that measured them (#858).
         .environment(\.argoFeedGeometries, feedGeometries)

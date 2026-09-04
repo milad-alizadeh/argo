@@ -57,6 +57,7 @@ struct SpecimenRegistryTests {
             SpecimenRegistry.header,
             SpecimenRegistry.feed,
             SpecimenRegistry.live,
+            SpecimenRegistry.waiting,
             SpecimenRegistry.vessel,
             SpecimenRegistry.commands,
             SpecimenRegistry.mentions,

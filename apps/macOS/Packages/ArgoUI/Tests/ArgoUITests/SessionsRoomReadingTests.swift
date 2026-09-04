@@ -86,8 +86,13 @@ struct SessionsRoomReadingTests {
             sessionID: "one",
         )
 
-        #expect(starting.feed.map(\.content) == [.mark(.starting)])
+        // The reading is empty on BOTH sides — a wait is not a row while it runs — so what the
+        // cache is proved not to have held is the WAIT: the plinth stands over the first and is
+        // gone from the second.
+        #expect(starting.feed.isEmpty)
+        #expect(starting.wait == .starting)
         #expect(up.feed.isEmpty)
+        #expect(up.wait == nil)
     }
 
     private static let transcript = TranscriptFixtures.previewTranscript

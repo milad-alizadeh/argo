@@ -31,6 +31,7 @@ struct FeedRowView: View {
         // question's ticks into the next question that landed there (#712).
         case let .ask(ask): FeedAskLine(ask: ask).id(ask.identity)
         case let .mark(mark): FeedMarkLine(mark: mark)
+        case let .settledWait(settled): FeedWaitRow(settled: settled)
         case let .unreadable(unreadable):
             FeedUnreadableLine(unreadable: unreadable, isExpanded: $isExpanded)
         }

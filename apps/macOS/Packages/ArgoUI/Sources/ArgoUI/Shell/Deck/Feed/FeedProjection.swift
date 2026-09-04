@@ -10,14 +10,14 @@ package enum FeedProjection {
     /// `working`, `handedOff`, `expired`, the question `asking` is holding and the one `reported`
     /// carries are the inputs that are not the record's — a Turn in progress (`FeedWorking`), a
     /// handoff (`CONTEXT.md` L2), a Permission Argo's own gate refused (#573), a question it is
-    /// still holding (#1190), and one the agent raised over the companion plugin (#1205). No CLI
-    /// wrote a word about any of them, so they arrive beside the stream rather than being looked
-    /// for inside it.
+    /// still holding (#1190), one the agent raised over the companion plugin (#1205), and a wait
+    /// Argo held that has ended (#1323). No CLI wrote a word about any of them, so they arrive
+    /// beside the stream rather than being looked for inside it.
     package static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
-        starting: Bool = false,
         startedQuietly: Bool = false,
+        settledWaits: [SessionWaitSettled] = [],
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
@@ -42,13 +42,24 @@ package enum FeedProjection {
         // The gate's question first, and the reported one read against the work AND it: the two
         // channels share no id, so the only thing that can tell one question from two is the words.
         let held = standing(asking, over: work)
-        return (work + held + self.reported(reported, asking, over: work + held) +
-            startingUp(starting) + wentQuiet(startedQuietly) +
-            inFlight(working, over: work) + unanswered(expired) +
-            chained(handedOff)).enumerated()
-            .map { position, content in
-                FeedRow(id: position, content: content)
-            }
+        let foot = wentQuiet(startedQuietly) + inFlight(working, over: work) +
+            unanswered(expired) + chained(handedOff)
+        let contents = opening(settledWaits) + work + held +
+            self.reported(reported, asking, over: work + held) + foot
+        return contents.enumerated().map { position, content in
+            FeedRow(id: position, content: content)
+        }
+    }
+
+    /// The waits that ended BEFORE the record did anything, at the head of the reading where they
+    /// happened (#1323). One row each, appended by the projection and never edited afterwards: the
+    /// reading is written once, and the plinth is what carried the wait while it ran.
+    ///
+    /// Every wait this ships is one of those: Argo starts a CLI and waits for its first byte, which
+    /// by construction comes before the first record. The other waits the design names end
+    /// elsewhere in the reading, and each arrives with its own ticket and its own position.
+    private static func opening(_ settled: [SessionWaitSettled]) -> [FeedRow.Content] {
+        settled.map { .settledWait($0) }
     }
 
     /// The Turn still running, under what it has done and ABOVE the statements at the foot. Those
@@ -69,16 +80,10 @@ package enum FeedProjection {
         working && !rows.contains(where: \.kind.isCallInFlight) ? [.mark(.working)] : []
     }
 
-    /// The CLI coming up, in place of the `FeedSilence` an empty reading would otherwise draw
-    /// (#587). By construction it IS the whole reading: a Session Argo is still waiting on has
-    /// written no record for anything to sit above it.
-    private static func startingUp(_ starting: Bool) -> [FeedRow.Content] {
-        starting ? [.mark(.starting)] : []
-    }
-
-    /// The row that takes the place of the one above once the wait runs out (#1245). Never beside
-    /// it: the engine publishes the two on either side of one limit, so the feed can no more draw
-    /// both than the Session can be in both states.
+    /// The row that lands once the wait for the CLI's first byte runs out (#1245).
+    ///
+    /// Never beside the plinth that carried that wait: the engine publishes the two on either side
+    /// of one limit, so the feed can no more draw both than the Session can be in both states.
     ///
     /// Never beside the WORKING row either, and that is the engine's doing rather than this
     /// function's: a Turn typed at a PTY Argo has never heard is not reported `running`

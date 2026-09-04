@@ -121,6 +121,10 @@ public extension CockpitPresentation {
         /// neither spoken nor gone. Absent for every Session Argo did not start, and for every one
         /// that came up and printed something.
         public let startedQuietlyAtMs: Int?
+        /// The waits Argo held here that have ENDED (#1323), oldest first — see
+        /// `SessionWaitSettled`. Each drops into the reading as one settled row. Empty for every
+        /// Session Argo did not start, which is what keeps the plinth DIRECT.
+        public let settledWaits: [SessionWaitSettled]
         /// Whether the user cleared this Session off the roster. Argo's own fact and not a
         /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,
         /// which is why new activity on an archived Session leaves it archived (#502, story 16)
@@ -206,6 +210,7 @@ public extension CockpitPresentation {
             self.handedOffTo = chain.handedOffTo
             self.companionChannel = chain.companionChannel
             self.startedQuietlyAtMs = chain.startedQuietlyAtMs
+            self.settledWaits = chain.settledWaits
             self.workspaceLocation = work.location
             self.workspace = work.workspace
             self.ticket = work.ticket

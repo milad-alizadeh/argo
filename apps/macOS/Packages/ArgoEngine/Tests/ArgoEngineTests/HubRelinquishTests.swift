@@ -32,11 +32,19 @@ struct HubRelinquishTests {
             // channel — the two are separate sockets.
             // The run Argo started the CLI at stays for the same reason as the rung: it is what
             // went on argv, and the orphaned row still states what it was started at (#1175).
-            #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts(
-                companionLiveness: .neverDialled,
-                modeSet: rung,
-                run: .unpicked,
-            ))
+            var survives = ClaimFacts()
+            survives.companionLiveness = .neverDialled
+            survives.modeSet = rung
+            survives.run = .unpicked
+            // The wait for the CLI's first byte survives for the same reason (#1323): this PTY went
+            // without ever printing one, so the start FAILED, and that is a thing that happened. It
+            // is asserted on its own and then set aside, because it carries a real duration off the
+            // clock, which no expected value can spell.
+            var found = fixture.hub.facts(forClaim: claim)
+            #expect(found.settledWaits.map(\.wait) == [.starting])
+            #expect(found.settledWaits.first?.failure != nil)
+            found.settledWaits = []
+            #expect(found == survives)
         }
     }
 

@@ -72,26 +72,12 @@ struct FeedWorkingTests {
         #expect(!FeedWorking.isStarting(nil))
     }
 
-    /// The row `starting` exists for: a spawn's reading is empty by construction, so without it the
-    /// feed draws `FeedSilence` — true, and identical to what a Session at its prompt draws.
+    /// A wait is NOT a row while it runs (`cockpit-feed-waiting.md`): it stands on the plinth, and
+    /// the reading a spawn has written stays exactly as empty as it is.
     @Test
-    func `a Session still starting has that as its whole reading`() {
-        #expect(FeedProjection.rows(from: [], starting: true).map(\.content) == [.mark(.starting)])
+    func `a Session still starting writes no row at all`() {
         #expect(FeedProjection.rows(from: []).isEmpty)
-    }
-
-    /// On screen as well as to a reader, because a hairline with nothing in it already means a Turn
-    /// ended — this state cannot borrow the working thread's silence.
-    @Test
-    func `the starting row says what it is waiting for`() {
-        #expect(FeedMark.starting.words == "starting the agent")
-        #expect(FeedMark.starting.spoken == "The agent is starting")
-    }
-
-    /// A CLI coming up is no Turn boundary, whatever a rule across the column looks like.
-    @Test
-    func `the starting row ends no Turn`() {
-        #expect(!FeedMark.starting.endsTurn)
+        #expect(FeedWait.showing(in: []) == nil)
     }
 
     /// Read off the status and nothing else, so an external Session gets the row on exactly the

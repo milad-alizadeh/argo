@@ -280,6 +280,7 @@ public extension Hub {
         spawn.startup.quietAtMs = nil
         spawns[claim] = spawn
         startupClocks[claim]?.cancel()
+        settleStartupWait(of: spawn, for: claim)
     }
 
     /// The process is gone. Ownership cannot be re-adopted, so the claim closes and the Session
@@ -292,6 +293,18 @@ public extension Hub {
         guard var spawn = spawns[claim] else { return }
         spawn.startup.exit = AgentSpawn.Exit(code: exitCode, atMs: Date().epochMs)
         spawns[claim] = spawn
+        settleStartupWait(of: spawn, for: claim)
+    }
+
+    /// File the ending of the wait for this spawn's first byte, so the reading gains its one
+    /// settled row (#1323). Called at both ways out — bytes, and a PTY that closed with none — and
+    /// the reading of which it was is `SessionWaitSettled`'s, not this call site's.
+    ///
+    /// Filed against the CLAIM as well as written on the spawn, because the spawn is retired the
+    /// moment its record binds: the ledger is the copy that survives that.
+    private func settleStartupWait(of spawn: AgentSpawn, for claim: SessionOwnership.ClaimID) {
+        guard let settled = SessionWaitSettled.startup(of: spawn) else { return }
+        claims.settle(settled, for: claim)
     }
 }
 

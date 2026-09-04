@@ -38,8 +38,8 @@ public extension CockpitPresentation.Session {
             }
         }
 
-        /// When it ran. Neither of the first two moments is a duration alone, and the span is all
-        /// either is read for.
+        /// When it ran, and the waits Argo timed inside that. Neither of the first two moments is a
+        /// duration alone, and the span is all either is read for.
         public struct Span: Equatable, Sendable {
             public let startedAtMs: Int?
             public let lastSeenAtMs: Int?
@@ -48,15 +48,22 @@ public extension CockpitPresentation.Session {
             /// link's life is dated by. Absent for every Session Argo did not start and every one
             /// that came up and printed something.
             public let startedQuietlyAtMs: Int?
+            /// The waits Argo HELD on this link that have ended (#1323), oldest first — see
+            /// `SessionWaitSettled`. Here beside the three moments because it is the same kind of
+            /// fact: a stretch of this link's life that Argo timed itself, and one no CLI wrote a
+            /// word about. Empty for every Session Argo did not start.
+            public let settledWaits: [SessionWaitSettled]
 
             public init(
                 startedAtMs: Int? = nil,
                 lastSeenAtMs: Int? = nil,
                 startedQuietlyAtMs: Int? = nil,
+                settledWaits: [SessionWaitSettled] = [],
             ) {
                 self.startedAtMs = startedAtMs
                 self.lastSeenAtMs = lastSeenAtMs
                 self.startedQuietlyAtMs = startedQuietlyAtMs
+                self.settledWaits = settledWaits
             }
         }
 
@@ -69,6 +76,10 @@ public extension CockpitPresentation.Session {
         public let handedOffTo: String?
         public let companionChannel: CompanionLiveness
         public let startedQuietlyAtMs: Int?
+        /// The waits Argo held on this link that have ENDED (#1323), oldest first. A property of
+        /// the process rather than of the record, which is why it is here beside the moment above:
+        /// no CLI wrote a word about any of them. Empty for every Session Argo did not start.
+        public let settledWaits: [SessionWaitSettled]
 
         public init(
             program: Program = .init(),
@@ -85,6 +96,7 @@ public extension CockpitPresentation.Session {
             self.handedOffTo = handedOffTo
             self.companionChannel = companionChannel
             self.startedQuietlyAtMs = span.startedQuietlyAtMs
+            self.settledWaits = span.settledWaits
         }
     }
 

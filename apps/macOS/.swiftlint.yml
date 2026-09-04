@@ -145,15 +145,12 @@ function_parameter_count:
   # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
   # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it
   # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
-  # INIT: ClaimFacts.swift 12 — everything Argo knows about one claim, under one key, widened for
-  # the run Argo started it at (#1175)
   # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
   # INIT: FeedTableModel.swift 8 — everything the AppKit half of the feed needs from the SwiftUI
   # INIT: GitHubPullRequest.swift 9 — one pull request as GitHub's REST API serves it, parsed at
   # INIT: PullRequestJSON.swift 9 — the GitHub pull-request fixture, written the way GitHub writes
   # INIT: TicketsRoomProjection.swift 9 — Room, the Tickets room's whole reading
   # INIT: ConnectPanelProjection+Ports.swift 8 — PortRow, one port's row, its choices and offers
-  # INIT: FeedColumn.swift 8 — the feed and the composer floating over it, one slot per reading
   # INIT: MermaidCompartmented.swift 8 — MermaidRelation, one relationship: its two ends, its
   # INIT: MinimapReadingStamp.swift 8 — everything a MinimapReading is a function of, in a form
   # INIT: TicketsReading.swift 8 — everything the Tickets room is derived from, provider Tickets

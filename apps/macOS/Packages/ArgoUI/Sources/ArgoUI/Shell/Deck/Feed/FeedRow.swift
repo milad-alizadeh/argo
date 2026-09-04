@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// One drawable line of a Session's reading: its place in the feed and the claim it makes.
 package struct FeedRow: Identifiable, Equatable, Sendable {
     /// What a row IS, which is what decides how it is drawn. Each kind carries its own payload
@@ -24,6 +26,10 @@ package struct FeedRow: Identifiable, Equatable, Sendable {
         case skillLoaded(FeedSkillLoad)
         /// Something that happened to the reading rather than in it. See `FeedMark`.
         case mark(FeedMark)
+        /// A wait Argo was holding, over — see `FeedWaitRow`. A row rather than a mark, and drawn
+        /// as a CALL is rather than as a rule: a wait that ended is a thing that happened, which is
+        /// what the reading already spends a call's shape on.
+        case settledWait(SessionWaitSettled)
         /// A stretch of the record nothing could parse. See `FeedUnreadable`.
         case unreadable(FeedUnreadable)
     }

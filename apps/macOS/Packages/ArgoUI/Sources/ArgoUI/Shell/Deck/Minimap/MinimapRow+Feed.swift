@@ -1,3 +1,4 @@
+import ArgoEngine
 import Foundation
 
 // A feed row read as the shape the lane draws it with (#382). The one place the miniature's
@@ -67,6 +68,13 @@ private extension FeedRow.Content {
         case let .gallery(gallery): .shots(widths: gallery.shots.map(\.drawnWidth))
         case let .ask(ask): .card(ask.card)
         case let .mark(mark): .whole(mark.ink)
+        // A wait that ended, as its own words — a settled one at the boundary rung, and a
+        // failed one in the failure ink the row itself takes. The lane must not show a red
+        // line as quiet grey: a run of red is the one thing a reader scans an overview for.
+        case let .settledWait(settled): .line(
+                parts: [.words(FeedWaitWords(settled.wait).settled, settled.laneInk)],
+                ink: settled.laneInk,
+            )
         }
     }
 }
@@ -109,5 +117,12 @@ private extension FeedCall {
                 ? MinimapLinePart.words("−\(churn.removed)", ink ?? .removed, in: .machine) : nil,
         ]
         .compactMap(\.self)
+    }
+}
+
+extension SessionWaitSettled {
+    /// What the lane draws this wait in — the row's own answer, so the two cannot disagree.
+    var laneInk: FeedInk {
+        failure == nil ? .boundary : .failure
     }
 }

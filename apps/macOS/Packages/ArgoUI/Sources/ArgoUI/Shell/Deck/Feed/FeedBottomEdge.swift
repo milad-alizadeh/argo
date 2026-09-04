@@ -23,6 +23,9 @@ package struct FeedBottomEdge: Equatable {
     package var hasVessel = false
     /// Whether the plan's pill floats there, riding on the vessel's top edge when there is one.
     package var hasPlanPill = false
+    /// Whether a wait stands on the plinth there (#1323). A third float on the one edge, and it
+    /// stacks like the pill: the reading must not end underneath it either.
+    package var hasWaitPlinth = false
 
     /// The scroll room under the last row, so a reading never ends underneath a float. The two
     /// costs ADD because the pill sits on top of the vessel rather than beside it. Only the pill's
@@ -30,6 +33,7 @@ package struct FeedBottomEdge: Equatable {
     package var clearance: CGFloat {
         let vessel = hasVessel ? ArgoComposerVessel.feedClearance : ArgoSpacing.section
         return vessel + (hasPlanPill ? ArgoPlanPill.footprint : 0)
+            + (hasWaitPlinth ? FeedWaitPlinth.Measures.footprint : 0)
     }
 
     /// How far the way back to the newest row lifts. Stacked above every other float rather than
@@ -40,8 +44,13 @@ package struct FeedBottomEdge: Equatable {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(hasVessel: Bool = false, hasPlanPill: Bool = false) {
+    package init(
+        hasVessel: Bool = false,
+        hasPlanPill: Bool = false,
+        hasWaitPlinth: Bool = false,
+    ) {
         self.hasVessel = hasVessel
         self.hasPlanPill = hasPlanPill
+        self.hasWaitPlinth = hasWaitPlinth
     }
 }

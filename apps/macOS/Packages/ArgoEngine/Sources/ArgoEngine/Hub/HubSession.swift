@@ -42,6 +42,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The Permissions Argo's own clock refused (#573) — DIRECT, and empty rather than absent for
     /// the reason the grants above are.
     public internal(set) var expiredPermissions: [PermissionExpiry] = []
+    /// The waits Argo held here that have ENDED (#1323), oldest first — see `SessionWaitSettled`.
+    /// DIRECT by construction, and empty for every Session Argo did not start: nothing observed
+    /// from outside can produce one, which is what keeps the plinth off a Session Argo only watched
+    /// change posture.
+    public internal(set) var settledWaits: [SessionWaitSettled] = []
     /// What the CLI's own protocol says this Session is doing, where Argo drives one that reports
     /// it (#683). Absent for every other Session, which is most of them.
     public internal(set) var driveStatus: SessionStatus?
@@ -177,6 +182,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // exists.
         self.hasAgentActivity = true
         self.startup = SessionStartup(spawn)
+        // Off the spawn itself, because the ledger cannot answer for a row that has not bound yet:
+        // a claim is keyed to a Session id at the CLI's first record, and the wait for the first
+        // BYTE ends before that. The ledger carries the same fact for the life after the bind, and
+        // `Hub.observed(_:)` prefers it there.
+        self.settledWaits = SessionWaitSettled.startup(of: spawn).map { [$0] } ?? []
     }
 }
 
@@ -188,10 +198,11 @@ extension HubSession {
     mutating func apply(_ event: TranscriptEvent) {
         transcript.append(event)
         switch event {
-        case let .headLeaf(uuid):
-            headLeafUUID = uuid
-        case let .originSession(id):
-            originSessionID = id
+        // One line each, for the reason the CLI's two knobs below take one: they are the shortest
+        // arms in this switch — a name written down verbatim — and spread over two they cost this
+        // FILE its length ceiling, which the fact added above it spends the rest of.
+        case let .headLeaf(uuid): headLeafUUID = uuid
+        case let .originSession(id): originSessionID = id
         case let .title(observedTitle):
             name.state(observedTitle)
         case let .cwd(observedCwd):

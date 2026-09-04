@@ -122,6 +122,12 @@ extension Hub {
         published.ask = facts.asking.first
         published.standingAllows = facts.standing
         published.expiredPermissions = facts.expiries
+        // Falls back to the row's own for the reason the ticket below does, and at the one moment
+        // it matters: a spawn's wait ends before its CLI writes the record that binds the claim, so
+        // until the bind the spawn's own reading is the only one there is (#1323).
+        published.settledWaits = facts.settledWaits.isEmpty
+            ? session.settledWaits
+            : facts.settledWaits
         published.driveStatus = facts.driveStatus
         published.submittedTurn = facts.submittedTurn
         // The rung falls back to the row's own, which is where a spawn's lives until something

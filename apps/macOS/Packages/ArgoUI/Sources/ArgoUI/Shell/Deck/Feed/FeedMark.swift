@@ -25,12 +25,9 @@ package enum FeedMark: Equatable, Sendable {
     /// already happened, which is also why it is the one that comes and goes: it stands at the foot
     /// of the reading while the wait lasts and is gone the moment the record answers.
     case working
-    /// The CLI Argo started has not spoken yet (`FeedWorking`). A wait on the process rather than
-    /// on the agent, so it ends on the first bytes off the PTY rather than on a record.
-    case starting
-    /// That wait, run out (#1245). The process is up and has printed nothing, which is a claim
-    /// about NOW rather than a boundary in the record — so it comes and goes the way `starting`
-    /// does, and the bytes that end one end the other.
+    /// The wait for a started CLI's first byte, run out (#1245). The process is up and has printed
+    /// nothing, which is a claim about NOW rather than a boundary in the record — so it comes and
+    /// goes the way the plinth's own wait does, and the bytes that end one end the other.
     case startedQuietly
     /// What the Session runs at MOVED here (#558) — a model or an effort level, in the CLI's own
     /// word. The one mark about a standing setting rather than about the record's shape, and it is
@@ -58,7 +55,7 @@ extension FeedMark {
         // Attention on the same ground the expiry takes it: a wait that ran out is news about
         // something that did NOT happen, and the rule ink would file it as punctuation (#1245).
         case .permissionExpired, .startedQuietly: .attention
-        case .compacted, .turnEnded, .handedOff, .interrupted, .working, .starting,
+        case .compacted, .turnEnded, .handedOff, .interrupted, .working,
              .excerpted, .runFactChanged:
             .boundary
         }
@@ -86,8 +83,6 @@ extension FeedMark {
         // The one live mark, and the one with nothing to say: `FeedWorkingThread` draws it as an
         // ion crossing the measure rather than as a caption let into a rule.
         case .working: nil
-        // A caption, where the working thread has none — see `FeedWorking.startingWords`.
-        case .starting: FeedWorking.startingWords
         // What the wait ended AS, in the two facts the reader has to have: the process is there,
         // and it has said nothing (#1245).
         case .startedQuietly: FeedWorking.quietWords
@@ -107,7 +102,7 @@ extension FeedMark {
     var endsTurn: Bool {
         switch self {
         case .turnEnded, .interrupted: true
-        case .compacted, .handedOff, .permissionExpired, .working, .starting,
+        case .compacted, .handedOff, .permissionExpired, .working,
              .startedQuietly, .excerpted, .runFactChanged: false
         }
     }
@@ -137,7 +132,6 @@ extension FeedMark {
         // A sentence rather than the caption, for the reason the expiry gets one: "working…" read
         // out is a word and an ellipsis, and the ellipsis is where the whole meaning was.
         case .working: FeedWorking.spoken
-        case .starting: FeedWorking.startingSpoken
         case .startedQuietly: FeedWorking.quietSpoken
         // A sentence, for the reason the two above get one, and it names what is being waited on:
         // the records are on disk and about to be read, not gone.

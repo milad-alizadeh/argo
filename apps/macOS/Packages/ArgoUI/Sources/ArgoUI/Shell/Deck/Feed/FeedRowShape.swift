@@ -25,6 +25,8 @@ extension FeedRow.Content {
         case ask
         case mark
         case unreadable
+        /// A wait Argo was holding, over — one line, as a call's is.
+        case settledWait
     }
 
     /// No `default`, for `kind`'s reason: a twelfth case fails this build rather than quietly
@@ -41,6 +43,7 @@ extension FeedRow.Content {
         case .skillLoaded: .skillLoaded
         case .ask: .ask
         case .mark: .mark
+        case .settledWait: .settledWait
         case .unreadable: .unreadable
         }
     }

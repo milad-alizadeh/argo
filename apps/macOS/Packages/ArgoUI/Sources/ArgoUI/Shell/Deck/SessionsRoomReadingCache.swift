@@ -25,7 +25,7 @@ enum SessionsRoomReadingCache {
     /// The version of a Session's record a reading was taken at.
     ///
     /// Everything `FeedProjection` and `PlanProjection` read is here: the stream by its STAMP, and
-    /// the five small facts by VALUE, since none of them is append-only. The header is deliberately
+    /// the six small facts by VALUE, since none of them is append-only. The header is deliberately
     /// absent — see `SessionsRoomReading.init`.
     ///
     /// A Subagent's reading is absent too, and that is #858 rather than an omission: a child's
@@ -56,6 +56,11 @@ enum SessionsRoomReadingCache {
         /// stamp stopping at the status would go on drawing `starting the agent` at a wait that
         /// has ended.
         let startedQuietly: Bool
+        /// The waits Argo held that have ended (#1323), by VALUE for the reason the flag above is:
+        /// each one appends a row to the reading and none of them is in the stream, so a stamp
+        /// stopping at the events would keep drawing the reading as it stood before the wait
+        /// settled.
+        let settledWaits: [SessionWaitSettled]
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -72,6 +77,7 @@ enum SessionsRoomReadingCache {
             self.reported = session?.companionAsk?.ask
             self.status = session?.status
             self.startedQuietly = session?.startedQuietlyAtMs != nil
+            self.settledWaits = session?.settledWaits ?? []
         }
     }
 
@@ -79,6 +85,10 @@ enum SessionsRoomReadingCache {
     /// cheap and stays uncached.
     struct Body {
         let feed: [FeedRow]
+        /// The wait Argo is holding on this reading, if any — see `SessionsRoomReading.wait`. Here
+        /// rather than taken fresh each pass because it is read off the same stamp the rows are:
+        /// two answers to one question is how a plinth and a reading come to disagree.
+        let wait: FeedWait?
         let showing: PlanShowing
         /// The header's one event-stream walk — see `SessionHeaderProjection.header(from:worked:)`.
         /// The rest of the header is not here, and must not be: spend and context move with no
