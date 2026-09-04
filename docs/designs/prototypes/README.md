@@ -1,5 +1,6 @@
-> **This file covers the roster-header study only.** The other prototype here,
-> `ask-vessel-prototype.html`, has its own notes in `ask-vessel-prototype.md`.
+> **This file covers the roster-header study only.** The other prototypes here have their own
+> notes beside them: `ask-vessel-prototype.md`, and `backlog-question-prototype.md` (#1293 — six
+> shapes for a natural-language question asked of the backlog).
 
 # Roster row + Session header — throwaway prototype
 
