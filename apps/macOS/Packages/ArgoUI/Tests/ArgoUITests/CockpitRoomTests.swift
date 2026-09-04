@@ -1,5 +1,6 @@
 import ArgoDesign
 @testable import ArgoUI
+import SwiftUI
 import Testing
 
 /// What a room tab says once it has stopped saying it in words (#690). A native tooltip is
@@ -48,5 +49,14 @@ struct CockpitRoomTests {
     @Test
     func `the strip runs Sessions, Tickets, Code, Atlas`() {
         #expect(CockpitRoom.allCases == [.sessions, .tickets, .code, .atlas])
+    }
+
+    /// Command N is the room's position in the strip, not a number chosen apart from it — so a
+    /// room reordered here and forgotten in `shortcut` cannot pass silently.
+    @Test
+    func `a room's shortcut is its own position in the strip`() {
+        for (index, room) in CockpitRoom.allCases.enumerated() {
+            #expect(room.shortcut == KeyEquivalent(Character("\(index + 1)")))
+        }
     }
 }
