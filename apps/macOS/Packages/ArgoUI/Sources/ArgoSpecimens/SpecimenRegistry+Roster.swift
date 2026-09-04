@@ -36,6 +36,14 @@ extension SpecimenRegistry {
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
+        // The strip's edge, which only a SCROLLED roster can be judged on: at rest the first row
+        // sits flush with the control whether the list clips there or not (#1235).
+        SpecimenEntry("scrolledRoster") { ScrolledRosterSpecimen() },
+        // A Session landing at the head of a roster longer than the window, from the top and from
+        // a reader's own offset (#1235). Rendered after the arrival, with the hold let go, so the
+        // offset in the picture is the list's own answer rather than the harness's.
+        SpecimenEntry("arrivingRoster") { ArrivingRosterSpecimen() },
+        SpecimenEntry("arrivingScrolledRoster") { ArrivingRosterSpecimen(offset: 220) },
         // No swiped-row entry: `.swipeActions` opens only from a real gesture, so there is no state
         // to hand the harness. Nor is it an XCUITest claim: neither `XCUIElement.scroll(byDeltaX:)`
         // nor a phased `CGEvent` scroll opens the action, so it is a hand's frame or nothing

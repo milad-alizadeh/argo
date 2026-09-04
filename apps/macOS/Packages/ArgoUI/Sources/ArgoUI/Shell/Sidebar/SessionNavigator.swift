@@ -31,7 +31,25 @@ package struct SessionNavigator: View {
     /// that opened itself would put the cleared rows back under the ones that were kept.
     @State private var isArchiveShowing = false
 
+    /// Whether the list is resting against its top edge. Read off the scroll geometry rather than
+    /// tracked from the gestures, because the offset moves for reasons no gesture reports — a
+    /// keyboard selection, a row leaving, the window resizing (#1235).
+    @State private var isAtTop = true
+
+    /// The list, and the one thing scrolled from outside it: a Session landing at the roster's
+    /// head brings a list that is already at the top back to the top (#1235).
     package var body: some View {
+        ScrollViewReader { roster in
+            list.onChange(of: rows.first?.id) { previous, leading in
+                guard let top = SessionRosterProjection.topRow(
+                    whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
+                ) else { return }
+                roster.scrollTo(top, anchor: .top)
+            }
+        }
+    }
+
+    private var list: some View {
         List(selection: $selection) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
@@ -41,6 +59,14 @@ package struct SessionNavigator: View {
                 }
             }
             archivedFoot
+        }
+        // The whole reading of "is the reader at the top", in the one place it can be read from.
+        // Compared against the top inset and not against zero: a list resting at its top sits at
+        // MINUS its inset, and a rule written against zero would call every roster scrolled.
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y <= -geometry.contentInsets.top
+        } action: { _, atTop in
+            isAtTop = atTop
         }
         // `.sidebar` carries the window's system material (D3), so the roster may not trade it
         // for a styled list. What it does NOT carry is a selection this app can colour: on macOS
