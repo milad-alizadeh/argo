@@ -39,11 +39,15 @@ public actor AtlasMapStore {
     @discardableResult
     public func generate(for project: ProjectRecord) async -> AtlasMap {
         let map = await generator.measure(at: project.url)
-        guard let data = try? map.encoded() else { return map }
-        try? FileManager.default.createDirectory(
-            at: directoryURL, withIntermediateDirectories: true,
-        )
-        try? data.write(to: fileURL(of: project), options: .atomic)
+        do {
+            let data = try map.encoded()
+            try FileManager.default.createDirectory(
+                at: directoryURL, withIntermediateDirectories: true,
+            )
+            try data.write(to: fileURL(of: project), options: .atomic)
+        } catch {
+            // Nothing to recover: the map returned below is the answer either way.
+        }
         return map
     }
 

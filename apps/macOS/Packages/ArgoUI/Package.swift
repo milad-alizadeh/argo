@@ -79,6 +79,8 @@ let package = Package(
                 .product(name: "ArgoAtoms", package: "ArgoDesign"),
                 .product(name: "MermaidLayout", package: "ArgoMermaid"),
                 .product(name: "MermaidView", package: "ArgoMermaid"),
+                // The Map's value types: the Atlas room specimen carries a measured one (#1148).
+                .product(name: "AtlasLayout", package: "ArgoAtlas"),
             ],
         ),
         .testTarget(

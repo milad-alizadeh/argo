@@ -62,3 +62,14 @@ let gitCommand: GitCommand = { arguments, directoryURL in
     guard let answer = gitInvocation(arguments, directoryURL), answer.isSuccess else { return nil }
     return answer.output
 }
+
+/// One git answer read as a VALUE: git ends every answer with a newline, so it is trimmed before it
+/// is read as a name — and an answer with nothing left in it is one git did not give.
+///
+/// Here rather than beside any one reader because three of them ask this way (#1148).
+func gitValue(_ git: GitCommand, _ arguments: [String], at directoryURL: URL) -> String? {
+    guard let output = git(arguments, directoryURL)?
+        .trimmingCharacters(in: .whitespacesAndNewlines), !output.isEmpty
+    else { return nil }
+    return output
+}

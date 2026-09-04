@@ -11,7 +11,7 @@ enum AtlasFileMeasures {
     /// the process does not have — measures NOTHING here and is still a Plot: the history knows
     /// how often it was committed, and dropping it would take a file off the map that git says is
     /// in the repository (#1148).
-    static func of(_ fileURL: URL) -> [String: Double] {
+    static func measured(at fileURL: URL) -> [String: Double] {
         guard let data = try? Data(contentsOf: fileURL, options: .mappedIfSafe) else { return [:] }
         var measures = ["bytes": Double(data.count)]
         // A NUL byte is what `git diff` itself calls binary, and a binary file has no lines to

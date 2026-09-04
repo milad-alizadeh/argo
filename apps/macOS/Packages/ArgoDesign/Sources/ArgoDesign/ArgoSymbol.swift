@@ -70,6 +70,8 @@ public enum ArgoSymbol {
     public static let sessionsRoom = "apple.terminal"
     public static let ticketsRoom = "checklist"
     public static let codeRoom = programSource
+    /// The Atlas draws the Project as a place, and a map is the mark for one (#1140).
+    public static let atlasRoom = "map"
 
     /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries
     /// NO mark, deliberately — a mark is a claim about what happened.

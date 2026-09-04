@@ -76,6 +76,10 @@ public struct CockpitView: View {
     @State var feedDecks = KeptDecks()
     /// Which Session the shell has already drawn — what says whether this pass may take a reading
     /// at all. See `DrawnSession`.
+    /// The Atlas room's container: it holds the Map store and the reading off it. A container
+    /// rather than a projection because the map is a file on this machine that nothing pushes —
+    /// see `AtlasRoomModel`.
+    @State var atlas = AtlasRoomModel()
     @State private var drawn = DrawnSession()
 
     public init(
@@ -187,6 +191,7 @@ public struct CockpitView: View {
         } detail: {
             detail(
                 tickets: tickets,
+                atlas: atlasRoom,
                 // The pass's ONE reading, handed on rather than asked for again (#957) — and only
                 // where the shell has caught up with the row that was clicked. See `DrawnSession`.
                 reading: isDrawn
@@ -199,6 +204,9 @@ public struct CockpitView: View {
         // split view rather than inside the room: it is a fact about the PROJECT, and the room is
         // rebuilt on every ticket.
         .environment(\.argoTicketAddress, ticketAddress)
+        // One event, two causes: arriving in the room, and the active Project changing under it
+        // (ADR-0015). `initial: true` because a window that opens onto the Atlas has neither.
+        .task(id: atlasSubject) { await openAtlas() }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         .sheet(isPresented: isConnecting) {
             if let reading = connect.reading {

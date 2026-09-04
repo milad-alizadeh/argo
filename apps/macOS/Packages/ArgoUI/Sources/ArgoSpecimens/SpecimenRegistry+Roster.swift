@@ -22,6 +22,10 @@ extension SpecimenRegistry {
         // from the running app rather than a preview, because what is being asked is whether the
         // SHIPPED binary carries a compiled shader at all.
         SpecimenEntry("atlasQuad") { AtlasQuadSpecimen() },
+        // The Atlas room over a real trimmed measurement, and over a Project nobody has measured:
+        // the two readings #1148 can draw, and the pair a treemap has to survive.
+        SpecimenEntry("atlasRoom") { AtlasRoomSpecimen() },
+        SpecimenEntry("atlasRoomUnmeasured") { AtlasRoomVacancySpecimen() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
         // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in

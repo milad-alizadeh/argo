@@ -61,10 +61,9 @@ struct AtlasHistory: Sendable {
                 continue
             }
             guard let commit else { continue }
-            // git walks newest first, so the first commit naming a path is its last one.
             paths[String(text), default: AtlasPathHistory(
-                commits: 0, authors: [], lastCommittedAt: commit.committedAt,
-            )].touched(by: commit.author)
+                commits: 0, authors: [], lastCommittedAt: .distantPast,
+            )].touched(by: commit)
         }
         self.paths = paths
     }
@@ -89,8 +88,13 @@ private struct AtlasCommit {
 }
 
 private extension AtlasPathHistory {
-    mutating func touched(by author: String) {
+    /// The LATEST date wins rather than the first one seen. `git log` walks newest first by commit
+    /// date, but that order is only as monotonic as the clocks that wrote it: a branch committed on
+    /// a machine running fast merges in ahead of commits listed before it, and a path it touched
+    /// would otherwise read as older than it is.
+    mutating func touched(by commit: AtlasCommit) {
         commits += 1
-        authors.insert(author)
+        authors.insert(commit.author)
+        lastCommittedAt = max(lastCommittedAt, commit.committedAt)
     }
 }

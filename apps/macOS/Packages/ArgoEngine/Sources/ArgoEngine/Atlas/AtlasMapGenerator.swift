@@ -27,7 +27,7 @@ actor AtlasMapGenerator {
         // A folder git will not name a root for is measured as itself and comes out empty. It
         // cannot be a registered Project — registration resolves to a repository root — so this is
         // a degradation rather than a case, and an empty map beats no answer.
-        let repositoryURL = answer(["rev-parse", "--show-toplevel"], at: candidateURL)
+        let repositoryURL = gitValue(git, ["rev-parse", "--show-toplevel"], at: candidateURL)
             .map { URL(fileURLWithPath: $0).standardizedFileURL } ?? candidateURL
         let history = AtlasHistory(
             readingLog: git(AtlasHistory.logArguments, repositoryURL) ?? "",
@@ -36,7 +36,7 @@ actor AtlasMapGenerator {
         let files = paths(at: repositoryURL).map { path in
             AtlasMeasuredFile(
                 path: path,
-                measures: AtlasFileMeasures.of(repositoryURL.appending(path: path))
+                measures: AtlasFileMeasures.measured(at: repositoryURL.appending(path: path))
                     .merging(committed(path, in: history, at: measuredAt)) { own, _ in own },
             )
         }
@@ -44,7 +44,7 @@ actor AtlasMapGenerator {
             measuredAt: measuredAt,
             // Absent for a repository with no commits, which still gets a map: git refuses to name
             // a HEAD that no commit is under.
-            commit: answer(["rev-parse", "HEAD"], at: repositoryURL),
+            commit: gitValue(git, ["rev-parse", "HEAD"], at: repositoryURL),
             root: AtlasNesting.plate(named: repositoryURL.lastPathComponent, holding: files),
         )
     }
@@ -83,14 +83,5 @@ actor AtlasMapGenerator {
             // clock is a clock disagreement, not a file from the future.
             "age_in_weeks": max(0, weeks.rounded(.down)),
         ]
-    }
-
-    /// git ends its answers with a newline, and an answer with nothing left in it is one git did
-    /// not give.
-    private func answer(_ arguments: [String], at directoryURL: URL) -> String? {
-        guard let output = git(arguments, directoryURL)?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !output.isEmpty
-        else { return nil }
-        return output
     }
 }

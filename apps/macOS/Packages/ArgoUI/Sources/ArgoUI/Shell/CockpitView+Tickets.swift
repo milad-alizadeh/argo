@@ -146,7 +146,7 @@ extension CockpitView {
     var sidebarIdealWidth: CGFloat {
         switch navigation.room {
         case .tickets: ArgoLayout.sidebarMinimumWidth
-        case .sessions, .code: ArgoLayout.sidebarIdealWidth
+        case .sessions, .code, .atlas: ArgoLayout.sidebarIdealWidth
         }
     }
 }
@@ -157,7 +157,7 @@ extension CockpitRoom {
     /// it. `⌘N` and the menu bar are unaffected in every room.
     var spawnsSessions: Bool {
         switch self {
-        case .sessions, .code: true
+        case .sessions, .code, .atlas: true
         case .tickets: false
         }
     }

@@ -53,8 +53,6 @@ struct AtlasHistoryTests {
         #expect(history["main.swift"]?.authors == ["Ada", "Grace"])
     }
 
-    /// git walks newest first, so this is the FIRST commit naming the path rather than the last —
-    /// the one thing about the order this parse depends on.
     @Test
     func `a path's last commit is the most recent one naming it`() {
         let history = AtlasHistory(readingLog: log([
@@ -66,6 +64,19 @@ struct AtlasHistoryTests {
 
         #expect(history["README.md"]?.lastCommittedAt == Date(iso8601: "2026-03-02T09:00:00Z"))
         #expect(history["main.swift"]?.lastCommittedAt == Date(iso8601: "2026-01-05T09:00:00Z"))
+    }
+
+    /// `git log` walks newest first by commit date, and that order is only as monotonic as the
+    /// clocks that wrote it: a branch committed on a machine running fast merges in with a date
+    /// ahead of commits listed before it. The latest date wins, not the first one seen.
+    @Test
+    func `a later commit listed after an earlier one is still the last one`() {
+        let history = AtlasHistory(readingLog: log([
+            LoggedCommit(author: "Ada", date: "2026-01-05T09:00:00Z", paths: ["main.swift"]),
+            LoggedCommit(author: "Grace", date: "2026-03-02T09:00:00Z", paths: ["main.swift"]),
+        ]))
+
+        #expect(history["main.swift"]?.lastCommittedAt == Date(iso8601: "2026-03-02T09:00:00Z"))
     }
 
     /// A merge git shows no files for is a commit that touched no path, and counting it against
