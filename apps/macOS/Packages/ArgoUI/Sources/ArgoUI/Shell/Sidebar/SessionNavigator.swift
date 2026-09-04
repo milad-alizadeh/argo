@@ -126,8 +126,11 @@ package struct SessionNavigator: View {
                 .argoSelectedRowGround(isSelected: reading.isSelected(row))
                 .tag(row.id)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    // A swipe action is re-drawn by the platform from its title and image alone,
+                    // so `ArgoRadius.control` cannot reach this button's corner and the capsule
+                    // here is not drift (#1257).
                     Button(
-                        SessionArchiveProjection.title(isArchived: row.isArchived),
+                        SessionArchiveProjection.rowTitle(isArchived: row.isArchived),
                         systemImage: SessionArchiveProjection.symbol(isArchived: row.isArchived),
                     ) {
                         archive(row.id, !row.isArchived)

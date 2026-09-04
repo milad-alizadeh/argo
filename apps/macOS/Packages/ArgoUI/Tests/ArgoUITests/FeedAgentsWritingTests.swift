@@ -136,7 +136,6 @@ struct FeedAgentsWritingTests {
                     status: status,
                     transcript: .init(events: launched),
                 )],
-                checkout: .unavailable,
                 connection: .idle,
             ),
             sessionID: "one",
