@@ -92,9 +92,9 @@ package struct FeedLightbox: View {
                   let png = NSBitmapImageRep(data: tiff)?.representation(
                       using: .png,
                       properties: [:],
-                  )
+                  ),
+                  (try? png.write(to: url)) != nil
             else { return }
-            try? png.write(to: url)
         }
     }
 
