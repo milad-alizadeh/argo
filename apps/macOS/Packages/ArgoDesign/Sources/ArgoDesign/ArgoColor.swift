@@ -1,4 +1,5 @@
 import AppKit
+import Metal
 import SwiftUI
 
 /// A colour in the contract, held as sRGB components rather than as an opaque `Color` — nothing can
@@ -67,6 +68,18 @@ public struct ArgoColor: Sendable, Hashable {
     /// property on a control reached through `NSViewRepresentable`.
     public var nsColor: NSColor {
         NSColor(srgbRed: red, green: green, blue: blue, alpha: opacity)
+    }
+
+    /// And once more for Metal, which takes none of the three. The Atlas clears its drawable to a
+    /// role rather than to a number (#1144), and the conversion sits here beside its siblings for
+    /// the reason they do: a channel is read off `ArgoColor` in one place or it drifts in several.
+    ///
+    /// **Opaque roles only.** The components pass through unpremultiplied, and a `CAMetalLayer`
+    /// drawable is premultiplied — hand this a role carrying an `opacity` below 1 and the clear is
+    /// brighter than its own alpha, which composites wrong. Every caller today passes a ground,
+    /// which is opaque by construction; a translucent one needs the premultiply written first.
+    public var clearColor: MTLClearColor {
+        MTLClearColor(red: red, green: green, blue: blue, alpha: opacity)
     }
 
     public func opacity(_ opacity: Double) -> ArgoColor {

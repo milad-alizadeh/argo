@@ -15,6 +15,10 @@ extension SpecimenRegistry {
         // The map's own five families (#1142), on the desktop rather than the deck — the ground
         // they are really read against, and one no other room has.
         SpecimenEntry("atlasContract") { AtlasContractSpecimen() },
+        // The map's first drawn pixels: one Metal-shaded plate on the desktop (#1144). Rendered
+        // from the running app rather than a preview, because what is being asked is whether the
+        // SHIPPED binary carries a compiled shader at all.
+        SpecimenEntry("atlasQuad") { AtlasQuadSpecimen() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
         // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in

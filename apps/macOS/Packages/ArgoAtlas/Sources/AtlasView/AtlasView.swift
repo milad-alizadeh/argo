@@ -4,10 +4,15 @@ import SwiftUI
 
 /// The Atlas, drawn.
 ///
-/// A placeholder: it lays the plan's own ground and nothing on it (#1143). The real surface is
-/// Metal — PR #1139 settled that — and this view is the SwiftUI seam the `MTKView` will be hosted
-/// in, so the package, the app target and the five gates over them are all real before the shader
-/// arrives.
+/// One lit plate on the map's own ground, and nothing else (#1144). That is the whole of the
+/// renderer today, on purpose: the Atlas is specified to draw with Metal, this tree had never
+/// compiled a shader, and the cost of learning that at the first drawing ticket is one quad
+/// against a rewrite of everything drawn by the tenth.
+///
+/// The ground is a `Rectangle` behind the `MTKView` rather than only the view's clear colour,
+/// because every way Metal can be absent — no device, no compiled shader, no library — resolves to
+/// a surface that draws nothing. Degrade-down: the map's floor with no city on it is a state the
+/// app can honestly show, and a blank hole is not.
 public struct AtlasView: View {
     @Environment(\.argo) private var argo
 
@@ -19,12 +24,18 @@ public struct AtlasView: View {
 
     public var body: some View {
         Rectangle()
-            .fill(argo.color.surface.sunken)
+            .fill(argo.color.atlas.materials.desktop)
+            .overlay {
+                AtlasSurface(
+                    pigment: argo.color.atlas.materials.plate1,
+                    ground: argo.color.atlas.materials.desktop,
+                )
+            }
             .frame(width: plan.extent.width, height: plan.extent.height)
     }
 }
 
-/// The two states the placeholder has: a map with ground, and one with none.
+/// The two states the map has: one with ground to stand a plate on, and one with none.
 ///
 /// The empty case is the one worth a render rather than an assertion — a 0×0 rectangle draws
 /// nothing, and nothing is indistinguishable from a view that failed to paint until you have
@@ -40,7 +51,7 @@ private struct AtlasPreview: View {
     }
 }
 
-#Preview("Atlas — a map with ground") {
+#Preview("Atlas — one lit plate") {
     AtlasPreview(plan: AtlasPlan(extent: CGSize(width: 420, height: 260)))
 }
 
