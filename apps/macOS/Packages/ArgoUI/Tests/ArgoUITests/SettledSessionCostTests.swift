@@ -43,7 +43,7 @@ struct SettledSessionCostTests {
     @Test
     func `the largest Session is settled inside the budget`() async throws {
         let rows = try await Self.rows()
-        #expect(rows.count > 400, "the fixture stopped being the largest Session's shape")
+        #expect(rows.count > 250, "the fixture stopped being the largest Session's shape")
         let stamp = FeedMeasureStamp(
             of: FeedTableFixture.model(showing: rows), atWidth: Self.width,
         )

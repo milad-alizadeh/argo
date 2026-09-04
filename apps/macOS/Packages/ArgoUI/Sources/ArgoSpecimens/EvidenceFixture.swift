@@ -22,10 +22,7 @@ enum EvidenceFixture {
     /// asserted. Taken off the shipping rows for the same reason as the rest: a command written out
     /// here would be a render of a call nobody is shown.
     static let ran = FeedProjection.previewCommandRows
-        .compactMap { row -> FeedCall? in
-            guard case let .call(call) = row.content else { return nil }
-            return call
-        }
+        .flatMap(\.content.calls)
         .max { $0.address.text.count < $1.address.text.count }?
         .opened
 
@@ -37,12 +34,6 @@ enum EvidenceFixture {
     }.first
 
     private static func call(_ matching: (FeedCall) -> Bool) -> FeedEvidence? {
-        FeedProjection.previewCallRows
-            .compactMap { row -> FeedCall? in
-                guard case let .call(call) = row.content else { return nil }
-                return call
-            }
-            .first(where: matching)?
-            .opened
+        FeedProjection.previewCallRows.flatMap(\.content.calls).first(where: matching)?.opened
     }
 }

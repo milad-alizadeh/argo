@@ -49,8 +49,7 @@ struct EvidenceStepTests {
             .first)
 
         #expect(survey.opened.steps.map(\.id) == [0, 1, 2])
-        #expect(survey.step(of: 0) == 0)
-        #expect(survey.step(of: 2) == 2)
+        #expect(survey.steps.map(\.goesTo) == [0, 1, 2])
     }
 
     /// A call the record answered with nothing is still listed under the open row — it happened —
@@ -75,9 +74,7 @@ struct EvidenceStepTests {
         let survey = try #require(FeedFixture.surveys(in: FeedProjection.rows(from: unanswered))
             .first)
 
-        #expect(survey.step(of: 0) == nil)
-        #expect(survey.step(of: 1) == 0)
-        #expect(survey.step(of: 9) == nil)
+        #expect(survey.steps.map(\.goesTo) == [nil, 0])
     }
 
     // MARK: - Fixtures

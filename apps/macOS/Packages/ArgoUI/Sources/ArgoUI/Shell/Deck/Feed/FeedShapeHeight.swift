@@ -11,7 +11,7 @@ import ProseText
 /// 4 800 of them (ADR-0030).
 ///
 /// The formulas are held against the ruler by `FeedShapeHeightTests`, which is what the ruler is
-/// for now: a test oracle, driven from the named list of shapes, so an eleventh shape without a
+/// for now: a test oracle, driven from the named list of shapes, so a twelfth shape without a
 /// formula fails the build rather than escaping the claim.
 ///
 /// A value rather than a namespace so the pass's own two facts — how the row stands, and the
@@ -25,7 +25,7 @@ struct FeedShapeHeight {
     /// The row's own height, without the step above it: that is a fact about a PAIR of rows, and
     /// `FeedRow.step(to:from:)` is where it is answered.
     ///
-    /// No `default`, for `FeedRow.Content.kind`'s reason: an eleventh case fails this build rather
+    /// No `default`, for `FeedRow.Content.kind`'s reason: a twelfth case fails this build rather
     /// than inheriting a formula written for a shape it is not.
     func height(of content: FeedRow.Content) -> CGFloat {
         switch content {
@@ -33,7 +33,8 @@ struct FeedShapeHeight {
         case let .message(text): prose(text)
         case let .thought(text): prose(text)
         case .call: pressedLine
-        case let .survey(survey): surveyed(survey)
+        case let .survey(survey): folded(survey.calls.count)
+        case let .work(work): folded(work.calls.count)
         case let .gallery(gallery): Self.shots(gallery.shots, across: measure)
         case .skillLoaded: chipLine
         case let .ask(ask): asked(ask)
@@ -47,11 +48,13 @@ struct FeedShapeHeight {
         FeedRowMeasure.height(ofProse: text, chip: standing.drawsChip, across: measure)
     }
 
-    /// A run of looking: its own line, and the names it looked at while the panel is open on it.
-    private func surveyed(_ survey: FeedSurvey) -> CGFloat {
+    /// A fold of a run of calls: its own line, and the calls it stands for listed under it while
+    /// the panel is open on it. One formula over both folds — the survey's stretch of looking and
+    /// the Turn's card of work are the same anatomy, and a second copy of it would drift.
+    private func folded(_ calls: Int) -> CGFloat {
         guard standing.isOpen else { return pressedLine }
         return pressedLine + ArgoFeedRow.callStep + Self.stackedLines(
-            survey.calls.count, at: Self.bodyLine, step: ArgoSpacing.hair,
+            calls, at: Self.bodyLine, step: ArgoSpacing.hair,
         )
     }
 

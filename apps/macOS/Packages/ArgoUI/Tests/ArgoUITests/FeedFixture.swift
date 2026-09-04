@@ -114,14 +114,16 @@ enum FeedFixture {
     /// Every call a stream produced, in order. Reaches INSIDE a folded run of looking; whether a
     /// call got a line of its own is `surveys(in:)`'s claim.
     static func calls(in events: [TranscriptEvent]) -> [FeedCall] {
-        FeedProjection.rows(from: events).flatMap { row -> [FeedCall] in
-            switch row.content {
-            case let .call(call): [call]
-            case let .survey(survey): survey.calls
-            // A gallery keeps its pictures and drops the sentence that carried them; those are
-            // asserted through `galleries(in:)`, `asks(in:)`, `marks(in:)` and `unreadable(in:)`.
-            case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable, .skillLoaded: []
-            }
+        // A gallery keeps its pictures and drops the sentence that carried them; those are
+        // asserted through `galleries(in:)`, `asks(in:)`, `marks(in:)` and `unreadable(in:)`.
+        FeedProjection.rows(from: events).flatMap(\.content.calls)
+    }
+
+    /// Every card of a Turn's work a stream folded, in order.
+    static func work(in rows: [FeedRow]) -> [FeedWork] {
+        rows.compactMap { row in
+            guard case let .work(work) = row.content else { return nil }
+            return work
         }
     }
 

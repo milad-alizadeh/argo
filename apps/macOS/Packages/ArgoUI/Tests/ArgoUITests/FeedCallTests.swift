@@ -34,9 +34,13 @@ struct FeedCallTests {
             .toolCall(FeedFixture.call("mcp", tool: "mcp__linear__list_issues", kind: .mcp)),
         ])
 
-        #expect(calls.map(\.kind.verb) == [
+        // A set, not a sequence: the Turn's fold gathers the tool calls into one card, and the
+        // order they come back in is that card's claim rather than this one's. What this holds is
+        // that each kind has a verb and a mark of its own.
+        #expect(Set(calls.map(\.kind.verb)) == [
             "Searched", "Read", "Ran", "Fetched", "Delegated", "Invoked", "Called",
         ])
+        #expect(calls.count == 7)
         #expect(calls.allSatisfy { $0.kind.symbol != nil })
         #expect(Set(calls.compactMap(\.kind.symbol)).count == calls.count)
     }

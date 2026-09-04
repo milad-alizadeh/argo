@@ -14,6 +14,8 @@ package struct FeedRow: Identifiable, Equatable, Sendable {
         case call(FeedCall)
         /// A run of looking, as one line of counts. See `FeedSurveyFold`.
         case survey(FeedSurvey)
+        /// A Turn's work, as one line of counts. See `FeedWorkFold`.
+        case work(FeedWork)
         /// A run of pictures, as one row of thumbnails. See `FeedGalleryFold`.
         case gallery(FeedGallery)
         /// A question put to somebody, waiting or settled. The feed's one attention state.

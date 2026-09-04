@@ -28,12 +28,13 @@ struct FeedCommandFoldTests {
     }
 
     /// A command the allowlist does not name is loud, and no reading of it is attempted at all.
+    /// It joins the Turn's own card instead, which counts work rather than looking (#1172).
     @Test
-    func `an unrecognised command stays its own row`() {
+    func `an unrecognised command never joins a run of looking`() {
         let rows = FeedProjection.rows(from: ran("ls apps", "swift build", "git status"))
 
-        #expect(rows.count == 3)
         #expect(FeedFixture.surveys(in: rows).isEmpty)
+        #expect(FeedFixture.work(in: rows).map(\.label) == ["Ran 3"])
     }
 
     /// A chain is unrecognised by construction: the judgement never works out which half ran.
@@ -54,10 +55,17 @@ struct FeedCommandFoldTests {
         "ls -la | git push", "git push origin main 2>&1", "git status | cat && git push",
         "cat log > pushed.txt", "find . -name '*.swift' -fprint pushed.txt",
     ])
-    func `a mutation cannot appear inside a fold`(_ mutation: String) {
-        #expect(FeedProjection.rows(from: ran("ls apps", mutation, "cat a.swift")).count == 3)
+    func `a mutation is never counted as looking`(_ mutation: String) {
+        let rows = FeedProjection.rows(from: ran("ls apps", mutation, "cat a.swift"))
+
+        #expect(FeedFixture.surveys(in: rows).isEmpty)
+        #expect(FeedFixture.work(in: rows).flatMap(\.calls).map(\.subject.captioned)
+            == ["ls apps", mutation, "cat a.swift"])
     }
 
+    /// A count saying three commands only looked would report that everything went fine, so the
+    /// failure keeps the run out of the survey. What the Turn's card says about it instead is
+    /// `FeedWorkFoldTests`'.
     @Test
     func `a failed command breaks the run, however it would otherwise be judged`() {
         let broken: [TranscriptEvent] = ran("ls apps") + [
@@ -65,10 +73,7 @@ struct FeedCommandFoldTests {
             .toolCallOutcome(FeedFixture.failed("bad", printing: "No such file")),
         ] + ran("git status")
 
-        let rows = FeedProjection.rows(from: broken)
-
-        #expect(rows.count == 3)
-        #expect(FeedFixture.surveys(in: rows).isEmpty)
+        #expect(FeedFixture.surveys(in: FeedProjection.rows(from: broken)).isEmpty)
     }
 
     @Test
@@ -152,10 +157,12 @@ struct FeedCommandFoldTests {
         #expect(survey.label == "Read 2 · Ran 5")
     }
 
-    /// The four rows are the fold, the change it was for, and the two loud commands after it.
+    /// The three rows are the fold, the change it was for, and the card the two loud commands
+    /// after it fold into.
     @Test
-    func `the specimen leaves the mutation and the two loud commands as rows`() {
-        #expect(FeedProjection.previewFoldRows.count == 4)
+    func `the specimen leaves the mutation a row and cards the two loud commands`() {
+        #expect(FeedProjection.previewFoldRows.count == 3)
+        #expect(FeedFixture.work(in: FeedProjection.previewFoldRows).map(\.label) == ["Ran 2"])
     }
 
     /// A turn that looked at two files and ran a command, then changed something, then looked

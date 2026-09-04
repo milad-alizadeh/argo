@@ -29,6 +29,8 @@ extension FeedShapeHeightTests {
         Row(name: "call, still running", content: .call(RowKindFixture.pendingCall)),
         Row(name: "survey, closed", content: .survey(run)),
         Row(name: "survey, open", content: .survey(run), isOpen: true),
+        Row(name: "work, closed", content: .work(card)),
+        Row(name: "work, open", content: .work(card), isOpen: true),
         Row(name: "gallery, one shot", content: .gallery(RowKindFixture.gallery)),
         Row(name: "gallery, no shots at all", content: .gallery(FeedGallery(shots: []))),
         Row(name: "gallery, a wrapping run", content: .gallery(FeedGallery(
@@ -69,6 +71,12 @@ extension FeedShapeHeightTests {
         Row(name: "message", content: .message("Renamed.")),
         Row(name: "thought", content: .thought("Weighing the two.")),
     ]
+
+    /// A Turn's work with a failure in it, so the header's count and the tinted step are both
+    /// drawn — neither adds a line, which is what the open state is held against.
+    private static let card = FeedWork(calls: [
+        RowKindFixture.answeredCall, RowKindFixture.failedCall, RowKindFixture.answeredCall,
+    ])
 
     /// A run of looking with more than one call, so the list the open state draws has lines to
     /// stack.

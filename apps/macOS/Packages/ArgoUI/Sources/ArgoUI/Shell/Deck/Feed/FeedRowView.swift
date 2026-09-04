@@ -19,13 +19,9 @@ struct FeedRowView: View {
         case let .call(call):
             FeedCallLine(call: call, isOpen: isOpen, open: openEvidence)
         case let .survey(survey):
-            FeedSurveyLine(
-                survey: survey,
-                isOpen: isOpen,
-                open: openEvidence,
-                look: { look(at: $0, in: survey) },
-                current: isOpen ? selection.step : nil,
-            )
+            FeedFoldLine(fold: survey, opening: opening)
+        case let .work(work):
+            FeedFoldLine(fold: work, opening: opening)
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery, open: selection.light)
         case let .skillLoaded(skill):
@@ -44,15 +40,24 @@ struct FeedRowView: View {
         selection.open == row.id
     }
 
+    /// How the panel stands over this row: whether it is the open one, and which of its listed
+    /// calls the pane is showing.
+    private var opening: FeedFoldOpening {
+        FeedFoldOpening(
+            isOpen: isOpen,
+            open: openEvidence,
+            look: look,
+            current: isOpen ? selection.step : nil,
+        )
+    }
+
     private func openEvidence() {
         row.openEvidence(with: selection)
     }
 
-    /// Open the panel at what one of a folded run's calls produced. A call the record answered with
-    /// nothing has no step to go to and the press does nothing — the control is disabled anyway,
-    /// and this guard is the same fact answered where it cannot be wrong.
-    private func look(at call: Int, in survey: FeedSurvey) {
-        guard let step = survey.step(of: call) else { return }
+    /// Open the panel at what one of a folded run's calls produced — by the step's place down the
+    /// whole pane, which is what the list already carries.
+    private func look(at step: Int) {
         selection.openEvidence(of: row.id, at: step)
     }
 }

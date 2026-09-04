@@ -5,7 +5,7 @@ import SwiftUI
     VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
         ForEach(FeedProjection.previewRows) { row in
             if case let .survey(survey) = row.content {
-                FeedSurveyLine(survey: survey, isOpen: false, open: {})
+                FeedFoldLine(fold: survey, opening: FeedFoldOpening(isOpen: false, open: {}))
             }
         }
     }
