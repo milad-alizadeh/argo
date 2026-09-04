@@ -13,10 +13,18 @@ struct MinimapAskCard: Equatable, Sendable {
         var label: String
     }
 
-    /// One question and the options offered under it, in the order they were offered.
+    /// One question and what stands under it — the options offered, in the order they were
+    /// offered, or the way it went once the record has settled it.
+    ///
+    /// Never both. A settled question hands over `answer` and no offers at all, because the feed's
+    /// own row folds the offer out (#1207); a lane still laying a line per option beside a folded
+    /// card is the map disagreeing with the column.
     struct Question: Equatable, Sendable {
         var text: String
         var offers: [Offer]
+        /// The answer's words, where this question is settled. Carried without a marker: the row
+        /// puts a GLYPH in that column, and a glyph is not text the lane can size.
+        var answer: String?
     }
 
     var questions: [Question]
@@ -76,6 +84,11 @@ extension MinimapRowShape {
     )
         -> (rects: [MinimapRowRect], height: CGFloat) {
         let asked = line(question.text, marker: nil, ink: ink, across: measure)
+        if let answer = question.answer {
+            let y = asked.height + ArgoFeedRow.stepBeforeProse
+            let drawn = line(answer, marker: nil, ink: ink, across: measure)
+            return (asked.rects + drawn.rects.map { $0.lowered(by: y) }, y + drawn.height)
+        }
         guard !question.offers.isEmpty else { return (asked.rects, asked.height) }
         var rects = asked.rects
         var y = asked.height + ArgoFeedRow.stepBeforeProse

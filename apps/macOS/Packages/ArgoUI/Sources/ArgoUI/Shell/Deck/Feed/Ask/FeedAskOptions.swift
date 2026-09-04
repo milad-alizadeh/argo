@@ -3,11 +3,18 @@ import ArgoDesign
 import ArgoEngine
 import SwiftUI
 
-/// The options a question offered, one per line, numbered, in the order they were offered.
+/// The options a question offered, one per line, numbered, in the order they were offered — the
+/// PENDING reading, and only that one (#1207).
 ///
 /// Drawn on the feed's own marker grid, at the feed's own prose rung — the same shape a numbered
 /// list in the prose above takes, because that is the shape the prompt put them in. Nothing here is
 /// pressable: the feed is a reading, and the place to answer is the session's own terminal.
+///
+/// **A settled question no longer draws this.** The offer folds out and `FeedAskAnswer` states the
+/// way it went instead, because the options nobody took are the shape of a decision already made.
+/// What is left here is the three rows that are pending and cannot be pressed: a Session Argo
+/// cannot drive (#546), a question whose gate has not raised it yet, and one reported over the
+/// companion plugin (#1205). None of them has an answer to fold to.
 struct FeedAskOptions: View {
     let offers: [FeedAskOffer]
 

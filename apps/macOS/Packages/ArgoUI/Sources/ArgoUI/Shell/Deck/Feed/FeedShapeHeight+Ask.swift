@@ -5,9 +5,9 @@ import ProseText
 
 // A question, at the height its card stands.
 //
-// Two shapes and not one: a settled question is a READING — the words and the options as they were
-// offered — and a question Argo is holding open draws the cards you press, a field and an `Answer`.
-// `FeedAskLine` forks on `ask.isWaiting`, so this does too.
+// Three shapes and not one, because `FeedAskLine` draws three (#1207): a question Argo is holding
+// open draws the cards you press, a field and an `Answer`; a pending one nothing here can reach
+// draws its offer as a reading; and a SETTLED one folds the offer out and draws the way it went.
 
 extension FeedShapeHeight {
     /// The card: every question inside it, and the card's own breathing room.
@@ -38,14 +38,29 @@ extension FeedShapeHeight {
         -> CGFloat {
         let step = ask.isWaiting ? ArgoSpacing.comfortable : ArgoFeedRow.stepBeforeProse
         let asked = Self.gridLine(question.text, across: inside)
-        let offers = ask.isWaiting
-            ? held(question, across: inside)
-            : listed(ask.offers(in: question), across: inside)
-        return Self.stacked([asked, offers].compactMap(\.self), step: step)
+        return Self.stacked(
+            [asked, under(ask, question, across: inside)].compactMap(\.self),
+            step: step,
+        )
+    }
+
+    /// What stands under one question, per reading — the same three `FeedAskLine` forks on. `nil`
+    /// where the reading draws nothing at all: a pending question that offered none, and a settled
+    /// one nothing readable answered.
+    private func under(_ ask: FeedAsk, _ question: Ask.Question, across inside: CGFloat)
+        -> CGFloat? {
+        if ask.isWaiting {
+            return held(question, across: inside)
+        }
+        guard ask.isAnswered else { return listed(ask.offers(in: question), across: inside) }
+        // One line on the same grid: the offer folds out, and the mark takes the column its
+        // numbers stood in — so the answer measures exactly as an option used to.
+        return ask.answered(question).map { Self.gridLine($0.words, across: inside) }
     }
 
     /// The options as they were offered, one per line on the same grid — `FeedAskOptions`. `nil`
-    /// where the question offered none, which draws nothing at all.
+    /// where the question offered none, which draws nothing at all. Reached only by a PENDING
+    /// question now: a settled one folds the offer out (#1207).
     private func listed(_ offers: [FeedAskOffer], across inside: CGFloat) -> CGFloat? {
         guard !offers.isEmpty else { return nil }
         return Self.stacked(

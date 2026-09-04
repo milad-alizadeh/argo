@@ -115,9 +115,32 @@ package struct FeedAsk: Equatable, Sendable {
         isPending && isDriveable ? .attention : .message
     }
 
-    /// The options of one question, numbered, in the order they were offered — what the row draws.
+    /// The options of one question, numbered, in the order they were offered — what the row draws
+    /// while it is a PENDING reading. A settled row draws `answered(_:)` instead (#1207).
     func offers(in question: Ask.Question) -> [FeedAskOffer] {
         FeedAskOffer.numbered(question.options, chosen: chosen(in: question))
+    }
+
+    /// The way one question went, as the folded settled row draws it (#1207). `nil` where the
+    /// record has not settled this ask, and where nothing readable came back.
+    ///
+    /// The option's own label where the answer named one. Where it named none — a free-form ask, or
+    /// an answer that agreed with nothing on the list — the record's prose, which is the only place
+    /// those words have ever been on screen: today the row draws its offer only `if
+    /// !offers.isEmpty`
+    /// and quiets it only where one was chosen, so both cases state the question and stop.
+    ///
+    /// The prose stands in only where the call put ONE question. A call's answer is one payload
+    /// covering every question in it, so drawing it under each of two would draw one fact twice.
+    /// A question of a longer call that named no option draws nothing rather than its neighbour's
+    /// answer — the quieter reading, which is what degrade-down asks for.
+    func answered(_ question: Ask.Question) -> FeedAskAnswer.Words? {
+        guard isAnswered else { return nil }
+        if let chosen = chosen(in: question) {
+            return FeedAskAnswer.Words(words: chosen, isChosen: true)
+        }
+        guard questions.count == 1, let answer, !answer.trimmed.isEmpty else { return nil }
+        return FeedAskAnswer.Words(words: answer, isChosen: false)
     }
 
     /// The card as the overview lane draws it: the same words at the same indents, and the ink read
@@ -126,14 +149,19 @@ package struct FeedAsk: Equatable, Sendable {
     /// The offers come from `offers(in:)` rather than the bare labels, because the row sets each
     /// one behind its NUMBER in the marker column — so the lane needs the same numbers to place
     /// them.
+    ///
+    /// **The lane folds with the row or the map stops matching the column** (#1207): a settled
+    /// question hands over its answer and no offers at all, which is one line under the question
+    /// where the map used to lay one per option.
     var card: MinimapAskCard {
         MinimapAskCard(
             questions: questions.map { question in
                 MinimapAskCard.Question(
                     text: question.text,
-                    offers: offers(in: question).map {
+                    offers: isAnswered ? [] : offers(in: question).map {
                         MinimapAskCard.Offer(marker: $0.marker, label: $0.label)
                     },
+                    answer: answered(question)?.words,
                 )
             },
             // The row's own caption, so the lane says the same thing about the channel the row

@@ -28,7 +28,7 @@ package struct FeedAskLine: View {
                     question: question,
                     offers: ask.offers(in: question),
                     ink: ink,
-                    waiting: waiting(question, at: index),
+                    reading: reading(question, at: index),
                 )
             }
             if ask.isReported {
@@ -77,17 +77,25 @@ package struct FeedAskLine: View {
         return ask.isPending ? "Question, waiting on you" : "Question, answered"
     }
 
-    /// What one question offers while it waits, and nothing at all where the row is a reading —
-    /// which is every settled question, and every question on a Session Argo cannot drive (#546).
-    private func waiting(_ question: Ask.Question, at index: Int) -> FeedAskQuestion.Waiting? {
-        guard ask.isWaiting else { return nil }
-        return FeedAskQuestion.Waiting(
+    /// Which of the three readings this question is (#1207).
+    ///
+    /// **The branch between the last two is `isAnswered`, not `waiting == nil`.** Three rows are
+    /// pending and not pressable, and every one of them would be wrecked by folding: a question on
+    /// a Session Argo cannot drive (#546), one whose gate has not raised it yet, and one reported
+    /// over the companion plugin — which `FeedProjection+Ask.reported` builds `isAnswered: false`,
+    /// so it is never a settled row whatever its caption says. None of the three has an answer, so
+    /// a fold there would draw a decision nobody made.
+    private func reading(_ question: Ask.Question, at index: Int) -> FeedAskQuestion.Reading {
+        guard ask.isWaiting else {
+            return ask.isAnswered ? .settled(ask.answered(question)) : .pending
+        }
+        return .waiting(FeedAskQuestion.Waiting(
             held: Binding(get: { held[index] }, set: { held[index] = $0 }),
             needsClosing: held.needsClosing(question, at: index),
             hasSomethingToSend: held.hasSomethingToSend(at: index),
             pick: { pick($0, in: question, at: index) },
             send: { close(at: index) },
-        )
+        ))
     }
 
     /// Taking an option. On a many-of question it ticks a box and nothing else happens; on a one-of
@@ -150,9 +158,23 @@ package struct FeedAskLine: View {
 // Every shape a call can put a question in, while Argo holds it open. The settled reading is the
 // preview above; these are the states where the row is the thing you press.
 
-/// One question and the options it offered — read, or pressable.
+/// One question and what stands under it — the offer, pressable or read, or the way it went.
 private struct FeedAskQuestion: View {
-    /// What this question offers while Argo holds it open. Absent makes the question a reading.
+    /// The three readings a question can be in (#1207). #534 and #712 branched on one question —
+    /// *is this row the thing you press?* — and gave everything that was not the same drawing: the
+    /// question, then every option it offered, one line each. That put two different facts in one
+    /// shape, and the fold applies to exactly one of them.
+    enum Reading {
+        /// Argo is holding the question open: the pressable cards, the field, `Answer`.
+        case waiting(Waiting)
+        /// Nobody has answered it and nothing here can — the numbered offer, as #534 built it.
+        case pending
+        /// The record has settled it: the question, and the way it went. The offer folds out, and
+        /// the words are absent where nothing readable came back.
+        case settled(FeedAskAnswer.Words?)
+    }
+
+    /// What this question offers while Argo holds it open.
     struct Waiting {
         let held: Binding<FeedAskHeld.Marks>
         let needsClosing: Bool
@@ -167,7 +189,7 @@ private struct FeedAskQuestion: View {
     /// The options it offered, numbered, in the order it offered them.
     let offers: [FeedAskOffer]
     let ink: ArgoColor
-    package let waiting: Waiting?
+    let reading: Reading
 
     /// The ask glyph takes the same marker column the option numbers do, so the block is one grid
     /// and the read options need no indent of their own.
@@ -186,16 +208,24 @@ private struct FeedAskQuestion: View {
         }
     }
 
-    /// Pressable cards need the room a bare list does not.
+    /// Pressable cards need the room a bare list does not. Both readings take the step the offer
+    /// used to, so the fold moves nothing that was already on the grid.
     private var step: CGFloat {
-        waiting == nil ? ArgoFeedRow.stepBeforeProse : ArgoSpacing.comfortable
+        if case .waiting = reading {
+            return ArgoSpacing.comfortable
+        }
+        return ArgoFeedRow.stepBeforeProse
     }
 
-    /// The options exactly as they were offered, in the order they were offered. A question that
-    /// offered none draws none while it is a reading — free-form asks exist — but while it waits it
-    /// still draws its field, which is the whole of what it offers.
+    /// What stands under the question, per reading.
+    ///
+    /// A **settled** question draws the way it went and never its offer, whatever it offered. A
+    /// **pending** one draws the options exactly as they were offered, in the order they were
+    /// offered, and a question that offered none draws nothing — free-form asks exist. While it
+    /// **waits** it draws its field either way, which is the whole of what it offers.
     @ViewBuilder private var options: some View {
-        if let waiting {
+        switch reading {
+        case let .waiting(waiting):
             FeedAskOfferList(
                 question: question,
                 offers: offers,
@@ -205,8 +235,14 @@ private struct FeedAskQuestion: View {
                 pick: waiting.pick,
                 send: waiting.send,
             )
-        } else if !offers.isEmpty {
-            FeedAskOptions(offers: offers)
+        case .pending:
+            if !offers.isEmpty {
+                FeedAskOptions(offers: offers)
+            }
+        case let .settled(answer):
+            if let answer {
+                FeedAskAnswer(answer: answer)
+            }
         }
     }
 }

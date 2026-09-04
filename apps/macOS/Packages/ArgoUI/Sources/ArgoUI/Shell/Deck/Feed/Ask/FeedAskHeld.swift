@@ -83,9 +83,3 @@ struct FeedAskHeld: Equatable {
         return words
     }
 }
-
-private extension String {
-    var trimmed: String {
-        trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-}
