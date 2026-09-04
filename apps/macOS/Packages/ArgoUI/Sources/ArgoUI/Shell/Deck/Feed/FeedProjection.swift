@@ -148,10 +148,7 @@ package enum FeedProjection {
                 return opening.contains(index) ? [] : [.mark(.runFactChanged(fact))]
             }
             switch event {
-            case let .prompt(_, _, atMs):
-                turnOpenedAtMs = atMs
-                lastClockedAtMs = atMs ?? lastClockedAtMs
-            case let .turnResumed(atMs):
+            case let .prompt(_, _, atMs), let .turnResumed(atMs):
                 turnOpenedAtMs = atMs
                 lastClockedAtMs = atMs ?? lastClockedAtMs
             case let .toolCall(call):
@@ -160,7 +157,12 @@ package enum FeedProjection {
                 lastClockedAtMs = outcome.endedAtMs ?? lastClockedAtMs
             case let .interrupted(atMs), let .compaction(atMs):
                 lastClockedAtMs = atMs ?? lastClockedAtMs
-            default:
+            // Nothing this pass clocks a Turn by: none of these is a moment work happened at, or
+            // the moment already rides on a case above (`.turnEnded`'s own reading is `atMs`-less;
+            // the failed row's duration is read off the LAST clocked activity instead).
+            case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort,
+                 .branch, .entry, .mode, .message, .thought, .skillLoaded, .turnEnded, .queued,
+                 .usage, .plan, .unreadableLine, .superseded, .excerpted:
                 break
             }
             var produced: [FeedRow.Content] = []
