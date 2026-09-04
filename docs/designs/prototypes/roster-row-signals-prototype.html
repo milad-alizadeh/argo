@@ -137,10 +137,12 @@
      reader has to learn. Still no leading accent rule: the GROUND carries it, as D30 asks.
      This is one rule for every list in the app — the Sessions roster and the Tickets room
      both — and the implementation ticket has to say so. */
-  .row.sel {
-    background: rgba(62,155,255,.14);
-    box-shadow: inset 0 0 0 1px rgba(62,155,255,.34);
-  }
+  /* The fill alone by default. The rim is a TOGGLE in the switcher, because the two readings
+     are a millimetre apart and the only way to choose is to flip between them on the same
+     rows: the fill alone is quieter in a long list, and the rim holds the card's edge where the
+     row above it is also tinted. */
+  .row.sel { background: rgba(62,155,255,.14); }
+  body.rim .row.sel { box-shadow: inset 0 0 0 1px rgba(62,155,255,.34); }
   .row.ext { opacity: .58; }
 
   .flex { display: flex; align-items: center; min-width: 0; }
@@ -434,6 +436,7 @@
   <span id="switch-label"></span>
   <button onclick="cycle(1)" aria-label="Next variant">›</button>
   <button class="toggle" id="motion-toggle" onclick="toggleMotion()">Motion</button>
+  <button class="toggle" id="rim-toggle" onclick="toggleRim()">Rim</button>
 </div>
 
 <script>
@@ -1219,6 +1222,12 @@ function cycle(d) {
   const ks = ['G','H','I','A','B','C','D','E','F'];
   history.replaceState(null, '', '?variant=' + ks[(ks.indexOf(current()) + d + ks.length) % ks.length]);
   render();
+}
+
+/* The selected card's rim, on and off, so the choice is made by looking rather than by arguing. */
+function toggleRim() {
+  document.body.classList.toggle('rim');
+  document.getElementById('rim-toggle').classList.toggle('on', document.body.classList.contains('rim'));
 }
 
 function toggleMotion() {
