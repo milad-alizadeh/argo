@@ -3,11 +3,8 @@ import Foundation
 
 /// What the roster's leading column says runs UNDER a Session (#1344, `cockpit-roster-row.md`).
 extension SessionRosterProjection {
-    /// The four readings the column draws, and each is a different fact.
-    ///
-    /// `none` and `spent` are the two that look alike and are not: never delegated draws nothing at
-    /// all, where delegated-and-all-home draws a dash. A column that answered both with a blank
-    /// would say a Session that fanned out and gathered everyone back never fanned out.
+    /// The four readings the column draws, and each is a different fact. `none` and `spent` are
+    /// the pair that look alike and are not — see `SubagentDots`, which draws them.
     package enum Delegation: Equatable, Sendable {
         /// Nothing was handed over, or nothing may be claimed about what was.
         case none
@@ -15,18 +12,26 @@ extension SessionRosterProjection {
         case running(Int)
         /// Delegated, and every one of them is home.
         case spent
-        /// An open delegation Argo cannot resolve (#1076). Never a number: `finished` here is the
-        /// untruth #1269 was written for.
+        /// An open delegation Argo cannot resolve (#1076).
         case unresolved
+
+        /// What a screen reader hears, which the column spends on marks it has no way to see.
+        var spoken: String? {
+            switch self {
+            case .none: nil
+            case let .running(count): "\(count) running under it"
+            case .spent: "Delegated, all landed"
+            case .unresolved: "Delegating, and Argo cannot say how many"
+            }
+        }
     }
 
     /// The Subagents of one Session, as the Agents rail reads them — the rail's own list through
     /// the rail's own rule (`FeedAgents`), so the two surfaces cannot disagree about one Session.
     ///
-    /// **Empty for a Session whose OWN state Argo cannot place.** A Session Argo cannot place
-    /// cannot be claimed to be delegating either, and the state's outline already carries the whole
-    /// claim — a second outline under it reads as a second dot. Emptied HERE rather than at the
-    /// reading below, so a fold cannot pick the claim back up by joining the lists.
+    /// **Empty for a Session whose OWN state Argo cannot place** — its state's outline already
+    /// carries the whole claim. Emptied here rather than at the reading below, so a fold cannot
+    /// pick the claim back up by joining the lists.
     static func subagents(
         of session: CockpitPresentation.Session,
         in events: [TranscriptEvent],
@@ -47,17 +52,13 @@ extension SessionRosterProjection {
     }
 
     /// What a list of Subagents draws in the column. One rule at both levels: a Session reads its
-    /// own list, and a fold reads the lists it hides joined — which is what makes rule 9's "a fold
-    /// sums" structural rather than a second piece of arithmetic that could drift from this one.
+    /// own list, and a fold reads the lists it hides joined, which is what makes rule 9's "a fold
+    /// sums" structural rather than a second piece of arithmetic.
     ///
-    /// **Argo counts what it can place, and says so only about what it cannot.** The running count
-    /// comes first because those are the ones Argo has evidence for — the record answered them, or
-    /// the child's own file is growing (#1269). The outline is what is left when it can place
-    /// nothing: rule 5's "never a number" is about a reading with no number in it, not about
-    /// suppressing one Argo actually has. Reading it the other way would put an idle Session's two
-    /// silent children in front of the one Argo is watching write, which is #1269 pointed sideways.
-    ///
-    /// Then the dash, then nothing. `finished` is never claimed on absence of evidence.
+    /// **Argo counts what it can place, and says so only about what it cannot** — the amendment
+    /// `cockpit-roster-row.md` rule 5 carries (#1344). The running count comes first because those
+    /// are the ones Argo has evidence for: the record answered them, or the child's own file is
+    /// growing (#1269). `finished` is never claimed on absence of evidence.
     static func reading(of agents: [FeedAgent]) -> Delegation {
         guard !agents.isEmpty else { return .none }
         let running = FeedAgents.running(of: agents)

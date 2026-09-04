@@ -2,8 +2,9 @@ import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
-/// The roster row's leading column (`cockpit-roster-row.md`): what the Session is DOING, or — on a
-/// fold — whether it is open.
+/// The roster row's leading column (`cockpit-roster-row.md`): the Session's own state, and under
+/// it what runs beneath the Session. The column belongs to the machinery and nothing else on the
+/// row may claim it.
 ///
 /// It takes the whole row rather than a state and a fold, so no caller can hand it both.
 struct SessionMarker: View {
@@ -20,8 +21,8 @@ struct SessionMarker: View {
         .accessibilityHidden(true)
     }
 
-    /// The Session's own state, or — on a fold — whether it is open. What runs BENEATH it is
-    /// `SubagentDots`, which is a different subject in the same column.
+    /// The Session's own state, or — on a fold — whether it is open. One of the two is a state and
+    /// the other a control, and no row is both.
     @ViewBuilder private var mark: some View {
         if let fold = row.fold {
             ArgoDisclosure(fold.isOpen ? .below : .beside)

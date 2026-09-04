@@ -61,11 +61,30 @@ struct SubagentDotsSpecimen: View {
                     id: "unknown",
                     title: "codex — refactor the relay",
                     status: .unknown,
-                    access: .external,
+                    ran: .external,
                 ),
                 agoMs: 360_000, handed: Handover(open: 3, landed: 0),
             ),
-        ].map { delegating($0, at: nowMs) }
+        ].map { delegating($0, at: nowMs) } + folded(at: nowMs)
+    }
+
+    /// Two headless runs in one folder, which is what folds — and the fold above them sums what
+    /// they delegated rather than reading one of them and claiming it for the other (rule 9).
+    private static func folded(at nowMs: Int) -> [CockpitPresentation.Session] {
+        (0 ..< 2).map { index in
+            delegating(
+                Reading(
+                    run: Run(
+                        id: "headless-\(index)",
+                        title: "/implement 1344",
+                        status: .running,
+                        ran: .headlessInALoop,
+                    ),
+                    agoMs: 92000 + index * 1000, handed: Handover(open: 2, landed: 0),
+                ),
+                at: nowMs,
+            )
+        }
     }
 
     /// How many briefs a Session handed over, and how many of them came back.
@@ -75,11 +94,27 @@ struct SubagentDotsSpecimen: View {
     }
 
     /// The Session itself: what names it, and how Argo can place it.
+    /// How a run exists: whether anyone here can drive it, what started it, and where it runs.
+    /// Two headless runs in one folder fold, which is the last pair of rows here.
+    struct Ran {
+        var access = CockpitPresentation.Session.Access.managed
+        var entry = SessionEntry.interactive
+        var location = "/Users/milad/Developer/argo"
+
+        static let managed = Ran()
+        static let external = Ran(access: .external)
+        static let headlessInALoop = Ran(
+            access: .external,
+            entry: .headless,
+            location: "/Users/milad/Developer/argo/.claude/worktrees/loop",
+        )
+    }
+
     struct Run {
         let id: String
         let title: String
         let status: SessionStatus
-        var access: CockpitPresentation.Session.Access = .managed
+        var ran = Ran.managed
     }
 
     /// What a row in this specimen IS: a Session in some state, with some fan-out under it.
@@ -96,14 +131,14 @@ struct SubagentDotsSpecimen: View {
         return CockpitPresentation.Session(
             id: reading.run.id,
             title: reading.run.title,
-            access: reading.run.access,
+            access: reading.run.ran.access,
             status: reading.run.status,
             chain: .init(
-                program: .init(model: "claude-opus-5"),
+                program: .init(model: "claude-opus-5", entry: reading.run.ran.entry),
                 span: .init(lastSeenAtMs: startedAtMs),
             ),
             work: .init(
-                location: "/Users/milad/Developer/argo",
+                location: reading.run.ran.location,
                 workspace: .init(kind: .main, branch: "main"),
             ),
             transcript: .init(events: events(at: startedAtMs, handed: reading.handed)),

@@ -16,8 +16,8 @@ extension SessionRosterProjection {
         let isOpen: Bool
     }
 
-    /// Every fold these Sessions draw a row for, by the id `rows(from:opened:)` opens one BY —
-    /// so a caller never spells `fold:<list>:<dir>` itself and drifts from it.
+    /// Every fold these Sessions draw a row for, by the id `Viewing.opened` names one BY — so a
+    /// caller never spells `fold:<list>:<dir>` itself and drifts from it.
     package static func foldIDs(from sessions: [CockpitPresentation.Session]) -> Set<String> {
         Set(rows(from: sessions).compactMap { $0.fold?.id })
     }
@@ -37,12 +37,15 @@ extension SessionRosterProjection {
         /// run whose place it takes — the first of the group, which, the Hub publishing
         /// newest-activity-first, is its newest.
         struct Reading {
-            let count: Int
             let label: String
             let leader: String
-            /// The ids of the runs this fold hides. Kept so a fold can SUM what it stands for
-            /// rather than read one run and claim it for the others (#1344).
+            /// The ids of the runs this fold hides — which is also how many there are, and what a
+            /// fold sums what it stands for over (#1344).
             let runs: [String]
+
+            var count: Int {
+                runs.count
+            }
         }
 
         /// Which directory each FOLDED run belongs to. A run drawn on its own row is absent.
@@ -57,7 +60,7 @@ extension SessionRosterProjection {
             let groups = Self.groups(of: sessions)
             let members = Dictionary(
                 uniqueKeysWithValues: groups.flatMap { group in
-                    group.runs.map { ($0, group.directory) }
+                    group.reading.runs.map { ($0, group.directory) }
                 },
             )
             let list = pass.isArchived ? "archived" : "roster"
@@ -65,11 +68,11 @@ extension SessionRosterProjection {
             // reason the archive foot is (`isArchiveOpen`): the deck draws what the selection
             // names, and a fold shut over it would leave the roster drawing no row for the
             // Session the feed is drawing.
-            let selected = pass.selection.flatMap { members[$0] }
+            let selected = pass.viewing.selection.flatMap { members[$0] }
             self.list = list
             self.membership = members
             self.folds = Dictionary(uniqueKeysWithValues: groups.map { ($0.directory, $0.reading) })
-            self.opened = pass.opened
+            self.opened = pass.viewing.opened
                 .union(selected.map { [Self.identifier(of: $0, in: list)] } ?? [])
         }
 
@@ -126,10 +129,10 @@ private extension SessionRosterProjection.Folding {
         let runs: [String]
     }
 
-    /// A candidate that earned a fold, and what its fold says.
+    /// A candidate that earned a fold, and what its fold says. The runs are on the `Reading`,
+    /// which is the value that outlives this one.
     struct Group {
         let directory: String
-        let runs: [String]
         let reading: Reading
     }
 
@@ -147,11 +150,7 @@ private extension SessionRosterProjection.Folding {
                 guard let label, let leader = candidate.runs.first else { return nil }
                 return Group(
                     directory: candidate.directory,
-                    runs: candidate.runs,
-                    reading: Reading(
-                        count: candidate.runs.count, label: label, leader: leader,
-                        runs: candidate.runs,
-                    ),
+                    reading: Reading(label: label, leader: leader, runs: candidate.runs),
                 )
             }
     }

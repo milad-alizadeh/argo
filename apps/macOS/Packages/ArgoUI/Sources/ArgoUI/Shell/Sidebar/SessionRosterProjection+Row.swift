@@ -122,6 +122,7 @@ extension SessionRosterProjection {
                 stateWord,
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
+                delegation.spoken,
                 secondaryFact,
                 spokenWorktree.map { "in \($0)" },
                 spokenClock,

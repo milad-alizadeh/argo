@@ -54,14 +54,6 @@ package enum SessionRosterProjection {
     struct Pass {
         let isArchived: Bool
         let viewing: Viewing
-
-        var opened: Set<String> {
-            viewing.opened
-        }
-
-        var selection: String? {
-            viewing.selection
-        }
     }
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
@@ -127,10 +119,9 @@ package enum SessionRosterProjection {
         }
     }
 
-    /// What one pass read off one Session's stream: the events, handed out once, and what they say
-    /// runs under it. One value because the cap on a parameter list is four and these two always
-    /// travel together — a row that took the events without the reading would hand the stream out
-    /// twice to get it.
+    /// One Session's stream, handed out once, and what the pass read off it. They travel together
+    /// because a row given the events without the reading would ask for the stream again to get it
+    /// (`PerfBudgets.selectionPassReads`).
     struct Held {
         let events: [TranscriptEvent]
         let delegation: Delegation

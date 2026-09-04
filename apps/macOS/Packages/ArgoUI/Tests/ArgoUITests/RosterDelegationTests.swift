@@ -1,6 +1,7 @@
 import ArgoEngine
 import ArgoFixtures
 @testable import ArgoUI
+import Foundation
 import Testing
 
 /// What the roster's leading column says runs under a Session (#1344).
@@ -10,18 +11,35 @@ import Testing
 /// repeats #1269 repeats it on every row at once.
 @Suite("The roster's Subagent dots")
 struct RosterDelegationTests {
-    @Test
-    func `the row's count is the count the rail draws for the same Session`() throws {
-        let events = Self.handedOver(open: 3, landed: 2)
-        let session = Self.session(status: .running, events: events)
+    /// The claim the design's rule 1 makes, asserted against the rail's REAL reading — the one the
+    /// rail draws, `told(_:writing:at:)` and all. Comparing against the un-dated walk would hold
+    /// only while nothing is writing, which is the one case #1269 was not about.
+    @Test(arguments: [Set<String>(), Set(["child-0"])])
+    func `the row's count is the count the rail draws for the same Session`(
+        writing: Set<String>,
+    ) throws {
+        // Idle, so the record alone cannot place the open delegations (#1076) and the children's
+        // own files are what decides them.
+        let events = Self.handedOver(open: 3, landed: 2, answering: "child-0")
+        let nowMs = Date().epochMs
+        let read: @Sendable (String) -> SubagentWriting = {
+            writing.contains($0) ? .writing : .quiet
+        }
 
-        let rail = FeedAgents.running(of: FeedAgents.all(
-            in: FeedProjection.rows(from: events), of: .running,
+        let rail = FeedAgents.running(of: FeedAgents.told(
+            FeedAgents.all(in: FeedProjection.rows(from: events), of: .undecided),
+            writing: read,
+            at: nowMs,
         ))
-        let row = try #require(SessionRosterProjection.rows(from: [session]).first)
+        let row = try #require(SessionRosterProjection.rows(
+            from: [Self.session(status: .idle, events: events)],
+            viewing: .init(writing: read),
+        ).first)
 
-        #expect(rail == 3)
-        #expect(row.delegation == .running(rail))
+        // Nothing writing: the rail counts none and the row draws the outline, which is the same
+        // reading of the same list. One writing: both say exactly one.
+        #expect(rail == writing.count)
+        #expect(row.delegation == (rail > 0 ? .running(rail) : .unresolved))
     }
 
     /// The ceiling, and the exact figure past it: five is where a stack stops being countable at a
@@ -36,9 +54,21 @@ struct RosterDelegationTests {
         #expect(SubagentDots.ceiling == 5)
     }
 
-    /// The three readings that are NOT a count, told apart. Never-delegated and all-home look alike
-    /// and are two facts: a column that answered both with a blank would say a Session that fanned
-    /// out and gathered everyone back never fanned out.
+    /// What a screen reader hears, which the column spends entirely on marks.
+    @Test
+    func `every reading but silence is announced`() throws {
+        let row = try #require(SessionRosterProjection.rows(from: [
+            Self.session(status: .running, events: Self.handedOver(open: 3, landed: 0)),
+        ]).first)
+
+        #expect(row.announcement.contains("3 running under it"))
+        #expect(SessionRosterProjection.Delegation.none.spoken == nil)
+        #expect(SessionRosterProjection.Delegation.spent.spoken != nil)
+        #expect(SessionRosterProjection.Delegation.unresolved.spoken != nil)
+    }
+
+    /// The three readings that are NOT a count, told apart — see `SubagentDots` for why
+    /// never-delegated and all-home may not draw the same blank.
     @Test
     func `never delegated, all home and cannot resolve are three different readings`() throws {
         let never = try #require(SessionRosterProjection.rows(from: [
@@ -58,8 +88,7 @@ struct RosterDelegationTests {
         #expect(cannotSay.delegation == .unresolved)
     }
 
-    /// A Session Argo cannot place cannot be claimed to be delegating either, and the state's own
-    /// outline already carries the whole claim — a second outline under it reads as a second dot.
+    /// A Session Argo cannot place cannot be claimed to be delegating either (rule 5).
     @Test
     func `a Session whose own state Argo cannot place claims nothing under it`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [
@@ -178,5 +207,15 @@ struct RosterDelegationTests {
         RosterSessionFixture.session(
             id: id, access: access, entry: entry, status: status, lastSeenAtMs: 0, events: events,
         )
+    }
+}
+
+/// The ceiling is the VIEW's: the projection hands over a count and never a drawn stack.
+@Suite("The Subagent stack's ceiling")
+struct SubagentStackTests {
+    @Test(arguments: [(3, 3, 0), (5, 5, 0), (12, 5, 7)])
+    func `the stack stops at five and says the rest`(running: Int, drawn: Int, overflow: Int) {
+        #expect(min(running, SubagentDots.ceiling) == drawn)
+        #expect(max(0, running - SubagentDots.ceiling) == overflow)
     }
 }
