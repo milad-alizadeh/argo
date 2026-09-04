@@ -6,12 +6,12 @@
 /// An actor because the reads block on subprocesses and the caller is the main actor.
 actor ProcessLivenessReader {
     /// The CLIs whose Sessions this engine reads, by the name each is found on the `PATH` under.
-    /// Every CLI a spawn can run, taken off `AgentCLI` rather than written out: a program absent
-    /// here can never match, and reading `codex` against `claude` alone left every Codex Session
-    /// quiet — and so grey — however hard it was working (#1261).
+    /// Every CLI a spawn can run, taken off `AgentCLI` rather than written out — a program absent
+    /// here can never match, so a Session on it reads quiet however hard it is working (#1261).
     ///
-    /// Named programs still, never a looser match: what keeps a false running out is this set, not
-    /// the shape of the comparison below.
+    /// A NAME and not a path: an executable called `claude` somewhere else on disk matches too.
+    /// That is as tight as a process table read gets, and the honest floor under it is that a
+    /// match alone never says a Session is live (`SessionLiveness`).
     static let agentExecutables = Set(AgentCLI.allCases.map(\.command))
 
     private let run: ShellCommand

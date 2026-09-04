@@ -154,18 +154,26 @@ extension Hub {
     ///
     /// No other posture has such a process to ask about: `orphaned` is a PTY Argo watched die and
     /// `external` is one it never held, so both fall to what the machine can be observed to say.
+    ///
+    /// The PTY rather than a pid, though the pid is there for the taking (`LocalProcess.shellPid`):
+    /// a pid is recycled and a descriptor is not, and the exit reaches `relinquish` down three
+    /// paths — the child monitor, a failed read, and Argo's own `terminate`. A pid tested against
+    /// the process table would add a fourth witness that only fires where all three missed, and
+    /// would retire every managed row on a host where `ps` cannot be run at all.
     private func liveness(
         of session: HubSession,
         ownedAs provenance: SessionProvenance,
     )
         -> SessionLiveness {
-        guard provenance != .managed else { return .live }
-        return readings.liveness(
-            inCwd: session.cwd,
-            // The records' own times where they carry any, and the file's last write behind them —
-            // a transcript that timestamps nothing still says when it was written to.
-            lastActivityAtMs: session.lastSeenAtMs,
-        )
+        switch provenance {
+        case .managed: .live
+        case .orphaned, .external: readings.liveness(
+                inCwd: session.cwd,
+                // The records' own times where they carry any, and the file's last write behind
+                // them — a transcript that timestamps nothing still says when it was written to.
+                lastActivityAtMs: session.lastSeenAtMs,
+            )
+        }
     }
 
     /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a

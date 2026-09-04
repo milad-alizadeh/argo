@@ -62,34 +62,23 @@ struct HubLivenessTests {
         #expect(hub.sessions.first?.status == .unknown)
     }
 
-    @Test
-    func `a Session Argo is holding the PTY of is live with no process match at all`() async {
-        // The machine's process table says nothing at all here, and it is not asked: Argo started
-        // this agent and has not been told it exited. Before #1261 the row was matched back on its
-        // FOLDER, so a second agent in the same worktree, a `codex` under any folder, and an agent
-        // ten minutes into one tool call each read grey while they worked.
+    /// Neither thing the process table is joined ON reaches a Session Argo spawned: the folder
+    /// match is not asked for, and neither is the record write that corroborates one (#1261).
+    @Test(arguments: [0, SessionLiveness.recentActivityWindowMs + 1000])
+    func `a Session Argo holds the PTY of is live, whatever the machine says`(
+        wroteAgoMs: Int,
+    ) async {
+        // No agent anywhere in the process table, and — at the second argument — a record silent
+        // for longer than any match would be corroborated over, which is one long tool call.
         let hub = await Self.hub()
         _ = hub.ownership.claim(naming: "ours")
 
-        await hubObserveToEnd(hub, Self.working(id: "ours"))
-
-        #expect(hub.sessions.first?.liveness == .live)
-        #expect(hub.sessions.first?.status == .running)
-    }
-
-    @Test
-    func `a managed Session goes on reading live while its record sits silent`() async {
-        let hub = await Self.hub()
-        _ = hub.ownership.claim(naming: "thinking")
-        // One long tool call: the Turn is open and nothing has been written to the record since
-        // well outside the window a match is corroborated by.
-        let silent = Self.nowMs - SessionLiveness.recentActivityWindowMs - 1000
-
-        await hubObserveToEnd(hub, hubTestObservation(id: "thinking", events: [
+        await hubObserveToEnd(hub, hubTestObservation(id: "ours", events: [
             .cwd(Self.cwd),
-            .prompt(text: "Refactor it", images: [], atMs: silent),
+            .prompt(text: "Refactor it", images: [], atMs: Self.nowMs - wroteAgoMs),
         ]))
 
+        #expect(hub.sessions.first?.liveness == .live)
         #expect(hub.sessions.first?.status == .running)
     }
 

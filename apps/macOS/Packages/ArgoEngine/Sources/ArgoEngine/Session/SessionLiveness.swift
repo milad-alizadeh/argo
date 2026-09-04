@@ -6,7 +6,8 @@
 /// Only Sessions Argo does NOT own are read here. A `managed` one is answered by the PTY Argo is
 /// holding open, which is a fact rather than a match (`Hub.liveness(of:ownedAs:)`, #1261).
 public enum SessionLiveness: Sendable, Equatable {
-    /// A process matched, and the record corroborates it with a recent write.
+    /// Something corroborates the agent running: a process matched with a recent write behind it,
+    /// or — for a `managed` Session — the PTY Argo is holding open.
     case live
     /// Nothing corroborates this Session running. Also the honest default for a liveness that was
     /// never read at all: ambiguity resolves toward the quieter state.

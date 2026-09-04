@@ -40,8 +40,7 @@ struct ProcessLivenessReaderTests {
 
     @Test
     func `a codex agent is read too, because Argo spawns that CLI as well`() async {
-        // Read against `claude` alone, 1205 matched nothing and every Codex Session went quiet —
-        // and so grey — however hard it was working (#1261).
+        // 1205 is `codex app-server`, which is how a spawn runs that CLI (#1261).
         let reader = ProcessLivenessReader(run: Self.shell(cwds: ["1205": "/Users/me/five"]))
 
         #expect(await reader.liveCwds() == ["/Users/me/five"])
