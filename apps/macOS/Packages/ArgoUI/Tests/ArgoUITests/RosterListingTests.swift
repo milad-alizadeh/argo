@@ -53,6 +53,37 @@ struct RosterListingTests {
         #expect(later.rows.map(\.id) == ["new", "alpha", "beta"])
     }
 
+    /// Three Sessions started one after the other, which is how the roster was reported
+    /// reshuffling (#1236): each publish brings a new row AND a moved activity order for the rows
+    /// already on, and not one of those rows may change place.
+    @Test
+    func `three Sessions starting one after the other leave the roster order still`() {
+        var roster = RosterListing()
+        roster.hold(roster.reading(of: sessions(named: "alpha", "beta", "gamma")))
+
+        let publishes = [
+            ["one", "gamma", "alpha", "beta"],
+            ["two", "beta", "one", "gamma", "alpha"],
+            ["three", "gamma", "alpha", "two", "beta", "one"],
+        ]
+        let onBefore = ["alpha", "beta", "gamma"]
+
+        for activity in publishes {
+            let reading = roster.reading(of: sessions(named: activity))
+
+            #expect(reading.ids.filter(onBefore.contains) == onBefore)
+
+            roster.admit(reading)
+        }
+
+        // And each of the three took its place once: a publish that sorts them last moves nothing.
+        let settled = roster.reading(of: sessions(named: [
+            "alpha", "beta", "gamma", "one", "two", "three",
+        ]))
+
+        #expect(settled.ids == ["three", "two", "one", "alpha", "beta", "gamma"])
+    }
+
     // MARK: - The archived list
 
     /// Not held by the order above: nothing behind the fold is under the pointer, so there is no
@@ -98,6 +129,10 @@ struct RosterListingTests {
     // MARK: - Fixtures
 
     private func sessions(named ids: String...) -> [CockpitPresentation.Session] {
+        sessions(named: ids)
+    }
+
+    private func sessions(named ids: [String]) -> [CockpitPresentation.Session] {
         ids.map { session(id: $0, isArchived: false) }
     }
 

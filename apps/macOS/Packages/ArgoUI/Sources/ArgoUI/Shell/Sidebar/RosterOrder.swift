@@ -45,24 +45,35 @@ struct RosterOrder: Equatable, Sendable {
     }
 
     /// The held order minus what has gone, plus what has arrived — each new id at the place the
-    /// activity order puts it, never appended at the end.
+    /// activity order puts it, relative to the rows the walk has already reached.
+    ///
+    /// Where the activity order and the held order disagree, the held rows win: a new id goes
+    /// BELOW every row already walked past rather than in between two of them. That can put a
+    /// Session that arrives behind a row which has just spoken lower than its activity alone would
+    /// — the price of the one thing the hold owes the reader, which is that no row already on the
+    /// roster moves (#1236).
     private func merged(_ ids: [String]) -> [String] {
         guard let held else { return ids }
         let present = Set(ids)
         var order = held.filter(present.contains)
         var placed = Set(order)
-        // The last id walked past, which is what a new one is placed AFTER: its position in the
-        // activity order is only meaningful relative to the rows that were already there.
-        var anchor: String?
+        // How far down the PUBLISHED order the walk has reached, which is where the next new id
+        // goes. It only ever moves down: the activity order of the held rows moves under the walk,
+        // and a new id placed from a step that walked back up would wedge in between two rows that
+        // were next to each other — the swap the hold exists to refuse (#1236).
+        var frontier: Int?
         for id in ids {
-            if !placed.contains(id) {
-                order.insert(
-                    id,
-                    at: anchor.flatMap { order.firstIndex(of: $0).map { $0 + 1 } } ?? 0,
-                )
-                placed.insert(id)
+            if placed.contains(id) {
+                if let reached = order.firstIndex(of: id) {
+                    // Nothing walked yet is the top, which no index is above.
+                    frontier = max(frontier ?? 0, reached)
+                }
+                continue
             }
-            anchor = id
+            let place = frontier.map { $0 + 1 } ?? 0
+            order.insert(id, at: place)
+            placed.insert(id)
+            frontier = place
         }
         return order
     }
