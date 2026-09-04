@@ -53,6 +53,10 @@ extension SessionRosterProjection {
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning.
         let stateWord: String?
+        /// Line 3's `PlanBar` — the same reading the Session's own plan pill shows. `nil` for a
+        /// Session that has never written a Plan, and always `nil` on a fold (`foldRow`): four
+        /// to-do lists do not add up to one.
+        let plan: PlanReading?
         /// What runs under this Session, drawn beneath the state dot (`SessionMarker`,
         /// `SubagentDots`).
         let subagents: SubagentReading?
@@ -92,6 +96,7 @@ extension SessionRosterProjection {
             self.state = activity.state
             self.stateWord = activity.stateWord
             self.activity = activity.activity
+            self.plan = activity.plan
             self.subagents = activity.subagents
         }
 
@@ -162,9 +167,15 @@ extension SessionRosterProjection {
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
-                // A fold stands for several runs at once, so one run's call drawn for all of
-                // them is the same claim about the others its dot and its word decline to make.
-                activity: nil,
+                doing: Row.Activity.Doing(
+                    // A fold stands for several runs at once, so one run's call drawn for all of
+                    // them is the same claim about the others its dot and its word decline to
+                    // make.
+                    activity: nil,
+                    // A fold sums or says nothing: its Plan is nobody's to draw, and four to-do
+                    // lists do not add up to one (`cockpit-roster-row.md`, rule 9).
+                    plan: nil,
+                ),
                 // A fold sums or says nothing (rule 9): its dots are pooled across every run it
                 // hides, under the same ceiling, and never the other three readings.
                 subagents: foldedSubagents(of: runs),
@@ -208,7 +219,12 @@ extension SessionRosterProjection {
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
-                activity: activity(of: session, in: events),
+                doing: Row.Activity.Doing(
+                    activity: activity(of: session, in: events),
+                    // Off the same hand-out the clock and the activity above already walked,
+                    // not a second `session.events` (`PerfBudgets`).
+                    plan: PlanProjection.reading(from: events),
+                ),
                 subagents: subagents(of: session, in: events),
             ),
             availability: Row.Availability(

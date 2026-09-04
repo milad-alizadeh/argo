@@ -127,8 +127,13 @@ struct FeedColumn: View {
     /// it, whether that surface is the vessel or the deck's own foot.
     @ViewBuilder private var pill: some View {
         if let plan = showing.plan {
-            PlanPill(plan: plan, isRevealed: showing.isRevealed, isCursored: showing.isCursored)
-                .padding(.bottom, ArgoPlanPill.lift)
+            PlanPill(
+                plan: plan,
+                isStill: showing.isStill,
+                isRevealed: showing.isRevealed,
+                isCursored: showing.isCursored,
+            )
+            .padding(.bottom, ArgoPlanPill.lift)
         }
     }
 
