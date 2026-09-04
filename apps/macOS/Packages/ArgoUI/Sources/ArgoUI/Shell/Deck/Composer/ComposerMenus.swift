@@ -92,9 +92,9 @@ struct ComposerMenus {
     /// The menu the line opens, and `nil` where none does — `AddMenu` while it is open, else
     /// whichever sigil's listing.
     ///
-    /// At most one of the two sigils is ever open, and by construction rather than by a guard: `/`
-    /// opens only at the head of the line, `@` only on a token the reader is still typing. So the
-    /// `/` derive is asked first and the `@` derive answers whatever it declined.
+    /// At most one of the two sigils is ever open, and by construction rather than by a guard:
+    /// each opens only on a token the reader is still typing. So the `/` derive is asked first
+    /// and the `@` derive answers whatever it declined.
     func listing(on line: ComposerMenuLine) -> ComposerMenu.Listing? {
         guard !isDismissed else { return nil }
         switch addState {
@@ -192,10 +192,11 @@ struct ComposerMenus {
         // it opened — to writing, so it closes. A pick's own insertion fires this too, which is
         // exactly what is meant to close it: see `addMenuPicked(_:)`.
         addState = .closed
-        // The HEAD of the previous line, and not `ComposerMenu.command(in:)`'s full rule: a space
-        // or a second slash closes the menu without the reader having left the command they are
-        // typing, and re-reading on those made a held-down space a walk every second keystroke.
-        let reopened = wasDismissed || !was.hasPrefix("/")
+        // Whether a command was already open on the PREVIOUS line, at the tail the reader is
+        // still typing in — not `ComposerMenu.command(in:)`'s full rule: a space or a second
+        // slash closes the menu without the reader having left the command, and re-reading on
+        // those made a held-down space a walk every second keystroke.
+        let reopened = wasDismissed || !hadOpenCommand(was)
         return asking(commands: opensCommands(line) && reopened, on: line, from: was)
     }
 
@@ -278,5 +279,26 @@ struct ComposerMenus {
 
     private func opensCommands(_ line: ComposerMenuLine) -> Bool {
         line.canRunCommands && ComposerMenu.command(in: line.text) != nil
+    }
+
+    /// Whether `text` already had a `/` open at a token boundary, closed by a trailing space or a
+    /// second slash included — `lineChanged(from:to:)`'s own question, asked with a looser rule
+    /// than `ComposerMenu.command(in:)` on purpose.
+    ///
+    /// Walks back past a slash that fails the boundary test — `/usr/` is still the tail of the `/`
+    /// opened at its own head — but stops the moment the walk crosses whitespace: past that is a
+    /// different word, not the tail of the command still being typed, and #1256 gave a `/` more
+    /// than one place in the draft to open from. Without the stop, an abandoned command near the
+    /// head would keep every LATER `/` on the same line from ever reading its own skills.
+    private func hadOpenCommand(_ text: String) -> Bool {
+        var upper = text.endIndex
+        while let slash = text[..<upper].lastIndex(of: "/") {
+            if ComposerMenu.opensToken(text, at: slash) {
+                return true
+            }
+            guard !text[slash ..< upper].contains(where: \.isWhitespace) else { return false }
+            upper = slash
+        }
+        return false
     }
 }

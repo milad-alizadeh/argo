@@ -53,6 +53,21 @@ struct ComposerMenuReadsTests {
         #expect(asks.commands)
     }
 
+    /// #1256: a `/` two lines down is its OWN opening, not a keystroke inside the one at the
+    /// head — a command abandoned near the head must not keep a later `/` from reading its own
+    /// skills.
+    @Test
+    func `a slash after a later line reads the skills too`() {
+        var menus = ComposerMenus()
+
+        let asks = menus.lineChanged(
+            from: "go with these\n\n",
+            to: Self.line("go with these\n\n/"),
+        )
+
+        #expect(asks.commands)
+    }
+
     /// The composer arriving is itself an opening, whatever the line says: read now and the menu
     /// has its rows before the reader has typed the `/`, rather than waiting when it opens.
     @Test
