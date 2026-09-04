@@ -87,7 +87,12 @@ extension FeedTableCoordinator {
 
     /// The deck handing the keyboard back — `FeedRowSelection.close()` names a row, and the row
     /// is here now rather than in the deck's focus space.
-    func focus(onto id: FeedRow.ID) {
+    ///
+    /// - Parameter byKey: whether the reader got here by a key. `nil` asks the press in hand,
+    ///   which is the app's own answer; a surface with no events at all states it instead — a
+    ///   specimen cannot press Escape, and a still that drew no cursor would be a still of a
+    ///   state the app does not have (`FeedPreview`).
+    func focus(onto id: FeedRow.ID, byKey: Bool? = nil) {
         guard let table, let index = shown.firstIndex(where: { $0.id == id }) else { return }
         focusedRow = index
         table.scrollRowToVisible(index)
@@ -95,7 +100,11 @@ extension FeedTableCoordinator {
         // The hand-back preserves how the reader was working rather than deciding it (#533):
         // Escape out of the panel arrives on a key, its close button on a click. Stated here and
         // not left to the responder change, which is silent when the table already held the keys.
-        noteKeyboard(table.reader.isOn)
+        //
+        // Of the PRESS in hand, not of the cockpit's reader: this is also the backstop every
+        // surface that writes a row into the focus space lands on (`FeedView`), and a reader whose
+        // last key was in the composer never asked this reading for a cursor (#1180).
+        noteKeyboard(byKey ?? table.isKeyDriven)
         reportFollowing()
     }
 }

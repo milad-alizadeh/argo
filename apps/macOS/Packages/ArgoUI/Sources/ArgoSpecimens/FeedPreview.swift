@@ -107,10 +107,9 @@ struct FeedPreview: View {
     /// rather than a spin, so a reading that never settles yields a wrong still and not a hang.
     private func seedCursor() async {
         guard let cursor else { return }
-        ArgoFocusVisibility.shared.note(.keyDown)
         for _ in 0 ..< Self.landingTries where table.isOpeningOwed {
             try? await Task.sleep(for: Self.landingBeat)
         }
-        table.focus(onto: cursor)
+        table.focus(onto: cursor, byKey: true)
     }
 }

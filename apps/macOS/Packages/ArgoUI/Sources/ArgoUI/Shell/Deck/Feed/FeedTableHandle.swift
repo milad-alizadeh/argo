@@ -98,9 +98,10 @@ import SwiftUI
         coordinator?.execute(resolve(.followRequested), over: pace)
     }
 
-    /// The keyboard onto a row — the deck's half of `FeedRowSelection.close()`.
-    package func focus(onto id: FeedRow.ID) {
-        coordinator?.focus(onto: id)
+    /// The keyboard onto a row — the deck's half of `FeedRowSelection.close()`. `byKey` states how
+    /// the reader got there where nothing can be pressed; see `FeedTableCoordinator.focus(onto:)`.
+    package func focus(onto id: FeedRow.ID, byKey: Bool? = nil) {
+        coordinator?.focus(onto: id, byKey: byKey)
     }
 
     /// The policy's two published facts, mirrored out only when they actually change. An
