@@ -3,7 +3,8 @@ import ArgoEngine
 import Testing
 
 /// A follow-up typed while a Turn is running: held rather than sent, cancellable while it waits,
-/// and delivered in the order it was typed the moment the Turn ends (design decision 4).
+/// and delivered when the Turn ends (design decision 4) — in the order it was typed, one to each
+/// boundary, because the one that goes starts the Turn the next waits for (#1337).
 @Suite("Composer queue")
 @MainActor
 struct ComposerQueueTests {
@@ -31,8 +32,11 @@ struct ComposerQueueTests {
         #expect(draft.queued.isEmpty)
     }
 
+    /// Oldest first, and ONE to each put: a follow-up that goes starts a Turn, and the one
+    /// behind it waits for that Turn's own boundary (#1337). Three boundaries, three follow-ups,
+    /// in the order they were typed.
     @Test
-    func `queued turns are delivered in the order they were typed`() {
+    func `queued turns are delivered in the order they were typed, one to each boundary`() {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft()
         for text in ["First", "Second", "Third"] {
@@ -43,10 +47,45 @@ struct ComposerQueueTests {
                 }
         }
 
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        for _ in draft.queued.indices {
+            draft.putNext { text, _ in try driver.send(text, to: "session-a") }
+            // The record catching up with the Turn that put started — what a boundary waits on.
+            draft.turnStarted()
+        }
 
         #expect(driver.sent(to: "session-a") == ["First", "Second", "Third"])
         #expect(draft.queued.isEmpty)
+    }
+
+    /// Why one put is enough: the put claims the Turn it started, and the claim is what the
+    /// release reads to decline until the record has seen that Turn run. Without it the reading
+    /// straight after this one still says the Session is at rest, and the rest of the queue goes
+    /// to a CLI already busy with what just went (#1337).
+    @Test
+    func `a put follow-up claims the Turn it started until the record shows it`() {
+        let driver = InMemorySessionDriver()
+        var draft = ComposerDraft(text: "First")
+        draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
+
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
+        #expect(draft.isAwaitingPutTurn)
+        draft.turnStarted()
+
+        #expect(!draft.isAwaitingPutTurn)
+    }
+
+    /// A refused put claims nothing: no Turn started, so nothing is waiting on the record and the
+    /// reader's Retry is free to try the same follow-up at the very next reading.
+    @Test
+    func `a refused put claims no Turn`() {
+        let driver = InMemorySessionDriver()
+        var draft = ComposerDraft(text: "First")
+        draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
+        driver.refusal = .notDrivable
+
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
+
+        #expect(!draft.isAwaitingPutTurn)
     }
 
     /// The chip's `×`: cancelling one must leave the rest of the queue exactly where it was.
@@ -63,10 +102,10 @@ struct ComposerQueueTests {
         #expect(draft.queued.map(\.text) == ["First", "Third"])
     }
 
-    /// A flush that hits a refusal stops there; the rest stay queued and the seam carries the
+    /// A put that hits a refusal stops there; the rest stay queued and the seam carries the
     /// reason.
     @Test
-    func `a refused flush keeps the turns it never reached`() {
+    func `a refused put keeps the turns it never reached`() {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft()
         for text in ["First", "Second"] {
@@ -78,28 +117,28 @@ struct ComposerQueueTests {
         }
         driver.refusal = .notDrivable
 
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(draft.queued.map(\.text) == ["First", "Second"])
         #expect(draft.refusal == SessionDriveError.notDrivable.detail)
     }
 
-    /// Nothing to flush is not an event: a Turn ending on a Session nobody queued anything for
+    /// Nothing to put is not an event: a Turn ending on a Session nobody queued anything for
     /// must not clear a refusal the user has not read yet.
     @Test
-    func `flushing an empty queue changes nothing`() {
+    func `putting from an empty queue changes nothing`() {
         var draft = ComposerDraft(text: "Carry on.", refusal: "Argo no longer holds this Session")
 
-        draft.flush { _, _ in }
+        draft.putNext { _, _ in }
 
         #expect(draft.text == "Carry on.")
         #expect(draft.refusal == "Argo no longer holds this Session")
     }
 
-    /// The seam's Retry after a refused flush. The words went into the queue before they were ever
+    /// The seam's Retry after a refused put. The words went into the queue before they were ever
     /// put to the Session, so the field is empty and Retry must read the queue.
     @Test
-    func `retrying a refused flush puts the queue back, not the empty field`() {
+    func `retrying a refused put reads the queue, not the empty field`() {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft()
         for text in ["First", "Second"] {
@@ -110,13 +149,15 @@ struct ComposerQueueTests {
                 }
         }
         driver.refusal = .notDrivable
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
         driver.refusal = nil
 
         draft.retry { text, _ in try driver.send(text, to: "session-a") }
 
-        #expect(driver.sent(to: "session-a") == ["First", "Second"])
-        #expect(draft.queued.isEmpty)
+        // The one the refusal reached, and only that one: Retry is the reader asking for the
+        // release that was refused, and the rest wait for the boundary as they always did (#1337).
+        #expect(driver.sent(to: "session-a") == ["First"])
+        #expect(draft.queued.map(\.text) == ["Second"])
         #expect(draft.refusal == nil)
     }
 

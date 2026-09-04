@@ -78,7 +78,7 @@ struct ComposerStopBoundaryTests {
 
         let mustDrop = draft.mustDropQueue(afterInterrupt: true)
         #expect(!mustDrop)
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(driver.sent(to: "session-a") == ["Actually, do the caption first."])
     }

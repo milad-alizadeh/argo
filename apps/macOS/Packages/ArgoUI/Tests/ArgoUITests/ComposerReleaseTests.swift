@@ -92,6 +92,39 @@ struct ComposerReleaseTests {
         #expect(log.sent == ["And then open the PR."])
     }
 
+    /// Two follow-ups, and the whole of #1337: ONE goes at the boundary. The port takes the first
+    /// and the Turn it starts is the Turn the second would land in — a Turn the record has not
+    /// caught up with, so the status still reads ended. Put there the second would be answering
+    /// a run nobody had read yet, which is why it waits instead.
+    @Test
+    func `one boundary releases the head, and the rest keeps waiting`() {
+        let log = Log()
+        queue("And then open the PR.", in: log)
+        queue("Then tag it.", in: log)
+
+        walk([.running, .idle], log)
+
+        #expect(log.sent == ["And then open the PR."])
+        #expect(log.draft.queued.map(\.text) == ["Then tag it."])
+        // Nothing was refused, so nothing may say it was — waiting is not being held back.
+        #expect(log.draft.refusedTurn == nil)
+    }
+
+    /// …and the other half, which is the reported defect: the one that waited GOES. Every queued
+    /// follow-up is put, oldest first, one to each boundary — none is dropped, and none is put
+    /// into the Turn the one ahead of it started.
+    @Test
+    func `every queued follow-up goes, oldest first, one to each boundary`() {
+        let log = Log()
+        queue("And then open the PR.", in: log)
+        queue("Then tag it.", in: log)
+
+        walk([.running, .idle, .running, .idle], log)
+
+        #expect(log.sent == ["And then open the PR.", "Then tag it."])
+        #expect(log.draft.queued.isEmpty)
+    }
+
     // MARK: - The level
 
     /// The level, stated on its own: a release the boundary could not make is made at the next

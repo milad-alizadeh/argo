@@ -90,7 +90,7 @@ struct ComposerAttachmentTests {
         #expect(draft.attachments.isEmpty)
         #expect(draft.queued.first?.attachments.map(\.name) == ["notes.md"])
 
-        draft.flush { text, attachments in
+        draft.putNext { text, attachments in
             _ = try driver.attach(attachments, to: "session-a")
             try driver.send(text, to: "session-a")
         }

@@ -24,9 +24,9 @@ struct ComposerInterruptTests {
         }
 
         draft.stopped {}
-        // The flush the vessel runs when the Session goes idle, which is what the clearing has to
+        // The put the vessel makes when the Session goes idle, which is what the clearing has to
         // get in front of.
-        draft.flush { text, _ in try driver.send(text, to: "session-a") }
+        draft.putNext { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(draft.queued.isEmpty)
         #expect(driver.sent(to: "session-a").isEmpty)

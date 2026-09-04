@@ -86,7 +86,7 @@ struct ComposerSteerTests {
 
         let release = ComposerRelease(Self.session(at: .idle), log.draft)
 
-        #expect(!release.flushes)
+        #expect(!release.putsNext)
         #expect(!release.walks)
     }
 
@@ -103,7 +103,7 @@ struct ComposerSteerTests {
 
         log.draft.steerLanded(steered)
 
-        #expect(!ComposerRelease(Self.session(at: .idle), log.draft).flushes)
+        #expect(!ComposerRelease(Self.session(at: .idle), log.draft).putsNext)
     }
 
     /// …and it comes back once the record has caught up: a Turn seen RUNNING is what makes the
@@ -119,7 +119,7 @@ struct ComposerSteerTests {
         // The record shows the steered Turn running — the vessel's own `hasTurnEnded` false edge.
         composer(log).turnRead(false)
 
-        #expect(ComposerRelease(Self.session(at: .idle), log.draft).flushes)
+        #expect(ComposerRelease(Self.session(at: .idle), log.draft).putsNext)
     }
 
     /// A steer in flight is a Turn in flight, whatever the status says: its own `ESC` ended the

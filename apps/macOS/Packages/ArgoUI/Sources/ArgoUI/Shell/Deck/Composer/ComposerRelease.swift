@@ -11,7 +11,7 @@ struct ComposerRelease {
     ///
     /// The Session's side is deliberately NOT in here. A boundary carries out its own release, and
     /// it has a once-per-Turn claim to spend first (`ComposerDraft.mustDropQueue(afterInterrupt:)`)
-    /// — a level watching the boundary too would race that drop with a flush of the very
+    /// — a level watching the boundary too would race that drop with a put of the very
     /// follow-ups it is about to take away.
     struct Awaiting: Equatable {
         /// How many follow-ups are waiting. A count and not the turns themselves: what the release
@@ -26,8 +26,9 @@ struct ComposerRelease {
         let isRefused: Bool
         /// Whether a follow-up is being steered into the running Turn (#1238).
         let isSteering: Bool
-        /// Whether a steered Turn has gone and the record has yet to show it running (#1238).
-        let isAwaitingSteeredTurn: Bool
+        /// Whether a follow-up this composer put has started a Turn the record has yet to show
+        /// running — a steered one (#1238) or a released one (#1337).
+        let isAwaitingPutTurn: Bool
 
         init(_ draft: ComposerDraft) {
             self.waiting = draft.queued.count
@@ -35,7 +36,7 @@ struct ComposerRelease {
             self.isWalkingMode = draft.isWalkingMode
             self.isRefused = draft.refusal != nil
             self.isSteering = draft.steeringTurn != nil
-            self.isAwaitingSteeredTurn = draft.isAwaitingSteeredTurn
+            self.isAwaitingPutTurn = draft.isAwaitingPutTurn
         }
     }
 
@@ -48,7 +49,7 @@ struct ComposerRelease {
         self.awaiting = Awaiting(draft)
     }
 
-    /// Whether the held rung may be walked now. Ahead of `flushes` in the order the composer acts,
+    /// Whether the held rung may be walked now. Ahead of `putsNext` in the order the composer acts,
     /// for the reason `SessionComposer.honour(_:)` states.
     var walks: Bool {
         hasTurnEnded && awaiting.heldMode != nil && !awaiting.isWalkingMode && !awaiting.isSteering
@@ -67,12 +68,14 @@ struct ComposerRelease {
     /// interrupt ENDS the Turn, so the boundary arrives while the steered follow-up is still in
     /// the queue with its paste not yet written. Released there it would go twice, and every
     /// follow-up behind it would go early, into a Turn the reader had just redirected (#1238).
-    /// And a steer that has just LANDED stops it too, which is the sharpest of the four: the
+    /// And a follow-up that has just GONE stops it too, which is the sharpest of the four: the
     /// paste has gone but the record has not caught up, so `hasTurnEnded` is still reading `true`
-    /// for the Turn the steer ended rather than the one it started. Released on that reading the
-    /// whole queue would follow the steered follow-up into the Turn it was steering.
-    var flushes: Bool {
+    /// for the Turn before it rather than the one it started. Released on that reading the whole
+    /// queue would follow it into that Turn — which is a steer's queue emptying into the run it
+    /// was redirecting (#1238), and, at the boundary, every follow-up after the first written to a
+    /// CLI busy with the first (#1337).
+    var putsNext: Bool {
         hasTurnEnded && awaiting.waiting > 0 && !awaiting.isRefused && !awaiting.isWalkingMode
-            && !awaiting.isSteering && !awaiting.isAwaitingSteeredTurn
+            && !awaiting.isSteering && !awaiting.isAwaitingPutTurn
     }
 }
