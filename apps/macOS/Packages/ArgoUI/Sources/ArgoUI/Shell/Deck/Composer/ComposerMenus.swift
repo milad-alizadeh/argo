@@ -144,6 +144,23 @@ struct ComposerMenus {
         return listing.pick(row)
     }
 
+    /// Whether ⏎ over the open menu takes the row under the cursor, or leaves the key to the
+    /// Turn.
+    ///
+    /// It takes the row wherever the pick would put something in the line — a command with
+    /// arguments is the common case, and sending on ⏎ makes the argument impossible to type
+    /// (design decision 1). A pick that would add nothing but the trailing space is a command the
+    /// reader has already typed in full, and ⏎ spent on that space sends nothing at all: the
+    /// composer keeps the line and looks inert (#1208). ⇥ never asks this — it is the completion
+    /// key and takes the row either way (#1181).
+    func completes(on line: ComposerMenuLine) -> Bool {
+        // `AddMenu`'s own rows insert nothing to compare: a pick OPENS the row's section (design
+        // decision 11).
+        guard addMenuPick(on: line) == nil else { return true }
+        guard let picked = picked(on: line) else { return false }
+        return picked.taken(over: line.text) != line.text + " "
+    }
+
     /// Escape puts an open menu away and leaves the draft exactly as it was. Not a mode: the next
     /// keystroke asks for it back, because typing on is the reader still looking for a command.
     ///
