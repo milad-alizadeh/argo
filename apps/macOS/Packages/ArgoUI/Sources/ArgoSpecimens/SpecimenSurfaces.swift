@@ -41,6 +41,19 @@ struct SelectedRowSpecimen: View {
     }
 }
 
+/// The strip at the sidebar's own MINIMUM — the width its four segments get least room in, and
+/// the one #1163's fourth (the Atlas) must still fit at. Four short names were the point; a
+/// fifth would need this render looked at again, not assumed away.
+struct NarrowRoomStripSpecimen: View {
+    @State private var selection = CockpitPresentation.preview.sessions.first?.id
+    @State private var room = CockpitRoom.atlas
+
+    var body: some View {
+        ShellSidebar(presentation: .preview, selection: $selection, room: $room)
+            .frame(width: ArgoLayout.sidebarMinimumWidth)
+    }
+}
+
 /// The shell against a roster that MIXES access — a ghosted row inside the whole window rather
 /// than in a list on its own. `ghostedRows` is the close read of the same claim.
 struct RosterSpecimen: View {

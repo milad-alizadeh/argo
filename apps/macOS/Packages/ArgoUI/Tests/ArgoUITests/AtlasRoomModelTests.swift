@@ -78,4 +78,20 @@ struct AtlasRoomModelTests {
 
         #expect(model.reading == .unmeasured)
     }
+
+    /// Leaving the room and coming back re-fires the same open, but the Project under it has not
+    /// changed — so this must be a no-op rather than a second read. Proved by pulling the Map file
+    /// out from under the model: a re-read would find nothing and drop to `.unmeasured`.
+    @Test
+    func `reopening the same Project reads nothing a second time`() async throws {
+        let (model, rootURL) = try fixture()
+        let project = project("argo", at: rootURL)
+        await model.rebuild(project)
+        let measured = model.reading
+
+        try FileManager.default.removeItem(atPath: rootURL.path)
+        await model.open(project)
+
+        #expect(model.reading == measured)
+    }
 }
