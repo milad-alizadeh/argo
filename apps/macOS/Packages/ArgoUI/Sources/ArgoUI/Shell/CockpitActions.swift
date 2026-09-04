@@ -30,9 +30,10 @@ public struct CockpitActions {
     /// composer can put the provider's own words beside the button (§4); a spawn answers with the
     /// fresh Session's id, on the same terms as `Sessions.spawn`.
     public struct Tickets {
-        /// File a ticket through `TicketWriter`. Answers `nil` where it landed, and the refusal
-        /// otherwise — nothing retries, so the reply IS the outcome.
-        public var createTicket: (TicketDraft) async -> TicketWriteError? = { _ in nil }
+        /// The two provider-port writes a ticket that already exists or does not yet exist can
+        /// raise — grouped apart from the reads below and `startSession` beside them (4-parameter
+        /// init cap, rules/house.md).
+        public var writes = Writes()
         /// Start a Session ON one ticket, on the rung the row names, opening on the prompt the
         /// ticket asks for (#899). The seed carries the number, which is what makes the Session
         /// claimable back (`TicketsReading.claimed`), and the opening is `nil` where the ticket
@@ -46,6 +47,16 @@ public struct CockpitActions {
         /// the closed listing (#1075). ONE slot for all of them, because none is on a cadence and
         /// each answers nothing: what lands in the ledger is the answer.
         public var read: (TicketRead) async -> Void = { _ in }
+
+        /// Both answered on the same terms: `nil` where the write landed, and the refusal
+        /// otherwise — nothing retries, so the reply IS the outcome.
+        public struct Writes {
+            /// File a ticket through `TicketWriter`.
+            public var createTicket: (TicketDraft) async -> TicketWriteError? = { _ in nil }
+            /// Apply one intent to a ticket that already exists — closing it or reopening it
+            /// (#1333).
+            public var applyIntent: (TicketIntent, Int) async -> TicketWriteError? = { _, _ in nil }
+        }
     }
 
     /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).

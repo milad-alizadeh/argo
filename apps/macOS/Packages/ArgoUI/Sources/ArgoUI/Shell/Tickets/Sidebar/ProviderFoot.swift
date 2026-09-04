@@ -34,8 +34,7 @@ struct ProviderFoot: View {
     ProviderFoot(provider: TicketsProvider(
         name: "GitHub",
         account: "milad-alizadeh",
-        state: .idle,
-        hasAnswered: true,
+        connection: .init(state: .idle, hasAnswered: true),
     ))
     .frame(width: ArgoLayout.sidebarMinimumWidth)
     .argoAppearance()
@@ -45,8 +44,7 @@ struct ProviderFoot: View {
     ProviderFoot(provider: TicketsProvider(
         name: "GitHub",
         account: "milad-alizadeh",
-        state: nil,
-        hasAnswered: false,
+        connection: .init(state: nil, hasAnswered: false),
     ))
     .frame(width: ArgoLayout.sidebarMinimumWidth)
     .argoAppearance()

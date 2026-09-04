@@ -16,17 +16,37 @@ struct TicketPaneHeader: View {
     var body: some View {
         TicketsPaneHeader(reach: reach, inset: ArgoTicketDetail.inset) {
             if let verbs {
-                StartControl(verbs: verbs)
+                HStack(spacing: ArgoSpacing.comfortable) {
+                    StartControl(verbs: verbs)
+                    CloseControl(closure: verbs.closure)
+                }
             }
         }
     }
 }
 
 #Preview("Ticket pane header") {
-    TicketPaneHeader(verbs: TicketsChromeIntents.Verbs(command: .implement))
-        .frame(width: 480)
-        .argoDeckSurface()
-        .argoAppearance()
+    TicketPaneHeader(
+        verbs: TicketsChromeIntents.Verbs(
+            command: .implement,
+            closure: TicketsChromeIntents.Verbs.Closure(current: .open),
+        ),
+    )
+    .frame(width: 480)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Ticket pane header — closed, offers reopen") {
+    TicketPaneHeader(
+        verbs: TicketsChromeIntents.Verbs(
+            command: .implement,
+            closure: TicketsChromeIntents.Verbs.Closure(current: .resolved),
+        ),
+    )
+    .frame(width: 480)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 #Preview("Ticket pane header — no ticket open, and the band stays") {

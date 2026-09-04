@@ -75,6 +75,34 @@ struct TicketCreatorTests {
         #expect(await api.urls().isEmpty)
     }
 
+    /// The write half of #1333: closing the ticket the reader is standing on must not blank the
+    /// room out from under them. `TicketWriter` alone drops a closed ticket from the listing it
+    /// just left (`TicketAdoptionTests`, right for a poll's own writes) — this is what keeps it in
+    /// hand at the level a room actually reads through.
+    @Test func `closing a ticket through the creator keeps it in the listing`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let projectID = try await fixture.project("argo")
+        try await fixture.accountStore().authorizeGitHub(id: "1")
+        try await fixture.bindings().bind(.gitHub(), to: projectID)
+        let items = TicketLedger()
+        await items.record(
+            [Ticket(number: 872, title: "Wire the verbs", status: "open", closure: .open)],
+            for: projectID,
+        )
+        let api = StubProviderAPI(
+            body: IssueJSON(
+                number: 872, title: "Wire the verbs", state: "closed", reason: "completed",
+            ).json,
+        )
+
+        let refusal = await Self.creator(fixture, api: api, items: items)
+            .apply(.close(.resolved), to: 872, forProject: projectID)
+
+        #expect(refusal == nil)
+        #expect(await items.items(of: projectID).map(\.number) == [872])
+    }
+
     @Test func `a window on no Project has nowhere to file either`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }

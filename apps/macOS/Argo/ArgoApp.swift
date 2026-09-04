@@ -92,10 +92,7 @@ struct ArgoApp: App {
                     // A Session opening on a branch nobody has read the ticket for is the one
                     // event worth a code-host read (#745). Keyed on the unnamed set rather than on
                     // the roster, so a turn ending on a named ticket asks nothing.
-                    .onChange(
-                        of: presentation.untitledTicketNumbers,
-                        initial: true,
-                    ) { _, _ in
+                    .onChange(of: presentation.untitledTicketNumbers, initial: true) { _, _ in
                         Task { await cockpit.nameTickets(through: accounts.ticketBinding()) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above ends
@@ -204,8 +201,9 @@ struct ArgoApp: App {
         actions.composer.workspaceFiles = { root in
             await gitWorkspaceFileRead(URL(fileURLWithPath: root))
         }
-        actions.tickets.createTicket = { await accounts.createTicket($0) }
+        actions.tickets.writes.createTicket = { await accounts.createTicket($0) }
         actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1, opening: $2) }
+        actions.tickets.writes.applyIntent = { await accounts.applyTicket($0, to: $1) }
         actions.tickets.designedScreens = DesignedScreens(projectURL: projectURL).screens
         actions.tickets.read = { await accounts.read($0) }
         return actions

@@ -51,6 +51,10 @@ public struct CockpitView: View {
     /// row's own button renders the same reading, and two answers about one write would let the
     /// sheet and the row disagree.
     @State var ticketWrite = WriteAttempt.idle
+    /// Where a close or reopen has got to, keyed by the ticket it was raised on (#1333). Per-number
+    /// and not one value beside `ticketWrite`: a refusal on the ticket the reader just left must
+    /// not surface beside the one they opened next.
+    @State var closureWrite: [Int: WriteAttempt] = [:]
     /// Which call's evidence the panel is showing, and which result inside it. Held HERE rather
     /// than in the deck since #875: the toolbar's toggle reaches them and the toolbar is outside
     /// the deck. See `CockpitView+Evidence`.

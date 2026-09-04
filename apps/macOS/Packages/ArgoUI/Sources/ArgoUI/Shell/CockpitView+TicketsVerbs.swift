@@ -22,7 +22,48 @@ extension CockpitView {
         verbs.startOn = { picked in
             Task { await start.run(on: ticket, in: navigation, sending: picked) }
         }
+        verbs.closure = ticketClosureVerb(for: ticket)
         return verbs
+    }
+
+    /// The open ticket's closure, both directions (#1333). `nil` current — a ticket number the
+    /// listing does not hold, or a Binding that never declares `.closure` — draws `Closure()`'s
+    /// own default: ABSENT, which is the honest answer for either.
+    private func ticketClosureVerb(for number: Int) -> TicketsChromeIntents.Verbs.Closure {
+        guard let item = tickets.first(where: { $0.number == number }),
+              TicketsProvider(reading: health)?.closureOffered == true
+        else { return TicketsChromeIntents.Verbs.Closure() }
+        return TicketsChromeIntents.Verbs.Closure(
+            current: item.closure,
+            close: { closeTicket(number, as: $0) },
+            reopen: { reopenTicket(number) },
+            control: closureWriteControl(for: number),
+        )
+    }
+
+    /// What the ticket pane's closure control renders — read by the control alone, so there is no
+    /// second answer for it to disagree with (§4).
+    private func closureWriteControl(for number: Int) -> WriteControlState {
+        .over(health.writes(through: .ticket), attempt: closureWrite[number] ?? .idle)
+    }
+
+    /// Close the ticket with the reason the reader picked. Pessimistic at the seam
+    /// (`TicketWriting`): the row redraws off what `applyIntent` answers with, never off the press.
+    func closeTicket(_ number: Int, as reason: TicketCloseReason) {
+        closureWrite[number] = .pending
+        Task {
+            let refusal = await actions.tickets.writes.applyIntent(.close(reason), number)
+            closureWrite[number] = refusal.map(WriteAttempt.failed) ?? .idle
+        }
+    }
+
+    /// Reopen a closed ticket, on the same terms.
+    func reopenTicket(_ number: Int) {
+        closureWrite[number] = .pending
+        Task {
+            let refusal = await actions.tickets.writes.applyIntent(.reopen, number)
+            closureWrite[number] = refusal.map(WriteAttempt.failed) ?? .idle
+        }
     }
 
     /// Starting a Session on a ticket, assembled from the two readings the act needs and the room
@@ -53,7 +94,7 @@ extension CockpitView {
     func createTicket(_ draft: TicketDraft) {
         ticketWrite = .pending
         Task {
-            guard let refusal = await actions.tickets.createTicket(draft) else {
+            guard let refusal = await actions.tickets.writes.createTicket(draft) else {
                 ticketWrite = .idle
                 isComposingTicket = false
                 return

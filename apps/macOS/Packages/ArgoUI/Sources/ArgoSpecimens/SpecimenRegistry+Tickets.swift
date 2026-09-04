@@ -132,6 +132,30 @@ extension SpecimenRegistry {
         // The room's Start, saying what it will send before it is pressed (#899) — and the ticket
         // that asks for nothing, which no fixture reaches on its own.
         SpecimenEntry("ticketStart") { SpecimenScene.centred { TicketStartSpecimen() } },
+        // The closure verb's band, both directions and both non-live states (#1333): open (offers
+        // the two reasons behind a menu), closed (offers reopen), pending, and refused with the
+        // provider's own words.
+        SpecimenEntry("closeControlOpen") {
+            SpecimenScene.centred { CloseControl(closure: .init(current: .open)) }
+        },
+        SpecimenEntry("closeControlClosed") {
+            SpecimenScene.centred { CloseControl(closure: .init(current: .resolved)) }
+        },
+        SpecimenEntry("closeControlPending") {
+            SpecimenScene.centred {
+                CloseControl(closure: .init(current: .open, control: .pending))
+            }
+        },
+        SpecimenEntry("closeControlRefused") {
+            SpecimenScene.centred {
+                CloseControl(
+                    closure: .init(
+                        current: .open,
+                        control: .refused(.refused("GitHub would not close this issue.")),
+                    ),
+                )
+            }
+        },
         SpecimenEntry("deliveryDots") { DeliveryDotsSpecimen() },
         // The head's status pair, over a provider whose word IS the filing and one with words of
         // its own (#893). Every fixture spells "In progress", so no room render reaches the first.
