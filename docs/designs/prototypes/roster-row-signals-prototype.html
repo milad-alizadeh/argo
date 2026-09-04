@@ -75,6 +75,11 @@
     /* ArgoLayout.swift */
     --sidebar-w: 320px;
     --dot: 6px;
+    /* The title's own line box: 13px at the body's 1.45. Everything that has to sit ON the
+       title's line is centred against this rather than nudged by eye — a marker aligned by a
+       magic number drifts the moment the type scale moves. */
+    --row-line: calc(13px * 1.45);
+    --dot-inset: calc((var(--row-line) - var(--dot)) / 2);
 
     --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
@@ -126,8 +131,16 @@
     cursor: default; transition: background 120ms ease;
   }
   .row:hover { background: var(--hover); }
-  /* Selection is the neutral wash alone — no leading accent rule (D30 as amended by #875). */
-  .row.sel { background: var(--selected); }
+  /* SELECTION IS THE PLATFORM'S OWN SELECTED CARD, tinted with the accent — not the custom
+     neutral wash this prototype started with. AppKit already draws a selected row this way in
+     every sidebar on the machine, so a hand-rolled grey is a second selection vocabulary the
+     reader has to learn. Still no leading accent rule: the GROUND carries it, as D30 asks.
+     This is one rule for every list in the app — the Sessions roster and the Tickets room
+     both — and the implementation ticket has to say so. */
+  .row.sel {
+    background: rgba(62,155,255,.14);
+    box-shadow: inset 0 0 0 1px rgba(62,155,255,.34);
+  }
   .row.ext { opacity: .58; }
 
   .flex { display: flex; align-items: center; min-width: 0; }
@@ -166,8 +179,11 @@
   /* ---------- the agent count, four ways ---------- */
 
   /* A — pips stacked under the state dot, in the leading marker column. */
+  /* The state dot sits on the TITLE's optical centre, not at the top of the column: the title
+     is the line it is a state for, and a dot floating above it reads as a bullet. Everything
+     under it — the Subagent dots — then hangs from that one x and y. */
   .marker { width: var(--dot); flex: none; display: flex; flex-direction: column;
-            align-items: center; gap: 3px; padding-top: 4px; }
+            align-items: center; gap: 3px; padding-top: var(--dot-inset); }
   .pip { width: 4px; height: 4px; border-radius: 1px; background: var(--running); flex: none; }
   .pip.more { width: 5px; height: 4px; border-radius: 1px; background: var(--text-off);
               box-shadow: 0 0 0 0; }
@@ -313,6 +329,11 @@
 
   /* fold row */
   .chev { width: 11px; height: 11px; color: var(--text-3); flex: none; }
+  /* The disclosure stands where the dot does, so a fold's title lands on the same x as every
+     other title and the column does not step in and out down the list. Two rules, because the
+     marker column already carries the dot's own inset and a bare chevron does not. */
+  .marker .chev { margin-top: calc((var(--row-line) - 11px) / 2 - var(--dot-inset)); }
+  .row > .flex > .chev { margin-top: calc((var(--row-line) - 11px) / 2); }
   .row.fold .title { color: var(--text-2); font-weight: 400; }
 
   /* ---------- deck ---------- */
@@ -677,7 +698,7 @@ const roster = {
      GIVES UP: seeing the count and the PR at once on the same row. */
   D: s => `
     <div class="flex g8" style="align-items:flex-start">
-      ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}" style="margin-top:5px"></span>`}
+      ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}" style="margin-top:var(--dot-inset)"></span>`}
       <span class="col grow" style="gap:var(--s-hair)">
         <span class="flex g6">
           <span class="title grow">${s.title}</span>

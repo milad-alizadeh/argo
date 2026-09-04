@@ -234,6 +234,22 @@ Rendered and looked at, all four:
 - **H beats G past about eight items.** G's segments become texture; `5/12` stays exact. G wins
   below that, because the shape of the work is visible without reading anything.
 
+## Carry these into the implementation ticket
+
+Two decisions here are **not about this row**. They are app-wide, they were settled while
+looking at these pixels, and the ticket that builds any of this has to carry them or they get
+lost:
+
+1. **Selection is the platform's own selected card, tinted with the accent** — not the custom
+   neutral wash. AppKit already draws a selected row this way in every sidebar on the machine, so
+   a hand-rolled grey is a second selection vocabulary the reader has to learn. **One rule for
+   every list in the app: the Sessions roster and the Tickets room both.** Still no leading
+   accent rule — the ground carries it, as D30 asks.
+2. **The state dot sits on the title's optical centre**, and it is derived rather than nudged:
+   `(line box − dot) / 2`, off one token. A marker aligned by a magic number drifts the moment
+   the type scale moves. Every variant here measures 0px offset on every row, fold disclosures
+   included; the first pass was 2.4px high and it read as a bullet floating above the title.
+
 ## Two numbers, one row
 
 **A pull request must never be addressed `#1312` beside a title that opens `#1269 — …`.** It
