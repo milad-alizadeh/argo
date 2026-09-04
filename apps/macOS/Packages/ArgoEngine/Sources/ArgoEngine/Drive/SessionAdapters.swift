@@ -95,6 +95,10 @@ extension SessionAdapters: SessionChannel {
         return claude.received(chunk, from: claim)
     }
 
+    func echo(of text: String, at sessionID: String) -> TurnEcho {
+        channel(for: sessionID).echo(of: text, at: sessionID)
+    }
+
     func resubmit(_ sessionID: String) -> Bool {
         channel(for: sessionID).resubmit(sessionID)
     }

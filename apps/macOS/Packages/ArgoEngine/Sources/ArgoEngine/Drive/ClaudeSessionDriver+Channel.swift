@@ -19,6 +19,18 @@ extension ClaudeSessionDriver: SessionChannel {
         return true
     }
 
+    /// The composer at the bottom of this claim's own PTY, read for whether it is still holding
+    /// the Turn (#1266). `unreadable` covers every way there is nothing to read: a claim whose PTY
+    /// has gone, a Hub with no emulator wired, and a screen with no prompt row painted on it yet.
+    func echo(of text: String, at sessionID: String) -> TurnEcho {
+        guard let claim = ownership.ownerOf(sessionID: sessionID),
+              let rows = terminals.rows(of: claim)
+        else {
+            return .unreadable
+        }
+        return ComposerEcho.reading(of: text, on: rows)
+    }
+
     /// One bare Return at the prompt, for the Turn whose own Return a popup ate (#682).
     func resubmit(_ sessionID: String) -> Bool {
         guard let claim = ownership.ownerOf(sessionID: sessionID) else { return false }

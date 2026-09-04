@@ -43,7 +43,7 @@ struct LiveCodex {
                 liveness: noLiveProcesses,
             )),
             spawnServices: SpawnServices(
-                host: FakeProcessHost(),
+                hosts: SpawnHosts(pty: FakeProcessHost()),
                 companionRoot: companionRoot,
                 patience: SpawnServices.Patience(permission: patience),
             ),

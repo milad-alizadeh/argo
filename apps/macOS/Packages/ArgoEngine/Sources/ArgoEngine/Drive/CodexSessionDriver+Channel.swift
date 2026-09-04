@@ -27,6 +27,12 @@ extension CodexSessionDriver: SessionChannel {
         threads.received(chunk, from: claim)
     }
 
+    /// No surface to read: a Turn here is a request over JSON-RPC, and there is no composer for
+    /// one to sit in. Nothing ever watches a Codex Turn either — see `Hub.makeDelivery`.
+    func echo(of _: String, at _: String) -> TurnEcho {
+        .unreadable
+    }
+
     /// Nothing to resubmit: a Turn here is a request the server accepted or refused, so there is no
     /// keystroke for a popup to eat (#682).
     func resubmit(_: String) -> Bool {
