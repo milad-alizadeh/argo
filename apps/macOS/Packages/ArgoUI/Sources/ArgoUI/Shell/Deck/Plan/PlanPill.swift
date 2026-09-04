@@ -9,6 +9,10 @@ package struct PlanPill: View {
     @Environment(\.argo) private var argo
 
     let plan: PlanReading
+    /// A Session that is not running is not progressing (`cockpit-roster-row.md`, rule 3): the
+    /// ring freezes to `progress.still`, exactly as the roster's own `PlanBar` does for the same
+    /// Session.
+    var isStill = false
     /// Whether the list is showing before anybody opened it — a specimen's seam, since a click
     /// cannot be reached from a screenshot.
     var isRevealed = false
@@ -85,7 +89,7 @@ package struct PlanPill: View {
 
     private var line: some View {
         HStack(spacing: ArgoPlanPill.gap) {
-            PlanRing(progress: plan.progress)
+            PlanRing(progress: plan.progress, isStill: isStill)
             PlanCounter(counter: counter)
             Text(currentStep)
                 .argoText(ArgoTypography.body)
@@ -130,8 +134,14 @@ package struct PlanPill: View {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(plan: PlanReading, isRevealed: Bool = false, isCursored: Bool = false) {
+    package init(
+        plan: PlanReading,
+        isStill: Bool = false,
+        isRevealed: Bool = false,
+        isCursored: Bool = false,
+    ) {
         self.plan = plan
+        self.isStill = isStill
         self.isRevealed = isRevealed
         self.isCursored = isCursored
     }
@@ -176,6 +186,9 @@ private struct PlanRing: View {
     @Environment(\.argo) private var argo
 
     let progress: Double
+    /// A Session that is not running is not progressing (rule 3): the arc freezes to
+    /// `progress.still`, the same fill the roster's own `PlanBar` drops to for this Session.
+    var isStill = false
 
     var body: some View {
         Circle()
@@ -189,7 +202,10 @@ private struct PlanRing: View {
                     // not its state, and this pill already spends teal on a live Turn clock
                     // (`cockpit-roster-row.md`, rule 2 — the roster's `PlanBar` draws the same
                     // fact in the same colour).
-                    .stroke(argo.color.interaction.accent, lineWidth: ArgoStroke.indicator)
+                    .stroke(
+                        isStill ? argo.color.progress.still : argo.color.interaction.accent,
+                        lineWidth: ArgoStroke.indicator,
+                    )
                     .padding(ArgoStroke.indicator)
             }
             .frame(width: ArgoPlanPill.ringSize, height: ArgoPlanPill.ringSize)
