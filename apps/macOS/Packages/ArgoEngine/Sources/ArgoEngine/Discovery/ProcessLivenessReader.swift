@@ -5,9 +5,14 @@
 ///
 /// An actor because the reads block on subprocesses and the caller is the main actor.
 actor ProcessLivenessReader {
-    /// The CLI whose Sessions this engine reads. One name, because `Session.cli` is not yet a fact
-    /// the discovery half establishes — a second CLI is a second entry here, never a looser match.
-    static let agentExecutable = "claude"
+    /// The CLIs whose Sessions this engine reads, by the name each is found on the `PATH` under.
+    /// Every CLI a spawn can run, taken off `AgentCLI` rather than written out: a program absent
+    /// here can never match, and reading `codex` against `claude` alone left every Codex Session
+    /// quiet — and so grey — however hard it was working (#1261).
+    ///
+    /// Named programs still, never a looser match: what keeps a false running out is this set, not
+    /// the shape of the comparison below.
+    static let agentExecutables = Set(AgentCLI.allCases.map(\.command))
 
     private let run: ShellCommand
 
@@ -19,8 +24,8 @@ actor ProcessLivenessReader {
         Set(agentPIDs().compactMap(cwd(ofPID:)))
     }
 
-    /// Matches the `claude` executable itself, not any command line that merely CONTAINS the word —
-    /// a path under `~/.claude`, or Argo's own arguments — which would manufacture a false running.
+    /// Matches an agent executable itself, not any command line that merely CONTAINS the word — a
+    /// path under `~/.claude`, or Argo's own arguments — which would manufacture a false running.
     private func agentPIDs() -> [String] {
         guard let table = run(["ps", "-axo", "pid=,command="]) else { return [] }
         return table.split(whereSeparator: \.isNewline).compactMap { line in
@@ -32,8 +37,11 @@ actor ProcessLivenessReader {
         }
     }
 
+    /// The program is the LAST component of what it was launched by, so `/opt/homebrew/bin/claude`
+    /// is `claude` and `node …/cli.js` is `node`.
     private func isAgent(command: String) -> Bool {
-        command == Self.agentExecutable || command.hasSuffix("/" + Self.agentExecutable)
+        let program = command.split(separator: "/").last.map(String.init) ?? command
+        return Self.agentExecutables.contains(program)
     }
 
     /// `lsof -Fn` answers in fields, one per line, each prefixed by its letter. The `n` field of a

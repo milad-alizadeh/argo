@@ -60,8 +60,11 @@ public extension SessionStatus {
     /// Argo owns, and it collapses to `idle` the moment the same Session is observed from outside.
     private static func boundary(_ signals: SessionSignals) -> SessionStatus {
         // A Turn opened since the last boundary, so that boundary is the previous Turn's and says
-        // nothing about this one. Uncorroborated, an open Turn is quiet — never `running`.
-        guard !signals.turnOpen else { return .idle }
+        // nothing about this one. Uncorroborated, an open Turn is never `running` — and never
+        // `idle` either: the record says a Turn was started and nothing says it finished, so the
+        // calm word would be the one a FINISHED Session draws and a wrong liveness would be
+        // invisible on the row. `unknown` is the honest outline for it (ADR-0008, #1261).
+        guard !signals.turnOpen else { return .unknown }
         return switch signals.lastStop {
         case .endTurn, .cancelled: .idle
         case .maxTokens, .maxTurnRequests, .refusal:

@@ -2,6 +2,9 @@
 /// of them a key: a `claude` matched on a working directory could be a second agent in the same
 /// repo, and a transcript's last write goes stale while an agent thinks. Every status read through
 /// this one is DERIVED, and both have to agree before anything is called live.
+///
+/// Only Sessions Argo does NOT own are read here. A `managed` one is answered by the PTY Argo is
+/// holding open, which is a fact rather than a match (`Hub.liveness(of:ownedAs:)`, #1261).
 public enum SessionLiveness: Sendable, Equatable {
     /// A process matched, and the record corroborates it with a recent write.
     case live

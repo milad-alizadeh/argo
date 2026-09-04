@@ -49,8 +49,8 @@ struct HubLivenessTests {
         await hubObserveToEnd(hub, Self.working(id: "gone"))
 
         // The degrade-down rule at the only place it can fire: a transcript whose writer died
-        // mid-turn is quiet, not working.
-        #expect(hub.sessions.first?.status == .idle)
+        // mid-turn is not working — and not finished either, which is what `idle` would say.
+        #expect(hub.sessions.first?.status == .unknown)
     }
 
     @Test
@@ -59,7 +59,38 @@ struct HubLivenessTests {
 
         await hubObserveToEnd(hub, Self.working(id: "elsewhere"))
 
-        #expect(hub.sessions.first?.status == .idle)
+        #expect(hub.sessions.first?.status == .unknown)
+    }
+
+    @Test
+    func `a Session Argo is holding the PTY of is live with no process match at all`() async {
+        // The machine's process table says nothing at all here, and it is not asked: Argo started
+        // this agent and has not been told it exited. Before #1261 the row was matched back on its
+        // FOLDER, so a second agent in the same worktree, a `codex` under any folder, and an agent
+        // ten minutes into one tool call each read grey while they worked.
+        let hub = await Self.hub()
+        _ = hub.ownership.claim(naming: "ours")
+
+        await hubObserveToEnd(hub, Self.working(id: "ours"))
+
+        #expect(hub.sessions.first?.liveness == .live)
+        #expect(hub.sessions.first?.status == .running)
+    }
+
+    @Test
+    func `a managed Session goes on reading live while its record sits silent`() async {
+        let hub = await Self.hub()
+        _ = hub.ownership.claim(naming: "thinking")
+        // One long tool call: the Turn is open and nothing has been written to the record since
+        // well outside the window a match is corroborated by.
+        let silent = Self.nowMs - SessionLiveness.recentActivityWindowMs - 1000
+
+        await hubObserveToEnd(hub, hubTestObservation(id: "thinking", events: [
+            .cwd(Self.cwd),
+            .prompt(text: "Refactor it", images: [], atMs: silent),
+        ]))
+
+        #expect(hub.sessions.first?.status == .running)
     }
 
     @Test

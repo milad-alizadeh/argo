@@ -99,6 +99,9 @@ struct DriveModeTests {
             events: [
                 .cwd(fixture.projectURL.path),
                 .prompt(text: "First prompt", images: [], atMs: Date().epochMs),
+                // Ended, so the refusal under test is the STANCE and not the Turn: a managed
+                // Session mid-Turn is running on Argo's own PTY, and is refused as busy (#1261).
+                .turnEnded(.endTurn),
                 .mode(cli: "dontAsk"),
             ],
         ))

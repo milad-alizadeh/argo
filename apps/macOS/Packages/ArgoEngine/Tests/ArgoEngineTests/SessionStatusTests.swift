@@ -50,12 +50,15 @@ struct SessionStatusTests {
     func `a question with no live process behind it is never asking`() {
         // The record still holds the call; what it no longer has is anything corroborating that
         // somebody is waiting on it.
-        #expect(status(signals(liveness: .quiet, turnOpen: true, pendingAsk: true)) == .idle)
+        #expect(status(signals(liveness: .quiet, turnOpen: true, pendingAsk: true)) == .unknown)
     }
 
     @Test
-    func `an open turn nothing corroborates resolves down to idle, never running`() {
-        #expect(status(signals(liveness: .quiet, turnOpen: true)) == .idle)
+    func `an open turn nothing corroborates is unknown, never running and never idle`() {
+        // `idle` is what a FINISHED Session draws, and the record says this Turn was started and
+        // never finished — so the calm word would hide a wrong liveness rather than show it
+        // (#1261).
+        #expect(status(signals(liveness: .quiet, turnOpen: true)) == .unknown)
     }
 
     @Test
