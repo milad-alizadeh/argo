@@ -55,6 +55,10 @@ let package = Package(
         // The drawing half has a suite for one reason: the uniform struct it hands the GPU is
         // declared twice, once here and once in `AtlasQuad.metal`, and a disagreement between them
         // draws a plausible wrong picture rather than failing (#1144).
-        .testTarget(name: "AtlasViewTests", dependencies: ["AtlasView"]),
+        //
+        // It takes `AtlasLayout` directly as well, because it is also the only place the band cuts
+        // declared in BOTH halves can be compared: the layout half depends on no contract, so
+        // `AtlasLayoutTests` cannot see `ArgoDesign` at all.
+        .testTarget(name: "AtlasViewTests", dependencies: ["AtlasView", "AtlasLayout"]),
     ],
 )
