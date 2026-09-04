@@ -147,7 +147,7 @@ struct ComposerUnavailableTests {
             access: access,
             status: status,
             chain: .init(program: .init(cli: .claude, model: "claude-opus-5")),
-            autonomy: .init(permission: permission),
+            autonomy: .init(blocked: .init(permission: permission)),
         )
     }
 }

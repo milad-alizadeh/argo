@@ -24,14 +24,22 @@ enum CompanionArguments {
         return .status(CompanionTool.status(named: word))
     }
 
+    /// A question with no WORDS is refused here, exactly as `AskReading` refuses one on the
+    /// transcript channel: an ask nobody can read is not one anybody can answer, and inventing a
+    /// blank row for it would stand an empty card at the foot of the reading. The agent gets the
+    /// refusal instead, which is what reading at a boundary is for.
     private static func ask(from arguments: JSONValue, callID: JSONValue?) -> CompanionFact? {
-        guard let question = arguments.stringField("question") else { return nil }
+        guard let question = arguments.stringField("question"), !question.isEmpty
+        else { return nil }
         return .ask(CompanionAsk(
             // The call's own id: the agent never sends one, and this is the only handle both sides
             // already share for the question being asked.
             id: identifier(callID),
             question: question,
-            options: arguments["options"]?.array.compactMap(\.string) ?? [],
+            // A blank label goes the same way, one at a time rather than all of them: an option
+            // with nothing on it is a number beside empty space, and the question is still
+            // answerable without it.
+            options: arguments["options"]?.array.compactMap(\.string).filter { !$0.isEmpty } ?? [],
         ))
     }
 

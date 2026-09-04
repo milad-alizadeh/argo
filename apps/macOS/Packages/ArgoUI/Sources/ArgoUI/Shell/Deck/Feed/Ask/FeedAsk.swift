@@ -24,6 +24,20 @@ package struct FeedAsk: Equatable, Sendable {
     /// drew it. `true` where nothing said otherwise — a reading of a live cockpit, not of a dead
     /// Session.
     let isDriveable: Bool
+    /// How Argo knows this question was put (`CONTEXT.md`, "Honesty tier"): `derived` for one read
+    /// out of the record, `direct` for the one Argo's own gate is holding, and `convention` for one
+    /// the agent REPORTED over the companion plugin (#1205).
+    ///
+    /// Only `convention` changes what the row draws, and it changes it twice: the row says where
+    /// the question came from, and it never offers a card. Argo answered that call `Recorded` the
+    /// moment it arrived, so there is no held reply a press could reach — an affordance there would
+    /// be exactly the one that cannot work.
+    ///
+    /// A `var` set at each of the three construction sites rather than a fifth initializer
+    /// parameter, which the cap forbids (`apps/macOS/.swiftlint.yml`). `derived` is the default
+    /// because it is the lowest of the three: a row nobody stated a tier for is never a false
+    /// `direct`.
+    private(set) var tier: Tier = .derived
 
     init(
         ask: Ask,
@@ -42,7 +56,21 @@ package struct FeedAsk: Equatable, Sendable {
     /// projection that calls it, so what a row KEEPS across that swap is settled once, here,
     /// beside the fields it keeps — a rebuild at the call site drops a new field silently.
     func offered(_ offer: FeedAskProjection.Asking) -> Self {
-        FeedAsk(ask: ask, isAnswered: isAnswered, answer: answer, offer: offer)
+        FeedAsk(ask: ask, isAnswered: isAnswered, answer: answer, offer: offer).known(via: tier)
+    }
+
+    /// The same question at a stated tier. Spelled here beside `offered`, which rebuilds the row
+    /// and would otherwise drop the tier silently — the trap that comment names, closed.
+    func known(via tier: Tier) -> Self {
+        var stated = self
+        stated.tier = tier
+        return stated
+    }
+
+    /// Whether the row states where the question came from — true only where Argo did not read it
+    /// off the record or hold it at its own gate, which is what makes it not a row Argo owns.
+    var isReported: Bool {
+        tier == .convention
     }
 
     var questions: [Ask.Question] {
@@ -108,6 +136,9 @@ package struct FeedAsk: Equatable, Sendable {
                     },
                 )
             },
+            // The row's own caption, so the lane says the same thing about the channel the row
+            // does — and takes the same height for saying it.
+            caption: isReported ? FeedAskLine.reportedWords : nil,
             ink: ink,
             // Off the same reading the ROW's ground is, not off `isPending`: a lane still ruled
             // beside a question nobody here can answer is the map disagreeing with the reading.

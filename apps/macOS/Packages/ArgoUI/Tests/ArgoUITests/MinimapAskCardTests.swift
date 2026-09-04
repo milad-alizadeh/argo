@@ -27,6 +27,7 @@ struct MinimapAskCardTests {
                     MinimapAskCard.Offer(marker: "2.", label: "Two"),
                 ],
             )],
+            caption: nil,
             ink: .attention,
             isRuled: true,
         )))
@@ -52,7 +53,7 @@ struct MinimapAskCardTests {
             offer: FeedAskProjection.Asking(live: nil, isDriveable: false),
         )
         #expect(MinimapRowFixture.shape(.ask(unanswerable)) == .card(MinimapAskCard(
-            questions: [], ink: .message, isRuled: false,
+            questions: [], caption: nil, ink: .message, isRuled: false,
         )))
     }
 
@@ -63,9 +64,33 @@ struct MinimapAskCardTests {
     func `a question somebody answered stops taking attention ink and its rule`() {
         let settled = FeedAsk(ask: Ask(questions: []), isAnswered: true, answer: "Both")
         #expect(MinimapRowFixture.shape(.ask(settled)) == .card(MinimapAskCard(
-            questions: [], ink: .message, isRuled: false,
+            questions: [], caption: nil, ink: .message, isRuled: false,
         )))
         #expect(MinimapRowFixture.shape(.ask(settled))
             .rects(across: 400, height: 90).isEmpty)
+    }
+
+    /// A row that arrived over the companion plugin is CONVENTION, and the lane may not draw it as
+    /// one Argo owns (#1205). The card carries the row's own caption, at the quietest prose ink so
+    /// it reads as meta rather than as more of the question — and it takes the LINE of height the
+    /// row spends on it, which the card would otherwise leave empty inside its frame.
+    @Test
+    func `a question reported over the plugin says so in the lane too`() {
+        let asked = Ask(questions: [Ask.Question(text: "Which branch?", options: [])])
+        let reported = FeedAsk(ask: asked, isAnswered: false, answer: nil)
+            .known(via: .convention)
+        let owned = FeedAsk(ask: asked, isAnswered: false, answer: nil)
+
+        #expect(MinimapRowFixture.shape(.ask(reported)) == .card(MinimapAskCard(
+            questions: [MinimapAskCard.Question(text: "Which branch?", offers: [])],
+            caption: FeedAskLine.reportedWords,
+            ink: .attention,
+            isRuled: true,
+        )))
+        // And the two are not the same shape, which is the whole of what degrade-down asks here.
+        #expect(MinimapRowFixture.shape(.ask(reported)) != MinimapRowFixture.shape(.ask(owned)))
+        #expect(MinimapRowFixture.shape(.ask(reported)).rects(across: 400, height: 90).contains {
+            $0.ink == .thought
+        })
     }
 }

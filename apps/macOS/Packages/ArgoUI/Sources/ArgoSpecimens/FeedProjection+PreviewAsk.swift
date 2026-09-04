@@ -79,6 +79,29 @@ package extension FeedProjection {
         ),
     )
 
+    /// A question the agent raised over the COMPANION PLUGIN rather than at Argo's gate (#1205).
+    ///
+    /// Beside `previewAskStanding` because the pair is the whole judgement: the same words at the
+    /// foot of the same work, one of them Argo's own and pressable, this one a reading that says
+    /// where it came from and where an answer can go. If the two are hard to tell apart on screen,
+    /// the row is drawing a false DIRECT.
+    ///
+    /// The channel carries one flat question and bare labels, so the render is the shape the
+    /// plugin can actually produce — no detail lines under the options, because it has no field
+    /// for them.
+    static let previewAskReported = rows(
+        from: Array(askTranscript(previewAskDecision).dropLast()),
+        reported: CompanionAsk(
+            id: "call-preview",
+            question: "Issue #721 doesn't exist. Which ticket should I implement?",
+            options: [
+                "#712 — Answer an AskUserQuestion in the cockpit",
+                "#713 — PlanPill shows the system focus ring on a click",
+                "#711 — Read a Session's subagent transcripts",
+            ],
+        ).ask,
+    )
+
     /// The Session those renders are drawn for, blocked on the one-of question.
     internal static let previewAskWaiting = SessionAsk(
         id: previewAskID,

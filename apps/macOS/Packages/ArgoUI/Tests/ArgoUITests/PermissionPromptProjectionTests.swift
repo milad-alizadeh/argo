@@ -21,7 +21,7 @@ struct PermissionPromptProjectionTests {
             chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: location),
             autonomy: .init(
-                permission: permission,
+                blocked: .init(permission: permission),
                 standingAllows: standing.map(StandingAllow.init(toolName:)),
             ),
         )

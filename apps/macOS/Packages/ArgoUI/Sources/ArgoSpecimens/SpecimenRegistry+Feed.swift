@@ -35,6 +35,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedAskStanding") {
             SpecimenScene.sessions(FeedProjection.previewAskStanding)
         },
+        // The same shape one tier down (#1205): the agent REPORTED this question over the plugin,
+        // so Argo holds nothing to answer with. Judged against the row above it — a CONVENTION row
+        // that reads as one Argo owns is the false DIRECT this state exists to catch.
+        SpecimenEntry("feedAskReported") {
+            SpecimenScene.sessions(FeedProjection.previewAskReported)
+        },
     ]
 
     private static let rows: [SpecimenEntry] = [

@@ -31,11 +31,50 @@ package struct FeedAskLine: View {
                     waiting: waiting(question, at: index),
                 )
             }
+            if ask.isReported {
+                reported
+            }
         }
         .padding(ArgoFeedRow.askCardInset)
         .background(ground, in: RoundedRectangle(cornerRadius: ArgoRadius.control))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(ask.isPending ? "Question, waiting on you" : "Question, answered")
+        .accessibilityLabel(spoken)
+    }
+
+    /// Where a question Argo does not own came from, and where an answer to it can go (#1205).
+    ///
+    /// A row drawn off the companion plugin arrives at CONVENTION, and degrade-down forbids it
+    /// being indistinguishable from one Argo owns — so it says so, on the same marker grid the
+    /// question above it is set on, at the quieter rung every piece of meta in the feed takes.
+    ///
+    /// It also has to say where the answer goes, because this is the one waiting ask row with
+    /// nothing to press: Argo answered the call the moment it arrived, so the composer is the only
+    /// route left to the agent.
+    private var reported: some View {
+        HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
+            ArgoGlyph(ArgoSymbol.mcpTool, .inline)
+                .foregroundStyle(argo.color.text.tertiary)
+                .feedMarkerColumn()
+            Text(Self.reportedWords)
+                .argoText(ArgoTypography.rowMeta)
+                .foregroundStyle(argo.color.text.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// The caption itself, `package` so the row's own measurement lays out the words it will draw
+    /// rather than a second copy of them.
+    nonisolated package static let reportedWords =
+        "asked over the companion plugin · answer in the composer"
+
+    /// What a screen reader is told the card is. The reported row is named apart from the two
+    /// beside it: "waiting on you" over a card with nothing to press would send somebody looking
+    /// for a control that is not there.
+    private var spoken: String {
+        if ask.isReported {
+            return "Question asked over the companion plugin, answer in the composer"
+        }
+        return ask.isPending ? "Question, waiting on you" : "Question, answered"
     }
 
     /// What one question offers while it waits, and nothing at all where the row is a reading —

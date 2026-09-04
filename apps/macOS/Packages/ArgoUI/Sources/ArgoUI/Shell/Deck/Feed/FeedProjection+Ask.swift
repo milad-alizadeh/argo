@@ -18,7 +18,44 @@ extension FeedProjection {
     )
         -> [FeedRow.Content] {
         guard let live = asking.live, !rows.contains(where: isDrawingLiveAsk) else { return [] }
-        return [.ask(FeedAsk(ask: live.ask, isAnswered: false, answer: nil, offer: asking))]
+        // DIRECT: both ends of the hook this came up are Argo's own, which is what entitles the row
+        // to the cards below it.
+        return [.ask(
+            FeedAsk(ask: live.ask, isAnswered: false, answer: nil, offer: asking)
+                .known(via: .direct),
+        )]
+    }
+
+    /// The question the agent REPORTED over the companion plugin, at the foot of the work (#1205).
+    ///
+    /// A seam of its own beside `standing`, not a second way into it, because the two are answered
+    /// by different acts. `standing`'s question is one Argo's own gate is HOLDING: the hook is
+    /// blocked, the answer goes back down the socket it came up, and the row is the thing you
+    /// press. This one arrived as an MCP call Argo answered `Recorded` the moment it landed — there
+    /// is no held reply left to reach, so the row states the question and the reader answers where
+    /// an answer can actually go, which is the composer.
+    ///
+    /// It is drawn at CONVENTION and says so, because degrade-down forbids a row Argo does not own
+    /// being indistinguishable from one it does.
+    ///
+    /// `offer` carries the feed's own driveability and no live handle: the ink means *this is
+    /// waiting on YOU*, and on a Session nothing can reach it is not — the same rule every ask row
+    /// beside it takes (#546).
+    static func reported(
+        _ ask: Ask?,
+        _ asking: FeedAskProjection.Asking,
+    )
+        -> [FeedRow.Content] {
+        guard let ask else { return [] }
+        return [.ask(
+            FeedAsk(
+                ask: ask,
+                isAnswered: false,
+                answer: nil,
+                offer: FeedAskProjection.Asking(live: nil, isDriveable: asking.isDriveable),
+            )
+            .known(via: .convention),
+        )]
     }
 
     /// Whether `offering` already handed the gate's question to a row of the record's own.

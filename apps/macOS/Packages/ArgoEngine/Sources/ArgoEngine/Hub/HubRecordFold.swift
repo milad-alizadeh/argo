@@ -37,7 +37,7 @@ struct HubRecordFold: Equatable, Sendable {
             return true
         case .originSession, .cwd, .model, .effort, .branch, .entry, .prompt, .message, .thought,
              .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .usage, .plan, .compaction,
-             .unreadableLine:
+             .unreadableLine, .interrupted:
             return !isRefolding
         }
     }

@@ -18,7 +18,15 @@ extension FeedShapeHeightTests {
         Row(name: "ask, waiting many-of", content: .ask(waiting(manyOf))),
         Row(name: "ask, waiting free-form", content: .ask(waiting(freeForm))),
         Row(name: "ask, waiting with a detail line", content: .ask(waiting(detailed))),
+        Row(name: "ask, reported over the plugin", content: .ask(reported(oneOf))),
+        Row(name: "ask, reported and wrapping", content: .ask(reported(wrapping))),
     ]
+
+    /// A question the agent raised over the companion plugin (#1205): a reading with the caption
+    /// under it, and nothing pressable — the one ask shape that carries a line the others do not.
+    private static func reported(_ ask: Ask) -> FeedAsk {
+        FeedAsk(ask: ask, isAnswered: false, answer: nil).known(via: .convention)
+    }
 
     /// A question the record has already answered — the row is a reading, and nothing is pressable.
     private static func settled(_ ask: Ask) -> FeedAsk {

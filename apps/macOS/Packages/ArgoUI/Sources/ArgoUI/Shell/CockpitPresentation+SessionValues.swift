@@ -120,25 +120,49 @@ public extension CockpitPresentation.Session {
     /// Autonomy (`CONTEXT.md`): the standing stance, and everything the Session is blocked on or
     /// has stopped being blocked on.
     struct Autonomy: Equatable, Sendable {
+        /// What the Session is blocked on RIGHT NOW, one slot per channel the block arrives over.
+        /// They are read together at the same moment off the same claim, and no call site names
+        /// one without knowing about the others — a surface that drew two of them at once would
+        /// be putting two things to the reader as the one act.
+        public struct Blocked: Equatable, Sendable {
+            public let permission: PermissionRequest?
+            public let ask: SessionAsk?
+            /// The question the agent REPORTED over the companion plugin (#1205) — CONVENTION,
+            /// beside `ask` and never merged into it: this one carries no handle Argo can answer
+            /// down, so a surface handed it in `ask`'s slot would offer an answer reaching nobody.
+            public let companionAsk: CompanionAsk?
+
+            public init(
+                permission: PermissionRequest? = nil,
+                ask: SessionAsk? = nil,
+                companionAsk: CompanionAsk? = nil,
+            ) {
+                self.permission = permission
+                self.ask = ask
+                self.companionAsk = companionAsk
+            }
+        }
+
         public let mode: SessionModeReading
         public let modeDidNotTake: SessionMode?
         public let permission: PermissionRequest?
         public let ask: SessionAsk?
+        public let companionAsk: CompanionAsk?
         public let standingAllows: [StandingAllow]
         public let expiredPermissions: [PermissionExpiry]
 
         public init(
             mode: SessionModeReading = .unknown(cli: nil),
             modeDidNotTake: SessionMode? = nil,
-            permission: PermissionRequest? = nil,
-            ask: SessionAsk? = nil,
+            blocked: Blocked = .init(),
             standingAllows: [StandingAllow] = [],
             expiredPermissions: [PermissionExpiry] = [],
         ) {
             self.mode = mode
             self.modeDidNotTake = modeDidNotTake
-            self.permission = permission
-            self.ask = ask
+            self.permission = blocked.permission
+            self.ask = blocked.ask
+            self.companionAsk = blocked.companionAsk
             self.standingAllows = standingAllows
             self.expiredPermissions = expiredPermissions
         }

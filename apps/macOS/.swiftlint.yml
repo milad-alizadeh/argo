@@ -114,7 +114,8 @@ function_parameter_count:
   # INIT: ArgoPalette.swift 7 — one colour per interaction role
   # INIT: DeliveryPullRequest.swift 6 — the PR's own fields; its git facts are grouped already
   # INIT: CockpitPresentation.swift 6 — one project row, a field per column
-  # INIT: CockpitPresentation+SessionValues.swift 6 — the autonomy reading, one fact per rung
+  # INIT: CockpitPresentation+SessionValues.swift 5 — the autonomy reading: the stance, and one
+  # group for what the Session is blocked on (#1205)
   # INIT: GitHubDeviceChallenge.swift 5 — the device-flow response as GitHub documents it
   # INIT: SessionAttachment.swift 5 — an attachment's own facts
   # INIT: LaunchConfiguration.swift 5 — the launch arguments as parsed

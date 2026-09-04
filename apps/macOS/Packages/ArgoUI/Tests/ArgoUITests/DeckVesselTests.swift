@@ -114,7 +114,7 @@ struct DeckVesselTests {
             status: status ?? (permission == nil ? .idle : .permission),
             chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: "/Users/someone/repo"),
-            autonomy: .init(permission: permission),
+            autonomy: .init(blocked: .init(permission: permission)),
         )
     }
 }

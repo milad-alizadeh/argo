@@ -9,7 +9,10 @@ enum FeedAskReading {
     /// call line, because a question with no words is not a question the feed can put to anybody.
     static func asked(_ call: ToolCall, answeredBy outcome: ToolCallOutcome?) -> FeedAsk? {
         guard let ask = call.ask else { return nil }
+        // DERIVED, and stated rather than left to the default: this row is a reading of what the
+        // record said, and the two rows beside it in the feed are not.
         return FeedAsk(ask: ask, isAnswered: hasAnswered(outcome), answer: answer(in: outcome))
+            .known(via: .derived)
     }
 
     /// Whether the record has answered the question — the result EXISTING and being resolved, not

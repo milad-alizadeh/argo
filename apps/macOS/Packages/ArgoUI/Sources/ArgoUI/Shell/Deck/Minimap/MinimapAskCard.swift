@@ -20,6 +20,14 @@ struct MinimapAskCard: Equatable, Sendable {
     }
 
     var questions: [Question]
+    /// The line the card carries UNDER its questions, where it carries one — the caption a row
+    /// drawn off the companion plugin says its channel in (#1205). `nil` for every row Argo owns.
+    ///
+    /// Here rather than left to the row, because a lane that drew a CONVENTION card exactly as it
+    /// draws a DIRECT one is the false DIRECT the row itself is built to avoid — and because the
+    /// card is laid out inside a frame of the ROW's height, so a line the lane does not draw is a
+    /// line of empty space inside it.
+    var caption: String?
     var ink: FeedInk
     /// Whether the card keeps a rule around it. Only while it waits: a settled question keeps none
     /// in the feed, and a lane still drawing one would say a reader was needed where none is.
@@ -51,7 +59,11 @@ extension MinimapRowShape {
             rects += laid.rects.map { $0.lowered(by: y).indented(by: inset) }
             y += laid.height + ArgoFeedRow.blockStep
         }
-        return rects
+        guard let caption = card.caption else { return rects }
+        // At the quietest prose ink and never the card's own: the caption is meta about where the
+        // question came from, and drawn in the attention colour it would read as more of the ask.
+        let said = line(caption, marker: nil, ink: .thought, across: inside)
+        return rects + said.rects.map { $0.lowered(by: y).indented(by: inset) }
     }
 
     /// One question and its options on ONE grid, which is what `FeedAskQuestion` draws: the ask

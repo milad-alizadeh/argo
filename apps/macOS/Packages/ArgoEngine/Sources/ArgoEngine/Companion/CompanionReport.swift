@@ -34,6 +34,18 @@ public struct CompanionAsk: Sendable, Equatable {
         self.question = question
         self.options = options
     }
+
+    /// The same question in the vocabulary every surface draws a question in (#1205), so nothing
+    /// downstream of the channel reinvents the conversion.
+    ///
+    /// One question, because the channel's shape carries one. The words and the labels are carried
+    /// VERBATIM, and `allowsMultiple` is `false` because the channel has no word for it —
+    /// degrade-down resolves an unstated one to the narrower act.
+    public var ask: Ask {
+        Ask(questions: [
+            Ask.Question(text: question, options: Ask.Option.labelled(options)),
+        ])
+    }
 }
 
 /// A durable record of what a Session produced (CONTEXT.md L4, "Outcome"), pointing at a typed
