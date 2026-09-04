@@ -86,7 +86,7 @@ struct SessionRosterWorkspaceTests {
         ]).first)
 
         #expect(spokenWorktree(row) == "tkt-505")
-        #expect(row.leadingFact == nil)
+        #expect(row.secondaryFact == nil)
         #expect(row.clock == nil)
     }
 

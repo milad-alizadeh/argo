@@ -29,6 +29,10 @@ extension SpecimenRegistry {
         // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
+        // The travel only shows in motion; a still catches the light at one point along it, and
+        // catches four rows at four different points (#1291).
+        SpecimenEntry("rosterSecondLine") { RosterSecondLineSpecimen() },
+        SpecimenEntry("rosterSecondLineStill") { RosterSecondLineSpecimen(isStill: true) },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },

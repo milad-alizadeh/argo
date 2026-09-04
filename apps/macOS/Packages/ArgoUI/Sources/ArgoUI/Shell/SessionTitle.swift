@@ -2,6 +2,9 @@
 /// roster row's and the deck header's projections read it: `cockpit-spec.md` §4.2 — "Title
 /// resolves through a stable fallback chain — explicit name → linked ticket → conversation-derived
 /// … so rail and header always match" (#502 §Seams), as that section's #1072 amendment holds it.
+///
+/// It is also where the title is SPELLED: whichever link of the chain answers, no title the
+/// cockpit draws carries an em dash — see `spelled(_:)`.
 enum SessionTitle {
     /// What one row is called, and what the surface drawing it must ask beside the words.
     struct Naming {
@@ -58,13 +61,36 @@ enum SessionTitle {
     )
         -> Naming {
         let words = namesOneRow(for: session, drawn: drawn) ? ticket(for: session) : nil
-        let resetsTo = words ?? session.title
+        let resetsTo = spelled(words ?? session.title)
         return Naming(
-            title: session.explicitName ?? resetsTo,
+            // Reset's words are spelled the same way, so the dialog can never offer a title the
+            // row would then draw differently.
+            title: session.explicitName.map(spelled) ?? resetsTo,
             drawsDerivedTitle: session.explicitName == nil && words == nil,
             resetsTo: resetsTo,
         )
     }
+
+    /// No em dash in a title the cockpit draws. It arrives from all three links of the chain — a
+    /// CLI's own derived summary, a provider's issue title, and a name somebody typed — so it is
+    /// taken out HERE, where the chain resolves, rather than three times over.
+    ///
+    /// `IssueReading.joiner` and not a hyphen: the dash was setting a subject against what is said
+    /// about it, which is that separator's own job, and a hyphen at that width reads as part of a
+    /// word. The space before it goes with it, so `Roster row — the pulse` reads
+    /// `Roster row: the pulse`.
+    private static func spelled(_ title: String) -> String {
+        guard title.contains(emDash) else { return title }
+        let parts = title
+            .split(separator: emDash, omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        // A title that was nothing BUT dashes keeps what it had: a blank row says less than a
+        // strange one, and there is no reading behind an empty name to fall back to.
+        return parts.isEmpty ? title : parts.joined(separator: IssueReading.joiner)
+    }
+
+    private static let emDash: Character = "—"
 
     /// Whether this Session is the only row a Ticket's words would name. Its own draw comes out of
     /// the count, so a renamed row — which draws no words now, and would draw them the moment

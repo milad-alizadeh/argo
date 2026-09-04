@@ -175,7 +175,7 @@ struct SessionTicketLinkingTests {
 
         // A closed ticket beside the open ones would invite attaching a Session to finished work.
         #expect(linking.options.map(\.number) == [1092, 272])
-        #expect(linking.options.first?.label == "#1092 — Open, newest")
+        #expect(linking.options.first?.label == "#1092: Open, newest")
         #expect(linking.isOffered)
     }
 
