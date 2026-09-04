@@ -17,7 +17,7 @@ extension SessionHeaderProjection.Header {
     /// beside it, and the remedy that stands beside that reading and carries its urgency
     /// (`SessionHeaderProjection.Handoff`).
     struct Telemetry: Equatable, Sendable {
-        let context: SessionHeaderProjection.Context
+        let context: SessionHeaderProjection.Context?
         let spend: String?
         let handoff: SessionHeaderProjection.Handoff?
     }

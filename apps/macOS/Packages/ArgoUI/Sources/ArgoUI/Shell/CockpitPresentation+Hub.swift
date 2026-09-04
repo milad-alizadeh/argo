@@ -155,7 +155,7 @@ extension CockpitPresentation.Session {
             ),
             spend: Spend(
                 spentTokens: session.spentTokens, cachedTokens: session.cachedTokens,
-                subagentTokens: session.subagentTokens, contextTokens: session.contextTokens,
+                subagentTokens: session.subagentTokens, context: session.context,
             ),
             autonomy: Autonomy(
                 // The Hub's own reading, carried whole rather than reduced to a rung: the `≈` and

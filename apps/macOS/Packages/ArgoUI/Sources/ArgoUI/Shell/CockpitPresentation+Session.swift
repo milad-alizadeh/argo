@@ -95,7 +95,7 @@ public extension CockpitPresentation {
         public let startedAtMs: Int?
         /// What the Session has spent across its whole life, in tokens — every reported spend
         /// summed, both grains (`CONTEXT.md` L3), cache excluded. The opposite reading from
-        /// `contextTokens` below, which is only what it is holding now.
+        /// `context` below, which is only what it is holding now.
         public let spentTokens: Int?
         /// The cache half of the same life — read and re-read once per request, so it dwarfs
         /// `spentTokens` by the turn count. Split out so neither figure inflates the other.
@@ -104,10 +104,10 @@ public extension CockpitPresentation {
         /// reported any — which is every CLI in use today, and why the header drops the fact
         /// off its line rather than printing a zero that would claim no subagent ran.
         public let subagentTokens: Int?
-        /// How full the Session's context is right now, in tokens — the latest reading its records
-        /// carry, DERIVED. Absent for a record that reported no spend at all, which the header
-        /// draws as `unknown`: unreadable is not an empty context.
-        public let contextTokens: Int?
+        /// How full the Session's context is right now — the latest reading its records carry,
+        /// DERIVED. `unread` where no record has reported a spend at all, which the header draws
+        /// as NOTHING; `unreadable` is the one the header words `unknown` (#1249).
+        public let context: ContextReading
         /// The Session this one handed its work to, as the id of the row that now carries it
         /// (`CONTEXT.md` L2 — the resume chain a handoff makes across two Sessions rather than
         /// within one). Absent for every Session that has not handed off, which is nearly all of
@@ -206,7 +206,7 @@ public extension CockpitPresentation {
             self.spentTokens = spend.spentTokens
             self.cachedTokens = spend.cachedTokens
             self.subagentTokens = spend.subagentTokens
-            self.contextTokens = spend.contextTokens
+            self.context = spend.context
             self.permission = autonomy.permission
             self.ask = autonomy.ask
             self.companionAsk = autonomy.companionAsk

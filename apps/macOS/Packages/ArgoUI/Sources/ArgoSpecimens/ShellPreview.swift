@@ -49,7 +49,7 @@ public extension CockpitPresentation {
                     ),
                 ),
                 // A real reading off this machine, past the first line.
-                spend: .init(contextTokens: 216_764),
+                spend: .init(context: .held(216_764)),
                 // A Turn still open under everything that has already happened: this Session is
                 // `running`, and a running Session with no call in flight has nothing for the
                 // roster's activity line to say (#1199).
@@ -72,7 +72,7 @@ public extension CockpitPresentation {
                     location: "/Users/milad/Experiments/argo",
                     workspace: .init(kind: .main, branch: "main"),
                 ),
-                spend: .init(contextTokens: 67175),
+                spend: .init(context: .held(67175)),
             ),
             Session(
                 id: "observed",
@@ -104,7 +104,7 @@ public extension CockpitPresentation {
                     location: "/Users/milad/Developer/cockpit",
                     workspace: .init(kind: .main, branch: "main", dirty: 0, unpushed: 0),
                 ),
-                spend: .init(contextTokens: 88400),
+                spend: .init(context: .held(88400)),
             ),
             Session(
                 id: "failed",
@@ -128,7 +128,7 @@ public extension CockpitPresentation {
                     ),
                 ),
                 // Past the second line, which is what a Session that stopped short usually is.
-                spend: .init(contextTokens: 472_233),
+                spend: .init(context: .held(472_233)),
             ),
         ],
         connection: .connected,
@@ -149,7 +149,7 @@ public extension CockpitPresentation {
                     location: "/Users/milad/Developer/argo",
                     workspace: .init(kind: .worktree, branch: "argo/#376-native-shell"),
                 ),
-                spend: .init(contextTokens: 216_764),
+                spend: .init(context: .held(216_764)),
                 transcript: .init(events: TranscriptFixtures.longTranscript),
             ),
             Session(
@@ -162,7 +162,7 @@ public extension CockpitPresentation {
                     location: "/Users/milad/Experiments/argo",
                     workspace: .init(kind: .main, branch: "main"),
                 ),
-                spend: .init(contextTokens: 67175),
+                spend: .init(context: .held(67175)),
                 transcript: .init(events: TranscriptFixtures.longTranscript),
             ),
         ],

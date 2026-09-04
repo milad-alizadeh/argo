@@ -102,18 +102,20 @@ public extension CockpitPresentation.Session {
         public let spentTokens: Int?
         public let cachedTokens: Int?
         public let subagentTokens: Int?
-        public let contextTokens: Int?
+        /// A READING and not a figure: a Session Argo has not heard from has no context to draw,
+        /// which is a different claim from one whose spend Argo read and cannot use (#1249).
+        public let context: ContextReading
 
         public init(
             spentTokens: Int? = nil,
             cachedTokens: Int? = nil,
             subagentTokens: Int? = nil,
-            contextTokens: Int? = nil,
+            context: ContextReading = .unread,
         ) {
             self.spentTokens = spentTokens
             self.cachedTokens = cachedTokens
             self.subagentTokens = subagentTokens
-            self.contextTokens = contextTokens
+            self.context = context
         }
     }
 

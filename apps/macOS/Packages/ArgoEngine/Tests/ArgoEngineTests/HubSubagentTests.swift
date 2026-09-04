@@ -127,7 +127,7 @@ struct HubSubagentTests {
         #expect(after.subagentTokens != nil)
         #expect(after.spentTokens == before.spentTokens)
         #expect(after.subagentTokens == before.subagentTokens)
-        #expect(after.contextTokens == before.contextTokens)
+        #expect(after.context == before.context)
         // The events the feed draws are the parent's own, and a child's records are not among them.
         #expect(after.events == before.events)
         await hub.disconnect()

@@ -80,7 +80,7 @@ struct UnparseableTranscriptTests {
     @MainActor
     func `an unparseable transcript reports no context to render a percentage from`() async throws {
         try await withCorruptTranscript { _, hub in
-            #expect(hub.sessions.map(\.contextTokens) == [nil])
+            #expect(hub.sessions.map(\.context) == [.unread])
         }
     }
 

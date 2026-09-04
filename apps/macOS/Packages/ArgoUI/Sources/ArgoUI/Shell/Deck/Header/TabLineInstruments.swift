@@ -18,7 +18,11 @@ package struct TabLineInstruments: View {
                 if let state = header.state {
                     stateWord(state)
                 }
-                SessionHeaderContext(context: header.context, facts: header.facts)
+                // Absent for a Session that has reported no spend yet, and the zone draws no
+                // instrument at all rather than a placeholder reading (#1249).
+                if let context = header.context {
+                    SessionHeaderContext(context: context, facts: header.facts)
+                }
                 // LAST: the design puts the remedy on the trailing edge, ahead of the instrument.
                 if let handoff = header.handoff {
                     SessionHandoffButton(handoff: handoff, run: handOff)

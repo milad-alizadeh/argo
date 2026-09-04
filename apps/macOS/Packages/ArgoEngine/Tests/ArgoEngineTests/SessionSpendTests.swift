@@ -34,7 +34,7 @@ struct SessionSpendTests {
         let session = try #require(hub.sessions.first)
         #expect(session.spentTokens == 3000)
         #expect(session.cachedTokens == 80000)
-        #expect(session.contextTokens == 52000)
+        #expect(session.context == .held(52000))
     }
 
     /// A Session whose records priced nothing has not spent nothing — the header leaves the fact

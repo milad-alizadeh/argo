@@ -94,7 +94,7 @@ extension SpecimenRegistry {
             InstrumentDeckShell(
                 room: .sessions,
                 feed: FeedProjection.longRows,
-                header: SessionHeaderFixture.header(context: 216_764),
+                header: SessionHeaderFixture.header(context: .held(216_764)),
                 vessel: .composer(ComposerSpecimen.composer),
                 intents: DeckIntents(draft: .constant(ComposerDraft(text: "Something to send."))),
             )

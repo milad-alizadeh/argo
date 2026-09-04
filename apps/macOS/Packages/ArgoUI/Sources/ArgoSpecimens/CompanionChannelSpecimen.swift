@@ -61,7 +61,7 @@ struct CompanionChannelSpecimen: View {
                     title: "Say whether the companion channel is live",
                 )),
             ),
-            spend: .init(contextTokens: 67175),
+            spend: .init(context: .held(67175)),
         ))
     }
 }

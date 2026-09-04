@@ -99,7 +99,7 @@ struct SessionHeaderTooltipTests {
                 workspace: .init(kind: .worktree, branch: "argo/#692-titlebar-title", dirty: 3),
                 ticket: .linked(.init(number: 692, title: "Titlebar title")),
             ),
-            spend: .init(spentTokens: 1_830_000, cachedTokens: 28_100_000, contextTokens: 216_764),
+            spend: .init(spentTokens: 1_830_000, cachedTokens: 28_100_000, context: .held(216_764)),
         )
     }
 }

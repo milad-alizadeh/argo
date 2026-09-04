@@ -117,9 +117,10 @@ package enum SessionHeaderProjection {
         /// was. `nil` only where no Ticket provider is bound, which is the one state with nothing
         /// to say (#894).
         let issue: IssueRow?
-        /// The one instrument on the header. Never absent: an unreadable context is still a
-        /// context, and the absence lives INSIDE the reading, as `unknown`.
-        package let context: Context
+        /// The one instrument on the header, and **`nil` for a Session that has reported no spend
+        /// yet** — the zone draws nothing at all rather than a placeholder (#1249). An unreadable
+        /// context is still a context and lives INSIDE the reading, as `unknown`.
+        package let context: Context?
         /// What the Session has spent and how long it has been going, already composed — the tab
         /// line's whole content. `nil` where none of those facts could be established, so the
         /// line collapses rather than drawing separators between facts it does not have.
@@ -221,7 +222,7 @@ package enum SessionHeaderProjection {
             ),
             state: SessionState.reading(for: session.status),
             telemetry: Header.Telemetry(
-                context: context(tokens: session.contextTokens),
+                context: context(reading: session.context),
                 spend: spend(from: session, worked: worked),
                 handoff: handoff(from: session),
             ),

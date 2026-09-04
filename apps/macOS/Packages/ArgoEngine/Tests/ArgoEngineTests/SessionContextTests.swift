@@ -30,7 +30,7 @@ struct SessionContextTests {
         await hubObserveToEnd(hub, observed)
 
         // 5000 + 300 + 90000 + 2000 — all four terms of the second reading and none of the first.
-        #expect(try #require(hub.sessions.first).contextTokens == 97300)
+        #expect(try #require(hub.sessions.first).context == .held(97300))
     }
 
     /// A cached token is a cheaper token, not a smaller one: the model still reads it, and on an
@@ -45,7 +45,7 @@ struct SessionContextTests {
 
         await hubObserveToEnd(hub, observed)
 
-        #expect(try #require(hub.sessions.first).contextTokens == 250_020)
+        #expect(try #require(hub.sessions.first).context == .held(250_020))
     }
 
     /// A zero here would render as an empty window — the opposite claim from an unread one.
@@ -60,7 +60,38 @@ struct SessionContextTests {
 
         await hubObserveToEnd(hub, observed)
 
-        #expect(try #require(hub.sessions.first).contextTokens == nil)
+        #expect(try #require(hub.sessions.first).context == .unread)
+    }
+
+    /// The two absences, told apart (#1249). Nothing reported yet is a Session with NOTHING to say
+    /// about its window; a spend of zero is the CLI's own `<synthetic>` record, a thing Argo read
+    /// and cannot put against one. Only the second is a word on screen.
+    @Test
+    @MainActor
+    func `a spend against no context at all reads as unreadable, not as unread`() async throws {
+        let hub = testHub(projectURL: Self.projectURL)
+        let observed = hubTestObservation(id: "synthetic", events: [
+            .usage(usage(input: 0, output: 0, cacheRead: 0, cacheCreation: 0)),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(try #require(hub.sessions.first).context == .unreadable)
+    }
+
+    /// A note the CLI wrote to itself did not empty the conversation it was written into.
+    @Test
+    @MainActor
+    func `a spend against no context leaves a reading already taken standing`() async throws {
+        let hub = testHub(projectURL: Self.projectURL)
+        let observed = hubTestObservation(id: "after", events: [
+            .usage(usage(input: 4000, output: 200, cacheRead: 60000, cacheCreation: 1000)),
+            .usage(usage(input: 0, output: 0, cacheRead: 0, cacheCreation: 0)),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(try #require(hub.sessions.first).context == .held(65200))
     }
 
     /// A resumed file with no spend in it yet must not blank what the root already read.
@@ -80,6 +111,6 @@ struct SessionContextTests {
         await hubObserveToEnd(hub, child)
         await hubObserveToEnd(hub, root)
 
-        #expect(try #require(hub.sessions.first).contextTokens == 31100)
+        #expect(try #require(hub.sessions.first).context == .held(31100))
     }
 }

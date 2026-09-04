@@ -62,8 +62,9 @@ spend stays on the header line and off the block` is the test that holds it. It 
 
 **Isolated states:** `contextGuide` renders the full panel from the new `SessionHeaderFixture.
 guided`, the fixture `header/guide.png` is drawn from. `contextGuideUnread` renders the same panel
-over a Session nothing could be read off, where the block collapses to its one permanent row — the
-state the happy path cannot show.
+over a Session whose spend Argo read and cannot use, where the block collapses to the two rows it
+has — the state the happy path cannot show. No row is permanent: the context row goes too where no
+spend has been reported (#1249), and the block goes with it.
 
 **Contract:** one promotion, `ArgoContextBar.guideTermWidth` 96. See the design's *Contract
 changes*.
