@@ -1,3 +1,4 @@
+import AtlasFixtures
 @testable import AtlasLayout
 import CoreGraphics
 import Foundation
@@ -59,16 +60,19 @@ struct AtlasTilingTests {
     /// failure that lost 532 files, one level up from where the test above looks.
     @Test func `every folder stands on the plate of the folder it is in`() throws {
         let plan = try Self.plan(of: AtlasMapFixture.argo())
-        let plates = Dictionary(uniqueKeysWithValues: plan.plates.map { ($0.path, $0.rect) })
+        let plates = Self.grounds(in: plan)
         var nested = 0
 
         for frame in plan.plates where frame.depth > 0 {
-            let folder = String(frame.path.dropLast(frame.name.count + 1))
+            // The folder holding the OUTERMOST folder this plate stands for: a folded run has no
+            // plate above it until the fold began.
+            let outermost = try #require(frame.covers.first)
+            let folder = String(outermost.dropLast(AtlasPath.name(of: outermost).count + 1))
             let parent = try #require(plates[folder], "\(frame.path) has a plate to stand on")
             nested += 1
             #expect(parent.contains(frame.rect), "\(frame.path)")
         }
-        #expect(nested > 20, "the fixture put real folders through this")
+        #expect(nested > 15, "the fixture put real folders through this")
     }
 
     /// The failure this guards is a dictionary iterated in its own order, whose seed is fresh on
@@ -119,7 +123,7 @@ struct AtlasTilingTests {
             #expect(Self.about(frame.rect.maxY - covered.maxY, ring), "\(frame.path)")
             #expect(covered.minY - frame.rect.minY > ring, "\(frame.path)")
         }
-        #expect(checked > 20, "the fixture put real plates through this")
+        #expect(checked > 15, "the fixture put real plates through this")
     }
 
     @Test func `a plate carries the name of its folder`() throws {
@@ -129,14 +133,23 @@ struct AtlasTilingTests {
             $0.path == "argo/apps/macOS/Packages/ArgoAtlas"
         })
         #expect(atlas.name == "ArgoAtlas")
-        #expect(atlas.depth == 4)
+        // 2, not 4: `apps/macOS/Packages` is one folded plate rather than three.
+        #expect(atlas.depth == 2)
     }
 
     /// The rect of each of a plate's direct children, in that plate's order.
     static func rects(of children: [AtlasNode], in plan: AtlasPlan) -> [CGRect] {
         let tiles = Dictionary(uniqueKeysWithValues: plan.tiles.map { ($0.path, $0.rect) })
-        let plates = Dictionary(uniqueKeysWithValues: plan.plates.map { ($0.path, $0.rect) })
+        let plates = grounds(in: plan)
         return children.compactMap { tiles[$0.path] ?? plates[$0.path] }
+    }
+
+    /// The rect a folder is drawn on, keyed by EVERY folder each plate stands for — a folder
+    /// folded into the plate below it has no plate of its own to be found under.
+    static func grounds(in plan: AtlasPlan) -> [String: CGRect] {
+        Dictionary(uniqueKeysWithValues: plan.plates.flatMap { frame in
+            frame.covers.map { ($0, frame.rect) }
+        })
     }
 
     /// Equal to within a thousandth of a point — well under anything a screen can draw, and well

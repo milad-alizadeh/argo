@@ -1,3 +1,4 @@
+import AtlasFixtures
 @testable import AtlasLayout
 import CoreGraphics
 import Foundation

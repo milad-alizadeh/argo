@@ -33,6 +33,19 @@ public struct AtlasBanding: Equatable, Sendable {
         return AtlasBand(at: fraction(of: value))
     }
 
+    /// The greatest measured value falling in a band, or nothing when the repository put none
+    /// there — a Measure nothing carries has no quiet end, and a repository whose whole spread
+    /// sits below the hot cut has no hot one. Read by `AtlasLegend`, which is why it is a search
+    /// of the distribution rather than a percentile taken a second time.
+    public func greatest(in band: AtlasBand) -> Double? {
+        ascending.last { self.band(of: $0) == band }
+    }
+
+    /// The least measured value falling in a band.
+    public func least(in band: AtlasBand) -> Double? {
+        ascending.first { self.band(of: $0) == band }
+    }
+
     /// The lower bound, by bisection. Every Plot is banded once against a list as long as the
     /// repository, so a linear scan here is the map's cost squared.
     private func countBelow(_ value: Double) -> Int {
