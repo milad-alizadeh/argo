@@ -99,6 +99,7 @@ extension FeedTableCoordinator {
         // nothing will ever correct AppKit's row geometry afterwards (#1132). Whole document,
         // because a table built fresh over a kept store has resolved none of it.
         converge(table)
+        adopt(document.totalHeight, on: table)
         place()
     }
 
@@ -293,6 +294,29 @@ extension FeedTableCoordinator {
         for index in 0 ..< rows {
             _ = table.rect(ofRow: index)
         }
+    }
+
+    /// The document view given the height the walk above has just made true, rather than left to
+    /// AppKit to arrive at in its own time (#1132).
+    ///
+    /// The walk converges the ROW RECTS; it does not move the table's own frame. That frame catches
+    /// up on the next tile, and WHEN the tile happens is AppKit's business — measured here, it was
+    /// still 456pt over a 41 759pt document at the end of `adoptSettled` and correct by the time
+    /// the caller's `apply` had returned, with no code of ours in between. `landed` never had to
+    /// care because it lays the scroll view out a line later; the adopt path lays nothing out, so
+    /// on the CI runner the tile had not happened by the time anything asked and the table stood
+    /// 8 570pt short of its own document — a fifth of the reading, all of it below everything the
+    /// overview lane maps. Green on one machine and red on another is the shape of a fact nobody
+    /// owns, so this path takes ownership of it.
+    ///
+    /// AFTER the walk, and that order is the whole of why this is not the frame-setting ADR-0030
+    /// records as not working. Set BEFORE it, the height is taken straight back by the next tile,
+    /// because that tile sums row rects still standing at the placeholder — measured, the same
+    /// 8 662pt gap as setting nothing at all. Set after it, the tile sums rects that agree with the
+    /// document and arrives at this very number, so the set is the document's own height brought
+    /// forward rather than a value AppKit will disagree with.
+    private func adopt(_ height: CGFloat, on table: FeedTableView) {
+        table.setFrameSize(NSSize(width: table.frame.width, height: height))
     }
 
     /// Whether the held document is one there is still anything to give up: a pass that has landed
