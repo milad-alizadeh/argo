@@ -211,11 +211,9 @@ import SwiftUI
                 settleAfterResize()
             }
         }
-        // The gutter under the last row is part of the content — grown under a composer so the
-        // newest line genuinely ends clear of the vessel, and every follow lands below it.
-        scroller?.contentInsets.bottom = fresh.isUnderComposer
-            ? ArgoComposerVessel.feedClearance
-            : ArgoSpacing.section
+        // The gutter under the last row is part of the content — grown by whatever floats at the
+        // foot, so the newest line genuinely ends clear of it and every follow lands below it.
+        scroller?.contentInsets.bottom = fresh.bottomEdge.clearance
         // The gutter above it grows by whatever the canopy covers. An inset and not a frame: the
         // rows keep the deck's full height to scroll through, and only START below the glass.
         scroller?.contentInsets.top = ArgoSpacing.section + fresh.environment.deckCanopy

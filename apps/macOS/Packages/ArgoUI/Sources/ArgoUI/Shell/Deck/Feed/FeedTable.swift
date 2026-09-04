@@ -21,7 +21,8 @@ struct FeedTable: NSViewRepresentable {
     let selection: FeedRowSelection
     let held: FeedRow.ID?
     let isResizing: Bool
-    let isUnderComposer: Bool
+    /// What floats over the reading's foot — see `FeedBottomEdge`.
+    let bottomEdge: FeedBottomEdge
     let washed: FeedRow.ID?
     @Binding var unfolded: Set<FeedRow.ID>
     /// This reading's deck, from the one view above every switch that would destroy it — see
@@ -47,7 +48,7 @@ struct FeedTable: NSViewRepresentable {
             selection: selection,
             held: held,
             isResizing: isResizing,
-            isUnderComposer: isUnderComposer,
+            bottomEdge: bottomEdge,
             washed: washed,
             unfolded: $unfolded,
             environment: FeedCellEnvironment(context.environment),

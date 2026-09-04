@@ -14,9 +14,9 @@ import SwiftUI
     /// Whether a deck seam is being dragged right now. Mid-drag the table re-measures visible rows
     /// only; the edge off this flag is when the deferred full pass runs.
     var isResizing: Bool
-    /// Whether the composer floats over this reading — it grows the gutter under the last row, so
-    /// the newest line genuinely ends clear of the vessel.
-    var isUnderComposer: Bool
+    /// What floats over this reading's foot — it grows the gutter under the last row, so the
+    /// newest line genuinely ends clear of every float. See `FeedBottomEdge`.
+    var bottomEdge: FeedBottomEdge
     /// The row the user's own words just landed on, while the accent wash stands over it — see
     /// `FeedView.washed`.
     var washed: FeedRow.ID?

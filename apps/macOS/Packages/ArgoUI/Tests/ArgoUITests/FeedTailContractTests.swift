@@ -20,10 +20,11 @@ struct FeedTailContractTests {
         #expect(ArgoFeedRow.tailDiameter > ArgoIconSize.control.rawValue)
     }
 
-    /// It clears the pill entirely rather than sitting beside it — the claim `tailLift` exists for.
+    /// It clears the pill entirely rather than sitting beside it — the claim `tailLift` exists
+    /// for. What it lifts by at each state of the edge is `FeedBottomEdgeTests`'.
     @Test
     func `it floats clear of the plan pill's whole lane`() {
-        #expect(ArgoFeedRow.tailLift > ArgoPlanPill.lift + ArgoPlanPill.laneHeight)
+        #expect(FeedBottomEdge(hasPlanPill: true).tailLift > ArgoPlanPill.footprint)
     }
 
     /// The badge is a mark ON the control and never a second control beside it. A chip as tall as

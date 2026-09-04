@@ -10,7 +10,7 @@ extension FeedView {
     var fade: some View {
         VStack(spacing: ArgoSpacing.flush) {
             Color.black
-            if isUnderComposer {
+            if bottomEdge.hasVessel {
                 LinearGradient(
                     colors: [.black, .clear],
                     startPoint: .top,

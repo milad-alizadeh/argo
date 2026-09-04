@@ -87,7 +87,7 @@ struct FeedShapeHeightTests {
             ),
             held: nil,
             isResizing: false,
-            isUnderComposer: false,
+            bottomEdge: .bare,
             washed: nil,
             unfolded: .constant(row.isUnfolded ? [0] : []),
             environment: FeedCellEnvironment(),

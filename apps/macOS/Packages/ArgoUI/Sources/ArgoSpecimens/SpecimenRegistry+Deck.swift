@@ -74,6 +74,14 @@ extension SpecimenRegistry {
         SpecimenEntry("cursoredPlanPill") {
             PlanSpecimen(plan: PlanFixture.working, isCursored: true)
         },
+        // The state #1225 was reported in: the pill over a composer. What is being judged is the
+        // gap between the two, and that the reading's last row clears the pill's whole lane.
+        SpecimenEntry("planPillOverComposer") {
+            PlanSpecimen(
+                plan: PlanFixture.working,
+                vessel: .composer(ComposerSpecimen.composer),
+            )
+        },
         SpecimenEntry("unstartedPlanPill") {
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         },

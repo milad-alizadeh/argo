@@ -82,14 +82,8 @@ public enum ArgoFeedRow {
     /// advances, so the chrome role's `callout` is a box nothing in the feed stands in (#1026).
     static let machineRung: ArgoTypeScale = ProseRhythm.machineRung
 
-    /// How far the way-back-to-the-newest control floats above the bottom of the feed. Stacked
-    /// above the plan pill's lane, not beside it: side by side, a narrow deck draws the centred
-    /// pill and the trailing capsule on top of each other.
-    public static var tailLift: CGFloat {
-        ArgoPlanPill.lift + ArgoPlanPill.laneHeight + ArgoSpacing.base
-    }
-
-    /// How wide that control is drawn — the pill's own lane; the diameter is the whole hit area.
+    /// How wide the way-back-to-the-newest control is drawn — the pill's own lane; the diameter is
+    /// the whole hit area. How far it floats above the feed's foot is `FeedBottomEdge.tailLift`.
     ///
     /// The icon button that keeps a box of its own rather than taking `ArgoControlBox.icon`
     /// (#1243), and the derivation above is the reason: this number answers to the OTHER float over
