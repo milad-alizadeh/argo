@@ -292,6 +292,15 @@
   /* The pull request on line 3 is a GLYPH and a colour. No number: the title above it already
      opens with the Ticket number, and a second number on the row is a second ticket. */
   .prmark { display: inline-flex; align-items: center; flex: none; }
+  /* An address on line 3: its mark, then its number. The mark IS the label — `1269` beside
+     `1312` needs the ring and the fork to tell a ticket from a pull request, and neither needs
+     a word. */
+  .addr {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    font: 11px var(--mono); color: var(--text-3);
+  }
+  .addr + .addr { margin-left: var(--s-base); }
+  .addr svg { stroke: currentColor; }
 
   /* D's trailing gutter: one fixed column, one fact, ranked. */
   .gutter { width: 46px; flex: none; display: flex; flex-direction: column;
@@ -412,6 +421,9 @@ const SVG = {
   /* delegation: a stem that forks. Not the branch glyph — that one is git's on this row. */
   agents: `<path d="M4 13.2V6.4a2 2 0 0 1 2-2h6"/><circle cx="4" cy="14.4" r="1.4"/>
            <path d="M12.6 4.4 10.6 2.4M12.6 4.4l-2 2"/><path d="M7.6 13.2a2 2 0 0 1 2-2h3"/>`,
+  /* the code host's issue mark. A RING and not a fork: the ticket and the pull request sit side
+     by side on line 3, so the two marks have to differ in shape and not only in colour. */
+  ticket: `<circle cx="8" cy="8" r="5.6"/><circle cx="8" cy="8" r="1.5"/>`,
   /* the code host's pull-request mark */
   pr: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
        <circle cx="11.8" cy="12.2" r="1.7"/><path d="M11.8 10.5V6.6a2 2 0 0 0-2-2H7.2"/>
@@ -438,62 +450,60 @@ const glyph = (d, cls = 'g') => `<svg class="${cls}" viewBox="0 0 16 16" fill="n
    pr:     { n, state } or null. state ∈ open | merged | closed | draft, the host's own words.
    ready:  what the Session CLAIMED over the companion channel, or null. CONVENTION tier. */
 const sessions = [
-  /* THE TITLES ARE THE REAL SHAPE. A Session titled from its Ticket leads with the number:
-     `#1269 — The rail reads …`, exactly as the app draws it. Two consequences the earlier
-     fixtures hid, and both change the judgement:
+  /* THE TICKET NUMBER IS OFF THE TITLE, and on line 3 beside the pull request.
 
-       1. Titles are LONG. Every variant that spends line 1's width is far more expensive than
-          a short invented title made it look.
-       2. A pull request drawn as `#1312` puts a SECOND hash number on a row whose title
-          already opens with one. `#1269 — … #1312` reads as one run against two tickets.
-          The PR is addressed as `PR 1312` here for that reason — see the .md.
+     The app draws it in the title today — `#1269 — The rail reads …` — and that is what put two
+     hash numbers on one row the moment a pull request arrived beside it. Moving the number to
+     line 3 fixes the collision at its cause rather than by renaming one of the two: the ticket
+     and the pull request are both ADDRESSES, they belong together, and each carries its own
+     mark so the shapes tell them apart before the colours do.
 
-     The meta slot is empty on most rows, and that is the projection's own rule, not a
-     shortcut: `toldApart` gives the Ticket only where the title does NOT already name it
-     (`IssueReading.names(number:in:)`, #1072). */
-  { id:'s1', title:'#1269 — The rail reads the Subagents’ own records', state:'running', access:'managed',
+     The title then carries the sentence alone, which is the widest and most readable it has
+     been in any variant here. A run with no Ticket — a slash command (#745), an external
+     session — simply draws no ticket mark. */
+  { id:'s1', title:'The rail reads the Subagents’ own records', ticket:1269, state:'running', access:'managed',
     act:'Ran Edit FeedAgentReader.swift', clock:'4m 12s',
     plan:{done:3,total:7}, agents:3, spent:1, pr:{n:1312,state:'open'}, ready:null },
 
   /* Q5 — the ceiling. Twelve marks do not fit on a 320pt row in ANY variant. */
-  { id:'s2', title:'#1204 — Sweep every stop reason in the corpus', state:'running', access:'managed',
+  { id:'s2', title:'Sweep every stop reason in the corpus', ticket:1204, state:'running', access:'managed',
     act:'Ran Read 41 transcripts', clock:'22m 07s',
     plan:{done:5,total:12}, agents:12, spent:4, pr:null, ready:null },
 
   /* Q4a — delegated NOTHING. The honest mark here is no mark at all. */
-  { id:'s3', title:'#1289 — Fix the worktree naming guard', state:'running', access:'managed',
+  { id:'s3', title:'Fix the worktree naming guard', ticket:1289, state:'running', access:'managed',
     act:'Ran scripts/swift-boundaries.sh', clock:'1m 30s',
     plan:{done:2,total:3}, agents:0, spent:0, pr:{n:1291,state:'merged'}, ready:null },
 
   /* Q4b — delegated five, and all five are home. Different fact from the row above. */
-  { id:'s4', title:'#375 — Graphite and Ion Blue across the shell', state:'idle', access:'managed',
+  { id:'s4', title:'Graphite and Ion Blue across the shell', ticket:375, state:'idle', access:'managed',
     act:null, clock:'18m',
     plan:null, agents:0, spent:5, pr:{n:1301,state:'closed'}, ready:null },
 
   /* THE SHIP CASE — the Session says it is done and there is no pull request yet. The one
      title shape that is NOT a ticket: a run opened by a slash command (#745). */
-  { id:'s5', title:'/implement 1288', state:'idle', access:'managed',
+  { id:'s5', title:'/implement 1288', ticket:null, state:'idle', access:'managed',
     act:null, clock:'2m',
     plan:{done:6,total:6}, agents:0, spent:2, pr:null,
     ready:{ why:'8 files · 2 commits · quality green' } },
 
   /* Q6 — the DERIVED, cannot-tell count, on an external Session Argo owns no terminal of. */
-  { id:'s6', title:'codex — refactor the relay', state:'unknown', access:'external',
+  { id:'s6', title:'codex — refactor the relay', ticket:null, state:'unknown', access:'external',
     act:null, told:'external', clock:'6m ago',
     plan:null, agents:null, spent:0, pr:{n:1305,state:'draft'}, ready:null },
 
   /* An orphaned run: ghosted, and its pull request outlives the process that opened it. */
-  { id:'s7', title:'#1276 — The checkout mark’s previews pass the worktree', state:'idle', access:'orphaned',
+  { id:'s7', title:'The checkout mark’s previews pass the worktree', ticket:1276, state:'idle', access:'orphaned',
     act:null, clock:'3d',
     plan:{done:4,total:9}, agents:0, spent:3, pr:{n:1279,state:'open'}, ready:null },
 
-  { id:'s8', title:'#1282 — Screenshots go in the ticket body and the PR body', state:'attn', access:'managed',
+  { id:'s8', title:'Screenshots go in the ticket body and the PR body', ticket:1282, state:'attn', access:'managed',
     word:'Needs input', act:'Ran gh auth status', clock:'40s',
     plan:{done:1,total:4}, agents:1, spent:0, pr:{n:1286,state:'open'}, ready:null },
 
   /* The edge that decides where the ship claim may draw: the Session claims ready AND a pull
      request is already open. The claim is stale; the pull request outranks it. */
-  { id:'s9', title:'#1232 — The branch control goes; Refresh checkout moves', state:'idle', access:'managed',
+  { id:'s9', title:'The branch control goes; Refresh checkout moves', ticket:1232, state:'idle', access:'managed',
     act:null, clock:'1h',
     plan:{done:8,total:8}, agents:0, spent:1, pr:{n:1285,state:'open'}, reviewed:true,
     ready:{ why:'12 files · 3 commits' } },
@@ -779,7 +789,7 @@ const roster = {
           ${clockOf(s)}
           ${planBar(s)}
           <span class="grow"></span>
-          ${s.fold ? foldPRs(s) : prMark(s)}
+          ${s.fold ? foldPRs(s) : addresses(s)}
         </span>
       </span>
     </div>`,
@@ -806,7 +816,7 @@ const roster = {
           ${clockOf(s)}
           ${planSolid(s)}
           <span class="grow"></span>
-          ${s.fold ? foldPRs(s) : prMark(s)}
+          ${s.fold ? foldPRs(s) : addresses(s)}
         </span>
       </span>
     </div>`,
@@ -833,7 +843,7 @@ const roster = {
           ${clockOf(s)}
           ${s.plan ? `<span class="planfig">${s.plan.done}/${s.plan.total}</span>` : ''}
           <span class="grow"></span>
-          ${s.fold ? foldPRs(s) : prMark(s)}
+          ${s.fold ? foldPRs(s) : addresses(s)}
         </span>
       </span>
     </div>
@@ -948,6 +958,19 @@ function prMark(s) {
   if (!s.pr) return '';
   const mark = s.pr.state === 'merged' ? SVG.merged : SVG.pr;
   return `<span class="prmark pr ${s.pr.state}" title="Pull request ${s.pr.n} — ${s.pr.state}">${glyph(mark)}</span>`;
+}
+
+/* The two addresses this run answers to, side by side on line 3. The ticket is drawn in the
+   quiet ink and the pull request in its state's, which is the hierarchy that is actually true:
+   the ticket is an address and nothing more, and the pull request is an address WITH a state. */
+function addresses(s) {
+  const t = s.ticket
+    ? `<span class="addr" title="Ticket ${s.ticket}">${glyph(SVG.ticket)}${s.ticket}</span>`
+    : '';
+  return t + (s.pr
+    ? `<span class="addr pr ${s.pr.state}" title="Pull request ${s.pr.n} — ${s.pr.state}">${
+        glyph(s.pr.state === 'merged' ? SVG.merged : SVG.pr)}${s.pr.n}</span>`
+    : '');
 }
 
 /* The Subagents, as the smaller dots under the state dot. Same column, half the size: what runs
@@ -1133,12 +1156,15 @@ function render() {
   document.getElementById('deck-title').textContent = s.title;
   /* The deck header is where the PR is named and where shipping happens. The roster has one
      click and it selects a Session; a control on a row is a second target to aim at. */
+  /* The header names the run the same way the row does, or the two surfaces disagree about a
+     fact they read off one link (#1268). Title is the sentence; the two addresses ride beside
+     it with their own marks. */
   document.getElementById('deck-pr').innerHTML = s.fold
     ? ''
     : shipsNow(s)
-      ? `<span class="flex g8"><span class="shipwhy">${s.ready.why}</span>
+      ? `<span class="flex g8">${addresses(s)}<span class="shipwhy">${s.ready.why}</span>
          <button class="ship" onclick="ship('${s.id}')">${glyph(SVG.ship)}Create PR</button></span>`
-      : prBadge(s, {fill:true});
+      : `<span class="flex g8">${addresses(s)}</span>`;
 
   /* The rail, so the roster's figure can be read against the one the rail draws for it. */
   const running = s.agents ?? 0;

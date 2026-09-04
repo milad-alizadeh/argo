@@ -64,17 +64,36 @@ scoped and replaced whole. One segment per item, filled to what is done.
 The row then reads top to bottom as three questions a person asks in that order:
 
 ```
-line 1   which run is this      — the title, which opens with its Ticket number
+line 1   which run is this      — the title, as a sentence and nothing else
 line 2   what is it doing       — the newest call, in the feed's own words
-line 3   how is it going        — how long · how far · what came out
+line 3   how is it going        — how long · how far · which ticket · which pull request
 ```
 
 **The Subagents are not on line 3.** What runs *under* a Session is drawn under its state dot,
 in the leading column, as smaller dots. That column belongs to the machinery, and nothing else
 on the row claims it.
 
-**The pull request is a glyph and a colour, never a number.** The title above already opens with
-a Ticket number.
+**The Ticket number comes off the title and goes on line 3, beside the pull request.** This is
+the fix for the two-hash problem, at its cause. Today the title reads `#1269 — The rail reads …`,
+so the moment a pull request lands beside it the row carries two hash numbers meaning different
+things. Renaming one of them was a patch. The real answer is that **a Ticket and a pull request
+are both addresses**, they belong in the same place, and each carries its own mark:
+
+```
+◎ 1269      ⑂ 1312
+```
+
+A ring for the Ticket, a fork for the pull request — the shapes tell them apart before the
+colours do. The Ticket takes the quiet ink and the pull request its state's, which is the
+hierarchy that is actually true: **a Ticket is an address, a pull request is an address with a
+state.**
+
+The title then carries the sentence alone, and it is the widest and most readable it has been in
+any variant here. A run with no Ticket — a slash command (#745), an external session — draws no
+Ticket mark.
+
+**The deck header does the same thing**, or the two surfaces disagree about a fact they read off
+one link (#1268).
 
 Three treatments of the same line:
 
@@ -211,14 +230,17 @@ Rendered and looked at, all four:
 
 ## Two numbers, one row
 
-**A pull request must never be addressed `#1312` on this roster.** The title already opens with
-the Ticket number, so `#1269 — The rail reads …` above `#1312 open` reads as one run against two
-tickets. Tickets and pull requests live in different spaces and the row has to say which one it
-is addressing.
+**A pull request must never be addressed `#1312` beside a title that opens `#1269 — …`.** It
+reads as one run against two tickets. Tickets and pull requests live in different spaces and the
+row has to say which one it is addressing.
 
-The prototype draws it `PR 1312`, and drops the word where a glyph is already carrying it. This
-is the one finding here that is not a preference: it is a misreading, and it appears on every
-variant that draws a PR number at all.
+A to F patch this by renaming the pull request `PR 1312`. **G to I fix it at the cause**: the
+Ticket number comes off the title, and both addresses sit together on line 3 with their own
+marks. That is the recommendation.
+
+It also retires the em dash in `IssueReading.words` — `#476 — Anchor the feed …`. Once the
+number is not in the title, there is nothing for the separator to join, and the open ticket
+asking for a colon instead has nothing left to fix.
 
 ## The open risk, all six variants
 
