@@ -28,6 +28,14 @@ public enum AtlasMapError: Error, Equatable {
     /// caller can build such a tree in memory, and writing it would re-parent the subtree.
     case misplacedNode(String)
 
+    /// A Coupling in the file pointing at a position the Map has no file at, which is a file whose
+    /// two halves disagree about how many files were measured (#1149). Carries the position.
+    case couplingAtNoPlot(Int)
+
+    /// A Coupling naming a path the Map holds no Plot at. A write-side failure, like
+    /// `misplacedNode`: a caller can build such a tie, and it has no position to be written at.
+    case couplingOutsideMap(String)
+
     /// The Map in hand cannot be written out. JSON has no literal for a measure that is not a
     /// finite number, so a generator that divided by zero is caught here rather than at the read.
     case unwritable(String)

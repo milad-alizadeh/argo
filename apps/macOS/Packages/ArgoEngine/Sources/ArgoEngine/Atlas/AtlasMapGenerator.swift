@@ -21,8 +21,9 @@ actor AtlasMapGenerator {
 
     /// The whole repository, measured: four `git` invocations and one read per file. The history is
     /// asked for ONCE rather than once per path, because a repository of a few thousand files would
-    /// otherwise spawn a few thousand subprocesses on one gesture — this repository's 2,643 files
-    /// measure in 2.5 seconds as it stands.
+    /// otherwise spawn a few thousand subprocesses on one gesture — this repository's 2,705 files
+    /// and 18,402 couplings measure in about 3 seconds as it stands, over four runs of one machine
+    /// that was also building.
     func measure(at candidateURL: URL) -> AtlasMap {
         // A folder git will not name a root for is measured as itself and comes out empty. It
         // cannot be a registered Project — registration resolves to a repository root — so this is
@@ -33,19 +34,31 @@ actor AtlasMapGenerator {
             readingLog: git(AtlasHistory.logArguments, repositoryURL) ?? "",
         )
         let measuredAt = now()
-        let files = paths(at: repositoryURL).map { path in
+        let tracked = paths(at: repositoryURL)
+        let files = tracked.map { path in
             AtlasMeasuredFile(
                 path: path,
                 measures: AtlasFileMeasures.measured(at: repositoryURL.appending(path: path))
                     .merging(committed(path, in: history, at: measuredAt)) { own, _ in own },
             )
         }
+        let name = repositoryURL.lastPathComponent
+        let root = AtlasNesting.plate(named: name, holding: files)
+        // Counted over the paths that REACHED the map rather than over everything git tracks. A
+        // path the nesting settled as a folder gets no Plot, and a Coupling naming one cannot be
+        // written at all — so the map would be lost over a tie.
+        let plotted = Set(root.plots.map(\.path))
         return AtlasMap(
             measuredAt: measuredAt,
             // Absent for a repository with no commits, which still gets a map: git refuses to name
             // a HEAD that no commit is under.
             commit: gitValue(git, ["rev-parse", "HEAD"], at: repositoryURL),
-            root: AtlasNesting.plate(named: repositoryURL.lastPathComponent, holding: files),
+            root: root,
+            couplings: AtlasCoChange.couplings(
+                over: history.commits,
+                among: tracked.filter { plotted.contains(name + "/" + $0) },
+                under: name,
+            ),
         )
     }
 

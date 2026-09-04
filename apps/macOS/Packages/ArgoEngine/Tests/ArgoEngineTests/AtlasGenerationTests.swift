@@ -106,6 +106,54 @@ struct AtlasGenerationTests {
         #expect(map.plots.count == 9)
     }
 
+    /// The co-change counting, on a real history rather than on one written in a test: the
+    /// thresholds are put by `AtlasCoChangeTests`, and what is claimed here is that the map a
+    /// repository produces states ties between the files that repository committed together.
+    @Test
+    func `files committed together are coupled, as often as they shared a commit`() async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+
+        let map = try await atlasGenerator().measure(at: fixture.measuredRepository())
+
+        // `README.md` and `main.swift` are the two files of the first commit that changed again in
+        // the second, and neither has changed without the other: every commit either touched is a
+        // commit both were in.
+        #expect(map.strength(
+            between: "measured/README.md", and: "measured/src/app/main.swift",
+        ) == 1)
+        // `leaf.txt` shares the first commit with `README.md` and has never changed since, so one
+        // of the two commits `README.md` was in.
+        #expect(map.strength(
+            between: "measured/README.md",
+            and: "measured/notes/deep/one/two/three/leaf.txt",
+        ) == 0.5)
+    }
+
+    @Test
+    func `a file the working tree no longer holds is nobody's company`() async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+
+        let map = try await atlasGenerator().measure(at: fixture.measuredRepository())
+
+        // `gone.txt` was committed and then deleted. It is in the history and not on the map, and
+        // a tie to it could not be drawn beside anything.
+        #expect(!map.couplings.contains { $0.first.hasSuffix("gone.txt") })
+        #expect(!map.couplings.contains { $0.second.hasSuffix("gone.txt") })
+    }
+
+    @Test
+    func `a repository of one commit produces a map and no couplings`() async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+
+        let map = try await atlasGenerator().measure(at: fixture.repositoryWithOneCommit())
+
+        #expect(map.plots.count == 2)
+        #expect(map.couplings.isEmpty)
+    }
+
     @Test
     func `a repository with no commits still produces a map`() async throws {
         let fixture = try AtlasRepositoryFixture()

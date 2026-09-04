@@ -36,10 +36,12 @@ public extension AtlasMap {
         // child off. `inside: ""` is what an error at the root reads as.
         let path = try AtlasMap.path(of: wire.root.name, inside: "")
         let children = try AtlasMap.nodes(wire.root.children, inside: path)
-        self.init(
+        let root = AtlasPlate(path: path, children: children)
+        try self.init(
             measuredAt: wire.measuredAt,
             commit: wire.commit,
-            root: AtlasPlate(path: path, children: children),
+            root: root,
+            couplings: AtlasMap.couplings(wire.couplings ?? [], joining: root.plots),
         )
     }
 
@@ -59,6 +61,32 @@ public extension AtlasMap {
 }
 
 private extension AtlasMap {
+    /// The Couplings a file states, read back against the Plots it counted them over. A position
+    /// the Map has no Plot at is refused rather than dropped: it means the two halves of the file
+    /// disagree about which repository was measured, and a coupling read off by one would draw a
+    /// tie between two files that never changed together.
+    static func couplings(
+        _ wire: [AtlasCouplingWire],
+        joining plots: [AtlasPlot],
+    ) throws(AtlasMapError)
+        -> [AtlasCoupling] {
+        var built: [AtlasCoupling] = []
+        for coupling in wire {
+            try built.append(AtlasCoupling(
+                first: path(at: coupling.first, among: plots),
+                second: path(at: coupling.second, among: plots),
+                strength: coupling.strength,
+            ))
+        }
+        return built
+    }
+
+    /// The Plot one end of a Coupling names.
+    static func path(at position: Int, among plots: [AtlasPlot]) throws(AtlasMapError) -> String {
+        guard plots.indices.contains(position) else { throw .couplingAtNoPlot(position) }
+        return plots[position].path
+    }
+
     /// Where a node sits, given what it is called and where its Plate sits.
     static func path(of name: String, inside parent: String) throws(AtlasMapError) -> String {
         guard !name.isEmpty, !name.contains("/") else {
@@ -102,15 +130,49 @@ private extension AtlasMap {
     /// alone would re-parent the whole subtree under it on the next read, silently.
     func wire() throws(AtlasMapError) -> AtlasMapWire {
         guard !root.path.contains("/") else { throw .misplacedNode(root.path) }
+        var position: [String: Int] = [:]
+        for (index, plot) in root.plots.enumerated() {
+            position[plot.path] = index
+        }
         return try AtlasMapWire(
-            version: AtlasMap.version,
             measuredAt: measuredAt,
             commit: commit,
             root: AtlasPlateWire(
                 name: root.path,
                 children: AtlasMap.wire(root.children, inside: root.path),
             ),
+            couplings: AtlasMap.wire(couplings, at: position),
         )
+    }
+
+    /// The Couplings as the file spells them: two positions in the Map's own Plot order. A
+    /// Coupling naming a path the Map holds no Plot at is refused rather than dropped, because it
+    /// has no position to be written at and a file that quietly lost ties is one nothing can
+    /// audit.
+    static func wire(
+        _ couplings: [AtlasCoupling],
+        at position: [String: Int],
+    ) throws(AtlasMapError)
+        -> [AtlasCouplingWire] {
+        var built: [AtlasCouplingWire] = []
+        for coupling in couplings {
+            try built.append(AtlasCouplingWire(
+                first: place(of: coupling.first, in: position),
+                second: place(of: coupling.second, in: position),
+                strength: coupling.strength,
+            ))
+        }
+        return built
+    }
+
+    /// Where one end of a Coupling sits in the Map's Plot order.
+    static func place(
+        of path: String,
+        in position: [String: Int],
+    ) throws(AtlasMapError)
+        -> Int {
+        guard let found = position[path] else { throw .couplingOutsideMap(path) }
+        return found
     }
 
     static func wire(

@@ -9,8 +9,8 @@ authored, and the Session record is not an input.
 - **Map** — one repository, measured. Argo-owned, per-machine app data under `userData`, **never
   committed and never watched**: generated whole on first Atlas open, read on every open after,
   and regenerated only when the reader asks. It holds `version`, `measuredAt`, the `commit` it
-  measured (absent for a repository with no history) and one root Plate. Scoped to the Project
-  the window is on (ADR-0015); a monorepo is one Project and gets one Map.
+  measured (absent for a repository with no history), one root Plate and its Couplings. Scoped to
+  the Project the window is on (ADR-0015); a monorepo is one Project and gets one Map.
 
 - **Plot** — one file of the repository as the Atlas reads it: a path from the Map's root down,
   and its Measures. The path is the join key — search, picking and opening in an editor all key
@@ -26,9 +26,19 @@ authored, and the Session record is not an input.
   zero — a PNG has no lines to count rather than zero of them — though a sum over a subtree
   counts an absent Measure as nothing.
 
-Not yet named, because nothing has built them: the inferred grouping that re-tiles the Map by
-subject rather than by folder, and the co-change relation between two Plots. Both are in #1140
-and each takes its name in the ticket that builds it.
+- **Coupling** — two Plots that keep changing in the same commit, and how tightly: **Jaccard**,
+  the commits that touched both over the commits that touched either. Counted from git's history
+  alone, which is the one coupling signal every repository has and the only one that sees a
+  dependency no import declares. A pair is one Coupling and reads the same from either end. Two
+  thresholds decide what is stated and both are the repository's own: commits larger than its
+  **90th percentile** are not counted, because one sweeping commit would otherwise couple
+  everything it touched to everything else it touched; and each Plot keeps its **twenty**
+  strongest, so what is written follows the file count rather than how busy the history is.
+  A repository of one commit states none — its files arrived together, which is not the same
+  fact as changing together.
+
+Not yet named, because nothing has built it: the inferred grouping that re-tiles the Map by
+subject rather than by folder. It is in #1140 and takes its name in the ticket that builds it.
 
 **Drawn forms are not domain entities.** Volume, band, legend, city and treemap are appearance,
 settled by #650 and `docs/designs/cockpit-atlas.html`. A Plot is the file; the volume is one way
