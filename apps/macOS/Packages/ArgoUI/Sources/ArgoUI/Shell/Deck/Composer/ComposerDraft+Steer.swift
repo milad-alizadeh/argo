@@ -55,8 +55,9 @@ extension ComposerDraft {
         steeringTurn = nil
         // Before anything else moves: taking the follow-up out of the queue is itself a movement
         // the release watches, and the status it would be read against is still the one this
-        // steer's own interrupt produced.
-        claimSteeredTurn()
+        // steer's own interrupt produced. The claim is the release's own — see
+        // `ComposerDraft+Release.swift`, where a follow-up put at the boundary makes the same one.
+        claimPutTurn()
         // The chip's own `×` act: one follow-up leaves the queue by id, and a delivered steer
         // takes it out exactly as a cancel would have.
         cancel(id)
@@ -96,40 +97,5 @@ extension ComposerDraft {
     /// reader who pressed no Stop, about a Session running exactly what they just steered it onto.
     mutating func claimSteerInterrupt() {
         steerInterrupts += 1
-    }
-
-    // Whether a STEER has just put a Turn to the Session and the record has yet to show it
-    // running (#1238).
-    //
-    // It answers the one place the status is not merely stale but actively WRONG. `hasTurnEnded`
-    // is DERIVED off the record; a steer's own interrupt ended the Turn, so it reads `true`, and
-    // it goes on reading `true` for as long as the record takes to catch up with the Turn the
-    // steer has just started. A release asked in that window sees a Session at rest with a queue
-    // waiting on it, and empties the whole queue into the Turn the reader just redirected —
-    // which is the very thing steering one follow-up was meant to avoid.
-    //
-    // So the claim stands until the record shows a Turn RUNNING again, and the boundary after
-    // that one is what releases what is left.
-
-    /// Whether a steered Turn is still waiting to be seen by the record — see
-    /// `steerAwaitingRecord`. What `ComposerRelease` reads, so no release is made on a status that
-    /// has not caught up with Argo's own act.
-    var isAwaitingSteeredTurn: Bool {
-        steerAwaitingRecord
-    }
-
-    /// Say that a steer has put a Turn, so nothing is released until the record has seen it.
-    mutating func claimSteeredTurn() {
-        steerAwaitingRecord = true
-    }
-
-    /// The record shows a Turn running, so the claim above is spent: the steered Turn is one the
-    /// status can now be read for, and its own boundary is what releases what is still queued.
-    ///
-    /// Spent on the Turn STARTING and not on the boundary, because the boundary is exactly what
-    /// the stale reading was already claiming — waiting for one would spend the claim on the
-    /// reading it exists to distrust.
-    mutating func turnStarted() {
-        steerAwaitingRecord = false
     }
 }

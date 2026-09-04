@@ -82,11 +82,12 @@ package struct ComposerDraft: Equatable {
     /// Not `private` like its neighbour, for the reason `heldMode` is not: the rules that move it
     /// live in `ComposerDraft+Steer.swift`, and Swift's `private` is file-scoped.
     var steerInterrupts = 0
-    /// Whether a STEER has put a Turn to the Session and the record has yet to show it running
-    /// (#1238) — the one place the status is not merely stale but actively WRONG. Read through
-    /// `isAwaitingSteeredTurn`; the rules that move it live in `ComposerDraft+Steer.swift`, for
-    /// the reason `steerInterrupts` above is not `private` either.
-    var steerAwaitingRecord = false
+    /// Whether a follow-up this composer PUT has started a Turn the record has yet to show
+    /// running (#1238, #1337) — the one place the status is not merely stale but actively WRONG.
+    /// Both ways a follow-up goes leave it: a steer, and the boundary release. Read through
+    /// `isAwaitingPutTurn`; the rules that move it live in `ComposerDraft+Release.swift`, for the
+    /// reason `steerInterrupts` above is not `private` either.
+    var putAwaitingRecord = false
     package init(
         text: String = "",
         refusal: String? = nil,
@@ -165,28 +166,38 @@ package struct ComposerDraft: Equatable {
         say(nil)
     }
 
-    /// Deliver what was waiting, oldest first, when the Turn it was waiting on ends. A refusal
-    /// stops the run where it happened — the turns it never reached stay queued.
+    /// Put the oldest waiting follow-up, when the Turn it was waiting on ends.
+    ///
+    /// ONE, and never the rest behind it. A follow-up that goes STARTS a Turn the record does not
+    /// have yet: everything the release reads still says the Session is at rest, so a loop putting
+    /// the whole queue here writes every one of them at a CLI already busy with the first — which
+    /// is one follow-up landing, the rest going nowhere, and their chips gone either way (#1337).
+    /// So the put claims that Turn (`claimPutTurn()`), the release declines while the claim
+    /// stands, and the boundary after it carries the next one. The queue empties at one follow-up
+    /// per Turn, which is the order and the pace a reader typing them by hand would have got.
+    ///
+    /// A refusal stops it where it happened — the turns it never reached stay queued.
     ///
     /// `package` for the reason `send(via:)` is: a specimen builds the refused state by RUNNING a
     /// refused release rather than by setting the fields behind one, so the render cannot come to
     /// draw a state the app never produces.
     package mutating func flush(via deliver: ComposerSend) {
-        guard !queued.isEmpty else { return }
-        while let next = queued.first {
-            if let line = Self.refusal(
-                putting: next.text,
-                attaching: next.attachments,
-                via: deliver,
-            ) {
-                refused(by: line)
-                // After, never before: standing under a refusal is what takes the last one down.
-                refusedTurn = next.id
-                return
-            }
-            queued.removeFirst()
-            refused(by: nil)
+        guard let next = queued.first else { return }
+        if let line = Self.refusal(
+            putting: next.text,
+            attaching: next.attachments,
+            via: deliver,
+        ) {
+            refused(by: line)
+            // After, never before: standing under a refusal is what takes the last one down.
+            refusedTurn = next.id
+            return
         }
+        queued.removeFirst()
+        refused(by: nil)
+        // Last: taking the follow-up out of the queue is itself a movement the release watches,
+        // and the claim has to be standing by the time that reading happens.
+        claimPutTurn()
     }
 
     /// What an interrupt takes from the composer: the QUEUE, and nothing else (#541).
@@ -356,6 +367,10 @@ package struct ComposerDraft: Equatable {
 
     /// What the seam's Retry puts back: whatever the standing refusal actually stopped. The QUEUE
     /// first — a refused flush is the one way a refusal comes to stand over an EMPTY field.
+    ///
+    /// Through `flush(via:)` and so under its rule: the one the refusal reached goes, and anything
+    /// behind it waits for the boundary of the Turn it starts (#1337). Retry is the reader asking
+    /// for the release that was refused, not for a different, faster one.
     mutating func retry(via deliver: ComposerSend) {
         guard queued.isEmpty else { return flush(via: deliver) }
         guard isSendable else { return }

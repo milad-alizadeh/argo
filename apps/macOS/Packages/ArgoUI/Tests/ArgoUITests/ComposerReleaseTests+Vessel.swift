@@ -59,7 +59,10 @@ extension ComposerReleaseTests {
     }
 
     /// The vessel's own release chain, replayed over a walk of statuses — the two `onChange`
-    /// modifiers on `SessionComposer.body`, and nothing else.
+    /// modifiers on `SessionComposer.body`, and nothing else. Both EDGES of the first one, through
+    /// `turnRead(_:)` rather than `turnEnded()` alone: a Turn STARTING is what spends the claim a
+    /// put leaves behind (#1337), so a replay that only ever ended Turns would strand every
+    /// release after the first.
     ///
     /// Spelled here rather than driven through SwiftUI because nothing in a test can make SwiftUI
     /// render: what these cases claim is that the CHAIN releases the queue for every path the
@@ -81,7 +84,7 @@ extension ComposerReleaseTests {
             let vessel = composer(log, at: status, refusing: refusal)
             let hasTurnEnded = Self.composer(at: status).hasTurnEnded
             if lastEnded != hasTurnEnded {
-                vessel.turnEnded()
+                vessel.turnRead(hasTurnEnded)
             }
             lastEnded = hasTurnEnded
             let awaiting = ComposerRelease.Awaiting(log.draft)
