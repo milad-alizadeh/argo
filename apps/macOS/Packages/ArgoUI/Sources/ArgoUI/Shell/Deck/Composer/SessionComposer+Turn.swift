@@ -124,6 +124,24 @@ extension SessionComposer {
         }
     }
 
+    /// Arriving at this Session, which is where a line the reader has already read comes down
+    /// (#1183). Paired with `lostTurnArrived(_:)` below and safe in either order: what it reads is
+    /// the Hub's own standing news, which neither pass moves.
+    func arrived() {
+        guard draft.isLostTurnStale(newsStanding: composer.lostTurn != nil) else { return }
+        draft.say(nil)
+    }
+
+    /// News that the CLI never heard a Turn, taken in and spent in one act (#682, #1183).
+    ///
+    /// Neither half is conditional on the other (#1183). The draft decides what to do with the
+    /// WORDS; the Hub is told the news landed either way — news left filed is re-announced by the
+    /// `initial: true` pass every time the composer comes back on screen for that Session.
+    func lostTurnArrived(_ text: String) {
+        draft.turnLost(text, whileRunning: composer.isRunning)
+        intents.lostTurnSeen()
+    }
+
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is
     /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
     func retry() {

@@ -238,15 +238,29 @@ package struct ComposerDraft: Equatable {
     /// goes back into the field directly below the sentence answering it, which is a state the
     /// reader can act on twice — and it holds however the watch comes to be wrong next.
     ///
-    /// `true` when the news has been taken in, which is what spends it: reported twice, a reader
-    /// would put the same Turn back twice.
-    mutating func turnLost(_ text: String, whileRunning isRunning: Bool) -> Bool {
-        guard !isRunning else { return true }
-        guard notice != Self.lost else { return false }
+    /// It answers nothing, and a standing notice is not a guard (#1183): spending the news is the
+    /// caller's act (`SessionComposer.lostTurnArrived(_:)`), and `isSendable` already refuses a
+    /// field in use — which covers a reader mid-sentence AND the field these words just went into.
+    mutating func turnLost(_ text: String, whileRunning isRunning: Bool) {
+        guard !isRunning else { return }
         say(ComposerSeamLine(Self.lost))
-        guard !isSendable else { return true }
+        guard !isSendable else { return }
         self.text = text
-        return true
+    }
+
+    /// Whether the lost-Turn line standing here is one the reader already met, rather than this
+    /// visit's (#1183). The line outlives the deck the way the words do — the draft store is per
+    /// Session, not per visit — so without taking it down on arrival the notice greets them again
+    /// however faithfully the news itself was spent.
+    ///
+    /// News STILL standing on the Hub is this visit's to say. That is what makes the two arrival
+    /// passes order-independent: neither answer depends on whether the other has run.
+    ///
+    /// An ANSWER and not the act, so the arrival can write through its `@Binding` only when there
+    /// is something to write: a binding's setter runs whether or not the value moved, and the
+    /// selection pass is counted to the read (ADR-0028 Rule 3, `PerfBudgets.selectionPassReads`).
+    func isLostTurnStale(newsStanding: Bool) -> Bool {
+        notice == Self.lost && !newsStanding
     }
 
     /// What the seam says about a Turn the CLI never heard. It does not offer a Retry: the words

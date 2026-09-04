@@ -64,6 +64,7 @@ package struct SessionComposer: View {
         }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
             enteredAtMs = WallClock.nowMs()
+            arrived()
         }
         // What was waiting on the Turn goes — `SessionComposer.turnEnded()` owns the order.
         // `initial` is what makes it survive a switch: the composer is only on screen for the
@@ -83,9 +84,8 @@ package struct SessionComposer: View {
         // the flush above has it: the news lands while the reader may be looking at another
         // Session, and it is still theirs when they come back to this one.
         .onChange(of: composer.lostTurn, initial: true) { _, lost in
-            guard let lost, draft.turnLost(lost, whileRunning: composer.isRunning)
-            else { return }
-            intents.lostTurnSeen()
+            guard let lost else { return }
+            lostTurnArrived(lost)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Composer")
