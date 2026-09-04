@@ -87,10 +87,9 @@ package struct SessionComposer: View {
             guard let lost else { return }
             lostTurnArrived(lost)
         }
-        // A Stop that was written, waited on, and never reported (#1234). Keyed to the COUNT and
-        // not to a flag, which is what makes a second Stop start a second wait — and what cancels
-        // this one the moment a boundary answers, since the count moving is what `.task(id:)`
-        // restarts on.
+        // A Stop that was written, waited on, and never reported (#1234). `.task(id:)` restarts on
+        // the count moving, which is what starts a second Stop's wait and cancels this one the
+        // moment a boundary answers.
         .task(id: draft.unansweredStops) { await watchStop() }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Composer")

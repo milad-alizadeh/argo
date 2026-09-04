@@ -50,10 +50,9 @@ package struct ComposerDraft: Equatable {
     /// How many Stops this composer has landed that no boundary has answered yet (#1189, #1234).
     /// Not part of `isEmpty`: it is a claim about an act in flight, never something a reader typed.
     ///
-    /// A COUNT and not a flag, though only `> 0` is ever asked of it here: it is what the vessel
-    /// keys its wait on (`SessionComposer.watchStop(patience:)`), and two Stops with no boundary
-    /// between them are two acts. A flag already true the second time would not move, so the second
-    /// click would be watched by nobody.
+    /// Counted rather than flagged though only `> 0` is asked of it here: the vessel keys its wait
+    /// on this value moving (`SessionComposer.watchStop(patience:)`), and a flag already true would
+    /// leave a second Stop watched by nobody.
     private(set) var unansweredStops = 0
 
     package init(
@@ -185,23 +184,38 @@ package struct ComposerDraft: Equatable {
     /// waiting happens seconds after the click returned, and a `mutating` method cannot hold a
     /// draft open across it. The vessel does the waiting; this decides what to say about it.
     ///
-    /// It says nothing where a boundary has already answered — the wait is keyed to a value that
-    /// moves, but the vessel and the record race and the record is allowed to win.
+    /// It says nothing where a boundary has already answered: the vessel's wait and the record
+    /// race, and the record wins. A refused Stop is silent here on the same count —
+    /// `stopped(via:)` leaves it untouched when the port throws, so there is nothing outstanding
+    /// for this to speak about and the port's own reason stands alone.
     ///
-    /// A NOTICE and not a refusal: nothing was sent and no unsent words are at risk, which is the
-    /// rule `dropQueue` states. And it does not stand over a refusal, which is the louder and more
-    /// exact answer to the same click — `ComposerSeamNote` already ranks the two, so a refused Stop
-    /// keeps the port's own reason rather than having it replaced by this vaguer one.
+    /// A notice rather than a refusal, which is the rule `dropQueue` states: nothing was sent, and
+    /// no unsent words are at risk.
     mutating func stopDidNotTake() {
         guard unansweredStops > 0 else { return }
-        say(ComposerSeamLine(Self.stopDidNotTake))
+        say(ComposerSeamLine(Self.stopDidNotTakeNotice))
     }
 
     /// What the seam says about it. Two claims, and neither is one Argo cannot stand behind: the
     /// keystroke went and the Session has not come off `running`. Never that the agent is still
     /// working, which is a DERIVED reading Argo does not own, and never that the Stop failed, which
     /// nothing here can see.
-    package static let stopDidNotTake = "Stop did not take. The Session is still running."
+    package static let stopDidNotTakeNotice = "Stop did not take. The Session is still running."
+
+    /// Take back the line the wait put up, now that a boundary has answered the Stop after all
+    /// (#1234).
+    ///
+    /// The line is a claim about what is happening NOW, and a claim like that cannot outlive the
+    /// news that answers it — the wait gives a Stop five seconds, and a slow file watch or an `ESC`
+    /// the CLI took a while to unwind both land later than that. Without this the seam goes on
+    /// saying the Session is running over one that has been idle for minutes, which is the false
+    /// DIRECT the honesty rule exists to stop.
+    ///
+    /// Its OWN line and no other: a drop the same boundary reported is news the reader still needs.
+    mutating func stopTookAfterAll() {
+        guard notice == Self.stopDidNotTakeNotice else { return }
+        say(nil)
+    }
 
     /// Drop what was waiting on the Turn, and say so where anything was.
     ///

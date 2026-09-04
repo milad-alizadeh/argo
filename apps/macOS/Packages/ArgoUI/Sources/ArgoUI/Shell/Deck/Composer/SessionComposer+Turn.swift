@@ -107,6 +107,9 @@ extension SessionComposer {
     /// works next rather than about the Turn that was killed, and the boundary it waited for is
     /// the one the interrupt just made.
     func turnEnded() {
+        // First, so a drop reported below is not the line this takes down (#1234): the boundary
+        // that arrives IS the answer the wait gave up on.
+        draft.stopTookAfterAll()
         if draft.mustDropQueue(afterInterrupt: composer.endedByInterrupt) {
             draft.dropQueue()
         }

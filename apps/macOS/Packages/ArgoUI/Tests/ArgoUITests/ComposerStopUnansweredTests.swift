@@ -8,12 +8,8 @@ import Testing
 ///
 /// Argo writes one `ESC` and that is the whole of what it can do: whether the CLI took it is the
 /// record's to say, and the record is what draws the spinner down. So a Stop that was written and
-/// never reported leaves a lit button over a Session that goes on claiming to work — which is the
-/// state the ticket was filed from, and the one thing the composer must not answer with silence.
-///
-/// It says the weaker, true thing rather than the loud one: Argo asked, and the Session has not
-/// come off `running`. Never that the Turn is still running, which Argo cannot see, and never
-/// that the Stop failed, which it cannot know either.
+/// never reported leaves a lit button over a Session that goes on claiming to work — the one thing
+/// the composer must not answer with silence.
 @MainActor
 @Suite("A Stop the record did not answer")
 struct ComposerStopUnansweredTests {
@@ -36,10 +32,10 @@ struct ComposerStopUnansweredTests {
 
         await composer(log).watchStop(patience: .milliseconds(1))
 
-        #expect(log.draft.notice == ComposerDraft.stopDidNotTake)
+        #expect(log.draft.notice == ComposerDraft.stopDidNotTakeNotice)
         #expect(
             ComposerSeamNote.note(for: log.draft, enteredAtMs: 0)
-                == .notice(ComposerSeamLine(ComposerDraft.stopDidNotTake)),
+                == .notice(ComposerSeamLine(ComposerDraft.stopDidNotTakeNotice)),
         )
     }
 
@@ -71,6 +67,37 @@ struct ComposerStopUnansweredTests {
         #expect(draft.notice == nil)
     }
 
+    /// The line is a claim about what is happening NOW, so it cannot outlive the news that answers
+    /// it. A boundary arriving after the wait gave up — a slow file watch, an `ESC` the CLI took a
+    /// while to unwind — takes it down, or the seam goes on saying the Session is running over one
+    /// that has been idle for minutes.
+    @Test
+    func `a boundary after the line went up takes it back down`() {
+        let log = Log()
+        log.draft.stopped(via: {})
+        log.draft.stopDidNotTake()
+        #expect(log.draft.notice == ComposerDraft.stopDidNotTakeNotice)
+
+        composer(log, isRunning: false).turnEnded()
+
+        #expect(log.draft.notice == nil)
+    }
+
+    /// It takes down its OWN line and no other. A drop the same boundary reported is news the
+    /// reader still needs.
+    @Test
+    func `the retraction leaves another line standing`() {
+        var draft = ComposerDraft()
+        draft.text = "And then open the PR."
+        draft.submit(whileRunning: true) { _, _ in }
+        draft.stopped(via: {})
+        #expect(draft.notice == ComposerDraft.droppedQueue)
+
+        draft.stopTookAfterAll()
+
+        #expect(draft.notice == ComposerDraft.droppedQueue)
+    }
+
     /// Nothing to watch where no Stop was made. The wait is started by a state change rather than
     /// by the click, so it runs on arrival at a Session too — and must find nothing to say.
     @Test
@@ -82,15 +109,19 @@ struct ComposerStopUnansweredTests {
         #expect(log.draft.notice == nil)
     }
 
-    /// A refused Stop is already answered, in the port's own words, and answered LOUDER — a refusal
-    /// outranks a notice on the seam. A second line about the same click would replace the reason
-    /// with a vaguer one.
+    /// A Stop the port would not take is not a Stop in flight, so it is never counted and there is
+    /// nothing here to speak about — the port's own reason stands alone, where a vaguer line about
+    /// the same click would only compete with it.
+    ///
+    /// The count is what the claim rests on: a refused Stop that DID count would have this watch
+    /// talking over the reason a moment later.
     @Test
-    func `a refused Stop is left to say its own reason`() async {
+    func `a refused Stop is never counted, so the port's reason stands alone`() async {
         let log = Log()
         let driver = InMemorySessionDriver()
         driver.refusal = .notDrivable
         log.draft.stopped { try driver.interrupt("session-a") }
+        #expect(log.draft.unansweredStops == 0)
 
         await composer(log).watchStop(patience: .milliseconds(1))
 
@@ -98,9 +129,8 @@ struct ComposerStopUnansweredTests {
         #expect(log.draft.notice == nil)
     }
 
-    /// Every Stop gets its own watch. Counted rather than flagged, because two Stops with no
-    /// boundary between them are two acts — and a flag already true the second time would key the
-    /// vessel's wait to a value that never moved, so the second click would be watched by nobody.
+    /// Every Stop gets its own watch: the vessel keys its wait to this count, so a second Stop with
+    /// no boundary between must move it or nobody watches that click.
     @Test
     func `a second Stop before any boundary is a second thing to watch`() {
         var draft = ComposerDraft()
@@ -113,11 +143,5 @@ struct ComposerStopUnansweredTests {
         // One boundary answers whatever is outstanding: the record reports the act, not the clicks.
         _ = draft.mustDropQueue(afterInterrupt: true)
         #expect(draft.unansweredStops == 0)
-    }
-
-    /// The line the reader is left with, kept where the test that asserts it can see it.
-    @Test
-    func `the seam names the act and claims nothing about the agent`() {
-        #expect(ComposerDraft.stopDidNotTake == "Stop did not take. The Session is still running.")
     }
 }

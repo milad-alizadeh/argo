@@ -1,13 +1,7 @@
 @testable import ArgoEngine
 import Testing
 
-/// The record's own account of a command the CLI answered ITSELF (#1234).
-///
-/// `/model opus` is typed at the prompt like a Turn and the CLI writes a prompt record for it, but
-/// no agent ever answers one: the whole exchange is that record and the stdout beside it. A reader
-/// that opens a Turn on the prompt and closes it on nothing leaves the Session `running` for good,
-/// which is the same fault `.interrupted` was read for in #1189 and the same fix: the record that
-/// ENDS the exchange is read as the boundary it is.
+/// The record's own account of a command the CLI answered ITSELF (#1234) — see `promptEvents`.
 @Suite("Local command reading")
 struct LocalCommandReadingTests {
     @Test
@@ -36,32 +30,25 @@ struct LocalCommandReadingTests {
         #expect(session.signals.lastStop == .endTurn)
     }
 
-    /// A live Session reads `idle` off that boundary — alive, and not working. Which is what takes
-    /// the spinner down and unlocks the composer the ticket found locked.
+    /// A command with a transcript after it closes its own Turn where it printed, rather than
+    /// leaning on the next agent Turn's boundary to close it late.
+    ///
+    /// Read by POSITION and not off the rolled-up signals: `harnessNoise` ends in an agent's own
+    /// `end_turn`, so a Session folded from the whole file reads shut either way — which is a claim
+    /// that holds with the reading this suite is about and without it.
     @Test
-    func `a live Session comes off running once the command has printed`() {
-        let printed = SessionSignals(
-            provenance: .managed,
-            liveness: .live,
-            turnOpen: false,
-            lastStop: .endTurn,
-            pendingAsk: false,
-        )
+    func `a command mid-transcript closes its Turn where it printed`() async throws {
+        let events = try await Fixture.events("harnessNoise")
+        let printed = try #require(events.firstIndex { event in
+            guard case let .toolCallOutcome(outcome) = event else { return false }
+            return outcome.id == "u-stdout"
+        })
+        // `/effort` prints, and the next thing anybody asks for is `/implement`.
+        let asked = try #require(events.firstIndex { event in
+            guard case let .prompt(text, _, _) = event else { return false }
+            return text.hasPrefix("/implement")
+        })
 
-        #expect(SessionStatus.read(printed).status == .idle)
-    }
-
-    /// A command whose stdout is only the FIRST half of the exchange still ends its own Turn, and
-    /// the prompt that follows opens the next one. The two must not be read as one long Turn.
-    @Test
-    func `a command mid-transcript closes only its own Turn`() async throws {
-        var session = HubSession(observation: hubTestObservation(id: "noise", events: []))
-        for event in try await Fixture.events("harnessNoise") {
-            session.apply(event)
-        }
-
-        // `harnessNoise` runs `/effort`, then asks for real work and gets an answer.
-        #expect(!session.signals.turnOpen)
-        #expect(session.signals.lastStop == .endTurn)
+        #expect(events[printed ..< asked].contains(.turnEnded(.endTurn)))
     }
 }
