@@ -60,6 +60,25 @@ package extension FeedProjection {
     /// draws no cards because there is nothing to answer through.
     static let previewAskUnreached = rows(from: askTranscript(previewAskDecision))
 
+    /// The question Argo's gate is holding that the record does not carry (#1190) — the work
+    /// stops mid-column and the row arrives beside the stream rather than out of it.
+    ///
+    /// The transcript is the one above with its LAST event dropped: the `AskUserQuestion` call
+    /// itself, which is the whole specimen. What it settles is that the standing row draws exactly
+    /// as `previewAskOneOf` does — what the row IS does not depend on which side of the join it
+    /// came from.
+    static let previewAskStanding = rows(
+        from: Array(askTranscript(previewAskDecision).dropLast()),
+        asking: FeedAskProjection.Asking(
+            live: FeedAskProjection.Live(
+                sessionID: "session-preview",
+                askID: previewAskID,
+                ask: Ask(questions: previewAskDecision),
+            ),
+            isDriveable: true,
+        ),
+    )
+
     /// The Session those renders are drawn for, blocked on the one-of question.
     internal static let previewAskWaiting = SessionAsk(
         id: previewAskID,
