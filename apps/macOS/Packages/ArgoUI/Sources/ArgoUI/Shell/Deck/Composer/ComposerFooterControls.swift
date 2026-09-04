@@ -38,28 +38,38 @@ struct ModePickerControl {
     var setMode: (SessionMode) -> Void = { _ in }
 }
 
+/// A Model or an Effort rung picked while a Turn was running, waiting on the boundary to be
+/// walked (#1329) — one reading, grouped the way edge 6 asks: `RunFactsControl` takes this ONE
+/// value rather than the two it groups, which is what keeps its own init under the parameter cap.
+struct RunFactsHeld: Equatable {
+    var model: String?
+    var effort: SessionEffort?
+}
+
 /// The `Opus 5 · Medium` fact line and the popover it opens (#558).
 struct RunFactsControl {
     /// What the Session runs at, and which of its two knobs can be reached at all.
     var facts = RunFacts(model: nil, effort: .unknown(cli: nil))
     var acts = RunFactsActs()
-    /// Whether the CLI's prompt is free to take a line typed at it. The port refuses both knobs
-    /// while it is not (`runFactsBusy`), so this is what the popover draws inert rather than a
-    /// click it cannot honour (#1217).
-    var takesTypedLine = true
+    /// What is held for the boundary. It is what the popover draws instead of a silent click — the
+    /// row it names under a held mark, in the way `ModePickerControl.heldMode` is drawn under `≈`.
+    var held = RunFactsHeld()
     /// Whether the popover should already be open the instant the footer appears — a Specimen's own
     /// hook, the way `ComposerMenusOpening` is (#689). Production always leaves it `false`: every
     /// render that opens something does it through the click a reader would.
     var isOpenForRender = false
 
-    /// Why the two knobs are inert, or `nil` where they are not (#1217).
-    ///
-    /// The PORT's own sentence and never a second spelling of it: what the popover says about a
-    /// refusal has to be what the refusal says, or the two drift the first time one is reworded.
-    /// Words rather than a flag, because a control drawn inert without a reason is the silent
-    /// click this ticket is about wearing a lower opacity.
+    /// What the popover's lock line says while something is held, and `nil` where nothing is
+    /// (#1329, formerly #1217's inert sentence). It NAMES what is held rather than the reason a
+    /// click did not land — the two sections stay live, so a reader who picks mid-Turn sees the
+    /// pick taken and held rather than a control that does nothing.
     var lockWords: String? {
-        takesTypedLine ? nil : SessionDriveError.runFactsBusy.detail
+        let names = [
+            held.model.map(ReadableModelName.readable),
+            held.effort?.label,
+        ].compactMap(\.self)
+        guard !names.isEmpty else { return nil }
+        return "\(names.joined(separator: " · ")) held until this Turn ends"
     }
 }
 

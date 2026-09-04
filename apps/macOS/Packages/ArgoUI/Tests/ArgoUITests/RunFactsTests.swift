@@ -136,20 +136,37 @@ struct RunFactsTests {
         #expect(RunFacts.defaultMode == .code)
     }
 
-    /// What a click on a busy prompt does now (#1217). The port refuses both knobs whenever the
-    /// CLI's prompt is not free, so the popover says so in the port's OWN sentence and draws the
-    /// two sections inert — a second spelling here would drift from the refusal it describes.
+    /// What a pick mid-Turn draws now (#1329, formerly #1217). The two sections stay live; the
+    /// lock line NAMES the held knob rather than a reason a click did nothing.
     @Test
-    func `both knobs are locked on a busy prompt, in the port's own words`() {
-        let busy = RunFactsControl(facts: facts(), takesTypedLine: false)
+    func `a held Model is named on the lock line`() {
+        let held = RunFactsControl(facts: facts(), held: RunFactsHeld(model: "claude-sonnet-5"))
 
-        #expect(busy.lockWords == SessionDriveError.runFactsBusy.detail)
+        #expect(held.lockWords == "Sonnet 5 held until this Turn ends")
     }
 
-    /// And a Session at its own prompt locks nothing: the sections are live, and no sentence is
+    @Test
+    func `a held Effort rung is named on the lock line`() {
+        let held = RunFactsControl(facts: facts(), held: RunFactsHeld(effort: .xhigh))
+
+        #expect(held.lockWords == "XHigh held until this Turn ends")
+    }
+
+    /// Both held at once name both, Model first.
+    @Test
+    func `both held knobs are named together`() {
+        let held = RunFactsControl(
+            facts: facts(),
+            held: RunFactsHeld(model: "claude-sonnet-5", effort: .xhigh),
+        )
+
+        #expect(held.lockWords == "Sonnet 5 · XHigh held until this Turn ends")
+    }
+
+    /// And a Session with nothing held locks nothing: the sections are live, and no sentence is
     /// spent saying that they are.
     @Test
-    func `a free prompt locks neither knob`() {
+    func `nothing held locks nothing`() {
         #expect(RunFactsControl(facts: facts()).lockWords == nil)
     }
 }

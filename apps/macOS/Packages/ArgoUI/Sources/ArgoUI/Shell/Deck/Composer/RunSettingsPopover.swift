@@ -27,20 +27,19 @@ struct RunSettingsPopover: View {
 
     var body: some View {
         Form {
-            // First, because it is the CONDITION the sections below are drawn under, and a reason
-            // met after the control it explains is one the reader has already clicked past.
+            // First, because it names what the rows below are about to draw a held mark on, and a
+            // reader who opened the popover to see why a row did not tick needs the word before
+            // the row (#1329).
             if let lockWords = control.lockWords {
                 RunSettingsLock(words: lockWords)
             }
-            // Whole sections and not their rows: a full-strength `Model` heading over ghosted rows
-            // would read as a live section that had lost its contents. The heading is spelled as a
-            // view rather than as `Section("Model")` because a Form draws a string header itself,
-            // and what it draws does not take the section's opacity.
+            // The heading is spelled as a view rather than as `Section("Model")` because a Form
+            // draws a string header itself.
             if facts.chooses.model {
-                Section { models } header: { heading("Model") }.runSettingsInert(isLocked)
+                Section { models } header: { heading("Model") }
             }
             if facts.chooses.effort {
-                Section { efforts } header: { heading("Effort") }.runSettingsInert(isLocked)
+                Section { efforts } header: { heading("Effort") }
             }
             resetRow
         }
@@ -51,10 +50,9 @@ struct RunSettingsPopover: View {
         .scrollContentBackground(.hidden)
     }
 
-    /// One section's heading. The Form styles it exactly as it styles the string it replaces; what
-    /// it is here for is to be a view the section's own ghosting can reach (#1217).
+    /// One section's heading. The Form styles it exactly as it styles the string it replaces.
     private func heading(_ words: String) -> some View {
-        Text(words).runSettingsInert(isLocked)
+        Text(words)
     }
 
     /// Rows with a checkmark, drawn rather than picked (#558).
@@ -74,12 +72,17 @@ struct RunSettingsPopover: View {
     /// named no model ticks NOTHING rather than the first row, for the reason an inexact Mode
     /// reading ticks nothing (#545) — and the mark's SPACE is held either way, so the names do not
     /// shift when the tick moves.
+    ///
+    /// A row Argo is HOLDING draws its name under the same `≈` a held rung draws (#940, #1329):
+    /// the tick still ticks the CLI's own reading, because a held pick is not the Model the
+    /// Session runs at yet — it is a claim about the Turn's end, and the mark says so.
     private func row(_ model: RunFactsModel) -> some View {
         HStack(spacing: ArgoSpacing.snug) {
             ArgoGlyph(ArgoSymbol.chosen, .inline)
                 .foregroundStyle(argo.color.interaction.accent)
                 .opacity(model == facts.tickedModel ? 1 : 0)
-            Text(model.name).argoText(ArgoTypography.body)
+            Text(model.id == control.held.model ? "≈ \(model.name)" : model.name)
+                .argoText(ArgoTypography.body)
             Spacer(minLength: ArgoSpacing.base)
             Text(model.note)
                 .argoText(ArgoTypography.caption)
@@ -115,31 +118,18 @@ struct RunSettingsPopover: View {
                 .argoText(ArgoTypography.caption)
         }
         .buttonStyle(.plain)
-        .disabled(isInert)
-        .foregroundStyle(isInert ? argo.color.text.tertiary : argo.color.text.secondary)
-    }
-
-    /// Whether the reset does nothing when pressed — because there is nothing left to restore, or
-    /// because the port would refuse all three (#1217). It SETS the two locked knobs, so a live
-    /// reset under a locked pair would promise exactly what the port has just refused.
-    ///
-    /// One ink for both reasons and no ghosting on top: this button already draws its own inert
-    /// state, and a second dim over it would say the same thing twice at two strengths.
-    private var isInert: Bool {
-        isAtDefaults || isLocked
+        .disabled(isAtDefaults)
+        .foregroundStyle(isAtDefaults ? argo.color.text.tertiary : argo.color.text.secondary)
     }
 
     /// Whether there is anything left for the reset to do. All THREE, because it sets all three:
     /// inertness read off Model and Effort alone would draw a dead button on a Session sitting on
     /// Auto, whose Mode this act would very much have moved.
+    ///
+    /// Never `isLocked` beside it any more (#1329): a reset mid-Turn is held rather than refused
+    /// (`SessionComposer.resetRunFacts()`), so it does something even where the prompt is busy.
     private var isAtDefaults: Bool {
         facts.isDefault && mode.rung == RunFacts.defaultMode
-    }
-
-    /// Whether the knobs are inert (#1217). Read off the lock's WORDS rather than a flag beside
-    /// them, so what dims the controls and what explains the dimming cannot come apart.
-    private var isLocked: Bool {
-        control.lockWords != nil
     }
 
     /// What this popover says, unwrapped once so the body above reads as the design does.
@@ -147,8 +137,14 @@ struct RunSettingsPopover: View {
         control.facts
     }
 
+    /// The Effort segment to draw selected — the CLI's own reading, or the rung Argo is HOLDING
+    /// while it does (#1329): a hold that drew no segment selected would read as though the pick
+    /// had not been taken at all, and `RunSettingsLock` is what says it is not landed yet.
     private var effortSelection: Binding<SessionEffort?> {
-        Binding(get: { facts.effort.rung }, set: { picked in picked.map(control.acts.setEffort) })
+        Binding(
+            get: { control.held.effort ?? facts.effort.rung },
+            set: { picked in picked.map(control.acts.setEffort) },
+        )
     }
 }
 
@@ -188,4 +184,17 @@ enum ArgoRunSettings {
         effort: .exactly(.high, cli: "high"),
         chooses: RunFactKnobs(effort: true),
     ))
+}
+
+// The state #1329 is about: a Model picked mid-Turn stays live, said under the lock line and the
+// held row's own `≈`, rather than the whole popover going inert (#1217's old picture).
+#Preview("Run settings — a Model held until the Turn ends") {
+    RunSettingsPopover(
+        control: RunFactsControl(
+            facts: bothKnobs("claude-opus-5", .exactly(.medium, cli: "medium")),
+            held: RunFactsHeld(model: "claude-sonnet-5"),
+        ),
+        mode: .exactly(.code, cli: "acceptEdits"),
+    )
+    .argoAppearance()
 }

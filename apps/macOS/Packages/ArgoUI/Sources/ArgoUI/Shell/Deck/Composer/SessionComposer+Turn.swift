@@ -1,5 +1,14 @@
 import ArgoEngine
 
+/// How one knob's ask ended: on the ladder Argo owns (`SessionMode`) and named on the CLI's own
+/// two (Model, Effort) alike — `.held` is what lets `resetRunFacts()` tell a wait for the Turn's
+/// boundary apart from a refusal that stops the rest (#1329).
+enum RunFactStep: Equatable {
+    case landed
+    case held
+    case refused
+}
+
 /// What the composer asks of the Session, and what the seam says when the port refuses (#541,
 /// #545, #687, ADR-0024).
 ///
@@ -131,15 +140,19 @@ extension SessionComposer {
     /// `modeBusy` is the one refusal the composer ANSWERS instead of repeating — but only while a
     /// Turn is running. Held against a Session the composer reads as idle, the rung would be
     /// waiting on a boundary that has already gone by.
-    func walk(to mode: SessionMode) async {
+    @discardableResult
+    func walk(to mode: SessionMode) async -> RunFactStep {
         do {
             try await intents.settings.setMode(mode)
             draft.modeLanded(mode)
+            return .landed
         } catch {
             guard (error as? SessionDriveError) == .modeBusy, composer.isRunning else {
-                return draft.modeRefused(error)
+                draft.modeRefused(error)
+                return .refused
             }
             draft.modeHeld(mode)
+            return .held
         }
     }
 
@@ -201,6 +214,10 @@ extension SessionComposer {
             Task { await honour(held) }
             return
         }
+        if release.walksRunFacts, let held = draft.beginRunFactsWalk() {
+            Task { await honourRunFacts(held) }
+            return
+        }
         guard release.putsNext else { return }
         draft.putNext(via: sending)
     }
@@ -216,23 +233,68 @@ extension SessionComposer {
         release()
     }
 
-    /// Ask the Session for a model, and for an effort rung (#558).
+    /// The held Model, then the held Effort, then the queue (#1329) — `honour(_:)`'s own order,
+    /// read for the CLI's other two knobs. Model ahead of Effort for the reason `resetRunFacts`
+    /// orders them: two separate lines at one prompt, sent a pause apart rather than together.
+    func honourRunFacts(_ held: (model: String?, effort: SessionEffort?)) async {
+        if let model = held.model {
+            await setModel(model)
+        }
+        if let effort = held.effort {
+            await setEffort(effort)
+        }
+        release()
+    }
+
+    /// Ask the Session for a model, and for an effort rung (#558, #1329).
     ///
     /// In a `Task` for the reason `ask(for:)` is: the picker's setter cannot wait, and the line
-    /// reaches the CLI as a paste and a Return a pause apart. A refusal goes to the seam and
-    /// NOTHING is held — unlike a rung, neither is queued for the Turn's boundary: the composer
-    /// keeps showing what the CLI is still on, which is the true reading either way.
+    /// reaches the CLI as a paste and a Return a pause apart.
     func askForModel(_ modelID: String) {
-        Task {
-            do { try await intents.settings.setModel(modelID) } catch { draft.runFactRefused(error)
-            }
-        }
+        Task { await setModel(modelID) }
     }
 
     func askForEffort(_ effort: SessionEffort) {
-        Task {
-            do { try await intents.settings.setEffort(effort) } catch { draft.runFactRefused(error)
+        Task { await setEffort(effort) }
+    }
+
+    /// The Model, and what each of its endings leaves on the seam (#1329) — `walk(to:)`'s own
+    /// shape, read for a knob that is named rather than walked. `runFactsBusy` is answered by a
+    /// hold while a boundary is still coming (`!composer.hasTurnEnded`); reached again from that
+    /// very boundary (`honourRunFacts(_:)`), the same refusal has nothing left to wait on and
+    /// clears the hold instead — the trap #1329 names: the gate is `hasTurnEnded`, not `isRunning`,
+    /// because a Permission or a question refuses the line just as truly (`SessionDriveError`,
+    /// `SessionStatus.takesTypedLine`).
+    @discardableResult
+    func setModel(_ modelID: String) async -> RunFactStep {
+        do {
+            try await intents.settings.setModel(modelID)
+            draft.runFactLanded(model: modelID)
+            return .landed
+        } catch {
+            guard (error as? SessionDriveError) == .runFactsBusy, !composer.hasTurnEnded else {
+                draft.modelRefused(error)
+                return .refused
             }
+            draft.runFactHeld(model: modelID)
+            return .held
+        }
+    }
+
+    /// The Effort rung, on `setModel(_:)`'s own shape.
+    @discardableResult
+    func setEffort(_ effort: SessionEffort) async -> RunFactStep {
+        do {
+            try await intents.settings.setEffort(effort)
+            draft.runFactLanded(effort: effort)
+            return .landed
+        } catch {
+            guard (error as? SessionDriveError) == .runFactsBusy, !composer.hasTurnEnded else {
+                draft.effortRefused(error)
+                return .refused
+            }
+            draft.runFactHeld(effort: effort)
+            return .held
         }
     }
 
@@ -240,17 +302,15 @@ extension SessionComposer {
     /// popover's reset makes, and the reason its sentence NAMES all three.
     ///
     /// Ordered Mode first, and each awaited: they are three separate lines at one prompt, and
-    /// firing them together would interleave three pastes into one input batch. The first refusal
-    /// stops the rest, because a reset that landed on two of three is not the state it named.
+    /// firing them together would interleave three pastes into one input batch. A HELD step does
+    /// not stop the rest (#1329): the reset is one intent, so a Turn in flight holds all three
+    /// together rather than leaving Model and Effort at whatever they were on. Only a genuine
+    /// refusal stops it, because a reset that landed on two of three is not the state it named.
     func resetRunFacts() {
         Task {
-            do {
-                try await intents.settings.setMode(RunFacts.defaultMode)
-                try await intents.settings.setModel(RunFactsModel.default.id)
-                try await intents.settings.setEffort(RunFacts.defaultEffort)
-            } catch {
-                draft.runFactRefused(error)
-            }
+            guard await walk(to: RunFacts.defaultMode) != .refused else { return }
+            guard await setModel(RunFactsModel.default.id) != .refused else { return }
+            await setEffort(RunFacts.defaultEffort)
         }
     }
 
