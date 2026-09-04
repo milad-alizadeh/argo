@@ -1,5 +1,5 @@
-> **This file covers the roster-header study only.** The other prototype here,
-> `ask-vessel-prototype.html`, has its own notes in `ask-vessel-prototype.md`.
+> **This file covers the roster-header study only.** The other prototypes here have their own
+> notes: `ask-vessel-prototype.md`, `feed-loading-row-prototype.md`.
 
 # Roster row + Session header — throwaway prototype
 

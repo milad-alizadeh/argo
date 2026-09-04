@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>One loading row for the feed (#1246)</title>
+<!--
+  THROWAWAY. Three variants of the ONE row that says "Argo is doing a thing and you are waiting
+  for it", switchable via ?variant=A|B|C. Not production code: no tests, no abstractions, one file.
+
+  Every colour, radius, spacing step and type role is transcribed from
+  apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/ and ArgoFeedRow.swift. Nothing is invented.
+  The ion ramp is docs/designs/cockpit-feed-working.md's, stop for stop.
+
+  URL:
+    ?variant=A|B|C   which shape the wait takes. Also the floating bar and the ← / → keys.
+    &case=starting|handoff|resume|turn   which wait.
+    &state=running|done|failed           where that wait got to.
+    &age=0|10|60|300                     how long it has run — the ArgoWaitAge ladder.
+    &still=1                             Reduce Motion.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift */
+    --sunken:#191A1D; --base:#1E2024; --raised:#252729; --overlay:#2E3136;
+    --hover:rgba(255,255,255,.045); --selected:rgba(255,255,255,.058);
+    --marked:rgba(255,255,255,.07); --control:rgba(255,255,255,.06);
+
+    --text-1:#F2F4F6; --text-2:#A8AEB5; --text-3:#929AA1; --text-off:#4E545A;
+
+    --hairline:rgba(255,255,255,.08); --subtle:rgba(255,255,255,.13); --strong:rgba(255,255,255,.22);
+
+    --accent:#3E9BFF; --accent-bright:#6FB6FF; --accent-deep:#1E6FD4;
+    --running:#46D3A8; --idle:#868E96; --attention:#E8B24A; --failure:#F2555C;
+
+    /* ArgoRadius / ArgoSpacing / ArgoStroke */
+    --r-marker:3px; --r-control:6px; --r-popover:12px;
+    --s-hair:2px; --s-tight:4px; --s-snug:6px; --s-base:8px;
+    --s-comfortable:12px; --s-loose:16px; --s-section:24px; --s-region:32px;
+    --st-hairline:.5px; --st-border:1px; --st-indicator:2px;
+
+    /* ArgoFeedRow.swift */
+    --feed-column:720px; --feed-inset:24px; --feed-gap:16px;
+    --call-step:4px; --call-gap:6px; --call-symbol-w:15px; --line-h:20px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w:320px; --deck-tab-h:40px;
+
+    --sans:-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+    /* set per age by JS — ArgoWaitAge.all */
+    --period:1.9s; --glow:.60; --cooling:1;
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body {
+    background:#0d0e10; color:var(--text-1);
+    font:13px/1.45 var(--sans); -webkit-font-smoothing:antialiased;
+  }
+  :focus-visible { outline:2px solid var(--accent-bright); outline-offset:2px; border-radius:var(--r-marker); }
+
+  /* ---------- window ---------- */
+  .window {
+    position:fixed; inset:var(--s-section) 356px 104px var(--s-section);
+    border-radius:10px; overflow:hidden; border:1px solid var(--subtle);
+    box-shadow:0 30px 80px rgba(0,0,0,.6); background:var(--base);
+    min-width:940px; display:grid; grid-template-columns:var(--sidebar-w) 1fr;
+  }
+
+  /* ---------- sidebar — scenery, so the feed is judged at a real width ---------- */
+  .sidebar { background:var(--sunken); border-right:1px solid var(--hairline); padding-top:46px; overflow:hidden; }
+  .rail-label { font-size:11px; font-weight:600; letter-spacing:.6px; color:var(--text-3);
+                padding:var(--s-comfortable) var(--s-comfortable) var(--s-snug); }
+  .srow { display:flex; gap:var(--s-base); align-items:flex-start;
+          padding:var(--s-base) var(--s-comfortable); margin:0 var(--s-base);
+          border-radius:var(--r-control); }
+  .srow.sel { background:var(--selected); }
+  .srow .dot { width:6px; height:6px; border-radius:50%; margin-top:6px; flex:none; }
+  .srow .t { font-size:13px; font-weight:500; color:var(--text-1); }
+  .srow .m { font-size:11px; color:var(--text-3); font-family:var(--mono); margin-top:1px;
+             white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:210px; }
+
+  /* ---------- deck ---------- */
+  .deck { display:grid; grid-template-rows:auto 1fr auto; min-width:0; position:relative; }
+  .tabs { display:flex; align-items:flex-end; gap:var(--s-loose);
+          padding:30px var(--s-loose) 9px; border-bottom:1px solid var(--hairline);
+          font-size:12px; color:var(--text-3); }
+  .tabs .on { color:var(--text-1); font-weight:500; box-shadow:inset 0 -2px 0 var(--accent); padding-bottom:9px; margin-bottom:-9px; }
+  .tabs .sp { flex:1; }
+  .tabs .mono { font-family:var(--mono); font-size:12px; }
+
+  .feedzone { overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .feed { flex:1; overflow:hidden; padding:var(--s-section) 0 var(--s-base);
+          display:flex; flex-direction:column; justify-content:flex-end; }
+  .measure { width:var(--feed-column); max-width:100%; margin:0 auto; padding:0 var(--feed-inset); }
+  .measure.bleed { padding:0; }
+
+  /* ---------- settled feed rows — scenery ---------- */
+  .prompt { display:flex; justify-content:flex-end; margin-bottom:var(--feed-gap); }
+  .prompt span { background:var(--marked); border-radius:var(--r-control);
+                 padding:var(--s-comfortable) var(--s-loose); max-width:78%; color:var(--text-1); }
+  .msg { color:var(--text-2); margin-bottom:var(--feed-gap); }
+  .calls { display:flex; flex-direction:column; gap:var(--call-step); margin-bottom:var(--feed-gap); }
+
+  .call { display:flex; align-items:baseline; gap:var(--call-gap);
+          padding:1px var(--s-snug); margin-left:calc(var(--s-snug) * -1);
+          border-radius:var(--r-marker); line-height:var(--line-h); white-space:nowrap; }
+  .call .sym { width:var(--call-symbol-w); flex:none; display:inline-flex; justify-content:center;
+               align-self:center; color:var(--text-3); }
+  .call .verb { color:var(--text-2); }
+  .call .subj { font-family:var(--mono); font-size:12px; color:var(--text-2); }
+  .call .chev { color:var(--text-off); margin-left:auto; padding-left:var(--s-base); }
+  .call.dead .verb, .call.dead .subj { color:var(--text-3); }
+  .call.dead .sym { color:var(--text-off); }
+  .call.fail .verb, .call.fail .subj, .call.fail .sym { color:var(--failure); }
+
+  /* the mark line — FeedMarkLine.swift */
+  .mark { display:flex; align-items:center; gap:var(--s-comfortable); margin:var(--feed-gap) 0; }
+  .mark .rule { flex:1; height:var(--st-hairline); background:var(--hairline); }
+  .mark .cap { font-family:var(--mono); font-size:11px; color:var(--text-3); white-space:nowrap; }
+
+  /* ---------- the ion, one substance ---------- */
+  /* cockpit-feed-working.md — one ramp, four stops, all existing tokens. */
+  .ion-ramp {
+    background-image:linear-gradient(90deg,
+      transparent 0%, var(--accent-deep) 28%, var(--accent) 55%,
+      var(--accent-bright) 76%, var(--running) 88%, transparent 100%);
+  }
+
+  /* A wash over a run of TYPE. The row keeps its REST ink — text.secondary, one step above the
+     finished calls, and that ink IS the Reduce Motion state. The ion is a second copy of the same
+     type laid exactly over it, its background clipped to the glyphs. */
+  .washed { position:relative; }
+  .washed .over {
+    position:absolute; inset:0; pointer-events:none;
+    background-size:200% 100%; background-repeat:no-repeat;
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+    animation:washpass var(--period) linear infinite;
+  }
+  .washed .over, .washed .over * { color:transparent !important; }
+  .washed .over svg { visibility:hidden; }
+  .washed .over { margin:0 !important; }
+  @keyframes washpass { from { background-position:200% 0; } to { background-position:-100% 0; } }
+
+  /* A filament crossing a lane — the thread, and the rule's own pass. */
+  .lane { position:relative; overflow:hidden; height:var(--line-h); }
+  .lane.thin { height:var(--st-indicator); }
+  .fil { position:absolute; top:50%; height:var(--st-indicator); width:30%;
+         border-radius:999px; transform:translateY(-50%);
+         animation:filpass var(--period) linear infinite; }
+  .fil .halo { position:absolute; inset:0; border-radius:999px; filter:blur(4px); opacity:var(--glow); }
+  @keyframes filpass {
+    from { transform:translate(-105%, -50%); }
+    to   { transform:translate(340%, -50%); }
+  }
+
+  .still .washed .over, .still .fil { animation:none !important; }
+  .still .washed .over { display:none; }
+  .still .fil { transform:translate(117%, -50%); opacity:.4; }
+  .still .fil .halo { opacity:.4; }
+
+  /* ---------- VARIANT A — the wait is a call row ---------- */
+  /* Same 15pt mark column, same body rung, same wash. It settles in place and stays. */
+  .waitA { display:flex; align-items:baseline; gap:var(--call-gap);
+           padding:1px var(--s-snug); margin-left:calc(var(--s-snug)*-1);
+           line-height:var(--line-h); white-space:nowrap; }
+  .waitA .sym { width:var(--call-symbol-w); flex:none; display:inline-flex; justify-content:center;
+                align-self:center; color:var(--accent); }
+  .waitA .words { color:var(--text-2); }
+  .waitA .took { font-family:var(--mono); font-size:11px; color:var(--text-off); }
+  .waitA.done .words { color:var(--text-3); } .waitA.done .sym { color:var(--text-off); }
+  .waitA.failed .words, .waitA.failed .sym, .waitA.failed .took { color:var(--failure); }
+  .waitA .why { color:var(--failure); font-family:var(--mono); font-size:11px; }
+
+  /* ---------- VARIANT B — the wait is a rule with its words let into it ---------- */
+  /* Today's `starting the agent` shape, given a symbol and a pass along the rule.
+     A wait that ENDS well leaves nothing behind; only a failure keeps its place. */
+  .waitB { margin:var(--feed-gap) 0; }
+  .waitB .line { display:flex; align-items:center; gap:var(--s-comfortable); }
+  .waitB .side { flex:1; position:relative; height:var(--st-indicator); }
+  .waitB .track { position:absolute; inset:auto 0 auto 0; top:50%; height:var(--st-hairline);
+                  transform:translateY(-50%); background:var(--hairline); }
+  .waitB .cap { display:inline-flex; align-items:center; gap:var(--s-snug);
+                font-family:var(--mono); font-size:11px; color:var(--text-3); white-space:nowrap; }
+  .waitB .cap .sym { color:var(--accent); display:inline-flex; }
+  .waitB.done .cap { color:var(--text-3); } .waitB.done .cap .sym { color:var(--text-off); }
+  .waitB.failed .cap, .waitB.failed .cap .sym { color:var(--failure); }
+  .waitB.failed .track { background:rgba(242,85,92,.28); }
+
+  /* ---------- VARIANT C — the wait stands at the foot, outside the reading ---------- */
+  /* One place for the live wait, never a row. When it ends it DROPS INTO the feed as a
+     settled row, so the reading is only ever written once. */
+  .plinth { margin:0 auto var(--s-base); width:var(--feed-column); max-width:100%;
+            padding:0 var(--feed-inset); }
+  .plinth .box { display:flex; align-items:center; gap:var(--s-comfortable);
+                 background:var(--raised); border:1px solid var(--hairline);
+                 border-radius:var(--r-control); padding:var(--s-base) var(--s-comfortable);
+                 position:relative; overflow:hidden; }
+  .plinth .sym { color:var(--accent); display:inline-flex; flex:none; }
+  .plinth .words { color:var(--text-2); flex:1; }
+  .plinth .took { font-family:var(--mono); font-size:11px; color:var(--text-off); }
+  .plinth .rail { position:absolute; left:0; right:0; bottom:0; height:var(--st-indicator);
+                  overflow:hidden; }
+  .plinth.failed .box { border-color:rgba(242,85,92,.5); background:rgba(242,85,92,.10); }
+  .plinth.failed .sym, .plinth.failed .words { color:var(--failure); }
+  .plinth .dismiss { color:var(--text-3); background:none; border:none; cursor:pointer;
+                     font:inherit; padding:0 var(--s-tight); }
+
+  /* ---------- composer — scenery ---------- */
+  .composer { padding:var(--s-comfortable) var(--s-loose) var(--s-loose); }
+  .vessel { width:var(--feed-column); max-width:100%; margin:0 auto;
+            border:1px solid var(--subtle); border-radius:var(--r-popover);
+            background:var(--raised); padding:var(--s-comfortable) var(--s-loose);
+            color:var(--text-off); display:flex; align-items:center; }
+  .vessel .send { margin-left:auto; width:26px; height:26px; border-radius:50%;
+                  background:var(--control); display:grid; place-items:center; color:var(--text-3); }
+
+  /* ---------- the readout — what changed, said in words ---------- */
+  .readout { position:fixed; right:var(--s-section); top:var(--s-section); width:308px;
+             font-family:var(--mono); font-size:11px; line-height:1.6; color:var(--text-3);
+             background:rgba(25,26,29,.92); border:1px solid var(--hairline);
+             border-radius:var(--r-control); padding:var(--s-comfortable); }
+  .readout b { color:var(--text-1); font-weight:600; }
+  .readout .k { color:var(--text-off); }
+  .readout hr { border:none; border-top:1px solid var(--hairline); margin:var(--s-base) 0; }
+  .readout .verdict { color:var(--text-2); }
+
+  /* ---------- floating bar — obviously not part of the design ---------- */
+  .bar { position:fixed; left:50%; bottom:var(--s-section); transform:translateX(-50%);
+         display:flex; align-items:center; gap:var(--s-tight); z-index:10;
+         background:#EDEFF2; color:#111; border-radius:999px; padding:var(--s-tight);
+         box-shadow:0 8px 30px rgba(0,0,0,.5); font:12px var(--sans); }
+  .bar button { border:none; background:none; cursor:pointer; font:inherit; color:inherit;
+                padding:var(--s-snug) var(--s-comfortable); border-radius:999px; }
+  .bar button:hover { background:rgba(0,0,0,.08); }
+  .bar .name { font-weight:600; padding:0 var(--s-base); white-space:nowrap; }
+  .bar select { font:12px var(--sans); border-radius:999px; border:1px solid rgba(0,0,0,.2);
+                background:#fff; padding:var(--s-tight) var(--s-snug); }
+  .bar label { display:flex; align-items:center; gap:var(--s-tight); padding-left:var(--s-snug); }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <aside class="sidebar">
+    <div class="rail-label">SESSIONS</div>
+    <div class="srow sel">
+      <span class="dot" style="background:var(--running)"></span>
+      <span><span class="t">Feed loading row</span><br><span class="m">argo/#1246-loading-row</span></span>
+    </div>
+    <div class="srow">
+      <span class="dot" style="background:var(--idle)"></span>
+      <span><span class="t">Handoff progress</span><br><span class="m">argo/#1229-handoff</span></span>
+    </div>
+    <div class="srow">
+      <span class="dot" style="background:var(--attention)"></span>
+      <span><span class="t">A start that never ends</span><br><span class="m">argo/#1245-stuck-start</span></span>
+    </div>
+  </aside>
+
+  <section class="deck">
+    <div class="tabs">
+      <span class="on">Reading</span><span>Delivery</span><span>Terminal</span>
+      <span class="sp"></span>
+      <span class="mono">42k / 200k</span>
+    </div>
+
+    <div class="feedzone">
+      <div class="feed" id="feed"></div>
+      <div id="plinth-slot"></div>
+    </div>
+
+    <div class="composer">
+      <div class="vessel"><span>Ask anything</span><span class="send">↑</span></div>
+    </div>
+  </section>
+</div>
+
+<div class="readout" id="readout"></div>
+
+<div class="bar" role="group" aria-label="Variant picker">
+  <button id="prev" aria-label="Previous variant">←</button>
+  <span class="name" id="vname"></span>
+  <button id="next" aria-label="Next variant">→</button>
+  <select id="case" aria-label="Which wait"></select>
+  <select id="state" aria-label="Where the wait got to"></select>
+  <select id="age" aria-label="How long it has run"></select>
+  <label><input type="checkbox" id="still"> still</label>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * The marks. SF Symbols traced as paths — ArgoSymbol names in comments.
+ * ------------------------------------------------------------------ */
+const SYM = {
+  /* ArgoSymbol.startSession — "play.fill" */
+  start: '<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M4 2.6v10.8c0 .5.5.8 1 .5l8.4-5.4c.4-.3.4-.8 0-1.1L5 2.1c-.5-.3-1 0-1 .5z"/></svg>',
+  /* ArgoSymbol.handedOff — "arrow.right.circle" */
+  handoff: '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.3"/><path d="M5.2 8h5.4M8.6 5.9 10.8 8l-2.2 2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  /* ArgoSymbol.retry — "arrow.clockwise" */
+  resume: '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M13.4 8a5.4 5.4 0 1 1-1.9-4.1" stroke-linecap="round"/><path d="M13.6 1.9v2.6H11" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  /* No mark. A Turn in flight is the commonest wait; a mark is a claim about WHAT happened,
+     and "the agent is thinking" is not a thing that happened. */
+  none: '',
+  /* ArgoSymbol.ran — "terminal", for the scenery rows */
+  ran: '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.4" y="2.6" width="13.2" height="10.8" rx="2"/><path d="M4.3 6.2 6.4 8l-2.1 1.8M8.3 10.2h3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  read: '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3.2 1.9h5l4.6 4.5v7.7H3.2z"/><path d="M8.1 1.9v4.6h4.7M5.4 9h5.2M5.4 11.1h5.2" stroke-linecap="round"/></svg>',
+  chev: '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3.5 4.5 4.5L6 12.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+/* ------------------------------------------------------------------ *
+ * The four waits #1246 lists. Words, mark, and the past tense each one
+ * settles into — a wait that ended must not still read as running.
+ * ------------------------------------------------------------------ */
+const CASES = {
+  starting: {
+    label: 'Starting the agent',
+    sym: 'start',
+    running: 'Starting the agent',
+    done: 'Started the agent',
+    failed: 'The agent did not start',
+    why: 'no bytes on the PTY after 30s',
+    took: '1.4s',
+    /* FeedWorking.startingWords today — the one wait that already has a rendering. */
+    today: 'a caption in the rule: `starting the agent`',
+  },
+  handoff: {
+    label: 'Handing off',
+    sym: 'handoff',
+    running: 'Handing off the current session',
+    done: 'Handed off to Feed loading row',
+    failed: 'The handoff failed',
+    why: 'the fresh session never started',
+    took: '6.2s',
+    today: 'NOTHING. Only the header button reads `Handing off…` (#1229)',
+  },
+  resume: {
+    label: 'Resuming',
+    sym: 'resume',
+    running: 'Resuming the session',
+    done: 'Resumed the session',
+    failed: 'The session did not resume',
+    why: 'the transcript could not be replayed',
+    took: '2.9s',
+    today: 'nothing named',
+  },
+  turn: {
+    label: 'Waiting for the agent',
+    sym: 'none',
+    running: 'Waiting for the agent to answer',
+    done: 'The agent answered',
+    failed: 'The turn ended without an answer',
+    why: 'max_tokens',
+    took: '48s',
+    today: 'an ion crossing the column, no words at all — FeedWorkingThread',
+  },
+};
+
+/* ArgoWaitAge.all — the ladder the ion cools down. */
+const AGES = {
+  '0':   { period:1.9, glow:.60, label:'under 10s', elapsed:'3s'     },
+  '10':  { period:2.8, glow:.49, label:'10s – 60s',  elapsed:'24s'    },
+  '60':  { period:3.8, glow:.40, label:'1m – 5m',    elapsed:'2m 10s' },
+  '300': { period:4.9, glow:.30, label:'over 5m',    elapsed:'6m 41s' },
+};
+
+/* ------------------------------------------------------------------ *
+ * The three variants. Each answers #1246's six questions differently;
+ * `verdict` is what it is ASSERTING, printed in the readout.
+ * ------------------------------------------------------------------ */
+const VARIANTS = {
+  A: {
+    name: 'A — the wait is a call row',
+    verdict: {
+      shape: 'a row, on the call row\'s own metrics: 15pt mark column, body rung, one line',
+      persists: 'KEEPS its place. The row settles to tertiary and gains what it took.',
+      ion: 'the thread STAYS. This row is for waits Argo can put WORDS to; a Turn in flight has none.',
+      symbol: 'one per named wait. The unnamed wait gets NO mark — the column is drawn empty, as a call of unknown kind is.',
+      failure: 'the whole line in failure ink, exactly as a failed call row, plus the reason in mono.',
+    },
+    draw: drawA,
+  },
+  B: {
+    name: 'B — the wait is a rule with words in it',
+    verdict: {
+      shape: 'a rule across the column with a symbol and a machine caption let into it — today\'s `starting the agent`, extended.',
+      persists: 'GOES when it ends well. Only a FAILED wait keeps its place.',
+      ion: 'the thread JOINS. A Turn in flight is this same rule with the caption left out.',
+      symbol: 'one per named wait, at caption size. The unnamed wait draws the rule alone.',
+      failure: 'the caption and the rule both in failure ink — a rule that stayed is itself the news.',
+    },
+    draw: drawB,
+  },
+  C: {
+    name: 'C — the wait stands at the foot',
+    verdict: {
+      shape: 'not a feed row at all: a plinth above the composer, one at a time.',
+      persists: 'ARRIVES at the end. The reading is written once, after the fact, never edited.',
+      ion: 'the thread STAYS in the feed, and the plinth names the same wait in words. Two sayings of one wait — look hard at this.',
+      symbol: 'one per named wait, at body size. The unnamed wait takes no mark and the plinth still speaks.',
+      failure: 'the plinth turns failure and does not leave until dismissed; the settled row lands in failure ink.',
+    },
+    draw: drawC,
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * State
+ * ------------------------------------------------------------------ */
+const params = new URLSearchParams(location.search);
+let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
+let caseKey = CASES[params.get('case')] ? params.get('case') : 'starting';
+let state   = ['running','done','failed'].includes(params.get('state')) ? params.get('state') : 'running';
+let age     = AGES[params.get('age')] ? params.get('age') : '0';
+let still   = params.get('still') === '1';
+
+const theCase = () => CASES[caseKey];
+
+/* ------------------------------------------------------------------ *
+ * Pieces
+ * ------------------------------------------------------------------ */
+function el(tag, cls) { const n = document.createElement(tag); if (cls) n.className = cls; return n; }
+function html(s) { const t = document.createElement('template'); t.innerHTML = s.trim(); return t.content.firstElementChild; }
+
+/* The scenery above the wait: a real Turn, ending in a call that FAILED, so a failed wait is
+   judged next to a failed call row rather than on its own (#1246 q5). */
+function scenery() {
+  return html(`
+    <div>
+      <div class="measure">
+        <div class="prompt"><span>Give the feed one row for a wait, with a symbol and words per case.</span></div>
+        <div class="msg">I'll read the two waits that have words today and the one that has none, then draw the three shapes side by side.</div>
+        <div class="calls">
+          <div class="call dead"><span class="sym">${SYM.read}</span><span class="verb">Read</span><span class="subj">FeedWorking.swift</span><span class="chev">${SYM.chev}</span></div>
+          <div class="call dead"><span class="sym">${SYM.read}</span><span class="verb">Read</span><span class="subj">FeedMarkLine.swift</span><span class="chev">${SYM.chev}</span></div>
+          <div class="call fail"><span class="sym">${SYM.ran}</span><span class="verb">Ran</span><span class="subj">bun run quality:swift</span><span class="chev">${SYM.chev}</span></div>
+        </div>
+      </div>
+      <div class="measure"><div class="mark"><div class="rule"></div><div class="cap">compacted</div><div class="rule"></div></div></div>
+    </div>
+  `);
+}
+
+/* The ion at its own length, in a lane. Used by B's rule and C's plinth, and by the thread. */
+function filament(share) {
+  const l = el('div', 'fil ion-ramp');
+  l.style.width = share;
+  l.appendChild(el('div', 'halo ion-ramp'));
+  return l;
+}
+
+/* FeedWorkingThread as it is today — 30% of the measure, edge to edge, no words. */
+function thread() {
+  const lane = el('div', 'lane');
+  lane.appendChild(filament('30%'));
+  const wrap = el('div', 'measure bleed');
+  wrap.style.marginBottom = 'var(--s-base)';
+  wrap.appendChild(lane);
+  return wrap;
+}
+
+/* ---------------- A ---------------- */
+function drawA(feed) {
+  const c = theCase();
+  /* A's own rule: the row is for waits with WORDS. The commonest wait has none, so it stays
+     the thread and this row never draws for it. */
+  if (caseKey === 'turn') {
+    if (state === 'running') { feed.appendChild(thread()); return; }
+    /* And when it ends: the ANSWER is the record of it, so there is nothing to settle. Only a
+       turn that ended with no answer is news, and that draws the row in failure ink. */
+    if (state === 'done') return;
+  }
+  const body = `
+    <span class="sym">${SYM[c.sym] || ''}</span>
+    <span class="words">${c[state]}</span>
+    <span class="took">${state === 'running' ? AGES[age].elapsed : c.took}</span>
+    ${state === 'failed' ? `<span class="why">— ${c.why}</span>` : ''}`;
+
+  const row = el('div', 'waitA ' + (state === 'running' ? 'live washed' : state));
+  row.innerHTML = body;
+  if (state === 'running') {
+    /* The same sentence again, laid over the first and clipped to its glyphs. In Swift this is
+       ONE mask over one painting surface; here it takes a second copy to get the same picture. */
+    const over = el('div', 'waitA over ion-ramp');
+    over.innerHTML = body;
+    row.appendChild(over);
+  }
+  const wrap = el('div', 'measure');
+  wrap.appendChild(row);
+  feed.appendChild(wrap);
+}
+
+/* ---------------- B ---------------- */
+function drawB(feed) {
+  const c = theCase();
+  /* B's own rule: everything joins. A Turn in flight is this rule with no caption. */
+  const bare = caseKey === 'turn' && state === 'running';
+  if (state === 'done') return;                     /* a wait that ended well leaves nothing */
+
+  const row = el('div', 'waitB ' + (state === 'running' ? 'live' : state));
+  const line = el('div', 'line');
+
+  const side = () => {
+    const s = el('div', 'side');
+    s.appendChild(el('div', 'track'));
+    if (state === 'running') s.appendChild(filament('26%'));
+    return s;
+  };
+
+  line.appendChild(side());
+  if (!bare) {
+    const cap = el('div', 'cap');
+    cap.innerHTML = `${c.sym === 'none' ? '' : `<span class="sym">${SYM[c.sym]}</span>`}` +
+      `<span>${state === 'failed' ? c.failed + ' — ' + c.why : c.running.toLowerCase()}</span>`;
+    line.appendChild(cap);
+    line.appendChild(side());
+  }
+  row.appendChild(line);
+  const wrap = el('div', 'measure');
+  wrap.appendChild(row);
+  feed.appendChild(wrap);
+}
+
+/* ---------------- C ---------------- */
+function drawC(feed) {
+  const c = theCase();
+  /* C's own rule: the live wait is never a row. While it runs the feed shows only what it
+     always showed — the thread, for a Turn in flight — and the plinth carries the words. */
+  if (caseKey === 'turn' && state === 'running') feed.appendChild(thread());
+
+  if (state !== 'running') {
+    /* It dropped into the feed. The reading is written ONCE, after the fact. */
+    const row = el('div', 'waitA ' + state);
+    row.innerHTML = `
+      <span class="sym">${SYM[c.sym] || ''}</span>
+      <span class="words">${c[state]}</span>
+      <span class="took">${c.took}</span>
+      ${state === 'failed' ? `<span class="why">— ${c.why}</span>` : ''}`;
+    const wrap = el('div', 'measure');
+    wrap.appendChild(row);
+    feed.appendChild(wrap);
+  }
+}
+
+/* C's plinth lives outside the scrolling feed, so it is drawn separately. */
+function drawPlinth(slot) {
+  if (variant !== 'C') return;
+  const c = theCase();
+  if (state === 'done') return;                     /* it dropped into the feed and cleared */
+
+  const p = el('div', 'plinth ' + (state === 'running' ? 'live' : state));
+  const box = el('div', 'box');
+  box.innerHTML =
+    `${c.sym === 'none' ? '' : `<span class="sym">${SYM[c.sym]}</span>`}` +
+    `<span class="words">${state === 'failed' ? c.failed + ' — ' + c.why : c.running}</span>` +
+    (state === 'running' ? `<span class="took">${AGES[age].elapsed}</span>` : `<button class="dismiss">✕</button>`);
+  if (state === 'running') {
+    const rail = el('div', 'rail');
+    rail.appendChild(filament('22%'));
+    box.appendChild(rail);
+  }
+  p.appendChild(box);
+  slot.appendChild(p);
+}
+
+/* ------------------------------------------------------------------ *
+ * Draw
+ * ------------------------------------------------------------------ */
+function draw() {
+  document.body.classList.toggle('still', still);
+  document.documentElement.style.setProperty('--period', AGES[age].period + 's');
+  document.documentElement.style.setProperty('--glow', AGES[age].glow);
+
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '';
+  feed.appendChild(scenery());
+  VARIANTS[variant].draw(feed);
+
+  const slot = document.getElementById('plinth-slot');
+  slot.innerHTML = '';
+  drawPlinth(slot);
+
+  drawReadout();
+  syncBar();
+  writeURL();
+}
+
+function drawReadout() {
+  const v = VARIANTS[variant], c = theCase();
+  document.getElementById('readout').innerHTML = `
+    <b>${v.name}</b>
+    <hr>
+    <span class="k">wait</span> ${c.label}<br>
+    <span class="k">state</span> ${state}<br>
+    <span class="k">age</span> ${AGES[age].label} · period ${AGES[age].period}s · glow ${AGES[age].glow}<br>
+    <span class="k">motion</span> ${still ? 'off (Reduce Motion)' : 'on'}<br>
+    <span class="k">today</span> ${c.today}
+    <hr>
+    <span class="k">shape</span> <span class="verdict">${v.verdict.shape}</span><br>
+    <span class="k">after</span> <span class="verdict">${v.verdict.persists}</span><br>
+    <span class="k">the ion</span> <span class="verdict">${v.verdict.ion}</span><br>
+    <span class="k">symbol</span> <span class="verdict">${v.verdict.symbol}</span><br>
+    <span class="k">failed</span> <span class="verdict">${v.verdict.failure}</span>
+    <hr>
+    <span class="k">tier</span> <span class="verdict">DIRECT only. Every wait here is an act
+    Argo STARTED and is waiting on, so nothing DERIVED may take this row.</span>`;
+}
+
+/* ------------------------------------------------------------------ *
+ * The bar
+ * ------------------------------------------------------------------ */
+function fill(id, entries, current) {
+  const s = document.getElementById(id);
+  s.innerHTML = entries.map(([k, label]) =>
+    `<option value="${k}"${k === current ? ' selected' : ''}>${label}</option>`).join('');
+}
+
+function syncBar() {
+  document.getElementById('vname').textContent = VARIANTS[variant].name;
+  fill('case',  Object.entries(CASES).map(([k, c]) => [k, c.label]), caseKey);
+  fill('state', [['running','running'],['done','done'],['failed','failed']], state);
+  fill('age',   Object.entries(AGES).map(([k, a]) => [k, a.label]), age);
+  document.getElementById('still').checked = still;
+}
+
+function writeURL() {
+  history.replaceState(null, '',
+    `?variant=${variant}&case=${caseKey}&state=${state}&age=${age}${still ? '&still=1' : ''}`);
+}
+
+const keys = Object.keys(VARIANTS);
+const step = d => { variant = keys[(keys.indexOf(variant) + keys.length + d) % keys.length]; draw(); };
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+document.getElementById('case').onchange  = e => { caseKey = e.target.value; draw(); };
+document.getElementById('state').onchange = e => { state   = e.target.value; draw(); };
+document.getElementById('age').onchange   = e => { age     = e.target.value; draw(); };
+document.getElementById('still').onchange = e => { still   = e.target.checked; draw(); };
+
+document.addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+
+draw();
+</script>
+</body>
+</html>
