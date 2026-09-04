@@ -164,14 +164,24 @@ package struct SessionRow: View {
         }
     }
 
-    /// Line 3 — how it is going, with the clock at its leading edge (#1343). One more `hair` above
-    /// it than the two lines take between them, because it changes subject.
+    /// Line 3 — how it is going, with the clock at its leading edge (#1343) and the Plan's own
+    /// `PlanBar` beside it (#1345). One more `hair` above it than the two lines take between
+    /// them, because it changes subject.
     @ViewBuilder private var progressLine: some View {
-        if let clock = row.clock {
-            RosterTurnClock(clock: clock)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, ArgoSpacing.hair)
-                .foregroundStyle(argo.color.text.tertiary)
+        if row.clock != nil || row.plan != nil {
+            HStack(spacing: ArgoSpacing.base) {
+                if let clock = row.clock {
+                    RosterTurnClock(clock: clock)
+                }
+                if let plan = row.plan {
+                    // A Session that is not running is not progressing (`cockpit-roster-row.md`,
+                    // rule 3): the fill freezes to `progress.still` rather than the accent.
+                    PlanBar(plan: plan, isStill: row.state != .running)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, ArgoSpacing.hair)
+            .foregroundStyle(argo.color.text.tertiary)
         }
     }
 

@@ -185,7 +185,11 @@ private struct PlanRing: View {
                     .trim(from: 0, to: progress)
                     // From the top, the way progress is read on a clock rather than on a chart.
                     .rotation(.degrees(-90))
-                    .stroke(argo.color.state.running, lineWidth: ArgoStroke.indicator)
+                    // The Plan's own ink, never the running teal: it is the Session's progress,
+                    // not its state, and this pill already spends teal on a live Turn clock
+                    // (`cockpit-roster-row.md`, rule 2 — the roster's `PlanBar` draws the same
+                    // fact in the same colour).
+                    .stroke(argo.color.interaction.accent, lineWidth: ArgoStroke.indicator)
                     .padding(ArgoStroke.indicator)
             }
             .frame(width: ArgoPlanPill.ringSize, height: ArgoPlanPill.ringSize)

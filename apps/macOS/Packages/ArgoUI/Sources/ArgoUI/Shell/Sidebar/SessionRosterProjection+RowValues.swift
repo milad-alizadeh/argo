@@ -29,6 +29,13 @@ extension SessionRosterProjection.Row {
     /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, the
     /// one age slot in both forms, and the newest call in its record while it is running (#1199).
     struct Activity {
+        /// The dot's reading and the word beside it — both read off the same status at the same
+        /// time, and no call site names one without the other.
+        struct Marking {
+            let state: ArgoOperationalState?
+            let stateWord: String?
+        }
+
         /// The one age slot in both its forms. They are read off the same moment at the same
         /// time and no call site names one without the other, which is what makes them one
         /// parameter rather than two.
@@ -45,18 +52,23 @@ extension SessionRosterProjection.Row {
         /// `nil` on every row that is not a running Session with a call behind it — see
         /// `SessionRosterProjection.activity(of:in:)`.
         let activity: String?
+        /// The agent's live to-do list, read off the same events the clock and the activity
+        /// already walked (`PlanProjection.reading(from:)`) — `nil` for a Session that has never
+        /// written one, drawn exactly alike (`cockpit-roster-row.md`, `PlanBar`).
+        let plan: PlanReading?
 
         init(
-            state: ArgoOperationalState?,
-            stateWord: String?,
+            marking: Marking,
             age: Age,
             activity: String?,
+            plan: PlanReading?,
         ) {
-            self.state = state
-            self.stateWord = stateWord
+            self.state = marking.state
+            self.stateWord = marking.stateWord
             self.clock = age.clock
             self.spokenClock = age.spoken
             self.activity = activity
+            self.plan = plan
         }
     }
 

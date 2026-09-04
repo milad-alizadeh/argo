@@ -53,6 +53,10 @@ extension SessionRosterProjection {
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning.
         let stateWord: String?
+        /// Line 3's `PlanBar` — the same reading the Session's own plan pill shows. `nil` for a
+        /// Session that has never written a Plan, and always `nil` on a fold (`foldRow`): four
+        /// to-do lists do not add up to one.
+        let plan: PlanReading?
         /// Which of the roster's two lists this row belongs to — and, on the row itself, which
         /// way its swipe goes: a row on the roster archives, a row under the foot comes back.
         let isArchived: Bool
@@ -89,6 +93,7 @@ extension SessionRosterProjection {
             self.state = activity.state
             self.stateWord = activity.stateWord
             self.activity = activity.activity
+            self.plan = activity.plan
         }
 
         /// The one fact line 2 carries, first match wins (#1199): what the Session is doing right
@@ -151,13 +156,16 @@ extension SessionRosterProjection {
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
                 // of them drawn for all of them is a claim about the others.
-                state: nil, stateWord: nil,
+                marking: Row.Activity.Marking(state: nil, stateWord: nil),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 // A fold stands for several runs at once, so one run's call drawn for all of
                 // them is the same claim about the others its dot and its word decline to make.
                 activity: nil,
+                // A fold sums or says nothing: its Plan is nobody's to draw, and four to-do
+                // lists do not add up to one (`cockpit-roster-row.md`, rule 9).
+                plan: nil,
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -191,12 +199,17 @@ extension SessionRosterProjection {
                 toldApart: toldApart(for: session, naming: decided.naming),
             ),
             activity: Row.Activity(
-                state: SessionState.role(for: session.status),
-                stateWord: SessionState.word(for: session.status),
+                marking: Row.Activity.Marking(
+                    state: SessionState.role(for: session.status),
+                    stateWord: SessionState.word(for: session.status),
+                ),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 activity: activity(of: session, in: events),
+                // Off the same hand-out the clock and the activity above already walked, not a
+                // second `session.events` (`PerfBudgets`).
+                plan: PlanProjection.reading(from: events),
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),
