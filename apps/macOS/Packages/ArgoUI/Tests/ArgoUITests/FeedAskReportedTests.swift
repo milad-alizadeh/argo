@@ -162,7 +162,6 @@ struct FeedAskReportedTests {
                     atMs: nil,
                 )]),
             )],
-            checkout: .unavailable,
             connection: .idle,
         )
     }

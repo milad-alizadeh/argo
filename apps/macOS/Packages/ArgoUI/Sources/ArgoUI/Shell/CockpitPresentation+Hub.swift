@@ -53,7 +53,6 @@ public extension CockpitPresentation {
             projects: Self.counted(projects, activeProjectID: activeProjectID, in: sessions),
             activeProjectID: activeProjectID,
             sessions: sessions,
-            checkout: hub.checkout,
             connection: hub.connection,
         )
         // After the init and not through it — see the property.

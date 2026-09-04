@@ -103,7 +103,6 @@ import SwiftUI
                     transcript: .init(events: events),
                 )
             },
-            checkout: .unavailable,
             connection: .idle,
         )
     }

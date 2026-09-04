@@ -34,7 +34,6 @@ struct SessionsRoomReadingTests {
                 Self.session(id: "one", events: Self.transcript),
                 Self.session(id: "two", events: []),
             ],
-            checkout: .unavailable,
             connection: .idle,
         )
 
@@ -102,7 +101,6 @@ struct SessionsRoomReadingTests {
             projects: [],
             activeProjectID: nil,
             sessions: [session(id: "one", events: events)],
-            checkout: .unavailable,
             connection: .idle,
         )
     }
@@ -127,7 +125,6 @@ struct SessionsRoomReadingTests {
             projects: [],
             activeProjectID: nil,
             sessions: [session(id: "one", events: [], status: status)],
-            checkout: .unavailable,
             connection: .idle,
         )
     }

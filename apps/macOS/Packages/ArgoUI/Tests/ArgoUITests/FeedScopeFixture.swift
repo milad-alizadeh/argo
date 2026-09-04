@@ -50,7 +50,6 @@ enum FeedScopeFixture {
             projects: [],
             activeProjectID: nil,
             sessions: [session(grown: grown)],
-            checkout: .unavailable,
             connection: .idle,
         )
     }

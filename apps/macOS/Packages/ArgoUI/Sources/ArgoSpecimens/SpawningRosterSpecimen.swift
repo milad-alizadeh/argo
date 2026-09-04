@@ -50,7 +50,6 @@ struct SpawningRosterSpecimen: View {
             projects: presentation.projects,
             activeProjectID: presentation.activeProjectID,
             sessions: [session] + presentation.sessions,
-            checkout: presentation.checkout,
             connection: presentation.connection,
         )
         return session.id

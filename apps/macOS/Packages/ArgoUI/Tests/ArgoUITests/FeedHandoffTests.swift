@@ -107,7 +107,6 @@ struct FeedHandoffTests {
             projects: [],
             activeProjectID: nil,
             sessions: sessions,
-            checkout: .unavailable,
             connection: .idle,
         )
     }

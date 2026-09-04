@@ -10,7 +10,7 @@ struct CockpitTicketLinkTests {
         -> CockpitPresentation {
         CockpitPresentation(
             projects: [], activeProjectID: nil, sessions: sessions,
-            checkout: .unavailable, connection: .idle,
+            connection: .idle,
         )
     }
 

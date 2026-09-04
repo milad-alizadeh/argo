@@ -171,7 +171,6 @@ struct CockpitPresentationCostTests {
                     transcript: .init(events: events),
                 )
             },
-            checkout: .unavailable,
             connection: .idle,
         )
     }

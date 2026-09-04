@@ -17,7 +17,7 @@ struct CockpitPresentationTests {
 
     @Test
     @MainActor
-    func `the Hub's own checkout and connection reach the shell unrenamed`() {
+    func `the Hub's own connection reaches the shell unrenamed`() {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
         let registered = CockpitPresentation.Project(
             id: "argo",
@@ -28,7 +28,6 @@ struct CockpitPresentationTests {
         let presentation = projection(of: hub, projects: [registered])
 
         #expect(presentation.activeProject?.id == registered.id)
-        #expect(presentation.checkout == CheckoutProjection.Head.unavailable)
         // A Hub with nothing to read is not a connected one, and the shell is told which.
         #expect(presentation.connection == HubConnection.idle)
         #expect(presentation.sessions.isEmpty)

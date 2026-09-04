@@ -179,7 +179,6 @@ struct SessionsRoomReadingCostTests {
                 projects: [],
                 activeProjectID: nil,
                 sessions: [session],
-                checkout: .unavailable,
                 connection: .idle,
             ),
             sessionID: "one",
@@ -204,7 +203,6 @@ struct SessionsRoomReadingCostTests {
                     transcript: .init(events: events),
                 )
             },
-            checkout: .unavailable,
             connection: .idle,
         )
     }

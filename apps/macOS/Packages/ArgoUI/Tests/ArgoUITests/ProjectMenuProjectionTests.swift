@@ -153,7 +153,6 @@ struct ProjectMenuProjectionTests {
             projects: projects,
             activeProjectID: activeProjectID,
             sessions: [],
-            checkout: .unavailable,
             connection: .idle,
         )
     }

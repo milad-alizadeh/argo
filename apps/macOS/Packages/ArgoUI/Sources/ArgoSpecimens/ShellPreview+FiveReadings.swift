@@ -27,7 +27,6 @@ public extension CockpitPresentation {
                 transcript: .init(events: TranscriptFixtures.longTranscript(from: at * 1000)),
             )
         },
-        checkout: .branch("main"),
         connection: .connected,
     )
 }

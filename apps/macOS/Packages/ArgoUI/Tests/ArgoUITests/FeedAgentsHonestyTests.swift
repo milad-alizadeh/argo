@@ -141,7 +141,6 @@ struct FeedAgentsHonestyTests {
                 projects: [],
                 activeProjectID: nil,
                 sessions: [session(status, access: access)],
-                checkout: .unavailable,
                 connection: .idle,
             ),
             sessionID: "one",

@@ -54,7 +54,6 @@ struct EvidenceOnScreenTests {
                 projects: [],
                 activeProjectID: nil,
                 sessions: [session],
-                checkout: .unavailable,
                 connection: .idle,
             ),
             sessionID: "one",
