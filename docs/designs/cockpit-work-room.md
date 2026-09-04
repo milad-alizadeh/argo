@@ -842,8 +842,8 @@ and this sheet holds what `ArgoBacklogList` declares.
 |---|---|---|
 | Row height | **46** | the shell's existing titlebar strip, unchanged — not restated in code, where `ArgoToolbarVessel` already names the band |
 | ~~`listBlockWidth`~~ | **gone (#836)** | it claimed 520 inside one toolbar region to reach the column boundary, and macOS begins that region after the shell's own items. The list's controls are in the list's band now, aligned by construction — which is also what makes the pane safe to drag (#844): a band has no width to keep in step with the seam |
-| `iconButton` | **26 × 24** inside a 3pt vessel inset | the capsule's own padding is the vessel's, not the button's |
-| `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make |
+| `iconButton` | **26 × 26** inside a 5pt vessel inset — **amended #1243** | it was 26 × 24 inside a 3pt inset, a box this room measured for itself. Four headers measured four, so the box left this sheet: it is `ArgoControlBox.icon` now, and the inset is what makes a capsule of them stand at the band's own 36 — the 30pt capsule beside the shell row's 36pt circle was the whole of what looked wrong |
+| `iconSize` | `ArgoIconSize.control` **13** | 14 was the SVG box the study drew into; `control` is the rung the contract gives "a control's own mark", and a fourth rung is a token change this room has no standing to make. **Amended #1243**: the rung is not this room's to pass either — `ArgoIconButton` draws at `control` |
 | `searchWidth` | **210** | wide enough for `Search the backlog`; at 260 the trailing edge clipped at 1280 |
 | Vessel shape | `Capsule()` | a capsule is a shape, not a radius — no `ArgoRadius` rung applies |
 | Vessel material | glass, **no border, no shadow** | `ArgoElevation.vessel` is zero; the specular rim is the cue |
@@ -886,13 +886,13 @@ for; anything not listed is stock used directly.
 | `BacklogMore` | atom | a full-width `Button` at the foot of the list | **Added #1075**: there is another page of closed tickets, and this reads it. Drawn only on a cursor the provider served, so it cannot outlive the last page |
 | `PriorityHeader` | atom | a `Section` header | label on `sectionLabel`, drawn count on `machineCaption`. **Amended #819**: it is a `List` ROW with `selectionDisabled()`, not a `Section` header — a section costs air this design has already measured, and what that trade returns and what it does not (pinning) is in the inventory |
 | `TicketsToolbar` | organism | `.toolbar { ToolbarItem }` per control | the window row, and **every control the room has**. Amended twice: #836 moved all but search into per-pane bands, and the bands are now gone — see the column question |
-| `BacklogControls` | molecule | a `ToolbarVessel` | `BacklogMenu`, alone. Split out of `BacklogHeader` when the controls returned to the row. **Amended #900**: the funnel and the rule beside it are gone |
+| `BacklogControls` | molecule | an `ArgoIconButtonGroup` | `BacklogMenu`, alone. Split out of `BacklogHeader` when the controls returned to the row. **Amended #900**: the funnel and the rule beside it are gone |
 | `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading and its count, and nothing else. **Renamed #836** from `BacklogToolbarLabel`; the controls left it when the row was reassembled |
 | ~~`TicketBand`~~ | — | **gone** | added by #836 to carry New ticket and the ticket's verbs over their column; both are toolbar items again |
 | `BacklogMenu` | atom | `Menu` under an `ellipsis` | how the list is ordered. **Added #836**: Mail keeps sort and group here rather than on a mark of their own |
-| `ToolbarVessel` | atom | `GlassEffectContainer` + `Capsule` | groups icon buttons; no border, no shadow |
-| `ToolbarIcon` | atom | `Button(.plain)` with a `Label(.iconOnly)` | one glyph at `iconSize` |
-| `NewTicketButton` | atom | `ToolbarIcon` in its own `ToolbarVessel` | the call-to-action; survives the empty backlog |
+| ~~`ToolbarVessel`~~ | atom | **lifted to `ArgoIconButtonGroup` (#1243)** | it grouped icon buttons in a capsule with no border and no shadow, and it did it well — but it was `internal` to this room, so every other header hand-rolled the same stack at its own size. Same shape, in `ArgoAtoms`, where the shell row and the composer can reach it |
+| ~~`ToolbarIcon`~~ | atom | **lifted to `ArgoIconButton` (#1243)** | one glyph in the settled box, with the press, the tooltip and the spoken label |
+| `NewTicketButton` | atom | an `ArgoIconButton` in its own `ArgoIconButtonGroup` | the call-to-action; survives the empty backlog |
 | `StartControl` | molecule | `Button` in one vessel, with the two link icons | the verb, spawning in `Auto` (**amended #941**). **Amended #872**: it was `Button` + `Menu`, and the chevron is gone |
 | ~~`ModeMenu`~~ | — | **gone (#872)** | the four Mode rungs. The rung is the composer's, over a live Session (#608) |
 | `BacklogSearchField` | atom | `.searchable` field | searches the list; sits at the trailing edge |

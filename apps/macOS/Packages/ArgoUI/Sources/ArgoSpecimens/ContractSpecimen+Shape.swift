@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import ArgoUI
 import SwiftUI
@@ -29,6 +30,15 @@ extension ContractSpecimen {
                     }
                 }
             }
+        }
+    }
+
+    /// Every ground an icon button takes, at the ONE box they all share (#1243). The row is
+    /// `IconButtonSpecimen`'s, which also draws it on a sheet of its own — this sheet is longer
+    /// than any window, and the judgement the row exists for needs a render somebody looks at.
+    var controls: some View {
+        section("Icon buttons — one box, whatever the surface puts under it") {
+            IconButtonRow()
         }
     }
 

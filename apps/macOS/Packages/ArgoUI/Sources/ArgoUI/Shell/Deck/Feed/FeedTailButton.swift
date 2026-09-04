@@ -17,18 +17,21 @@ struct FeedTailButton: View {
     let follow: () -> Void
 
     var body: some View {
-        Button(action: follow) {
-            ArgoGlyph(ArgoSymbol.latest, .control)
-                .foregroundStyle(argo.color.text.secondary)
-                .frame(width: ArgoFeedRow.tailDiameter, height: ArgoFeedRow.tailDiameter)
-                .argoFloatingGlass(in: .circle)
-                // The circle and not the square around it: the corners of a frame that draws
-                // nothing would take clicks meant for the reading behind them.
-                .contentShape(.circle)
-                .overlay(alignment: .topTrailing) { badge }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Newest")
+        // The one icon button in the app that does NOT take `ArgoControlBox.icon`, and the reason
+        // is beside `tailDiameter`: this control's box answers to the plan pill's lane rather than
+        // to the button, because the two float over the same edge and a mark narrower than the lane
+        // would sit inside a float rather than beside one.
+        ArgoIconButton(
+            ArgoSymbol.latest,
+            voice: ArgoControlVoice("Newest"),
+            face: ArgoControlFace(
+                box: ArgoFeedRow.tailDiameter,
+                ink: argo.color.text.secondary,
+                ground: .floatingGlass,
+            ),
+            act: follow,
+        )
+        .overlay(alignment: .topTrailing) { badge }
         .accessibilityValue(spoken)
         .accessibilityHint("Scrolls back to the newest line and follows the Session again")
     }

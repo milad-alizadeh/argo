@@ -22,18 +22,12 @@ struct AddButton: View {
     let toggle: () -> Void
 
     var body: some View {
-        Button(action: toggle) {
-            ArgoGlyph(ArgoSymbol.attach, .control)
-                .foregroundStyle(argo.color.text.secondary)
-                .frame(
-                    width: ArgoComposerVessel.controlDiameter,
-                    height: ArgoComposerVessel.controlDiameter,
-                )
-                .contentShape(.circle)
-        }
-        .buttonStyle(.plain)
-        .help(AddMenu.label)
-        .accessibilityLabel(AddMenu.label)
+        ArgoIconButton(
+            ArgoSymbol.attach,
+            voice: ArgoControlVoice(AddMenu.label),
+            face: ArgoControlFace(ink: argo.color.text.secondary),
+            act: toggle,
+        )
         .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
     }
 }

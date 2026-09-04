@@ -20,7 +20,7 @@ struct StartVerb: View {
 
     var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            ArgoGlyph(ArgoSymbol.startSession, ArgoTicketsChrome.iconSize)
+            ArgoGlyph(ArgoSymbol.startSession, .control)
             Text("Start")
                 .argoText(ArgoTypography.control)
             if let command {

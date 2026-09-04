@@ -24,14 +24,12 @@ struct BacklogMenu: View {
             // three dots whose ink is a fraction of its box — matched by height it drew three discs
             // as tall as a full glyph. Sized by font, it takes the proportions the system draws it
             // at, which is what every other ellipsis on the platform is.
+            // `argoControlFace` and not `ArgoIconButton`: a `Menu`'s label is not a button, so the
+            // atom's press and tooltip cannot own it — only the box can, which is the half that
+            // has to agree with the marks beside it.
             Image(systemName: ArgoSymbol.backlogMenu)
-                .argoIcon(ArgoTicketsChrome.iconSize)
-                .foregroundStyle(argo.color.text.tertiary)
-                .frame(
-                    width: ArgoTicketsChrome.iconButtonWidth,
-                    height: ArgoTicketsChrome.iconButtonHeight,
-                )
-                .contentShape(.capsule)
+                .argoIcon(.control)
+                .argoControlFace(ArgoControlFace(ink: argo.color.text.tertiary))
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
@@ -43,7 +41,7 @@ struct BacklogMenu: View {
 }
 
 #Preview("Backlog menu") {
-    ToolbarVessel {
+    ArgoIconButtonGroup {
         BacklogMenu()
     }
     .padding(ArgoSpacing.region)

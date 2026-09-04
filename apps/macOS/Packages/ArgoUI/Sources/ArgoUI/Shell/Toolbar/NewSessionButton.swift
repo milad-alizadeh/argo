@@ -26,27 +26,21 @@ package struct NewSessionButton: View {
     @State var isStarting = false
 
     package var body: some View {
-        Button(action: start) {
-            mark
-                // A SQUARE of the bar's own container height, and not `toolbarSegment()`: that
-                // modifier measures a segment INSIDE a vessel, so it sized this container to one
-                // glyph plus padding — shorter than every other container on the bar, and with
-                // the mark sitting off its centre.
-                //
-                // On the CONTAINER and not on either mark, so the swap below cannot move the bar.
-                .frame(
-                    width: ArgoToolbarVessel.height,
-                    height: ArgoToolbarVessel.height,
-                )
-                .contentShape(.circle)
-                .glassEffect(in: .circle)
-        }
-        .buttonStyle(.plain)
+        // `ArgoControlBox.vessel` and not a box of its own: this control carries its OWN container
+        // on a band whose other containers are the same arithmetic, so it stands exactly as tall as
+        // the capsule of icon buttons beside it (#1243). The box is on the CONTAINER and not on
+        // either mark, so the swap below cannot move the bar.
+        ArgoIconButton(
+            voice: ArgoControlVoice(
+                isStarting ? Self.starting : NewSessionOffer.label, help: helpText,
+            ),
+            face: ArgoControlFace(box: ArgoControlBox.vessel, ink: ink, ground: .glass),
+            act: start,
+            mark: { mark },
+        )
         // Refused while one is in flight for the same reason it is refused with no Project: a
         // second press would start a second agent, and the first one has not answered yet.
         .disabled(!offer.isLaunchable || isStarting)
-        .help(helpText)
-        .accessibilityLabel(isStarting ? Self.starting : NewSessionOffer.label)
         // The hint moves with the label. Left on `detail` it would offer to start a Session under
         // a label saying one is already starting — two claims about the same press.
         .accessibilityHint(isStarting ? Self.waiting : offer.blocked ?? NewSessionOffer.detail)
@@ -69,7 +63,6 @@ package struct NewSessionButton: View {
                 .controlSize(.small)
         } else {
             ArgoGlyph(ArgoSymbol.newSession, .control)
-                .foregroundStyle(ink)
                 // `square.and.pencil` draws its square in the LOWER-LEFT of its own glyph box and
                 // spends the top-right on the pencil, so a box centred in the container leaves the
                 // body of the mark 1.3pt down and left of centre. The correction centres the
@@ -95,10 +88,12 @@ package struct NewSessionButton: View {
         }
     }
 
-    /// A disabled plain button dims nothing of a label it did not draw, so the state is spelled in
-    /// the ink as well as in the sentence on it.
+    /// The LIVE ink only. A disabled plain button dims nothing of a label it did not draw, and the
+    /// atom spells that state in `text.disabled` for every icon button at once — this control used
+    /// to answer it in `text.tertiary` and the Tickets row in `text.disabled`, which was two inks
+    /// for one state (#1243).
     private var ink: ArgoColor {
-        offer.isLaunchable ? argo.color.text.primary : argo.color.text.tertiary
+        argo.color.text.primary
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

@@ -7,7 +7,7 @@ import Testing
 /// a live-looking mark to `{}` — and no test could see it, because both `#Preview`s constructed the
 /// control with the same empty defaults the app was passing.
 ///
-/// What holds now is mostly the compiler: `ToolbarIcon.act` has no default, so a mark cannot be
+/// What holds now is mostly the compiler: `ArgoIconButton.act` has no default, so a mark cannot be
 /// drawn without an act written at its call site, and `BacklogMenu`'s one row is a `Text` rather
 /// than a `Button` because there is no choice to offer. This suite covers what the compiler cannot
 /// — that a slot cannot be ADDED to the intents unnoticed. It is a change detector by design: the

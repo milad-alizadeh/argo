@@ -29,6 +29,7 @@ struct ContractSpecimen: View, SpecimenSheet {
                 scale
                 type
                 icons
+                controls
                 shape
                 presence
                 depth

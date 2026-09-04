@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
@@ -14,22 +15,26 @@ import SwiftUI
 /// row is a fixed set of marks, and a pair that came and went with the provider would move the
 /// ones beside them.
 package struct StartControl: View {
+    @Environment(\.argo) private var argo
+
     let verbs: TicketsToolbarIntents.Verbs
 
     package var body: some View {
-        ToolbarVessel {
+        ArgoIconButtonGroup {
             start
-            DeckSeparator()
-                .frame(height: ArgoTicketsChrome.splitDividerHeight)
-                .accessibilityHidden(true)
-            ToolbarIcon(
-                symbol: ArgoSymbol.openOnHost,
-                label: "Open on host",
+            ArgoIconButtonRule()
+            ArgoIconButton(
+                ArgoSymbol.openOnHost,
+                voice: ArgoControlVoice("Open on host"),
+                face: ArgoControlFace(ink: argo.color.text.tertiary),
                 act: verbs.openOnHost ?? {},
             )
             .disabled(verbs.openOnHost == nil)
-            ToolbarIcon(
-                symbol: ArgoSymbol.copyLink, label: "Copy link", act: verbs.copyLink ?? {},
+            ArgoIconButton(
+                ArgoSymbol.copyLink,
+                voice: ArgoControlVoice("Copy link"),
+                face: ArgoControlFace(ink: argo.color.text.tertiary),
+                act: verbs.copyLink ?? {},
             )
             .disabled(verbs.copyLink == nil)
         }
@@ -37,11 +42,14 @@ package struct StartControl: View {
 
     /// The one control on this row that spends a word. It is the verb the room exists for, and a
     /// glyph on its own would be the unlabelled mark the study cut.
+    ///
+    /// Not an `ArgoIconButton`: it draws a WORD, so it takes the box's height and whatever width
+    /// the verb needs — the one thing on this row that is not square.
     private var start: some View {
         Button(action: verbs.start) {
             StartVerb(command: verbs.command)
                 .padding(.horizontal, ArgoSpacing.base)
-                .frame(height: ArgoTicketsChrome.iconButtonHeight)
+                .frame(height: ArgoControlBox.icon)
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
