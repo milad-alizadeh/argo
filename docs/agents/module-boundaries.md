@@ -6,20 +6,32 @@ notes, and each failure message states its own rule. Pulled out of AGENTS.md so 
 never touches a package boundary does not pay for it.
 
 `apps/macOS`'s layers — `ArgoEngine` ⊥ `ArgoDesign` → `ArgoAtoms` / `ProseText` →
-`MermaidLayout` → `MermaidView` → `ArgoUI` ⊥ the app target — are enforced by
+`MermaidLayout` / `AtlasLayout` → `MermaidView` / `AtlasView` → `ArgoUI` ⊥ the app target — are
+enforced by
 `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
 Four of the nine are ADR-0022's layering; the sharpest of those is **exactly
 one file in `ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else
 takes a value.
 
-Edge 2 of those four has **two** subjects, one implementation: `ArgoEngine` is ADR-0022's own,
-and `MermaidLayout` — the renderer's headless half, which scans, ranks and measures without
-drawing — is there for the same argument (#1087). `ArgoMermaid`'s other target, `MermaidView`,
-draws and is not a subject. Five types are `public` out of the pair — `MermaidDiagram`,
-`MermaidView`, `MermaidPlan`, `MermaidMeasure`, `MermaidFigure` — and everything the two targets
-share between themselves is `package`, which `ArgoUI` cannot see. That split is a convention and
-not an edge: nothing counts the public names, so widening one is a review note rather than a
-build failure.
+Edge 2 of those four has **three** subjects, one implementation: `ArgoEngine` is ADR-0022's own,
+and the two renderers' headless halves are there for the same argument — `MermaidLayout`, which
+scans, ranks and measures without drawing (#1087), and `AtlasLayout`, which tiles, bands and
+picks without drawing (#1143). Each package's other target — `MermaidView`, `AtlasView` — draws
+and is not a subject; each is instead named in the edge's own forbidden-import pattern, because
+that sibling import is how a `Path` reaches a layout without any framework name appearing.
+
+Five types are `public` out of the mermaid pair — `MermaidDiagram`, `MermaidView`, `MermaidPlan`,
+`MermaidMeasure`, `MermaidFigure` — and everything the two targets share between themselves is
+`package`, which `ArgoUI` cannot see. `ArgoAtlas` takes the same convention. That split is a
+convention and not an edge: nothing counts the public names, so widening one is a review note
+rather than a build failure.
+
+A package's registration is not one gate but five, and four of them are hard-coded name lists a
+new module is absent from by default — a scope a gate cannot see is a silent pass, not a
+failure. Edge 2's loop here, `SRC_DIRS` in `scripts/check-design-tokens-swift.sh`, the package
+loop in `apps/macOS/scripts/swift-test.sh`, `included:` in `apps/macOS/.swiftlint.yml`, and the
+link from `ArgoUI/Package.swift` that puts the module under `xcodebuild` at all. Land a package
+and widen all five, proving each fires by injecting a violation (#1143).
 
 The fifth is ADR-0027, on that projection: the cockpit **restates** `HubSession` rather than
 holding one, so every public engine fact must land in the mapping or be named on a

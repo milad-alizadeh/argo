@@ -37,6 +37,9 @@ export const PROSE = 'apps/macOS/Packages/ArgoDesign/Sources/ProseText'
 // The renderer's headless half, edge 2's second subject beside the engine (#1087).
 export const MERMAID = 'apps/macOS/Packages/ArgoMermaid/Sources/MermaidLayout'
 export const MERMAID_VIEW = 'apps/macOS/Packages/ArgoMermaid/Sources/MermaidView'
+// The map's, edge 2's third — split from its own drawing half for the same reason (#1143).
+export const ATLAS = 'apps/macOS/Packages/ArgoAtlas/Sources/AtlasLayout'
+export const ATLAS_VIEW = 'apps/macOS/Packages/ArgoAtlas/Sources/AtlasView'
 export const ALLOW = 'scripts/design-tokens-swift-allow.txt'
 
 // Edge 7 calls a script of its own, and that script reads its allowlist from beside itself. Both
@@ -124,6 +127,8 @@ export function tree(files = {}) {
     [`${PROSE}/ProseFace.swift`]: 'public struct ProseFace { public init() {} }\n',
     [`${MERMAID}/MermaidPlan.swift`]: 'public struct MermaidPlan { public init() {} }\n',
     [`${MERMAID_VIEW}/MermaidView.swift`]: 'import SwiftUI\n',
+    [`${ATLAS}/AtlasPlan.swift`]: 'public struct AtlasPlan { public init() {} }\n',
+    [`${ATLAS_VIEW}/AtlasView.swift`]: 'import SwiftUI\n',
     [ALLOW]: '# Nothing carried in the synthetic tree.\n',
     ...SCRIPTS,
     [`${SPECIMENS}/SpecimenRegistry.swift`]: 'import ArgoUI\n\nenum SpecimenRegistry {}\n',

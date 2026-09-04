@@ -15,6 +15,10 @@ import { ARGV_LOG, BARE, MISSING, run, STRICT, STUBBED, scratch } from './swift-
 const LINT = 'scripts/swift-lint.sh'
 const FORMAT = 'scripts/swift-format.sh'
 const TEST = 'apps/macOS/scripts/swift-test.sh'
+// The package loop `swift-test.sh` spells, in its order. The first is asserted by name in the
+// configuration case below and the rest by their verdict lines, so this list is the one place
+// the count and the order live.
+const PACKAGES = ['ArgoEngine', 'ArgoUI', 'ArgoMermaid', 'ArgoAtlas']
 
 for (const [script, tool] of [
   [LINT, 'swiftlint'],
@@ -105,19 +109,18 @@ for (const [configuration, environment, flags] of [
     swiftWriting(suite('errors="0" tests="9" failures="0"'))
     const result = run(TEST, { ...REPORTING, env: environment })
     assert.equal(result.status, 0, result.output)
-    assert.match(result.output, new RegExp(`ArgoEngine \\(${configuration}\\)`))
-    assert.match(result.output, /ArgoUI clean, 0 failures across 9 reported tests/)
-    assert.match(result.output, /ArgoMermaid clean, 0 failures across 9 reported tests/)
+    assert.match(result.output, new RegExp(`${PACKAGES[0]} \\(${configuration}\\)`))
+    for (const name of PACKAGES.slice(1)) {
+      assert.match(result.output, new RegExp(`${name} clean, 0 failures across 9 reported tests`))
+    }
     // Every invocation in order: the report path, then whatever flags the configuration adds.
+    // One per package in the loop — a package added to the script and not to `PACKAGES` would be
+    // a run nobody counted.
     const passed = result.argv.filter((arg) => arg !== 'test' && !arg.endsWith('.xml'))
-    assert.deepEqual(passed, [
-      '--xunit-output',
-      ...flags,
-      '--xunit-output',
-      ...flags,
-      '--xunit-output',
-      ...flags,
-    ])
+    assert.deepEqual(
+      passed,
+      PACKAGES.flatMap(() => ['--xunit-output', ...flags]),
+    )
   })
 }
 

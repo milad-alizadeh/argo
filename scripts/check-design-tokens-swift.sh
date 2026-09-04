@@ -36,7 +36,7 @@ set -u
 # assertion about #D73A4A has to spell #D73A4A.
 SRC_DIRS="apps/macOS/Packages/ArgoUI/Sources apps/macOS/Packages/ArgoDesign/Sources/ArgoAtoms\
  apps/macOS/Packages/ArgoDesign/Sources/ProseText apps/macOS/Packages/ArgoMermaid/Sources\
- apps/macOS/Argo"
+ apps/macOS/Packages/ArgoAtlas/Sources apps/macOS/Argo"
 # The module the exemption is: named here so a rename fails loudly rather than exempting nothing.
 DESIGN_TARGET="apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign"
 ALLOW_FILE="$(dirname "$0")/design-tokens-swift-allow.txt"
