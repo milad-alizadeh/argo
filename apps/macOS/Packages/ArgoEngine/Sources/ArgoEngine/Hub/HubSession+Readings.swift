@@ -17,6 +17,13 @@ public extension HubSession {
         moments.lastActivityAtMs
     }
 
+    /// When the wait for a spawned CLI's first byte ran out with its process still up (#1245) —
+    /// the moment a reader is told about in place of `starting the agent`. Absent for every Session
+    /// Argo did not start and every one that came up and printed something.
+    var startedQuietlyAtMs: Int? {
+        startup.quietAtMs
+    }
+
     /// The oldest moment the records report. Only ever taken from a moment read BEFORE a bounded
     /// read's seam: a start behind an unopened stretch is not the start. A value already taken
     /// stands after the seam, so this is not withheld on an excerpt.

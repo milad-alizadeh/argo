@@ -110,7 +110,7 @@ final class LiveClaudeFixture {
             spawnServices: SpawnServices(
                 host: host,
                 companionRoot: companionRoot,
-                permissionPatience: patience,
+                patience: SpawnServices.Patience(permission: patience),
             ),
         )
         // Pointed at the Project BEFORE anything is spawned, exactly as the app does it. Without

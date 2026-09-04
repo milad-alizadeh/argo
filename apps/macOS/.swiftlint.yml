@@ -103,8 +103,8 @@ function_parameter_count:
   # INIT: Ticket+Copy.swift 10 — Ticket's memberwise copy, one slot per field it carries
   # INIT: CockpitPresentation+Session.swift 10 — the projected Session, one group per reading
   # INIT: ArgoPalette.swift 10 — one ground per surface layer
-  # INIT: SpawnServices.swift 10 — the Hub's spawn collaborators and the files they own, widened
-  # for the last-picked run's file (#1175)
+  # INIT: SpawnServices.swift 7 — the Hub's spawn collaborators; the four files it remembers in
+  # and the two waits it runs are grouped (#1245)
   # INIT: ConnectReading.swift 9 — the connect panel's whole reading
   # INIT: ConnectPanelActions.swift 8 — one closure per connect step
   # INIT: ToolCall.swift 7 — a call as the transcript declares it
@@ -164,7 +164,8 @@ function_parameter_count:
   # INIT: PermissionPromptProjection.swift 7 — Prompt, one permission request as the composer draws
   # INIT: ProjectMenuProjection.swift 7 — Row, one project in the menu, a field per thing the row
   # INIT: TicketsChromeProjection.swift 7 — Reading, the Tickets chrome's whole reading, heading
-  # INIT: AgentSpawn.swift 7 — what Argo just started, before its CLI has written a record
+  # INIT: AgentSpawn.swift 6 — what Argo just started, before its CLI has written a record; the
+  # moments its wait for the first byte can end at are grouped (#1245)
   # INIT: AgentSpawnPlan.swift 7 — everything one spawn was decided to be, before anything has
   # happened, widened for the Model and Effort it opens on (#1175)
   # INIT: ClaudeSessionDriver.swift 6 — the driver's collaborators, one per thing a Claude Session

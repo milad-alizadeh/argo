@@ -6,6 +6,14 @@ import Foundation
 /// to whatever draws it.
 @MainActor
 public protocol AgentProcess: AnyObject {
+    /// Whether the child is still there. DIRECT — this is Argo's own process, asked directly,
+    /// rather than the working directory and time window a transcript is matched on.
+    ///
+    /// Asked at one moment only: where the wait for the first byte has run out and the silence
+    /// needs an answer (`StartupPatience`, #1245). An exit Argo WITNESSED arrives on `onExit`
+    /// instead, and is the stronger fact wherever both are available.
+    var isRunning: Bool { get }
+
     func write(_ text: String)
     /// Match the PTY to the viewport after a fit.
     func resize(columns: Int, rows: Int)

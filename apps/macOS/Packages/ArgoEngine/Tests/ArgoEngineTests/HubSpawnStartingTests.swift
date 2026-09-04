@@ -34,10 +34,10 @@ struct HubSpawnStartingTests {
         let process = try #require(fixture.host.started.last)
 
         process.emit("first")
-        let witnessed = fixture.hub.spawns[claim]?.firstOutputAtMs
+        let witnessed = fixture.hub.spawns[claim]?.startup.firstOutputAtMs
         process.emit("second")
 
         #expect(witnessed != nil)
-        #expect(fixture.hub.spawns[claim]?.firstOutputAtMs == witnessed)
+        #expect(fixture.hub.spawns[claim]?.startup.firstOutputAtMs == witnessed)
     }
 }

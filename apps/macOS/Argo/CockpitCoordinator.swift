@@ -55,18 +55,20 @@ final class CockpitCoordinator {
             // therefore AppKit, and nothing under `ArgoEngine` may name either.
             spawnServices: SpawnServices(
                 host: SwiftTermProcessHost(),
-                // The one place the real chain file is named. A Hub given none remembers no
-                // handoff.
-                chainFileURL: HandoffChainStore.defaultFileURL,
-                // And the one place the real ownership ledger is. A Hub given none grades every
-                // Session it spawned `external` after a relaunch (ADR-0026).
-                ownershipFileURL: SessionOwnershipLedgerStore.defaultFileURL,
-                // And the one place the real preference is. A Hub given none opens every New
-                // Session on `Code` (#629).
-                modeFileURL: SessionModeStore.defaultFileURL,
-                // And of the Model and Effort last picked. A Hub given none opens every New
-                // Session on `Opus 5 · Medium` (#1175).
-                runFileURL: SessionRunStore.defaultFileURL,
+                files: SpawnServices.Files(
+                    // The one place the real chain file is named. A Hub given none remembers no
+                    // handoff.
+                    chainFileURL: HandoffChainStore.defaultFileURL,
+                    // And the one place the real ownership ledger is. A Hub given none grades every
+                    // Session it spawned `external` after a relaunch (ADR-0026).
+                    ownershipFileURL: SessionOwnershipLedgerStore.defaultFileURL,
+                    // And the one place the real preference is. A Hub given none opens every New
+                    // Session on `Code` (#629).
+                    modeFileURL: SessionModeStore.defaultFileURL,
+                    // And of the Model and Effort last picked. A Hub given none opens every New
+                    // Session on `Opus 5 · Medium` (#1175).
+                    runFileURL: SessionRunStore.defaultFileURL,
+                ),
             ),
         )
         // Composed here for the PTY host's reason, and with a terminal to paint on for the same

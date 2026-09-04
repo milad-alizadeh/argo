@@ -38,14 +38,25 @@ public extension CockpitPresentation.Session {
             }
         }
 
-        /// When it ran. Neither moment is a duration alone, and the span is all either is read for.
+        /// When it ran. Neither of the first two moments is a duration alone, and the span is all
+        /// either is read for.
         public struct Span: Equatable, Sendable {
             public let startedAtMs: Int?
             public let lastSeenAtMs: Int?
+            /// When the wait for this Session's first byte ran out with its process still up
+            /// (#1245) — a moment of the same kind as the two above, and the third thing this
+            /// link's life is dated by. Absent for every Session Argo did not start and every one
+            /// that came up and printed something.
+            public let startedQuietlyAtMs: Int?
 
-            public init(startedAtMs: Int? = nil, lastSeenAtMs: Int? = nil) {
+            public init(
+                startedAtMs: Int? = nil,
+                lastSeenAtMs: Int? = nil,
+                startedQuietlyAtMs: Int? = nil,
+            ) {
                 self.startedAtMs = startedAtMs
                 self.lastSeenAtMs = lastSeenAtMs
+                self.startedQuietlyAtMs = startedQuietlyAtMs
             }
         }
 
@@ -57,6 +68,7 @@ public extension CockpitPresentation.Session {
         public let lastSeenAtMs: Int?
         public let handedOffTo: String?
         public let companionChannel: CompanionLiveness
+        public let startedQuietlyAtMs: Int?
 
         public init(
             program: Program = .init(),
@@ -72,6 +84,7 @@ public extension CockpitPresentation.Session {
             self.lastSeenAtMs = span.lastSeenAtMs
             self.handedOffTo = handedOffTo
             self.companionChannel = companionChannel
+            self.startedQuietlyAtMs = span.startedQuietlyAtMs
         }
     }
 

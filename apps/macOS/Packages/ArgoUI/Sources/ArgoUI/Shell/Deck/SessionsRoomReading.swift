@@ -80,6 +80,7 @@ struct SessionsRoomReading {
                     from: session?.events ?? [],
                     working: FeedWorking.isWorking(stamp.status),
                     starting: FeedWorking.isStarting(stamp.status),
+                    startedQuietly: stamp.startedQuietly,
                     handedOff: handedOff,
                     expired: stamp.expired,
                     asking: asking,

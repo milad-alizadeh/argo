@@ -39,4 +39,12 @@ enum FeedWorking {
 
     /// Words in the rule, unlike the state above: two wordless ions would say neither wait.
     static let startingWords = "starting the agent"
+
+    /// The wait above, ended by its limit rather than by the agent (#1245). Both facts, because
+    /// either alone is the wrong news: that it started rules out a launch that failed, and that it
+    /// printed nothing is why the feed below this line is empty. It states what Argo found and
+    /// guesses at no cause — a CLI at a keychain prompt and one wedged look the same from here.
+    static let quietWords = "the agent started and printed nothing"
+
+    static let quietSpoken = "The agent started and printed nothing"
 }

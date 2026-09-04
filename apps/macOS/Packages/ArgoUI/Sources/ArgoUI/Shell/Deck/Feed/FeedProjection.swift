@@ -17,6 +17,7 @@ package enum FeedProjection {
         from events: [TranscriptEvent],
         working: Bool = false,
         starting: Bool = false,
+        startedQuietly: Bool = false,
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
@@ -42,7 +43,7 @@ package enum FeedProjection {
         // channels share no id, so the only thing that can tell one question from two is the words.
         let held = standing(asking, over: work)
         return (work + held + self.reported(reported, asking, over: work + held) +
-            startingUp(starting) +
+            startingUp(starting) + wentQuiet(startedQuietly) +
             inFlight(working, over: work) + unanswered(expired) +
             chained(handedOff)).enumerated()
             .map { position, content in
@@ -73,6 +74,18 @@ package enum FeedProjection {
     /// written no record for anything to sit above it.
     private static func startingUp(_ starting: Bool) -> [FeedRow.Content] {
         starting ? [.mark(.starting)] : []
+    }
+
+    /// The row that takes the place of the one above once the wait runs out (#1245). Never beside
+    /// it: the engine publishes the two on either side of one limit, so the feed can no more draw
+    /// both than the Session can be in both states.
+    ///
+    /// Never beside the WORKING row either, and that is the engine's doing rather than this
+    /// function's: a Turn typed at a PTY Argo has never heard is not reported `running`
+    /// (`HubSession.statusReading`), so a reading cannot arrive here claiming both that the agent
+    /// is thinking and that it has printed nothing.
+    private static func wentQuiet(_ startedQuietly: Bool) -> [FeedRow.Content] {
+        startedQuietly ? [.mark(.startedQuietly)] : []
     }
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {

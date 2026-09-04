@@ -46,13 +46,17 @@ public extension HubSession {
         }
         // Below every channel above it, because a channel that has SPOKEN is itself proof the CLI
         // is up — and above the record, which has no word for a Session that has written none.
-        if awaitingFirstOutput {
+        if startup == .awaitingFirstOutput {
             return SessionStatusReading(tier: .direct, status: .starting)
         }
         // Below `starting` and not above it, though this is the louder word: a CLI Argo has heard
         // nothing at all from cannot be shown to have heard a Turn either, and ambiguity resolves
         // to the quieter of the two claims (#1048).
-        if submittedTurn?.isAwaitingRecord(events.count) == true {
+        //
+        // Gated on the WHOLE wait rather than on the `starting` half of it: a spawn past its limit
+        // has still never been heard, so a Turn typed at it after the row went quiet would report
+        // `running` at DIRECT over a process that has never printed a byte (#1245).
+        if !startup.heardNothing, submittedTurn?.isAwaitingRecord(events.count) == true {
             return SessionStatusReading(tier: .direct, status: .running)
         }
         return SessionStatus.read(signals)

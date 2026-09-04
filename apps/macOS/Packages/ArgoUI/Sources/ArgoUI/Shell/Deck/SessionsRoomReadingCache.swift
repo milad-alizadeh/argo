@@ -50,6 +50,12 @@ enum SessionsRoomReadingCache {
         /// two boundaries are no longer the same. One fact here, each reading named where it is
         /// taken — two stored Bools would be two places to answer a status added later.
         let status: SessionStatus?
+        /// Whether the wait for the Session's first byte ran out with its process still up
+        /// (#1245). By VALUE beside the status, and not read OFF it: the row it draws stands over
+        /// a Session whose status has already fallen through to what the world readings say, so a
+        /// stamp stopping at the status would go on drawing `starting the agent` at a wait that
+        /// has ended.
+        let startedQuietly: Bool
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -65,6 +71,7 @@ enum SessionsRoomReadingCache {
             self.expired = session?.expiredPermissions ?? []
             self.reported = session?.companionAsk?.ask
             self.status = session?.status
+            self.startedQuietly = session?.startedQuietlyAtMs != nil
         }
     }
 

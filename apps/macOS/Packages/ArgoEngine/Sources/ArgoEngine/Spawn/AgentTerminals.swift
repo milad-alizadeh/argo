@@ -77,6 +77,22 @@ final class AgentTerminals {
         }
     }
 
+    /// Whether the process behind one claim is still there — asked of the child itself, never of
+    /// the process table (`AgentProcess.isRunning`). `false` where no PTY answers to that claim at
+    /// all, which is the same answer for the same reason: nothing of it is left.
+    func isRunning(_ id: SessionOwnership.ClaimID) -> Bool {
+        agents[id]?.process.isRunning ?? false
+    }
+
+    /// End ONE agent, for the claim that is about to stop answering. Asked where Argo INFERRED the
+    /// child was gone rather than watching it go: `isRunning` above can read false for a tty whose
+    /// last slave descriptor closed under a child that is still alive, and dropping such a child
+    /// unasked would put it beyond `terminateAll` — an agent Argo started outliving the Argo that
+    /// started it (#1245). Signalling a child that really did die costs nothing.
+    func terminate(_ id: SessionOwnership.ClaimID) {
+        agents[id]?.process.terminate()
+    }
+
     /// The PTY exited: there is nothing left to steer.
     func drop(_ id: SessionOwnership.ClaimID) {
         agents.removeValue(forKey: id)

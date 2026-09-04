@@ -26,7 +26,7 @@ extension Hub {
         )
         permissions = PermissionChannel(
             scope: companionScope,
-            patience: spawnServices.permissionPatience,
+            patience: spawnServices.patience.permission,
             ledger: claims,
             rung: { [weak self] claim in self?.rung(ofClaim: claim) },
         )

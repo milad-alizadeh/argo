@@ -45,7 +45,7 @@ struct LiveCodex {
             spawnServices: SpawnServices(
                 host: FakeProcessHost(),
                 companionRoot: companionRoot,
-                permissionPatience: patience,
+                patience: SpawnServices.Patience(permission: patience),
             ),
         )
     }

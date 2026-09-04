@@ -116,6 +116,11 @@ public extension CockpitPresentation {
         /// Whether the companion channel this Session's CONVENTION-tier facts arrive over is up
         /// (#493). `notApplicable` draws NOTHING rather than a negative claim.
         public let companionChannel: CompanionLiveness
+        /// When the wait for this Session's first byte ran out with its process still up (#1245) —
+        /// DIRECT, and the only thing on this value that can say why a row Argo started has
+        /// neither spoken nor gone. Absent for every Session Argo did not start, and for every one
+        /// that came up and printed something.
+        public let startedQuietlyAtMs: Int?
         /// Whether the user cleared this Session off the roster. Argo's own fact and not a
         /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,
         /// which is why new activity on an archived Session leaves it archived (#502, story 16)
@@ -200,6 +205,7 @@ public extension CockpitPresentation {
             self.startedAtMs = chain.startedAtMs
             self.handedOffTo = chain.handedOffTo
             self.companionChannel = chain.companionChannel
+            self.startedQuietlyAtMs = chain.startedQuietlyAtMs
             self.workspaceLocation = work.location
             self.workspace = work.workspace
             self.ticket = work.ticket
