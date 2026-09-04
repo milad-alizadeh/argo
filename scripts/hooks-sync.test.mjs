@@ -13,7 +13,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const descriptor = JSON.parse(readFileSync(path.join(HERE, '..', 'hooks.json'), 'utf8'))
 
 const guardCmd = (block) =>
-  block.PreToolUse.find((g) => g.matcher === 'Edit|Write').hooks[0].command
+  block.PreToolUse.find((g) => g.hooks[0].command.includes('worktree-guard.mjs')).hooks[0].command
 
 // A consumer installs the hooks with `scaffold.mjs --hooks`, which copies HOOK_ASSETS and then
 // projects hooks.json. The two are separate lists, so adding a hook whose script is not an asset
@@ -102,7 +102,7 @@ check('projects PascalCase event keys with the right group shapes', () => {
   // and every count-based assertion here stays green through it.
   assert.deepEqual(
     b.PreToolUse.map((g) => g.matcher),
-    ['Edit|Write', 'Bash|EnterWorktree'],
+    ['Edit|Write|NotebookEdit|Bash', 'Bash|EnterWorktree'],
   )
   assert.equal(b.SessionEnd.length, 1)
   const end = b.SessionEnd[0]
@@ -121,6 +121,8 @@ check('unknown event -> warning, skipped', () => {
 // Merge preserves a consumer's own hooks and replaces only ours — idempotently.
 check('mergeHooks keeps foreign groups, replaces managed ones', () => {
   const foreign = { matcher: 'Bash', hooks: [{ type: 'command', command: 'my-own-linter' }] }
+  // A stale group from an earlier projection, matcher and all: mergeHooks keys on the script
+  // name, so widening the matcher must still replace it rather than leave two.
   const ourOld = {
     matcher: 'Edit|Write',
     hooks: [{ type: 'command', command: 'node /old/path/scripts/worktree-guard.mjs' }],

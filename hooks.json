@@ -1,10 +1,11 @@
 {
-  "$comment": "Neutral guardrail-hook SSOT for this repo — the hooks half of Argo's cross-CLI setup (skills are skills-lock.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mjs` projects them into each harness named in `agents` below: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks — edit here and run `bun run hooks:sync`. Commands are harness-neutral: `$(git rev-parse --show-toplevel)/scripts/*` (no $CLAUDE_PROJECT_DIR). The commands invoke this repo's scripts/ via git-toplevel; scaffold.mjs can copy this file AND those scripts into a consumer before projecting, but only opt-in (`--hooks`) since the guard imposes Argo's worktree discipline. Optional top-level `worktreeGuard.roots` re-scopes the worktree edit guard (default `[\"apps\", \"packages\"]`) for a project whose code lives elsewhere. See AGENTS.md \"Cross-CLI guardrail hooks\".",
+  "$comment": "Neutral guardrail-hook SSOT for this repo — the hooks half of Argo's cross-CLI setup (skills are skills-lock.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mjs` projects them into each harness named in `agents` below: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks — edit here and run `bun run hooks:sync`. Commands are harness-neutral: `$(git rev-parse --show-toplevel)/scripts/*` (no $CLAUDE_PROJECT_DIR). The commands invoke this repo's scripts/ via git-toplevel; scaffold.mjs can copy this file AND those scripts into a consumer before projecting, but only opt-in (`--hooks`) since the guard imposes Argo's worktree discipline. Optional top-level `worktreeGuard.roots` narrows the worktree edit guard, whose default `[\".\"]` is the whole repository, for a project whose agents must still edit part of the main checkout. See AGENTS.md \"Cross-CLI guardrail hooks\".",
   "agents": ["claude-code", "codex"],
   "hooks": [
     {
       "event": "pre-tool",
-      "matcher": "Edit|Write",
+      "matcher": "Edit|Write|NotebookEdit|Bash",
+      "$comment": "Every agent change runs in a worktree. It watches Bash as well as the edit tools, because `cat > file` is a write, and the whole repository rather than apps/ and packages/, because \"all of it except X\" is how four files landed in the main checkout under an installed, passing guard (#1276). `worktreeGuard.roots` narrows it for a consumer.",
       "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-guard.mjs\"",
       "agentGated": true
     },

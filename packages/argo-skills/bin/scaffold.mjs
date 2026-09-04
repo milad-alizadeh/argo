@@ -44,6 +44,7 @@ const SKILL_AGENTS = ['claude-code', 'cursor', 'codex']
 const HOOK_ASSETS = [
   'hooks.json',
   'scripts/hook-io.mjs',
+  'scripts/shell-writes.mjs',
   'scripts/worktree-guard.mjs',
   'scripts/worktree-name-guard.mjs',
   'scripts/worktree-gc.sh',
