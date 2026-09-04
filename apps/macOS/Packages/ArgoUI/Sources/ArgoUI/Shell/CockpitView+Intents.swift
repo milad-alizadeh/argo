@@ -161,7 +161,7 @@ extension CockpitView {
         return SessionCommands(
             for: session,
             rename: { renamingSessionID = $0 },
-            archive: archive,
+            archive: { archive(sessionID: $0, isArchived: $1) },
         )
     }
 
@@ -175,7 +175,7 @@ extension CockpitView {
     /// A Session the presentation cannot name is archived without a prompt rather than dropped: it
     /// is a row that exists (the gesture came off one), and a gesture that silently did nothing is
     /// worse than one that skips a question about a Session nothing can describe.
-    func archive(_ sessionID: String, _ isArchived: Bool) {
+    func archive(sessionID: String, isArchived: Bool) {
         guard let session = presentation.session(sessionID),
               SessionArchiveProjection.confirms(
                   access: session.access,

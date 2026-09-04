@@ -124,7 +124,7 @@ extension CockpitView {
                 // The shell's intent and not the action itself: an archive that would end live work
                 // is asked about first, and the row's swipe raises the same prompt the menu item
                 // does (#1290).
-                archive: archive,
+                archive: { archive(sessionID: $0, isArchived: $1) },
                 rename: actions.sessions.setName,
                 renamingSessionID: $renamingSessionID,
             )

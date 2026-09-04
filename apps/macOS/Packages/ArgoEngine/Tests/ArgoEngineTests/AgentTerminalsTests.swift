@@ -84,6 +84,31 @@ struct AgentTerminalsTests {
         #expect(second.isTerminated)
     }
 
+    /// Ending them all reaches every queued Turn too. The loop walks the ADOPTED claims, so this
+    /// holds only while a queued Turn implies an adopted claim — the invariant `terminateAll`
+    /// states. A change that let the two tables drift apart would leave a Turn typing at a PTY the
+    /// quit had already ended, and this is what would catch it.
+    @Test
+    func `terminating them all cancels every queued Turn`() async {
+        let terminals = AgentTerminals()
+        let first = unwatchedProcess()
+        let second = unwatchedProcess()
+        terminals.adopt(SessionOwnership.ClaimID(value: "claim-1"), process: first)
+        terminals.adopt(SessionOwnership.ClaimID(value: "claim-2"), process: second)
+        for claim in ["claim-1", "claim-2"] {
+            terminals.write(Self.turn, to: SessionOwnership.ClaimID(value: claim))
+            terminals.write(Self.turn, to: SessionOwnership.ClaimID(value: claim))
+        }
+
+        terminals.terminateAll()
+
+        // Waited out rather than checked at once: a cancelled Turn and a Turn still sleeping out
+        // its gap look identical the instant the terminate returns.
+        try? await Task.sleep(for: Self.turn.gap * 4)
+        #expect(first.written == [Self.turn.first])
+        #expect(second.written == [Self.turn.first])
+    }
+
     /// A gap short enough that a passing test does not wait on it, and long enough that the second
     /// Turn of each pair is still queued when the terminate lands.
     private static let turn = PacedKeystrokes(first: "hi", second: "\r", gap: .milliseconds(20))

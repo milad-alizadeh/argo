@@ -84,6 +84,11 @@ public extension Hub {
         for claim in ownership.liveClaims {
             end(claim)
         }
+        // Kept as a sweep even though `end` forgets each claim's own watches, and deliberately not
+        // folded into it. Per-claim forgetting resolves a Session by the two ids a claim answers
+        // to; this is the quit path, where being one id short means a watch outliving the Hub that
+        // owns it. One call, and the guarantee stops resting on that resolution being exhaustive.
+        delivery.forgetAll()
     }
 
     /// The act of ownership this spawn opens, and the three things a claim can know about its

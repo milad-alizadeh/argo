@@ -38,7 +38,9 @@ struct SessionArchiveProjectionTests {
     @Test
     func `archiving a managed Session mid-turn is confirmed`() {
         for status in [SessionStatus.starting, .running, .permission, .asking] {
-            #expect(SessionArchiveProjection.confirms(access: .managed, status: status))
+            #expect(SessionArchiveProjection.confirms(
+                access: .managed, status: status, archiving: true,
+            ))
         }
     }
 
@@ -47,7 +49,9 @@ struct SessionArchiveProjectionTests {
     @Test
     func `archiving a managed Session between Turns is not confirmed`() {
         for status in [SessionStatus.idle, .stopped, .ended, .unknown] {
-            #expect(!SessionArchiveProjection.confirms(access: .managed, status: status))
+            #expect(!SessionArchiveProjection.confirms(
+                access: .managed, status: status, archiving: true,
+            ))
         }
     }
 
@@ -57,7 +61,9 @@ struct SessionArchiveProjectionTests {
     func `archiving a Session Argo does not own is never confirmed`() {
         for access in [CockpitPresentation.Session.Access.external, .orphaned] {
             for status in SessionStatus.allCases {
-                #expect(!SessionArchiveProjection.confirms(access: access, status: status))
+                #expect(!SessionArchiveProjection.confirms(
+                    access: access, status: status, archiving: true,
+                ))
             }
         }
     }
@@ -78,10 +84,14 @@ struct SessionArchiveProjectionTests {
     func `the prompt names the Session and says what ending it does`() {
         #expect(SessionArchiveProjection.confirmTitle(name: "Rebuild the roster")
             == "Archive \u{201C}Rebuild the roster\u{201D}?")
-        #expect(SessionArchiveProjection.confirmMessage == """
-        Its agent is working. Archiving ends that agent and takes the Session off the roster. \
-        Putting it back keeps the history, and it can be continued from there.
-        """)
-        #expect(SessionArchiveProjection.confirmVerb == "Archive and End")
+        // The message is not re-typed here to be compared with itself: an assertion that can only
+        // fail when somebody edits the copy is a change detector, and it would be edited in both
+        // places. What is asserted is what the words have to DO — say that ending is not losing,
+        // which is the sentence a reader needs before they dare archive a Session mid-turn.
+        #expect(SessionArchiveProjection.confirmMessage.contains("ends that agent"))
+        #expect(SessionArchiveProjection.confirmMessage.contains("keeps the history"))
+        // The verb says both halves. "Archive" alone reads as the gesture that only hid the row.
+        #expect(SessionArchiveProjection.confirmVerb.contains("Archive"))
+        #expect(SessionArchiveProjection.confirmVerb.contains("End"))
     }
 }

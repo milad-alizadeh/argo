@@ -42,3 +42,21 @@ struct ArchiveConfirmationDialog: ViewModifier {
         )
     }
 }
+
+// The prompt as it is raised: over a stand-in for the surface it covers, naming a Session the way a
+// real row does. ONE render, because the prompt has one state — it is up, or there is nothing to
+// draw at all.
+//
+// The platform owns the chrome here, so what this is for is the WORDS: that the title quotes a long
+// name without swallowing it, that the message's two sentences read in the order that matters, and
+// that the destructive verb and Cancel sit the way macOS puts them.
+#Preview("Archive prompt — over a running Session") {
+    @Previewable @State var pending: ArchiveConfirmation? = ArchiveConfirmation(
+        id: "session",
+        name: "Rebuild the roster's archived foot",
+    )
+
+    Color.clear
+        .frame(width: 420, height: 260)
+        .modifier(ArchiveConfirmationDialog(pending: $pending) { _ in })
+}

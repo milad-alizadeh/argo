@@ -227,8 +227,8 @@ public struct CockpitView: View {
         // asked about first (#1290). On the shell beside the sheets above, and for their reason:
         // both gestures that raise it — the menu bar's item and the roster row's swipe — are
         // outside the deck, and the row's own swipe closes over the prompt it would present.
-        .modifier(ArchiveConfirmationDialog(pending: $archiveConfirmation) {
-            actions.sessions.setArchived($0, true)
+        .modifier(ArchiveConfirmationDialog(pending: $archiveConfirmation) { sessionID in
+            actions.sessions.setArchived(sessionID, true)
         })
         .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in

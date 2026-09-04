@@ -21,7 +21,7 @@ enum SessionArchiveProjection {
     static func confirms(
         access: CockpitPresentation.Session.Access,
         status: SessionStatus,
-        archiving: Bool = true,
+        archiving: Bool,
     )
         -> Bool {
         guard archiving, access == .managed else { return false }
