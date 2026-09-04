@@ -38,10 +38,11 @@ struct FeedFoldStepName: View {
             }
             .foregroundStyle(ink)
             // The mark's column let in first, so the name hangs under the header's WORDS rather
-            // than under the run's mark — then the row's own ground around it, at the open box's
-            // step, so a name and the count above it are the same shape at the same height.
+            // than under the run's mark — then the row's own ground around it, at the same step
+            // the header stands at in both states, so a name and the count above it are the same
+            // shape at the same height (#1354).
             .padding(.leading, ArgoFeedRow.foldNameIndent)
-            .feedRowGround(ground, stepY: ArgoFeedRow.foldLineInsetY)
+            .feedRowGround(ground)
         }
         .buttonStyle(.plain)
         .disabled(!goesSomewhere)
