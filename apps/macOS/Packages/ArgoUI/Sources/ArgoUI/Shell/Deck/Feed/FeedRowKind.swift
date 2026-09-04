@@ -131,6 +131,10 @@ extension FeedRow.Content {
         case .ask: Kind()
         case let .mark(mark): Kind(endsTurn: mark.endsTurn, isWorkingThread: mark == .working)
         // The raw text is behind a fold, so the key that opens it is the fold's own.
+        // A wait that ended is a thing that HAPPENED, so it is `isCall` for the reason a call
+        // line is: the feed welds a run of them together with a call's tighter step, and the
+        // settled start belongs against the work below it rather than a prose gap away from it.
+        case .settledWait: Kind(isCall: true)
         case .unreadable: Kind(activation: .fold)
         }
     }
@@ -142,7 +146,8 @@ extension FeedRow.Content {
         case let .call(call): [call]
         case let .survey(survey): survey.calls
         case let .work(work): work.calls
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .skillLoaded, .unreadable: []
+        case .prompt, .message, .thought, .gallery, .ask, .mark, .skillLoaded, .settledWait,
+             .unreadable: []
         }
     }
 
@@ -154,7 +159,7 @@ extension FeedRow.Content {
         case let .survey(survey): survey.opened
         case let .work(work): work.opened
         case let .skillLoaded(skill): skill.opened
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: nil
+        case .prompt, .message, .thought, .gallery, .ask, .mark, .settledWait, .unreadable: nil
         }
     }
 }

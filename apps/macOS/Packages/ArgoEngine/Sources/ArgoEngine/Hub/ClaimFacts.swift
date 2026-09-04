@@ -41,11 +41,23 @@ struct ClaimFacts: Equatable {
     /// go back where they were typed: the composer cleared on the strength of a keystroke that was
     /// written, and this is the later news that it was never read.
     var lostTurn: String?
+    /// The waits Argo held at this claim that have ENDED (#1323), in the order they ended. Never
+    /// taken back and never edited: a wait that ran is something that happened, so an orphaned
+    /// Session still carries what its start took. Here rather than on the row alone because the row
+    /// is re-keyed the moment its CLI writes a record, and the spawn that held the wait is retired
+    /// at exactly that moment.
+    var settledWaits: [SessionWaitSettled] = []
     /// The Ticket this claim was started ON (#872), by number. DIRECT: Argo was told which
     /// ticket at the spawn, so the Tickets room draws it claimed without waiting for a branch to be
     /// cut. Here rather than on the row alone because the row is re-keyed the moment its CLI
     /// writes a record, and a claim outlives that.
     var ticket: Int?
+
+    /// Spelled out and taking NOTHING, which suppresses the memberwise init Swift would otherwise
+    /// synthesise across every field above. Nothing builds one from a list — the ledger starts from
+    /// an empty value and folds one fact into it at a time — so the list would be a signature no
+    /// caller wants and every new fact widens.
+    init() {}
 
     /// Absent rather than empty: a claim with nothing to say must leave the ledger, or an empty
     /// entry keeps it alive there long after the PTY behind it went.
@@ -61,6 +73,7 @@ struct ClaimFacts: Equatable {
             && driveStatus == nil
             && submittedTurn == nil
             && lostTurn == nil
+            && settledWaits.isEmpty
             && ticket == nil
     }
 }

@@ -191,6 +191,7 @@ extension CockpitPresentation.Session.Chain {
                 startedAtMs: session.startedAtMs,
                 lastSeenAtMs: session.lastSeenAtMs,
                 startedQuietlyAtMs: session.startedQuietlyAtMs,
+                settledWaits: session.settledWaits,
             ),
             handedOffTo: session.handedOffTo,
             companionChannel: session.companionChannel,

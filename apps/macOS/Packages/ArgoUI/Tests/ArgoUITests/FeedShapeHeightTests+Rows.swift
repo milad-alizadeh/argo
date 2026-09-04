@@ -48,7 +48,10 @@ extension FeedShapeHeightTests {
             PermissionExpiry(id: "one", toolName: "Bash"),
         ))),
         Row(name: "mark, working", content: .mark(.working)),
-        Row(name: "mark, starting", content: .mark(.starting)),
+        Row(
+            name: "a wait that settled",
+            content: .settledWait(SessionWaitSettled(wait: .starting, tookMs: 3200)),
+        ),
         Row(name: "mark, excerpted", content: .mark(.excerpted)),
     ]
 

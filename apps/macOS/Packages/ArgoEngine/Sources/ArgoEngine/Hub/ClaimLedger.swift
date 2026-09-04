@@ -74,6 +74,18 @@ final class ClaimLedger {
         update(claim) { $0.ticket = number }
     }
 
+    /// A wait Argo held at this claim, ended (#1323). Appended and never taken back, for the reason
+    /// the ticket above is: the wait ran, and that stays true however the Session goes on.
+    ///
+    /// One entry per wait: a second ending for a wait already settled is dropped rather than
+    /// appended, so a byte arriving twice cannot land the reader two rows saying one thing.
+    func settle(_ settled: SessionWaitSettled, for claim: SessionOwnership.ClaimID) {
+        update(claim) { facts in
+            guard !facts.settledWaits.contains(where: { $0.wait == settled.wait }) else { return }
+            facts.settledWaits.append(settled)
+        }
+    }
+
     func setMode(_ modeSet: SessionModeSet, for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.modeSet = modeSet }
     }

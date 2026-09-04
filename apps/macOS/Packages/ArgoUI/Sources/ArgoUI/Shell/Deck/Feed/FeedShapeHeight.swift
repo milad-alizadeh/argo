@@ -39,6 +39,9 @@ struct FeedShapeHeight {
         case .skillLoaded: chipLine
         case let .ask(ask): asked(ask)
         case let .mark(mark): marked(mark)
+        // One line at the body's own height, whatever happened. Not `pressedLine`: that carries the
+        // ground a call's row keeps clear for being PRESSED, and a settled wait opens nothing.
+        case .settledWait: ArgoFeedRow.lineHeight
         case let .unreadable(unreadable): unread(unreadable)
         }
     }

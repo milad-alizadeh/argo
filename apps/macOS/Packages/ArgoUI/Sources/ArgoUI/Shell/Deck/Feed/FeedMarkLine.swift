@@ -24,7 +24,7 @@ package struct FeedMarkLine: View {
         switch mark {
         case .working: FeedWorkingThread()
         case .compacted, .turnEnded, .handedOff, .interrupted, .permissionExpired,
-             .starting, .startedQuietly, .excerpted, .runFactChanged:
+             .startedQuietly, .excerpted, .runFactChanged:
             punctuation
         }
     }

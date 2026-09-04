@@ -26,6 +26,9 @@ enum FeedWorking {
     }
 
     /// DIRECT, and the engine's own reading, so no surface re-derives it from an empty reading.
+    /// What the plinth's `FeedWait.starting` is raised off. Its words and its spoken sentence are
+    /// `FeedWaitWords.starting`'s, which is where both went when this stopped being a caption let
+    /// into a rule (#1325).
     static func isStarting(_ status: SessionStatus?) -> Bool {
         status == .starting
     }
@@ -34,11 +37,6 @@ enum FeedWorking {
     /// with an ion and no caption, and a shape crossing the column is exactly what a screen reader
     /// gets nothing from.
     package static let spoken = "The agent is working"
-
-    static let startingSpoken = "The agent is starting"
-
-    /// Words in the rule, unlike the state above: two wordless ions would say neither wait.
-    static let startingWords = "starting the agent"
 
     /// The wait above, ended by its limit rather than by the agent (#1245). Both facts, because
     /// either alone is the wrong news: that it started rules out a launch that failed, and that it

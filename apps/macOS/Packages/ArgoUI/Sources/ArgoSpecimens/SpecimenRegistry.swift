@@ -13,13 +13,14 @@ import SwiftUI
 @MainActor
 public enum SpecimenRegistry {
     /// One array per subject, in the order a reader meets the app: the window's furniture, the
-    /// roster, the deck it opens, the reading inside it, the two vessels over it, and the states
-    /// the Project itself can be in.
+    /// roster, the deck it opens, the reading inside it, the waits it holds, the two vessels over
+    /// it, and the states the Project itself can be in.
     static let all: [SpecimenEntry] = roster
         + deck
         + header
         + feed
         + live
+        + waiting
         + vessel
         + commands
         + mentions

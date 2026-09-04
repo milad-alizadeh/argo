@@ -144,9 +144,10 @@ extension SpecimenRegistry {
         SpecimenEntry("feedArriving") { ArrivingFeedSpecimen() },
         SpecimenEntry("emptyFeed") { SpecimenScene.sessions([]) },
         // The same empty reading over a CLI that has not spoken yet: the pair is the claim, one
-        // saying nothing has been said and the other saying why.
+        // saying nothing has been said and the other saying why. The reading is UNTOUCHED and the
+        // plinth at the foot is where the wait is said (`cockpit-feed-waiting.md`).
         SpecimenEntry("startingFeed") {
-            SpecimenScene.sessions(FeedProjection.rows(from: [], starting: true))
+            SpecimenScene.sessions([]).environment(\.argoFeedWait, .starting)
         },
         // A record read at its two ends, with the seam where its middle is missing (#404 AC4). The
         // whole deck rather than the rows alone: what the still has to settle is that the rule

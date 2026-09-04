@@ -67,11 +67,6 @@ package struct FeedView: View {
 
     /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
-    /// When the wait this reading is showing began, or `nil` while it is showing none. Held here
-    /// and not in the row that draws it, because the table recycles cells: a clock kept in a row
-    /// would restart every time the reader scrolled it off and back, and a six-minute wait would
-    /// come back reading as a fresh one.
-    @State private var waitStarted: Date?
 
     package var body: some View {
         FeedTable(
@@ -97,16 +92,6 @@ package struct FeedView: View {
         .onChange(of: FeedFact(reading: reading, value: rows.count)) { was, now in
             washArrived(between: was, and: now)
         }
-        // The age of the wait is counted from here. Stamped on the CHANGE, so a row arriving
-        // mid-think does not restart a wait that never stopped — and on the reading too, so two
-        // Sessions showing the same wait in a row are two waits rather than one that never did.
-        .onChange(
-            of: FeedFact(reading: reading, value: FeedWait.showing(in: rows)),
-            initial: true,
-        ) {
-            waitStarted = $1.value == nil ? nil : Date()
-        }
-        .environment(\.argoWaitStarted, waitStarted)
         // Cancellation IS the reset: a second send while the first wash stands re-keys
         // the task, and the fresh one times the fresh row.
         .task(id: washed) { await washExpired() }

@@ -10,6 +10,10 @@ import ArgoEngine
 /// `CockpitView.reading` decides WHETHER to take one; this decides only what it says.
 struct SessionsRoomReading {
     let feed: [FeedRow]
+    /// The wait Argo is HOLDING on this Session, if any — the plinth's, and the one the reading
+    /// carries no row for. DIRECT and managed-only by construction: it is read off the engine's own
+    /// `starting`, which no observed Session can reach.
+    let wait: FeedWait?
     let header: SessionHeaderProjection.Header?
     let showing: PlanShowing
     /// Which version of the Session's record this reading was taken at, handed on so the Subagent
@@ -52,6 +56,7 @@ struct SessionsRoomReading {
 
     private init() {
         self.feed = []
+        self.wait = nil
         self.header = nil
         self.showing = PlanShowing()
         self.stamp = nil
@@ -79,18 +84,24 @@ struct SessionsRoomReading {
                 feed: FeedProjection.rows(
                     from: session?.events ?? [],
                     working: FeedWorking.isWorking(stamp.status),
-                    starting: FeedWorking.isStarting(stamp.status),
                     startedQuietly: stamp.startedQuietly,
+                    settledWaits: stamp.settledWaits,
                     handedOff: handedOff,
                     expired: stamp.expired,
                     asking: asking,
                     reported: stamp.reported,
                 ),
+                // Off the engine's own `starting` reading, which is DIRECT and managed-only, and
+                // never off an empty reading: a Session observed from outside that has written
+                // nothing is a Session nobody here started, and a plinth over it would claim an act
+                // Argo did not perform.
+                wait: FeedWorking.isStarting(stamp.status) ? .starting : nil,
                 showing: PlanShowing(plan: PlanProjection.reading(from: session?.events ?? [])),
                 worked: .read(across: session?.events ?? []),
             )
         }
         self.feed = body.feed
+        self.wait = body.wait
         self.showing = body.showing
         // Taken every pass, and only its one stream walk remembered: the header reads facts that
         // move with no event appended — spend, context, what the roster calls the Session — so
