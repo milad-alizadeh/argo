@@ -16,7 +16,7 @@ public struct AtlasPlate: Equatable, Sendable {
 
     /// What the folder is called on disk.
     public var name: String {
-        String(path.split(separator: "/").last ?? "")
+        AtlasPath.name(of: path)
     }
 
     /// What this Plate measures, its Plots summed over the whole subtree.

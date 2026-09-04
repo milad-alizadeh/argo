@@ -19,6 +19,6 @@ public struct AtlasPlot: Equatable, Sendable {
 
     /// What the file is called on disk.
     public var name: String {
-        String(path.split(separator: "/").last ?? "")
+        AtlasPath.name(of: path)
     }
 }
