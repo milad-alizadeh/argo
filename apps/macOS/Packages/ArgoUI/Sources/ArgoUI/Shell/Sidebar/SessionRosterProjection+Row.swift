@@ -97,6 +97,13 @@ extension SessionRosterProjection {
             activity ?? toldApart
         }
 
+        /// Whether that fact is the activity — the one condition the second line's whole layout
+        /// reads off (#1199). Named here rather than tested three times in the view, so the rule
+        /// "an activity line pushes the clock right" is stated once.
+        var drawsActivity: Bool {
+            activity != nil
+        }
+
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
         /// fact, which the row spends on ink a screen reader has no way to hear.
         var announcement: String {

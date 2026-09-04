@@ -25,10 +25,14 @@ extension SessionRosterProjection {
             .map { "\($0.kind.verb) \($0.subject.drawn)" }
     }
 
-    /// **Backwards, and it stops at the first call it can read** (ADR-0028 Rule 1). This runs once
-    /// per running row on every pass of the shell's body, and the answer is a fact about the tail
-    /// of the record; walking forwards would read every Turn that has already ended to arrive at
-    /// the same line.
+    /// **Backwards, and it stops at the OPEN Turn's boundary** (ADR-0028 Rule 1), the way
+    /// `openTurnStartMs` does. Two things ride on that bound and neither is the arithmetic:
+    ///
+    /// A call before the last `turnEnded` belongs to a Turn that finished, and drawing it while
+    /// the next one runs is the same stale reading the `running` guard above exists to refuse —
+    /// so the Turn boundary is where the honest answer stops, not merely where the cheap one does.
+    /// With it, the walk cannot read past the newest Turn however long the record is; without it,
+    /// a running Session that had made no call would walk the whole stream on every body pass.
     ///
     /// The outcomes are gathered on the way down, which is where a call's own answer always is:
     /// the two events are written by different records, so the result is read through the call's
@@ -53,6 +57,10 @@ extension SessionRosterProjection {
                 ) {
                     return read
                 }
+            // An interrupt ends a Turn like any other boundary, and is the commoner one on a
+            // Session somebody is watching (#1189).
+            case .turnEnded, .interrupted:
+                return nil
             default:
                 break
             }

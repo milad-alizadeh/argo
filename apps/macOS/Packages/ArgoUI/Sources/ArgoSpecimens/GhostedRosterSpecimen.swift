@@ -82,7 +82,9 @@ struct GhostedRosterSpecimen: View {
             ),
             // Running, so the row draws an activity line — the one thing on the second line that
             // pushes the clock to the far edge, and it has to ghost with the rest of the row.
-            transcript: .init(events: TranscriptFixtures.previewTranscript),
+            transcript: .init(
+                events: TranscriptFixtures.previewTranscript + TranscriptFixtures.stillWorking,
+            ),
         ),
         CockpitPresentation.Session(
             id: "observed-unknown",

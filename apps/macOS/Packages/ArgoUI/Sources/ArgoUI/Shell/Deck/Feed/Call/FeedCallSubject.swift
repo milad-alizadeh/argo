@@ -32,8 +32,11 @@ package struct FeedCallSubject: View {
     ///
     /// The ground is the one part of the row an ion mask must not see, or the pass lights the whole
     /// chip instead of the command on it.
+    ///
+    /// Takes the words already read off the subject — `drawn` is where the command's head is cut,
+    /// once, for this view and the roster row alike.
     private func typed(_ command: String) -> some View {
-        Text(FeedCommandLine.head(of: command))
+        Text(command)
             .argoText(subject.style)
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.tight)

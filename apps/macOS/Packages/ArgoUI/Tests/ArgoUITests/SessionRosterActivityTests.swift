@@ -121,6 +121,22 @@ struct SessionRosterActivityTests {
         #expect(row.activity == "Ran bun run quality")
     }
 
+    @Test(arguments: [TranscriptEvent.turnEnded(.endTurn), .interrupted(atMs: nil)])
+    func `a call from a Turn that ended is not what the Session is doing now`(
+        boundary: TranscriptEvent,
+    ) throws {
+        // The walk stops at the open Turn's boundary: a call the Turn before is as stale as one
+        // on an idle Session, and the row falls back rather than drawing it as live.
+        let row = try #require(rows(status: .running, events: [
+            ran("bun run quality", id: "one"),
+            boundary,
+            .prompt(text: "Now open the PR.", images: [], atMs: nil),
+        ]).first)
+
+        #expect(row.activity == nil)
+        #expect(row.leadingFact == "/implement")
+    }
+
     @Test
     func `a fold draws no activity, for the reason it draws no dot`() throws {
         // It stands for several runs at once, and one run's call drawn for all of them is a

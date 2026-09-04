@@ -169,12 +169,12 @@ package struct SessionRow: View {
         if row.leadingFact != nil || row.clock != nil {
             HStack(spacing: ArgoSpacing.snug) {
                 leadingFactLabel
-                if row.activity == nil {
-                    clock
+                if !row.drawsActivity {
+                    clockLabel
                 }
                 Spacer(minLength: ArgoSpacing.tight)
-                if row.activity != nil {
-                    clock
+                if row.drawsActivity {
+                    clockLabel
                 }
             }
             .foregroundStyle(argo.color.text.tertiary)
@@ -183,7 +183,7 @@ package struct SessionRow: View {
 
     /// The one age slot. It never gives up a character: a clock cut to a width says a different
     /// duration, where the fact beside it only loses its tail.
-    @ViewBuilder private var clock: some View {
+    @ViewBuilder private var clockLabel: some View {
         if let clock = row.clock {
             RosterTurnClock(clock: clock)
                 .layoutPriority(1)
@@ -226,7 +226,7 @@ private extension SessionRow {
                 .argoText(ArgoTypography.rowMeta)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .layoutPriority(row.activity == nil ? 1 : 0)
+                .layoutPriority(row.drawsActivity ? 0 : 1)
         }
     }
 

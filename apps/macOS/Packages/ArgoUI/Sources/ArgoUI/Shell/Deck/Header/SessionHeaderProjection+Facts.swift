@@ -12,7 +12,7 @@ extension SessionHeaderProjection {
     /// carries the folder, and a reader who has selected the Session reads the checkout here.
     static func checkout(
         for workspace: CockpitPresentation.Session.Workspace?,
-        at location: String? = nil,
+        at location: String?,
     )
         -> Header.Checkout? {
         guard let branch = workspace?.branch else { return nil }
