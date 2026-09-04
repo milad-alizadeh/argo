@@ -74,6 +74,17 @@ public extension Hub {
         end(claim)
     }
 
+    /// What the archive gesture asks of the Hub (#1290): archiving a Session Argo owns ends it,
+    /// and putting one back starts nothing.
+    ///
+    /// The `guard` is here rather than at the gesture because it is a RULE about archiving and not
+    /// a step in performing one — the app layer composes the two writes, and what each of them
+    /// means is the engine's to state and a test's to hold.
+    func endSession(archiving isArchived: Bool, id sessionID: String) {
+        guard isArchived else { return }
+        endSession(id: sessionID)
+    }
+
     /// Every process this Hub owns, ended, and every channel with them. What window close and app
     /// quit call: an agent Argo started must not outlive the Argo that started it.
     ///

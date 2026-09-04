@@ -145,20 +145,15 @@ final class CockpitCoordinator {
     /// what is running, so a Session that is running and not on it breaks that — and the failure is
     /// silent in the worst way: the row was archived to tidy up and the agent kept working.
     ///
-    /// The Hub answers for whether there is a process at all, so nothing here reads provenance: an
-    /// `external` Session was never Argo's to end and an `orphaned` one's PTY is already gone.
+    /// Which way the gesture goes is the Hub's rule, not this method's: archiving a Session Argo
+    /// owns ends it, putting one back starts nothing, and a Session it does not own has no process
+    /// to end either way. This composes the two writes and decides neither.
     ///
     /// Ended BEFORE the annotation, so the two never disagree in the order that matters. A write
     /// that landed first would take the row off the roster while its agent was still being asked to
     /// stop, which is the state this ticket exists to remove.
-    ///
-    /// Putting a Session back starts nothing. It returns read-only, as `orphaned`, and continuing
-    /// it is the resume gesture that already exists (#10, ADR-0026) — the chain is intact, so
-    /// ending the process loses no work.
     func setArchived(_ isArchived: Bool, sessionID: String) async {
-        if isArchived {
-            hub.endSession(id: sessionID)
-        }
+        hub.endSession(archiving: isArchived, id: sessionID)
         annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
     }
 

@@ -75,12 +75,40 @@ struct HubEndSessionTests {
         fixture.hub.endSession(id: claim.value)
         // Nothing has reported yet: Argo asked the agent to end, and an exit it has not heard is
         // not a fact it can state.
-        #expect(fixture.hub.spawns[claim]?.exit == nil)
+        #expect(fixture.hub.spawns[claim]?.startup.exit == nil)
         fixture.host.endLastProcess(exitCode: 0)
 
-        #expect(fixture.hub.spawns[claim]?.exit?.code == 0)
+        #expect(fixture.hub.spawns[claim]?.startup.exit?.code == 0)
         #expect(fixture.hub.ownership.liveClaims.isEmpty)
         #expect(fixture.hub.ownership.provenance(sessionID: claim.value) == .orphaned)
+    }
+
+    /// The archive gesture's own rule, which is the seam #1290 exists for: archiving a Session Argo
+    /// owns ends it.
+    @Test
+    func `archiving a Session Argo owns ends it`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        fixture.hub.endSession(archiving: true, id: claim.value)
+
+        #expect(fixture.host.started.last?.isTerminated == true)
+        #expect(fixture.hub.ownership.liveClaims.isEmpty)
+    }
+
+    /// Putting one back starts nothing and ends nothing. The row comes back read-only, and the
+    /// resume gesture is what continues it (#10, ADR-0026).
+    @Test
+    func `putting a Session back ends nothing`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        fixture.hub.endSession(archiving: false, id: claim.value)
+
+        #expect(fixture.host.started.last?.isTerminated == false)
+        #expect(fixture.hub.ownership.liveClaims == [claim])
     }
 
     /// Window close and app quit still end everything, now as the loop over the same verb.
