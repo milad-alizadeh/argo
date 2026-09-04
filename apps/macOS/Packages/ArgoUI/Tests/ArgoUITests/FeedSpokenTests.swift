@@ -84,6 +84,6 @@ struct FeedSpokenTests {
         })
         let survey = try #require(FeedFixture.surveys(in: rows).first)
 
-        #expect(survey.spoken == "Looked at Read 3")
+        #expect(survey.spoken == "Looked at Read 3 Files")
     }
 }

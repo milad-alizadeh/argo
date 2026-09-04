@@ -49,10 +49,11 @@ struct FeedShapeHeight {
     }
 
     /// A fold of a run of calls: its own line, and the calls it stands for listed under it while
-    /// the panel is open on it. One formula over both folds — the survey's stretch of looking and
-    /// the Turn's card of work are the same anatomy, and a second copy of it would drift.
+    /// the reader has the row's accordion out. One formula over both folds — the survey's stretch
+    /// of looking and the Turn's card of work are the same anatomy, and a second copy of it would
+    /// drift.
     private func folded(_ calls: Int) -> CGFloat {
-        guard standing.isOpen else { return pressedLine }
+        guard standing.isUnfolded else { return pressedLine }
         return pressedLine + ArgoFeedRow.callStep + Self.stackedLines(
             calls, at: Self.bodyLine, step: ArgoSpacing.hair,
         )

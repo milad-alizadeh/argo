@@ -37,7 +37,7 @@ struct FeedWorkExpansionCostTests {
         let closed = coordinator.measuredHeight(at: card.id, in: table)
         let before = coordinator.measurements
 
-        coordinator.apply(FeedTableFixture.model(showing: Self.rows, open: card.id))
+        coordinator.apply(FeedTableFixture.model(showing: Self.rows, unfolded: [card.id]))
         await FeedTableFixture.settled(coordinator)
 
         #expect(coordinator.measurements - before == 1)

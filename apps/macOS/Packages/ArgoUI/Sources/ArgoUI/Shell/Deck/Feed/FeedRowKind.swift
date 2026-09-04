@@ -99,11 +99,16 @@ extension FeedRow.Content {
                 opensEvidence: call.disclosure == .available,
                 activation: .openEvidence,
             )
+        // A fold opens its own LIST and not the panel: the press is the accordion's, and the panel
+        // belongs to one of the names the list puts out (`FeedFoldOpening`). It still says it
+        // opens evidence, because the panel is reachable from the row — one step further in.
+        // A run nobody answered has nothing to list and is inert, which is the answer the drawn
+        // line already gives: the key falls through rather than growing a row with nothing in it.
         case let .survey(survey):
             Kind(
                 isCall: true,
                 opensEvidence: survey.disclosure == .available,
-                activation: .openEvidence,
+                activation: survey.disclosure == .available ? .fold : .inert,
             )
         // A card of work is a count and not a line, so it is not the row in flight even while one
         // of its calls is pending — the same answer the survey gives, for the same reason.
@@ -111,7 +116,7 @@ extension FeedRow.Content {
             Kind(
                 isCall: true,
                 opensEvidence: work.disclosure == .available,
-                activation: .openEvidence,
+                activation: work.disclosure == .available ? .fold : .inert,
             )
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes to the
         // picture. Said once here, for the row and the lane beside it both.

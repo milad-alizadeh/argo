@@ -16,6 +16,28 @@ enum FeedSurveyFold {
         return rows + surveyed(run)
     }
 
+    /// Two runs of looking that ended up next to each other, read as one.
+    ///
+    /// This pass runs over the whole stream, and every pass after it takes rows away: a Turn's card
+    /// of work swallows the loud calls that had separated two runs of looking, and leaves the two
+    /// standing one under the other. Nothing separates them any more, so nothing should draw them
+    /// apart — three lines reading `Ran 3`, `Ran 2`, `Ran 3` are one stretch of looking that the
+    /// reader has to add up by hand.
+    ///
+    /// DIRECTLY adjacent only. A sentence between two runs is the agent saying why the second one
+    /// happened, and a fold that reached across it would take the first run's row away from the
+    /// place the Turn wrote it.
+    static func rejoined(_ contents: [FeedRow.Content]) -> [FeedRow.Content] {
+        contents.reduce(into: []) { rows, content in
+            guard case let .survey(survey) = content, let previous = rows.last,
+                  case let .survey(before) = previous
+            else { return rows.append(content) }
+            rows[rows.index(before: rows.endIndex)] = .survey(
+                FeedSurvey(calls: before.calls + survey.calls),
+            )
+        }
+    }
+
     /// A run of one is not a fold: `Read 1` loses the only address the row had and saves no room.
     private static func surveyed(_ run: [FeedCall]) -> [FeedRow.Content] {
         run.count > 1 ? [.survey(FeedSurvey(calls: run))] : run.map(FeedRow.Content.call)

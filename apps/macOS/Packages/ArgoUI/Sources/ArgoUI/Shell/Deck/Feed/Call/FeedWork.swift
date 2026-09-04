@@ -2,8 +2,9 @@ import ArgoDesign
 
 /// A Turn's work, read as one line.
 ///
-/// Every loud call a Turn made, of the kinds that belong together, folded into one row: `Ran 8`,
-/// `Edited 36 · Created 2`. A fold and never a filter — the count is what the Turn did, and every
+/// Every loud call a Turn made, of the kinds that belong together, folded into one row: `Ran 8
+/// Commands`, `Edited 36 Files · Created 2 Files`. A fold and never a filter — the count is what
+/// the Turn did, and every
 /// call is still one click behind the line.
 ///
 /// Per TURN and not per RUN, which is what makes it worth twice what an adjacency rule is worth
@@ -66,7 +67,7 @@ extension FeedCall {
     ///
     /// The grouping is kind-AGNOSTIC inside a stretch and the caption is kind-aware, which is what
     /// reconciles the measured win with legibility (#1172): an `Edit` next to a `Write` is one
-    /// piece of the Turn's work, and the line still says `Edited 3 · Created 1`.
+    /// piece of the Turn's work, and the line still says `Edited 3 Files · Created 1 File`.
     ///
     /// Three kinds fold into nothing. Looking is the survey's, whose adjacency rule ran first and
     /// left behind only the reads that failed or came back holding a picture — a stretch those

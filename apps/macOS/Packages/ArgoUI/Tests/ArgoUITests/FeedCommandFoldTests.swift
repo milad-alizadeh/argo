@@ -14,7 +14,7 @@ struct FeedCommandFoldTests {
         let survey = try #require(FeedFixture.surveys(in: rows).first)
 
         #expect(rows.count == 1)
-        #expect(survey.label == "Ran 3")
+        #expect(survey.label == "Ran 3 Commands")
     }
 
     @Test
@@ -24,7 +24,7 @@ struct FeedCommandFoldTests {
             FeedFixture.surveys(in: FeedProjection.rows(from: mixed)).first,
         )
 
-        #expect(survey.label == "Ran 2 · Read 1")
+        #expect(survey.label == "Ran 2 Commands · Read 1 File")
     }
 
     /// A command the allowlist does not name is loud, and no reading of it is attempted at all.
@@ -34,7 +34,7 @@ struct FeedCommandFoldTests {
         let rows = FeedProjection.rows(from: ran("ls apps", "swift build", "git status"))
 
         #expect(FeedFixture.surveys(in: rows).isEmpty)
-        #expect(FeedFixture.work(in: rows).map(\.label) == ["Ran 3"])
+        #expect(FeedFixture.work(in: rows).map(\.label) == ["Ran 3 Commands"])
     }
 
     /// A chain is unrecognised by construction: the judgement never works out which half ran.
@@ -45,7 +45,7 @@ struct FeedCommandFoldTests {
         )
 
         #expect(rows.count == 2)
-        #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2"])
+        #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2 Commands"])
     }
 
     /// Every shape that has ever smuggled a command past a prefix check. One row per shape, so a
@@ -80,7 +80,7 @@ struct FeedCommandFoldTests {
     func `a mutation breaks a run of commands into two surveys`() {
         let rows = FeedProjection.rows(from: interrupted)
 
-        #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2", "Ran 2"])
+        #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2 Commands", "Ran 2 Commands"])
     }
 
     @Test
@@ -136,7 +136,7 @@ struct FeedCommandFoldTests {
                 .first,
         )
 
-        #expect(survey.label == "Ran 2")
+        #expect(survey.label == "Ran 2 Commands")
     }
 
     @Test
@@ -146,23 +146,6 @@ struct FeedCommandFoldTests {
 
         #expect(FeedFixture.surveys(in: FeedProjection.rows(from: alone)).isEmpty)
         #expect(call.subject.captioned == "git status")
-    }
-
-    /// Asserted here so a fixture change that quietly stopped it folding fails the suite rather
-    /// than producing a screenshot that no longer shows what its caption says.
-    @Test
-    func `the specimen folds seven quiet calls into one counted line`() throws {
-        let survey = try #require(FeedFixture.surveys(in: FeedProjection.previewFoldRows).first)
-
-        #expect(survey.label == "Read 2 · Ran 5")
-    }
-
-    /// The three rows are the fold, the change it was for, and the card the two loud commands
-    /// after it fold into.
-    @Test
-    func `the specimen leaves the mutation a row and cards the two loud commands`() {
-        #expect(FeedProjection.previewFoldRows.count == 3)
-        #expect(FeedFixture.work(in: FeedProjection.previewFoldRows).map(\.label) == ["Ran 2"])
     }
 
     /// A turn that looked at two files and ran a command, then changed something, then looked

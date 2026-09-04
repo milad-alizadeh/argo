@@ -28,9 +28,9 @@ extension FeedShapeHeightTests {
         Row(name: "call, answered", content: .call(RowKindFixture.answeredCall)),
         Row(name: "call, still running", content: .call(RowKindFixture.pendingCall)),
         Row(name: "survey, closed", content: .survey(run)),
-        Row(name: "survey, open", content: .survey(run), isOpen: true),
+        Row(name: "survey, listed", content: .survey(run), isUnfolded: true),
         Row(name: "work, closed", content: .work(card)),
-        Row(name: "work, open", content: .work(card), isOpen: true),
+        Row(name: "work, listed", content: .work(card), isUnfolded: true),
         Row(name: "gallery, one shot", content: .gallery(RowKindFixture.gallery)),
         Row(name: "gallery, no shots at all", content: .gallery(FeedGallery(shots: []))),
         Row(name: "gallery, a wrapping run", content: .gallery(FeedGallery(
