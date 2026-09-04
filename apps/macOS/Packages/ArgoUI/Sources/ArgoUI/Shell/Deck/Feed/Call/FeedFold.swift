@@ -13,7 +13,15 @@ enum FeedFold {
     /// Called 1` over what a reader sees as two of the same thing.
     struct Tally: Equatable, Sendable {
         let verb: String
+        /// What the count counts, carried beside the verb so the line says what the number is OF.
+        /// One per verb, which the kinds sharing a verb also share (`FeedCall.Kind.noun`).
+        let noun: FeedCall.Noun
         let count: Int
+
+        /// `Ran 2 Commands` — the verb, the count, and the thing counted, in that order.
+        var said: String {
+            "\(verb) \(count) \(noun.counted(count))"
+        }
     }
 
     /// What the run did, per verb, in the order the verbs first appeared.
@@ -21,16 +29,19 @@ enum FeedFold {
         calls.reduce(into: []) { tallies, call in
             let verb = call.kind.verb
             guard let at = tallies.firstIndex(where: { $0.verb == verb }) else {
-                tallies.append(Tally(verb: verb, count: call.repeats))
+                tallies.append(Tally(verb: verb, noun: call.kind.noun, count: call.repeats))
                 return
             }
-            tallies[at] = Tally(verb: verb, count: tallies[at].count + call.repeats)
+            tallies[at] = Tally(
+                verb: verb, noun: tallies[at].noun, count: tallies[at].count + call.repeats,
+            )
         }
     }
 
-    /// `Searched 1 · Read 3` — Argo's own verbs and Argo's own counts, never the tool's names.
+    /// `Searched 1 Pattern · Read 3 Files` — Argo's own verbs and Argo's own counts, never the
+    /// tool's names.
     static func label(of calls: [FeedCall]) -> String {
-        tallies(of: calls).map { "\($0.verb) \($0.count)" }.joined(separator: " · ")
+        tallies(of: calls).map(\.said).joined(separator: " · ")
     }
 
     /// Whether the line could open onto anything, so a run nobody answered offers no click.
@@ -140,7 +151,7 @@ package protocol FeedFolded {
 }
 
 package extension FeedFolded {
-    /// `Searched 1 · Read 3` — Argo's own verbs and Argo's own counts.
+    /// `Searched 1 Pattern · Read 3 Files` — Argo's own verbs and Argo's own counts.
     var label: String {
         FeedFold.label(of: calls)
     }
@@ -168,14 +179,21 @@ package extension FeedFolded {
     }
 }
 
-/// How the evidence panel stands over one folded row: whether it is open on this row, how to open
-/// it, how to go to one of the listed calls, and which step is showing.
+/// How a folded row stands open: whether its own list is out, how to put it out, how to go to one
+/// of the listed calls, and which of them the panel is showing.
+///
+/// The row is an ACCORDION and not a way into the panel: a press on the line opens the list of what
+/// the fold took, which is what the reader asked the line for. The panel belongs to a NAME in that
+/// list — a count has no one result to show, and opening the panel on a card of 126 commands puts
+/// the reader in front of the first of them for no reason they chose.
 ///
 /// One value rather than four parameters on the row view, which is the cap the house keeps
 /// initializers under (#755).
 package struct FeedFoldOpening {
-    let isOpen: Bool
-    let open: () -> Void
+    /// Whether the row's own list of calls is out.
+    let isExpanded: Bool
+    /// Put the list out, or take it back in.
+    let expand: () -> Void
     /// Inert by default so a specimen draws the list without a panel to send anybody to.
     var look: (Int) -> Void = { _ in }
     /// `nil` while the panel is open somewhere else, or on nothing.
@@ -183,13 +201,13 @@ package struct FeedFoldOpening {
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
-        isOpen: Bool,
-        open: @escaping () -> Void,
+        isExpanded: Bool,
+        expand: @escaping () -> Void,
         look: @escaping (Int) -> Void = { _ in },
         current: Int? = nil,
     ) {
-        self.isOpen = isOpen
-        self.open = open
+        self.isExpanded = isExpanded
+        self.expand = expand
         self.look = look
         self.current = current
     }

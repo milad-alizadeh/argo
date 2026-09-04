@@ -17,7 +17,7 @@ extension FeedWorkFoldTests {
         let rows = FeedProjection.rows(from: Self.reworked(failing: false))
         let card = try #require(FeedFixture.work(in: rows).first)
 
-        #expect(card.label == "Edited 4")
+        #expect(card.label == "Edited 4 Files")
         #expect(card.steps.map(\.repeats) == [3, 1])
         #expect(card.steps.map(\.repeats).reduce(0, +) == 4)
     }
@@ -43,7 +43,7 @@ extension FeedWorkFoldTests {
         ])
         let card = try #require(FeedFixture.work(in: FeedProjection.rows(from: mixed)).first)
 
-        #expect(card.label == "Called 2")
+        #expect(card.label == "Called 2 Tools")
     }
 
     /// A delegation is a whole other agent's Turn and carries the rail's join key on its own row,
@@ -85,8 +85,8 @@ extension FeedWorkFoldTests {
         ))
 
         #expect(cards.map(\.label) == [
-            "Created 3 · Edited 3 · Deleted 1", "Ran 4",
-            "Created 3 · Edited 3 · Deleted 1", "Ran 4",
+            "Created 3 Files · Edited 3 Files · Deleted 1 File", "Ran 4 Commands",
+            "Created 3 Files · Edited 3 Files · Deleted 1 File", "Ran 4 Commands",
         ])
     }
 
@@ -99,7 +99,7 @@ extension FeedWorkFoldTests {
         ])
 
         #expect(FeedFixture.work(in: FeedProjection.rows(from: unbounded))
-            .map(\.label) == ["Ran 2"])
+            .map(\.label) == ["Ran 2 Commands"])
     }
 
     /// Calls the agent narrated, one sentence between each — the shape the per-Turn rule exists

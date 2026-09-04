@@ -40,12 +40,15 @@ struct FeedRowView: View {
         selection.open == row.id
     }
 
-    /// How the panel stands over this row: whether it is the open one, and which of its listed
-    /// calls the pane is showing.
+    /// How a folded row stands: whether the reader has its list out, and which of the listed calls
+    /// the pane is showing. The line is an accordion and the names in it are what open the panel —
+    /// see `FeedFoldOpening`.
     private var opening: FeedFoldOpening {
         FeedFoldOpening(
-            isOpen: isOpen,
-            open: openEvidence,
+            isExpanded: isExpanded,
+            // Through `activate` and not a toggle of its own, so the click and the key stay the one
+            // answer the doc there claims they are.
+            expand: { row.activate(selection: selection, isExpanded: $isExpanded) },
             look: look,
             current: isOpen ? selection.step : nil,
         )

@@ -30,17 +30,11 @@ package enum FeedProjection {
         // break rule is the wider of the two, so no call is counted here and drawn there.
         // The Turn's own fold LAST, over what all of those left behind: it reads the Turn
         // boundaries out of the rows, and every pass above it takes rows away without moving one
-        // across a prompt or a stop reason.
-        let work = offering(
-            FeedWorkFold.folded(
-                FeedUnreadableRun.folded(
-                    FeedGalleryFold.galleried(
-                        FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read)).contents),
-                    ),
-                ),
-            ),
-            asking,
-        )
+        // across a prompt or a stop reason. Then the runs of looking that the card left standing
+        // next to each other are read as the one stretch they now are.
+        let looked = FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read)).contents)
+        let shown = FeedUnreadableRun.folded(FeedGalleryFold.galleried(looked))
+        let work = offering(FeedSurveyFold.rejoined(FeedWorkFold.folded(shown)), asking)
         // The link goes BELOW the roll-up, at the very foot.
         return (work + standing(asking, over: work) + startingUp(starting) +
             inFlight(working, over: work) + unanswered(expired) +

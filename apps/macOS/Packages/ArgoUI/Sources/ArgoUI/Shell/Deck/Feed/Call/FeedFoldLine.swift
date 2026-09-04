@@ -13,22 +13,23 @@ package struct FeedFoldLine: View {
     @Environment(\.argo) private var argo
 
     let fold: any FeedFolded
-    /// How the panel stands over this row — see `FeedFoldOpening`.
+    /// How the row stands open, and where a name in its list sends the panel — see
+    /// `FeedFoldOpening`.
     let opening: FeedFoldOpening
 
     package var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-            Button(action: opening.open) {
+            Button(action: opening.expand) {
                 sentence
             }
-            .buttonStyle(FeedRowButtonStyle(isOpen: opening.isOpen))
+            .buttonStyle(FeedRowButtonStyle(isOpen: opening.isExpanded))
             .disabled(fold.disclosure == .none)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(fold.spoken)
             .accessibilityHint(
-                fold.disclosure == .available ? "Opens what these calls produced" : "",
+                fold.disclosure == .available ? "Lists what these calls were" : "",
             )
-            if opening.isOpen {
+            if opening.isExpanded {
                 listed
             }
         }
@@ -40,12 +41,12 @@ package struct FeedFoldLine: View {
             Text(fold.label)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(
-                    opening.isOpen ? argo.color.text.secondary : argo.color.text.tertiary,
+                    opening.isExpanded ? argo.color.text.secondary : argo.color.text.tertiary,
                 )
+            failed
             if let churn = fold.churn {
                 FeedChurnMarks(churn: churn)
             }
-            failed
             chevron
         }
         .lineLimit(1)
@@ -53,9 +54,12 @@ package struct FeedFoldLine: View {
 
     /// How much of the stretch failed, said in the header rather than left for the reader to find
     /// by opening it — a card that folded a failure away would report the work went fine.
+    ///
+    /// Bracketed, because it is an aside on the count beside it rather than a second count: the
+    /// line reads `Ran 2 Commands (1 Failed)`.
     @ViewBuilder private var failed: some View {
         if fold.failures > 0 {
-            Text("\(fold.failures) failed")
+            Text("(\(fold.failures) Failed)")
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.state.failure)
         }
@@ -69,17 +73,19 @@ package struct FeedFoldLine: View {
             .foregroundStyle(argo.color.text.disabled)
     }
 
+    /// Turned down while the list is out: the row is an accordion, and the mark says which way it
+    /// opens rather than that a panel is up somewhere.
     @ViewBuilder private var chevron: some View {
         if fold.disclosure == .available {
-            ArgoDisclosure(.beside)
+            ArgoDisclosure(opening.isExpanded ? .below : .beside)
                 .foregroundStyle(
-                    opening.isOpen ? argo.color.interaction.accent : argo.color.text.disabled,
+                    opening.isExpanded ? argo.color.interaction.accent : argo.color.text.disabled,
                 )
         }
     }
 
-    /// What the run actually did, listed under the count — but only while this is the row the
-    /// panel is open on.
+    /// What the run actually did, listed under the count — but only while the reader has the list
+    /// out.
     private var listed: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             ForEach(fold.steps) { step in

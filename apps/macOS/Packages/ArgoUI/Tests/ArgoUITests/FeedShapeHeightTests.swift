@@ -38,7 +38,6 @@ struct FeedShapeHeightTests {
         let name: String
         let content: FeedRow.Content
         var isUnfolded = false
-        var isOpen = false
     }
 
     @Test(arguments: widths)
@@ -81,7 +80,7 @@ struct FeedShapeHeightTests {
         return FeedTableModel(
             rows: [FeedRow(id: 0, content: row.content)],
             selection: FeedRowSelection(
-                open: .constant(row.isOpen ? 0 : nil),
+                open: .constant(nil),
                 step: .constant(nil),
                 lit: .constant(nil),
                 focus: focus.projectedValue,

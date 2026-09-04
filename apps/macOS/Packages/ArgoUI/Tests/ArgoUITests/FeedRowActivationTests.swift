@@ -6,10 +6,14 @@ import Testing
 /// switch as the row's flags, so a wrong intent is wrong for Return, for Space and for the click.
 @Suite("Feed row activation")
 struct FeedRowActivationTests {
-    /// A row with something to hide has a fold, and the key that works it is the fold's own.
+    /// A row with something to hide has a fold, and the key that works it is the fold's own. A
+    /// fold of calls is one of them: the press lists what it took, and the panel belongs to a name
+    /// in that list rather than to the count over it.
     @Test(arguments: [
         FeedRow.Content.prompt(text: "Rename the deck", shots: []),
         .unreadable(FeedUnreadable(lines: ["{"])),
+        .survey(RowKindFixture.survey),
+        .work(RowKindFixture.work),
     ])
     func `a row with a fold folds`(content: FeedRow.Content) {
         #expect(content.kind.activation == .fold)
@@ -19,7 +23,6 @@ struct FeedRowActivationTests {
     /// the record never answered still means the panel rather than meaning nothing.
     @Test(arguments: [
         FeedRow.Content.call(RowKindFixture.pendingCall),
-        .survey(RowKindFixture.survey),
         .skillLoaded(RowKindFixture.skill),
     ])
     func `a row the panel stands behind opens the panel`(content: FeedRow.Content) {
@@ -41,9 +44,11 @@ struct FeedRowActivationTests {
     }
 
     /// Nothing to fold and nothing to light, so the key falls through to the feed rather than being
-    /// swallowed by a row that does nothing.
+    /// swallowed by a row that does nothing. A fold the record answered with nothing is one of
+    /// them: there is no list to put out, and the drawn line offers no click either.
     @Test(arguments: [
         FeedRow.Content.message("Renamed."),
+        .survey(FeedSurvey(calls: [RowKindFixture.pendingCall, RowKindFixture.pendingCall])),
         .thought("Weighing."),
         .ask(RowKindFixture.ask),
         .mark(.compacted),

@@ -22,7 +22,10 @@ struct FeedWorkFoldTests {
     func `every call of a stretch in a Turn folds into one card, across the narration`() {
         let cards = FeedFixture.work(in: Self.rows)
 
-        #expect(cards.map(\.label) == ["Created 3 · Edited 3 · Deleted 1", "Ran 4"])
+        #expect(cards.map(\.label) == [
+            "Created 3 Files · Edited 3 Files · Deleted 1 File",
+            "Ran 4 Commands",
+        ])
         #expect(cards.map(\.calls.count) == [7, 4])
     }
 

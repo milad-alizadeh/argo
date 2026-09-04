@@ -13,7 +13,7 @@ struct FeedSurveyTests {
         let survey = try #require(FeedFixture.surveys(in: rows).first)
 
         #expect(rows.count == 1)
-        #expect(survey.label == "Searched 1 · Read 3")
+        #expect(survey.label == "Searched 1 Pattern · Read 3 Files")
     }
 
     /// The break rule makes "Edited a file, ran a command, read a file" mush structurally
@@ -39,7 +39,7 @@ struct FeedSurveyTests {
 
         #expect(rows.count == 3)
         #expect(FeedFixture.surveys(in: rows).map(\.label) == [
-            "Searched 1 · Read 2", "Searched 1 · Read 2",
+            "Searched 1 Pattern · Read 2 Files", "Searched 1 Pattern · Read 2 Files",
         ])
     }
 
@@ -83,7 +83,7 @@ struct FeedSurveyTests {
 
         #expect(rows.count == 3)
         #expect(FeedFixture.surveys(in: rows).map(\.label) == [
-            "Searched 1 · Read 2", "Searched 1 · Read 2",
+            "Searched 1 Pattern · Read 2 Files", "Searched 1 Pattern · Read 2 Files",
         ])
     }
 
@@ -130,7 +130,7 @@ struct FeedSurveyTests {
         let survey = try #require(FeedFixture.surveys(in: FeedProjection.rows(from: repeated))
             .first)
 
-        #expect(survey.label == "Read 4")
+        #expect(survey.label == "Read 4 Files")
     }
 
     /// Folding is not discarding: everything the run produced is still one click away, each result

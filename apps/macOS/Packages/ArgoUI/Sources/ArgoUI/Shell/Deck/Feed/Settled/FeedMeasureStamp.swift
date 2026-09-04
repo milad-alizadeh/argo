@@ -28,14 +28,13 @@ struct FeedMeasureStamp: Equatable, Sendable {
         FeedRowMeasure.measure(atWidth: width)
     }
 
-    /// How the row at `index` stands — the three facts beyond its own words that decide its height.
+    /// How the row at `index` stands — the two facts beyond its own words that decide its height.
     func standing(at index: Int) -> FeedRowStanding {
         guard rows.indices.contains(index) else { return FeedRowStanding() }
         let row = rows[index]
         return FeedRowStanding(
             drawsChip: FeedCopy.drawsChip(of: rows, at: index),
             isUnfolded: reader.unfolded.contains(row.id),
-            isOpen: reader.open == row.id,
         )
     }
 
