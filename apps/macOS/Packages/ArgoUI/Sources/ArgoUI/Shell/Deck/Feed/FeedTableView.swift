@@ -68,15 +68,38 @@ final class FeedTableView: NSTableView {
     /// rather than share a mutable global between cases.
     var reader = ArgoFocusVisibility.shared
 
-    /// Arriving is not the same as arriving BY keyboard. A click that lands in the reading makes
-    /// this the first responder just as a Tab does, so which it was comes off the last event the
-    /// app saw — the same question every hand-drawn ring in the cockpit asks.
+    /// The last event the app took off its queue — `NSApp`'s own, as a closure so a suite can
+    /// state one: the claims below are about WHICH press a hand-over came in on.
+    var currentEvent: () -> NSEvent? = { NSApp.currentEvent }
+
+    /// Whether the hand-over in hand came in on a key. Asked of the event rather than of
+    /// `ArgoFocusVisibility`, which answers for the whole cockpit: a reader typing in the composer
+    /// is working the keyboard, and a reading handed the keys under them was still handed them by
+    /// something else (#1180).
+    var isKeyDriven: Bool {
+        currentEvent()?.type == .keyDown
+    }
+
+    /// Arriving is not the same as arriving BY keyboard, and neither of those is the reader
+    /// DRIVING this reading. A click that lands in the reading makes this the first responder just
+    /// as a Tab does, and so does the deck opening on a Session picked in the roster — a reader
+    /// working the keys elsewhere in the cockpit is a keyboard reader who asked this reading for
+    /// nothing (#1180).
+    ///
+    /// So the cursor comes on for the one arrival the reader steered into the reading: a Tab.
+    /// Every other route waits for a key pressed in the reading itself.
     override func becomeFirstResponder() -> Bool {
         let arrived = super.becomeFirstResponder()
         if arrived {
-            keyboardMoved?(reader.isOn)
+            keyboardMoved?(reader.isOn && isTab(currentEvent()))
         }
         return arrived
+    }
+
+    /// A Tab or a back-Tab, as against whatever else the arrival came in on.
+    private func isTab(_ event: NSEvent?) -> Bool {
+        guard let event, isKeyDriven else { return false }
+        return event.specialKey == .tab || event.specialKey == .backTab
     }
 
     override func resignFirstResponder() -> Bool {

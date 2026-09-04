@@ -48,7 +48,7 @@ struct TicketTitleReadTests {
 
     @Test
     func `a ticket whose title is blank reads as absent`() async {
-        // A row reading `#745 — ` says the provider answered and had nothing to say.
+        // A row reading `#745: ` says the provider answered and had nothing to say.
         let (read, _) = await Self.read(body: #"{ "number": 745, "title": "   " }"#)
 
         #expect(read == .absent)

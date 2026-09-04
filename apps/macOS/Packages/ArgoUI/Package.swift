@@ -78,9 +78,12 @@ let package = Package(
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
                 .product(name: "ArgoAtoms", package: "ArgoDesign"),
                 .product(name: "MermaidLayout", package: "ArgoMermaid"),
-                .product(name: "MermaidView", package: "ArgoMermaid"),
-                // The Map's value types: the Atlas room specimen carries a measured one (#1148).
+                // The map's own fixture, so the treemap specimen draws the measurement the Atlas
+                // suite asserts on rather than a second copy of it (#1147).
+                .product(name: "AtlasFixtures", package: "ArgoAtlas"),
                 .product(name: "AtlasLayout", package: "ArgoAtlas"),
+                .product(name: "AtlasView", package: "ArgoAtlas"),
+                .product(name: "MermaidView", package: "ArgoMermaid"),
             ],
         ),
         .testTarget(

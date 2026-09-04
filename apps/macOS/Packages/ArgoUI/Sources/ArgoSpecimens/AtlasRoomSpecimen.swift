@@ -1,23 +1,25 @@
 import ArgoDesign
 import ArgoUI
+import AtlasFixtures
 import SwiftUI
 
-/// The Atlas room over a measured Map: the treemap of a repository, plate by plate, banded by the
-/// traffic light (#1148).
+/// The Atlas room over a generated atlas: the treemap of #1147 with the strip that says what was
+/// measured, and the one lever that measures it again (#1148).
 ///
-/// The map is a REAL measurement, trimmed — the same shape the generator writes, rather than tidy
-/// numbers. A treemap tested only on round figures is a treemap that breaks on the first
-/// repository: what has to survive is one file 78× the median beside a dozen that measure nothing.
+/// It draws the committed measurement, which is the same fixture `AtlasTreemapSpecimen` and the
+/// Atlas suite read. The picture on its own is that specimen; this one is the ROOM, so what it is
+/// worth a look for is the strip, the key under the map, and how the two sit around the tiling.
 struct AtlasRoomSpecimen: View {
     var body: some View {
-        AtlasRoomHost(map: AtlasRoomSpecimenMap.trimmed)
+        AtlasRoomHost(map: try? AtlasMapFixture.argo())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .argoDeckSurface()
     }
 }
 
-/// The room's other reading, on the same sheet's terms: a Project nobody has measured, which is an
-/// instruction rather than an empty screen.
+/// The room's other reading: a Project with no atlas, which is an instruction rather than an empty
+/// screen. A fixture that could not be read lands here too, because a specimen that trapped would
+/// be a harness failure dressed as a product one.
 struct AtlasRoomVacancySpecimen: View {
     var body: some View {
         AtlasRoomHost(map: nil)

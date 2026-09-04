@@ -267,6 +267,18 @@ import SwiftUI
         hasKeyboard = isHere
     }
 
+    /// This reading brought to the front — see `FeedDeckStack.show`. Its own verb rather than
+    /// `noteKeyboard(false)`, which would say the keyboard moved when nothing about the keyboard
+    /// happened: the reader picked a Session.
+    ///
+    /// The row goes with the ring. Keeping it would step the next arrow off a row the reader may
+    /// have scrolled miles from, and `landing(_:in:)` exists to put that first press somewhere
+    /// they can see — the reading resumes, the cursor does not.
+    func forgetCursor() {
+        hasKeyboard = false
+        focusedRow = nil
+    }
+
     func visibleRows() -> IndexSet {
         guard let table else { return [] }
         let visible = table.rows(in: table.visibleRect)

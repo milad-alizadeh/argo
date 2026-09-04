@@ -71,9 +71,14 @@ public enum ArgoLight {
         ("planShade", planShade), ("orbDim", orbDim),
     ]
 
-    /// Roles nothing draws yet — none, since #1144. All three lamps are spent by `AtlasQuad.metal`,
-    /// which takes them as uniforms rather than re-deriving them, which is what this family was
-    /// written down ahead of the shader for. (See `ArgoMotion.unwired` for why an unwired role
-    /// stays and why it says so.)
-    public static let unwired: [String: String] = [:]
+    /// Roles nothing draws yet, and what each is waiting on. (See `ArgoMotion.unwired` for why an
+    /// unwired role stays and why it says so.)
+    ///
+    /// The map draws FLAT until the light model lands, because nothing may be lit at the cost of
+    /// its band (#1147).
+    public static let unwired: [String: String] = [
+        "key": "#1151 — the light model, once the volumes of #1150 have faces to light",
+        "fill": "#1151 — the same",
+        "ambient": "#1151 — the same",
+    ]
 }

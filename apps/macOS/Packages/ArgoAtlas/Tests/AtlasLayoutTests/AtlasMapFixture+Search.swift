@@ -1,25 +1,11 @@
-@testable import AtlasLayout
-import Foundation
+import AtlasFixtures
+import AtlasLayout
 import Testing
 
-/// The committed measurement, read from the test bundle.
-///
-/// Real numbers off a real repository, trimmed — `Fixtures/README.md` states what was measured and
-/// which awkward cases it was kept for. A test that wants a tidy number writes its own JSON rather
-/// than editing this, because editing it retires the only evidence the reader survives real data.
-enum AtlasMapFixture {
-    static func data(_ name: String) throws -> Data {
-        let url = try #require(
-            Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures"),
-        )
-        return try Data(contentsOf: url)
-    }
-
-    /// This repository, as measured at commit 4478553.
-    static func argo() throws -> AtlasMap {
-        try AtlasMap(decoding: data("argo-map"))
-    }
-
+/// Finding one node in the committed measurement. Here rather than in `AtlasFixtures` because
+/// `#require` is the suite's vocabulary: a failure names the path that found nothing, which is
+/// only useful to a test.
+extension AtlasMapFixture {
     /// The one Plot at a path, or a failure naming the path that found nothing.
     static func plot(_ path: String, in map: AtlasMap) throws -> AtlasPlot {
         try #require(map.plots.first { $0.path == path })

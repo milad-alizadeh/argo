@@ -1,5 +1,6 @@
 import ArgoDesign
 import AtlasLayout
+import AtlasView
 import Foundation
 import SwiftUI
 
@@ -36,9 +37,36 @@ struct AtlasRoomView: View {
     private func measured(_ map: AtlasMap) -> some View {
         VStack(spacing: ArgoSpacing.flush) {
             strip(map)
-            AtlasMapCanvas(map: map, channels: channels(of: map))
+            ground(map)
         }
     }
+
+    /// The map, tiled into the room's own ground. `AtlasView` frames itself at the plan's extent
+    /// and hangs its key under that, so the ground is what the tiling is sized by and the key
+    /// falls in the room's padding below it.
+    ///
+    /// Tiled in the BODY rather than inside the view, because a plan is recomputed when the size
+    /// moves and a body is not a frame (ADR-0028 rule 3).
+    private func ground(_ map: AtlasMap) -> some View {
+        GeometryReader { proxy in
+            AtlasView(plan: AtlasPlan(
+                tiling: map,
+                by: channels(of: map),
+                into: CGSize(
+                    width: proxy.size.width - ArgoSpacing.loose * 2,
+                    height: proxy.size.height - Self.keyRoom,
+                ),
+            ))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .padding(.horizontal, ArgoSpacing.loose)
+        .padding(.bottom, ArgoSpacing.base)
+    }
+
+    /// What the key under the map costs the tiling. A measure beside the one surface that reads it
+    /// rather than a token (`rules/swift.md`): it is what `AtlasLegendKey` stands in, not a rhythm
+    /// step, and it comes off the ground so the two do not overrun the room between them.
+    private static let keyRoom: CGFloat = 76
 
     private func strip(_ map: AtlasMap) -> some View {
         HStack(spacing: ArgoSpacing.comfortable) {
@@ -74,15 +102,19 @@ struct AtlasRoomView: View {
     /// The opening reading, before anything can be chosen. #1161 gives the reader the choice.
     ///
     /// A PREFERENCE and not an assumption: the Measure set is open and belongs to the repository
-    /// (#1145), so these two are tried and the Map's own first name is taken when neither is there.
+    /// (#1145), so each channel tries its names in turn and falls back on what the Map carries.
     /// Alphabetical order alone put `age_in_weeks` on footprint, which sizes every file committed
     /// this week to nothing. `bytes` was tried next and is worse on a real repository: one 4.8 MB
-    /// fixture takes most of the map and everything else becomes a sliver. A legible opening is
-    /// worth stating a preference for.
+    /// fixture takes most of the map and everything else becomes a sliver.
+    ///
+    /// Two DIFFERENT Measures where the repository has both, which is what `AtlasTreemapSpecimen`
+    /// picked for its own reason: with one Measure on both channels, nothing in the picture can be
+    /// read off a colour that the size has not already said.
     private func channels(of map: AtlasMap) -> AtlasChannels {
         let names = map.measureNames
-        let preferred = ["lines", "bytes"].first { names.contains($0) }
-        return AtlasChannels(preferred ?? names.first ?? "")
+        let footprint = ["lines", "bytes"].first { names.contains($0) } ?? names.first ?? ""
+        let band = ["commits", "authors"].first { names.contains($0) } ?? footprint
+        return AtlasChannels(footprint: footprint, band: band)
     }
 }
 

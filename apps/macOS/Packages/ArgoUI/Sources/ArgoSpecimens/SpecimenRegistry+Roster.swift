@@ -18,12 +18,16 @@ extension SpecimenRegistry {
         // The contract's icon buttons, on a sheet of their own: the sheet above is longer than any
         // window, and a section nobody can render is not the drift check #1243 asked for.
         SpecimenEntry("iconButtons") { IconButtonSpecimen() },
-        // The map's first drawn pixels: one Metal-shaded plate on the desktop (#1144). Rendered
-        // from the running app rather than a preview, because what is being asked is whether the
-        // SHIPPED binary carries a compiled shader at all.
-        SpecimenEntry("atlasQuad") { AtlasQuadSpecimen() },
-        // The Atlas room over a real trimmed measurement, and over a Project nobody has measured:
-        // the two readings #1148 can draw, and the pair a treemap has to survive.
+        // The map's first picture: this repository tiled flat, drawn by the shader (#1147).
+        // Rendered from the running app rather than a preview, because what is being asked is
+        // whether the SHIPPED binary carries a compiled shader at all.
+        SpecimenEntry("atlasTreemap") { AtlasTreemapSpecimen() },
+        // The map before anything has been scanned: the floor, and no city on it. Worth a render
+        // rather than an assertion, because it is also what every way Metal can be ABSENT degrades
+        // to — so this is the frame the one above is told apart from.
+        SpecimenEntry("emptyAtlas") { AtlasTreemapSpecimen(map: nil) },
+        // The same picture inside the ROOM: the strip that says what was measured, and the page a
+        // Project with no atlas gets instead (#1148). The treemap above is the drawing on its own.
         SpecimenEntry("atlasRoom") { AtlasRoomSpecimen() },
         SpecimenEntry("atlasRoomUnmeasured") { AtlasRoomVacancySpecimen() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
@@ -33,9 +37,21 @@ extension SpecimenRegistry {
         // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
         SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
+        // The travel only shows in motion; a still catches the light at one point along it, and
+        // catches four rows at four different points (#1291).
+        SpecimenEntry("rosterSecondLine") { RosterSecondLineSpecimen() },
+        SpecimenEntry("rosterSecondLineStill") { RosterSecondLineSpecimen(isStill: true) },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
+        // The strip's edge, which only a SCROLLED roster can be judged on: at rest the first row
+        // sits flush with the control whether the list clips there or not (#1235).
+        SpecimenEntry("scrolledRoster") { ScrolledRosterSpecimen() },
+        // A Session landing at the head of a roster longer than the window, from the top and from
+        // a reader's own offset (#1235). Rendered after the arrival, with the hold let go, so the
+        // offset in the picture is the list's own answer rather than the harness's.
+        SpecimenEntry("arrivingRoster") { ArrivingRosterSpecimen() },
+        SpecimenEntry("arrivingScrolledRoster") { ArrivingRosterSpecimen(offset: 220) },
         // No swiped-row entry: `.swipeActions` opens only from a real gesture, so there is no state
         // to hand the harness. Nor is it an XCUITest claim: neither `XCUIElement.scroll(byDeltaX:)`
         // nor a phased `CGEvent` scroll opens the action, so it is a hand's frame or nothing

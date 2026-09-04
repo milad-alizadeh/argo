@@ -85,6 +85,9 @@ struct TicketNumberSpellingTests {
     @Test
     func `the worded form spells the number exactly as the mark does`() {
         #expect(IssueReading.words(number: 1261, title: nil) == IssueReading.mark(1261))
-        #expect(IssueReading.words(number: 1261, title: "Anchor the feed").hasPrefix("#1261 "))
+        // Through the joiner rather than a literal separator: the claim is about the NUMBER's
+        // spelling, and it must not fail the next time the house form's punctuation changes.
+        #expect(IssueReading.words(number: 1261, title: "Anchor the feed")
+            .hasPrefix(IssueReading.mark(1261) + IssueReading.joiner))
     }
 }

@@ -153,6 +153,10 @@ public extension ArgoColor {
 
     /// Source-over compositing, so a translucent edge or wash can be measured against the
     /// surface it actually sits on rather than against nothing.
+    ///
+    /// Public because the Atlas draws through a shader that does not blend (#1147): every colour
+    /// reaching the GPU there is opaque, so a role carrying an opacity has to be resolved against
+    /// its ground on this side of the boundary or it arrives at full strength.
     func composited(over backdrop: ArgoColor) -> ArgoColor {
         ArgoColor(
             red: red * opacity + backdrop.red * (1 - opacity),

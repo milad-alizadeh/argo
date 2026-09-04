@@ -20,6 +20,12 @@ final class FeedDeckStack: NSView {
     private weak var shown: NSScrollView?
 
     func show(_ deck: KeptDeck) {
+        // A different deck coming forward is a SELECTION and never a key, so whatever keyboard
+        // cursor this one was left with is not one the reader is asking for now (#1180). `show`
+        // runs every pass, so the comparison is what tells a switch from a re-render.
+        if deck.scroller !== shown {
+            deck.coordinator.forgetCursor()
+        }
         if !kept.contains(where: { $0 === deck }) {
             kept.append(deck)
             deck.scroller.autoresizingMask = []

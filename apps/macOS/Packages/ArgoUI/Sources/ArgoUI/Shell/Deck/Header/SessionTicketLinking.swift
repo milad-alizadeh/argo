@@ -20,10 +20,10 @@ package struct SessionTicketLinking {
             number
         }
 
-        /// `#1092 — Route between Session and Ticket`: the number first, because a reader picking
+        /// `#1092: Route between Session and Ticket`: the number first, because a reader picking
         /// from a list of their own backlog is looking for the number they typed elsewhere.
         package var label: String {
-            "#\(number) — \(title)"
+            IssueReading.words(number: number, title: title)
         }
 
         package init(number: Int, title: String) {

@@ -104,7 +104,9 @@ enum FeedFold {
 package struct FeedFoldStep: Equatable, Sendable, Identifiable {
     package let id: Int
     let caption: String
-    let goesTo: Int?
+    /// `package` so the specimen can find the one fold in a fixture whose list holds a name that
+    /// goes nowhere — the inert state, which no still reaches by any other route.
+    package let goesTo: Int?
     /// How many calls this one name stands for — see `FeedCall.repeats`. `1` for all but a
     /// collapsed run of the same work on the same subject.
     let repeats: Int
@@ -198,6 +200,13 @@ package struct FeedFoldOpening {
     var look: (Int) -> Void = { _ in }
     /// `nil` while the panel is open somewhere else, or on nothing.
     var current: Int?
+    /// Which name a STILL is asked to draw the pointer over. `nil` in the running app, where each
+    /// name answers for its own hover: a hover is the one state a still cannot reach (#382), and
+    /// the specimen this list's shape is judged from has to show one.
+    ///
+    /// Set after building rather than through the initializer, which is at the house's parameter
+    /// cap — and for the reason `FeedPreview.naming` is: it is a state only a still needs.
+    package var pointsAt: Int?
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(

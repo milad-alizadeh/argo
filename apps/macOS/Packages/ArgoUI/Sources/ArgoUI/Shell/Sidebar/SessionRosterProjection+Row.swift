@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import Foundation
 
 /// One roster row and the two passes that build one — split off `SessionRosterProjection.swift`
 /// so neither file owns two subjects. The `Row` and everything that constructs one sit together,
@@ -24,11 +25,11 @@ extension SessionRosterProjection {
         /// other status and for a running Session that has emitted no call — the slot then keeps
         /// `toldApart` below.
         ///
-        /// Read on its own as well as through `leadingFact`: an activity line is the one thing on
-        /// the row that pushes the clock to the trailing edge.
+        /// Read only through `secondaryFact` on the row itself: the line has one arrangement now,
+        /// so which of the two facts fills the slot no longer changes where anything sits (#1291).
         let activity: String?
-        /// The one fact on that second line that tells this Session from the rows beside it, at
-        /// the leading edge: the slash command it opened with where the Ticket holds the title
+        /// The one fact on that second line that tells this Session from the rows beside it:
+        /// the slash command it opened with where the Ticket holds the title
         /// (#745), and the Ticket itself where the title fell back to the Session's own derived
         /// name (#1072). Never both — the slot says whatever the title is not saying, and a row
         /// with nothing left to add draws nothing.
@@ -90,18 +91,23 @@ extension SessionRosterProjection {
             self.activity = activity.activity
         }
 
-        /// The one fact the second line leads with, first match wins (#1199): what the Session is
-        /// doing right now while it is running, and the fact that tells it apart from its
-        /// neighbours otherwise. One slot, so the line never says both.
-        var leadingFact: String? {
+        /// The one fact the second line carries beside the clock, first match wins (#1199): what
+        /// the Session is doing right now while it is running, and the fact that tells it apart
+        /// from its neighbours otherwise. One slot, so the line never says both.
+        var secondaryFact: String? {
             activity ?? toldApart
         }
 
-        /// Whether that fact is the activity — the one condition the second line's whole layout
-        /// reads off (#1199). Named here rather than tested three times in the view, so the rule
-        /// "an activity line pushes the clock right" is stated once.
-        var drawsActivity: Bool {
-            activity != nil
+        /// When the open Turn began, where Argo owns the stamp — what the dot's pulse ages off, so
+        /// a Turn six minutes in beats at the rung its age has earned rather than at the one the
+        /// row's own first frame would give it (#1291).
+        ///
+        /// `nil` for every other reading of the slot: an observed Session's `output … ago` is when
+        /// a record last LANDED, and ageing a wait off that would claim a Turn start Argo never
+        /// saw. Those rows fall back to when the row appeared, which is the feed's own answer.
+        var turnStartedAt: Date? {
+            guard case let .turn(startedAtMs) = clock else { return nil }
+            return Date(epochMs: startedAtMs)
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
@@ -112,7 +118,7 @@ extension SessionRosterProjection {
                 stateWord,
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
-                leadingFact,
+                secondaryFact,
                 spokenWorktree.map { "in \($0)" },
                 spokenClock,
             ]

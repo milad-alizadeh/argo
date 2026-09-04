@@ -1,3 +1,4 @@
+import AtlasFixtures
 @testable import AtlasLayout
 import Foundation
 import Testing

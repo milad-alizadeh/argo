@@ -19,7 +19,7 @@ struct SessionHeaderTooltipTests {
         // The worktree folder is named here too (#1199): the roster row stopped drawing it.
         #expect(lines[1] == "On argo/#692-titlebar-title, in the worktree tkt-692 "
             + "· 3 uncommitted files")
-        #expect(lines[2] == "Issue #692 — Titlebar title")
+        #expect(lines[2] == "Issue #692: Titlebar title")
         #expect(lines[3] == "Argo never owned this Session's terminal, "
             + "so it cannot be driven from here.")
         // The blank line is what separates identity from telemetry: the facts above it say what

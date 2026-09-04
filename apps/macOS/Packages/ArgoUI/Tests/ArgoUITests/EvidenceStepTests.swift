@@ -77,6 +77,22 @@ struct EvidenceStepTests {
         #expect(survey.steps.map(\.goesTo) == [nil, 0])
     }
 
+    /// What a press on ONE name opens: that call's own result and nothing else. The step a name
+    /// points at is an index down the WHOLE pane, so the claim only bites where the calls produce
+    /// different numbers of results — a run of one-each is numbered correctly by any off-by-one.
+    @Test
+    func `each name in a fold points at its own call's first result`() throws {
+        let calls = try [
+            Self.edited("first.swift", patches: 1),
+            Self.edited("middle.swift", patches: 3),
+            Self.edited("last.swift", patches: 2),
+        ]
+        let pane = FeedFold.steps(of: calls)
+
+        let aimed = FeedFold.listed(calls).map { name in name.goesTo.map { pane[$0].address } }
+        #expect(aimed == calls.map { Optional($0.caption) })
+    }
+
     // MARK: - Fixtures
 
     private static var looking: [TranscriptEvent] {

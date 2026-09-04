@@ -23,3 +23,30 @@ public extension FormatStyle where Self == IntegerFormatStyle<Int> {
         .number.grouping(.never)
     }
 }
+
+/// The same rule for a figure that was MEASURED rather than counted (#1147).
+public extension FormatStyle where Self == FloatingPointFormatStyle<Double> {
+    /// How Argo writes a figure it measured: the digits, no group separator, and at most one place
+    /// after the point.
+    ///
+    /// A separate style from `machine` because the question it answers is a different one. A count
+    /// is a whole number and the only decision is the separator; a measure is whatever the
+    /// generator wrote — the Atlas reads five and only one of them is fractional — and the decision
+    /// is how much of it to show. One place, because the legend is read at a glance and a file
+    /// whose age is 3.4 weeks and one whose age is 3.41 are the same file to the reader.
+    static var measured: Self {
+        .number.grouping(.never).precision(.fractionLength(0 ... 1))
+    }
+}
+
+/// A share of a whole, which is neither a count nor a measurement (#1147).
+public extension FormatStyle where Self == FloatingPointFormatStyle<Double>.Percent {
+    /// How Argo writes a fraction as a share: whole percent, no group separator.
+    ///
+    /// Whole percent because a share is read at a glance and against a round number — a legend
+    /// saying "top 15%" is a claim about the shape of a repository, and a tenth of a percent on
+    /// it is precision nobody asked for and floating-point noise nobody wants to see.
+    static var share: Self {
+        .percent.grouping(.never).precision(.fractionLength(0))
+    }
+}

@@ -38,7 +38,7 @@ struct SessionRenameProjectionTests {
         let row = try #require(SessionRosterProjection.rows(from: [linked]).first)
 
         // The house form, so the row names the ticket as well as the work (#745).
-        #expect(row.title == "#515 — Rename a Session")
+        #expect(row.title == "#515: Rename a Session")
     }
 
     @Test
@@ -81,7 +81,7 @@ struct SessionRenameProjectionTests {
 
         // Undoing the rename lands where the Session would have been without it, not one rung
         // further down the chain.
-        #expect(row.rename?.derived == "#515 — Rename a Session")
+        #expect(row.rename?.derived == "#515: Rename a Session")
     }
 
     @Test
