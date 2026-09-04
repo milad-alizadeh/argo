@@ -106,7 +106,35 @@ function blocks(record) {
 
 // ClaudeInterrupt.isMark — an interrupt arrives on the user side and is punctuation, not a prompt.
 function isInterrupt(text) {
-  return /^\[Request interrupted/.test(text) || /^\s*\[Request interrupted/.test(text)
+  return /^\s*\[Request interrupted/.test(text)
+}
+
+// What the CLI writes into the user's side of the record that the user did not type.
+//
+// The app has `isMeta` and `taskNotification` for this (`TranscriptReader.userEvents`), and the
+// record does NOT flag most of it — a slash command, a finished background agent's notification
+// and a hook's stdout all arrive as ordinary user text. Read as prompts they name Turns with
+// markup, which is what the outline made obvious the moment the Turns were listed as words.
+const NOT_TYPED = [
+  /^\s*<task-notification>/,
+  /^\s*<local-command-stdout>/,
+  /^\s*<user-memory-input>/,
+  /^\s*Caveat: The messages below/,
+  /^\s*\[Image #\d+\]\s*$/,
+]
+
+// A slash command IS the user speaking, and its name is the whole of what they said — so the
+// wrapper is unwrapped rather than dropped. `<command-name>` is the CLI's spelling of it.
+function spoken(text) {
+  const command = text.match(/<command-name>([^<]+)<\/command-name>/)
+  if (command) {
+    const argument = text.match(/<command-args>([^<]*)<\/command-args>/)
+    return `${command[1].trim()}${argument?.[1]?.trim() ? ` ${argument[1].trim()}` : ''}`
+  }
+  if (NOT_TYPED.some((pattern) => pattern.test(text))) return null
+  // A system reminder is appended to a real prompt. The words before it are the ones typed.
+  const words = text.split('<system-reminder>')[0].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  return words || null
 }
 
 function targetOf(input) {
@@ -116,7 +144,8 @@ function targetOf(input) {
   )
 }
 
-// One record → the row contents it carries, in the record's own order.
+// One record → the row contents it carries, in the record's own order. Every row carries the
+// record's own wall clock, which is what the time-mapped variants read.
 function contentsOf(record, failed) {
   if (record.isSidechain) return []
   const kind = record.type
@@ -128,11 +157,15 @@ function contentsOf(record, failed) {
     const text = parts.filter((p) => p.type === 'text').map((p) => p.text ?? '').join('\n')
     if (!text.trim()) return []
     if (isInterrupt(text)) return [{ kind: 'mark', text: '', ends: true }]
+    const said = spoken(text)
     // A meta record is the CLI talking to itself; only a skill's body earns a row.
     if (record.isMeta) {
-      return /<command-name>|skill/i.test(text) ? [{ kind: 'skill', text: text.slice(0, 80) }] : []
+      return /<command-name>|skill/i.test(text) ? [{ kind: 'skill', text: said ?? '' }] : []
     }
-    return [{ kind: 'prompt', text }]
+    // Text the CLI wrote into the user's side stays in the reading — it happened — but as
+    // punctuation: it opens no Turn, carries no words, and is not read at the length of its
+    // markup. `FeedProjection` routes a task notification the same way (`reported`).
+    return said ? [{ kind: 'prompt', text: said }] : [{ kind: 'mark', text: '', ends: false }]
   }
   if (kind !== 'assistant') return []
   const rows = []
@@ -147,6 +180,7 @@ function contentsOf(record, failed) {
         kind: name === 'AskUserQuestion' ? 'ask' : 'call',
         text: `${name} ${targetOf(part.input)}`.trim(),
         tool: name,
+        target: targetOf(part.input),
         id: part.id,
         looks: LOOKING.has(name),
         delegate: DELEGATE.has(name),
@@ -290,13 +324,53 @@ async function read(spec) {
     }
     if (record.type === 'user' || record.type === 'assistant') records.push(record)
   }
-  const raw = records.flatMap((record) => contentsOf(record, failed))
+  const raw = records.flatMap((record) => {
+    const at = Date.parse(record.timestamp ?? '') || 0
+    return contentsOf(record, failed).map((row) => ({ ...row, at }))
+  })
   // UNFOLDED, which #1174 asks for: #1172's work fold lowers the count this lane is asked to
   // draw, and the variants are to be judged at the harder length. The folded count is carried
   // beside it so the two lengths can be compared without a second read.
   const rows = raw
   const turns = spans(rows)
   return { rows, turns, folded: surveyed(collapsed(raw)).length }
+}
+
+// What a Turn DID, in the words the hover card needs. A digest and not the rows themselves: the
+// card is read at a glance beside the reading, and a list of forty calls is a second feed.
+function digest(rows, [from, to]) {
+  const tools = new Map()
+  const files = new Set()
+  let failed = 0, questions = 0, prose = 0, thoughts = 0
+  for (let i = from; i <= to; i += 1) {
+    const row = rows[i]
+    if (row.kind === 'call' || row.kind === 'survey' || row.kind === 'skill') {
+      const name = row.tool ?? 'Read'
+      tools.set(name, (tools.get(name) ?? 0) + 1)
+      // The subject as the call named it, never re-split out of the drawn sentence — a pattern
+      // with a space in it came back as half a word.
+      const target = row.target ?? ''
+      if (target) files.add(target.split('/').pop().slice(0, 28))
+    }
+    if (row.kind === 'ask') questions += 1
+    if (row.failed) failed += 1
+    if (row.kind === 'message') prose += 1
+    if (row.kind === 'thought') thoughts += 1
+  }
+  const ranked = [...tools.entries()].sort((a, b) => b[1] - a[1])
+  return {
+    // The wall clock the Turn ran over, which is what the time-mapped lane maps and what the
+    // card says out loud — a reader remembers the long one, not the tall one.
+    from: rows[from].at,
+    to: rows[to].at,
+    work: ranked.reduce((a, [, n]) => a + n, 0),
+    tools: ranked.slice(0, 3),
+    files: [...files].slice(0, 3),
+    failed,
+    questions,
+    prose,
+    thoughts,
+  }
 }
 
 function statistics(rows, turns) {
@@ -351,6 +425,10 @@ for (const spec of SPECIMENS) {
     inks: rows.map((row) => INK[row.failed ? 'failure' : row.kind] ?? 'message'),
     kinds: rows.map((row) => row.kind),
     turns: turns.map(([from, to]) => [from, to]),
+    // Every row's wall clock, and what each Turn did — the two the equal-weight variants and the
+    // hover card are drawn from.
+    times: rows.map((row) => row.at),
+    digests: turns.map((span) => digest(rows, span)),
     // The first words of each Turn's prompt, for the label a hover draws. Empty where the Turn
     // opened without one — a promptless exchange, which the lane must not invent words for.
     prompts: turns.map(([from]) => (rows[from].kind === 'prompt' ? rows[from].text.slice(0, 90) : '')),

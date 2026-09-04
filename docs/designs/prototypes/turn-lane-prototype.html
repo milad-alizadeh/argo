@@ -49,13 +49,97 @@
   /* The lane. Its width is ArgoLayout.minimapLaneWidth(sharing:) — 15% of the deck, 72…120. */
   #laneZone { position: relative; background: var(--sunken); }
   #lanePaint { display: block; cursor: pointer; }
+  /* The card a hover draws. It hangs OUTSIDE the lane, over the reading, because the lane is four
+     words wide — `ArgoMinimapLane.labelWidth` is the same 260. What is new against the shipped
+     label is the second half: a Turn's mark can no longer show what the Turn was, so the card
+     has to say it. */
   #laneLabel {
-    position: absolute; right: 100%; margin-right: 4px; max-width: 260px;
-    background: var(--overlay); border: 1px solid var(--subtle); border-radius: 5px;
-    padding: 4px 6px; font-size: 11px; line-height: 14px; color: var(--text-primary);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
-    display: none; z-index: 5;
+    position: absolute; right: 100%; margin-right: 6px; width: 260px;
+    background: var(--overlay); border: 1px solid var(--subtle); border-radius: 7px;
+    padding: 8px 10px; font-size: 11px; line-height: 15px; color: var(--text-primary);
+    pointer-events: none; display: none; z-index: 5;
+    box-shadow: 0 10px 28px rgba(0,0,0,.55);
   }
+  #laneLabel .said {
+    color: var(--text-primary); display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;
+  }
+  #laneLabel .said.none { color: var(--text-disabled); font-style: italic; }
+  #laneLabel .did { color: var(--text-secondary); }
+  #laneLabel .facts {
+    color: var(--text-tertiary); margin-top: 5px; padding-top: 5px;
+    border-top: 1px solid var(--hairline); display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  #laneLabel .facts b { color: var(--text-primary); font-weight: 600; }
+  #laneLabel .facts .hot { color: var(--failure); }
+
+  #deck { flex-direction: column; }
+  #row { display: flex; flex: 1; min-height: 0; }
+  /* N: the strip across the head of the deck, so the reading keeps its full height. */
+  #ribbon { position: relative; height: 0; overflow: hidden; border-bottom: 1px solid transparent; }
+  #ribbon.on { height: 64px; border-bottom-color: var(--hairline); background: var(--sunken); }
+  #ribbonPaint { display: block; cursor: pointer; }
+  #ribbonLabel {
+    position: absolute; bottom: 4px; background: var(--overlay); border: 1px solid var(--subtle);
+    border-radius: 6px; padding: 5px 8px; font-size: 11px; line-height: 15px; max-width: 300px;
+    pointer-events: none; display: none; z-index: 6; box-shadow: 0 8px 22px rgba(0,0,0,.5);
+  }
+  /* L: the loupe — the real rows under the pointer, drawn big enough to read the shape of. */
+  #loupe {
+    position: absolute; right: 100%; margin-right: 8px; width: 190px;
+    background: var(--overlay); border: 1px solid var(--subtle); border-radius: 8px;
+    padding: 6px; display: none; z-index: 6; box-shadow: 0 12px 30px rgba(0,0,0,.6);
+  }
+  #loupePaint { display: block; border-radius: 4px; background: var(--base); }
+  #loupeSaid {
+    font-size: 10px; line-height: 13px; color: var(--text-tertiary); margin-top: 5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  /* K: the outline — navigation by reading rather than by looking. */
+  #outline { width: 0; overflow: hidden; background: var(--sunken); display: flex; flex-direction: column; }
+  #outline.on { width: 268px; border-left: 1px solid var(--hairline); }
+  #outlineHead { padding: 8px 10px; border-bottom: 1px solid var(--hairline); }
+  #outlineHead input[type=search] {
+    width: 100%; background: var(--base); border: 1px solid var(--subtle); border-radius: 6px;
+    color: var(--text-primary); font: inherit; padding: 4px 7px;
+  }
+  #outlineHead .filters { display: flex; gap: 4px; margin-top: 6px; }
+  #outlineHead .filters button {
+    flex: 1; background: transparent; border: 1px solid var(--hairline); border-radius: 999px;
+    color: var(--text-tertiary); font: inherit; font-size: 10px; padding: 2px 0; cursor: pointer;
+  }
+  #outlineHead .filters button.on { background: var(--accent); color: #05070A; border-color: transparent; }
+  #outlineList { flex: 1; overflow-y: auto; }
+  .entry {
+    padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.04); cursor: pointer;
+    display: grid; grid-template-columns: 3px 1fr; gap: 7px; align-items: start;
+  }
+  .entry:hover { background: rgba(255,255,255,.045); }
+  .entry.here { background: #203146; }
+  .entry .bar { height: 100%; border-radius: 2px; background: var(--text-disabled); }
+  .entry .said { color: var(--text-primary); font-size: 11px; line-height: 15px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .entry .said.none { color: var(--text-disabled); font-style: italic; }
+  .entry .did { color: var(--text-tertiary); font-size: 10px; line-height: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry .mine { color: var(--text-secondary); }
+  /* M: type what you remember. */
+  #palette {
+    position: fixed; top: 14vh; left: 50%; transform: translateX(-50%); width: 520px;
+    background: var(--overlay); border: 1px solid rgba(255,255,255,.3); border-radius: 12px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.65); display: none; z-index: 30; overflow: hidden;
+  }
+  #palette.on { display: block; }
+  #paletteInput {
+    width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--hairline);
+    color: var(--text-primary); font: inherit; font-size: 15px; padding: 12px 14px; outline: none;
+  }
+  #paletteList { max-height: 46vh; overflow-y: auto; }
+  #paletteList .hit { padding: 8px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,.04); }
+  #paletteList .hit.on { background: #203146; }
+  #paletteList .hit .said { color: var(--text-primary); }
+  #paletteList .hit .did { color: var(--text-tertiary); font-size: 11px; }
+  #paletteList mark { background: transparent; color: var(--accent); }
 
   /* Everything below is prototype chrome, deliberately not part of the design being judged. */
   #panel {
@@ -99,6 +183,8 @@
 <div id="page">
 <div id="stage">
 <div id="deck">
+  <div id="ribbon"><canvas id="ribbonPaint"></canvas><div id="ribbonLabel"></div></div>
+  <div id="row">
   <div id="feedZone">
     <div id="feedScroll"><div id="feedSpacer"></div></div>
     <canvas id="feedPaint"></canvas>
@@ -107,8 +193,12 @@
   <div id="laneZone">
     <canvas id="lanePaint"></canvas>
     <div id="laneLabel"></div>
+    <div id="loupe"><canvas id="loupePaint"></canvas><div id="loupeSaid"></div></div>
+  </div>
+  <div id="outline"><div id="outlineHead"></div><div id="outlineList"></div></div>
   </div>
 </div>
+<div id="palette"><input id="paletteInput" placeholder="Type what you remember…" autocomplete="off"><div id="paletteList"></div></div>
 </div>
   <div id="panel">
     <h1 id="variantTitle">—</h1>
@@ -186,6 +276,58 @@ const VARIANTS = {
     name: 'Proportional + boundary comb',
     what: 'Bars stay proportional, and every Turn boundary also draws a 1pt tick in a leading ' +
       'comb at its true position — so a run of trivial Turns is countable rather than a stipple.',
+  },
+  F: {
+    name: 'Work ticks, magnitude across',
+    what: 'Equal weight down the lane, magnitude ACROSS it: a Turn’s tick is the same height ' +
+      'whatever it holds and as long as what it did. Turns that did no work — half of every ' +
+      'session — stop being marks and become punctuation in a 6pt gutter at their true position, ' +
+      'which is also the proportional rail. Nothing abstract carries the position: the dots are ' +
+      'the same Turns.',
+  },
+  G: {
+    name: 'Chapters, one open',
+    what: 'The lane is stateful. Turns group into chapters at the gaps where somebody left the ' +
+      'keyboard; every chapter keeps a labelled band, and only the chapter the reading is in ' +
+      'opens into per-Turn ticks. Always fits, at any length — what it gives up is a lane that ' +
+      'stands still while you scroll.',
+  },
+  H: {
+    name: 'Worked time, not document',
+    what: 'Maps the clock instead of the scroll. A Turn stands as long as it RAN, away-time is ' +
+      'a drawn seam rather than empty lane, and the reading’s place is where the clock says. ' +
+      'A reader remembers the long one before lunch, not the tall one.',
+  },
+  K: {
+    name: 'Outline — read to navigate',
+    what: 'Not a map at all. Every Turn as a line you can READ: what was asked, what it did, how ' +
+      'long it took — searchable, filterable to the ones you typed or the ones that did work. ' +
+      'A 440-Turn session is a long list, and a long list is a thing people are good at. ' +
+      'The lane shrinks to a position rail beside it.',
+  },
+  L: {
+    name: 'Loupe — see the real rows',
+    what: 'The lane stays compressed and stops pretending it is legible. Hovering it opens a ' +
+      'loupe on the REAL rows under the pointer, at a size you can recognise, the way a video ' +
+      'scrubber shows frames. Nothing is abstracted into a mark whose meaning has to be learned.',
+  },
+  M: {
+    name: 'Jump — type what you remember',
+    what: 'Press ⌘K. You do not remember where a Turn was, you remember a word in it — so type ' +
+      'the word and the Turns matching it rank up, arrow through them, enter to land. ' +
+      'Navigation by memory, with the lane demoted to showing where you ended up.',
+  },
+  N: {
+    name: 'Ribbon — across, not down',
+    what: 'Turn the map ninety degrees. A 64pt strip across the head of the deck: one column ' +
+      'per Turn, height for the work in it, chapters named underneath. The reading keeps its ' +
+      'full height and the map gets a dimension the lane never had — width per Turn.',
+  },
+  J: {
+    name: 'Density field + your own ticks',
+    what: 'Stop drawing marks. The lane is a continuous field — every lane point inked by what ' +
+      'the reading holds there — so nothing can be starved, because nothing is a rect with a ' +
+      'floor. The only marks left are the Turns YOU opened by typing, at their true positions.',
   },
   E: {
     name: 'Adaptive compression',
@@ -300,6 +442,77 @@ function buildGeometry(spec, lane, viewportHeight) {
   }
 }
 
+// ── What the equal-weight family needs ───────────────────────────────────────────────────────
+
+// Where somebody left the keyboard. Longer than this between two Turns is not thinking, it is
+// nobody there — the same five-minute rule the roster's `worked` is taken with.
+const AWAY_MS = 5 * 60 * 1000
+// What a chapter breaks at. Longer than this and the reader came back to a different sitting.
+const CHAPTER_MS = 20 * 60 * 1000
+
+// The session in chapters: runs of Turns with nobody away for long in between. Derived from the
+// record's own clock, so a chapter is a thing that happened rather than a bucket of N.
+function chaptersOf(spec) {
+  const chapters = []
+  let head = 0
+  for (let i = 1; i < spec.turns.length; i += 1) {
+    if (spec.digests[i].from - spec.digests[i - 1].to > CHAPTER_MS) {
+      chapters.push({ from: head, to: i - 1 })
+      head = i
+    }
+  }
+  chapters.push({ from: head, to: spec.turns.length - 1 })
+  // A chapter of one Turn is a gap, not a chapter: a person who stepped away mid-sitting leaves
+  // one, and a lane full of them is a lane of labels. Runs shorter than three fold forward into
+  // the chapter they interrupted.
+  const merged = []
+  for (const chapter of chapters) {
+    const last = merged[merged.length - 1]
+    if (last && chapter.to - chapter.from + 1 < 3) last.to = chapter.to
+    else merged.push({ ...chapter })
+  }
+  return merged.map((chapter) => {
+    const digests = spec.digests.slice(chapter.from, chapter.to + 1)
+    return {
+      ...chapter,
+      turns: chapter.to - chapter.from + 1,
+      work: digests.reduce((a, d) => a + d.work, 0),
+      failed: digests.reduce((a, d) => a + d.failed, 0),
+      at: digests[0].from,
+      ran: digests[digests.length - 1].to - digests[0].from,
+      // What the chapter opened with. A place you recognise, rather than a count you compare.
+      said: spec.prompts.slice(chapter.from, chapter.to + 1).find(Boolean) ?? '',
+    }
+  })
+}
+
+// The session on a WORKED clock: every Turn placed by when it ran, with anybody-away time
+// collapsed to one drawn seam rather than mapped. A 55-hour record is 19 hours of work and one
+// ten-hour night, and the night is a fact to draw, not a stretch of lane to spend.
+function workedClock(spec) {
+  const stops = []
+  let cursor = 0
+  spec.digests.forEach((digest, i) => {
+    const gap = i === 0 ? 0 : digest.from - spec.digests[i - 1].to
+    if (gap > CHAPTER_MS) {
+      // Somebody left. A drawn seam, because a night is a fact about the session and a lane that
+      // MAPPED it would spend three quarters of itself on nothing happening.
+      stops.push({ away: true, at: cursor, gap })
+    } else if (gap > AWAY_MS) {
+      // A short absence — a coffee, a meeting — is mapped, but clamped: it is time the reader
+      // was gone, not time the session took, and at full length sixty of them own the lane.
+      cursor += AWAY_MS
+    } else {
+      cursor += Math.max(0, gap)
+    }
+    // A Turn that ran no measurable time still happened, so it gets the floor rather than nothing.
+    const ran = Math.max(1000, digest.to - digest.from)
+    stops.push({ away: false, at: cursor, ran, turn: i })
+    cursor += ran
+  })
+  return { stops, worked: cursor, seams: stops.filter((s) => s.away).length }
+}
+
 // ── The marks each variant draws ─────────────────────────────────────────────────────────────
 // Every variant answers with the same shape: marks in lane coordinates, plus how it maps a lane
 // point back onto the reading — which is the thing the ticket says must not be given up.
@@ -338,7 +551,121 @@ function marksFor(key, g, spec, offset) {
     })
     return { linear: false, rail: false, marks, fits: cursor <= g.lane.height + 1 }
   }
-  // A, B, D — proportional. The mapping is untouched; only what is drawn inside a bar changes.
+  if (key === 'F') {
+    // Only a Turn that DID something earns a mark. The rest are punctuation, which is the
+    // ticket's own open question answered one way and then counted.
+    const worked = []
+    const punctuation = []
+    turns.forEach(([from, to], i) => {
+      const digest = spec.digests[i]
+      const mark = { turn: i, from, to, trueY: y(at(from)), rows: to - from + 1, digest }
+      if (digest.work > 0 || digest.questions > 0) worked.push(mark)
+      else punctuation.push(mark)
+    })
+    const step = Math.max(FLOOR + 1, g.lane.height / Math.max(1, worked.length))
+    const longest = Math.max(1, ...worked.map((m) => m.rows))
+    worked.forEach((mark, i) => {
+      mark.y = i * step
+      mark.height = Math.max(RECT_MIN + 1, step - RECT_GAP * 2)
+      // Magnitude ACROSS, and on a log scale: a 1-row Turn and a 328-row Turn have to be
+      // distinguishable at both ends, which a linear length spends entirely on the outlier.
+      mark.span = Math.log1p(mark.rows) / Math.log1p(longest)
+    })
+    return {
+      linear: false, rail: false, gutter: punctuation.concat(worked), marks: worked,
+      fits: worked.length * step <= g.lane.height + 1,
+    }
+  }
+  if (key === 'G') {
+    const chapters = chaptersOf(spec)
+    // Which chapter the reading is in. That one opens; the rest keep a labelled band.
+    const inside = spec.turns.findIndex(([from, to]) =>
+      offset >= g.starts[from] - TOP_INSET && offset < g.starts[to + 1])
+    const open = Math.max(0, chapters.findIndex((c) => inside >= c.from && inside <= c.to))
+    // A shut chapter's band is the same height as every other shut chapter's, and that is the
+    // point: it is a place to go, not a quantity. What it holds is said in words inside it —
+    // which a proportional band could not do, because the small ones would have no room for the
+    // sentence that makes them worth opening.
+    const shut = chapters.length - 1
+    const shutBand = 24
+    const shutRoom = Math.min(g.lane.height * 0.5, shut * (shutBand + RECT_GAP))
+    const openRoom = Math.max(120, g.lane.height - shutRoom - RECT_GAP)
+    const marks = []
+    const bands = []
+    let cursor = 0
+    chapters.forEach((chapter, i) => {
+      if (i === open) {
+        const step = Math.max(FLOOR, openRoom / Math.max(1, chapter.turns))
+        bands.push({ ...chapter, y: cursor, height: openRoom, open: true, index: i })
+        for (let turnAt = chapter.from; turnAt <= chapter.to; turnAt += 1) {
+          const [from, to] = spec.turns[turnAt]
+          marks.push({
+            y: cursor + (turnAt - chapter.from) * step,
+            height: Math.max(RECT_MIN, step - RECT_GAP),
+            turn: turnAt, from, to, digest: spec.digests[turnAt],
+            trueY: y(at(from)),
+          })
+        }
+        cursor += openRoom + RECT_GAP
+        return
+      }
+      bands.push({ ...chapter, y: cursor, height: shutBand, open: false, index: i })
+      cursor += shutBand + RECT_GAP
+    })
+    // It fits by construction, whatever the session's length — which is the claim, and the one
+    // thing none of A–F can say about #650.
+    return { linear: false, rail: false, bands, marks, fits: true }
+  }
+  if (key === 'H') {
+    const clock = workedClock(spec)
+    const seamHeight = 5
+    const room = g.lane.height - clock.seams * (seamHeight + RECT_GAP)
+    const perMs = room / Math.max(1, clock.worked)
+    const marks = []
+    const seams = []
+    let cursor = 0
+    for (const stop of clock.stops) {
+      if (stop.away) {
+        seams.push({ y: cursor, height: seamHeight, gap: stop.gap })
+        cursor += seamHeight + RECT_GAP
+        continue
+      }
+      const [from, to] = spec.turns[stop.turn]
+      const height = Math.max(RECT_MIN, stop.ran * perMs)
+      marks.push({
+        y: cursor, height, turn: stop.turn, from, to, digest: spec.digests[stop.turn],
+        trueY: y(at(from)), ran: stop.ran,
+      })
+      cursor += height
+    }
+    return { linear: false, rail: false, seams, marks, clock, fits: cursor <= g.lane.height + 1 }
+  }
+  if (key === 'J') {
+    // A field, not marks. The only rects are the Turns the reader opened by typing — at their
+    // true positions, so this lane is linear everywhere a mark exists.
+    const typed = []
+    turns.forEach(([from, to], i) => {
+      if (!spec.prompts[i]) return
+      typed.push({
+        y: y(at(from)), height: Math.max(RECT_MIN + 1, 3), turn: i, from, to,
+        digest: spec.digests[i], trueY: y(at(from)),
+      })
+    })
+    return { linear: true, rail: false, field: true, marks: typed, fits: true }
+  }
+  if (key === 'K' || key === 'M' || key === 'N') {
+    // These three navigate somewhere else. What is left in the lane is a position rail — where
+    // you are in the session, and nothing that has to be decoded.
+    return {
+      linear: true, rail: false, rails: true, marks: turns.map(([from, to], i) => ({
+        y: y(at(from)),
+        height: Math.max(RECT_MIN, g.turnExtents[i] * g.scale - RECT_GAP),
+        turn: i, from, to, trueY: y(at(from)), digest: spec.digests[i],
+      })),
+      fits: g.coverage >= 1,
+    }
+  }
+  // A, B, D, L — proportional. The mapping is untouched; only what is drawn inside a bar changes.
   const marks = turns.map(([from, to], i) => ({
     y: y(at(from)),
     height: Math.max(RECT_MIN, g.turnExtents[i] * g.scale - RECT_GAP),
@@ -362,13 +689,22 @@ function sharesOf(spec, from, to) {
   return { prompt: prompt / total, work: work / total, prose: prose / total, total }
 }
 
-// The ink a Turn is drawn in where one ink has to stand for all of it: the loudest state wins,
-// then whatever the Turn spent most of its height on.
+// The ink a Turn is drawn in where one ink has to stand for all of it.
+//
+// A FAILURE is not one of them, and that is a decision rather than an omission: a call fails all
+// day — a `cd` into the wrong folder, a grep that matched nothing — and none of it is news to
+// the person reading. The feed inks the failed LINE, where the reader is looking at that line;
+// a lane that inked the whole Turn would report an errand as an incident. 17% of #650's Turns
+// hold one, so the lane would have been a sixth red for nothing.
+//
+// A QUESTION still wins: it is the one state that is waiting on somebody, and a reader scanning
+// the lane for where they are needed is scanning for exactly that.
 function dominantInk(spec, from, to) {
-  let spent = {}
+  const spent = {}
   for (let i = from; i <= to; i += 1) {
     const ink = spec.inks[i]
-    if (ink === 'failure' || ink === 'attention') return ink
+    if (ink === 'attention') return ink
+    if (ink === 'failure' || ink === 'boundary') continue
     spent[ink] = (spent[ink] ?? 0) + spec.heights[i]
   }
   return Object.entries(spent).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'message'
@@ -395,6 +731,18 @@ function paintLane(offset) {
   const shape = marksFor(variant, g, specimen, offset)
   const drawable = { from: RECT_INSET, to: width - RECT_INSET }
   const inner = drawable.to - drawable.from
+
+  // The four equal-weight lanes each paint themselves whole — their marks are not rects in one
+  // column, so there is nothing for the loop below to do with them.
+  if (variant === 'K' || variant === 'M' || variant === 'N') {
+    const starved = paintRail(ctx, shape, g, offset, { width, height })
+    return { shape, starved }
+  }
+  if (variant === 'F' || variant === 'G' || variant === 'H' || variant === 'J') {
+    const painter = { F: paintTicks, G: paintChapters, H: paintClock, J: paintField }[variant]
+    const starved = painter(ctx, shape, g, offset, { width, height, drawable, inner })
+    return { shape, starved }
+  }
 
   // C's rail: the true proportional position, kept off to the trailing edge.
   if (shape.rail) {
@@ -495,6 +843,236 @@ function paintLane(offset) {
     ctx.strokeRect(0.5, lit.from + 0.5, width - 1, Math.max(1, height2 - 1))
   }
   return { shape, starved }
+}
+
+// ── K / M / N: the lane demoted to a rail ────────────────────────────────────────────────────
+// Where you are, and nothing else. Every Turn is still drawn at its true position, so the rail
+// stays the honest picture it always was — it has just stopped being asked to be legible, because
+// something beside it is doing the navigating.
+function paintRail(ctx, shape, g, offset, box) {
+  const { width, height } = box
+  const x = width / 2 - 3
+  ctx.fillStyle = 'rgba(255,255,255,.05)'
+  ctx.fillRect(x, 0, 6, height)
+  ctx.globalAlpha = RUN_OPACITY
+  let starved = 0
+  for (const mark of shape.marks) {
+    if (mark.height <= RECT_MIN + 0.01) starved += 1
+    if (mark.y > height + 2 || mark.y + mark.height < -2) continue
+    ctx.fillStyle = INK[shows.ink ? dominantInk(specimen, mark.from, mark.to) : 'message']
+    ctx.fillRect(x, mark.y, 6, Math.max(RECT_MIN, mark.height))
+  }
+  ctx.globalAlpha = 1
+  const vy = g.viewportY(offset)
+  ctx.fillStyle = 'rgba(62,155,255,.16)'
+  ctx.fillRect(0, vy, width, g.viewportHeightInLane)
+  ctx.strokeStyle = 'rgba(62,155,255,.7)'
+  ctx.strokeRect(0.5, vy + 0.5, width - 1, Math.max(1, g.viewportHeightInLane - 1))
+  return starved
+}
+
+// ── F: equal weight down, magnitude across ───────────────────────────────────────────────────
+function paintTicks(ctx, shape, g, offset, box) {
+  const { width, height, drawable, inner } = box
+  const gutter = 7
+  // The gutter is the proportional rail, and it is made of the same Turns: every Turn's true
+  // position, the workless ones included, so nothing has left the lane — it has stopped being a
+  // bar and become a dot.
+  ctx.globalAlpha = 0.5
+  for (const mark of shape.gutter) {
+    ctx.fillStyle = INK[mark.digest.work > 0 ? 'command' : 'boundary']
+    ctx.fillRect(2, Math.round(mark.trueY) + 0.5, gutter - 4, RECT_MIN)
+  }
+  ctx.globalAlpha = 1
+
+  const from = drawable.from - 4
+  const room = drawable.to - from
+  let starved = 0
+  for (const mark of shape.marks) {
+    if (mark.y > height) break
+    if (mark.height <= RECT_MIN + 0.01) starved += 1
+    const ink = shows.ink ? dominantInk(specimen, mark.from, mark.to) : 'message'
+    const length = Math.max(6, room * mark.span)
+    ctx.globalAlpha = RUN_OPACITY + 0.15
+    ctx.fillStyle = INK[ink]
+    ctx.fillRect(from, mark.y, length, mark.height)
+    // A question waiting on somebody gets a cap — the one state a lane is scanned for. A failed
+    // call gets nothing: see `dominantInk`.
+    if (mark.digest.questions > 0) {
+      ctx.globalAlpha = 0.95
+      ctx.fillStyle = INK.attention
+      ctx.fillRect(from + length - 3, mark.y, 3, mark.height)
+    }
+    ctx.globalAlpha = 1
+  }
+  litBand(ctx, shape, g, offset, { width, from: 0 })
+  return starved
+}
+
+// ── G: chapters, one open ────────────────────────────────────────────────────────────────────
+function paintChapters(ctx, shape, g, offset, box) {
+  const { width, drawable } = box
+  ctx.textBaseline = 'middle'
+  ctx.font = '9px -apple-system, system-ui, sans-serif'
+  for (const band of shape.bands) {
+    ctx.globalAlpha = band.open ? 0.10 : 0.06
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(2, band.y, width - 4, band.height)
+    ctx.globalAlpha = 1
+    if (!band.open) {
+      // A shut chapter says what it OPENED WITH, because a band labelled with a count is a band
+      // nobody has a reason to open. The count goes underneath, where it answers "how much".
+      ctx.fillStyle = INK.message
+      ctx.fillText(clipped(ctx, band.said || 'no prompt', width - 14), 6, band.y + band.height / 2 - 5)
+      ctx.fillStyle = INK.boundary
+      ctx.fillText(
+        `${band.turns} turn${band.turns === 1 ? '' : 's'} · ${clockWords(band.ran)}`,
+        6, band.y + band.height / 2 + 6,
+      )
+
+    }
+  }
+  let starved = 0
+  for (const mark of shape.marks) {
+    if (mark.height <= RECT_MIN + 0.01) starved += 1
+    const shares = sharesOf(specimen, mark.from, mark.to)
+    ctx.globalAlpha = RUN_OPACITY + 0.2
+    ctx.fillStyle = INK[shows.ink ? dominantInk(specimen, mark.from, mark.to) : 'message']
+    // Inside the open chapter the tick keeps its Turn's work share as its length, so a chapter
+    // opens into something with texture rather than into a comb.
+    const room = drawable.to - drawable.from
+    const length = Math.max(5, room * (0.35 + shares.work * 0.65))
+    ctx.fillRect(drawable.from, mark.y, length, mark.height)
+    if (mark.digest.questions > 0) {
+      ctx.globalAlpha = 0.95
+      ctx.fillStyle = INK.attention
+      ctx.fillRect(drawable.from + length - 3, mark.y, 3, mark.height)
+    }
+    ctx.globalAlpha = 1
+  }
+  litBand(ctx, shape, g, offset, { width, from: 0 })
+  return starved
+}
+
+// ── H: the worked clock ──────────────────────────────────────────────────────────────────────
+function paintClock(ctx, shape, g, offset, box) {
+  const { width, drawable } = box
+  for (const seam of shape.seams) {
+    // Away-time drawn rather than mapped: a hatched break, the way the feed draws a seam.
+    ctx.globalAlpha = 0.5
+    ctx.strokeStyle = INK.boundary
+    ctx.setLineDash([2, 3])
+    ctx.beginPath()
+    ctx.moveTo(0, seam.y + seam.height / 2 + 0.5)
+    ctx.lineTo(width, seam.y + seam.height / 2 + 0.5)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.globalAlpha = 1
+    ctx.font = '8px -apple-system, system-ui, sans-serif'
+    ctx.fillStyle = INK.boundary
+    ctx.textBaseline = 'middle'
+    ctx.fillText(clockWords(seam.gap), 3, seam.y + seam.height / 2)
+  }
+  let starved = 0
+  for (const mark of shape.marks) {
+    if (mark.height <= RECT_MIN + 0.01) starved += 1
+    ctx.globalAlpha = RUN_OPACITY + 0.15
+    ctx.fillStyle = INK[shows.ink ? dominantInk(specimen, mark.from, mark.to) : 'message']
+    ctx.fillRect(drawable.from, mark.y, drawable.to - drawable.from, Math.max(RECT_MIN, mark.height))
+    ctx.globalAlpha = 1
+  }
+  litBand(ctx, shape, g, offset, { width, from: 0 })
+  return starved
+}
+
+// ── J: a field, and only the Turns you typed ─────────────────────────────────────────────────
+function paintField(ctx, shape, g, offset, box) {
+  const { width, height, drawable } = box
+  const laneOffset = g.laneOffset(offset)
+  const perLanePoint = 1 / g.scale
+  // One pass down the LANE rather than over the rows: for each point of lane, what the reading
+  // holds there. Nothing has a floor, because nothing is a rect — which is the whole claim.
+  const documentAt = (laneY) => (laneY + laneOffset) / g.scale - TOP_INSET
+  const from = drawable.from - 6
+  const room = drawable.to - from
+  let row = 0
+  for (let laneY = 0; laneY < height; laneY += 0.5) {
+    const top = documentAt(laneY)
+    const bottom = documentAt(laneY + 0.5)
+    while (row + 1 < specimen.heights.length && g.starts[row + 1] <= top) row += 1
+    // Every row this half-point of lane covers, mixed by how much of it each holds.
+    const mix = {}
+    let seen = row
+    let total = 0
+    while (seen < specimen.heights.length && g.starts[seen] < bottom) {
+      const overlap = Math.min(bottom, g.starts[seen + 1]) - Math.max(top, g.starts[seen])
+      if (overlap > 0) {
+        const ink = specimen.inks[seen]
+        mix[ink] = (mix[ink] ?? 0) + overlap
+        total += overlap
+      }
+      seen += 1
+    }
+    if (!total) continue
+    // By how much of the point each ink holds, and nothing jumps the queue — a failed call is
+    // inked as the work it was (`dominantInk`).
+    const ranked = Object.entries(mix).sort((a, b) => b[1] - a[1])
+    let x = from
+    for (const [ink, share] of ranked) {
+      const w = (share / total) * room
+      ctx.globalAlpha = Math.min(0.85, RUN_OPACITY + 0.1)
+      ctx.fillStyle = INK[shows.ink ? (ink === 'failure' ? 'command' : ink) : 'message']
+      ctx.fillRect(x, laneY, Math.max(0.5, w), 0.6)
+      x += w
+    }
+  }
+  ctx.globalAlpha = 1
+  // The handles: only the Turns somebody typed. At their TRUE positions, so this lane is linear
+  // everywhere it has a mark at all.
+  for (const mark of shape.marks) {
+    if (mark.y < -2 || mark.y > height + 2) continue
+    ctx.fillStyle = INK.prompt
+    ctx.fillRect(0, Math.round(mark.y) + 0.5, 5, 2)
+  }
+  const vy = g.viewportY(offset)
+  const vh = g.viewportHeightInLane
+  ctx.fillStyle = 'rgba(62,155,255,.12)'
+  ctx.fillRect(0, vy, width, vh)
+  ctx.strokeStyle = 'rgba(62,155,255,.65)'
+  ctx.strokeRect(0.5, vy + 0.5, width - 1, Math.max(1, vh - 1))
+  return 0
+}
+
+// As much of a line as the lane can hold, cut on a word where it can be.
+function clipped(ctx, text, room) {
+  const words = String(text).replace(/\s+/g, ' ').trim()
+  if (ctx.measureText(words).width <= room) return words
+  let cut = words
+  while (cut.length > 1 && ctx.measureText(`${cut}…`).width > room) {
+    cut = cut.slice(0, cut.lastIndexOf(' ') > 4 ? cut.lastIndexOf(' ') : cut.length - 1)
+  }
+  return `${cut}…`
+}
+
+// A duration in the fewest words that still says which one it is.
+function clockWords(ms) {
+  const minutes = ms / 60000
+  if (minutes < 1) return '<1m'
+  if (minutes < 60) return `${Math.round(minutes)}m`
+  const hours = minutes / 60
+  return hours < 24 ? `${hours.toFixed(hours < 10 ? 1 : 0)}h` : `${Math.round(hours / 24)}d`
+}
+
+// Where the reading is, on a lane whose marks do not carry position: the run of marks the
+// visible range falls inside, lit as one band.
+function litBand(ctx, shape, g, offset, box) {
+  const lit = litTurns(shape, g, offset)
+  if (!lit) return
+  const height = Math.max(VIEWPORT_MIN, lit.to - lit.from)
+  ctx.fillStyle = 'rgba(62,155,255,.14)'
+  ctx.fillRect(box.from, lit.from, box.width - box.from, height)
+  ctx.strokeStyle = 'rgba(62,155,255,.65)'
+  ctx.strokeRect(box.from + 0.5, lit.from + 0.5, box.width - box.from - 1, Math.max(1, height - 1))
 }
 
 // Which of C's evenly spaced marks the reading is actually inside — the join between the two
@@ -618,8 +1196,8 @@ function report(painted) {
     row('3 biggest Turns hold', pc(topThree)),
     // Loudest-wins is the obvious rule for a Turn's one ink, and this is its bill: every Turn
     // holding one failed call goes red, however little of the Turn that call was.
-    row('Turns holding a failure', pc(holdsFailure / turnCount),
-      holdsFailure / turnCount > 0.15 ? 'bad' : ''),
+    // Kept as the reason no mark is inked by it, not as a thing to draw.
+    row('Turns holding a failed call', pc(holdsFailure / turnCount)),
     row('Turns holding a question', pc(holdsAttention / turnCount)),
   ].join('')
 
@@ -630,10 +1208,18 @@ function report(painted) {
     row('granularity chosen', g.granularity),
     row('coverage at row grain', pc(rowsAtRowGrain)),
     row('coverage at Turn grain', pc(g.coverage), g.coverage >= 0.999 ? 'good' : ''),
-    row('marks at the 1pt floor', `${atFloor} (${pc(atFloor / shape.marks.length)})`,
-      atFloor / shape.marks.length > 0.3 ? 'bad' : ''),
-    row('marks under 2pt', `${under2} (${pc(under2 / shape.marks.length)})`,
-      under2 / shape.marks.length > 0.3 ? 'bad' : ''),
+    // A lane that draws fewer marks than there are Turns is answering the ticket's question
+    // about the workless half — so the omission is counted rather than left as a look.
+    row('Turns given a mark', `${shape.marks.length} of ${turnCount}`,
+      shape.marks.length < turnCount ? '' : ''),
+    shape.seams ? row('away-seams drawn', shape.seams.length) : '',
+    shape.clock ? row('worked / on the record',
+      `${Math.round(shape.clock.worked / 3600000)}h / ${Math.round((spec.digests[turnCount - 1].to - spec.digests[0].from) / 3600000)}h`) : '',
+    shape.bands ? row('chapters', shape.bands.length) : '',
+    row('marks at the 1pt floor', `${atFloor} (${pc(atFloor / Math.max(1, shape.marks.length))})`,
+      atFloor / Math.max(1, shape.marks.length) > 0.3 ? 'bad' : ''),
+    row('marks under 2pt', `${under2} (${pc(under2 / Math.max(1, shape.marks.length))})`,
+      under2 / Math.max(1, shape.marks.length) > 0.3 ? 'bad' : ''),
     row('linear in scroll distance', shape.linear ? 'yes' : 'no',
       shape.linear ? 'good' : 'bad'),
     row('whole session at once', shape.fits ? 'yes' : 'no', shape.fits ? 'good' : 'bad'),
@@ -649,17 +1235,346 @@ function report(painted) {
   ].join('')
 }
 
+// ── K: the outline ───────────────────────────────────────────────────────────────────────────
+const outline = document.getElementById('outline')
+const outlineList = document.getElementById('outlineList')
+const outlineHead = document.getElementById('outlineHead')
+const outlineFilters = { words: '', mine: false, worked: false }
+
+// The one sentence an entry is recognised by. Prompt words where somebody typed them, and what
+// the Turn did where nobody did — never a Turn number, which nobody remembers.
+function entryWords(at) {
+  const said = specimen.prompts[at]
+  if (said) return { text: said, mine: true }
+  const digest = specimen.digests[at]
+  const did = digest.tools.map(([name, n]) => (n > 1 ? `${name} ×${n}` : name)).join(', ')
+  return { text: did || (digest.prose ? 'answered' : 'nothing but punctuation'), mine: false }
+}
+
+function outlineEntries() {
+  const words = outlineFilters.words.trim().toLowerCase()
+  return specimen.turns.map((span, at) => ({ at, span })).filter(({ at }) => {
+    const digest = specimen.digests[at]
+    if (outlineFilters.mine && !specimen.prompts[at]) return false
+    if (outlineFilters.worked && digest.work === 0) return false
+    if (!words) return true
+    const hay = `${specimen.prompts[at] ?? ''} ${digest.tools.map((x) => x[0]).join(' ')} ${digest.files.join(' ')}`
+    return hay.toLowerCase().includes(words)
+  })
+}
+
+function drawOutlineHead() {
+  const shown = outlineEntries().length
+  outlineHead.innerHTML =
+    `<input type="search" id="outlineSearch" placeholder="Search ${specimen.turns.length} turns…" value="${escaped(outlineFilters.words)}">` +
+    '<div class="filters">' +
+    `<button data-filter="all" class="${!outlineFilters.mine && !outlineFilters.worked ? 'on' : ''}">everything</button>` +
+    `<button data-filter="mine" class="${outlineFilters.mine ? 'on' : ''}">I asked</button>` +
+    `<button data-filter="worked" class="${outlineFilters.worked ? 'on' : ''}">did work</button>` +
+    `</div><div class="did" style="margin-top:5px;color:var(--text-tertiary)">${shown} shown</div>`
+}
+
+function drawOutline() {
+  const entries = outlineEntries()
+  const here = turnAt(feedScroll.scrollTop)
+  outlineList.innerHTML = entries.map(({ at, span }) => {
+    const digest = specimen.digests[at]
+    const said = entryWords(at)
+    const rows = span[1] - span[0] + 1
+    const facts = [
+      `${rows} rows`,
+      clockWords(Math.max(0, digest.to - digest.from)),
+      digest.work ? `${digest.work} calls` : '',
+      digest.files[0] ?? '',
+    ].filter(Boolean).join(' · ')
+    return `<div class="entry ${at === here ? 'here' : ''}" data-turn="${at}">` +
+      `<div class="bar" style="background:${INK[dominantInk(specimen, span[0], span[1])]}"></div>` +
+      `<div><div class="said ${said.mine ? 'mine' : 'none'}">${escaped(said.text)}</div>` +
+      `<div class="did">${escaped(facts)}</div></div></div>`
+  }).join('')
+  const lit = outlineList.querySelector('.entry.here')
+  if (lit && !outlineList.matches(':hover')) lit.scrollIntoView({ block: 'nearest' })
+}
+
+// The Turn the reading is in — what every surface here lights.
+function turnAt(offset) {
+  let low = 0, high = specimen.turns.length - 1
+  while (low < high) {
+    const mid = (low + high + 1) >> 1
+    if (geo.starts[specimen.turns[mid][0]] <= offset + 4) low = mid
+    else high = mid - 1
+  }
+  return low
+}
+
+function goToTurn(at) {
+  feedScroll.scrollTop = Math.max(0, geo.starts[specimen.turns[at][0]] - TOP_INSET)
+}
+
+outlineList.addEventListener('click', (event) => {
+  const entry = event.target.closest('.entry')
+  if (entry) goToTurn(Number(entry.dataset.turn))
+})
+outlineHead.addEventListener('input', (event) => {
+  if (event.target.id !== 'outlineSearch') return
+  outlineFilters.words = event.target.value
+  const caret = event.target.selectionStart
+  drawOutline()
+  drawOutlineHead()
+  const again = document.getElementById('outlineSearch')
+  again.focus()
+  again.setSelectionRange(caret, caret)
+})
+outlineHead.addEventListener('click', (event) => {
+  const filter = event.target.dataset?.filter
+  if (!filter) return
+  outlineFilters.mine = filter === 'mine'
+  outlineFilters.worked = filter === 'worked'
+  drawOutline()
+  drawOutlineHead()
+})
+
+// ── L: the loupe ─────────────────────────────────────────────────────────────────────────────
+const loupe = document.getElementById('loupe')
+const loupePaint = document.getElementById('loupePaint')
+const loupeSaid = document.getElementById('loupeSaid')
+const LOUPE = { width: 178, height: 150, rows: 12 }
+
+// The real rows around a place in the reading, drawn big enough to recognise. NOT a magnified
+// picture of the lane — the lane is 120pt of abstraction, and blowing that up magnifies the
+// abstraction. This re-draws the rows themselves at a compression a reader can read a shape off.
+function drawLoupe(laneY) {
+  const documentY = geo.offsetForLaneY(laneY)
+  const ctx = fit(loupePaint, LOUPE.width, LOUPE.height)
+  ctx.clearRect(0, 0, LOUPE.width, LOUPE.height)
+  // The row the pointer is on, and the dozen either side of it.
+  let middle = 0
+  while (middle + 1 < specimen.heights.length && geo.starts[middle + 1] < documentY) middle += 1
+  const first = Math.max(0, middle - LOUPE.rows)
+  const last = Math.min(specimen.heights.length - 1, middle + LOUPE.rows)
+  // The scale is chosen HERE rather than fixed, and that is what makes it a loupe rather than a
+  // zoom: one 500pt tool output at a fixed scale fills the whole card with one grey slab, and a
+  // slab is exactly the thing the lane already failed to say anything with.
+  const span = geo.starts[last + 1] - geo.starts[first]
+  const scale = Math.min(0.9, LOUPE.height / Math.max(1, span))
+  const top = documentY - (LOUPE.height / 2) / scale
+  const measure = LOUPE.width - 16
+  for (let i = first; i <= last; i += 1) {
+    const y = (geo.starts[i] - top) * scale
+    const h = Math.max(1.5, (specimen.heights[i] - 16) * scale)
+    if (y > LOUPE.height) break
+    if (y + h < 0) continue
+    const kind = specimen.kinds[i]
+    const ink = specimen.inks[i] === 'failure' ? 'command' : specimen.inks[i]
+    ctx.globalAlpha = 0.8
+    ctx.fillStyle = INK[ink] ?? INK.message
+    if (kind === 'prompt') {
+      ctx.globalAlpha = 0.16
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fillRect(8 + measure * 0.22, y, measure * 0.78, h)
+      ctx.globalAlpha = 0.9
+      ctx.fillStyle = INK.prompt
+      loupeLines(ctx, 12 + measure * 0.22, y + 2, measure * 0.66, h - 4, scale)
+    } else if (kind === 'call' || kind === 'survey' || kind === 'skill') {
+      ctx.fillRect(8, y + 1, measure * 0.6, Math.max(1.5, h - 2))
+    } else if (kind === 'mark') {
+      ctx.globalAlpha = 0.4
+      ctx.fillRect(8, y + h / 2, measure, 1)
+    } else {
+      // Prose keeps its LINES, so a tall row reads as a lot of words rather than as a block —
+      // which is the one thing the reader recognises a place in the reading by.
+      loupeLines(ctx, 8, y, measure, h, scale)
+    }
+  }
+  ctx.globalAlpha = 1
+  // A hairline where the pointer actually is, so the loupe says which of these rows it is on.
+  ctx.strokeStyle = 'rgba(62,155,255,.8)'
+  ctx.beginPath()
+  ctx.moveTo(0, LOUPE.height / 2 + 0.5)
+  ctx.lineTo(LOUPE.width, LOUPE.height / 2 + 0.5)
+  ctx.stroke()
+  loupeSaid.textContent = entryWords(turnAt(documentY)).text
+  loupe.style.display = 'block'
+  loupe.style.top = `${Math.min(geo.lane.height - LOUPE.height - 44, Math.max(0, laneY - LOUPE.height / 2))}px`
+}
+
+// A row's own lines at the loupe's scale, ragged at the end the way a paragraph is.
+function loupeLines(ctx, x, y, width, height, scale) {
+  const step = Math.max(1.2, 20 * scale)
+  if (step < 1.6) {
+    ctx.fillRect(x, y, width, Math.max(1, height))
+    return
+  }
+  for (let line = 0; line * step < height; line += 1) {
+    const last = (line + 1) * step >= height
+    ctx.fillRect(x, y + line * step, last ? width * (0.3 + (line % 5) * 0.13) : width,
+      Math.max(0.8, step - 0.8))
+  }
+}
+
+// ── M: the jump palette ──────────────────────────────────────────────────────────────────────
+const palette = document.getElementById('palette')
+const paletteInput = document.getElementById('paletteInput')
+const paletteList = document.getElementById('paletteList')
+let paletteHits = []
+let paletteAt = 0
+
+function openPalette() {
+  palette.classList.add('on')
+  paletteInput.value = ''
+  paletteInput.focus()
+  rankPalette('')
+}
+function closePalette() { palette.classList.remove('on') }
+
+// Ranked, not filtered: a word half-remembered should still put its Turn near the top. Prompt
+// words score highest — what YOU said is what you remember — then what the Turn touched.
+function rankPalette(words) {
+  const needle = words.trim().toLowerCase()
+  paletteHits = specimen.turns.map((span, at) => {
+    const said = specimen.prompts[at] ?? ''
+    const digest = specimen.digests[at]
+    const touched = `${digest.tools.map((x) => x[0]).join(' ')} ${digest.files.join(' ')}`.trim()
+    let score = 0
+    if (!needle) score = said ? 2 : 0
+    else {
+      if (said.toLowerCase().includes(needle)) score += 10
+      if (touched.toLowerCase().includes(needle)) score += 4
+      if (said.toLowerCase().startsWith(needle)) score += 3
+    }
+    return { at, span, score, said, digest, touched }
+  }).filter((hit) => hit.score > 0).sort((a, b) => b.score - a.score || a.at - b.at).slice(0, 40)
+  paletteAt = 0
+  drawPalette(needle)
+}
+
+const litWords = (words, needle) => {
+  const safe = escaped(words)
+  if (!needle) return safe
+  const pattern = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return safe.replace(new RegExp(`(${pattern})`, 'ig'), '<mark>$1</mark>')
+}
+
+function drawPalette(needle) {
+  paletteList.innerHTML = paletteHits.map((hit, i) => {
+    const rows = hit.span[1] - hit.span[0] + 1
+    const words = hit.said || hit.touched || 'no prompt'
+    return `<div class="hit ${i === paletteAt ? 'on' : ''}" data-turn="${hit.at}">` +
+      `<div class="said">${litWords(words, needle)}</div>` +
+      `<div class="did">${rows} rows · ${clockWords(Math.max(0, hit.digest.to - hit.digest.from))}` +
+      `${hit.digest.work ? ` · ${escaped(hit.touched)}` : ''}</div></div>`
+  }).join('') || '<div class="hit"><div class="did">nothing matches</div></div>'
+}
+
+paletteInput.addEventListener('input', () => rankPalette(paletteInput.value))
+paletteInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') { closePalette(); return }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    paletteAt = Math.max(0, Math.min(paletteHits.length - 1,
+      paletteAt + (event.key === 'ArrowDown' ? 1 : -1)))
+    drawPalette(paletteInput.value.trim().toLowerCase())
+    paletteList.children[paletteAt]?.scrollIntoView({ block: 'nearest' })
+    return
+  }
+  if (event.key === 'Enter' && paletteHits[paletteAt]) {
+    goToTurn(paletteHits[paletteAt].at)
+    closePalette()
+  }
+})
+paletteList.addEventListener('click', (event) => {
+  const hit = event.target.closest('.hit')
+  if (!hit?.dataset.turn) return
+  goToTurn(Number(hit.dataset.turn))
+  closePalette()
+})
+
+// ── N: the ribbon ────────────────────────────────────────────────────────────────────────────
+const ribbon = document.getElementById('ribbon')
+const ribbonPaint = document.getElementById('ribbonPaint')
+const ribbonLabel = document.getElementById('ribbonLabel')
+
+function drawRibbon(offset) {
+  const width = ribbon.clientWidth
+  const height = 64
+  const ctx = fit(ribbonPaint, width, height)
+  ctx.clearRect(0, 0, width, height)
+  const chapters = chaptersOf(specimen)
+  const turns = specimen.turns.length
+  const step = width / turns
+  const plot = height - 16
+  const tallest = Math.max(...specimen.turns.map(([from, to]) => to - from + 1))
+  const here = turnAt(offset)
+  specimen.turns.forEach(([from, to], at) => {
+    const rows = to - from + 1
+    // Height for size, on a log scale — the same reason F's LENGTH is log: linear, one Turn in
+    // three hundred would be the only one with a height at all.
+    const h = Math.max(1.5, (Math.log1p(rows) / Math.log1p(tallest)) * plot)
+    ctx.globalAlpha = at === here ? 1 : RUN_OPACITY + 0.2
+    ctx.fillStyle = INK[shows.ink ? dominantInk(specimen, from, to) : 'message']
+    ctx.fillRect(at * step, plot - h, Math.max(1, step - 0.5), h)
+    // A Turn somebody typed carries a pip on the baseline, so your own turns are countable across.
+    if (specimen.prompts[at]) {
+      ctx.globalAlpha = 0.9
+      ctx.fillStyle = INK.prompt
+      ctx.fillRect(at * step, plot + 1, Math.max(1, step - 0.5), 2)
+    }
+  })
+  ctx.globalAlpha = 1
+  // Chapters named underneath — G's rule, read across instead of down.
+  ctx.font = '9px -apple-system, system-ui, sans-serif'
+  ctx.textBaseline = 'top'
+  for (const chapter of chapters) {
+    const x = chapter.from * step
+    ctx.fillStyle = 'rgba(255,255,255,.14)'
+    ctx.fillRect(x, plot + 4, 1, 10)
+    ctx.fillStyle = INK.thought
+    const room = (chapter.to - chapter.from + 1) * step - 6
+    if (room > 26) ctx.fillText(clipped(ctx, chapter.said || 'no prompt', room), x + 4, plot + 5)
+  }
+  // Where the reading is, as a window across.
+  const from = (here / turns) * width
+  const span = Math.max(2, (geo.viewportHeight / Math.max(1, geo.documentHeight)) * width)
+  ctx.fillStyle = 'rgba(62,155,255,.16)'
+  ctx.fillRect(from, 0, span, plot)
+  ctx.strokeStyle = 'rgba(62,155,255,.7)'
+  ctx.strokeRect(from + 0.5, 0.5, span, plot - 1)
+}
+
+const ribbonTurnAt = (clientX) => {
+  const box = ribbonPaint.getBoundingClientRect()
+  return {
+    at: Math.max(0, Math.min(specimen.turns.length - 1,
+      Math.floor(((clientX - box.left) / box.width) * specimen.turns.length))),
+    box,
+  }
+}
+ribbonPaint.addEventListener('pointermove', (event) => {
+  const { at, box } = ribbonTurnAt(event.clientX)
+  ribbonLabel.style.display = 'block'
+  ribbonLabel.style.left = `${Math.min(box.width - 312, Math.max(4, event.clientX - box.left - 150))}px`
+  ribbonLabel.innerHTML = cardFor({
+    turn: at, from: specimen.turns[at][0], to: specimen.turns[at][1],
+    digest: specimen.digests[at],
+  })
+  if (event.buttons) goToTurn(at)
+})
+ribbonPaint.addEventListener('pointerdown', (event) => goToTurn(ribbonTurnAt(event.clientX).at))
+ribbonPaint.addEventListener('pointerleave', () => { ribbonLabel.style.display = 'none' })
+
 // ── Wiring ───────────────────────────────────────────────────────────────────────────────────
 const deckHeight = Number(url.searchParams.get('deck') ?? 800)
 document.getElementById('deck').style.height = `${deckHeight}px`
 
+let laneWidth = LANE_WIDTHS[0]
+
 function layout() {
-  const deckWidth = window.innerWidth - 320 - 9
-  const laneWidth = Math.min(LANE_WIDTHS[1], Math.max(LANE_WIDTHS[0], deckWidth * LANE_SHARE))
-  laneZone.style.width = `${laneWidth}px`
-  const height = deckHeight
+  const deckWidth = window.innerWidth - 320 - 9 - (outline.classList.contains('on') ? 268 : 0)
+  laneWidth = Math.min(LANE_WIDTHS[1], Math.max(LANE_WIDTHS[0], deckWidth * LANE_SHARE))
+  surfacesFor(variant)
+  const height = deckHeight - (ribbon.classList.contains('on') ? 65 : 0)
   const viewportHeight = height
-  geo = buildGeometry(specimen, { width: laneWidth, height }, viewportHeight)
+  geo = buildGeometry(specimen, { width: laneZone.clientWidth || laneWidth, height }, viewportHeight)
   feedSpacer.style.height = `${geo.documentHeight + BOTTOM_INSET}px`
   feedPaint.style.width = `${feedPaint.parentElement.clientWidth}px`
   feedPaint.style.height = `${height}px`
@@ -670,7 +1585,21 @@ function draw() {
   const offset = feedScroll.scrollTop
   paintFeed(offset)
   const painted = paintLane(offset)
+  if (variant === 'N') drawRibbon(offset)
+  if (variant === 'K') drawOutline()
   report(painted)
+}
+
+// Which surface each variant navigates from. The lane is only one of them, and three of these
+// leave it as a rail — a variant that hides the lane entirely would be answering a question
+// nobody asked: the lane is where the reader already looks for their place.
+function surfacesFor(key) {
+  ribbon.classList.toggle('on', key === 'N')
+  outline.classList.toggle('on', key === 'K')
+  if (key !== 'K') outlineList.innerHTML = ''
+  if (key !== 'M') closePalette()
+  if (key !== 'L') loupe.style.display = 'none'
+  laneZone.style.width = `${key === 'K' || key === 'M' || key === 'N' ? 26 : laneWidth}px`
 }
 
 function pickVariant(key) {
@@ -680,7 +1609,9 @@ function pickVariant(key) {
   document.getElementById('now').textContent = `${key} · ${VARIANTS[key].name}`
   document.getElementById('variantTitle').textContent = `${key} — ${VARIANTS[key].name}`
   document.getElementById('variantWhat').textContent = VARIANTS[key].what
-  draw()
+  if (key === 'K') { drawOutlineHead(); drawOutline() }
+  if (key === 'M') openPalette()
+  layout()
 }
 
 function pickSpecimen(key) {
@@ -702,6 +1633,11 @@ document.getElementById('prev').onclick = () =>
 document.getElementById('next').onclick = () =>
   pickVariant(KEYS[(KEYS.indexOf(variant) + 1) % KEYS.length])
 window.addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    pickVariant('M')
+    return
+  }
   const tag = document.activeElement?.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA') return
   if (event.key === 'ArrowLeft') document.getElementById('prev').click()
@@ -733,26 +1669,70 @@ lanePaint.addEventListener('pointermove', (event) => {
     feedScroll.scrollTop = Math.max(0, offsetForLane(laneY - geo.viewportHeightInLane / 2))
     return
   }
+  if (variant === 'L') {
+    drawLoupe(laneY)
+    return
+  }
   // The label a hover draws: which Turn is under the pointer, and what it opened with.
   const shape = marksFor(variant, geo, specimen, feedScroll.scrollTop)
   const found = shape.marks.find((m) => laneY >= m.y && laneY <= m.y + Math.max(2, m.height))
   if (!found) { laneLabel.style.display = 'none'; return }
-  const words = specimen.prompts[found.turn]
-  const rows = found.to - found.from + 1
   laneLabel.style.display = 'block'
-  laneLabel.style.top = `${Math.max(0, laneY - 10)}px`
-  laneLabel.textContent = words
-    ? `Turn ${found.turn + 1} · ${rows} rows — ${words}`
-    : `Turn ${found.turn + 1} · ${rows} rows — (no prompt)`
+  laneLabel.style.top = `${Math.min(geo.lane.height - 90, Math.max(0, laneY - 20))}px`
+  laneLabel.innerHTML = cardFor(found)
 })
-lanePaint.addEventListener('pointerleave', () => { laneLabel.style.display = 'none' })
+// What a Turn's card says. The mark can only carry so much; everything else the reader needs to
+// recognise the Turn goes here — what they asked, what it did, how long it took.
+function cardFor(mark) {
+  const digest = mark.digest ?? specimen.digests[mark.turn]
+  const words = specimen.prompts[mark.turn]
+  const rows = mark.to - mark.from + 1
+  const ran = Math.max(0, digest.to - digest.from)
+  const did = digest.tools.map(([name, n]) => (n > 1 ? `${name} ×${n}` : name)).join(', ')
+  const files = digest.files.length ? ` · ${digest.files.join(', ')}` : ''
+  const said = words
+    ? `<div class="said">${escaped(words)}</div>`
+    : '<div class="said none">no prompt — the agent kept going</div>'
+  const doing = did
+    ? `<div class="did">${escaped(did)}${escaped(files)}</div>`
+    : `<div class="did">${digest.prose ? 'answered' : 'nothing but punctuation'}</div>`
+  const facts = [
+    `<span><b>${rows}</b> rows</span>`,
+    `<span><b>${clockWords(ran)}</b></span>`,
+    digest.work ? `<span><b>${digest.work}</b> calls</span>` : '',
+    digest.failed ? `<span><b>${digest.failed}</b> retried</span>` : '',
+    digest.questions ? `<span class="hot">asked</span>` : '',
+  ].filter(Boolean).join('')
+  return `${said}${doing}<div class="facts">${facts}</div>`
+}
+
+const escaped = (text) =>
+  String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])
+
+lanePaint.addEventListener('pointerleave', () => {
+  laneLabel.style.display = 'none'
+  loupe.style.display = 'none'
+})
 lanePaint.addEventListener('pointerup', () => { dragging = false })
 
 // A lane point → a place in the reading. Linear for A/B/D; through each of C's and E's own
 // mappings otherwise, which is exactly the cost those two are being judged on.
 function offsetForLane(laneY) {
-  if (variant === 'A' || variant === 'B' || variant === 'D') return geo.offsetForLaneY(laneY)
+  if (variant === 'A' || variant === 'B' || variant === 'D' || variant === 'J') {
+    return geo.offsetForLaneY(laneY)
+  }
   const shape = marksFor(variant, geo, specimen, feedScroll.scrollTop)
+  if (variant === 'F' || variant === 'G' || variant === 'H') {
+    // These three name a TURN. The press lands on the mark under the pointer and the reading goes
+    // to that Turn's head — a jump, not a scrub, and the lane says so by having gaps in it.
+    let found = null
+    for (const mark of shape.marks) {
+      if (laneY >= mark.y - RECT_GAP && laneY <= mark.y + mark.height + RECT_GAP) { found = mark; break }
+      if (mark.y > laneY && !found) { found = mark; break }
+    }
+    if (!found) found = shape.marks[shape.marks.length - 1]
+    return found ? geo.starts[found.from] - TOP_INSET : 0
+  }
   if (variant === 'C') {
     // The rail is linear; the marks are not. A press on the marks names a TURN and scrolls to its
     // head — which is a different gesture from a scrub, and that is the thing to feel.
@@ -789,7 +1769,7 @@ document.getElementById('toggles').addEventListener('input', (event) => {
 
 document.getElementById('legend').innerHTML = [
   ['prompt', 'prompt'], ['message', 'prose'], ['thought', 'thought'], ['command', 'work'],
-  ['attention', 'question'], ['failure', 'failed'], ['boundary', 'punctuation'],
+  ['attention', 'question'], ['boundary', 'punctuation'],
 ].map(([ink, label]) =>
   `<span><i class="swatch" style="background:${INK[ink]}"></i>${label}</span>`,
 ).join('')
