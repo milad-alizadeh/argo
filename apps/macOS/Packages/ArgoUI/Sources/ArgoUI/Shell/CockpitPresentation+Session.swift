@@ -139,6 +139,11 @@ public extension CockpitPresentation {
         /// DIRECT, on the same ground the Permission above is. Absent for every Session that is not
         /// waiting on one, which is what returns the feed's ask row to being a reading.
         public let ask: SessionAsk?
+        /// The question the Session's agent raised over the companion plugin and nobody has
+        /// answered (#1205) — CONVENTION, and a reading rather than a handle: Argo answered the
+        /// call the moment it arrived, so there is nothing here to answer down. Beside `ask` and
+        /// never instead of it; the feed draws the two apart.
+        public let companionAsk: CompanionAsk?
         /// The tools this Session has stopped asking about (#572), verbatim from the engine and in
         /// the order they were granted. Empty for a Session that has granted none, which is every
         /// Session until somebody says otherwise.
@@ -204,6 +209,7 @@ public extension CockpitPresentation {
             self.contextTokens = spend.contextTokens
             self.permission = autonomy.permission
             self.ask = autonomy.ask
+            self.companionAsk = autonomy.companionAsk
             self.standingAllows = autonomy.standingAllows
             self.expiredPermissions = autonomy.expiredPermissions
             self.mode = autonomy.mode

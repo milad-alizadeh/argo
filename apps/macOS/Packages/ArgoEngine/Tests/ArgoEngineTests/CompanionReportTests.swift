@@ -70,4 +70,32 @@ struct CompanionReportTests {
 
         #expect(report.isEmpty)
     }
+
+    /// The channel carries a question in its own flat shape — one string and a list of labels —
+    /// and the feed draws `Ask`. Read here so nothing downstream reinvents the conversion, and
+    /// carried VERBATIM: an agent that asked in its own words is quoted, never reworded (#1205).
+    @Test
+    func `a reported question reads as one Ask, words and options verbatim`() {
+        let read = ask.ask
+
+        #expect(read.questions.count == 1)
+        #expect(read.questions.first?.text == "Which branch?")
+        #expect(read.questions.first?.options.map(\.label) == ["main"])
+    }
+
+    /// A question with nothing to choose from is a free-form ask, which the feed already draws —
+    /// so no option is invented to stand in for the ones the agent did not offer.
+    @Test
+    func `a reported question that offered no options offers none`() {
+        let free = CompanionAsk(id: "ask-2", question: "What next?", options: [])
+
+        #expect(free.ask.questions.first?.options.isEmpty == true)
+    }
+
+    /// One answer at a time: the channel's shape has no `multiSelect`, and degrade-down resolves
+    /// an unstated one to the narrower act.
+    @Test
+    func `a reported question takes one answer, nothing having said otherwise`() {
+        #expect(ask.ask.questions.first?.allowsMultiple == false)
+    }
 }

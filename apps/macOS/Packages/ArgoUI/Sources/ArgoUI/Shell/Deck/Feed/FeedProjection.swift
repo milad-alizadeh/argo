@@ -7,11 +7,12 @@ import ArgoEngine
 package enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
-    /// `working`, `handedOff`, `expired` and the question `asking` is holding are the inputs that
-    /// are not the record's — a Turn in progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), a
-    /// Permission Argo's own gate refused (#573), and a question it is still holding (#1190). No
-    /// CLI wrote a word about any of them, so they arrive beside the stream rather than being
-    /// looked for inside it.
+    /// `working`, `handedOff`, `expired`, the question `asking` is holding and the one `reported`
+    /// carries are the inputs that are not the record's — a Turn in progress (`FeedWorking`), a
+    /// handoff (`CONTEXT.md` L2), a Permission Argo's own gate refused (#573), a question it is
+    /// still holding (#1190), and one the agent raised over the companion plugin (#1205). No CLI
+    /// wrote a word about any of them, so they arrive beside the stream rather than being looked
+    /// for inside it.
     package static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
@@ -19,6 +20,7 @@ package enum FeedProjection {
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
+        reported: Ask? = nil,
     )
         -> [FeedRow] {
         let read = contents(of: events)
@@ -36,7 +38,8 @@ package enum FeedProjection {
         let shown = FeedUnreadableRun.folded(FeedGalleryFold.galleried(looked))
         let work = offering(FeedSurveyFold.rejoined(FeedWorkFold.folded(shown)), asking)
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + standing(asking, over: work) + startingUp(starting) +
+        return (work + standing(asking, over: work) + self.reported(reported, asking) +
+            startingUp(starting) +
             inFlight(working, over: work) + unanswered(expired) +
             rolledUp(events) + chained(handedOff)).enumerated()
             .map { position, content in

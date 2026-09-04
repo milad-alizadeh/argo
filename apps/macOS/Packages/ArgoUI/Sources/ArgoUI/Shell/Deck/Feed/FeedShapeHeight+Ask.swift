@@ -15,8 +15,22 @@ extension FeedShapeHeight {
         let inside = measure - ArgoFeedRow.askCardInset * 2
         guard inside > 0 else { return 0 }
         let questions = ask.questions.map { question(ask, asking: $0, across: inside) }
-        return Self.stacked(questions, step: ArgoFeedRow.blockStep)
+        let parts = questions + [reported(ask, across: inside)].compactMap(\.self)
+        return Self.stacked(parts, step: ArgoFeedRow.blockStep)
             + ArgoFeedRow.askCardInset * 2
+    }
+
+    /// The caption a question that arrived over the companion plugin carries, and `nil` for every
+    /// row that does not — one line of the meta rung on the marker grid (`FeedAskLine.reported`).
+    private func reported(_ ask: FeedAsk, across inside: CGFloat) -> CGFloat? {
+        guard ask.isReported else { return nil }
+        // The caption's OWN face and no body-line floor under it: the glyph beside it is drawn
+        // inline, so it sets its height from the words rather than the other way round.
+        return Self.unleaded(
+            FeedAskLine.reportedWords,
+            in: ProseFace(rung: ArgoTypography.rowMeta.rung),
+            across: inside - Self.markerIndent,
+        )
     }
 
     /// One question: its words on the marker grid, and whatever stands under them.

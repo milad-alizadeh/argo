@@ -58,7 +58,7 @@ enum FeedFixture {
             status: ask == nil ? .idle : .asking,
             chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: "/repo"),
-            autonomy: .init(ask: ask),
+            autonomy: .init(blocked: .init(ask: ask)),
             transcript: .init(events: [.toolCall(asking(askedQuestion))]),
         )
     }
