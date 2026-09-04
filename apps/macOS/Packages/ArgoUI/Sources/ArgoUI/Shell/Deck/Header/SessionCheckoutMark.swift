@@ -46,14 +46,19 @@ struct SessionCheckoutMark: View {
         SessionCheckoutMark(checkout: .init(
             branch: "argo/#1232-remove-branch-control",
             symbol: ArgoSymbol.worktree,
+            // The branch already names the folder, so there is nothing extra to say.
+            worktree: nil,
             detail: "On argo/#1232-remove-branch-control, in a worktree of its own",
         ))
         SessionCheckoutMark(checkout: .init(
             branch: "main",
             symbol: ArgoSymbol.branch,
+            worktree: nil,
             detail: "On main, in the Project's own checkout",
         ))
-        SessionCheckoutMark(checkout: .init(branch: "main", symbol: nil, detail: "On main"))
+        SessionCheckoutMark(checkout: .init(
+            branch: "main", symbol: nil, worktree: nil, detail: "On main",
+        ))
         SessionCheckoutMark(checkout: nil)
     }
     .padding(ArgoSpacing.loose)
