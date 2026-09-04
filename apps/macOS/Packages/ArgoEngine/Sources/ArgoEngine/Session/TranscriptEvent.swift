@@ -73,7 +73,7 @@ public enum TranscriptEvent: Sendable, Equatable {
     ///
     /// A SIDECHAIN record reports none of these: a subagent's spend is read off the delegating
     /// call's result, and reading both would count the same tokens twice.
-    case usage(Usage)
+    case usage(UsageReading)
     /// The agent replaced its to-do list.
     case plan(Plan)
     /// History was condensed here. The resume chain stitches across it.
@@ -102,4 +102,13 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// question: `HubSession.transcriptExtent` is what this sets, and what keeps a partial total
     /// from being rendered as a whole one (`CONTEXT.md` Honesty tier).
     case excerpted
+}
+
+public extension TranscriptEvent {
+    /// A spend that WAS read, spelled the short way. Overloads the case of the same name, so the
+    /// hundred fixtures and folds that already say `.usage(someUsage)` keep saying it and only the
+    /// two places that care about an unreadable object name the reading (#1249).
+    static func usage(_ usage: Usage) -> TranscriptEvent {
+        .usage(.read(usage))
+    }
 }

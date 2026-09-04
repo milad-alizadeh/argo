@@ -63,12 +63,13 @@ struct SessionContextTests {
         #expect(try #require(hub.sessions.first).context == .unread)
     }
 
-    /// The two absences, told apart (#1249). Nothing reported yet is a Session with NOTHING to say
-    /// about its window; a spend of zero is the CLI's own `<synthetic>` record, a thing Argo read
-    /// and cannot put against one. Only the second is a word on screen.
+    /// A record priced at nothing is the CLI writing a record of its OWN — a `<synthetic>` message,
+    /// not a request — and no real request is made against an empty window. It says nothing about
+    /// the context, so the reading does not move (#1249). Drawing `unknown` off it would put the
+    /// reported placeholder back on a Session that has only just started.
     @Test
     @MainActor
-    func `a spend against no context at all reads as unreadable, not as unread`() async throws {
+    func `a record priced at nothing leaves the context exactly where it was`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "synthetic", events: [
             .usage(usage(input: 0, output: 0, cacheRead: 0, cacheCreation: 0)),
@@ -76,13 +77,14 @@ struct SessionContextTests {
 
         await hubObserveToEnd(hub, observed)
 
-        #expect(try #require(hub.sessions.first).context == .unreadable)
+        #expect(try #require(hub.sessions.first).context == .unread)
     }
 
-    /// A note the CLI wrote to itself did not empty the conversation it was written into.
+    /// The same record after a real reading: a note the CLI wrote to itself did not empty the
+    /// conversation it was written into.
     @Test
     @MainActor
-    func `a spend against no context leaves a reading already taken standing`() async throws {
+    func `a record priced at nothing leaves a reading already taken standing`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "after", events: [
             .usage(usage(input: 4000, output: 200, cacheRead: 60000, cacheCreation: 1000)),
@@ -92,6 +94,41 @@ struct SessionContextTests {
         await hubObserveToEnd(hub, observed)
 
         #expect(try #require(hub.sessions.first).context == .held(65200))
+    }
+
+    /// The two absences, told apart (#1249) — the pair the header words differently. Nothing
+    /// reported yet is a Session with NOTHING to say about its window and draws no instrument at
+    /// all; a spend Argo READ and could not take one token off is `unknown`.
+    @Test
+    @MainActor
+    func `a spend Argo cannot read is unreadable, where none reported is unread`() async {
+        let hub = testHub(projectURL: Self.projectURL)
+        let silent = hubTestObservation(id: "silent", events: [
+            .prompt(text: "Read the contract", images: [], atMs: 1000),
+        ])
+        let unusable = hubTestObservation(id: "unusable", events: [.usage(.unreadable)])
+
+        await hubObserveToEnd(hub, silent)
+        await hubObserveToEnd(hub, unusable)
+
+        let byID = Dictionary(uniqueKeysWithValues: hub.sessions.map { ($0.id, $0.context) })
+        #expect(byID["silent"] == .unread)
+        #expect(byID["unusable"] == .unreadable)
+    }
+
+    /// A window Argo once read is the last thing the Session truthfully said about itself.
+    @Test
+    @MainActor
+    func `a spend Argo cannot read does not unsay a reading already taken`() async throws {
+        let hub = testHub(projectURL: Self.projectURL)
+        let observed = hubTestObservation(id: "degraded", events: [
+            .usage(usage(input: 1000, output: 100, cacheRead: 30000, cacheCreation: 0)),
+            .usage(.unreadable),
+        ])
+
+        await hubObserveToEnd(hub, observed)
+
+        #expect(try #require(hub.sessions.first).context == .held(31100))
     }
 
     /// A resumed file with no spend in it yet must not blank what the root already read.

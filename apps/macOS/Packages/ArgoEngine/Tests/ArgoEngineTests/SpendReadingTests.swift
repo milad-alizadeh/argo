@@ -8,8 +8,8 @@ import Testing
 struct SpendReadingTests {
     private func spends(in name: String) async throws -> [Usage] {
         try await Fixture.events(name).compactMap { event in
-            guard case let .usage(usage) = event else { return nil }
-            return usage
+            guard case let .usage(reading) = event else { return nil }
+            return reading.usage
         }
     }
 

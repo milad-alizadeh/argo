@@ -277,10 +277,10 @@ extension HubSession {
     }
 
     /// What one request reported spending, and the context it left behind it.
-    private mutating func observe(usage: Usage) {
+    private mutating func observe(usage: UsageReading) {
         hasAgentActivity = true
         context = context.updated(by: usage)
-        spend.observe(usage)
+        spend.observe(usage.usage)
     }
 
     private mutating func observe(call: ToolCall) {

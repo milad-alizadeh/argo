@@ -159,10 +159,16 @@ corrected to it. A tier's colour is spent on a word and a rim, never on a ground
 ## An unreadable context reads `unknown` over an empty track
 
 An unreadable context is still a context, and the absence lives inside the reading. A Session
-whose records reported a spend Argo cannot put against a window draws the `CONTEXT` label, the
+whose records reported a spend Argo could not take one token off draws the `CONTEXT` label, the
 word `unknown` in `text.tertiary`, and the 3pt track with **no fill and no ticks**. The empty
 track says Argo does not have the number without inventing one, which is `CONTEXT.md`'s
 degrade-down rule.
+
+**A spend of zero is not that.** The CLI writes records of its own and prices them at nothing,
+and no real request is made against an empty window — so such a record says nothing about the
+context and moves no reading. It is the same record whose model the feed drops (#1249), and the
+two halves of it are read the same way. What reaches `unknown` is a `usage` object naming not one
+token field this reader knows: the host's keys moved, and Argo read something it cannot use.
 
 ## A Session Argo has not heard from draws no instrument at all
 

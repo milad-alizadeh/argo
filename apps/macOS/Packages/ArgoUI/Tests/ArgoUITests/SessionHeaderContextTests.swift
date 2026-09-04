@@ -6,14 +6,14 @@ import Testing
 /// The context instrument's whole content decision, asserted where it is made.
 @Suite("Session header context")
 struct SessionHeaderContextTests {
-    private func tier(at tokens: Int) -> SessionHeaderProjection.Context.Tier? {
-        SessionHeaderProjection.context(reading: .held(tokens))?.tier
-    }
-
     /// The instrument for a held reading. Optional like the projection it calls: the absence is
     /// the subject of two cases of its own below, and never of these.
     private func instrument(at tokens: Int) -> SessionHeaderProjection.Context? {
         SessionHeaderProjection.context(reading: .held(tokens))
+    }
+
+    private func tier(at tokens: Int) -> SessionHeaderProjection.Context.Tier? {
+        instrument(at: tokens)?.tier
     }
 
     /// The four numbers from the spec, exactly. `>=` and not `>` on both lines: crossing a

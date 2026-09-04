@@ -49,8 +49,8 @@ struct SubagentReadingTests {
     @Test
     func `a Subagent's own reading keeps what it spent`() async throws {
         let spends = try await subagentEvents("subagentOwn").compactMap { event -> Usage? in
-            guard case let .usage(usage) = event else { return nil }
-            return usage
+            guard case let .usage(reading) = event else { return nil }
+            return reading.usage
         }
 
         #expect(spends.map(\.inputTokens) == [900])
