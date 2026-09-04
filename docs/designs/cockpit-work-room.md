@@ -9,6 +9,18 @@
 > `work-room/` renders keep their names, because six other docs and the design's own provenance
 > cite them by path.
 
+> **Stale on the toolbar and the query · 2026-09-04.** The app has moved past this file in the
+> region #1293 touches: the two-line heading is in the list pane, not the window's row (#836);
+> the Filter button is gone (#900) and so is Start's Mode chevron (#1232); Next-up is in the
+> sidebar; and the field now takes a query, with a `Searching` heading, rails and a stated empty
+> that this file never drew (#873). Re-basing it is #1304. Until that lands, read the
+> toolbar and the query here as history.
+>
+> **The asking surface has its own design.** A natural-language question about the backlog is
+> [`cockpit-backlog-question.md`](cockpit-backlog-question.md) (#1293) — the field when it holds
+> a question, and the sheet the answer draws on. This file's **the two narrowings, decided** is
+> unchanged and is what that design is an addition to.
+
 The approved design for the **Tickets room** (#609) — the views sidebar, the backlog list, the
 ticket detail, the Next-up hero, the panes' headers, its empty and degraded states, and the
 Route's re-skin. Before this, every design in `docs/designs/` was a Sessions surface and

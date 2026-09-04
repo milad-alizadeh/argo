@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A question asked of the backlog — approved design (#1293)</title>
+<!--
+  The APPROVED asking surface (#1293). The prototype explored six shapes; this is C, the field
+  that FINDS the question, with E's sheet as where the answer draws. The other five and the
+  reasoning are on the throwaway branch `worktree-ticket-1293-backlog-question`.
+
+  Every state is reachable from the selector at the top, or by ?state=<key>; ?render=1 strips
+  the chrome for the committed PNGs.
+
+  SCOPE. This design covers the asking surface only — the search field, the affordance under it,
+  the wait, and the sheet over the ticket pane. The room around it is drawn to what the app
+  SHIPS today, not to `cockpit-work-room.html`, which is stale on this exact region: it puts
+  the heading in the toolbar row (#836 moved it into the pane), draws a Filter button (#900
+  deleted it) and a Mode chevron (#1232), and never draws a query at all (#873 added one).
+  Correcting that file is #1304. Nothing here should be read as approving what it says.
+
+  Every colour, radius, spacing step, type role and duration below is transcribed from
+  apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/ — GraphitePalette, ArgoSpacing, ArgoRadius,
+  ArgoTypeScale, ArgoStroke, ArgoTint, ArgoMotion. NOTHING here is a new token: the snap table
+  in the .md lists every raw value the prototype held and the token it landed on. The numbers
+  that ARE new are surface measures, and they belong beside the surface (rules/swift.md) —
+  ArgoTicketsChrome.askWidth and the sheet's own set, both named in the .md.
+
+  Type is San Francisco throughout — SF Pro and SF Mono. The contract has no serif.
+-->
+<style>
+:root {
+  /* ---- GraphitePalette.swift, verbatim ---- */
+  --surface-sunken:   #191A1D;
+  --surface-base:     #1E2024;
+  --surface-raised:   #252729;
+  --surface-overlay:  #2E3136;
+  --surface-control:  rgba(255,255,255,0.06);
+  --surface-hover:    rgba(255,255,255,0.045);
+  --surface-selected: rgba(255,255,255,0.058);
+  --surface-marked:   rgba(255,255,255,0.07);
+
+  --text-primary:   #F2F4F6;
+  --text-secondary: #A8AEB5;
+  --text-tertiary:  #929AA1;
+  --text-disabled:  #4E545A;
+  --text-on-accent: #05070A;
+
+  --edge-hairline:  rgba(255,255,255,0.08);
+  --edge-subtle:    rgba(255,255,255,0.13);
+  --edge-glass-rim: rgba(255,255,255,0.30);
+
+  --accent:            #3E9BFF;
+  --accent-bright:     #6FB6FF;
+  --focus-ring:        #6FB6FF;
+  --selection-ground:  #203146;
+
+  --state-running: #46D3A8;
+  --state-failure: #F2555C;
+  /* state.failure at ArgoTint.wash (0.10) — the one ground a wrong answer wears. */
+  --failure-wash: rgba(242,85,92,0.10);
+
+  /* ---- ArgoSpacing.swift ---- */
+  --s-hair: 2px;  --s-tight: 4px;  --s-snug: 6px;  --s-base: 8px;
+  --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+
+  /* ---- ArgoRadius.swift ---- */
+  --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+
+  /* ---- ArgoStroke.swift ---- */
+  --stroke-hairline: 0.5px; --stroke-border: 1px; --stroke-focus: 2px;
+
+  /* ---- ArgoTypeScale.swift ---- */
+  --t-title2: 17px; --t-title3: 15px; --t-headline: 13px; --t-body: 13px;
+  --t-callout: 12px; --t-subheadline: 11px; --t-caption: 10px;
+
+  /* ---- ArgoMotion.swift ---- */
+  --m-state-change: 0.18s; --m-working: 1.9s;
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ---- Surface measures. NOT tokens — these belong beside the surface. ---- */
+  --search-width: 210px;      /* ArgoTicketsChrome.searchWidth */
+  --ask-width: 268px;         /* ArgoTicketsChrome.askWidth — NEW, see the .md */
+  --search-height: 28px;      /* ArgoTicketsChrome.searchHeight */
+  --sidebar-width: 320px;     /* ArgoLayout.sidebarIdealWidth */
+  --backlog-width: 520px;     /* ArgoBacklogList.width */
+  --band-height: 44px;        /* ArgoBacklogList.bandHeight */
+  --row-height: 30px;         /* ArgoBacklogList.rowHeight */
+  --gutter: 12px;             /* ArgoBacklogList.gutter */
+  --indent-step: 16px;        /* ArgoBacklogList.indentStep */
+  --wait-bar-width: 40px;     /* BacklogAskWait */
+  --wait-bar-height: 2px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: #0B0C0E; font: 400 var(--t-body)/1.45 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: var(--stroke-focus) solid var(--focus-ring); outline-offset: 2px; }
+
+/* ---------- design chrome (NOT part of the design under evaluation) ---------- */
+.banner {
+  position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 60;
+  display: flex; align-items: center; gap: var(--s-comfortable);
+  padding: 0 var(--s-section); background: #f6f7f8; color: #14161a; font: 12px var(--sans);
+}
+.banner b { font-weight: 600; }
+.banner select {
+  font: 12px var(--sans); padding: 3px var(--s-snug); border-radius: var(--r-control);
+  border: 1px solid rgba(0,0,0,.2); background: #fff; color: #14161a;
+}
+.banner .q { color: rgba(20,22,26,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.window {
+  position: fixed; inset: 44px 0 0; overflow: hidden; background: var(--surface-base);
+}
+body.render .banner { display: none; }
+body.render .window { inset: 0; }
+
+/* ==========================================================================
+   THE ROOM. Drawn to what ships, because the asking surface is judged in it.
+   ========================================================================= */
+.win-body { display: flex; height: 100%; }
+
+.sidebar {
+  width: var(--sidebar-width); flex: none; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.028) 42%, rgba(255,255,255,.02));
+  border-right: var(--stroke-border) solid var(--edge-hairline);
+}
+.lights { display: flex; align-items: center; gap: var(--s-base); height: var(--band-height); padding: 0 var(--s-loose); }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #3A3D42; display: block; }
+.lights .toggle { margin-left: auto; color: var(--text-tertiary); }
+
+.rooms {
+  display: flex; margin: var(--s-tight) var(--s-loose) var(--s-comfortable);
+  background: var(--surface-control); border-radius: 7px; padding: var(--s-hair);
+}
+.rooms div {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--s-snug);
+  height: 26px; font-size: var(--t-callout); font-weight: 500; color: var(--text-secondary); border-radius: 5px;
+}
+.rooms div.on { background: var(--surface-overlay); color: var(--text-primary); }
+
+.sec-label {
+  font-size: var(--t-subheadline); font-weight: 600; letter-spacing: .6px;
+  color: var(--text-tertiary); padding: 0 var(--s-section) var(--s-snug);
+}
+.views { padding: 0 var(--s-comfortable); }
+.view {
+  display: flex; align-items: center; gap: var(--s-comfortable); height: 28px;
+  padding: 0 var(--s-comfortable); border-radius: var(--r-control);
+  font-size: var(--t-body); color: var(--text-secondary);
+}
+.view.on { background: var(--selection-ground); color: var(--text-primary); }
+.view .n { margin-left: auto; font-size: var(--t-subheadline); color: var(--text-tertiary); font-family: var(--mono); }
+.view .dot { width: 9px; height: 9px; flex: none; display: flex; }
+
+.nextup {
+  margin: var(--s-comfortable) var(--s-comfortable) 0; padding: var(--s-comfortable);
+  border: var(--stroke-border) solid var(--edge-hairline); border-radius: var(--r-control);
+}
+.nextup .cap { display: flex; font-size: var(--t-subheadline); font-weight: 600; letter-spacing: .6px; color: var(--text-tertiary); }
+.nextup .cap span { margin-left: auto; }
+.nextup .id { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--text-tertiary); margin-top: 10px; }
+.nextup .ti { font-size: var(--t-body); color: var(--text-primary); margin-top: var(--s-hair); }
+.nextup .chips { display: flex; gap: var(--s-snug); margin-top: var(--s-base); }
+.nextup .btn {
+  margin-top: var(--s-comfortable); margin-left: auto; width: fit-content;
+  display: flex; align-items: center; gap: var(--s-snug); padding: 5px 10px;
+  border-radius: var(--r-control); background: var(--surface-control);
+  font-size: var(--t-callout); font-weight: 500; color: var(--text-secondary);
+}
+.side-foot {
+  margin-top: auto; padding: var(--s-loose) var(--s-section);
+  border-top: var(--stroke-border) solid var(--edge-hairline);
+  font-size: var(--t-subheadline); color: var(--text-tertiary);
+  display: flex; align-items: center; gap: var(--s-base);
+}
+.side-foot i { width: 6px; height: 6px; border-radius: 50%; background: var(--state-running); display: block; }
+
+.deck { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+
+.toolbar {
+  height: var(--band-height); flex: none; display: flex; align-items: center;
+  gap: var(--s-base); padding: 0 var(--s-loose) 0 var(--s-comfortable);
+}
+.tb-item {
+  display: flex; align-items: center; gap: var(--s-snug); height: var(--search-height);
+  padding: 0 var(--s-base); border-radius: calc(var(--search-height) / 2);
+  background: var(--surface-control);
+  box-shadow: inset 0 0 0 var(--stroke-hairline) var(--edge-hairline);
+  font-size: var(--t-callout); font-weight: 500; color: var(--text-secondary); white-space: nowrap;
+}
+.tb-spacer { flex: 1; }
+
+.panes { flex: 1; display: flex; min-height: 0; }
+.listpane { width: var(--backlog-width); flex: none; display: flex; flex-direction: column; min-height: 0; }
+.detailpane { flex: 1; min-width: 0; border-left: var(--stroke-border) solid var(--edge-hairline); position: relative; overflow: hidden; }
+
+.band { min-height: var(--band-height); padding: 0 var(--gutter); display: flex; flex-direction: column; justify-content: center; }
+.band h1 { margin: 0; font-size: var(--t-headline); font-weight: 600; color: var(--text-primary); }
+.band p { margin: 0; font-size: var(--t-subheadline); color: var(--text-tertiary); }
+
+.rows { flex: 1; overflow: hidden; padding-bottom: var(--s-base); }
+.pri {
+  display: flex; align-items: center; height: 28px; padding: 0 var(--gutter);
+  font-size: var(--t-subheadline); font-weight: 600; letter-spacing: .6px; color: var(--text-tertiary);
+}
+.pri span { margin-left: auto; font-family: var(--mono); font-weight: 400; }
+
+.row {
+  display: flex; align-items: center; gap: var(--s-base); min-height: var(--row-height);
+  padding-right: var(--gutter); font-size: var(--t-body);
+}
+.row.sel { background: var(--selection-ground); }
+.row .twist { width: 12px; flex: none; color: var(--text-tertiary); font-size: 9px; text-align: center; }
+.row .ddot { width: 9px; height: 9px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--text-disabled); }
+.row .id { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--text-tertiary); flex: none; }
+.row .ti { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A rail is on screen for a descendant's sake, so its title takes the demotion the #id beside
+   it already carries (#873). NOTHING else marks a row: the ground alone carries selection
+   (#1165), and a suggested row needs no mark because the demotion already tells the two apart. */
+.row.rail .ti { color: var(--text-tertiary); }
+.row .sp { flex: 1; min-width: var(--s-base); }
+.row .labels { display: flex; gap: var(--s-hair); flex: none; }
+.row .cap { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--text-disabled); flex: none; }
+.row .blk { display: flex; align-items: center; gap: var(--s-tight); flex: none; color: var(--state-failure); }
+.row .blk b { font-family: var(--mono); font-size: var(--t-subheadline); font-weight: 400; color: var(--text-disabled); }
+
+.chip {
+  font-size: var(--t-caption); font-family: var(--mono); line-height: 1;
+  padding: 3px 5px; border-radius: var(--r-marker); white-space: nowrap;
+  background: var(--surface-marked); color: var(--text-secondary);
+}
+.nomatch {
+  flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 0 var(--s-region); font-size: var(--t-body); color: var(--text-tertiary);
+}
+
+.detail { padding: var(--s-section) var(--s-region); }
+.detail .id { font-family: var(--mono); font-size: var(--t-subheadline); color: var(--text-tertiary); }
+.detail h2 { margin: var(--s-base) 0 0; font-size: var(--t-title2); font-weight: 600; color: var(--text-primary); }
+.detail .status { margin-top: var(--s-base); font-size: var(--t-body); color: var(--text-secondary); }
+.detail .facts { display: flex; flex-wrap: wrap; gap: var(--s-loose); align-items: center; margin-top: var(--s-section); }
+.detail .facts .k { font-size: var(--t-subheadline); letter-spacing: .6px; color: var(--text-tertiary); font-weight: 500; }
+.detail .facts .v { font-size: var(--t-body); color: var(--text-secondary); margin-left: var(--s-snug); }
+.detail .rule { height: 1px; background: var(--edge-hairline); margin: var(--s-loose) 0 var(--s-comfortable); }
+.detail .k2 { font-size: var(--t-subheadline); letter-spacing: .6px; color: var(--text-tertiary); font-weight: 500; }
+.detail p { font-size: var(--t-body); line-height: 1.55; color: var(--text-secondary); }
+.detail .none { font-size: var(--t-body); color: var(--text-disabled); }
+.detail h3 { font-size: var(--t-headline); font-weight: 600; color: var(--text-primary); margin: var(--s-section) 0 var(--s-base); }
+.detail .blocker { display: flex; gap: var(--s-base); align-items: center; font-size: var(--t-body); color: var(--text-secondary); padding: 3px 0; }
+
+/* ==========================================================================
+   THE ASKING SURFACE — everything below this line is what #1293 approves.
+   ========================================================================= */
+
+/* --- BacklogSearchField. One field, two modes, and the second is FOUND, never
+   switched to. The leading glyph is the only thing that changes, and it changes
+   ONCE — when the text stops looking like a term. --- */
+[data-component="BacklogSearchField"] {
+  position: relative; display: flex; align-items: center; gap: var(--s-snug);
+  width: var(--search-width); height: var(--search-height);
+  padding: 0 var(--s-base); border-radius: calc(var(--search-height) / 2);
+  background: var(--surface-control);
+  box-shadow: inset 0 0 0 var(--stroke-hairline) var(--edge-glass-rim);
+  font-size: var(--t-body); color: var(--text-primary);
+  transition: width var(--m-state-change) ease-out;
+}
+/* The field widens only while it holds a question. 268 still clears the trailing edge at
+   the 1280 window, which is the same arithmetic that set 210. */
+[data-component="BacklogSearchField"].asks { width: var(--ask-width); }
+[data-component="BacklogSearchField"].focused {
+  box-shadow: inset 0 0 0 var(--stroke-border) var(--accent),
+              0 0 0 var(--stroke-focus) var(--focus-ring);
+}
+[data-component="BacklogSearchField"] .lead { flex: none; color: var(--text-tertiary); display: flex; }
+[data-component="BacklogSearchField"] .lead.asks { color: var(--accent-bright); }
+[data-component="BacklogSearchField"] .ph { color: var(--text-tertiary); }
+/* A question is longer than the field. The TAIL stays visible, because that is
+   where the caret is: a field that showed the head while you typed the tail would
+   be showing you the one part you are not editing. */
+[data-component="BacklogSearchField"] .typed {
+  color: var(--text-primary); white-space: nowrap; overflow: hidden;
+  flex: 1; min-width: 0; direction: rtl; text-align: left; unicode-bidi: plaintext;
+}
+[data-component="BacklogSearchField"] .caret { width: 1px; height: 14px; background: var(--accent-bright); }
+
+/* --- BacklogAskAffordance. The ask, OFFERED under the field. Search keeps the
+   return key; the ask takes a modifier. A reader who never looks down here has
+   lost nothing. --- */
+[data-component="BacklogAskAffordance"] {
+  position: absolute; top: calc(var(--band-height) - var(--s-snug)); right: var(--s-loose);
+  width: var(--ask-width); z-index: 20; padding: var(--s-tight);
+  background: var(--surface-overlay); border-radius: var(--r-control);
+  box-shadow: 0 0 0 var(--stroke-hairline) var(--edge-glass-rim), 0 16px 40px rgba(0,0,0,.6);
+}
+.found-opt {
+  display: flex; align-items: center; gap: var(--s-base);
+  padding: var(--s-base); border-radius: 5px; font-size: var(--t-body); color: var(--text-secondary);
+}
+.found-opt.on { background: var(--surface-selected); color: var(--text-primary); }
+.found-opt .sub { font-size: var(--t-subheadline); color: var(--text-tertiary); }
+.found-opt .key {
+  margin-left: auto; font-family: var(--mono); font-size: var(--t-caption); color: var(--text-tertiary);
+  box-shadow: inset 0 0 0 var(--stroke-border) var(--edge-subtle);
+  padding: var(--s-hair) var(--s-tight); border-radius: var(--r-marker); flex: none;
+}
+
+/* --- BacklogAskWait. The list is never cleared while a question runs. --- */
+[data-component="BacklogAskWait"] {
+  display: flex; align-items: center; gap: var(--s-base);
+  font-size: var(--t-body); color: var(--text-tertiary);
+}
+.pulse {
+  width: var(--wait-bar-width); height: var(--wait-bar-height); border-radius: 1px;
+  background: var(--edge-subtle); overflow: hidden; flex: none;
+}
+.pulse i { display: block; width: 40%; height: 100%; background: var(--accent);
+           animation: slide var(--m-working) linear infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+
+/* --- BacklogAnswerSheet. Over the ticket pane, never over the list: the list
+   holds the tickets the reader asked about. --- */
+[data-component="BacklogAnswerSheet"] {
+  position: absolute; inset: 0; z-index: 15; background: var(--surface-base);
+  display: flex; flex-direction: column;
+  animation: rise var(--m-state-change) ease-out;
+}
+@keyframes rise { from { transform: translateY(var(--s-base)); opacity: 0; } }
+.sheet-head { padding: var(--s-section) var(--s-region) 0; display: flex; align-items: flex-start; gap: var(--s-comfortable); }
+.sheet-head .q { font-size: var(--t-title3); font-weight: 600; color: var(--text-primary); line-height: 1.35; }
+.sheet-head .x { margin-left: auto; color: var(--text-tertiary); }
+.sheet-body { padding: var(--s-loose) var(--s-region); flex: 1; overflow: hidden; }
+.sheet-body p { font-size: var(--t-body); line-height: 1.6; color: var(--text-secondary); margin: 0 0 var(--s-comfortable); }
+.sheet-body b { color: var(--text-primary); font-weight: 500; }
+.sheet-foot { padding: var(--s-loose) var(--s-region) var(--s-section); border-top: var(--stroke-border) solid var(--edge-hairline); }
+
+/* --- BacklogAnswerCitation. Every number the answer names, checked against the
+   set the room holds. One it cannot find is not a link. --- */
+[data-component="BacklogAnswerCitation"] {
+  color: var(--accent-bright); text-decoration: none;
+  font-family: var(--mono); font-size: var(--t-subheadline); cursor: pointer;
+}
+[data-component="BacklogAnswerCitation"]:hover { text-decoration: underline; }
+[data-component="BacklogAnswerCitation"].dead {
+  color: var(--text-disabled); text-decoration: line-through; cursor: default;
+}
+
+/* --- BacklogAnswerAttribution. Who made the answer, what it read, what it cost.
+   Not a disclosure the reader has to open: an answer whose sources are hidden is
+   an answer nobody can check. --- */
+[data-component="BacklogAnswerAttribution"] .who {
+  display: flex; align-items: center; gap: var(--s-snug);
+  font-size: var(--t-subheadline); letter-spacing: .4px; font-weight: 600;
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+[data-component="BacklogAnswerAttribution"] .tier {
+  margin-left: auto; font-family: var(--mono); font-weight: 500; letter-spacing: .5px;
+  padding: var(--s-hair) 5px; border-radius: var(--r-marker); text-transform: none;
+  color: var(--text-tertiary); box-shadow: inset 0 0 0 var(--stroke-border) var(--edge-subtle);
+}
+[data-component="BacklogAnswerAttribution"] .read {
+  padding-top: var(--s-base); font-size: var(--t-subheadline);
+  color: var(--text-disabled); line-height: 1.5;
+}
+[data-component="BacklogAnswerAttribution"] .read b { color: var(--text-tertiary); font-weight: 400; }
+.acts { display: flex; gap: var(--s-base); margin-top: var(--s-comfortable); }
+.acts span {
+  font-size: var(--t-callout); font-weight: 500; color: var(--text-secondary);
+  padding: var(--s-tight) 10px; border-radius: var(--r-control); background: var(--surface-control);
+}
+.acts span.quiet { background: none; color: var(--text-tertiary); }
+
+/* --- The wrong answer. state.failure at ArgoTint.wash, and no rim: the wash and
+   the failure-ink line already say it. --- */
+.wrong-notice {
+  margin-top: var(--s-loose); padding: var(--s-comfortable) 14px;
+  border-radius: var(--r-control); background: var(--failure-wash);
+}
+.wrong-notice .who { color: var(--state-failure); }
+.wrong-notice p { margin-top: var(--s-snug); }
+
+/* --- BacklogAskVacancy. No Account to pay, drawn where the answer would be. --- */
+[data-component="BacklogAskVacancy"] { padding: var(--s-section) var(--s-region); }
+[data-component="BacklogAskVacancy"] p { font-size: var(--t-body); line-height: 1.55; color: var(--text-secondary); }
+
+/* The room's own vacancy: no provider, so no list, so no field and no ask. */
+.vacancy {
+  height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 0 var(--s-region);
+}
+.vacancy h2 { font-size: var(--t-title3); font-weight: 600; color: var(--text-primary); margin: 0 0 var(--s-comfortable); max-width: 420px; }
+.vacancy p { font-size: var(--t-body); line-height: 1.55; color: var(--text-tertiary); width: 420px; margin: 0; }
+.vacancy .cta {
+  margin-top: var(--s-section); background: var(--accent); color: var(--text-on-accent);
+  font-size: var(--t-callout); font-weight: 500; padding: var(--s-snug) var(--s-comfortable);
+  border-radius: var(--r-control);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component="BacklogAnswerSheet"] { animation: none; }
+  [data-component="BacklogSearchField"] { transition: none; }
+  .pulse i { animation: none; width: 100%; opacity: .5; }
+}
+
+svg { display: block; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <b>A question asked of the backlog</b>
+  <select id="sel" aria-label="State"></select>
+  <span class="q" id="note"></span>
+</div>
+
+<div class="window" id="window"></div>
+
+<script>
+/* ============================================================================
+   The fixture backlog — TicketsFixture+Items.swift, All open, by priority. The
+   same twelve `ARGO_SPECIMEN=ticketsRoom` renders, so a row that looks wrong
+   here is a row that looks wrong there.
+   ========================================================================= */
+const BACKLOG = [
+  { band: 'HIGH', n: 8, rows: [
+    { id: 607, d: 0, twist: true, t: 'Wayfinder: the Tickets ro…',
+      labels: [['wayfinder','#5319e7'], ['work-room',null], ['+1',null]], blk: '2/9' },
+    { id: 609, d: 1, t: 'Prototype: what the Tickets roo…',
+      labels: [['design','#d876e3'], ['work-room',null]], run: true, cap: '1d' },
+    { id: 388, d: 1, t: 'Ticket read path: listing, status, labels, dependency e…', run: true, cap: '5d' },
+    { id: 334, d: 1, twist: true, t: 'The Route — a progress-axis view of a ticket and its…', blk: '0/2' },
+    { id: 336, d: 2, t: 'The canvas: derived spacing and the edge rule', blkOnly: true, cap: 'low' },
+    { id: 335, d: 2, t: 'Placement: zones, columns and the cycle guard', blkOnly: true, cap: 'medium' },
+    { id: 273, d: 1, t: 'The Next-up cold-start planner', cap: 'medium' },
+    { id: 272, d: 1, t: 'The generic node tree and tick…',
+      labels: [['work-room',null], ['ui','#1d76db'], ['+1',null]], blkOnly: true, cap: '1w', sel: true },
+  ]},
+  { band: 'MEDIUM', n: 1, rows: [
+    { id: 763, d: 1, t: 'Ticket transport and grant plumbing', run: true },
+  ]},
+  { band: 'LOW', n: 3, rows: [
+    { id: 275, d: 1, t: 'The provider connection chip as a graphite transient', blkOnly: true, cap: '1w' },
+    { id: 185, d: 1, t: 'Tickets room interior: what a leaf carries', blkOnly: true, cap: '2mo' },
+    { id: 160, d: 1, t: 'Ticket vocabulary: type is a property, not a ladder', blkOnly: true, cap: '1y' },
+  ]},
+];
+
+/* The reader's question, and the case #1293 was opened over: they want the ticket
+   about spacing on the chart, and no title uses the word `chart`. */
+const QUESTION = 'spacing between nodes on the chart';
+const TERM = 'chart';
+
+const ANSWER = [
+  'The chart\'s spacing is <a data-component="BacklogAnswerCitation">#336</a>, <b>The canvas: derived spacing and the edge rule</b> — low priority, Todo, and the only open ticket that names spacing at all. It never uses the word “chart”, which is why the field found nothing.',
+  'It cannot start. <a data-component="BacklogAnswerCitation">#336</a> is blocked by <a data-component="BacklogAnswerCitation">#335</a>, <b>Placement: zones, columns and the cycle guard</b>, and that one waits on <a data-component="BacklogAnswerCitation">#334</a>, the Route itself. Three deep, all still open.',
+  'Nothing else in All open touches the canvas. <a data-component="BacklogAnswerCitation">#334</a> is the parent the two hang from and is on screen for their sake, not for a match of its own.',
+];
+
+const READ = 'Read <b>12 open tickets</b> — number, title, labels, priority, type, status word and the blockedBy edges the room already holds. No ticket body, no comments, nothing you clicked.';
+const COST = 'GitHub · milad-alizadeh — 2.4s';
+
+/* ============================================================================
+   The states. Each is a real configuration of the surface, not one screenshot
+   with a note under it.
+   ========================================================================= */
+const STATES = {
+  'rest':     { n: 'Rest — the field as it sits',
+                q: 'The field is untouched. The asking surface must cost this state nothing.' },
+  'term':     { n: 'A term typed — the plain path, unchanged',
+                q: 'Search still works exactly as it shipped: the number and the title, folded, with rails kept.' },
+  'found':    { n: 'A question typed — the ask is offered',
+                q: 'The text stopped looking like a term. Search keeps the return key; the ask takes a modifier.' },
+  'asking':   { n: 'The wait',
+                q: 'What the room does for the two to five seconds a model takes, and what it must NOT do to the list.' },
+  'answered': { n: 'The answer, as prose',
+                q: 'Where an answer draws, how it is attributed, and what it says it read.' },
+  'followed': { n: 'A citation followed — the query dropped',
+                q: 'The one act that does not preserve the typed query, and why nothing on screen still claims it.' },
+  'empty':    { n: 'Nothing matched — an answer, not a failure',
+                q: 'The model read all twelve and found nothing. Said plainly, with the nearest thing named.' },
+  'wrong':    { n: 'A number the room cannot find',
+                q: 'The worst failure, drawn: a live-looking link to a ticket that does not exist.' },
+  'unbound':  { n: 'No Account can pay',
+                q: 'The Ticket Binding reads tickets; it does not answer questions about them.' },
+  'vacant':   { n: 'No provider — no list, so no question',
+                q: 'The asking surface is a member of `narrows`. No list, nothing to ask about.' },
+};
+
+let state = 'rest';
+
+/* ---------------------------------------------------------------- drawing -- */
+const ICON = {
+  glass: `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.4"/><path d="M10.3 10.3 14 14" stroke-linecap="round"/></svg>`,
+  wand: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 13.4 9.4 6.6"/><path d="M9.9 2.2l.55 1.5 1.5.55-1.5.55-.55 1.5-.55-1.5-1.5-.55 1.5-.55z"/><path d="M13.4 7.4l.4 1.05 1.05.4-1.05.4-.4 1.05-.4-1.05L12 8.85l1.05-.4z"/></svg>`,
+  x: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>`,
+  slash: `<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 11.2 11.2 4.8" stroke="#1E2024" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+  diamond: `<svg width="9" height="9" viewBox="0 0 12 12"><path d="M6 0.5 11.5 6 6 11.5 0.5 6z" fill="#46D3A8"/></svg>`,
+  play: `<svg width="9" height="9" viewBox="0 0 12 12"><path d="M2.5 1.5 10 6l-7.5 4.5z" fill="currentColor"/></svg>`,
+  chev: `<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5 8 6l-4 3.5"/></svg>`,
+  dots: `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="12.5" cy="8" r="1.2"/></svg>`,
+  pencil: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M13 2.6 8 7.6 7.4 9.6 9.4 9 14.4 4z"/><path d="M12.5 9v4H3V3.5h4"/></svg>`,
+  link: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6.6 9.4a2.6 2.6 0 0 0 3.7 0l2.2-2.2a2.6 2.6 0 1 0-3.7-3.7l-1 1"/><path d="M9.4 6.6a2.6 2.6 0 0 0-3.7 0L3.5 8.8a2.6 2.6 0 1 0 3.7 3.7l1-1"/></svg>`,
+  out: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5h4.5V7"/><path d="M13.5 2.5 7.5 8.5"/><path d="M12 10v3.5H2.5V4H6"/></svg>`,
+  folder: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M1.8 12.5v-9h4.4l1.3 1.6h6.7v7.4z"/></svg>`,
+  term: `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.6" y="2.6" width="12.8" height="10.8" rx="2"/><path d="M4.6 6.4 6.6 8l-2 1.6M8.4 9.8h3"/></svg>`,
+  list: `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2 4h1.6M2 8h1.6M2 12h1.6M6 4h8M6 8h8M6 12h8"/></svg>`,
+  code: `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5 2.5 8l3 3M10.5 5l3 3-3 3"/></svg>`,
+  side: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.6" y="3.2" width="12.8" height="9.6" rx="2"/><path d="M6.2 3.2v9.6"/></svg>`,
+};
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+const chip = ([name, colour]) => colour
+  ? `<span class="chip" style="background:${colour}2E;color:${colour};box-shadow:inset 0 0 0 1px ${colour}66">${esc(name)}</span>`
+  : `<span class="chip">${esc(name)}</span>`;
+
+function row(r, { rails = new Set(), pick = null, plain = false } = {}) {
+  const indent = 12 + Math.min(r.d, 2) * 16;
+  const selected = pick !== null ? r.id === pick : (r.sel && !plain);
+  const cls = ['row', selected ? 'sel' : '', rails.has(r.id) ? 'rail' : ''].filter(Boolean).join(' ');
+  const labels = r.labels ? `<span class="labels">${r.labels.map(chip).join('')}</span>` : '';
+  const mark = r.blk ? `<span class="blk">${ICON.slash}<b>${r.blk}</b></span>`
+    : r.blkOnly ? `<span class="blk">${ICON.slash}</span>` : r.run ? ICON.diamond : '';
+  return `<div class="${cls}" style="padding-left:${indent}px">
+    <span class="twist">${r.twist ? '⌄' : ''}</span><span class="ddot"></span>
+    <span class="id">#${r.id}</span><span class="ti">${esc(r.t)}</span>
+    <span class="sp"></span>${labels}${mark}${r.cap ? `<span class="cap">${esc(r.cap)}</span>` : ''}
+  </div>`;
+}
+
+function listRows(opts = {}) {
+  return BACKLOG.map(g => {
+    const rows = opts.keep ? g.rows.filter(r => opts.keep.has(r.id)) : g.rows;
+    if (!rows.length) return '';
+    const count = opts.keep ? rows.filter(r => !opts.rails.has(r.id)).length : g.n;
+    return `<div class="pri">${g.band}<span>${count}</span></div>` + rows.map(r => row(r, opts)).join('');
+  }).join('');
+}
+
+const sidebar = () => `<aside class="sidebar">
+  <div class="lights"><i></i><i></i><i></i><span class="toggle">${ICON.side}</span></div>
+  <div class="rooms">
+    <div>${ICON.term}Sessions</div><div class="on">${ICON.list}Tickets</div><div>${ICON.code}Code</div>
+  </div>
+  <div class="sec-label">BACKLOG</div>
+  <div class="views">
+    <div class="view on"><span class="dot" style="background:var(--text-secondary);border-radius:50%"></span>All open<span class="n">12</span></div>
+    <div class="view"><span class="dot" style="border-radius:50%;box-shadow:inset 0 0 0 1.3px var(--text-tertiary)"></span>Unblocked<span class="n">4</span></div>
+    <div class="view"><span class="dot">${ICON.diamond}</span>In progress<span class="n">3</span></div>
+    <div class="view"><span class="dot" style="color:var(--state-failure)">${ICON.slash}</span>Blocked<span class="n">8</span></div>
+    <div class="view"><span class="dot" style="border-radius:50%;box-shadow:inset 0 0 0 1.3px var(--text-tertiary)"></span>Closed</div>
+  </div>
+  <div class="nextup">
+    <div class="cap">NEXT UP<span>${ICON.chev}</span></div>
+    <div class="id">#273</div><div class="ti">The Next-up cold-start planner</div>
+    <div class="chips"><span class="chip">unblocked</span><span class="chip">next in #607</span></div>
+    <div class="btn">${ICON.play} Start</div>
+  </div>
+  <div class="side-foot"><i></i>GitHub · milad-alizadeh</div>
+</aside>`;
+
+/* The row of controls. ONE ROW, and the asking surface adds nothing to it: that
+   is the whole argument for this variant over a wand. */
+const toolbar = (field, verbs = true) => `<div class="toolbar">
+  <div class="tb-item">${ICON.folder} argo ⌄</div>
+  <div class="tb-item">${ICON.dots}</div>
+  <div class="tb-item">${ICON.pencil}</div>
+  ${verbs ? `<div class="tb-item">${ICON.play} Start</div><div class="tb-item">${ICON.out}</div><div class="tb-item">${ICON.link}</div>` : ''}
+  <div class="tb-spacer"></div>${field}
+</div>`;
+
+function field({ text = null, asks = false, focused = false }) {
+  const cls = ['asks', 'focused'].filter((c, i) => (i === 0 ? asks : focused));
+  return `<div data-component="BacklogSearchField" class="${cls.join(' ')}">
+    <span class="lead ${asks ? 'asks' : ''}">${asks ? ICON.wand : ICON.glass}</span>
+    ${text === null ? `<span class="ph">Search the backlog</span>`
+      : `<span class="typed">${esc(text)}</span><span class="caret"></span>`}
+  </div>`;
+}
+
+const band = (h, sub) => `<div class="band"><h1>${h}</h1><p>${sub}</p></div>`;
+
+const ticketDetail = () => `<div class="detail">
+  <div class="id">#272</div>
+  <h2>The generic node tree and ticket detail</h2>
+  <div class="status">Todo</div>
+  <div class="facts">
+    <div><span class="k">PRIORITY</span><span class="v">high</span></div>
+    <div><span class="k">TYPE</span><span class="v">task</span></div>
+    <div><span class="k">BUCKET</span><span class="v">open</span></div>
+    <div><span class="k">LABELS</span><span class="v" style="display:inline-flex;gap:4px;vertical-align:-3px">
+      ${chip(['work-room', null])}${chip(['ui', '#1d76db'])}${chip(['blocked', '#b60205'])}</span></div>
+  </div>
+  <div class="rule"></div>
+  <div class="k2">DELIVERIES</div>
+  <div class="none" style="margin-top:8px">No Delivery yet</div>
+  <p>The backlog's home, with the sidebar freed: views at 280, the backlog at 520 where a title reads whole at depth three, and the ticket beside it.</p>
+  <p>Any node — parent or leaf — opens in detail through the same view; type is a property rather than a rung of a ladder. A parent adds a Children section to that same view, and no Implement action appears anywhere on one: work happens at leaves.</p>
+  <h3>Blocked by · 2</h3>
+  <div class="blocker"><span class="ddot" style="width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--text-disabled)"></span><span class="id">#609</span> Prototype: what the Tickets room looks like in the Liquid Glass shell</div>
+  <div class="blocker"><span class="ddot" style="width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--text-disabled)"></span><span class="id">#388</span> Ticket read path: listing, status, labels, dependency edges</div>
+</div>`;
+
+/* The attribution. The tier is drawn only where there IS an answer to tier — a
+   refusal has no provenance, and a chip over one would claim a fact nobody made. */
+const attribution = (who, tier = true) => `<div data-component="BacklogAnswerAttribution">
+  <div class="who">${ICON.wand}${who}${tier ? '<span class="tier">CONVENTION</span>' : ''}</div>
+  ${tier ? `<div class="read">${READ}<br>${COST}</div>` : ''}
+</div>`;
+
+function sheet(question, paras, { wrong = false, waiting = false, vacancy = false } = {}) {
+  let body;
+  if (waiting) {
+    body = `<div data-component="BacklogAskWait"><span class="pulse"><i></i></span>Reading 12 open tickets…</div>`;
+  } else if (vacancy) {
+    body = `<div data-component="BacklogAskVacancy"><p>Asking spends a model. This Project's GitHub Binding reads tickets — it does not answer questions about them. Connect an Account with a model to ask.</p></div>`;
+  } else {
+    body = paras.map(p => `<p>${p}</p>`).join('') + (wrong ? `
+      <div class="wrong-notice">
+        <div class="who" style="display:flex;align-items:center;gap:var(--s-snug);font-size:var(--t-subheadline);letter-spacing:.4px;font-weight:600;text-transform:uppercase">${ICON.slash}#511 is not in this backlog</div>
+        <p style="font-size:var(--t-body);line-height:1.6;color:var(--text-secondary);margin:var(--s-snug) 0 0">The room checks every number an answer names against the twelve it holds. This one is not among them, so the link is dead and nothing was drawn for it. Read the answer as wrong, not as a ticket you have not seen.</p>
+      </div>` : '');
+  }
+
+  const foot = waiting
+    ? `${attribution('Asking', false)}<div class="read" style="padding-top:var(--s-base);font-size:var(--t-subheadline);color:var(--text-disabled)">Titles, labels, priorities and the blockedBy edges the room already holds. No ticket body, no comments.</div><div class="acts"><span>Stop</span></div>`
+    : vacancy
+      ? `<div class="acts"><span>Connect an Account…</span><span class="quiet">Search instead</span></div>`
+      : `${attribution('Answered from the backlog')}<div class="acts"><span>Ask again</span><span class="quiet">Close</span></div>`;
+
+  return `<div data-component="BacklogAnswerSheet">
+    <div class="sheet-head">${ICON.wand}<div class="q">${esc(question)}</div><span class="x">${ICON.x}</span></div>
+    <div class="sheet-body">${body}</div>
+    <div class="sheet-foot">${foot}</div>
+  </div>`;
+}
+
+const shell = (tb, list, detail, overlay = '') => `<div class="win-body">
+  ${sidebar()}
+  <div class="deck">${tb}
+    <div class="panes">
+      <div class="listpane">${list}</div>
+      <div class="detailpane">${detail}</div>
+    </div>${overlay}
+  </div>
+</div>`;
+
+const askAffordance = () => `<div data-component="BacklogAskAffordance">
+  <div class="found-opt">
+    <span style="color:var(--text-tertiary)">${ICON.glass}</span>
+    <span>Search — <span class="sub">0 of 12 match</span></span><span class="key">⏎</span>
+  </div>
+  <div class="found-opt on">
+    <span style="color:var(--accent-bright)">${ICON.wand}</span>
+    <span>Ask the backlog<div class="sub">Reads all 12, not just the titles</div></span><span class="key">⌘⏎</span>
+  </div>
+</div>`;
+
+const STATED_EMPTY = q => `<div class="nomatch">No ticket in All open matches “${esc(q)}”.</div>`;
+
+function draw() {
+  if (state === 'vacant') {
+    return `<div class="win-body">${sidebar()}
+      <div class="deck">
+        <div class="toolbar"><div class="tb-item">${ICON.folder} argo ⌄</div><div class="tb-item">${ICON.dots}</div><div class="tb-spacer"></div></div>
+        <div class="panes"><div style="flex:1" class="vacancy">
+          <h2>No Ticket provider is connected to argo</h2>
+          <p>Argo reads tickets through a provider you connect per Project. Nothing here has been read yet — this is not an empty backlog.</p>
+          <div class="cta">Connect a provider…</div>
+        </div></div>
+      </div></div>`;
+  }
+
+  if (state === 'rest') {
+    return shell(toolbar(field({})),
+      band('Backlog', 'All open · by priority · 12 tickets') + `<div class="rows">${listRows()}</div>`,
+      ticketDetail());
+  }
+
+  if (state === 'term') {
+    /* The plain path, untouched: `canvas` matches one title, and the two ancestors
+       it hangs from are kept as rails (#873). */
+    return shell(toolbar(field({ text: 'canvas' })),
+      band('Searching', 'All open · by priority · 1 result')
+        + `<div class="rows">${listRows({ keep: new Set([607, 334, 336]), rails: new Set([607, 334]), plain: true })}</div>`,
+      ticketDetail());
+  }
+
+  if (state === 'found') {
+    return shell(toolbar(field({ text: QUESTION, asks: true, focused: true })),
+      band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
+      ticketDetail(), askAffordance());
+  }
+
+  if (state === 'asking') {
+    /* The list is NOT cleared and NOT dimmed: it still holds the honest answer to
+       the query, and the question has not answered anything yet. */
+    return shell(toolbar(field({ text: QUESTION, asks: true })),
+      band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
+      sheet(QUESTION, [], { waiting: true }));
+  }
+
+  if (state === 'answered') {
+    return shell(toolbar(field({ text: QUESTION, asks: true })),
+      band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
+      sheet(QUESTION, ANSWER));
+  }
+
+  if (state === 'followed') {
+    /* The one act that drops the query. The answer names tickets the query had
+       filtered out, so the list cannot honour it and show #336 at once — and the
+       FIELD clears with it, so nothing on screen claims a narrowing not in force. */
+    return shell(toolbar(field({})),
+      band('Backlog', 'All open · by priority · 12 tickets') + `<div class="rows">${listRows({ pick: 336 })}</div>`,
+      sheet(QUESTION, ANSWER));
+  }
+
+  if (state === 'empty') {
+    return shell(toolbar(field({ text: 'is anything here about deployment?', asks: true })),
+      band('Backlog', 'All open · by priority · 12 tickets') + `<div class="rows">${listRows()}</div>`,
+      sheet('is anything here about deployment?', [
+        'Nothing in All open is about deployment. Twelve tickets, and none of them names a deploy, a release or an environment.',
+        'The nearest is <a data-component="BacklogAnswerCitation">#763</a>, <b>Ticket transport and grant plumbing</b> — that is the ticket port, the way Argo reads a tracker, rather than anything that ships.',
+      ]));
+  }
+
+  if (state === 'wrong') {
+    return shell(toolbar(field({ text: QUESTION, asks: true })),
+      band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
+      sheet(QUESTION, [
+        'The chart\'s spacing is <a data-component="BacklogAnswerCitation" class="dead">#511</a>, <b>Chart canvas spacing rules</b> — high priority, unblocked, ready to start.',
+      ], { wrong: true }));
+  }
+
+  /* unbound */
+  return shell(toolbar(field({ text: QUESTION, asks: true })),
+    band('Searching', 'All open · by priority · 0 results') + STATED_EMPTY(QUESTION),
+    sheet(QUESTION, [], { vacancy: true }));
+}
+
+function render() {
+  document.getElementById('window').innerHTML = draw();
+  document.getElementById('note').textContent = STATES[state].q;
+  document.getElementById('sel').value = state;
+}
+
+const sel = document.getElementById('sel');
+sel.innerHTML = Object.entries(STATES).map(([k, v]) => `<option value="${k}">${v.n}</option>`).join('');
+sel.onchange = () => {
+  state = sel.value;
+  const u = new URLSearchParams(location.search);
+  u.set('state', state);
+  history.replaceState(null, '', '?' + u);
+  render();
+};
+
+const params = new URLSearchParams(location.search);
+if (STATES[params.get('state')]) state = params.get('state');
+if (params.get('render') === '1') document.body.classList.add('render');
+
+addEventListener('keydown', e => {
+  const ks = Object.keys(STATES);
+  const i = ks.indexOf(state);
+  if (e.key === 'ArrowRight') { state = ks[(i + 1) % ks.length]; sel.onchange.call(sel, sel.value = state); }
+  if (e.key === 'ArrowLeft') { state = ks[(i - 1 + ks.length) % ks.length]; sel.onchange.call(sel, sel.value = state); }
+});
+
+render();
+</script>
+</body>
+</html>
