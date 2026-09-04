@@ -16,7 +16,7 @@ package struct MinimapLane: NSViewRepresentable {
 
     package func makeNSView(context: Context) -> MinimapLaneView {
         let lane = MinimapLaneView()
-        lane.setAccessibilityLabel("Minimap lane")
+        lane.nameLane()
         dress(lane, in: context.environment)
         return lane
     }

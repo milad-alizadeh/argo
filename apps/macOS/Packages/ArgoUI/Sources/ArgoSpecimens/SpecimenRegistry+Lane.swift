@@ -24,6 +24,12 @@ extension SpecimenRegistry {
         SpecimenEntry("minimapLaneHeld") {
             SpecimenScene.overview(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
         },
+        // A session past the length the lane can draw a mark a row, where it draws a mark a Turn
+        // instead (#1173). The one state the coarsening can be looked at in: the marks are Turns
+        // at their true extents, and the whole session is in the lane rather than a fraction of it.
+        SpecimenEntry("minimapLaneAtTurnGrain") {
+            SpecimenScene.overview(FeedProjection.deepRows)
+        },
         // Nothing to scroll. The lane draws the reading at its own size rather than stretching
         // three rows to fill it, which would read as a session ten times the length.
         SpecimenEntry("minimapLaneShortReading") {

@@ -22,10 +22,21 @@ struct MinimapGeometry: Equatable {
     package let reading: MinimapReading
     let lane: CGSize
 
-    /// The height a quarter of the rows are shorter than — what `grain` is measured against.
+    /// The height a quarter of the rows are shorter than — what `rowGrain` is measured against.
     let shortRowHeight: CGFloat
+    /// The same quartile over the Turns' own extents, which is what `turnGrain` is measured
+    /// against (#1173).
+    let shortTurnHeight: CGFloat
 
-    init(_ reading: MinimapReading, lane: CGSize) {
+    /// Whether the lane has already coarsened for this reading and stays coarsened for it.
+    ///
+    /// The latch #1173 asks for. A running Session only grows, and a bare comparison against the
+    /// grain would flip the lane's whole appearance mid-scroll and possibly back again near the
+    /// boundary — so once a reading has crossed, it stays crossed for as long as the lane is
+    /// reading it. `MinimapLaneView` is what holds it; a geometry is still.
+    let isCoarsened: Bool
+
+    init(_ reading: MinimapReading, lane: CGSize, coarsened: Bool = false) {
         var starts: [CGFloat] = [0]
         starts.reserveCapacity(reading.rows.count + 1)
         var running: CGFloat = 0
@@ -33,9 +44,26 @@ struct MinimapGeometry: Equatable {
             running += max(0, row.height)
             starts.append(running)
         }
+        let turns = MinimapTurn.extents(of: reading.rows)
         self.starts = starts
-        self.turns = MinimapTurn.extents(of: reading.rows)
-        self.shortRowHeight = Self.quarterHeight(of: reading.rows)
+        self.turns = turns
+        // A row at a bucket a point wide, which is what #1132 landed and what every reading the
+        // lane already answered was measured at: heights are ceiled to whole points, so a bucket
+        // is exact up to the cap.
+        self.shortRowHeight = Self.quarterHeight(count: reading.rows.count, quantum: 1) {
+            max(0, reading.rows[$0].height)
+        }
+        // A Turn is worth its rows together, so its extents are tens or hundreds of times a row's,
+        // and a point-wide bucket would put every one of them past the cap — where a lower quartile
+        // stops being a lower quartile. The width is taken off the MEAN instead, which is the one
+        // scale that suits either question.
+        let extent = { starts[turns[$0].rows.upperBound + 1] - starts[turns[$0].rows.lowerBound] }
+        self.shortTurnHeight = Self.quarterHeight(
+            count: turns.count,
+            quantum: Self.quantum(mean: (starts.last ?? 0) / CGFloat(max(1, turns.count))),
+            height: extent,
+        )
+        self.isCoarsened = coarsened
         self.reading = reading
         self.lane = CGSize(width: max(0, lane.width), height: max(0, lane.height))
     }
@@ -53,25 +81,48 @@ struct MinimapGeometry: Equatable {
     /// derivation, and ADR-0028 Rule 2 does not allow a sort there. Heights are ceiled to whole
     /// points by the measure pass, so a bucket is exact up to the cap; everything at or over the
     /// cap shares the last one, which cannot move a LOWER quartile.
-    private static func quarterHeight(of rows: [MinimapRow]) -> CGFloat {
-        guard !rows.isEmpty else { return 0 }
+    private static func quarterHeight(
+        count: Int,
+        quantum: CGFloat,
+        height: (Int) -> CGFloat,
+    )
+        -> CGFloat {
+        guard count > 0, quantum > 0 else { return 0 }
         var counts = [Int](repeating: 0, count: Self.tallestBucket + 1)
-        for row in rows {
-            counts[min(Self.tallestBucket, max(0, Int(row.height.rounded(.down))))] += 1
+        for at in 0 ..< count {
+            counts[min(Self.tallestBucket, max(0, Int((height(at) / quantum).rounded(.down))))] += 1
         }
-        let quarter = max(1, rows.count / 4)
+        let quarter = max(1, count / 4)
         var seen = 0
-        for (height, count) in counts.enumerated() {
-            seen += count
+        for (bucket, held) in counts.enumerated() {
+            seen += held
             if seen >= quarter {
-                return CGFloat(height)
+                return CGFloat(bucket) * quantum
             }
         }
-        return CGFloat(Self.tallestBucket)
+        return CGFloat(Self.tallestBucket) * quantum
     }
 
-    /// The tallest row the buckets tell apart. A row taller than this is in the long tail by any
-    /// reading, and the tail cannot move a lower quartile wherever it is put.
+    /// How wide one bucket stands, for a reading whose marks average `mean` points.
+    ///
+    /// Off the mean, because the count above is asked about rows one moment and about Turns the
+    /// next, and those differ by two orders of magnitude — a width that suited one would put the
+    /// other's whole lower quarter in a single bucket. A whole point at the smallest, since a
+    /// height is measured in whole points and nothing is told apart below that.
+    ///
+    /// It rounds the answer DOWN, so a quartile read here is never taller than the true one and the
+    /// grain it feeds is never looser than the reading can hold.
+    private static func quantum(mean: CGFloat) -> CGFloat {
+        max(1, (mean / CGFloat(bucketsBelowTheMean)).rounded(.up))
+    }
+
+    /// How finely the count tells apart what is SHORTER than the mean, which is the half a lower
+    /// quartile falls in.
+    private static let bucketsBelowTheMean = 128
+
+    /// How many buckets the count above tells apart in all — sixteen times the mean, past which a
+    /// mark is in the long tail by any reading, and the tail cannot move a lower quartile wherever
+    /// it is put.
     private static let tallestBucket = 2048
 
     /// How tall the rows stand together.
@@ -99,6 +150,10 @@ struct MinimapGeometry: Equatable {
     /// that keeps compressing past that draws a session as one grey smear. There the miniature
     /// stands taller than the lane again and slides inside it exactly as it always did (#658) —
     /// which is why none of `laneTravel`, `viewportY` or `offset(forLaneY:)` changes here.
+    ///
+    /// `grain` is read at whatever granularity the reading is drawn at, which is the whole of
+    /// #1173: a session that will not fit a mark a row is asked again a mark a Turn, and eight of
+    /// the nine measured transcripts fit that way. See `MinimapGranularity`.
     var scale: CGFloat {
         let column = columnScale
         guard !reading.rows.isEmpty, scrollableHeight > 0, lane.height > 0 else { return column }
@@ -107,7 +162,7 @@ struct MinimapGeometry: Equatable {
 
     /// What the lane's width gives, capped at 1:1 — a lane wider than the column beside it would
     /// magnify rather than compress, and a column not yet laid out has no ratio to give.
-    private var columnScale: CGFloat {
+    var columnScale: CGFloat {
         guard reading.columnWidth > 0 else { return 1 }
         return min(1, lane.width / reading.columnWidth)
     }
@@ -120,7 +175,7 @@ struct MinimapGeometry: Equatable {
     /// is, and a miniature fitted to the plain quotient would need the rectangle to hang past the
     /// lane's foot to mark the end of the reading. Fitting the TRAVEL into the lane less the floor
     /// is what the rectangle can actually walk.
-    private var fitScale: CGFloat {
+    var fitScale: CGFloat {
         let travel = scrollableHeight - reading.viewportHeight
         guard travel > 0 else { return columnScale }
         let room = lane.height - ArgoMinimapLane.viewportMinimumHeight
@@ -130,23 +185,6 @@ struct MinimapGeometry: Equatable {
         return reading.viewportHeight * held >= ArgoMinimapLane.viewportMinimumHeight
             ? plain
             : held
-    }
-
-    /// The compression at which three rows in four are still drawn as their own mark: a rect at the
-    /// floor, and the gap that keeps it off the row above it. Exactly the distance
-    /// `MinimapGeometry.isCrowded` needs between two stacked rects to draw both — past this the
-    /// lane starts dropping every other row's mark and the map stops mimicking the reading's
-    /// structure, which is the whole of what #658 found and what the lane is for.
-    ///
-    /// A quarter of the rows may fall under it, and that is the bound rather than an accident:
-    /// `shortRowHeight` is the lower quartile, so the rows it starves are at most a quarter of the
-    /// reading by construction — 20 of 459 on a real session, where the mean allowed 329. Not the
-    /// SHORTEST row either: a session's rules and its one-line Turns are a point or two each, and
-    /// holding the whole map to those would keep a long session at a compression where nothing
-    /// fits.
-    private var grain: CGFloat {
-        guard shortRowHeight > 0 else { return columnScale }
-        return (ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap) / shortRowHeight
     }
 
     /// The whole miniature's height, the lane's own height notwithstanding.

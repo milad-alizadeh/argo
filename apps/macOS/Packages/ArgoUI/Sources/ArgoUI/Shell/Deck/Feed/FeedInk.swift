@@ -8,7 +8,10 @@ import Foundation
 ///
 /// Every role must stay opaque: the lane applies its own alpha on top, and a translucent role would
 /// be dimmed twice.
-enum FeedInk: Equatable, Sendable, CaseIterable {
+/// The raw value is a bucket index and nothing else: `MinimapGeometry.drawn(_:weighing:)` weighs a
+/// Turn's points into one slot per ink and may not allocate a store per Turn to do it. Nothing is
+/// persisted by number, so the order here is free to change.
+enum FeedInk: Int, Equatable, Sendable, CaseIterable {
     /// What someone asked for.
     case prompt
     /// What the agent said.

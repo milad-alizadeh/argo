@@ -13,7 +13,7 @@ import Testing
 /// story: 12,000 points of reading fitted into a 600pt lane compresses exactly twenty to one.
 @Suite("Minimap geometry")
 struct MinimapGeometryTests {
-    private static let lane = CGSize(width: 100, height: 600)
+    static let lane = CGSize(width: 100, height: 600)
 
     /// 120 rows of 100pt in an 800pt column: 12,000pt of reading, 600 of it on screen. Long enough
     /// that the widths' ratio would not fit it, and short enough that the lane fits it anyway —
@@ -24,23 +24,20 @@ struct MinimapGeometryTests {
         )
     }
 
-    /// The other regime: 1,000 rows of 100pt, which is 100,000pt of reading. Fitting that in 600
-    /// points would draw each row at six hundredths of a point, far under the mark-and-gap the lane
-    /// needs to draw two rows as two — so the grain holds the compression at two points per row's
-    /// 100, and the miniature stands taller than the lane again, sliding inside it (#658).
-    private static func vast() -> MinimapReading {
-        MinimapReading(
-            rows: rows(Array(repeating: 100, count: 1000)), columnWidth: 800, viewportHeight: 600,
-        )
-    }
-
-    /// Rows carrying one drawn line apiece. What shape a row makes is `MinimapRowTests`; these are
+    /// Rows carrying one drawn line apiece, in Turns of `turnedEvery` rows — one Turn over the
+    /// whole reading where that is nil. What shape a row makes is `MinimapRowTests`; these are
     /// about where it lands and how tall it stands.
-    static func rows(_ heights: [CGFloat]) -> [MinimapRow] {
-        heights.map { MinimapRow(height: $0, shape: .oneLine) }
+    static func rows(_ heights: [CGFloat], turnedEvery: Int? = nil) -> [MinimapRow] {
+        heights.enumerated().map { at, height in
+            MinimapRow(
+                height: height,
+                shape: .oneLine,
+                endsTurn: turnedEvery.map { (at + 1).isMultiple(of: $0) } ?? false,
+            )
+        }
     }
 
-    private static func geometry(_ reading: MinimapReading) -> MinimapGeometry {
+    static func geometry(_ reading: MinimapReading) -> MinimapGeometry {
         MinimapGeometry(reading, lane: lane)
     }
 
@@ -75,17 +72,6 @@ struct MinimapGeometryTests {
         let lane = Self.geometry(Self.long())
         #expect(lane.miniatureHeight == 600)
         #expect(lane.laneTravel == 0)
-    }
-
-    /// Past the grain the lane stops compressing, because a row thinner than the smallest mark it
-    /// draws maps nothing — so the miniature stands taller than the lane and slides again (#658).
-    @Test
-    func `a session past the lane's grain is taller than the lane and slides inside it`() {
-        let lane = Self.geometry(Self.vast())
-        #expect(lane.scale
-            == (ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap) / 100)
-        #expect(lane.miniatureHeight == 2000)
-        #expect(lane.laneTravel == 1412)
     }
 
     @Test
@@ -182,15 +168,6 @@ struct MinimapGeometryTests {
         #expect(lane.laneOffset(at: lane.offsetRange.lowerBound) == 0)
     }
 
-    /// Only of a session past the grain, which is the only one with a fold left to be below.
-    @Test @MainActor
-    func `the head of the session is off the top of the lane once the reader is far into it`() {
-        let lane = Self.geometry(Self.vast())
-        let end = lane.laneOffset(at: lane.offsetRange.upperBound)
-        #expect(end == 1412)
-        #expect(lane.rects(in: end ... end + Self.lane.height).allSatisfy { $0.y > 0 })
-    }
-
     /// Both directions of the one mapping click and drag go through. The inverse is a division, so
     /// it is read to a thousandth of a point rather than to the last bit.
     @Test
@@ -212,32 +189,5 @@ struct MinimapGeometryTests {
         let lane = Self.geometry(Self.long())
         let landed = lane.offset(centringLaneY: 400)
         #expect(abs(lane.viewportY(at: landed) + lane.viewportHeightInLane / 2 - 400) < 0.001)
-    }
-}
-
-/// How the compression answers a reading whose rows are NOT all one size, which is every real one.
-/// An extension so the suite's own body stays inside its length gate.
-extension MinimapGeometryTests {
-    /// The shape a real transcript actually has: mostly one-line messages, with a long tool output
-    /// or a gallery every so often. The compression has to hold for the MANY short rows, and the
-    /// mean is the one statistic the long tail moves freely — 90% of this reading is 20pt and its
-    /// mean is 98, so a grain taken off the mean draws those 810 rows at 0.41pt each, a fifth of
-    /// the floor, and 270 of 300 adjacent pairs in the head band land closer than a mark and a gap.
-    /// That is the smear #658 is about, arriving on the ordinary reading rather than the extreme
-    /// one. Measured on a real 459-row session: 329 of 459 rows starved off the mean, 20 off the
-    /// lower quartile.
-    @Test
-    func `a reading of many short rows and a few long ones keeps the short ones apart`() {
-        let heights = (0 ..< 900).map { $0.isMultiple(of: 10) ? CGFloat(800) : CGFloat(20) }
-        let reading = MinimapReading(
-            rows: Self.rows(heights), columnWidth: 800, viewportHeight: 600,
-        )
-        let lane = Self.geometry(reading)
-        let apart = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
-
-        // The quartile, not the mean: the short rows are what the lane is mostly drawing.
-        #expect(lane.scale == apart / 20)
-        let starved = heights.filter { $0 * lane.scale < apart }.count
-        #expect(starved <= heights.count / 4, "\(starved) of \(heights.count) rows starved")
     }
 }

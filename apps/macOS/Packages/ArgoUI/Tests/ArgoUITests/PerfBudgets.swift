@@ -139,39 +139,58 @@ enum PerfBudgets {
     /// Apple silicon laptop · debug · least of 20 over 100-pass blocks.
     static let scopedReadingFold = 4000.0 / 3
 
+    /// `MinimapGeometryTests` — how much of a #650-shaped session the overview lane holds at once
+    /// once it is drawn a mark a Turn (#1173).
+    ///
+    /// Recorded: 0.719 of the session in an 800pt lane, over 5,004 rows in 556 Turns · M4 Pro ·
+    /// either · exact. A share and not a duration, so it reads the same on any box: the lane's
+    /// height over the miniature's, both of which are arithmetic over measured heights.
+    ///
+    /// The same session a mark a ROW is 0.08 of itself — 5,000 marks needing a mark and a gap
+    /// apiece in 800 points of lane — which is the reading #1173 was opened on. 0.70 is gated,
+    /// which is the ticket's own bound and a hair under the figure.
+    static let turnGrainCoverage = 0.70
+
     /// `MinimapCostTests` — a band far down the miniature is worth a BAND and not a position. Not
     /// equality, because the rows it lands on are of their own heights.
     ///
-    /// Recorded: 107 rows in the band at the head, 109 half a session down, over the 301-row and
-    /// 1 204-row readings · M4 Pro · either · exact. Twice is Rule 8's slack on a count, not Rule
-    /// 7's on a duration: the two readings differ by 2 rows and a band that had started costing the
-    /// session would read 1 204.
+    /// Recorded: 355 marks in the band at the head, 356 half a session down, over the 2 408-row and
+    /// 9 632-row readings · M4 Pro · either · exact. Twice is Rule 8's slack on a count, not Rule
+    /// 7's on a duration: the two readings differ by 1 mark and a band that had started costing the
+    /// session would read 1 664. Re-recorded for #1173, which moved both arms up to the lengths a
+    /// mark a Turn no longer fits and changed the unit from rows to marks.
     static let bandPositionSlack = 2
 
     /// `MinimapCostTests` — a repaint of a band already painted comes off the caches, as a fraction
     /// of the first paint rather than as nothing.
     ///
-    /// Recorded: 0 Core Text passes of 32 idle, 2 of 32 when `ProseMetrics`' eight-measure drop
-    /// lands mid-paint · M4 Pro · either · exact per run, both readings seen. A quarter, which is
+    /// Recorded: 0 Core Text passes of 87 idle, and a handful of 87 when `ProseMetrics`'
+    /// eight-measure drop lands mid-paint · M4 Pro · either · exact per run, both readings seen.
+    /// Re-recorded for #1173, which moved the reading to the 200 rows this fixture still draws a
+    /// mark a row — past that there is no glyph work to come off a cache. A quarter, which is
     /// 4x the worse reading — Rule 8's slack on a count and deliberately not Rule 7's 3x, because
     /// which of the two readings a run gets is decided by test ordering rather than by the lane. A
     /// repaint that had stopped coming off the caches costs all 32.
     static let repaintOffCachesFraction = 4
 
-    /// `MinimapCostTests` — a seam drag re-measures the band and not the session, so a session four
-    /// times as long costs the same burst.
+    /// `MinimapCostTests` — what a paint drawn a mark a TURN costs in glyph work (#1173).
     ///
-    /// Recorded: 841 Core Text passes over the 301-row session, 840 over the 1 204-row one ·
-    /// M4 Pro · either · exact. Twice rather than equality because the frames change the scale, so
-    /// the band's last row is a boundary the two sessions can fall either side of; a drag paying
-    /// for the session would cost 4x.
-    static let seamOverSessionSlack = 2
+    /// Recorded: 0 Core Text passes over the 2 408-row reading, painting a band and over a
+    /// thirty-frame seam drag alike · M4 Pro · either · exact. The same fixture at 200 rows, which
+    /// still draws a mark a row, reads 87 for the band and 1 291 for the drag — which is why zero
+    /// is gated EXACTLY rather than with slack, and why both cases carry the row-grain arm beside
+    /// it. A coarse mark is a Turn's extent, its ink and its share, all of them already reported by
+    /// the reading, so a pass that measured a glyph here would be measuring something nobody asked
+    /// for.
+    static let coarsePaintTypesets = 0
 
     /// `MinimapCostTests` — a session of nothing but long markdown still pays only for the band. A
     /// heading and a paragraph a row, so a row is worth more than one pass.
     ///
-    /// Recorded: 66 Core Text passes over 34 band rows — 1.9 a row — and the repaint 0 of those 66
-    /// · M4 Pro · either · exact. 3 gated, which is Rule 8's slack on a count.
+    /// Recorded: 600 Core Text passes over 300 band marks — 2.0 a row — and the repaint 0 of those
+    /// 600 · M4 Pro · either · exact. 3 gated, which is Rule 8's slack on a count. Re-recorded for
+    /// #1173: a session of long markdown rows stays drawn a mark a row at this length, so the whole
+    /// fitted miniature is the band.
     static let markdownPassesPerRow = 3
 
     /// `MinimapWalkCostTests` — thirty frames of a width burst re-measure less than one document.

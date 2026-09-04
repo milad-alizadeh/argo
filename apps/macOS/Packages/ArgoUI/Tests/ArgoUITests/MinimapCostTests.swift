@@ -32,13 +32,34 @@ struct MinimapCostTests {
     /// it is a claim: a hundred rows of the projection's prose.
     private static let fitting = 100
 
-    /// How many rows a band spans — the exact range `rects(in:)` walks, which is the whole of what
-    /// "bounded by the band rather than by the session" claims.
-    private static func rowsIn(_ band: ClosedRange<CGFloat>, of geometry: MinimapGeometry) -> Int {
+    /// The longest this fixture stays drawn a mark a ROW, which is where every claim about glyph
+    /// work belongs: past about 250 rows the lane runs out of lane at that granularity and draws a
+    /// mark a Turn instead, and a Turn's mark is an extent and an ink — no Core Text at all
+    /// (#1173). A case counting passes over a coarsened reading would be counting zero.
+    private static let rowGrained = 200
+
+    /// How many MARKS a band spans — the exact range `rects(in:)` walks, which is the whole of what
+    /// "bounded by the band rather than by the session" claims. Rows or Turns, as the reading is
+    /// drawn (#1173).
+    private static func marksIn(_ band: ClosedRange<CGFloat>, of geometry: MinimapGeometry) -> Int {
+        let rows = Self.rowsIn(band, of: geometry)
+        switch geometry.granularity {
+        case .rows: return rows.count
+        case .turns: return geometry.turn(holding: rows.upperBound)
+            - geometry.turn(holding: rows.lowerBound) + 1
+        }
+    }
+
+    /// The rows a band reaches over, whatever it draws them as.
+    private static func rowsIn(
+        _ band: ClosedRange<CGFloat>,
+        of geometry: MinimapGeometry,
+    )
+        -> ClosedRange<Int> {
         let head = (band.lowerBound - geometry.lineInLane) / geometry.scale
             - geometry.reading.topInset
         let foot = band.upperBound / geometry.scale - geometry.reading.topInset
-        return geometry.row(startingAtOrBefore: foot) - geometry.row(startingAtOrBefore: head) + 1
+        return geometry.row(startingAtOrBefore: head) ... geometry.row(startingAtOrBefore: foot)
     }
 
     /// The feed's own measure pass — one hosting-ruler `sizeThatFits` per row, and the most
@@ -86,24 +107,52 @@ struct MinimapCostTests {
     /// on are of their own heights. The two readings are `PerfBudgets.bandPositionSlack`.
     /// Both lengths are past the lane's grain, which since #1132 is where a band is a band at all:
     /// under it the lane fits the whole session into itself and the band IS the session, bounded
-    /// instead by the arithmetic the case below this one states.
+    /// instead by the arithmetic the case below this one states. Since #1173 that grain is the
+    /// TURN grain — a session the lane cannot hold a mark a row is drawn a mark a Turn, and these
+    /// rows run about six to a Turn, so both arms are the lengths that moved up with it.
     @Test
     func `painting a band is bounded by the band rather than by the session`() async throws {
-        let short = try await Fixture.geometry(over: Fixture.rows(602, tag: "band"))
-        let long = try await Fixture.geometry(over: Fixture.rows(2408, tag: "wide"))
+        let short = try await Fixture.geometry(over: Fixture.rows(2408, tag: "band"))
+        let long = try await Fixture.geometry(over: Fixture.rows(9632, tag: "wide"))
 
-        // Within a rounding of each other rather than equal to the row: past the grain the scale
-        // follows the reading's own lower quartile row, and four times the same cyclic fixture does
-        // not land on exactly the same quartile. A few rows in six hundred is that rounding; four
-        // times the session would be four times the band.
-        let bands = (short: Self.rowsIn(Fixture.band, of: short), long: Self.rowsIn(
+        // Within a rounding of each other rather than equal to the mark: past the grain the scale
+        // follows the reading's own lower quartile Turn, and four times the same cyclic fixture
+        // does not land on exactly the same quartile. A few marks in four hundred is that
+        // rounding; four times the session would be four times the band.
+        #expect(short.granularity == .turns)
+        #expect(long.granularity == .turns)
+        let bands = (short: Self.marksIn(Fixture.band, of: short), long: Self.marksIn(
             Fixture.band, of: long,
         ))
         #expect(abs(bands.long - bands.short) <= bands.short / 20, "\(bands)")
-        #expect(bands.long < 602)
+        #expect(bands.long < short.turns.count)
         let below = long.miniatureHeight / 2 ... long.miniatureHeight / 2 + Fixture.lane.height
-        #expect(Self.rowsIn(below, of: long)
-            < PerfBudgets.bandPositionSlack * Self.rowsIn(Fixture.band, of: long))
+        #expect(Self.marksIn(below, of: long)
+            < PerfBudgets.bandPositionSlack * Self.marksIn(Fixture.band, of: long))
+    }
+
+    /// And what a coarsened band costs in glyph work, which is the half no count over the rows can
+    /// say: nothing at all. A Turn's mark is its rows' extent, its one ink and its share, all of
+    /// which the reading already reported, so the whole of #1173's coarse paint is arithmetic
+    /// (ADR-0028 Rule 7).
+    ///
+    /// Both regimes in one case, and that is what makes the zero a gate rather than a fact about
+    /// the fixture: the same setup at row grain typesets the band it paints, so a zero here says
+    /// the coarsening happened rather than that nothing was left to measure.
+    @Test
+    func `a band drawn a mark a Turn costs no glyph work, where a mark a row does`() async throws {
+        let fine = try await Fixture.geometry(over: Fixture.rows(Self.rowGrained, tag: "fine"))
+        let coarse = try await Fixture.geometry(over: Fixture.rows(2408, tag: "coarse"))
+        #expect(fine.granularity == .rows)
+        #expect(coarse.granularity == .turns)
+
+        var typeset = ProseMetrics.typesets
+        #expect(!fine.rects(in: Fixture.band).isEmpty)
+        #expect(ProseMetrics.typesets - typeset > 0)
+
+        typeset = ProseMetrics.typesets
+        #expect(!coarse.rects(in: Fixture.band).isEmpty)
+        #expect(ProseMetrics.typesets - typeset == PerfBudgets.coarsePaintTypesets)
     }
 
     /// And the OTHER regime, which #1132 added and which has no band to be bounded by: a session
@@ -122,14 +171,22 @@ struct MinimapCostTests {
 
         let mark = ArgoMinimapLane.rectMinimumHeight + ArgoMinimapLane.rectGap
         let ceiling = Int(Fixture.lane.height / mark)
-        #expect(Self.rowsIn(Fixture.band, of: fitted) == Self.fitting)
-        #expect(Self.rowsIn(Fixture.band, of: fitted) <= ceiling)
+        #expect(fitted.granularity == .rows)
+        #expect(Self.marksIn(Fixture.band, of: fitted) == Self.fitting)
+        #expect(Self.marksIn(Fixture.band, of: fitted) <= ceiling)
 
-        // The ceiling really is a ceiling: a session past it does NOT fit, so no fitted paint is
-        // ever worth more rows than this — the row count of a fitted band is what the lane's own
-        // height allows, not what the session brought.
+        // The ceiling really is a ceiling, and since #1173 what it bounds is MARKS rather than
+        // rows: a session past it stops fitting at that granularity and is drawn at the next one
+        // down. So a fitted paint is never worth more marks than this, whatever the session brought
+        // — first a session of more ROWS than the lane holds, which coarsens…
         let past = try await Fixture.geometry(over: Fixture.rows(ceiling + 1, tag: "past"))
-        #expect(past.miniatureHeight > Fixture.lane.height)
+        #expect(past.granularity == .turns)
+
+        // …and then one of more TURNS than it holds, which is where the lane runs out of lane for
+        // good and the miniature stands taller than it again.
+        let deep = try await Fixture.geometry(over: Fixture.rows(2408, tag: "deep"))
+        #expect(deep.turns.count > ceiling)
+        #expect(deep.miniatureHeight > Fixture.lane.height)
     }
 
     /// The repaint the reader feels: the second look at a band the lane already painted comes off
@@ -145,7 +202,7 @@ struct MinimapCostTests {
     @Test
     func `a band already painted is repainted off the caches`() async throws {
         let geometry = try await Fixture.geometry(
-            over: Fixture.rows(301, tag: "repaint"),
+            over: Fixture.rows(Self.rowGrained, tag: "repaint"),
             atWidth: 617,
         )
         let typeset = ProseMetrics.typesets
@@ -155,7 +212,7 @@ struct MinimapCostTests {
         let warm = ProseMetrics.typesets
         _ = geometry.rects(in: Fixture.band)
 
-        #expect(cold <= Self.rowsIn(Fixture.band, of: geometry))
+        #expect(cold <= Self.marksIn(Fixture.band, of: geometry))
         #expect((ProseMetrics.typesets - warm) * PerfBudgets.repaintOffCachesFraction <= cold)
     }
 
@@ -171,7 +228,7 @@ struct MinimapCostTests {
     @Test
     func `a second of scrolling inside one band comes off the caches`() async throws {
         let geometry = try await Fixture.geometry(
-            over: Fixture.rows(301, tag: "scroll"),
+            over: Fixture.rows(Self.rowGrained, tag: "scroll"),
             atWidth: 611,
         )
         let first = ProseMetrics.typesets
@@ -193,17 +250,22 @@ struct MinimapCostTests {
     /// character-count arithmetic paid nothing for, so it earns its own gate.
     ///
     /// The cliff the old `cost < 1.5` was watching for is a drag that re-measures the SESSION per
-    /// frame instead of the band. Two counts say it did not: the whole burst costs less than the
-    /// band's rows once a frame, and — the half no bound on the short session could see — a session
-    /// four times as long costs the same burst. The readings, and why the bound is twice rather
-    /// than equality, are `PerfBudgets.seamOverSessionSlack`.
+    /// frame instead of the band. Two counts say it did not, one per regime: at a mark a row the
+    /// whole burst costs less than the band's marks once a frame, and at a mark a Turn it costs no
+    /// glyph work at all. The readings are `PerfBudgets.coarsePaintTypesets`.
+    ///
+    /// Twelve times the session on the second arm rather than four, because the length at which
+    /// this fixture stops fitting a mark a row moved up with #1173 — a ratio between the two arms
+    /// would say nothing now that the longer one is a different regime, so each is bounded on its
+    /// own terms.
     @Test
     func `dragging the seam re-measures the band and not the session`() async throws {
-        let short = try await Self.dragged(over: Fixture.rows(301, tag: "seam"))
-        let long = try await Self.dragged(over: Fixture.rows(1204, tag: "seamwide"))
+        let short = try await Self.dragged(over: Fixture.rows(Self.rowGrained, tag: "seam"))
+        let long = try await Self.dragged(over: Fixture.rows(2408, tag: "seamwide"))
 
+        #expect(short.typesets > 0)
         #expect(short.typesets < Self.frames * short.rows)
-        #expect(long.typesets < PerfBudgets.seamOverSessionSlack * short.typesets)
+        #expect(long.typesets == PerfBudgets.coarsePaintTypesets)
     }
 
     /// How many frames of a seam drag one burst is.
@@ -223,7 +285,7 @@ struct MinimapCostTests {
             reading.columnWidth = Self.dragFrom - CGFloat(at)
             _ = MinimapGeometry(reading, lane: Fixture.lane).rects(in: Fixture.band)
         }
-        return (ProseMetrics.typesets - typeset, Self.rowsIn(Fixture.band, of: held))
+        return (ProseMetrics.typesets - typeset, Self.marksIn(Fixture.band, of: held))
     }
 
     /// The worst reading the design has: every row a long markdown message, so every row in the
@@ -246,7 +308,8 @@ struct MinimapCostTests {
         // A heading and a paragraph a row, so a row is worth more than one pass — and still it is
         // the band's rows it is worth, not the session's. The readings are
         // `PerfBudgets.markdownPassesPerRow`.
-        #expect(cold <= PerfBudgets.markdownPassesPerRow * Self.rowsIn(Fixture.band, of: geometry))
+        #expect(cold
+            <= PerfBudgets.markdownPassesPerRow * Self.marksIn(Fixture.band, of: geometry))
 
         // And the repaint comes off the caches here as it does above, which since #1132 it only
         // does because the paint HOLDS the wrapped store to what it is about to ask for

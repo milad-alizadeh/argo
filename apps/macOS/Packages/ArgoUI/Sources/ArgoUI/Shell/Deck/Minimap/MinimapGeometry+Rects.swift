@@ -46,6 +46,10 @@ extension MinimapGeometry {
     /// touch past its own extent, so a row ending just above the band can still reach it.
     @MainActor func rects(in band: ClosedRange<CGFloat>) -> [MinimapRect] {
         guard scale > 0, !reading.rows.isEmpty else { return [] }
+        // A session that will not fit a mark a row is drawn a mark a Turn instead (#1173). It is a
+        // second source for the marks and not a second lane: everything above this line, and every
+        // mapping between the lane and the reading, is the same either way.
+        guard granularity == .rows else { return turnRects(in: band) }
         let head = (band.lowerBound - lineInLane) / scale - reading.topInset
         let foot = band.upperBound / scale - reading.topInset
         let rows = row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)

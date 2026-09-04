@@ -20,8 +20,12 @@ struct MinimapScrollBuildTests {
 
     /// The band reaches several lane-heights past the viewport, so this whole travel stays inside
     /// the one already painted — which is the case a reader scrolling with a wheel is in.
-    private static func scroll(_ mounted: MinimapLaneFixture.Mounted, through travel: CGFloat) {
-        for at in stride(from: CGFloat(0), to: travel, by: 40) {
+    private static func scroll(
+        _ mounted: MinimapLaneFixture.Mounted,
+        through travel: CGFloat,
+        by step: CGFloat = 40,
+    ) {
+        for at in stride(from: CGFloat(0), to: travel, by: step) {
             mounted.feed.settle(at: at, over: nil)
         }
     }
@@ -65,8 +69,10 @@ struct MinimapScrollBuildTests {
         let mounted = await MinimapLaneFixture.mounted(over: MinimapLaneFixture.deepRows)
         let drawn = mounted.lane.rectRedraws
 
-        // Far enough to leave a band three lane-heights deep, at the grain's two points a row.
-        Self.scroll(mounted, through: 60000)
+        // Far enough to leave a band three lane-heights deep. At the Turn grain's two points a
+        // Turn that band is 360,000 points of reading, so the travel is the whole session and the
+        // step is a Turn rather than a line (#1173).
+        Self.scroll(mounted, through: 450_000, by: 200)
 
         #expect(mounted.lane.rectRedraws > drawn)
     }
