@@ -211,19 +211,37 @@ final class AgentTerminals {
         )
     }
 
+    /// End ONE agent's PTY and FORGET it, along with the Turn still queued at it. What archiving a
+    /// Session Argo owns calls (#1290): a Session ends alone, and every other agent this registry
+    /// holds goes on running.
+    ///
+    /// Distinct from `terminate(_:)` above, which signals a child and deliberately keeps its entry
+    /// — that one is asked where Argo INFERRED the child was gone, and dropping an entry on an
+    /// inference would put a child that is still alive beyond `terminateAll` (#1245). This is the
+    /// other case: the end is Argo's own decision, so the bookkeeping goes with it.
+    ///
+    /// The claim is dropped BEFORE the host is asked to end, and that ordering is the reason this
+    /// is not `drop` plus a `terminate`: a host reports the exit it was just asked for, and the
+    /// owner answers that report by dropping the very entry this would still be holding.
+    func end(_ id: SessionOwnership.ClaimID) {
+        guard let entry = agents.removeValue(forKey: id) else { return }
+        typing.removeValue(forKey: id)?.task.cancel()
+        entry.process.terminate()
+    }
+
     /// End every PTY this registry holds. What window close and app quit call, so no agent Argo
     /// started outlives the Argo that started it.
+    ///
+    /// The keys are snapshotted for the reason one entry is dropped before it is ended: the loop
+    /// must not be walking the table each `end` removes from.
+    ///
+    /// The adopted claims are the whole set, so this reaches every queued Turn as well: a Turn is
+    /// only ever queued behind a claim that HAS an entry here (`write(_:to:)` guards on one), and
+    /// the two tables are only ever cleared together, by `drop` and by `end`. Nothing can therefore
+    /// be waiting to type at a PTY this loop does not end.
     func terminateAll() {
-        // Snapshotted and cleared BEFORE anything is ended: a host reports the exit it was just
-        // asked for, and the owner answers that by dropping the very table this would be walking.
-        let ending = Array(agents.values)
-        agents = [:]
-        for turn in typing.values {
-            turn.task.cancel()
-        }
-        typing = [:]
-        for entry in ending {
-            entry.process.terminate()
+        for id in Array(agents.keys) {
+            end(id)
         }
     }
 }

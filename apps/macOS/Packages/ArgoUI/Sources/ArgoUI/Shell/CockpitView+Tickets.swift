@@ -121,7 +121,10 @@ extension CockpitView {
                 presentation: presentation,
                 selection: $navigation.session,
                 room: $navigation.room,
-                archive: actions.sessions.setArchived,
+                // The shell's intent and not the action itself: an archive that would end live work
+                // is asked about first, and the row's swipe raises the same prompt the menu item
+                // does (#1290).
+                archive: archive,
                 rename: actions.sessions.setName,
                 renamingSessionID: $renamingSessionID,
             )

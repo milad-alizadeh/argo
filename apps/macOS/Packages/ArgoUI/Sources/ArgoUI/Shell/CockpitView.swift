@@ -31,6 +31,10 @@ public struct CockpitView: View {
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands`), and the menu bar is outside the sidebar.
     @State var renamingSessionID: String?
+    /// The archive waiting on an answer, when one is (#1290). Held HERE for the reason the rename
+    /// above is: the menu bar raises this gesture as well as the row, and the menu bar is outside
+    /// the sidebar — one prompt over both, or the two gestures would need a prompt each.
+    @State var archiveConfirmation: ArchiveConfirmation?
     /// Every Session's unsent words. Held at the top of the shell because that is the one place
     /// above the deck's per-Session identity: the deck is rebuilt whole on a switch, so a draft
     /// kept any lower would leave with the selection rather than be waiting on the way back (#539).
@@ -219,6 +223,13 @@ public struct CockpitView: View {
                 create: createTicket,
             )
         }
+        // Archiving a Session Argo owns ends its agent, so an archive that would end live work is
+        // asked about first (#1290). On the shell beside the sheets above, and for their reason:
+        // both gestures that raise it — the menu bar's item and the roster row's swipe — are
+        // outside the deck, and the row's own swipe closes over the prompt it would present.
+        .modifier(ArchiveConfirmationDialog(pending: $archiveConfirmation) {
+            actions.sessions.setArchived($0, true)
+        })
         .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
             navigation.reconcile(against: sessionIDs)
