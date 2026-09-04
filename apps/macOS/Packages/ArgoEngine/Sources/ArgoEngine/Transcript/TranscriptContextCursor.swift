@@ -16,6 +16,19 @@ struct TranscriptContextCursor {
     private var lastOriginSessionID: String?
     private var lastEntrypoint: String?
 
+    /// Forget everything said so far, so the NEXT record announces whatever it carries in full.
+    ///
+    /// What a superseded branch needs (#1202). These facts are emitted on CHANGE, so the one
+    /// record that announced a new cwd or model can be the very record a fork takes back out of
+    /// the reading — and the record superseding it carries the same value, which on-change reads
+    /// as nothing to say. The fact would then be in no event anywhere, while the Session's folded
+    /// scalars still held it: a stream and a header disagreeing permanently.
+    ///
+    /// Re-stating costs one repeated event per fact at a fork, which is 19 places in 474 files.
+    mutating func restate() {
+        self = TranscriptContextCursor()
+    }
+
     mutating func events(for message: MessageRecord) -> [TranscriptEvent] {
         var events: [TranscriptEvent] = []
         if let cwd = message.cwd, cwd != lastCwd {

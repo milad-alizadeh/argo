@@ -31,9 +31,13 @@ struct HubRecordFold: Equatable, Sendable {
             isRefolding = !folded.insert(uuid).inserted
             return !isRefolding
         // The seam a bounded read leaves is a fact about the READING and not about any record, so
-        // it is never skipped: an extent that has degraded may never read whole again. The rest
+        // it is never skipped: an extent that has degraded may never read whole again. A branch the
+        // CLI abandoned is the same kind of fact (#1202) — it belongs to no record of its own, and
+        // it arrives BEFORE the identity of the record that supersedes it, so a window standing
+        // open over a repeat would swallow it and leave the doubled row it exists to remove. Safe
+        // to admit twice: the second one finds the branch already gone and takes nothing. The rest
         // are the host's own uuid-less lines, per the doc above.
-        case .excerpted, .headLeaf, .title, .queued, .mode:
+        case .excerpted, .superseded, .headLeaf, .title, .queued, .mode:
             return true
         case .originSession, .cwd, .model, .effort, .branch, .entry, .prompt, .message, .thought,
              .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .usage, .plan, .compaction,

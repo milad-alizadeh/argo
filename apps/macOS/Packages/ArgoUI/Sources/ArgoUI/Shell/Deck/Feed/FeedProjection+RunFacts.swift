@@ -14,7 +14,7 @@ extension FeedProjection {
         case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .branch, .mode, .entry,
              .prompt, .message, .thought, .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded,
              .interrupted,
-             .queued, .usage, .compaction, .plan, .unreadableLine, .excerpted: nil
+             .queued, .usage, .compaction, .plan, .unreadableLine, .superseded, .excerpted: nil
         }
     }
 

@@ -60,13 +60,19 @@ func describe(_ event: TranscriptEvent) -> String {
         "  ↳ \(outcome.status.rawValue)  \(outcome.result.map(describe) ?? "")"
     case let .turnEnded(reason): "turn ended  \(reason.rawValue)"
     case .interrupted: "interrupted somebody stopped the Turn"
-    case let .plan(plan):
-        "plan        \(plan.entries.count) entries, "
-            + plan.entries.filter { $0.status == .completed }.count.description + " done"
+    case let .plan(plan): describe(plan)
     case let .usage(usage): "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
     case .queued: "queued      a prompt queued rather than run"
+    case let .superseded(record): "superseded  the branch opened by \(record) was put again"
     case .excerpted: "excerpt     a stretch of the file was not read"
     case .compaction: "compaction  history condensed here"
     case let .unreadableLine(raw): "unreadable  \(oneLine(raw, width: 60))"
     }
+}
+
+/// How far down the list the agent is. Its own function rather than an arm, so the switch above
+/// stays one line of prose per event.
+private func describe(_ plan: Plan) -> String {
+    let done = plan.entries.count { $0.status == .completed }
+    return "plan        \(plan.entries.count) entries, \(done) done"
 }

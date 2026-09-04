@@ -240,7 +240,13 @@ extension HubSession {
         // claim `hasAgentActivity` is about, so it deliberately does not count. A skill load is the
         // CLI expanding a body in front of the agent, and the agent has not answered yet, so it
         // does not count either — the reading below it is where the activity shows up.
-        case .unreadableLine, .skillLoaded:
+        // `superseded` is spent by the STREAM, which takes the abandoned branch back out rather
+        // than appending it (#1202, `TranscriptStream.append`). Nothing is folded off it here: the
+        // scalars below are claims about what this Session DID, and the agent really did speak on
+        // the branch it abandoned, so un-saying its spend or its activity would be a quieter
+        // reading than the truth. The Turn needs no unwinding either — the record that supersedes
+        // is a prompt, and it opens the Turn again in the same act.
+        case .unreadableLine, .skillLoaded, .superseded:
             break
         // Read by `HubRecordFold` before this fold ever sees it (`HubTranscript`), and by
         // `HubJoin` for chain ownership — never by the Session itself.
