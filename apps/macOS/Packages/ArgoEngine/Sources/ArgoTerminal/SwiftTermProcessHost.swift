@@ -24,9 +24,16 @@ public final class SwiftTermProcessHost: AgentProcessHost {
 /// delegate for every agent could not tell them apart, and would have to outlive all of them.
 @MainActor
 final class SwiftTermAgentProcess: NSObject, AgentProcess, LocalProcessDelegate {
-    /// The size the child is told about before anything has laid a terminal out. A real one arrives
-    /// from the first `resize`; this is only so the agent does not draw for an 0×0 screen.
-    private static let initialSize = winsize(ws_row: 24, ws_col: 80, ws_xpixel: 0, ws_ypixel: 0)
+    /// The size the child is told about before anything has laid a terminal out, spelled as a
+    /// `winsize`. Read off `TerminalSize.unattached` rather than written again here: the same
+    /// number is what an unattached claim's screen is painted at, and two spellings of it would
+    /// drift into a screen painted for a terminal the CLI never had (#1266).
+    private static let initialSize = winsize(
+        ws_row: UInt16(TerminalSize.unattached.rows),
+        ws_col: UInt16(TerminalSize.unattached.columns),
+        ws_xpixel: 0,
+        ws_ypixel: 0,
+    )
 
     private let events: AgentProcessEvents
     private var size = SwiftTermAgentProcess.initialSize

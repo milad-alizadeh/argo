@@ -140,15 +140,20 @@ final class TurnDelivery {
         // The record first: it is the CLI's own account of itself, and it settles a Turn the agent
         // has already begun answering whatever its screen is doing.
         guard watch.says.records(id) == before else { return nil }
-        let echo = watch.says.echo(text, id)
-        return echo == .heard ? nil : echo
+        switch watch.says.echo(text, id) {
+        case .heard: return nil
+        case .unheard: return .unheard
+        case .unreadable: return .unreadable
+        }
     }
 
     /// Stop watching — and report the Turn ONLY where the composer was seen still holding it. A
     /// Turn Argo could not read the composer for is left standing and nothing is said (#1266).
     private func finish(_ text: String, to sessionID: String, saying echo: TurnEcho) {
         watching.removeValue(forKey: sessionID)
-        guard echo == .unheard else { return }
-        watch.lost(text, sessionID)
+        switch echo {
+        case .unheard: watch.lost(text, sessionID)
+        case .heard, .unreadable: break
+        }
     }
 }

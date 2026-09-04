@@ -4,8 +4,8 @@ import Testing
 /// Reading a `claude` screen for whether the composer still holds the Turn (#1266).
 ///
 /// The rows here are the shape a real `claude` 2.1.260 draws at 120×40, cut down to the parts the
-/// reading touches: a banner, the scrollback, the rule above the composer, the prompt row, and the
-/// two status rows below it.
+/// reading touches: a banner, the scrollback, the composer between its two rules, and the status
+/// rows under them. `ComposerEchoScreenTests` holds the real bytes.
 @Suite("Composer echo")
 struct ComposerEchoTests {
     /// The failure the ticket was filed for. `/clear` is heard the instant it is typed and writes
@@ -18,12 +18,23 @@ struct ComposerEchoTests {
     }
 
     /// The echo of an accepted Turn sits in the scrollback under the same marker as the composer.
-    /// Read as "any prompt row", that echo would say the composer still holds a Turn it let go.
+    /// Read as "the lowest prompt row", that echo would say the composer still holds a Turn it let
+    /// go — so the composer is found between its rules instead.
     @Test
     func `the scrollback echo of a Turn is not read as the composer`() {
         let screen = Self.screen(scrollback: ["❯ Fix the caption."], composing: "")
 
         #expect(ComposerEcho.reading(of: "Fix the caption.", on: screen) == .heard)
+    }
+
+    /// The composer has been replaced — a permission prompt, a question — so the only prompt row
+    /// left on the screen is the scrollback echo of the very Turn being watched. Outside the
+    /// rules, it is not the composer, and the Turn is not called lost on the strength of it.
+    @Test
+    func `a screen whose composer is gone says nothing rather than unheard`() {
+        let screen = ["  Claude Code", "❯ /clear", "  Do you want to allow this?"]
+
+        #expect(ComposerEcho.reading(of: "/clear", on: screen) == .unreadable)
     }
 
     /// The real failure #682 exists for: the file-mention popup ate the Return, so the words are
@@ -36,6 +47,18 @@ struct ComposerEchoTests {
         )
 
         #expect(ComposerEcho.reading(of: "what is @README.md about?", on: screen) == .unheard)
+    }
+
+    /// A paste too long to echo is collapsed to a marker, so the composer no longer carries the
+    /// Turn's own words. Held rather than let go: the Turns that collapse are the long ones, and a
+    /// long Turn carrying an `@` is the shape whose Return #682 gets eaten.
+    @Test
+    func `a paste the CLI collapsed is still the composer holding a Turn`() {
+        let screen = Self.screen(scrollback: [], composing: "[Pasted text #1 +15 lines]")
+
+        let echo = ComposerEcho.reading(of: "Read @README.md then do the thing", on: screen)
+
+        #expect(echo == .unheard)
     }
 
     /// A Turn wider than the terminal is held with its tail on the rows below, so the prompt row
@@ -68,7 +91,14 @@ struct ComposerEchoTests {
         #expect(echo == .unheard)
     }
 
-    /// A screen with no prompt row on it — a CLI that draws a different marker, a PTY that has
+    /// A divider inside the command popup is not one of the composer's rules, so a screen holding
+    /// one and no composer is still unreadable rather than a region to read a Turn out of.
+    @Test
+    func `a short divider in a popup is not one of the composer's rules`() {
+        #expect(ComposerEcho.reading(of: "/clear", on: ["────", "❯ /clear", "────"]) == .unreadable)
+    }
+
+    /// A screen with no composer on it — a CLI that draws a different marker, a PTY that has
     /// painted nothing yet, a Session Argo holds no screen for. Quiet, not `unheard`: a wrong
     /// "lost" is what makes the reader send the same words twice.
     @Test

@@ -92,10 +92,10 @@ struct HubLostTurnTests {
         let claim = try await fixture.hub.spawnSession()
         let echo = fixture.hub.delivery.watch.says.echo
 
-        try #require(fixture.host.started.last).emit("scrollback\n❯ /clear\n")
+        try #require(fixture.host.started.last).emit(Self.painting("❯ /clear"))
         #expect(echo("/clear", claim.value) == .unheard)
 
-        try #require(fixture.host.started.last).emit("\n❯\n")
+        try #require(fixture.host.started.last).emit(Self.painting("❯"))
         #expect(echo("/clear", claim.value) == .heard)
     }
 
@@ -117,6 +117,13 @@ struct HubLostTurnTests {
         fixture.host.endLastProcess(exitCode: 0)
 
         #expect(!fixture.hub.delivery.isWatching(claim.value))
+    }
+
+    /// One composer, painted the way the CLI paints one: between its two rules. What the fixture's
+    /// screen answers is every line the PTY has carried, so the LAST pair of rules is this one.
+    private static func painting(_ composer: String) -> String {
+        let rule = String(repeating: "─", count: 120)
+        return "scrollback\n\(rule)\n\(composer)\n\(rule)\n"
     }
 
     /// The CLI writing its first record, which is what re-keys the spawned row to the id the

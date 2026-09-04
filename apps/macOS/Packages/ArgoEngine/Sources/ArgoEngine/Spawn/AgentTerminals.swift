@@ -13,11 +13,6 @@ final class AgentTerminals {
     /// durable record.
     static let replayLimit = 200_000
 
-    /// The size a PTY is told about before any pane has laid one out, matching what the host sets
-    /// on the descriptor. Held here as well because the screen a watch reads has to be painted at
-    /// the size the CLI drew for, and an agent nobody ever attached to was drawn for this one.
-    nonisolated static let unattachedSize = (columns: 80, rows: 24)
-
     private final class Adopted {
         let process: AgentProcess
         var replay: [UInt8] = []
@@ -25,7 +20,7 @@ final class AgentTerminals {
         /// What this PTY was last told its window is. Followed rather than assumed: a pane that
         /// attached resized the child, and a screen painted at the wrong width wraps where the CLI
         /// did not.
-        var size = AgentTerminals.unattachedSize
+        var size = TerminalSize.unattached
 
         init(process: AgentProcess) {
             self.process = process
@@ -55,10 +50,8 @@ final class AgentTerminals {
     private var typing: [SessionOwnership.ClaimID: Typing] = [:]
     private var nextTyping = 0
     private var nextViewer = 0
-    /// What paints a claim's replay into rows, for the one reading that needs a picture rather than
-    /// bytes: whether the composer still holds a Turn (#1266). Optional because the emulator links
-    /// AppKit and the engine has to run with no window — a Hub given none reads `nil`, and
-    /// `TurnDelivery` answers that by keeping quiet.
+    /// What paints a claim's replay into rows — see `rows(of:)`. Optional because the emulator
+    /// links AppKit and the engine has to run with no window.
     private let screen: TerminalScreen?
 
     /// One queued Turn, and the number that says whether the queue's tail is still THIS one by the
@@ -110,7 +103,8 @@ final class AgentTerminals {
     }
 
     /// What a terminal of this claim's own size would be SHOWING for everything the agent has
-    /// written (#1266) — `nil` where no screen was wired, or no live PTY answers to that claim.
+    /// written — `nil` where no screen was wired, or no live PTY answers to that claim. The one
+    /// reading that needs a picture rather than bytes is `ComposerEcho`, which states why.
     ///
     /// The whole replay and not its tail: a screen is the state a stream leaves behind, and a feed
     /// starting mid-sequence paints a picture nothing drew. The buffer is capped at `replayLimit`,
@@ -212,9 +206,7 @@ final class AgentTerminals {
             process: entry.process,
             // Recorded on the way through rather than read back off the process: the size is what
             // `rows(of:)` paints at, and only the pane that set it knows what it is.
-            resized: { [weak self] columns, rows in
-                self?.agents[id]?.size = (columns: columns, rows: rows)
-            },
+            resized: { [weak self] size in self?.agents[id]?.size = size },
             detach: { [weak self] in self?.agents[id]?.viewers.removeValue(forKey: viewer) },
         )
     }

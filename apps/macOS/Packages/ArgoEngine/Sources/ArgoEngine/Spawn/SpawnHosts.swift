@@ -15,10 +15,8 @@ public struct SpawnHosts {
     /// a suite that must not launch a real CLI. `nil` takes `CodexProcessHost`, which is what the
     /// app wants and what needs no window.
     public let codex: AgentProcessHost?
-    /// What paints a claim's PTY into rows, for the one reading that needs a picture rather than
-    /// bytes: whether the composer still holds the Turn Argo typed (#1266). `nil` reads no screen
-    /// at all, and then a Turn is never reported lost — the quiet answer the engine takes where it
-    /// cannot see.
+    /// What paints a claim's PTY into rows, which is what `ComposerEcho` reads a Turn's fate off.
+    /// `nil` paints nothing, and then a Turn is never reported lost (#1266).
     public let screen: TerminalScreen?
 
     public init(

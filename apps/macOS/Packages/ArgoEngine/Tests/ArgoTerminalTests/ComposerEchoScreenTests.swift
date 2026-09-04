@@ -31,14 +31,27 @@ struct ComposerEchoScreenTests {
         #expect(echo == .heard)
     }
 
+    /// A paste the CLI judged too long to echo, which it collapses to `[Pasted text #1 +15
+    /// lines]`. The Turn's own words are nowhere on the screen — and this is the shape #682 is
+    /// about, because a long Turn is the one whose `@` token opens the popup that eats the Return.
+    @Test
+    func `a collapsed paste reads unheard off a real screen`() throws {
+        let painted = try Self.painted("composerPastedPty")
+
+        #expect(ComposerEcho.reading(of: "Read @README.md first, then do this:", on: painted)
+            == .unheard)
+    }
+
     /// At the size the PTY was really told it had, for `SwiftTermScreenTests`' reason: a screen
     /// painted at another width wraps where the CLI did not.
     private static func painted(_ fixture: String) throws -> [String] {
         try SwiftTermScreen().rows(painted: ptyOutput(fixture), columns: 120, rows: 40)
     }
 
-    /// Captured from `claude` 2.1.260 in a 120×40 PTY on 2026-09-04: started, `/clear` pasted with
-    /// the same bracketed paste `ClaudeTurn` writes, then Return.
+    /// Captured from `claude` 2.1.260 in a 120×40 PTY on 2026-09-04, pasted with the same
+    /// bracketed paste `ClaudeTurn` writes: `composerHoldingPty` is `/clear` sitting in the
+    /// composer, `composerEmptyPty` the same session one Return later, and `composerPastedPty` a
+    /// 16-line Turn the CLI collapsed to a marker.
     private static func ptyOutput(_ fixture: String) throws -> [UInt8] {
         let url = try #require(
             Bundle.module.url(
