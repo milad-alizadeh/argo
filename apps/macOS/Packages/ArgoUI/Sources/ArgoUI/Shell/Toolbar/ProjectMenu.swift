@@ -29,6 +29,23 @@ package struct ProjectMenu: View {
             }
             .pickerStyle(.inline)
         }
+        if !rows.isEmpty {
+            Divider()
+            // The one verb that acts on the Project already picked above, rather than on the
+            // registered set below — so it sits with the picker, not with `Add Project…`. It was
+            // the only item in the header's branch control, which promised a choice of branch it
+            // never had (#1232); the shortcut is the same one that control carried.
+            //
+            // Absent, not disabled, when nothing is registered: with no active Project there is no
+            // checkout to read again, and a live item over a checkout Argo does not have is the
+            // `CONTEXT.md` degrade-down rule broken.
+            Button(
+                "Refresh checkout",
+                systemImage: ArgoSymbol.retry,
+                action: actions.retry.checkout,
+            )
+            .keyboardShortcut("r", modifiers: [.command, .shift])
+        }
         Divider()
         // **Add Project…**, not "Register a Project": registration is the domain term, not the
         // label.

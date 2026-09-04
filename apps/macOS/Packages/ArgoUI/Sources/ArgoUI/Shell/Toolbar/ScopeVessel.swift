@@ -1,59 +1,49 @@
 import ArgoDesign
 import SwiftUI
 
-/// This Project, on this checkout — the two halves and the rule between them, as one control.
+/// This Project, as one control on the toolbar.
 ///
 /// No glass of its own: the single toolbar item hosting it supplies that, and one capsule around
-/// both is the whole claim. It tints the pair, so the merged vessel speaks in one colour.
+/// the Project is the whole claim.
+///
+/// **One half, since #1232.** It carried a checkout half beside the Project — a menu whose only
+/// item was `Refresh checkout`, so it offered a branch it could not switch to. The verb moved into
+/// the Project menu with its shortcut, and the half, the rule beside it and the space both took
+/// went with it. The Session's own branch is not lost with them: the Session header states it
+/// (`SessionHeaderProjection.checkout(for:)`), which is where a per-Session fact belongs.
 package struct ScopeVessel: View {
-    @Environment(\.argo) private var argo
-
     let project: ProjectVesselReading
-    /// The menu hangs off the Project half, so its rows arrive with it.
+    /// The menu hangs off the Project, so its rows arrive with it.
     package let rows: [ProjectMenuProjection.Row]
-    let checkout: CheckoutReading
     let actions: CockpitActions
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         project: ProjectVesselReading,
         rows: [ProjectMenuProjection.Row],
-        checkout: CheckoutReading,
         actions: CockpitActions,
     ) {
         self.project = project
         self.rows = rows
-        self.checkout = checkout
         self.actions = actions
     }
 
     package var body: some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            ProjectVessel(reading: project, rows: rows, actions: actions)
-            DeckSeparator()
-                .frame(height: ArgoToolbarVessel.scopeDividerHeight)
-                .accessibilityHidden(true)
-            GitVessel(reading: checkout, refresh: actions.retry.checkout)
-        }
-        // The toolbar draws the glass but not the room inside it. Without this the folder mark sat
-        // ~3.5pt off its own rim while the Rooms vessel next to it breathed at 8.5 — two capsules
-        // on one bar, at two densities.
-        .padding(.horizontal, ArgoSpacing.snug)
-        // The rule between the halves only. Each half states its OWN tint since #875, because each
-        // is a menu now and a menu takes its label's ink from there — one tint for both would put
-        // the checkout at the Project's weight.
-        .foregroundStyle(argo.color.text.tertiary)
+        ProjectVessel(reading: project, rows: rows, actions: actions)
+            // The toolbar draws the glass but not the room inside it. Without this the folder mark
+            // sat ~3.5pt off its own rim while the Rooms vessel next to it breathed at 8.5 — two
+            // capsules on one bar, at two densities.
+            .padding(.horizontal, ArgoSpacing.snug)
     }
 }
 
 package extension ScopeVessel {
     /// Where THIS vessel projects a presentation. The disabled window's narrower bar has its own
-    /// (`ProjectDisabledToolbar`), because it draws no checkout half.
+    /// (`ProjectDisabledToolbar`).
     init(presentation: CockpitPresentation, actions: CockpitActions) {
         self.init(
             project: ProjectVesselReading(presentation: presentation),
             rows: ProjectMenuProjection.rows(from: presentation),
-            checkout: CheckoutReading(presentation: presentation),
             actions: actions,
         )
     }

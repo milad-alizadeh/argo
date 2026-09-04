@@ -2,8 +2,8 @@ import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
-/// The active Project as the leading half of the scope vessel: its symbol, its full name and the
-/// system's own indicator. Clicking it opens the Project menu.
+/// The active Project as the scope vessel: its symbol, its full name and the system's own
+/// indicator. Clicking it opens the Project menu.
 ///
 /// **A plain pull-down (#875).** It was a `Button` opening a `.popover` on a drawer that drew its
 /// own heading, its own rows and its own active fill — none of which a menu cannot do, and all of
@@ -24,7 +24,7 @@ package struct ProjectVessel: View {
             ProjectMenu(rows: rows, actions: actions)
         } label: {
             // The menu rows' role, not a control role: one size for the Project name here and in
-            // the menu, and a rung above the branch beside it.
+            // the menu it opens.
             Label {
                 // A folder can be named anything. Truncated, not clipped — `.fixedSize()` would
                 // hand the bar a control as wide as the name and the frame below would then cut a

@@ -38,13 +38,6 @@ struct SurfaceMeasureTests {
             .connectionSlotWidth)
     }
 
-    /// The scope capsule's divider and a drawer row's ⋯ slot are both drawn inside the toolbar's
-    /// own glass, so the vessel is what bounds them.
-    @Test
-    func `what the toolbar draws inside a vessel fits inside that vessel`() {
-        #expect(ArgoToolbarVessel.scopeDividerHeight < ArgoToolbarVessel.height)
-    }
-
     /// Without the overshoot a hairline inside a 3pt bar is indistinguishable from the fill's own
     /// edge, which is the whole reason the tick is stated separately from the bar.
     @Test

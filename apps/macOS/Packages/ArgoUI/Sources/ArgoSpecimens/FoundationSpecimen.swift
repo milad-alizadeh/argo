@@ -56,8 +56,8 @@ public struct FoundationSpecimen: View {
                 Button("Checkout…") {}
                 Button("Fetch") {}
             } label: {
-                // The word `GitVessel` degrades an unnameable checkout to. The roster's own
-                // answer — draw no line — is not open to a control that must be labelled.
+                // The word an unnameable checkout degrades to. The roster's own answer — draw no
+                // line — is not open to a control that must be labelled.
                 Label(
                     selected.workspace?.branch ?? "unknown",
                     systemImage: "arrow.trianglehead.branch",
