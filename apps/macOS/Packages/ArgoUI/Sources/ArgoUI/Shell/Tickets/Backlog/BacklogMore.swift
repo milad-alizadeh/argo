@@ -15,14 +15,14 @@ struct BacklogMore: View {
 
     var body: some View {
         Button(action: read) {
-            Text("Load \(ClosedTicketPage.size) more")
+            Text("Load \(ClosedTicketPage.size, format: .machine) more")
                 .argoText(ArgoTypography.control)
                 .foregroundStyle(argo.color.text.secondary)
                 .frame(maxWidth: .infinity, minHeight: ArgoBacklogList.rowHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Load \(ClosedTicketPage.size) more closed tickets")
+        .accessibilityLabel("Load \(ClosedTicketPage.size, format: .machine) more closed tickets")
     }
 }
 

@@ -59,7 +59,7 @@ package struct FeedFoldLine: View {
     /// line reads `Ran 2 Commands (1 Failed)`.
     @ViewBuilder private var failed: some View {
         if fold.failures > 0 {
-            Text("(\(fold.failures) Failed)")
+            Text("(\(fold.failures, format: .machine) Failed)")
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.state.failure)
         }
@@ -142,7 +142,7 @@ struct FeedFoldStepName: View {
     /// on the line above, which are in calls (`FeedFold.listed`).
     @ViewBuilder private var repeats: some View {
         if step.repeats > 1 {
-            Text("×\(step.repeats)")
+            Text("×\(step.repeats, format: .machine)")
                 .argoMono(ArgoFeedRow.proseRung)
                 .monospacedDigit()
         }

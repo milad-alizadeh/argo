@@ -47,7 +47,7 @@ package struct BacklogRow: View {
         HStack(spacing: ArgoBacklogList.gap) {
             BacklogTwist(toggle: toggle, isOpen: isOpen)
             DeliveryDot(reading: row.delivery)
-            Text("#\(row.id)")
+            number
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(ink.machine)
                 // RIGID, so the title is the only thing the row squeezes. Without it a row
@@ -78,6 +78,13 @@ package struct BacklogRow: View {
             caption
         }
         .padding(.leading, ArgoBacklogList.gutter + ArgoBacklogList.indent(atDepth: drawn.depth))
+    }
+
+    /// The Ticket's number, `#1261`. Named rather than set in the line above so a test can read
+    /// the drawn row back: this is the row #1263 was reported against, where a four-digit ticket
+    /// was written `#1,261` (`IssueReading.mark`).
+    var number: Text {
+        Text(IssueReading.mark(row.id))
     }
 
     /// The provider's own labels, cut by `BacklogRowLabels`, which also decides what the

@@ -60,7 +60,10 @@ struct IconButtonRow: View {
                 label: "Newest",
                 face: ArgoControlFace(ink: argo.color.text.secondary, ground: .floatingGlass),
             )
-            Text("box \(Int(ArgoControlBox.icon)) · vessel \(Int(ArgoControlBox.vessel))")
+            // Two `Text`s and one line: a localized key is a LITERAL, so the halves cannot be
+            // joined with `+` inside one and the line will not fit under the wrap.
+            (Text("box \(Int(ArgoControlBox.icon), format: .machine) · ")
+                + Text("vessel \(Int(ArgoControlBox.vessel), format: .machine)"))
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
         }

@@ -46,9 +46,9 @@ package struct DeliveryChip: View {
     /// construction: a change's size is not one of them.
     private var diff: some View {
         HStack(spacing: ArgoSpacing.tight) {
-            Text("+\(delivery.added)")
+            Text("+\(delivery.added, format: .machine)")
                 .foregroundStyle(argo.color.diff.added.color)
-            Text("−\(delivery.removed)")
+            Text("−\(delivery.removed, format: .machine)")
                 .foregroundStyle(argo.color.diff.removed.color)
         }
         .argoText(ArgoTypography.machineCaption)

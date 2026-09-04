@@ -11,12 +11,20 @@ struct TicketUnread: View {
     let number: Int
 
     var body: some View {
-        Text("Nothing has been read for #\(number, format: .number.grouping(.never)) yet.")
+        sentence
             .argoText(ArgoTypography.body)
             .foregroundStyle(argo.color.text.tertiary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, ArgoSpacing.region)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    /// Named rather than set in the `body`, so a test can read the drawn line back and hold the
+    /// number to its one spelling (#1263). `IssueReading.mark` arrives as a `String`, which a
+    /// localized key substitutes verbatim: the sentence stays translatable and the number stays
+    /// `#1261`.
+    var sentence: Text {
+        Text("Nothing has been read for \(IssueReading.mark(number)) yet.")
     }
 }
 

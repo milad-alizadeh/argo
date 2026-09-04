@@ -62,7 +62,7 @@ struct ContractSpecimen: View, SpecimenSheet {
                         ArgoGlyph(ArgoSymbol.project, rung.size)
                         ArgoGlyph(ArgoSymbol.branch, rung.size)
                         ArgoGlyph(ArgoSymbol.disclosure, rung.size)
-                        Text("\(rung.name) · \(Int(rung.size.rawValue))pt")
+                        Text("\(rung.name) · \(Int(rung.size.rawValue), format: .machine)pt")
                             .argoText(ArgoTypography.machineCaption)
                             .foregroundStyle(argo.color.text.tertiary)
                     }
