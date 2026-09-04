@@ -44,6 +44,76 @@ struct HubLostTurnTests {
         #expect(fixture.hub.session(id: claim.value)?.lostTurn == nil)
     }
 
+    /// The re-key read from the OTHER side (#1176) — `Hub.recordCount(writtenBy:)` states the
+    /// mechanism. One claim in one test because it is one claim: the answer has to be the SAME
+    /// Session's under either id a first Turn can be watched at — the claim's, which is what the
+    /// composer typed at before the record landed, and the transcript's, which is what the row
+    /// answers to after.
+    @Test
+    func `the record count is one Session's under either of its ids`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        #expect(fixture.hub.recordCount(writtenBy: claim.value) == 0)
+
+        try await Self.record(landsFor: fixture)
+
+        let written = try #require(fixture.hub.session(id: spawnedSessionID)?.events.count)
+        #expect(written > 0)
+        #expect(fixture.hub.recordCount(writtenBy: claim.value) == written)
+        #expect(fixture.hub.recordCount(writtenBy: spawnedSessionID) == written)
+    }
+
+    /// The count the WATCH holds, and not merely the resolution behind it: what made the Turn read
+    /// as silence was this closure, and a test of `recordCount` alone would not notice it being
+    /// pointed back at the row the re-key stands down.
+    @Test
+    func `the watch the Hub wired reads the re-keyed Session`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        let records = fixture.hub.delivery.watch.records
+
+        try await Self.record(landsFor: fixture)
+
+        let written = try #require(fixture.hub.session(id: spawnedSessionID)?.events.count)
+        #expect(written > 0)
+        #expect(records(claim.value) == written)
+    }
+
+    /// A Turn nobody can retype is not news the composer could act on, so the PTY going has to
+    /// drop the watch — and a first Turn is watched under the id it was typed at, which is the
+    /// claim's (#1176). The record lands in between here, which is the whole hazard: from that
+    /// moment the claim resolves to the transcript's id, and a `forget` that took only the
+    /// RESOLVED id would leave this watch armed to report the Turn lost seconds later.
+    @Test
+    func `a PTY that goes drops the watch on a fresh Session's first Turn`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
+        try fixture.hub.driver.send("what is @README.md about?", to: claim.value)
+        try #require(fixture.hub.delivery.isWatching(claim.value))
+        try await Self.record(landsFor: fixture)
+
+        fixture.host.endLastProcess(exitCode: 0)
+
+        #expect(!fixture.hub.delivery.isWatching(claim.value))
+    }
+
+    /// The CLI writing its first record, which is what re-keys the spawned row to the id the
+    /// transcript names (#361).
+    private static func record(landsFor fixture: SpawnFixture) async throws {
+        let (observation, continuation) = hubLiveObservation(at: spawnedTranscriptURL)
+        await fixture.hub.startObserving(observation)
+        continuation.yield([
+            .cwd(fixture.projectURL.path),
+            .prompt(text: "Fix the caption, not the sort.", images: [], atMs: 1000),
+            .turnEnded(.endTurn),
+        ])
+        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.status == .idle }
+    }
+
     /// A Session Argo holds no claim on is one it cannot type at, so there was never a Turn of
     /// ours to lose — and a fact filed against no claim would have nowhere to live.
     @Test

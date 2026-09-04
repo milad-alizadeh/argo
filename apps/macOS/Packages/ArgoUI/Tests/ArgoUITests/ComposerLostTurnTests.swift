@@ -15,7 +15,7 @@ struct ComposerLostTurnTests {
     func `the words come back into a field the reader has left empty`() {
         var draft = ComposerDraft()
 
-        let told = draft.turnLost("what is @README.md about?")
+        let told = draft.turnLost("what is @README.md about?", whileRunning: false)
 
         #expect(told)
         #expect(draft.text == "what is @README.md about?")
@@ -28,7 +28,7 @@ struct ComposerLostTurnTests {
     func `a field the reader is already using is left exactly as it is`() {
         var draft = ComposerDraft(text: "Something else entirely")
 
-        let told = draft.turnLost("what is @README.md about?")
+        let told = draft.turnLost("what is @README.md about?", whileRunning: false)
 
         #expect(told)
         #expect(draft.text == "Something else entirely")
@@ -41,7 +41,7 @@ struct ComposerLostTurnTests {
     func `a tray with attachments on it counts as a field in use`() {
         var draft = ComposerDraft(attachments: [Self.dropped])
 
-        let told = draft.turnLost("what is @README.md about?")
+        let told = draft.turnLost("what is @README.md about?", whileRunning: false)
 
         #expect(told)
         #expect(draft.text.isEmpty)
@@ -54,13 +54,27 @@ struct ComposerLostTurnTests {
     func `the same lost Turn is not put back a second time`() {
         var draft = ComposerDraft()
 
-        let told = draft.turnLost("Off you go.")
+        let told = draft.turnLost("Off you go.", whileRunning: false)
         draft.text = ""
-        let toldAgain = draft.turnLost("Off you go.")
+        let toldAgain = draft.turnLost("Off you go.", whileRunning: false)
 
         #expect(told)
         #expect(!toldAgain)
         #expect(draft.text.isEmpty)
+    }
+
+    /// The bug the watch's re-key blindness produced (#1176): the Turn landed, the feed is drawing
+    /// it running, and the news that it was lost is simply wrong. Spent without a word — a restore
+    /// here would put the sentence back directly below the sentence being answered.
+    @Test
+    func `a Turn the feed is drawing running puts nothing back`() {
+        var draft = ComposerDraft()
+
+        let told = draft.turnLost("what is @README.md about?", whileRunning: true)
+
+        #expect(told)
+        #expect(draft.text.isEmpty)
+        #expect(draft.notice == nil)
     }
 
     /// The seam is one line, and a refusal outranks this: a refusal stands over words that are
@@ -68,7 +82,7 @@ struct ComposerLostTurnTests {
     @Test
     func `the lost note reads as a notice on the seam`() {
         var draft = ComposerDraft()
-        _ = draft.turnLost("Off you go.")
+        _ = draft.turnLost("Off you go.", whileRunning: false)
 
         let note = ComposerSeamNote.note(for: draft, enteredAtMs: 0)
 

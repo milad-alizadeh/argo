@@ -79,7 +79,10 @@ struct SeamRefusalOutputTests {
             $0.attach([AttachmentFixture.pasted], canAttach: false)
         }),
         Notice(name: "a rung held for the boundary", said: { $0.modeHeld(.auto) }),
-        Notice(name: "a Turn the CLI never heard", said: { _ = $0.turnLost("Carry on.") }),
+        Notice(
+            name: "a Turn the CLI never heard",
+            said: { _ = $0.turnLost("Carry on.", whileRunning: false) },
+        ),
     ])
     func `a notice Argo wrote itself carries no output`(notice: Notice) {
         var draft = ComposerDraft(text: "Carry on.")

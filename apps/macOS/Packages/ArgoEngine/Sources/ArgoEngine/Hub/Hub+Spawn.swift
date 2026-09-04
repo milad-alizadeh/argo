@@ -147,6 +147,13 @@ public extension Hub {
     private func relinquish(_ claim: SessionOwnership.ClaimID) {
         // Before the claim is released, because the watch is keyed by Session and the id is read
         // back through the claim that is about to stop answering.
+        //
+        // BOTH ids, because a watch is keyed by the id the Turn was typed at and a fresh Session
+        // answers to two of them: its claim's until the CLI's first record re-keys the row, and
+        // the transcript's after (#1176). Dropping only the resolved one leaves a first Turn still
+        // watched at a PTY that has just gone, and the watch would report lost the one thing
+        // `forget` exists to keep quiet.
+        delivery.forget(claim.value)
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)
         adapters.close(claim)
