@@ -1,5 +1,13 @@
-# Sourced by the three Swift entrypoints, never run. One definition of the one decision they
-# share: what to do when Swift cannot run here.
+# Sourced by the Swift entrypoints, never run. One definition of the decisions they share: what
+# to do when Swift cannot run here, and which packages "all of them" means.
+
+# The packages with a test target, in dependency order — ArgoDesign first because the other four
+# build against it, ArgoUI last because it builds against all of them. `swift-test.sh` runs the
+# four that HAVE tests; `warm-build.sh` warms all five, since warming a dependency is most of the
+# cost of warming its dependents. Held here rather than in each script: the two lists were written
+# a day apart and had already drifted into two different orders.
+ARGO_TEST_PACKAGES='ArgoEngine ArgoUI ArgoMermaid ArgoAtlas'
+ARGO_BUILD_PACKAGES='ArgoDesign ArgoEngine ArgoMermaid ArgoAtlas ArgoUI'
 #
 # Absent tooling is a skip, because the Linux CI jobs and a TypeScript-only contributor both
 # hit it legitimately. ARGO_REQUIRE_SWIFT_TOOLS reverses that for the macOS CI job, where the
