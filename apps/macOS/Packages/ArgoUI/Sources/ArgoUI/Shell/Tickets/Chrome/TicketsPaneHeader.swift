@@ -18,9 +18,11 @@ import SwiftUI
 /// over the ticket at every window width BY CONSTRUCTION — rather than by arithmetic between the
 /// window's trailing edge and a seam the reader can drag, which is the measurement #1242 is about.
 ///
-/// **No rule at its foot.** The panes are glass containers and a container's own edge is what
-/// separates the band from the reading under it; a hairline here would stack a second edge inside
-/// the material's, which is what `ArgoElevation.vessel` already refuses on the outside.
+/// **No ground and no rule of its own.** The window's chrome is ONE sheet from the top edge to the
+/// single hairline where it stops (`ArgoChromeBar`), and this band sits INSIDE it. Wearing
+/// `argoChromeBar()` here drew that sheet a second time, once per pane — which put a hairline
+/// under each header and broke the one bar into three across the column seams. The band lays its
+/// controls out and paints nothing.
 package struct TicketsPaneHeader<Leading: View, Trailing: View>: View {
     /// How far the band climbs past the safe area — the window's own strip, measured by the deck
     /// and handed down. Zero where there is no strip over this pane, which is a specimen or a
@@ -49,7 +51,6 @@ package struct TicketsPaneHeader<Leading: View, Trailing: View>: View {
         }
         .padding(.horizontal, inset)
         .frame(maxWidth: .infinity, minHeight: max(reach, Self.floor), alignment: .leading)
-        .argoChromeBar()
         .ignoresSafeArea(.container, edges: .top)
     }
 
