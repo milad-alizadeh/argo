@@ -85,6 +85,20 @@ check('a failing gate records nothing', () => {
   s.cleanup()
 })
 
+check('a tree that goes dirty mid-run is not recorded', () => {
+  const s = scenario()
+  // The gate tests the working tree; the key describes HEAD. They agree when a run starts, and
+  // a run long enough to build Xcode is long enough for somebody to save a file inside it. The
+  // stub `bun` is what does the saving here, standing in for that person.
+  const dirtied = s.run({ STUB_BUN_DIRTIES: path.join(s.dir, 'apps/macOS/A.swift') })
+  assert.equal(dirtied.status, 0, dirtied.output)
+  const after = s.commands()
+  const next = s.run()
+  assert.doesNotMatch(next.output, /passed the gate/, 'a tree nobody gated must not be certified')
+  assert.ok(s.commands() > after, 'the next run must gate it properly')
+  s.cleanup()
+})
+
 check('a new toolchain is gated again', () => {
   const s = scenario()
   s.run()

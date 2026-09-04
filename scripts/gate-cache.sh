@@ -59,9 +59,21 @@ gate_cache_hit() {
   [ -f "$GATE_CACHE_DIR/$1" ]
 }
 
-# Record a pass. Failure to write is not failure to gate, so nothing here is fatal.
+# Record a pass for key $1, earned under scope $2. Failure to write is not failure to gate, so
+# nothing here is fatal.
 gate_cache_record() {
   [ -n "$1" ] || return 0
+
+  # The key is recomputed and compared, because the gate tests the WORKING TREE and the key
+  # describes HEAD. Those agree at the start of a run — `gate_cache_key` refuses a dirty tree —
+  # and a run long enough to build Xcode is long enough for somebody to save a file inside it.
+  # Recording then would certify a tree that was never gated, which is the one thing a cache in
+  # front of a gate must not do.
+  [ "$(gate_cache_key "$2")" = "$1" ] || {
+    echo "gate-cache: the tree moved while the gate ran — recording nothing" >&2
+    return 0
+  }
+
   mkdir -p "$GATE_CACHE_DIR" 2>/dev/null || return 0
   printf '%s\t%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "${2:-}" > "$GATE_CACHE_DIR/$1" 2>/dev/null ||
     return 0

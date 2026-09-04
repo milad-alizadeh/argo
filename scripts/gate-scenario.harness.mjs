@@ -37,9 +37,15 @@ function stubs(dir) {
   const bin = path.join(dir, 'bin')
   mkdirSync(bin, { recursive: true })
   const log = path.join(dir, 'bun.log')
+  // STUB_BUN_DIRTIES names a file the stub writes to while it "runs", which is how a case
+  // stands in for somebody saving a file during a build that takes minutes.
   writeFileSync(
     path.join(bin, 'bun'),
-    `#!/bin/sh\necho "$@" >> ${JSON.stringify(log)}\nexit \${STUB_BUN_STATUS:-0}\n`,
+    `#!/bin/sh
+echo "$@" >> ${JSON.stringify(log)}
+[ -n "\${STUB_BUN_DIRTIES:-}" ] && echo "// saved mid-run" >> "$STUB_BUN_DIRTIES"
+exit \${STUB_BUN_STATUS:-0}
+`,
   )
   writeFileSync(path.join(bin, 'swift'), `#!/bin/sh\necho "\${STUB_SWIFT_VERSION:-6.2.0}"\n`)
   execFileSync('chmod', ['+x', path.join(bin, 'bun'), path.join(bin, 'swift')])
