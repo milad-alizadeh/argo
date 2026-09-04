@@ -41,12 +41,19 @@ extension FeedProjection {
     /// `offer` carries the feed's own driveability and no live handle: the ink means *this is
     /// waiting on YOU*, and on a Session nothing can reach it is not — the same rule every ask row
     /// beside it takes (#546).
+    ///
+    /// Drawn only where no row above is already putting these words, on `standing`'s own ground and
+    /// by the same value match (#1203): two cards asking the same thing would put one question to
+    /// the reader twice, and — since `FeedAsk.identity` is what was asked — hand the recycled table
+    /// two rows under one id. The gate's copy is the one that survives, being the one that can be
+    /// answered where it stands.
     static func reported(
         _ ask: Ask?,
         _ asking: FeedAskProjection.Asking,
+        over rows: [FeedRow.Content],
     )
         -> [FeedRow.Content] {
-        guard let ask else { return [] }
+        guard let ask, !rows.contains(where: { isPendingAsk(of: ask, $0) }) else { return [] }
         return [.ask(
             FeedAsk(
                 ask: ask,
@@ -62,6 +69,14 @@ extension FeedProjection {
     private static func isDrawingLiveAsk(_ content: FeedRow.Content) -> Bool {
         guard case let .ask(ask) = content else { return false }
         return ask.live != nil
+    }
+
+    /// Whether a row is already putting these exact words and still waiting on them. An ANSWERED
+    /// row asking the same thing is history, and history does not stand for a question being asked
+    /// now.
+    private static func isPendingAsk(of ask: Ask, _ content: FeedRow.Content) -> Bool {
+        guard case let .ask(drawn) = content else { return false }
+        return drawn.isPending && drawn.ask == ask
     }
 
     /// What every ask row is told about answering (#712). Over the WHOLE feed rather than per row,

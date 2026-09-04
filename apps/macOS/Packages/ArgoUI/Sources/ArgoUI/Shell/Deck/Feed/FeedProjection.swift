@@ -38,7 +38,10 @@ package enum FeedProjection {
         let shown = FeedUnreadableRun.folded(FeedGalleryFold.galleried(looked))
         let work = offering(FeedSurveyFold.rejoined(FeedWorkFold.folded(shown)), asking)
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + standing(asking, over: work) + self.reported(reported, asking) +
+        // The gate's question first, and the reported one read against the work AND it: the two
+        // channels share no id, so the only thing that can tell one question from two is the words.
+        let held = standing(asking, over: work)
+        return (work + held + self.reported(reported, asking, over: work + held) +
             startingUp(starting) +
             inFlight(working, over: work) + unanswered(expired) +
             rolledUp(events) + chained(handedOff)).enumerated()

@@ -87,11 +87,19 @@ final class ClaimLedger {
     /// A Turn Argo typed at this claim's PTY (#1048). Nothing takes one back when the record
     /// answers it — that reading is derived — so the only writes that clear it are the two below,
     /// where the Turn was never heard at all or the PTY it went down has gone.
+    ///
+    /// It retires a question the agent raised over the companion plugin in the same write (#1203),
+    /// because those two are one act: the composer is where such a question is answered (#1205), so
+    /// the Turn going down the PTY IS the answer. Which of the report's facts that touches is
+    /// `CompanionReport`'s to say, as it is on withdrawal below.
     func setSubmittedTurn(
         _ submission: SessionTurnSubmission,
         for claim: SessionOwnership.ClaimID,
     ) {
-        update(claim) { $0.submittedTurn = submission }
+        update(claim) { facts in
+            facts.submittedTurn = submission
+            facts.report?.answered()
+        }
     }
 
     /// A Turn the CLI never heard (#682), or `nil` to take the news back once the composer has it.
