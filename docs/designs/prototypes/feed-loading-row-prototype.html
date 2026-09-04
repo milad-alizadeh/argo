@@ -16,6 +16,7 @@
     &case=starting|handoff|resume|turn   which wait.
     &state=running|done|failed           where that wait got to.
     &age=0|10|60|300                     how long it has run — the ArgoWaitAge ladder.
+    &speed=1.9|1.5|1.2|1.0|0.8           the ladder's BASE period. 1.9 is what ships today.
     &still=1                             Reduce Motion.
 -->
 <style>
@@ -287,6 +288,7 @@
   <select id="case" aria-label="Which wait"></select>
   <select id="state" aria-label="Where the wait got to"></select>
   <select id="age" aria-label="How long it has run"></select>
+  <select id="speed" aria-label="How fast the ion runs"></select>
   <label><input type="checkbox" id="still"> still</label>
 </div>
 
@@ -358,6 +360,25 @@ const CASES = {
   },
 };
 
+/* ArgoFeedRow.workingThreadShare. ONE share everywhere the ion runs: the thread across the
+   measure, the rule's own pass, the plinth's rail. Travel is stated in multiples of the
+   filament's OWN length, so two lanes only read at one SPEED if the filament is one length. */
+const ION_SHARE = '216px';   /* 0.3 × ArgoFeedRow.column (720). A LENGTH, not a share: the
+                                plinth's lane is narrower than the measure, and a share would make
+                                its filament shorter — and a shorter filament travelling its own
+                                lengths covers less ground per pass, which is exactly the speed
+                                mismatch this is fixing. */
+
+/* The base period — ArgoMotion.working, 1.9s today. `&speed=` scales the WHOLE ArgoWaitAge
+   ladder by the same ratio, so the cooling holds its shape while the ion gets quicker. */
+const SPEEDS = {
+  '1.9': 'ArgoMotion.working — 1.9s',
+  '1.5': '1.5s',
+  '1.2': '1.2s',
+  '1.0': '1.0s',
+  '0.8': '0.8s',
+};
+
 /* ArgoWaitAge.all — the ladder the ion cools down. */
 const AGES = {
   '0':   { period:1.9, glow:.60, label:'under 10s', elapsed:'3s'     },
@@ -415,6 +436,11 @@ let caseKey = CASES[params.get('case')] ? params.get('case') : 'starting';
 let state   = ['running','done','failed'].includes(params.get('state')) ? params.get('state') : 'running';
 let age     = AGES[params.get('age')] ? params.get('age') : '0';
 let still   = params.get('still') === '1';
+let speed   = SPEEDS[params.get('speed')] ? params.get('speed') : '1.9';
+
+/* The rung's period, scaled off the base. The ladder's RATIOS are what `ArgoWaitAge` settled;
+   the base is what is being re-judged here. */
+const periodAt = key => AGES[key].period * (Number(speed) / 1.9);
 
 const theCase = () => CASES[caseKey];
 
@@ -505,7 +531,7 @@ function drawB(feed) {
   const side = () => {
     const s = el('div', 'side');
     s.appendChild(el('div', 'track'));
-    if (state === 'running') s.appendChild(filament('26%'));
+    if (state === 'running') s.appendChild(filament(ION_SHARE));
     return s;
   };
 
@@ -558,7 +584,7 @@ function drawPlinth(slot) {
     (state === 'running' ? `<span class="took">${AGES[age].elapsed}</span>` : `<button class="dismiss">✕</button>`);
   if (state === 'running') {
     const rail = el('div', 'rail');
-    rail.appendChild(filament('22%'));
+    rail.appendChild(filament(ION_SHARE));
     box.appendChild(rail);
   }
   p.appendChild(box);
@@ -570,7 +596,7 @@ function drawPlinth(slot) {
  * ------------------------------------------------------------------ */
 function draw() {
   document.body.classList.toggle('still', still);
-  document.documentElement.style.setProperty('--period', AGES[age].period + 's');
+  document.documentElement.style.setProperty('--period', periodAt(age).toFixed(2) + 's');
   document.documentElement.style.setProperty('--glow', AGES[age].glow);
 
   const feed = document.getElementById('feed');
@@ -594,7 +620,8 @@ function drawReadout() {
     <hr>
     <span class="k">wait</span> ${c.label}<br>
     <span class="k">state</span> ${state}<br>
-    <span class="k">age</span> ${AGES[age].label} · period ${AGES[age].period}s · glow ${AGES[age].glow}<br>
+    <span class="k">age</span> ${AGES[age].label} · period ${periodAt(age).toFixed(2)}s · glow ${AGES[age].glow}<br>
+    <span class="k">speed</span> base ${speed}s ${speed === '1.9' ? '(shipped)' : `— ${(1.9 / Number(speed)).toFixed(2)}× the shipped ion`}<br>
     <span class="k">motion</span> ${still ? 'off (Reduce Motion)' : 'on'}<br>
     <span class="k">today</span> ${c.today}
     <hr>
@@ -622,12 +649,13 @@ function syncBar() {
   fill('case',  Object.entries(CASES).map(([k, c]) => [k, c.label]), caseKey);
   fill('state', [['running','running'],['done','done'],['failed','failed']], state);
   fill('age',   Object.entries(AGES).map(([k, a]) => [k, a.label]), age);
+  fill('speed', Object.entries(SPEEDS), speed);
   document.getElementById('still').checked = still;
 }
 
 function writeURL() {
   history.replaceState(null, '',
-    `?variant=${variant}&case=${caseKey}&state=${state}&age=${age}${still ? '&still=1' : ''}`);
+    `?variant=${variant}&case=${caseKey}&state=${state}&age=${age}&speed=${speed}${still ? '&still=1' : ''}`);
 }
 
 const keys = Object.keys(VARIANTS);
@@ -637,6 +665,7 @@ document.getElementById('next').onclick = () => step(1);
 document.getElementById('case').onchange  = e => { caseKey = e.target.value; draw(); };
 document.getElementById('state').onchange = e => { state   = e.target.value; draw(); };
 document.getElementById('age').onchange   = e => { age     = e.target.value; draw(); };
+document.getElementById('speed').onchange = e => { speed   = e.target.value; draw(); };
 document.getElementById('still').onchange = e => { still   = e.target.checked; draw(); };
 
 document.addEventListener('keydown', e => {
