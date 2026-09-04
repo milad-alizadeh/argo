@@ -79,6 +79,12 @@ and only while it stays read-only. A write through `Bash` — `cat > file`, `sed
 counts as a change; the guard reads those too. Naming, resuming, recovery, the sub-agent rule
 and `bun run worktrees:gc`: `docs/agents/worktrees.md`.
 
+In a **new worktree that will touch Swift, run `bun run warm` first** — before reading the ticket,
+not before the tests. Each worktree gets its own `.build`, so the first `bun run test` in one pays
+about two and a half minutes of cold build against 43 seconds of actual suites (#1358). `warm`
+returns at once and builds behind you, so that cost lands during the reading instead of the
+waiting. It is safe to run twice and a no-op on a warm tree.
+
 ## Cross-CLI guardrail hooks
 
 `hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hooks — three guardrails

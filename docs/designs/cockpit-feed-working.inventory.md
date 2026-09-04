@@ -27,7 +27,7 @@ happy path never renders — the Reduce Motion still, parked at the centre of th
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `FeedIonLoop` | driver | `ArgoUI/Shell/Deck/Feed/` — three callers (`FeedWorkingThread`, `FeedCallLineIon`, `SessionStateIndicator` since #1291) | a content closure taking the pass's phase and its rung | `ArgoWaitAge`, and a `.task` that runs one pass at a time | [`working/aged.png`](working/aged.png) |
+| `FeedIonLoop` | driver | `ArgoUI/Shell/Deck/Feed/` — three callers (`FeedWorkingThread`, `FeedCallLineIon`, `SessionStateIndicator` since #1291, which breathes its halo rather than travelling it) | a content closure taking the pass's phase and its rung | `ArgoWaitAge`, and a `.task` that runs one pass at a time | [`working/aged.png`](working/aged.png) |
 | `FeedWait` | value | `ArgoUI/Shell/Deck/Feed/` — one caller (`FeedView`) | `showing(in: [FeedRow])` | `FeedRow.Content.isCallInFlight`, `FeedMark.working` | — |
 
 Extraction evidence: the ladder applies to BOTH live states, so the second caller existed before

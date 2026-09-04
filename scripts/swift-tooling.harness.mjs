@@ -100,3 +100,32 @@ export const STUBBED = { pathValue: `${stubBin}:/usr/bin:/bin` }
 // check, on macOS the missing `swift`. Either way the posture under test is the same.
 export const BARE = { pathValue: bareBin }
 export const STRICT = { ARGO_REQUIRE_SWIFT_TOOLS: '1' }
+
+// `swift test` EXITS 0 ON A FAILED RUN (#918), so `swift-test.sh` may believe only the xUnit
+// report. The `swift` stub below is exactly that trap; `uname` says Darwin so these run anywhere.
+//
+// Shared for the same reason `run` is: the narrow-run tests split into their own file at the
+// 150-line ceiling and needed the identical stub, and a second copy of it is a second thing to
+// keep true.
+const reportBin = path.join(scratch, 'report-bin')
+mkdirSync(reportBin, { recursive: true })
+writeFileSync(path.join(reportBin, 'uname'), '#!/bin/sh\nprintf Darwin\n')
+chmodSync(path.join(reportBin, 'uname'), 0o755)
+export const REPORTING = { pathValue: `${reportBin}:/usr/bin:/bin` }
+export const suite = (n) => `<testsuites><testsuite name="T" ${n}></testsuite></testsuites>`
+
+// An empty `report` writes none at all, which is a run that never got that far.
+export function swiftWriting(report, code = 0) {
+  // `$3` is the path, because the script invokes `swift test --xunit-output <path>` ahead of
+  // any configuration flags — so a reordering of those breaks this stub loudly rather than
+  // silently writing nowhere. SwiftPM appends a per-harness suffix to the name asked for, and
+  // so does this. The argv line is what lets a test assert on the flags themselves.
+  const write = report ? `printf '%s' '${report}' > "\${3%.xml}-swift-testing.xml"\n` : ''
+  const head = `#!/bin/sh\nprintf '%s\\n' "$@" >> '${ARGV_LOG}'\n`
+  writeFileSync(path.join(reportBin, 'swift'), `${head}${write}exit ${code}\n`)
+  chmodSync(path.join(reportBin, 'swift'), 0o755)
+}
+
+// The package loop `swift-test.sh` spells, in its order — asserted by name in the configuration
+// cases and by verdict line elsewhere, so this list is the one place the count and order live.
+export const PACKAGES = ['ArgoEngine', 'ArgoUI', 'ArgoMermaid', 'ArgoAtlas']

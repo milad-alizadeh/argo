@@ -17,14 +17,16 @@ export function check(name, fn) {
   }
 }
 
-// Exits 1 on any failure, never a code of its own: `test:hooks` chains the suites with `&&`, so
-// only zero-vs-non-zero is read. Which arm broke is carried by the FAIL lines above, and by
-// whatever a case puts in its assertion message — that is where a suite says which half it lost.
+// Exits 1 on any failure, never a code of its own: `run-suites.mjs` reads only zero-vs-non-zero.
+// Which arm broke is carried by the FAIL lines above, and by whatever a case puts in its
+// assertion message — that is where a suite says which half it lost. The runner buffers both
+// streams and prints them whole for a failing suite, so nothing written here is lost to the pool.
 //
 // Zero cases is a failure, not a pass. Several suites build their cases by iterating a literal
 // array; empty that array, or filter it on a toolchain that is absent, and a suite that checked
-// nothing reports success while `&&` chains straight past it. `swift-test.sh` refuses a run
-// reporting 0 tests for this reason, and the harness is held to its own rule.
+// nothing reports success while the runner counts it green. `swift-test.sh` refuses a run
+// reporting 0 tests for this reason, and the harness is held to its own rule. The runner holds
+// the same rule from outside: a suite exiting 0 without the line below is a failure there too.
 export function report(suite) {
   if (failures) {
     console.error(`\n${suite}: ${failures} check(s) failed`)

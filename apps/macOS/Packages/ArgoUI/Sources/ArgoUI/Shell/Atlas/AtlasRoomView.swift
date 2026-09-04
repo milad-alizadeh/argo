@@ -15,12 +15,22 @@ struct AtlasRoomView: View {
     @Environment(\.argoAtlasRoom) private var resolved
     @Environment(\.argoReduceMotion) private var reduceMotion
 
+    /// Whether this is the room on screen. `InstrumentDeckShell` keeps every room mounted so a
+    /// switch destroys nothing (#1356), which makes this the one thing that still tells the map's
+    /// tiling and its Metal surface not to redraw for a reader who cannot see them — existence is
+    /// no longer the gate, so activity has to be.
+    var isActive = true
+
     /// The turn and tilt the reader has driven the city to (#1152) — held here rather than in
     /// `AtlasView`, which stays a pure function of what it is handed.
     @State private var orientation = AtlasOrientation.opening
     /// Whether the map is showing the city or the treemap. The room ships flat (below), so this
     /// starts `false` until the reader reaches for the toggle.
     @State private var isCity = false
+
+    init(isActive: Bool = true) {
+        self.isActive = isActive
+    }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
     private var room: AtlasRoom {
@@ -30,7 +40,11 @@ struct AtlasRoomView: View {
     var body: some View {
         Group {
             if case let .measured(map) = room.reading {
-                measured(map)
+                if isActive {
+                    measured(map)
+                } else {
+                    Color.clear
+                }
             } else {
                 AtlasRoomVacancy(
                     reading: room.reading,

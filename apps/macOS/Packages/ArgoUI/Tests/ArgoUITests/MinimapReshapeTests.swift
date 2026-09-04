@@ -173,7 +173,11 @@ struct MinimapReshapeTests {
     /// The reading left until the feed has a settled document to be mapped, the lane laid out on
     /// every turn of the wait as it is in the app.
     private static func quiet(_ deck: MinimapLaneFixture.Mounted) async throws {
-        await FeedTableFixture.settled(deck.table)
+        // To the line the LANE gates on, not the feed's. The burst above leaves a re-measure
+        // running past the whole-document pass, and the lane holds its reading for exactly as
+        // long as that runs — so a wait that ended at `geometry.isSettled` ended inside the hold
+        // and compared a held reading against a fresh walk (#1363).
+        await FeedTableFixture.settledForReading(deck.table, layingOut: deck.lane)
         deck.lane.layoutSubtreeIfNeeded()
         #expect(deck.table.geometry.isSettled)
     }

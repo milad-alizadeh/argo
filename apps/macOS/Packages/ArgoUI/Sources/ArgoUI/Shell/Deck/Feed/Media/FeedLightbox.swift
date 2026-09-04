@@ -1,15 +1,19 @@
+import AppKit
 import ArgoAtoms
 import ArgoDesign
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// One picture, opened over the deck at the size it actually is. It covers the whole deck rather
 /// than the feed column, which is a reading measure a deck-width screenshot does not fit in.
 /// Everything is a way out: the scrim is the button, the picture is inside it, and Escape answers.
-/// The caption is the WHOLE path plus the provenance, which is more than the thumbnail said.
+/// The arrow keys step to the picture beside it where there is one; a right-click offers the
+/// picture itself rather than anything about it.
 package struct FeedLightbox: View {
     @Environment(\.argo) private var argo
 
     let shot: FeedShot
+    let step: (Int) -> Void
     let dismiss: () -> Void
 
     @State private var showing = MediaShowing.undecoded
@@ -39,13 +43,17 @@ package struct FeedLightbox: View {
         }
         .showing(shot.media, drawnIn: .full, in: $showing)
         .onExitCommand(perform: dismiss)
+        .onKeyPress(.leftArrow) { step(-1); return .handled }
+        .onKeyPress(.rightArrow) { step(1); return .handled }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(shot.address), full size")
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(named: "Close", dismiss)
     }
 
-    /// Full size means as large as the deck allows and never larger than the file.
+    /// Full size means as large as the deck allows and never larger than the file. The context
+    /// menu sits on the picture alone, not the whole button, so it never contests the dismiss
+    /// click the surrounding button already owns.
     @ViewBuilder private var lit: some View {
         if let picture = showing.picture {
             Image(nsImage: picture.image)
@@ -56,31 +64,44 @@ package struct FeedLightbox: View {
                     maxHeight: picture.naturalSize.height,
                 )
                 .clipShape(.rect(cornerRadius: ArgoRadius.popover))
+                .contextMenu {
+                    Button("Save Image") { save(picture.image) }
+                    Button("Copy Image") { ArgoPasteboard.put(picture.image) }
+                }
         }
     }
 
-    private var caption: some View {
-        VStack(spacing: ArgoSpacing.hair) {
-            Text(shot.address)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
-                .lineLimit(1)
-                .truncationMode(.head)
-            Text(subtitle)
+    /// Just the provenance, where the picture said anything at all — never the path, which is
+    /// internal detail the reader cannot act on, and never the mime type or pixel size, which is
+    /// noise beside the picture that is already on screen saying its own size.
+    @ViewBuilder private var caption: some View {
+        if let words = showing.provenance.words {
+            Text(words)
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
-    private var subtitle: String {
-        [shot.media.mediaType, showing.picture?.spokenSize, showing.provenance.words]
-            .compactMap(\.self)
-            .joined(separator: " · ")
+    private func save(_ image: NSImage) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = (shot.address as NSString).lastPathComponent
+        panel.allowedContentTypes = [.png]
+        panel.begin { response in
+            guard response == .OK, let url = panel.url,
+                  let tiff = image.tiffRepresentation,
+                  let png = NSBitmapImageRep(data: tiff)?.representation(
+                      using: .png,
+                      properties: [:],
+                  ),
+                  (try? png.write(to: url)) != nil
+            else { return }
+        }
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(shot: FeedShot, dismiss: @escaping () -> Void) {
+    package init(shot: FeedShot, step: @escaping (Int) -> Void, dismiss: @escaping () -> Void) {
         self.shot = shot
+        self.step = step
         self.dismiss = dismiss
     }
 }
@@ -96,18 +117,22 @@ extension View {
     func argoLightbox(_ selection: FeedRowSelection, in feed: [FeedRow]) -> some View {
         overlay {
             if let lit = selection.lit, lit.isOpenable {
-                FeedLightbox(shot: lit) { selection.darken(returningInto: feed) }
-                    // Focused so `onExitCommand` reaches it at all: it only fires for a view in the
-                    // responder chain, and until this nothing put the lightbox in one.
-                    .focusable()
-                    .focused(selection.focus, equals: .lightbox)
-                    // Ringed by nothing: the lightbox covers every zone at once, so a ring around
-                    // it states what the picture already does — see the panel's, #533.
-                    .focusEffectDisabled()
-                    // `.identity`, never `.opacity`: a transition here composites the WHOLE
-                    // lightbox into one translucent group and the reading burns through it for the
-                    // length of the fade. The layers carry their own (see `FeedLightbox.body`).
-                    .transition(.identity)
+                FeedLightbox(
+                    shot: lit,
+                    step: { delta in selection.stepLightbox(by: delta, within: feed) },
+                    dismiss: { selection.darken(returningInto: feed) },
+                )
+                // Focused so `onExitCommand` reaches it at all: it only fires for a view in the
+                // responder chain, and until this nothing put the lightbox in one.
+                .focusable()
+                .focused(selection.focus, equals: .lightbox)
+                // Ringed by nothing: the lightbox covers every zone at once, so a ring around
+                // it states what the picture already does — see the panel's, #533.
+                .focusEffectDisabled()
+                // `.identity`, never `.opacity`: a transition here composites the WHOLE
+                // lightbox into one translucent group and the reading burns through it for the
+                // length of the fade. The layers carry their own (see `FeedLightbox.body`).
+                .transition(.identity)
             }
         }
         .argoAnimation(.reveal, value: selection.lit)

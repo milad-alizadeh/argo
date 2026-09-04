@@ -44,7 +44,7 @@ extension CockpitView {
     /// `reading` again — see the notes there. `isDrawn` is why the reading may be `none` beside a
     /// Session that is very much selected — see `DrawnSession`.
     @ViewBuilder func detail(
-        tickets: TicketsRoom?,
+        tickets: TicketsRoom,
         atlas: AtlasRoom,
         reading: SessionsRoomReading,
         isDrawn: Bool,
@@ -95,8 +95,10 @@ extension CockpitView {
         // `FeedColumn` stands the `.thinking` plinth behind, injected beside the wait above for
         // the same reason.
         .environment(\.argoTurnIsDirect, reading.hasUnansweredTurn)
-        // Injected from ABOVE the deck, which is the whole point of it: the room switch below
-        // destroys the table that measured them (#858).
+        // Injected from ABOVE the deck, which is the whole point of it: a Session switch below
+        // replaces the feed's rows in place, and the heights this remembers are keyed per
+        // reading rather than per pass so a row does not measure twice for a switch back (#858).
+        // The room switch itself no longer tears the table down at all (#1356).
         .environment(\.argoFeedGeometries, feedGeometries)
         // Beside the heights, and from the same view, for the same reason — see `KeptDecks`.
         .environment(\.argoFeedDecks, feedDecks)
