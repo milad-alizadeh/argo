@@ -31,14 +31,6 @@ package struct FeedFoldLine: View {
             .accessibilityHint(
                 fold.disclosure == .available ? "Lists what these calls were" : "",
             )
-            // The step the names take, less what the row style already gives the header: one
-            // rhythm down the box, without the header's own line moving when the list is folded
-            // away again.
-            .padding(
-                .vertical,
-                opening.isExpanded
-                    ? ArgoFeedRow.foldLineInsetY - FeedRowButtonStyle.groundInsetY : 0,
-            )
             if opening.isExpanded {
                 listed
             }

@@ -42,16 +42,12 @@ extension View {
     /// without still start on the same vertical — the highlight is drawn around the line, not
     /// beside it.
     ///
-    /// A modifier rather than a paste, because the fold's names are drawn on the same ground at
-    /// their own vertical step (`ArgoFeedRow.foldLineInsetY`), and a second copy of the gesture is
-    /// how a header and its list come apart (#1228).
-    func feedRowGround(
-        _ ink: ArgoColor,
-        stepY: CGFloat = FeedRowButtonStyle.groundInsetY,
-    )
-        -> some View {
+    /// A modifier rather than a paste, because the fold's names are drawn on the same ground at the
+    /// same step, and a second copy of the gesture is how a header and its list come apart — the
+    /// jitter of #1354 (#1228).
+    func feedRowGround(_ ink: ArgoColor) -> some View {
         padding(.horizontal, FeedRowButtonStyle.groundInsetX)
-            .padding(.vertical, stepY)
+            .padding(.vertical, FeedRowButtonStyle.groundInsetY)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(ink, in: .rect(cornerRadius: ArgoRadius.control))
             .padding(.horizontal, -FeedRowButtonStyle.groundInsetX)
