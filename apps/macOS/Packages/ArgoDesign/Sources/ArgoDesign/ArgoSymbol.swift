@@ -89,6 +89,8 @@ public enum ArgoSymbol {
     public static let mcpTool = "puzzlepiece.extension"
     /// A folded run of looking — reads and searches at once, so neither of their marks.
     public static let looked = "eye"
+    /// A folded stretch of a Turn's work — commands, edits and tools at once, so none of theirs.
+    public static let worked = "hammer"
     // A call's outcome has no mark of its own: a failure is the line in the failure ink, and
     // success is the default a feed may assume.
 

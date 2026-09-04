@@ -46,8 +46,8 @@ struct FeedRowKindTests {
         #expect(prompts == [.prompt(text: "Rename the deck", shots: [])])
     }
 
-    /// A survey and a gallery are counts and pictures rather than lines, but the feed welds all
-    /// three into one run.
+    /// A survey, a card of work and a gallery are counts and pictures rather than lines, but the
+    /// feed welds all of them into one run.
     @Test
     func `every shape a piece of looking takes is work`() {
         let work = RowKindFixture.everyKind.filter(\.kind.isCall)
@@ -56,6 +56,7 @@ struct FeedRowKindTests {
             .call(RowKindFixture.answeredCall),
             .call(RowKindFixture.pendingCall),
             .survey(RowKindFixture.survey),
+            .work(RowKindFixture.work),
             .gallery(RowKindFixture.gallery),
         ])
     }
@@ -124,6 +125,7 @@ struct FeedRowKindTests {
             .call(RowKindFixture.answeredCall),
             .call(RowKindFixture.pendingCall),
             .survey(RowKindFixture.survey),
+            .work(RowKindFixture.work),
             .skillLoaded(RowKindFixture.skill),
         ])
     }

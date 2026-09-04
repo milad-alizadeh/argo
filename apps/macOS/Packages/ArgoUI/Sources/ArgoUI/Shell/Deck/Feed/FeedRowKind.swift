@@ -65,7 +65,8 @@ extension FeedRow.Content {
     }
 
     /// The one exhaustive `switch` over the kinds that answers a FACT about a row. No `default`, so
-    /// an eleventh kind fails this build rather than quietly inheriting answers written for the ten
+    /// a twelfth kind fails this build rather than quietly inheriting answers written for the
+    /// eleven
     /// that exist. Three switches remain, each resolving a payload per case rather than a fact and
     /// none of them precomputable per row per reshape: `opened` below, `FeedRowView.body` and
     /// `MinimapRow.shape`.
@@ -104,6 +105,14 @@ extension FeedRow.Content {
                 opensEvidence: survey.disclosure == .available,
                 activation: .openEvidence,
             )
+        // A card of work is a count and not a line, so it is not the row in flight even while one
+        // of its calls is pending — the same answer the survey gives, for the same reason.
+        case let .work(work):
+            Kind(
+                isCall: true,
+                opensEvidence: work.disclosure == .available,
+                activation: .openEvidence,
+            )
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes to the
         // picture. Said once here, for the row and the lane beside it both.
         case let .gallery(gallery):
@@ -121,12 +130,24 @@ extension FeedRow.Content {
         }
     }
 
+    /// Every call this row stands for: one for a call's own line, all of them for a fold, and none
+    /// for a row that is not work. The one way to reach a call without knowing which fold took it.
+    package var calls: [FeedCall] {
+        switch self {
+        case let .call(call): [call]
+        case let .survey(survey): survey.calls
+        case let .work(work): work.calls
+        case .prompt, .message, .thought, .gallery, .ask, .mark, .skillLoaded, .unreadable: []
+        }
+    }
+
     /// What the panel shows for this row, resolved against the row rather than remembered — a live
     /// transcript grows under an open panel.
     var opened: FeedEvidence? {
         switch self {
         case let .call(call): call.opened
         case let .survey(survey): survey.opened
+        case let .work(work): work.opened
         case let .skillLoaded(skill): skill.opened
         case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: nil
         }

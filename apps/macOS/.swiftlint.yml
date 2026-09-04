@@ -221,7 +221,6 @@ function_parameter_count:
   # INIT: SessionNavigator.swift 8 — the roster's rows and the acts on them
   # INIT: ShellSidebar.swift 6 — the sidebar's rooms, its roster and what is selected in them
   # INIT: EvidenceOutput.swift 5 — the output panel's fields
-  # INIT: FeedSurveyLine.swift 5 — the survey row's fields
   # INIT: NewTicketComposer.swift 5 — the new-ticket sheet's fields
 
 cyclomatic_complexity:

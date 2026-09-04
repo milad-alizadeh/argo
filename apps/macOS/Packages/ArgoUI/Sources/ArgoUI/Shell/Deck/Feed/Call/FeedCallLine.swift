@@ -82,16 +82,7 @@ package struct FeedCallLine: View {
 
     @ViewBuilder private var churn: some View {
         if let churn = call.churn, !churn.isSilent {
-            HStack(spacing: ArgoSpacing.tight) {
-                if churn.added > 0 {
-                    Text("+\(churn.added)").foregroundStyle(argo.color.diff.added)
-                }
-                if churn.removed > 0 {
-                    Text("−\(churn.removed)").foregroundStyle(argo.color.diff.removed)
-                }
-            }
-            .argoMono(.body)
-            .monospacedDigit()
+            FeedChurnMarks(churn: churn)
         }
     }
 

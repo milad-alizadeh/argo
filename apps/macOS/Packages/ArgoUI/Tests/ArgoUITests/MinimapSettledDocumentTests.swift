@@ -45,7 +45,7 @@ struct MinimapSettledDocumentTests {
     @Test
     func `every mark stands at its row's own offset in the settled document`() async throws {
         let rows = try await Self.rows()
-        #expect(rows.count > 400, "the fixture stopped being the largest Session's shape")
+        #expect(rows.count > 250, "the fixture stopped being the largest Session's shape")
         let handle = FeedTableHandle()
         let table = await FeedTableFixture.laidOut(rows, in: Self.pane, through: handle)
         let document = try #require(table.geometry.settled)

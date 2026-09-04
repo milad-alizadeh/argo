@@ -47,6 +47,10 @@ private extension FeedRow.Content {
                 parts: [.words(survey.label, survey.ending.ink)],
                 ink: survey.ending.ink,
             )
+        case let .work(work): .line(
+                parts: [.words(work.label, work.ending.ink)],
+                ink: work.ending.ink,
+            )
         case let .unreadable(unreadable): .line(
                 parts: [.words(unreadable.label, .unreadable)],
                 ink: .unreadable,

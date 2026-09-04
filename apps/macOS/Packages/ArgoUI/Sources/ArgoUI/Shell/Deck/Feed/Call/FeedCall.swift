@@ -161,7 +161,7 @@ package extension FeedCall {
     }
 
     /// What a mutation did, in lines.
-    internal struct Churn: Equatable, Sendable {
+    struct Churn: Equatable, Sendable {
         let added: Int
         let removed: Int
 
@@ -173,7 +173,7 @@ package extension FeedCall {
     }
 
     /// Whether the row could open onto anything — see `FeedCall.disclosure`, which derives it.
-    internal enum Disclosure: Equatable, Sendable {
+    enum Disclosure: Equatable, Sendable {
         case none
         case available
     }

@@ -48,6 +48,17 @@ extension SpecimenRegistry {
         // Render narrow as well as wide — a row's whole promise is that it stays one line.
         SpecimenEntry("feedCommands") { SpecimenScene.sessions(FeedProjection.previewCommandRows) },
         SpecimenEntry("feedCommandFold") { SpecimenScene.sessions(FeedProjection.previewFoldRows) },
+        // A Turn's work folded across its own narration (#1172): the two cards at rest, then the
+        // card of commands opened onto the list its failure is tinted in.
+        SpecimenEntry("feedWorkFold") {
+            SpecimenScene.sessions(FeedProjection.previewDenseTurnRows)
+        },
+        SpecimenEntry("feedWorkFoldOpen") {
+            SpecimenScene.sessions(
+                FeedProjection.previewDenseTurnRows,
+                open: FeedProjection.previewFailedWorkRowID,
+            )
+        },
         SpecimenEntry("feedProse") { SpecimenScene.sessions(FeedProjection.previewProseRows) },
         // The two states of one long prompt (#946). Rendered at the feed's own measure: the fold is
         // a question about the column the bubble landed in, so a still taken at any other width

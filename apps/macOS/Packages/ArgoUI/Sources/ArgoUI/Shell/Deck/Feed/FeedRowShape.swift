@@ -19,6 +19,7 @@ extension FeedRow.Content {
         case thought
         case call
         case survey
+        case work
         case gallery
         case skillLoaded
         case ask
@@ -26,7 +27,7 @@ extension FeedRow.Content {
         case unreadable
     }
 
-    /// No `default`, for `kind`'s reason: an eleventh case fails this build rather than quietly
+    /// No `default`, for `kind`'s reason: a twelfth case fails this build rather than quietly
     /// recycling into a tree that draws something else.
     var shape: Shape {
         switch self {
@@ -35,6 +36,7 @@ extension FeedRow.Content {
         case .thought: .thought
         case .call: .call
         case .survey: .survey
+        case .work: .work
         case .gallery: .gallery
         case .skillLoaded: .skillLoaded
         case .ask: .ask

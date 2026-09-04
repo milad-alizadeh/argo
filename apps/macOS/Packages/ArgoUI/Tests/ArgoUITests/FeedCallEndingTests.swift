@@ -78,14 +78,15 @@ struct FeedCallEndingTests {
     /// and it would draw three finished calls.
     @Test
     func `the in-flight fixture ends on a call still running, under one that failed`() {
-        let calls = FeedProjection.previewPendingCallRows.compactMap { row -> FeedCall? in
-            guard case let .call(call) = row.content else { return nil }
-            return call
-        }
+        let rows = FeedProjection.previewPendingCallRows
+        let calls = rows.flatMap(\.content.calls)
 
         #expect(calls.last?.ending == .pending)
         #expect(calls.dropLast().contains { $0.ending.hasFailed })
         #expect(calls.filter { $0.ending == .pending }.count == 1)
+        // And it is still a LINE: the Turn's fold leaves the call the record has not answered out
+        // of its card, because the ion crosses that call's own line (#1172).
+        #expect(rows.last?.kind.isCallInFlight == true)
     }
 
     // MARK: - What opens

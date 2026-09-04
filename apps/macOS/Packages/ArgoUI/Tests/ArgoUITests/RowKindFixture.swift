@@ -3,7 +3,7 @@ import ArgoEngine
 
 /// One row of every kind the feed can produce. Hand-listed rather than derived: `FeedRow.Content`
 /// has no case list to walk, and the exhaustive `switch` behind `kind` is what actually fails a
-/// build when an eleventh kind arrives. Every case must appear here, or every `everyKind` filter
+/// build when a twelfth kind arrives. Every case must appear here, or every `everyKind` filter
 /// silently stops proving anything about the one that is missing.
 enum RowKindFixture {
     static let everyKind: [FeedRow.Content] = [
@@ -13,6 +13,7 @@ enum RowKindFixture {
         .call(answeredCall),
         .call(pendingCall),
         .survey(survey),
+        .work(work),
         .gallery(gallery),
         .skillLoaded(skill),
         .ask(ask),
@@ -30,6 +31,14 @@ enum RowKindFixture {
     static let pendingCall = call(evidence: [], ending: .pending)
 
     static let survey = FeedSurvey(calls: [answeredCall])
+
+    /// A Turn's work with a failure among it — the state the card's header counts.
+    static let work = FeedWork(calls: [answeredCall, failedCall])
+
+    /// A call the record answered with a failure, and the output it failed with.
+    static let failedCall = call(evidence: [
+        .output(OutputEvidence(tier: .direct, text: "No such file")),
+    ], ending: .failed)
 
     static let gallery = FeedGallery(shots: [absentShot])
 
