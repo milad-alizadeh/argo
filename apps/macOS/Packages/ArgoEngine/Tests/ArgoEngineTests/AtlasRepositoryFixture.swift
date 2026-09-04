@@ -145,3 +145,15 @@ extension AtlasMap {
         return [plate] + plate.children.flatMap(plates(of:))
     }
 }
+
+extension AtlasCoupling {
+    /// Test-only: the other end, for a path at one end of this Coupling, and `nil` for a path it
+    /// does not join. Here rather than on the type, which nothing outside these suites asks yet.
+    func partner(of path: String) -> String? {
+        switch path {
+        case first: second
+        case second: first
+        default: nil
+        }
+    }
+}

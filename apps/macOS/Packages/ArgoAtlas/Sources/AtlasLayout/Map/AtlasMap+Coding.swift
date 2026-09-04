@@ -72,16 +72,19 @@ private extension AtlasMap {
         -> [AtlasCoupling] {
         var built: [AtlasCoupling] = []
         for coupling in wire {
-            guard plots.indices.contains(coupling.first),
-                  plots.indices.contains(coupling.second)
-            else { throw .danglingCoupling("\(coupling.first)/\(coupling.second)") }
-            built.append(AtlasCoupling(
-                first: plots[coupling.first].path,
-                second: plots[coupling.second].path,
+            try built.append(AtlasCoupling(
+                first: path(at: coupling.first, among: plots),
+                second: path(at: coupling.second, among: plots),
                 strength: coupling.strength,
             ))
         }
         return built
+    }
+
+    /// The Plot one end of a Coupling names.
+    static func path(at position: Int, among plots: [AtlasPlot]) throws(AtlasMapError) -> String {
+        guard plots.indices.contains(position) else { throw .couplingAtNoPlot(position) }
+        return plots[position].path
     }
 
     /// Where a node sits, given what it is called and where its Plate sits.
@@ -153,13 +156,23 @@ private extension AtlasMap {
         -> [AtlasCouplingWire] {
         var built: [AtlasCouplingWire] = []
         for coupling in couplings {
-            guard let first = position[coupling.first], let second = position[coupling.second]
-            else { throw .danglingCoupling(coupling.first + " / " + coupling.second) }
-            built.append(AtlasCouplingWire(
-                first: first, second: second, strength: coupling.strength,
+            try built.append(AtlasCouplingWire(
+                first: place(of: coupling.first, in: position),
+                second: place(of: coupling.second, in: position),
+                strength: coupling.strength,
             ))
         }
         return built
+    }
+
+    /// Where one end of a Coupling sits in the Map's Plot order.
+    static func place(
+        of path: String,
+        in position: [String: Int],
+    ) throws(AtlasMapError)
+        -> Int {
+        guard let found = position[path] else { throw .couplingOutsideMap(path) }
+        return found
     }
 
     static func wire(

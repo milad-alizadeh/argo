@@ -6,6 +6,12 @@ import AtlasLayout
 /// dependency no import declares. Counted here rather than taken from a tool's export because the
 /// two thresholds below decide the answer: CodeCharta's own coupling export reached 240 of this
 /// repository's 1,547 files, and counting it with these thresholds reached 1,380.
+///
+/// A RENAMED file is two files here, because the log this reads is asked for with `--no-renames`
+/// so that no machine's `diff.renames` can change what Argo measured (`AtlasHistory`). What that
+/// costs is company: a file's history stops at its last rename, so the pairs before it are lost
+/// and what remains is counted over a shorter history. Undercounting rather than inventing,
+/// which is the direction to be wrong in, and the fix is one log pass away when a ticket wants it.
 enum AtlasCoChange {
     /// How many neighbours a file may keep. It bounds the FILE rather than the repository, so the
     /// couplings grow with the file count and not with how busy the history is — a global
@@ -46,9 +52,9 @@ enum AtlasCoChange {
             .map { commit in commit.compactMap { place[$0] }.sorted() }
             .filter { $0.count > 1 }
         let cap = cap(of: touched)
-        return couplings(
-            among: paths.map { root + "/" + $0 },
+        return counted(
             over: touched.filter { $0.count <= cap },
+            among: paths.map { root + "/" + $0 },
         )
     }
 
@@ -60,7 +66,9 @@ enum AtlasCoChange {
         return sizes[Int(Double(sizes.count) * commitSizeQuantile)]
     }
 
-    private static func couplings(among paths: [String], over kept: [[Int]]) -> [AtlasCoupling] {
+    /// The kept commits, paired: how often each file changed, how often each pair changed
+    /// together, and which of those pairs each file holds on to.
+    private static func counted(over kept: [[Int]], among paths: [String]) -> [AtlasCoupling] {
         var changes: [Int: Int] = [:]
         var shared: [Pair: Int] = [:]
         for files in kept {

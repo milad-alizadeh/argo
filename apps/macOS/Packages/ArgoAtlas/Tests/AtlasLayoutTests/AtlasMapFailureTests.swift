@@ -82,7 +82,7 @@ struct AtlasMapFailureTests {
         let json = #"{"version":1,"measuredAt":"2026-09-04T00:37:17Z","commit":null,"#
             + #""root":{"name":"argo","children":[{"kind":"plot","name":"a.swift","#
             + #""measures":{}}]},"couplings":[{"first":0,"second":7,"strength":0.5}]}"#
-        #expect(throws: AtlasMapError.danglingCoupling("0/7")) {
+        #expect(throws: AtlasMapError.couplingAtNoPlot(7)) {
             try AtlasMap(decoding: map(json))
         }
     }

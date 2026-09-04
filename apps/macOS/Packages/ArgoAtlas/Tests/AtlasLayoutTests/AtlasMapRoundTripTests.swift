@@ -115,7 +115,7 @@ struct AtlasMapRoundTripTests {
             ]),
             couplings: [AtlasCoupling(first: "argo/a.swift", second: "argo/b.swift", strength: 1)],
         )
-        #expect(throws: AtlasMapError.danglingCoupling("argo/a.swift / argo/b.swift")) {
+        #expect(throws: AtlasMapError.couplingOutsideMap("argo/b.swift")) {
             try map.encoded()
         }
     }

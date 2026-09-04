@@ -59,10 +59,9 @@ struct AtlasCoChangeTests {
             [["a.swift", "b.swift"], ["b.swift", "a.swift"]], among: ["a.swift", "b.swift"],
         )
 
-        #expect(couplings.count == 1)
-        let coupling = try? #require(couplings.first)
-        #expect(coupling?.partner(of: "repository/a.swift") == "repository/b.swift")
-        #expect(coupling?.partner(of: "repository/b.swift") == "repository/a.swift")
+        // One tie, naming both files, however the two commits happened to list them.
+        #expect(couplings.map { [$0.first, $0.second] }
+            == [["repository/a.swift", "repository/b.swift"]])
     }
 
     @Test func `one sweeping commit does not couple everything to everything`() {

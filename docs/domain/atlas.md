@@ -9,8 +9,8 @@ authored, and the Session record is not an input.
 - **Map** — one repository, measured. Argo-owned, per-machine app data under `userData`, **never
   committed and never watched**: generated whole on first Atlas open, read on every open after,
   and regenerated only when the reader asks. It holds `version`, `measuredAt`, the `commit` it
-  measured (absent for a repository with no history), one root Plate and its Couplings. Scoped to the Project
-  the window is on (ADR-0015); a monorepo is one Project and gets one Map.
+  measured (absent for a repository with no history), one root Plate and its Couplings. Scoped to
+  the Project the window is on (ADR-0015); a monorepo is one Project and gets one Map.
 
 - **Plot** — one file of the repository as the Atlas reads it: a path from the Map's root down,
   and its Measures. The path is the join key — search, picking and opening in an editor all key

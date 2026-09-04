@@ -40,8 +40,8 @@ struct AtlasMapWire: Codable {
 /// One Coupling, its two ends given as POSITIONS in the Map's own Plot order rather than as paths.
 ///
 /// The file already names every file once, in the nesting. This repository measures 2,705 files
-/// and 18,402 couplings: 914 KB of the Map file as positions, against the 342 KB the rest of it
-/// takes, and roughly 2.5 MB if each tie named its two paths in full.
+/// and 18,402 couplings: 788 KB of the Map file as positions, against the 342 KB the rest of it
+/// takes, where naming both paths on every tie would be 3.4 MB.
 struct AtlasCouplingWire: Codable {
     let first: Int
     let second: Int
