@@ -31,6 +31,38 @@ enum FeedFixture {
         )
     }
 
+    /// The question both ask suites are written against — one of three, with two options.
+    static let askedQuestion = Ask.Question(
+        text: "Which ticket should I implement?",
+        options: Ask.Option.labelled(["#712", "#713"]),
+    )
+
+    static let askedLive = SessionAsk(id: "ask-1", ask: Ask(questions: [askedQuestion]))
+
+    /// A Session whose gate is holding `askedQuestion`, which is what the roster reads `Needs
+    /// input` off. Shared, because two suites make claims about the same Session from opposite
+    /// sides of one join: whether the row the RECORD carries is the one being answered, and what
+    /// the feed puts up when no row carries it.
+    ///
+    /// `ask: nil` is the driveable Session whose gate holds nothing; `access:` is how a Session
+    /// Argo cannot drive is asked for.
+    static func askingSession(
+        ask: SessionAsk? = askedLive,
+        access: CockpitPresentation.Session.Access = .managed,
+    )
+        -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: "session",
+            title: "A Session",
+            access: access,
+            status: ask == nil ? .idle : .asking,
+            chain: .init(program: .init(model: "claude-opus-5")),
+            work: .init(location: "/repo"),
+            autonomy: .init(ask: ask),
+            transcript: .init(events: [.toolCall(asking(askedQuestion))]),
+        )
+    }
+
     static func failed(_ id: String, printing output: String?) -> ToolCallOutcome {
         ToolCallOutcome(
             id: id,

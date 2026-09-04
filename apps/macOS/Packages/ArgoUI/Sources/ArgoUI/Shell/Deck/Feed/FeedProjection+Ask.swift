@@ -41,15 +41,10 @@ extension FeedProjection {
         let held = contents.lastIndex { waits(for: asking.live, $0) }
         return contents.enumerated().map { position, content in
             guard case let .ask(ask) = content else { return content }
-            return .ask(FeedAsk(
-                ask: ask.ask,
-                isAnswered: ask.isAnswered,
-                answer: ask.answer,
-                offer: FeedAskProjection.Asking(
-                    live: position == held ? asking.live : nil,
-                    isDriveable: asking.isDriveable,
-                ),
-            ))
+            return .ask(ask.offered(FeedAskProjection.Asking(
+                live: position == held ? asking.live : nil,
+                isDriveable: asking.isDriveable,
+            )))
         }
     }
 

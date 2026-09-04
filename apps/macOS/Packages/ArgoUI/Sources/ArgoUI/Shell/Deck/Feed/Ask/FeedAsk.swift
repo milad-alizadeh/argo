@@ -38,6 +38,13 @@ package struct FeedAsk: Equatable, Sendable {
         self.isDriveable = offer.isDriveable
     }
 
+    /// The same question told something new about answering it. On `FeedAsk` rather than in the
+    /// projection that calls it, so what a row KEEPS across that swap is settled once, here,
+    /// beside the fields it keeps — a rebuild at the call site drops a new field silently.
+    func offered(_ offer: FeedAskProjection.Asking) -> Self {
+        FeedAsk(ask: ask, isAnswered: isAnswered, answer: answer, offer: offer)
+    }
+
     var questions: [Ask.Question] {
         ask.questions
     }

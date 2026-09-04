@@ -30,6 +30,11 @@ extension SpecimenRegistry {
         SpecimenEntry("feedAskUnreached") {
             SpecimenScene.sessions(FeedProjection.previewAskUnreached)
         },
+        // The other way round (#1190): the GATE holds the question and the record does not carry
+        // it. The row stands beside the stream, at the foot of the work it interrupted.
+        SpecimenEntry("feedAskStanding") {
+            SpecimenScene.sessions(FeedProjection.previewAskStanding)
+        },
     ]
 
     private static let rows: [SpecimenEntry] = [
