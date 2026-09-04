@@ -23,6 +23,10 @@ public struct SpawnServices {
     /// reason `chainFileURL` does — and then every New Session opens on `Code`, which is the
     /// baseline Argo spawned on before this file existed.
     public let modeFileURL: URL?
+    /// Where the Model and Effort the user last picked are remembered (#1175). `nil` remembers
+    /// nothing, for the reason `modeFileURL` does — and then every New Session opens on
+    /// `Opus 5 · Medium`, which is where one opens with nothing ever picked.
+    public let runFileURL: URL?
     /// How long the permission gate waits for a person before refusing the call itself (#573).
     /// Live everywhere but a test that has to reach the far end of a day-long wait.
     public let permissionPatience: PermissionPatience
@@ -39,6 +43,7 @@ public struct SpawnServices {
         chainFileURL: URL? = nil,
         ownershipFileURL: URL? = nil,
         modeFileURL: URL? = nil,
+        runFileURL: URL? = nil,
         permissionPatience: PermissionPatience = .default,
         mintTranscriptID: @MainActor @escaping () -> String = { UUID().uuidString.lowercased() },
     ) {
@@ -49,6 +54,7 @@ public struct SpawnServices {
         self.chainFileURL = chainFileURL
         self.ownershipFileURL = ownershipFileURL
         self.modeFileURL = modeFileURL
+        self.runFileURL = runFileURL
         self.permissionPatience = permissionPatience
         self.mintTranscriptID = mintTranscriptID
     }

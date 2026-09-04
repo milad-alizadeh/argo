@@ -4,9 +4,9 @@ import SwiftUI
 /// The states of what a Session RUNS AT — the fact line on the footer and the popover it opens
 /// (#558), drawn against `docs/designs/composer/run.png` and `rest.png`.
 ///
-/// Six cases and not one per combination: what each is about is a rule, and the rules are the
-/// trigger's two inks, the two read-backs that must survive verbatim, an adapter that declares one
-/// knob, and one that declares neither.
+/// Eight cases and not one per combination: what each is about is a rule, and the rules are the
+/// trigger's two inks, the two read-backs that must survive verbatim, the pair a spawn opens on
+/// before any record (#1175), an adapter that declares one knob, and one that declares neither.
 extension SpecimenRegistry {
     static let runFacts: [SpecimenEntry] = [
         // `rest.png`. The closed state at the defaults — chromeless, quiet, `Opus 5 · Medium`.
@@ -35,6 +35,14 @@ extension SpecimenRegistry {
         SpecimenEntry("composerRunSettingsUnread") {
             ComposerSpecimen(
                 composer: ComposerSpecimen.runFactsUnread,
+                opening: .runSettings,
+            )
+        },
+        // A Session Argo has just STARTED, before its CLI has written a record (#1175): the
+        // popover states and ticks the pair that went on argv, off the CLI's own alias for it.
+        SpecimenEntry("composerRunSettingsLaunched") {
+            ComposerSpecimen(
+                composer: ComposerSpecimen.runFactsLaunched,
                 opening: .runSettings,
             )
         },

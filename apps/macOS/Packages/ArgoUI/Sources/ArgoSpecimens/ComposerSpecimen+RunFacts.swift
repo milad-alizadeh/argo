@@ -47,6 +47,26 @@ extension ComposerSpecimen {
         canRunCommands: false,
     )
 
+    /// A Session in its first moments, stating what ARGO started it at rather than `unknown`
+    /// (#1175). The model is the CLI's own alias — `opus` is what went on argv — and it reads and
+    /// ticks as `Opus 5`, so the opening reading and the record's later one draw the same control.
+    static let runFactsLaunched = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: RunFacts(
+            model: SessionRun.unpicked.model,
+            effort: .exactly(SessionRun.unpicked.effort, cli: "medium"),
+            chooses: .both,
+        ),
+        standingAllows: [],
+        isRunning: false,
+        mode: composer.mode,
+        modeDidNotTake: nil,
+        lostTurn: nil,
+        canAttach: true,
+        canRunCommands: false,
+    )
+
     /// An adapter declaring ONE knob (#558, criterion 4). The Model section is absent rather than
     /// greyed — a control that cannot work gives no reason for not working.
     static let runFactsEffortOnly = SessionComposerProjection.Composer(

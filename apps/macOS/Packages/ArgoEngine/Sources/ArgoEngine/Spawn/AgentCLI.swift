@@ -80,6 +80,31 @@ public enum AgentCLI: String, Sendable, CaseIterable {
         }
     }
 
+    /// The flags that start this CLI on one Model and one Effort (#1175). Read at startup like the
+    /// rung above, and put here for the same reason: what Argo asked for is DIRECT only where Argo
+    /// itself spelled it, and argv is the one place a fresh process reads it from.
+    ///
+    /// Codex declares neither knob (`RunFactKnobs`) and takes neither flag, so it gets nothing — a
+    /// default that could not be applied would be a value the composer states about a Session
+    /// nothing put it on.
+    ///
+    /// Verified against `claude` 2.1.257 on 2026-09-03: `--model <alias>` and `--effort <level>`.
+    func arguments(running run: SessionRun) -> [String] {
+        switch self {
+        case .claude: ["--model", run.model, "--effort", ClaudeEffort.value(for: run.effort)]
+        case .codex: []
+        }
+    }
+
+    /// Whether `arguments(running:)` has anything to say. Asked before the pair is filed against
+    /// the claim, so the composer never states a Model a CLI was not started on.
+    var takesRunFlags: Bool {
+        switch self {
+        case .claude: true
+        case .codex: false
+        }
+    }
+
     /// The flags that tell this CLI which transcript to write, so Argo knows the Session a fresh
     /// spawn will be before the process exists (#742). Empty is not a fallback: a CLI with nothing
     /// here picks its own id, and the claim then owns a process rather than a Session.

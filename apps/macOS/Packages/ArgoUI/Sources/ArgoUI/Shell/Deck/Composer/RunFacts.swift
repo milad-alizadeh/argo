@@ -62,8 +62,10 @@ package struct RunFacts: Equatable {
         modelWords == RunFactsModel.default.name && effort.rung == Self.defaultEffort
     }
 
-    /// The rung a fresh Session starts on, and the one the reset names.
-    static let defaultEffort = SessionEffort.medium
+    /// The rung a fresh Session starts on, and the one the reset names. The engine's own value for
+    /// it, which is what a spawn with nothing ever picked is started at — a second constant here
+    /// would let the words and the argv drift apart (#1175).
+    static let defaultEffort = SessionRun.unpicked.effort
 
     /// The Model rows the popover offers: the short list, plus the Session's own reading where that
     /// reading is not on it.

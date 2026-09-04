@@ -98,12 +98,14 @@ struct HubHandoffTests {
 
         let launch = try #require(fixture.host.launches.first)
         #expect(launch.cwd == fixture.projectURL.path)
-        // The companion's flags, the baseline rung (#545), the transcript this spawn is told to
-        // write (#742), and no prompt behind them.
+        // The companion's flags, the baseline rung (#545), the pair a New Session opens on (#1175),
+        // the transcript this spawn is told to write (#742), and no prompt behind them.
         #expect(launch.arguments == [
             "--mcp-config", launch.arguments[1],
             "--plugin-dir", launch.arguments[3],
             "--permission-mode", "acceptEdits",
+            "--model", "opus",
+            "--effort", "medium",
             "--session-id", spawnedChainID,
         ])
     }

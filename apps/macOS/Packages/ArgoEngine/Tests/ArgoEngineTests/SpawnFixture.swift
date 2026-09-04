@@ -83,6 +83,9 @@ struct SpawnFixture {
     /// restart has to open a Session on what the launch before it picked, and never on what the
     /// person running the tests picked in the real app.
     let modeFileURL: URL
+    /// The last-picked Model and Effort's file, under this fixture's root for the reason the rung's
+    /// is: a restart has to open a Session on what the launch before it picked (#1175).
+    let runFileURL: URL
     private let services: SpawnServices
     private let engine: Engine
 
@@ -108,6 +111,7 @@ struct SpawnFixture {
         self.chainFileURL = root.appending(path: "chain.json")
         self.ownershipFileURL = root.appending(path: "ownership.json")
         self.modeFileURL = root.appending(path: "mode.json")
+        self.runFileURL = root.appending(path: "run.json")
         self.engine = Engine(reads: .init(checkout: CheckoutFixture().read, liveness: liveness))
         self.services = SpawnServices(
             host: host,
@@ -121,6 +125,7 @@ struct SpawnFixture {
             chainFileURL: chainFileURL,
             ownershipFileURL: ownershipFileURL,
             modeFileURL: modeFileURL,
+            runFileURL: runFileURL,
             permissionPatience: permissionPatience,
             // Every spawn in these suites is told to write THIS transcript, which is the one
             // `spawnedSessionObservation` stands in for (#742). A random uuid would leave the

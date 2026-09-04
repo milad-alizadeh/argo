@@ -24,6 +24,10 @@ struct ClaimFacts: Equatable {
     var expiries: [PermissionExpiry] = []
     /// The rung Argo last put it on (#545).
     var modeSet: SessionModeSet?
+    /// The Model and Effort Argo STARTED it at (#1175) — DIRECT, because Argo spelled both on
+    /// argv. Absent for a claim on a CLI that takes neither flag, and for every external Session,
+    /// which has no claim at all.
+    var run: SessionRun?
     /// What the CLI's own protocol says this Session is doing, off `codex app-server`'s
     /// `thread/status/changed` (#683). Absent for a `claude` claim, whose surface is a PTY with
     /// nothing on it to report.
@@ -53,6 +57,7 @@ struct ClaimFacts: Equatable {
             && standing.isEmpty
             && expiries.isEmpty
             && modeSet == nil
+            && run == nil
             && driveStatus == nil
             && submittedTurn == nil
             && lostTurn == nil

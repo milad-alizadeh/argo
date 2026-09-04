@@ -14,7 +14,9 @@ struct RememberingDriverTests {
     @Test
     func `the acts it does not record still reach the adapter`() throws {
         let base = InMemorySessionDriver()
-        let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 }, remember: { _, _ in }, rememberRun: { _ in },
+        )
 
         try driver.send("Off you go.", to: "session-a")
         try driver.revokeStandingAllow("Bash", for: "session-a")
@@ -32,7 +34,9 @@ struct RememberingDriverTests {
         base.declaredSurface = DriveSurface(
             takesAttachments: declared, runsCommands: declared, resolvesMentions: declared,
         )
-        let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 }, remember: { _, _ in }, rememberRun: { _ in },
+        )
 
         #expect(driver.surface(of: "s1") == base.declaredSurface)
     }
@@ -43,6 +47,7 @@ struct RememberingDriverTests {
         var filed: [(SessionModeSet, String)] = []
         let driver = RememberingDriver(
             base: base, records: { _ in 0 }, remember: { filed.append(($0, $1)) },
+            rememberRun: { _ in },
         )
 
         try await driver.setMode(.plan, for: "session-a")
@@ -61,6 +66,7 @@ struct RememberingDriverTests {
         var filed: [SessionModeSet] = []
         let driver = RememberingDriver(
             base: base, records: { _ in records }, remember: { set, _ in filed.append(set) },
+            rememberRun: { _ in },
         )
         base.duringSetMode = { records = 9 }
 
@@ -78,11 +84,53 @@ struct RememberingDriverTests {
         var filed: [SessionMode] = []
         let driver = RememberingDriver(
             base: base, records: { _ in 0 }, remember: { set, _ in filed.append(set.mode) },
+            rememberRun: { _ in },
         )
 
         await #expect(throws: SessionDriveError.modeBusy) {
             try await driver.setMode(.auto, for: "session-a")
         }
         #expect(filed.isEmpty)
+    }
+
+    /// A Model or an Effort is remembered APP-WIDE and against no Session (#1175) — the pick alone,
+    /// where the rung above files a Session id beside it.
+    @Test
+    func `a Model and an Effort that landed are filed as picks`() async throws {
+        let base = InMemorySessionDriver()
+        base.declaredSurface = DriveSurface(
+            takesAttachments: true, runsCommands: true, resolvesMentions: true, chooses: .both,
+        )
+        var picked: [SessionRunPick] = []
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 }, remember: { _, _ in },
+            rememberRun: { picked.append($0) },
+        )
+
+        try await driver.setModel("sonnet", for: "session-a")
+        try await driver.setEffort(.high, for: "session-a")
+
+        #expect(picked == [.model("sonnet"), .effort(.high)])
+    }
+
+    /// A pick the port refused is not one the next New Session should open on, which is the whole
+    /// reason the file is written after the call rather than before it.
+    @Test
+    func `a Model the adapter refuses is not filed`() async throws {
+        let base = InMemorySessionDriver()
+        base.declaredSurface = DriveSurface(
+            takesAttachments: true, runsCommands: true, resolvesMentions: true,
+        )
+        var picked: [SessionRunPick] = []
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 }, remember: { _, _ in },
+            rememberRun: { picked.append($0) },
+        )
+
+        await #expect(throws: SessionDriveError.runFactsUnsupported) {
+            try await driver.setModel("sonnet", for: "session-a")
+        }
+
+        #expect(picked.isEmpty)
     }
 }

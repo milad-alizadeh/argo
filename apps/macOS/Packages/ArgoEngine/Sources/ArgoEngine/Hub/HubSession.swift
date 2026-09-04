@@ -60,15 +60,22 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     public private(set) var cwd: String?
-    public private(set) var model: String?
-    /// The CLI's own word for the effort level, latest reading and nothing yet where no record said
-    /// one (#558). Verbatim like `observedMode`: what it means on Argo's scale is `ClaudeEffort`'s
-    /// to say, and nothing here reads it.
-    public private(set) var effort: String?
+    /// The model id the records report, latest reading and nothing yet where no record said one
+    /// (#558). Not public and not the whole answer: `model` in `HubSession+Run.swift` is the
+    /// reading, which opens on what Argo started the CLI at (#1175).
+    private(set) var observedModel: String?
+    /// The CLI's own word for the effort level, on the same terms as `observedModel` above.
+    /// Verbatim like `observedMode`: what it means on Argo's scale is `ClaudeEffort`'s to say, and
+    /// nothing here reads it.
+    private(set) var observedEffort: String?
     public private(set) var branch: String?
     /// The rung Argo ITSELF put this Session on — off the spawn, or off a later set. The only
     /// place Plan can come from: the CLI reports Read Only's boundary for both (ADR-0025).
     public internal(set) var modeSet: SessionModeSet?
+    /// The Model and Effort Argo STARTED this Session at, off the spawn's own argv (#1175). The
+    /// opening reading for a managed Session, and absent for every external one — Argo did not
+    /// start it and has no argv to read.
+    var launchedRun: SessionRun?
     /// The last Turn typed at this Session that the CLI never heard (#682), verbatim.
     ///
     /// A Turn is submitted by a Return the file-mention popup can eat, and the composer clears on
@@ -193,8 +200,8 @@ extension HubSession {
             cwd = observedCwd
         // The CLI's own two knobs, both verbatim and latest-wins (#558). One line each: they are
         // the two shortest arms in this switch, and spreading them costs the body its ceiling.
-        case let .model(observedModel): model = observedModel
-        case let .effort(observedEffort): effort = observedEffort
+        case let .model(reported): observedModel = reported
+        case let .effort(reported): observedEffort = reported
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
         case let .entry(cli):
@@ -271,8 +278,8 @@ extension HubSession {
         // `TranscriptStream.merge`.
         transcript.merge(continuation.transcript)
         cwd = continuation.cwd ?? cwd
-        model = continuation.model ?? model
-        effort = continuation.effort ?? effort
+        observedModel = continuation.observedModel ?? observedModel
+        observedEffort = continuation.observedEffort ?? observedEffort
         // The later half of the chain wins where it read one, and says nothing where it did not: a
         // resume file with no `usage` in it yet is not a Session that has emptied its context.
         contextTokens = continuation.contextTokens ?? contextTokens
@@ -287,6 +294,9 @@ extension HubSession {
             entry = .interactive
         }
         modeSet = continuation.modeSet ?? modeSet
+        // A resume is a fresh process with its own `--model` and `--effort`, so the later half's
+        // launch value is the live one (#1175).
+        launchedRun = continuation.launchedRun ?? launchedRun
         // A resume continues the work the root was started on, so the later half only adds a ticket
         // where the root named none.
         ticket = continuation.ticket ?? ticket
