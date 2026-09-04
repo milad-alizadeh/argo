@@ -143,10 +143,10 @@ extension SessionRosterProjection {
         _ fold: Fold,
         at newest: CockpitPresentation.Session,
         nowMs: Int,
-        delegation: Delegation,
+        held: Held,
     )
         -> Row {
-        let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
+        let clock = clock(for: newest, in: held.events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
                 id: fold.id, title: "\(fold.count) runs", rename: nil, fold: fold,
@@ -167,7 +167,7 @@ extension SessionRosterProjection {
                 activity: nil,
                 // The one fact a fold does state for its runs, because it is the SUM of them and
                 // not one of them stood in for the rest (rule 9).
-                delegation: delegation,
+                delegation: held.delegation,
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -181,12 +181,13 @@ extension SessionRosterProjection {
         for session: CockpitPresentation.Session,
         decided: Decided,
         nowMs: Int,
-        delegation: Delegation,
+        held: Held,
     )
         -> Row {
-        // Handed out ONCE and walked twice: the clock and the activity both read the tail of the
-        // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`).
-        let events = session.events
+        // Handed out ONCE by the pass above and walked three times: the clock, the activity and
+        // the delegations all read this same array, and the selection pass is gated on hand-outs
+        // rather than on walking (`PerfBudgets.selectionPassReads`).
+        let events = held.events
         let clock = clock(for: session, in: events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
@@ -212,7 +213,7 @@ extension SessionRosterProjection {
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 activity: activity(of: session, in: events),
-                delegation: delegation,
+                delegation: held.delegation,
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

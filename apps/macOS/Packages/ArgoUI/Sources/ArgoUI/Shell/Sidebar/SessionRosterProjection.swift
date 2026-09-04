@@ -89,29 +89,51 @@ package enum SessionRosterProjection {
         // kept half, so a fold's count is what the reader can see rather than what is behind the
         // foot as well.
         let folding = Folding(of: kept.map { pair in pair.0 }, in: pass)
-        // Once per Session and read twice: the Session's own row reads its own list, and the fold
-        // above it reads the lists it hides joined (`Folding.subagents(under:from:)`).
+        // The stream is handed out ONCE per Session here and walked three times below — the clock,
+        // the activity and the delegations all read the same array, and the pass is gated on
+        // hand-outs rather than on walking (`PerfBudgets.selectionPassReads`).
+        let held = Dictionary(uniqueKeysWithValues: kept.map { session, _ in
+            (session.id, session.events)
+        })
+        // Read twice in turn: the Session's own row reads its own list, and the fold above it
+        // reads the lists it hides joined (`Folding.subagents(under:from:)`).
         let subagents = Dictionary(uniqueKeysWithValues: kept.map { session, _ in
             (session.id, self.subagents(
-                of: session, in: session.events, writing: pass.viewing.writing, nowMs: nowMs,
+                of: session, in: held[session.id] ?? [],
+                writing: pass.viewing.writing, nowMs: nowMs,
             ))
         })
         return kept.flatMap { session, decided -> [Row] in
-            [
+            let read = Held(
+                events: held[session.id] ?? [],
+                delegation: reading(of: subagents[session.id] ?? []),
+            )
+            return [
                 folding.fold(opening: session).map {
                     foldRow(
                         $0, at: session, nowMs: nowMs,
-                        delegation: reading(of: folding.subagents(under: session, from: subagents)),
+                        held: Held(
+                            events: read.events,
+                            delegation: reading(
+                                of: folding.subagents(under: session, from: subagents),
+                            ),
+                        ),
                     )
                 },
                 folding.drawsOwnRow(session)
-                    ? row(
-                        for: session, decided: decided, nowMs: nowMs,
-                        delegation: reading(of: subagents[session.id] ?? []),
-                    ) : nil,
+                    ? row(for: session, decided: decided, nowMs: nowMs, held: read) : nil,
             ]
             .compactMap(\.self)
         }
+    }
+
+    /// What one pass read off one Session's stream: the events, handed out once, and what they say
+    /// runs under it. One value because the cap on a parameter list is four and these two always
+    /// travel together — a row that took the events without the reading would hand the stream out
+    /// twice to get it.
+    struct Held {
+        let events: [TranscriptEvent]
+        let delegation: Delegation
     }
 
     /// What the two whole-roster passes settled for one Session: the name it draws and the label
