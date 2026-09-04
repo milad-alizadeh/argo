@@ -45,14 +45,12 @@ struct HubTranscript {
     /// reference on the stream behind it, and every event of the slice would then copy it.
     mutating func stage(_ events: [TranscriptEvent]) {
         isStaged = true
-        guard rereading != nil else {
-            for event in events {
-                session.apply(event)
-            }
-            return
-        }
         for event in events {
-            rereading?.apply(event)
+            if rereading == nil {
+                session.apply(event)
+            } else {
+                rereading?.apply(event)
+            }
         }
     }
 

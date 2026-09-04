@@ -36,25 +36,29 @@ extension TranscriptWatch {
         }
     }
 
-    /// Fold one read into the join in bounded slices, handing the main actor back between them.
+    /// Land one read in the join in bounded slices, handing the main actor back between them.
     ///
-    /// A tail's FIRST batch is everything its file already held, so folding a batch whole holds the
-    /// main actor for a span that grows with the file (#1166, `TranscriptFold`). An ordinary live
+    /// A tail's FIRST batch is everything its file already held, so taking a batch whole holds the
+    /// main actor for a span that grows with the file (#1166, `TranscriptSlice`). An ordinary live
     /// batch is a record or two and takes the one write below, untouched.
     ///
     /// Every slice but the last publishes nothing (`HubJoin.stage`), so what the reader sees is the
     /// row it already had and then the whole reading — never a row growing a slice at a time, and
     /// never the gap that would be (#1134).
-    func fold(_ events: [TranscriptEvent], of transcriptID: String) async {
+    func land(_ events: [TranscriptEvent], of transcriptID: String) async {
         var rest = events[...]
-        while rest.count > TranscriptFold.events {
-            let slice = Array(rest.prefix(TranscriptFold.events))
-            rest = rest.dropFirst(TranscriptFold.events)
+        while rest.count > TranscriptSlice.events, !Task.isCancelled {
+            let slice = Array(rest.prefix(TranscriptSlice.events))
+            rest = rest.dropFirst(TranscriptSlice.events)
             mutate { $0.stage(slice, to: transcriptID) }
             // The whole point of the slice: a suspension here is the main actor handed back, so a
             // frame can be drawn and the roster can be read between one slice and the next.
             await Task.yield()
         }
+        // A CANCELLED tail stops slicing and lands what it has, which is what a stopped read has
+        // always done: the reading it was replacing stands (`HubJoin.settle`), and a first read
+        // publishes what it got rather than nothing.
+        guard !Task.isCancelled else { return }
         mutate { $0.apply(Array(rest), to: transcriptID) }
     }
 

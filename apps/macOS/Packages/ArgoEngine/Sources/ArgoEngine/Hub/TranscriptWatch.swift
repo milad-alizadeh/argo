@@ -269,7 +269,7 @@ final class TranscriptWatch {
 
     private func drain(_ observation: TranscriptObservation) async {
         for await events in observation.events {
-            await fold(events, of: observation.id)
+            await land(events, of: observation.id)
             // After the join, never before: reconciliation retires a spawned Session's own row, and
             // it may only do that once the observed row it is standing in for is published.
             await onApplied()
