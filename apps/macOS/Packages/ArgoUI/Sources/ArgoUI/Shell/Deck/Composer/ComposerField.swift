@@ -24,6 +24,9 @@ struct ComposerField: View {
     /// Escape. `false` says there was no menu to put away, and the key goes on up the responder
     /// chain rather than being swallowed here.
     var dismiss: () -> Bool = { false }
+    /// Tab, offered to whichever composer menu is open. `false` says no row was under a cursor to
+    /// take, and the key stays the focus walk it has always been (#1181).
+    var complete: () -> Bool = { false }
     /// What a paste was holding, where it was holding files or pixels rather than words (#540).
     var attach: ([SessionAttachment]) -> Void = { _ in }
 
@@ -34,6 +37,7 @@ struct ComposerField: View {
             submit: submit,
             walk: walk,
             dismiss: dismiss,
+            complete: complete,
             attach: attach,
         )
         .frame(minHeight: ArgoComposerVessel.fieldLineHeight)

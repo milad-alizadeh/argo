@@ -158,7 +158,11 @@ more.
 
 1. **Selecting inserts text; it never sends.** `⏎` inserts `/name ` and leaves the caret after it.
    A command with arguments is the common case, and sending on `⏎` makes the argument impossible
-   to type. The composer stays sendable throughout — `slash-args.png`.
+   to type. The composer stays sendable throughout — `slash-args.png`. **`⇥` takes the same row
+   `⏎` would, added in #1181**: it is the completion key every other such menu answers, and over
+   the `+` menu it opens the row's section, exactly as `⏎` does there (decision 11). With no row
+   under the cursor — no menu, or a filter that matched nothing (decision 8) — `⇥` is the focus
+   walk it has always been, and `⇧⇥` never touches the menu at all.
 2. **`/` opens only at the head of the line; `@` at any token boundary.** A slash inside `src/foo`
    is a path, not a command — `codex.png` types `/usr/local` and opens nothing.
 3. **Filtering narrows *and* reorders.** Prefix matches first in origin order, then name-substring

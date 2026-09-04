@@ -108,6 +108,7 @@ package struct SessionComposer: View {
                 submit: submit,
                 walk: { menus.walk($0, on: line) },
                 dismiss: { menus.dismissed(on: line) },
+                complete: complete,
                 attach: take,
             )
             footer
@@ -146,18 +147,39 @@ package struct SessionComposer: View {
     /// Answered here rather than by an `onKeyPress` above the field, because a `TextField` takes
     /// Return itself and there is no intercepting it from outside.
     ///
-    /// Over `AddMenu`, ⏎ does not insert at all — it OPENS the row's section (design decision 11),
-    /// the same act a click makes; see `open(_:)`.
+    /// What a menu makes of the key is `complete()` below, which ⇥ asks the same question of —
+    /// that includes `AddMenu`, where a pick OPENS the row's section rather than inserting
+    /// anything (design decision 11), the same act a click makes; see `open(_:)`.
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
     func submit() {
-        if let row = menus.addMenuPick(on: line) {
-            return open(row)
-        }
-        if let picked = menus.picked(on: line) {
-            return draft.take(picked)
-        }
+        guard !complete() else { return }
         draft.submit(whileRunning: composer.isRunning, via: sending)
+    }
+
+    /// Tab, which takes the row under the cursor exactly as ⏎ does over the same menu (#1181) —
+    /// the completion key every other such menu answers, and the one the hand reaches for.
+    ///
+    /// It is the WHOLE of what ⏎ does over a menu, called by both keys rather than spelled twice:
+    /// two lists of what a pick means could drift, and a Tab that took a different row from the ⏎
+    /// beside it is the one way this could be worse than not answering Tab at all.
+    ///
+    /// Over `AddMenu` it OPENS the row's section, which is that menu's own meaning of a pick
+    /// (design decision 11): its rows insert nothing to be taken. Tab cannot simply decline there
+    /// either — a Tab that walked focus away would leave the drawer drawn with a keyboard cursor
+    /// the arrows no longer reach.
+    ///
+    /// `false` is what leaves Tab alone, and the field walks focus with it as #718 built: there is
+    /// no menu at all, or the filter matched nothing and there is no row under the cursor to take
+    /// (design decision 8). It is also what sends the Turn, since ⏎ asks the same question.
+    private func complete() -> Bool {
+        if let row = menus.addMenuPick(on: line) {
+            open(row)
+            return true
+        }
+        guard let picked = menus.picked(on: line) else { return false }
+        draft.take(picked)
+        return true
     }
 
     /// Which of the seam's three sentences is up. The order is `ComposerSeamNote`'s.
