@@ -421,9 +421,12 @@ const SVG = {
   /* delegation: a stem that forks. Not the branch glyph — that one is git's on this row. */
   agents: `<path d="M4 13.2V6.4a2 2 0 0 1 2-2h6"/><circle cx="4" cy="14.4" r="1.4"/>
            <path d="M12.6 4.4 10.6 2.4M12.6 4.4l-2 2"/><path d="M7.6 13.2a2 2 0 0 1 2-2h3"/>`,
-  /* the code host's issue mark. A RING and not a fork: the ticket and the pull request sit side
-     by side on line 3, so the two marks have to differ in shape and not only in colour. */
-  ticket: `<circle cx="8" cy="8" r="5.6"/><circle cx="8" cy="8" r="1.5"/>`,
+  /* The TICKETS ROOM's own mark — SF `checklist`, `ArgoSymbol.ticketsRoom`. A number on the row
+     addresses a Ticket, and the mark beside it has to be the one the reader clicks to go and
+     read that Ticket. A second glyph for the same thing is a second vocabulary.
+     It also differs from the pull request's fork in shape and not only in colour. */
+  ticket: `<path d="M2.3 5 3.5 6.2 5.9 3.6"/><path d="M8.4 5h5.3"/>
+           <path d="M2.6 11h3.3"/><path d="M8.4 11h5.3"/>`,
   /* the code host's pull-request mark */
   pr: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
        <circle cx="11.8" cy="12.2" r="1.7"/><path d="M11.8 10.5V6.6a2 2 0 0 0-2-2H7.2"/>
@@ -962,14 +965,17 @@ function prMark(s) {
 
 /* The two addresses this run answers to, side by side on line 3. The ticket is drawn in the
    quiet ink and the pull request in its state's, which is the hierarchy that is actually true:
-   the ticket is an address and nothing more, and the pull request is an address WITH a state. */
+   the ticket is an address and nothing more, and the pull request is an address WITH a state.
+
+   BOTH keep the `#`. The mark says which space the number lives in; the hash says it is a number
+   at all — without it `1269` sits beside `4m 12s` as one more quantity on a line of quantities. */
 function addresses(s) {
   const t = s.ticket
-    ? `<span class="addr" title="Ticket ${s.ticket}">${glyph(SVG.ticket)}${s.ticket}</span>`
+    ? `<span class="addr" title="Ticket #${s.ticket}">${glyph(SVG.ticket)}#${s.ticket}</span>`
     : '';
   return t + (s.pr
-    ? `<span class="addr pr ${s.pr.state}" title="Pull request ${s.pr.n} — ${s.pr.state}">${
-        glyph(s.pr.state === 'merged' ? SVG.merged : SVG.pr)}${s.pr.n}</span>`
+    ? `<span class="addr pr ${s.pr.state}" title="Pull request #${s.pr.n} — ${s.pr.state}">${
+        glyph(s.pr.state === 'merged' ? SVG.merged : SVG.pr)}#${s.pr.n}</span>`
     : '');
 }
 

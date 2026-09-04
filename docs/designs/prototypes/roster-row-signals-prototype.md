@@ -80,11 +80,17 @@ things. Renaming one of them was a patch. The real answer is that **a Ticket and
 are both addresses**, they belong in the same place, and each carries its own mark:
 
 ```
-◎ 1269      ⑂ 1312
+☑ #1269      ⑂ #1312
 ```
 
-A ring for the Ticket, a fork for the pull request — the shapes tell them apart before the
-colours do. The Ticket takes the quiet ink and the pull request its state's, which is the
+The Ticket's mark is the **Tickets room's own** — SF `checklist`, `ArgoSymbol.ticketsRoom`. A
+number on the row addresses a Ticket, and the mark beside it has to be the one the reader clicks
+to go and read that Ticket; a second glyph for the same thing is a second vocabulary. The pull
+request keeps the code host's fork, so the two differ in shape and not only in colour.
+
+**Both keep the `#`.** The mark says which space the number lives in; the hash says it is a
+number at all — without it `1269` sits beside `4m 12s` as one more quantity on a line of
+quantities. The Ticket takes the quiet ink and the pull request its state's, which is the
 hierarchy that is actually true: **a Ticket is an address, a pull request is an address with a
 state.**
 
