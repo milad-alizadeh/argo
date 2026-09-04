@@ -13,10 +13,10 @@ struct FeedChurnMarks: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.tight) {
             if churn.added > 0 {
-                Text("+\(churn.added)").foregroundStyle(argo.color.diff.added)
+                Text("+\(churn.added, format: .machine)").foregroundStyle(argo.color.diff.added)
             }
             if churn.removed > 0 {
-                Text("−\(churn.removed)").foregroundStyle(argo.color.diff.removed)
+                Text("−\(churn.removed, format: .machine)").foregroundStyle(argo.color.diff.removed)
             }
         }
         .argoMono(.body)

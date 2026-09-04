@@ -33,7 +33,7 @@ struct ViewRow: View {
             Spacer(minLength: ArgoSpacing.base)
             shortfall
             if let count {
-                Text("\(count)")
+                Text("\(count, format: .machine)")
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.tertiary)
             }
@@ -58,7 +58,7 @@ struct ViewRow: View {
             // `text.tertiary`, the COUNT's own ink. `text.disabled` measured 1.12:1 against this
             // rail's row ground — a 3/255 step, findable only at 3× — and there is no rung between
             // the two. Subordination is carried by position and by being words beside a numeral.
-            Text("\(unplaced) unplaced")
+            Text("\(unplaced, format: .machine) unplaced")
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
                 .fixedSize()

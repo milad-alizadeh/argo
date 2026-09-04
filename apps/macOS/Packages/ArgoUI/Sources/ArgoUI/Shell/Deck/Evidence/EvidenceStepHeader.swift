@@ -79,18 +79,12 @@ struct EvidenceStepHeader: View {
     }
 
     /// What this ONE result changed, in lines — the panel's own count and not the row's.
+    ///
+    /// `FeedChurnMarks` and not a second copy of it: the pair was spelled out here as well, which
+    /// is how the panel and the row it folds could have disagreed about the same two numbers.
     @ViewBuilder private var churn: some View {
         if let churn = step.churn {
-            HStack(spacing: ArgoSpacing.tight) {
-                if churn.added > 0 {
-                    Text("+\(churn.added)").foregroundStyle(argo.color.diff.added)
-                }
-                if churn.removed > 0 {
-                    Text("−\(churn.removed)").foregroundStyle(argo.color.diff.removed)
-                }
-            }
-            .argoMono(.body)
-            .monospacedDigit()
+            FeedChurnMarks(churn: churn)
         }
     }
 

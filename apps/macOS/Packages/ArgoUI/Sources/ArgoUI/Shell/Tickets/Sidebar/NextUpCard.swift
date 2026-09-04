@@ -103,7 +103,7 @@ package struct NextUpCard: View {
     private func picked(_ pick: NextUp.Pick) -> some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                Text("#\(pick.number)")
+                Text(IssueReading.mark(pick.number))
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.tertiary)
                 Text(pick.title)

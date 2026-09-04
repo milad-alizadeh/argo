@@ -15,7 +15,7 @@ extension ContractSpecimen {
             VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
                 ForEach(ArgoTypeScale.ladder, id: \.name) { rung in
                     HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
-                        Text("\(rung.name) · \(Int(rung.rung.size))pt")
+                        Text("\(rung.name) · \(Int(rung.rung.size), format: .machine)pt")
                             .argoText(ArgoTypography.machineCaption)
                             .foregroundStyle(argo.color.text.tertiary)
                             .frame(width: 132, alignment: .leading)

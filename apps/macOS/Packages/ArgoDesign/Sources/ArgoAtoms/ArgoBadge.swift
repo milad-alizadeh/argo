@@ -31,7 +31,7 @@ public struct ArgoBadge: View {
     }
 
     public var body: some View {
-        Text("\(count)")
+        Text("\(count, format: .machine)")
             .argoText(Self.type)
             .foregroundStyle(argo.color.text.primary)
             .padding(.horizontal, Self.insetX)

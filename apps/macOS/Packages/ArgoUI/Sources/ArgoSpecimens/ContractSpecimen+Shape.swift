@@ -24,7 +24,7 @@ extension ContractSpecimen {
                                     )
                             }
                             .frame(width: 88, height: 44)
-                        Text("\(rung.name) · \(Int(rung.radius))")
+                        Text("\(rung.name) · \(Int(rung.radius), format: .machine)")
                             .argoText(ArgoTypography.machineCaption)
                             .foregroundStyle(argo.color.text.tertiary)
                     }

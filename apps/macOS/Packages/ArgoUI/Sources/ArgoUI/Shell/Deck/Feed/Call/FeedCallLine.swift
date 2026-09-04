@@ -73,7 +73,7 @@ package struct FeedCallLine: View {
     /// How many calls this line stands for, where it stands for more than one.
     @ViewBuilder private var repeats: some View {
         if call.repeats > 1 {
-            Text("×\(call.repeats)")
+            Text("×\(call.repeats, format: .machine)")
                 .argoMono(.body)
                 .monospacedDigit()
                 .foregroundStyle(restInk)

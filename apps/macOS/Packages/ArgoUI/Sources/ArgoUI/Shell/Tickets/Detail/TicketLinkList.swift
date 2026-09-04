@@ -34,7 +34,7 @@ private struct TicketLinkRow: View {
     var body: some View {
         HStack(spacing: ArgoTicketDetail.linkFieldGap) {
             DeliveryDot(reading: link.delivery)
-            Text("#\(link.id)")
+            Text(IssueReading.mark(link.id))
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.secondary)
             title

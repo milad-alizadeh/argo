@@ -54,7 +54,7 @@ extension AtlasContractSpecimen {
                         Rectangle()
                             .fill(argo.color.atlas.measure.ramp.color(at: Double(step) / 10))
                             .frame(width: 34, height: 26)
-                        Text("\(step)")
+                        Text("\(step, format: .machine)")
                             .argoText(ArgoTypography.machineCaption)
                             .foregroundStyle(argo.color.text.tertiary)
                     }
