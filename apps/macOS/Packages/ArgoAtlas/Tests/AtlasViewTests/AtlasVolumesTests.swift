@@ -8,10 +8,10 @@ import Testing
 ///
 /// Every claim here is one a screenshot would have to be eyedropped to make, and one that decides
 /// whether the picture is honest rather than whether it is pretty: a file is its band's own swatch
-/// and nothing else, an unmeasured file is not the quiet end of the ramp, and the order the faces
+/// and nothing else, an unmeasured file is not the quiet end of the ramp, and the order the volumes
 /// are handed over is the order that puts a file on top of the plate it stands on.
 @Suite("Atlas — what the map is painted in")
-struct AtlasFacesTests {
+struct AtlasVolumesTests {
     static let pigments = AtlasPigments(
         ArgoPalette.graphite.atlas,
         rim: ArgoPalette.graphite.edge.hairline,
@@ -30,8 +30,14 @@ struct AtlasFacesTests {
                     path: "a/b/one",
                     rect: CGRect(x: 2, y: 28, width: 46, height: 40),
                     band: .hot,
+                    height: 40,
                 ),
-                .init(path: "a/two", rect: CGRect(x: 50, y: 14, width: 50, height: 86), band: nil),
+                .init(
+                    path: "a/two",
+                    rect: CGRect(x: 50, y: 14, width: 50, height: 86),
+                    band: nil,
+                    height: 3,
+                ),
             ],
         )
     }
@@ -76,15 +82,15 @@ struct AtlasFacesTests {
     ///
     /// Two faces per plate: its rim, then its ground inside that.
     @Test func `the plates are handed over before the files that stand on them`() {
-        let faces = AtlasFaces.faces(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
 
-        #expect(faces.count == 6)
-        #expect(faces[0].pigment == Self.pigments.rim(at: 0).simd)
-        #expect(faces[1].pigment == Self.pigments.plate(at: 0).simd)
-        #expect(faces[2].pigment == Self.pigments.rim(at: 1).simd)
-        #expect(faces[3].pigment == Self.pigments.plate(at: 1).simd)
-        #expect(faces[4].pigment == Self.measure.hot.simd)
-        #expect(faces[5].pigment == ArgoPalette.graphite.atlas.materials.unassigned.simd)
+        #expect(volumes.count == 6)
+        #expect(volumes[0].pigment == Self.pigments.rim(at: 0).simd)
+        #expect(volumes[1].pigment == Self.pigments.plate(at: 0).simd)
+        #expect(volumes[2].pigment == Self.pigments.rim(at: 1).simd)
+        #expect(volumes[3].pigment == Self.pigments.plate(at: 1).simd)
+        #expect(volumes[4].pigment == Self.measure.hot.simd)
+        #expect(volumes[5].pigment == ArgoPalette.graphite.atlas.materials.unassigned.simd)
     }
 
     /// The shader does not blend, so a role carrying an opacity has to be resolved before it gets
@@ -107,23 +113,23 @@ struct AtlasFacesTests {
     /// out, which the fixture's nesting reaches. A rim under the ground rather than a stroke over
     /// it, so it costs the map no face nothing stands on.
     @Test func `a plate's ground sits inside its own rim`() {
-        let faces = AtlasFaces.faces(of: Self.plan(), in: Self.pigments)
-        let border = Float(AtlasFaces.border)
+        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+        let border = Float(AtlasVolumes.border)
 
-        #expect(faces[0].size == SIMD2<Float>(100, 100))
-        #expect(faces[1].origin == SIMD2<Float>(border, border))
-        #expect(faces[1].size == SIMD2<Float>(100 - border * 2, 100 - border * 2))
+        #expect(volumes[0].size == SIMD2<Float>(100, 100))
+        #expect(volumes[1].origin == SIMD2<Float>(border, border))
+        #expect(volumes[1].size == SIMD2<Float>(100 - border * 2, 100 - border * 2))
     }
 
     /// A file keeps a gap of the plate around it, so a treemap reads as rectangles rather than as
     /// one field of colour.
     @Test func `a file keeps a gap around itself`() {
-        let gap = Float(AtlasFaces.gap)
+        let gap = Float(AtlasVolumes.gap)
 
-        let faces = AtlasFaces.faces(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
 
-        #expect(faces[4].origin == SIMD2<Float>(2 + gap, 28 + gap))
-        #expect(faces[4].size == SIMD2<Float>(46 - gap * 2, 40 - gap * 2))
+        #expect(volumes[4].origin == SIMD2<Float>(2 + gap, 28 + gap))
+        #expect(volumes[4].size == SIMD2<Float>(46 - gap * 2, 40 - gap * 2))
     }
 
     /// The gap may not turn a small file into a face covering the map. `CGRect.insetBy` returns a
@@ -139,9 +145,27 @@ struct AtlasFacesTests {
             )],
         )
 
-        let face = try #require(AtlasFaces.faces(of: plan, in: Self.pigments).first)
+        let face = try #require(AtlasVolumes.volumes(of: plan, in: Self.pigments).first)
 
         #expect(face.origin.x.isFinite)
         #expect(face.size == SIMD2<Float>(0, 0))
+    }
+
+    /// A file stands as tall as the plan said it stands, and its foot is on the plate — the third
+    /// channel, arriving at the GPU as the one number the shader raises the roof by.
+    @Test func `a file's roof stands at the height the plan gave it`() {
+        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+
+        #expect(volumes[4].heights == SIMD2<Float>(0, 40))
+        #expect(volumes[5].heights == SIMD2<Float>(0, 3))
+    }
+
+    /// A PLATE is foot and roof at one height. It is what makes the ground a flat face rather than
+    /// a slab: its two walls come out degenerate and rasterise nothing, so a plate costs the same
+    /// one quad it cost flat.
+    @Test func `a plate is one flat face, foot and roof together`() {
+        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+
+        #expect(volumes.prefix(4).allSatisfy { $0.heights.x == $0.heights.y })
     }
 }

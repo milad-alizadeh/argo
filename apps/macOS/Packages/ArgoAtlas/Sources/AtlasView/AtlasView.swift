@@ -2,11 +2,15 @@ import ArgoDesign
 import AtlasLayout
 import SwiftUI
 
-/// The Atlas, drawn flat: a rectangle per file in its band's colour, the folder plates under them
-/// carrying their names, and the key that says what the colour is worth (#1147).
+/// The Atlas: a volume per file, standing as tall as its measure and painted in its band's colour,
+/// the folder plates under them carrying their names, and the key that says what the colour is
+/// worth (#1147, stood up at #1150).
 ///
-/// Nothing here is lit: nothing may be lit at the cost of its band, which `AtlasFace.metal` states
-/// in full. The volumes stand up at #1150 and the light model arrives at #1151.
+/// ONE camera draws both readings. `relief` runs 1 to 0 — at 1 the city, at 0 the treemap — and
+/// there is no second view here, only that parameter.
+///
+/// Nothing here is lit: nothing may be lit at the cost of its band, which `AtlasVolume.metal`
+/// states in full. The light model arrives at #1151.
 ///
 /// The rectangles are Metal and the words are SwiftUI, which is the split every part of this view
 /// follows: the GPU draws the city, and the one thing a GPU has no cheap answer for — a name that
@@ -20,9 +24,13 @@ public struct AtlasView: View {
     @Environment(\.argo) private var argo
 
     private let plan: AtlasPlan
+    private let camera: AtlasCamera
 
-    public init(plan: AtlasPlan) {
+    /// `relief` is 1 for the city and 0 for the treemap, and it has no default: it is the one thing
+    /// that decides which of the two readings reaches the screen.
+    public init(plan: AtlasPlan, relief: Double) {
         self.plan = plan
+        self.camera = AtlasCamera(relief: relief, over: plan.extent)
     }
 
     public var body: some View {
@@ -40,11 +48,18 @@ public struct AtlasView: View {
             .overlay {
                 AtlasSurface(
                     plan: plan,
+                    camera: camera,
                     pigments: AtlasPigments(argo.color.atlas, rim: argo.color.edge.hairline),
                 )
             }
             .overlay {
-                AtlasPlateNames(plates: plan.plates)
+                // The names are laid out in PLAN coordinates, which is the map seen straight down.
+                // Turned, every one of them would sit where its folder used to be — a caption over
+                // a building it does not name is worse than no caption. The city gets its names
+                // when something can place them in the picture rather than in the plan.
+                if camera.isFlat {
+                    AtlasPlateNames(plates: plan.plates)
+                }
             }
             .frame(width: plan.extent.width, height: plan.extent.height)
     }
@@ -57,41 +72,55 @@ public struct AtlasView: View {
 /// looked at the tiled one beside it.
 private struct AtlasPreview: View {
     let plan: AtlasPlan
+    var relief: Double = 1
 
     var body: some View {
-        AtlasView(plan: plan)
+        AtlasView(plan: plan, relief: relief)
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
             .argoAppearance()
     }
 }
 
+/// A plan with ground to stand a city on: two plates, one nested, and three files at three
+/// different heights so a projection that lost the third channel is visible rather than plausible.
+private let previewPlan = AtlasPlan(
+    extent: CGSize(width: 620, height: 400),
+    plates: [
+        .init(path: "argo", rect: CGRect(x: 0, y: 0, width: 620, height: 400), depth: 0),
+        .init(path: "argo/rules", rect: CGRect(x: 2, y: 8, width: 300, height: 390), depth: 1),
+    ],
+    tiles: [
+        .init(
+            path: "argo/rules/house.md",
+            rect: CGRect(x: 4, y: 16, width: 296, height: 200),
+            band: .hot,
+            height: 60,
+        ),
+        .init(
+            path: "argo/rules/swift.md",
+            rect: CGRect(x: 4, y: 216, width: 296, height: 180),
+            band: .quiet,
+            height: 8,
+        ),
+        .init(
+            path: "argo/README.md",
+            rect: CGRect(x: 302, y: 8, width: 316, height: 390),
+            band: .middling,
+            height: 26,
+        ),
+    ],
+    legend: AtlasLegend(measure: "lines", greatestQuiet: 61, leastHot: 480),
+)
+
+#Preview("Atlas — the city") {
+    AtlasPreview(plan: previewPlan)
+}
+
+// The other end of the one camera, and the picture the identity is about: the same plan, drawn
+// straight down.
 #Preview("Atlas — the map tiled flat") {
-    AtlasPreview(plan: AtlasPlan(
-        extent: CGSize(width: 620, height: 400),
-        plates: [
-            .init(path: "argo", rect: CGRect(x: 0, y: 0, width: 620, height: 400), depth: 0),
-            .init(path: "argo/rules", rect: CGRect(x: 2, y: 8, width: 300, height: 390), depth: 1),
-        ],
-        tiles: [
-            .init(
-                path: "argo/rules/house.md",
-                rect: CGRect(x: 4, y: 16, width: 296, height: 200),
-                band: .hot,
-            ),
-            .init(
-                path: "argo/rules/swift.md",
-                rect: CGRect(x: 4, y: 216, width: 296, height: 180),
-                band: .quiet,
-            ),
-            .init(
-                path: "argo/README.md",
-                rect: CGRect(x: 302, y: 8, width: 316, height: 390),
-                band: .middling,
-            ),
-        ],
-        legend: AtlasLegend(measure: "lines", greatestQuiet: 61, leastHot: 480),
-    ))
+    AtlasPreview(plan: previewPlan, relief: 0)
 }
 
 #Preview("Atlas — the empty map") {

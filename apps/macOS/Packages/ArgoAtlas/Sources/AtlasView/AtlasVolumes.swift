@@ -2,12 +2,12 @@ import ArgoDesign
 import AtlasLayout
 import CoreGraphics
 
-/// A plan, turned into the rectangles the GPU draws (#1147).
+/// A plan, turned into the boxes the GPU draws (#1147, stood up at #1150).
 ///
 /// Pure, and separated from the renderer for the reason the tiler is separated from the view: this
 /// is where a file gets its colour and a folder its tone, and none of that needs a GPU to be
-/// checked. `AtlasFacesTests` is what checks it.
-enum AtlasFaces {
+/// checked. `AtlasVolumesTests` is what checks it.
+enum AtlasVolumes {
     /// The gap a file keeps around itself, so a treemap reads as rectangles rather than as one
     /// field of colour. It is the plate showing through rather than a stroke over the file, so it
     /// costs the map no second colour.
@@ -22,27 +22,37 @@ enum AtlasFaces {
     /// reason: a stroke would need a face nothing stands on.
     static let border = ArgoStroke.hairline
 
-    /// Every face of the map, in the order they are painted.
+    /// Every box of the map, in the order they are painted.
     ///
     /// Plates first and outermost first, then the files, which is the painter's order: a nested
     /// plate covers the one it stands on and the files cover the plate they stand on. The plan
     /// already holds both lists that way, so nothing here re-sorts what the tiler decided.
     ///
+    /// The order is not the whole story once the volumes stand up — a near tower has to cover a
+    /// far plate whatever order the two were handed over in, and that is the depth buffer's job
+    /// (`AtlasVolumeRenderer`). What the order still settles is everything COPLANAR: every plate
+    /// and every roof at zero height is at one depth, and the later draw wins. That is what leaves
+    /// the flat camera drawing exactly the treemap it drew before.
+    ///
     /// A plate is TWO faces, rim then ground, so the border survives the nesting: a nested plate
     /// paints over its parent's ground, and without a rim of its own the seam between them is two
     /// tones that are equal once the contract's three have run out.
-    static func faces(of plan: AtlasPlan, in pigments: AtlasPigments) -> [AtlasFace] {
+    static func volumes(of plan: AtlasPlan, in pigments: AtlasPigments) -> [AtlasVolume] {
         let plates = plan.plates.flatMap { frame in
             [
-                AtlasFace(frame.rect, pigment: pigments.rim(at: frame.depth)),
-                AtlasFace(
+                AtlasVolume(frame.rect, pigment: pigments.rim(at: frame.depth)),
+                AtlasVolume(
                     frame.rect.shrunk(by: border),
                     pigment: pigments.plate(at: frame.depth),
                 ),
             ]
         }
         let tiles = plan.tiles.map {
-            AtlasFace($0.rect.shrunk(by: gap), pigment: pigments.pigment(of: $0.band))
+            AtlasVolume(
+                $0.rect.shrunk(by: gap),
+                roof: $0.height,
+                pigment: pigments.pigment(of: $0.band),
+            )
         }
         return plates + tiles
     }

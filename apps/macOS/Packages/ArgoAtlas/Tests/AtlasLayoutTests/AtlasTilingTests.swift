@@ -20,7 +20,7 @@ struct AtlasTilingTests {
 
     /// Size by lines and colour by commits: two different Measures, so a claim about one channel
     /// cannot pass by reading the other's number.
-    static let channels = AtlasChannels(footprint: "lines", band: "commits")
+    static let channels = AtlasChannels(footprint: "lines", band: "commits", height: "commits")
 
     static func plan(of map: AtlasMap) -> AtlasPlan {
         AtlasPlan(tiling: map, by: channels, into: ground)

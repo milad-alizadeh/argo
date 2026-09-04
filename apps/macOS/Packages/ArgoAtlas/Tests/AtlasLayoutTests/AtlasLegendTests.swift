@@ -14,7 +14,7 @@ struct AtlasLegendTests {
     @Test func `the legend names the measure the map is coloured by`() throws {
         let plan = try AtlasPlan(
             tiling: AtlasMapFixture.argo(),
-            by: AtlasChannels(footprint: "lines", band: "commits"),
+            by: AtlasChannels(footprint: "lines", band: "commits", height: "commits"),
             into: CGSize(width: 1200, height: 800),
         )
 

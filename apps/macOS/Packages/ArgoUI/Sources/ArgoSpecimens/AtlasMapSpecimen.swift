@@ -4,8 +4,12 @@ import AtlasLayout
 import AtlasView
 import SwiftUI
 
-/// The map's first picture: this repository, tiled flat, with the key that says what its colour is
-/// worth (#1147).
+/// The map of this repository, at one end of the camera or the other: the city, or the same
+/// tiling seen straight down, with the key that says what its colour is worth (#1147, #1150).
+///
+/// One specimen and one `relief` rather than two views, because that is the claim the drawing
+/// makes: there is ONE camera, and the treemap is what it draws at the flat end of it. Two
+/// specimen types here would be two pictures nobody could tell had drifted apart.
 ///
 /// It is a specimen rather than a preview because the question it answers cannot be answered in
 /// Xcode. A `#Preview` renders on the machine that has the Metal Toolchain installed; the claim
@@ -14,27 +18,36 @@ import SwiftUI
 ///
 /// It draws the committed measurement rather than a tidy invention, for the reason the fixture
 /// exists: 89 real files, eleven levels of nesting, one file 78× the median and twenty carrying no
-/// `lines` at all. A treemap judged on tidy numbers is a treemap judged on the one repository that
-/// does not exist.
-struct AtlasTreemapSpecimen: View {
-    /// Size by `lines` and colour by `commits`: two different Measures, so nothing in the picture
-    /// can be read off one channel and mistaken for the other.
-    static let channels = AtlasChannels(footprint: "lines", band: "commits")
+/// `lines` at all. A city judged on tidy numbers is a city judged on the one repository that does
+/// not exist.
+struct AtlasMapSpecimen: View {
+    /// Size by `lines` and colour by `commits`, unchanged from the flat picture so the two ends of
+    /// the camera can be compared frame against frame.
+    ///
+    /// Height is `commits` too, which the FIXTURE decides rather than a preference. Its five
+    /// Measures over 89 files: `authors` is 1 for every one of them, `age_in_weeks` holds four
+    /// values, `bytes` runs 359 B to 4.8 MB, `lines` is absent on twenty. `commits` spreads 1 to 13
+    /// over eleven values, and it is the only one of the five that draws a skyline.
+    static let channels = AtlasChannels(footprint: "lines", band: "commits", height: "commits")
 
     let ground: CGSize
+    /// How much of the third dimension is left: 1 the city, 0 the treemap.
+    let relief: Double
     /// Nothing draws the map of a repository nobody has scanned: the floor, and no city on it.
     private let map: AtlasMap?
 
     init(
         ground: CGSize = CGSize(width: 1040, height: 660),
+        relief: Double = 1,
         map: AtlasMap? = try? AtlasMapFixture.argo(),
     ) {
         self.ground = ground
+        self.relief = relief
         self.map = map
     }
 
     var body: some View {
-        AtlasView(plan: plan)
+        AtlasView(plan: plan, relief: relief)
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
     }
@@ -50,8 +63,14 @@ struct AtlasTreemapSpecimen: View {
     }
 }
 
+#Preview("Atlas — the city") {
+    AtlasMapSpecimen()
+        .frame(width: 1100, height: 800)
+        .argoAppearance()
+}
+
 #Preview("Atlas — the map tiled flat") {
-    AtlasTreemapSpecimen()
+    AtlasMapSpecimen(relief: 0)
         .frame(width: 1100, height: 800)
         .argoAppearance()
 }
