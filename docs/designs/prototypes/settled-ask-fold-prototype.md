@@ -27,7 +27,7 @@ a live question costs.
 
 | Parameter | Effect |
 |---|---|
-| `?variant=now\|A\|B\|C\|D` | Which fold. Also `←`/`→`, or the bar at the bottom. |
+| `?variant=now\|A1\|A2\|D` | Which fold. Also `←`/`→`, or the bar at the bottom. |
 | `&case=pick\|long\|two\|free\|none\|reported` | Which ask. Also `↑`/`↓`. |
 
 Every state is reachable by URL, which is the point — a state you cannot link to is a state
@@ -39,31 +39,48 @@ vertical" is a number and not an opinion. The strip between them is the lane
 (`MinimapAskCard`), drawn off the rendered card, so a fold the lane cannot follow is visible
 rather than inferred.
 
-## The four folds
+## What the fold is
 
-| | What it is | Cost |
-|---|---|---|
-| **A** | The question truncated to one line, and the chosen option's words under it on the indent they were offered on. | The unchosen offers are gone and not reachable. |
-| **B** | One line: the question and the answer sharing the column. | They compete. At the `long` case both truncate and neither is readable. |
-| **C** | The answer is the row at the prose rung; the question drops to the meta rung under it. | The ask glyph goes, so the row stops reading as a question at all. |
-| **D** | A, plus a disclosure that swaps the answer line for the full numbered offer. | A control on a row that has never had one. |
+**The offer comes out, the question stays whole.** The length a settled ask loses is its list of
+options, not the words somebody was asked — a truncated question is a fact the row no longer
+states, and the fold is meant to drop what is finished, not what was said.
+
+So the settled block is: the question, wrapping in full at the prose rung, and one line under it
+carrying the way it went. Both on the marker grid the offers were on — the ask glyph and the
+answer's mark in the same 18pt column, their words on the same prose column after it — so the
+block is one grid and nothing hangs a few points off anything else.
+
+Two readings of the **hierarchy** between the two lines, differing in that and nothing else:
+
+| | Question | Answer | The claim |
+|---|---|---|---|
+| **A1** | `text.secondary` | `text.primary`, mark in `text.primary` | The way it went is the fact you scan a settled feed for; the question is the label on it. |
+| **A2** | `text.primary` | `text.secondary`, mark in `text.tertiary` | The question keeps the rung it has everywhere else in the feed, and the answer reads as its continuation. |
+
+**D** is A1 plus a disclosure that swaps the answer line for the full numbered offer as it ships
+today. Collapsed it costs what A1 costs.
+
+Two earlier shapes were drawn and dropped: one line with the question and the answer sharing the
+column (at `long` both truncate and neither is readable), and the answer as the row with the
+question at the meta rung under it (the ask glyph goes, so the row stops reading as a question).
 
 ## The numbers
 
 Measured in the browser at the 672pt column the feed draws, `now` being what ships today.
-Heights in points, per case.
+Heights in points, per case. A1 and A2 measure identically — the ink is the only difference.
 
-| Case | waiting | today | A | B | C | D collapsed |
-|---|---|---|---|---|---|---|
-| `pick` — one-of, 3 offers | 212 | 110 | **65** | 44 | 61 | **65** |
-| `long` — one-of, 5 offers, question wraps | 316 | 174 | **65** | 44 | 61 | **65** |
-| `two` — two questions, one call | 275 | 162 | **118** | 76 | 111 | **119** |
-| `free` — free-form | 82 | 43 | 65 | 44 | 61 | 65 |
-| `none` — no option named | 178 | 110 | **65** | 44 | 61 | **65** |
-| `reported` — companion plugin | 163 | 115 | **93** | 72 | 89 | **93** |
+| Case | waiting | today | A1 / A2 | D collapsed |
+|---|---|---|---|---|
+| `pick` — one-of, 3 offers | 212 | 110 | **65** | 65 |
+| `long` — one-of, 5 offers, question wraps to 2 lines | 316 | 174 | **83** | 83 |
+| `two` — two questions, one call | 275 | 162 | **118** | 119 |
+| `free` — free-form | 82 | 43 | 65 | 65 |
+| `none` — no option named | 178 | 110 | **65** | 65 |
+| `reported` — companion plugin | 163 | 115 | **93** | 93 |
 
-A settled ask under fold A is **21–37% of the same ask waiting**, and it is a **fixed** height
-whatever was offered: five offers cost what three do, which is the whole of the complaint.
+A settled ask is **26–43% of the same ask waiting**, and the offer no longer costs anything:
+`long`'s five offers and `pick`'s three now differ only by the question's own second line
+(83 against 65), where today they differ by 64pt.
 
 `free` is the one row that grows, from 43 to 65, and that is a **bug being fixed rather than a
 cost being paid** — see below.
@@ -81,17 +98,20 @@ cost being paid** — see below.
 3. **A fold has to carry the record's own prose, not only a label.** Which follows from 1 and 2:
    the answer line is a label where an option was named and the record's prose where it was not,
    at a quieter rung, because prose is what it is.
-4. **A disclosure must REPLACE the answer line, not join it.** Drawn as A-plus-the-list, the
-   chosen option appears twice, two lines apart. `D` swaps them.
+4. **A disclosure must REPLACE the answer line, not join it.** Drawn as the fold plus the list,
+   the chosen option appears twice, two lines apart. `D` swaps them.
 5. **The fold applies per question, not per card.** In `two` the step between the questions stays
    `blockStep` 12 and each question folds on its own, which is what keeps one call one ground.
-6. **A reported row is settled by definition.** Argo answers a companion-plugin call the moment
+6. **Truncating the question was the wrong economy.** It was drawn first and it reads badly: at
+   `long` the row states a question nobody can finish reading, and it saves 18pt against letting
+   it wrap. The offer is where the length is.
+7. **A reported row is settled by definition.** Argo answers a companion-plugin call the moment
    it arrives (#1205), so the fold is the state that row is *always* in — the caption stays under
    it and costs the 28pt the table shows.
-7. **The ordinal has nowhere to go.** The settled reading numbers its options because the number
-   is how an answer names one. A fold that draws one line has no column for it: A and D put the
-   tick in the marker column where the number was. Whether the fold keeps `2.` with a trailing
-   tick instead is a call the design has to state.
+8. **The ordinal has nowhere to go.** The settled reading numbers its options because the number
+   is how an answer names one. A fold that draws one line has no column for it: A1, A2 and D put
+   the tick in the marker column where the number was. Whether the fold keeps `2.` with a
+   trailing tick instead is a call the design has to state.
 
 ## What it is faithful to, and what it is not
 

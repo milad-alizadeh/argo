@@ -133,8 +133,9 @@
   }
   .ask.waiting .glyph { color: var(--attention); }
   .qtext { color: var(--text-1); min-width: 0; }
-  /* The fold's own truncation: ONE line at the column, never wrapped to three. */
-  .qtext.clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The question is never truncated. What it was is a fact the fold keeps whole; the length
+     the fold takes out is the OFFER, not the words somebody was asked. */
+  .qtext.quiet { color: var(--text-2); }
 
   /* The caption a row drawn off the companion plugin carries (#1205). */
   .caption { display: flex; gap: var(--marker-gap); align-items: flex-start;
@@ -174,27 +175,23 @@
   .rline.quiet .l { color: var(--text-2); }
   .rline .tick { color: var(--text-1); margin-left: var(--s-tight); flex: none; }
 
-  /* A — the answer under the question, on the option indent it was offered on. */
+  /* The answer, on the SAME grid the question and the offers are on: its mark in the marker
+     column, its words on the prose column after it. One grid, so nothing in the block hangs a
+     few points off anything else. It wraps like the question does. */
   .answer { display: flex; gap: var(--marker-gap); align-items: flex-start; }
-  .answer .mk { width: var(--marker-w); text-align: right; flex: none; color: var(--text-3);
-                font-size: 12px; margin-top: 2px; }
-  .answer .l { color: var(--text-1); min-width: 0;
-               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* Where the answer named no offered option it is the record's own prose, not a label. */
-  .answer .l.prose-answer { color: var(--text-2); }
-
-  /* B — one line: the question and the way it went, sharing the column. */
-  .oneline { display: flex; gap: var(--marker-gap); align-items: baseline; min-width: 0; }
-  .oneline .qtext { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .oneline .sep { color: var(--text-off); flex: none; }
-  .oneline .a { color: var(--text-2); flex: 1 1 40%; min-width: 4em;
-                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  /* C — answer first: the way it went is the row, the question is meta under it. */
-  .cmeta { display: flex; gap: var(--marker-gap); align-items: flex-start;
-           color: var(--text-3); font-size: 11px; }
-  .cmeta .mk { width: var(--marker-w); flex: none; }
-  .cmeta .l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .answer .mk {
+    width: var(--marker-w); text-align: right; flex: none; font-size: 12px;
+    /* Seated on the cap height of the 13pt line beside it — the same 2 the ask glyph takes,
+       so the two marks sit on one vertical. */
+    margin-top: 2px;
+  }
+  .answer .l { min-width: 0; }
+  /* The loud half of the pair carries the mark in the ordinary ink; the quiet half steps the
+     mark back with its words rather than leaving a bright tick over grey prose. */
+  .answer.loud .mk { color: var(--text-1); }
+  .answer.loud .l { color: var(--text-1); }
+  .answer.quiet .mk { color: var(--text-3); }
+  .answer.quiet .l { color: var(--text-2); }
 
   /* D — the fold, with the full offer still reachable. */
   .disc { margin-left: auto; flex: none; background: none; border: 0; cursor: pointer;
@@ -348,11 +345,10 @@ const CASES = {
 };
 
 const VARIANTS = {
-  now:  'now — every offer, one line each',
-  A:    'A — the answer under the question',
-  B:    'B — one line, question and answer',
-  C:    'C — the answer is the row',
-  D:    'D — A, with the offer still reachable',
+  now: 'now — every offer, one line each',
+  A1:  'A1 — the answer is the loud half',
+  A2:  'A2 — the question is the loud half',
+  D:   'D — A1, with the offer still reachable',
 };
 
 /* `FeedAsk.chosen(in:)`, transcribed: DERIVED and deliberately weak — the answer is prose, so
@@ -386,10 +382,10 @@ const GLYPH = '?';   /* ArgoSymbol.asked — questionmark.bubble; the browser ha
 const TICK  = '✓';   /* ArgoSymbol.chosen */
 
 function head(text, opts) {
-  const clip = opts && opts.clip;
+  const quiet = opts && opts.quiet;
   const h = el('div', 'head');
   h.append(el('span', 'glyph', GLYPH));
-  h.append(el('div', 'qtext' + (clip ? ' clip' : ''), text));
+  h.append(el('div', 'qtext' + (quiet ? ' quiet' : ''), text));
   return h;
 }
 
@@ -453,11 +449,16 @@ function said(q, answer) {
   return { text: taken != null ? taken : (answer || ''), isLabel: taken != null };
 }
 
-function answerLine(q, answer) {
+/* The answer's own line. `loud` says which half of the pair carries the ordinary ink — the two
+   readings differ in that and in nothing else, so the hierarchy is the only thing being judged. */
+function answerLine(q, answer, loud) {
   const s = said(q, answer);
-  const row = el('div', 'answer');
+  const row = el('div', 'answer ' + (loud ? 'loud' : 'quiet'));
+  /* The tick where an option was named, and the continuation mark where the answer is the
+     record's own prose — a tick over words nobody offered would claim a pick that never
+     happened. */
   row.append(el('span', 'mk', s.isLabel ? TICK : '›'));
-  row.append(el('div', 'l' + (s.isLabel ? '' : ' prose-answer'), s.text));
+  row.append(el('div', 'l', s.text));
   return row;
 }
 
@@ -469,51 +470,36 @@ const FOLDS = {
     return block;
   },
 
-  A(q, answer) {
+  /* The way it went is the fact you scan for; the question is the label on it. */
+  A1(q, answer) {
     const block = el('div', 'askq');
-    block.append(head(q.text, { clip: true }));
-    block.append(answerLine(q, answer));
+    block.append(head(q.text, { quiet: true }));
+    block.append(answerLine(q, answer, true));
     return block;
   },
 
-  B(q, answer) {
+  /* The question keeps the prose rung it has everywhere else in the feed, and the answer
+     reads as its continuation. */
+  A2(q, answer) {
     const block = el('div', 'askq');
-    const line = el('div', 'oneline');
-    line.append(el('span', 'glyph', GLYPH));
-    line.append(el('div', 'qtext', q.text));
-    line.append(el('span', 'sep', '·'));
-    line.append(el('div', 'a', said(q, answer).text));
-    block.append(line);
-    return block;
-  },
-
-  C(q, answer) {
-    const block = el('div', 'askq');
-    const s = said(q, answer);
-    const top = el('div', 'head');
-    top.append(el('span', 'glyph', s.isLabel ? TICK : GLYPH));
-    top.append(el('div', 'qtext clip', s.text));
-    block.append(top);
-    const meta = el('div', 'cmeta');
-    meta.append(el('span', 'mk', ''));
-    meta.append(el('div', 'l', 'asked: ' + q.text));
-    block.append(meta);
+    block.append(head(q.text));
+    block.append(answerLine(q, answer, false));
     return block;
   },
 
   D(q, answer) {
     const block = el('div', 'askq');
-    const h = head(q.text, { clip: true });
+    const h = head(q.text, { quiet: true });
     block.append(h);
     /* A free-form ask offered nothing, so there is nothing to disclose — and a chevron over an
        empty list is the affordance that lies. */
-    if (!q.options.length) { block.append(answerLine(q, answer)); return block; }
+    if (!q.options.length) { block.append(answerLine(q, answer, true)); return block; }
     const open = el('button', 'disc', '⌄');
     open.setAttribute('aria-label', 'Show what was offered');
     h.append(open);
     /* The fold's answer line is REPLACED by the offer, not joined by it: the list already ticks
        the option that was taken, and drawing both puts the same words on screen twice. */
-    const folded = answerLine(q, answer);
+    const folded = answerLine(q, answer, true);
     block.append(folded);
     let shown = null;
     open.addEventListener('click', () => {
@@ -553,7 +539,7 @@ function drawLane(cardEl, isRuled) {
   box.style.height = Math.max(6, origin.height * SCALE) + 'px';
   const inset = 12 * SCALE;
   const lines = cardEl.querySelectorAll(
-    '.qtext, .rline .l, .answer .l, .cmeta .l, .opt .l, .caption div, .oneline .a');
+    '.qtext, .rline .l, .answer .l, .opt .l, .caption div');
   for (const line of lines) {
     const r = line.getBoundingClientRect();
     if (!r.height) continue;
@@ -570,7 +556,7 @@ function drawLane(cardEl, isRuled) {
  * Render
  * ------------------------------------------------------------------ */
 const params = new URLSearchParams(location.search);
-let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
+let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A1';
 let kaseKey = CASES[params.get('case')] ? params.get('case') : 'pick';
 
 let refs = {};
@@ -661,16 +647,17 @@ function measure() {
 const NOTES = {
   now: 'The control. The question wraps in full and every offer takes a line, so a settled '
      + 'question keeps the vertical of a live one — which is the whole of #1207.',
-  A: 'Two lines whatever was offered. The question truncates at the column instead of wrapping, '
-   + 'and the words that were chosen sit under it on the indent they were offered on. The '
-   + 'unchosen offers stop being lines and are not reachable.',
-  B: 'One line. The tightest fold there is, and the one that costs the most: the question and '
-   + 'the answer compete for the same column, so a long answer eats the question that earned it.',
-  C: 'Two lines, inverted — the way it went is the row, and the question drops to the meta rung '
-   + 'under it. Reads well in a scan of a long feed and badly beside its neighbours, which are '
-   + 'all set the other way round.',
-  D: 'A, plus a disclosure that restores the full numbered offer exactly as it ships today. '
-   + 'Collapsed it costs what A costs. It is the only fold where nothing offered is lost.',
+  A1: 'The question in full at text.secondary, and the way it went under it at text.primary '
+    + 'with the mark. Both on the marker grid the offers were on. The answer is what you scan '
+    + 'a settled feed for, so it is the half that keeps the ordinary ink; the question is the '
+    + 'label on it. What comes out is the OFFER, never the words somebody was asked.',
+  A2: 'The same two lines with the ink the other way round: the question keeps the prose rung '
+    + 'it has everywhere else in the feed, and the answer reads as its continuation at '
+    + 'text.secondary. Sits better beside its neighbours; makes the answer the quieter half of '
+    + 'the only two facts left.',
+  D: 'A1, plus a disclosure that swaps the answer line for the full numbered offer exactly as '
+   + 'it ships today. Collapsed it costs what A1 costs. It is the only fold where nothing '
+   + 'offered is lost.',
 };
 
 const CASE_NOTES = {
