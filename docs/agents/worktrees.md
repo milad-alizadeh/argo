@@ -3,9 +3,9 @@
 Implementation work runs in a git worktree under `.claude/worktrees/`, never the shared main
 checkout — multiple agent sessions run concurrently, and isolating each unit of work on its own
 tree and branch keeps them from clobbering each other's files. A `PreToolUse` hook
-(`scripts/worktree-guard.mjs`) enforces it, blocking agent `Edit`/`Write` to `apps/**` or
-`packages/**` from outside a worktree, and a second one (`scripts/worktree-name-guard.mjs`)
-enforces the naming below at creation. This file is the *how* they cite — naming, resuming an
+(`scripts/worktree-guard.mjs`) enforces it, blocking every agent change to the main checkout
+from outside a worktree, and a second one (`scripts/worktree-name-guard.mjs`) enforces the
+naming below at creation. This file is the *how* they cite — naming, resuming an
 interrupted worktree, recovering a deleted one. It applies to all implementation work, not just
 `/implement` runs, and is self-contained so it stands alone when the hooks copy it into a
 consumer project.
@@ -34,6 +34,34 @@ For work with no ticket, keep the shape but drop the number: worktree `ticket-<s
 shared main checkout, which is the worse failure. What may not start is an *undeclared* one:
 the numberless slug may not itself begin with a number, because `argo/901-naming` is a dropped
 `#` and nothing downstream can tell it from a deliberate statement that no ticket exists.
+
+### Everything is guarded, and a write through the shell is a write
+
+`scripts/worktree-guard.mjs` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit` and
+`Bash`. From outside a worktree it refuses:
+
+- an `Edit`, `Write` or `NotebookEdit` to **any** path in the repository — not a chosen part of
+  it;
+- a `Bash` command that names a file it writes: a `>` or `>>` redirection (a `cat > file <<EOF`
+  heredoc included), `tee`, `sed -i`, `cp`, `mv`, `ln`, `install`, `rm`, `rmdir`, `touch`,
+  `truncate`, `dd of=`, `patch`, and `apply_patch`.
+
+Both of those started narrower, and both holes were found by the same four files: they sat
+uncommitted in the main checkout while the guard was installed and passing (#1276). One was
+under `scripts/`, which `apps/**` and `packages/**` never covered; all four were written with
+`cat > file`, which no edit-tool matcher ever sees.
+
+There is no unguarded corner left — a doc or config fix needs a worktree too. That is the point:
+"all of it except X" is what let the four files in, and X is only ever obvious in hindsight.
+
+Two things it deliberately does not do. It never fires for the human's own workflow, only for an
+agent (`CLAUDECODE`, or the `ARGO_HOOK_AGENT` the projection injects for Codex). And it allows a
+target it cannot resolve — one still holding a `$` or a backtick — for the reason the name guard
+does: guessing at an expansion would deny work that may well be correct. A program that writes
+as a side effect (`swift build`, `bun install`) names no path and is not read.
+
+A consumer whose agents must still edit part of their main checkout narrows the scope with
+`worktreeGuard.roots` in `hooks.json`; Argo's own default is `["."]`, the whole repository.
 
 ### The names are enforced, not merely documented
 

@@ -61,12 +61,13 @@ goes, and the verification recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 
-Implementation work (a ticket build, any multi-file change) runs in a worktree under
-`.claude/worktrees/`, never in the shared main checkout: from the repo root, enter one first
+**Every** change runs in a worktree under `.claude/worktrees/`, never in the shared main
+checkout — a doc or config fix as much as a ticket build. From the repo root, enter one first
 (Claude Code: `EnterWorktree`, unprompted; other harnesses: `git worktree add`) and commit to a
-ticket branch there. Read-only work (review, triage, Q&A) may stay in the main checkout.
-Naming, resuming, recovery, the sub-agent rule and `bun run worktrees:gc`:
-`docs/agents/worktrees.md`.
+ticket branch there. Only read-only work (review, triage, Q&A) may stay in the main checkout,
+and only while it stays read-only. A write through `Bash` — `cat > file`, `sed -i`, `cp` —
+counts as a change; the guard reads those too. Naming, resuming, recovery, the sub-agent rule
+and `bun run worktrees:gc`: `docs/agents/worktrees.md`.
 
 ## Cross-CLI guardrail hooks
 
@@ -75,7 +76,8 @@ Naming, resuming, recovery, the sub-agent rule and `bun run worktrees:gc`:
 ever adds context and can never block — projected per-harness. **Edit
 `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
 `.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
-and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.
+and narrow the edit guard, whose default scope is the whole repository, with
+`worktreeGuard.roots` in the same file.
 
 A script named in `hooks.json` must also be in `MANAGED_MARKERS` (`hooks-sync.mjs`) or the
 projection grows a duplicate on every run. `test:hooks` fails when it isn't.
