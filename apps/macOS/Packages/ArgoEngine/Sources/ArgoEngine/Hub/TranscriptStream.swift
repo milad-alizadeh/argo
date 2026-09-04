@@ -33,6 +33,28 @@ struct TranscriptStream: Sendable {
         stamp.fold(continuation.stamp)
     }
 
+    /// Take back everything from the record that OPENED an abandoned branch onward (#1202) —
+    /// answering whether anything was found to take.
+    ///
+    /// The search runs BACKWARDS and stops at the first excerpt seam, which is what bounds it: a
+    /// fork's abandoned branch is the tail of the stream, because the record superseding it is the
+    /// one being read now. A uuid this reading never held — behind a bounded read's seam, or in a
+    /// link of the chain that is somebody else's file — is a miss, and a miss drops NOTHING: an
+    /// emptied feed is a worse answer than a doubled row (`CONTEXT.md` Honesty tier).
+    mutating func dropBranch(openedBy uuid: String) -> Bool {
+        var index = records.endIndex
+        while index > records.startIndex {
+            index -= 1
+            if case .excerpted = records[index] {
+                return false
+            }
+            guard case let .recordIdentity(seen) = records[index], seen == uuid else { continue }
+            records.removeSubrange(index...)
+            return true
+        }
+        return false
+    }
+
     private mutating func restamp() {
         stamp.wrote(events: records.count)
     }

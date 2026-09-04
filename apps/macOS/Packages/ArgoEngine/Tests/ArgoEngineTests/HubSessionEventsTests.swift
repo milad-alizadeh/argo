@@ -86,7 +86,7 @@ private extension TranscriptEvent {
              .prompt, .toolCall,
              .toolCallOutcome, .turnEnded, .interrupted, .plan, .usage, .compaction, .queued,
              .unreadableLine,
-             .skillLoaded, .excerpted: nil
+             .skillLoaded, .superseded, .excerpted: nil
         }
     }
 }

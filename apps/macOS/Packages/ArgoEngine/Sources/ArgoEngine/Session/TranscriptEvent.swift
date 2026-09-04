@@ -82,6 +82,18 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// explicit event, so "nothing happened" stays distinguishable from "I could not read what
     /// happened"; the raw text rides along.
     case unreadableLine(raw: String)
+    /// A branch the CLI abandoned starts at the named record, and everything the reading took from
+    /// it onward belongs to a Turn that was submitted again (#1202).
+    ///
+    /// A transcript is a TREE — every record names the one it answers — and a Turn submitted twice
+    /// leaves two children on one parent. Only the later child is the branch the CLI went on with,
+    /// but the file keeps both, so a reading that appends every line in file order draws the same
+    /// words twice with one answer under them.
+    ///
+    /// It names the record the abandoned branch OPENED rather than carrying the events to drop:
+    /// what has to go is everything the reading has taken since, and only the reading knows how
+    /// much that is.
+    case superseded(fromRecord: String)
     /// The reading skipped a stretch of the file here — the seam a BOUNDED read leaves between a
     /// transcript's two ends (`TranscriptExcerpt`), which is what a launch sweep takes.
     ///

@@ -31,6 +31,9 @@ public actor TranscriptReader {
     /// plan one entry at a time leaves the list itself nowhere in the record.
     var planLedger = PlanLedger()
     private var context = TranscriptContextCursor()
+    /// The reader's third memory: where the file's prompts forked, so a Turn put twice draws one
+    /// row rather than two (`TranscriptForks`, #1202).
+    private var forks = TranscriptForks()
     let readImage: ImageReader
     private let readSkill: SkillReader
     /// The file being read, where there is one, and where in it the line in hand starts. Set by
@@ -108,8 +111,12 @@ public actor TranscriptReader {
         }
         switch record {
         case let .user(message):
-            return identity(of: message) + stance(of: message)
+            let opened = identity(of: message) + stance(of: message)
                 + context.events(for: message) + userEvents(message)
+            // BEFORE what it opens, never after: the branch it supersedes is everything the
+            // reading holds up to this moment, and a marker behind this record's own events would
+            // take them back too.
+            return superseded(by: message, opening: opened) + opened
         case let .assistant(message):
             return identity(of: message) + context.events(for: message) + assistantEvents(message)
         case let .attachment(message):
@@ -125,6 +132,21 @@ public actor TranscriptReader {
         case .unknown:
             return []
         }
+    }
+
+    /// The branch this record abandons, where it forks one (`TranscriptForks`).
+    ///
+    /// A SIDECHAIN record is never asked, and a Session's reading is the reason: a fan-out puts
+    /// several delegated agents under one call, and siblings there are the shape of the work rather
+    /// than a Turn put twice. `attributes(_:)` is the same guard the Turn fold takes, so the two
+    /// cannot drift.
+    private func superseded(
+        by message: MessageRecord,
+        opening events: [TranscriptEvent],
+    )
+        -> [TranscriptEvent] {
+        guard attributes(message) else { return [] }
+        return forks.superseded(by: message, opening: events)
     }
 
     private func identity(of message: MessageRecord) -> [TranscriptEvent] {

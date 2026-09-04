@@ -102,7 +102,7 @@ extension SessionHeaderProjection {
             case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort,
                  .branch, .mode, .entry,
                  .message, .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine,
-                 .skillLoaded, .excerpted: nil
+                 .skillLoaded, .superseded, .excerpted: nil
             }
         }
         .sorted()

@@ -116,7 +116,7 @@ package enum FeedProjection {
              .title, .cwd,
              .model, .effort, .branch, .mode, .entry, .turnEnded, .interrupted, .plan, .compaction,
              .queued,
-             .unreadableLine, .skillLoaded, .excerpted: nil
+             .unreadableLine, .skillLoaded, .superseded, .excerpted: nil
         }
     }
 
@@ -197,8 +197,10 @@ package enum FeedProjection {
         case .excerpted: .mark(.excerpted)
         // `.model` and `.effort` are read by `contents(of:)` above, which is the one place that
         // can tell an opening reading from a change — this switch sees one event at a time.
+        // `.superseded` never reaches a projection at all: it is spent where the reading is built,
+        // taking the abandoned branch out of the stream this switch is handed (#1202).
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
-             .model, .effort, .branch, .mode, .entry, .plan, .queued: nil
+             .model, .effort, .branch, .mode, .entry, .plan, .queued, .superseded: nil
         }
     }
 }
