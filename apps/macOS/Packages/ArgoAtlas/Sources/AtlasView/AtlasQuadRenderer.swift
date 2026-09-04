@@ -12,11 +12,13 @@ final class AtlasQuadRenderer: NSObject, MTKViewDelegate {
     let device: MTLDevice
     private let queue: MTLCommandQueue
     private let pipeline: MTLRenderPipelineState
-    private var uniforms: AtlasUniforms
+    /// Set by `AtlasSurface` on every update rather than fixed at construction, so a change of
+    /// appearance or of pigment reaches the GPU.
+    var uniforms = AtlasUniforms(pigment: .transparent, halfExtent: 0)
 
     /// `pixelFormat` is taken rather than read off a view: a pipeline is compiled against one
     /// format, and building it before the view exists is what keeps the failure here.
-    init?(uniforms: AtlasUniforms, pixelFormat: MTLPixelFormat) {
+    init?(pixelFormat: MTLPixelFormat) {
         guard let device = MTLCreateSystemDefaultDevice(),
               let queue = device.makeCommandQueue(),
               let library = try? device.makeDefaultLibrary(bundle: Bundle.module),
@@ -35,7 +37,6 @@ final class AtlasQuadRenderer: NSObject, MTKViewDelegate {
         self.device = device
         self.queue = queue
         self.pipeline = pipeline
-        self.uniforms = uniforms
         super.init()
     }
 

@@ -74,9 +74,10 @@ public struct ArgoColor: Sendable, Hashable {
     /// role rather than to a number (#1144), and the conversion sits here beside its siblings for
     /// the reason they do: a channel is read off `ArgoColor` in one place or it drifts in several.
     ///
-    /// The components pass through unchanged, which is only honest against an unmanaged drawable —
-    /// `bgra8Unorm`, which is what `AtlasSurface` asks for. A colour-managed one would want these
-    /// linearised, and that is a conversion to write when something needs it.
+    /// **Opaque roles only.** The components pass through unpremultiplied, and a `CAMetalLayer`
+    /// drawable is premultiplied — hand this a role carrying an `opacity` below 1 and the clear is
+    /// brighter than its own alpha, which composites wrong. Every caller today passes a ground,
+    /// which is opaque by construction; a translucent one needs the premultiply written first.
     public var clearColor: MTLClearColor {
         MTLClearColor(red: red, green: green, blue: blue, alpha: opacity)
     }

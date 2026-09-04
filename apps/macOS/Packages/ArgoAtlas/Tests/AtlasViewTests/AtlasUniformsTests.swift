@@ -44,7 +44,11 @@ struct AtlasUniformsTests {
         #expect(uniforms.key.intensity == Float(ArgoLight.key.intensity))
         #expect(uniforms.fill.intensity == Float(ArgoLight.fill.intensity))
         #expect(uniforms.key.direction == SIMD3<Float>(ArgoLight.key.direction))
-        #expect(uniforms.ambient == ArgoLight.ambient.tint.simd)
+        // The sky term is driven too. Asserted against the product rather than the tint alone,
+        // because `ArgoLight.ambient.intensity` is 1 today and a test written against the tint
+        // would pass while the number was being dropped.
+        let sky = ArgoLight.ambient
+        #expect(uniforms.ambient == sky.tint.simd * Float(sky.intensity))
     }
 
     /// The pigment crosses as three channels. Opacity is dropped, and this says so rather than

@@ -17,25 +17,40 @@ struct AtlasSurface: NSViewRepresentable {
     private static let halfExtent: Float = 0.72
 
     func makeCoordinator() -> AtlasQuadRenderer? {
-        AtlasQuadRenderer(
-            uniforms: AtlasUniforms(pigment: pigment, halfExtent: Self.halfExtent),
-            pixelFormat: .bgra8Unorm,
-        )
+        AtlasQuadRenderer(pixelFormat: .bgra8Unorm)
     }
 
     func makeNSView(context: Context) -> MTKView {
         let view = MTKView(frame: .zero, device: context.coordinator?.device)
         view.colorPixelFormat = .bgra8Unorm
+        // The drawable is colour-matched to sRGB, which is the space `ArgoColor`'s components are
+        // in. Left nil it would be UNMANAGED, and the window server would read the shader's numbers
+        // in the display's own space — on a P3 Mac, which is every current one, the plate would
+        // render more saturated than the same role drawn by SwiftUI beside it. That would break the
+        // one promise `ArgoLight` makes: a lit face is the colour of its legend swatch.
+        view.colorspace = CGColorSpace(name: CGColorSpace.sRGB)
         // A still frame, drawn on demand. The Atlas has nothing animating yet, and a display link
         // spinning at 120 Hz over a static plate is a battery cost with no picture to show for it.
         view.isPaused = true
         view.enableSetNeedsDisplay = true
         view.delegate = context.coordinator
-        view.clearColor = ground.clearColor
+        apply(to: view, renderer: context.coordinator)
         return view
     }
 
-    func updateNSView(_ view: MTKView, context _: Context) {
-        view.setNeedsDisplay(view.bounds)
+    /// The colours are pushed on every update, not captured at construction. SwiftUI does not
+    /// rebuild a coordinator when a representable's stored properties change, so a surface that
+    /// baked its pigment in would keep drawing the old one through an appearance change — and
+    /// through the very next caller that passes a second plate tone.
+    func updateNSView(_ view: MTKView, context: Context) {
+        apply(to: view, renderer: context.coordinator)
+    }
+
+    private func apply(to view: MTKView, renderer: AtlasQuadRenderer?) {
+        renderer?.uniforms = AtlasUniforms(pigment: pigment, halfExtent: Self.halfExtent)
+        view.clearColor = ground.clearColor
+        // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the
+        // view's bounds are still zero, and invalidating an empty rect marks nothing dirty.
+        view.needsDisplay = true
     }
 }

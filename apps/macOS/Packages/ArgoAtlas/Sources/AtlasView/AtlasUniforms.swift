@@ -47,7 +47,10 @@ struct AtlasUniforms {
     init(pigment: ArgoColor, halfExtent: Float) {
         self.pigment = pigment.simd
         self.normal = SIMD3<Float>(0, 0, 1)
-        self.ambient = ArgoLight.ambient.tint.simd
+        // Driven by its intensity like the other two, even though that is 1 today. `ArgoLight`
+        // says the sky term's colour IS its strength, and a uniform that dropped the number would
+        // make turning the sky down in the contract change nothing on screen.
+        self.ambient = ArgoLight.ambient.tint.simd * Float(ArgoLight.ambient.intensity)
         self.halfExtent = halfExtent
         self.key = Lamp(ArgoLight.key)
         self.fill = Lamp(ArgoLight.fill)
