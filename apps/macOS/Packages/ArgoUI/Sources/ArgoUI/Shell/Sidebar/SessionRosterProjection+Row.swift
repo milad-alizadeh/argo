@@ -91,11 +91,19 @@ extension SessionRosterProjection {
             self.activity = activity.activity
         }
 
-        /// The one fact the second line carries beside the clock, first match wins (#1199): what
-        /// the Session is doing right now while it is running, and the fact that tells it apart
-        /// from its neighbours otherwise. One slot, so the line never says both.
+        /// The one fact the second line carries, first match wins (#1199): what the Session is
+        /// doing right now while it is running, and the fact that tells it apart from its
+        /// neighbours otherwise. One slot, so the line never says both — and it has the line to
+        /// itself now that the clock is on line 3 (#1343).
         var secondaryFact: String? {
             activity ?? toldApart
+        }
+
+        /// Whether the row draws a second line at all. It disappears entirely where there is no
+        /// fact for it: a line holding nothing, between the title and the clock under it, is what
+        /// a three-line row cannot afford (#1343).
+        var drawsActivityLine: Bool {
+            secondaryFact != nil
         }
 
         /// When the open Turn began, where Argo owns the stamp — what the dot's pulse ages off, so

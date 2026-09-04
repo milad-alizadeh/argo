@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — Roster row signals: agents, PR, ready to ship</title>
+<!--
+  THROWAWAY PROTOTYPE (#1310, plus the PR badge and the ready-to-ship affordance).
+  Six variants of the Sessions roster row, switchable via ?variant=A|B|C|D|E|F, the floating
+  bar, or the ← / → keys.
+
+  THE QUESTION
+  The row says what one Session is DOING. It says nothing about the machinery under it or the
+  product coming out of it. Three facts want in at once, and they compete for the same two
+  lines:
+    1. how many Agents run under the Session right now      (#1310)
+    2. which pull request it is attached to, and its state   (merged / open / closed / draft)
+    3. that it is ready to ship, and the action that ships it
+  A variant is a position on how many of those three a dense row can carry, and where.
+
+  Every colour, radius, spacing step and type role is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoRadius.swift, ArgoSpacing.swift, ArgoLayout.swift, ArgoTypography.swift.
+  The four PR inks are the ONE thing here that is not in the contract; see --pr-* below.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --hover:      rgba(255,255,255,.045);
+    --selected:   rgba(255,255,255,.058);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    /* The accent, banked. A plan that stopped moving must still read as far as it GOT — grey
+       erases the one thing the bar is for, and a 6-of-6 drawn in the dead ink looks like a plan
+       nobody started. Same hue, dropped to where it cannot be mistaken for live. */
+    --accent-still: #2F5C89;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* PR state — NOT in the visual contract. The code host's own dark-theme inks, because
+       "merged is purple" is a fact the reader already carries in from GitHub, and the domain
+       says a code-host fact keeps the host's vocabulary. The contract has no purple at all,
+       and --pr-open sits a hue away from --running: see the .md, this is the open risk. */
+    --pr-open:   #3FB950;
+    --pr-merged: #A371F7;
+    --pr-closed: #F85149;
+    --pr-draft:  #8B949E;
+
+    /* ArgoRadius.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoSpacing.swift */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --dot: 6px;
+    /* The title's own line box: 13px at the body's 1.45. Everything that has to sit ON the
+       title's line is centred against this rather than nudged by eye — a marker aligned by a
+       magic number drifts the moment the type scale moves. */
+    --row-line: calc(13px * 1.45);
+    --dot-inset: calc((var(--row-line) - var(--dot)) / 2);
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10; color: var(--text-1);
+    font: 13px/1.45 var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 72px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle); box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base); min-width: 1080px;
+  }
+  .panes { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    display: flex; flex-direction: column; border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%); min-height: 0;
+  }
+  .sidebar-head {
+    display: flex; align-items: center; gap: var(--s-base);
+    height: 46px; flex: none; padding: 0 var(--s-comfortable);
+  }
+  .eyebrow {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .roster { flex: 1; overflow-y: auto; padding: 0 var(--s-base) var(--s-base); min-height: 0; }
+  .sidebar-foot {
+    flex: none; padding: var(--s-base) var(--s-comfortable) var(--s-comfortable);
+    border-top: 1px solid var(--hairline); color: var(--text-3); font-size: 12px;
+    display: flex; align-items: center; gap: var(--s-snug);
+  }
+
+  /* ---------- roster row ---------- */
+  .row {
+    position: relative; border-radius: var(--r-control);
+    padding: 7px var(--s-base); margin-bottom: 1px;
+    cursor: default; transition: background 120ms ease;
+  }
+  .row:hover { background: var(--hover); }
+  /* SELECTION IS THE PLATFORM'S OWN SELECTED CARD, tinted with the accent — not the custom
+     neutral wash this prototype started with. AppKit already draws a selected row this way in
+     every sidebar on the machine, so a hand-rolled grey is a second selection vocabulary the
+     reader has to learn. Still no leading accent rule: the GROUND carries it, as D30 asks.
+     This is one rule for every list in the app — the Sessions roster and the Tickets room
+     both — and the implementation ticket has to say so. */
+  /* The fill alone by default. The rim is a TOGGLE in the switcher, because the two readings
+     are a millimetre apart and the only way to choose is to flip between them on the same
+     rows: the fill alone is quieter in a long list, and the rim holds the card's edge where the
+     row above it is also tinted. */
+  .row.sel { background: rgba(62,155,255,.14); }
+  body.rim .row.sel { box-shadow: inset 0 0 0 1px rgba(62,155,255,.34); }
+  .row.ext { opacity: .58; }
+
+  .flex { display: flex; align-items: center; min-width: 0; }
+  .g4 { gap: var(--s-tight); } .g6 { gap: var(--s-snug); } .g8 { gap: var(--s-base); }
+  .grow { flex: 1; min-width: 0; }
+  .col { display: flex; flex-direction: column; min-width: 0; }
+
+  .dot { width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.running   { background: var(--running); box-shadow: 0 0 6px rgba(70,211,168,.5); }
+  .dot.attn      { background: var(--attention); }
+  .dot.fail      { background: var(--failure); }
+  .dot.idle      { background: var(--idle); }
+  /* "Argo cannot say" is an outline and never a colour — SessionStateIndicator's own rule. */
+  .dot.unknown   { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); }
+
+  .title {
+    font-size: 13px; font-weight: 500; color: var(--text-1); letter-spacing: -.05px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .meta {
+    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  /* A live Turn duration is the one figure on the row drawn in the running ink — the same
+     spend `RosterTurnClock` makes today. It is also a THIRD green on a row that carries a
+     PR badge, which is the collision the .md names. */
+  .time.live { color: var(--running); }
+  .badge {
+    flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
+    text-transform: uppercase; color: var(--attention);
+  }
+  .badge.fail { color: var(--failure); }
+  .g { width: 11px; height: 11px; flex: none; }
+
+  /* ---------- the agent count, four ways ---------- */
+
+  /* A — pips stacked under the state dot, in the leading marker column. */
+  /* The state dot sits on the TITLE's optical centre, not at the top of the column: the title
+     is the line it is a state for, and a dot floating above it reads as a bullet. Everything
+     under it — the Subagent dots — then hangs from that one x and y. */
+  .marker { width: var(--dot); flex: none; display: flex; flex-direction: column;
+            align-items: center; gap: 3px; padding-top: var(--dot-inset); position: relative; }
+  .pip { width: 4px; height: 4px; border-radius: 1px; background: var(--running); flex: none; }
+  .pip.more { width: 5px; height: 4px; border-radius: 1px; background: var(--text-off);
+              box-shadow: 0 0 0 0; }
+  .pip.unknown { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); border-radius: 50%; }
+  /* A landed delegation is a DASH, never an outlined pip: an outline here is already spoken for
+     by the unknown state, and two outlines under one dot read as two dots. */
+  .pip.spent { width: 5px; height: 1px; border-radius: 0; background: var(--text-off); }
+  /* Past five dots the column says how many it is NOT drawing. Taken out of the flow and
+     centred on the column, so the overflow costs the title not one point of its width — the
+     count is the rarest thing on the row and the title is the widest. */
+  .pipmore {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 2px; font: 9px var(--mono); color: var(--text-3); white-space: nowrap;
+  }
+
+  /* B / C / D — a labelled figure. Never a bare number: `3` beside a title is a number
+     nobody can name, which is the trap AgentMeter.swift already names. */
+  .agents {
+    display: inline-flex; align-items: center; gap: 3px; flex: none;
+    font: 11px var(--mono); color: var(--running);
+  }
+  .agents.spent   { color: var(--text-off); }
+  .agents.unknown { color: var(--text-off); }
+  .agents svg { stroke: currentColor; }
+
+  /* ---------- the PR badge ---------- */
+  .pr {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    font: 11px var(--mono); border-radius: var(--r-marker);
+  }
+  .pr.open   { color: var(--pr-open); }
+  .pr.merged { color: var(--pr-merged); }
+  .pr.closed { color: var(--pr-closed); }
+  .pr.draft  { color: var(--pr-draft); }
+  /* The filled form some variants use, where the badge has to hold its own beside a title. */
+  .pr.fill { padding: 1px var(--s-snug); font-size: 10.5px; }
+  .pr.fill.open   { background: rgba(63,185,80,.14);  box-shadow: inset 0 0 0 1px rgba(63,185,80,.32); }
+  .pr.fill.merged { background: rgba(163,113,247,.16); box-shadow: inset 0 0 0 1px rgba(163,113,247,.34); }
+  .pr.fill.closed { background: rgba(248,81,73,.14);  box-shadow: inset 0 0 0 1px rgba(248,81,73,.32); }
+  .pr.fill.draft  { background: rgba(139,148,158,.12); box-shadow: inset 0 0 0 1px rgba(139,148,158,.28); }
+  .pr svg { stroke: currentColor; }
+
+  /* ---------- ready to ship ---------- */
+  /* The claim arrives over the companion channel, so it is CONVENTION and never DIRECT — it is
+     drawn as a thing the Session SAID, and a Session that says nothing simply has no strip. */
+  .ready {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    font: 600 10px var(--sans); letter-spacing: .5px; text-transform: uppercase;
+    color: var(--pr-open);
+  }
+  .ship {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    border: none; cursor: pointer; font: 600 11px var(--sans);
+    padding: 3px var(--s-base); border-radius: var(--r-control);
+    background: rgba(63,185,80,.16); color: #7EE787;
+    box-shadow: inset 0 0 0 1px rgba(63,185,80,.34);
+  }
+  .ship:hover { background: rgba(63,185,80,.26); color: #A6F0AE; }
+  .ship svg { stroke: currentColor; width: 11px; height: 11px; }
+  /* The reason the Session gave, in the deck header beside the control. */
+  .shipwhy { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- E / F — the third line ---------- */
+  /* A DIFFERENT SUBJECT from the two lines above it. Lines 1 and 2 are the Session: a process,
+     running now. This line is the Delivery: a product on a branch, which outlives the process.
+     The register change carries that — the utility face, one step down, and the PR's own ink —
+     so no hairline rule is needed to separate them. A rule inside a row inside a list is
+     furniture; a change of voice is not. */
+  .delivery {
+    display: flex; align-items: center; gap: var(--s-snug);
+    margin-top: var(--s-hair); padding-left: 14px;
+    font: 10.5px var(--mono); color: var(--text-3); min-width: 0;
+  }
+  .delivery .n { flex: none; }
+  .delivery .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .delivery.none { color: var(--text-off); }
+
+  /* THE SIGNATURE. The Delivery's own lifecycle, in miniature: commits · pr · ci · review ·
+     merge, the five nodes `CONTEXT.md` L4 already names. Filled to where the work has actually
+     got, in the PR state's ink. Ready-to-ship needs no badge in this shape — it IS the gap
+     between a filled `commits` and an empty `pr`. */
+  .track { display: inline-flex; gap: 2px; flex: none; }
+  .track i { width: 6px; height: 3px; border-radius: 1px; background: rgba(255,255,255,.13); }
+  .track i.on { background: currentColor; }
+  /* A closed pull request reached its nodes and then stopped counting. Hollow, not filled:
+     drawing it solid red would say the work landed. */
+  .track.closed i.on { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+
+
+  /* ---------- G / H / I — the third line is PROGRESS ---------- */
+  /* The segments turned out to be worth more than the lifecycle they were drawn for. What a
+     roster reader actually wants to know is how far through its own work the Session is, and
+     Argo already holds that: the Plan (`CONTEXT.md` L3), the agent's live to-do list, session
+     scoped and replaced whole. One segment per item, filled to what is done.
+
+     The ink is the ACCENT and not the running teal. The plan is the Session's own progress, not
+     its state, and the row already spends teal on the dot and on a live Turn clock. A third
+     teal thing would make the row one colour. */
+  .plan { display: inline-flex; gap: 2px; flex: none; align-items: center; }
+  .plan i {
+    height: 3px; border-radius: 1px; background: rgba(255,255,255,.13);
+    width: var(--seg, 6px);
+  }
+  .plan i.done  { background: var(--accent); }
+  /* Exactly one item is in progress at a time — the house rule the list is written under. It
+     is the brightest thing on the bar, because it is the only item anybody can act on. */
+  .plan i.doing { background: var(--accent-bright); }
+  /* A Session that is not running is not progressing. Its plan is frozen where it stopped, and
+     drawing it in the live ink would say the work goes on — the untruth #1269 was written for. */
+  .plan.frozen i.done, .plan.frozen i.doing { background: var(--accent-still); }
+
+  /* H's continuous form, for comparison: one bar and a figure instead of countable segments. */
+  .plan.solid { width: 64px; height: 3px; border-radius: 1px;
+                background: rgba(255,255,255,.13); display: inline-block; position: relative; }
+  .plan.solid b { position: absolute; inset: 0 auto 0 0; border-radius: 1px; background: var(--accent); }
+  .plan.solid.frozen b { background: var(--accent-still); }
+  .planfig { font: 10.5px var(--mono); color: var(--text-3); flex: none; }
+
+  /* I draws the plan as the row's own bottom edge rather than as an object on a line. */
+  .row.edge { padding-bottom: 9px; }
+  .edgebar {
+    position: absolute; left: var(--s-base); right: var(--s-base); bottom: 4px; height: 2px;
+    border-radius: 1px; background: rgba(255,255,255,.10); overflow: hidden;
+  }
+  .edgebar b { display: block; height: 100%; background: var(--accent); }
+  .edgebar.frozen b { background: var(--accent-still); }
+
+  /* The pull request on line 3 is a GLYPH and a colour. No number: the title above it already
+     opens with the Ticket number, and a second number on the row is a second ticket. */
+  .prmark { display: inline-flex; align-items: center; flex: none; }
+  /* An address on line 3: its mark, then its number. The mark IS the label — `1269` beside
+     `1312` needs the ring and the fork to tell a ticket from a pull request, and neither needs
+     a word. */
+  .addr {
+    display: inline-flex; align-items: center; gap: var(--s-tight); flex: none;
+    font: 11px var(--mono); color: var(--text-3);
+  }
+  .addr + .addr { margin-left: var(--s-base); }
+  .addr svg { stroke: currentColor; }
+
+  /* D's trailing gutter: one fixed column, one fact, ranked. */
+  .gutter { width: 46px; flex: none; display: flex; flex-direction: column;
+            align-items: flex-end; gap: 3px; }
+  .gutter .slot { height: 15px; display: flex; align-items: center; }
+  .ship.mini { padding: 2px 5px; font-size: 10px; }
+
+  /* C's fact bar. */
+  .sep { color: var(--text-off); }
+
+  /* fold row */
+  .chev { width: 11px; height: 11px; color: var(--text-3); flex: none; }
+  /* The disclosure stands where the dot does, so a fold's title lands on the same x as every
+     other title and the column does not step in and out down the list. Two rules, because the
+     marker column already carries the dot's own inset and a bare chevron does not. */
+  .marker .chev { margin-top: calc((var(--row-line) - 11px) / 2 - var(--dot-inset)); }
+  .row > .flex > .chev { margin-top: calc((var(--row-line) - 11px) / 2); }
+  .row.fold .title { color: var(--text-2); font-weight: 400; }
+
+  /* ---------- deck ---------- */
+  .deck { display: flex; flex-direction: column; background: var(--base); min-width: 0; }
+  .deck-head {
+    height: 46px; flex: none; display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-section); border-bottom: 1px solid var(--hairline);
+  }
+  .deck-title { font-size: 13px; font-weight: 600; }
+  .deck-body { flex: 1; display: grid; grid-template-columns: 220px 1fr; min-height: 0; }
+
+  /* the Agents rail, so the roster's figure can be checked against the rail's own count line */
+  .rail { border-right: 1px solid var(--hairline); padding: var(--s-comfortable); overflow-y: auto; }
+  .rail h5 {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: var(--s-base);
+  }
+  .chip {
+    display: flex; align-items: center; gap: var(--s-snug);
+    padding: var(--s-snug); border-radius: var(--r-control); margin-bottom: var(--s-tight);
+  }
+  .chip:hover { background: var(--hover); }
+  .chip .cn { font-size: 11.5px; color: var(--text-2); overflow: hidden;
+              text-overflow: ellipsis; white-space: nowrap; }
+
+  /* The plan pill, as `PlanPill.swift` draws it above the dock — here so the ring and the
+     roster's bar can be judged in one glance. THE RING TAKES THE ACCENT, not the running teal it
+     strokes today: the two are the same fact about the same list, and a reader seeing them in
+     two colours has to work out whether they are saying different things. Teal is what the state
+     dot and a live Turn clock spend, so a teal ring reads as a state rather than as progress. */
+  .pill {
+    display: inline-flex; align-items: center; gap: var(--s-base);
+    padding: var(--s-snug) var(--s-comfortable) var(--s-snug) var(--s-base);
+    border-radius: 999px; background: var(--overlay);
+    box-shadow: inset 0 0 0 1px var(--subtle), 0 8px 24px rgba(0,0,0,.4);
+    font-size: 12.5px;
+  }
+  .ring { width: 15px; height: 15px; flex: none; transform: rotate(-90deg); display: block; }
+  .ring circle { fill: none; }
+  .ring .track { stroke: rgba(255,255,255,.13); stroke-width: 1.4; }
+  .ring .arc { stroke: var(--accent); stroke-width: 2.6; }
+  .pill .count { font: 12.5px var(--mono); color: var(--text-3); flex: none; }
+  .pill .step { color: var(--text-1); }
+  .pill .step.none { color: var(--text-3); }
+
+  /* the answers card — the prototype's own readout, not part of the design */
+  .answers { padding: var(--s-loose) var(--s-section); overflow-y: auto; }
+  .answers h4 {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--accent-bright); margin-bottom: var(--s-comfortable);
+  }
+  .qa { display: grid; grid-template-columns: 200px 1fr; gap: var(--s-base) var(--s-loose);
+        font-size: 12px; align-items: baseline; }
+  .qa .q { color: var(--text-3); }
+  .qa .a { color: var(--text-1); }
+  .qa .a em { color: var(--text-3); font-style: normal; }
+  .answers .note {
+    margin-top: var(--s-loose); padding-top: var(--s-comfortable);
+    border-top: 1px solid var(--hairline); font-size: 11.5px; color: var(--text-3);
+    max-width: 62ch;
+  }
+  .answers .note b { color: var(--attention); font-weight: 600; }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: flex; align-items: center; gap: 2px;
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button {
+    border: none; background: none; cursor: pointer; width: 26px; height: 26px;
+    border-radius: 999px; font-size: 15px; color: #111;
+  }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+  .switch .toggle {
+    width: auto; padding: 0 10px; height: 22px; font: 600 11px var(--sans);
+    background: rgba(0,0,0,.07); border-radius: 999px;
+  }
+  .switch .toggle.on { background: #111; color: #fff; }
+
+  /* Q8 — the motion the toggle turns on, so the reader can see why a list of these is a list
+     nobody can scan. Off by default, and the recommendation is that it stays off. */
+  body.motion .pip,
+  body.motion .agents svg { animation: breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="panes">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span class="eyebrow" id="eyebrow">Sessions</span>
+      </div>
+      <div class="roster" id="roster"></div>
+      <div class="sidebar-foot" id="foot"></div>
+    </aside>
+
+    <section class="deck">
+      <div class="deck-head">
+        <span class="deck-title" id="deck-title"></span>
+        <span class="grow"></span>
+        <span id="deck-pr"></span>
+      </div>
+      <div class="deck-body">
+        <div class="rail" id="rail"></div>
+        <div class="answers" id="answers">
+          <div id="pill-slot"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="switch">
+  <button onclick="cycle(-1)" aria-label="Previous variant">‹</button>
+  <span id="switch-label"></span>
+  <button onclick="cycle(1)" aria-label="Next variant">›</button>
+  <button class="toggle" id="motion-toggle" onclick="toggleMotion()">Motion</button>
+  <button class="toggle" id="rim-toggle" onclick="toggleRim()">Rim</button>
+</div>
+
+<script>
+/* ============ GLYPHS ============ */
+const SVG = {
+  /* delegation: a stem that forks. Not the branch glyph — that one is git's on this row. */
+  agents: `<path d="M4 13.2V6.4a2 2 0 0 1 2-2h6"/><circle cx="4" cy="14.4" r="1.4"/>
+           <path d="M12.6 4.4 10.6 2.4M12.6 4.4l-2 2"/><path d="M7.6 13.2a2 2 0 0 1 2-2h3"/>`,
+  /* The TICKETS ROOM's own mark — SF `checklist`, `ArgoSymbol.ticketsRoom`. A number on the row
+     addresses a Ticket, and the mark beside it has to be the one the reader clicks to go and
+     read that Ticket. A second glyph for the same thing is a second vocabulary.
+     It also differs from the pull request's fork in shape and not only in colour. */
+  ticket: `<path d="M2.3 5 3.5 6.2 5.9 3.6"/><path d="M8.4 5h5.3"/>
+           <path d="M2.6 11h3.3"/><path d="M8.4 11h5.3"/>`,
+  /* the code host's pull-request mark */
+  pr: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
+       <circle cx="11.8" cy="12.2" r="1.7"/><path d="M11.8 10.5V6.6a2 2 0 0 0-2-2H7.2"/>
+       <path d="M8.8 3 7.2 4.6l1.6 1.6"/>`,
+  merged: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
+           <circle cx="11.8" cy="4" r="1.7"/><path d="M11.8 5.7v.8a4 4 0 0 1-4 4H5.9"/>`,
+  ship: `<path d="M8 12.6V3.4"/><path d="M4.6 6.8 8 3.4l3.4 3.4"/><path d="M3.4 13.6h9.2"/>`,
+  chevD: `<path d="M4 6.5 8 10.5l4-4"/>`,
+  chevR: `<path d="M6.5 4 10.5 8l-4 4"/>`,
+};
+const glyph = (d, cls = 'g') => `<svg class="${cls}" viewBox="0 0 16 16" fill="none"
+  stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+/* ============ FIXTURES ============ */
+/* One row per case the ticket asks a variant to answer. Read the comment, not just the row.
+
+   agents: how many Subagents are RUNNING at this second — the same reading
+           FeedAgents.running(of:) gives the rail (#1269 says the two must agree).
+     n     — Argo can say: n are running.  0 is a real answer.
+     null  — Argo CANNOT say (an open delegation under a Session whose silence says nothing,
+             #1076). Never drawn as a number, in any variant.
+   spent:  how many have LANDED. Only there to tell "delegated nothing" from "delegated and
+           they are all home" — two different facts, per the ticket's question 4.
+   pr:     { n, state } or null. state ∈ open | merged | closed | draft, the host's own words.
+   ready:  what the Session CLAIMED over the companion channel, or null. CONVENTION tier. */
+const sessions = [
+  /* THE TICKET NUMBER IS OFF THE TITLE, and on line 3 beside the pull request.
+
+     The app draws it in the title today — `#1269 — The rail reads …` — and that is what put two
+     hash numbers on one row the moment a pull request arrived beside it. Moving the number to
+     line 3 fixes the collision at its cause rather than by renaming one of the two: the ticket
+     and the pull request are both ADDRESSES, they belong together, and each carries its own
+     mark so the shapes tell them apart before the colours do.
+
+     The title then carries the sentence alone, which is the widest and most readable it has
+     been in any variant here. A run with no Ticket — a slash command (#745), an external
+     session — simply draws no ticket mark. */
+  { id:'s1', title:'The rail reads the Subagents’ own records', ticket:1269, state:'running', access:'managed',
+    act:'Ran Edit FeedAgentReader.swift', clock:'4m 12s',
+    plan:{done:3,total:7}, agents:3, spent:1, pr:{n:1312,state:'open'}, ready:null },
+
+  /* Q5 — the ceiling. Twelve marks do not fit on a 320pt row in ANY variant. */
+  { id:'s2', title:'Sweep every stop reason in the corpus', ticket:1204, state:'running', access:'managed',
+    act:'Ran Read 41 transcripts', clock:'22m 07s',
+    plan:{done:5,total:12}, agents:12, spent:4, pr:null, ready:null },
+
+  /* Q4a — delegated NOTHING. The honest mark here is no mark at all. */
+  { id:'s3', title:'Fix the worktree naming guard', ticket:1289, state:'running', access:'managed',
+    act:'Ran scripts/swift-boundaries.sh', clock:'1m 30s',
+    plan:{done:2,total:3}, agents:0, spent:0, pr:{n:1291,state:'merged'}, ready:null },
+
+  /* Q4b — delegated five, and all five are home. Different fact from the row above. */
+  { id:'s4', title:'Graphite and Ion Blue across the shell', ticket:375, state:'idle', access:'managed',
+    act:null, clock:'18m',
+    plan:null, agents:0, spent:5, pr:{n:1301,state:'closed'}, ready:null },
+
+  /* THE SHIP CASE — the Session says it is done and there is no pull request yet. The one
+     title shape that is NOT a ticket: a run opened by a slash command (#745). */
+  { id:'s5', title:'/implement 1288', ticket:null, state:'idle', access:'managed',
+    act:null, clock:'2m',
+    plan:{done:6,total:6}, agents:0, spent:2, pr:null,
+    ready:{ why:'8 files · 2 commits · quality green' } },
+
+  /* Q6 — the DERIVED, cannot-tell count, on an external Session Argo owns no terminal of. */
+  { id:'s6', title:'codex — refactor the relay', ticket:null, state:'unknown', access:'external',
+    act:null, told:'external', clock:'6m ago',
+    plan:null, agents:null, spent:0, pr:{n:1305,state:'draft'}, ready:null },
+
+  /* An orphaned run: ghosted, and its pull request outlives the process that opened it. */
+  { id:'s7', title:'The checkout mark’s previews pass the worktree', ticket:1276, state:'idle', access:'orphaned',
+    act:null, clock:'3d',
+    plan:{done:4,total:9}, agents:0, spent:3, pr:{n:1279,state:'open'}, ready:null },
+
+  { id:'s8', title:'Screenshots go in the ticket body and the PR body', ticket:1282, state:'attn', access:'managed',
+    word:'Needs input', act:'Ran gh auth status', clock:'40s',
+    plan:{done:1,total:4}, agents:1, spent:0, pr:{n:1286,state:'open'}, ready:null },
+
+  /* The edge that decides where the ship claim may draw: the Session claims ready AND a pull
+     request is already open. The claim is stale; the pull request outranks it. */
+  { id:'s9', title:'The branch control goes; Refresh checkout moves', ticket:1232, state:'idle', access:'managed',
+    act:null, clock:'1h',
+    plan:{done:8,total:8}, agents:0, spent:1, pr:{n:1285,state:'open'}, reviewed:true,
+    ready:{ why:'12 files · 3 commits' } },
+
+  /* Q7 — the fold. It stands for four headless runs at once, so every fact on it is a SUM or
+     it is a claim about runs it is hiding. */
+  { id:'f1', fold:true, title:'4 runs', told:'ticket-1194-fold', clock:'12m',
+    state:null, access:'managed', plan:null, agents:6, spent:9, prs:{open:2,merged:1}, ready:null },
+];
+
+let selected = 's1';
+let motion = false;
+
+/* ============ SHARED READINGS ============ */
+/* Whether the row may draw the ship affordance at all. A claim with a PR already open is a
+   stale claim — the product moved on and the Session did not hear. The PR wins: it is DERIVED
+   from the code host, and the claim is only what an agent SAID. */
+const shipsNow = s => s.ready != null && s.pr == null;
+const word = s => s.word ?? null;
+const dotClass = s => s.access === 'external' ? 'unknown' : (s.state ?? 'idle');
+const fact = s => s.act ?? s.told ?? null;
+/* The clock, in the ink its state earns. */
+const clockOf = s => `<span class="time ${s.state === 'running' ? 'live' : ''}">${s.clock}</span>`;
+
+/* The count line the RAIL draws for the same Session, so a variant can be checked against it. */
+const railHeader = s =>
+  s.agents == null ? 'Background Agents · state unknown' : `Background Agents · ${s.agents} running`;
+
+/* The PR badge, in the two weights the variants need. `#1312` and a state ink — the number is
+   the thing the reader is looking for, and the colour is what the state costs nothing to say. */
+/* `PR 1312` and never `#1312`. The title of a Session already opens with its Ticket number, so
+   a second hash on the same row reads as a second ticket. The two live in different spaces and
+   the row has to say which space it is addressing. Where a glyph is drawn the word is dropped —
+   the mark is the label there. */
+function prBadge(s, { fill = false, glyphOn = true } = {}) {
+  if (!s.pr) return '';
+  const mark = s.pr.state === 'merged' ? SVG.merged : SVG.pr;
+  return `<span class="pr ${s.pr.state} ${fill ? 'fill' : ''}" title="Pull request ${s.pr.n} — ${s.pr.state}">
+    ${glyphOn ? glyph(mark) : 'PR&nbsp;'}${s.pr.n}</span>`;
+}
+
+/* The fold's PR reading: never one badge, because a fold has no one PR. A tally or nothing. */
+function foldPRs(s) {
+  if (!s.prs) return '';
+  return `<span class="pr open" title="2 open pull requests under this fold">${glyph(SVG.pr)}${s.prs.open}</span>
+          <span class="pr merged" title="1 merged pull request under this fold">${glyph(SVG.merged)}${s.prs.merged}</span>`;
+}
+
+/* ============ VARIANTS ============ */
+/* Each is a POSITION, not a skin. Read the comment above each one: it says what that variant
+   is willing to give up, which is the only thing that tells four dense rows apart.
+
+   TWO RULES HOLD ACROSS ALL FOUR, and neither is negotiable:
+
+   1. THE ACTIVITY LINE STAYS. What the Session is doing right now is the row's own subject
+      (#1199) — every new fact here is an addition to it and never a replacement for it. A
+      variant that moves the activity to a tooltip is not a cheaper row, it is a different
+      surface.
+   2. NO CONTROL ON THE ROW. The roster has exactly one click and it selects the Session.
+      Ready-to-ship is drawn as a STATE, like `Needs input` is; the Create PR control that runs
+      `/ship` lives in the deck header, where the Session is already open. A second click
+      target on a row is a row a reader has to aim at. */
+const NAMES = {
+  A: 'Pips in the leading column',
+  B: 'Trailing meta column on line 1',
+  C: 'Grouped with the clock, line 2 trailing',
+  D: 'One trailing gutter, one ranked fact',
+  E: 'A third line, only when there is a delivery',
+  F: 'A third line on every row',
+  G: 'Progress as segments, one per to-do item',
+  H: 'Progress as one bar and a figure',
+  I: 'Progress as the row’s own bottom edge',
+};
+
+/* Ready to ship, as a WORD in the state slot — the slot that already carries `Needs input` and
+   `Stopped`. It is a state the Session claimed, so it is drawn exactly where the states the
+   row derives are drawn, and it competes with them rather than sitting beside them. */
+const readyWord = s => shipsNow(s)
+  ? `<span class="ready" title="${s.ready.why} — open the Session to ship it">${glyph(SVG.ship)}Ready</span>`
+  : (word(s) ? `<span class="badge">${word(s)}</span>` : '');
+
+const roster = {
+
+  /* ── A ────────────────────────────────────────────────────────────────────────────────
+     The leading marker column is where the MACHINERY lives. The state dot keeps its place and
+     grows a stack of pips beneath it — one per running Agent, ceiling 3 and then a wider bar
+     that means "and more". The PR badge takes the leading edge of line 2, ahead of the
+     activity, so the clock at the trailing edge is untouched.
+     GIVES UP: the exact figure above 3, and some of line 2's width for the activity. */
+  A: s => {
+    const pips = subDots(s);
+    return `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${pips}
+      </span>
+      <span class="col grow g4" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        <span class="flex g6">
+          ${s.fold ? foldPRs(s) : prBadge(s)}
+          <span class="meta grow">${fact(s) ?? ''}</span>
+          ${clockOf(s)}
+        </span>
+      </span>
+    </div>`;
+  },
+
+  /* ── B ────────────────────────────────────────────────────────────────────────────────
+     Line 1 ends in a meta column: the labelled agent figure, then the PR as a filled chip,
+     then the state slot. A figure has NO ceiling, which is exactly what it buys — the
+     twelve-Agent row reads `12` where A can only say "more than 3". Line 2 is left entirely
+     alone, so the activity keeps its full width and the clock its edge.
+     GIVES UP: the title's width, which is the widest thing on the row and the first thing a
+     reader uses to tell two runs apart. */
+  B: s => `
+    <div class="col g4" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${agentFigure(s)}
+        ${s.fold ? foldPRs(s) : prBadge(s, {fill:true, glyphOn:false})}
+        ${readyWord(s)}
+      </div>
+      <div class="flex g6">
+        <span class="meta grow">${fact(s) ?? ''}</span>
+        ${clockOf(s)}
+      </div>
+    </div>`,
+
+  /* ── C ────────────────────────────────────────────────────────────────────────────────
+     Line 1 is left exactly as it is today — dot, title, state — and every new fact joins the
+     CLOCK at the trailing edge of line 2, as one group. The reasoning: the count, the PR and
+     the clock are all machine readings of the same run, and a reader scanning for any of them
+     scans one column rather than three places. The activity keeps the leading edge and gives
+     up its tail, which is what it already does today whenever the clock is beside it.
+     GIVES UP: the activity's tail, and it puts three facts where the eye currently expects
+     one. */
+  C: s => `
+    <div class="col" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${readyWord(s)}
+      </div>
+      <div class="flex g6" style="padding-left:14px">
+        <span class="meta grow">${fact(s) ?? ''}</span>
+        ${agentFigure(s)}
+        ${s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false})}
+        ${clockOf(s)}
+      </div>
+    </div>`,
+
+  /* ── D ────────────────────────────────────────────────────────────────────────────────
+     The row cannot grow, so it carries exactly ONE extra fact and ranks them: the agent count
+     beats the PR. Both live in a fixed trailing gutter under the clock, so the row's width is
+     decided once and never by its content, and every clock on the roster lands on one x.
+     The fact that loses the slot is still reachable — the deck header carries the PR, the rail
+     carries the count.
+     GIVES UP: seeing the count and the PR at once on the same row. */
+  D: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}" style="margin-top:var(--dot-inset)"></span>`}
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        <span class="meta">${fact(s) ?? ''}</span>
+      </span>
+      <span class="gutter">
+        <span class="slot">${clockOf(s)}</span>
+        <span class="slot">${
+          (s.agents == null || s.agents > 0)
+            ? agentFigure(s)
+            : (s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false}))
+        }</span>
+      </span>
+    </div>`,
+
+  /* == E and F: THE THIRD LINE ==========================================================
+     Both split the row by SUBJECT rather than by slot, which is the argument for a third
+     line at all:
+
+       line 1   who this is, and what machinery is under it   — title, agent count, state
+       line 2   what it is doing at this second               — activity, clock
+       line 3   what it has produced                          — the Delivery
+
+     Lines 1 and 2 are the Session, a process running now. Line 3 is the Delivery, a product
+     on a branch that outlives the process. Nothing on line 3 competes with the activity,
+     because the activity is a different subject and now has a line to itself.
+
+     The line leads with the Delivery's own lifecycle — commits · pr · ci · review · merge,
+     the five nodes `CONTEXT.md` L4 names — filled to where the work actually got. Ready to
+     ship needs no badge in this shape: it IS a filled `commits` beside an empty `pr`. */
+
+  /* ── E ────────────────────────────────────────────────────────────────────────────────
+     The line appears ONLY where there is something to deliver. Most rows stay two lines, so
+     the PRESENCE of a third line is itself the signal — the reader finds the runs that made
+     something without reading a word.
+     GIVES UP: a uniform row height, and with it the ability to judge the list's length at a
+     glance. */
+  E: s => `
+    <div class="col" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${agentFigure(s)}
+        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+      </div>
+      ${linesOf(s).hasActivity ? `
+      <div class="flex g6" style="padding-left:14px">
+        <span class="meta grow">${fact(s)}</span>
+        ${clockOf(s)}
+      </div>` : ''}
+      ${deliveryLine(s, {always: false, clock: !linesOf(s).hasActivity})}
+    </div>`,
+
+  /* ── F ────────────────────────────────────────────────────────────────────────────────
+     The same line on EVERY row, including the rows with nothing to say, which read `no
+     delivery yet` against an empty track. The counter-position to E: a fixed three-line row
+     puts the delivery on one x down the whole list, and a reader compares two runs by
+     reading across rather than by hunting for which rows grew a line.
+     GIVES UP: about a third of the roster's vertical space, on rows that had nothing to
+     add. */
+  F: s => `
+    <div class="col" style="gap:var(--s-hair)">
+      <div class="flex g6">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        <span class="title grow">${s.title}</span>
+        ${agentFigure(s)}
+        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+      </div>
+      ${linesOf(s).hasActivity ? `
+      <div class="flex g6" style="padding-left:14px">
+        <span class="meta grow">${fact(s)}</span>
+        ${clockOf(s)}
+      </div>` : ''}
+      ${deliveryLine(s, {always: true, clock: !linesOf(s).hasActivity})}
+    </div>`,
+
+  /* == G, H and I: THE THIRD LINE IS PROGRESS ==========================================
+     The row now reads top to bottom as three questions a person actually asks in order:
+
+       line 1   which run is this        — the title, which opens with its Ticket number
+       line 2   what is it doing         — the newest call, in the feed's own words
+       line 3   how is it going          — how long, how far, and what came out
+
+     Line 3 holds the clock, the Plan's own progress, and the pull request as a mark. The
+     Subagents are NOT on it: what runs under this Session is drawn under its state dot, in
+     the leading column, as smaller dots. That column belongs to the machinery and nothing
+     else on the row claims it.
+
+     The pull request is a GLYPH and a colour here, never a number. The title above already
+     opens with the Ticket number, and a second number on the row is a second ticket. */
+
+  /* ── G ────────────────────────────────────────────────────────────────────────────────
+     One segment per to-do item, at a fixed total width. A 12-item plan and a 3-item plan
+     occupy the same space, so a reader compares two rows by how far the fill got and never
+     by how long the bar is. The item count is readable at a glance up to about eight.
+     GIVES UP: countable segments past eight, where they become texture. */
+  G: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${subDots(s)}
+      </span>
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        ${fact(s) ? `<span class="meta">${fact(s)}</span>` : ''}
+        <span class="flex g8" style="margin-top:var(--s-hair)">
+          ${clockOf(s)}
+          ${planBar(s)}
+          <span class="grow"></span>
+          ${s.fold ? foldPRs(s) : addresses(s)}
+        </span>
+      </span>
+    </div>`,
+
+  /* ── H ────────────────────────────────────────────────────────────────────────────────
+     The same line, with the plan drawn as one bar and stated as a figure. `3/7` is exact at
+     any size where segments have already become texture, and it is the one form that does
+     not lie about a twenty-item list.
+     GIVES UP: the shape of the work. A reader can no longer see that a run is two items from
+     done without reading the figure. */
+  H: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${subDots(s)}
+      </span>
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        ${fact(s) ? `<span class="meta">${fact(s)}</span>` : ''}
+        <span class="flex g8" style="margin-top:var(--s-hair)">
+          ${clockOf(s)}
+          ${planSolid(s)}
+          <span class="grow"></span>
+          ${s.fold ? foldPRs(s) : addresses(s)}
+        </span>
+      </span>
+    </div>`,
+
+  /* ── I ────────────────────────────────────────────────────────────────────────────────
+     The progress is not an object on a line — it IS the row's bottom edge, full width. The
+     roster then reads as a stack of runs each carrying its own fill, and the third line
+     spends its width on the clock and the pull request alone.
+     GIVES UP: the item count entirely, and it draws a rule on every row, which is the
+     furniture the flat row was designed without. */
+  I: s => `
+    <div class="flex g8" style="align-items:flex-start">
+      <span class="marker">
+        ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
+        ${subDots(s)}
+      </span>
+      <span class="col grow" style="gap:var(--s-hair)">
+        <span class="flex g6">
+          <span class="title grow">${s.title}</span>
+          ${readyWord(s)}
+        </span>
+        ${fact(s) ? `<span class="meta">${fact(s)}</span>` : ''}
+        <span class="flex g8">
+          ${clockOf(s)}
+          ${s.plan ? `<span class="planfig">${s.plan.done}/${s.plan.total}</span>` : ''}
+          <span class="grow"></span>
+          ${s.fold ? foldPRs(s) : addresses(s)}
+        </span>
+      </span>
+    </div>
+    ${s.plan ? `<span class="edgebar ${s.state === 'running' ? '' : 'frozen'}"><b style="width:${
+      Math.round(s.plan.done / s.plan.total * 100)}%"></b></span>` : ''}`,
+};
+
+
+/* The labelled figure B, C and D share. The glyph IS the label — a bare `3` on a row is the
+   unnamed number AgentMeter.swift refuses. `?` for the count Argo cannot establish, because a
+   number there would be the #1269 untruth written in one character. */
+function agentFigure(s) {
+  if (s.agents == null)
+    return `<span class="agents unknown" title="An open delegation Argo cannot resolve">${glyph(SVG.agents)}?</span>`;
+  if (s.agents > 0)
+    return `<span class="agents" title="${s.agents} Agents running">${glyph(SVG.agents)}${s.agents}</span>`;
+  if (s.spent)
+    return `<span class="agents spent" title="${s.spent} delegations, all landed">${glyph(SVG.agents)}0</span>`;
+  return '';  /* delegated nothing — no mark at all */
+}
+
+
+/* ============ THE THIRD LINE (E and F) ============ */
+/* How far the Delivery has actually got, as a count of the five lifecycle nodes. A RULE and not
+   a table on each fixture: the stage is derived from the pull request's own state, so no row can
+   claim a stage its PR does not support. */
+const NODES = ['commits', 'pr', 'ci', 'review', 'merge'];
+function stage(s) {
+  if (!s.pr) return s.ready ? 1 : 0;          /* commits and nothing else, or nothing at all */
+  switch (s.pr.state) {
+    case 'draft':  return 2;
+    case 'merged': return 5;
+    case 'closed': return 3;
+    default:       return s.reviewed ? 4 : 3;
+  }
+}
+
+/* The track. Five segments, filled to the stage, in the pull request state's ink — and in the
+   ship green before there is a pull request at all, because that is the one state where the NEXT
+   node is the whole point. */
+function track(s) {
+  const n = stage(s);
+  const state = s.pr ? s.pr.state : 'open';
+  const reached = NODES.slice(0, n).join(' · ') || 'nothing yet';
+  return `<span class="pr ${state}" title="${reached}"><span class="track ${state}">${
+    NODES.map((_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')
+  }</span></span>`;
+}
+
+/* What the line SAYS beside the track. One job each: the track carries how far the work got, the
+   words carry which pull request it is and what state it is in. Never both in one place. */
+function deliveryWords(s) {
+  if (s.fold) return `<span class="n">${s.prs.open + s.prs.merged} pull requests below</span>`;
+  if (s.pr) return `<span class="pr ${s.pr.state} n">PR ${s.pr.n}</span><span class="n">${s.pr.state}</span>`;
+  return `<span class="ready n">Ready to ship</span><span class="why">${s.ready.why}</span>`;
+}
+
+/* E draws this line only where there IS something to deliver; F draws it on every row. */
+function deliveryLine(s, { always = false, clock = false } = {}) {
+  /* The clock rides here when line 2 has no activity to carry it. Its x does not move — the
+     clock is right-aligned to the row's trailing edge on either line, so the column a reader
+     scans times down is the same one. Only its y changes. */
+  const tail = clock ? `<span class="grow"></span>${clockOf(s)}` : '';
+  const has = s.fold ? !!s.prs : (s.pr != null || shipsNow(s));
+  if (!has) {
+    if (!always && !clock) return '';
+    return `<div class="delivery none"><span class="track">${
+      NODES.map(() => '<i></i>').join('')}</span><span class="n">no delivery yet</span>${tail}</div>`;
+  }
+  return `<div class="delivery">${s.fold ? '' : track(s)}${deliveryWords(s)}${tail}</div>`;
+}
+
+/* Line 2 exists only where there is an activity to put on it. A row whose Session is quiet and
+   whose Delivery is not would otherwise draw a line holding nothing but a clock, and a hollow
+   line between two full ones is the one thing a three-line row cannot afford. */
+const linesOf = s => ({ hasActivity: fact(s) != null });
+
+
+/* ============ THE PROGRESS LINE (G, H, I) ============ */
+/* The Plan, as the roster can see it: how many items the agent's to-do list holds and how many
+   it has finished. `null` where the Session published no list at all, which is most short runs —
+   and a bar drawn for a Session with no plan would be a claim that it has one. */
+const PLAN_WIDTH = 64;   /* the bar is the same width whatever the item count, so the roster
+                            reads as a column rather than as bars of different lengths */
+
+/* Segments share one fixed width, so a 12-item plan and a 3-item plan occupy the same space and
+   a reader compares two rows by how FAR the fill got, never by how long the bar is. */
+function planBar(s) {
+  if (!s.plan) return '';
+  const { done, total } = s.plan;
+  const frozen = s.state !== 'running';
+  const seg = Math.max(2, (PLAN_WIDTH - 2 * (total - 1)) / total);
+  const items = Array.from({length: total}, (_, i) =>
+    `<i class="${i < done ? 'done' : i === done && !frozen ? 'doing' : ''}"></i>`).join('');
+  return `<span class="plan ${frozen ? 'frozen' : ''}" style="--seg:${seg}px"
+    title="${done} of ${total} done${frozen ? ', and not moving' : ''}">${items}</span>`;
+}
+
+/* H's form: one bar and the figure, for the reading where the item count is not worth drawing. */
+function planSolid(s) {
+  if (!s.plan) return '';
+  const { done, total } = s.plan;
+  const frozen = s.state !== 'running';
+  return `<span class="plan solid ${frozen ? 'frozen' : ''}"><b style="width:${
+    Math.round(done / total * 100)}%"></b></span>
+    <span class="planfig">${done}/${total}</span>`;
+}
+
+/* The pull request as its mark alone. Merged has its own glyph, because purple and green are one
+   colour to a reader who cannot tell them apart and the shapes are not. */
+function prMark(s) {
+  if (!s.pr) return '';
+  const mark = s.pr.state === 'merged' ? SVG.merged : SVG.pr;
+  return `<span class="prmark pr ${s.pr.state}" title="Pull request ${s.pr.n} — ${s.pr.state}">${glyph(mark)}</span>`;
+}
+
+/* The two addresses this run answers to, side by side on line 3. The ticket is drawn in the
+   quiet ink and the pull request in its state's, which is the hierarchy that is actually true:
+   the ticket is an address and nothing more, and the pull request is an address WITH a state.
+
+   BOTH keep the `#`. The mark says which space the number lives in; the hash says it is a number
+   at all — without it `1269` sits beside `4m 12s` as one more quantity on a line of quantities. */
+function addresses(s) {
+  const t = s.ticket
+    ? `<span class="addr" title="Ticket #${s.ticket}">${glyph(SVG.ticket)}#${s.ticket}</span>`
+    : '';
+  return t + (s.pr
+    ? `<span class="addr pr ${s.pr.state}" title="Pull request #${s.pr.n} — ${s.pr.state}">${
+        glyph(s.pr.state === 'merged' ? SVG.merged : SVG.pr)}#${s.pr.n}</span>`
+    : '');
+}
+
+/* What the pill's current step says. Invented text — the pill is here for its RING, and a bare
+   pill with no sentence would not be the thing the app draws. */
+const STEPS = {
+  s1: 'Read the Subagent records off disk',
+  s2: 'Sweep the stop reasons in batch three',
+  s3: 'Run the boundary script',
+  s5: 'No step in progress',
+  s7: 'Crop the checkout previews',
+  s8: 'Wait on gh auth',
+  s9: 'No step in progress',
+};
+const planStep = s => STEPS[s.id] ?? 'No step in progress';
+
+/* The Subagents, as the smaller dots under the state dot. Same column, half the size: what runs
+   UNDER this Session is drawn under its state, and nothing else on the row claims that column. */
+const DOT_CEILING = 5;
+
+function subDots(s) {
+  if (s.agents == null)
+    return `<span class="pip unknown" title="Argo cannot say how many run here"></span>`;
+  if (!s.agents)
+    return s.spent ? `<span class="pip spent" title="${s.spent} delegations, all landed"></span>` : '';
+  /* Five dots, and then the column says how many more rather than drawing them. Five is where a
+     stack stops being countable at a glance, and `+7` is exact where a longer stack is texture —
+     so the row never asks the reader to count past five and never rounds the truth off either. */
+  const drawn = Math.min(s.agents, DOT_CEILING);
+  return Array.from({length: drawn}, () => `<span class="pip"></span>`).join('')
+       + (s.agents > DOT_CEILING
+            ? `<span class="pipmore" title="${s.agents} running">+${s.agents - DOT_CEILING}</span>`
+            : '');
+}
+
+/* ============ WHAT EACH VARIANT ANSWERS ============ */
+/* The ticket's eight questions, plus the two the PR badge and the ready state add. Rendered
+   beside the roster so a reader never has to hold a variant's position in their head. */
+const ANSWERS = {
+  A: {
+    'Shape': 'A repeated mark. One pip per Agent, in the leading column under the dot.',
+    'Where it sits': 'The marker column widens by nothing — pips stack under the dot.',
+    'The activity line': 'Kept. It shares line 2 with the PR badge and gives up its tail.',
+    'Project total': 'Sidebar foot: <em>22 across 9 sessions</em>.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one dash.',
+    'Above the ceiling': 'Five pips, then <em>+7</em> under the column. Exact, and it costs the title no width.',
+    'Cannot tell': 'One hollow round pip. No count, because there is none to give.',
+    'The Fold': 'Pips summed across the runs it hides, same ceiling.',
+    'Motion': 'None. Toggle it on to see why.',
+    'PR badge': 'Leading edge of line 2, ahead of the activity. Glyph + number, state as ink.',
+    'Ready to ship': 'A word in the state slot, beside <em>Needs input</em>. No control on the row.',
+  },
+  B: {
+    'Shape': 'A labelled figure. The delegation glyph plus a number.',
+    'Where it sits': 'A meta column on line 1, after the title and before the state slot.',
+    'The activity line': 'Kept, and untouched — line 2 is left entirely alone.',
+    'Project total': 'The roster eyebrow: <em>SESSIONS · 22 AGENTS</em>.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws a dimmed <em>0</em>.',
+    'Above the ceiling': 'No ceiling — a figure reads at 12 as well as at 3. That is the whole trade.',
+    'Cannot tell': 'The glyph and a <em>?</em>, dimmed. Never a number.',
+    'The Fold': 'The summed figure and a PR tally — a fold has no one PR, so it never draws one badge.',
+    'Motion': 'None.',
+    'PR badge': 'Filled chip beside the figure. The number carries the ink.',
+    'Ready to ship': 'A word in the state slot, at the end of the same column.',
+  },
+  C: {
+    'Shape': 'A labelled figure, grouped with the clock.',
+    'Where it sits': 'Line 2 trailing, as one group: count, PR, clock. Line 1 is exactly as it is today.',
+    'The activity line': 'Kept, at the leading edge. It gives up its tail to the group, as it already does to the clock.',
+    'Project total': 'Nowhere on the roster. C says the total belongs in the deck, beside the rail.',
+    '0 vs never delegated': 'As B: nothing, versus a dimmed 0.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>.',
+    'The Fold': 'The same group, with a summed figure and a PR tally.',
+    'Motion': 'None.',
+    'PR badge': 'Between the count and the clock. No glyph — the group already has one.',
+    'Ready to ship': 'A word in the state slot on line 1.',
+  },
+  D: {
+    'Shape': 'A figure, but only when it wins the slot.',
+    'Where it sits': 'A fixed 46pt trailing gutter: clock above, one ranked fact below. The row cannot grow.',
+    'The activity line': 'Kept, and it gains a hard right edge — the gutter, not the clock, decides where line 2 stops.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'A 0 count never wins the slot, so the PR takes it. The distinction lives in the rail.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>, and it still outranks the PR — an unresolved delegation is the louder fact.',
+    'The Fold': 'The summed count, by the same ranking, so a fold’s PRs are never drawn.',
+    'Motion': 'None.',
+    'PR badge': 'Second in the ranking. Visible only when nothing is delegated.',
+    'Ready to ship': 'A word in the state slot on line 1 — it never touches the gutter.',
+  },
+  E: {
+    'Shape': 'A labelled figure on line 1, and a third line for the Delivery.',
+    'Where it sits': 'Row split by subject: line 1 who and what machinery, line 2 what it is doing, line 3 what it produced.',
+    'The activity line': 'Kept, and it gets line 2 to itself — nothing on line 3 competes with it.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'Nothing, versus a dimmed 0.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>.',
+    'The Fold': 'The third line tallies the pull requests below it, with no track — a fold has no one Delivery.',
+    'Motion': 'None.',
+    'PR badge': 'On the third line, after the lifecycle track, addressed <em>PR 1312</em>.',
+    'Ready to ship': 'The track itself: a filled <em>commits</em> beside an empty <em>pr</em>, and the words say so.',
+    'The line appears': 'Only when there is a Delivery. Its presence is the signal, so a reader finds the runs that made something without reading a word.',
+  },
+  F: {
+    'Shape': 'The same as E, drawn on every row.',
+    'Where it sits': 'The same three lines, at a fixed height — the Delivery sits on one x down the whole list.',
+    'The activity line': 'Kept, on line 2.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'Nothing, versus a dimmed 0.',
+    'Above the ceiling': 'No ceiling.',
+    'Cannot tell': 'Glyph and <em>?</em>.',
+    'The Fold': 'As E.',
+    'Motion': 'None.',
+    'PR badge': 'As E.',
+    'Ready to ship': 'As E.',
+    'The line appears': 'Always. A row with nothing to deliver reads <em>no delivery yet</em> against an empty track — which is a fact, and it costs a third of the roster to say it.',
+  },
+  G: {
+    'Shape': 'One segment per to-do item on the agent’s Plan, filled to what is done.',
+    'Where it sits': 'Line 3, after the clock. Line 1 is the title, line 2 is what it is doing.',
+    'The activity line': 'Kept, on line 2, with the full width of the row.',
+    'Subagents': 'Smaller dots under the state dot, in the leading column. Never on line 3.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one dash.',
+    'Above the ceiling': 'Five dots, then <em>+7</em> under the column — exact, and out of the flow so no title moves.',
+    'Cannot tell': 'One hollow round dot, in the same column.',
+    'The Fold': 'No plan — a fold stands for several runs and their lists do not add up.',
+    'Motion': 'None. The bar moves when the list does, which is rarely.',
+    'PR badge': 'A glyph and a colour at the trailing edge. Never a number: the title already opens with one.',
+    'Ready to ship': 'A full bar and no pull request mark. The word says it; the bar shows it.',
+    'No plan': 'No bar. Most short runs publish no list, and a bar drawn for them would claim one.',
+    'A frozen plan': 'A Session that is not running is not progressing, so its fill drops to the banked accent — still legible as how far it got, never as live.',
+  },
+  H: {
+    'Shape': 'One continuous bar and the figure <em>3/7</em>.',
+    'Where it sits': 'As G.',
+    'The activity line': 'Kept, on line 2.',
+    'Subagents': 'As G.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'As G.',
+    'Above the ceiling': 'As G.',
+    'Cannot tell': 'As G.',
+    'The Fold': 'As G.',
+    'Motion': 'None.',
+    'PR badge': 'As G.',
+    'Ready to ship': 'A full bar, <em>8/8</em>, and no pull request mark.',
+    'No plan': 'No bar and no figure.',
+    'A frozen plan': 'As G, and the figure stays exact — which is what H buys over G at twenty items.',
+  },
+  I: {
+    'Shape': 'The progress IS the row’s bottom edge, full width.',
+    'Where it sits': 'Under the row. Line 3 spends its width on the clock and the pull request alone.',
+    'The activity line': 'Kept, on line 2.',
+    'Subagents': 'As G.',
+    'Project total': 'Sidebar foot.',
+    '0 vs never delegated': 'As G.',
+    'Above the ceiling': 'As G.',
+    'Cannot tell': 'As G.',
+    'The Fold': 'No edge bar.',
+    'Motion': 'None.',
+    'PR badge': 'As G.',
+    'Ready to ship': 'A full edge and no pull request mark.',
+    'No plan': 'No edge at all, so the row loses its rule and reads a step lighter than its neighbours.',
+    'A frozen plan': 'The edge drops to the banked accent.',
+  },
+};
+
+const RISK = `<b>Open risk, all six variants.</b> The three PR inks are the code host's, not
+  Argo's — the visual contract has no purple at all, and <code>--pr-open</code> (#3FB950) sits one
+  hue from <code>--running</code> (#46D3A8), the ink the state dot spends on a Session that is
+  working. A green PR number beside a teal running dot is two greens on one row saying two
+  unrelated things. Either the roster takes the host's colours and the running dot changes, or the
+  PR state is drawn by its glyph and its position and only <em>merged</em> keeps a colour. This
+  prototype draws it the risky way on purpose, so the collision is visible rather than argued
+  about.`;
+
+/* ============ RENDER ============ */
+function current() {
+  const v = (new URLSearchParams(location.search).get('variant') || 'G').toUpperCase();
+  return ['A','B','C','D','E','F','G','H','I'].includes(v) ? v : 'G';
+}
+
+/* The Project total, as A, B and D each spend it. Summed the ONE way the rail counts:
+   the running Agents, and never the ones that landed. */
+const totalAgents = sessions.reduce((n, s) => n + (s.agents ?? 0), 0);
+const liveSessions = sessions.filter(s => !s.fold).length;
+
+function render() {
+  const v = current();
+  const s = sessions.find(x => x.id === selected) ?? sessions[0];
+
+  document.getElementById('roster').innerHTML = sessions.map(x => `
+    <div class="row ${x.id === selected ? 'sel' : ''} ${x.access !== 'managed' ? 'ext' : ''} ${x.fold ? 'fold' : ''} ${v === 'I' ? 'edge' : ''}"
+         onclick="selected='${x.id}';render()">${roster[v](x)}</div>`).join('');
+
+  document.getElementById('eyebrow').textContent =
+    v === 'B' ? `Sessions · ${totalAgents} agents` : 'Sessions';
+  document.getElementById('foot').innerHTML =
+    v === 'C'
+      ? `Archived (2)`
+      : `Archived (2) <span class="sep">·</span> <span class="agents">${glyph(SVG.agents)}${totalAgents}</span> across ${liveSessions} sessions`;
+
+  document.getElementById('deck-title').textContent = s.title;
+  /* The deck header is where the PR is named and where shipping happens. The roster has one
+     click and it selects a Session; a control on a row is a second target to aim at. */
+  /* The header names the run the same way the row does, or the two surfaces disagree about a
+     fact they read off one link (#1268). Title is the sentence; the two addresses ride beside
+     it with their own marks. */
+  document.getElementById('deck-pr').innerHTML = s.fold
+    ? ''
+    : shipsNow(s)
+      ? `<span class="flex g8">${addresses(s)}<span class="shipwhy">${s.ready.why}</span>
+         <button class="ship" onclick="ship('${s.id}')">${glyph(SVG.ship)}Create PR</button></span>`
+      : `<span class="flex g8">${addresses(s)}</span>`;
+
+  /* The rail, so the roster's figure can be read against the one the rail draws for it. */
+  const running = s.agents ?? 0;
+  document.getElementById('rail').innerHTML = `
+    <h5>${railHeader(s)}</h5>
+    ${s.agents == null
+      ? `<div class="chip"><span class="dot unknown"></span><span class="cn">One delegation, unresolved</span></div>`
+      : Array.from({length: running}, (_, i) =>
+          `<div class="chip"><span class="dot running"></span><span class="cn">Subagent ${i + 1}</span></div>`).join('')
+        + (s.spent ? `<div class="chip"><span class="cn" style="color:var(--text-3)">${s.spent} finished</span></div>` : '')
+        + (!running && !s.spent ? `<div class="chip"><span class="cn" style="color:var(--text-off)">Nothing delegated</span></div>` : '')}`;
+
+  /* The plan pill of the selected Session, drawn beside the answers so the ring and the row's
+     own bar are on screen at once. */
+  const pill = document.getElementById('pill-slot');
+  pill.innerHTML = s.plan
+    ? `<div class="pill" title="The ring takes the accent, exactly as the roster's bar does">
+         <svg class="ring" viewBox="0 0 16 16">
+           <circle class="track" cx="8" cy="8" r="6.6"/>
+           <circle class="arc" cx="8" cy="8" r="5.6"
+                   stroke-dasharray="${(2 * Math.PI * 5.6).toFixed(2)}"
+                   stroke-dashoffset="${(2 * Math.PI * 5.6 * (1 - s.plan.done / s.plan.total)).toFixed(2)}"/>
+         </svg>
+         <span class="count">Step ${Math.min(s.plan.done + 1, s.plan.total)}/${s.plan.total}</span>
+         <span class="step">${planStep(s)}</span>
+       </div>`
+    : `<div class="pill"><span class="step none">No plan on this Session</span></div>`;
+
+  const a = ANSWERS[v];
+  document.getElementById('answers').innerHTML = `
+    <div style="margin-bottom:var(--s-loose)">${pill.innerHTML}</div>
+    <h4>Variant ${v} — ${NAMES[v]}</h4>
+    <div class="qa">
+      ${Object.entries(a).map(([q, ans]) => `<span class="q">${q}</span><span class="a">${ans}</span>`).join('')}
+    </div>
+    <p class="note">${RISK}</p>`;
+
+  document.getElementById('switch-label').textContent = `${v} — ${NAMES[v]}`;
+}
+
+function cycle(d) {
+  const ks = ['G','H','I','A','B','C','D','E','F'];
+  history.replaceState(null, '', '?variant=' + ks[(ks.indexOf(current()) + d + ks.length) % ks.length]);
+  render();
+}
+
+/* The selected card's rim, on and off, so the choice is made by looking rather than by arguing. */
+function toggleRim() {
+  document.body.classList.toggle('rim');
+  document.getElementById('rim-toggle').classList.toggle('on', document.body.classList.contains('rim'));
+}
+
+function toggleMotion() {
+  motion = !motion;
+  document.body.classList.toggle('motion', motion);
+  document.getElementById('motion-toggle').classList.toggle('on', motion);
+}
+
+/* The prototype wires no mutation: what Create PR would DO is run /ship in the open Session,
+   and the question here is what the surfaces look like, not whether the skill works. */
+function ship(id) {
+  const s = sessions.find(x => x.id === id);
+  document.getElementById('answers').insertAdjacentHTML('afterbegin',
+    `<p class="note" style="margin:0 0 var(--s-loose);border:0;padding:0;color:var(--accent-bright)">
+       Create PR on “${s.title}” → runs <code>/ship</code> in that Session. Nothing is wired here.</p>`);
+}
+
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+});
+
+render();
+</script>
+</body>
+</html>
