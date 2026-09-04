@@ -58,6 +58,22 @@ public extension HubSession {
         return SessionStatus.read(signals)
     }
 
+    /// Whether Argo has typed a Turn that nothing has answered yet (#1179) — the DIRECT half of
+    /// "is a Turn running", and a stronger answer than the status word wherever the two disagree.
+    ///
+    /// The same claim `statusReading` reads `running` off, asked separately because the status word
+    /// can be overruled above it: a drive port or a companion that reports `idle` wins the status,
+    /// and Argo's own submit is still the firmer news. What the composer needs is that news alone,
+    /// not the word it usually produces.
+    ///
+    /// It answers ONLY about a Turn Argo itself typed. An open Turn the record carries is
+    /// deliberately not in here: `SessionTurnState.merge` carries a root's open Turn across a
+    /// resume (ADR-0026), so a Session whose CLI died mid-Turn reads one open forever — and a
+    /// composer that held its queue against that would never release it.
+    var hasUnansweredTurn: Bool {
+        submittedTurn?.isAwaitingRecord(events.count) == true
+    }
+
     var status: SessionStatus {
         statusReading.status
     }

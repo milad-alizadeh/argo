@@ -55,7 +55,7 @@ extension ComposerReleaseTests {
     /// A follow-up typed while the Turn runs, put through the same act Return makes.
     func queue(_ text: String, in log: Log) {
         log.draft.text = text
-        log.draft.submit(whileRunning: true) { _, _ in }
+        log.draft.submit(whileTurnInFlight: true) { _, _ in }
     }
 
     /// The vessel's own release chain, replayed over a walk of statuses — the two `onChange`

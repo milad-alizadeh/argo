@@ -49,7 +49,7 @@ struct ComposerMentionTests {
         take(into: &draft)
         var sent: [String] = []
 
-        draft.submit(whileRunning: false) { text, _ in sent.append(text) }
+        draft.submit(whileTurnInFlight: false) { text, _ in sent.append(text) }
 
         #expect(sent == ["Have a look at @\(Self.path) "])
         #expect(draft.text.isEmpty)

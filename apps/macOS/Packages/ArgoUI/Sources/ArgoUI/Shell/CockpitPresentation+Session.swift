@@ -235,4 +235,11 @@ public extension CockpitPresentation.Session {
     var lostTurn: String? {
         transcript.lostTurn
     }
+
+    /// Whether Argo has typed a Turn nothing has answered yet (#1179) — the engine's own reading,
+    /// carried through unchanged. It outranks the status word wherever the two disagree, which is
+    /// what the composer asks it for.
+    var hasUnansweredTurn: Bool {
+        transcript.hasUnansweredTurn
+    }
 }

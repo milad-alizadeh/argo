@@ -133,7 +133,7 @@ struct ComposerSteerTests {
 
         log.draft.text = "Actually, do the caption first."
         // The reading `submit()` makes while a steer is in flight.
-        log.draft.submit(whileRunning: log.draft.steeringTurn != nil) { text, _ in
+        log.draft.submit(whileTurnInFlight: log.draft.steeringTurn != nil) { text, _ in
             log.acts.append("send \(text)")
         }
 

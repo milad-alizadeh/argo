@@ -41,7 +41,7 @@ struct ComposerStopBoundaryTests {
     func `a Turn stopped outside Argo drops the queue rather than releasing it`() {
         var draft = ComposerDraft()
         draft.text = "And then open the PR."
-        draft.submit(whileRunning: true) { _, _ in }
+        draft.submit(whileTurnInFlight: true) { _, _ in }
 
         let mustDrop = draft.mustDropQueue(afterInterrupt: true)
         #expect(mustDrop)
@@ -57,7 +57,7 @@ struct ComposerStopBoundaryTests {
     func `a Turn that ended on its own releases the queue`() {
         var draft = ComposerDraft()
         draft.text = "And then open the PR."
-        draft.submit(whileRunning: true) { _, _ in }
+        draft.submit(whileTurnInFlight: true) { _, _ in }
 
         let mustDrop = draft.mustDropQueue(afterInterrupt: false)
 
@@ -74,7 +74,7 @@ struct ComposerStopBoundaryTests {
         var draft = ComposerDraft()
         draft.stopped { try driver.interrupt("session-a") }
         draft.text = "Actually, do the caption first."
-        draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
+        draft.submit(whileTurnInFlight: true) { text, _ in try driver.send(text, to: "session-a") }
 
         let mustDrop = draft.mustDropQueue(afterInterrupt: true)
         #expect(!mustDrop)

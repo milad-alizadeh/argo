@@ -193,6 +193,7 @@ extension CockpitPresentation.Session.Transcript {
             events: session.events,
             transcriptStamp: session.transcriptStamp,
             lostTurn: session.lostTurn,
+            hasUnansweredTurn: session.hasUnansweredTurn,
         )
     }
 }

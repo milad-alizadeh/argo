@@ -57,7 +57,7 @@ extension ComposerSteerTests {
     func queue(_ texts: [String], in log: Log) {
         for text in texts {
             log.draft.text = text
-            log.draft.submit(whileRunning: true) { _, _ in }
+            log.draft.submit(whileTurnInFlight: true) { _, _ in }
         }
     }
 }
