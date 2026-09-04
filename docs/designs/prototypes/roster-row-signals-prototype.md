@@ -16,8 +16,7 @@ lines and the same 320 points:
 2. **Which pull request the Session is attached to, and its state.** Merged purple, open green,
    closed red — the code host's own inks, because the domain says a code-host fact keeps the
    host's vocabulary.
-3. **That the Session is ready to ship**, and the action that ships it — a **Create PR** control
-   that runs `/ship` in that Session.
+3. **That the Session is ready to ship** — drawn on the row as a **state**, never as a control.
 
 A variant here is a **position on how many of those three a dense row can carry, and where** —
 not a skin. Each one gives something up, and the comment above each variant in the HTML says
@@ -25,21 +24,33 @@ what.
 
 The row's existing slots are the constraint: leading dot, title, a second line with the activity
 sentence, and the clock at the trailing edge (`SessionRosterProjection+Row.swift`,
-`+Activity.swift`, `SessionRow.swift`). Nothing here may take the activity's slot or the clock's
-without saying so.
+`+Activity.swift`, `SessionRow.swift`).
+
+**Two rules hold across all four variants, and neither is negotiable.**
+
+1. **The activity line stays.** What the Session is doing right now is the row's own subject
+   (#1199). Every fact here is an addition to it, never a replacement for it. A variant that
+   moved the activity to a tooltip was not a cheaper row — it was a different surface, and it
+   is gone.
+2. **No control on the row.** The roster has exactly one click and it selects the Session.
+   Ready-to-ship is drawn the way `Needs input` is: a **word in the state slot**. The **Create
+   PR** control that runs `/ship` lives in the **deck header**, where the Session is already
+   open.
 
 ## The four variants
 
-| | Name | Count shape | PR | Ready to ship | Gives up |
-|---|---|---|---|---|---|
-| **A** | Pips in the leading column | one pip per Agent under the state dot, ceiling 3 + a bar | leading edge of line 2 | the state-word slot; a **Create PR** button on the selected row | the exact figure above 3, and line-2 width |
-| **B** | Trailing meta column | labelled figure, no ceiling | filled chip, line 1 trailing | a **third line** the row grows, with the reason the Session gave | title width, and a uniform row height |
-| **C** | Second line is a fact bar | labelled figure in a chip bar | second chip in the bar | the bar is replaced whole by the ship strip | the activity sentence — the one thing #1199 put there |
-| **D** | One trailing gutter, one ranked fact | labelled figure, but only when it wins the slot | third in the ranking | wins the gutter outright, as a mini button | seeing two of the three facts at once |
+| | Name | Count shape | PR | Gives up |
+|---|---|---|---|---|
+| **A** | Pips in the leading column | one pip per Agent under the state dot, ceiling 3 + a bar | leading edge of line 2 | the exact figure above 3, and line-2 width |
+| **B** | Trailing meta column on line 1 | labelled figure, no ceiling | filled chip beside it | the title's width — the widest thing on the row |
+| **C** | Grouped with the clock, line 2 trailing | labelled figure in the trailing group | between the count and the clock | the activity's tail, and three facts where the eye expects one |
+| **D** | One trailing gutter, one ranked fact | labelled figure, but only when it wins the slot | second in the ranking | seeing the count and the PR at once |
+
+Ready-to-ship is the same in all four: the word `Ready` in the state slot on line 1.
 
 The prototype renders the **answers card** beside the roster: every variant's position on each
-of the ticket's eight questions plus the three the PR and the ship claim add. Nothing has to be
-held in the reader's head.
+of the ticket's eight questions plus the two the PR badge and the ready state add. Nothing has
+to be held in the reader's head.
 
 ## What the fixtures force
 
@@ -52,9 +63,9 @@ Each row exists to make a variant answer something:
 - **An external Session** — question 6. The count is DERIVED and Argo cannot resolve it
   (#1076), so the shape needs a state that is not a number. Every variant draws an outline or a
   `?`, never a figure. `finished` there would be the #1269 untruth.
-- **Ready to ship with no PR** — the strip and the button.
+- **Ready to ship with no PR** — the `Ready` word on the row, and the control in the deck header.
 - **Ready to ship with a PR already open** — the stale claim. The claim is CONVENTION, arriving
-  over the companion channel; the PR is DERIVED from the code host. **The PR wins and the strip
+  over the companion channel; the PR is DERIVED from the code host. **The PR wins and the word
   never draws**, in all four variants.
 - **A fold of 4 runs** — question 7. Every fact on a fold is a sum or it is a claim about runs
   it is hiding.
@@ -74,12 +85,21 @@ Rendered and looked at, all four:
   dash now.
 - **B's filled PR chips turn the roster into a wall of pills** — nine rows, nine coloured
   capsules, and the state dot stops being the first thing the eye finds.
+- **A variant that took the activity line away had to go.** The first draft of C moved the
+  activity to the title's tooltip to free line 2. It read beautifully and it answered the wrong
+  question: the roster is scanned to find out what is happening, and a row that only carries
+  delivery facts is a delivery list.
+- **The row carries no button.** The first draft put **Create PR** on the ready row. A control
+  on a row gives the roster a second click target, and every row then has to be aimed at rather
+  than picked. The claim is a state; the action belongs to the open Session.
 - **B's and C's fold tallies pile up three near-identical glyphs** (`⑂6 ⑂2 ⑂1`). A fold needs one
   summed fact, not three.
 - **The delegate glyph and the PR glyph look alike at 11px.** Both are node-and-branch marks. If
   two of these facts ship on one row they need shapes that differ at a glance, not two forks.
 - **D aligns the clocks into a column**, which is better than the row has today — but the fact
   under each clock changes from row to row, so the second column reads as a mixed bag.
+- **C's trailing group gets crowded** at three facts (`⑂0 #1279 3d`), and the count and the PR
+  are the two that a reader has to tell apart there.
 - **Motion is wrong.** The switcher has a **Motion** toggle that breathes the marks. Turn it on
   once: nine rows pulsing out of phase is a list nobody can scan. Question 8 answers itself.
 
@@ -103,8 +123,8 @@ about. Three ways out, and this is the decision the review has to make:
 The **ready-to-ship claim has no source yet**. `CompanionTool.swift` gives a managed Session
 three things it may tell Argo — `report_status`, `ask_user`, `report_outcome` — and none of them
 says "I am done, open the PR". That is a fourth tool, at the CONVENTION tier, plus the feed's
-reading of it and the wiring behind **Create PR** that runs `/ship`. Filed separately; this
-prototype only decides what the row looks like when the claim arrives.
+reading of it and the wiring behind **Create PR** that runs `/ship`. Filed as #1335; this
+prototype only decides what the surfaces look like when the claim arrives.
 
 `ship()` in the HTML is a stub that prints what it would do. No mutation is wired, by the
 prototype rules.
@@ -117,3 +137,4 @@ prototype rules.
 - #1261 — running Sessions drew the grey dot in the roster.
 - #1076 — the record alone cannot close a delegation.
 - #1199 — why the second line carries the activity, and why the clock sits where it does.
+- #1335 — the companion report behind the ready state, and the action behind **Create PR**.

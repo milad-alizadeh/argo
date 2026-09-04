@@ -212,12 +212,7 @@
   }
   .ship:hover { background: rgba(63,185,80,.26); color: #A6F0AE; }
   .ship svg { stroke: currentColor; width: 11px; height: 11px; }
-  /* B's third line: the strip only a ready row grows. */
-  .shipline {
-    display: flex; align-items: center; gap: var(--s-snug);
-    margin-top: var(--s-snug); padding-top: var(--s-snug);
-    border-top: 1px solid var(--hairline);
-  }
+  /* The reason the Session gave, in the deck header beside the control. */
   .shipwhy { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
              text-overflow: ellipsis; white-space: nowrap; }
 
@@ -228,7 +223,6 @@
   .ship.mini { padding: 2px 5px; font-size: 10px; }
 
   /* C's fact bar. */
-  .factbar { display: flex; align-items: center; gap: var(--s-snug); min-width: 0; }
   .sep { color: var(--text-off); }
 
   /* fold row */
@@ -453,22 +447,39 @@ function foldPRs(s) {
 
 /* ============ VARIANTS ============ */
 /* Each is a POSITION, not a skin. Read the comment above each one: it says what that variant
-   is willing to give up, which is the only thing that tells four dense rows apart. */
+   is willing to give up, which is the only thing that tells four dense rows apart.
+
+   TWO RULES HOLD ACROSS ALL FOUR, and neither is negotiable:
+
+   1. THE ACTIVITY LINE STAYS. What the Session is doing right now is the row's own subject
+      (#1199) — every new fact here is an addition to it and never a replacement for it. A
+      variant that moves the activity to a tooltip is not a cheaper row, it is a different
+      surface.
+   2. NO CONTROL ON THE ROW. The roster has exactly one click and it selects the Session.
+      Ready-to-ship is drawn as a STATE, like `Needs input` is; the Create PR control that runs
+      `/ship` lives in the deck header, where the Session is already open. A second click
+      target on a row is a row a reader has to aim at. */
 const NAMES = {
   A: 'Pips in the leading column',
-  B: 'Trailing meta column, ship on a third line',
-  C: 'Second line is a fact bar',
+  B: 'Trailing meta column on line 1',
+  C: 'Grouped with the clock, line 2 trailing',
   D: 'One trailing gutter, one ranked fact',
 };
+
+/* Ready to ship, as a WORD in the state slot — the slot that already carries `Needs input` and
+   `Stopped`. It is a state the Session claimed, so it is drawn exactly where the states the
+   row derives are drawn, and it competes with them rather than sitting beside them. */
+const readyWord = s => shipsNow(s)
+  ? `<span class="ready" title="${s.ready.why} — open the Session to ship it">${glyph(SVG.ship)}Ready</span>`
+  : (word(s) ? `<span class="badge">${word(s)}</span>` : '');
 
 const roster = {
 
   /* ── A ────────────────────────────────────────────────────────────────────────────────
-     The leading marker column is where the MACHINERY lives. The state dot keeps its place
-     and grows a stack of pips beneath it — one per running Agent, ceiling 3 and then a wider
-     bar that means "and more". The PR badge takes the leading edge of line 2, ahead of the
-     activity fact, so the clock at the trailing edge is untouched. Ready-to-ship takes the
-     state-word slot on line 1, and the Create PR button replaces it on the selected row.
+     The leading marker column is where the MACHINERY lives. The state dot keeps its place and
+     grows a stack of pips beneath it — one per running Agent, ceiling 3 and then a wider bar
+     that means "and more". The PR badge takes the leading edge of line 2, ahead of the
+     activity, so the clock at the trailing edge is untouched.
      GIVES UP: the exact figure above 3, and some of line 2's width for the activity. */
   A: s => {
     const pips = s.agents == null
@@ -486,11 +497,7 @@ const roster = {
       <span class="col grow g4" style="gap:var(--s-hair)">
         <span class="flex g6">
           <span class="title grow">${s.title}</span>
-          ${shipsNow(s)
-            ? (s.id === selected
-                ? `<button class="ship" onclick="event.stopPropagation();ship('${s.id}')">${glyph(SVG.ship)}Create PR</button>`
-                : `<span class="ready">${glyph(SVG.ship)}Ready</span>`)
-            : (word(s) ? `<span class="badge">${word(s)}</span>` : '')}
+          ${readyWord(s)}
         </span>
         <span class="flex g6">
           ${s.fold ? foldPRs(s) : prBadge(s)}
@@ -502,11 +509,12 @@ const roster = {
   },
 
   /* ── B ────────────────────────────────────────────────────────────────────────────────
-     Line 1 ends in a fixed-width meta column: the labelled agent figure, then the PR badge
-     as a filled chip. A figure has NO ceiling, which is exactly what it buys — s2 reads
-     `⑂12` where A can only say "more than 3". Ready-to-ship is not squeezed in anywhere: the
-     row GROWS a third line for it, with the reason the Session gave and the button.
-     GIVES UP: the title's width, and a uniform row height down the list. */
+     Line 1 ends in a meta column: the labelled agent figure, then the PR as a filled chip,
+     then the state slot. A figure has NO ceiling, which is exactly what it buys — the
+     twelve-Agent row reads `12` where A can only say "more than 3". Line 2 is left entirely
+     alone, so the activity keeps its full width and the clock its edge.
+     GIVES UP: the title's width, which is the widest thing on the row and the first thing a
+     reader uses to tell two runs apart. */
   B: s => `
     <div class="col g4" style="gap:var(--s-hair)">
       <div class="flex g6">
@@ -514,73 +522,60 @@ const roster = {
         <span class="title grow">${s.title}</span>
         ${agentFigure(s)}
         ${s.fold ? foldPRs(s) : prBadge(s, {fill:true, glyphOn:false})}
+        ${readyWord(s)}
       </div>
       <div class="flex g6">
-        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
         <span class="meta grow">${fact(s) ?? ''}</span>
         <span class="time">${s.clock}</span>
       </div>
-      ${shipsNow(s) ? `
-      <div class="shipline">
-        <span class="ready">${glyph(SVG.ship)}Ready to ship</span>
-        <span class="shipwhy grow">${s.ready.why}</span>
-        <button class="ship" onclick="event.stopPropagation();ship('${s.id}')">Create PR</button>
-      </div>` : ''}
     </div>`,
 
   /* ── C ────────────────────────────────────────────────────────────────────────────────
-     The most opinionated of the four: it says the activity SENTENCE is worth less on a
-     scanned list than the delivery facts, and gives line 2 over to a chip bar — agents, PR,
-     clock — moving the activity onto the title's tooltip. A row you scan for machinery, not
-     for prose. When the Session is ready to ship, the whole bar becomes the ship strip.
-     GIVES UP: the activity line, which is the single thing #1199 put there. */
+     Line 1 is left exactly as it is today — dot, title, state — and every new fact joins the
+     CLOCK at the trailing edge of line 2, as one group. The reasoning: the count, the PR and
+     the clock are all machine readings of the same run, and a reader scanning for any of them
+     scans one column rather than three places. The activity keeps the leading edge and gives
+     up its tail, which is what it already does today whenever the clock is beside it.
+     GIVES UP: the activity's tail, and it puts three facts where the eye currently expects
+     one. */
   C: s => `
     <div class="col" style="gap:var(--s-hair)">
       <div class="flex g6">
         ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}"></span>`}
-        <span class="title grow" title="${fact(s) ?? ''}">${s.title}</span>
-        ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+        <span class="title grow">${s.title}</span>
+        ${readyWord(s)}
       </div>
-      ${shipsNow(s) ? `
-      <div class="factbar" style="padding-left:14px">
-        <span class="ready">${glyph(SVG.ship)}Ready</span>
-        <span class="shipwhy grow">${s.ready.why}</span>
-        <button class="ship" onclick="event.stopPropagation();ship('${s.id}')">Create PR</button>
-      </div>` : `
-      <div class="factbar" style="padding-left:14px">
+      <div class="flex g6" style="padding-left:14px">
+        <span class="meta grow">${fact(s) ?? ''}</span>
         ${agentFigure(s)}
-        ${(s.agents || s.agents == null || s.spent) && (s.pr || s.fold) ? `<span class="sep">·</span>` : ''}
-        ${s.fold ? foldPRs(s) : prBadge(s)}
-        <span class="grow"></span>
+        ${s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false})}
         <span class="time">${s.clock}</span>
-      </div>`}
+      </div>
     </div>`,
 
   /* ── D ────────────────────────────────────────────────────────────────────────────────
-     The row cannot grow, so it carries exactly ONE extra fact and ranks them: ready-to-ship
-     beats the agent count, the agent count beats the PR. All three live in one fixed trailing
-     gutter under the clock, so the row's width is decided once and never by its content. The
-     facts that lose the slot are still reachable — the deck header carries the PR, the rail
+     The row cannot grow, so it carries exactly ONE extra fact and ranks them: the agent count
+     beats the PR. Both live in a fixed trailing gutter under the clock, so the row's width is
+     decided once and never by its content, and every clock on the roster lands on one x.
+     The fact that loses the slot is still reachable — the deck header carries the PR, the rail
      carries the count.
-     GIVES UP: seeing two of the three facts at once on the same row. */
+     GIVES UP: seeing the count and the PR at once on the same row. */
   D: s => `
     <div class="flex g8" style="align-items:flex-start">
       ${s.fold ? glyph(SVG.chevR,'chev') : `<span class="dot ${dotClass(s)}" style="margin-top:5px"></span>`}
       <span class="col grow" style="gap:var(--s-hair)">
         <span class="flex g6">
           <span class="title grow">${s.title}</span>
-          ${word(s) ? `<span class="badge">${word(s)}</span>` : ''}
+          ${readyWord(s)}
         </span>
         <span class="meta">${fact(s) ?? ''}</span>
       </span>
       <span class="gutter">
         <span class="slot"><span class="time">${s.clock}</span></span>
         <span class="slot">${
-          shipsNow(s)
-            ? `<button class="ship mini" onclick="event.stopPropagation();ship('${s.id}')" title="Ready to ship — ${s.ready.why}">${glyph(SVG.ship)}PR</button>`
-            : (s.agents == null || s.agents > 0)
-              ? agentFigure(s)
-              : (s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false}))
+          (s.agents == null || s.agents > 0)
+            ? agentFigure(s)
+            : (s.fold ? foldPRs(s) : prBadge(s, {glyphOn:false}))
         }</span>
       </span>
     </div>`,
@@ -600,60 +595,60 @@ function agentFigure(s) {
 }
 
 /* ============ WHAT EACH VARIANT ANSWERS ============ */
-/* The ticket's eight questions, plus the three the PR badge and the ship affordance add.
-   Rendered beside the roster so a reader never has to hold a variant's position in their head. */
+/* The ticket's eight questions, plus the two the PR badge and the ready state add. Rendered
+   beside the roster so a reader never has to hold a variant's position in their head. */
 const ANSWERS = {
   A: {
     'Shape': 'A repeated mark. One pip per Agent, in the leading column under the dot.',
-    'Where it sits': 'The marker column widens by nothing — pips stack under the dot. Line 2 keeps the activity and the clock.',
-    'Project total': 'Sidebar foot: <em>9 sessions · 22 agents</em>.',
-    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one hollow pip.',
+    'Where it sits': 'The marker column widens by nothing — pips stack under the dot.',
+    'The activity line': 'Kept. It shares line 2 with the PR badge and gives up its tail.',
+    'Project total': 'Sidebar foot: <em>22 across 9 sessions</em>.',
+    '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws one dash.',
     'Above the ceiling': '3 pips, then a wider grey bar. The exact figure is in the rail, never on the row.',
     'Cannot tell': 'One hollow round pip. No count, because there is none to give.',
     'The Fold': 'Pips summed across the runs it hides, same ceiling.',
     'Motion': 'None. Toggle it on to see why.',
     'PR badge': 'Leading edge of line 2, ahead of the activity. Glyph + number, state as ink.',
-    'Ready to ship': 'Takes the state-word slot; becomes a Create PR button on the selected row.',
-    'Stale claim': 'A ready claim with a PR already open is dropped — the PR is DERIVED and outranks it.',
+    'Ready to ship': 'A word in the state slot, beside <em>Needs input</em>. No control on the row.',
   },
   B: {
     'Shape': 'A labelled figure. The delegation glyph plus a number.',
-    'Where it sits': 'A trailing meta column on line 1, after the title. Line 2 untouched.',
+    'Where it sits': 'A meta column on line 1, after the title and before the state slot.',
+    'The activity line': 'Kept, and untouched — line 2 is left entirely alone.',
     'Project total': 'The roster eyebrow: <em>SESSIONS · 22 AGENTS</em>.',
     '0 vs never delegated': 'Never delegated draws nothing. 0-of-5-landed draws a dimmed <em>0</em>.',
     'Above the ceiling': 'No ceiling — a figure reads at 12 as well as at 3. That is the whole trade.',
     'Cannot tell': 'The glyph and a <em>?</em>, dimmed. Never a number.',
-    'The Fold': 'The summed figure. No single PR badge — a fold has no one PR, so it tallies.',
+    'The Fold': 'The summed figure and a PR tally — a fold has no one PR, so it never draws one badge.',
     'Motion': 'None.',
-    'PR badge': 'Filled chip beside the figure, line 1 trailing. The number carries the ink.',
-    'Ready to ship': 'A third line the row grows, holding the reason the Session gave and the button.',
-    'Stale claim': 'Same rule; the third line never appears for a Session with a PR.',
+    'PR badge': 'Filled chip beside the figure. The number carries the ink.',
+    'Ready to ship': 'A word in the state slot, at the end of the same column.',
   },
   C: {
-    'Shape': 'A labelled figure in a chip bar.',
-    'Where it sits': 'Line 2 IS the bar — agents, PR, clock. The activity sentence moves to the tooltip.',
+    'Shape': 'A labelled figure, grouped with the clock.',
+    'Where it sits': 'Line 2 trailing, as one group: count, PR, clock. Line 1 is exactly as it is today.',
+    'The activity line': 'Kept, at the leading edge. It gives up its tail to the group, as it already does to the clock.',
     'Project total': 'Nowhere on the roster. C says the total belongs in the deck, beside the rail.',
     '0 vs never delegated': 'As B: nothing, versus a dimmed 0.',
     'Above the ceiling': 'No ceiling.',
     'Cannot tell': 'Glyph and <em>?</em>.',
-    'The Fold': 'The bar with a summed figure and a PR tally.',
+    'The Fold': 'The same group, with a summed figure and a PR tally.',
     'Motion': 'None.',
-    'PR badge': 'Second chip in the bar, beside the count.',
-    'Ready to ship': 'The bar is replaced whole by the ship strip. One row, one message.',
-    'Stale claim': 'Same rule.',
+    'PR badge': 'Between the count and the clock. No glyph — the group already has one.',
+    'Ready to ship': 'A word in the state slot on line 1.',
   },
   D: {
     'Shape': 'A figure, but only when it wins the slot.',
     'Where it sits': 'A fixed 46pt trailing gutter: clock above, one ranked fact below. The row cannot grow.',
+    'The activity line': 'Kept, and it gains a hard right edge — the gutter, not the clock, decides where line 2 stops.',
     'Project total': 'Sidebar foot.',
     '0 vs never delegated': 'A 0 count never wins the slot, so the PR takes it. The distinction lives in the rail.',
     'Above the ceiling': 'No ceiling.',
     'Cannot tell': 'Glyph and <em>?</em>, and it still outranks the PR — an unresolved delegation is the louder fact.',
-    'The Fold': 'The summed count, by the same ranking — a fold with runs delegating always wins the slot with the figure, so its PRs are never drawn.',
+    'The Fold': 'The summed count, by the same ranking, so a fold’s PRs are never drawn.',
     'Motion': 'None.',
-    'PR badge': 'Third in the ranking. Visible only when nothing is delegated and nothing is ready.',
-    'Ready to ship': 'Wins the gutter outright, as a mini Create PR button.',
-    'Stale claim': 'Same rule.',
+    'PR badge': 'Second in the ranking. Visible only when nothing is delegated.',
+    'Ready to ship': 'A word in the state slot on line 1 — it never touches the gutter.',
   },
 };
 
@@ -693,7 +688,14 @@ function render() {
       : `Archived (2) <span class="sep">·</span> <span class="agents">${glyph(SVG.agents)}${totalAgents}</span> across ${liveSessions} sessions`;
 
   document.getElementById('deck-title').textContent = s.title;
-  document.getElementById('deck-pr').innerHTML = s.fold ? '' : prBadge(s, {fill:true});
+  /* The deck header is where the PR is named and where shipping happens. The roster has one
+     click and it selects a Session; a control on a row is a second target to aim at. */
+  document.getElementById('deck-pr').innerHTML = s.fold
+    ? ''
+    : shipsNow(s)
+      ? `<span class="flex g8"><span class="shipwhy">${s.ready.why}</span>
+         <button class="ship" onclick="ship('${s.id}')">${glyph(SVG.ship)}Create PR</button></span>`
+      : prBadge(s, {fill:true});
 
   /* The rail, so the roster's figure can be read against the one the rail draws for it. */
   const running = s.agents ?? 0;
@@ -729,8 +731,8 @@ function toggleMotion() {
   document.getElementById('motion-toggle').classList.toggle('on', motion);
 }
 
-/* The prototype wires no mutation: what Create PR would DO is run /ship, and the question here
-   is what the row looks like, not whether the skill works. */
+/* The prototype wires no mutation: what Create PR would DO is run /ship in the open Session,
+   and the question here is what the surfaces look like, not whether the skill works. */
 function ship(id) {
   const s = sessions.find(x => x.id === id);
   document.getElementById('answers').insertAdjacentHTML('afterbegin',
