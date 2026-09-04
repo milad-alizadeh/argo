@@ -8,20 +8,15 @@ import SwiftUI
 /// is a control over the pane, not an overlay, so at no offset may a row be drawn over it or under
 /// it. A roster photographed at rest cannot say that, because at rest the first row is below the
 /// strip whether the list stops there or scrolls through it.
-///
-/// The whole window and not `ShellSidebar` alone: the sidebar is the leading column of a split
-/// view whose top reaches into the titlebar, and what that puts on the list is half the question.
 struct ScrolledRosterSpecimen: View {
-    /// How far the roster is held down. A few points, which is the offset the reported render
-    /// caught: far enough that a row is crossing the strip's edge, not so far that it has passed.
-    var points: CGFloat = 22
-
     @State private var navigation = CockpitNavigationModel()
 
     var body: some View {
         CockpitView(presentation: Self.presentation, actions: .inert)
             .environment(navigation)
-            .background(RosterScrollHold(points: points))
+            // A few points, which is the offset the reported render caught: far enough that a row
+            // is crossing the strip's edge, not so far that it has passed.
+            .background(RosterScrollHold(offset: 22))
     }
 
     /// A roster longer than any window this renders in, so the list is always scrollable and the

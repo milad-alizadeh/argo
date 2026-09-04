@@ -4,28 +4,23 @@ import SwiftUI
 /// Holds the roster's own scroll view at a fixed offset, so "the list is scrolled" is a state a
 /// still render can repeat (#1235). Nothing in the app scrolls the roster from code — a reader
 /// rolls the wheel — and a wheel event is not something a screenshot has.
-///
-/// Planted as a background of the window's content rather than inside a row: a view inside the
-/// list is inside the document the table lays out, and moving the clip view from under that
-/// fights the layout it is a part of.
 struct RosterScrollHold: NSViewRepresentable {
     /// How far down the roster is held, in points.
-    let points: CGFloat
+    let offset: CGFloat
 
-    /// Whether the hold is still on. Turned off to hand the list back to itself — the only way to
-    /// photograph what the roster does to its OWN offset when a row lands at the head, which a
-    /// harness still writing an offset over it would be answering for it.
-    var holds = true
+    /// Whether the hold is still on. Turned off to hand the list back to itself, which is the only
+    /// way to photograph what the roster does to its OWN offset when a row lands at the head.
+    var isHolding = true
 
     func makeNSView(context: Context) -> NSView {
         let probe = NSView()
         context.coordinator.watch(probe)
-        context.coordinator.hold = held
+        context.coordinator.heldOffset = heldOffset
         return probe
     }
 
     func updateNSView(_: NSView, context: Context) {
-        context.coordinator.hold = held
+        context.coordinator.heldOffset = heldOffset
     }
 
     static func dismantleNSView(_: NSView, coordinator: Coordinator) {
@@ -36,29 +31,34 @@ struct RosterScrollHold: NSViewRepresentable {
         Coordinator()
     }
 
-    private var held: CGFloat? {
-        holds ? points : nil
+    private var heldOffset: CGFloat? {
+        isHolding ? offset : nil
     }
 
     /// The beat that re-applies the offset, and the timer it runs on.
     ///
     /// Re-applied rather than set once: the list lays out again after the pass that mounted it,
-    /// and an offset written before that lands on a document the next layout throws away. Setting
+    /// and an offset written before that lands on a document the next layout throws away. Writing
     /// an offset the clip view already has costs nothing, so a settled roster is left alone.
     @MainActor final class Coordinator {
         /// The offset held, or `nil` once the list is the harness's no longer.
-        var hold: CGFloat?
+        var heldOffset: CGFloat?
+
+        /// Fast enough that the offset is in place before the render script's capture, which lands
+        /// half a second after the window opens.
+        private static let beatSeconds = 0.05
 
         private var beat: Timer?
+        /// The view the window is reached through. Weak: SwiftUI owns it, and the beat outliving
+        /// it must stop reaching rather than keep it up.
+        private weak var probe: NSView?
 
         func watch(_ probe: NSView) {
-            // `.common`, so the offset keeps being re-applied while the window is being resized
-            // or tracked — the modes a `.default` timer is starved in.
-            let beat = Timer(timeInterval: 0.05, repeats: true) { [weak self, weak probe] _ in
-                MainActor.assumeIsolated {
-                    guard let self, let probe, let hold = self.hold else { return }
-                    RosterScrollHold.roster(in: probe.window)?.holdRoster(at: hold)
-                }
+            self.probe = probe
+            // `.common`, so the offset keeps being re-applied while the window is being resized or
+            // tracked — the modes a `.default` timer is starved in.
+            let beat = Timer(timeInterval: Self.beatSeconds, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.apply() }
             }
             RunLoop.main.add(beat, forMode: .common)
             self.beat = beat
@@ -68,12 +68,17 @@ struct RosterScrollHold: NSViewRepresentable {
             beat?.invalidate()
             beat = nil
         }
+
+        private func apply() {
+            guard let offset = heldOffset else { return }
+            RosterScrollHold.roster(in: probe?.window)?.holdRoster(at: offset)
+        }
     }
 
     /// The roster's scroller: the LEFTMOST table scroller in the window. The cockpit's other table
     /// is the feed's, which is in the deck — to the right of the sidebar at every width the shell
     /// opens at, since the sidebar is the leading column of the split.
-    static func roster(in window: NSWindow?) -> NSScrollView? {
+    private static func roster(in window: NSWindow?) -> NSScrollView? {
         guard let root = window?.contentView else { return nil }
         return tableScrollers(under: root)
             .min { left, right in
@@ -89,10 +94,9 @@ struct RosterScrollHold: NSViewRepresentable {
 }
 
 private extension NSScrollView {
-    /// The clip view moved to a fixed offset, and the scroller told about it. Silent when it is
-    /// already there, so a settled roster is not re-laid-out on every beat.
-    func holdRoster(at points: CGFloat) {
-        let held = CGPoint(x: contentView.bounds.origin.x, y: points)
+    /// The clip view moved to a fixed offset, and the scroller told about it.
+    func holdRoster(at offset: CGFloat) {
+        let held = CGPoint(x: contentView.bounds.origin.x, y: offset)
         guard contentView.bounds.origin != held else { return }
         contentView.scroll(to: held)
         reflectScrolledClipView(contentView)

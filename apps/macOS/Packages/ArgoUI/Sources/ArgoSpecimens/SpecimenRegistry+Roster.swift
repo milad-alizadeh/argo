@@ -39,7 +39,7 @@ extension SpecimenRegistry {
         // a reader's own offset (#1235). Rendered after the arrival, with the hold let go, so the
         // offset in the picture is the list's own answer rather than the harness's.
         SpecimenEntry("arrivingRoster") { ArrivingRosterSpecimen() },
-        SpecimenEntry("arrivingScrolledRoster") { ArrivingRosterSpecimen(points: 220) },
+        SpecimenEntry("arrivingScrolledRoster") { ArrivingRosterSpecimen(offset: 220) },
         // No swiped-row entry: `.swipeActions` opens only from a real gesture, so there is no state
         // to hand the harness. Nor is it an XCUITest claim: neither `XCUIElement.scroll(byDeltaX:)`
         // nor a phased `CGEvent` scroll opens the action, so it is a hand's frame or nothing

@@ -38,15 +38,11 @@ package struct SessionNavigator: View {
 
     /// The list, and the one thing scrolled from outside it: a Session landing at the roster's
     /// head brings a list that is already at the top back to the top (#1235).
-    ///
-    /// A `ScrollViewReader` and not `scrollPosition`, because what is aimed at is a named ROW —
-    /// the row that just arrived — and landing it under the rooms picker is the claim, not
-    /// landing the list on whatever its own top edge currently is.
     package var body: some View {
         ScrollViewReader { roster in
             list.onChange(of: rows.first?.id) { previous, leading in
-                guard let top = SessionRosterProjection.returnToTop(
-                    from: previous, to: leading, isAtTop: isAtTop,
+                guard let top = SessionRosterProjection.topRow(
+                    whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
                 ) else { return }
                 roster.scrollTo(top, anchor: .top)
             }

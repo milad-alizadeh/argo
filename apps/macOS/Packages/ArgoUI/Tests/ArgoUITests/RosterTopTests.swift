@@ -10,7 +10,11 @@ import Testing
 struct RosterTopTests {
     @Test
     func `a Session arriving at the head brings a roster at the top back to the top`() {
-        let top = SessionRosterProjection.returnToTop(from: "one", to: "arrived", isAtTop: true)
+        let top = SessionRosterProjection.topRow(
+            whenHeadMovedFrom: "one",
+            to: "arrived",
+            isAtTop: true,
+        )
 
         #expect(top == "arrived")
     }
@@ -19,14 +23,18 @@ struct RosterTopTests {
     /// Session is worse than not announcing it.
     @Test
     func `a scrolled roster is left where the reader put it`() {
-        let top = SessionRosterProjection.returnToTop(from: "one", to: "arrived", isAtTop: false)
+        let top = SessionRosterProjection.topRow(
+            whenHeadMovedFrom: "one",
+            to: "arrived",
+            isAtTop: false,
+        )
 
         #expect(top == nil)
     }
 
     @Test
     func `a roster whose head did not move does not scroll`() {
-        let top = SessionRosterProjection.returnToTop(from: "one", to: "one", isAtTop: true)
+        let top = SessionRosterProjection.topRow(whenHeadMovedFrom: "one", to: "one", isAtTop: true)
 
         #expect(top == nil)
     }
@@ -35,7 +43,7 @@ struct RosterTopTests {
     /// already — a scroll there would be the mount announcing itself.
     @Test
     func `the first roster drawn does not scroll`() {
-        let top = SessionRosterProjection.returnToTop(from: nil, to: "one", isAtTop: true)
+        let top = SessionRosterProjection.topRow(whenHeadMovedFrom: nil, to: "one", isAtTop: true)
 
         #expect(top == nil)
     }
@@ -43,7 +51,7 @@ struct RosterTopTests {
     /// An emptied roster has no row to scroll to. Nothing is asked of the list.
     @Test
     func `a roster that lost its last row does not scroll`() {
-        let top = SessionRosterProjection.returnToTop(from: "one", to: nil, isAtTop: true)
+        let top = SessionRosterProjection.topRow(whenHeadMovedFrom: "one", to: nil, isAtTop: true)
 
         #expect(top == nil)
     }
