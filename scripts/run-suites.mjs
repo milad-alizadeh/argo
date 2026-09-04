@@ -27,6 +27,8 @@ const suites = readdirSync(SCRIPTS)
 // checks: silence that reads as success. A rename of this directory is exactly how it would happen.
 if (suites.length === 0) {
   console.error('test:hooks: found no scripts/*.test.mjs at all — nothing ran')
+  // `exit()` here and `exitCode` at the end, deliberately: nothing has run yet, so there is one
+  // line to flush and the rest of this file must not go on to report 0 suites as 0 failures.
   process.exit(1)
 }
 
@@ -84,8 +86,11 @@ const verdicts = suites.map((file) => summarise(byName.get(file)))
 const failed = verdicts.filter((v) => !v.ok).length
 const checks = verdicts.reduce((total, v) => total + v.checks, 0)
 if (failed) {
+  // `exitCode` rather than `exit()`: turbo and CI capture this through a pipe, and `exit()` can
+  // cut a still-draining stderr off mid-line — losing exactly the failing suite's own output,
+  // which is the only reason the run printed anything at all.
   console.error(`\ntest:hooks: ${failed} of ${suites.length} suite(s) failed`)
-  process.exit(1)
+  process.exitCode = 1
 }
 const plural = suites.length === 1 ? 'suite' : 'suites'
 console.log(`\ntest:hooks: ${suites.length} ${plural} clean, ${checks} checks passed`)

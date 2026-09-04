@@ -7,18 +7,24 @@
 // missing binary would report Success without checking a line. `ARGO_REQUIRE_SWIFT_TOOLS`
 // is what turns each skip into a failure; these tests are the proof it does.
 import assert from 'node:assert/strict'
-import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
+import { rmSync } from 'node:fs'
 import { check, report } from './check-harness.mjs'
-import { ARGV_LOG, BARE, MISSING, run, STRICT, STUBBED, scratch } from './swift-tooling.harness.mjs'
+import {
+  BARE,
+  MISSING,
+  PACKAGES,
+  REPORTING,
+  run,
+  STRICT,
+  STUBBED,
+  scratch,
+  suite,
+  swiftWriting,
+} from './swift-tooling.harness.mjs'
 
 const LINT = 'scripts/swift-lint.sh'
 const FORMAT = 'scripts/swift-format.sh'
 const TEST = 'apps/macOS/scripts/swift-test.sh'
-// The package loop `swift-test.sh` spells, in its order. The first is asserted by name in the
-// configuration case below and the rest by their verdict lines, so this list is the one place
-// the count and the order live.
-const PACKAGES = ['ArgoEngine', 'ArgoUI', 'ArgoMermaid', 'ArgoAtlas']
 
 for (const [script, tool] of [
   [LINT, 'swiftlint'],
@@ -52,26 +58,6 @@ check('swift-test.sh fails there instead under ARGO_REQUIRE_SWIFT_TOOLS', () => 
   assert.match(result.output, /ARGO_REQUIRE_SWIFT_TOOLS is set/)
   assert.doesNotMatch(result.output, /skipping/)
 })
-
-// `swift test` EXITS 0 ON A FAILED RUN (#918), so swift-test.sh may believe only the xUnit
-// report. The `swift` stub below is exactly that trap; `uname` says Darwin so these run anywhere.
-const reportBin = path.join(scratch, 'report-bin')
-mkdirSync(reportBin, { recursive: true })
-writeFileSync(path.join(reportBin, 'uname'), '#!/bin/sh\nprintf Darwin\n')
-chmodSync(path.join(reportBin, 'uname'), 0o755)
-const REPORTING = { pathValue: `${reportBin}:/usr/bin:/bin` }
-const suite = (n) => `<testsuites><testsuite name="T" ${n}></testsuite></testsuites>`
-// An empty `report` writes none at all, which is a run that never got that far.
-function swiftWriting(report, code = 0) {
-  // `$3` is the path, because the script invokes `swift test --xunit-output <path>` ahead of
-  // any configuration flags — so a reordering of those breaks this stub loudly rather than
-  // silently writing nowhere. SwiftPM appends a per-harness suffix to the name asked for, and
-  // so does this. The argv line is what lets a test assert on the flags themselves.
-  const write = report ? `printf '%s' '${report}' > "\${3%.xml}-swift-testing.xml"\n` : ''
-  const head = `#!/bin/sh\nprintf '%s\\n' "$@" >> '${ARGV_LOG}'\n`
-  writeFileSync(path.join(reportBin, 'swift'), `${head}${write}exit ${code}\n`)
-  chmodSync(path.join(reportBin, 'swift'), 0o755)
-}
 
 for (const [cause, reportXml, said] of [
   ['a failure', suite('errors="0" tests="9" failures="2"'), /2 failure\(s\) across 9/],
@@ -123,51 +109,6 @@ for (const [configuration, environment, flags] of [
     )
   })
 }
-
-// `swift-test.sh [Package…] [--filter PATTERN]`, the narrow inner loop. Its whole reason to exist
-// is the case below where the pattern matches nothing: `swift test --filter` runs 0 tests and
-// exits 0 (#1358), and `verdict` is what turns that back into a failure.
-check('swift-test.sh runs one named package alone', () => {
-  swiftWriting(suite('errors="0" tests="9" failures="0"'))
-  const result = run(TEST, { ...REPORTING, args: ['ArgoUI'] })
-  assert.equal(result.status, 0, result.output)
-  assert.match(result.output, /ArgoUI clean/)
-  for (const name of PACKAGES.filter((p) => p !== 'ArgoUI')) {
-    assert.doesNotMatch(result.output, new RegExp(name))
-  }
-})
-
-check('swift-test.sh passes a filter through, last', () => {
-  swiftWriting(suite('errors="0" tests="9" failures="0"'))
-  const result = run(TEST, { ...REPORTING, args: ['ArgoUI', '--filter', 'MinimapReshapeTests'] })
-  assert.equal(result.status, 0, result.output)
-  // Last, so an unfiltered run's argv stays the one the configuration cases above assert on.
-  assert.deepEqual(result.argv.slice(-2), ['--filter', 'MinimapReshapeTests'])
-})
-
-check('swift-test.sh fails a filter that matched nothing, though swift test exits 0', () => {
-  swiftWriting(suite('errors="0" tests="0" failures="0"'))
-  const result = run(TEST, { ...REPORTING, args: ['ArgoUI', '--filter', 'Minimap reshape'] })
-  assert.equal(result.status, 1, result.output)
-  assert.match(result.output, /matched no test for --filter Minimap reshape/)
-  // The reason it matched nothing, not just that it did: the display name is the mistake people
-  // make, because it is the name the test output prints.
-  assert.match(result.output, /matches type names/)
-})
-
-check('swift-test.sh refuses a filter with no package to run it in', () => {
-  swiftWriting(suite('errors="0" tests="9" failures="0"'))
-  const result = run(TEST, { ...REPORTING, args: ['--filter', 'MinimapReshapeTests'] })
-  assert.equal(result.status, 1, result.output)
-  assert.match(result.output, /--filter needs a package/)
-})
-
-check('swift-test.sh refuses a package it does not carry', () => {
-  swiftWriting(suite('errors="0" tests="9" failures="0"'))
-  const result = run(TEST, { ...REPORTING, args: ['ArgoTerminal'] })
-  assert.equal(result.status, 1, result.output)
-  assert.match(result.output, /is not one of/)
-})
 
 check('swift-test.sh refuses a configuration it does not carry', () => {
   swiftWriting(suite('errors="0" tests="9" failures="0"'))

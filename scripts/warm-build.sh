@@ -30,14 +30,19 @@ fi
 LOG=${ARGO_WARM_LOG:-$APP_DIR/.build-warm.log}
 mkdir -p "$(dirname "$LOG")"
 
-# Detached, so the shell that asked for it is free immediately — the whole point. The packages go
-# in dependency order, and `--build-tests` because the test target is what the gate builds and
-# building only the library would leave half the cost still to pay.
+# Backgrounded, so the shell that asked for it is free immediately — the whole point.
 #
-# `ArgoUI` last and alone on its line for the same reason it dominates the gate: it depends on the
-# other three, so warming it warms them, and it is the one worth waiting for.
+# Backgrounded, NOT detached: the job stays in the caller's process group, so a Ctrl-C at that
+# terminal takes the warm with it. That is the wanted behaviour rather than a gap — the warm is
+# for the session it was started in, and a build nobody is waiting for that survives the session
+# is a `swift` holding the package lock against whoever opens the tree next. `nohup` here would
+# buy outliving the terminal and cost exactly that.
+#
+# `--build-tests` because the test target is what the gate builds, and building only the library
+# would leave half the cost still to pay.
 {
-  for package in ArgoDesign ArgoEngine ArgoMermaid ArgoAtlas ArgoUI; do
+  # shellcheck disable=SC2086 # ARGO_BUILD_PACKAGES is a word list, not one argument.
+  for package in $ARGO_BUILD_PACKAGES; do
     echo "warm: $package"
     (cd "$APP_DIR/Packages/$package" && swift build --build-tests) || echo "warm: $package failed"
   done

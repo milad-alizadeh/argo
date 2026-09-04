@@ -9,10 +9,13 @@ set -eu
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
+# shellcheck source=scripts/swift-tool-guard.sh
+. "$APP_DIR/../../scripts/swift-tool-guard.sh"
+
 # Every package with a test target, not just the engine: ArgoUI carries the visual contract's
 # tests (#375), ArgoMermaid the renderer's layout suites (#1087) and ArgoAtlas the map's (#1143).
 # A `test` script that silently covered some of them would be worse than none.
-ALL_PACKAGES='ArgoEngine ArgoUI ArgoMermaid ArgoAtlas'
+ALL_PACKAGES=$ARGO_TEST_PACKAGES
 
 # `swift-test.sh [Package…] [--filter PATTERN]` narrows the inner loop, and the point of routing a
 # narrow run through here is `verdict` below: `swift test --filter` FAILS OPEN (#1358). It matches
@@ -23,17 +26,30 @@ ALL_PACKAGES='ArgoEngine ArgoUI ArgoMermaid ArgoAtlas'
 # Which is why a filter has to name its package. Unfiltered, all four run and each must report
 # tests. Filtered, the three packages the pattern does not live in would each report nothing, and
 # the guard that makes the filter safe would fire on them instead of on a typo.
+#
+# An EMPTY pattern is refused rather than ignored. `--filter ""` is the one spelling that would
+# have walked straight through the guard above: it leaves `FILTER` unset, so the package check
+# does not fire, no `--filter` reaches `swift test`, and the whole package runs and reports clean
+# under a command that asked for a narrow run. That is the fail-open this block exists to close,
+# arriving by the other door.
+no_pattern() {
+  echo "swift-test: --filter takes a pattern, and an empty one is not a filter" >&2
+  exit 1
+}
+
 PACKAGES=''
 FILTER=''
 while [ $# -gt 0 ]; do
   case "$1" in
     --filter)
-      [ $# -ge 2 ] || { echo "swift-test: --filter takes a pattern" >&2; exit 1; }
+      [ $# -ge 2 ] || no_pattern
       FILTER=$2
+      [ -n "$FILTER" ] || no_pattern
       shift 2
       ;;
     --filter=*)
       FILTER=${1#--filter=}
+      [ -n "$FILTER" ] || no_pattern
       shift
       ;;
     -*)
@@ -59,9 +75,6 @@ if [ -n "$FILTER" ] && [ -z "$PACKAGES" ]; then
   exit 1
 fi
 [ -n "$PACKAGES" ] || PACKAGES=$ALL_PACKAGES
-
-# shellcheck source=scripts/swift-tool-guard.sh
-. "$APP_DIR/../../scripts/swift-tool-guard.sh"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   swift_unavailable "not macOS" "the default CI jobs are Linux; the suites run locally"
