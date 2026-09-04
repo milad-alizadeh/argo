@@ -47,6 +47,10 @@ final class TranscriptWatch {
     /// The running tail per transcript id. A tail's presence in the table IS its liveness, so there
     /// is no second number to fall out of step.
     private(set) var tails: [String: Task<Void, Never>] = [:]
+    /// Which admit each tail is running under — see `TranscriptAdmissions`. The table above cannot
+    /// answer this on its own: a tail is registered AFTER a suspension, so two admits of one
+    /// transcript can both reach it (#1237).
+    @ObservationIgnored private var admissions = TranscriptAdmissions()
     /// The transcripts held on a WHOLE reading, and the ceiling on holding them — see
     /// `WholeReadings`. Written only by `TranscriptWatch+Reading.swift`.
     @ObservationIgnored var whole = WholeReadings()
@@ -153,6 +157,9 @@ final class TranscriptWatch {
         // Surrendered before the tails go, and only here: a transcript DROPPED loses its Subagents'
         // readings the way it loses its row, where a paused one keeps both.
         readings.forget(claims: subagents.surrenderClaims(of: transcriptID))
+        // The id is given up before the tail is stopped, so the drain that ends cannot settle a
+        // transcript that is no longer in the join — or clear a key some later admit now holds.
+        admissions.forget(transcriptID)
         await pauseObserving(transcriptID: transcriptID)
     }
 
@@ -176,6 +183,7 @@ final class TranscriptWatch {
         readings.forgetAll()
         let stopped = Array(tails.values)
         tails = [:]
+        admissions.forgetAll()
         whole = WholeReadings()
         mutate { $0.replace(with: HubJoin()) }
         // A failure is a claim about what could not be read, and nothing is being read now. The one
@@ -196,11 +204,21 @@ final class TranscriptWatch {
         _ observation: TranscriptObservation,
         joining admit: (inout HubJoin) -> Bool,
     ) async {
+        // Stamped BEFORE the wait below, which is what makes the guard after it mean anything:
+        // the wait is where a second admit of this transcript overtakes this one (#1237).
+        let admission = admissions.stamp(observation.id)
         await pauseObserving(transcriptID: observation.id)
+        // Overtaken while waiting. Nothing is admitted and no tail is started: the admit that took
+        // the id is reading this same file, and a second reader of it is the duplicate this guard
+        // exists to prevent. The observation goes out of scope here, which is what releases the
+        // descriptors it opened (`TranscriptTail`).
+        guard admissions.owns(admission, observation.id) else { return }
         mutate(admit)
         // A connection reading `failed` over a live source is a stale claim.
         failureMessage = nil
-        tails[observation.id] = Task { [weak self] in await self?.drain(observation) }
+        tails[observation.id] = Task { [weak self] in
+            await self?.drain(observation, admitted: admission)
+        }
         // Whatever the fan-out has written SO FAR. The rest arrives with the sweep, which is what
         // sees the file for a delegation handed over after this moment.
         subagents.refresh(of: observation.id, beside: observation.sourceURL)
@@ -231,18 +249,24 @@ final class TranscriptWatch {
         SubagentTails(engine: engine, readings: readings)
     }
 
-    private func drain(_ observation: TranscriptObservation) async {
+    private func drain(
+        _ observation: TranscriptObservation,
+        admitted admission: TranscriptAdmissions.Admission,
+    ) async {
         for await events in observation.events {
             await land(events, of: observation.id)
             // After the join, never before: reconciliation retires a spawned Session's own row, and
             // it may only do that once the observed row it is standing in for is published.
             await onApplied()
         }
+        // A tail whose id has since moved on settles nothing and clears nothing: the transcript
+        // was dropped, or a later admit owns it and is reading it now. Either way this reading is
+        // not the one the roster is standing on, and `abandonReread` here would take away the
+        // reread that admit is holding (#1237).
+        guard admissions.owns(admission, observation.id) else { return }
         // A tail that ended without delivering a backfill — an unopenable file, or one stopped
         // mid-read — still has to settle, or the roster waits on a transcript that never speaks.
         mutate { $0.settle(transcriptID: observation.id) }
-        // Clearing by id is safe: every path that re-registers an id awaits the previous tail to
-        // completion first, so no later tail can be holding the key by the time this runs.
         tails.removeValue(forKey: observation.id)
     }
 }
