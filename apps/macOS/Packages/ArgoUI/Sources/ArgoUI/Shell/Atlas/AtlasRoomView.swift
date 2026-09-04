@@ -13,6 +13,15 @@ struct AtlasRoomView: View {
     @Environment(\.argo) private var argo
     /// Injected from above the deck rather than taken as a parameter — `argoAtlasRoom` says why.
     @Environment(\.argoAtlasRoom) private var resolved
+    /// Whether this is the room on screen. `InstrumentDeckShell` keeps every room mounted so a
+    /// switch destroys nothing (#1356), which makes this the one thing that still tells the map's
+    /// tiling and its Metal surface not to redraw for a reader who cannot see them — existence is
+    /// no longer the gate, so activity has to be.
+    var isActive = true
+
+    init(isActive: Bool = true) {
+        self.isActive = isActive
+    }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
     private var room: AtlasRoom {
@@ -22,7 +31,11 @@ struct AtlasRoomView: View {
     var body: some View {
         Group {
             if case let .measured(map) = room.reading {
-                measured(map)
+                if isActive {
+                    measured(map)
+                } else {
+                    Color.clear
+                }
             } else {
                 AtlasRoomVacancy(
                     reading: room.reading,
