@@ -93,6 +93,33 @@ struct SessionRunStoreTests {
             == SessionRun(model: "sonnet", effort: .medium))
     }
 
+    /// The crash leg of #1223. A file naming a placeholder is a file naming no model, so the next
+    /// launch opens on Opus 5 rather than putting `<synthetic>` back on `--model` — where it broke
+    /// every turn of the Session that read it.
+    @Test(arguments: ["<synthetic>", "<unknown>", "   "])
+    func `a placeholder in the file opens on Opus 5`(placeholder: String) throws {
+        let file = Self.temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: file) }
+        try #"{"model":"\#(placeholder)","effort":"high"}"#
+            .write(to: file, atomically: true, encoding: .utf8)
+
+        #expect(SessionRunStore(fileURL: file).lastPicked()
+            == SessionRun(model: SessionRun.unpicked.model, effort: .high))
+    }
+
+    /// And the placeholder never gets INTO the file either, so a launch that read one cannot hand
+    /// it to the launch after that.
+    @Test func `a placeholder is not remembered as a pick`() {
+        let file = Self.temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: file) }
+        let store = SessionRunStore(fileURL: file)
+        store.remember(.model("sonnet"))
+
+        store.remember(.model("<synthetic>"))
+
+        #expect(store.lastPicked().model == "sonnet")
+    }
+
     private static func temporaryFileURL() -> URL {
         URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-run-\(UUID().uuidString.prefix(8)).json")

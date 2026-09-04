@@ -23,10 +23,14 @@ public final class SessionRunStore {
 
     /// What a spawn opens on. `Opus 5 · Medium` where nothing has been picked, and each half read
     /// on its own: a file naming a model but an effort off the ladder still opens on that model.
+    ///
+    /// A file naming a PLACEHOLDER is a file naming no model (#1223, `ModelID`), so it reads as
+    /// unpicked. This is the leg a crash needs: a Session that went down holding `<synthetic>`
+    /// would otherwise come back up on it, and `--model <synthetic>` fails every turn.
     func lastPicked() -> SessionRun {
         let remembered = file.load(orEmpty: Remembered(model: "", effort: ""))
         return SessionRun(
-            model: remembered.model.isEmpty ? SessionRun.unpicked.model : remembered.model,
+            model: ModelID.isReal(remembered.model) ? remembered.model : SessionRun.unpicked.model,
             effort: SessionEffort(rawValue: remembered.effort) ?? SessionRun.unpicked.effort,
         )
     }
@@ -38,6 +42,9 @@ public final class SessionRunStore {
         let picked = lastPicked()
         switch pick {
         case let .model(model):
+            // A placeholder is not a pick, so it is not written. The read above repairs a file that
+            // already holds one; this stops this launch handing one to the next (#1223).
+            guard ModelID.isReal(model) else { return }
             file.write(Remembered(model: model, effort: picked.effort.rawValue))
         case let .effort(effort):
             file.write(Remembered(model: picked.model, effort: effort.rawValue))
