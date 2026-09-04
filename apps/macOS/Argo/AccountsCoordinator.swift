@@ -43,8 +43,9 @@ final class AccountsCoordinator {
     /// because the poll reads through a Binding and files its failures on `health` — both of which
     /// are this half's, and neither of which the Hub has ever heard of.
     let ticketLedger = TicketLedger()
-    /// The write half (#872). Computed rather than held: it has no state of its own, and its
-    /// transport is `URLSession.shared`.
+    /// The write half (#872, #1333) — filing a ticket and applying an intent to one that already
+    /// exists. Computed rather than held: it has no state of its own, and its transport is
+    /// `URLSession.shared`.
     var ticketCreator: TicketCreator {
         TicketCreator(bindings: bindings, items: ticketLedger, health: health)
     }

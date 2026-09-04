@@ -12,6 +12,14 @@ extension AccountsCoordinator {
         return refusal
     }
 
+    /// Apply one intent to an existing ticket — closing it or reopening it (#1333) — and answer
+    /// with the refusal that stopped it, on the same terms as `createTicket` above.
+    func applyTicket(_ intent: TicketIntent, to number: Int) async -> TicketWriteError? {
+        let refusal = await ticketCreator.apply(intent, to: number, forProject: project?.id)
+        await refresh()
+        return refusal
+    }
+
     /// Make one of the reads a room raises — a link followed by number (#895), a page of the closed
     /// listing (#1075). `refresh` is what publishes the answer, for the reason `createTicket` above
     /// ends there too.

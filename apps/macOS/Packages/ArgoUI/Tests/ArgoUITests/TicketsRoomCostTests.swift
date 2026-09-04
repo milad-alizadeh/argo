@@ -177,7 +177,8 @@ struct TicketsRoomCostTests {
         return TicketsReading(
             items: items,
             provider: TicketsProvider(
-                name: "GitHub", account: "argo", state: .idle, hasAnswered: true,
+                name: "GitHub", account: "argo",
+                connection: .init(state: .idle, hasAnswered: true),
             ),
         )
     }

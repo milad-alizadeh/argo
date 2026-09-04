@@ -62,6 +62,11 @@ public enum ArgoSymbol {
     /// The arrow leaves the app; the chain is the address itself.
     public static let openOnHost = "arrow.up.forward.square"
     public static let copyLink = "link"
+    /// Closing the open ticket (#1333). A ring closing rather than a plain `xmark`: the control
+    /// opens a menu of two reasons, and the mark has to say "closes" without picking either.
+    public static let closeTicket = "xmark.circle"
+    /// A closed ticket's twin verb, put back where it started (#1333).
+    public static let reopenTicket = "arrow.uturn.backward.circle"
 
     /// One mark per room, and since #690 the whole of what a room tab draws.
     ///

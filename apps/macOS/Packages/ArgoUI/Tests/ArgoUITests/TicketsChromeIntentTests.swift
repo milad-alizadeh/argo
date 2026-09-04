@@ -36,6 +36,10 @@ struct TicketsChromeIntentTests {
 
         let verbs = Mirror(reflecting: TicketsChromeIntents.Verbs.inert).children
             .compactMap(\.label)
-        #expect(Set(verbs) == ["start", "command", "startOn"])
+        #expect(Set(verbs) == ["start", "command", "startOn", "closure"])
+
+        let closure = Mirror(reflecting: TicketsChromeIntents.Verbs.Closure()).children
+            .compactMap(\.label)
+        #expect(Set(closure) == ["current", "close", "reopen", "control"])
     }
 }

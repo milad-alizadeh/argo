@@ -168,8 +168,7 @@ package enum TicketsFixture {
     package static let bound = TicketsProvider(
         name: "GitHub",
         account: "milad-alizadeh",
-        state: .idle,
-        hasAnswered: true,
+        connection: .init(state: .idle, hasAnswered: true),
     )
 
     /// The Project the design's renders are shot in — this repo, by the name the window carries.

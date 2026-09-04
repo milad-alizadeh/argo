@@ -56,6 +56,8 @@ package struct TicketsChromeIntents {
         /// draws six live rows, so one left unassigned would be six controls that highlight,
         /// accept the press and do nothing. Absence has to reach the control AS absence.
         var startOn: ((WorkCommand?) -> Void)?
+        /// Closing the open ticket, and its reopen twin (#1333).
+        var closure = Closure()
 
         /// Verbs with nothing behind them, for a preview and for a room with no ticket open.
         @MainActor static let inert = Verbs()
@@ -66,10 +68,49 @@ package struct TicketsChromeIntents {
             start: @escaping () -> Void = {},
             command: WorkCommand? = nil,
             startOn: ((WorkCommand?) -> Void)? = nil,
+            closure: Closure = Closure(),
         ) {
             self.start = start
             self.command = command
             self.startOn = startOn
+            self.closure = closure
+        }
+
+        /// The open ticket's closure, both directions (#1333). One value rather than two verbs on
+        /// `Verbs` itself: `current` decides which of `close` and `reopen` a control may even
+        /// reach, and the two travelling apart is how a room could offer both at once.
+        package struct Closure {
+            /// The ticket's own closure, as last adopted — `.open` draws `close`'s two reasons and
+            /// anything else draws `reopen` in their place, never both — and `nil` where the
+            /// Binding does not declare the `.closure` write at all.
+            ///
+            /// ABSENCE folded into one optional rather than a separate flag beside it (4-parameter
+            /// init cap, rules/house.md): a Binding that never offers the write has no honest
+            /// answer for "is this ticket open or closed" EITHER, because nothing here may draw a
+            /// control that takes a press and does nothing (#872).
+            var current: TicketClosure?
+            /// Close with a reason. Two, not one: `TicketCloseReason` is `resolved` or `ruledOut`,
+            /// and a single `Close` that always meant one of them would write a false fact every
+            /// time the other was intended.
+            var close: (TicketCloseReason) -> Void = { _ in }
+            var reopen: () -> Void = {}
+            /// What the write on the wire renders — pending disables in place, a refusal returns
+            /// it pressable with the provider's own words beside it (§4).
+            var control = WriteControlState.live
+
+            /// Spelled out because Swift synthesises no memberwise initializer above
+            /// `internal`, and the specimens build this from their own target (#1085).
+            package init(
+                current: TicketClosure? = nil,
+                close: @escaping (TicketCloseReason) -> Void = { _ in },
+                reopen: @escaping () -> Void = {},
+                control: WriteControlState = .live,
+            ) {
+                self.current = current
+                self.close = close
+                self.reopen = reopen
+                self.control = control
+            }
         }
     }
 
