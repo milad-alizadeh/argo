@@ -12,19 +12,20 @@ later cleanup pass.
 
 ## Labels
 
-Every issue you create carries a label before you hand the number back. There is no unlabelled
-issue, and a bug report is no exception.
+Every issue is labelled in the `gh issue create` call. There is no unlabelled issue, and a bug
+report is no exception.
 
 - **One triage label, always**, from `docs/agents/triage-labels.md`: `ready-for-agent` when the
   issue is specified well enough for an AFK agent to build it, `ready-for-human` when a person
   must do the work, `needs-info` when the report is short of a fact only the reporter holds, and
-  `needs-triage` when you cannot tell.
+  `needs-triage` when you cannot tell. The fifth, `wontfix`, is a closing label, never a
+  create-time one.
 - **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
   for behaviour that is new, `documentation` for docs, designs and ADRs.
 
-Pass them in the create call — `gh issue create --label ready-for-agent --label bug ...` — not in
-a later `gh issue edit`. An issue that reaches the list unlabelled is invisible to every triage
-query that reads this repo.
+You know which triage label fits at the moment you write the body, so the create call is where it
+goes. An issue that lands unlabelled falls into `/triage`'s never-triaged bucket, and a person
+must read it again to learn what you already knew.
 
 ## Screenshots
 
@@ -52,11 +53,13 @@ You cannot read a pasted image as a file. Ask the user to save it and give you t
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
+- **Create an issue**: `gh issue create --title "..." --body "..." --label <triage> [--label <kind>]`.
+  Use a heredoc for multi-line bodies. The labels are not optional — see **Labels** above.
 - **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
 - **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
+- **Re-label an existing issue**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`.
+  This is for issues that already exist; a new one is labelled at creation.
 - **Close**: `gh issue close <number> --comment "..."`
 
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.

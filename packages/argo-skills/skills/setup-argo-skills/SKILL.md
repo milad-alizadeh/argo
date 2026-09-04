@@ -68,26 +68,28 @@ apply it before the first draft goes out, not as a later cleanup pass.
 ```
 
 **Labels** is a section too, under the same condition: only when `docs/agents/issue-tracker.md`
-exists. Append it verbatim, replacing any existing `## Labels` section in place. It names the
-five triage labels that `docs/agents/triage-labels.md` maps; if that file does not exist, install
-it first or drop the first bullet's label names for whatever the host uses.
+exists. Append it verbatim, replacing any existing `## Labels` section in place. The first bullet
+names four of the five triage labels that `docs/agents/triage-labels.md` maps, and
+`setup-matt-pocock-skills` is what writes that file — so if it is absent, run that skill first, or
+replace those names with whatever the host tracker uses.
 
 ```markdown
 ## Labels
 
-Every issue you create carries a label before you hand the number back. There is no unlabelled
-issue, and a bug report is no exception.
+Every issue is labelled in the `gh issue create` call. There is no unlabelled issue, and a bug
+report is no exception.
 
 - **One triage label, always**, from `docs/agents/triage-labels.md`: `ready-for-agent` when the
   issue is specified well enough for an AFK agent to build it, `ready-for-human` when a person
   must do the work, `needs-info` when the report is short of a fact only the reporter holds, and
-  `needs-triage` when you cannot tell.
+  `needs-triage` when you cannot tell. The fifth, `wontfix`, is a closing label, never a
+  create-time one.
 - **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
   for behaviour that is new, `documentation` for docs, designs and ADRs.
 
-Pass them in the create call — `gh issue create --label ready-for-agent --label bug ...` — not in
-a later `gh issue edit`. An issue that reaches the list unlabelled is invisible to every triage
-query that reads this repo.
+You know which triage label fits at the moment you write the body, so the create call is where it
+goes. An issue that lands unlabelled falls into `/triage`'s never-triaged bucket, and a person
+must read it again to learn what you already knew.
 ```
 
 **Screenshot evidence** is a section too, under the same condition: only when
