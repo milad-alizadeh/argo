@@ -45,6 +45,10 @@ extension SessionRosterProjection {
         /// Which directory each FOLDED run belongs to. A run drawn on its own row is absent.
         private let membership: [String: String]
         private let folds: [String: Reading]
+        /// Every id a directory folds, in roster order — what a fold's OWN reading pools across
+        /// (`SessionRosterProjection.foldedSubagents`), kept apart from `folds` because that is
+        /// the count and the label alone.
+        private let runsByDirectory: [String: [String]]
         private let opened: Set<String>
         /// Which of the roster's two lists this pass drew. In the id because a directory with runs
         /// on both would otherwise have one id for two rows, and opening either would open both.
@@ -66,6 +70,9 @@ extension SessionRosterProjection {
             self.list = list
             self.membership = members
             self.folds = Dictionary(uniqueKeysWithValues: groups.map { ($0.directory, $0.reading) })
+            self.runsByDirectory = Dictionary(
+                uniqueKeysWithValues: groups.map { ($0.directory, $0.runs) },
+            )
             self.opened = pass.opened
                 .union(selected.map { [Self.identifier(of: $0, in: list)] } ?? [])
         }
@@ -87,6 +94,13 @@ extension SessionRosterProjection {
         func drawsOwnRow(_ session: CockpitPresentation.Session) -> Bool {
             guard let directory = membership[session.id] else { return true }
             return opened.contains(identifier(of: directory))
+        }
+
+        /// Every run the fold this Session opens hides — what its own reading pools across
+        /// (`SessionRosterProjection.foldedSubagents`). Empty for a Session that opens no fold.
+        func runs(foldedWith session: CockpitPresentation.Session) -> [String] {
+            guard let directory = membership[session.id] else { return [] }
+            return runsByDirectory[directory] ?? []
         }
 
         private func identifier(of directory: String) -> String {

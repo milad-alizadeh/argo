@@ -12,18 +12,28 @@ struct SessionMarker: View {
     let row: SessionRosterProjection.Row
 
     var body: some View {
-        Group {
-            if let fold = row.fold {
-                ArgoDisclosure(fold.isOpen ? .below : .beside)
-                    .foregroundStyle(argo.color.text.tertiary)
-                    .padding(.top, Self.inset(for: ArgoIconSize.chevron.rawValue))
-                    .accessibilityHidden(true)
-            } else {
-                SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
-                    .padding(.top, Self.inset(for: ArgoIconSize.statusDot))
+        VStack(spacing: ArgoSpacing.subagentGap) {
+            Group {
+                if let fold = row.fold {
+                    ArgoDisclosure(fold.isOpen ? .below : .beside)
+                        .foregroundStyle(argo.color.text.tertiary)
+                        .accessibilityHidden(true)
+                } else {
+                    SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
+                }
+            }
+            .padding(.top, Self.inset(for: markSize))
+            // What runs under this Session, drawn smaller than the state above it — never
+            // claimed for a Session Argo cannot place (rule 5, `SessionRosterProjection`).
+            if let subagents = row.subagents, subagents != .none {
+                SubagentDots(reading: subagents)
             }
         }
         .frame(width: Self.columnWidth)
+    }
+
+    private var markSize: CGFloat {
+        row.fold != nil ? ArgoIconSize.chevron.rawValue : ArgoIconSize.statusDot
     }
 }
 
