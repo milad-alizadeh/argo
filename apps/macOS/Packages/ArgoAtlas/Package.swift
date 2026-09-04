@@ -34,6 +34,12 @@ let package = Package(
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
             ],
         ),
-        .testTarget(name: "AtlasLayoutTests", dependencies: ["AtlasLayout"]),
+        .testTarget(
+            name: "AtlasLayoutTests",
+            dependencies: ["AtlasLayout"],
+            // A real measurement of this repository, trimmed. Its own README states what was
+            // measured and which awkward cases it was chosen to carry (#1145).
+            resources: [.copy("Fixtures")],
+        ),
     ],
 )
