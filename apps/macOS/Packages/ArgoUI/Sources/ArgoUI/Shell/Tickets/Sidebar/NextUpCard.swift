@@ -26,8 +26,9 @@ package struct NextUpCard: View {
 
     package var body: some View {
         statement
-            .padding(.horizontal, ArgoTicketsSidebar.heroInset)
-            .padding(.top, ArgoTicketsSidebar.heroInset)
+            // Vertical only: the card's left and right are the rail's `railInset`, the vertical
+            // the marks and the counts beside it are read down.
+            .padding(.top, ArgoTicketsSidebar.heroTopInset)
             .padding(.bottom, ArgoTicketsSidebar.heroFootInset)
     }
 

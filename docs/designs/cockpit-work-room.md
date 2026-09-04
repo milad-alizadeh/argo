@@ -611,10 +611,12 @@ and search field replaced it.
 
 ## The Next-up hero
 
-**A card at the foot of the sidebar's scroll, below the views.** It is inset from the sidebar's
-edges by `ArgoSpacing.base`, sits on `surface.raised` and carries an `edge.subtle` border at
-`ArgoRadius.control` — three things a view row has none of, which is what stops it reading as
-another view.
+**A card at the foot of the sidebar's scroll, below the views.** Its border stands on the rail's
+own `railInset`, the vertical the marks above it and the rule directly over it are read down; it
+sits on `surface.raised` and carries an `edge.subtle` border at `ArgoRadius.control` — three
+things a view row has none of, which is what stops it reading as another view. **Amended**: the
+card was inset a further `ArgoSpacing.base` inboard of that rule, which read as a fourth left edge
+on a rail that already had three.
 
 **The hero was never the width problem.** It states *one* ticket, so its title has the sidebar's
 whole width and three lines to wrap into. It reads better at 280 than it did in the 320 rail,
@@ -804,11 +806,11 @@ Surface sheets, beside the surface, per `rules/swift.md` — a measure is not a 
 | Sidebar width | `ArgoLayout.sidebarMinimumWidth` **280** as the room's *ideal* | at 320 the list drops to 480 and three of twelve titles truncate; the one shell change this design asks for |
 | `viewRowHeight` | **26**, a FLOOR not a frame | macOS scales sidebar row height with the reader's own setting, and a frame would refuse it — the same reason `rosterFootMinimumHeight` is a floor |
 | `glyphWidth` | **14** | every view name starts on one vertical |
-| `gutter` | `ArgoSpacing.comfortable` 12 | the row's leading inset |
-| `heroInset` | `ArgoSpacing.base` 8 | the hero card off the sidebar's edges |
+| `railInset` | `ArgoSpacing.loose` 16 | **Amended.** The rail's ONE horizontal inset, so the mark, the rule, the card's border, the counts and the foot's chip are read down two verticals. OBSERVED, not documented: it is the inset `.listStyle(.sidebar)` gives its rows' content, measured off the `ticketsRoom` render. A row spends nothing to sit on it; only what is outside the `List` spends it by hand. If AppKit moves it the foot drifts off the rows and no gate sees it — a `/pixel-review` catch |
+| `heroTopInset` | `ArgoSpacing.base` 8 | **Amended**, and renamed from `heroInset`: the hero card off the rule above it, VERTICAL only. Its left and right are `railInset`; a horizontal step here put the card a second inset inboard of that rule |
 | `heroPadding` | `ArgoSpacing.comfortable` 12 | inside it |
 | Hero radius | `ArgoRadius.control` 6 | a card, not a popover |
-| `footPadding` | `ArgoSpacing.base` 8 / `ArgoSpacing.comfortable` 12 | around the provider chip, above a hairline |
+| `footPadding` | `ArgoSpacing.base` 8 / `railInset` 16 | around the provider chip, above a hairline |
 
 ### `ArgoBacklogList` — `ArgoUI/Shell/Tickets/Backlog/`
 
