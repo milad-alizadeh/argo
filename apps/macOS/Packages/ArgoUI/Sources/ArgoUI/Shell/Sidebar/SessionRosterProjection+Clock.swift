@@ -83,6 +83,10 @@ extension SessionRosterProjection {
             switch event {
             case let .prompt(_, _, atMs):
                 start = atMs
+            // A Turn nobody typed starts where the report that woke it landed (#1299), and is
+            // overwritten by an earlier prompt like any other start.
+            case let .turnResumed(atMs):
+                start = atMs
             // An interrupt is a boundary like any other, and the commoner one on a Session
             // somebody is watching: the walk stops at it (#1189).
             case .turnEnded, .interrupted:

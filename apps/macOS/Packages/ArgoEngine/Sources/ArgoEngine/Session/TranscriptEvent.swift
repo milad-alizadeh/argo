@@ -56,6 +56,14 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// A Turn ended, and why. Emitted only where the record's reason SAYS the turn is over: one
     /// that continues into a tool call closes nothing.
     case turnEnded(StopReason)
+    /// A Turn started again with nobody typing: a background agent reported, and the CLI put the
+    /// agent back to work on it (#1299). A fan-out ends its Turn to wait for its delegates, so the
+    /// report is the only record that says the next one began.
+    ///
+    /// A boundary and nothing else — there is nothing here for anyone to DRAW. The moment rides
+    /// along because the Turn it opens has no prompt behind it to be clocked from
+    /// (`SessionRosterProjection+Clock`).
+    case turnResumed(atMs: Int?)
     /// Somebody stopped the Turn. Its own case rather than a `.prompt` carrying the CLI's marker
     /// (#1189), because the marker is the one user entry that is not a thing anybody asked for:
     /// read as a prompt it opens a Turn on the very act that ended one, and the Session never comes

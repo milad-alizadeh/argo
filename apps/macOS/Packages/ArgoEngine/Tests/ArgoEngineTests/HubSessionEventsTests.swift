@@ -84,7 +84,8 @@ private extension TranscriptEvent {
         case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort,
              .branch, .mode, .entry,
              .prompt, .toolCall,
-             .toolCallOutcome, .turnEnded, .interrupted, .plan, .usage, .compaction, .queued,
+             .toolCallOutcome, .turnEnded, .turnResumed, .interrupted, .plan, .usage, .compaction,
+             .queued,
              .unreadableLine,
              .skillLoaded, .superseded, .excerpted: nil
         }

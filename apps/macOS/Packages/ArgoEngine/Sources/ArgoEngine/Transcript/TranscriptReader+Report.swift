@@ -28,10 +28,17 @@ extension TranscriptReader {
         // Standing alone, it ends nothing: the delegation whose receipt left it `inProgress`
         // (#908) stays open, which is honest — no id means Argo cannot know this report is that
         // call's ending.
+        //
+        // The wake leads either way, joined or not: the CLI files a report to put the agent back
+        // to work on it, so the Turn is open before anything inside it is folded (#1299). Gated on
+        // `attributes` for the reason the turn END is (`+Assistant.swift`): the Turn a delegate's
+        // own report opens is the delegate's, and opening the root's on one would report a Session
+        // as working when nobody is.
+        let woken = wake(of: message)
         guard let callID = report.callID, openCalls[callID] != nil else {
-            return unattached(report, in: message)
+            return woken + unattached(report, in: message)
         }
-        return [.toolCallOutcome(ToolCallOutcome(
+        return woken + [.toolCallOutcome(ToolCallOutcome(
             id: callID,
             resolution: ToolCallOutcome.Resolution(
                 status: report.status,
@@ -49,6 +56,10 @@ extension TranscriptReader {
                 subagentID: report.subagentID,
             ),
         ))]
+    }
+
+    private func wake(of message: MessageRecord) -> [TranscriptEvent] {
+        attributes(message) ? [.turnResumed(atMs: message.timestampMs)] : []
     }
 
     /// A report Argo cannot join to a call, drawn as a row of its own: work handed over somewhere

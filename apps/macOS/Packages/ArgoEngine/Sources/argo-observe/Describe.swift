@@ -59,6 +59,7 @@ func describe(_ event: TranscriptEvent) -> String {
     case let .toolCallOutcome(outcome):
         "  ↳ \(outcome.status.rawValue)  \(outcome.result.map(describe) ?? "")"
     case let .turnEnded(reason): "turn ended  \(reason.rawValue)"
+    case .turnResumed: "turn woken  a report put the agent back to work"
     case .interrupted: "interrupted somebody stopped the Turn"
     case let .plan(plan): describe(plan)
     case let .usage(.read(usage)):

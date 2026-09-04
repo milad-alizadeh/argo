@@ -157,6 +157,22 @@ struct SessionRosterActivityTests {
         #expect(fold.activity == nil)
     }
 
+    /// Why #1299's two symptoms were one bug, read at the slot: while the status was wrong the row
+    /// fell back to the prompt, and the newest call comes back on its own once the report that woke
+    /// the Turn re-opens it. The `running` gate above is untouched — the call behind the boundary
+    /// stays as stale as it ever was, and the walk simply reaches the newer one first.
+    @Test
+    func `a call made after a report woke the Turn is what the Session is doing`() throws {
+        let row = try #require(rows(status: .running, events: [
+            ran("bun run quality", id: "before"),
+            .turnEnded(.endTurn),
+            .turnResumed(atMs: nil),
+            ran("swift test", id: "after"),
+        ]).first)
+
+        #expect(row.activity == "Ran swift test")
+    }
+
     /// A Session the Ticket holds the title of, so its derived name is free to carry the slash
     /// command — which is the fact the slot falls through TO (#745).
     private func rows(status: SessionStatus, events: [TranscriptEvent])

@@ -40,8 +40,8 @@ struct HubRecordFold: Equatable, Sendable {
         case .excerpted, .superseded, .headLeaf, .title, .queued, .mode:
             return true
         case .originSession, .cwd, .model, .effort, .branch, .entry, .prompt, .message, .thought,
-             .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .usage, .plan, .compaction,
-             .unreadableLine, .interrupted:
+             .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded, .turnResumed, .usage, .plan,
+             .compaction, .unreadableLine, .interrupted:
             return !isRefolding
         }
     }

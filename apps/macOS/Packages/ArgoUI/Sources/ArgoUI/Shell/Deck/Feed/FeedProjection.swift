@@ -182,8 +182,12 @@ package enum FeedProjection {
         // can tell an opening reading from a change — this switch sees one event at a time.
         // `.superseded` never reaches a projection at all: it is spent where the reading is built,
         // taking the abandoned branch out of the stream this switch is handed (#1202).
+        // `.turnResumed` is among them: the Turn a report re-opened is a boundary the Hub and the
+        // roster read (#1299), and the report itself is already drawn here as the delegating call's
+        // own row — a second mark beside it would say the same thing twice.
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
-             .model, .effort, .branch, .mode, .entry, .plan, .queued, .superseded: nil
+             .model, .effort, .branch, .mode, .entry, .plan, .queued, .superseded, .turnResumed:
+            nil
         }
     }
 }

@@ -13,7 +13,7 @@ extension FeedProjection {
         case let .effort(cli): .effort(cli)
         case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .branch, .mode, .entry,
              .prompt, .message, .thought, .skillLoaded, .toolCall, .toolCallOutcome, .turnEnded,
-             .interrupted,
+             .turnResumed, .interrupted,
              .queued, .usage, .compaction, .plan, .unreadableLine, .superseded, .excerpted: nil
         }
     }
