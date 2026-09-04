@@ -310,17 +310,23 @@ chips are still drawn, both for reasons stated where they are measured.)
    no fourth signal.
 4. **A queued follow-up rides above the field**, cancellable, and is sent when the Turn ends —
    **except when what ended it was the user stopping it** (amended in build, #541). An interrupt
-   empties the whole vessel: the field, the tray and the queue. The queue is the half that would
-   otherwise bite, and it is not a special case so much as the same rule read carefully — a
+   drops the queue. It is not a special case so much as the same rule read carefully — a
    follow-up is released the moment the Turn ends, and an interrupt IS that Turn ending, so the
    very next thing the Session received would be instructions written for the run somebody had
-   just killed. Stopping and being about to say something else are the same gesture often enough
-   that this cannot be left to the reader to undo in the half-second they have.
+   just killed.
 
-   It is **said, not done quietly** — one line on the `ComposerSeam` in the quiet ink, in the slot
-   decision 8's refusal and decision 9's capability notice share. Everywhere else in the composer
-   a message survives what went wrong with it; this is the one act that cannot let it, so a reader
-   who typed something is told where it went rather than finding an empty vessel.
+   **The field and the tray are not touched** (amended in build, second time). #541 emptied the
+   whole vessel, and that was wrong: a follow-up in the queue was handed over and has to be taken
+   back, while words still in the field were never handed to anything, so there is nothing to
+   release and nothing at risk. Emptying them made Stop the one control in the composer that
+   destroys what the reader typed — decision 8's rule broken by the act it was written for.
+   Stopping and being about to say something else are the same gesture often enough that the
+   words in the field are usually the reason the reader reached for Stop at all.
+
+   What it does take is **said, not done quietly** — one line on the `ComposerSeam` in the quiet
+   ink, in the slot decision 8's refusal and decision 9's capability notice share. An interrupt
+   with an empty queue behind it says nothing: a seam that reports every Stop is one that cries
+   wolf.
 
    **A refused interrupt clears nothing**, on decision 8's rule exactly: nothing was stopped, so
    the reason goes on the seam with a Retry and every character stays where it was typed. The

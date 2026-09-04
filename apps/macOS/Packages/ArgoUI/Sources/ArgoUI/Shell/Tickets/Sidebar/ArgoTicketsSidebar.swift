@@ -10,16 +10,30 @@ enum ArgoTicketsSidebar {
     static let viewRowHeight: CGFloat = 26
     /// The column a view's mark is drawn in, so every view name starts on one vertical.
     static let glyphWidth: CGFloat = 14
-    /// The row's leading inset, before the mark.
-    static let gutter: CGFloat = ArgoSpacing.comfortable
-    /// The Next-up card off the sidebar's edges, which is half of what stops it reading as a row.
-    static let heroInset: CGFloat = ArgoSpacing.base
+    /// The rail's ONE horizontal inset, and the only measure anything here is set off.
+    ///
+    /// OBSERVED, not documented: `.listStyle(.sidebar)` insets its rows' content, and this is that
+    /// inset MEASURED off the `ticketsRoom` render — the mark, the count, the rule and the card's
+    /// border all standing on 16 with nothing here spending it. A row therefore spends nothing to
+    /// sit on the rail, and only what is outside the `List` — the provider foot — spends it by
+    /// hand, reading THIS rather than restating the number. `.listRowInsets(EdgeInsets())`
+    /// on the hero zeroes the ROW's own insets and the platform's own stays, which is why the card
+    /// lands on that same vertical rather than at the sidebar's edge.
+    ///
+    /// If AppKit ever moves it, the foot drifts off the rows silently — no gate can see it, so it
+    /// is a `/pixel-review` catch. That is the cost of the alternative being a hand-set inset on
+    /// every row, fighting the platform's own for the same 16.
+    static let railInset: CGFloat = ArgoSpacing.loose
     /// The card's own inner padding.
     static let heroPadding: CGFloat = ArgoSpacing.comfortable
-    /// Under the card, where the scroll ends. A step over `heroInset` so the card sits clear of the
-    /// hairline the provider foot draws rather than centred between two edges it does not share.
+    /// OVER the card, off the rule the views end at, and vertical only — the card's left and right
+    /// are the rail's, not its own.
+    static let heroTopInset: CGFloat = ArgoSpacing.base
+    /// Under the card, where the scroll ends. A step over `heroTopInset` so the card sits clear of
+    /// the hairline the provider foot draws rather than centred between two edges it does not
+    /// share.
     static let heroFootInset: CGFloat = ArgoSpacing.comfortable
     /// Above and below the provider chip at the foot, and at its two ends.
     static let footPaddingY: CGFloat = ArgoSpacing.base
-    static let footPaddingX: CGFloat = ArgoSpacing.comfortable
+    static let footPaddingX: CGFloat = railInset
 }

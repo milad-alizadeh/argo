@@ -60,10 +60,16 @@ extension SpecimenRegistry {
         SpecimenEntry("composerQueued") {
             ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
         },
-        // The other half of #541: the vessel a moment after Stop, empty and back at rest, with the
-        // one line saying what went. The claim is that the line is quiet enough not to read as a
-        // failure and loud enough that nobody has to work out where their words went.
+        // The other half of #541: the vessel a moment after Stop, the words still in the field and
+        // the follow-ups gone, with the one line saying which went. The claim is that the line is
+        // quiet enough not to read as a failure and specific enough that nobody reads it as being
+        // about the message they can still see.
         SpecimenEntry("composerStopped") { ComposerSpecimen(draft: ComposerSpecimen.stopped) },
+        // Stop as a GESTURE rather than as a state — the one entry the composer's e2e presses the
+        // control in. It holds the Session's own running flag, so the click walks the whole
+        // transition a reader walks: the chip goes, the seam arrives, the circle turns back into
+        // an arrow, and the field has to still be the field afterwards.
+        SpecimenEntry("composerStopping") { ComposerStoppingSpecimen() },
         // A refused send: the message still where it was typed, the reason on the seam above the
         // vessel, and a way to try again.
         SpecimenEntry("composerRefusal") { ComposerSpecimen(draft: ComposerSpecimen.refused) },

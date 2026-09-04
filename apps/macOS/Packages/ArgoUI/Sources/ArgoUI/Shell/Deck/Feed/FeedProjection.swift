@@ -7,10 +7,11 @@ import ArgoEngine
 package enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
-    /// `working`, `handedOff` and `expired` are the inputs that are not the record's — a Turn in
-    /// progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), and a Permission Argo's own gate
-    /// refused (#573). No CLI wrote a word about any of them, so they arrive beside the stream
-    /// rather than being looked for inside it.
+    /// `working`, `handedOff`, `expired` and the question `asking` is holding are the inputs that
+    /// are not the record's — a Turn in progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), a
+    /// Permission Argo's own gate refused (#573), and a question it is still holding (#1190). No
+    /// CLI wrote a word about any of them, so they arrive beside the stream rather than being
+    /// looked for inside it.
     package static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
@@ -41,17 +42,22 @@ package enum FeedProjection {
             asking,
         )
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + startingUp(starting) + inFlight(working, over: work) + unanswered(expired) +
+        return (work + standing(asking, over: work) + startingUp(starting) +
+            inFlight(working, over: work) + unanswered(expired) +
             rolledUp(events) + chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
             }
     }
 
-    /// The Turn still running, directly under what it has done and ABOVE the three statements below
-    /// it. Those are facts about the whole reading and this is the newest moment of it, so it keeps
-    /// the place the next row will take when the record catches up — which is what makes it read as
-    /// the reading continuing rather than as a footnote about it.
+    /// The Turn still running, under what it has done and ABOVE the statements at the foot. Those
+    /// are facts about the whole reading and this is the newest moment of it, so it keeps the place
+    /// the next row will take when the record catches up — which is what makes it read as the
+    /// reading continuing rather than as a footnote about it.
+    ///
+    /// A question the gate is holding sits above it on the same argument and wins the tie: a Turn
+    /// waiting on an answer is not thinking, and the thing the reader has to act on goes nearer the
+    /// work than the thing they only have to watch.
     ///
     /// A Turn in flight is EITHER running a tool or thinking, never both, so the row stands down
     /// while a call is pending: the ion crosses that call's own line instead (`FeedCallLineIon`).
@@ -196,50 +202,5 @@ package enum FeedProjection {
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .originSession, .title, .cwd,
              .model, .effort, .branch, .mode, .entry, .plan, .queued: nil
         }
-    }
-
-    /// The question a call put, where it put one. Read BEFORE the call line, because a question is
-    /// not work: drawn as `Called AskUserQuestion` it says the mechanism and never what was asked.
-    private static func asked(
-        _ call: ToolCall,
-        answeredBy outcomes: [String: ToolCallOutcome],
-    )
-        -> FeedRow.Content? {
-        FeedAskReading.asked(call, answeredBy: outcomes[call.id]).map(FeedRow.Content.ask)
-    }
-
-    /// What every ask row is told about answering (#712). Over the WHOLE feed rather than per row,
-    /// because both facts are about the feed a row sits in: whether this Session can be driven at
-    /// all reaches every ask row, and the gate's live question reaches exactly one.
-    ///
-    /// The LAST match wins. Two identical questions in one Session both match by value — there is
-    /// no id either side shares — and the newest is the one still waiting.
-    private static func offering(
-        _ contents: [FeedRow.Content],
-        _ asking: FeedAskProjection.Asking,
-    )
-        -> [FeedRow.Content] {
-        let held = contents.lastIndex { waits(for: asking.live, $0) }
-        return contents.enumerated().map { position, content in
-            guard case let .ask(ask) = content else { return content }
-            return .ask(FeedAsk(
-                ask: ask.ask,
-                isAnswered: ask.isAnswered,
-                answer: ask.answer,
-                offer: FeedAskProjection.Asking(
-                    live: position == held ? asking.live : nil,
-                    isDriveable: asking.isDriveable,
-                ),
-            ))
-        }
-    }
-
-    private static func waits(
-        for live: FeedAskProjection.Live?,
-        _ content: FeedRow.Content,
-    )
-        -> Bool {
-        guard case let .ask(ask) = content else { return false }
-        return ask.isPending && FeedAskProjection.matches(live, ask.ask)
     }
 }

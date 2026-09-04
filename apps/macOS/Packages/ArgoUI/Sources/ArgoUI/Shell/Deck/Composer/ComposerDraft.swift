@@ -19,8 +19,8 @@ package struct ComposerDraft: Equatable {
     /// `ComposerDraft+Attachments.swift`, and Swift's `private` is file-scoped.
     var attachments: [SessionAttachment]
     /// What Argo did to this draft that the reader did not do — a drop the adapter would not take
-    /// (#540), or the clearing an interrupt leaves behind (#541). Quieter than `refusal` and
-    /// outranked by it.
+    /// (#540), or the follow-ups an interrupt dropped (#541). Quieter than `refusal` and outranked
+    /// by it.
     ///
     /// Mutated through `say(_:)`, so it and the output behind it move together.
     private(set) var notice: String?
@@ -68,18 +68,12 @@ package struct ComposerDraft: Equatable {
         SessionTurn.isSendable(text) || !attachments.isEmpty
     }
 
-    /// Whether this draft holds anything at all — anything Stop would clear, or a rung waiting on
-    /// the Turn. What the store keys eviction on: a draft evicted while it holds a rung is one
-    /// whose rung is never walked.
+    /// Whether this draft holds anything at all — nothing typed, nothing waiting, nothing said,
+    /// and no rung held for the Turn. What the store keys eviction on: a draft evicted while it
+    /// holds a rung is one whose rung is never walked.
     var isEmpty: Bool {
-        isClear && heldMode == nil
-    }
-
-    /// Whether Stop has anything to take away. The held rung is NOT among it: a rung is about how
-    /// the Session works next rather than about the Turn that was killed, and it survives the
-    /// interrupt to be walked at the boundary the interrupt itself creates.
-    private var isClear: Bool {
         text.isEmpty && queued.isEmpty && attachments.isEmpty && refusal == nil && notice == nil
+            && heldMode == nil
     }
 
     /// Put the draft to the Session through `deliver`. A refusal keeps every character where it
@@ -138,18 +132,17 @@ package struct ComposerDraft: Equatable {
         }
     }
 
-    /// What an interrupt leaves in the composer: nothing (#541, ADR-0024). The field, the tray and
-    /// the queue all go, so no leftover word can concatenate onto the next Turn.
+    /// What an interrupt takes from the composer: the QUEUE, and nothing else (#541).
     ///
-    /// The QUEUE is the half a reader would not think to ask about, and the half that would bite.
     /// A follow-up typed while the Turn ran is released the moment that Turn ends — and an
     /// interrupt IS it ending, so without this the very next thing the Session received would be
-    /// instructions written for the run somebody had just killed.
+    /// instructions written for the run somebody had just killed. Words still in the field were
+    /// never handed over, so nothing releases them and there is nothing to take back.
     ///
-    /// It says what it did rather than clearing quietly. Everywhere else here the rule is that a
-    /// message survives what went wrong with it; this is the one act that cannot let it, so the
-    /// reader is told instead of finding an empty vessel and having to guess.
-    /// A refusal clears NOTHING, which is decision 8's rule read at this act: nothing was stopped,
+    /// It says what it took rather than taking it quietly, and only when it took something: an
+    /// interrupt with no follow-ups behind it leaves the seam alone.
+    ///
+    /// A refusal takes NOTHING, which is decision 8's rule read at this act: nothing was stopped,
     /// so the reason goes on the seam and every character stays where it was typed. The composer
     /// must never report a Turn stopped on the strength of having asked — the port is the only
     /// thing that knows whether the keystroke landed, and the Session's own status is a DERIVED
@@ -160,17 +153,18 @@ package struct ComposerDraft: Equatable {
         } catch {
             return refused(by: ComposerSeamLine(error))
         }
-        guard !isClear else { return }
-        text = ""
-        attachments = []
+        guard !queued.isEmpty else { return }
         queued = []
-        refused(by: nil)
-        say(ComposerSeamLine(Self.cleared))
+        say(ComposerSeamLine(Self.droppedQueue))
     }
 
     /// The seam's sentence for it. Named rather than written at the call site, so the test that
     /// asserts the reader was told and the vessel that tells them cannot come to disagree.
-    package static let cleared = "Turn stopped — the composer was cleared"
+    ///
+    /// It names the follow-ups and not "the composer", because the words in the field are still
+    /// there: a line saying more went than went would send the reader looking for what they can
+    /// already see.
+    package static let droppedQueue = "Turn stopped — the queued follow-ups were dropped"
 
     /// The port's reason a rung did not land (#545), on the seam as a notice rather than a
     /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.

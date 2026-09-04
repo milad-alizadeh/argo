@@ -55,21 +55,6 @@ final class ComposerKeysE2ETests: XCTestCase {
         )
     }
 
-    /// The field's own words, waited for rather than read once: a keystroke crosses AppKit, the
-    /// draft and SwiftUI's next layout before the value here can change, so an assertion made the
-    /// instant `typeKey` returns is a race the field usually loses.
-    private func settles(_ field: XCUIElement, on words: String) -> Bool {
-        let reads = expectation(
-            for: NSPredicate(format: "value == %@", words),
-            evaluatedWith: field,
-        )
-        return XCTWaiter.wait(for: [reads], timeout: 10) == .completed
-    }
-
-    private func read(_ field: XCUIElement) -> String {
-        String(describing: field.value)
-    }
-
     /// What the field is called to a screen reader, which is what addresses it here rather than
     /// `textViews.firstMatch` — the label the composer sets on the text view itself.
     private static let placeholder = "Message Claude Code…"

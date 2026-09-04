@@ -29,50 +29,55 @@ struct ComposerInterruptTests {
         #expect(driver.sent(to: "session-a").isEmpty)
     }
 
+    /// The field and the tray are the reader's, and Stop is not a delete key. Words never handed
+    /// over are not released by the Turn ending, so there is nothing here to take back — and
+    /// stopping in order to say something else is the commonest reason to reach for the control at
+    /// all.
     @Test
-    func `stopping a Turn clears the field and the tray`() {
-        var draft = ComposerDraft(
-            text: "No, not that file —",
-            attachments: [AttachmentFixture.pasted],
-        )
+    func `stopping a Turn leaves the field and the tray exactly as they were`() {
+        // Held rather than read twice: the fixture mints an id per access, so a second read is a
+        // different attachment and the claim would fail on the identity rather than on the act.
+        let chip = AttachmentFixture.pasted
+        var draft = ComposerDraft(text: "No, not that file —", attachments: [chip])
 
         draft.stopped {}
 
-        #expect(draft.text.isEmpty)
-        #expect(draft.attachments.isEmpty)
+        #expect(draft.text == "No, not that file —")
+        #expect(draft.attachments == [chip])
     }
 
-    /// Cleared, and SAID so. Everywhere else in this value a message survives what went wrong with
-    /// it; this is the one act that cannot let it, so a reader who typed something is told where it
-    /// went rather than finding an empty vessel.
+    /// Dropped, and SAID so. A follow-up is the one thing an interrupt destroys, so a reader who
+    /// queued one is told where it went rather than watching the chip vanish.
     @Test
-    func `what the interrupt cleared is reported on the seam`() {
-        var draft = ComposerDraft(text: "No, not that file —")
+    func `what the interrupt dropped is reported on the seam`() {
+        var draft = ComposerDraft(text: "And then open the PR.")
+        draft.submit(whileRunning: true) { _, _ in }
 
         draft.stopped {}
 
-        #expect(draft.notice == ComposerDraft.cleared)
+        #expect(draft.notice == ComposerDraft.droppedQueue)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0)
-            == .notice(ComposerSeamLine(ComposerDraft.cleared)))
+            == .notice(ComposerSeamLine(ComposerDraft.droppedQueue)))
     }
 
-    /// Stopping with nothing in the vessel says nothing. The control is live for the whole of a run
-    /// and the empty composer is the commonest state to stop from — a line reporting that an empty
-    /// field was emptied is a seam that cries wolf every time.
+    /// Stopping with nothing queued says nothing. The control is live for the whole of a run and
+    /// the empty queue is the commonest state to stop from — a line reporting that nothing was
+    /// dropped is a seam that cries wolf every time.
     @Test
-    func `stopping an empty composer leaves no note`() {
-        var draft = ComposerDraft()
+    func `stopping with nothing queued leaves no note`() {
+        var draft = ComposerDraft(text: "Carry on with the plan.")
 
         draft.stopped {}
 
         #expect(draft.notice == nil)
-        #expect(draft.isEmpty)
+        #expect(draft.text == "Carry on with the plan.")
     }
 
-    /// A refusal the reader has not answered yet goes with the rest: it stood over a message that
-    /// is no longer there, and a reason with nothing left to explain is a warning about nothing.
+    /// A refusal stands over the words it was refused for, and those words are still in the field
+    /// — so the reason for them is still true and the seam's Retry still has something to put
+    /// back.
     @Test
-    func `stopping clears a standing refusal along with the words it stood over`() {
+    func `stopping leaves a standing refusal over the words it still stands over`() {
         var draft = ComposerDraft(
             text: "Carry on with the plan.",
             refusal: SessionDriveError.notDrivable.detail,
@@ -80,8 +85,7 @@ struct ComposerInterruptTests {
 
         draft.stopped {}
 
-        #expect(draft.refusal == nil)
-        #expect(draft.notice == ComposerDraft.cleared)
+        #expect(draft.refusal == SessionDriveError.notDrivable.detail)
     }
 
     /// A stop that never landed stopped nothing, so it may clear nothing. The vessel would

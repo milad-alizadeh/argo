@@ -1,4 +1,3 @@
-import ArgoDesign
 import ArgoEngine
 
 package extension TranscriptFixtures {

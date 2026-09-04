@@ -156,6 +156,35 @@ struct FeedAskProjectionTests {
         #expect(ask.ink == .attention)
     }
 
+    /// The record and the hook payload arrive independently: Argo holds the question the moment
+    /// the hook does, and the CLI writes the call whenever it writes it. A gate holding one over a
+    /// reading that carries none is what put `Needs input` on the roster with nothing under it to
+    /// answer (#712).
+    @Test
+    func `a question no row in the reading draws is still put to the reader`() throws {
+        let rows = FeedProjection.rows(
+            from: [.prompt(text: "/implement 1182", images: [], atMs: nil)],
+            asking: FeedAskProjection.asking(for: session()),
+        )
+        let ask = try #require(FeedFixture.asks(in: rows).first)
+
+        #expect(ask.isWaiting)
+        #expect(ask.ask == Self.live.ask)
+        #expect(ask.live?.askID == "ask-1")
+    }
+
+    /// And exactly once: the row the record carries IS the question, so a second copy at the foot
+    /// would put the same question to the reader twice.
+    @Test
+    func `a question the reading already draws is not put a second time`() {
+        let rows = FeedProjection.rows(
+            from: [.toolCall(FeedFixture.asking(Self.question))],
+            asking: FeedAskProjection.asking(for: session()),
+        )
+
+        #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [true])
+    }
+
     /// The marks a waiting row holds are keyed by this, because the rows are hosted in a recycled
     /// table cell — two different questions must never share one identity.
     @Test

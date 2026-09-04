@@ -38,7 +38,8 @@ struct ViewRow: View {
                     .foregroundStyle(argo.color.text.tertiary)
             }
         }
-        .padding(.leading, ArgoTicketsSidebar.gutter)
+        // NO leading padding: the row already stands on `railInset`, which the sidebar `List`
+        // insets its rows' content by, and a gutter over it takes the marks off the rail.
         .frame(minHeight: ArgoTicketsSidebar.viewRowHeight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(announcement)

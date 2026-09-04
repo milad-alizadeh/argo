@@ -98,7 +98,7 @@ struct ComposerSeam: View {
 }
 
 #Preview("Composer seam — what an interrupt cleared") {
-    ComposerSeam(note: .notice(ComposerSeamLine(ComposerDraft.cleared)), retry: {})
+    ComposerSeam(note: .notice(ComposerSeamLine(ComposerDraft.droppedQueue)), retry: {})
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()
