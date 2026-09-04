@@ -29,6 +29,14 @@ extension SessionRosterProjection.Row {
     /// What the Session is doing right now, drawn and spoken — the dot's reading, its word, the
     /// one age slot in both forms, and the newest call in its record while it is running (#1199).
     struct Activity {
+        /// The state dot's own reading, in both its forms — the colour role `SessionState.role`
+        /// settles and the word `SessionState.word` spends, read off the same status at the same
+        /// time, which is what makes them one parameter rather than two.
+        struct Dot {
+            let state: ArgoOperationalState?
+            let word: String?
+        }
+
         /// The one age slot in both its forms. They are read off the same moment at the same
         /// time and no call site names one without the other, which is what makes them one
         /// parameter rather than two.
@@ -45,18 +53,23 @@ extension SessionRosterProjection.Row {
         /// `nil` on every row that is not a running Session with a call behind it — see
         /// `SessionRosterProjection.activity(of:in:)`.
         let activity: String?
+        /// What runs under this Session, or a fold of several
+        /// (`SessionRosterProjection.subagents`).
+        /// `nil` where `state` is, and for the same reason (rule 5).
+        let subagents: SessionRosterProjection.SubagentReading?
 
         init(
-            state: ArgoOperationalState?,
-            stateWord: String?,
+            dot: Dot,
             age: Age,
             activity: String?,
+            subagents: SessionRosterProjection.SubagentReading? = nil,
         ) {
-            self.state = state
-            self.stateWord = stateWord
+            self.state = dot.state
+            self.stateWord = dot.word
             self.clock = age.clock
             self.spokenClock = age.spoken
             self.activity = activity
+            self.subagents = subagents
         }
     }
 

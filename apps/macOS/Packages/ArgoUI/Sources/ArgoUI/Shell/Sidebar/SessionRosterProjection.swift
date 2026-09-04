@@ -62,9 +62,13 @@ package enum SessionRosterProjection {
         // kept half, so a fold's count is what the reader can see rather than what is behind the
         // foot as well.
         let folding = Folding(of: kept.map { pair in pair.0 }, in: pass)
+        let byID = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
         return kept.flatMap { session, decided -> [Row] in
             [
-                folding.fold(opening: session).map { foldRow($0, at: session, nowMs: nowMs) },
+                folding.fold(opening: session).map { fold in
+                    let runs = folding.runs(foldedWith: session).compactMap { byID[$0] }
+                    return foldRow(fold, at: session, of: runs, nowMs: nowMs)
+                },
                 folding.drawsOwnRow(session)
                     ? row(for: session, decided: decided, nowMs: nowMs) : nil,
             ]
