@@ -34,10 +34,23 @@ struct TicketStart {
     /// A refusal moves nothing: it is reported by the app, and the reader is left looking at the
     /// list they were triaging rather than at a room with nothing in it.
     func run(on ticket: Int, in navigation: CockpitNavigationModel) async {
+        await run(on: ticket, in: navigation, sending: command(on: ticket))
+    }
+
+    /// The same act on a command the reader PICKED (#1242) — including `nil`, which is the fresh
+    /// Session that carries the ticket and opens on an empty composer.
+    ///
+    /// The picked command is passed rather than resolved again: the menu drew the resolved one to
+    /// be departed from, and re-resolving here would put it back.
+    func run(
+        on ticket: Int,
+        in navigation: CockpitNavigationModel,
+        sending command: WorkCommand?,
+    ) async {
         guard let fresh = await spawn(
             ticket,
             WorkCommand.startingMode,
-            command(on: ticket)?.opening(on: ticket),
+            command?.opening(on: ticket),
         )
         else { return }
         navigation.session = fresh

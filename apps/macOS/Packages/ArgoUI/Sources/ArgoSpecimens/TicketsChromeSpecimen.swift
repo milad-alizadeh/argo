@@ -3,12 +3,12 @@ import ArgoEngine
 import ArgoUI
 import SwiftUI
 
-/// The Tickets room's chrome alone — the window's one row of controls, over the heading the list
-/// keeps — for the two vacancies the shipping shell cannot be driven into, since its Tickets room
-/// is fed from one fixture.
+/// The Tickets room's chrome alone — the list pane's own header band, over the two lines of words
+/// it keeps — for the two vacancies the shipping shell cannot be driven into, since its Tickets
+/// room is fed from one fixture.
 ///
 /// The chrome and not the room, because what these states differ in IS the chrome: an empty backlog
-/// keeps New ticket and loses everything that narrows a list, and an unbound provider keeps nothing
+/// keeps New ticket and loses the field that narrows a list, and an unbound provider keeps nothing
 /// at all.
 struct TicketsChromeSpecimen: View {
     private let reading: TicketsReading
@@ -33,8 +33,19 @@ struct TicketsChromeSpecimen: View {
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             HStack(spacing: ArgoSpacing.flush) {
-                BacklogHeader(reading: chrome)
-                    .frame(width: ArgoBacklogList.width)
+                VStack(spacing: ArgoSpacing.flush) {
+                    // No `reach`: there is no window strip over a specimen, so the band draws at
+                    // its own floor — which is the state a preview and a render both want.
+                    TicketsPaneHeader(inset: ArgoBacklogList.bandInsetX) {
+                        NewTicketButton()
+                    } trailing: {
+                        if chrome.narrows {
+                            BacklogSearchField(query: $query)
+                        }
+                    }
+                    BacklogHeader(reading: chrome)
+                }
+                .frame(width: ArgoBacklogList.width)
                 DeckSeparator()
                 Spacer(minLength: ArgoSpacing.flush)
             }
@@ -48,10 +59,6 @@ struct TicketsChromeSpecimen: View {
         // would be a render of the specimen's own stack rather than of the room.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .argoDeckSurface()
-        .toolbar {
-            TicketsToolbar(reading: chrome, held: TicketsRoom.Held(query: $query))
-        }
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     }
 }
 

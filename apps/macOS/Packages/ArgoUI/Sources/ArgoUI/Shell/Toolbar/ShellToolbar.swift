@@ -2,16 +2,18 @@ import SwiftUI
 
 /// What every room's toolbar carries: scope at the window's leading edge, with the one verb the bar
 /// spends in front of it where the room creates Sessions, beside the sidebar toggle. What a room
-/// adds beyond this is the room's own — see `TicketsToolbar`.
+/// adds beyond this is the room's own, and the Tickets room adds nothing here: its controls are
+/// drawn by the header of the pane each one acts on (`TicketsPaneHeader`, #1242).
 ///
 /// New Session is NOT a second vessel (#433): the verb carries a small glass of its own.
 ///
 /// Scope is ONE toolbar item, because that is what the toolbar draws one Liquid Glass capsule
 /// around — a `ToolbarItemGroup` gives each control in it a capsule of its own.
 ///
-/// Every item here is `.navigation`, which is the WINDOW's leading region — over the sidebar in a
-/// split view, not over the detail pane. A room's own row takes `.primaryAction`
-/// (`TicketsToolbar`).
+/// Every item here is `.navigation`, the WINDOW's leading region. **`.navigation` and
+/// `.primaryAction` lay out as one continuous band**, so an item here is placed relative to the
+/// window's leading edge and NOT to any column — which is the fault #816 and #836 both broke
+/// themselves on. A control that must sit over a column has to be drawn by that column.
 ///
 /// The rooms picker is the sidebar's strip (`RoomStrip`, #816).
 ///

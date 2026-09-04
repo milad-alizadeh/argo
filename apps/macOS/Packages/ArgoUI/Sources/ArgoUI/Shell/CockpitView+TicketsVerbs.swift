@@ -1,30 +1,27 @@
 import ArgoEngine
 import SwiftUI
 
-/// What the Tickets room's row actually performs (#872) — the four verbs `ticketsIntents` hands
+/// What the Tickets room's controls actually perform (#872) — the verbs `ticketsIntents` hands
 /// down, and the composer New ticket opens.
 ///
-/// Here rather than on the room: a verb reaches the provider port, the pasteboard, the browser or a
-/// spawn, and none of those is a value the room could hold. The room takes closures for exactly
-/// that reason, and a preview passes it inert ones.
+/// Here rather than on the room: a verb reaches the provider port or a spawn, and neither is a
+/// value the room could hold. The room takes closures for exactly that reason, and a preview passes
+/// it inert ones.
 extension CockpitView {
-    /// The open ticket's own three. `inert` with no ticket open — the row hides the vessel there
-    /// anyway (`TicketsToolbar`), and a verb addressing nobody must not be one press away from
-    /// being drawn.
+    /// The open ticket's own. `inert` with no ticket open — the ticket pane's header hides the pill
+    /// there anyway (`TicketsRoom.panes`), and a verb addressing nobody must not be one press away
+    /// from being drawn.
     ///
-    /// The two link verbs are ABSENT where the Binding cannot address the ticket, which is what
-    /// disables them: a Linear Binding holds a team id, and no page is derivable from one
-    /// (`TicketAddress`).
-    func ticketsVerbs(_ start: TicketStart) -> TicketsToolbarIntents.Verbs {
+    /// **The two link verbs are gone** (#1242): the ticket's number is the link, so the pair that
+    /// re-derived one address off `TicketAddress` said what `TicketHead` already says.
+    func ticketsVerbs(_ start: TicketStart) -> TicketsChromeIntents.Verbs {
         guard let ticket = navigation.ticket else { return .inert }
-        var verbs = TicketsToolbarIntents.Verbs()
+        var verbs = TicketsChromeIntents.Verbs()
         verbs.start = { Task { await start.run(on: ticket, in: navigation) } }
         verbs.command = start.command(on: ticket)
-        guard let url = ticketAddress?.browseURL(of: ticket) else { return verbs }
-        verbs.openOnHost = { openURL(url) }
-        // The same URL the verb beside it opens, off one derivation: two readings of one address
-        // is how a copied link comes to point somewhere else than the one that opened.
-        verbs.copyLink = { ArgoPasteboard.put(url.absoluteString) }
+        verbs.startOn = { picked in
+            Task { await start.run(on: ticket, in: navigation, sending: picked) }
+        }
         return verbs
     }
 

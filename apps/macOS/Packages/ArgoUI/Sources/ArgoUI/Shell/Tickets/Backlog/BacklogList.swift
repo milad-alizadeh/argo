@@ -15,8 +15,8 @@ package struct BacklogList: View {
     /// parents are folded. Both outlive the pane, so both are held above it, and they travel as
     /// one value because every row in the list is drawn from the pair (#1071, #814).
     var held: Held
-    /// What the heading over the list says. Words only — the controls that narrow the list are in
-    /// the window's row with the rest of the room's, see `TicketsToolbar`.
+    /// What the heading over the list says. Words only — the field that narrows the list is on this
+    /// pane's own header band, see `TicketsPaneHeader`.
     var header: TicketsChromeProjection.Reading = .none
     /// What reads the next page of closed tickets, and `nil` wherever there is no next page to read
     /// — every open view, and the closed one once the provider has served its last (#1075).

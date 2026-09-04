@@ -35,7 +35,7 @@ package struct TicketsRoom {
     var connect: @MainActor () -> Void = {}
     /// What the row's controls do, and what the one that writes through a provider renders (#275).
     /// Inert by default for the same reason `connect` is.
-    var intents = TicketsToolbarIntents.inert
+    var intents = TicketsChromeIntents.inert
     /// What the sidebar hero's Start raises, and what that press will send (#899). Not a value the
     /// room could build — a spawn reaches the engine, and the mapping needs the listing and the
     /// design tree, neither of which the room holds.
@@ -108,14 +108,8 @@ package struct TicketsRoom {
         cockpitRoom = .sessions
     }
 
-    /// What the room puts in the WINDOW's row: every control the room has, on one line — the reason
-    /// is `TicketsToolbar`'s.
-    var toolbar: TicketsToolbar {
-        TicketsToolbar(reading: chrome, intents: intents, held: held)
-    }
-
-    /// Read ONCE and handed to both the list's heading and the row of controls above it, so the
-    /// count under the title and the controls that narrow it can never be two answers about one
+    /// Read ONCE and handed to both the list's heading and the header band above it, so the
+    /// count under the title and the field that narrows it can never be two answers about one
     /// list.
     private var chrome: TicketsChromeProjection.Reading {
         TicketsChromeProjection.reading(of: room, in: view, showing: ticket)
@@ -146,7 +140,7 @@ package struct TicketsRoom {
             // The deck's own width, because the seam's ceiling is what is left after the ticket
             // detail's floor — `ArgoLayout.backlogLimits(in:)`.
             GeometryReader { deck in
-                panes(in: deck.size.width)
+                panes(in: deck.size.width, reaching: deck.safeAreaInsets.top)
             }
             // Keyed on the number, so one ticket a reader followed costs one read: the task is
             // not re-run while the deck stays open on it.
@@ -157,39 +151,58 @@ package struct TicketsRoom {
         }
     }
 
-    /// The backlog, the seam the reader moves, and the ticket. The list keeps its heading; the
-    /// controls are in the window's row above both (`TicketsToolbar`), and the seam between them is
-    /// the reader's (#844).
+    /// The backlog, the seam the reader moves, and the ticket. **Each pane carries its own header**
+    /// (`TicketsPaneHeader`, #1242): the list's holds New ticket at its leading edge and the search
+    /// field at its trailing one, and the ticket's holds that ticket's verbs. The list keeps its
+    /// two lines of words under its band, and the seam between the panes is the reader's (#844).
+    ///
+    /// `reach` is the window's own strip, measured off the deck rather than written down — the
+    /// bands sit IN it, which is the whole difference between these and #836's, and a constant
+    /// here would be #836 again.
     ///
     /// The stored width is the reader's INTENT and is never written back — it is seated for the
     /// draw and left alone. Seating it in place looks like tidiness and is data loss: a window
     /// narrow for one layout pass clamps the number, and `seated` cannot tell a width that was
     /// clamped from one the reader chose, so widening the window again never brings it back. A
     /// pane dragged to 520 came back at its floor on every launch that sized the window twice.
-    private func panes(in deck: CGFloat) -> some View {
+    private func panes(in deck: CGFloat, reaching reach: CGFloat) -> some View {
         let limits = ArgoLayout.backlogLimits(in: deck)
 
         return HStack(spacing: ArgoSpacing.flush) {
             let seated = ArgoLayout.seated(backlogWidth, in: limits)
-            BacklogList(
-                rows: room.backlog,
-                held: BacklogList.Held(selection: $ticket, shut: $shut),
-                header: chrome,
-                // Only where the provider said there IS another page. A `Load more` that survived
-                // the last one is the control-that-does-nothing this room keeps refusing (#900).
-                more: room.opened.closedHasMore ? reads.closed.more : nil,
-            )
+            VStack(spacing: ArgoSpacing.flush) {
+                BacklogPaneHeader(
+                    reach: reach,
+                    creation: intents.creation,
+                    narrows: chrome.narrows,
+                    query: held.query,
+                )
+                BacklogList(
+                    rows: room.backlog,
+                    held: BacklogList.Held(selection: $ticket, shut: $shut),
+                    header: chrome,
+                    // Only where the provider said there IS another page. A `Load more` that
+                    // survived the last one is the control-that-does-nothing this room keeps
+                    // refusing (#900).
+                    more: room.opened.closedHasMore ? reads.closed.more : nil,
+                )
+            }
             .frame(width: seated)
             // What the rows inside the `List` read to decide whether they have width for label
             // chips — see `ArgoBacklogList.labelsAppearAt`.
             .environment(\.backlogPaneWidth, seated)
             DeckSeam(width: $backlogWidth, limits: limits, growsRightward: true)
-            TicketDetail(
-                ticket: room.ticket,
-                unreadNumber: room.unreadNumber,
-                open: { ticket = $0 },
-                openSession: openSession,
-            )
+            VStack(spacing: ArgoSpacing.flush) {
+                // The verbs reach the header only where a ticket is OPEN. With none, the band
+                // stands and the pill does not.
+                TicketPaneHeader(reach: reach, verbs: chrome.ticket == nil ? nil : intents.verbs)
+                TicketDetail(
+                    ticket: room.ticket,
+                    unreadNumber: room.unreadNumber,
+                    open: { ticket = $0 },
+                    openSession: openSession,
+                )
+            }
         }
     }
 
@@ -203,7 +216,7 @@ package struct TicketsRoom {
         backlogWidth: Binding<CGFloat>,
         shut: Binding<Set<Int>>,
         connect: @escaping @MainActor () -> Void = {},
-        intents: TicketsToolbarIntents = TicketsToolbarIntents.inert,
+        intents: TicketsChromeIntents = TicketsChromeIntents.inert,
         starting: StartIntent = StartIntent.inert,
         reads: Reads = Reads.inert,
         held: Held = Held.unheld,

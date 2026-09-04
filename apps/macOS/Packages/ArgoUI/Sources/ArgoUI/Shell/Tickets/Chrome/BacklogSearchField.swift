@@ -9,14 +9,21 @@ import SwiftUI
 /// it clears the trailing edge at the 1280 window. Everything else about it is the stock field —
 /// focus, the escape key, and the system's own clear button.
 ///
-/// **It sits over the ticket and searches the list.** That is Mail's own split, and for Mail's
-/// reason: the toolbar is one row, not three.
-struct BacklogSearchField: View {
+/// **It stands exactly as tall as the icon vessels beside it** — `ArgoControlBox.vessel`, the same
+/// number a capsule holding one mark comes out at. It had a 28 of its own, which made the one row
+/// of controls three heights of container; a field is a container on this band like any other.
+package struct BacklogSearchField: View {
     @Environment(\.argo) private var argo
 
     @Binding var query: String
 
-    var body: some View {
+    /// Spelled out: Swift synthesises no memberwise initializer above `internal`, and the
+    /// specimens build this from their own target (#1085).
+    package init(query: Binding<String>) {
+        _query = query
+    }
+
+    package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             ArgoGlyph(ArgoSymbol.searchBacklog, .inline)
                 .foregroundStyle(argo.color.text.tertiary)
@@ -26,7 +33,7 @@ struct BacklogSearchField: View {
                 .foregroundStyle(argo.color.text.primary)
         }
         .padding(.horizontal, ArgoSpacing.base)
-        .frame(width: ArgoTicketsChrome.searchWidth, height: ArgoTicketsChrome.searchHeight)
+        .frame(width: ArgoTicketsChrome.searchWidth, height: ArgoControlBox.vessel)
         .argoFloatingGlass(in: .capsule)
         .accessibilityLabel("Search the backlog")
     }

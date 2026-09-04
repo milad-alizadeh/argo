@@ -46,8 +46,8 @@ column-placement question** below for what the bands bought and what they cost.
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
 | `BacklogHeader` | molecule | `ArgoUI/Shell/Tickets/Backlog/` | `reading: TicketsChromeProjection.Reading` | — | renamed from `BacklogToolbarLabel`, which was a toolbar item claiming 520pt. **#855**: words only, the controls left it |
-| `BacklogControls` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | — | `ArgoIconButtonGroup`, `BacklogMenu` | **#855**: split out of `BacklogHeader` when the controls returned to the row. **#900**: the funnel it also held was bound to `{}`, so the mark, its `narrowing` intent and the rule beside it are deleted |
-| `BacklogMenu` | atom | `ArgoUI/Shell/Tickets/Backlog/` | — | stock `Menu` | Mail's `⋯` beside its filter. **#900**: its one row is a `Text`, so the `grouping` closure it took is gone too |
+| ~~`BacklogControls`~~ | — | — | — | — | **#855**: split out of `BacklogHeader` when the controls returned to the row. **#900**: the funnel it also held was bound to `{}`, so the mark, its `narrowing` intent and the rule beside it are deleted. **Deleted #1242**: it wrapped `BacklogMenu` alone |
+| ~~`BacklogMenu`~~ | — | — | — | — | Mail's `⋯` beside its filter. **#900**: its one row is a `Text`, so the `grouping` closure it took is gone too. **Deleted #1242**: a menu whose only content is a sentence is a sentence behind a click. It returns with a second grouping (#388) |
 | ~~`TicketBand`~~ | — | — | — | — | added by #836 to carry New ticket and the ticket's verbs over their column. **Deleted by #855**: both are toolbar items again |
 
 ### #815 — the fact strip and the sections
@@ -333,16 +333,20 @@ picker now, not this room's.
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `TicketsToolbar` | organism | `ArgoUI/Shell/Tickets/Toolbar/` | `reading: Reading`, `intents: TicketsToolbarIntents`, `held: TicketsRoom.Held` | `BacklogControls`, `NewTicketButton`, `StartControl`, `BacklogSearchField` | the `.titlebar.three` grid. **#836**: search alone, the rest went to the bands. **#855**: every control the room has, on one line |
+| ~~`TicketsToolbar`~~ | — | — | — | — | the `.titlebar.three` grid. **#836**: search alone, the rest went to the bands. **#855**: every control the room has, on one line. **Deleted #1242**: the room contributes nothing to `.toolbar` — each pane draws its own header |
 | ~~`BacklogToolbarLabel`~~ | molecule | — | — | — | **#836**: renamed `BacklogHeader` and moved into the list pane |
 | `ArgoIconButtonGroup` | atom | `ArgoDesign/ArgoAtoms/` | `content: Content` | `argoFloatingGlass(in: .capsule)` | `.icap.glass` |
 | `ArgoIconButton` | atom | `ArgoDesign/ArgoAtoms/` | `symbol: String`, `voice: ArgoControlVoice`, `face: ArgoControlFace`, `act: () -> Void` | `ArgoGlyph` | `.ibtn` |
-| `NewTicketButton` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `act: () -> Void` | `ArgoIconButtonGroup`, `ArgoIconButton` | `ibtn('compose')` |
-| `StartControl` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `verbs: Verbs`, `mode: Binding<SessionMode>` | `ArgoIconButtonGroup`, `ModeMenu`, `ArgoIconButtonRule`, `ArgoIconButton` | `.icap.split` |
-| `ModeMenu` | molecule | `ArgoUI/Shell/Tickets/Toolbar/` | `mode: Binding<SessionMode>` (4 rungs) | stock `Menu` + `Picker(.inline)` | `.menu` / `MODE_MENU` |
-| `BacklogSearchField` | atom | `ArgoUI/Shell/Tickets/Toolbar/` | `query: Binding<String>` | stock `TextField`, `argoFloatingGlass` | `.search.glass` |
-| `TicketsToolbarProjection` | value | `ArgoUI/Shell/Tickets/Toolbar/` | `reading(of:in:showing:) -> Reading` | — | the `titlebarHTML()` branches |
-| `TicketsToolbarIntents` | value | `ArgoUI/Shell/Tickets/Toolbar/` | four closures plus a `Verbs` triple, all inert by default | — | the buttons' `title=` strings |
+| `TicketsPaneHeader` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `reach: CGFloat`, `inset: CGFloat`, `leading`, `trailing` | — (it paints nothing) | **#1242**, from `ticket-verbs-prototype.html` `.paneheader`. The band is the window's title strip, reached into — no constant, and no material of its own: `argoChromeBar` per pane drew the window's one sheet three times |
+| `BacklogPaneHeader` | molecule | `ArgoUI/Shell/Tickets/Chrome/` | `creation: Creation`, `query: Binding<String>` | `TicketsPaneHeader`, `NewTicketButton`, `BacklogSearchField` | **#1242**, `.backlog .paneheader` |
+| `TicketPaneHeader` | molecule | `ArgoUI/Shell/Tickets/Chrome/` | `verbs: Verbs?` | `TicketsPaneHeader`, `StartControl` | **#1242**, `.pane .paneheader` |
+| `NewTicketButton` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `creation: Creation` | `ArgoIconButtonGroup`, `ArgoIconButton` | `ibtn('compose')`. **#1242**: a 36pt circle at the list pane's leading edge |
+| `StartControl` | molecule | `ArgoUI/Shell/Tickets/Chrome/` | `verbs: Verbs` | `ArgoIconButtonGroup`, `StartVerb`, `StartSkillMenu` | `.icap.split`, then the prototype's `.as-line`. **#1242**: ONE pill, two segments, no rule between them |
+| `StartSkillMenu` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `command: WorkCommand?`, `pick: (WorkCommand?) -> Void` | stock `Menu` | **#1242**, the prototype's `.menu`. Which skill the Session opens on; the command segment IS the control |
+| ~~`ModeMenu`~~ | molecule | **deleted (#872)**; its directory went with #1242 | `mode: Binding<SessionMode>` (4 rungs) | stock `Menu` + `Picker(.inline)` | `.menu` / `MODE_MENU` |
+| `BacklogSearchField` | atom | `ArgoUI/Shell/Tickets/Chrome/` | `query: Binding<String>` | stock `TextField`, `argoFloatingGlass` | `.search.glass`. **#1242**: at the LIST pane's trailing edge, not the window's |
+| `TicketsChromeProjection` | value | `ArgoUI/Shell/Tickets/` | `reading(of:in:showing:) -> Reading` | — | the `titlebarHTML()` branches |
+| `TicketsChromeIntents` | value | `ArgoUI/Shell/Tickets/Chrome/` | a `Creation` and a `Verbs`, both inert by default | — | the buttons' `title=` strings |
 
 `ArgoTicketsToolbar` beside them is the surface sheet, not a component: the block width and the
 search field's measure. **#1243** took the icon button's slot, the vessel inset and the split rule
@@ -350,10 +354,12 @@ off it — four headers each measured their own, and all four now read `ArgoCont
 
 ## What stayed inline
 
-- **The two link verbs.** `ArgoIconButton` twice inside `StartControl`, single-use each.
-- **The `Start` verb itself.** A `Button` with a glyph and a word, in the one control that spends
-  a word. Extracted it would be an `ArgoIconButton` with a label bolted on.
-- **The row's flexible spacer.** `ToolbarSpacer(.flexible, placement: .primaryAction)`, stock.
+- ~~**The two link verbs.**~~ **Deleted #1242** — the ticket's number is the link.
+- **The `Start` verb itself.** A glyph and a word, in the one control that spends a word.
+  Extracted it would be an `ArgoIconButton` with a label bolted on. **#1242**: it is a segment of
+  the pill now, drawing no ground of its own — the capsule IS the ground.
+- ~~**The row's flexible spacer.**~~ **Deleted #1242** with the row. A pane header spaces its two
+  slots with a stock `Spacer`, which needs no placement because it is inside a view.
 
 ## The column-placement question — answered, and what the wrong answer showed (#836)
 
@@ -404,6 +410,20 @@ ticket, the ticket's verbs, search at the trailing edge. That is the arrangement
 reach, arrived at by giving up the column boundary rather than by claiming it: the boundary was
 never the point, one legible row was. `TicketBand` is deleted and `ArgoTicketDetail.bandHeight`
 with it; `BacklogHeader` keeps `ArgoBacklogList.bandHeight` for its two lines of words.
+
+**And #1242 reversed that, because the boundary WAS the point for one control.** The ticket's verbs
+act on the ticket in the trailing pane, and in a window-wide row their position is measured off the
+window's trailing edge while the pane's leading edge is measured off a seam the reader drags. The
+prototype measured the gap: the cluster sat **+42 inside the pane** at 1280 with the seam at rest
+and **−116** at every floor — over the list, which is the screenshot on the ticket.
+
+**The fourth answer is a header per pane, drawn IN the title strip rather than under it.** That is
+the whole difference from #836, whose bands cost 44pt each because they opened below the strip. The
+deck climbs past the safe area the way `DeckCanopy` already does (`reach: window.safeAreaInsets.top`),
+so the band is spent either way and no pane loses a line. `#836`'s second failure — the same family
+of marks at three heights, with no readable scope rule — is answered by leaving almost nothing on
+the bands: one mark and a field on the list's, one pill on the ticket's, nothing on the sidebar's.
+There is no second control to mistake it for.
 
 **What gives at a narrow window: the list.** Mounted, the bands needed more width than the room had
 below about 1050 — the sidebar's 280 and the list's fixed 520 left the ticket pane less than

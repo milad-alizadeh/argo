@@ -12,6 +12,12 @@ public enum WorkCommand: String, Sendable {
     case wayfinder
     case prototype
     case implement
+    /// Offered and never RESOLVED. No rule guesses `/triage` — deciding for a reader that a ticket
+    /// needs triaging is the guess triage exists to answer — but it is the command a reader most
+    /// often wants over a ticket the resolver had nothing to say about, so the picker carries it
+    /// (#1242). A case with no rule is not a gap in the mapping; it is a command the mapping has
+    /// no business asserting.
+    case triage
 
     /// The rung a Session started FROM A TICKET opens on (#941). Argo's own choice for that one
     /// Session, never filed as the rung last picked (#629), so a hand-started Session is untouched.
@@ -36,6 +42,30 @@ public enum WorkCommand: String, Sendable {
     /// again — which is the thing this ticket exists to remove.
     public func opening(on ticket: Int) -> String {
         "\(typed) \(ticket)"
+    }
+
+    /// What the skill picker offers, in the order it lists them (#1242). Written down rather than
+    /// taken from `allCases`, because the order a reader reads is not the order the rules fire in:
+    /// the two commands a ticket most often wants come first, and the three `wayfinder:*` ones
+    /// follow. A case added to this enum is absent from the picker until somebody decides where in
+    /// that reading it belongs — which is the decision `allCases` would make silently.
+    public static let offered: [WorkCommand] = [
+        .implement, .designToCode, .grillMe, .triage, .prototype, .wayfinder,
+    ]
+
+    /// Why the resolver picked this command, in the reader's words, and `nil` for one no rule ever
+    /// picks. Said only beside the command that DID match — `StartSkillMenu` enforces that, because
+    /// a rule printed beside a command nobody picked reads as a claim about that command.
+    public static func why(_ command: WorkCommand) -> String? {
+        switch command {
+        case .designToCode: "the screen has a design"
+        case .grillMe: "labelled wayfinder:grilling"
+        case .wayfinder: "labelled wayfinder:map"
+        case .prototype: "labelled wayfinder:prototype"
+        case .implement: "matched by label"
+        // No rule resolves it, so there is never a reason to give beside it.
+        case .triage: nil
+        }
     }
 
     /// Which command a Ticket asks for, and `nil` where it asks for none.

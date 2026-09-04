@@ -214,7 +214,7 @@ extension SpecimenRegistry {
                 // The repair is inert but PRESENT: §7 makes the disabled reading point at a
                 // Reconnect, so a render without it would prove the wrong shape.
                 NewTicketButton(
-                    creation: TicketsToolbarIntents.Creation(control: state.control, reconnect: {}),
+                    creation: TicketsChromeIntents.Creation(control: state.control, reconnect: {}),
                 )
             }
         }

@@ -117,7 +117,6 @@ extension CockpitView {
                 spawn: spawn(in: navigation),
                 evidence: evidenceControl(in: reading),
             )
-            roomToolbar(tickets: tickets)
         }
     }
 

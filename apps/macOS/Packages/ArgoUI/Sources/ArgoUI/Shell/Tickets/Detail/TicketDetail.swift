@@ -7,8 +7,9 @@ import SwiftUI
 /// readable (`cockpit-work-room.md`). That is what the room trades for showing list and ticket
 /// at once, and why the facts are a strip under the title instead.
 ///
-/// The pane carries no band of its own: the ticket's verbs are in the window's row with the rest of
-/// the room's controls (`TicketsToolbar`), which is a line of height back for the words.
+/// The pane's verbs are on its OWN header band (`TicketsPaneHeader`, #1242), which is what puts
+/// them over the ticket they act on at every width. The band is drawn in the window's title strip
+/// rather than under it, so this column loses no line to it.
 package struct TicketDetail: View {
     let ticket: TicketsRoomProjection.Detail?
     /// The number the pane is open on that nothing was read for, and `nil` wherever `ticket` has

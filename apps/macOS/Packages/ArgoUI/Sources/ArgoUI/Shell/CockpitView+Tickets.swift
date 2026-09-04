@@ -60,13 +60,14 @@ extension CockpitView {
 
     /// What the room's controls do (#872). New ticket is `createTicket`, so §7 of the failure
     /// spec decides whether it may be pressed, and the panel it points at on a dead token is the
-    /// same one the unbound page's `Connect a provider…` opens.
+    /// same one the unbound page's `Connect a provider…` opens. Every one of them is drawn by
+    /// the header of the pane it acts on (#1242), not by the window's row.
     ///
-    /// Every slot is assigned here. `TicketsToolbarIntentTests` pins the set, so a slot added to
+    /// Every slot is assigned here. `TicketsChromeIntentTests` pins the set, so a slot added to
     /// the intents fails until somebody looks at this method and decides what drives it — which is
     /// what the funnel's `narrowing` never had (#900).
-    func ticketsIntents(_ start: TicketStart) -> TicketsToolbarIntents {
-        var intents = TicketsToolbarIntents.inert
+    func ticketsIntents(_ start: TicketStart) -> TicketsChromeIntents {
+        var intents = TicketsChromeIntents.inert
         intents.creation.control = ticketWriteControl
         intents.creation.act = { openTicketComposer() }
         intents.creation.reconnect = openProjectPanel
@@ -133,15 +134,6 @@ extension CockpitView {
     func spawn(in navigation: CockpitNavigationModel) -> CockpitSpawn? {
         guard navigation.room.spawnsSessions else { return nil }
         return CockpitSpawn(presentation: presentation, actions: actions, navigation: navigation)
-    }
-
-    /// What the room adds to `ShellToolbar` — the Tickets room's whole row of controls, and nothing
-    /// in the other two. `ToolbarContentBuilder` has no empty content, so the absence is an `if`
-    /// over the room the caller already assembled rather than a `switch` arm returning nothing.
-    @ToolbarContentBuilder func roomToolbar(tickets: TicketsRoom?) -> some ToolbarContent {
-        if let tickets {
-            tickets.toolbar
-        }
     }
 
     /// Room-dependent, and the one shell change `cockpit-work-room.md` asks for: at the 320 ideal

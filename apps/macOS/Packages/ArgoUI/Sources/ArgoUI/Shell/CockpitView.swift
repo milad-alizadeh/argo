@@ -191,6 +191,10 @@ public struct CockpitView: View {
                 isDrawn: isDrawn,
             )
         }
+        // The Binding's address, put where the ticket's number can read it (#1242). Set on the
+        // split view rather than inside the room: it is a fact about the PROJECT, and the room is
+        // rebuilt on every ticket.
+        .environment(\.argoTicketAddress, ticketAddress)
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         .sheet(isPresented: isConnecting) {
             if let reading = connect.reading {
