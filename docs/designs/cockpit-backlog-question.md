@@ -4,11 +4,12 @@
      prototype: worktree-ticket-1293-backlog-question -->
 
 > **Reopened by #1316 — the glyph does not hold still.** The ticket that was meant to test
-> "ends in `?`, or six words and up" against a realistic corpus (`BacklogQueryIntentCorpus`, 104
-> queries in `apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/`) found the exact risk this file
-> names below: a long term reads as a question. One term in five (`21/104`) that is a pasted
-> title or a long plain phrase is misread as a question, and the leading glyph changes its mind
-> at least once on the way to being typed for over half the corpus (`53/104`) — three of those
+> "ends in `?`, or six words and up" against a realistic corpus (`BacklogQueryIntentCorpus`, 106
+> queries in `apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/`) found both risks this file names
+> below. A long term reads as a question: `19/106` — roughly one term in six, every one a pasted
+> title or a long plain phrase — is misread. A short question reads as a term: `2/106` carry no
+> mark and fall under six words, and the rule misses them outright. The leading glyph also
+> changes its mind at least once on the way to being typed for `51/106` queries — three of those
 > (an embedded `?` inside a URL query string) flip it twice. `docs/designs/cockpit-backlog-
 > question.html?variant=B` — the wand at the field's edge, on `worktree-ticket-1293-backlog-
 > question` — is the drawn fallback this file names as the alternative to variant C. The evidence

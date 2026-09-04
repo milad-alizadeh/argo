@@ -23,8 +23,10 @@ extension BacklogQueryIntentCorpus {
         ),
     ]
 
-    /// A short question the six-word floor misses on its own — a real false negative unless it
-    /// carries its own `?`, which every one of these does.
+    /// A short question the six-word floor misses on its own — caught here only where it also
+    /// carries its own `?`. The last two carry NEITHER signal: the design's own named risk, "a
+    /// short question reads as a term," made concrete — these are the corpus's real false
+    /// negatives, not a hypothetical the write-up gestures at.
     private static let shortQuestions: [Entry] = [
         Entry(query: "is 1242 done?", expected: .question, group: "awkward: short question"),
         Entry(query: "who owns this?", expected: .question, group: "awkward: short question"),
@@ -33,6 +35,14 @@ extension BacklogQueryIntentCorpus {
         Entry(query: "any ticket for 1293?", expected: .question, group: "awkward: short question"),
         Entry(query: "swift gate flaky?", expected: .question, group: "awkward: short question"),
         Entry(query: "1075 fixed?", expected: .question, group: "awkward: short question"),
+        Entry(
+            query: "why blocked", expected: .question,
+            group: "awkward: short question, no mark",
+        ),
+        Entry(
+            query: "still open", expected: .question,
+            group: "awkward: short question, no mark",
+        ),
     ]
 
     /// A pasted quote or title carrying an internal `?`, ending as a term — the reader is talking
@@ -52,26 +62,32 @@ extension BacklogQueryIntentCorpus {
         ),
     ]
 
-    /// A ticket title that reads like a question in its own wording, with no mark and under six
-    /// words — a genuine hard case the corpus still calls a TERM, since a pasted title is what the
-    /// reader is searching for, not asking.
+    /// A ticket-title FRAGMENT that opens with a question word, with no mark and truly under six
+    /// words — a genuine hard case the corpus still calls a TERM, since a pasted fragment is what
+    /// the reader is searching for, not asking. (The longer titles that open the same way —
+    /// `pastedTitles`, `longTerms` — already cross the six-word floor and land in the false-
+    /// positive count; these two are here specifically because they do NOT, so the rule agrees
+    /// with the ground truth and this category stays distinct from that one.)
     private static let titleShapedNoMark: [Entry] = [
         Entry(
-            query: "what happened to the ordering menu",
-            expected: .term, group: "awkward: title-shaped, no mark",
+            query: "what happened here",
+            expected: .term,
+            group: "awkward: title-shaped, no mark",
         ),
         Entry(
-            query: "is there a ticket for the fold state bug",
+            query: "is this ticket closed",
             expected: .term, group: "awkward: title-shaped, no mark",
         ),
     ]
 
-    /// A number pasted with surrounding words — still a term.
+    /// A number pasted with surrounding words. The first is long enough to cross the six-word
+    /// floor, so it lands with `longTerms` in spirit — grouped there, not as a short term, so a
+    /// reader of the group label is not told it is short when it is one of the false positives.
     private static let numbersWithContext: [Entry] = [
         Entry(
             query: "see 1242 for the ordering menu removal",
             expected: .term,
-            group: "short term",
+            group: "awkward: long term",
         ),
         Entry(query: "duplicate of 1075", expected: .term, group: "short term"),
     ]
