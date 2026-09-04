@@ -76,6 +76,13 @@ the agent was never blocked and no answer can go back the way it came. The card 
 its options as the reading they are — the state the table calls *reported* — and keeps the
 attention ground, because the question is genuinely still waiting on the reader.
 
+**Sending a Turn retires it**, since that is the act that answers it. Nothing obliges the agent to
+report again afterwards, so a card that waited for a second report would stay amber for the rest of
+the Session.
+
+**One question, however many channels raised it.** The gate's copy is the one that survives, being
+the one that can be answered where it stands.
+
 ## States
 
 | State | Render | Ground | Glyph ink |

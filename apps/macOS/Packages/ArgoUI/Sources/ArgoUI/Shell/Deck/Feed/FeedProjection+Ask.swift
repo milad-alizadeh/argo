@@ -34,12 +34,19 @@ extension FeedProjection {
     /// go back down and no option here is pressable. The reader answers in the composer, which is
     /// why the composer is not replaced. Driveability still reaches the row, and does the same work
     /// it does above: a question on a Session nothing can reach is not waiting on anybody (#546).
+    ///
+    /// Drawn only where no row above is already putting these words, on `standing`'s own ground and
+    /// by the same value match: two cards asking the same thing would put one question to the
+    /// reader twice, and — since `FeedAsk.identity` is what was asked — hand the recycled table two
+    /// rows under one id. The gate's copy is the one that survives, because it can be answered
+    /// where it stands.
     static func reported(
         _ ask: Ask?,
         _ asking: FeedAskProjection.Asking,
+        over rows: [FeedRow.Content],
     )
         -> [FeedRow.Content] {
-        guard let ask else { return [] }
+        guard let ask, !rows.contains(where: { isPendingAsk(of: ask, $0) }) else { return [] }
         return [.ask(FeedAsk(
             ask: ask,
             isAnswered: false,
@@ -52,6 +59,13 @@ extension FeedProjection {
     private static func isDrawingLiveAsk(_ content: FeedRow.Content) -> Bool {
         guard case let .ask(ask) = content else { return false }
         return ask.live != nil
+    }
+
+    /// Whether a row is already putting these exact words and still waiting on them. An ANSWERED
+    /// row asking the same thing is history and does not stand for a question being asked now.
+    private static func isPendingAsk(of ask: Ask, _ content: FeedRow.Content) -> Bool {
+        guard case let .ask(drawn) = content else { return false }
+        return drawn.isPending && drawn.ask == ask
     }
 
     /// What every ask row is told about answering (#712). Over the WHOLE feed rather than per row,

@@ -33,6 +33,26 @@ extension CompanionReport {
         }
     }
 
+    /// Somebody answered — a Turn Argo typed at this Session's PTY (#1203). A question asked over
+    /// the channel is answered in the composer, so the act that answers it is the one that has to
+    /// retire it: nothing obliges the agent to report again, and a question left standing would
+    /// keep an amber card and a `NEEDS INPUT` badge up for the rest of the Session.
+    ///
+    /// The STATUS goes with it, and it has to: `pendingAsk` cleared under a standing `asking`
+    /// claim is the roster telling the reader to answer something no surface can show them, which
+    /// is the bug this is half of. Cleared rather than replaced with a word of Argo's own — what
+    /// the agent is doing now is for the tiers below to read, and this one has nothing left to say.
+    ///
+    /// One limit, stated rather than papered over: a Turn the CLI never heard (#682) retires the
+    /// question all the same. The words go back to the composer where they were typed, and the
+    /// agent's next report is what puts a question back — Argo does not re-raise one on its own.
+    mutating func answered() {
+        pendingAsk = nil
+        if status == .asking {
+            status = nil
+        }
+    }
+
     /// The channel is gone, so the claims that stood on it go: the roster falls back to the DERIVED
     /// reading of the transcript rather than to a `running` nothing is behind any more (#799). The
     /// other half of `apply`'s rule — outcomes are cumulative, so they stay.

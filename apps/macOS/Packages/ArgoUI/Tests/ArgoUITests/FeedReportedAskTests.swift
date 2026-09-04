@@ -114,6 +114,57 @@ struct FeedReportedAskTests {
         #expect(asks.map { $0.live != nil } == [true, false])
     }
 
+    /// The two channels share no id, so the words are the only thing that can tell one question
+    /// from two. Where they agree, the reader gets ONE card — the answerable one — since two would
+    /// also hand the recycled table two rows under a single `FeedAsk.identity`.
+    @Test
+    func `one question raised down both channels is put to the reader once`() {
+        let bothWays = session(ask: SessionAsk(id: "ask-1", ask: Self.reported.ask))
+        let rows = FeedProjection.rows(
+            from: [],
+            asking: FeedAskProjection.asking(for: bothWays),
+            reported: bothWays.reportedAsk?.ask,
+        )
+        let asks = FeedFixture.asks(in: rows)
+
+        #expect(asks.count == 1)
+        #expect(asks[0].live != nil)
+    }
+
+    /// And where the record's own row is the one drawing it, on the same ground: `offering` hands
+    /// the gate's handle to that row, and a copy at the foot would ask again under it.
+    @Test
+    func `a reported question the reading already draws is not put a second time`() {
+        let asked = FeedFixture.asking(Ask.Question(
+            text: "Which branch should I cut from?",
+            options: Ask.Option.labelled(["main", "the release branch"]),
+        ))
+        let rows = FeedProjection.rows(
+            from: [.toolCall(asked)],
+            asking: FeedAskProjection.asking(for: session()),
+            reported: session().reportedAsk?.ask,
+        )
+
+        #expect(FeedFixture.asks(in: rows).count == 1)
+    }
+
+    /// An ANSWERED row asking the same thing is history, and history does not stand for a question
+    /// being asked now — so the reported one is still put.
+    @Test
+    func `a settled row asking the same thing does not stand for the live question`() {
+        let asked = FeedFixture.asking(Ask.Question(
+            text: "Which branch should I cut from?",
+            options: Ask.Option.labelled(["main", "the release branch"]),
+        ))
+        let rows = FeedProjection.rows(
+            from: [.toolCall(asked), .toolCallOutcome(TranscriptFixtures.printed("ask", "main"))],
+            asking: FeedAskProjection.asking(for: session()),
+            reported: session().reportedAsk?.ask,
+        )
+
+        #expect(FeedFixture.asks(in: rows).map(\.isPending) == [false, true])
+    }
+
     /// The record does carry the call — `mcp__argo__ask_user` — and it draws as an ordinary call
     /// line, because `FeedAskReading` is gated on the tool NAME. That is deliberate: widening the
     /// gate would read any tool's arguments as a question the moment they happened to fit.

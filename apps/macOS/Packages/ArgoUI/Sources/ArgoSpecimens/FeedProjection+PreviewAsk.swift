@@ -88,7 +88,6 @@ package extension FeedProjection {
         from: reportedAskTranscript,
         reported: previewReportedAsk.ask,
     )
-
     /// The Session those renders are drawn for, blocked on the one-of question.
     internal static let previewAskWaiting = SessionAsk(
         id: previewAskID,

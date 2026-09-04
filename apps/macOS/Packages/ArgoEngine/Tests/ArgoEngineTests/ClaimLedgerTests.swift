@@ -95,6 +95,44 @@ struct ClaimLedgerTests {
         #expect(report?.pendingAsk == nil)
     }
 
+    /// A question asked over the channel is answered in the COMPOSER, so the Turn Argo typed down
+    /// the PTY is the act that retires it (#1203). Nothing obliges the agent to report again, and a
+    /// question left standing would keep an amber card and a `NEEDS INPUT` badge up for the rest of
+    /// the Session.
+    @Test
+    func `a Turn typed at the Session answers the question its agent asked`() {
+        let ledger = ClaimLedger()
+        ledger.record(.ask(CompanionAsk(
+            id: "ask-1",
+            question: "Which branch?",
+            options: ["main", "next"],
+        )), for: claim)
+
+        ledger.setSubmittedTurn(SessionTurnSubmission(recordsWhenSubmitted: 3), for: claim)
+
+        let report = ledger.facts(for: claim).report
+        #expect(report?.pendingAsk == nil)
+        // And the badge with it: a cleared question under a standing `asking` claim is the roster
+        // telling the reader to answer something no surface can show them.
+        #expect(report?.status == nil)
+    }
+
+    /// Only what the question stood on. What the agent PRODUCED is something that happened, and an
+    /// answer does not take it back.
+    @Test
+    func `answering the question leaves what the Session produced alone`() {
+        let ledger = ClaimLedger()
+        ledger.record(.outcome(landed), for: claim)
+        ledger.record(.status(.running), for: claim)
+
+        ledger.setSubmittedTurn(SessionTurnSubmission(recordsWhenSubmitted: 3), for: claim)
+
+        let report = ledger.facts(for: claim).report
+        #expect(report?.outcomes == [landed])
+        // Untouched, because it is not a question: only an `asking` claim is one this act answers.
+        #expect(report?.status == .running)
+    }
+
     @Test
     func `withdrawing a claim keeps the rung Argo put it on`() {
         let ledger = ClaimLedger()
