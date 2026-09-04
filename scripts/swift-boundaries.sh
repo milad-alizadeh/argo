@@ -20,9 +20,10 @@ TOKENS="$(dirname "$0")/check-design-tokens-swift.sh"
 DESIGN_SOURCES="$APP_DIR/Packages/ArgoDesign/Sources/ArgoDesign"
 UI_SOURCES="$APP_DIR/Packages/ArgoUI/Sources"
 ENGINE_SOURCES="$APP_DIR/Packages/ArgoEngine/Sources/ArgoEngine"
-# The layout half of the mermaid renderer, which is headless for ADR-0022's own reason and so is
-# checked by edge 2 rather than by an edge of its own (#1087).
+# The layout halves of the two renderers, headless for ADR-0022's own reason and so checked by
+# edge 2 rather than by an edge each of their own (#1087, #1143).
 MERMAID_LAYOUT_SOURCES="$APP_DIR/Packages/ArgoMermaid/Sources/MermaidLayout"
+ATLAS_LAYOUT_SOURCES="$APP_DIR/Packages/ArgoAtlas/Sources/AtlasLayout"
 APP_TARGET="$APP_DIR/Argo"
 # The one file in ArgoUI allowed to read live Hub state: the Hub → cockpit projection.
 PROJECTION_FILE="CockpitPresentation+Hub.swift"
@@ -148,15 +149,17 @@ fi
 
 # 2. The headless modules ⊥ UI frameworks. Each stays testable from the command line, which it
 #    only is while nothing in it needs a window server. ArgoEngine is ADR-0022's own subject;
-#    `MermaidLayout` is here for the same argument rather than under an edge of its own, because a
-#    second implementation of one rule is two rules the day one of them is edited (#1087). Its
-#    sibling `MermaidView` draws, so it is not a subject.
-for headless in "$ENGINE_SOURCES" "$MERMAID_LAYOUT_SOURCES"; do
+#    `MermaidLayout` and `AtlasLayout` are here for the same argument rather than under an edge
+#    each of their own, because a second implementation of one rule is two rules the day one of
+#    them is edited (#1087, #1143). Their siblings `MermaidView` and `AtlasView` draw, so neither
+#    is a subject — and each is named in the pattern below, because that sibling import is how a
+#    `Path` arrives without any framework name appearing.
+for headless in "$ENGINE_SOURCES" "$MERMAID_LAYOUT_SOURCES" "$ATLAS_LAYOUT_SOURCES"; do
   if [ ! -d "$headless" ]; then
     report "edge 2 cannot see $headless — a renamed module leaves it checking nothing" "$headless"
     continue
   fi
-  hits=$(grep -rnE '^ *import  *(SwiftUI|AppKit|Cocoa|ArgoUI|MermaidView)' "$headless" 2>/dev/null || true)
+  hits=$(grep -rnE '^ *import  *(SwiftUI|AppKit|Cocoa|ArgoUI|MermaidView|AtlasView)' "$headless" 2>/dev/null || true)
   if [ -n "$hits" ]; then
     report "$(basename "$headless") imports a UI framework — it must run under \`swift test\`, with no window (ADR-0022)" "$hits"
   fi

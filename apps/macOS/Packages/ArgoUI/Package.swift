@@ -23,6 +23,10 @@ let package = Package(
         .package(path: "../ArgoDesign"),
         // The `mermaid` renderer, which is a package rather than a leaf of the feed (#1087).
         .package(path: "../ArgoMermaid"),
+        // The Atlas, split the same way and for the same reason (#1143). Linked from here rather
+        // than from the Xcode target: the app links `ArgoUI`, so this is what puts the map's two
+        // modules in the product's build and under `xcodebuild`.
+        .package(path: "../ArgoAtlas"),
         // Syntax highlighting: highlight.js under a SwiftUI surface, MIT. A grammar per language is
         // a solved problem and not one to hand-roll (`rules/house.md`), and this one ships
         // Xcode's own theme, which is the theme the panel wants.
@@ -39,6 +43,8 @@ let package = Package(
                 .product(name: "ProseText", package: "ArgoDesign"),
                 .product(name: "MermaidLayout", package: "ArgoMermaid"),
                 .product(name: "MermaidView", package: "ArgoMermaid"),
+                .product(name: "AtlasLayout", package: "ArgoAtlas"),
+                .product(name: "AtlasView", package: "ArgoAtlas"),
             ],
         ),
         // Sample data, and nothing that draws: the transcripts the cockpit is judged against and
@@ -48,7 +54,14 @@ let package = Package(
         // is read from the source tree by a suite and a generator, and `ArgoSpecimens` links this
         // target while the app links `ArgoSpecimens` — a resource here would ship a transcript
         // inside the product.
-        .target(name: "ArgoFixtures", dependencies: ["ArgoEngine"], exclude: ["Fixtures"]),
+        // `ArgoDesign` is declared rather than borrowed: two files here import it, and SwiftPM
+        // resolves that through ArgoUI's own dependency while `xcodebuild` does not — so an
+        // undeclared edge compiles under `swift test` and fails the app build.
+        .target(
+            name: "ArgoFixtures",
+            dependencies: ["ArgoEngine", .product(name: "ArgoDesign", package: "ArgoDesign")],
+            exclude: ["Fixtures"],
+        ),
         // The fixtures' own generator. An executable rather than a test, because writing a file
         // into the tree is not something a suite may do — and in this package because proving the
         // synthetic stands for its source means projecting both, which is ArgoUI's `package`
