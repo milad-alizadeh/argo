@@ -6,15 +6,14 @@ extension AgentsRailFixture {
     /// The state #1269 was written from, and the one no fixture held: a parent that handed its
     /// whole fan-out over and is now WAITING on it.
     ///
-    /// A waiting parent writes nothing, so its own status reads `idle` — and neither `quiet` nor
-    /// `stale` can show this, because in both of those the parent's status decided the chips. Here
-    /// it decides nothing, and every earlier reading of these rows said `0 running` with three
-    /// quiet dots while two of the children were writing into files the reader could open.
+    /// Neither `quiet` nor `stale` can show it, because in both of those the parent's status
+    /// decided the chips. Here it decides nothing, and every earlier reading of these rows said
+    /// `0 running` with three quiet dots while two of the children were writing.
     ///
     /// What settles it in pixels is the three chips together: two drawn running off their own
-    /// records, and one drawn UNKNOWN — an outlined dot and no clock, because Argo cannot say. The
-    /// third is what keeps the render honest about the fix's shape: the evidence settles the chips
-    /// it reaches and the rail says so about the one it does not.
+    /// records, and one drawn UNKNOWN — an outlined dot and no clock. The third is what keeps the
+    /// render honest about the fix's shape: the evidence settles the chips it reaches, and the rail
+    /// says so about the one it does not.
     static let waitingRows = FeedProjection.rows(from: waiting)
 
     /// Those records read as a WAITING Session's: `of: .undecided` is what the parent's `idle`

@@ -34,9 +34,6 @@ final class SubagentReadings {
     /// dating that would draw every long-dead delegation live for ten minutes after the cockpit
     /// opened. Only the batches AFTER the backfill are writes Argo saw happen.
     private var grewAtMsByFile: [String: Int] = [:]
-    /// Which files have had their backfill. A file is here from its first non-empty batch onward,
-    /// and that batch is the one that does not count.
-    private var backfilled: Set<String> = []
     /// What dates a batch. Injected so a suite can name the moment; every shipping caller wants the
     /// real one.
     private let clock: @Sendable () -> Int
@@ -83,7 +80,6 @@ final class SubagentReadings {
         filesByAgent[agentID, default: []].insert(path)
         byFile[path] = nil
         grewAtMsByFile[path] = nil
-        backfilled.remove(path)
     }
 
     /// One batch, appended. A read carrying nothing publishes nothing: a file that exists and has
@@ -91,10 +87,13 @@ final class SubagentReadings {
     ///
     /// Every batch but the FIRST dates the file, per the note on `grewAtMsByFile`: the first is
     /// what the file already held when the tail opened it, and the rest are Argo watching it grow.
+    /// Which batch that is takes no table of its own — a file with bytes already in it has had its
+    /// backfill, and `beginReading` is what empties it again.
     func apply(_ read: [TranscriptEvent], from path: String) {
         guard !read.isEmpty else { return }
+        let isBackfill = byFile[path] == nil
         byFile[path, default: []] += read
-        if backfilled.insert(path).inserted == false {
+        if !isBackfill {
             grewAtMsByFile[path] = clock()
         }
     }
@@ -106,7 +105,6 @@ final class SubagentReadings {
         for (agentID, path) in claims {
             byFile[path] = nil
             grewAtMsByFile[path] = nil
-            backfilled.remove(path)
             filesByAgent[agentID]?.remove(path)
             if filesByAgent[agentID]?.isEmpty == true {
                 filesByAgent[agentID] = nil
@@ -120,6 +118,5 @@ final class SubagentReadings {
         byFile = [:]
         filesByAgent = [:]
         grewAtMsByFile = [:]
-        backfilled = []
     }
 }

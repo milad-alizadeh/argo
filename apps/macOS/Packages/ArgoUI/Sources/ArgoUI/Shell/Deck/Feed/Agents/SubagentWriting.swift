@@ -6,13 +6,20 @@ import ArgoEngine
 /// The evidence the parent's record does not hold. A Session that delegated its children and is now
 /// waiting on them writes nothing itself, so its status reads `idle` and every delegation under it
 /// is indistinguishable in the record from a dead one's (#1076). Argo holds each child's own
-/// transcript anyway — that is what the rail draws when the reader opens a chip (#858) — and a file
-/// Argo has watched grow is DIRECT evidence that somebody is writing it.
+/// transcript anyway (#858), and a file it has watched grow is DIRECT evidence somebody is writing
+/// it. Where that reading is applied, and why not one level down, is `FeedAgents.told(_:writing:)`.
 ///
-/// **One-directional, exactly as `DelegationCeiling` is.** It only ever settles an `unknown` chip;
-/// it never takes a `finished` away. A delegation the record closed is closed whatever a trailing
-/// byte in the child's file says, and a stale one is stale — this is here to stop a gap in the
-/// evidence being read as an ending, not to reopen the endings Argo has.
+/// **One-directional, exactly as `DelegationCeiling` is** — it only ever GIVES a running claim, on
+/// the evidence of a write. It never reopens a delegation the record answered: that ending is one
+/// Argo holds, and a trailing byte in the child's file does not un-answer it.
+///
+/// **What it does NOT decay is stated here rather than left to be found.** A chip lifted to running
+/// is re-read on every pass, so the window below expires it — but only on a pass, and the deck
+/// takes no pass on a timer. Where every child has fallen silent AND the parent never writes again,
+/// nothing invalidates the rail and the last dot stands past its window. That is the property
+/// `DelegationCeiling` has had since #1090, unchanged in kind: both are read WHEN THE LIST IS
+/// DERIVED, and a clock in the room's stamp would expire every memo in it on a timer, which is the
+/// cost #858 and #875 exist to have removed.
 enum SubagentWriting: Equatable, Sendable {
     /// Argo saw this file grow inside the window below.
     case writing

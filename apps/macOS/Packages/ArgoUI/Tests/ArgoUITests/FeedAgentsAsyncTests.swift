@@ -45,7 +45,7 @@ struct FeedAgentsAsyncTests {
     func `a launch receipt leaves the subagent running`() {
         let chips = FeedAgents.all(in: rows, of: .running)
 
-        #expect(chips.map(\.isRunning) == [true])
+        #expect(chips.map(\.activity) == [.running])
         #expect(FeedAgents.running(of: chips) == 1)
     }
 

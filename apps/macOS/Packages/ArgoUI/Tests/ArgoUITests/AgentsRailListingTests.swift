@@ -44,7 +44,7 @@ struct AgentsRailListingTests {
     /// nothing is a control that lies about having content behind it.
     @Test
     func `a rail whose agents are all running has nothing to reveal`() {
-        let running = Self.agents.filter(\.isRunning)
+        let running = Self.agents.filter { $0.activity == .running }
 
         #expect(AgentsRailListing(of: running, scopedOnto: nil).finished.isEmpty)
     }
@@ -53,7 +53,7 @@ struct AgentsRailListingTests {
     /// all landed lists nothing, and says so on the disclosure rather than by standing empty.
     @Test
     func `a rail whose agents have all landed lists none of them`() {
-        let landed = Self.agents.filter { !$0.isRunning }
+        let landed = Self.agents.filter { $0.activity == .finished }
         let listing = AgentsRailListing(of: landed, scopedOnto: nil)
 
         #expect(listing.listed.isEmpty)

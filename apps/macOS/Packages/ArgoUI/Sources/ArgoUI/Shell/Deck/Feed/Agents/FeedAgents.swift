@@ -12,23 +12,15 @@ package enum FeedAgents {
     /// (`FeedCall.stands(for:)`): two agents handed the same brief keep two rows, two endings and
     /// two spends.
     ///
-    /// `nowMs` is the clock the ceiling below is measured against, and it is defaulted rather than
-    /// threaded: every shipping caller wants the real one, and a suite that passed it would be the
-    /// only place a fixed moment is worth having.
-    ///
-    /// Read WHEN THE LIST IS DERIVED, which on the shipping path is under
-    /// `SessionsRoomReadingCache`'s stamp — and that stamp carries no clock, so a chip cannot cross
-    /// the ceiling while nothing else about the reading moves. Nothing is owed for that, because
-    /// what the ceiling would take away is a claim this no longer makes on its own: a running
-    /// Session that writes nothing is read `idle` inside `SessionLiveness.recentActivityWindowMs`,
-    /// and an idle Session's open delegation is `unknown` rather than running (#1269). A chip left
-    /// past the ceiling by a stalled stamp is drawn as a state Argo cannot place, which is what it
-    /// is. A clock in the stamp would instead expire every memo in the room on a timer, which is
-    /// the cost #858 and #875 exist to have removed.
+    /// NOTHING here is measured against a clock, which is what lets this be memoised under
+    /// `SessionsRoomReadingCache`'s stamp: that stamp carries no clock, so anything read off one
+    /// would freeze at the moment the parent last wrote. The two facts that need one — the report
+    /// ceiling and the child's own growth — are both taken in `told(_:writing:at:)`, on the list
+    /// this returns. A clock in the stamp would instead expire every memo in the room on a timer,
+    /// which is the cost #858 and #875 exist to have removed.
     package static func all(
         in rows: [FeedRow],
         of session: DelegatingSession,
-        at nowMs: Int = Date().epochMs,
     )
         -> [FeedAgent] {
         rows.compactMap(delegation(in:)).enumerated().map { position, call in
@@ -37,7 +29,7 @@ package enum FeedAgents {
                 // The disambiguated address: a row here stands alone in a column of its own, with
                 // no line beside it to tell two same-named subjects apart.
                 label: call.subject.captioned,
-                activity: activity(call, of: session, at: nowMs),
+                activity: activity(call, of: session),
                 spend: call.spend,
                 subagentID: call.subagentID,
                 durationMs: call.durationMs,
@@ -46,25 +38,42 @@ package enum FeedAgents {
         }
     }
 
-    /// The same list, told what the Subagents' OWN files say (#1269).
+    /// The same list, dated: what the Subagents' OWN files say, and how long the silent ones have
+    /// been silent (#1269).
     ///
-    /// Applied HERE and not inside `all(in:of:at:)` on purpose: that walk is memoised under the
-    /// room's stamp, and the room's stamp does not move for a child's bytes — that is the whole of
-    /// #858. A growth reading folded into the memo would freeze at whatever the child was doing
-    /// when the parent last wrote, which is the exact failure this ticket is about, one level down.
+    /// Everything with a clock in it lives HERE and not in `all(in:of:)`, because that walk is
+    /// memoised under the room's stamp and the room's stamp does not move for a child's bytes —
+    /// that is the whole of #858. A timed reading folded into the memo would freeze at whatever was
+    /// true when the parent last wrote, which is the failure this ticket is about, one level down.
     /// This is a cheap pass over a list the memo already holds, so it is taken every time.
     ///
-    /// It only ever settles `unknown`, per `SubagentWriting`: a delegation the record closed stays
-    /// closed, and one past the ceiling stays lost.
+    /// The ORDER is the ruling: growth is asked first, so an observation outranks a stated ceiling.
+    /// `DelegationCeiling` says how long a report can still be in flight and names itself a stated
+    /// figure rather than an observation — and Argo watching the child write is an observation, so
+    /// a Subagent still going at five hours keeps its dot rather than being quieted for being slow.
+    /// The ceiling then reaches what is left: silence, past the age at which silence means the
+    /// report was lost (#1090).
+    ///
+    /// A `.finished` chip is never reopened. That is the record having ANSWERED the delegation, and
+    /// a trailing byte in the child's file does not un-answer it.
+    ///
+    /// `writing` is asked by Subagent ID, so an Agent the record never named has no file to watch
+    /// and is never asked about — both halves of "which chips the evidence can reach" spelled here,
+    /// rather than one of them living in whichever closure was passed in.
     static func told(
         _ agents: [FeedAgent],
-        writing: (FeedAgent) -> SubagentWriting,
+        writing: (String) -> SubagentWriting,
+        at nowMs: Int = Date().epochMs,
     )
         -> [FeedAgent] {
         agents.map { agent in
-            guard agent.activity == .unknown, writing(agent) == .writing else { return agent }
+            guard agent.activity != .finished else { return agent }
             var told = agent
-            told.activity = .running
+            if agent.subagentID.map({ writing($0) }) == .writing {
+                told.activity = .running
+            } else if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
+                told.activity = .finished
+            }
             return told
         }
     }
@@ -83,28 +92,23 @@ package enum FeedAgents {
     /// A FOURTH fact reaches the ones those three leave undecided, and it is not in the record at
     /// all: the Subagent's own file, growing (`told(_:writing:)`, #1269).
     static func running(of agents: [FeedAgent]) -> Int {
-        agents.filter(\.isRunning).count
+        agents.filter(\.activity.isRunning).count
     }
 
     /// One chip's own share of that claim, spelled here so the list above reads as one line per
-    /// fact the rail draws.
+    /// fact the rail draws — and the TIMELESS half of it, which is what `told(_:writing:at:)` is
+    /// handed to date.
     ///
-    /// The two endings first, because both are things Argo KNOWS: a delegation the record resolved
-    /// is over, and one whose report is past `DelegationCeiling` was lost rather than is late
-    /// (#1090). What is left is an open delegation, and the delegating Session decides it — down to
-    /// `unknown` where that Session is one whose silence says nothing (`DelegatingSession`).
-    ///
-    /// Nothing here reads the child's own file: this walk is memoised under a stamp a child's bytes
-    /// do not move, so that reading belongs in `told(_:writing:)` above.
+    /// The ending first, because it is the one thing Argo simply KNOWS: a delegation the record
+    /// resolved is over. What is left is an open delegation, and the delegating Session decides it
+    /// — down to `unknown` where that Session is one whose silence says nothing about it
+    /// (`DelegatingSession`).
     private static func activity(
         _ call: FeedCall,
         of session: DelegatingSession,
-        at nowMs: Int,
     )
         -> AgentActivity {
-        guard call.ending == .pending,
-              !DelegationCeiling.passed(sinceMs: call.startedAtMs, nowMs: nowMs)
-        else { return .finished }
+        guard call.ending == .pending else { return .finished }
         switch session {
         case .running: return .running
         case .notRunning: return .finished

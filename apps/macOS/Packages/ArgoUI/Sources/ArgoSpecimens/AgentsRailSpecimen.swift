@@ -33,11 +33,10 @@ struct AgentsRailSpecimen: View {
         /// the Session had gone. The rail lists the one live Agent, says `1 running`, and holds the
         /// three stale ones behind the disclosure at the foot (`AgentsRailFixture.staleRows`).
         case stale
-        /// A parent that handed its whole fan-out over and is now WAITING on it, so its own
-        /// status reads `idle` and its record says nothing about any of them (#1269). Two chips
-        /// drawn running off the children's OWN files, and one drawn unknown because Argo has
-        /// watched neither its file grow nor its delegation close. The state `quiet` and `stale`
-        /// cannot show: in both of those the parent's status decided the chips.
+        /// A parent that handed its whole fan-out over and is now WAITING on it (#1269): two
+        /// chips drawn running off the children's OWN files, and one drawn unknown. The state
+        /// `quiet` and `stale` cannot show — in both of those the parent's status decided the
+        /// chips. `AgentsRailFixture.waitingRows` carries the rest.
         case waiting
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed

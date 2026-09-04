@@ -17,7 +17,7 @@ struct FeedAgentsHonestyTests {
     func `a delegation left pending by a session that is not running is not running`() {
         let chips = FeedAgents.all(in: Self.rows, of: .notRunning)
 
-        #expect(chips.map(\.isRunning) == [false])
+        #expect(chips.map(\.activity) == [.finished])
         #expect(FeedAgents.running(of: chips) == 0)
     }
 
@@ -27,7 +27,7 @@ struct FeedAgentsHonestyTests {
     func `a delegation still pending in a running session is still running`() {
         let chips = FeedAgents.all(in: Self.rows, of: .running)
 
-        #expect(chips.map(\.isRunning) == [true])
+        #expect(chips.map(\.activity) == [.running])
         #expect(FeedAgents.running(of: chips) == 1)
     }
 
@@ -40,12 +40,16 @@ struct FeedAgentsHonestyTests {
     /// is that it produces no finished one, which `FeedAgentsWritingTests` is where.
     @Test
     func `a session that cannot be driving anything produces no running chip`() {
-        for status in [SessionStatus.unknown, .stopped, .ended, .idle] {
+        for status in [SessionStatus.unknown, .stopped, .ended] {
             let chips = FeedAgents.all(in: Self.rows, of: DelegatingSession.of(status))
 
-            #expect(chips.map(\.isRunning) == [false], "\(status)")
+            #expect(chips.map(\.activity) == [.finished], "\(status)")
         }
-        #expect(Self.listing(of: .ended, access: .orphaned).map(\.isRunning) == [false])
+        // `idle` is the one that moved: no running chip either, and no FINISHED one — see
+        // `FeedAgentsWritingTests`.
+        #expect(FeedAgents.all(in: Self.rows, of: DelegatingSession.of(.idle))
+            .map(\.activity) == [.unknown])
+        #expect(Self.listing(of: .ended, access: .orphaned).map(\.activity) == [.finished])
     }
 
     /// The other half of the ruling: a Session blocked on a permission prompt is alive, and the
@@ -53,8 +57,8 @@ struct FeedAgentsHonestyTests {
     /// being quieted by a Session that is merely waiting on its reader.
     @Test
     func `a session waiting on the reader keeps its subagent running`() {
-        #expect(Self.listing(of: .permission).map(\.isRunning) == [true])
-        #expect(Self.listing(of: .asking).map(\.isRunning) == [true])
+        #expect(Self.listing(of: .permission).map(\.activity) == [.running])
+        #expect(Self.listing(of: .asking).map(\.activity) == [.running])
     }
 
     /// The clock, which is the same untruth with the animation removed: a chip whose Session is
@@ -64,7 +68,7 @@ struct FeedAgentsHonestyTests {
     func `a stale chip has neither a total nor a clock to draw`() throws {
         let chip = try #require(FeedAgents.all(in: Self.rows, of: .notRunning).first)
 
-        #expect(!chip.isRunning)
+        #expect(chip.activity == .finished)
         #expect(chip.durationMs == nil)
     }
 

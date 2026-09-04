@@ -36,11 +36,6 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     /// have yet cannot be drawn.
     var startedAtMs: Int?
 
-    /// Whether the rail counts this one. The count line says `running`, so only `.running` is.
-    var isRunning: Bool {
-        activity.isRunning
-    }
-
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         id: Int,

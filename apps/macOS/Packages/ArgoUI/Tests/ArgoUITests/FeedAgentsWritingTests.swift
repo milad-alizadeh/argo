@@ -8,9 +8,8 @@ import Testing
 ///
 /// A parent that has handed its whole fan-out over and is now waiting on it writes nothing, so its
 /// status reads `idle` — and `idle` used to mean `notRunning`, so every pending delegation under it
-/// read finished. The record cannot settle that (#1076), but the record is not the only evidence:
-/// Argo tails each child's own transcript (#858), and a file it has watched grow is DIRECT evidence
-/// somebody is writing it.
+/// read finished. What settles it instead is `SubagentWriting`. Where that evidence meets
+/// `DelegationCeiling` is `FeedAgentsCeilingTests`, the suite that owns the ceiling.
 @Suite("Feed agents writing")
 @MainActor
 struct FeedAgentsWritingTests {
@@ -71,9 +70,9 @@ struct FeedAgentsWritingTests {
         #expect(listing.finished.isEmpty)
     }
 
-    /// One-directional, exactly as `DelegationCeiling` is. Growth only ever settles an `unknown`
-    /// chip — a delegation the record CLOSED stays closed, whatever a trailing byte in the child's
-    /// file says.
+    /// One-directional, exactly as `DelegationCeiling` is. Growth only ever GIVES a running claim
+    /// — a delegation the record CLOSED stays closed, whatever a trailing byte in the child's file
+    /// says.
     @Test
     func `growth does not reopen a delegation the record answered`() {
         let answered = [FeedAgent(
@@ -92,57 +91,6 @@ struct FeedAgentsWritingTests {
     @Test
     func `growth does not raise a delegation under a session that has gone`() {
         #expect(Self.listing(of: .ended, writing: [Self.child]).map(\.activity) == [.finished])
-    }
-
-    /// A chip Argo has no id for has no file to watch, so it cannot be settled by one.
-    @Test
-    func `a chip with no subagent id is not settled by anybody's growth`() {
-        let unnamed = [FeedAgent(id: 0, label: "out", activity: .unknown, spend: nil)]
-
-        #expect(FeedAgents.told(unnamed) { _ in .quiet }.map(\.activity) == [.unknown])
-    }
-
-    /// The window, from both sides, against the constant and never against its literal. A figure
-    /// restated here is the drift the constant exists to stop.
-    @Test
-    func `growth exactly at the window still reads as writing`() {
-        let nowMs = 4_000_000_000
-
-        #expect(SubagentWriting.read(
-            lastGrewAtMs: nowMs - SubagentWriting.growthWindowMs,
-            nowMs: nowMs,
-        ) == .writing)
-        #expect(SubagentWriting.read(
-            lastGrewAtMs: nowMs - SubagentWriting.growthWindowMs - 1,
-            nowMs: nowMs,
-        ) == .quiet)
-    }
-
-    /// A file Argo never watched grow dates nothing, and absence of evidence settles nothing —
-    /// which is what keeps the backfill of a long-dead child from lighting its chip up.
-    @Test
-    func `a child argo never watched grow is quiet`() {
-        #expect(SubagentWriting.read(lastGrewAtMs: nil, nowMs: 4_000_000_000) == .quiet)
-    }
-
-    /// The whole seam, end to end, through the memo the shipping path takes: the walk is remembered
-    /// under a stamp a child's bytes do not move (#858), so a growth reading held INSIDE it would
-    /// freeze at whatever the child was doing when its parent last wrote. Asked twice at one stamp,
-    /// the second answer still follows the child.
-    @Test
-    func `the memoised list still follows the child`() throws {
-        SessionsRoomReadingCache.forget()
-        let reading = Self.reading(of: .idle)
-        let stamp = try #require(reading.stamp)
-        let quiet = Self.readings().stamped(reading.stamp).agents(in: reading.feed)
-        let told = Self.readings(writing: [Self.child]).stamped(reading.stamp)
-            .agents(in: reading.feed)
-
-        // The memo IS the thing under test, so it is asserted to be standing: without this the
-        // case would pass on a cache that never held the walk at all.
-        #expect(SessionsRoomReadingCache.agents(at: stamp)?.map(\.activity) == [.unknown])
-        #expect(quiet.map(\.activity) == [.unknown])
-        #expect(told.map(\.activity) == [.running])
     }
 
     // MARK: - Fixtures

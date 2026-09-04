@@ -175,14 +175,15 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// last wrote — the same staleness the rail was reported for, one level down. This is a
     /// dictionary lookup per chip, so it is taken every pass.
     ///
-    /// `nowMs` is read here rather than threaded: this is the only caller, and every one of them
-    /// wants the real clock.
+    /// `nowMs` is read here rather than threaded: this is the one place the deck asks, and both
+    /// datings below want the same moment.
     @MainActor private func told(_ agents: [FeedAgent]) -> [FeedAgent] {
         let nowMs = Date().epochMs
-        return FeedAgents.told(agents) { agent in
-            guard let id = agent.subagentID else { return .quiet }
-            return SubagentWriting.read(lastGrewAtMs: grewAtMs(id), nowMs: nowMs)
-        }
+        return FeedAgents.told(
+            agents,
+            writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+            at: nowMs,
+        )
     }
 
     @MainActor private func derived(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {

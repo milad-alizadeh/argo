@@ -2,11 +2,10 @@ import ArgoDesign
 
 /// What the rail claims about one Subagent: working, landed, or a state Argo cannot establish.
 ///
-/// THREE and not two, because the second is what the count was getting wrong in both directions. A
-/// `Bool` has to answer every reading, so every gap in the evidence became `finished` by default —
-/// and the rail said `0 running` over a feed the reader could open and watch move (#1269). The
-/// honesty tier owes an `unknown` here the same way the roster's dot does: `SessionStateIndicator`
-/// already draws it, as an outline rather than a colour.
+/// THREE and not two, because a `Bool` has to answer every reading, so every gap in the evidence
+/// became `finished` by default — and the rail said `0 running` over a feed the reader could open
+/// and watch move (#1269). The honesty tier owes an `unknown` here the same way the roster's dot
+/// does: `SessionStateIndicator` already draws it, as an outline rather than a colour.
 ///
 /// One value per chip, read by the dots, the count, the list's split and the clock — so no surface
 /// can answer this question its own way (#1204).
