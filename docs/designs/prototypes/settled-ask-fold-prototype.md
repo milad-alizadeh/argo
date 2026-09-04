@@ -23,11 +23,33 @@ with a tick beside the one taken. `FeedAskLine` degrades the **ink** — the gro
 glyph drops to `text.tertiary` — and nothing at all degrades the **length**. History costs what
 a live question costs.
 
+## The thesis
+
+**A question and its answer are one fact, so they are one paragraph.**
+
+The answer alone says nothing — *The design route* is not a fact until you know what was asked.
+The question alone is finished business. Stacking them as two rows is the lazy reading of that;
+setting the answer **inline, as the resolution of the question's own sentence**, is the honest
+one — and it is also the cheapest, because where the answer fits on the question's last line the
+whole decision is one line and the fold paid nothing for it.
+
+Everything else stays exactly where the feed already puts it. The ask glyph keeps the marker
+column its offers were numbered in; the words keep the prose column after it. The palette, the
+radii, the spacing steps and the single typeface are **not open here** — they are ArgoDesign's,
+and the app has one theme. The setting is the whole of what this drawing spends itself on.
+
+**What the thesis gives up**, stated plainly: the answer no longer has a fixed x. You cannot run
+your eye down a column of answers. You scan the marker column for *where a decision happened*,
+stop, and read the sentence — which is what a transcript is for. The `chip` treatment exists to
+buy some of that back.
+
 ## Reading the URL
 
 | Parameter | Effect |
 |---|---|
-| `?variant=now\|A1\|A2\|D` | Which fold. Also `←`/`→`, or the bar at the bottom. |
+| `?variant=now\|inline\|chip\|stack` | Which fold. Also `←`/`→`, or the bar at the bottom. |
+| `&ink=answer\|question` | Which half of the pair carries the ordinary ink. |
+| `&offer=out\|disclose` | Whether the full numbered offer stays reachable. |
 | `&case=pick\|long\|two\|free\|none\|reported` | Which ask. Also `↑`/`↓`. |
 
 Every state is reachable by URL, which is the point — a state you cannot link to is a state
@@ -39,51 +61,39 @@ vertical" is a number and not an opinion. The strip between them is the lane
 (`MinimapAskCard`), drawn off the rendered card, so a fold the lane cannot follow is visible
 rather than inferred.
 
-## What the fold is
+## The three folds
 
-**The offer comes out, the question stays whole.** The length a settled ask loses is its list of
-options, not the words somebody was asked — a truncated question is a fact the row no longer
-states, and the fold is meant to drop what is finished, not what was said.
+| | What it is | What it costs |
+|---|---|---|
+| **inline** | The answer resolves the question's sentence: a mark, then its words, in the same paragraph, at `text.primary` against a `text.secondary` question. | The answer has no fixed x, and a long one breaks across lines mid-phrase. |
+| **chip** | The same paragraph with the answer set as an object — a capsule at `surface.control` that wraps *with* the text (`box-decoration-break: clone`, so both fragments keep rounded ends). | A shape in the middle of a sentence. |
+| **stack** | The answer as a row of its own under the question, mark in the marker column. The reading this drawing started from, kept as the thing to beat. | Always a whole line, even when the answer is two words and the question ended mid-column. |
 
-So the settled block is: the question, wrapping in full at the prose rung, and one line under it
-carrying the way it went. Both on the marker grid the offers were on — the ask glyph and the
-answer's mark in the same 18pt column, their words on the same prose column after it — so the
-block is one grid and nothing hangs a few points off anything else.
-
-Two readings of the **hierarchy** between the two lines, differing in that and nothing else:
-
-| | Question | Answer | The claim |
-|---|---|---|---|
-| **A1** | `text.secondary` | `text.primary`, mark in `text.primary` | The way it went is the fact you scan a settled feed for; the question is the label on it. |
-| **A2** | `text.primary` | `text.secondary`, mark in `text.tertiary` | The question keeps the rung it has everywhere else in the feed, and the answer reads as its continuation. |
-
-**D** is A1 plus a disclosure that swaps the answer line for the full numbered offer as it ships
-today. Collapsed it costs what A1 costs.
-
-Two earlier shapes were drawn and dropped: one line with the question and the answer sharing the
-column (at `long` both truncate and neither is readable), and the answer as the row with the
-question at the meta rung under it (the ask glyph goes, so the row stops reading as a question).
+The mark is `checkmark` where an option was named and a **continuation** mark where none was —
+a tick over words nobody offered claims a pick that never happened. For the same reason the chip
+declines to draw a capsule around a prose answer: a capsule says *a thing that was offered, and
+taken*, and the shape must not claim what the mark is careful not to.
 
 ## The numbers
 
 Measured in the browser at the 672pt column the feed draws, `now` being what ships today.
-Heights in points, per case. A1 and A2 measure identically — the ink is the only difference.
+Heights in points, per case. `inline` and `chip` measure identically — the capsule adds no line.
 
-| Case | waiting | today | A1 / A2 | D collapsed |
+| Case | waiting | today | inline / chip | stack |
 |---|---|---|---|---|
-| `pick` — one-of, 3 offers | 212 | 110 | **65** | 65 |
-| `long` — one-of, 5 offers, question wraps to 2 lines | 316 | 174 | **83** | 83 |
-| `two` — two questions, one call | 275 | 162 | **118** | 119 |
-| `free` — free-form | 82 | 43 | 65 | 65 |
-| `none` — no option named | 178 | 110 | **65** | 65 |
-| `reported` — companion plugin | 163 | 115 | **93** | 93 |
+| `pick` — one-of, 3 offers | 216 | 116 | **44** | 68 |
+| `long` — 5 offers, question wraps to 2 lines | 324 | 184 | **84** | 88 |
+| `two` — two questions, one call | 281 | 172 | **76** | 124 |
+| `free` — free-form | 83 | 44 | 44 | 68 |
+| `none` — no option named | 182 | 116 | **64** | 68 |
+| `reported` — companion plugin | 167 | 121 | **73** | 97 |
 
-A settled ask is **26–43% of the same ask waiting**, and the offer no longer costs anything:
-`long`'s five offers and `pick`'s three now differ only by the question's own second line
-(83 against 65), where today they differ by 64pt.
+A settled ask is **20–44% of the same ask waiting**. Against what ships today the inline fold
+saves 72pt on the ordinary case and 96pt where one call carried two questions — because there
+each answer joins its own question's line, and the stacked reading pays for two extra rows.
 
-`free` is the one row that grows, from 43 to 65, and that is a **bug being fixed rather than a
-cost being paid** — see below.
+`free` lands on 44pt, which is exactly what it costs today — and today's 44pt **does not include
+the answer at all**. Same height, one more fact.
 
 ## What building it exposed
 
@@ -93,38 +103,41 @@ cost being paid** — see below.
    by drawing the case.
 2. **Neither is an answer that named no option.** `FeedAsk.chosen(in:)` is deliberately weak — it
    reads the answer for a label it *contains*. Where none matches, `anyChosen` is false, so every
-   offer stays full-length and unquieted and the answer is again nowhere. `none` is the case, and
-   today it is the worst row in the feed: full height, no tick, no answer.
-3. **A fold has to carry the record's own prose, not only a label.** Which follows from 1 and 2:
-   the answer line is a label where an option was named and the record's prose where it was not,
-   at a quieter rung, because prose is what it is.
-4. **A disclosure must REPLACE the answer line, not join it.** Drawn as the fold plus the list,
-   the chosen option appears twice, two lines apart. `D` swaps them.
-5. **The fold applies per question, not per card.** In `two` the step between the questions stays
-   `blockStep` 12 and each question folds on its own, which is what keeps one call one ground.
-6. **Truncating the question was the wrong economy.** It was drawn first and it reads badly: at
-   `long` the row states a question nobody can finish reading, and it saves 18pt against letting
-   it wrap. The offer is where the length is.
+   offer stays full-length and unquieted and the answer is again nowhere. `none` is that case,
+   and today it is the worst row in the feed: full height, no tick, no answer.
+3. **The fold has to carry the record's own prose, not only a label** — which follows from 1 and
+   2, and is why the mark has two spellings.
+4. **Truncating the question was the wrong economy.** It was drawn first and it reads badly: the
+   row states a question nobody can finish reading, and it saves 18pt. The length is in the
+   OFFER, and taking the offer out is worth 72pt on the same case.
+5. **Two rows was the wrong structure**, which is a bigger finding than the first: it is the
+   `two` case that shows it, where stacking costs 124pt against 76pt for the same six facts.
+6. **A disclosure must REPLACE the answer, not join it.** Drawn as the fold plus the list, the
+   chosen option appears twice. The chevron sits at the end of the sentence — where the sentence
+   finishes — and what it opens takes the answer's place.
 7. **A reported row is settled by definition.** Argo answers a companion-plugin call the moment
-   it arrives (#1205), so the fold is the state that row is *always* in — the caption stays under
-   it and costs the 28pt the table shows.
+   it arrives (#1205), so the fold is the state that row is *always* in. The caption stays.
 8. **The ordinal has nowhere to go.** The settled reading numbers its options because the number
-   is how an answer names one. A fold that draws one line has no column for it: A1, A2 and D put
-   the tick in the marker column where the number was. Whether the fold keeps `2.` with a
-   trailing tick instead is a call the design has to state.
+   is how an answer names one. A sentence has no marker column to put it in. Whether the fold
+   keeps `2.` before the answer's words is a call the design has to state.
 
 ## What it is faithful to, and what it is not
 
 Every colour, radius, spacing step and type role is transcribed from
 `apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` and from `ArgoFeedRow.swift` —
 `askCardInset` 12, `markerWidth` 18, `markerGap` 6, `stepBeforeProse` 2, `askOptionGap` 4,
-`blockStep` 12. `chosen(in:)` and `FeedAskOffer.numbered` are transcribed line for line, so the
-cases resolve exactly the way the app resolves them. The waiting card is `FeedAskOfferList` as
-#712 shipped it and **nothing here touches it**.
+`blockStep` 12, prose 13 on `lineHeight` 20. `chosen(in:)` and `FeedAskOffer.numbered` are
+transcribed line for line, so the cases resolve exactly the way the app resolves them. The
+waiting card is `FeedAskOfferList` as #712 shipped it and **nothing here touches it**.
 
-The lane is a **sketch** of `MinimapRowShape.card`, derived from the rendered row rather than
-from `ProseMetrics` — enough to show that the fold shortens the lane too, not enough to state a
-lane measurement from.
+The two symbols are **drawn** to match SF's `questionmark.bubble` and `checkmark`, because the
+browser has no access to SF Symbols and a `?` typed as a character sits on the text baseline at
+the text weight — it reads as punctuation somebody left behind, not as a mark in a column.
+
+The lane is a **sketch** of `MinimapRowShape.card`, taken off the rendered row's client rects
+rather than from `ProseMetrics` — enough to show the fold shortens the lane too, not enough to
+state a lane measurement from. Note that an inline answer gives the lane a **part-line**, which
+is a shape `MinimapProseWords` does not draw today.
 
 It is **not** a component structure or anything to port line by line.
 

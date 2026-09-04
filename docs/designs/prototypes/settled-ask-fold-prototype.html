@@ -7,15 +7,22 @@
   THROWAWAY. One question: what shape does an ANSWERED AskUserQuestion take in the feed?
 
   Today it takes the same vertical a waiting one does — the question in full, then every option
-  it offered, one line each, with a tick beside the one taken. This draws four shapes against
-  that control, at the same width, and MEASURES all of them, because "materially less vertical"
-  is a number and not an opinion.
+  it offered, one line each, with a tick beside the one taken. This draws the fold against that
+  control, at the same width, and MEASURES both, because "materially less vertical" is a number
+  and not an opinion.
+
+  THE THESIS. A question and its answer are ONE FACT, so they are ONE PARAGRAPH. The answer on
+  its own says nothing — "The design route" is not a fact until you know what was asked — and
+  the question on its own is finished business. Stacking them as two rows is the lazy reading of
+  that; setting the answer inline, as the resolution of the question's own sentence, is the
+  honest one. It also costs the least: where the answer fits on the question's last line, the
+  whole decision is one line and the fold paid nothing for it.
+
+  The palette, the radii, the spacing steps and the single typeface are NOT open here: they are
+  ArgoDesign's, and the app has one theme. What is open is the SETTING, which is where the whole
+  of this drawing spends itself.
 
   Not production code: no tests, no abstractions, one file.
-
-  Every colour, radius, spacing step and type role is transcribed from
-  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ and from ArgoFeedRow.swift.
-  Nothing is invented.
 -->
 <style>
   :root {
@@ -24,10 +31,9 @@
     --base:    #1E2024;
     --raised:  #252729;
     --overlay: #2E3136;
-    --hover:      rgba(255,255,255,.045);
-    --control:    rgba(255,255,255,.06);
-    --selected:   rgba(255,255,255,.058);
-    --marked:     rgba(255,255,255,.07);
+    --hover:   rgba(255,255,255,.045);
+    --control: rgba(255,255,255,.06);
+    --marked:  rgba(255,255,255,.07);
 
     /* text */
     --text-1: #F2F4F6;
@@ -54,16 +60,15 @@
     /* ArgoRadius.swift, ArgoSpacing.swift */
     --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
     --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
-    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
 
-    /* ArgoFeedRow.swift — inset 24, feedGap 16, markerWidth 18, markerGap 6,
-       stepBeforeProse 2 (hair), askOptionGap 4 (tight), blockStep 12 (comfortable),
-       askCardInset 12 (comfortable), lineHeight 20 */
+    /* ArgoFeedRow.swift — markerWidth 18, markerGap 6, stepBeforeProse 2 (hair),
+       askOptionGap 4 (tight), blockStep 12 (comfortable), askCardInset 12, lineHeight 20 */
     --marker-w: 18px; --marker-gap: 6px; --feed-column: 720px;
     --feed-inset: 24px; --feed-gap: 16px; --line-h: 20px;
+    --indent: 24px;                        /* markerWidth + markerGap */
 
-    /* ArgoComposerVessel.swift */
-    --decision-h: 27px;
+    --decision-h: 27px;                    /* ArgoComposerVessel.swift */
 
     --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
@@ -72,22 +77,19 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    background: #0d0e10;
-    color: var(--text-1);
-    font: 13px/1.45 var(--sans);
+    background: #0d0e10; color: var(--text-1);
+    font: 13px/1.54 var(--sans);           /* 13 on 20 — ProseRhythm.lineHeight */
     -webkit-font-smoothing: antialiased;
   }
-  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px;
+                   border-radius: var(--r-marker); }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-  /* ---------- the window: deck column, lane, readout ---------- */
+  /* ---------- the window ---------- */
   .window {
-    position: fixed; inset: var(--s-loose) var(--s-loose) 92px;
-    border-radius: 10px; overflow: hidden;
-    border: 1px solid var(--subtle);
-    box-shadow: 0 30px 80px rgba(0,0,0,.6);
-    background: var(--base);
-    min-width: 1040px;
+    position: fixed; inset: var(--s-loose) var(--s-loose) 96px;
+    border-radius: 10px; overflow: hidden; border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6); background: var(--base); min-width: 1040px;
     display: grid; grid-template-columns: 1fr 76px 320px;
   }
   .deck { overflow-y: auto; min-width: 0; }
@@ -97,67 +99,86 @@
     display: flex; flex-direction: column; gap: var(--feed-gap);
   }
 
-  /* Section captions. Scenery, not the design — deliberately not on any feed rung. */
-  .cap {
-    font: 600 10px/1 var(--mono); letter-spacing: .8px; text-transform: uppercase;
-    color: var(--text-off); padding-left: calc(var(--marker-w) + var(--marker-gap));
-  }
+  /* Scenery captions — deliberately on no feed rung, so they cannot be mistaken for the design. */
+  .cap { font: 600 10px/1 var(--mono); letter-spacing: .8px; text-transform: uppercase;
+         color: var(--text-off); padding-left: var(--indent); }
   .cap b { color: var(--attention); font-weight: 600; }
   .rule { height: 1px; background: var(--hairline); }
-
-  /* Feed scenery around the ask, so a fold is judged in a column and not in a vacuum. */
   .prose { color: var(--text-1); }
   .prose.q { color: var(--text-2); }
-  .call { display: flex; gap: var(--marker-gap); align-items: flex-start; color: var(--text-2); }
+  .call { display: flex; gap: var(--marker-gap); color: var(--text-2); }
   .call .sym { width: var(--marker-w); text-align: right; color: var(--text-3); flex: none; }
   .call .mono { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
 
-  /* ---------- the ask card — FeedAskLine's own inset, radius and step ---------- *
+  /* ---------- the ask card ---------- *
    * Carried by its GROUND alone while it waits; settled, the ground goes and nothing moves. */
-  .ask {
-    padding: var(--s-comfortable);
-    border-radius: var(--r-control);
-    display: flex; flex-direction: column; gap: var(--s-comfortable); /* blockStep */
-  }
+  .ask { padding: var(--s-comfortable); border-radius: var(--r-control);
+         display: flex; flex-direction: column; gap: var(--s-comfortable); }
   .ask.waiting { background: var(--attention-muted); }
-
-  .askq { display: flex; flex-direction: column; gap: var(--s-hair); } /* stepBeforeProse */
+  .askq { display: flex; flex-direction: column; gap: var(--s-hair); }
   .ask.waiting .askq { gap: var(--s-comfortable); }
 
-  .head { display: flex; gap: var(--marker-gap); align-items: flex-start; }
-  .glyph {
-    width: var(--marker-w); flex: none; color: var(--text-3);
-    display: flex; justify-content: flex-end;
-    /* Seated on the cap height of the 13pt line beside it, not on its box. */
-    margin-top: 2px; font-size: 12px;
+  /* ---------- the marker grid ---------- *
+   * The feed sets everything on one column of marks and one column of words. A settled ask is
+   * not exempt from it: the ask glyph takes the marker column its offers were numbered in, and
+   * the words take the column after it. */
+  .grid { display: flex; gap: var(--marker-gap); align-items: flex-start; }
+  .mark { width: var(--marker-w); height: var(--line-h); flex: none;
+          display: flex; align-items: center; justify-content: flex-end; color: var(--text-3); }
+  .mark svg { display: block; }
+  .ask.waiting .mark { color: var(--attention); }
+  .words { min-width: 0; flex: 1; }
+
+  /* ---------- THE SIGNATURE: one question, one answer, one paragraph ---------- *
+   * The answer is set INLINE, as the resolution of the sentence it answers — not as a second
+   * row under it. Nothing is truncated, nothing competes for a share of the column, and where
+   * the answer fits on the question's last line the whole decision is one line. */
+  .say { color: var(--text-2); }           /* the question: the label on the fact */
+  .say .a { color: var(--text-1); white-space: normal; }
+  .say .a .tick { display: inline-flex; vertical-align: -2px; margin-right: 3px; }
+  /* The space before the answer is a real one and slightly wider than a word space, so the two
+     halves read as a turn rather than as a run-on. */
+  .say .gap { display: inline-block; width: var(--marker-gap); }
+
+  /* — chip — the same paragraph, with the answer wrapped as an object. `clone` so a chip that
+       wraps keeps a rounded end on both fragments instead of one long torn box. */
+  .say.chip .a {
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: 1px var(--s-snug) 2px;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
   }
-  .ask.waiting .glyph { color: var(--attention); }
-  .qtext { color: var(--text-1); min-width: 0; }
-  /* The question is never truncated. What it was is a fact the fold keeps whole; the length
-     the fold takes out is the OFFER, not the words somebody was asked. */
-  .qtext.quiet { color: var(--text-2); }
+
+  /* — stacked — the reading this drawing started from, kept as the thing to beat. */
+  .stack { margin-top: var(--s-hair); display: flex; gap: var(--marker-gap); }
+  .stack .a { color: var(--text-1); min-width: 0; }
+  .stack .mark { color: var(--text-1); }
+  .stack.qloud .mark { color: var(--text-3); }
+  .stack .a .chipped {
+    display: inline-flex; gap: var(--s-tight); align-items: baseline;
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: 1px var(--s-snug) 2px;
+  }
+
+  /* The inverted reading: the question keeps the prose rung and the answer is its continuation. */
+  .say.qloud { color: var(--text-1); }
+  .say.qloud .a { color: var(--text-2); }
+  .stack.qloud .a { color: var(--text-2); }
 
   /* The caption a row drawn off the companion plugin carries (#1205). */
-  .caption { display: flex; gap: var(--marker-gap); align-items: flex-start;
-             color: var(--text-3); font-size: 11px; }
-  .caption .sym { width: var(--marker-w); text-align: right; flex: none; }
+  .caption { display: flex; gap: var(--marker-gap); color: var(--text-3); font-size: 11px; }
+  .caption .sym { width: var(--marker-w); flex: none; display: flex;
+                  justify-content: flex-end; padding-top: 3px; }
 
   /* ---------- WAITING: the pressable options, exactly as #712 shipped them ---------- */
-  .opts { display: flex; flex-direction: column; gap: var(--s-snug);
-          margin-left: calc(var(--marker-w) + var(--marker-gap)); }
-  .opt {
-    display: flex; gap: var(--marker-gap); align-items: flex-start; width: 100%;
-    text-align: left; font: inherit; color: inherit; cursor: default;
-    background: var(--control);
-    border: 1px solid var(--hairline); border-radius: var(--r-control);
-    padding: var(--s-base) var(--s-comfortable);
-  }
+  .opts { display: flex; flex-direction: column; gap: var(--s-snug); margin-left: var(--indent); }
+  .opt { display: flex; gap: var(--marker-gap); width: 100%;
+         background: var(--control); border: 1px solid var(--hairline);
+         border-radius: var(--r-control); padding: var(--s-base) var(--s-comfortable); }
   .opt .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
             flex: none; width: var(--marker-w); text-align: right; }
   .opt .l { color: var(--text-1); }
-  .opt .d { color: var(--text-3); font-size: 11px; margin-top: 1px; }
-  .typed { display: flex; gap: var(--s-base); align-items: center;
-           margin-left: calc(var(--marker-w) + var(--marker-gap)); }
+  .opt .d { color: var(--text-3); font-size: 11px; }
+  .typed { display: flex; gap: var(--s-base); align-items: center; margin-left: var(--indent); }
   .field { flex: 1; height: var(--decision-h); border: 1px solid var(--hairline);
            border-radius: var(--r-control); padding: 0 var(--s-comfortable);
            display: flex; align-items: center; color: var(--text-3); }
@@ -165,51 +186,33 @@
           background: var(--accent); color: var(--on-accent); font: 500 12px/1 var(--sans);
           display: grid; place-items: center; }
 
-  /* ---------- SETTLED: the reading, per variant ---------- */
-  /* The list as it ships today. Every offer is a line; isQuiet is the whole of the degrade. */
-  .read { display: flex; flex-direction: column; gap: var(--s-tight); } /* askOptionGap */
-  .rline { display: flex; gap: var(--marker-gap); align-items: flex-start; }
+  /* ---------- the offer, where it is still drawn ---------- */
+  .read { display: flex; flex-direction: column; gap: var(--s-tight); margin-top: var(--s-hair); }
+  .rline { display: flex; gap: var(--marker-gap); }
   .rline .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-3);
               flex: none; width: var(--marker-w); text-align: right; }
   .rline .l { color: var(--text-1); min-width: 0; }
   .rline.quiet .l { color: var(--text-2); }
-  .rline .tick { color: var(--text-1); margin-left: var(--s-tight); flex: none; }
+  .rline .tick { flex: none; display: inline-flex; vertical-align: -2px;
+                 margin-left: var(--s-tight); color: var(--text-1); }
 
-  /* The answer, on the SAME grid the question and the offers are on: its mark in the marker
-     column, its words on the prose column after it. One grid, so nothing in the block hangs a
-     few points off anything else. It wraps like the question does. */
-  .answer { display: flex; gap: var(--marker-gap); align-items: flex-start; }
-  .answer .mk {
-    width: var(--marker-w); text-align: right; flex: none; font-size: 12px;
-    /* Seated on the cap height of the 13pt line beside it — the same 2 the ask glyph takes,
-       so the two marks sit on one vertical. */
-    margin-top: 2px;
-  }
-  .answer .l { min-width: 0; }
-  /* The loud half of the pair carries the mark in the ordinary ink; the quiet half steps the
-     mark back with its words rather than leaving a bright tick over grey prose. */
-  .answer.loud .mk { color: var(--text-1); }
-  .answer.loud .l { color: var(--text-1); }
-  .answer.quiet .mk { color: var(--text-3); }
-  .answer.quiet .l { color: var(--text-2); }
-
-  /* D — the fold, with the full offer still reachable. */
-  .disc { margin-left: auto; flex: none; background: none; border: 0; cursor: pointer;
-          color: var(--text-3); font: inherit; font-size: 11px; padding: 0 var(--s-tight);
-          line-height: var(--line-h); }
+  .disc { background: none; border: 0; cursor: pointer; color: var(--text-off);
+          padding: 0 2px; display: inline-flex; vertical-align: -1px; }
   .disc:hover { color: var(--text-1); }
+  .disc svg { transition: transform 140ms ease-out; }   /* ArgoMotion.selection */
+  .disc.open svg { transform: rotate(180deg); }
 
-  /* ---------- the lane (MinimapAskCard), drawn from the same fold ---------- */
+  /* ---------- the lane (MinimapAskCard) ---------- */
   .lane { background: var(--sunken); border-left: 1px solid var(--hairline);
           border-right: 1px solid var(--hairline); padding: var(--s-section) 10px; overflow: hidden; }
   .lane h4 { font: 600 9px/1 var(--mono); letter-spacing: .6px; text-transform: uppercase;
              color: var(--text-off); margin-bottom: var(--s-comfortable); }
   .card { position: relative; margin-bottom: var(--s-comfortable); }
   .card.ruled { outline: 1px solid var(--attention); border-radius: 2px; }
-  .bar { position: absolute; height: 3px; border-radius: 1px; background: var(--text-off); }
-  .bar.att { background: var(--attention); }
+  .lbar { position: absolute; height: 3px; border-radius: 1px; background: var(--text-off); }
+  .lbar.att { background: var(--attention); }
 
-  /* ---------- the readout: the numbers the ticket asks to be stated ---------- */
+  /* ---------- the readout ---------- */
   .side { background: var(--sunken); padding: var(--s-section) var(--s-loose); overflow-y: auto; }
   .side h3 { font: 600 10px/1 var(--mono); letter-spacing: .8px; text-transform: uppercase;
              color: var(--text-off); margin-bottom: var(--s-comfortable); }
@@ -222,25 +225,26 @@
   td.num { text-align: right; font-family: var(--mono); color: var(--text-1);
            font-variant-numeric: tabular-nums; }
   td.num.win { color: var(--running); }
-  .note { font-size: 11px; color: var(--text-3); line-height: 1.5; }
+  .note { font-size: 11px; color: var(--text-3); line-height: 1.55; }
   .note b { color: var(--text-2); font-weight: 500; }
 
-  /* ---------- the bar. Deliberately not part of the design being judged. ---------- */
+  /* ---------- the bar ---------- */
   .bar-fixed {
-    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-    display: flex; align-items: center; gap: var(--s-base); z-index: 20;
-    background: var(--overlay); border: 1px solid var(--strong); border-radius: 999px;
-    padding: 6px 10px; box-shadow: 0 10px 30px rgba(0,0,0,.6);
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: var(--s-base); z-index: 20; flex-wrap: wrap;
+    justify-content: center; max-width: calc(100vw - 40px);
+    background: var(--overlay); border: 1px solid var(--strong); border-radius: 14px;
+    padding: 8px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.6);
   }
-  .bar-fixed button {
-    background: var(--control); border: 1px solid var(--hairline); border-radius: 999px;
-    color: var(--text-1); font: 500 12px/1 var(--sans); padding: 6px 10px; cursor: pointer;
-  }
-  .bar-fixed button.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-  .bar-fixed .grp { display: flex; gap: 4px; align-items: center; }
+  .bar-fixed button { background: var(--control); border: 1px solid var(--hairline);
+                      border-radius: 999px; color: var(--text-1); font: 500 12px/1 var(--sans);
+                      padding: 6px 10px; cursor: pointer; }
+  .bar-fixed button.on { background: var(--accent); color: var(--on-accent);
+                         border-color: var(--accent); }
+  .bar-fixed .grp { display: flex; gap: 4px; }
   .bar-fixed .lbl { font: 600 9px/1 var(--mono); letter-spacing: .6px; text-transform: uppercase;
                     color: var(--text-off); padding-right: 2px; }
-  .bar-fixed .name { font-size: 12px; color: var(--text-2); padding: 0 var(--s-snug); min-width: 15ch; }
+  .bar-fixed .sp { width: 1px; height: 18px; background: var(--hairline); }
 </style>
 </head>
 <body>
@@ -252,14 +256,50 @@
 </div>
 
 <div class="bar-fixed">
-  <span class="lbl">fold</span>
-  <div class="grp" id="variants"></div>
-  <span class="name" id="vname"></span>
-  <span class="lbl">case</span>
-  <div class="grp" id="cases"></div>
+  <span class="lbl">fold</span><div class="grp" id="variants"></div>
+  <span class="sp"></span>
+  <span class="lbl">loud</span><div class="grp" id="inks"></div>
+  <span class="sp"></span>
+  <span class="lbl">offer</span><div class="grp" id="offers"></div>
+  <span class="sp"></span>
+  <span class="lbl">case</span><div class="grp" id="cases"></div>
 </div>
 
 <script>
+/* ------------------------------------------------------------------ *
+ * The symbols, drawn. SF's questionmark.bubble and checkmark at
+ * ArgoIconSize.inline. A "?" typed as a character sits on the text
+ * baseline at the text weight and reads as punctuation somebody left
+ * behind; these are marks.
+ * ------------------------------------------------------------------ */
+const SVG = {
+  asked:
+    '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M14 4.1a2.5 2.5 0 0 0-2.5-2.5h-7A2.5 2.5 0 0 0 2 4.1v4.3a2.5 2.5 0 0 0 2.5 2.5h.6'
+    + 'v3l3.2-3h3.2A2.5 2.5 0 0 0 14 8.4z"/>'
+    + '<path d="M6.5 5.3a1.6 1.6 0 0 1 3.1.5c0 1-1.5 1.2-1.5 2.1"/>'
+    + '<circle cx="8.05" cy="9.5" r=".62" fill="currentColor" stroke="none"/></svg>',
+  chosen:
+    '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M2.8 8.5 6.1 11.8 13.2 4.3"/></svg>',
+  /* Where the answer named nothing that was offered, the mark says CONTINUES rather than
+     CHOSEN: a tick over words nobody offered claims a pick that never happened. */
+  said:
+    '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M4 3.4v4.1a2 2 0 0 0 2 2h6"/><path d="M9.6 7.1 12.2 9.5 9.6 11.9"/></svg>',
+  mcp:
+    '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M3 9.5 8 4.5l5 5"/><path d="M5.5 12 8 9.5l2.5 2.5"/></svg>',
+  chevron:
+    '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M3.5 6 8 10.5 12.5 6"/></svg>',
+};
+
 /* ------------------------------------------------------------------ *
  * The cases. Six shapes a settled ask actually arrives in — including
  * the two the code today draws badly and nobody looking at `pick` sees.
@@ -285,7 +325,7 @@ const CASES = {
           + 'it hands the deck back?',
       options: [
         { label: 'Commit it on the ticket branch and leave the worktree in place', detail: null },
-        { label: 'Stash it and report the stash on the row', detail: 'recoverable, but off the branch' },
+        { label: 'Stash it and report the stash on the row', detail: 'recoverable, off the branch' },
         { label: 'Leave it exactly as it is', detail: null },
         { label: 'Open a draft pull request from what is there', detail: 'no CI runs on a draft' },
         { label: 'Ask again in ten minutes', detail: null },
@@ -345,11 +385,13 @@ const CASES = {
 };
 
 const VARIANTS = {
-  now: 'now — every offer, one line each',
-  A1:  'A1 — the answer is the loud half',
-  A2:  'A2 — the question is the loud half',
-  D:   'D — A1, with the offer still reachable',
+  now:    'now — the question, then every offer',
+  inline: 'inline — one question, one answer, one paragraph',
+  chip:   'inline chip — the answer as an object in the sentence',
+  stack:  'stacked — the answer as a row of its own',
 };
+const INKS   = { answer: 'the answer', question: 'the question' };
+const OFFERS = { out: 'folded out', disclose: 'disclosure' };
 
 /* `FeedAsk.chosen(in:)`, transcribed: DERIVED and deliberately weak — the answer is prose, so
    the reading is that it CONTAINS the label, and where two are named the longer wins. */
@@ -369,6 +411,14 @@ function offers(question, answer) {
   }));
 }
 
+/* What the fold says the answer to ONE question was: the chosen option's words where an option
+   was named, and the record's own prose where none was — which is every free-form ask, and
+   every answer that agreed with nothing on the list. Today both draw nothing at all. */
+function said(q, answer) {
+  const taken = chosen(q, answer);
+  return { text: taken != null ? taken : (answer || ''), isLabel: taken != null };
+}
+
 /* ------------------------------------------------------------------ *
  * Drawing
  * ------------------------------------------------------------------ */
@@ -378,20 +428,20 @@ const el = (tag, cls, text) => {
   if (text != null) n.textContent = text;
   return n;
 };
-const GLYPH = '?';   /* ArgoSymbol.asked — questionmark.bubble; the browser has no SF Symbols. */
-const TICK  = '✓';   /* ArgoSymbol.chosen */
-
-function head(text, opts) {
-  const quiet = opts && opts.quiet;
-  const h = el('div', 'head');
-  h.append(el('span', 'glyph', GLYPH));
-  h.append(el('div', 'qtext' + (quiet ? ' quiet' : ''), text));
-  return h;
-}
+const icon = (name, cls) => {
+  const n = el('span', cls || null);
+  n.innerHTML = SVG[name];
+  return n;
+};
+const markerCell = name => {
+  const n = el('span', 'mark');
+  n.innerHTML = SVG[name];
+  return n;
+};
 
 function caption(text) {
   const c = el('div', 'caption');
-  c.append(el('span', 'sym', '⌥'));   /* ArgoSymbol.mcpTool */
+  c.append(icon('mcp', 'sym'));
   c.append(el('div', null, text));
   return c;
 }
@@ -401,17 +451,20 @@ function drawWaiting(kase) {
   const card = el('div', 'ask waiting');
   for (const q of kase.questions) {
     const block = el('div', 'askq');
-    block.append(head(q.text));
+    const row = el('div', 'grid');
+    row.append(markerCell('asked'));
+    row.append(el('div', 'words', q.text));
+    block.append(row);
     if (q.options.length) {
       const list = el('div', 'opts');
       for (const o of offers(q, null)) {
-        const row = el('div', 'opt');
-        row.append(el('span', 'n', o.marker));
+        const line = el('div', 'opt');
+        line.append(el('span', 'n', o.marker));
         const words = el('div');
         words.append(el('div', 'l', o.label));
         if (o.detail) words.append(el('div', 'd', o.detail));
-        row.append(words);
-        list.append(row);
+        line.append(words);
+        list.append(line);
       }
       block.append(list);
     } else {
@@ -426,101 +479,109 @@ function drawWaiting(kase) {
   return card;
 }
 
-/* The full numbered offer, as `FeedAskOptions` ships it. Variant `now` is this; `D` reveals it. */
+/* The full numbered offer, as `FeedAskOptions` ships it. `now` is this; the disclosure
+   reveals it. */
 function fullOffer(q, answer) {
   const list = el('div', 'read');
   const drawn = offers(q, answer);
   const any = drawn.some(o => o.isChosen);
   for (const o of drawn) {
-    const row = el('div', 'rline' + (any && !o.isChosen ? ' quiet' : ''));
-    row.append(el('span', 'n', o.marker));
-    row.append(el('div', 'l', o.label));
-    if (o.isChosen) row.append(el('span', 'tick', TICK));
-    list.append(row);
+    const line = el('div', 'rline' + (any && !o.isChosen ? ' quiet' : ''));
+    line.append(el('span', 'n', o.marker));
+    line.append(el('div', 'l', o.label));
+    if (o.isChosen) line.append(icon('chosen', 'tick'));
+    list.append(line);
   }
   return list;
 }
 
-/* What the fold says the answer to ONE question was: the chosen option's words where an option
-   was named, and the record's own prose where none was — which is every free-form ask, and
-   every answer that agreed with nothing on the list. Today both draw nothing at all. */
-function said(q, answer) {
-  const taken = chosen(q, answer);
-  return { text: taken != null ? taken : (answer || ''), isLabel: taken != null };
-}
-
-/* The answer's own line. `loud` says which half of the pair carries the ordinary ink — the two
-   readings differ in that and in nothing else, so the hierarchy is the only thing being judged. */
-function answerLine(q, answer, loud) {
+/* The answer, as the run of words that resolves the question — a `<span>`, so it flows in the
+   question's own paragraph rather than opening a row of its own. */
+function answerRun(q, answer, asChip) {
   const s = said(q, answer);
-  const row = el('div', 'answer ' + (loud ? 'loud' : 'quiet'));
-  /* The tick where an option was named, and the continuation mark where the answer is the
-     record's own prose — a tick over words nobody offered would claim a pick that never
-     happened. */
-  row.append(el('span', 'mk', s.isLabel ? TICK : '›'));
-  row.append(el('div', 'l', s.text));
-  return row;
+  const run = el('span', 'a');
+  run.append(icon(s.isLabel ? 'chosen' : 'said', 'tick'));
+  run.append(document.createTextNode(s.text));
+  /* A capsule says "a thing that was offered, and taken". An answer that named no offer is not
+     that — it is the record's own prose — so it stays bare whatever the treatment, or the shape
+     claims a pick the mark is careful not to. */
+  return { run, chipped: asChip && s.isLabel };
 }
 
-const FOLDS = {
-  now(q, answer) {
-    const block = el('div', 'askq');
-    block.append(head(q.text));
+function foldQuestion(q, answer, state) {
+  const block = el('div', 'askq');
+  const row = el('div', 'grid');
+  row.append(markerCell('asked'));
+  const words = el('div', 'words');
+  row.append(words);
+  block.append(row);
+
+  const loudAnswer = state.ink === 'answer';
+
+  if (state.variant === 'now') {
+    words.style.color = 'var(--text-1)';
+    words.textContent = q.text;
     if (q.options.length) block.append(fullOffer(q, answer));
     return block;
-  },
+  }
 
-  /* The way it went is the fact you scan for; the question is the label on it. */
-  A1(q, answer) {
-    const block = el('div', 'askq');
-    block.append(head(q.text, { quiet: true }));
-    block.append(answerLine(q, answer, true));
+  const showOffer = state.offer === 'disclose' && q.options.length;
+
+  if (state.variant === 'stack') {
+    words.style.color = loudAnswer ? 'var(--text-2)' : 'var(--text-1)';
+    words.textContent = q.text;
+    const s = said(q, answer);
+    const line = el('div', 'stack' + (loudAnswer ? '' : ' qloud'));
+    /* Stacked, the mark takes the marker column the offers were numbered in, rather than
+       leading the words the way it does inside a sentence. */
+    line.append(markerCell(s.isLabel ? 'chosen' : 'said'));
+    line.append(el('div', 'a', s.text));
+    block.append(line);
+    if (showOffer) attachDisclosure(words, block, line, q, answer);
     return block;
-  },
+  }
 
-  /* The question keeps the prose rung it has everywhere else in the feed, and the answer
-     reads as its continuation. */
-  A2(q, answer) {
-    const block = el('div', 'askq');
-    block.append(head(q.text));
-    block.append(answerLine(q, answer, false));
-    return block;
-  },
+  /* inline, and inline chip — the signature. */
+  const say = el('div', 'say' + (state.variant === 'chip' ? ' chip' : '')
+    + (loudAnswer ? '' : ' qloud'));
+  say.append(document.createTextNode(q.text));
+  say.append(el('span', 'gap'));
+  const { run, chipped } = answerRun(q, answer, state.variant === 'chip');
+  if (!chipped) say.classList.remove('chip');
+  say.append(run);
+  words.append(say);
+  if (showOffer) attachDisclosure(say, block, null, q, answer);
+  return block;
+}
 
-  D(q, answer) {
-    const block = el('div', 'askq');
-    const h = head(q.text, { quiet: true });
-    block.append(h);
-    /* A free-form ask offered nothing, so there is nothing to disclose — and a chevron over an
-       empty list is the affordance that lies. */
-    if (!q.options.length) { block.append(answerLine(q, answer, true)); return block; }
-    const open = el('button', 'disc', '⌄');
-    open.setAttribute('aria-label', 'Show what was offered');
-    h.append(open);
-    /* The fold's answer line is REPLACED by the offer, not joined by it: the list already ticks
-       the option that was taken, and drawing both puts the same words on screen twice. */
-    const folded = answerLine(q, answer, true);
-    block.append(folded);
-    let shown = null;
-    open.addEventListener('click', () => {
-      if (shown) {
-        shown.remove(); shown = null; open.textContent = '⌄';
-        block.append(folded);
-      } else {
-        folded.remove();
-        shown = fullOffer(q, answer);
-        block.append(shown);
-        open.textContent = '⌃';
-      }
-      measure();
-    });
-    return block;
-  },
-};
+/* The offer, still reachable. The chevron sits at the END of the sentence, because that is
+   where the sentence finishes — and what it opens REPLACES the answer rather than joining it,
+   since the list already ticks the option that was taken. */
+function attachDisclosure(host, block, stackLine, q, answer) {
+  const open = el('button', 'disc');
+  open.innerHTML = SVG.chevron;
+  open.setAttribute('aria-label', 'Show what was offered');
+  host.append(document.createTextNode(' '));
+  host.append(open);
+  let shown = null;
+  const hide = stackLine || host.querySelector('.a');
+  open.addEventListener('click', () => {
+    if (shown) {
+      shown.remove(); shown = null; open.classList.remove('open');
+      hide.style.display = '';
+    } else {
+      hide.style.display = 'none';
+      shown = fullOffer(q, answer);
+      block.append(shown);
+      open.classList.add('open');
+    }
+    measure();
+  });
+}
 
-function drawSettled(kase, variant) {
+function drawSettled(kase, state) {
   const card = el('div', 'ask');
-  for (const q of kase.questions) card.append(FOLDS[variant](q, kase.answer));
+  for (const q of kase.questions) card.append(foldQuestion(q, kase.answer, state));
   if (kase.caption) card.append(caption(kase.caption));
   return card;
 }
@@ -528,8 +589,7 @@ function drawSettled(kase, variant) {
 /* ------------------------------------------------------------------ *
  * The lane. `MinimapRowShape.card` draws the SAME lines the row does,
  * on the same indents — so a fold the lane does not follow is a map
- * that stops matching the column. Derived from the rendered card, not
- * from a second copy of the fold.
+ * that stops matching the column.
  * ------------------------------------------------------------------ */
 const SCALE = 0.14;
 
@@ -538,16 +598,15 @@ function drawLane(cardEl, isRuled) {
   const origin = cardEl.getBoundingClientRect();
   box.style.height = Math.max(6, origin.height * SCALE) + 'px';
   const inset = 12 * SCALE;
-  const lines = cardEl.querySelectorAll(
-    '.qtext, .rline .l, .answer .l, .opt .l, .caption div');
-  for (const line of lines) {
-    const r = line.getBoundingClientRect();
-    if (!r.height) continue;
-    const bar = el('div', 'bar' + (isRuled ? ' att' : ''));
-    bar.style.top = ((r.top - origin.top) * SCALE + inset) + 'px';
-    bar.style.left = ((r.left - origin.left) * SCALE + inset) + 'px';
-    bar.style.width = Math.max(3, Math.min(r.width, 420) * SCALE) + 'px';
-    box.append(bar);
+  for (const line of cardEl.querySelectorAll('.words, .rline .l, .stack .a, .opt .l, .caption div')) {
+    for (const r of line.getClientRects()) {
+      if (!r.height) continue;
+      const bar = el('div', 'lbar' + (isRuled ? ' att' : ''));
+      bar.style.top = ((r.top - origin.top) * SCALE + inset) + 'px';
+      bar.style.left = ((r.left - origin.left) * SCALE + inset) + 'px';
+      bar.style.width = Math.max(3, Math.min(r.width, 420) * SCALE) + 'px';
+      box.append(bar);
+    }
   }
   return box;
 }
@@ -556,13 +615,18 @@ function drawLane(cardEl, isRuled) {
  * Render
  * ------------------------------------------------------------------ */
 const params = new URLSearchParams(location.search);
-let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A1';
-let kaseKey = CASES[params.get('case')] ? params.get('case') : 'pick';
+const pick = (map, key, fallback) => (map[params.get(key)] ? params.get(key) : fallback);
+const state = {
+  variant: pick(VARIANTS, 'variant', 'inline'),
+  ink:     pick(INKS, 'ink', 'answer'),
+  offer:   pick(OFFERS, 'offer', 'out'),
+  case:    pick(CASES, 'case', 'pick'),
+};
 
 let refs = {};
 
 function render() {
-  const kase = CASES[kaseKey];
+  const kase = CASES[state.case];
   const col = document.getElementById('col');
   col.replaceChildren();
 
@@ -573,21 +637,21 @@ function render() {
   call.append(el('span', 'mono', 'Read  FeedAskOptions.swift'));
   col.append(call);
 
-  const waitingCap = el('div', 'cap');
-  waitingCap.append(document.createTextNode('waiting — '));
-  waitingCap.append(el('b', null, 'untouched by this ticket'));
-  col.append(waitingCap);
+  const cap = el('div', 'cap');
+  cap.append(document.createTextNode('waiting — '));
+  cap.append(el('b', null, 'untouched by this ticket'));
+  col.append(cap);
   const waiting = drawWaiting(kase);
   col.append(waiting);
 
   col.append(el('div', 'rule'));
   col.append(el('div', 'cap', 'settled — as it ships today'));
-  const today = drawSettled(kase, 'now');
+  const today = drawSettled(kase, { variant: 'now', ink: state.ink, offer: 'out' });
   col.append(today);
 
   col.append(el('div', 'rule'));
-  col.append(el('div', 'cap', 'settled — ' + VARIANTS[variant]));
-  const folded = drawSettled(kase, variant);
+  col.append(el('div', 'cap', 'settled — ' + VARIANTS[state.variant]));
+  const folded = drawSettled(kase, state);
   col.append(folded);
 
   col.append(el('div', 'prose q', 'And the column carries on underneath, which is the point.'));
@@ -598,21 +662,20 @@ function render() {
 }
 
 function measure() {
-  const waiting = refs.waiting, today = refs.today, folded = refs.folded, kase = refs.kase;
   const h = n => Math.round(n.getBoundingClientRect().height);
-  const w = h(waiting), t = h(today), f = h(folded);
+  const w = h(refs.waiting), t = h(refs.today), f = h(refs.folded);
 
   const lane = document.getElementById('lane');
   lane.replaceChildren();
-  lane.append(drawLane(waiting, true));
-  lane.append(drawLane(today, false));
-  lane.append(drawLane(folded, false));
+  lane.append(drawLane(refs.waiting, true));
+  lane.append(drawLane(refs.today, false));
+  lane.append(drawLane(refs.folded, false));
 
   const side = document.getElementById('side');
   side.replaceChildren();
   side.append(el('h3', null, 'the numbers'));
-  side.append(el('p', null, kase.name + ' · at the '
-    + Math.round(today.getBoundingClientRect().width) + 'pt column the feed actually draws.'));
+  side.append(el('p', null, refs.kase.name + ' · at the '
+    + Math.round(refs.today.getBoundingClientRect().width) + 'pt column the feed actually draws.'));
 
   const table = el('table');
   const thead = el('tr');
@@ -627,7 +690,7 @@ function measure() {
   };
   row('waiting', w);
   row('settled, today', t);
-  row('settled, ' + variant, f, f < t ? ' win' : '');
+  row('settled, ' + state.variant, f, f < t ? ' win' : '');
   side.append(table);
 
   const saved = t - f;
@@ -637,40 +700,43 @@ function measure() {
   note.append(el('b', null, Math.round((f / w) * 100) + '%'));
   note.append(document.createTextNode(' of the waiting one.'));
   note.append(el('br')); note.append(el('br'));
-  note.append(document.createTextNode(NOTES[variant]));
+  note.append(document.createTextNode(NOTES[state.variant]));
   note.append(el('br')); note.append(el('br'));
   note.append(el('b', null, 'Case notes. '));
-  note.append(document.createTextNode(CASE_NOTES[kaseKey] || '—'));
+  note.append(document.createTextNode(CASE_NOTES[state.case] || '—'));
   side.append(note);
 }
 
 const NOTES = {
   now: 'The control. The question wraps in full and every offer takes a line, so a settled '
      + 'question keeps the vertical of a live one — which is the whole of #1207.',
-  A1: 'The question in full at text.secondary, and the way it went under it at text.primary '
-    + 'with the mark. Both on the marker grid the offers were on. The answer is what you scan '
-    + 'a settled feed for, so it is the half that keeps the ordinary ink; the question is the '
-    + 'label on it. What comes out is the OFFER, never the words somebody was asked.',
-  A2: 'The same two lines with the ink the other way round: the question keeps the prose rung '
-    + 'it has everywhere else in the feed, and the answer reads as its continuation at '
-    + 'text.secondary. Sits better beside its neighbours; makes the answer the quieter half of '
-    + 'the only two facts left.',
-  D: 'A1, plus a disclosure that swaps the answer line for the full numbered offer exactly as '
-   + 'it ships today. Collapsed it costs what A1 costs. It is the only fold where nothing '
-   + 'offered is lost.',
+  inline: 'One question, one answer, one paragraph. The answer resolves the sentence rather than '
+        + 'opening a row under it, so nothing is truncated, nothing competes for a share of the '
+        + 'column, and where the answer fits on the question’s last line the decision is ONE '
+        + 'line and the fold paid nothing for it. What it gives up is a fixed x for the answer: '
+        + 'you scan the marker column for where a decision happened, then read it, rather than '
+        + 'scanning a column of answers.',
+  chip: 'The same paragraph with the answer set as an object — a capsule at surface.control that '
+      + 'wraps with the text. It buys back some of the scannability the bare inline setting '
+      + 'gives up, and costs a shape in the middle of a sentence.',
+  stack: 'The answer as a row of its own under the question. The reading this drawing started '
+       + 'from, kept as the thing to beat: it always costs a whole line, even when the answer is '
+       + 'two words and the question ended mid-column.',
 };
 
 const CASE_NOTES = {
-  pick: 'The ordinary shape, and the one the ticket was reported against.',
+  pick: 'The ordinary shape, and the one the ticket was reported against. Watch whether the '
+      + 'answer joins the question’s line here — that is the whole argument for inline.',
   long: 'Where the cost is worst: five offers and a question that wraps to three lines.',
-  two: 'One call is one ground. Whatever the fold is, it applies per question, and the step '
-     + 'between the two stays blockStep 12.',
+  two: 'One call is one ground. The fold applies per question, and the step between the two '
+     + 'stays blockStep 12. Judge every treatment here, not only on pick.',
   free: 'A free-form ask offers nothing, so today the settled row draws the question and NOTHING '
       + 'ELSE — the answer is not on screen at all. Every fold here draws it. That is a bug the '
-      + 'fold fixes, not a cost it pays.',
+      + 'fold fixes, not a cost it pays. It also has nothing to disclose.',
   none: 'chosen(in:) is weak: it reads the answer for a label it CONTAINS. Where none is named, '
       + 'today every offer stays full-length and unquieted, and the answer is again nowhere. The '
-      + 'folds draw the record’s own prose instead.',
+      + 'folds draw the record’s own prose, the mark says CONTINUES rather than CHOSEN, and the '
+      + 'chip treatment declines to draw a capsule around words nobody offered.',
   reported: 'Argo answered this call the moment it arrived, so the row is settled by definition '
           + '— which makes the fold the state this row is ALWAYS in. The caption stays.',
 };
@@ -678,40 +744,42 @@ const CASE_NOTES = {
 /* ------------------------------------------------------------------ *
  * The bar
  * ------------------------------------------------------------------ */
+function href() {
+  return '?' + new URLSearchParams({
+    variant: state.variant, ink: state.ink, offer: state.offer, case: state.case,
+  });
+}
+
+function group(id, map, key) {
+  const host = document.getElementById(id);
+  host.replaceChildren();
+  for (const k of Object.keys(map)) {
+    const b = el('button', state[key] === k ? 'on' : null, k);
+    b.title = map[k];
+    b.addEventListener('click', () => { state[key] = k; history.replaceState(null, '', href()); render(); });
+    host.append(b);
+  }
+}
+
 function paintBar() {
-  const vs = document.getElementById('variants');
-  vs.replaceChildren();
-  for (const key of Object.keys(VARIANTS)) {
-    const b = el('button', key === variant ? 'on' : null, key);
-    b.addEventListener('click', () => go({ variant: key }));
-    vs.append(b);
-  }
-  document.getElementById('vname').textContent = VARIANTS[variant];
-  const cs = document.getElementById('cases');
-  cs.replaceChildren();
-  for (const key of Object.keys(CASES)) {
-    const b = el('button', key === kaseKey ? 'on' : null, key);
-    b.addEventListener('click', () => go({ case: key }));
-    cs.append(b);
-  }
+  group('variants', VARIANTS, 'variant');
+  group('inks', INKS, 'ink');
+  group('offers', OFFERS, 'offer');
+  group('cases', CASES, 'case');
 }
 
-function go(next) {
-  if (next.variant) variant = next.variant;
-  if (next.case) kaseKey = next.case;
-  history.replaceState(null, '', '?' + new URLSearchParams({ variant, case: kaseKey }));
-  render();
-}
-
-/* ←/→ cycle the fold; ↑/↓ cycle the case. A state you cannot link to is a state nobody
-   re-checks, so both are in the URL either way. */
+/* ←/→ cycle the treatment; ↑/↓ cycle the case. A state you cannot link to is a state nobody
+   re-checks, so every axis is in the URL either way. */
 addEventListener('keydown', e => {
-  const keys = Object.keys(VARIANTS), cases = Object.keys(CASES);
-  const step = (list, at, by) => list[(list.indexOf(at) + by + list.length) % list.length];
-  if (e.key === 'ArrowLeft')  go({ variant: step(keys, variant, -1) });
-  if (e.key === 'ArrowRight') go({ variant: step(keys, variant, +1) });
-  if (e.key === 'ArrowUp')    go({ case: step(cases, kaseKey, -1) });
-  if (e.key === 'ArrowDown')  go({ case: step(cases, kaseKey, +1) });
+  const step = (map, at, by) => {
+    const list = Object.keys(map);
+    return list[(list.indexOf(at) + by + list.length) % list.length];
+  };
+  const set = (key, value) => { state[key] = value; history.replaceState(null, '', href()); render(); };
+  if (e.key === 'ArrowLeft')  set('variant', step(VARIANTS, state.variant, -1));
+  if (e.key === 'ArrowRight') set('variant', step(VARIANTS, state.variant, +1));
+  if (e.key === 'ArrowUp')    set('case', step(CASES, state.case, -1));
+  if (e.key === 'ArrowDown')  set('case', step(CASES, state.case, +1));
 });
 
 addEventListener('resize', () => measure());
