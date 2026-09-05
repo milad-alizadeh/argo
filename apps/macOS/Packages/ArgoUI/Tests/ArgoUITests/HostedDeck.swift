@@ -166,12 +166,18 @@ import Testing
     /// decks stand beside this one inside `FeedDeckStack`, hidden (ADR-0030, Rule 4), and a search
     /// that took the first table it found would answer with whichever deck happens to be first in
     /// the stack's subviews.
+    ///
+    /// Siblings are walked BACK TO FRONT, which is what "on screen" means when two of them overlap.
+    /// The deck going away is still unhidden for the turn after the switch — it is covered by the
+    /// one coming forward rather than hidden inside the pass that decided it, because hiding there
+    /// re-enters the view graph (#1260) — so for that turn `isHidden` alone names two decks and
+    /// z-order is the one that names the right one.
     static func find<V: NSView>(_ kind: V.Type, in view: NSView) -> V? {
         guard !view.isHidden else { return nil }
         if let hit = view as? V {
             return hit
         }
-        for child in view.subviews {
+        for child in view.subviews.reversed() {
             if let found = find(kind, in: child) {
                 return found
             }

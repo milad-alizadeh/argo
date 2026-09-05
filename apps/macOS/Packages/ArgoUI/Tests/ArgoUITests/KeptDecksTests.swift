@@ -123,8 +123,12 @@ struct KeptDecksTests {
 
     /// The stack draws ONE deck. Every other kept one is hidden rather than torn down, which is
     /// what makes coming back a show rather than a reload.
+    ///
+    /// A turn is awaited because the hide is taken a turn after the pass that switched: hiding
+    /// inside it re-enters the view graph (#1260). Until then the deck going away is covered by the
+    /// one coming forward, which is why the order is asserted here too.
     @Test
-    func `the stack shows one deck and hides the rest`() {
+    func `the stack shows one deck and hides the rest`() async {
         let decks = KeptDecks(cap: KeptDecks.defaultCap)
         let stack = FeedDeckStack()
         stack.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
@@ -133,6 +137,8 @@ struct KeptDecksTests {
 
         let second = decks.show(Self.reading(1))
         stack.show(second)
+        #expect(stack.subviews.last === second.scroller)
+        await Task.yield()
 
         #expect(first.scroller.superview === stack)
         #expect(first.scroller.isHidden)
