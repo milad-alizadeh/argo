@@ -73,18 +73,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     public private(set) var cwd: String?
-    /// The model the records report, latest reading and nothing yet where no record said one
-    /// (#558). Not public and not the whole answer: `model` in `HubSession+Run.swift` is the
-    /// reading, which opens on what Argo started the CLI at (#1175).
+    /// The Model, Effort and stance the records report, latest reading each and nothing yet where
+    /// no record said one (#558, ADR-0025) — see `SessionObservedWords`, which holds the three and
+    /// says why they are one value.
     ///
-    /// A provider's id off an assistant record, or the alias a `/model` command was handed once
-    /// that command confirmed it (`CommandedModel`, #1411) — the same two vocabularies
-    /// `launchedRun` already holds, and `ReadableModelName` says either the way a person does.
-    private(set) var observedModel: String?
-    /// The CLI's own word for the effort level, on the same terms as `observedModel` above.
-    /// Verbatim like `observedMode`: what it means on Argo's scale is `ClaudeEffort`'s to say, and
-    /// nothing here reads it.
-    private(set) var observedEffort: String?
+    /// Not public and not the whole answer for any of them: `model` and `effort` in
+    /// `HubSession+Run.swift` and `mode` in `HubSession+Mode.swift` are the readings, and each
+    /// opens on what Argo started or set the CLI at (#1175).
+    private(set) var observed = SessionObservedWords()
     public private(set) var branch: String?
     /// The rung Argo ITSELF put this Session on — off the spawn, or off a later set. The only
     /// place Plan can come from: the CLI reports Read Only's boundary for both (ADR-0025).
@@ -105,8 +101,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// `delegationHold` is the reading a surface draws. Empty for every external Session, which has
     /// no claim to file a gesture against.
     var endedDelegations: Set<String> = []
-    /// The CLI's own word for the stance, latest reading and nothing yet where no record said one.
-    private(set) var observedMode: String?
     /// How many stance records the Session has written. A rung Argo set stands until this moves
     /// past what it was when the set was made — see `SessionModeSet` for why it is counted rather
     /// than compared.
@@ -231,8 +225,8 @@ extension HubSession {
             cwd = observedCwd
         // The CLI's own two knobs, both verbatim and latest-wins (#558). One line each: they are
         // the two shortest arms in this switch, and spreading them costs the body its ceiling.
-        case let .model(reported): observedModel = reported
-        case let .effort(reported): observedEffort = reported
+        case let .model(reported): observed.model = reported
+        case let .effort(reported): observed.effort = reported
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
         case let .entry(cli):
@@ -326,7 +320,7 @@ extension HubSession {
     /// The value and the count move together, always: a rung Argo set stands until the count moves
     /// past what it was, so a value written without one would freeze the reading on the set.
     private mutating func observe(mode cli: String) {
-        observedMode = cli
+        observed.mode = cli
         observedModeCount += 1
     }
 
@@ -349,16 +343,14 @@ extension HubSession {
         // `TranscriptStream.merge`.
         transcript.merge(continuation.transcript)
         cwd = continuation.cwd ?? cwd
-        observedModel = continuation.observedModel ?? observedModel
-        observedEffort = continuation.observedEffort ?? observedEffort
         // The later half of the chain wins where it read one, and says nothing where it did not: a
         // resume file with no `usage` in it yet is not a Session that has emptied its context.
         context = context.merged(with: continuation.context)
         spend.merge(continuation.spend)
         branch = continuation.branch ?? branch
-        // A resume is a fresh `claude` with its own flag, so the later half's stance is the live
-        // one — and a file that has not stated one yet does not un-state the root's.
-        observedMode = continuation.observedMode ?? observedMode
+        // A resume is a fresh `claude` with its own flag, so the later half's words are the live
+        // ones — and a file that has not stated one yet does not un-state the root's.
+        observed.merge(continuation.observed)
         // A chain is headless only where EVERY link is: a resume opened at a terminal continues
         // the work a `-p` run started, and what is happening to it NOW is what the Roster draws.
         if continuation.entry == .interactive {
