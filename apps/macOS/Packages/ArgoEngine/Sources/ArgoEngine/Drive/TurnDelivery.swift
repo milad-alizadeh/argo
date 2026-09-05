@@ -46,8 +46,13 @@ final class TurnDelivery {
         /// The two readings of the Session itself, grouped because the watch asks them as one
         /// question and answers `unheard` only when BOTH have nothing to report.
         let says: Says
-        /// File the Turn just written to the PTY, against the Session it went to (#1048).
-        let submitted: (SessionTurnSubmission, String) -> Void
+        /// File the Turn just written to the PTY, against the Session it went to (#1048) — or
+        /// `nil` to say the claim is OVER, which is what bounds it (#1409).
+        ///
+        /// Both directions through one answer, exactly as `ClaimLedger.setLostTurn` takes its own
+        /// `nil`: the claim opens when Argo types and closes when this watch is done with it, and
+        /// a second answer beside this one would be a second place the two could disagree.
+        let submitted: (SessionTurnSubmission?, String) -> Void
         /// Type one more Return at that Session, and `false` where no PTY answers any more.
         let retype: (String) -> Bool
         /// File a Turn the CLI never heard, by the Session it was meant for.
@@ -120,42 +125,91 @@ final class TurnDelivery {
 
     private func watchForAnswer(to text: String, at id: String, since before: Int) async {
         for _ in 0 ..< Self.attempts {
-            guard let echo = await answer(to: text, at: id, since: before) else { return }
-            // No PTY left to type at, so waiting again would only delay the same answer.
-            guard watch.retype(id) else { return finish(text, to: id, saying: echo) }
+            switch await answer(to: text, at: id, since: before) {
+            case .cancelled: return
+            case .answered: return over(id)
+            case let .said(echo):
+                // No PTY left to type at, so waiting again would only delay the same answer.
+                guard watch.retype(id) else { return finish(text, to: id, saying: echo) }
+            }
         }
-        guard let echo = await answer(to: text, at: id, since: before) else { return }
-        finish(text, to: id, saying: echo)
+        switch await answer(to: text, at: id, since: before) {
+        case .cancelled: return
+        case .answered: over(id)
+        case let .said(echo): finish(text, to: id, saying: echo)
+        }
     }
 
-    /// One wait, and what the Session then says about the Turn — or `nil` where the watch is over
-    /// and nothing more is owed: the record moved, the composer let the Turn go, or the Session is
-    /// being torn down.
+    /// Argo's own claim that a Turn is in flight, ENDED — the bound on it, and the whole of #1409's
+    /// first symptom.
     ///
-    /// `unreadable` comes back rather than ending it, because a Return typed at a composer that
-    /// took the last one does nothing — so a screen Argo cannot read keeps the #682 recovery it
-    /// always had, and only loses the right to call the Turn lost at the end of it.
-    private func answer(to text: String, at id: String, since before: Int) async -> TurnEcho? {
+    /// `SessionTurnSubmission` ends on the record growing and on nothing else, so a Turn the CLI
+    /// took and wrote no record for — a local `/command` writes none at all, which is #1266's own
+    /// finding — left the Session reading `running` at DIRECT for the rest of the window: no
+    /// hand-off, a plinth standing over a Plan that read `6/6 done`, and a Stop that could not
+    /// reach the claim because an `ESC` at a prompt the CLI is already back at writes no record
+    /// either.
+    ///
+    /// This watch is the bound, because this watch is the whole life of the claim: it was set up to
+    /// see the answer, and once it is done looking, "no record has answered it YET" has no `yet`
+    /// left in it. What the Session is doing from here is the RECORD's to say — which is
+    /// `isAwaitingRecord`'s own rule, read at the one moment it could not reach.
+    ///
+    /// Not called on a cancelled watch, and that is the sharp edge: `typed` cancels the watch it is
+    /// replacing, and a cancelled watch filing `nil` afterwards would end the claim the Turn that
+    /// replaced it had just filed.
+    private func over(_ sessionID: String) {
+        watching.removeValue(forKey: sessionID)
+        watch.submitted(nil, sessionID)
+    }
+
+    /// Why one wait ended, in the three directions the watch has to tell apart (#1409).
+    ///
+    /// Told apart because the two quiet endings are NOT the same news: a Turn the CLI took ends
+    /// Argo's own claim (`over(_:)`), and a watch somebody replaced must leave the claim its
+    /// replacement just filed exactly where it is.
+    private enum Waited {
+        /// The Session said something about the Turn, and the watch has more to do.
+        case said(TurnEcho)
+        /// The CLI has the Turn: the record moved, or the composer let it go.
+        case answered
+        /// A fresh Turn replaced this watch, or the Session is being torn down.
+        case cancelled
+    }
+
+    /// One wait, and what the Session then says about the Turn.
+    ///
+    /// `unreadable` comes back as something SAID rather than as an ending, because a Return typed
+    /// at a composer that took the last one does nothing — so a screen Argo cannot read keeps the
+    /// #682 recovery it always had, and only loses the right to call the Turn lost at the end of
+    /// it.
+    private func answer(to text: String, at id: String, since before: Int) async -> Waited {
         try? await Task.sleep(for: patience)
-        // `nil` the moment the watch is cancelled, so a Session being torn down files nothing.
-        guard !Task.isCancelled else { return nil }
+        guard !Task.isCancelled else { return .cancelled }
         // The record first: it is the CLI's own account of itself, and it settles a Turn the agent
         // has already begun answering whatever its screen is doing.
-        guard watch.says.records(id) == before else { return nil }
+        guard watch.says.records(id) == before else { return .answered }
         switch watch.says.echo(text, id) {
-        case .heard: return nil
-        case .unheard: return .unheard
-        case .unreadable: return .unreadable
+        case .heard: return .answered
+        case .unheard: return .said(.unheard)
+        case .unreadable: return .said(.unreadable)
         }
     }
 
     /// Stop watching — and report the Turn ONLY where the composer was seen still holding it. A
     /// Turn Argo could not read the composer for is left standing and nothing is said (#1266).
     private func finish(_ text: String, to sessionID: String, saying echo: TurnEcho) {
-        watching.removeValue(forKey: sessionID)
         switch echo {
-        case .unheard: watch.lost(text, sessionID)
-        case .heard, .unreadable: break
+        // The Turn is reported lost, which ENDS the claim in the same write
+        // (`ClaimLedger.setLostTurn`) — so this path does its own ending and takes no second one.
+        case .unheard:
+            watching.removeValue(forKey: sessionID)
+            watch.lost(text, sessionID)
+        // Nothing is SAID about a Turn Argo could not read the composer for, and the claim still
+        // ends: saying nothing is #1266's rule about the WORDS, and it was never a licence to go
+        // on claiming a Turn is running over a screen nobody could read (#1409).
+        case .heard, .unreadable:
+            over(sessionID)
         }
     }
 }
