@@ -31,4 +31,17 @@ struct RosterDisengagementTests {
 
         #expect(released)
     }
+
+    /// The production initialiser's `elapse` is a real `Task.sleep`, not the no-op stand-in the
+    /// other two tests use — this is what actually gives a blip time to reverse itself before
+    /// `ShellSidebar` trusts the departure.
+    @Test
+    func `the default elapse genuinely waits out the grace period`() async {
+        let disengagement = RosterDisengagement(grace: .milliseconds(20))
+        let started = ContinuousClock.now
+
+        await disengagement.confirm(isStillInactive: { true }, onDeparture: {})
+
+        #expect(started.duration(to: .now) >= .milliseconds(20))
+    }
 }
