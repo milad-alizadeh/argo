@@ -62,6 +62,9 @@ extension SpecimenRegistry {
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
+        // #1404: a real-scale roster (60 mixed rows), checking whether the list keeps laying out
+        // past the window's fold or stops and leaves the pane blank.
+        SpecimenEntry("manyMixedRoster") { ManyMixedRosterSpecimen() },
         // The leading column's four Subagent readings and the ceiling, one row each (#1344).
         SpecimenEntry("subagentDots") { SubagentDotsRosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
