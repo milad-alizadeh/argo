@@ -9,8 +9,10 @@ import SwiftUI
 /// Also where the roster's PUBLISHED order is decided, because that needs a fact the engine does
 /// not have: whether anybody is looking at this window. The Hub keeps sorting by newest activity —
 /// a key that moves on every record either agent writes — and this holds the resulting order still
-/// for as long as the window is up, re-settling only while it is not. Keyed on the window and not
-/// the pointer (#498).
+/// for as long as the window is up, re-settling only once it has genuinely gone away — a raw
+/// `.inactive` earns a grace period, not an immediate release, because macOS reports that state
+/// for reasons that are not the reader leaving (#1402). Keyed on the window and not the pointer
+/// (#498).
 package struct ShellSidebar: View {
     /// `.inactive` means the window is not front: nothing on this roster is being read, and it can
     /// go back to answering "what moved last" so it is already right when the reader returns.
@@ -38,6 +40,12 @@ package struct ShellSidebar: View {
     /// The pipeline and the order it publishes in, in one value. Which step comes before which is
     /// `RosterListing`'s and no longer this body's — see the invariants stated there.
     @State private var roster = RosterListing()
+    /// Mirrors `activeState` as `false` for anything but `.active`, but as a `@State` rather than
+    /// read straight off the environment: the `Task` below wakes against a `self` frozen at the
+    /// moment it was spawned, and only `@State`'s shared storage still reads the CURRENT value by
+    /// then (#1402).
+    @State private var isWindowActive = true
+    private let disengagement = RosterDisengagement()
 
     package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
@@ -74,8 +82,17 @@ package struct ShellSidebar: View {
             // A window is not reported active for the first moments of its life, and those are
             // exactly the moments the roster was reshuffling in.
             let isFirstDraw = previous == state
+            isWindowActive = state != .inactive
             if state == .inactive, !isFirstDraw {
-                roster.release()
+                // Not released yet: macOS can report `.inactive` for reasons that are not the
+                // reader leaving (Spotlight, Mission Control, a notification banner), and each one
+                // undone within `disengagement.grace` must cost the roster nothing (#1402).
+                Task {
+                    await disengagement.confirm(
+                        isStillInactive: { !isWindowActive },
+                        onDeparture: { roster.release() },
+                    )
+                }
             } else {
                 roster.hold(reading)
             }
