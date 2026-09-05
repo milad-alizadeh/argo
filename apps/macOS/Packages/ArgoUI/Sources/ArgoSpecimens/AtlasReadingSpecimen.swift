@@ -25,9 +25,12 @@ struct AtlasReadingSpecimen: View {
     var opened = Self.opened
 
     var body: some View {
-        AtlasRoomHost(reading: .measured(readingFixtureMap), opened: opened)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .argoDeckSurface()
+        AtlasRoomHost(
+            reading: .measured(readingFixtureMap),
+            opening: AtlasRoomOpening(opened: opened),
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .argoDeckSurface()
     }
 }
 

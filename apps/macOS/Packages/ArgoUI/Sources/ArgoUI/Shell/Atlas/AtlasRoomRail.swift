@@ -3,8 +3,8 @@ import AtlasLayout
 import AtlasView
 import SwiftUI
 
-/// The rail beside the map: the index of every file the map is drawing, and the one file being
-/// read (#1154, #1155, the approved design's `#rail`).
+/// The rail beside the map: the question, where you are, the index of every file the map is
+/// drawing, and the one file being read (#1154, #1155, #1156, the approved design's `#rail`).
 ///
 /// **Beside the map, with the map still on screen.** That is #1154's first criterion and the whole
 /// reason this is a column rather than a sheet or a popover: the picture the reader was looking at
@@ -22,6 +22,11 @@ struct AtlasRoomRail: View {
     @Environment(\.argo) private var argo
 
     @Binding var query: String
+
+    /// Where the reader is in the Map, and the way back out of it (#1156). Between the field and
+    /// the list because that is the order the column is read in: what you asked, where you are,
+    /// what is there.
+    let descent: AtlasDescent
 
     /// Every file the map is drawing, as the reader's question leaves it.
     let entries: [AtlasIndexEntry]
@@ -48,7 +53,14 @@ struct AtlasRoomRail: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            AtlasIndex(query: $query, entries: entries, open: open, select: select)
+            // Top only, which is the design's own `#rail > .pad` — `12 16 0`. The space under the
+            // field belongs to the band below it, and paying it at both ends puts twice the gap
+            // there and leaves the strip drifting off the field it follows.
+            AtlasFind(query: $query)
+                .padding(.horizontal, ArgoSpacing.loose)
+                .padding(.top, ArgoSpacing.comfortable)
+            AtlasTrail(descent: descent)
+            AtlasIndex(query: query, entries: entries, open: open, select: select)
             inspect
         }
         .frame(width: Self.width)

@@ -73,6 +73,12 @@ extension SpecimenRegistry {
         SpecimenEntry("atlasIndexFound") { AtlasIndexSpecimen() },
         SpecimenEntry("atlasIndexSelected") { AtlasIndexSelectedSpecimen() },
         SpecimenEntry("atlasIndexEmpty") { AtlasIndexEmptySpecimen() },
+        // Inside a folder (#1156). Two frames, because the trail is a different shape at each: one
+        // level down it is the root, a chevron and where you are, and three levels down it carries
+        // the crumbs between them that make every step of it a control. Neither is reachable
+        // without a click on a plate.
+        SpecimenEntry("atlasDescent") { AtlasDescentSpecimen() },
+        SpecimenEntry("atlasDescentShallow") { AtlasDescentShallowSpecimen() },
         // The same mark on the CITY, where a volume's whole silhouette is traced rather than one
         // rectangle. The room ships flat, so this is the only frame that shows the five strokes —
         // and the claim to look at is that the traced tower is the colour it was before.

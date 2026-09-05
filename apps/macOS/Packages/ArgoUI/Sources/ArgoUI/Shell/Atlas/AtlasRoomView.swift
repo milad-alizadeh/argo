@@ -38,20 +38,28 @@ struct AtlasRoomView: View {
     /// the map rather than a fact about it, and a reopened room opens on the whole repository.
     @State private var query = ""
 
+    /// The folder the reader has descended into, or none for the whole repository (#1156). This
+    /// column's own, like `openFile`, and not persisted for the same reason: where you are in a map
+    /// is a way of looking at it rather than a fact about the Project, and a reopened room opens on
+    /// the whole shape.
+    @State private var folder: String?
+
     /// How far the city has climbed out of its plates, 0 to 1 (#1421). This column's own, like the
     /// orientation: the rise is what the map DOES when it arrives, not a fact about the Project,
     /// and nothing in the sidebar starts one.
     @State private var rise: Double = 0
 
-    /// `opened` is the file the room STARTS with open, and `typed` the question it starts with
-    /// asked. Nothing in the app ever passes either: a reading is opened by a click and a question
-    /// is asked at a keyboard, and neither is a gesture a screenshot can drive. They are what let
-    /// the specimen harness render those states at all — the design's own `?state=inspect` and
-    /// `?state=search`, in the one shape SwiftUI has for seeding state a view then owns.
-    init(isActive: Bool = true, opened: String? = nil, typed: String = "") {
+    /// What the room STARTS with — a file open, a question asked, a folder descended into. Nothing
+    /// in the app ever passes any of them: a reading is opened by a click, a question is asked at a
+    /// keyboard and a folder is entered by a click, and none of the three is a gesture a screenshot
+    /// can drive. They are what let the specimen harness render those states at all — the design's
+    /// own `?state=inspect` and `?state=search`, in the one shape SwiftUI has for seeding state a
+    /// view then owns.
+    init(isActive: Bool = true, opening: AtlasRoomOpening = .none) {
         self.isActive = isActive
-        _openFile = State(initialValue: opened)
-        _query = State(initialValue: typed)
+        _openFile = State(initialValue: opening.opened)
+        _query = State(initialValue: opening.typed)
+        _folder = State(initialValue: opening.entered)
     }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
@@ -89,6 +97,7 @@ struct AtlasRoomView: View {
         .onChange(of: room.project?.id) {
             openFile = nil
             query = ""
+            folder = nil
         }
     }
 
@@ -98,7 +107,15 @@ struct AtlasRoomView: View {
     private func measured(_ map: AtlasMap) -> some View {
         // The Map as the reader's filters leave it — the same call the sidebar makes, so the
         // tiling and every number said about it cannot disagree about what was measured.
-        let drawn = room.choice.drawn(map)
+        let filtered = room.choice.drawn(map)
+        // And then as their DESCENT leaves it: a Map of the folder they are in (#1156). One value
+        // for the picture, the trail, the list and the reading, so all four are of one folder —
+        // and the whole repository where the descent has gone out from under the reader, which is
+        // what `descending(to:)` answering nothing means and where `trail(to:)` puts them too.
+        let drawn = folder.flatMap { filtered.descending(to: $0) } ?? filtered
+        let descent = AtlasDescent(trail: filtered.trail(to: folder)) {
+            descend(to: $0, in: filtered)
+        }
         // The list is read off the SAME Map the picture is tiled from, by the same filters, and
         // ONCE — both columns are handed this one answer, so the two can never disagree about
         // what is in the repository.
@@ -106,9 +123,10 @@ struct AtlasRoomView: View {
         // The stage keeps the room it had: the rail takes its width off the end rather than
         // shrinking the map to nothing, and the map is what the reader clicked on.
         return HStack(spacing: ArgoSpacing.flush) {
-            stage(drawn, among: entries)
+            stage(drawn, among: entries, of: filtered)
             AtlasRoomRail(
                 query: $query,
+                descent: descent,
                 entries: entries,
                 open: openFile,
                 reading: openFile.flatMap {
@@ -119,30 +137,74 @@ struct AtlasRoomView: View {
         }
     }
 
-    /// What a pick on the map means (#1153, #1154, #1155).
-    ///
-    /// Picking the open file again closes it, and so does picking the ground — the design's own
-    /// three ways out, of which Escape is the third. What is open is open because the reader
-    /// opened it, so the same gesture puts it away.
-    ///
+    /// What a pick on the map means (#1153, #1154, #1155, #1156). The decision is
+    /// `AtlasPickRule`'s, so it can be asked about without a window; what is left here is the
+    /// three writes it resolves to.
+    private func pick(_ picked: AtlasTarget?, among entries: [AtlasIndexEntry], in map: AtlasMap) {
+        switch AtlasPickRule.outcome(of: picked, standingIn: folder ?? map.root.path) {
+        case let .enter(path):
+            descend(to: path, in: map)
+        case let .read(path):
+            open(path, among: entries)
+        case .close:
+            openFile = nil
+        }
+    }
+
     /// **A pick the question excludes puts the question away.** The list has to select the row of
     /// the file the map just marked, and it cannot select a row it is not drawing — so the
     /// narrower of the two facts gives. Clearing the reader's words is the visible answer; leaving
-    /// them is a marked map beside a list denying the file exists, which is the one state the
-    /// ticket rules out.
-    private func pick(_ picked: String?, among entries: [AtlasIndexEntry]) {
-        guard picked != openFile else {
+    /// them is a marked map beside a list denying the file exists, which is the one state #1155
+    /// rules out.
+    ///
+    /// Picking the open file again closes it: what is open is open because the reader opened it,
+    /// so the same gesture puts it away.
+    private func open(_ path: String, among entries: [AtlasIndexEntry]) {
+        guard path != openFile else {
             openFile = nil
             return
         }
-        openFile = picked
-        if let picked, !entries.contains(where: { $0.path == picked }) {
+        openFile = path
+        if !entries.contains(where: { $0.path == path }) {
             query = ""
         }
     }
 
-    private func stage(_ drawn: AtlasMap, among entries: [AtlasIndexEntry]) -> some View {
-        ground(drawn, among: entries)
+    /// Go to a folder: the one verb behind a click on a plate, a crumb of the trail and the control
+    /// back up (#1156). Three gestures, one move, so none of them can come to mean something
+    /// slightly different from the others.
+    ///
+    /// The camera is not touched, and that is the point of the criterion it answers: the map
+    /// re-tiles into the same ground at the same turn and tilt, so the reader arrives looking at
+    /// the folder from where they were looking at what held it. A descent that also moved the
+    /// camera would answer the question "where am I" with "somewhere else again". The approved
+    /// design flies between levels instead (`cockpit-atlas.html`, `goCrumb`); that is a move to
+    /// make with the animation it needs, not a half of one.
+    private func descend(to path: String, in map: AtlasMap) {
+        // The top of the trail is NO descent rather than a descent to the root: two spellings of
+        // one place would leave the room with a state the trail and the picture read differently.
+        folder = path == map.root.path ? nil : path
+        let inside = folder.flatMap { map.descending(to: $0) } ?? map
+        if !AtlasPickRule.stays(openFile, on: inside) {
+            openFile = nil
+        }
+        // The question goes with the level it was asked of, for the reason `open(_:among:)` clears
+        // it: a question asked of the repository can leave a folder's list saying nothing here
+        // matches, beside a map visibly full of that folder's files. The reader asked to be
+        // SOMEWHERE
+        // rather than to be shown fewer things, and the newer of the two answers is the one they
+        // just gave.
+        query = ""
+    }
+
+    /// `whole` is the Map before the descent, and the one a pick is answered against: a plate names
+    /// a folder by its whole path, and where the reader is going is a place in the REPOSITORY
+    /// rather than a place in the picture currently drawn.
+    private func stage(
+        _ drawn: AtlasMap, among entries: [AtlasIndexEntry], of whole: AtlasMap,
+    )
+        -> some View {
+        ground(drawn, among: entries, of: whole)
             .overlay(alignment: .topTrailing) {
                 // The design's own `#orbit`, floating over the stage rather than docked in a bar,
                 // and inset from the corner by what the design insets it by.
@@ -159,7 +221,10 @@ struct AtlasRoomView: View {
     /// The room ships at the FLAT end of the camera: the plates carry their names there, and a
     /// name is laid out in plan coordinates — turned, every caption would sit over a building it
     /// does not name, which is why the city draws with none.
-    private func ground(_ map: AtlasMap, among entries: [AtlasIndexEntry]) -> some View {
+    private func ground(
+        _ map: AtlasMap, among entries: [AtlasIndexEntry], of whole: AtlasMap,
+    )
+        -> some View {
         GeometryReader { proxy in
             AtlasView(
                 plan: AtlasPlan(
@@ -173,7 +238,7 @@ struct AtlasRoomView: View {
                 standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
                 orientation: orientation,
                 marks: AtlasMarks(
-                    focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
+                    focus: AtlasFocus(open: openFile) { pick($0, among: entries, in: whole) },
                     // The DRAWN Map's own ties, so hiding test files takes their cords with it:
                     // a cord to a file the map is not drawing has no box to end on (#1160).
                     ties: AtlasTies(
@@ -236,6 +301,31 @@ struct AtlasRoomView: View {
         try? await Task.sleep(for: .seconds(ArgoMotion.passReentry))
         withAnimation(sweep) { rise = 1 }
     }
+}
+
+/// The state a room is SEEDED with, which is the state no screenshot can reach by itself: a file
+/// open, a question asked, a folder descended into.
+///
+/// One value rather than three parameters, because they are one thought — where the reader already
+/// was when the picture was taken — and because the room's host would otherwise be a fourth
+/// parameter wider on every state a later ticket adds.
+package struct AtlasRoomOpening {
+    /// The file the room starts with open (#1154).
+    package var opened: String?
+    /// The question the room starts with asked (#1155).
+    package var typed: String
+    /// The folder the room starts INSIDE (#1156).
+    package var entered: String?
+
+    package init(opened: String? = nil, typed: String = "", entered: String? = nil) {
+        self.opened = opened
+        self.typed = typed
+        self.entered = entered
+    }
+
+    /// The room as the app itself always opens it: the whole repository, nothing read, nothing
+    /// asked.
+    package static let none = AtlasRoomOpening()
 }
 
 /// The two facts that decide whether a city has just arrived: which measurement is drawn, and

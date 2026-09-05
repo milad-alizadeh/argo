@@ -13,12 +13,10 @@ import SwiftUI
 package struct AtlasRoomHost: View {
     private let reading: AtlasReading
     private let behind: Int?
-    /// The file the room opens with open (#1154) — a specimen's only way to reach a state a click
-    /// puts the room into. Nothing but a specimen ever passes one.
-    private let opened: String?
-    /// The question the room opens with asked (#1155) — the same seam as `opened`, for the same
-    /// reason: no screenshot types.
-    private let typed: String
+    /// What the room opens already in — a file read, a question asked, a folder entered. A
+    /// specimen's only way to reach a state a click or a keyboard puts the room into, and nothing
+    /// but a specimen ever passes one.
+    private let opening: AtlasRoomOpening
 
     /// The room the strip in the rail is on. The strip switches the whole window in the app; here
     /// it has nowhere to go, and holds the room it opens in.
@@ -36,14 +34,12 @@ package struct AtlasRoomHost: View {
     package init(
         reading: AtlasReading,
         behind: Int? = nil,
-        opened: String? = nil,
-        typed: String = "",
+        opening: AtlasRoomOpening = .none,
     ) {
         self.reading = reading
         self.behind = behind
-        self.opened = opened
-        self.typed = typed
-        _channels = State(initialValue: Self.opening(of: reading))
+        self.opening = opening
+        _channels = State(initialValue: Self.channels(of: reading))
     }
 
     package var body: some View {
@@ -55,7 +51,7 @@ package struct AtlasRoomHost: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            AtlasRoomView(opened: opened, typed: typed)
+            AtlasRoomView(opening: opening)
         }
         .environment(\.argoAtlasRoom, room)
     }
@@ -86,7 +82,7 @@ package struct AtlasRoomHost: View {
     /// The opening channels for whatever was handed in — and none at all for a reading that
     /// carries no Map, which is every vacancy: three empty menus over nothing measured would be
     /// controls naming Measures no repository stands behind.
-    private static func opening(of reading: AtlasReading) -> AtlasChannels {
+    private static func channels(of reading: AtlasReading) -> AtlasChannels {
         guard case let .measured(map) = reading else { return AtlasChannels("") }
         return AtlasChannels.opening(for: map)
     }

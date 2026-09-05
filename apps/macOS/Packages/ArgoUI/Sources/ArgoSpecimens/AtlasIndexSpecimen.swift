@@ -19,9 +19,12 @@ struct AtlasIndexSpecimen: View {
     var opened: String?
 
     var body: some View {
-        AtlasRoomHost(reading: .measured(indexFixtureMap), opened: opened, typed: typed)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .argoDeckSurface()
+        AtlasRoomHost(
+            reading: .measured(indexFixtureMap),
+            opening: AtlasRoomOpening(opened: opened, typed: typed),
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .argoDeckSurface()
     }
 }
 

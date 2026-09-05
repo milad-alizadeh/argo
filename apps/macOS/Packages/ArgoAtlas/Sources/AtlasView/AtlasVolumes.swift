@@ -37,41 +37,61 @@ enum AtlasVolumes {
     /// A plate is TWO faces, rim then ground, so the border survives the nesting: a nested plate
     /// paints over its parent's ground, and without a rim of its own the seam between them is two
     /// tones that are equal once the contract's three have run out.
-    /// A file's id is its place in `roster` plus one, so 0 is left meaning NOTHING and every other
-    /// box on the map — plate, rim, shadow — keeps it (#1153).
+    /// A box's id is its place in `roster` plus one, so 0 is left meaning NOTHING — and every box
+    /// drawn on this map carries one, because every box IS either a file or a folder's ground: a
+    /// plate, its rim, and the shadow lying on it (#1153, #1156).
     static func city(of plan: AtlasPlan, in pigments: AtlasPigments) -> AtlasCity {
-        AtlasCity(volumes: volumes(of: plan, in: pigments), roster: plan.tiles.map(\.path))
+        AtlasCity(
+            volumes: volumes(of: plan, in: pigments),
+            roster: plan.plates.map { .folder($0.path) } + plan.tiles.map { .file($0.path) },
+        )
     }
 
     private static func volumes(of plan: AtlasPlan, in pigments: AtlasPigments) -> [AtlasVolume] {
-        let plates = plan.plates.flatMap { frame in
+        // A folder is picked by its PLATE, which is the part of it no file stands on: the rim and
+        // the margin the tiler leaves round its contents (#1156). Both faces carry the id, so the
+        // rim between two neighbours names the folder whose rim it is — and a nested plate drawn
+        // over its parent's ground takes the pixels it covers with it, which is what makes the
+        // innermost folder at a point the one that answers.
+        let plates = plan.plates.enumerated().flatMap { index, frame in
             [
                 AtlasVolume(frame.rect, pigment: pigments.rim(at: frame.depth)),
                 AtlasVolume(
                     frame.rect.shrunk(by: border),
                     pigment: pigments.plate(at: frame.depth),
                 ),
-            ]
+            ].map { $0.identified(as: UInt32(index + 1)) }
         }
         // Cast between the plates and the tiles: after every plate, so a shadow always lands on
         // ground already drawn, and before every file, so a file standing where its own shadow
         // falls draws over it rather than under it (#1151).
         let ceiling = AtlasElevation.ceiling(of: plan.extent)
-        let shadows = plan.tiles.compactMap {
-            AtlasShadow.decal(of: $0, on: plan.plates, ceiling: ceiling, in: pigments)
+        //
+        // A decal carries the id of the PLATE it lies on, not 0 (#1156). It is drawn after that
+        // plate and coplanar with it, under a depth test that lets the later draw win, so an
+        // unidentified decal writes 0 over the plate's own id — a hole in the folder's ground that
+        // picks as nothing and is invisible at the flat camera, where the shader fades the decal
+        // out but the tiler still places it. The decal is painted in the plate's own tone; it is
+        // picked as the plate's own folder.
+        let shadows = plan.tiles.compactMap { tile -> AtlasVolume? in
+            guard let decal = AtlasShadow.decal(
+                of: tile, on: plan.plates, ceiling: ceiling, in: pigments,
+            ) else { return nil }
+            let ground = AtlasShadow.plate(under: decal.rect, on: plan.plates)
+            return ground.map { decal.identified(as: UInt32($0 + 1)) } ?? decal
         }
-        // The id a file is picked by is its place in `plan.tiles` PLUS ONE, so that 0 is left
-        // meaning nothing and every other box on the map — plate, rim, shadow — keeps it (#1153).
-        // Assigned in the same expression that paints the file, because the id target and the
-        // screen are the same draw: an id handed out anywhere else would be a second walk of the
-        // tiles, and a second walk is what a pick can drift against.
+        // The id a file is picked by is its place in `plan.tiles` PLUS the plates in front of it
+        // in the roster, plus one — so 0 is left meaning nothing, which on this map is the desktop
+        // alone (#1153). Assigned in the same expression that paints the file, because the id
+        // target and the screen are the same draw: an id handed out anywhere else would be a
+        // second walk of the tiles, and a second walk is what a pick can drift against.
         let tiles = plan.tiles.enumerated().map { index, tile in
             AtlasVolume(
                 tile.rect.shrunk(by: gap),
                 roof: tile.height,
                 pigment: pigments.pigment(of: tile.band),
             )
-            .identified(as: UInt32(index + 1))
+            .identified(as: UInt32(plan.plates.count + index + 1))
         }
         return plates + shadows + tiles
     }

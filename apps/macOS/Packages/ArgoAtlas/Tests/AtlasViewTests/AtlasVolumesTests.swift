@@ -165,30 +165,73 @@ struct AtlasVolumesTests {
         #expect(volumes[7].heights == SIMD2<Float>(0, 3))
     }
 
-    /// The id a pick reads back names the file it was drawn for, and NOTHING is a real answer with
-    /// a number of its own: 0, which every plate, rim and shadow decal carries (#1153).
-    @Test func `only a file carries an id, and it names that file`() {
+    /// The id a pick reads back names the box it was drawn for, and NOTHING is a real answer with
+    /// a number of its own: 0, which on a drawn map nothing carries — it is the desktop (#1153).
+    ///
+    /// A folder carries one too since #1156, on both of its faces — the rim and the ground — so
+    /// the margin the tiler leaves round a folder's contents is the folder's own target. The two
+    /// plates are ids 1 and 2 here, the two files 3 and 4, which is the roster's own order.
+    @Test func `every file and every folder carries an id, and it names that box`() {
         let plan = Self.plan()
 
         let city = AtlasVolumes.city(of: plan, in: Self.pigments)
 
-        #expect(city.volumes.prefix(6).allSatisfy { $0.id == 0 })
-        #expect(city.volumes[6].id == 1)
-        #expect(city.volumes[7].id == 2)
-        #expect(city.file(at: 1) == "a/b/one")
-        #expect(city.file(at: 2) == "a/two")
+        #expect(city.volumes.prefix(2).allSatisfy { $0.id == 1 })
+        #expect(city.volumes[2 ... 3].allSatisfy { $0.id == 2 })
+        #expect(city.volumes[6].id == 3)
+        #expect(city.volumes[7].id == 4)
+        #expect(city.target(at: 1) == .folder("a"))
+        #expect(city.target(at: 2) == .folder("a/b"))
+        #expect(city.file(at: 3) == "a/b/one")
+        #expect(city.file(at: 4) == "a/two")
+    }
+
+    /// A cast shadow lies ON a folder's ground, is painted in that ground's tone, and is picked as
+    /// that folder (#1156).
+    ///
+    /// The claim is about a hole rather than about a shadow: a decal is drawn after the plate and
+    /// coplanar with it, so an unidentified one writes 0 over the plate's id and leaves a patch of
+    /// the folder's margin that descends into nothing — invisible at the flat camera, where the
+    /// shader fades the decal out but the tiler still places it.
+    @Test func `a cast shadow is picked as the folder whose ground it lies on`() {
+        let city = AtlasVolumes.city(of: Self.plan(), in: Self.pigments)
+
+        // Four plate faces, then the decals, then the two files: the order `city` builds them in.
+        let shadows = city.volumes.dropFirst(4).dropLast(2)
+        #expect(!shadows.isEmpty, "no file in the fixture is tall enough to cast anything")
+        // Every decal names a folder rather than nothing, and the folder it names is one of the
+        // two plates — never a file, which would trace a reading over a shadow.
+        #expect(shadows.allSatisfy { $0.id > 0 })
+        for shadow in shadows {
+            let named = city.target(at: shadow.id)
+            #expect(
+                named == .folder("a") || named == .folder("a/b"),
+                "a decal named \(named as Any)",
+            )
+        }
+        // The tall file stands on the nested plate, so the decal it throws is that plate's.
+        #expect(city.target(at: shadows.first?.id ?? 0) == .folder("a/b"))
+    }
+
+    /// The hover names files and only files: the strip over the map is built to say a filename,
+    /// and a folder read into it would caption the map with something it cannot say.
+    @Test func `a folder is picked, and is not a file`() {
+        let city = AtlasVolumes.city(of: Self.plan(), in: Self.pigments)
+
+        #expect(city.file(at: 1) == nil)
+        #expect(city.target(at: 3) == .file("a/b/one"))
     }
 
     /// A point on no box resolves to nothing rather than to the nearest — the claim spelled at the
     /// one place it is decided. An id past the roster is a target drawn from an older map than the
     /// one being asked; it too is nothing, because naming a file off a stale frame is exactly the
     /// answer this whole mechanism exists to make impossible.
-    @Test func `an id that names no file resolves to nothing`() {
+    @Test func `an id that names nothing resolves to nothing`() {
         let city = AtlasVolumes.city(of: Self.plan(), in: Self.pigments)
 
-        #expect(city.file(at: 0) == nil)
-        #expect(city.file(at: 3) == nil)
-        #expect(city.file(at: .max) == nil)
+        #expect(city.target(at: 0) == nil)
+        #expect(city.target(at: 5) == nil)
+        #expect(city.target(at: .max) == nil)
     }
 
     /// A PLATE is foot and roof at one height. It is what makes the ground a flat face rather than

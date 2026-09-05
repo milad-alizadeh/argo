@@ -58,6 +58,16 @@ public enum ArgoTypography {
         typeface: .interface, rung: .caption1, weight: .semibold,
     )
 
+    /// Where the reader IS, at the end of a trail of the folders above it (#1156).
+    ///
+    /// `control`'s rung, one weight above it, and that is the whole difference: the crumbs in
+    /// front of it are controls, and the one that is not has to read as the subject of the column
+    /// rather than as a control nobody can press. A rung larger would make the strip a heading
+    /// band, which is what the design took OUT of the rail when the trail arrived.
+    public static let locationHeading = ArgoTextStyle(
+        typeface: .interface, rung: .callout, weight: .semibold,
+    )
+
     /// The one machine string a person has to TRANSCRIBE: the device flow's user code, at the title
     /// rung because it is read off one screen and typed into another.
     public static let machineDisplay = ArgoTextStyle(
@@ -98,6 +108,7 @@ public enum ArgoTypography {
         ("control", control),
         ("caption", caption),
         ("captionEmphasis", captionEmphasis),
+        ("locationHeading", locationHeading),
         ("machineDisplay", machineDisplay),
         ("machineBody", machineBody),
         ("machine", machine),

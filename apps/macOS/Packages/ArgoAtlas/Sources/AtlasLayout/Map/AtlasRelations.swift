@@ -24,4 +24,39 @@ public struct AtlasRelations: Equatable, Sendable {
         self.couplings = couplings
         self.inference = inference
     }
+
+    /// The same reading over fewer Plots — what every narrowing of a Map has to do to what it says
+    /// across them. Hiding test files (#1161) and descending into a folder (#1156) are two ways of
+    /// asking for it, and one rule rather than two, because a Coupling dropped by one and kept by
+    /// the other would be a Map that read differently depending on how it got there.
+    ///
+    /// A Coupling survives only where BOTH ends did: it is a fact about a pair, and a pair with one
+    /// end outside the Map is not a weaker fact, it is a fact about something the Map no longer
+    /// holds.
+    func keeping(_ paths: Set<String>) -> AtlasRelations {
+        AtlasRelations(
+            couplings: couplings.filter { paths.contains($0.first) && paths.contains($0.second) },
+            inference: inference?.keeping(paths),
+        )
+    }
+}
+
+private extension AtlasInference {
+    /// The same inference over fewer files. The Domains are NOT re-inferred — that needs the
+    /// history and the whole file list, which is the generator's reading and not this one — so a
+    /// Domain here is what it was, minus the files that left, and a Domain the narrowing emptied
+    /// is gone. The two numbers stand as taken: they describe the partition the generator settled
+    /// on, and restating them against a subset would be inventing a second inference.
+    func keeping(_ paths: Set<String>) -> AtlasInference {
+        AtlasInference(
+            domains: domains.compactMap { domain in
+                let members = domain.members.filter { paths.contains($0.path) }
+                guard !members.isEmpty else { return nil }
+                return AtlasDomain(name: domain.name, tokens: domain.tokens, members: members)
+            },
+            resolution: resolution,
+            settled: settled,
+            agreement: agreement,
+        )
+    }
 }
