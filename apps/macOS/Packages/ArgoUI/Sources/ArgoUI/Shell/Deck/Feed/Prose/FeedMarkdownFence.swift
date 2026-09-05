@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
@@ -24,9 +25,10 @@ struct FeedMarkdownFence: View {
                 // A fence's lines are the record's, so they break where the writer broke them. Left
                 // to wrap they fold at whatever the pane is left, which turns an aligned block —
                 // a pipe table, a diff, a column of values — into prose that reads as garbage.
-                // `fixedSize` horizontally is what refuses the fold; the scroll view is what makes
-                // the overflow reachable rather than clipped.
-                ScrollView(.horizontal) {
+                // `fixedSize` horizontally is what refuses the fold; `ArgoScrollAcross` is what
+                // makes the overflow reachable rather than clipped, without eating the wheel the
+                // reading was owed.
+                ArgoScrollAcross {
                     words(colouring.whole)
                         .argoMono(.body)
                         .textSelection(.enabled)

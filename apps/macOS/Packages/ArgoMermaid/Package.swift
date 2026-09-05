@@ -33,6 +33,7 @@ let package = Package(
             name: "MermaidView",
             dependencies: [
                 "MermaidLayout",
+                .product(name: "ArgoAtoms", package: "ArgoDesign"),
                 .product(name: "ArgoDesign", package: "ArgoDesign"),
             ],
         ),
