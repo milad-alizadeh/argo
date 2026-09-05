@@ -13,38 +13,22 @@ package struct SessionHandoffButton: View {
     let run: () async -> Void
 
     package var body: some View {
-        Button {
+        HeaderCapsuleButton(label: label) {
             Task { await run() }
-        } label: {
-            Text(handoff.isRunning ? handoff.runningLabel : handoff.label)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(ink)
-                .lineLimit(1)
-                .padding(.horizontal, ArgoSpacing.snug)
-                .padding(.vertical, ArgoSpacing.hair)
-                // The neutral step every float lands on: the tier's colour is spent on the word and
-                // its rim, never the ground.
-                .background(argo.color.surface.overlay, in: .capsule)
-                .overlay {
-                    Capsule().strokeBorder(ink, lineWidth: ArgoStroke.border)
-                }
         }
-        .buttonStyle(.plain)
-        .disabled(!handoff.isLaunchable || handoff.isRunning)
-        // A remedy out of reach has to say what is in its way.
-        .help(handoff.blocked ?? handoff.detail)
-        .accessibilityLabel(handoff.isRunning ? handoff.runningLabel : handoff.label)
-        .accessibilityHint(handoff.blocked ?? handoff.detail)
-        // The branch is what gives way on this line (#502, story 25), never the remedy.
-        .layoutPriority(1)
     }
 
-    /// The tier's own tint at full strength — a button only exists past a line — dropping to the
-    /// inert rung while it is out of reach or already running.
-    private var ink: ArgoColor {
-        handoff.isLaunchable && !handoff.isRunning
-            ? handoff.tier.tint(in: argo.color)
-            : argo.color.text.disabled
+    /// The tier's own tint at full strength — a button only exists past a line — and the running
+    /// word while a press is still being answered, off `handoff.isRunning` (#1327): the same fact
+    /// `FeedWaitPlinth` stands on, never a state of the button's own. A remedy out of reach says
+    /// what is in its way, and the shape it is drawn in greys it for us.
+    private var label: HeaderCapsuleButton.Label {
+        HeaderCapsuleButton.Label(
+            word: handoff.isRunning ? handoff.runningLabel : handoff.label,
+            ink: handoff.tier.tint(in: argo.color),
+            detail: handoff.blocked ?? handoff.detail,
+            isEnabled: handoff.isLaunchable && !handoff.isRunning,
+        )
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

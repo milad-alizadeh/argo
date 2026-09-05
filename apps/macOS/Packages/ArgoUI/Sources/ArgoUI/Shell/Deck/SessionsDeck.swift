@@ -18,9 +18,9 @@ package struct SessionsDeck: View {
     /// What the top zone names. Absent when nothing is selected: the zone keeps its height and says
     /// nothing.
     var header: SessionHeaderProjection.Header?
-    /// Hand the shown Session's work to a fresh one. Inert by default so a specimen draws the
-    /// button without spawning anything.
-    var handOff: () async -> Void = {}
+    /// What the canopy's own controls DO — see `SessionHeaderIntents`. Inert by default so a
+    /// specimen draws them without spawning or typing anything.
+    var headerIntents = SessionHeaderIntents()
     /// The selected Session's plan — standing state rather than a row, so it arrives beside the
     /// rows and not among them.
     var showing = PlanShowing()
@@ -78,8 +78,10 @@ package struct SessionsDeck: View {
         // it, a reading vanishing mid-bar. Measured before the zones discard it, hence the reader.
         GeometryReader { window in
             ZStack(alignment: .top) {
-                DeckCanopy(header: header, reach: window.safeAreaInsets.top, handOff: handOff)
-                    .zIndex(1)
+                DeckCanopy(
+                    header: header, reach: window.safeAreaInsets.top, intents: headerIntents,
+                )
+                .zIndex(1)
                 zones
                     .ignoresSafeArea(.container, edges: .top)
             }
@@ -138,7 +140,7 @@ package struct SessionsDeck: View {
         session: CockpitPresentation.Session.ID? = nil,
         feed: [FeedRow],
         header: SessionHeaderProjection.Header? = nil,
-        handOff: @escaping () async -> Void = {},
+        headerIntents: SessionHeaderIntents = SessionHeaderIntents(),
         showing: PlanShowing = PlanShowing(),
         open: Binding<FeedRow.ID?> = .constant(nil),
         step: Binding<Int?> = .constant(nil),
@@ -154,7 +156,7 @@ package struct SessionsDeck: View {
         self.session = session
         self.feed = feed
         self.header = header
-        self.handOff = handOff
+        self.headerIntents = headerIntents
         self.showing = showing
         self.open = open
         self.step = step

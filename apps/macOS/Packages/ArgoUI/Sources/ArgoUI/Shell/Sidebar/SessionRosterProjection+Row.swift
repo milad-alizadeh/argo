@@ -28,11 +28,11 @@ extension SessionRosterProjection {
         /// Read only through `secondaryFact` on the row itself: the line has one arrangement now,
         /// so which of the two facts fills the slot no longer changes where anything sits (#1291).
         let activity: String?
-        /// The one fact on that second line that tells this Session from the rows beside it:
-        /// the slash command it opened with where the Ticket holds the title
-        /// (#745), and the Ticket itself where the title fell back to the Session's own derived
-        /// name (#1072). Never both — the slot says whatever the title is not saying, and a row
-        /// with nothing left to add draws nothing.
+        /// The one fact on that second line that tells this Session from the rows beside it: the
+        /// slash command it opened with, where the Ticket holds the title (#745). A linked Ticket
+        /// used to fill this slot instead wherever the title fell back to a derived name (#1072);
+        /// it now has its own address on line 3 regardless of the title (`ticketNumber`,
+        /// `DeliveryAddresses`), so the slot has nothing left to add there (#1347).
         let toldApart: String?
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
@@ -59,6 +59,10 @@ extension SessionRosterProjection {
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning.
         let stateWord: String?
+        /// Whether the Session's ready-to-ship claim still draws (`cockpit-roster-row.md`,
+        /// decision 7) — `false` on a fold, which stands for several runs and so makes no single
+        /// one's claim.
+        let readyToShip: Bool
         /// Line 3's `PlanBar` — the same reading the Session's own plan pill shows. `nil` for a
         /// Session that has never written a Plan, and always `nil` on a fold (`foldRow`): four
         /// to-do lists do not add up to one.
@@ -103,6 +107,7 @@ extension SessionRosterProjection {
             self.spokenClock = activity.spokenClock
             self.state = activity.state
             self.stateWord = activity.stateWord
+            self.readyToShip = activity.readyToShip
             self.activity = activity.activity
             self.plan = activity.plan
             self.subagents = activity.subagents
@@ -127,15 +132,51 @@ extension SessionRosterProjection {
             return Date(epochMs: startedAtMs)
         }
 
-        /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
+        /// What the row's one word slot draws, and the ink it takes with it — the two are one
+        /// value, so no surface can pair a word with an ink of its own choosing.
+        ///
+        /// `state` outranks `readyToShip` in the slot they share: a row waiting on the reader or
+        /// reporting a failure has more to say than that it is done
+        /// (`cockpit-roster-row.md`, the badge ink table).
+        enum Badge: Equatable, Sendable {
+            case state(String, ArgoOperationalState?)
+            case readyToShip
+
+            /// The word `cockpit-roster-row.md` spells for the claim — `ArgoStateLabel`
+            /// upper-cases it, so this stays sentence case like every other word the row spends.
+            static let readyWord = "Ready"
+
+            var word: String {
+                switch self {
+                case let .state(word, _): word
+                case .readyToShip: Self.readyWord
+                }
+            }
+        }
+
+        /// The badge slot's whole reading, and `nil` where the row spends no word at all. One
+        /// authority for the view and for `announcement`, so the two cannot draw it two ways.
+        var badge: Badge? {
+            if let stateWord {
+                return .state(stateWord, state)
+            }
+            return readyToShip ? .readyToShip : nil
+        }
+
+        /// What a screen reader hears: the same word the row draws, plus the read-only
         /// fact, which the row spends on ink a screen reader has no way to hear.
+        ///
+        /// The Ticket is spoken here even though line 3 draws it rather than the meta slot
+        /// (#1347): `DeliveryAddresses` is its own ink, and a screen reader that never visited
+        /// this row's meta slot would otherwise never hear the number at all.
         var announcement: String {
             [
                 title,
-                stateWord,
+                badge?.word,
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
                 secondaryFact,
+                ticketNumber.map { "on \(IssueReading.mark($0))" },
                 spokenWorktree.map { "in \($0)" },
                 spokenClock,
             ]
@@ -172,8 +213,9 @@ extension SessionRosterProjection {
             ),
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
-                // of them drawn for all of them is a claim about the others.
-                dot: Row.Activity.Dot(state: nil, word: nil),
+                // of them drawn for all of them is a claim about the others. No ready claim
+                // either, for the same reason (rule 9).
+                dot: Row.Activity.Dot(state: nil, word: nil, readyToShip: false),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
@@ -229,6 +271,7 @@ extension SessionRosterProjection {
                 dot: Row.Activity.Dot(
                     state: SessionState.role(for: session.status),
                     word: SessionState.word(for: session.status),
+                    readyToShip: session.readyToShip,
                 ),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),

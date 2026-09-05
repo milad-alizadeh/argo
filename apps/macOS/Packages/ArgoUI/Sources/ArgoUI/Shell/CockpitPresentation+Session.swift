@@ -89,6 +89,10 @@ public extension CockpitPresentation {
         /// and `nil` for a branch with none open. DERIVED, off `Readings.deliveries` rather than
         /// off anything the Hub reports.
         public let pullRequest: DeliveryPullRequest?
+        /// Whether this Session's companion claim to be ready for a pull request still draws
+        /// (`CONTEXT.md` L1 · Delivery, #1335) — already resolved against `pullRequest` above, so
+        /// no surface below the shell re-asks whether an open pull request makes the claim stale.
+        public let readyToShip: Bool
         /// When this Session was last seen to run, in milliseconds since the epoch. The Hub's own
         /// sort key rather than a second reading of it. Absent where neither the records nor the
         /// file behind them could say — a gap, never a moment standing in for one.
@@ -235,6 +239,7 @@ public extension CockpitPresentation {
             self.workspace = work.workspace
             self.ticket = work.ticket
             self.pullRequest = work.pullRequest
+            self.readyToShip = work.readyToShip
             self.spentTokens = spend.spentTokens
             self.cachedTokens = spend.cachedTokens
             self.subagentTokens = spend.subagentTokens

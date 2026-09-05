@@ -71,9 +71,11 @@ struct SessionRosterActivityTests {
     }
 
     @Test
-    func `the slot says the activity or the ticket, never both`() throws {
-        // A link with no title of its own, so the row keeps its derived title and the Ticket is
-        // the fact the slot would otherwise carry (#1072).
+    func `the activity fills the slot the ticket no longer rides`() throws {
+        // A link with no title of its own, so the row keeps its derived title. The Ticket used
+        // to fall back onto this slot (#1072); now it has its own address on line 3
+        // (`row.ticketNumber`) regardless, so the slot has nothing left to say while idle
+        // and only ever carries the activity while running (#1347).
         let row = try #require(SessionRosterProjection.rows(from: [
             RosterSessionFixture.session(
                 id: "one",
@@ -84,9 +86,8 @@ struct SessionRosterActivityTests {
             ),
         ]).first)
 
-        // First match wins: the ticket is the fact this row is missing while it is idle, and
-        // what it is doing right now outranks it while it runs.
-        #expect(row.toldApart == "#1199")
+        #expect(row.toldApart == nil)
+        #expect(row.ticketNumber == 1199)
         #expect(row.secondaryFact == "Ran bun run quality")
     }
 
@@ -98,10 +99,10 @@ struct SessionRosterActivityTests {
             ran("bun run quality", id: "one"),
             .toolCall(ToolCall(
                 id: "two", name: ToolCall.askUserQuestion, kind: .other, target: nil, atMs: nil,
-                ask: Ask(questions: [Ask.Question(
+                input: .init(ask: Ask(questions: [Ask.Question(
                     text: "Which edge should the clock take?",
                     options: Ask.Option.labelled(["Leading", "Trailing"]),
-                )]),
+                )])),
             )),
         ]).first)
 

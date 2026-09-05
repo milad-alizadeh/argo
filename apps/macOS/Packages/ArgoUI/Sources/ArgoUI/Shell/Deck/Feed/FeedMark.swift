@@ -44,6 +44,11 @@ package enum FeedMark: Equatable, Sendable {
     /// (`CONTEXT.md` Honesty tier). Selecting the Session reads the file whole, which is what makes
     /// this mark short-lived.
     case excerpted
+    /// The agent reported its change is ready for a pull request (#1335), with the reason it
+    /// gave — verbatim, and `nil` where it gave none. CONVENTION, and the roster's own claim is
+    /// drawn separately (`Ready`, on the badge): this is the feed's own reading of the SAME call,
+    /// off the transcript rather than the socket, which is why the two never share a value.
+    case readyToShip(CompanionReady)
 }
 
 extension FeedMark {
@@ -56,7 +61,7 @@ extension FeedMark {
         // something that did NOT happen, and the rule ink would file it as punctuation (#1245).
         case .permissionExpired, .startedQuietly: .attention
         case .compacted, .turnEnded, .handedOff, .interrupted, .working,
-             .excerpted, .runFactChanged:
+             .excerpted, .runFactChanged, .readyToShip:
             .boundary
         }
     }
@@ -91,6 +96,10 @@ extension FeedMark {
         // The CLI's own word, in the composer's own vocabulary for it — `model · Sonnet 5`. Named
         // rather than "settings changed", because which of the two moved is the whole of the news.
         case let .runFactChanged(fact): fact.words
+        // The reason travels verbatim, never reworded into a fact of Argo's own — the same rule
+        // the companion channel itself reads outcomes and questions under.
+        case let .readyToShip(claim):
+            claim.reason.map { "ready to ship — \($0)" } ?? "ready to ship"
         }
     }
 
@@ -103,7 +112,7 @@ extension FeedMark {
         switch self {
         case .turnEnded, .interrupted: true
         case .compacted, .handedOff, .permissionExpired, .working,
-             .startedQuietly, .excerpted, .runFactChanged: false
+             .startedQuietly, .excerpted, .runFactChanged, .readyToShip: false
         }
     }
 
@@ -139,6 +148,9 @@ extension FeedMark {
         // A sentence, and it says what MOVED: the caption is two nouns, which read out is a pair
         // of words with no verb between them.
         case let .runFactChanged(fact): fact.spoken
+        case let .readyToShip(claim):
+            claim.reason.map { "The Session reported it is ready to ship — \($0)" }
+                ?? "The Session reported it is ready to ship"
         }
     }
 }

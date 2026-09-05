@@ -117,6 +117,14 @@ extension CockpitView {
         return { try? actions.drive.revokeStandingAllow($0, for: session.id) }
     }
 
+    /// The **Create PR** control's one act (#1335): one `/ship` Turn into the Session the header
+    /// is naming, through the same port `answer(on:)` and `revoke` above already use — no queue,
+    /// no draft, and no watch on what follows. The Session reports its own status as it runs.
+    var createPullRequest: () -> Void {
+        guard let session = presentation.session(navigation.session) else { return {} }
+        return { try? actions.drive.send("/ship", to: session.id) }
+    }
+
     /// The header's one intent, bound to the Session the header is naming and the issue it serves.
     /// The fresh Session becomes the selection (story 48).
     var handOff: () async -> Void {

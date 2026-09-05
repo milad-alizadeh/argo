@@ -61,7 +61,7 @@ extension CockpitView {
             session: navigation.session,
             feed: reading.feed,
             header: reading.header,
-            handOff: handOff,
+            headerIntents: .init(handOff: handOff, createPullRequest: createPullRequest),
             showing: reading.showing,
             open: $openEvidence,
             step: $evidenceStep,

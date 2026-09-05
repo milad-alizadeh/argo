@@ -27,6 +27,9 @@ enum RosterSessionFixture {
         events: [TranscriptEvent] = [],
         ticket: CockpitPresentation.Session.TicketLinkReading = .unread,
         pullRequest: DeliveryPullRequest? = nil,
+        // The RAW companion claim, never the resolved Bool: the projection resolves it against
+        // the pull request beside it, so a fixture cannot state a pair the design forbids.
+        claim: CompanionReady? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -42,7 +45,7 @@ enum RosterSessionFixture {
                 location: workspaceLocation,
                 workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),
                 ticket: ticket,
-                pullRequest: pullRequest,
+                delivery: .init(pullRequest: pullRequest, claim: claim),
             ),
             annotations: .init(isArchived: isArchived, explicitName: explicitName),
             transcript: .init(events: events),

@@ -42,7 +42,7 @@ struct SessionBranchTicketTests {
 
         let session = try #require(Self.projection(of: hub, annotations: annotations)
             .sessions.first)
-        #expect(SessionTitle.resolved(for: session) == "#741: Anchor the feed")
+        #expect(SessionTitle.resolved(for: session) == "Anchor the feed")
     }
 
     @Test

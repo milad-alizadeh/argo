@@ -27,7 +27,7 @@ enum FeedFixture {
             kind: .other,
             target: nil,
             atMs: nil,
-            ask: Ask(questions: questions),
+            input: .init(ask: Ask(questions: questions)),
         )
     }
 

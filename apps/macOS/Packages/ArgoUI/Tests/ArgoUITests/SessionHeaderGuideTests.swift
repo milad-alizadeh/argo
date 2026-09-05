@@ -37,8 +37,9 @@ struct SessionHeaderGuideTests {
         // worktree folder sits between the two, now that the roster row has stopped naming it
         // (#1199).
         #expect(said["Branch"] == "argo/#694-context-guide · in tkt-694 · 3 uncommitted files")
-        // The term is already `Issue`, so the value is not `Issue #694` a second time.
-        #expect(said["Issue"] == "#694: The ⓘ panel says what the header stopped saying")
+        // The sentence alone: the term already says `Issue`, and the number now has its own
+        // address on the roster's line 3 (#1347).
+        #expect(said["Issue"] == "The ⓘ panel says what the header stopped saying")
         #expect(said["Access"] == "Read-only")
     }
 

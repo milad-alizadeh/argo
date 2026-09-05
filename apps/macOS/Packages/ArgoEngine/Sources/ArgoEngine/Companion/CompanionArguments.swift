@@ -16,6 +16,7 @@ enum CompanionArguments {
         case .reportStatus: status(from: arguments)
         case .askUser: ask(from: arguments, callID: callID)
         case .reportOutcome: outcome(from: arguments)
+        case .reportReady: ready(from: arguments)
         }
     }
 
@@ -41,6 +42,14 @@ enum CompanionArguments {
             // answerable without it.
             options: arguments["options"]?.array.compactMap(\.string).filter { !$0.isEmpty } ?? [],
         ))
+    }
+
+    /// Unlike the other three, a shape this cannot read never drops the claim — the reason is the
+    /// FEED's fact, never the roster's, and the badge the reason is missing from still has to
+    /// draw. A blank or absent reason degrades to `nil` rather than an empty string standing in
+    /// for one.
+    private static func ready(from arguments: JSONValue) -> CompanionFact? {
+        .ready(CompanionReady.reading(arguments))
     }
 
     private static func outcome(from arguments: JSONValue) -> CompanionFact? {
