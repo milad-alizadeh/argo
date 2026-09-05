@@ -63,27 +63,22 @@ extension CockpitCoordinator {
         return await spawn(SessionSeed(cwd: cwd))
     }
 
-    /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait
-    /// for the brief, then #412's spawn path seeded with it and the folder it was running in.
-    ///
-    /// Returns the fresh Session's id so the caller can put the roster on it, and `nil` when the
-    /// handoff did not happen. No Session row is published for work nobody handed over.
+    /// Hand a full Session's work to a fresh one (#513), and say so where the reading cannot.
     ///
     /// A handoff that BEGAN reports itself in the feed and not in a modal (#1229): `handoffEnded`
     /// drops the failure into the reading of the Session it was pressed on, which is where the
-    /// reader was already looking and where the plinth that ran beside it stood. Only the refusal
-    /// raised HERE — before a single act of the handoff ran, so before anything could have reached
-    /// the reading — still has to say itself out loud. A Session with no claim of ours records
-    /// nothing either, and is the one case with neither: the button is not offered on one at all
-    /// (story 49, `SessionHeaderProjection.handoff`), which is the brace this leans on.
+    /// reader was already looking and where the plinth that ran beside it stood. Those facts are
+    /// filed against the CLAIM, so a Session Argo holds none on — one whose process went while the
+    /// handoff ran — has nowhere to put a row, and the alert is the only report left.
     func handOff(sessionID: String, issue: Int?) async -> String? {
-        guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
-            report(detail: SessionHandoff.Failure.noFolder.detail)
+        do {
+            return try await hub.handOff(sessionID: sessionID, issue: issue)
+        } catch {
+            if !hub.reportsHandoff(of: sessionID) {
+                report(detail: AgentRefusal.detail(of: error))
+            }
             return nil
         }
-        return try? await SessionHandoff(host: hub, root: Hub.handoffRoot)
-            .run(SessionHandoff.Request(sessionID: sessionID, cwd: cwd, issue: issue))
-            .sessionID
     }
 
     /// Every agent this window started, ended on quit as well as on window close: ⌘Q with the

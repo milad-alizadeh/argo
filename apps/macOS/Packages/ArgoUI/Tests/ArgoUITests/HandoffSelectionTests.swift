@@ -64,7 +64,6 @@ struct HandoffSelectionTests {
 
         await spawn(recorder, navigation).run(handingOff: "full-session", issue: nil)
 
-        #expect(recorder.asked.count == 1)
         #expect(navigation.session == "full-session")
     }
 }

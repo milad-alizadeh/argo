@@ -92,18 +92,31 @@ final class ClaimLedger {
         update(claim) { $0.handingOff = handingOff }
     }
 
-    /// The `/handoff` Turn Argo steered at this claim, never heard (#1229) — or `false` as a fresh
-    /// handoff begins, which is the only thing that takes it back.
+    /// The words Argo steered at this claim for a handoff (#1229), so a Turn reported lost can be
+    /// told from one the reader typed while it ran.
+    func setHandoffPrompt(_ text: String, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.handoffPrompt = text }
+    }
+
+    /// That steered Turn, never heard (#1229).
     ///
     /// It ends the submission in the same write, exactly as `setLostTurn` does and for the same
     /// reason: a Turn nobody heard is not a Turn in flight. What it does NOT do is fill the
     /// composer — the words were Argo's, and the reader has no second copy to send.
-    func setHandoffTurnLost(_ lost: Bool, for claim: SessionOwnership.ClaimID) {
+    func setHandoffTurnLost(for claim: SessionOwnership.ClaimID) {
         update(claim) { facts in
-            facts.handoffTurnLost = lost
-            if lost {
-                facts.submittedTurn = nil
-            }
+            facts.handoffTurnLost = true
+            facts.submittedTurn = nil
+        }
+    }
+
+    /// Both of the above, dropped in ONE write as a handoff begins and again as it ends: the words
+    /// and the news about them belong to one attempt, and either left standing would answer for
+    /// the next one. One write rather than two, so the roster moves once for one act.
+    func forgetHandoffTurn(for claim: SessionOwnership.ClaimID) {
+        update(claim) { facts in
+            facts.handoffPrompt = nil
+            facts.handoffTurnLost = false
         }
     }
 

@@ -133,7 +133,11 @@ struct SessionsRoomReading {
                 expired: stamp.expired,
                 asking: asking,
                 reported: stamp.reported,
-                submitted: stamp.submittedTurn,
+                // Nothing while Argo is handing off (#1229): the Turn in flight is then the
+                // `/handoff` prompt Argo itself steered, and a prompt row would draw a line of
+                // Argo's own words — the brief's absolute path and all — as something the reader
+                // typed and is waiting on. The plinth over this same reading is what stands for it.
+                submitted: stamp.handingOff ? nil : stamp.submittedTurn,
             ),
             // Off the engine's own facts, which are DIRECT and managed-only, and never off an
             // empty reading: a Session observed from outside that has written nothing is a

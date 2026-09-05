@@ -15,7 +15,7 @@ struct SessionHandoffRefusalTests {
     func `a prompt the CLI never took ends the handoff at once`() async throws {
         let fixture = HandoffFixture(patience: HandoffPatience(pollMs: 100, limitMs: 300))
         defer { fixture.remove() }
-        fixture.host.isTurnLost = true
+        fixture.host.handoffTurnLost = true
 
         await #expect(throws: SessionHandoff.Failure.promptNeverSubmitted) {
             try await fixture.handoff.run(fixture.request)
@@ -36,7 +36,7 @@ struct SessionHandoffRefusalTests {
         defer { fixture.remove() }
         fixture.host.onPause = {
             fixture.writeBriefOnce()
-            fixture.host.isTurnLost = true
+            fixture.host.handoffTurnLost = true
         }
 
         let outcome = try await fixture.handoff.run(fixture.request)
