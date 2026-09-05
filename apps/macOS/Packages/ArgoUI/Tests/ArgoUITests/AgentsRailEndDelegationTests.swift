@@ -63,13 +63,13 @@ struct AgentsRailEndDelegationTests {
     }
 
     /// What the reader sees for it afterwards, and the ranking at the head of
-    /// `FeedAgents.told(_:writing:ended:at:)`: the gesture is DIRECT, so it outranks the child's
+    /// `FeedAgents.told(_:by:ended:at:)`: the gesture is DIRECT, so it outranks the child's
     /// own file still growing.
     @Test
     func `an ended delegation reads finished, whatever its child is still doing`() {
         let told = FeedAgents.told(
             [Self.chip(activity: .running)],
-            writing: { _ in .writing },
+            by: SubagentEvidence(writing: { _ in .writing }, measure: { _ in .unmeasured }),
             ended: DelegationHold(backgrounded: [Self.call], isAlone: true, ended: [Self.call]),
         )
 
@@ -82,7 +82,7 @@ struct AgentsRailEndDelegationTests {
     func `a delegation nobody ended keeps the reading the record and the child gave it`() {
         let told = FeedAgents.told(
             [Self.chip(activity: .running)],
-            writing: { _ in .writing },
+            by: SubagentEvidence(writing: { _ in .writing }, measure: { _ in .unmeasured }),
             ended: DelegationHold(backgrounded: [Self.call], isAlone: true, ended: ["another"]),
         )
 

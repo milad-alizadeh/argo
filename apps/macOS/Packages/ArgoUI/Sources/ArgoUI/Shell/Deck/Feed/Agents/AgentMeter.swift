@@ -11,11 +11,17 @@ import SwiftUI
 /// delegating call's result. So the duration counts UP from the handover instead, and the spend
 /// slot stays empty rather than drawing a `0` that would claim a busy agent had spent nothing.
 ///
-/// A backgrounded Agent is never reported either figure, at either end (#908) — so a finished one
-/// draws NOTHING here. The count-up is gated on `.running` for exactly that: a clock still growing
-/// beside a quiet dot would say the work goes on, which is the untruth the rail was fixed to stop.
-/// That gate carries the delegating Session's own status too (`DelegatingSession`), so a stale
-/// delegation draws no duration rather than a frozen one.
+/// A backgrounded Agent is never REPORTED either figure, at either end (#908). Both are derived
+/// from its own record instead (`SubagentMeasure`, #1279), and both arrive here as the same two
+/// fields — this view draws what a chip holds and never asks where the figure came from. What stays
+/// empty is a chip whose child Argo has not read: degrade-down, and an empty meter is the honest
+/// state where a `0` would claim the work was instant and free.
+///
+/// The count-up is gated on `.running` for the reason it always was: a clock still growing beside a
+/// quiet dot would say the work goes on, which is the untruth the rail was fixed to stop. That gate
+/// carries the delegating Session's own status too (`DelegatingSession`), so a stale delegation
+/// draws no duration rather than a frozen one — and it is why no derived duration is handed to a
+/// running chip, which would replace the clock with a total measured only up to now.
 ///
 /// `.running` and not "anything but finished": an UNKNOWN chip gets no clock either. Argo cannot
 /// say the work is going on, and a duration counting up is that sentence written in numbers.
@@ -29,7 +35,11 @@ struct AgentMeter: View {
             duration
             // Between the two figures and only when both are there: `3m 43s 143.6K tokens` reads as
             // one number with a unit in the middle of it, which is the mistake the labels prevent.
-            if agent.durationMs != nil, agent.spend != nil {
+            //
+            // Keyed on whether the slot DRAWS, not on the reported total alone: a running chip has
+            // no total and still shows a clock, and since #1279 it shows a spend beside it — read
+            // off `durationMs` this pair would be the two figures run together.
+            if drawsDuration, agent.spend != nil {
                 Text(verbatim: "·")
             }
             spend
@@ -40,13 +50,25 @@ struct AgentMeter: View {
         .lineLimit(1)
     }
 
+    /// The moment a live chip counts UP from, or `nil` where nothing should be counting. The
+    /// `.running` gate, spelled once: the separator above and the slot below both stand on it, and
+    /// two spellings of one gate is how they come to disagree.
+    private var countingFrom: Int? {
+        agent.activity == .running ? agent.startedAtMs : nil
+    }
+
+    /// Whether the slot below draws anything at all — a stated total, or a clock still counting.
+    private var drawsDuration: Bool {
+        agent.durationMs != nil || countingFrom != nil
+    }
+
     /// The reported total once it lands, and a live count until then. Ticking wraps only this text:
     /// a timeline any wider re-renders the whole chip, which restarts its siblings' animation
     /// mid-pass — the trap `RosterTurnClock` names.
     @ViewBuilder private var duration: some View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
-        } else if agent.activity == .running, let startedAtMs = agent.startedAtMs {
+        } else if let startedAtMs = countingFrom {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(counted(from: startedAtMs, at: context.date))
             }
@@ -92,6 +114,21 @@ struct AgentMeter: View {
             activity: .running,
             spend: nil,
             handover: .init(startedAtMs: Date().epochMs - 42000),
+        ))
+        // The state #1279 added: a backgrounded chip still working, whose spend is derived from
+        // what its own file has priced so far. The one case where a clock and a figure are drawn
+        // together with no reported total between them — which is what `drawsDuration` is for.
+        AgentMeter(agent: FeedAgent(
+            id: 2,
+            label: "Standards review of #1269",
+            activity: .running,
+            spend: Usage(
+                inputTokens: 1200,
+                outputTokens: 9400,
+                cacheReadTokens: 120_000,
+                cacheCreationTokens: 0,
+            ),
+            handover: FeedCall.Handover(startedAtMs: Date().epochMs - 96000),
         ))
     }
     .padding(ArgoSpacing.loose)

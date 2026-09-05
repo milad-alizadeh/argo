@@ -149,11 +149,24 @@ enum SessionsRoomReadingCache {
         let read: Int?
     }
 
+    /// What has been derived off one entry's reading and remembered — everything a second asker at
+    /// the same stamp gets for free. One value rather than three fields beside the body, because
+    /// they are one thing: the answers this entry has already paid for.
+    private struct Derived {
+        var agents: [FeedAgent]?
+        var scoped: [Scoping: [FeedRow]] = [:]
+        /// One measure per Subagent, and the reading each was taken at beside it. Per SUBAGENT
+        /// rather than per version of its file: a child writing under a parent that is not would
+        /// otherwise leave one entry per version here, and the room's stamp — which is what evicts
+        /// anything — does not move for a child's bytes.
+        var measures: [String: SubagentMeasure] = [:]
+        var measuredAt: [String: Measuring] = [:]
+    }
+
     private struct Entry {
         let stamp: Stamp
         let body: Body
-        var agents: [FeedAgent]?
-        var scoped: [Scoping: [FeedRow]] = [:]
+        var derived = Derived()
     }
 
     private static var entries: [Entry] = []
@@ -183,7 +196,7 @@ enum SessionsRoomReadingCache {
     static func agents(at stamp: Stamp) -> [FeedAgent]? {
         guard let found = index(of: stamp) else { return nil }
         let at = entries.touch(found)
-        if let agents = entries[at].agents {
+        if let agents = entries[at].derived.agents {
             return agents
         }
         let agents = FeedAgents.all(
@@ -191,7 +204,7 @@ enum SessionsRoomReadingCache {
             of: DelegatingSession.of(entries[at].stamp.status),
         )
         counted(\.agents)
-        entries[at].agents = agents
+        entries[at].derived.agents = agents
         return agents
     }
 
@@ -206,13 +219,48 @@ enum SessionsRoomReadingCache {
         -> [FeedRow] {
         guard let found = index(of: stamp) else { return derive() }
         let at = entries.touch(found)
-        if let rows = entries[at].scoped[scoping] {
+        if let rows = entries[at].derived.scoped[scoping] {
             return rows
         }
         let rows = derive()
         counted(\.scopes)
-        entries[at].scoped[scoping] = rows
+        entries[at].derived.scoped[scoping] = rows
         return rows
+    }
+
+    /// What one chip's own file measures (#1279), memoised for the reason the scoped rows are: the
+    /// Every chip's measure (#1279), memoised for the reason the scoped rows are: the rail asks on
+    /// every pass, and the walk behind one answer is the child's whole file. Keyed by that child's
+    /// own growth stamp beside the room's, so a Subagent Argo has watched write since is measured
+    /// again and one it has not costs a dictionary lookup.
+    ///
+    /// The WHOLE list in one call, and that is the point: found per chip, this cost a search of the
+    /// entries for a matching `Stamp` plus an LRU move, on every chip on every pass — the room
+    /// looked up once per Agent instead of once per pass, which is #858's cost with a different
+    /// number on it. One lookup here, however many chips are in the rail.
+    ///
+    /// Derives without remembering where nothing holds this stamp — a specimen, a `#Preview`, a
+    /// suite — exactly as `scoped(at:drawing:otherwise:)` does.
+    static func measures(
+        at stamp: Stamp,
+        of watched: [Measuring],
+        otherwise derive: (Measuring) -> SubagentMeasure,
+    )
+        -> [String: SubagentMeasure] {
+        guard let found = index(of: stamp) else {
+            return watched.reduce(into: [:]) { $0[$1.subagentID] = derive($1) }
+        }
+        let at = entries.touch(found)
+        for measuring in watched where entries[at].derived.measuredAt[measuring.subagentID]
+            != measuring {
+            entries[at].derived.measuredAt[measuring.subagentID] = measuring
+            entries[at].derived.measures[measuring.subagentID] = derive(measuring)
+            counted(\.measures)
+        }
+        // The held dictionary itself, never a copy of the part that was asked for: this is the warm
+        // pass, and a dictionary built per pass out of answers that were all already here is the
+        // cost this memo exists to avoid, one allocation smaller.
+        return entries[at].derived.measures
     }
 
     /// Everything remembered, dropped. For a suite that needs a cold cache; nothing in the app
@@ -253,6 +301,7 @@ struct SessionsRoomReadingCost {
     var bodies = 0
     var agents = 0
     var scopes = 0
+    var measures = 0
 }
 
 private extension Array {

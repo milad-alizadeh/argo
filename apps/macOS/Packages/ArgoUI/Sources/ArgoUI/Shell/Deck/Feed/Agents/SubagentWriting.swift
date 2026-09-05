@@ -7,7 +7,7 @@ import ArgoEngine
 /// waiting on them writes nothing itself, so its status reads `idle` and every delegation under it
 /// is indistinguishable in the record from a dead one's (#1076). Argo holds each child's own
 /// transcript anyway (#858), and a file it has watched grow is DIRECT evidence somebody is writing
-/// it. Where that reading is applied, and why not one level down, is `FeedAgents.told(_:writing:)`.
+/// it. Where that reading is applied, and why not one level down, is `FeedAgents.told(_:by:at:)`.
 ///
 /// **One-directional, exactly as `DelegationCeiling` is** — it only ever GIVES a running claim, on
 /// the evidence of a write. It never reopens a delegation the record answered: that ending is one

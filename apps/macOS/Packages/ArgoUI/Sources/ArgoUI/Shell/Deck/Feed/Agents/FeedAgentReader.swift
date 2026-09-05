@@ -183,10 +183,25 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// `feed` is walked only where the reader is unstamped — a specimen, a `#Preview`, a suite. A
     /// stamped one answers with the list the cache derived from its OWN rows, which is what keeps
     /// the answer a fact about the reading rather than about whoever asked first.
-    @MainActor func agents(in feed: [FeedRow]) -> [FeedAgent] {
-        let walked = stamp.flatMap { SessionsRoomReadingCache.agents(at: $0) }
+    /// `package` so a specimen can draw the rail's chips as the deck derives them, rather than
+    /// hand-building a list whose meters no reader would ever see (`AgentsRailMeasuredSpecimen`).
+    @MainActor package func agents(in feed: [FeedRow]) -> [FeedAgent] {
+        told(walked(in: feed))
+    }
+
+    /// The same list UNTOLD — the delegations as the record leaves them, with nothing read off the
+    /// children's own files.
+    ///
+    /// For the one caller that asks which Agent a scope names (`scoping(under:_)`). That question
+    /// is
+    /// answered by a delegation's position and its Subagent ID, neither of which the telling
+    /// touches — and it is asked on the WARM pass, every time the deck reads its rows, memoised or
+    /// not. Told there, every pass of a Session with a fan-out paid for evidence no scope key
+    /// reads:
+    /// a growth reading and a measure per chip, to pick one chip out of a list by its id.
+    @MainActor private func walked(in feed: [FeedRow]) -> [FeedAgent] {
+        stamp.flatMap { SessionsRoomReadingCache.agents(at: $0) }
             ?? FeedAgents.all(in: feed, of: liveness)
-        return told(walked)
     }
 
     /// What the walk above cannot answer, answered off the children's own files (#1269).
@@ -200,12 +215,60 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// datings below want the same moment.
     @MainActor private func told(_ agents: [FeedAgent]) -> [FeedAgent] {
         let nowMs = Date().epochMs
+        let measured = measures(of: agents)
         return FeedAgents.told(
             agents,
-            writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+            by: SubagentEvidence(
+                writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+                measure: { measured[$0] ?? .unmeasured },
+            ),
             ended: hold,
             at: nowMs,
         )
+    }
+
+    /// What the children's own files say their runs took and cost (#1279) — absent for a child Argo
+    /// has not read, which is what leaves that chip's meter honestly empty.
+    ///
+    /// Memoised under the room's stamp AND each child's own GROWTH STAMP, for the reason the scoped
+    /// rows are memoised under a length: the room's stamp does not move for a child's bytes (#858),
+    /// so a memo keyed on it alone would freeze a growing agent's figures.
+    ///
+    /// The growth stamp rather than the file's length, and both halves of that are load-bearing:
+    ///
+    /// - It is what a KEY may cost. This is the warm scoped pass — `reading(of:under:)` asks for
+    ///   the chips on every call, memoised rows or not — and reading each child's events to take a
+    ///   `count` put a whole file's worth of lookup on that pass per chip. `grewAtMs` is the Int
+    ///   the rail already asks for beside it, and the reading itself is touched only on a MISS.
+    /// - A length would miss a child's own `superseded` branch replaced in place (#1202), where
+    ///   the count lands where it was. Any write at all moves this.
+    ///
+    /// `nil` — a child Argo has never watched grow — is not a stale key: `lastGrewAtMs` is unset
+    /// only until a batch lands after the backfill, and a file that grows produces one. So `nil`
+    /// says the reading is not moving, which is exactly when a held measure still stands.
+    ///
+    /// The whole list in ONE call, because the room is what is looked up: asked per chip, each
+    /// answer cost a search of the cache for this stamp before it could be a dictionary hit.
+    @MainActor private func measures(of agents: [FeedAgent]) -> [String: SubagentMeasure] {
+        let watched = agents.compactMap { agent in
+            agent.subagentID.flatMap { id in
+                agent.wantsMeasuring
+                    ? SessionsRoomReadingCache.Measuring(subagentID: id, grewAtMs: grewAtMs(id))
+                    : nil
+            }
+        }
+        guard !watched.isEmpty else { return [:] }
+        guard let stamp else {
+            return watched.reduce(into: [:]) { $0[$1.subagentID] = measure(of: $1.subagentID) }
+        }
+        return SessionsRoomReadingCache.measures(at: stamp, of: watched) {
+            measure(of: $0.subagentID)
+        }
+    }
+
+    /// ONE walk of one child's file, taken only where nothing holds its answer already.
+    @MainActor private func measure(of agentID: String) -> SubagentMeasure {
+        read(agentID).map { SubagentMeasure.read($0) } ?? .unmeasured
     }
 
     @MainActor private func derived(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
@@ -214,13 +277,17 @@ public struct FeedAgentReader: Equatable, Sendable {
 
     /// What the scoped rows are a function of beyond the room's stamp: which Agent, and how much of
     /// it Argo had read when they were derived.
+    ///
+    /// Off the UNTOLD list — see `walked(in:)`. A scope names a delegation by position and reaches
+    /// its file by Subagent ID; what the children's own records say about their state and their
+    /// cost is the rail's question, not this one's.
     @MainActor private func scoping(
         under feed: [FeedRow],
         _ scope: FeedScope,
     )
         -> SessionsRoomReadingCache.Scoping {
         guard let selected = scope.agent,
-              let agent = agents(in: feed).first(where: { $0.id == selected }),
+              let agent = walked(in: feed).first(where: { $0.id == selected }),
               let id = agent.subagentID
         else { return SessionsRoomReadingCache.Scoping(scope: scope, read: nil) }
         return SessionsRoomReadingCache.Scoping(scope: scope, read: read(id)?.count)

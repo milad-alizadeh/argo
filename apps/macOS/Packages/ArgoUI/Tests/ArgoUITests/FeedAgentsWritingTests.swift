@@ -83,7 +83,7 @@ struct FeedAgentsWritingTests {
             handover: FeedCall.Handover(subagentID: Self.child),
         )]
 
-        #expect(FeedAgents.told(answered) { _ in .writing }.map(\.activity) == [.finished])
+        #expect(FeedAgents.told(answered, by: .watching(.writing)).map(\.activity) == [.finished])
     }
 
     /// Nor does it reach a Session that has gone: that reading is `finished` for a reason the

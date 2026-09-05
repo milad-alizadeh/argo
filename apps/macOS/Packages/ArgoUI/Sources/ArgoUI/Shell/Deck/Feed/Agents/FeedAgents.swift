@@ -15,8 +15,8 @@ package enum FeedAgents {
     /// NOTHING here is measured against a clock, which is what lets this be memoised under
     /// `SessionsRoomReadingCache`'s stamp: that stamp carries no clock, so anything read off one
     /// would freeze at the moment the parent last wrote. The two facts that need one — the report
-    /// ceiling and the child's own growth — are both taken in `told(_:writing:at:)`, on the list
-    /// this returns. A clock in the stamp would instead expire every memo in the room on a timer,
+    /// ceiling and the child's own growth — are both taken in `told(_:by:at:)`, on the list this
+    /// returns. A clock in the stamp would instead expire every memo in the room on a timer,
     /// which is the cost #858 and #875 exist to have removed.
     package static func all(
         in rows: [FeedRow],
@@ -52,7 +52,7 @@ package enum FeedAgents {
         /// A Turn ended, or somebody stopped one, AFTER the work was handed over
         /// (`FeedMark.endsTurn`). A synchronous delegation blocks the Turn that made it, so its own
         /// Turn cannot have ended while it runs; a backgrounded one outlives its Turn by design and
-        /// is reached instead by the child's own file (`told(_:writing:at:)`, #1269).
+        /// is reached instead by the child's own file (`told(_:by:at:)`, #1269).
         let turnEnded: Bool
     }
 
@@ -137,28 +137,60 @@ package enum FeedAgents {
     /// A `.finished` chip is never reopened. That is the record having ANSWERED the delegation, and
     /// a trailing byte in the child's file does not un-answer it.
     ///
-    /// `writing` is asked by Subagent ID, so an Agent the record never named has no file to watch
+    /// The evidence is asked by Subagent ID, so an Agent the record never named has no file to read
     /// and is never asked about — both halves of "which chips the evidence can reach" spelled here,
     /// rather than one of them living in whichever closure was passed in.
+    ///
+    /// The activity is settled BEFORE the figures are, and that order is load-bearing: a derived
+    /// duration is withheld from a running chip, so measuring first would hand a frozen total to a
+    /// chip the growth reading was about to set running (#1279).
     static func told(
         _ agents: [FeedAgent],
-        writing: (String) -> SubagentWriting,
+        by evidence: SubagentEvidence,
         ended: DelegationHold = .none,
         at nowMs: Int = Date().epochMs,
     )
         -> [FeedAgent] {
-        agents.map { agent in
-            guard agent.activity != .finished else { return agent }
-            var told = agent
-            if ended.isEnded(agent.openDelegationID) {
-                told.activity = .finished
-            } else if agent.subagentID.map({ writing($0) }) == .writing {
-                told.activity = .running
-            } else if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
-                told.activity = .finished
-            }
-            return told
+        agents.map { measured(dated($0, by: evidence, ended: ended, at: nowMs), by: evidence) }
+    }
+
+    /// One chip's activity, told by the clocked facts — the ruling the doc comment above states,
+    /// and the whole of what `told` did before the figures joined it.
+    private static func dated(
+        _ agent: FeedAgent,
+        by evidence: SubagentEvidence,
+        ended: DelegationHold,
+        at nowMs: Int,
+    )
+        -> FeedAgent {
+        guard agent.activity != .finished else { return agent }
+        var told = agent
+        if ended.isEnded(agent.openDelegationID) {
+            told.activity = .finished
+        } else if agent.subagentID.map({ evidence.writing($0) }) == .writing {
+            told.activity = .running
+        } else if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
+            told.activity = .finished
         }
+        return told
+    }
+
+    /// The two figures the delegation itself never stated, off the child's own record (#1279).
+    ///
+    /// REPORTED WINS. Each is filled only where the record stated none, so a synchronous agent's
+    /// host-measured pair still stands — and a chip whose record stated all three asks the reading
+    /// nothing at all.
+    ///
+    /// The DURATION is withheld from a running chip. `AgentMeter` draws a stated total in
+    /// preference to counting up, so a span measured off what has been read SO FAR would replace a
+    /// live clock with a frozen one — the untruth #1076 and #1090 removed, arrived at from the
+    /// other side. The spend is not withheld: tokens read so far are tokens spent so far, and that
+    /// figure only grows.
+    private static func measured(_ agent: FeedAgent, by evidence: SubagentEvidence) -> FeedAgent {
+        guard let id = agent.subagentID, agent.wantsMeasuring else { return agent }
+        var told = agent
+        told.measure = evidence.measure(id)
+        return told
     }
 
     /// How many of them are running right now — the count line's figure and the list under it,
@@ -175,13 +207,13 @@ package enum FeedAgents {
     /// the running Session still holding yesterday's delegations (#1090).
     ///
     /// A FOURTH fact reaches the ones those three leave undecided, and it is not in the record at
-    /// all: the Subagent's own file, growing (`told(_:writing:)`, #1269).
+    /// all: the Subagent's own file, growing (`told(_:by:at:)`, #1269).
     static func running(of agents: [FeedAgent]) -> Int {
         agents.filter(\.activity.isRunning).count
     }
 
     /// One chip's own share of that claim, spelled here so the list above reads as one line per
-    /// fact the rail draws — and the TIMELESS half of it, which is what `told(_:writing:at:)` is
+    /// fact the rail draws — and the TIMELESS half of it, which is what `told(_:by:at:)` is
     /// handed to date.
     ///
     /// The ending first, because it is the one thing Argo simply KNOWS: a delegation the record
