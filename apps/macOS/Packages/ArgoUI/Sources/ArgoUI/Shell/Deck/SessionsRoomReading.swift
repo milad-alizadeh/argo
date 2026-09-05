@@ -123,9 +123,12 @@ struct SessionsRoomReading {
         self.header = session.map {
             SessionHeaderProjection.header(
                 from: $0,
-                // Across the WHOLE roster, so a Session that has given its Ticket's words up to a
-                // rival row reads the same title here that row draws (#1391).
-                title: SessionTitle.namedTitle(for: $0.id, across: presentation.sessions),
+                // The ROSTER's own answer, so a Session that has given its Ticket's words up to a
+                // rival row reads the same title here that row draws — and one whose only rival
+                // is a row the reader cannot see keeps them on both surfaces (#1391, #1251).
+                title: SessionRosterProjection.namedTitle(
+                    for: $0.id, among: presentation.sessions,
+                ),
                 worked: body.worked,
             )
         }

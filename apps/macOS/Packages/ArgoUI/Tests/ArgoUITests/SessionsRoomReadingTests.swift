@@ -44,6 +44,29 @@ struct SessionsRoomReadingTests {
         #expect(quiet.header?.title == "two")
     }
 
+    /// The header's title is the ROSTER's decision, taken over the rows the roster draws (#1251).
+    /// Read here rather than off `SessionHeaderProjection.header(from:title:)`, because the wiring
+    /// between the two is the half that was wrong: the reading used to ask across every Session it
+    /// held, so a row behind the archive foot moved the header and not the row.
+    @Test
+    func `the header keeps the words a rival behind the foot leaves alone`() {
+        let issue = CockpitPresentation.Session.Issue(number: 650, title: "Rough atlas for Argo")
+        let presentation = CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: [
+                RosterSessionFixture.session(id: "live", ticket: .linked(issue)),
+                RosterSessionFixture
+                    .session(id: "filed", isArchived: true, ticket: .linked(issue)),
+            ],
+            connection: .idle,
+        )
+
+        let reading = SessionsRoomReading(presentation: presentation, sessionID: "live")
+
+        #expect(reading.header?.title == "Rough atlas for Argo")
+    }
+
     /// With nothing selected there is no Session to read, which is the one case that draws nothing
     /// — never a room the deck happens to be out of.
     @Test
