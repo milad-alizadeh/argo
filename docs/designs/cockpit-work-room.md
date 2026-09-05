@@ -808,12 +808,22 @@ as the toolbar's Start does — the word, then the command after it in `text.ter
 `machineCaption`, because it **says which command it will send** — `/implement`,
 `/design-to-code`, `/grill-me`, `/prototype`, `/wayfinder`. A press that silently dispatched one of
 five different jobs is a press nobody can aim. **Amended #1182: a ticket reads `Start` alone, and
-opens an empty composer, only where its labels SAY it is not build work** — `question`,
-`needs-triage`, `needs-info`, `ready-for-human`, `wayfinder:research`, `wontfix`, `duplicate`,
-`invalid`. Everything else, an unlabelled ticket included, sends `/implement`. The empty composer
-was written as the answer for decision tickets and became the answer for most tickets, because
-most tickets here are filed with no labels at all; a Start that reliably did nothing is not a more
-honest answer than a wrong one, it is an indistinguishable one.
+opens an empty composer, only where its labels SAY it is not build work.** Everything else, an
+unlabelled ticket included, sends `/implement`. The empty composer was written as the answer for
+decision tickets and became the answer for most tickets, because roughly one ticket in six here
+carries no labels at all; a Start that reliably did nothing is not a more honest answer than a wrong
+one, it is an indistinguishable one.
+
+**Two sets refuse, and they sit either side of the build labels**, because "never" and "not yet"
+are different claims:
+
+- **Not an agent's work at all** — `wontfix`, `duplicate`, `invalid`, `ready-for-human`. These
+  **outrank** `bug` and `enhancement` beside them: 3 tickets here carry `ready-for-human` next to
+  a build label and 2 carry `duplicate`, and starting an agent on a duplicate or on work a person
+  reserved is exactly the wrong-work failure the empty composer exists to prevent.
+- **Not settled yet** — `question`, `needs-triage`, `needs-info`, `wayfinder:research`. These
+  **lose** to a build label beside them. `needs-triage` rides along on about fifty of this
+  tracker's build tickets, so ranking it above them would re-create the fault #1182 reported.
 
 **Its vessel is its own, and it answers the pointer on its own account.** It cannot borrow the
 `.quiet` control's flat `surface.overlay`: that fill is a fixed ink and the card under it is not, so

@@ -1,20 +1,12 @@
 /// What a Session started on a Ticket opens on — the rule that picks its command (#899), and
 /// the rung it stands on (#941).
 ///
-/// Seven rules, FIRST MATCH WINS. Rules 1 to 5 read a Ticket that says what it wants; rule 6 is a
-/// named set of REFUSALS that opens an empty composer; rule 7 is the default, and it is
-/// `/implement`.
+/// Eight rules, FIRST MATCH WINS, and the last of them is the default: `/implement`. A Ticket has
+/// to say it is NOT build work rather than that it is (#1182), because most tickets in this
+/// tracker are filed with no labels at all.
 ///
-/// Rule 7 used to be the refusal, on the reasoning that a wrong `/implement` on a decision Ticket
-/// is a Session that does the wrong work. That reasoning only holds where the labels are
-/// maintained, and in this tracker they are not: most tickets are filed with no labels at all, so
-/// the fall-through written for decision Tickets was in practice the fall-through for MOST
-/// Tickets, and `/implement` — the whole point of pressing Start — almost never fired (#1182).
-///
-/// So the burden moved. A Ticket no longer has to say it is build work; it has to say it is NOT,
-/// and rule 6 is the closed set of ways to say so. The cost of the swap is bounded in the
-/// direction that matters: a Session opened on the wrong `/implement` is one a reader can see and
-/// stop, whereas the empty composer it replaced looked exactly like a Start that did nothing.
+/// The two refusing sets sit either side of rule 6's build labels, and which side is the whole of
+/// their meaning. `notForAnAgent` outranks a build label; `notYetSettled` loses to one.
 ///
 /// The raw value is the command's own name, so the prompt and the mapping cannot say two things.
 public enum WorkCommand: String, Sendable {
@@ -69,8 +61,7 @@ public enum WorkCommand: String, Sendable {
     /// a rule printed beside a command nobody picked reads as a claim about that command.
     ///
     /// `implement`'s reason is worded for BOTH ways it is reached, the build label and the default
-    /// under it (#1182). It used to read "matched by label", which an unlabelled Ticket would have
-    /// made into a straight falsehood printed beside the command it explains.
+    /// under it (#1182).
     public static func why(_ command: WorkCommand) -> String? {
         switch command {
         case .designToCode: "the screen has a design"
@@ -97,10 +88,9 @@ public enum WorkCommand: String, Sendable {
         if let asked = asked.first(where: { labels.contains($0.label) }) {
             return asked.command
         }
-        if !labels.isDisjoint(with: builds) {
-            return .implement
-        }
-        return labels.isDisjoint(with: refusals) ? .implement : nil
+        guard labels.isDisjoint(with: notForAnAgent) else { return nil }
+        guard labels.isDisjoint(with: builds) else { return .implement }
+        return labels.isDisjoint(with: notYetSettled) ? .implement : nil
     }
 
     /// Rule 1: does this Ticket NAME a screen the tree has a design for?
@@ -133,25 +123,30 @@ public enum WorkCommand: String, Sendable {
         ("wayfinder:prototype", .prototype),
     ]
 
-    /// Rule 5's labels: a Ticket that SAYS it is build work. It is checked before rule 6 so that a
-    /// refusal riding along beside a build label loses — `needs-triage` sits on a great many
-    /// Tickets that are plainly bugs, and a Ticket that says `bug` has said what it is.
+    /// Rule 6: the labels that say a Ticket IS build work. The last rule answers `.implement` too,
+    /// so the only effect left to this set is to OUTRANK rule 7 — `needs-triage` beside a `bug`
+    /// loses, and it has to: it rides along on about fifty of this tracker's build tickets.
     private static let builds: Set<String> = [
         "bug", "enhancement", "ready-for-agent", "wayfinder:task",
     ]
 
-    /// Rule 6: the labels that say this Ticket is NOT build work, and the only way to get no
-    /// command. Each is a different way of saying it — it is a question (`question`), it is not
-    /// settled (`needs-triage`, `needs-info`), it is somebody else's (`ready-for-human`), it is
-    /// reading rather than building (`wayfinder:research`), or it is not going to be actioned at
-    /// all (`wontfix`, `duplicate`, `invalid`).
+    /// Rule 5: not an agent's work, whatever KIND of work it is — so it is read before the build
+    /// labels and beats them. Three say the Ticket will never be actioned and one reserves it for
+    /// a person, and a build label beside any of them does not make it an agent's again: 3 Tickets
+    /// here carry `ready-for-human` next to `bug` or `enhancement`, and 2 carry `duplicate`.
+    private static let notForAnAgent: Set<String> = [
+        "wontfix", "duplicate", "invalid", "ready-for-human",
+    ]
+
+    /// Rule 7: not settled YET, which is a different claim and loses to a build label. A Ticket
+    /// that says `bug` has said what it is, whatever else is still open about it.
     ///
-    /// This set is the one that must stay maintained, and it is the closed one BY DESIGN: a label
-    /// added to the tracker tomorrow reads as build work until it is named here, which fails
-    /// towards the Session a reader can see rather than the empty composer they cannot tell from a
-    /// broken button.
-    private static let refusals: Set<String> = [
-        "question", "needs-triage", "needs-info", "ready-for-human", "wayfinder:research",
-        "wontfix", "duplicate", "invalid",
+    /// Both sets are closed BY DESIGN, which looks like the wrong way round: a label added to the
+    /// tracker tomorrow reads as build work until it is named in one of them. That fails towards a
+    /// Session a reader can see and stop, rather than an empty composer they cannot tell from a
+    /// broken button. Four of the strings across the two sets are triage labels
+    /// `docs/agents/triage-labels.md` owns — keep the two in step.
+    private static let notYetSettled: Set<String> = [
+        "question", "needs-triage", "needs-info", "wayfinder:research",
     ]
 }

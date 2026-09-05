@@ -40,9 +40,7 @@ struct WorkCommandTests {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == command)
     }
 
-    /// Rule 6 is a NAMED SET of refusals, and it is the only way to get no command. Each of these
-    /// labels says the Ticket is not build work — it is a question, it is somebody else's, or it is
-    /// not ready — so `Start` opens the empty composer that says so.
+    /// A refusing label ALONE asks for no command, from either set (#1182).
     @Test(arguments: [
         ["needs-triage"], ["ready-for-human"], ["wayfinder:research"], ["question"], ["wontfix"],
         ["needs-info"], ["duplicate"], ["invalid"],
@@ -51,29 +49,35 @@ struct WorkCommandTests {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == nil)
     }
 
-    /// The point of #1182. Most tickets in this tracker are filed with no labels at all, so a
-    /// fall-through that refused them was in practice the fall-through for MOST tickets, and
-    /// `/implement` — the whole point of pressing Start — almost never fired. An unlabelled Ticket
-    /// now reads as what Start reads as.
-    @Test func `an unlabelled ticket opens on implement`() {
-        #expect(WorkCommand.resolving(Self.ticket([]), designs: Self.designs) == .implement)
-    }
-
-    /// Rule 7 is a DEFAULT and not a named set, so a label nobody listed does not refuse the
-    /// Ticket. `documentation` and `skills-drift` are build work that the old closed set happened
-    /// not to name, and a label added to the tracker tomorrow is build work too until rule 6 says
-    /// otherwise.
-    @Test(arguments: [["documentation"], ["skills-drift"], ["good first issue"], ["help wanted"]])
-    func `a ticket labelled with none of the rules still opens on implement`(labels: [String]) {
+    /// The point of #1182, and the default under it: nothing refuses these, so `Start` sends what
+    /// it reads as. `[]` is the reported case — roughly one ticket in six here carries no labels —
+    /// and the rest are build work the old closed set happened not to name.
+    @Test(arguments: [
+        [], ["documentation"], ["skills-drift"], ["good first issue"], ["help wanted"],
+    ])
+    func `a ticket that nothing refuses opens on implement`(labels: [String]) {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == .implement)
     }
 
-    /// Rule 5 before rule 6: a refusal beside a build label loses. `needs-triage` rides along on a
-    /// great many tickets that are plainly build work, and a Ticket that says `bug` has said what
-    /// it is.
-    @Test(arguments: [["enhancement", "needs-triage"], ["bug", "needs-info"]])
-    func `a build label outranks a refusal beside it`(labels: [String]) {
+    /// Rule 6 before rule 7: `needs-triage` rides along on about fifty of this tracker's build
+    /// tickets, so a Ticket that says `bug` has said what it is whatever else is still open.
+    @Test(arguments: [["enhancement", "needs-triage"], ["bug", "needs-info"], ["bug", "question"]])
+    func `a build label outranks a ticket that is only unsettled`(labels: [String]) {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == .implement)
+    }
+
+    /// Rule 5 before rule 6, which is the other way round: `wontfix` and its neighbours say the
+    /// Ticket is not an agent's work whatever KIND of work it is, and a build label beside one does
+    /// not hand it back. Starting an agent on a duplicate, or on work a person reserved, is the
+    /// wrong-work failure the empty composer was there to prevent.
+    @Test(arguments: [
+        ["bug", "wontfix"], ["bug", "duplicate"], ["enhancement", "invalid"],
+        ["bug", "ready-for-human"], ["ready-for-agent", "ready-for-human"],
+    ])
+    func `a ticket that is not an agent's work outranks the build label beside it`(
+        labels: [String],
+    ) {
+        #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == nil)
     }
 
     /// Rule 1 before rule 5, which is the repo rule `AGENTS.md` states: a UI ticket whose screen
