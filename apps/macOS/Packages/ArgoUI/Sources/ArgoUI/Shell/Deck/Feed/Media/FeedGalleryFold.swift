@@ -14,47 +14,60 @@
 /// pictures alone and no fold may swallow the half that is not a picture.
 ///
 /// A run also breaks where its ORIGIN changes, so a gallery is never half pasted and half
-/// produced. That keeps the Turn a pasted run opened exactly where the first of those prompts
-/// stood: the work fold reads its Turn boundaries off `isPrompt` over these same rows, and a
+/// produced. That is what puts the pasted run's Turn boundary exactly where the FIRST of those
+/// prompts stood: the work fold reads its boundaries off `isPrompt` over these same rows, and a
 /// gallery that had swallowed a call ahead of the prompt would move the boundary up the reading.
+///
+/// The boundaries the rows BEHIND it opened go with those rows, as every other fold's swallowed
+/// rows take theirs. Six pictures pasted one after another are six prompt records and so six
+/// Turns, and the reading now names one — which is what they are: the agent answered none of the
+/// five, so five of those Turns hold nothing to be cut from, and a lane marking them marks
+/// nothing six times.
 enum FeedGalleryFold {
     static func galleried(_ contents: [FeedRow.Content]) -> [FeedRow.Content] {
         var rows: [FeedRow.Content] = []
-        var run: [FeedShot] = []
-        var origin = FeedGallery.Origin.produced
+        var run: FeedGallery?
         for content in contents {
             guard let held = pictures(in: content) else {
-                rows.append(contentsOf: gathered(run, from: origin))
-                run = []
+                rows.append(contentsOf: gathered(run))
+                run = nil
                 rows.append(content)
                 continue
             }
-            if held.origin != origin {
-                rows.append(contentsOf: gathered(run, from: origin))
-                run = []
-                origin = held.origin
+            guard let open = run, open.origin == held.origin else {
+                rows.append(contentsOf: gathered(run))
+                run = held
+                continue
             }
-            run.append(contentsOf: held.shots)
+            run = FeedGallery(shots: open.shots + held.shots, origin: open.origin)
         }
-        return rows + gathered(run, from: origin)
+        return rows + gathered(run)
     }
 
-    private static func gathered(_ run: [FeedShot], from origin: FeedGallery.Origin)
-        -> [FeedRow.Content] {
-        run.isEmpty ? [] : [.gallery(FeedGallery(shots: run, origin: origin))]
+    private static func gathered(_ run: FeedGallery?) -> [FeedRow.Content] {
+        run.map { [.gallery($0)] } ?? []
     }
 
-    /// The pictures a row contributes to a run and whose they are, or none — which is also what
-    /// says the run ends here. A collapsed run of three renders of one file contributes all three.
+    /// The gallery a row on its own would be, or none — which is also what says the run ends here.
+    /// A collapsed run of three renders of one file contributes all three.
     ///
     /// A row holding no picture at all contributes none whichever kind it is, so a prompt of
     /// nothing keeps its own row rather than being folded away into a gallery of nothing.
-    private static func pictures(in content: FeedRow.Content)
-        -> (shots: [FeedShot], origin: FeedGallery.Origin)? {
-        let held: (shots: [FeedShot], origin: FeedGallery.Origin)? = switch content {
-        case let .call(call) where call.showsMedia: (call.shots, .produced)
-        case let .prompt(text, shots) where text.isEmpty: (shots, .pasted)
-        default: nil
+    ///
+    /// No `default`, for `FeedRow.Content.kind`'s reason: a twelfth kind that carries pictures
+    /// fails this build rather than quietly ending every run it lands in.
+    private static func pictures(in content: FeedRow.Content) -> FeedGallery? {
+        let held: FeedGallery? = switch content {
+        case let .call(call): call.showsMedia ? FeedGallery(shots: call.shots) : nil
+        // Trimmed, not `isEmpty`: the CLI writes `[Image #3]` beside the pixels and the engine
+        // shears the token plus at most ONE space off it (`HarnessRecord.shorn`), so a paste that
+        // was two pictures, or one on a line of its own, leaves a space or a newline behind. A
+        // prompt of whitespace is a prompt of no words, and reading it as content would stack the
+        // very run this fold is for.
+        case let .prompt(text, shots):
+            text.trimmed.isEmpty ? FeedGallery(shots: shots, origin: .pasted) : nil
+        case .message, .thought, .survey, .work, .gallery, .ask, .skillLoaded, .mark,
+             .settledWait, .unreadable: nil
         }
         return held.flatMap { $0.shots.isEmpty ? nil : $0 }
     }

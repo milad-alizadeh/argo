@@ -26,7 +26,7 @@ struct FeedPastedGalleryTests {
     func `a prompt with words is not part of a picture run`() {
         let asked = Self.pasted(1) + [.prompt(
             text: "the header sits too low",
-            images: [Self.image],
+            images: [FeedFixture.pasted()],
             atMs: nil,
         )] + Self.pasted(2)
 
@@ -74,6 +74,19 @@ struct FeedPastedGalleryTests {
         #expect(gallery.shots.map(\.address) == [FeedShot.pastedCaption, FeedShot.pastedCaption])
     }
 
+    /// What the record actually leaves behind: `HarnessRecord.shorn` takes the `[Image #n]` token
+    /// and at most ONE space with it, so a paste of two pictures, or one on a line of its own,
+    /// hands the feed a prompt of whitespace. Read as content, that is the very run this fold is
+    /// for, stacked again.
+    @Test(arguments: [" ", "\n", "  \n "])
+    func `whitespace the token left behind is not words`(leftover: String) {
+        let rows = FeedProjection.rows(from: (0 ..< 3).map { _ in
+            .prompt(text: leftover, images: [FeedFixture.pasted()], atMs: nil)
+        })
+
+        #expect(FeedFixture.galleries(in: rows).map(\.shots.count) == [3])
+    }
+
     /// A prompt of nothing at all is still a row somebody sent. Folding it into a gallery of no
     /// pictures would take a row out of the reading and put an empty grid in its place.
     @Test
@@ -84,16 +97,10 @@ struct FeedPastedGalleryTests {
         #expect(rows.count == 1)
     }
 
-    private static let image = MediaEvidence(
-        tier: .direct,
-        mediaType: "image/png",
-        bytes: .held(FeedFixture.onePixelPNG),
-    )
-
     /// One wordless prompt per picture, which is what pasting several in a row writes. Their
     /// pictures are indistinguishable on purpose: a pasted shot borrows no address, so the count
     /// is the only thing a claim here can be made about.
     private static func pasted(_ pictures: Int) -> [TranscriptEvent] {
-        (0 ..< pictures).map { _ in .prompt(text: "", images: [image], atMs: nil) }
+        (0 ..< pictures).map { _ in .prompt(text: "", images: [FeedFixture.pasted()], atMs: nil) }
     }
 }

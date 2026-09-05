@@ -67,13 +67,18 @@ extension FeedRow.Content {
     /// The one exhaustive `switch` over the kinds that answers a FACT about a row. No `default`, so
     /// a twelfth kind fails this build rather than quietly inheriting answers written for the
     /// eleven
-    /// that exist. Three switches remain, each resolving a payload per case rather than a fact and
-    /// none of them precomputable per row per reshape: `opened` below, `FeedRowView.body` and
-    /// `MinimapRow.shape`.
+    /// that exist. Four switches remain, each resolving a payload per case rather than a fact and
+    /// none of them precomputable per row per reshape: `opened` below, `FeedRowView.body`,
+    /// `MinimapRow.shape` and `FeedGalleryFold.pictures(in:)`.
     var kind: Kind {
         switch self {
         // A prompt that is ONLY a picture has no fold for the key to work, so it opens the picture
         // instead — the gallery's answer, on the row the picture arrived in.
+        //
+        // The projection no longer hands one over: the gallery fold takes every wordless prompt
+        // that holds pictures, a run of one included (#1252). The answer stays because the VALUE
+        // stays constructible, and a row built by hand must not be a control that swallows the key
+        // while doing nothing.
         case let .prompt(text, shots):
             Kind(
                 isProse: true,

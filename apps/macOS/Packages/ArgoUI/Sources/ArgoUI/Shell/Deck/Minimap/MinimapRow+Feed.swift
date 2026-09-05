@@ -27,7 +27,11 @@ extension MinimapRow {
             topStep: FeedRow.step(to: row, from: previous),
         )
         let kind = row.kind
-        prompt = kind.isPrompt ? kind.words : nil
+        // A prompt of no words names its Turn with nothing. Reported as words all the same, the
+        // empty label still takes a slot from `MinimapAnnotation.legible`, which drops the words
+        // of any label landing on the one above it — so an unnamed Turn silenced a named one. It
+        // matters now that a whole run of pasted pictures folds into ONE such row (#1252).
+        prompt = kind.isPrompt ? kind.words.flatMap { $0.isEmpty ? nil : $0 } : nil
         endsTurn = kind.endsTurn
     }
 }

@@ -8,23 +8,17 @@ import Testing
 @MainActor
 @Suite("Prompt pictures in the feed")
 struct FeedPromptImageTests {
-    /// Real PNG bytes, because half of what a shot does depends on the image decoding at all — a
-    /// shot with nothing behind it is not a control, so it is not what the key press cases mean.
-    private static func media(_ bytes: String? = FeedFixture.onePixelPNG) -> MediaEvidence {
-        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: bytes.map { .held($0) })
-    }
-
     private static func rows(_ text: String, _ images: [MediaEvidence]) -> [FeedRow] {
         FeedProjection.rows(from: [.prompt(text: text, images: images, atMs: nil)])
     }
 
     @Test
     func `a prompt's pictures reach its row as shots`() {
-        let content = Self.rows("the header sits too low", [Self.media()]).first?.content
+        let content = Self.rows("the header sits too low", [FeedFixture.pasted()]).first?.content
 
         #expect(content == .prompt(
             text: "the header sits too low",
-            shots: [FeedShot.pasted(Self.media())],
+            shots: [FeedShot.pasted(FeedFixture.pasted())],
         ))
     }
 
@@ -32,7 +26,7 @@ struct FeedPromptImageTests {
     /// accent wash on a just-sent echo and the two filtered renders all read these.
     @Test
     func `a prompt carrying pictures is still prose the user asked for`() {
-        let row = Self.rows("look", [Self.media()]).first
+        let row = Self.rows("look", [FeedFixture.pasted()]).first
 
         #expect(row?.kind.isPrompt == true)
         #expect(row?.kind.isProse == true)
@@ -48,7 +42,7 @@ struct FeedPromptImageTests {
     /// named no file, so the shot says what it IS rather than borrowing an address it has not got.
     @Test
     func `a pasted shot names itself rather than a file`() {
-        let shot = FeedShot.pasted(Self.media())
+        let shot = FeedShot.pasted(FeedFixture.pasted())
 
         #expect(shot.name == FeedShot.pastedCaption)
         #expect(shot.address == FeedShot.pastedCaption)
@@ -130,7 +124,7 @@ struct FeedPromptImageTests {
     /// key while doing nothing takes it away from the feed, which is where scrolling lives.
     @Test
     func `a wordless prompt opens its picture on Return`() {
-        let shot = FeedShot.pasted(Self.media())
+        let shot = FeedShot.pasted(FeedFixture.pasted())
         let pressed = Self.pressing(.prompt(text: "", shots: [shot]))
 
         #expect(pressed.lit == shot)
@@ -144,7 +138,7 @@ struct FeedPromptImageTests {
         let pressed = Pressed()
         let took = FeedRow(id: 0, content: .prompt(
             text: "",
-            shots: [FeedShot.pasted(Self.media(nil))],
+            shots: [FeedShot.pasted(FeedFixture.pasted(bytes: nil))],
         )).activate(
             selection: Self.selection(writing: pressed),
             isExpanded: Binding(get: { pressed.isExpanded }, set: { pressed.isExpanded = $0 }),
@@ -158,7 +152,7 @@ struct FeedPromptImageTests {
     /// A prompt with words folds, pictures or not: the fold is what the row's control offers.
     @Test
     func `a prompt with words works its fold on Return`() {
-        let shot = FeedShot.pasted(Self.media())
+        let shot = FeedShot.pasted(FeedFixture.pasted())
         let pressed = Self.pressing(.prompt(text: "the header sits too low", shots: [shot]))
 
         #expect(pressed.lit == nil)
@@ -169,7 +163,7 @@ struct FeedPromptImageTests {
     /// pasted one is a prompt, not a gallery.
     @Test
     func `a prompt is where its own picture came from`() {
-        let shot = FeedShot.pasted(Self.media())
+        let shot = FeedShot.pasted(FeedFixture.pasted())
         let row = FeedRow(id: 0, content: .prompt(text: "look", shots: [shot]))
 
         #expect(row.shows(shot))

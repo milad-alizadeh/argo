@@ -103,6 +103,13 @@ enum FeedFixture {
 
     static let onePixelPNG = TranscriptFixtures.onePixelPNG
 
+    /// A picture as a PROMPT carries one, which is bytes and no path. Real PNG bytes by default,
+    /// because half of what a shot does depends on the image decoding at all — a shot with nothing
+    /// behind it is not a control. Pass `nil` for that absence deliberately.
+    static func pasted(bytes: String? = onePixelPNG) -> MediaEvidence {
+        MediaEvidence(tier: .direct, mediaType: "image/png", bytes: bytes.map { .held($0) })
+    }
+
     /// Two handovers, the second answered: one Subagent still working and one landed, which is the
     /// pair every claim about the rail is made against. Shared, because two suites make claims
     /// about the same two chips — the projection's, and the rail's own.
