@@ -121,4 +121,15 @@ struct CodeHostListingTests {
 
         #expect(await api.urls().contains { $0.contains("head=acme:spike/idea") })
     }
+
+    @Test
+    func `a branch name carrying a hash is asked about whole`() async throws {
+        let api = RecordedGitHub(replies: Self.replies(pulls: [PullRequestJSON(number: 8)]))
+        _ = try await GitHubDeliveries(transport: api)
+            .delivery(ofBranch: "argo/#1398-archive", in: "acme/api", grant: .listing)
+
+        // Unencoded, a URL reads the `#` as the start of a fragment and the host is asked about
+        // every pull request in the repository instead (#1398).
+        #expect(await api.urls().contains { $0.contains("head=acme:argo/%231398-archive") })
+    }
 }

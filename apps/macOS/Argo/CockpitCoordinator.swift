@@ -22,6 +22,9 @@ final class CockpitCoordinator {
     private(set) var annotations = SessionAnnotations.empty
 
     let hub: Hub
+    /// How the active Project's code host reads, injected because a Binding is the ACCOUNTS
+    /// coordinator's (#1398). Unbound until it is wired, which reaps nothing.
+    var codeHostBinding: @MainActor () async -> BindingResolution = { .unbound }
     /// The CLI's own built-in commands, asked for once per version of it (#686). Held here so the
     /// answer outlives every open of the picker — the read costs a hidden session, and a menu that
     /// waited on one would be a menu nobody uses.
@@ -152,9 +155,14 @@ final class CockpitCoordinator {
     /// Ended BEFORE the annotation, so the two never disagree in the order that matters. A write
     /// that landed first would take the row off the roster while its agent was still being asked to
     /// stop, which is the state this ticket exists to remove.
+    ///
+    /// The worktree goes with it where it is Argo's own and its branch has landed (#1398). Last of
+    /// the three, because it is the slow one: it may ask the code host, and neither write above
+    /// has any reason to wait on that.
     func setArchived(_ isArchived: Bool, sessionID: String) async {
         hub.endSession(archiving: isArchived, id: sessionID)
         annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
+        await hub.reapWorktree(archiving: isArchived, id: sessionID, through: codeHostBinding)
     }
 
     /// Name a Session, or drop the name. Only ever the rename dialog: nothing observed names a

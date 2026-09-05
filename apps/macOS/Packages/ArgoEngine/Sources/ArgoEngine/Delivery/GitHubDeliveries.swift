@@ -19,14 +19,20 @@ public struct GitHubDeliveries: CodeHostPort {
 
     /// `head` takes an `owner:branch`, and the owner is the half of the Binding's scope before the
     /// slash. Most-recently-updated first, so the branch's current life is the first answer.
+    ///
+    /// The branch is percent-encoded on its way into the query, and this is not a formality: every
+    /// branch Argo's own worktrees are cut on carries a `#`, which a URL reads as the start of a
+    /// fragment — so the unencoded spelling asks the host about every pull request in the
+    /// repository and answers with whichever was touched last (#1398).
     public func delivery(
         ofBranch branch: String, in scope: String, grant: AccountGrant,
     ) async throws
         -> Delivery? {
         let owner = scope.prefix { $0 != "/" }
+        let named = branch.addingPercentEncoding(withAllowedCharacters: .branchInAQuery) ?? branch
         return try await deliveries(
             listedBy: "/repos/\(scope)/pulls?state=all&sort=updated&direction=desc"
-                + "&head=\(owner):\(branch)",
+                + "&head=\(owner):\(named)",
             in: scope,
             grant: grant,
         ).first
@@ -69,4 +75,17 @@ public struct GitHubDeliveries: CodeHostPort {
             ),
         )
     }
+}
+
+private extension CharacterSet {
+    /// What may stand unencoded where a branch name is written into a query value.
+    ///
+    /// `urlQueryAllowed` minus the three that mean something TO a query rather than in it: `&` and
+    /// `=` would let a branch name add a parameter of its own, and `+` reads back as a space. Git
+    /// permits all three in a ref, so none of them is hypothetical. `#` is already out of
+    /// `urlQueryAllowed`, and it is the one every Argo branch carries.
+    ///
+    /// `/` stays: it delimits nothing inside a query VALUE, and every branch here has one.
+    static let branchInAQuery = urlQueryAllowed
+        .subtracting(CharacterSet(charactersIn: "&=+"))
 }

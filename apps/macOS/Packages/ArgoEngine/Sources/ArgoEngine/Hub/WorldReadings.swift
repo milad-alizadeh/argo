@@ -84,13 +84,21 @@ final class WorldReadings {
     /// `.claude/worktrees/` sits inside the primary checkout, so the shallowest match would answer
     /// every Session in the repository with the repository's own branch.
     func workspace(inCwd cwd: String?) -> WorkspaceProjection? {
+        worktree(inCwd: cwd)?.workspace
+    }
+
+    /// The same lookup with the worktree's own FOLDER kept — which the table holds as a key and the
+    /// reading above throws away. What archiving reaps by (#1398): a Workspace says a worktree is
+    /// landed, and only the path says which one to remove.
+    func worktree(inCwd cwd: String?) -> (path: String, workspace: WorkspaceProjection)? {
         guard let cwd else { return nil }
         let folder = spelled(cwd).value
         // Longest first, so the first match IS the deepest: two worktrees of the same path length
         // cannot both hold one folder unless they are the same worktree.
-        guard let path = deepestFirst.first(where: { Self.folder($0, holds: folder) })
+        guard let path = deepestFirst.first(where: { Self.folder($0, holds: folder) }),
+              let workspace = workspaces[path]
         else { return nil }
-        return workspaces[path]
+        return (path, workspace)
     }
 
     /// Every worktree the repository holds, as git last answered for it. The Delivery derivation's

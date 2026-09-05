@@ -1,14 +1,17 @@
 import Foundation
 
 /// The engine ports the app composes: transcript observation, repository checkout and process
-/// liveness reads.
+/// liveness reads, and the one repository write archiving makes.
 public struct Engine: Sendable {
     private let reads: EngineReads
+    private let writes: EngineWrites
 
     /// The `git`- and `ps`-backed reads are the app's adapters; a caller with no repository and no
-    /// process table to read supplies its own set (`EngineReads`).
-    public init(reads: EngineReads = .ofThisMachine) {
+    /// process table to read supplies its own set (`EngineReads`), and one that must not touch a
+    /// repository at all supplies its own writes too.
+    public init(reads: EngineReads = .ofThisMachine, writes: EngineWrites = .ofThisMachine) {
         self.reads = reads
+        self.writes = writes
     }
 
     /// One transcript read WHOLE — what selecting a Session takes, and what the feed is drawn from.
@@ -126,6 +129,16 @@ public struct Engine: Sendable {
     /// The git working context of one working tree, or nothing where git could not answer for it.
     public func workspace(of entry: WorktreeEntry) async -> WorkspaceProjection? {
         await reads.workspace(entry)
+    }
+
+    /// One landed worktree removed, with the branch it was on (#1398). What archiving a Session
+    /// asks for once `WorktreeReaping` has cleared the folder — the decision is the value's, and
+    /// this only carries it out.
+    public func removeWorktree(
+        _ candidate: WorktreeReaping.Candidate, in repositoryURL: URL,
+    ) async
+        -> WorktreeRemoval {
+        await writes.removeWorktree(repositoryURL, candidate)
     }
 
     /// The working directories a live CLI is running in, right now.
