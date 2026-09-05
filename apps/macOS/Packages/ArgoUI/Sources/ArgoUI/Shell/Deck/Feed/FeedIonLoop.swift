@@ -19,7 +19,7 @@ struct FeedIonLoop<Content: View>: View {
     @Environment(\.argoIonPass) private var shared
 
     /// Whether there is a Turn to report. A loop is instantiated whether or not one is running, so
-    /// that a Session going quiet does not change the shape of the tree above it (`FeedIonPass`);
+    /// that a Session going quiet does not change the shape of the tree above it (`SharedIonPass`);
     /// `false` publishes a still pass and schedules nothing.
     var isLive = true
 
@@ -39,7 +39,7 @@ struct FeedIonLoop<Content: View>: View {
     ///
     /// A pass already running ABOVE this one wins. Two surfaces reporting one Turn have to rise and
     /// fall together, and two loops started at two moments do not (#1403) — so a loop under a
-    /// `FeedIonPass` draws that pass and starts none of its own.
+    /// `SharedIonPass` draws that pass and starts none of its own.
     var body: some View {
         if let shared {
             content(shared.phase, shared.aged)
@@ -91,22 +91,21 @@ struct FeedIonLoop<Content: View>: View {
 /// One pass of the loop as a VALUE, so more than one surface can be drawn from the same one. The
 /// roster row's state dot and its `PlanBar` both report the live Turn, and they are only one
 /// reading if they breathe off one clock (#1403).
-struct FeedIonPassing: Equatable {
+struct FeedIonPass: Equatable {
     /// Where the pass has got to, 0 to 1, or `nil` while nothing is moving.
     let phase: Double?
     /// The rung the wait's age has cooled the pass to.
     let aged: ArgoWaitAge
 }
 
-/// The one pass every live surface under it draws from. It holds a `FeedIonLoop` of its own and
-/// publishes what that loop is doing, so a `FeedIonLoop` further down adopts the pass rather than
-/// opening a second one.
+/// Runs one `FeedIonPass` and publishes it, so every `FeedIonLoop` under it adopts that pass
+/// rather than opening a second one of its own.
 ///
 /// It is drawn whether or not the thing it reports is live, and answers that with `isLive` rather
 /// than with a branch at the call site: a wrapper that came and went would give the content it
 /// holds a new identity every time a Session went quiet, and a row rebuilt mid-rename loses the
 /// field the reader is typing into.
-struct FeedIonPass<Content: View>: View {
+struct SharedIonPass<Content: View>: View {
     /// Whether there is a Turn to report.
     let isLive: Bool
     /// When that Turn began, which is what the pass ages off.
@@ -116,16 +115,17 @@ struct FeedIonPass<Content: View>: View {
     var body: some View {
         FeedIonLoop(isLive: isLive) { phase, aged in
             content()
-                .environment(\.argoIonPass, FeedIonPassing(phase: phase, aged: aged))
+                .environment(\.argoIonPass, FeedIonPass(phase: phase, aged: aged))
         }
         .environment(\.argoWaitStarted, waitStarted)
     }
 }
 
 extension EnvironmentValues {
-    /// The pass a `FeedIonPass` above is already running. Every `FeedIonLoop` under one draws this
+    /// The pass a `SharedIonPass` above is already running. Every `FeedIonLoop` under one draws
+    /// this
     /// instead of its own, which is what keeps two readings of one Turn in step.
-    @Entry var argoIonPass: FeedIonPassing?
+    @Entry var argoIonPass: FeedIonPass?
 
     /// How old the wait is, forced for a RENDER — the cooled rungs are a minute and five minutes
     /// in. Read INSTEAD of the clock, and only where a render sets it.

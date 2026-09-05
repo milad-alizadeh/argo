@@ -8,7 +8,7 @@ import SwiftUI
 /// all.
 struct PlanBarRosterSpecimen: View {
     /// Movement off, so the half a still cannot otherwise carry is renderable: the step in
-    /// progress parks at the breath's own floor rather than moving (#1403).
+    /// progress holds its full `interaction.accentBright` instead of breathing (#1403).
     var isStill = false
 
     static var rows: [SessionRosterProjection.Row] {
@@ -92,8 +92,8 @@ struct PlanBarRosterSpecimen: View {
         .argoAppearance()
 }
 
-// The half a still cannot carry: with movement off the step in progress has to sit at the breath's
-// floor, where the same still with movement on catches it anywhere along the curve.
+// The half a still cannot carry: with movement off the step in progress has to sit at its full ink,
+// where the same still with movement on catches it anywhere along the breath.
 #Preview("PlanBar — with movement off") {
     PlanBarRosterSpecimen(isStill: true)
         .frame(height: 340)

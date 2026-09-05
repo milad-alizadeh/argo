@@ -43,22 +43,37 @@ struct BreathingGlowTests {
         #expect(breath(phase: phase, parked: 1).strength == 1)
     }
 
-    /// The one that would go unnoticed: a segment parked at the floor draws UNDER the completed
-    /// steps beside it, saying the step nobody can act on is the brighter one.
+    /// The one that would go unnoticed. A still is the ONLY reading of a live step a Reduce Motion
+    /// reader ever gets, so it has to be the full `interaction.accentBright` the design's table
+    /// gives that step — parked at the breath's floor instead, it would draw at 40% of that ink and
+    /// read as the dimmest thing on a bar whose completed steps are all at full.
     @Test
-    func `a parked segment never draws dimmer than a step that is done`() {
-        #expect(breath(phase: 0, parked: 1).strength > BreathingGlow.resting)
+    func `a segment parked for Reduce Motion draws at its full ink`() {
+        #expect(breath(phase: 0, parked: 1).opacity == 1)
+        #expect(breath(phase: 0, parked: BreathingGlow.resting).opacity < 1)
     }
 
-    /// The two marks differ in PEAK and in nothing else — the dot's halo is light and cools with
-    /// the wait, the Plan's segment is ink and does not.
+    /// The two marks share the curve and differ in where its ends sit — the dot's halo is light
+    /// and cools with the wait, the Plan's segment is ink and does not. `peak` scales what the
+    /// reader sees without bending the shape.
     @Test
-    func `the peak scales the whole curve and never the floor's share of it`() {
+    func `the peak scales what is drawn and leaves the curve's shape alone`() {
         let dim = breath(phase: 0.5, peak: 0.6)
         let full = breath(phase: 0.5)
 
-        // `strength` is the shared curve; `peak` is applied over it, so the shape is identical.
         #expect(dim.strength == full.strength)
-        #expect(dim.peak == 0.6)
+        #expect(dim.opacity == 0.6)
+        #expect(full.opacity == 1)
+    }
+
+    /// The trough is where the two marks are furthest apart, and it is the reading the design's
+    /// rule 8 states: neither reaches zero, and the dot's halo bottoms out under the segment's.
+    @Test
+    func `a cooled halo draws under an ink mark at the same point of the pass`() {
+        let halo = breath(phase: 0, peak: 0.3)
+        let ink = breath(phase: 0)
+
+        #expect(halo.opacity < ink.opacity)
+        #expect(halo.opacity > 0)
     }
 }

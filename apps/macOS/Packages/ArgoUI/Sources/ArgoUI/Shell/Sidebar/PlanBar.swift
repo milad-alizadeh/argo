@@ -57,24 +57,16 @@ package struct PlanBar: View {
     /// step (`PlanBarFill`) — so "is this bar moving" and "is this Session live" are one answer and
     /// cannot come apart.
     ///
-    /// It peaks at full strength, where the dot's halo peaks at the rung's own glow: the halo is
-    /// LIGHT and dims as the wait ages, while a segment is ink the design fixed at
-    /// `interaction.accentBright` because it is the one step anybody can act on, and ink that
-    /// cooled would say a long Turn had stopped being the live step. The age still reaches the
-    /// breath through the pass's PERIOD, so an old Turn breathes slower here exactly as on the dot.
+    /// It peaks at full and parks at full, where the dot's halo peaks at the rung's own glow and
+    /// parks at the breath's floor: the halo is LIGHT around a mark that keeps its ink, while a
+    /// segment IS the mark. The age still reaches the breath through the pass's PERIOD, so an old
+    /// Turn breathes slower here exactly as it does on the dot.
     @ViewBuilder private func segment(reading: PlanBarFill) -> some View {
         let capsule = Capsule()
             .fill(ink(for: reading))
             .frame(width: segmentWidth, height: Self.height)
         if reading == .doing {
-            FeedIonLoop { phase, _ in
-                capsule.modifier(
-                    // A still parks at FULL, not at the breath's floor: the segment is the mark
-                    // itself, and one dimmed to the floor would draw under the completed steps
-                    // beside it — saying the step nobody can act on is the brighter one.
-                    BreathingGlow(phase: phase ?? 0, peak: 1, parked: phase == nil ? 1 : nil),
-                )
-            }
+            BreathingMark(parkedAt: 1) { capsule }
         } else {
             capsule
         }

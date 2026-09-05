@@ -1,9 +1,46 @@
+import ArgoDesign
 import Foundation
 import SwiftUI
 
-/// One breath, as a function of `FeedIonLoop`'s phase. Argo has ONE breathing curve: the roster's
-/// state dot and the `PlanBar` segment under it are two readings of the same live Turn, and a
-/// second curve for the second reading would say they were reporting different things (#1403).
+/// A mark that BREATHES on the pass it is under: one rise and fall of its strength per pass of
+/// `ArgoMotion.working`. The roster's state dot and the `PlanBar` segment beneath it are two
+/// readings of one live Turn, and this is the one place either of them is drawn moving (#1403).
+///
+/// It sits beside `FeedIonLoop` rather than beside its callers for that file's own reason: the
+/// breath belongs to `ArgoMotion.working`, not to the room that first drew it.
+struct BreathingMark<Content: View>: View {
+    /// The strength to park at with movement off, as a share of the peak.
+    ///
+    /// Each surface answers this for itself, because Reduce Motion has to cost the reader the
+    /// MOVEMENT and not the state. A halo is light AROUND a mark, so it parks at the breath's own
+    /// floor and the mark underneath keeps its ink. A segment IS the mark: parked at the floor it
+    /// would draw dimmer than the completed steps beside it, saying the step nobody can act on was
+    /// the brighter one. It parks at full.
+    let parkedAt: Double
+    /// The top of the breath, off the rung the wait's age has cooled the pass to. The dot's halo is
+    /// light and peaks at the rung's own glow; ink is already drawn at the strength the design gave
+    /// it, so it peaks at full and cools only in PERIOD.
+    var peak: (ArgoWaitAge) -> Double = { _ in 1 }
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        FeedIonLoop { phase, aged in
+            content()
+                .modifier(BreathingGlow(
+                    phase: phase ?? 0,
+                    peak: peak(aged),
+                    // The loop says `nil` for "nothing is moving" — Reduce Motion, or no Turn to
+                    // report. One place turns that into a strength, so no caller can answer it
+                    // twice and disagree with itself.
+                    parked: phase == nil ? parkedAt : nil,
+                ))
+        }
+    }
+}
+
+/// One breath, as a function of `FeedIonLoop`'s phase. Argo has ONE breathing curve and one floor:
+/// a second curve for the second reading of a Turn would say the two were reporting different
+/// things.
 ///
 /// `Animatable` is the whole point. SwiftUI interpolates a modifier's `animatableData` and rebuilds
 /// its body at each step, so the curve below is evaluated ALONG the pass. An opacity computed in a
@@ -19,17 +56,10 @@ struct BreathingGlow: ViewModifier, Animatable {
     static let resting: Double = 0.4
 
     var phase: Double
-    /// The strength at the top of the breath — the surface's own full strength. The dot's halo is
-    /// light, so its peak is the rung's glow; an ink mark is already drawn at the strength the
-    /// design gave it, so its peak is 1.
+    /// The surface's own full strength, at the top of the breath.
     let peak: Double
-    /// The share of `peak` to park at with movement off, or `nil` while the breath is travelling.
-    ///
-    /// Each surface answers this for itself, because Reduce Motion has to cost the reader the
-    /// MOVEMENT and not the state. A halo is light around a mark, so it parks at the breath's own
-    /// floor and the mark keeps its ink. A segment IS the mark, and one parked at the floor would
-    /// draw dimmer than the completed steps beside it — saying the step nobody can act on is the
-    /// brighter one. It parks at full.
+    /// The share of `peak` to park at, or `nil` while the breath is travelling. `BreathingMark` is
+    /// the only thing that decides this.
     let parked: Double?
 
     /// `nonisolated` because `ViewModifier` is main-actor isolated and `Animatable` is not:
@@ -41,7 +71,12 @@ struct BreathingGlow: ViewModifier, Animatable {
     }
 
     func body(content: Content) -> some View {
-        content.opacity(peak * strength)
+        content.opacity(opacity)
+    }
+
+    /// What the reader actually sees: the curve, scaled to the surface's own strength.
+    var opacity: Double {
+        peak * strength
     }
 
     /// A cosine rise and fall over the pass: `resting` at both ends, full in the middle. Equal ends

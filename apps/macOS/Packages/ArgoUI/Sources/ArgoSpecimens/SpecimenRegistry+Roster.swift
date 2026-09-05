@@ -61,7 +61,7 @@ extension SpecimenRegistry {
         // (#1345).
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },
         // The step in progress breathes (#1403), so the still with movement OFF is the only one
-        // that can be judged: with it on the segment is caught anywhere along the curve.
+        // that can be judged: with it on the segment is caught anywhere along the breath.
         SpecimenEntry("planBarRosterStill") { PlanBarRosterSpecimen(isStill: true) },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },

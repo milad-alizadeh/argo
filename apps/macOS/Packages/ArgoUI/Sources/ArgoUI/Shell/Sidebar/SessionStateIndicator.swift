@@ -18,10 +18,6 @@ struct SessionStateIndicator: View {
     private static let glowSpread: CGFloat = 1.7
 
     let state: ArgoOperationalState?
-    /// When the Turn this dot is reporting began, where Argo owns that stamp. It is what the loop
-    /// ages the breath off; `nil` leaves it ageing from the row's own first frame, which is all a
-    /// Session Argo only observes has ever earned.
-    var turnStartedAt: Date?
 
     var body: some View {
         Group {
@@ -40,32 +36,21 @@ struct SessionStateIndicator: View {
         .accessibilityHidden(true)
     }
 
-    /// The dot BREATHING: one rise and fall of the halo per pass of `ArgoMotion.working`, through
-    /// the loop the feed's live surfaces already run off. Argo's live surfaces are one family, and
-    /// a second clock on the roster would read as a second claim.
+    /// The dot BREATHING: one rise and fall of the halo per pass of `ArgoMotion.working`, on the
+    /// pass its surface is already under. Argo's live surfaces are one family, and a second clock
+    /// on the roster would read as a second claim.
     ///
-    /// The period is `ArgoWaitAge`'s, read off `turnStartedAt`, so a dot on a Turn six minutes in
-    /// breathes slower than one three seconds in and glows lower with it.
+    /// The period is `ArgoWaitAge`'s, off the stamp the pass was opened with, so a dot on a Turn
+    /// six minutes in breathes slower than one three seconds in and glows lower with it. On the
+    /// roster that stamp is the row's (`SharedIonPass` in `SessionRow`); a dot drawn anywhere else
+    /// ages from its own first frame, which is all a Session Argo only observes has ever earned.
     ///
-    /// Under Reduce Motion the loop stops and the halo parks at its resting strength: the still is
-    /// the breath's own floor, so a reader who turned movement off loses the movement, not the
-    /// state.
+    /// It parks at the breath's own floor with movement off: a halo is light AROUND the dot, and
+    /// the dot keeps its ink whatever the breath does, so a reader who turned movement off loses
+    /// the movement and not the state.
     @ViewBuilder private func breath(of state: ArgoOperationalState) -> some View {
         if state == .running {
-            FeedIonLoop { phase, aged in
-                glow(of: state)
-                    .modifier(BreathingGlow(
-                        phase: phase ?? 0,
-                        peak: aged.glow,
-                        // A halo is light around the dot, and the dot keeps its own ink whatever
-                        // the breath does — so a still parks at the breath's own floor.
-                        parked: phase == nil ? BreathingGlow.resting : nil,
-                    ))
-            }
-            // The loop ages the breath off this. Without it a window opened onto a Turn six
-            // minutes in would breathe at the freshest rung, and scrolling the row off and back
-            // would restart the wait.
-            .environment(\.argoWaitStarted, turnStartedAt)
+            BreathingMark(parkedAt: BreathingGlow.resting, peak: \.glow) { glow(of: state) }
         }
     }
 

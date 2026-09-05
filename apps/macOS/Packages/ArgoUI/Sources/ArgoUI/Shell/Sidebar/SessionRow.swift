@@ -30,8 +30,8 @@ package struct SessionRow: View {
         // One pass for the whole row, because the state dot and the `PlanBar` under it are two
         // readings of ONE Turn (#1403): breathed off two loops they would drift apart, and a row
         // whose two live marks disagree reads as two claims. It wraps the row whatever the state
-        // is — see `FeedIonPass` on why this is not a branch.
-        FeedIonPass(isLive: row.state == .running, waitStarted: row.turnStartedAt) {
+        // is — see `SharedIonPass` on why this is not a branch.
+        SharedIonPass(isLive: row.state == .running, waitStarted: row.turnStartedAt) {
             HStack(alignment: .top, spacing: ArgoSpacing.base) {
                 SessionMarker(row: row)
                 VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
