@@ -38,6 +38,11 @@ struct AtlasRoomView: View {
     /// the map rather than a fact about it, and a reopened room opens on the whole repository.
     @State private var query = ""
 
+    /// How far the city has climbed out of its plates, 0 to 1 (#1421). This column's own, like the
+    /// orientation: the rise is what the map DOES when it arrives, not a fact about the Project,
+    /// and nothing in the sidebar starts one.
+    @State private var rise: Double = 0
+
     /// `opened` is the file the room STARTS with open, and `typed` the question it starts with
     /// asked. Nothing in the app ever passes either: a reading is opened by a click and a question
     /// is asked at a keyboard, and neither is a gesture a screenshot can drive. They are what let
@@ -166,12 +171,44 @@ struct AtlasRoomView: View {
                     ),
                 ),
                 relief: room.choice.isCity.isOn ? 1 : 0,
+                rise: rise,
                 orientation: orientation,
                 focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(ArgoSpacing.loose)
+        // On load and on rebuild, and on neither of the two things that look like one: keyed on
+        // WHEN the Map was measured, so a channel change repaints and a filter re-tiles without
+        // the city reassembling. A model that rebuilds every time the reader touches a menu is a
+        // loading screen (`docs/designs/cockpit-atlas.html`, `rise`).
+        .task(id: map.measuredAt) { await stand() }
+    }
+
+    /// The city stands up out of its plates (#1421). Every box starts flat and climbs to its
+    /// measured height, staggered outwards from the middle of the plan — but none of that is here:
+    /// this drives ONE scalar over the role's whole span, and the shader works each box's own
+    /// phase out of it against where the box stands.
+    ///
+    /// `@MainActor` for `FeedIonLoop.run`'s reason: every line writes view state, and `.task`
+    /// alone does not keep an `async` method on the main actor.
+    @MainActor private func stand() async {
+        // Reduce Motion CUTS, which is what `ArgoMotion.rise` carrying no reduced duration means.
+        // Answered before the reset rather than by handing `withAnimation` a nil animation: the
+        // reset and the tick after it would otherwise put a flat map on screen for a frame, which
+        // is the one thing a reader who turned movement off asked not to see.
+        guard !reduceMotion else {
+            rise = 1
+            return
+        }
+        var flat = Transaction()
+        flat.disablesAnimations = true
+        withTransaction(flat) { rise = 0 }
+        // A tick between the two, for `FeedIonLoop`'s reason: SwiftUI folds every change in one
+        // tick into the last value, so a reset in the same tick as the climb leaves nothing to
+        // animate — and a rebuild would then show no rise at all.
+        try? await Task.sleep(for: .seconds(ArgoMotion.passReentry))
+        withAnimation(ArgoMotion.risen.sweep.animation) { rise = 1 }
     }
 }
 

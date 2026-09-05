@@ -12,10 +12,11 @@
 // this file draws exactly the treemap the flat shader drew at #1147, unlit.
 //
 // NOTHING TESTS THIS FILE. `AtlasCameraTests` asserts the identity over `AtlasCamera` and
-// `AtlasFit`, `AtlasLightingTests` asserts the numbers `AtlasLighting` solves, and `AtlasVolumeTests`
-// asserts the struct layouts — all three are a second copy of an expression below written in
-// Swift. An edit to `atlas_clip` or `atlas_light` alone is caught by no test and by no build: what
-// says the two agree is that they are the same expression, term for term.
+// `AtlasFit`, `AtlasLightingTests` asserts the numbers `AtlasLighting` solves, `AtlasRiseTests`
+// asserts the curve one box climbs, and `AtlasVolumeTests` asserts the struct layouts — all four
+// are a second copy of an expression below written in Swift. An edit to `atlas_clip`, `atlas_light`
+// or `atlas_growth` alone is caught by no test and by no build: what says the two agree is that
+// they are the same expression, term for term.
 //
 // NOTHING MAY BE LIT AT THE COST OF ITS BAND. `atlas_light` returns one SCALAR, never a tinted
 // vector: every lamp's own colour was already spent, in `AtlasLighting`, as how bright it reads —
@@ -52,6 +53,17 @@ struct AtlasEye {
     float2 offset;
     float relief;
     float distance;
+};
+
+/// The city standing up out of its plates, as one clock (#1421). `AtlasRise` on the Swift side is
+/// the same three fields and the same curve; `AtlasRiseTests` asserts both.
+struct AtlasRise {
+    /// 0 the instant the first box leaves its plate, 1 once the last one has settled.
+    float clock;
+    /// How much of `clock` is spent staggering rather than climbing.
+    float share;
+    /// What a box's distance from the middle of the plan is divided by.
+    float reach;
 };
 
 /// The light, solved. `AtlasLighting` on the Swift side folds every lamp's direction and tint down
@@ -127,18 +139,53 @@ static float4 atlas_clip(float3 point, constant AtlasEye &eye) {
     );
 }
 
+/// How much of its own height one box stands at, this frame (#1421).
+///
+/// The stagger runs on how far out from the middle of the plan the box sits, so the city opens
+/// from its centre rather than sweeping across it, and the wave is a PLAN measurement: the same
+/// box starts at the same point of the clock however the map is framed. The middle is
+/// `eye.centre`, which IS the plan's own middle — a second one solved here would be a second
+/// declaration of where the map's centre is.
+///
+/// Exactly 0 before a box's turn and exactly 1 after it, and ABOVE 1 in the last third of the
+/// climb: the box passes its measured height and settles back onto it. That overshoot is a back
+/// ease, and `AtlasRise.growth` in Swift is the same expression, term for term.
+static float atlas_growth(AtlasVolume volume, constant AtlasEye &eye, constant AtlasRise &rise) {
+    float2 middle = volume.origin + volume.size * 0.5;
+    float out = min(1.0, length(middle - eye.centre) / rise.reach);
+    float climb = 1.0 - rise.share;
+    if (climb <= 0) {
+        return rise.clock >= 1 ? 1 : 0;
+    }
+    float elapsed = (rise.clock - out * rise.share) / climb;
+    if (elapsed <= 0) {
+        return 0;
+    }
+    if (elapsed >= 1) {
+        return 1;
+    }
+    float overshoot = 1.15;
+    float past = elapsed - 1;
+    return 1 + (overshoot + 1) * past * past * past + overshoot * past * past;
+}
+
 vertex AtlasFragment atlas_volume_vertex(
     uint vertex_id [[vertex_id]],
     uint volume_id [[instance_id]],
     const device AtlasVolume *volumes [[buffer(0)]],
     constant AtlasEye &eye [[buffer(1)]],
-    constant AtlasLighting &lighting [[buffer(2)]]
+    constant AtlasLighting &lighting [[buffer(2)]],
+    constant AtlasRise &rise [[buffer(3)]]
 ) {
     AtlasVolume volume = volumes[volume_id];
     float2 low = volume.origin;
     float2 high = volume.origin + volume.size;
     float foot = volume.heights.x;
-    float roof = volume.heights.y;
+    // The rise is a multiply on the box's own height, so a box with none does not move: a plate's
+    // foot IS its roof, and a cast shadow's decal is flat. Every box in the map goes through this
+    // one expression rather than being told which kind it is — nothing here has to know.
+    float growth = atlas_growth(volume, eye, rise);
+    float roof = mix(foot, volume.heights.y, growth);
 
     // The near corner: the plan corner this turn puts closest, and the two walls meeting there are
     // the two that can be seen. It is the same corner for every box in a frame, because it depends
@@ -178,7 +225,12 @@ vertex AtlasFragment atlas_volume_vertex(
     // the directional face light, because an unlit treemap has no faces to tell apart, and the
     // volume's own baked `shade`, because a shadow is a statement about height and the treemap
     // draws none.
-    out.light = mix(1.0, faceLight, eye.relief) * mix(1.0, volume.shade, eye.relief);
+    // The baked `shade` is also gated by the box's own growth, which is what keeps a cast shadow
+    // from lying on the plate under a file that has not stood up yet: a shadow is a statement
+    // about height, and a box at no height casts none. It costs an ordinary face nothing — their
+    // `shade` is 1, and mixing 1 towards 1 is 1 at every point of the clock.
+    out.light = mix(1.0, faceLight, eye.relief)
+        * mix(1.0, volume.shade, eye.relief * saturate(growth));
     float contact = mix(lighting.contactFoot, 1.0, along);
     out.contact = mix(1.0, contact, eye.relief);
     out.id = volume.id;

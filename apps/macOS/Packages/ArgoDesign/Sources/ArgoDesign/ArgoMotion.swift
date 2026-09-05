@@ -97,6 +97,27 @@ public extension ArgoMotion {
         public var wait: TimeInterval {
             motion.duration + stagger
         }
+
+        /// The whole role as ONE clock, for a surface that runs the stagger itself.
+        ///
+        /// LINEAR, and over `wait` rather than over `motion.duration`: a staggered role is many
+        /// boxes on one timeline, and the only thing a single scalar can carry across that
+        /// timeline is elapsed time. The role's own shape is spent per box, at the far end, over
+        /// each box's own share of this clock — a curve applied HERE would bend every box's climb
+        /// by where it happens to sit rather than by how far into its own climb it is.
+        ///
+        /// It keeps `motion`'s Reduce Motion answer, because the stagger is movement too: a role
+        /// that cuts for one box cuts for all of them, on the same clock.
+        public var sweep: ArgoMotion {
+            ArgoMotion(duration: wait, curve: .linear, reducedDuration: motion.reducedDuration)
+        }
+
+        /// How much of `sweep` is spent staggering, as a share of it. What a surface turns one
+        /// box's place into that box's own start with, so nothing downstream divides two of the
+        /// contract's durations by each other and gets a third answer.
+        public var staggerShare: Double {
+            wait > 0 ? stagger / wait : 0
+        }
     }
 
     /// A status word or dot changing. Fades under Reduce Motion — the change still has to
@@ -218,18 +239,23 @@ public extension ArgoMotion {
     /// A role and the span it is staggered over, for the two the map spreads across many boxes.
     /// The pair is what the reader waits, so it is the pair the ceiling is asserted against.
     static let staggered: [Staggered] = [
-        Staggered(name: "rise", motion: rise, stagger: riseStagger),
+        risen,
         Staggered(name: "reshuffle", motion: reshuffle, stagger: reshuffleStagger),
     ]
+
+    /// The rise and the span it is spread over, as the one value a surface that runs the stagger
+    /// itself is handed. Named rather than looked out of `staggered` by string: a surface that
+    /// reached a role by name is a surface a rename unwires without failing to build.
+    static let risen = Staggered(name: "rise", motion: rise, stagger: riseStagger)
 
     /// Roles nothing draws yet, and what each is waiting on. A role is kept only while the decision
     /// behind it still has a surface coming — `latch` left with the Dock it timed (#536 closed on
     /// the floating composer). A key naming no role fails the contract suite, and the specimen
     /// draws a kept role as unjudged.
     static let unwired: [String: String] = [
-        // The Atlas roles are decided (#1420) and the map does not read them yet: the motion is
-        // ported per surface, and each of these is waiting on the surface that spends it.
-        "rise": "the plan-to-city transition",
+        // The Atlas roles are decided (#1420) and the map reads them one surface at a time: the
+        // motion is ported per surface, and each of these is waiting on the surface that spends
+        // it. `rise` left this list at #1421, where the city first stood up out of its plates.
         "snap": "the camera flight to a picked box",
         "reshuffle": "the domain re-arrangement",
         "layerFade": "the map's filter and search repaints",

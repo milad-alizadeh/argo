@@ -30,6 +30,15 @@ public struct AtlasView: View {
     /// `withAnimation` and have every frame in between drawn as its own camera, rather than a jump
     /// from one end to the other (#1152).
     private var relief: Double
+    /// How far the city has climbed out of its plates, 0 to 1 over the whole of
+    /// `ArgoMotion.risen.sweep` (#1421). The SECOND animated scalar, and animated for `relief`'s
+    /// reason: a caller sets the two ends and every frame between them is drawn as its own city.
+    ///
+    /// One number for the whole map. The stagger that opens the city from its centre is not in
+    /// here at all — each box works its own phase out of this against where it stands, in
+    /// `AtlasVolume.metal`, which is the only place that can do it per box without the CPU walking
+    /// the plan once a frame.
+    private var rise: Double
     /// The city's own turn and tilt (#1152). Not animated here — a drag or a key press moves this
     /// live, one frame at a time, and a caller re-rendering this view on every one of those frames
     /// is a rate `Animatable` has no reason to also own.
@@ -45,14 +54,19 @@ public struct AtlasView: View {
     /// the reading is drawn in a column of its own, and both have to be looking at one file.
     private let focus: AtlasFocus
 
+    /// `rise` defaults to 1 — the settled city. A caller with nothing to say about the climb is
+    /// asking for the map as it stands, which is what every still, every preview and every
+    /// specimen wants; only a room that has just measured a Project has a rise to run.
     public init(
         plan: AtlasPlan,
         relief: Double,
+        rise: Double = 1,
         orientation: AtlasOrientation = .opening,
         focus: AtlasFocus = .none,
     ) {
         self.plan = plan
         self.relief = relief
+        self.rise = rise
         self.orientation = orientation
         self.focus = focus
     }
@@ -79,12 +93,16 @@ public struct AtlasView: View {
 
     private var map: some View {
         let projection = projection
+        // Solved once and handed to both, for the reason the projection is: the mark has to be on
+        // the box, and a second clock beside this one is a second thing to drift.
+        let rise = AtlasRise(clock: rise, over: plan.extent)
         return Rectangle()
             .fill(argo.color.atlas.materials.desktop)
             .overlay {
                 AtlasSurface(
                     projection: projection,
                     pigments: AtlasPigments(argo.color.atlas, rim: argo.color.edge.hairline),
+                    rise: rise,
                     resolve: { hovered = $0 },
                     pick: focus.clicked,
                 )
@@ -92,7 +110,7 @@ public struct AtlasView: View {
             // Over the surface and under the words: the mark belongs to the picture, and a name
             // the reader is reading must not be crossed by an edge.
             .overlay {
-                AtlasOpenTrace(projection: projection, open: focus.open)
+                AtlasOpenTrace(projection: projection, open: focus.open, rise: rise)
             }
             .overlay(alignment: .top) {
                 // Top centre, because both top corners of the stage are already spoken for. It
@@ -123,14 +141,23 @@ public struct AtlasView: View {
 }
 
 extension AtlasView: @MainActor Animatable {
-    /// `relief` alone. SwiftUI interpolates this between an old value and a new one over whatever
-    /// animation a caller's `withAnimation` set, and every step lands back in `camera` above — so
-    /// a city-to-treemap toggle tweens the whole projection rather than cutting between two static
-    /// pictures. No animation at the call site means no interpolation here either, which is what
-    /// makes Reduce Motion's answer "call it with none" rather than a branch this view has to hold.
-    public var animatableData: Double {
-        get { relief }
-        set { relief = newValue }
+    /// The two scalars the map is drawn from, and nothing else. SwiftUI interpolates them between
+    /// an old value and a new one over whatever animation a caller's `withAnimation` set, and
+    /// every step lands back in `camera` and in the rise above — so a city-to-treemap toggle
+    /// tweens the whole projection, and a rise tweens the whole city's climb, rather than either
+    /// cutting between two static pictures. No animation at the call site means no interpolation
+    /// here either, which is what makes Reduce Motion's answer "call it with none" rather than a
+    /// branch this view has to hold.
+    ///
+    /// A PAIR rather than two `Animatable` views, because they are one picture: the two run on
+    /// their own clocks and a reader who flips the map mid-rise is owed one city doing both, not
+    /// a flip that cancels a climb.
+    public var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(relief, rise) }
+        set {
+            relief = newValue.first
+            rise = newValue.second
+        }
     }
 }
 
@@ -142,6 +169,7 @@ extension AtlasView: @MainActor Animatable {
 private struct AtlasPreview: View {
     let plan: AtlasPlan
     var relief: Double = 1
+    var rise: Double = 1
     var orientation: AtlasOrientation = .opening
     var open: String?
 
@@ -149,6 +177,7 @@ private struct AtlasPreview: View {
         AtlasView(
             plan: plan,
             relief: relief,
+            rise: rise,
             orientation: orientation,
             focus: AtlasFocus(open: open) { _ in },
         )
@@ -201,6 +230,13 @@ private let previewPlan = AtlasPlan(
 
 #Preview("Atlas — the empty map") {
     AtlasPreview(plan: .empty)
+}
+
+// The city part way out of its plates (#1421). A still of a moving thing, and the one frame worth
+// keeping: the middle of the plan is up, the edges are still flat, and the wave between them is
+// what says the city opened from its centre rather than lifting all at once.
+#Preview("Atlas — the city half risen") {
+    AtlasPreview(plan: previewPlan, rise: 0.5)
 }
 
 // A turn and a tilt away from the opening view — the reader having driven the camera (#1152).

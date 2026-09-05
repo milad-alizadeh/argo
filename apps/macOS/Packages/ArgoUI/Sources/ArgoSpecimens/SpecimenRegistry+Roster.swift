@@ -29,6 +29,12 @@ extension SpecimenRegistry {
         // frame and the one above are one drawing with one number changed, and if the flat one
         // ever stops being the treemap it is this pair that shows it.
         SpecimenEntry("atlasTreemap") { AtlasMapSpecimen(relief: 0) },
+        // One frame of the city standing up out of its plates (#1421). A still of a moving thing,
+        // and the only way to look at it: the rise runs on a clock, and a screenshot taken while a
+        // clock runs is a different picture every time. Half way through, the middle of the plan
+        // is up and the edges have not started, which is the claim — the city opens from its
+        // centre rather than lifting all at once.
+        SpecimenEntry("atlasRising") { AtlasMapSpecimen(rise: 0.5) },
         // The map before anything has been scanned: the floor, and no city on it. Worth a render
         // rather than an assertion, because it is also what every way Metal can be ABSENT degrades
         // to — so this is the frame the one above is told apart from.

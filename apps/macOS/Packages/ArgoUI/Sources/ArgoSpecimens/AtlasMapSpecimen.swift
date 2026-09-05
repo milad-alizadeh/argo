@@ -33,6 +33,11 @@ struct AtlasMapSpecimen: View {
     let ground: CGSize
     /// How much of the third dimension is left: 1 the city, 0 the treemap.
     let relief: Double
+    /// How far the city has climbed out of its plates, 1 being the settled map (#1421). A
+    /// PARAMETER rather than a clock the specimen starts, because a screenshot of a moving thing
+    /// taken on a clock is a different picture every run — this way one frame of the rise is a
+    /// state the harness can ask for by name.
+    let rise: Double
     /// Nothing draws the map of a repository nobody has scanned: the floor, and no city on it.
     private let map: AtlasMap?
     /// The file to draw as OPEN, traced on the map (#1154). The room's own specimen renders the
@@ -43,17 +48,19 @@ struct AtlasMapSpecimen: View {
     init(
         ground: CGSize = CGSize(width: 1040, height: 660),
         relief: Double = 1,
+        rise: Double = 1,
         map: AtlasMap? = try? AtlasMapFixture.argo(),
         open: String? = nil,
     ) {
         self.ground = ground
         self.relief = relief
+        self.rise = rise
         self.map = map
         self.open = open
     }
 
     var body: some View {
-        AtlasView(plan: plan, relief: relief, focus: AtlasFocus(open: open) { _ in })
+        AtlasView(plan: plan, relief: relief, rise: rise, focus: AtlasFocus(open: open) { _ in })
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
     }
@@ -77,6 +84,12 @@ struct AtlasMapSpecimen: View {
 
 #Preview("Atlas — the map tiled flat") {
     AtlasMapSpecimen(relief: 0)
+        .frame(width: 1100, height: 800)
+        .argoAppearance()
+}
+
+#Preview("Atlas — the city half risen") {
+    AtlasMapSpecimen(rise: 0.5)
         .frame(width: 1100, height: 800)
         .argoAppearance()
 }
