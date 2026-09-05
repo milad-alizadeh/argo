@@ -71,9 +71,41 @@ extension AtlasContractSpecimen {
         section("The place — the ground, three plates for three depths, and the floor's light") {
             VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
                 swatches(argo.color.atlas.materials.grounds)
+                cordLight
                 inferredInk
             }
         }
+    }
+
+    /// The one family here that is not a surface: a co-change tie is a line of light drawn OVER
+    /// the map (#1160). Shown crossing the three plates rather than as a chip, for the reason the ink
+    /// is shown as words — a swatch of it says nothing about whether a cord at a third of its own
+    /// opacity is still visible over the deepest plate, which is the only question about it.
+    private var cordLight: some View {
+        HStack(alignment: .center, spacing: ArgoSpacing.loose) {
+            label("cord")
+            HStack(spacing: 0) {
+                ForEach(argo.color.atlas.materials.plates, id: \.name) { plate in
+                    Rectangle().fill(plate.color)
+                }
+            }
+            .frame(height: ArgoSpacing.section)
+            .overlay {
+                // The two weights the map draws: the whole-map ties at a third of the colour, and
+                // a pinned file's own at nearly all of it.
+                VStack(spacing: ArgoSpacing.snug) {
+                    cordStroke(alpha: 0.3, width: ArgoStroke.hairline)
+                    cordStroke(alpha: 0.95, width: ArgoStroke.indicator)
+                }
+                .padding(.horizontal, ArgoSpacing.base)
+            }
+        }
+    }
+
+    private func cordStroke(alpha: Double, width: CGFloat) -> some View {
+        Rectangle()
+            .fill(argo.color.atlas.marks.cord.color.opacity(alpha))
+            .frame(height: width)
     }
 
     /// The one promoted role that is an INK: a domain is inferred, never DIRECT, and every label

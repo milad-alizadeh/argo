@@ -44,12 +44,13 @@ struct VisualContractCoverageTests {
             Group("diff", palette.diff, palette.diff.all),
             Group("delivery", palette.delivery, palette.delivery.all),
             Group("progress", palette.progress, palette.progress.all),
-            // The map's own two colour groups. They are drawn by `AtlasContractSpecimen` rather
+            // The map's own colour groups. They are drawn by `AtlasContractSpecimen` rather
             // than by `ContractSpecimen` — one sheet per subject, and the Atlas promoted five
             // families at once (#1142) — but the guard is the same one: a role missing from its
             // catalogue is a colour that ships without ever being looked at.
             Group("atlas.measure", palette.atlas.measure, palette.atlas.measure.all),
             Group("atlas.materials", palette.atlas.materials, palette.atlas.materials.all),
+            Group("atlas.marks", palette.atlas.marks, palette.atlas.marks.all),
         ]
         for group in groups {
             let stored = Mirror(reflecting: group.roles).children.compactMap(\.label)

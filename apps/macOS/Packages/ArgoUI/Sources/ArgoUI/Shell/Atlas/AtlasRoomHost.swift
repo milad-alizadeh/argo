@@ -27,6 +27,7 @@ package struct AtlasRoomHost: View {
     /// draws the control and changes nothing when it is used.
     @State private var channels: AtlasChannels
     @State private var hideTests = false
+    @State private var showTies = false
     @State private var isCity = false
 
     /// `.unmeasured` is the Project nobody has measured, which is the room's other reading. Only a
@@ -74,6 +75,7 @@ package struct AtlasRoomHost: View {
                 channels: channels,
                 setChannels: { channels = $0 },
                 hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
+                showTies: AtlasSwitch(isOn: showTies) { showTies = $0 },
                 isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
             ),
         )

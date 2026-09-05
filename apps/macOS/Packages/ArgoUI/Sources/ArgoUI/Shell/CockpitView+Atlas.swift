@@ -17,6 +17,7 @@ extension CockpitView {
                 channels: atlas.channels,
                 setChannels: { atlas.setChannels($0) },
                 hideTests: AtlasSwitch(isOn: atlas.hideTests) { atlas.setHideTests($0) },
+                showTies: AtlasSwitch(isOn: atlas.showTies) { atlas.setShowTies($0) },
                 isCity: AtlasSwitch(isOn: atlas.isCity) { atlas.setIsCity($0) },
             ),
         )

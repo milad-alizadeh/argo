@@ -68,6 +68,10 @@ package struct AtlasMapChoice {
     package let setChannels: (AtlasChannels) -> Void
     /// Whether test files are left off the map.
     package let hideTests: AtlasSwitch
+    /// Whether the strongest co-change ties are drawn across the whole map (#1160). A pinned
+    /// file's own are drawn however this is set: the reader pointed at a file and asked a
+    /// question the switch does not answer.
+    package let showTies: AtlasSwitch
     /// Whether the map is drawn as the city or as the treemap.
     package let isCity: AtlasSwitch
 
@@ -75,19 +79,20 @@ package struct AtlasMapChoice {
         channels: AtlasChannels,
         setChannels: @escaping (AtlasChannels) -> Void,
         hideTests: AtlasSwitch,
+        showTies: AtlasSwitch,
         isCity: AtlasSwitch,
     ) {
         self.channels = channels
         self.setChannels = setChannels
         self.hideTests = hideTests
+        self.showTies = showTies
         self.isCity = isCity
     }
 
     /// The Map as it is DRAWN — the measured Map with the reader's filters applied.
     ///
     /// Both columns ask this rather than each spelling the filter out: a second spelling is a
-    /// second place to forget the next filter (#1160's Strongest ties lands in exactly this
-    /// shape), and the sidebar's own numbers would then be describing a map the stage is not
+    /// second place to forget the next filter, and the sidebar's own numbers would then be describing a map the stage is not
     /// drawing. Hiding test files re-reads the repository without them (#1161), so everything said
     /// about the map has to be said about the same one.
     package func drawn(_ map: AtlasMap) -> AtlasMap {
@@ -105,6 +110,7 @@ package struct AtlasMapChoice {
             channels: AtlasChannels(""),
             setChannels: { _ in },
             hideTests: AtlasSwitch(isOn: false) { _ in },
+            showTies: AtlasSwitch(isOn: false) { _ in },
             isCity: AtlasSwitch(isOn: false) { _ in },
         )
     }
