@@ -52,26 +52,15 @@ struct AtlasOpenTrace: View {
     }
 
     /// The tile at the height it is STANDING at this frame, which is its measured height once the
-    /// rise has settled and a share of it while the city is still coming up. The same curve the
-    /// shader climbs the box on, read at the same place — the box's own middle, in plan points —
-    /// and off the same projection, which is why the mark cannot be drawn at a height the box is
-    /// not standing at.
+    /// rise has settled and a share of it while the city is still coming up (#1421). Solved off
+    /// the same projection the surface underneath was handed, which is why the mark cannot be
+    /// drawn at a height the box is not standing at.
     private func risen(_ tile: AtlasTile) -> AtlasTile {
-        let rise = AtlasRise(clock: projection.rise, over: projection.plan.extent)
-        let middle = SIMD2<Float>(Float(tile.rect.midX), Float(tile.rect.midY))
-        let centre = SIMD2<Float>(
-            Float(projection.camera.centre.x),
-            Float(projection.camera.centre.y),
-        )
-        let standing = rise.height(
-            of: Float(tile.height),
-            at: rise.distance(of: middle, from: centre),
-        )
-        return AtlasTile(
+        AtlasTile(
             path: tile.path,
             rect: tile.rect,
             band: tile.band,
-            height: CGFloat(standing),
+            height: AtlasRise(projection).height(of: tile, about: projection.camera.centre),
         )
     }
 

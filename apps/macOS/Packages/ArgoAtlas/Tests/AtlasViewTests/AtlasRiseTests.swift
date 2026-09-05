@@ -39,12 +39,12 @@ struct AtlasRiseTests {
 
     /// The corner of the plan is exactly one reach from its middle, which is what makes the wave a
     /// plan measurement: the same box starts at the same point of the clock at any zoom.
-    @Test func `distance runs 0 at the middle of the plan and 1 at its corner`() {
+    @Test func `the wave runs 0 at the middle of the plan and 1 at its corner`() {
         let rise = AtlasRise(clock: 0, over: plan)
         let centre = SIMD2<Float>(310, 200)
 
-        #expect(rise.distance(of: centre, from: centre) == 0)
-        #expect(abs(rise.distance(of: SIMD2<Float>(0, 0), from: centre) - 1) < 0.001)
+        #expect(rise.wave(to: centre, from: centre) == 0)
+        #expect(abs(rise.wave(to: SIMD2<Float>(0, 0), from: centre) - 1) < 0.001)
     }
 
     /// Past the corner is still the corner. A cast shadow is thrown OUTWARD off its file, so a box
@@ -53,14 +53,14 @@ struct AtlasRiseTests {
     @Test func `a point past the corner is held at the far end of the wave`() {
         let rise = AtlasRise(clock: 0, over: plan)
 
-        #expect(rise.distance(of: SIMD2<Float>(-400, -400), from: SIMD2<Float>(310, 200)) == 1)
+        #expect(rise.wave(to: SIMD2<Float>(-400, -400), from: SIMD2<Float>(310, 200)) == 1)
     }
 
     @Test func `every box is flat on its plate before the clock starts`() {
         let rise = AtlasRise(clock: 0, over: plan)
 
-        for distance in stride(from: Float(0), through: 1, by: 0.1) {
-            #expect(rise.growth(at: distance) == 0)
+        for wave in stride(from: Float(0), through: 1, by: 0.1) {
+            #expect(rise.growth(at: wave) == 0)
         }
     }
 
@@ -69,8 +69,8 @@ struct AtlasRiseTests {
     @Test func `every box stands at its own height once the clock has run out`() {
         let rise = AtlasRise(clock: 1, over: plan)
 
-        for distance in stride(from: Float(0), through: 1, by: 0.1) {
-            #expect(rise.growth(at: distance) == 1)
+        for wave in stride(from: Float(0), through: 1, by: 0.1) {
+            #expect(rise.growth(at: wave) == 1)
         }
     }
 
@@ -104,8 +104,8 @@ struct AtlasRiseTests {
     @Test func `no box ever stands below its plate`() {
         for step in stride(from: 0.0, through: 1.0, by: 0.01) {
             let rise = AtlasRise(clock: step, over: plan)
-            for distance in stride(from: Float(0), through: 1, by: 0.1) {
-                #expect(rise.growth(at: distance) >= 0)
+            for wave in stride(from: Float(0), through: 1, by: 0.1) {
+                #expect(rise.growth(at: wave) >= 0)
             }
         }
     }

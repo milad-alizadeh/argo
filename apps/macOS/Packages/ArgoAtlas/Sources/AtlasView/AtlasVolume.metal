@@ -156,12 +156,14 @@ static float4 atlas_clip(float3 point, constant AtlasEye &eye) {
 /// ease, and `AtlasRise.growth` in Swift is the same expression, term for term.
 static float atlas_growth(AtlasVolume volume, constant AtlasEye &eye, constant AtlasRise &rise) {
     float2 middle = volume.origin + volume.size * 0.5;
-    float out = min(1.0, length(middle - eye.centre) / rise.reach);
+    // How far the wave has to travel to reach this box: 0 at the middle of the plan and 1 at its
+    // corner. `AtlasRise.wave` in Swift.
+    float wave = min(1.0, length(middle - eye.centre) / rise.reach);
     float climb = 1.0 - rise.share;
     if (climb <= 0) {
         return rise.clock >= 1 ? 1 : 0;
     }
-    float elapsed = (rise.clock - out * rise.share) / climb;
+    float elapsed = (rise.clock - wave * rise.share) / climb;
     if (elapsed <= 0) {
         return 0;
     }

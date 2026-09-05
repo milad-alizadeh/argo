@@ -252,7 +252,7 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&eye, length: MemoryLayout<AtlasEye>.stride, index: 1)
         var lighting = AtlasLighting.city
         encoder.setVertexBytes(&lighting, length: MemoryLayout<AtlasLighting>.stride, index: 2)
-        // The clock the city is standing up on, on the same terms (#1421): three floats, and one
+        // The clock the city is standing up on, on the same terms (#1421): four floats, and one
         // value for the whole draw — every box works its own phase out of it against where it
         // stands, so a staggered rise costs the instance buffer nothing either.
         var rise = rise

@@ -177,11 +177,25 @@ struct AtlasRoomView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(ArgoSpacing.loose)
-        // On load and on rebuild, and on neither of the two things that look like one: keyed on
-        // WHEN the Map was measured, so a channel change repaints and a filter re-tiles without
-        // the city reassembling. A model that rebuilds every time the reader touches a menu is a
-        // loading screen (`docs/designs/cockpit-atlas.html`, `rise`).
-        .task(id: map.measuredAt) { await stand() }
+        // A Map arriving, and the reader turning the city on: the two moments there is a city to
+        // stand up. Keyed on WHEN the Map was measured rather than on the plan, so a channel
+        // change repaints and a filter re-tiles without the city reassembling — a model that
+        // rebuilds every time the reader touches a menu is a loading screen.
+        .task(id: arrival) { await stand() }
+    }
+
+    /// What a rise is spent on: a Map, and whether there is a city to spend it on. Two facts
+    /// rather than one, because the room OPENS at the flat end of the camera — a rise run there
+    /// climbs heights a straight-down camera does not project, and the reader who then turns the
+    /// city on gets it fully built, which is the sentence #1421 opens by complaining about.
+    private var arrival: AtlasArrival {
+        AtlasArrival(measuredAt: measuredAt, isCity: room.choice.isCity.isOn)
+    }
+
+    /// When the drawn Map was measured, or nothing where none is drawn.
+    private var measuredAt: Date? {
+        guard case let .measured(map) = room.reading else { return nil }
+        return map.measuredAt
     }
 
     /// The city stands up out of its plates (#1421). Every box starts flat and climbs to its
@@ -192,23 +206,42 @@ struct AtlasRoomView: View {
     /// `@MainActor` for `FeedIonLoop.run`'s reason: every line writes view state, and `.task`
     /// alone does not keep an `async` method on the main actor.
     @MainActor private func stand() async {
-        // Reduce Motion CUTS, which is what `ArgoMotion.rise` carrying no reduced duration means.
-        // Answered before the reset rather than by handing `withAnimation` a nil animation: the
-        // reset and the tick after it would otherwise put a flat map on screen for a frame, which
-        // is the one thing a reader who turned movement off asked not to see.
-        guard !reduceMotion else {
+        // Two ways the map is simply THERE, and both answered before the reset rather than by a
+        // nil animation: the reset and the tick after it would otherwise put a flat map on screen
+        // for a frame, which is the one thing either reader asked not to see.
+        //
+        // The treemap draws no heights, so `docs/designs/cockpit-atlas.html`'s own `rise()`
+        // refuses to spend the role there — and Reduce Motion cuts, which is what
+        // `ArgoMotion.rise` carrying no reduced duration means, read off the role rather than
+        // decided here.
+        guard room.choice.isCity.isOn,
+              let sweep = ArgoMotion.risen.sweep.resolved(reduceMotion: reduceMotion)
+        else {
             rise = 1
             return
         }
-        var flat = Transaction()
-        flat.disablesAnimations = true
-        withTransaction(flat) { rise = 0 }
+        var cut = Transaction()
+        cut.disablesAnimations = true
+        withTransaction(cut) { rise = 0 }
         // A tick between the two, for `FeedIonLoop`'s reason: SwiftUI folds every change in one
         // tick into the last value, so a reset in the same tick as the climb leaves nothing to
         // animate — and a rebuild would then show no rise at all.
         try? await Task.sleep(for: .seconds(ArgoMotion.passReentry))
-        withAnimation(ArgoMotion.risen.sweep.animation) { rise = 1 }
+        withAnimation(sweep) { rise = 1 }
     }
+}
+
+/// The two facts that decide whether a city has just arrived: which measurement is drawn, and
+/// whether the camera is at the end that shows heights (#1421).
+///
+/// A value rather than two `onChange`s, so the rise has ONE trigger. Two would let a rebuild land
+/// in the same frame as a flip and start the climb twice, from two different points.
+///
+/// The treemap-to-city turn is `ArgoMotion.lieDown`'s when that lands, and the two will have to be
+/// reconciled there: a flip that also rises is one move too many.
+private struct AtlasArrival: Equatable {
+    let measuredAt: Date?
+    let isCity: Bool
 }
 
 /// A small measured Map, so the state that matters most has a render. Two plates, one nested, and
