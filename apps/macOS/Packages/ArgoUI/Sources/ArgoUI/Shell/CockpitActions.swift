@@ -36,8 +36,8 @@ public struct CockpitActions {
         public var writes = Writes()
         /// Start a Session ON one ticket, on the rung the row names, opening on the prompt the
         /// ticket asks for (#899). The seed carries the number, which is what makes the Session
-        /// claimable back (`TicketsReading.claimed`), and the opening is `nil` where the ticket
-        /// matches no rule — an empty composer, which is the honest answer.
+        /// claimable back (`TicketsReading.claimed`), and the opening is `nil` where the ticket's
+        /// labels REFUSE a command (#1182) — an empty composer, which is the honest answer.
         public var startSession: (Int, SessionMode, String?) async -> String? = { _, _, _ in nil }
         /// The screens the Project has settled a design for, read off `docs/designs/` on every call
         /// (`DesignedScreens`). Performed by the app layer for `Composer.skills`' reason: it walks

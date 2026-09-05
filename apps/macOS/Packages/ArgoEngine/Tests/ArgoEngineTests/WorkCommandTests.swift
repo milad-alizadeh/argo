@@ -40,8 +40,43 @@ struct WorkCommandTests {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == command)
     }
 
-    @Test(arguments: [["needs-triage"], ["ready-for-human"], [], ["wayfinder:research"]])
-    func `a ticket that matches no rule asks for no command`(labels: [String]) {
+    /// A refusing label ALONE asks for no command, from either set (#1182).
+    @Test(arguments: [
+        ["needs-triage"], ["ready-for-human"], ["wayfinder:research"], ["question"], ["wontfix"],
+        ["needs-info"], ["duplicate"], ["invalid"],
+    ])
+    func `a ticket that says it is not build work asks for no command`(labels: [String]) {
+        #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == nil)
+    }
+
+    /// The point of #1182, and the default under it: nothing refuses these, so `Start` sends what
+    /// it reads as. `[]` is the reported case — roughly one ticket in six here carries no labels —
+    /// and the rest are build work the old closed set happened not to name.
+    @Test(arguments: [
+        [], ["documentation"], ["skills-drift"], ["good first issue"], ["help wanted"],
+    ])
+    func `a ticket that nothing refuses opens on implement`(labels: [String]) {
+        #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == .implement)
+    }
+
+    /// Rule 6 before rule 7: `needs-triage` rides along on about fifty of this tracker's build
+    /// tickets, so a Ticket that says `bug` has said what it is whatever else is still open.
+    @Test(arguments: [["enhancement", "needs-triage"], ["bug", "needs-info"], ["bug", "question"]])
+    func `a build label outranks a ticket that is only unsettled`(labels: [String]) {
+        #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == .implement)
+    }
+
+    /// Rule 5 before rule 6, which is the other way round: `wontfix` and its neighbours say the
+    /// Ticket is not an agent's work whatever KIND of work it is, and a build label beside one does
+    /// not hand it back. Starting an agent on a duplicate, or on work a person reserved, is the
+    /// wrong-work failure the empty composer was there to prevent.
+    @Test(arguments: [
+        ["bug", "wontfix"], ["bug", "duplicate"], ["enhancement", "invalid"],
+        ["bug", "ready-for-human"], ["ready-for-agent", "ready-for-human"],
+    ])
+    func `a ticket that is not an agent's work outranks the build label beside it`(
+        labels: [String],
+    ) {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == nil)
     }
 

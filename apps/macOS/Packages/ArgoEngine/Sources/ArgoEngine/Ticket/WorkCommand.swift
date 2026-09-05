@@ -1,9 +1,12 @@
 /// What a Session started on a Ticket opens on — the rule that picks its command (#899), and
 /// the rung it stands on (#941).
 ///
-/// Five rules, FIRST MATCH WINS, and a sixth outcome that is no command at all. A Ticket matching
-/// nothing opens an empty composer, because a wrong `/implement` on a decision Ticket is a Session
-/// that does the wrong work — and that is worse than one waiting to be told what to do.
+/// Eight rules, FIRST MATCH WINS, and the last of them is the default: `/implement`. A Ticket has
+/// to say it is NOT build work rather than that it is (#1182), because most tickets in this
+/// tracker are filed with no labels at all.
+///
+/// The two refusing sets sit either side of rule 6's build labels, and which side is the whole of
+/// their meaning. `notForAnAgent` outranks a build label; `notYetSettled` loses to one.
 ///
 /// The raw value is the command's own name, so the prompt and the mapping cannot say two things.
 public enum WorkCommand: String, Sendable {
@@ -56,13 +59,18 @@ public enum WorkCommand: String, Sendable {
     /// Why the resolver picked this command, in the reader's words, and `nil` for one no rule ever
     /// picks. Said only beside the command that DID match — `StartSkillMenu` enforces that, because
     /// a rule printed beside a command nobody picked reads as a claim about that command.
+    ///
+    /// `implement`'s reason is worded for BOTH ways it is reached, the build label and the default
+    /// under it (#1182). It says what the two have in common and nothing more: a `bug` beside a
+    /// `needs-triage` is reached by the build label, and "no label says otherwise" printed beside
+    /// it would name the one that did and lost.
     public static func why(_ command: WorkCommand) -> String? {
         switch command {
         case .designToCode: "the screen has a design"
         case .grillMe: "labelled wayfinder:grilling"
         case .wayfinder: "labelled wayfinder:map"
         case .prototype: "labelled wayfinder:prototype"
-        case .implement: "matched by label"
+        case .implement: "nothing refuses it"
         // No rule resolves it, so there is never a reason to give beside it.
         case .triage: nil
         }
@@ -82,7 +90,9 @@ public enum WorkCommand: String, Sendable {
         if let asked = asked.first(where: { labels.contains($0.label) }) {
             return asked.command
         }
-        return labels.isDisjoint(with: builds) ? nil : .implement
+        guard labels.isDisjoint(with: notForAnAgent) else { return nil }
+        guard labels.isDisjoint(with: builds) else { return .implement }
+        return labels.isDisjoint(with: notYetSettled) ? .implement : nil
     }
 
     /// Rule 1: does this Ticket NAME a screen the tree has a design for?
@@ -115,9 +125,30 @@ public enum WorkCommand: String, Sendable {
         ("wayfinder:prototype", .prototype),
     ]
 
-    /// Rule 5's labels, which are a NAMED SET and not a catch-all: a Ticket carrying none of them
-    /// and matching no rule above gets no command, which is the honest empty composer.
+    /// Rule 5: not an agent's work, whatever KIND of work it is — so it is read before the build
+    /// labels and beats them. Three say the Ticket will never be actioned and one reserves it for
+    /// a person, and a build label beside any of them does not make it an agent's again: 3 Tickets
+    /// here carry `ready-for-human` next to `bug` or `enhancement`, and 2 carry `duplicate`.
+    private static let notForAnAgent: Set<String> = [
+        "wontfix", "duplicate", "invalid", "ready-for-human",
+    ]
+
+    /// Rule 6: the labels that say a Ticket IS build work. The last rule answers `.implement` too,
+    /// so the only effect left to this set is to OUTRANK rule 7 — `needs-triage` beside a `bug`
+    /// loses, and it has to: it rides along on about fifty of this tracker's build tickets.
     private static let builds: Set<String> = [
         "bug", "enhancement", "ready-for-agent", "wayfinder:task",
+    ]
+
+    /// Rule 7: not settled YET, which is a different claim and loses to a build label. A Ticket
+    /// that says `bug` has said what it is, whatever else is still open about it.
+    ///
+    /// Both sets are closed BY DESIGN, which looks like the wrong way round: a label added to the
+    /// tracker tomorrow reads as build work until it is named in one of them. That fails towards a
+    /// Session a reader can see and stop, rather than an empty composer they cannot tell from a
+    /// broken button. Four of the strings across the two sets are triage labels
+    /// `docs/agents/triage-labels.md` owns — keep the two in step.
+    private static let notYetSettled: Set<String> = [
+        "question", "needs-triage", "needs-info", "wayfinder:research",
     ]
 }
