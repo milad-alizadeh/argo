@@ -34,6 +34,9 @@ public actor TranscriptReader {
     /// The reader's third memory: where the file's prompts forked, so a Turn put twice draws one
     /// row rather than two (`TranscriptForks`, #1202).
     private var forks = TranscriptForks()
+    /// The reader's fourth memory: the model the last `/model` asked for, held until that command's
+    /// own output says whether the CLI took it (`CommandedModel`, #1411).
+    private var askedModel: String?
     let readImage: ImageReader
     private let readSkill: SkillReader
     /// The file being read, where there is one, and where in it the line in hand starts. Set by
@@ -99,6 +102,11 @@ public actor TranscriptReader {
         }
         defer { location = nil }
         let seam: [TranscriptEvent] = line.followsGap ? [.excerpted] : []
+        // Whatever the gap swallowed, it is not the record the pending ask was waiting for
+        // (`modelSettled`): a bounded read must not join two records the file never put together.
+        if line.followsGap {
+            askedModel = nil
+        }
         return seam + events(of: line.text)
     }
 
@@ -119,14 +127,21 @@ public actor TranscriptReader {
             if !fork.isEmpty {
                 context.restate()
             }
+            // Read before the cursor runs, because it MOVES the pending ask (`modelSettled`) and
+            // the cursor is then handed what that move settled.
+            let settled = modelSettled(by: message)
             // The marker goes BEFORE what this record opens, never after: the branch it supersedes
             // is everything the reading holds up to this moment, and a marker behind this record's
             // own events would take them back too.
             return fork + identity(of: message) + stance(of: message)
-                + context.events(for: message) + said
+                + context.events(for: message)
+                + context.events(forModelNamed: settled)
+                + said
         case let .assistant(message):
+            askedModel = nil
             return identity(of: message) + context.events(for: message) + assistantEvents(message)
         case let .attachment(message):
+            askedModel = nil
             return identity(of: message) + context.events(for: message)
         case let .aiTitle(title):
             return [.title(title)]
@@ -139,6 +154,22 @@ public actor TranscriptReader {
         case .unknown:
             return []
         }
+    }
+
+    /// The model this record SETTLES, where it is a `/model` command's own report of one (#1411).
+    ///
+    /// The command writes its invocation and its output as two consecutive records, so the ask is
+    /// remembered off the first and released by the second. Anything else in between clears it —
+    /// every other user record here, and every record carrying content in `events(of:)` — because
+    /// an ask held across something else is one the CLI never came back to, and releasing it then
+    /// would name a model off a sentence that was about something else.
+    private func modelSettled(by message: MessageRecord) -> String? {
+        if let asked = CommandedModel.asked(in: message.content) {
+            askedModel = asked
+            return nil
+        }
+        defer { askedModel = nil }
+        return CommandedModel.reportsASet(in: message.content) ? askedModel : nil
     }
 
     /// The branch this record abandons, where it forks one (`TranscriptForks`).

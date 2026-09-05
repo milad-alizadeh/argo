@@ -113,6 +113,14 @@ func commandPrompt(_ text: String) -> String? {
     return args.isEmpty ? name : "\(name) \(args)"
 }
 
+/// A slash command's name and its arguments, kept APART. `commandPrompt` above joins them because
+/// the feed draws what was typed; a reader that ACTS on one particular command needs to know which
+/// command it was and what it was handed.
+func commandInvocation(_ content: [ContentBlock]) -> (name: String, args: String)? {
+    guard let text = firstText(content), let name = tag(text, "command-name") else { return nil }
+    return (name, tag(text, "command-args") ?? "")
+}
+
 /// The line the CLI writes in front of a skill's body when it hands one over (#688).
 private let skillPreamble = "Base directory for this skill: "
 

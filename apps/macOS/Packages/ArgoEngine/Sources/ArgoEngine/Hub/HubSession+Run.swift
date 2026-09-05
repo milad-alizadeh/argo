@@ -4,6 +4,10 @@
 /// Unlike the rung, this needs no record count. A model and an effort are NAMED rather than walked
 /// to, and the CLI writes its own reading into the first record it makes — so a record that has
 /// spoken at all is the later fact of the two, and the launch value is only ever the opening one.
+///
+/// `/model` is the one set that no assistant record follows: it is a local command, and the next
+/// Turn may never open. The line it PRINTS is a record that has spoken, and is read as one
+/// (`CommandedModel`, #1411) — so the rule above still holds without a second one beside it.
 public extension HubSession {
     /// The model id, verbatim and unread — the record's where one has landed, and otherwise what
     /// Argo put on argv. `nil` for an external Session, which Argo did not start.

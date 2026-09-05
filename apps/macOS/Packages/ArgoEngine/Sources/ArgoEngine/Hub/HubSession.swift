@@ -65,9 +65,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     public private(set) var cwd: String?
-    /// The model id the records report, latest reading and nothing yet where no record said one
+    /// The model the records report, latest reading and nothing yet where no record said one
     /// (#558). Not public and not the whole answer: `model` in `HubSession+Run.swift` is the
     /// reading, which opens on what Argo started the CLI at (#1175).
+    ///
+    /// A provider's id off an assistant record, or the alias a `/model` command was handed once
+    /// that command confirmed it (`CommandedModel`, #1411) — the same two vocabularies
+    /// `launchedRun` already holds, and `ReadableModelName` says either the way a person does.
     private(set) var observedModel: String?
     /// The CLI's own word for the effort level, on the same terms as `observedModel` above.
     /// Verbatim like `observedMode`: what it means on Argo's scale is `ClaudeEffort`'s to say, and

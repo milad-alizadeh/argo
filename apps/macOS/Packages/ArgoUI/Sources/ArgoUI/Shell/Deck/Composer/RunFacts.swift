@@ -11,7 +11,8 @@ import ArgoEngine
 /// what the popover ticks and what the CLI is on cannot come apart. Nothing in it is normalised —
 /// a model this Argo's table has never heard of states itself.
 package struct RunFacts: Equatable {
-    /// The model id the records report, verbatim and unread. `nil` where none has been read, which
+    /// The model the records report, verbatim and unread — a provider's id, or the alias a spawn
+    /// put on argv or a `/model` command was handed (#1411). `nil` where none has been read, which
     /// is `unknown` rather than a guess.
     package let model: String?
     /// The effort as Argo can place it — a rung, or the CLI's own word off the ladder.

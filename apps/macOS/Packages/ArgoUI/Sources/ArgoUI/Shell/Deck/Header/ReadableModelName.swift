@@ -43,7 +43,8 @@ enum ReadableModelName {
     /// a model the table DOES know still reads as that model.
     ///
     /// The aliases come after the provider ids and before the undated lookup: an id is what a
-    /// record reports, and an alias is only ever what Argo itself asked for.
+    /// record reports, and an alias is only ever what was ASKED for — by Argo on argv, or by a
+    /// `/model` the CLI then confirmed (#1411).
     static func readable(_ id: String) -> String {
         table[id] ?? aliases[id] ?? table[undated(id)] ?? id
     }
