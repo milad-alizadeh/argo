@@ -51,6 +51,12 @@ extension SpecimenRegistry {
         SpecimenEntry("feedMarkdownCodeTable") {
             MarkdownSpecimen(text: MarkdownSpecimen.codeDenseTable)
         },
+        // A body naming a picture (#1412). The FIRST address is reachable and the second is not,
+        // so one render carries both answers: the picture drawn at the gallery's own box, and the
+        // alt text standing in for the one nothing could read.
+        SpecimenEntry("feedMarkdownPicture") {
+            MarkdownSpecimen(text: MarkdownSpecimen.pictures)
+        },
         SpecimenEntry("feedAttention") { SpecimenScene.sessions(FeedProjection.previewAskRows) },
         SpecimenEntry("feedPunctuation") { SpecimenScene.sessions(FeedProjection.previewMarkRows) },
         // The design's own render (#688): the command the user typed, their line verbatim, and the
