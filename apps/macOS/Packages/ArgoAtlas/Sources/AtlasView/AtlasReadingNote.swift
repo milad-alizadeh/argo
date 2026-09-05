@@ -54,7 +54,6 @@ struct AtlasReadingNote: View {
         Text(note.words)
             .argoText(ArgoTypography.body)
             .foregroundStyle(argo.color.text.primary)
-            .lineSpacing(AtlasNoteMeasure.proseLeading)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -84,16 +83,11 @@ struct AtlasReadingNote: View {
     }
 }
 
-/// The note block's own words and measures. Here rather than in the contract for
-/// `AtlasGaugeMeasure`'s reason: they describe this one block and nothing else in the app.
+/// The note block's own words. Here rather than in the view for `AtlasUnmeasured`'s reason: a
+/// sentence the panel says on the reader's behalf is UI copy, and it is spelled in one place.
 enum AtlasNoteMeasure {
     /// How a stale Note says so. One sentence, about the FILE rather than about the note: what
     /// changed is the subject, and a reader deciding whether to trust the sentence needs to know
     /// which of the two moved.
     static let stale = "The file has changed since this was written."
-
-    /// The extra leading a paragraph takes over the contract's one-line box. The contract's ratio
-    /// is a line box rather than paragraph leading and carries no prose measure, which the design
-    /// says out loud where it sets `--line-prose`.
-    static let proseLeading = ArgoSpacing.tight
 }
