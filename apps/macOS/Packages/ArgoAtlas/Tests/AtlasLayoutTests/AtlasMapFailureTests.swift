@@ -87,6 +87,29 @@ struct AtlasMapFailureTests {
         }
     }
 
+    @Test func `a Domain member pointing past the last file is refused`() throws {
+        // The same disagreement `couplingAtNoPlot` catches, on the other half of the file: a
+        // Domain read off by one holds files the inference never placed in it.
+        let json = #"{"version":1,"measuredAt":"2026-09-04T00:37:17Z","commit":null,"#
+            + #""root":{"name":"argo","children":[{"kind":"plot","name":"a.swift","#
+            + #""measures":{}}]},"inference":{"resolution":1.2,"settled":true,"#
+            + #""agreement":0.8,"domains":[{"name":"gone","tokens":[],"#
+            + #""members":[{"plot":4,"confidence":0.5}]}]}}"#
+        #expect(throws: AtlasMapError.domainAtNoPlot(4)) {
+            try AtlasMap(decoding: map(json))
+        }
+    }
+
+    @Test func `a Domain holding nobody is refused rather than read as an empty group`() throws {
+        let json = #"{"version":1,"measuredAt":"2026-09-04T00:37:17Z","commit":null,"#
+            + #""root":{"name":"argo","children":[{"kind":"plot","name":"a.swift","#
+            + #""measures":{}}]},"inference":{"resolution":1.2,"settled":true,"#
+            + #""agreement":null,"domains":[{"name":"nobody","tokens":[],"members":[]}]}}"#
+        #expect(throws: AtlasMapError.emptyDomain("nobody")) {
+            try AtlasMap(decoding: map(json))
+        }
+    }
+
     @Test func `a Map file this reader cannot parse still says which version wrote it`() throws {
         // The case the version field exists for: a newer Argo whose node shape this reader does
         // not know. Read as part of the whole file the version could only be checked against a

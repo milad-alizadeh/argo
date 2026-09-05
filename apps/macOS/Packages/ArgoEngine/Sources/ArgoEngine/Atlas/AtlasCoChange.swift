@@ -70,14 +70,14 @@ enum AtlasCoChange {
     /// together, and which of those pairs each file holds on to.
     private static func counted(over kept: [[Int]], among paths: [String]) -> [AtlasCoupling] {
         var changes: [Int: Int] = [:]
-        var shared: [Pair: Int] = [:]
+        var shared: [AtlasPair: Int] = [:]
         for files in kept {
             for file in files {
                 changes[file, default: 0] += 1
             }
             for (offset, file) in files.enumerated() {
                 for other in files[(offset + 1)...] {
-                    shared[Pair(first: file, second: other), default: 0] += 1
+                    shared[AtlasPair(file, other), default: 0] += 1
                 }
             }
         }
@@ -93,10 +93,10 @@ enum AtlasCoChange {
     /// commit would otherwise read as coupled to the whole repository, which is a fact about that
     /// file and never about a pair.
     private static func strengths(
-        of shared: [Pair: Int],
+        of shared: [AtlasPair: Int],
         against changes: [Int: Int],
     )
-        -> [Pair: Double] {
+        -> [AtlasPair: Double] {
         shared.reduce(into: [:]) { strengths, entry in
             let either = (changes[entry.key.first] ?? 0) + (changes[entry.key.second] ?? 0)
                 - entry.value
@@ -109,13 +109,13 @@ enum AtlasCoChange {
     /// either file kept survives. Ties break on the neighbour's own position: Swift's sort is not
     /// stable, and two equal strengths would otherwise put a different pair in the file on every
     /// run of the same measurement.
-    private static func strongest(_ strengths: [Pair: Double]) -> [(Pair, Double)] {
+    private static func strongest(_ strengths: [AtlasPair: Double]) -> [(AtlasPair, Double)] {
         var near: [Int: [(Int, Double)]] = [:]
         for (pair, strength) in strengths {
             near[pair.first, default: []].append((pair.second, strength))
             near[pair.second, default: []].append((pair.first, strength))
         }
-        var pairs: Set<Pair> = []
+        var pairs: Set<AtlasPair> = []
         for (file, list) in near {
             let closest = list
                 .sorted { left, right in
@@ -123,25 +123,11 @@ enum AtlasCoChange {
                 }
                 .prefix(neighbours)
             for (other, _) in closest {
-                pairs.insert(Pair(first: file, second: other))
+                pairs.insert(AtlasPair(file, other))
             }
         }
         // In the Map's own order, so one measurement writes one file however the counting reached
         // it, and two Map files can be compared line by line.
-        return pairs
-            .sorted { ($0.first, $0.second) < ($1.first, $1.second) }
-            .map { ($0, strengths[$0] ?? 0) }
-    }
-}
-
-/// Two files, by their positions in the Map. Ordered on the way in, so one pair is one key however
-/// the commit listed the two files.
-private struct Pair: Hashable {
-    let first: Int
-    let second: Int
-
-    init(first: Int, second: Int) {
-        self.first = min(first, second)
-        self.second = max(first, second)
+        return pairs.sorted().map { ($0, strengths[$0] ?? 0) }
     }
 }

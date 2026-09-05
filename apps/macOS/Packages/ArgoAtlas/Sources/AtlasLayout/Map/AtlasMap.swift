@@ -15,9 +15,9 @@ public struct AtlasMap: Equatable, Sendable {
     public let commit: String?
     public let root: AtlasPlate
 
-    /// Which files keep changing together, counted from git alone (#1149). Empty for a repository
-    /// whose history cannot pair anything — one commit, or none.
-    public let couplings: [AtlasCoupling]
+    /// What the Map says about its Plots together rather than one at a time: the Couplings
+    /// counted from history, and the Domains inferred over them.
+    public let relations: AtlasRelations
 
     /// `measuredAt` is held to the whole second the file can spell.
     ///
@@ -29,14 +29,35 @@ public struct AtlasMap: Equatable, Sendable {
         measuredAt: Date,
         commit: String?,
         root: AtlasPlate,
-        couplings: [AtlasCoupling] = [],
+        relations: AtlasRelations = .none,
     ) {
         self.measuredAt = Date(
             timeIntervalSince1970: measuredAt.timeIntervalSince1970.rounded(.down),
         )
         self.commit = commit
         self.root = root
-        self.couplings = couplings
+        self.relations = relations
+    }
+
+    /// Which files keep changing together (#1149). On the Map itself because that is where a
+    /// Coupling is read, and there is one place it is stored.
+    public var couplings: [AtlasCoupling] {
+        relations.couplings
+    }
+
+    /// Which files are about the same subject, and what the guess is worth (#1157).
+    public var inference: AtlasInference? {
+        relations.inference
+    }
+
+    /// The Plots the inference placed in no Domain at all, in the Map's own Plot order.
+    ///
+    /// Derived rather than written, so it cannot disagree with the Domains it is the complement
+    /// of. Every Plot for a Map that inferred nothing, which is the honest reading: a Map that
+    /// guessed nothing placed no file anywhere.
+    public var unassigned: [AtlasPlot] {
+        let placed = Set(inference?.domains.flatMap(\.paths) ?? [])
+        return plots.filter { !placed.contains($0.path) }
     }
 
     /// Every measure name any Plot in the Map carries, sorted.

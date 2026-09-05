@@ -1,4 +1,5 @@
 @testable import ArgoEngine
+import AtlasLayout
 import Foundation
 import Testing
 
@@ -164,5 +165,55 @@ struct AtlasGenerationTests {
         #expect(map.commit == nil)
         #expect(map.root.path == "unborn")
         #expect(map.plots.isEmpty)
+    }
+
+    @Test
+    func `a measured repository says what it inferred, and says it inferred it`() async throws {
+        // Every other number on the map is measured. These are guessed, so the guess arrives
+        // wrapped in what it is worth. Nine files sharing not one word between them have only the
+        // history to go on, and it says one thing: five of them arrived in the same commit and
+        // have not moved since. That is the one Domain here, and it is a Domain no reading of the
+        // filenames could have found.
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+
+        let map = try await atlasGenerator().measure(at: fixture.measuredRepository())
+        let inference = try #require(map.inference)
+
+        #expect(inference.domains.count == 1)
+        #expect(inference.domains.first?.paths == [
+            "measured/assets/logo.bin",
+            "measured/notes/a file with spaces.txt",
+            "measured/notes/café.txt",
+            "measured/notes/empty.txt",
+            "measured/notes/unterminated.txt",
+        ])
+        #expect(map.unassigned.count == 4)
+        #expect(AtlasPlateau.sweep.contains { abs($0 - inference.resolution) < 0.001 })
+    }
+
+    @Test
+    func `what was inferred survives the Map file`() async throws {
+        // The inference is written as positions in the Plot order, like the Couplings, so the
+        // claim that matters is that it comes back naming the same files.
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+
+        let map = try await atlasGenerator().measure(at: fixture.measuredRepository())
+
+        #expect(try AtlasMap(decoding: map.encoded()) == map)
+    }
+
+    @Test
+    func `a repository with no commits infers nothing and does not fail`() async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+
+        let map = try await atlasGenerator().measure(at: fixture.repositoryWithNoCommits())
+        let inference = try #require(map.inference)
+
+        #expect(inference.domains.isEmpty)
+        #expect(inference.agreement == nil)
+        #expect(!inference.settled)
     }
 }

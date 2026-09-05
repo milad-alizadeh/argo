@@ -28,18 +28,34 @@ struct AtlasMapFilteringTests {
                     )),
                 ])),
             ]),
-            couplings: [
-                AtlasCoupling(
-                    first: "root/Sources/f1.swift",
-                    second: "root/Sources/f2.swift",
-                    strength: 0.5,
+            relations: AtlasRelations(
+                couplings: [
+                    AtlasCoupling(
+                        first: "root/Sources/f1.swift",
+                        second: "root/Sources/f2.swift",
+                        strength: 0.5,
+                    ),
+                    AtlasCoupling(
+                        first: "root/Sources/f1.swift",
+                        second: "root/Tests/WidgetTests.swift",
+                        strength: 0.9,
+                    ),
+                ],
+                inference: AtlasInference(
+                    domains: [
+                        AtlasDomain(name: "widget", tokens: ["widget"], members: [
+                            AtlasDomainMember(path: "root/Sources/f1.swift", confidence: 0.5),
+                            AtlasDomainMember(path: "root/Sources/f2.swift", confidence: 0.25),
+                        ]),
+                        AtlasDomain(name: "suite", tokens: ["suite"], members: [
+                            AtlasDomainMember(path: "root/Tests/WidgetTests.swift", confidence: 1),
+                        ]),
+                    ],
+                    resolution: 1.2,
+                    settled: true,
+                    agreement: 0.8,
                 ),
-                AtlasCoupling(
-                    first: "root/Sources/f1.swift",
-                    second: "root/Tests/WidgetTests.swift",
-                    strength: 0.9,
-                ),
-            ],
+            ),
         )
     }
 
@@ -96,5 +112,25 @@ struct AtlasMapFilteringTests {
 
         #expect(before.leastHot == 1000)
         #expect(after.leastHot == 10)
+    }
+
+    /// The Domains are not re-inferred by the filter — that needs the history and the whole file
+    /// list — so a Domain here is what it was, minus the files that left.
+    @Test func `hiding the tests takes them out of the Domains they were placed in`() throws {
+        let filtered = Self.map().excludingTestFiles()
+        let inference = try #require(filtered.inference)
+
+        #expect(inference.domains.map(\.name) == ["widget"])
+        #expect(inference.domain(of: "root/Tests/WidgetTests.swift") == nil)
+        #expect(inference.domain(of: "root/Sources/f1.swift")?.name == "widget")
+    }
+
+    @Test func `a Domain the filter emptied is gone rather than empty`() throws {
+        // A Domain is the files it holds. One left holding none would draw a legend row over
+        // nothing, and the writer refuses it at the boundary anyway.
+        let filtered = Self.map().excludingTestFiles()
+
+        #expect(try !#require(filtered.inference).domains.contains { $0.name == "suite" })
+        #expect(try AtlasMap(decoding: filtered.encoded()) == filtered)
     }
 }

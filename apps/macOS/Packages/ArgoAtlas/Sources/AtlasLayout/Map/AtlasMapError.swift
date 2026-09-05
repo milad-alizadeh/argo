@@ -36,6 +36,19 @@ public enum AtlasMapError: Error, Equatable {
     /// `misplacedNode`: a caller can build such a tie, and it has no position to be written at.
     case couplingOutsideMap(String)
 
+    /// A Domain in the file pointing at a position the Map has no file at, which is the same
+    /// disagreement `couplingAtNoPlot` catches (#1157). Carries the position.
+    case domainAtNoPlot(Int)
+
+    /// A Domain naming a path the Map holds no Plot at. A write-side failure, like
+    /// `couplingOutsideMap`: it has no position to be written at. Carries the path.
+    case domainOutsideMap(String)
+
+    /// A Domain nothing belongs to. Refused at both ends rather than read as an empty group: a
+    /// Domain is the files it holds, and one holding none would draw a legend row over nothing
+    /// while claiming the inference found something. Carries the name it was written under.
+    case emptyDomain(String)
+
     /// The Map in hand cannot be written out. JSON has no literal for a measure that is not a
     /// finite number, so a generator that divided by zero is caught here rather than at the read.
     case unwritable(String)
