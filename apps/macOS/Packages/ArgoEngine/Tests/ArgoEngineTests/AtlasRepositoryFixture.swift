@@ -92,6 +92,16 @@ struct AtlasRepositoryFixture {
         try run(["git", "-C", repositoryURL.path, "add", name])
     }
 
+    /// Commits whatever is staged — the repository moving on past a commit a Map already named
+    /// (#1162).
+    func commitStaged(in repositoryURL: URL, message: String = "a later commit") throws {
+        try run([
+            "git", "-C", repositoryURL.path,
+            "-c", "user.name=Ada Lovelace", "-c", "user.email=ada@example.com",
+            "commit", "--quiet", "-m", message,
+        ])
+    }
+
     /// Writes a file into a working tree and leaves it there, tracked or not.
     func write(_ name: String, saying text: String, in repositoryURL: URL) throws {
         try text.write(

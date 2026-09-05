@@ -103,4 +103,51 @@ struct AtlasMapStoreTests {
             atPath: repositoryURL.appending(path: record.id + ".json").path,
         ))
     }
+
+    /// How far the repository has moved past the commit a Map was measured against (#1162).
+    @Test
+    func `commitsBehind counts what the repository has done since the Map was measured`(
+    ) async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+        let repositoryURL = try fixture.measuredRepository()
+        let record = project(at: repositoryURL)
+        let store = store(fixture)
+        let map = await store.generate(for: record)
+
+        try fixture.stage("later.swift", saying: "let later = 1\n", in: repositoryURL)
+        try fixture.commitStaged(in: repositoryURL)
+
+        #expect(store.commitsBehind(of: map, project: record) == 1)
+    }
+
+    /// A map current with the repository is behind it by nothing, not by an absence — the two read
+    /// differently to `AtlasRoomView` (#1162).
+    @Test
+    func `commitsBehind is zero for a Map the repository has not moved past`() async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+        let repositoryURL = try fixture.measuredRepository()
+        let record = project(at: repositoryURL)
+        let store = store(fixture)
+
+        let map = await store.generate(for: record)
+
+        #expect(store.commitsBehind(of: map, project: record) == 0)
+    }
+
+    /// A Map from a repository with no commits has nothing to be behind (#1162).
+    @Test
+    func `commitsBehind is nil for a Map with no commit recorded`() async throws {
+        let fixture = try AtlasRepositoryFixture()
+        defer { fixture.remove() }
+        let repositoryURL = try fixture.repositoryWithNoCommits()
+        let record = project(at: repositoryURL)
+        let store = store(fixture)
+
+        let map = await store.generate(for: record)
+
+        #expect(map.commit == nil)
+        #expect(store.commitsBehind(of: map, project: record) == nil)
+    }
 }

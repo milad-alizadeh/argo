@@ -14,9 +14,24 @@ package struct AtlasRoom {
     package let reading: AtlasReading
     /// The Project the map is of, named in the room's strip and in every vacancy sentence.
     package let project: CockpitPresentation.Project?
+    /// How many commits the repository has taken since the drawn Map was measured. `nil` where
+    /// the reading has no Map, or where nothing can be said about its age (#1162).
+    package let behind: Int?
     /// Measure the Project again. The map is generated on demand and nothing watches the file
     /// system, so this is the whole of what makes a stale map current (#1140).
     package let rebuild: () -> Void
+
+    package init(
+        reading: AtlasReading,
+        project: CockpitPresentation.Project?,
+        behind: Int? = nil,
+        rebuild: @escaping () -> Void,
+    ) {
+        self.reading = reading
+        self.project = project
+        self.behind = behind
+        self.rebuild = rebuild
+    }
 }
 
 /// What the room has to draw. Four states, because they are four different instructions: nothing
