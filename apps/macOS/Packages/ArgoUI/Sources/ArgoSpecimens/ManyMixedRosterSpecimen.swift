@@ -2,9 +2,9 @@ import ArgoEngine
 import ArgoUI
 import SwiftUI
 
-/// #1404's own claim: a real Project's roster, scrolled to the top, with rows well past the
-/// window's bottom edge — does the list keep laying out, or does it stop and leave the rest of
-/// the pane blank instead of continuing or scrolling?
+/// #1404: a roster with more rows than a full-height window can hold. No other entry in the
+/// catalog carries one, which is why nothing caught the sidebar column being divided between the
+/// two rooms mounted in it (`RoomStage`). The claim is the LAST row, not the first.
 struct ManyMixedRosterSpecimen: View {
     @State private var navigation = CockpitNavigationModel()
 

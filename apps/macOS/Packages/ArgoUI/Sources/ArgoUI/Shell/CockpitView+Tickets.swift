@@ -122,13 +122,16 @@ extension CockpitView {
     /// settled order and its open folds, and a switch into Tickets used to tear that down the same
     /// way the deck's `switch` tore down the feed.
     ///
-    /// `Group`, not `ZStack`: the split view's sidebar slot hosts a `Group`'s children overlaid
-    /// exactly the way a `ZStack` would — same frame, same size, checked by hand off the split
-    /// view's own view tree — but a bare `ZStack` here cost the split view coordinator a second
-    /// pass over `ShellSidebar.body` on every click, doubling the roster's read of the roster
-    /// (`SessionSelectionCostTests`, ADR-0028 Rule 1). `InstrumentDeckShell`'s own `ZStack` does
-    /// not pay this, because a `NavigationSplitView` detail pane is not a `NavigationSplitView`
-    /// sidebar.
+    /// `Group`, not `ZStack`: a bare `ZStack` here cost the split view coordinator a second pass
+    /// over `ShellSidebar.body` on every click, doubling the roster's read of the roster
+    /// (`SessionSelectionCostTests`, ADR-0028 Rule 1), and put up no window at all when it was
+    /// tried again for #1404. `InstrumentDeckShell`'s own `ZStack` does not pay this, because a
+    /// `NavigationSplitView` detail pane is not a `NavigationSplitView` sidebar.
+    ///
+    /// What a `Group` here does NOT do is overlay its children the way a `ZStack` would. It
+    /// STACKS them and divides the column's height between the two, which is #1404: the roster
+    /// drew eight rows in half a pane and the rest was the hidden Tickets sidebar's ground.
+    /// `RoomStage.room(isActive:)` is where the room that is off screen gives its half back.
     @ViewBuilder func sidebar(tickets: TicketsRoom) -> some View {
         @Bindable var navigation = navigation
         let isTickets = navigation.room == .tickets
