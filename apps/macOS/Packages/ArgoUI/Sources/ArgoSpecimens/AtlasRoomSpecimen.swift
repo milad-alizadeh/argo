@@ -10,12 +10,14 @@ import SwiftUI
 private let roomFixtureMap = (try? AtlasMapFixture.argo())
     ?? AtlasMap(measuredAt: Date(), commit: nil, root: AtlasPlate(path: "empty", children: []))
 
-/// The Atlas room over a generated atlas: the treemap of #1147 with the strip that says what was
-/// measured, and the one lever that measures it again (#1148).
+/// The Atlas room over a generated atlas: the treemap of #1147 beside the rail that says what was
+/// measured, what each channel measures it by, and the one lever that measures it again (#1148,
+/// #1161).
 ///
 /// It draws the committed measurement, which is the same fixture `AtlasMapSpecimen` and the
 /// Atlas suite read. The picture on its own is that specimen; this one is the ROOM, so what it is
-/// worth a look for is the strip, the key under the map, and how the two sit around the tiling.
+/// worth a look for is the sidebar's sections, the camera floating over the stage, and how the two
+/// columns sit around the tiling.
 struct AtlasRoomSpecimen: View {
     var body: some View {
         AtlasRoomHost(reading: .measured(roomFixtureMap))
@@ -56,7 +58,9 @@ struct AtlasRoomErrorSpecimen: View {
 
 /// A Map that draws, but names a commit the repository has since moved past (#1162). No render is
 /// approved for this one — the design draws only the three states with no map to draw — so this
-/// specimen is what a look at the strip's staleness clause is worth.
+/// specimen is what a look at the staleness clause is worth. It reads in the SIDEBAR's Repository
+/// data section now, not over the map: #1161 took the reading strip off the stage, and the clause
+/// went with the rest of the provenance.
 struct AtlasRoomStaleSpecimen: View {
     var body: some View {
         AtlasRoomHost(reading: .measured(roomFixtureMap), behind: 12)
