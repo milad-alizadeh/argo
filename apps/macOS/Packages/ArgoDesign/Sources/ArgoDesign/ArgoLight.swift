@@ -33,16 +33,30 @@ public enum ArgoLight {
     }
 
     /// The warm key: the lamp a face is read by.
+    ///
+    /// It is OVERHEAD FIRST, and that is the whole shape of it: `z` is the largest term by a clear
+    /// margin, then `x`, then `y`. The three faces a fixed yaw ever shows have the normals
+    /// `(0,0,1)`, `(-1,0,0)` and `(0,-1,0)`, so this direction's three components ARE, one for one,
+    /// how hard the key rakes each of them — and three components a reader can order is the only
+    /// way the three faces come out ordered. #1400 is what a direction that forgets this looks
+    /// like: at `(-0.66, 0.36, 0.66)` the `x` and `z` terms were equal, so the roof and the -x wall
+    /// took the identical key term and a box lost the edge between its top and its lit side, while
+    /// the `y` term pointed the wrong way and left the -y wall with no key at all. `faceStep` is
+    /// that lesson written as a number, and `AtlasLightingTests` spends it.
     public static let key = Lamp(
-        direction: SIMD3(-0.66, 0.36, 0.66),
+        direction: SIMD3(-0.56, -0.15, 0.82),
         tint: ArgoColor(red: 1.00, green: 0.93, blue: 0.82),
-        intensity: 1.14,
+        intensity: 1.00,
     )
 
     /// The cool fill, opposite the key. It lifts the dark side rather than competing with it —
     /// a third of the key's strength, or the map grows a second set of highlights.
+    ///
+    /// It is a SIDE lamp, which is why its `z` is the smallest term it has: the key is the one
+    /// that comes from above, and a fill lifted to meet it would be a second overhead lamp
+    /// brightening the roof the key already owns instead of the wall the key barely reaches.
     public static let fill = Lamp(
-        direction: SIMD3(0.58, -0.36, 0.30),
+        direction: SIMD3(0.58, -0.36, 0.10),
         tint: ArgoColor(red: 0.58, green: 0.76, blue: 1.00),
         intensity: 0.32,
     )
@@ -89,9 +103,19 @@ public enum ArgoLight {
     /// legend does not name.
     public static let shadowDepth = 0.45
 
+    /// The least ratio two faces of the SAME box are allowed to read apart by — the roof against
+    /// the wall below it, and that wall against the other one. It is what makes a box a solid
+    /// rather than a silhouette: two faces meeting at an edge and lit within a few percent of each
+    /// other have no edge a reader can see, and a city of those reads flat however many boxes are
+    /// standing in it (#1400). A ratio rather than a difference, because that is how the eye reads
+    /// two tones of one pigment — and because every face here is a multiply on that pigment.
+    /// `AtlasLightingTests` is what spends it, over the three faces the fixed yaw ever shows.
+    public static let faceStep = 1.2
+
     /// How far a fully-lit roof may drift from its own legend swatch, in `ArgoColor.distance(to:)`
-    /// units — the key's own intensity is driven above one on purpose, so the city's roof reads
-    /// brighter than the swatch beside it, not merely darker. The legend stays one fixed reading
+    /// units — a roof takes the key, the fill and the sky together and their sum lands above one on
+    /// purpose, so the city's roof reads brighter than the swatch beside it, not merely darker. The
+    /// legend stays one fixed reading
     /// across both cameras rather than tracking `relief`, so this bounds how far apart the two are
     /// ever allowed to read rather than asking them to match exactly. `AtlasLightingTests` is what
     /// spends it.

@@ -59,6 +59,21 @@ struct AtlasLightingTests {
         #expect(AtlasLighting.city.roof > max(AtlasLighting.city.nearX, AtlasLighting.city.nearY))
     }
 
+    /// The three faces have to STEP, not merely differ. `!=` above is satisfied by a roof and a
+    /// wall a rounding error apart, and that is exactly what #1400 was: the key's own direction
+    /// gave the roof and the -x wall the same term to within eight percent, so a tower read as one
+    /// flat shape and the -y wall beside it as a cliff. `ArgoLight.faceStep` is the least ratio an
+    /// edge is visible at, and every adjacent pair of faces has to clear it.
+    @Test
+    func `each face steps clear of the next`() {
+        let ordered = [
+            AtlasLighting.city.roof, AtlasLighting.city.nearX, AtlasLighting.city.nearY,
+        ]
+        for (brighter, darker) in zip(ordered, ordered.dropFirst()) {
+            #expect(Double(brighter / darker) >= ArgoLight.faceStep)
+        }
+    }
+
     /// The roof is what the legend is held against — the flat swatch beside a map whose roofs are
     /// fully lit — and `ArgoLight.legendTolerance` is the stated bound on how far apart they may
     /// read: never exact, since the roof rides the key's own brightening and the legend does not

@@ -16,7 +16,26 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// BLEND order, and a translucent volume would need it back (#1151 onward).
     static let depthFormat = MTLPixelFormat.depth32Float
 
+    /// How many samples a pixel is resolved from. Every edge in this picture is a box's own
+    /// silhouette against whatever stands behind it — there is no texture and no wireframe to hide
+    /// a staircase in — so at one sample a roof's diagonal far edge is drawn as a run of whole
+    /// pixels, and a city of a few thousand of them reads as ragged rather than as flat quads
+    /// (#1400). Four is the count every Metal device on this platform supports; `sampleCount(on:)`
+    /// asks the device rather than assuming, for the reason every other failure here is a `nil`.
+    nonisolated static let preferredSampleCount = 4
+
+    /// What this device will actually resolve a pixel from. A static function over a device rather
+    /// than a line inside `init`, because `init` also needs a command queue and a compiled shader
+    /// library — neither of which a test process has — and the choice itself is the only part of
+    /// this file a test can reach. `AtlasSamplingTests` reaches it here.
+    nonisolated static func sampleCount(on device: MTLDevice) -> Int {
+        device.supportsTextureSampleCount(preferredSampleCount) ? preferredSampleCount : 1
+    }
+
     let device: MTLDevice
+    /// What this device actually gave, which is what the view and the pipeline both have to be
+    /// built at: a pass whose attachments and pipeline disagree on the count does not draw.
+    let sampleCount: Int
     private let queue: MTLCommandQueue
     private let pipeline: MTLRenderPipelineState
     private let depth: MTLDepthStencilState
@@ -40,11 +59,14 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
               let fragment = library.makeFunction(name: "atlas_volume_fragment")
         else { return nil }
 
+        let samples = Self.sampleCount(on: device)
+
         let descriptor = MTLRenderPipelineDescriptor()
         descriptor.vertexFunction = vertex
         descriptor.fragmentFunction = fragment
         descriptor.colorAttachments[0].pixelFormat = pixelFormat
         descriptor.depthAttachmentPixelFormat = Self.depthFormat
+        descriptor.rasterSampleCount = samples
 
         // LESS OR EQUAL, not less. Every plate and every roof at no height is one plane at one
         // depth, and the flat camera puts the WHOLE map there; equal depths have to resolve to the
@@ -61,6 +83,7 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         self.queue = queue
         self.pipeline = pipeline
         self.depth = depth
+        self.sampleCount = samples
         super.init()
     }
 
