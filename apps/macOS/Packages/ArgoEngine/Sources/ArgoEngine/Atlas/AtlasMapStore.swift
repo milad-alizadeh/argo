@@ -17,14 +17,16 @@ public actor AtlasMapStore {
 
     private let directoryURL: URL
     private let generator: AtlasMapGenerator
+    private let git: GitCommand
 
     public init(directoryURL: URL = AtlasMapStore.defaultDirectoryURL) {
         self.init(directoryURL: directoryURL, generator: AtlasMapGenerator())
     }
 
-    init(directoryURL: URL, generator: AtlasMapGenerator) {
+    init(directoryURL: URL, generator: AtlasMapGenerator, git: @escaping GitCommand = gitCommand) {
         self.directoryURL = directoryURL
         self.generator = generator
+        self.git = git
     }
 
     /// Where one Project's Map file sits. A Project's id is a UUID, so it names a file as it
@@ -65,5 +67,18 @@ public actor AtlasMapStore {
             throw .unreadable("the Map file could not be opened")
         }
         return try AtlasMap(decoding: data)
+    }
+
+    /// How many commits the repository has taken since this Map was measured, or `nil` where
+    /// nothing can be said: a Map from a repository with no commits, or a working tree git no
+    /// longer answers for (moved, deleted, or a rebased history the recorded commit fell out of).
+    ///
+    /// `nil` is never rendered as a claim — a reader is told how far behind ONLY where the count
+    /// is a fact git actually gave (#1162).
+    nonisolated public func commitsBehind(of map: AtlasMap, project: ProjectRecord) -> Int? {
+        guard let commit = map.commit else { return nil }
+        guard let count = gitValue(git, ["rev-list", "--count", "\(commit)..HEAD"], at: project.url)
+        else { return nil }
+        return Int(count)
     }
 }

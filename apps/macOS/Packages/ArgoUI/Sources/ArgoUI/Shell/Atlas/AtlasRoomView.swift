@@ -135,7 +135,9 @@ struct AtlasRoomView: View {
     }
 
     /// Everything a reader needs to say whether the map is current: how much was found, what it was
-    /// measured against, and which Measure each channel is spending.
+    /// measured against, which Measure each channel is spending, and how far the repository has
+    /// moved since (#1162) — silent where that last clause has nothing to say, because a map that
+    /// is current earns no mention of a gap that does not exist.
     ///
     /// One clause per fact, in the order a reader asks them. The channels collapse to one clause
     /// while the same Measure drives both, which is what the opening reading does — "sized and
@@ -146,7 +148,16 @@ struct AtlasRoomView: View {
         let channels = measure.footprint == measure.band
             ? "sized and coloured by \(measure.footprint)"
             : "sized by \(measure.footprint), coloured by \(measure.band)"
-        return "\(map.plots.count) files · \(commit) · \(channels)"
+        return "\(map.plots.count) files · \(commit) · \(channels)\(staleness)"
+    }
+
+    /// " · N commits behind", or nothing where the room has no Map to be behind anything, or
+    /// nothing to say about its age, or the age is zero. A map this stale is still drawn — it is a
+    /// reading of a real commit, not an error — but the reader is told it is no longer the one the
+    /// working tree is on (#1162).
+    private var staleness: String {
+        guard let behind = room.behind, behind > 0 else { return "" }
+        return " · \(behind) commit\(behind == 1 ? "" : "s") behind"
     }
 
     /// The opening reading, before anything can be chosen. #1161 gives the reader the choice.
@@ -220,5 +231,15 @@ private let previewProject = CockpitPresentation.Project(
         )
         .frame(width: 960, height: 620)
         .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Atlas room, a stale atlas") {
+    AtlasRoomView()
+        .environment(
+            \.argoAtlasRoom,
+            AtlasRoom(reading: .measured(previewMap), project: previewProject, behind: 12) {},
+        )
+        .frame(width: 960, height: 620)
         .argoAppearance()
 }

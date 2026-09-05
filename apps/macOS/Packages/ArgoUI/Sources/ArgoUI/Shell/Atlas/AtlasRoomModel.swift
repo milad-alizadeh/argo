@@ -12,6 +12,9 @@ import Observation
 @Observable
 final class AtlasRoomModel {
     private(set) var reading: AtlasReading = .noProject
+    /// How many commits the repository has taken since the drawn Map was measured, or `nil` where
+    /// there is a Map to draw but nothing to say about its age — see `commitsBehind(of:project:)`.
+    private(set) var behind: Int?
     private let store: AtlasMapStore
     /// Which Project the reading is of, so a switch of Project cannot leave the last one's map on
     /// screen (ADR-0015).
@@ -28,11 +31,13 @@ final class AtlasRoomModel {
         guard let project else {
             readProjectID = nil
             reading = .noProject
+            behind = nil
             return
         }
         guard project.id != readProjectID else { return }
         readProjectID = project.id
         reading = await read(project)
+        behind = commitsBehind(project)
     }
 
     /// Measure the repository and write the Map, on the reader's own gesture.
@@ -40,7 +45,18 @@ final class AtlasRoomModel {
         guard let project else { return }
         readProjectID = project.id
         reading = .measuring
-        reading = await .measured(store.generate(for: record(of: project)))
+        behind = nil
+        let record = record(of: project)
+        let map = await store.generate(for: record)
+        reading = .measured(map)
+        behind = store.commitsBehind(of: map, project: record)
+    }
+
+    /// How far the drawn Map is behind the repository it measured, or `nil` where the reading has
+    /// no Map to be behind anything (#1162).
+    private func commitsBehind(_ project: CockpitPresentation.Project) -> Int? {
+        guard case let .measured(map) = reading else { return nil }
+        return store.commitsBehind(of: map, project: record(of: project))
     }
 
     private func read(_ project: CockpitPresentation.Project) async -> AtlasReading {

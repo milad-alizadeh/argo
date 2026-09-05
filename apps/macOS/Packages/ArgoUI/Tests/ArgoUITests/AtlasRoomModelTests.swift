@@ -28,6 +28,40 @@ struct AtlasRoomModelTests {
         )
     }
 
+    /// A real repository with one commit, self-contained rather than borrowed from
+    /// `ArgoEngineTests`' own fixture, which this target cannot see.
+    private func makeRepository(at url: URL) throws {
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try git(["init", "--quiet"], at: url)
+        try commit("first", at: url)
+    }
+
+    /// One more commit on a repository `makeRepository` already started — the working tree moving
+    /// on past a Map that was measured before it (#1162).
+    private func commit(_ message: String, at url: URL) throws {
+        try git([
+            "-c", "user.name=Ada Lovelace", "-c", "user.email=ada@example.com",
+            "commit", "--quiet", "--allow-empty", "-m", message,
+        ], at: url)
+    }
+
+    private func git(_ arguments: [String], at url: URL) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["git", "-C", url.path] + arguments
+        // Out of the way of the machine's own config, the same reason `AtlasRepositoryFixture`
+        // gives (`ArgoEngineTests`): a default branch name or a signing setting must not decide
+        // what this fixture is.
+        var environment = ProcessInfo.processInfo.environment
+        environment["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        environment["GIT_CONFIG_SYSTEM"] = "/dev/null"
+        process.environment = environment
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+    }
+
     /// A window with no active Project has no repository to measure, which is a different sentence
     /// from a Project nobody has measured yet.
     @Test
@@ -66,6 +100,46 @@ struct AtlasRoomModelTests {
         if case .measured = measured {} else {
             Issue.record("measuring left the room reading \(measured)")
         }
+    }
+
+    /// A window with no Map to draw has nothing to be behind (#1162).
+    @Test
+    func `an unmeasured Project is not behind anything`() async throws {
+        let (model, rootURL) = try fixture()
+
+        await model.open(project("argo", at: rootURL))
+
+        #expect(model.behind == nil)
+    }
+
+    /// Just-generated is current, by construction: the Map names the commit the rebuild ran under.
+    @Test
+    func `rebuilding leaves the Map no commits behind`() async throws {
+        let (model, rootURL) = try fixture()
+        let repositoryURL = rootURL.appending(path: "argo", directoryHint: .isDirectory)
+        try makeRepository(at: repositoryURL)
+
+        await model.rebuild(project("argo", at: rootURL))
+
+        #expect(model.behind == 0)
+    }
+
+    /// Arriving at a room whose Map now trails the repository states how far behind it is —
+    /// re-read on the room's own open, not watched live (#1162).
+    @Test
+    func `reopening after the repository has moved states how far behind the Map is`(
+    ) async throws {
+        let (model, rootURL) = try fixture()
+        let repositoryURL = rootURL.appending(path: "argo", directoryHint: .isDirectory)
+        try makeRepository(at: repositoryURL)
+        let project = project("argo", at: rootURL)
+        await model.rebuild(project)
+
+        try commit("second", at: repositoryURL)
+        await model.open(nil)
+        await model.open(project)
+
+        #expect(model.behind == 1)
     }
 
     /// A window that switches Project must never go on drawing the last one's map (ADR-0015).

@@ -34,6 +34,12 @@ extension SpecimenRegistry {
         // Project with no atlas gets instead (#1148). The treemap above is the drawing on its own.
         SpecimenEntry("atlasRoom") { AtlasRoomSpecimen() },
         SpecimenEntry("atlasRoomUnmeasured") { AtlasRoomVacancySpecimen() },
+        // The other two readings with no map to draw, and the one where an old map still draws
+        // (#1162). `pixel-review` judges the first two against #650's approved renders; the third
+        // has none — the design draws no stale state — so it is a look, not a diff.
+        SpecimenEntry("atlasRoomLoading") { AtlasRoomLoadingSpecimen() },
+        SpecimenEntry("atlasRoomError") { AtlasRoomErrorSpecimen() },
+        SpecimenEntry("atlasRoomStale") { AtlasRoomStaleSpecimen() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
         // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in

@@ -7,7 +7,11 @@ extension CockpitView {
     /// The room the deck draws, over the Project this window is scoped to. Handed the container's
     /// reading and the two gestures that move it, so no view below reaches the store.
     var atlasRoom: AtlasRoom {
-        AtlasRoom(reading: atlas.reading, project: presentation.activeProject) {
+        AtlasRoom(
+            reading: atlas.reading,
+            project: presentation.activeProject,
+            behind: atlas.behind,
+        ) {
             Task { await atlas.rebuild(presentation.activeProject) }
         }
     }

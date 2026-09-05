@@ -1,7 +1,14 @@
 import ArgoDesign
 import ArgoUI
 import AtlasFixtures
+import AtlasLayout
 import SwiftUI
+
+/// The committed measurement `AtlasMapSpecimen` and the Atlas suite also read, or the floor with
+/// no city on it where the bundled fixture will not load — a specimen that trapped would be a
+/// harness failure dressed as a product one.
+private let roomFixtureMap = (try? AtlasMapFixture.argo())
+    ?? AtlasMap(measuredAt: Date(), commit: nil, root: AtlasPlate(path: "empty", children: []))
 
 /// The Atlas room over a generated atlas: the treemap of #1147 with the strip that says what was
 /// measured, and the one lever that measures it again (#1148).
@@ -11,7 +18,7 @@ import SwiftUI
 /// worth a look for is the strip, the key under the map, and how the two sit around the tiling.
 struct AtlasRoomSpecimen: View {
     var body: some View {
-        AtlasRoomHost(map: try? AtlasMapFixture.argo())
+        AtlasRoomHost(reading: .measured(roomFixtureMap))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .argoDeckSurface()
     }
@@ -22,7 +29,37 @@ struct AtlasRoomSpecimen: View {
 /// be a harness failure dressed as a product one.
 struct AtlasRoomVacancySpecimen: View {
     var body: some View {
-        AtlasRoomHost(map: nil)
+        AtlasRoomHost(reading: .unmeasured)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .argoDeckSurface()
+    }
+}
+
+/// The walk is running (#1162, the loading state pixel-review judges against #650's render).
+struct AtlasRoomLoadingSpecimen: View {
+    var body: some View {
+        AtlasRoomHost(reading: .measuring)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .argoDeckSurface()
+    }
+}
+
+/// The Map file is there and would not read (#1162, the error state pixel-review judges against
+/// #650's render).
+struct AtlasRoomErrorSpecimen: View {
+    var body: some View {
+        AtlasRoomHost(reading: .unreadable)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .argoDeckSurface()
+    }
+}
+
+/// A Map that draws, but names a commit the repository has since moved past (#1162). No render is
+/// approved for this one — the design draws only the three states with no map to draw — so this
+/// specimen is what a look at the strip's staleness clause is worth.
+struct AtlasRoomStaleSpecimen: View {
+    var body: some View {
+        AtlasRoomHost(reading: .measured(roomFixtureMap), behind: 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .argoDeckSurface()
     }
