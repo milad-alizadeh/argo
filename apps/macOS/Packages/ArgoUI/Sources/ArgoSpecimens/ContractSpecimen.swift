@@ -117,7 +117,7 @@ struct ContractSpecimen: View, SpecimenSheet {
                         Text(role.name)
                             .argoText(ArgoTypography.machineCaption)
                             .frame(width: 132, alignment: .leading)
-                        Text(duration(role.motion))
+                        Text(duration(role.motion, cooling: role.name == "working"))
                             .argoText(ArgoTypography.machineCaption)
                         unwired(ArgoMotion.unwired[role.name])
                     }
@@ -132,15 +132,16 @@ struct ContractSpecimen: View, SpecimenSheet {
     private let stateWords = ["running", "idle", "Needs input", "Stopped"]
 
     /// A loop is read differently from a transition, so it is said differently: its number is a
-    /// period rather than a wait, it cools as the wait it reports ages, and Reduce Motion stops it
-    /// rather than shortening it.
-    private func duration(_ motion: ArgoMotion) -> String {
+    /// period rather than a wait, and Reduce Motion stops it rather than shortening it. Only
+    /// `working` also cools — the ladder is a property of the wait it reports, and a cord that has
+    /// been live for an hour is not a wait at all — so the clause is asked for rather than assumed.
+    private func duration(_ motion: ArgoMotion, cooling: Bool) -> String {
         let reduced = motion.reducedDuration.map { "\(Int($0 * 1000))ms fade" } ?? "instant"
         let pass = "\(Int(motion.duration * 1000))ms"
         let coldest = Int(ArgoWaitAge.coldest.period * 1000)
-        return motion.repeats
-            ? "\(pass) per pass, cooling to \(coldest)ms · reduce motion: stopped"
-            : "\(pass) · reduce motion: \(reduced)"
+        guard motion.repeats else { return "\(pass) · reduce motion: \(reduced)" }
+        let cools = cooling ? ", cooling to \(coldest)ms" : ""
+        return "\(pass) per pass\(cools) · reduce motion: stopped"
     }
 }
 
