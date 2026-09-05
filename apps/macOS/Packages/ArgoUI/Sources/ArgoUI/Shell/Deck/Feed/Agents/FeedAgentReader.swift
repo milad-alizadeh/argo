@@ -183,7 +183,9 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// `feed` is walked only where the reader is unstamped — a specimen, a `#Preview`, a suite. A
     /// stamped one answers with the list the cache derived from its OWN rows, which is what keeps
     /// the answer a fact about the reading rather than about whoever asked first.
-    @MainActor func agents(in feed: [FeedRow]) -> [FeedAgent] {
+    /// `package` so a specimen can draw the rail's chips as the deck derives them, rather than
+    /// hand-building a list whose meters no reader would ever see (`AgentsRailMeasuredSpecimen`).
+    @MainActor package func agents(in feed: [FeedRow]) -> [FeedAgent] {
         let walked = stamp.flatMap { SessionsRoomReadingCache.agents(at: $0) }
             ?? FeedAgents.all(in: feed, of: liveness)
         return told(walked)

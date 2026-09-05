@@ -35,7 +35,11 @@ struct AgentMeter: View {
             duration
             // Between the two figures and only when both are there: `3m 43s 143.6K tokens` reads as
             // one number with a unit in the middle of it, which is the mistake the labels prevent.
-            if agent.durationMs != nil, agent.spend != nil {
+            //
+            // Keyed on whether the slot DRAWS, not on the reported total alone: a running chip has
+            // no total and still shows a clock, and since #1279 it shows a spend beside it — read
+            // off `durationMs` this pair would be the two figures run together.
+            if drawsDuration, agent.spend != nil {
                 Text(verbatim: "·")
             }
             spend
@@ -49,6 +53,12 @@ struct AgentMeter: View {
     /// The reported total once it lands, and a live count until then. Ticking wraps only this text:
     /// a timeline any wider re-renders the whole chip, which restarts its siblings' animation
     /// mid-pass — the trap `RosterTurnClock` names.
+    /// Whether the slot below draws anything — a stated total, or a clock still counting. Spelled
+    /// once so the separator above and the view below cannot part company on it.
+    private var drawsDuration: Bool {
+        agent.durationMs != nil || (agent.activity == .running && agent.startedAtMs != nil)
+    }
+
     @ViewBuilder private var duration: some View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))

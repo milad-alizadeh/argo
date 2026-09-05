@@ -51,10 +51,18 @@ struct SubagentMeasureTests {
     @Test
     func `the spend sums every record the child priced`() {
         let measure = SubagentMeasure.read([
-            .usage(Usage(inputTokens: 10, outputTokens: 1, cacheReadTokens: 0,
-                         cacheCreationTokens: 0)),
-            .usage(Usage(inputTokens: 20, outputTokens: 2, cacheReadTokens: 100,
-                         cacheCreationTokens: 7)),
+            .usage(Usage(
+                inputTokens: 10,
+                outputTokens: 1,
+                cacheReadTokens: 0,
+                cacheCreationTokens: 0,
+            )),
+            .usage(Usage(
+                inputTokens: 20,
+                outputTokens: 2,
+                cacheReadTokens: 100,
+                cacheCreationTokens: 7,
+            )),
         ])
 
         #expect(measure.usage?.spentTokens == 33)
@@ -89,23 +97,39 @@ struct SubagentMeasureTests {
     }
 
     private static func call(at atMs: Int) -> ToolCall {
-        ToolCall(id: "call-\(atMs)", name: "Read", kind: .read, target: "AgentMeter.swift",
-                 atMs: atMs)
+        ToolCall(
+            id: "call-\(atMs)",
+            name: "Read",
+            kind: .read,
+            target: "AgentMeter.swift",
+            atMs: atMs,
+        )
     }
 
     /// One finished background Subagent's own file, as Argo reads it.
     private static let run: [TranscriptEvent] = [
         .prompt(text: "Standards review of #1269", images: [], atMs: 1_700_000_000_000),
-        .usage(Usage(inputTokens: 600, outputTokens: 4000, cacheReadTokens: 20000,
-                     cacheCreationTokens: 0)),
+        .usage(Usage(
+            inputTokens: 600,
+            outputTokens: 4000,
+            cacheReadTokens: 20000,
+            cacheCreationTokens: 0,
+        )),
         .toolCall(call(at: 1_700_000_010_000)),
         .toolCallOutcome(ToolCallOutcome(
             id: "call-1700000010000",
-            resolution: ToolCallOutcome.Resolution(status: .completed, result: nil,
-                                                   endedAtMs: 1_700_000_012_000),
+            resolution: ToolCallOutcome.Resolution(
+                status: .completed,
+                result: nil,
+                endedAtMs: 1_700_000_012_000,
+            ),
         )),
-        .usage(Usage(inputTokens: 1000, outputTokens: 5000, cacheReadTokens: 30000,
-                     cacheCreationTokens: 0)),
+        .usage(Usage(
+            inputTokens: 1000,
+            outputTokens: 5000,
+            cacheReadTokens: 30000,
+            cacheCreationTokens: 0,
+        )),
         .turnEnded(.endTurn),
         .compaction(atMs: 1_700_000_223_591),
     ]

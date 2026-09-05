@@ -159,12 +159,19 @@ enum SessionsRoomReadingCache {
         let read: Int
     }
 
-    private struct Entry {
-        let stamp: Stamp
-        let body: Body
+    /// What has been derived off one entry's reading and remembered — everything a second asker at
+    /// the same stamp gets for free. One value rather than three fields beside the body, because
+    /// they are one thing: the answers this entry has already paid for.
+    private struct Derived {
         var agents: [FeedAgent]?
         var scoped: [Scoping: [FeedRow]] = [:]
         var measures: [Measuring: SubagentMeasure] = [:]
+    }
+
+    private struct Entry {
+        let stamp: Stamp
+        let body: Body
+        var derived = Derived()
     }
 
     private static var entries: [Entry] = []
@@ -194,7 +201,7 @@ enum SessionsRoomReadingCache {
     static func agents(at stamp: Stamp) -> [FeedAgent]? {
         guard let found = index(of: stamp) else { return nil }
         let at = entries.touch(found)
-        if let agents = entries[at].agents {
+        if let agents = entries[at].derived.agents {
             return agents
         }
         let agents = FeedAgents.all(
@@ -202,7 +209,7 @@ enum SessionsRoomReadingCache {
             of: DelegatingSession.of(entries[at].stamp.status),
         )
         counted(\.agents)
-        entries[at].agents = agents
+        entries[at].derived.agents = agents
         return agents
     }
 
@@ -217,12 +224,12 @@ enum SessionsRoomReadingCache {
         -> [FeedRow] {
         guard let found = index(of: stamp) else { return derive() }
         let at = entries.touch(found)
-        if let rows = entries[at].scoped[scoping] {
+        if let rows = entries[at].derived.scoped[scoping] {
             return rows
         }
         let rows = derive()
         counted(\.scopes)
-        entries[at].scoped[scoping] = rows
+        entries[at].derived.scoped[scoping] = rows
         return rows
     }
 
@@ -241,12 +248,12 @@ enum SessionsRoomReadingCache {
         -> SubagentMeasure {
         guard let found = index(of: stamp) else { return derive() }
         let at = entries.touch(found)
-        if let measure = entries[at].measures[measuring] {
+        if let measure = entries[at].derived.measures[measuring] {
             return measure
         }
         let measure = derive()
         counted(\.measures)
-        entries[at].measures[measuring] = measure
+        entries[at].derived.measures[measuring] = measure
         return measure
     }
 

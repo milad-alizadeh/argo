@@ -52,8 +52,12 @@ struct FeedAgentsMeterTests {
             id: 0,
             label: "verified",
             activity: .finished,
-            spend: Usage(inputTokens: 1, outputTokens: 2, cacheReadTokens: 0,
-                         cacheCreationTokens: 0),
+            spend: Usage(
+                inputTokens: 1,
+                outputTokens: 2,
+                cacheReadTokens: 0,
+                cacheCreationTokens: 0,
+            ),
             subagentID: Self.child,
             durationMs: 99,
             startedAtMs: 5,
@@ -128,16 +132,32 @@ struct FeedAgentsMeterTests {
     /// The child's own file: dated at both ends, and pricing two of its records.
     private static let ran: [TranscriptEvent] = [
         .prompt(text: "Standards review of #1269", images: [], atMs: 1_700_000_000_000),
-        .usage(Usage(inputTokens: 600, outputTokens: 2000, cacheReadTokens: 20000,
-                     cacheCreationTokens: 0)),
-        .toolCall(ToolCall(id: "read-1", name: "Read", kind: .read, target: "AgentMeter.swift",
-                           atMs: 1_700_000_004_000)),
-        .usage(Usage(inputTokens: 1000, outputTokens: 2000, cacheReadTokens: 30000,
-                     cacheCreationTokens: 0)),
+        .usage(Usage(
+            inputTokens: 600,
+            outputTokens: 2000,
+            cacheReadTokens: 20000,
+            cacheCreationTokens: 0,
+        )),
+        .toolCall(ToolCall(
+            id: "read-1",
+            name: "Read",
+            kind: .read,
+            target: "AgentMeter.swift",
+            atMs: 1_700_000_004_000,
+        )),
+        .usage(Usage(
+            inputTokens: 1000,
+            outputTokens: 2000,
+            cacheReadTokens: 30000,
+            cacheCreationTokens: 0,
+        )),
         .toolCallOutcome(ToolCallOutcome(
             id: "read-1",
-            resolution: ToolCallOutcome.Resolution(status: .completed, result: nil,
-                                                   endedAtMs: 1_700_000_012_000),
+            resolution: ToolCallOutcome.Resolution(
+                status: .completed,
+                result: nil,
+                endedAtMs: 1_700_000_012_000,
+            ),
         )),
     ]
 

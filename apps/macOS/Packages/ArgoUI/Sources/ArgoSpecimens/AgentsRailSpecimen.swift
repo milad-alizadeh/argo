@@ -38,6 +38,11 @@ struct AgentsRailSpecimen: View {
         /// `quiet` and `stale` cannot show — in both of those the parent's status decided the
         /// chips. `AgentsRailFixture.waitingRows` carries the rest.
         case waiting
+        /// The meter under three backgrounded chips, none of which reported a figure (#1279): one
+        /// the record answered, drawn with the span and the roll-up of its OWN file; one still
+        /// writing, showing the tokens read so far and still counting up; and one Argo has no
+        /// reading of, whose meter is empty. `AgentsRailFixture.measuredRows` carries the rest.
+        case measured
         /// The rail as its dot strip, with the feed taking the width back.
         case collapsed
         /// The strip while the feed is scoped onto an Agent — the state that proves the way back
@@ -71,6 +76,7 @@ struct AgentsRailSpecimen: View {
         switch subject {
         case .quiet: AgentsRailFixture.quietReadings
         case .waiting: AgentsRailFixture.waitingReadings
+        case .measured: AgentsRailFixture.measuredReadings
         default: AgentsRailFixture.readings
         }
     }
@@ -80,6 +86,7 @@ struct AgentsRailSpecimen: View {
         case .sole: AgentsRailFixture.soleAgentRows
         case .stale: AgentsRailFixture.staleRows
         case .waiting: AgentsRailFixture.waitingRows
+        case .measured: AgentsRailFixture.measuredRows
         case .scoped, .rescoped, .quiet, .collapsed, .collapsedScoped:
             FeedProjection.previewRows
         }
@@ -124,6 +131,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — an idle parent whose children are still writing") {
     AgentsRailSpecimen(subject: .waiting)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — three background chips, measured off their own files") {
+    AgentsRailSpecimen(subject: .measured)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }

@@ -130,6 +130,12 @@ extension SpecimenRegistry {
         SpecimenEntry("unclosedDelegationEnded") {
             UnclosedDelegationSpecimen(ended: [UnclosedDelegationSpecimen.calls.spec])
         },
+        // The meter on three backgrounded chips that reported no figure: one measured off the file
+        // it left behind, one counting up beside the tokens read so far, one empty (#1279).
+        SpecimenEntry("agentsRailMeasured") { AgentsRailSpecimen(subject: .measured) },
+        // The third of those, which only the OPEN disclosure shows: the one that landed, drawn
+        // with the span and the roll-up of the file it left behind (#1279, #1090).
+        SpecimenEntry("agentsRailMeasuredLanded") { AgentsRailMeasuredSpecimen() },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
         // missing, since the strip has no room for the word Main (#1013).
