@@ -10,7 +10,7 @@ import Testing
 /// one — the Session is running, so `session.isRunning && call.ending == .pending` was still true
 /// at 33h and at 47h, and the rail drew a green dot and a clock counting up from each.
 ///
-/// Read on the DATED pass since #1269 (`FeedAgents.told(_:writing:at:)`) rather than inside the
+/// Read on the DATED pass since #1269 (`FeedAgents.told(_:by:at:)`) rather than inside the
 /// memoised walk, so every claim here goes through the same seam the rail does. Whether an
 /// observation of the child outranks it is `FeedAgentsWritingTests`.
 @Suite("Feed agents ceiling")
@@ -89,7 +89,7 @@ struct FeedAgentsCeilingTests {
         #expect(chip.durationMs == nil)
     }
 
-    /// The ranking the ORDER in `FeedAgents.told(_:writing:at:)` encodes: an OBSERVATION outranks
+    /// The ranking the ORDER in `FeedAgents.told(_:by:at:)` encodes: an OBSERVATION outranks
     /// a stated figure. This ceiling names itself a stated one — how long a report can still be in
     /// flight — so a Subagent Argo can watch writing at five hours is a slow Subagent rather than a
     /// lost report, and it keeps its dot (#1269).
@@ -129,7 +129,7 @@ struct FeedAgentsCeilingTests {
     }
 
     private static func told(_ agents: [FeedAgent], writing: SubagentWriting) -> [FeedAgent] {
-        FeedAgents.told(agents, writing: { _ in writing }, at: now)
+        FeedAgents.told(agents, by: .watching(writing), at: now)
     }
 
     private static func handover(_ hoursAgo: Int) -> Int {

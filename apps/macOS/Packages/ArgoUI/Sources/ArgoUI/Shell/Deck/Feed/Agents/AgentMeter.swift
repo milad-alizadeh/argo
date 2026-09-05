@@ -11,11 +11,17 @@ import SwiftUI
 /// delegating call's result. So the duration counts UP from the handover instead, and the spend
 /// slot stays empty rather than drawing a `0` that would claim a busy agent had spent nothing.
 ///
-/// A backgrounded Agent is never reported either figure, at either end (#908) — so a finished one
-/// draws NOTHING here. The count-up is gated on `.running` for exactly that: a clock still growing
-/// beside a quiet dot would say the work goes on, which is the untruth the rail was fixed to stop.
-/// That gate carries the delegating Session's own status too (`DelegatingSession`), so a stale
-/// delegation draws no duration rather than a frozen one.
+/// A backgrounded Agent is never REPORTED either figure, at either end (#908). Both are derived
+/// from its own record instead (`SubagentMeasure`, #1279), and both arrive here as the same two
+/// fields — this view draws what a chip holds and never asks where the figure came from. What stays
+/// empty is a chip whose child Argo has not read: degrade-down, and an empty meter is the honest
+/// state where a `0` would claim the work was instant and free.
+///
+/// The count-up is gated on `.running` for the reason it always was: a clock still growing beside a
+/// quiet dot would say the work goes on, which is the untruth the rail was fixed to stop. That gate
+/// carries the delegating Session's own status too (`DelegatingSession`), so a stale delegation
+/// draws no duration rather than a frozen one — and it is why no derived duration is handed to a
+/// running chip, which would replace the clock with a total measured only up to now.
 ///
 /// `.running` and not "anything but finished": an UNKNOWN chip gets no clock either. Argo cannot
 /// say the work is going on, and a duration counting up is that sentence written in numbers.

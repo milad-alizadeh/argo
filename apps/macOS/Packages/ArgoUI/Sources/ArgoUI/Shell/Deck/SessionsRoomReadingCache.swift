@@ -149,11 +149,22 @@ enum SessionsRoomReadingCache {
         let read: Int?
     }
 
+    /// What one chip's derived figures are a function of: which Subagent, and how much of its own
+    /// file Argo had read. The stamp above stops at the Session's own stream, so this is what moves
+    /// when the child writes — the same shape `Scoping` carries, for the same reason (#858).
+    struct Measuring: Hashable {
+        let subagentID: String
+        /// How many events the child's reading held. Never `nil`: a child nothing has read is not
+        /// measured at all, so it never reaches this key.
+        let read: Int
+    }
+
     private struct Entry {
         let stamp: Stamp
         let body: Body
         var agents: [FeedAgent]?
         var scoped: [Scoping: [FeedRow]] = [:]
+        var measures: [Measuring: SubagentMeasure] = [:]
     }
 
     private static var entries: [Entry] = []
@@ -215,6 +226,30 @@ enum SessionsRoomReadingCache {
         return rows
     }
 
+    /// What one chip's own file measures (#1279), memoised for the reason the scoped rows are: the
+    /// rail asks per chip on every pass, and the walk behind the answer is the child's whole file.
+    /// Keyed by that file's LENGTH beside the room's stamp, so a Subagent that has written since is
+    /// measured again and one that has not costs a lookup.
+    ///
+    /// Derives without remembering where nothing holds this stamp — a specimen, a `#Preview`, a
+    /// suite — exactly as `scoped(at:drawing:otherwise:)` does.
+    static func measure(
+        at stamp: Stamp,
+        of measuring: Measuring,
+        otherwise derive: () -> SubagentMeasure,
+    )
+        -> SubagentMeasure {
+        guard let found = index(of: stamp) else { return derive() }
+        let at = entries.touch(found)
+        if let measure = entries[at].measures[measuring] {
+            return measure
+        }
+        let measure = derive()
+        counted(\.measures)
+        entries[at].measures[measuring] = measure
+        return measure
+    }
+
     /// Everything remembered, dropped. For a suite that needs a cold cache; nothing in the app
     /// calls it, because a stamp that has moved already evicts what it replaces.
     static func forget() {
@@ -253,6 +288,7 @@ struct SessionsRoomReadingCost {
     var bodies = 0
     var agents = 0
     var scopes = 0
+    var measures = 0
 }
 
 private extension Array {

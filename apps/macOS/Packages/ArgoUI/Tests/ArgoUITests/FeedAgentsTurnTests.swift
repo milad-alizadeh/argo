@@ -13,7 +13,7 @@ import Testing
 /// The evidence that settles it is in the record and is the delegation's own: the Turn it was
 /// handed over in has ENDED. A synchronous delegation cannot outlive the Turn that blocked on it,
 /// and a backgrounded one that outlives its Turn is decided by the child's own file
-/// (`FeedAgents.told(_:writing:at:)`), which this leaves untouched.
+/// (`FeedAgents.told(_:by:at:)`), which this leaves untouched.
 @Suite("Feed agents turn")
 struct FeedAgentsTurnTests {
     /// The bug, in one claim: the leftovers of a Turn that is over are not this Turn's work.
@@ -66,7 +66,7 @@ struct FeedAgentsTurnTests {
     @Test
     func `a child still writing keeps its dot across the turn boundary`() {
         let chips = FeedAgents.all(in: Self.rows(Self.leftOver), of: .running)
-        let told = FeedAgents.told(chips, writing: { _ in .writing }, at: Self.now)
+        let told = FeedAgents.told(chips, by: .watching(.writing), at: Self.now)
 
         #expect(told.map(\.activity) == [.running])
     }

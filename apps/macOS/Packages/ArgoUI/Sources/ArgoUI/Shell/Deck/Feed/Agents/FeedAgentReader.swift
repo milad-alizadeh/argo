@@ -202,10 +202,30 @@ public struct FeedAgentReader: Equatable, Sendable {
         let nowMs = Date().epochMs
         return FeedAgents.told(
             agents,
-            writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+            by: SubagentEvidence(
+                writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+                measure: { measure(of: $0) },
+            ),
             ended: hold,
             at: nowMs,
         )
+    }
+
+    /// What one child's own file says its run took and cost (#1279) — `unmeasured` where Argo has
+    /// not read it, which is what leaves the meter honestly empty.
+    ///
+    /// Memoised under the room's stamp AND the child's own reading LENGTH, for the reason the
+    /// scoped rows are: the stamp does not move for a child's bytes (#858), so a memo keyed on it
+    /// alone would freeze a growing agent's figures — and this is a walk of the whole child file,
+    /// which the rail asks for per chip on every pass. An unstamped reader — a specimen, a
+    /// `#Preview`, a suite — simply walks.
+    @MainActor private func measure(of agentID: String) -> SubagentMeasure {
+        guard let events = read(agentID) else { return .unmeasured }
+        guard let stamp else { return SubagentMeasure.read(events) }
+        return SessionsRoomReadingCache.measure(
+            at: stamp,
+            of: SessionsRoomReadingCache.Measuring(subagentID: agentID, read: events.count),
+        ) { SubagentMeasure.read(events) }
     }
 
     @MainActor private func derived(of feed: [FeedRow], under scope: FeedScope) -> [FeedRow] {
