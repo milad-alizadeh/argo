@@ -20,6 +20,18 @@
 #
 # The lock lives outside every worktree, because it is a fact about the MACHINE. A per-tree
 # lock would be no lock at all: the lanes it has to hold apart are in different trees.
+#
+# A slot is held for a process TREE, not a process. `swift-gate.sh` takes one and then runs
+# `bun run build` and `bun run test`, each a child that sources this file — so a second
+# acquire would make one gate occupy two of the two slots, and two gates would each hold one
+# and then wait forever for the other's. The holder exports ARGO_BUILD_LOCK_HELD_BY; every
+# descendant reads it and runs inside the slot already paid for.
+#
+# That marker names the ROOT as well as the pid, and a descendant honours it only for the root
+# it came from. There is more than one pool: `land.sh` runs one landing at a time out of a lock
+# root of its own, and then runs the gate, which has to queue for a MACHINE build slot like any
+# lane. A marker trusted on presence alone would exempt that gate from the build cap entirely —
+# the landing would build uncapped while claiming to be serialised.
 
 BUILD_LOCK_ROOT=${ARGO_BUILD_LOCK_ROOT:-${TMPDIR:-/tmp}/argo-build-lock}
 BUILD_LOCK_SLOTS=${ARGO_BUILD_LOCK_SLOTS:-2}
@@ -35,6 +47,31 @@ build_lock_release() {
   [ -n "$BUILD_LOCK_HELD" ] || return 0
   rm -rf "$BUILD_LOCK_HELD"
   BUILD_LOCK_HELD=""
+  # Cleared with the slot, not left behind: a script that releases and then acquires again is
+  # asking for a second slot, and an inherited marker would silently hand it none.
+  unset ARGO_BUILD_LOCK_HELD_BY
+}
+
+# Install this lock's cleanup for signal $1, KEEPING whatever handler is already there, and
+# appending `exit $2` when one is given.
+#
+# Chaining rather than clobbering, because `trap … EXIT` inside a function replaces the
+# script-level one. `swift-test.sh` removes its xunit report directory in an EXIT trap set long
+# before it asks for a slot, and a plain `trap 'build_lock_release' EXIT` here leaked one temp
+# directory per run — on the very path the cap was added to cover, and on no other, since a
+# caller that inherits a slot returns above without reaching this.
+#
+# `trap` with no arguments prints the handler it currently holds, one line per signal, in a form
+# this reads back. The caller's handler runs AFTER the slot is freed and BEFORE the exit, so a
+# slow cleanup never keeps the next lane waiting.
+_bl_install_release() {
+  _bl_signal=$1
+  _bl_exit_code=$2
+  _bl_existing=$(trap | sed -n "s/^trap -- '\(.*\)' $_bl_signal\$/\1/p")
+  _bl_handler='build_lock_release'
+  [ -n "$_bl_existing" ] && _bl_handler="$_bl_handler; $_bl_existing"
+  [ -n "$_bl_exit_code" ] && _bl_handler="$_bl_handler; exit $_bl_exit_code"
+  trap "$_bl_handler" "$_bl_signal"
 }
 
 # Take one of $BUILD_LOCK_SLOTS slots, waiting as long as it takes.
@@ -43,6 +80,28 @@ build_lock_release() {
 # because it could not write a lock directory would be a gate turned off by a full disk —
 # which is exactly the condition this whole change exists to relieve.
 build_lock_acquire() {
+  # Already inside a slot this process tree paid for. Not an error and not a wait: the caller
+  # is the `bun run build` that a gate holding a slot just started, and the machine is already
+  # counting it.
+  #
+  # Two things have to hold. The marker's root must be THIS root, or a holder of some other
+  # pool's slot would walk straight through this one. And its holder must still be RUNNING:
+  # `build_lock_release` can only unset the variable in its own shell, so a child spawned
+  # before the release keeps the exported value for ever, and would then build uncapped,
+  # permanently, with nothing to notice.
+  #
+  # Split on the LAST space, so a lock root with a space in it still parses.
+  if [ -n "${ARGO_BUILD_LOCK_HELD_BY:-}" ]; then
+    _bl_marked_root=${ARGO_BUILD_LOCK_HELD_BY% *}
+    _bl_marked_pid=${ARGO_BUILD_LOCK_HELD_BY##* }
+    if [ "$_bl_marked_root" = "$BUILD_LOCK_ROOT" ] && kill -0 "$_bl_marked_pid" 2>/dev/null; then
+      # Nothing was waited for, and the caller reports this number: left at the previous
+      # acquire's figure it would bill one wait once per package that inherited the slot.
+      BUILD_LOCK_WAITED=0
+      return 0
+    fi
+  fi
+
   if ! mkdir -p "$BUILD_LOCK_ROOT" 2>/dev/null; then
     echo "build-lock: cannot create $BUILD_LOCK_ROOT — running unserialised" >&2
     return 0
@@ -61,9 +120,11 @@ build_lock_acquire() {
         echo $$ > "$_bl_slot/pid"
         BUILD_LOCK_HELD="$_bl_slot"
         BUILD_LOCK_WAITED=$_bl_waited
-        trap 'build_lock_release' EXIT
-        trap 'build_lock_release; exit 130' INT
-        trap 'build_lock_release; exit 143' TERM
+        ARGO_BUILD_LOCK_HELD_BY="$BUILD_LOCK_ROOT $$"
+        export ARGO_BUILD_LOCK_HELD_BY
+        _bl_install_release EXIT ''
+        _bl_install_release INT 130
+        _bl_install_release TERM 143
         return 0
       fi
 

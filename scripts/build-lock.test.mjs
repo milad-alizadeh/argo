@@ -12,39 +12,15 @@
 //   - it excludes too well, and a slot left behind by a killed gate blocks the machine forever;
 //   - it fails CLOSED on a machine that cannot make the lock directory, turning a throughput
 //     device into an outage.
+//
+// Which CALLERS take a slot is `build-lock-entrypoints.test.mjs`, and how one passes down a
+// process tree is `build-lock-inheritance.test.mjs`. This file is the exclusion itself.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { LOCK, withLock, workspace } from './build-lock.harness.mjs'
 import { check, report } from './check-harness.mjs'
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const LOCK = path.join(ROOT, 'scripts/build-lock.sh')
-
-function workspace() {
-  return mkdtempSync(path.join(tmpdir(), 'argo-build-lock-'))
-}
-
-// Run `body` inside a shell that has sourced the lock, with the lock root and slot count set.
-// Returns the process's stdout.
-function withLock(dir, body, { slots = 1, env = {} } = {}) {
-  const script = `
-set -e
-. "${LOCK}"
-${body}
-`
-  return execFileSync('sh', ['-c', script], {
-    encoding: 'utf8',
-    env: {
-      ...process.env,
-      ARGO_BUILD_LOCK_ROOT: path.join(dir, 'lock'),
-      ARGO_BUILD_LOCK_SLOTS: String(slots),
-      ...env,
-    },
-  })
-}
 
 // Two holders, one slot, each writing "in" and "out" around a sleep. If the lock works the
 // markers nest as in/out/in/out; if it does not, they interleave as in/in/out/out.
@@ -145,17 +121,6 @@ check('an unusable lock root runs unserialised rather than failing', () => {
   })
   assert.match(out, /ran/)
   rmSync(dir, { recursive: true, force: true })
-})
-
-// The gate has to actually take the lock, or every case above tests a device nothing calls.
-check('swift-gate.sh takes a build slot', () => {
-  const gate = readFileSync(path.join(ROOT, 'scripts/swift-gate.sh'), 'utf8')
-  assert.match(gate, /\.\s+"\$GATE_DIR\/build-lock\.sh"/, 'swift-gate.sh must source build-lock.sh')
-  assert.match(gate, /^build_lock_acquire$/m, 'swift-gate.sh must call build_lock_acquire')
-  const acquireAt = gate.indexOf('build_lock_acquire')
-  const buildAt = gate.indexOf('bun run build')
-  assert.ok(acquireAt < buildAt, 'the slot must be held before the build starts, not after')
-  assert.ok(existsSync(LOCK))
 })
 
 report('build-lock')

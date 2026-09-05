@@ -19,6 +19,16 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 APP_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 APP="$APP_DIR/build/Build/Products/Debug/Argo.app"
 
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
+
+# One of the machine's build slots (#1377), held for the WHOLE batch. `/pixel-review` is not
+# optional in this repo, so these xcodebuilds are ones an agent runs as routinely as the gate's.
+# Taken up here rather than around the build below because each render delegates to
+# `screenshot.sh`, which builds again: they inherit this slot and a run of twenty specimens
+# queues once instead of twenty times.
+build_lock_acquire
+
 if [ "$#" -gt 0 ]; then
   NAMES=$*
 else

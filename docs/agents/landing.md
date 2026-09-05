@@ -26,7 +26,7 @@ changed.
 
 | the cost | what it is now |
 | --- | --- |
-| every lane builds at once | `scripts/build-lock.sh`: a machine-wide count of build slots, two by default |
+| every lane builds at once | `scripts/build-lock.sh`: a machine-wide count of build slots, two by default, taken by every command that starts a Swift compiler and not only by the gate |
 | every rebase re-gates | `scripts/gate-cache.sh`: a pass is keyed to tree content, scope and toolchain |
 | every gate tests everything | `scripts/swift-scope.sh`: the suites run for the packages the diff can reach |
 | every worktree its own caches | a shared SPM cache and module cache; the scratch path stays per tree |

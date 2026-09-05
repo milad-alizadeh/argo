@@ -24,6 +24,8 @@ cd "$APP_DIR"
 . "$APP_DIR/../../scripts/gate-cache.sh"
 # shellcheck source=scripts/metrics.sh
 . "$APP_DIR/../../scripts/metrics.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
 
 case "${ARGO_BUILD_CONFIGURATION:-debug}" in
   debug) configuration=Debug ;;
@@ -57,6 +59,11 @@ if step_cached "$BUILD_KEY" && [ -d "$PRODUCT" ]; then
   exit 0
 fi
 
+# One of the machine's build slots (#1377), after the cache check above for the reason
+# `swift-gate.sh` gives at its own call: a run with nothing to do must not queue behind a run
+# that has.
+build_lock_acquire
+
 BUILD_STARTED=$(metric_now)
 # shellcheck disable=SC2086 # $signing is a deliberate argument list, empty when signing stays on.
 xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" \
@@ -69,4 +76,5 @@ xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" 
   exit 1
 }
 step_record "$BUILD_KEY" "xcodebuild:$configuration" apps/macOS
-metric_append step "xcodebuild:$configuration" run "$(($(metric_now) - BUILD_STARTED))" 0
+metric_append step "xcodebuild:$configuration" run \
+  "$(($(metric_now) - BUILD_STARTED))" "$BUILD_LOCK_WAITED"

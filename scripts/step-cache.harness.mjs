@@ -40,6 +40,9 @@ function seed(dir) {
     'scripts/swift-tool-guard.sh',
     'scripts/gate-cache.sh',
     'scripts/metrics.sh',
+    // The entrypoints take a build slot as well as reading the step memory, and a `.` of a file
+    // the fixture did not copy fails the script before any of that is reached.
+    'scripts/build-lock.sh',
   ]) {
     writeFileSync(path.join(dir, file), readFileSync(path.join(ROOT, file), 'utf8'))
   }
@@ -80,6 +83,10 @@ export function scenario() {
         // The metrics file goes with the fixture. A suite appending to the machine's own
         // record would put stub timings in the report a person reads.
         ARGO_METRICS_FILE: path.join(dir, 'metrics.tsv'),
+        // And so does the build lock, for the same reason turned up one notch: a suite queueing
+        // on the machine's own slots would wait behind a real build, and one that left a slot
+        // behind would throttle every lane on the box until somebody went looking.
+        ARGO_BUILD_LOCK_ROOT: path.join(dir, 'lock'),
         STUB_REPORT: REPORT_XML('passing'),
         ...env,
       },
@@ -146,6 +153,7 @@ export function buildScenario() {
           PATH: `${s.bin}:/usr/bin:/bin`,
           ARGO_GATE_CACHE_DIR: path.join(s.dir, 'cache'),
           ARGO_METRICS_FILE: path.join(s.dir, 'metrics.tsv'),
+          ARGO_BUILD_LOCK_ROOT: path.join(s.dir, 'lock'),
           ...env,
         },
       }),

@@ -15,9 +15,15 @@
 set -eu
 
 APP_DIR=$(cd "$(dirname "$0")/../apps/macOS" && pwd)
+# Absolute, because the worker below is this file re-entered and must not depend on the cwd
+# it inherits. `${0##*/}` rather than `basename`: this line runs before the tool guard, and the
+# stub harness gives the skip cases a PATH with no coreutils on it (found by those tests).
+SELF=$(cd "$(dirname "$0")" && pwd)/${0##*/}
 
 # shellcheck source=scripts/swift-tool-guard.sh
 . "$(dirname "$0")/swift-tool-guard.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$(dirname "$0")/build-lock.sh"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   swift_unavailable "not macOS" "there is nothing to warm without a Swift toolchain"
@@ -40,14 +46,29 @@ mkdir -p "$(dirname "$LOG")"
 #
 # `--build-tests` because the test target is what the gate builds, and building only the library
 # would leave half the cost still to pay.
-{
+#
+# The work runs as this file RE-ENTERED as a real child process, not as a `{ … } &` group, and
+# that is a correctness requirement rather than a tidying. Inside a backgrounded group `$$` is
+# still the PARENT's pid and an EXIT trap never runs — both measured on this repo's `/bin/sh`.
+# The build slot taken in the group was therefore recorded under a pid that exited seconds
+# later, so the next lane to look reclaimed it as stale and built on top of the warm, and the
+# slot was never released either. A child shell has its own `$$` and runs its traps.
+if [ "${1:-}" = --worker ]; then
+  # One of the machine's build slots (#1377). Waiting here costs the caller nothing — it has had
+  # its prompt back since the parent exited — and a warm nobody is waiting for is exactly the
+  # work that should yield to a build somebody is.
+  build_lock_acquire
+
   # shellcheck disable=SC2086 # ARGO_BUILD_PACKAGES is a word list, not one argument.
   for package in $ARGO_BUILD_PACKAGES; do
     echo "warm: $package"
     (cd "$APP_DIR/Packages/$package" && swift build --build-tests) || echo "warm: $package failed"
   done
   echo "warm: done"
-} >"$LOG" 2>&1 &
+  exit 0
+fi
+
+sh "$SELF" --worker >"$LOG" 2>&1 &
 
 echo "warm: building the Swift test targets in the background, logging to $LOG"
 echo "warm: it is finished when that file ends in 'warm: done'"

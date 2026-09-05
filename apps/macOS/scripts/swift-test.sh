@@ -16,6 +16,8 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 . "$APP_DIR/../../scripts/gate-cache.sh"
 # shellcheck source=scripts/metrics.sh
 . "$APP_DIR/../../scripts/metrics.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
 
 # Every package with a test target, not just the engine: ArgoUI carries the visual contract's
 # tests (#375), ArgoMermaid the renderer's layout suites (#1087) and ArgoAtlas the map's (#1143).
@@ -219,6 +221,12 @@ for package in $PACKAGES; do
     fi
   fi
 
+  # One of the machine's build slots (#1377), inside the loop and after the cached check so a
+  # tree whose every package already passed never queues for a slot it would not use.
+  # The wait it reports below belongs to the package that actually paid it: the acquire returns
+  # at once for every package after the first, and zeroes its own figure when it does.
+  build_lock_acquire
+
   echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
   package_started=$(metric_now)
   status=0
@@ -242,5 +250,5 @@ for package in $PACKAGES; do
   verdict "$package"
   step_record "$package_key" "swift-test:$package:$CONFIGURATION" apps/macOS
   metric_append step "swift-test:$package:$CONFIGURATION" run \
-    "$(($(metric_now) - package_started))" 0
+    "$(($(metric_now) - package_started))" "$BUILD_LOCK_WAITED"
 done

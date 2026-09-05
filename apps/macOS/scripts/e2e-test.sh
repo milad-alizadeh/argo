@@ -23,6 +23,15 @@ set -eu
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 cd "$APP_DIR"
 
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
+
+# One of the machine's build slots (#1377), held for the whole run. `xcodebuild test` compiles and
+# then drives the app in one invocation, so there is no seam to release at — and this is the run
+# that least wants a neighbour anyway: it holds the real keyboard and mouse, and a build stealing
+# cores under it turns a click that arrives late into a test failure.
+build_lock_acquire
+
 # Match the host: a UI test runs the app it built, and an arch mismatch reports as a launch
 # failure rather than as the configuration error it is.
 ARCH=$(uname -m)

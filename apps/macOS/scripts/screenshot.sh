@@ -46,10 +46,23 @@ fi
 
 cd "$APP_DIR"
 
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
+
+# One of the machine's build slots (#1377). `/pixel-review` is not optional in this repo, so this
+# is an xcodebuild an agent runs as routinely as the gate's. A `specimens.sh` batch above has
+# already taken one, and this inherits it rather than queueing per render.
+build_lock_acquire
+
 # Always build this worktree before launching it. A valid app bundle can be stale, and opening that
 # bundle produces a plausible screenshot of yesterday's source with no indication it is stale.
 xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug \
   -derivedDataPath build build >/dev/null
+
+# The build is over; everything below launches, waits and captures, and none of it wants a core.
+# A no-op when this run inherited its parent's slot, so a `specimens.sh` batch keeps the one it
+# took for the renders that follow.
+build_lock_release
 
 mkdir -p "$(dirname "$OUT")"
 

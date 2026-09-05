@@ -41,6 +41,20 @@ running this gate against each other. The arithmetic and the measurements are in
 2. **It takes one of two machine-wide build slots.** `scripts/build-lock.sh`. Every command in
    the gate fans out to all cores, so unserialised lanes do not build in parallel, they build
    each other slowly. `ARGO_BUILD_LOCK_SLOTS` raises the count on a bigger machine.
+
+   **The gate is not the only thing that takes one.** Every command that starts a Swift compiler
+   queues for a slot now, so a bare `bun run build`, `bun run test`, `bun run warm`,
+   `scripts/specimens.sh`, `scripts/screenshot.sh`, `scripts/record-figures.sh` or
+   `scripts/e2e-test.sh` can sit and wait with nothing on its output — that is the cap working,
+   not a hang, and it says so on stderr once a minute. Wiring only the push path left the
+   commands a lane spends its day on uncapped: six lanes on a twelve-core Mac reached load
+   average 137 with 65 concurrent `swift-frontend`, and not one lock directory on the disk.
+
+   A slot is held for a process TREE. The holder exports `ARGO_BUILD_LOCK_HELD_BY`, naming the
+   lock root and its pid, and a descendant queueing on that same root runs inside the slot
+   already paid for. Naming the root is what keeps `land.sh` honest: it holds a slot in a
+   landing pool of its own, and the gate it then runs still queues for a build slot like any
+   lane.
 3. **It works out which packages the change reaches.** `scripts/swift-scope.sh` reads the
    `.package(path:)` edges and answers ALL for anything it cannot place. Only the SUITES are
    scoped by it; the formatter, the linter, the boundary gate and the app build stay whole.
@@ -74,7 +88,9 @@ never change what the gate decides.
 None of these can make the gate pass something it would otherwise fail. The cache records
 only after every command has passed, the lock changes when work runs and never whether, and the
 scope widens to ALL in every case where it cannot see the whole picture. Each of those claims
-has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs`,
+has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs` (with
+`build-lock-entrypoints.test.mjs` for which callers take a slot and
+`build-lock-inheritance.test.mjs` for how one passes down a process tree),
 `scripts/step-cache.test.mjs` and `scripts/swift-scope.test.mjs`, and each of those suites is
 written the same way round: what it proves is that a MISS still happens when one must.
 
