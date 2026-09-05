@@ -20,7 +20,7 @@ struct AtlasLighting: Equatable {
     var roof: Float
     /// The nearer of the two walls the fixed yaw ever shows — the one the key rakes across.
     var nearX: Float
-    /// The other — the one the fill lifts, key-dark otherwise.
+    /// The other — the wall the key only grazes, lifted mostly by the fill.
     var nearY: Float
     /// The wall's own foot term, carried alongside rather than folded into `nearX`/`nearY`: it is
     /// a SECOND scalar, read along the wall's own height rather than picked by its face.

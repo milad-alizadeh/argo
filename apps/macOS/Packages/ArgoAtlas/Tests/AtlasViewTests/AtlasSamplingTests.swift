@@ -4,25 +4,26 @@ import Testing
 
 /// What the city's edges are resolved from (#1400).
 ///
-/// Every edge in this picture is a box's own silhouette against whatever stands behind it — there
-/// is no texture and no wireframe to hide a staircase in — so how many samples a pixel is resolved
-/// from IS the edge quality, and it is the only part of the renderer a test can reach: `init` also
-/// wants a command queue and a compiled shader library, and a test process has neither.
+/// `sampleCount(on:)` is the only part of the renderer a test can reach: `init` also wants a
+/// command queue and a compiled shader library, and a test process has neither.
 ///
-/// Gated on the machine having a GPU at all, which is the same answer `AtlasVolumeRenderer.init`
-/// gives: a box with no Metal device skips rather than fails.
-@Suite("Atlas sampling — the city's edges are resolved, not stepped")
+/// Enabled only where there is a Metal device to ask. `#require` on a missing one would FAIL the
+/// suite rather than skip it, and a box with no GPU has no fact here to be wrong about — it is the
+/// same answer `AtlasVolumeRenderer.init` gives, which is a `nil` and a floor with nothing on it.
+@Suite(
+    "Atlas sampling — the city's edges are resolved, not stepped",
+    .enabled(if: MTLCreateSystemDefaultDevice() != nil),
+)
 struct AtlasSamplingTests {
-    /// The point of the whole change: more than one sample a pixel, and a count the device
-    /// actually agreed to. A preference the pass cannot honour is a pass that does not draw, so
-    /// asking is not optional — but four is what every Metal device on this platform supports,
-    /// which is what makes it the one worth asking for.
-    @Test func `the city is drawn at every sample the device will give`() throws {
+    /// Four is what every Metal device on this platform supports, so the fallback to one sample
+    /// guards against a device that does not exist here rather than a path the app takes. The day
+    /// this fails is the day the city is drawn at one sample and its edges are stepped again.
+    @Test func `this device resolves the city at the count the renderer prefers`() throws {
         let device = try #require(MTLCreateSystemDefaultDevice())
-        let samples = AtlasVolumeRenderer.sampleCount(on: device)
 
-        #expect(device.supportsTextureSampleCount(samples))
-        #expect(samples > 1)
-        #expect(samples == AtlasVolumeRenderer.preferredSampleCount)
+        #expect(
+            AtlasVolumeRenderer.sampleCount(on: device)
+                == AtlasVolumeRenderer.preferredSampleCount,
+        )
     }
 }

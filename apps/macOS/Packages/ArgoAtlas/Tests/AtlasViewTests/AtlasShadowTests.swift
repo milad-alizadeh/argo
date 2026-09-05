@@ -45,13 +45,17 @@ struct AtlasShadowTests {
         #expect(decal.pigment == Self.pigments.plate(at: 0).simd)
     }
 
-    /// The throw runs away from the key, on the plan alone.
+    /// The throw runs away from the key, on the plan alone — pinned to an ABSOLUTE side rather
+    /// than re-derived from the key's own sign. A test written against `key.y > 0` agrees with
+    /// the lamp whichever way it points, so it cannot see the day the lamp moves and every shadow
+    /// on the map changes side with it. #1400 moved it, and this is what would have said so.
     @Test func `the throw runs away from the key`() throws {
         let decal = try #require(Self.decal(height: 40))
-        let key = ArgoLight.key.direction
 
-        #expect((decal.origin.x < 40) == (key.x > 0))
-        #expect((decal.origin.y < 40) == (key.y > 0))
+        // The key comes from -x and slightly from -y, so a decal is thrown to +x and +y — off the
+        // near corner the camera shows, onto the plate behind the file rather than in front of it.
+        #expect(decal.origin.x > 40)
+        #expect(decal.origin.y > 40)
     }
 
     /// A taller caster throws a darker shadow, up to the contract's own floor — the strongest a

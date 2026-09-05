@@ -25,8 +25,7 @@ struct AtlasLightingTests {
     }
 
     /// Every face reads something: the ambient term alone is enough that no face is ever the same
-    /// as no light at all. The key is driven above one on purpose — a face it rakes across reads
-    /// brighter than its own swatch, not darker — so only the wall it never reaches stays under 1.
+    /// as no light at all.
     @Test(arguments: faces)
     func `every face is a real, positive term`(_ face: (name: String, factor: Float)) {
         #expect(face.factor > 0)
@@ -50,20 +49,12 @@ struct AtlasLightingTests {
         }
     }
 
-    /// The lamp direction rakes across on purpose: one visible wall reads mostly key, the other
-    /// mostly fill, and the fill is the quieter lamp — so the two walls read at two different
-    /// depths of shade rather than going flat together.
-    @Test
-    func `the two visible walls read at different depths of shade`() {
-        #expect(AtlasLighting.city.nearX != AtlasLighting.city.nearY)
-        #expect(AtlasLighting.city.roof > max(AtlasLighting.city.nearX, AtlasLighting.city.nearY))
-    }
-
-    /// The three faces have to STEP, not merely differ. `!=` above is satisfied by a roof and a
-    /// wall a rounding error apart, and that is exactly what #1400 was: the key's own direction
-    /// gave the roof and the -x wall the same term to within eight percent, so a tower read as one
-    /// flat shape and the -y wall beside it as a cliff. `ArgoLight.faceStep` is the least ratio an
-    /// edge is visible at, and every adjacent pair of faces has to clear it.
+    /// The lamp direction rakes across on purpose: the roof reads brightest, then the wall the key
+    /// rakes, then the wall the fill lifts. They have to STEP, not merely differ — two faces a
+    /// rounding error apart meet at an edge no reader can see, and a city of those reads flat
+    /// however many boxes stand in it (#1400). `ArgoLight.faceStep` is the least ratio an edge is
+    /// visible at, and every adjacent pair has to clear it. The ordering falls out of the ratios,
+    /// so it is not asserted twice.
     @Test
     func `each face steps clear of the next`() {
         let ordered = [

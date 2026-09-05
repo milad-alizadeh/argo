@@ -24,10 +24,8 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// asks the device rather than assuming, for the reason every other failure here is a `nil`.
     nonisolated static let preferredSampleCount = 4
 
-    /// What this device will actually resolve a pixel from. A static function over a device rather
-    /// than a line inside `init`, because `init` also needs a command queue and a compiled shader
-    /// library — neither of which a test process has — and the choice itself is the only part of
-    /// this file a test can reach. `AtlasSamplingTests` reaches it here.
+    /// What this device will actually resolve a pixel from. `AtlasSamplingTests` is what holds it
+    /// to `preferredSampleCount`.
     nonisolated static func sampleCount(on device: MTLDevice) -> Int {
         device.supportsTextureSampleCount(preferredSampleCount) ? preferredSampleCount : 1
     }

@@ -34,27 +34,29 @@ public enum ArgoLight {
 
     /// The warm key: the lamp a face is read by.
     ///
-    /// It is OVERHEAD FIRST, and that is the whole shape of it: `z` is the largest term by a clear
-    /// margin, then `x`, then `y`. The three faces a fixed yaw ever shows have the normals
-    /// `(0,0,1)`, `(-1,0,0)` and `(0,-1,0)`, so this direction's three components ARE, one for one,
-    /// how hard the key rakes each of them — and three components a reader can order is the only
-    /// way the three faces come out ordered. #1400 is what a direction that forgets this looks
-    /// like: at `(-0.66, 0.36, 0.66)` the `x` and `z` terms were equal, so the roof and the -x wall
-    /// took the identical key term and a box lost the edge between its top and its lit side, while
-    /// the `y` term pointed the wrong way and left the -y wall with no key at all. `faceStep` is
-    /// that lesson written as a number, and `AtlasLightingTests` spends it.
+    /// It is OVERHEAD FIRST: `|z|` is the largest term, then `|x|`, then `|y|`. The three faces a
+    /// fixed yaw ever shows have the normals `(0,0,1)`, `(-1,0,0)` and `(0,-1,0)`, so these three
+    /// components ARE, one for one, how hard the key rakes each of them, and an ordering here is
+    /// the only thing that makes the three faces come out ordered by `faceStep` (#1400).
+    /// `ArgoLightTests` holds the ordering; `AtlasLightingTests` spends the step it buys.
+    ///
+    /// `x` and `y` are also the throw of every cast shadow — `AtlasShadow.decal` offsets a file's
+    /// decal along `-(x, y)` — so a sign change on either moves every shadow on the map to the
+    /// other side of its file. `AtlasShadowTests` pins the side.
     public static let key = Lamp(
         direction: SIMD3(-0.56, -0.15, 0.82),
         tint: ArgoColor(red: 1.00, green: 0.93, blue: 0.82),
         intensity: 1.00,
     )
 
-    /// The cool fill, opposite the key. It lifts the dark side rather than competing with it —
-    /// a third of the key's strength, or the map grows a second set of highlights.
+    /// The cool fill. It lifts the dark side rather than competing with the key — a third of its
+    /// strength, or the map grows a second set of highlights.
     ///
-    /// It is a SIDE lamp, which is why its `z` is the smallest term it has: the key is the one
-    /// that comes from above, and a fill lifted to meet it would be a second overhead lamp
-    /// brightening the roof the key already owns instead of the wall the key barely reaches.
+    /// It opposes the key across the plan, which is the `x` term doing the work: the two point
+    /// opposite ways there, so the wall the key rakes is the wall the fill misses and the reverse.
+    /// It is a SIDE lamp, which is why `z` is the smallest term it has — the key is the one that
+    /// comes from above, and a fill lifted to meet it would be a second overhead lamp brightening
+    /// the roof the key already owns instead of the wall the key barely reaches.
     public static let fill = Lamp(
         direction: SIMD3(0.58, -0.36, 0.10),
         tint: ArgoColor(red: 0.58, green: 0.76, blue: 1.00),
@@ -113,12 +115,11 @@ public enum ArgoLight {
     public static let faceStep = 1.2
 
     /// How far a fully-lit roof may drift from its own legend swatch, in `ArgoColor.distance(to:)`
-    /// units — a roof takes the key, the fill and the sky together and their sum lands above one on
-    /// purpose, so the city's roof reads brighter than the swatch beside it, not merely darker. The
-    /// legend stays one fixed reading
-    /// across both cameras rather than tracking `relief`, so this bounds how far apart the two are
-    /// ever allowed to read rather than asking them to match exactly. `AtlasLightingTests` is what
-    /// spends it.
+    /// units. The sky, the key and the fill summed on the `(0,0,1)` normal land above one on
+    /// purpose, so the city's roof reads BRIGHTER than the swatch beside it rather than merely
+    /// darker. The legend stays one fixed reading across both cameras rather than tracking
+    /// `relief`, so this bounds how far apart the two may ever read rather than asking them to
+    /// match exactly. `AtlasLightingTests` is what spends it.
     public static let legendTolerance = 0.15
 
     /// Every lamp, for the contract sheet.
