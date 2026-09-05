@@ -13,6 +13,9 @@ import SwiftUI
 package struct AtlasRoomHost: View {
     private let reading: AtlasReading
     private let behind: Int?
+    /// The file the room opens with open (#1154) — a specimen's only way to reach a state a click
+    /// puts the room into. Nothing but a specimen ever passes one.
+    private let opened: String?
 
     /// The room the strip in the rail is on. The strip switches the whole window in the app; here
     /// it has nowhere to go, and holds the room it opens in.
@@ -26,9 +29,10 @@ package struct AtlasRoomHost: View {
     /// `.unmeasured` is the Project nobody has measured, which is the room's other reading. Only a
     /// `.measured` reading draws `behind` at all (#1162); a specimen handing it in with another
     /// reading asserts nothing.
-    package init(reading: AtlasReading, behind: Int? = nil) {
+    package init(reading: AtlasReading, behind: Int? = nil, opened: String? = nil) {
         self.reading = reading
         self.behind = behind
+        self.opened = opened
         _channels = State(initialValue: Self.opening(of: reading))
     }
 
@@ -41,7 +45,7 @@ package struct AtlasRoomHost: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            AtlasRoomView()
+            AtlasRoomView(opened: opened)
         }
         .environment(\.argoAtlasRoom, room)
     }

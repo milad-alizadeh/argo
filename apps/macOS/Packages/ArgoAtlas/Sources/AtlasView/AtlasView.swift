@@ -40,16 +40,34 @@ public struct AtlasView: View {
     /// caller cannot hold what it has not seen.
     @State private var hovered: String?
 
-    public init(plan: AtlasPlan, relief: Double, orientation: AtlasOrientation = .opening) {
+    /// The file the reader has open, marked here without being repainted, and what a click means
+    /// (#1154). A parameter rather than state, unlike `hovered`: what is open outlives this view —
+    /// the reading is drawn in a column of its own, and both have to be looking at one file.
+    private let focus: AtlasFocus
+
+    public init(
+        plan: AtlasPlan,
+        relief: Double,
+        orientation: AtlasOrientation = .opening,
+        focus: AtlasFocus = .none,
+    ) {
         self.plan = plan
         self.relief = relief
         self.orientation = orientation
+        self.focus = focus
     }
 
     /// Solved fresh from `relief` and `orientation` on every draw rather than stored, because
     /// `relief` changes under `Animatable` between the values a caller ever set it to.
-    private var camera: AtlasCamera {
-        AtlasCamera(relief: relief, orientation: orientation, over: plan.extent)
+    ///
+    /// ONE projection, handed to the shader and to everything drawn over it. A second solved
+    /// beside it is a second camera to drift, which is the class of defect the id target exists to
+    /// remove.
+    private var projection: AtlasProjection {
+        AtlasProjection(
+            of: plan,
+            through: AtlasCamera(relief: relief, orientation: orientation, over: plan.extent),
+        )
     }
 
     /// The map alone. The key that says what the colour is worth is a section of the sidebar now,
@@ -60,15 +78,21 @@ public struct AtlasView: View {
     }
 
     private var map: some View {
-        Rectangle()
+        let projection = projection
+        return Rectangle()
             .fill(argo.color.atlas.materials.desktop)
             .overlay {
                 AtlasSurface(
-                    plan: plan,
-                    camera: camera,
+                    projection: projection,
                     pigments: AtlasPigments(argo.color.atlas, rim: argo.color.edge.hairline),
                     resolve: { hovered = $0 },
+                    pick: focus.clicked,
                 )
+            }
+            // Over the surface and under the words: the mark belongs to the picture, and a name
+            // the reader is reading must not be crossed by an edge.
+            .overlay {
+                AtlasOpenTrace(projection: projection, open: focus.open)
             }
             .overlay(alignment: .top) {
                 // Top centre, because both top corners of the stage are already spoken for. It
@@ -90,7 +114,7 @@ public struct AtlasView: View {
                 // Turned, every one of them would sit where its folder used to be — a caption over
                 // a building it does not name is worse than no caption. The city gets its names
                 // when something can place them in the picture rather than in the plan.
-                if camera.isFlat {
+                if projection.camera.isFlat {
                     AtlasPlateNames(plates: plan.plates)
                 }
             }
@@ -119,12 +143,18 @@ private struct AtlasPreview: View {
     let plan: AtlasPlan
     var relief: Double = 1
     var orientation: AtlasOrientation = .opening
+    var open: String?
 
     var body: some View {
-        AtlasView(plan: plan, relief: relief, orientation: orientation)
-            .padding(ArgoSpacing.section)
-            .argoDeckSurface()
-            .argoAppearance()
+        AtlasView(
+            plan: plan,
+            relief: relief,
+            orientation: orientation,
+            focus: AtlasFocus(open: open) { _ in },
+        )
+        .padding(ArgoSpacing.section)
+        .argoDeckSurface()
+        .argoAppearance()
     }
 }
 
@@ -176,4 +206,17 @@ private let previewPlan = AtlasPlan(
 // A turn and a tilt away from the opening view — the reader having driven the camera (#1152).
 #Preview("Atlas — the city, turned") {
     AtlasPreview(plan: previewPlan, orientation: AtlasOrientation(yaw: 2.1, pitch: 1.1))
+}
+
+// The file a reader has open, traced (#1154). The claim to look at: the marked volume is the same
+// colour it was before it was marked — the band IS the measure, and a mark that repainted it would
+// destroy the fact the reader opened it to read.
+#Preview("Atlas — a file open, traced on the city") {
+    AtlasPreview(plan: previewPlan, open: "argo/rules/house.md")
+}
+
+// The same mark at the other end of the one camera, where every standing edge of a box projects
+// onto its own footprint and the trace is the rectangle alone.
+#Preview("Atlas — a file open, traced on the treemap") {
+    AtlasPreview(plan: previewPlan, relief: 0, open: "argo/rules/house.md")
 }

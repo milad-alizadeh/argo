@@ -10,6 +10,10 @@ import MetalKit
 final class AtlasPointer: NSObject, MTKViewDelegate {
     let renderer: AtlasVolumeRenderer?
     var resolve: (String?) -> Void = { _ in }
+    /// What the reader opened, said on a click (#1154). Apart from `resolve` because they are two
+    /// different questions: a pointer passing over the map must not rewrite what somebody is
+    /// reading, which is what a click is for.
+    var picked: (String?) -> Void = { _ in }
 
     /// The last point the pointer was at, in the view's own points, or nothing once it has left.
     /// Kept so a frame that has just landed can re-answer the question the pointer already asked,
@@ -44,6 +48,21 @@ final class AtlasPointer: NSObject, MTKViewDelegate {
     func moved(to point: CGPoint?) {
         self.point = point
         reread()
+    }
+
+    /// What the reader clicked (#1154). The file drawn at that pixel, or NO file, which is an
+    /// answer of its own: clicking the ground closes the reading, so a click on nothing has to
+    /// arrive rather than be dropped.
+    ///
+    /// A frame that has not landed answers nothing, and nothing is what happens — the same rule
+    /// `reread` follows. There is no frame to resolve a click against, and resolving it against
+    /// the frame before would open the file that used to be under the cursor.
+    func clicked(at point: CGPoint) {
+        guard let renderer, let view, let pixel = AtlasPixel(
+            point, in: view.bounds.size, drawable: view.drawableSize,
+        ), let pick = renderer.pick(atPixel: pixel)
+        else { return }
+        picked(pick.file)
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {

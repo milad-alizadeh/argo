@@ -35,19 +35,25 @@ struct AtlasMapSpecimen: View {
     let relief: Double
     /// Nothing draws the map of a repository nobody has scanned: the floor, and no city on it.
     private let map: AtlasMap?
+    /// The file to draw as OPEN, traced on the map (#1154). The room's own specimen renders the
+    /// reading beside the treemap; this is the same mark on a city, which is the harder geometry —
+    /// the roof, three standing corners and the foot, rather than one rectangle.
+    private let open: String?
 
     init(
         ground: CGSize = CGSize(width: 1040, height: 660),
         relief: Double = 1,
         map: AtlasMap? = try? AtlasMapFixture.argo(),
+        open: String? = nil,
     ) {
         self.ground = ground
         self.relief = relief
         self.map = map
+        self.open = open
     }
 
     var body: some View {
-        AtlasView(plan: plan, relief: relief)
+        AtlasView(plan: plan, relief: relief, focus: AtlasFocus(open: open) { _ in })
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
     }
