@@ -69,7 +69,11 @@ struct AgentsRailEndDelegationTests {
     func `an ended delegation reads finished, whatever its child is still doing`() {
         let told = FeedAgents.told(
             [Self.chip(activity: .running)],
-            by: SubagentEvidence(writing: { _ in .writing }, measure: { _ in .unmeasured }),
+            by: SubagentEvidence(
+                writing: { _ in .writing },
+                ending: { _ in .open },
+                measure: { _ in .unmeasured },
+            ),
             ended: DelegationHold(backgrounded: [Self.call], isAlone: true, ended: [Self.call]),
         )
 
@@ -82,7 +86,11 @@ struct AgentsRailEndDelegationTests {
     func `a delegation nobody ended keeps the reading the record and the child gave it`() {
         let told = FeedAgents.told(
             [Self.chip(activity: .running)],
-            by: SubagentEvidence(writing: { _ in .writing }, measure: { _ in .unmeasured }),
+            by: SubagentEvidence(
+                writing: { _ in .writing },
+                ending: { _ in .open },
+                measure: { _ in .unmeasured },
+            ),
             ended: DelegationHold(backgrounded: [Self.call], isAlone: true, ended: ["another"]),
         )
 

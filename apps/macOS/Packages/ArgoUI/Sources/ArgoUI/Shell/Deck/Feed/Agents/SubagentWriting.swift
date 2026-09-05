@@ -23,9 +23,16 @@ import ArgoEngine
 enum SubagentWriting: Equatable, Sendable {
     /// Argo saw this file grow inside the window below.
     case writing
-    /// It has not — including the ordinary case of a file Argo never watched grow at all. Absence
-    /// of evidence, which is why it settles nothing on its own.
+    /// Argo watched this file grow, and has not seen it grow since the window lapsed. An OBSERVED
+    /// silence: it settles nothing on its own, but it is the half `SubagentEnding` needs before the
+    /// child's own last words may quiet a chip (#1392).
     case quiet
+    /// Argo has never watched this file grow at all, so it cannot say how long it has been silent —
+    /// a child that finished before the cockpit opened dates nothing, and neither does one that has
+    /// been working since without a batch landing yet. Absence of evidence, told apart from the
+    /// silence above because reading the two alike would let an ending quiet a live Subagent on the
+    /// first frame after a backfill.
+    case unwatched
 
     /// `SessionLiveness.recentActivityWindowMs`, and deliberately not a second number. The question
     /// is the same one that constant was measured for — a live agent sits quiet mid-tool, so only a
@@ -33,10 +40,10 @@ enum SubagentWriting: Equatable, Sendable {
     /// Agent. A figure of its own here would be a second answer to one question, drifting.
     static let growthWindowMs = SessionLiveness.recentActivityWindowMs
 
-    /// `quiet` for a file Argo never watched grow: `lastGrewAtMs` is `nil` until a batch lands
+    /// `unwatched` for a file Argo never watched grow: `lastGrewAtMs` is `nil` until a batch lands
     /// AFTER the backfill, so a child that finished before the cockpit opened dates nothing.
     static func read(lastGrewAtMs: Int?, nowMs: Int) -> SubagentWriting {
-        guard let lastGrewAtMs else { return .quiet }
+        guard let lastGrewAtMs else { return .unwatched }
         return nowMs - lastGrewAtMs <= growthWindowMs ? .writing : .quiet
     }
 }

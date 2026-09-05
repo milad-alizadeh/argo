@@ -8,8 +8,10 @@
 /// "nothing".
 ///
 /// - `writing`: whether Argo has watched that file GROW recently (`SubagentWriting`, #1269).
+/// - `ending`: whether its last words were the report it stopped to file (`SubagentEnding`, #1392).
 /// - `measure`: what the file itself says the run took and cost (`SubagentMeasure`, #1279).
 struct SubagentEvidence {
     let writing: (String) -> SubagentWriting
+    let ending: (String) -> SubagentEnding
     let measure: (String) -> SubagentMeasure
 }

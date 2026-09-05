@@ -125,14 +125,24 @@ package enum FeedAgents {
     /// true when the parent last wrote, which is the failure this ticket is about, one level down.
     /// This is a cheap pass over a list the memo already holds, so it is taken every time.
     ///
-    /// The ORDER is the ruling, and the READER is at the head of it (#1267): a delegation somebody
-    /// ended is over, whatever the child's file is still doing — the gesture is DIRECT and the two
-    /// readings under it are not. Then growth, so an observation outranks a stated ceiling.
-    /// `DelegationCeiling` says how long a report can still be in flight and names itself a stated
-    /// figure rather than an observation — and Argo watching the child write is an observation, so
-    /// a Subagent still going at five hours keeps its dot rather than being quieted for being slow.
-    /// The ceiling then reaches what is left: silence, past the age at which silence means the
-    /// report was lost (#1090).
+    /// The ORDER is the ruling, and it runs from the strongest evidence to the weakest.
+    ///
+    /// The ENDED GESTURE first (#1267): a delegation somebody ended is over, whatever the child's
+    /// file is still doing. The gesture is DIRECT and every reading under it is not.
+    ///
+    /// GROWTH next, so an observation outranks everything stated: Argo watching the child write is
+    /// evidence somebody is working, and a Subagent still going at five hours keeps its dot rather
+    /// than being quieted for being slow.
+    ///
+    /// The child's own ENDING next, and it takes BOTH HALVES: the record's last words say the
+    /// Subagent stopped, AND Argo has watched that file fall silent since (#1392). A trailing
+    /// ending on a file still growing is a Subagent between Turns; and `unwatched` is not the same
+    /// silence, because a file Argo never saw grow dates nothing — reading the two alike would
+    /// quiet a live child on the first frame after its backfill. It reaches in minutes the fan-out
+    /// whose closing `task-notification` never landed, which the ceiling below took four hours to.
+    ///
+    /// The ceiling LAST, on what none of those settled: silence from a child Argo has no reading
+    /// of, past the age at which silence means the report was lost (#1090).
     ///
     /// A `.finished` chip is never reopened. That is the record having ANSWERED the delegation, and
     /// a trailing byte in the child's file does not un-answer it.
@@ -165,12 +175,18 @@ package enum FeedAgents {
         -> FeedAgent {
         guard agent.activity != .finished else { return agent }
         var told = agent
-        if ended.isEnded(agent.openDelegationID) {
+        guard !ended.isEnded(agent.openDelegationID) else {
             told.activity = .finished
-        } else if agent.subagentID.map({ evidence.writing($0) }) == .writing {
-            told.activity = .running
-        } else if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
+            return told
+        }
+        switch agent.subagentID.map({ evidence.writing($0) }) {
+        case .writing: told.activity = .running
+        case .quiet where agent.subagentID.map { evidence.ending($0) } == .stopped:
             told.activity = .finished
+        case .quiet, .unwatched, nil:
+            if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
+                told.activity = .finished
+            }
         }
         return told
     }

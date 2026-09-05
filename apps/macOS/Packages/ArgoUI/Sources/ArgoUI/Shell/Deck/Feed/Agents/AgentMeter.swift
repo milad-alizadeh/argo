@@ -68,7 +68,7 @@ struct AgentMeter: View {
     @ViewBuilder private var duration: some View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
-        } else if let startedAtMs = countingFrom {
+        } else if agent.activity == .running, let startedAtMs = agent.startedAtMs {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(counted(from: startedAtMs, at: context.date))
             }

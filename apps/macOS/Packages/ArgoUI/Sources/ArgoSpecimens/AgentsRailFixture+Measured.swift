@@ -25,7 +25,7 @@ extension AgentsRailFixture {
             },
         ),
         of: .undecided,
-        writing: Set(axes.filter(\.isWriting).map(\.child)),
+        growth: StatedGrowth(writing: Set(axes.filter(\.isWriting).map(\.child))),
     )
 
     private static let measured: [TranscriptEvent] = [

@@ -65,7 +65,7 @@ enum FeedAgentsMeterFixture {
         let room = room(of: status)
         let reader = FeedAgentReader(
             events: events.isEmpty ? [:] : [child: events],
-            writing: writing,
+            growth: StatedGrowth(writing: writing),
         )
         return reader.stamped(room.stamp).agents(in: room.feed)
     }

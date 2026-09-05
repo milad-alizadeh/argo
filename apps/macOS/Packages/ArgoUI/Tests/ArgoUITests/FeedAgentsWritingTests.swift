@@ -105,10 +105,14 @@ struct FeedAgentsWritingTests {
         .toolCallOutcome(TranscriptFixtures.launched("away", subagent: child)),
     ]
 
+    /// The child's own record, left MID-TOOL: this suite's claims are about growth and the parent's
+    /// status, so the reading has to be one that settles neither by itself. A record ending in
+    /// prose would be the child saying it had stopped, which is `SubagentEndingTests`' subject
+    /// (#1392) and would answer every chip here before the evidence under test was reached.
     private static func readings(writing: Set<String> = []) -> FeedAgentReader {
         FeedAgentReader(
-            events: [child: [.message(markdown: "still going")]],
-            writing: writing,
+            events: [child: [.toolCall(FeedFixture.call("dig", tool: "Bash", kind: .execute))]],
+            growth: StatedGrowth(writing: writing),
         )
     }
 
