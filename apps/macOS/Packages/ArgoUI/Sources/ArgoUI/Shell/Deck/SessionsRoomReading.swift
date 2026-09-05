@@ -120,7 +120,15 @@ struct SessionsRoomReading {
         // Taken every pass, and only its one stream walk remembered: the header reads facts that
         // move with no event appended — spend, context, what the roster calls the Session — so
         // remembering the whole of it would draw them as they stood when the reader last looked.
-        self.header = session.map { SessionHeaderProjection.header(from: $0, worked: body.worked) }
+        self.header = session.map {
+            SessionHeaderProjection.header(
+                from: $0,
+                // Across the WHOLE roster, so a Session that has given its Ticket's words up to a
+                // rival row reads the same title here that row draws (#1391).
+                title: SessionTitle.namedTitle(for: $0.id, across: presentation.sessions),
+                worked: body.worked,
+            )
+        }
     }
 }
 

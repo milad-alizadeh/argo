@@ -1,7 +1,9 @@
 /// Which of a Session's names the cockpit shows — the one decision, in the one place. BOTH the
 /// roster row's and the deck header's projections read it: `cockpit-spec.md` §4.2 — "Title
 /// resolves through a stable fallback chain — explicit name → linked ticket → conversation-derived
-/// … so rail and header always match" (#502 §Seams), as that section's #1072 amendment holds it.
+/// … so rail and header always match" (#502 §Seams). #1072 spent a shared Ticket's words on only
+/// one of its rows; #1391 held the header to that SAME spend rather than one taken in isolation,
+/// so rail and header still always match.
 ///
 /// It is also where the title is SPELLED: whichever link of the chain answers, no title the
 /// cockpit draws carries an em dash — see `spelled(_:)`.
@@ -16,8 +18,10 @@ enum SessionTitle {
         let resetsTo: String
     }
 
-    /// `explicit → ticket → derived` (#502, story 19) for a surface drawing ONE Session: the deck
-    /// header, which carries the Ticket on its own Issue row and so has nothing to tell apart.
+    /// `explicit → ticket → derived` (#502, story 19) for a caller with no roster to hand —
+    /// isolated fixtures and tests, and a single Session that is the whole roster it is drawn in.
+    /// A caller that HAS the roster must go through `namedTitle(for:across:)` instead (#1391): a
+    /// Session drawn against only itself always reads as if its Ticket names it alone.
     static func resolved(for session: CockpitPresentation.Session) -> String {
         naming(for: session, drawn: ticketsDrawn(across: [session])).title
     }
@@ -31,6 +35,17 @@ enum SessionTitle {
     static func namings(across sessions: [CockpitPresentation.Session]) -> [Naming] {
         let drawn = ticketsDrawn(across: sessions)
         return sessions.map { naming(for: $0, drawn: drawn) }
+    }
+
+    /// One Session's title, decided the same way its roster row's is — the deck header's route to
+    /// the SAME decision rather than a second one taken in isolation (#1391): the header used to
+    /// resolve a Session against itself alone, so it kept a shared Ticket's words on a row that had
+    /// just given them up to its rivals. `nil` where `id` is not in `sessions`.
+    static func namedTitle(
+        for id: CockpitPresentation.Session.ID, across sessions: [CockpitPresentation.Session],
+    )
+        -> String? {
+        zip(sessions, namings(across: sessions)).first { $0.0.id == id }?.1.title
     }
 
     /// The linked Ticket as a title, in the house form (#745).

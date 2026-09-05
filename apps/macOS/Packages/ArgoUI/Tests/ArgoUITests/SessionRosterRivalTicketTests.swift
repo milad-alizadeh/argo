@@ -63,19 +63,23 @@ struct SessionRosterRivalTicketTests {
     }
 
     @Test
-    func `the deck header still reads the ticket a shared row gave up`() throws {
+    func `the deck header reads the same title the row gave up the ticket for`() throws {
         let sessions = [
             Self.session(id: "one", title: "Write a caption for one folder"),
             Self.session(id: "two", title: "These two files change together"),
         ]
 
-        // The rail and the header differ here on purpose (`cockpit-spec.md` §4.2, as #1072 amends
-        // it): the header draws ONE Session, so it has no neighbour to be confused with.
+        // #1391: the header used to resolve this Session against itself alone, so it kept the
+        // ticket's words on a row that had just given them up to its rival. It now reads the same
+        // decision the row does, across the whole roster.
         let row = try #require(SessionRosterProjection.rows(from: sessions).first)
-        let header = SessionHeaderProjection.header(from: sessions[0])
+        let header = SessionHeaderProjection.header(
+            from: sessions[0],
+            title: SessionTitle.namedTitle(for: sessions[0].id, across: sessions),
+        )
 
         #expect(row.title == "Write a caption for one folder")
-        #expect(header.title == "#650: Rough atlas for Argo itself")
+        #expect(header.title == "Write a caption for one folder")
     }
 
     @Test
