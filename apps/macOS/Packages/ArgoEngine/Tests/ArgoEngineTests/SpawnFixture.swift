@@ -100,12 +100,18 @@ struct SpawnFixture {
     let runFileURL: URL
     private let services: SpawnServices
     private let engine: Engine
+    /// The CLI record directory this fixture's Hubs sweep. The STORE and not a sweep: a restart
+    /// gets a `SessionDiscovery` of its own, which is what makes it one — a shared sweep would
+    /// hand the second Hub the first one's cache of what it had already read.
+    private let store: TranscriptRecordStore
 
     init(
         liveness: @escaping LivenessRead = noLiveProcesses,
         permissionPatience: PermissionPatience = .default,
         startupPatience: StartupPatience = .default,
+        store: TranscriptRecordStore = .claudeCode,
     ) throws {
+        self.store = store
         let token = String(UUID().uuidString.prefix(8))
         self.root = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-spawn-\(token)", directoryHint: .isDirectory)
@@ -157,13 +163,40 @@ struct SpawnFixture {
             // fixture's record answering to a name no claim is waiting for.
             mintTranscriptID: { spawnedChainID },
         )
-        self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)
+        self.hub = Self.makeHub(
+            projectURL: projectURL,
+            engine: engine,
+            store: store,
+            services: services,
+        )
     }
 
     /// A second Hub over the same folders and the same chain file — a restart, for everything that
     /// is meant to survive one. The claims and the PTYs do not come with it, which is the point.
     func restarted() -> Hub {
-        Hub(projectURL: projectURL, engine: engine, spawnServices: services)
+        Self.makeHub(
+            projectURL: projectURL,
+            engine: engine,
+            store: store,
+            services: services,
+        )
+    }
+
+    /// The one place this fixture's Hubs are built, so a launch and the restart after it cannot be
+    /// pointed at different worlds. Static because `init` builds one before `self` exists.
+    private static func makeHub(
+        projectURL: URL,
+        engine: Engine,
+        store: TranscriptRecordStore,
+        services: SpawnServices,
+    )
+        -> Hub {
+        Hub(
+            projectURL: projectURL,
+            engine: engine,
+            discovery: SessionDiscovery(store: store),
+            spawnServices: services,
+        )
     }
 
     /// The plugin directory one claim of a Hub of this fixture wrote — under that HUB's corner of

@@ -59,7 +59,34 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
 
     /// Whether Argo has ever held this Session's PTY — the whole of what grading asks.
     func hasOwned(sessionID: String) -> Bool {
-        windows[sessionID] != nil
+        window(for: sessionID) != nil
+    }
+
+    /// This Session's window, under the path it has now or under the one the CLI moved it FROM.
+    ///
+    /// The key here is a path, and a path is the one thing about a Session that changes: the CLI
+    /// moves the transcript into a worktree's own record directory, and a window written before
+    /// that move is keyed to a file that no longer exists (#770). Matched on the uuid the two
+    /// paths share, which is the file's name — the same key the chain graph joins the two halves
+    /// on, and the same one a claim follows a move by (`liveClaimWhoseTranscriptMoved`).
+    ///
+    /// Not a guess about a neighbour: the uuid is what Argo NAMED when it spawned the agent
+    /// (#742), so a window under it is this Session's own however its path has moved. Reading it
+    /// as somebody else's agent is the false `external` of #1406, and it is the one reading Argo
+    /// must never render.
+    private func window(for sessionID: String) -> Window? {
+        if let held = windows[sessionID] {
+            return held
+        }
+        let uuid = Self.uuid(of: sessionID)
+        return windows.first { Self.uuid(of: $0.key) == uuid }?.value
+    }
+
+    /// A transcript path's uuid, which is its file name without the extension.
+    private static func uuid(of path: String) -> Substring {
+        let name = path.split(separator: "/").last ?? Substring(path)
+        guard let dot = name.lastIndex(of: ".") else { return name }
+        return name[name.startIndex ..< dot]
     }
 
     /// Whether a registry other than `mine` is holding this Session's PTY right now. An open window
@@ -108,7 +135,7 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
 
     /// What a previous Argo was told this Session was started on, and `nil` where none was.
     func ticket(sessionID: String) -> Int? {
-        windows[sessionID]?.ticket
+        window(for: sessionID)?.ticket
     }
 
     /// The rung a Start named for this Session, spelled the way this file spells one — so the
@@ -119,7 +146,7 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
 
     /// The rung a previous Argo started this Session on, and `nil` where the Start named none.
     func startingRung(sessionID: String) -> SessionMode? {
-        windows[sessionID]?.startingRung.flatMap(SessionModeName.rung(named:))
+        window(for: sessionID)?.startingRung.flatMap(SessionModeName.rung(named:))
     }
 
     /// And no longer does. An id no window was opened for is left alone: the PTY that ran under it

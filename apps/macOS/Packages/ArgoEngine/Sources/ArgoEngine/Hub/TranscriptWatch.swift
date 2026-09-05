@@ -30,6 +30,12 @@ final class TranscriptWatch {
     /// that has awaited a batch has awaited everything that follows from it.
     @ObservationIgnored var onApplied: @MainActor () async -> Void = {}
 
+    /// What must run once a sweep has moved the tails onto a new working set. A batch is not the
+    /// only thing that changes
+    /// which Session a row is: dropping the path a moved transcript left re-keys its row, and no
+    /// batch need follow — the agent that moved the file may never write again (#1406).
+    @ObservationIgnored var onWorkingSetMoved: @MainActor () -> Void = {}
+
     /// NOT observed, and `joinRevision` below is why: an `inout` access to an observed property
     /// publishes whether or not the body writes anything, so a join left observed would republish
     /// on every no-op write however carefully `mutate` guarded the stamp (#858). The two readers a
