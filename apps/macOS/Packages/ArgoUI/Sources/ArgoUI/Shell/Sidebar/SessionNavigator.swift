@@ -36,17 +36,36 @@ package struct SessionNavigator: View {
     /// keyboard selection, a row leaving, the window resizing (#1235).
     @State private var isAtTop = true
 
-    /// The list, and the one thing scrolled from outside it: a Session landing at the roster's
-    /// head brings a list that is already at the top back to the top (#1235).
+    /// The list, and the two things scrolled from outside it: a Session landing at the roster's
+    /// head brings a list that is already at the top back to the top (#1235), and a selection made
+    /// on another surface brings its own row into view (#1273).
     package var body: some View {
         ScrollViewReader { roster in
-            list.onChange(of: rows.first?.id) { previous, leading in
-                guard let top = SessionRosterProjection.topRow(
-                    whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
-                ) else { return }
-                roster.scrollTo(top, anchor: .top)
-            }
+            list
+                .onChange(of: rows.first?.id) { previous, leading in
+                    guard let top = SessionRosterProjection.topRow(
+                        whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
+                    ) else { return }
+                    roster.scrollTo(top, anchor: .top)
+                }
+                // No anchor, deliberately: with none, the list scrolls the LEAST it can to put the
+                // row on screen, which is what leaves a row already visible exactly where it is —
+                // and a click in the roster is a selection change over a row the reader is looking
+                // at, so this rule costs their own picks no movement at all.
+                .onChange(of: selection) { _, chosen in
+                    guard let reveal = SessionRosterProjection.rowToReveal(
+                        for: chosen, among: drawnRows,
+                    ) else { return }
+                    roster.scrollTo(reveal)
+                }
         }
+    }
+
+    /// Every row the list is drawing, in its order — the kept rows, and what is behind the foot
+    /// only while the foot is open. Read here rather than by the body, because a scroll may only
+    /// name a row the list actually has.
+    private var drawnRows: [SessionRosterProjection.Row] {
+        rows + (isArchiveOpen ? archived : [])
     }
 
     private var list: some View {
