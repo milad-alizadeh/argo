@@ -140,7 +140,9 @@ package enum FeedProjection {
     /// Every row the record itself could put in the feed, in the record's own order, BEFORE any
     /// fold takes one out of it. The stage every pass above runs over.
     ///
-    /// A Turn that ends without an answer lands one EXTRA row here beside the ordinary
+    /// Two events land an EXTRA row here beside the one `content(of:)` draws for them. A
+    /// delegation's answer lands its ending (#1281), which needs the call that outcome quotes. And
+    /// a Turn that ends without an answer lands one beside the ordinary
     /// `.mark(.turnEnded)` rule — the settled half of the plinth's `.thinking` wait
     /// (`cockpit-feed-waiting.md`). A Turn that answers drops nothing: the agent's own words are
     /// the record of it.
@@ -148,6 +150,7 @@ package enum FeedProjection {
         let answered = outcomes(in: events)
         let within = workingDirectory(in: events)
         let opening = openingRunFacts(in: events)
+        let endings = delegationEndings(in: events, within: within)
         // Where the Turn now ending last opened, and the last moment anything of it was clocked —
         // both read off the stream in the order it happened, since nothing outside it is in hand
         // here. Reset at every open so a Turn that runs long is timed from ITS OWN start rather
@@ -179,6 +182,9 @@ package enum FeedProjection {
             var produced: [FeedRow.Content] = []
             if let one = content(of: event, answeredBy: answered, within: within) {
                 produced.append(one)
+            }
+            if let ended = endings[index] {
+                produced.append(ended)
             }
             if case let .turnEnded(reason) = event, let hostWord = answerlessReason(reason) {
                 produced.append(.settledWait(SessionWaitSettled(
@@ -244,7 +250,9 @@ package enum FeedProjection {
         case let .unreadableLine(raw): .unreadable(FeedUnreadable(lines: [raw]))
         // None of these is news of its own: an outcome is carried by the call's row, a spend is
         // the deck header's to state (#1248), and a queue note says how the prompt below it
-        // arrived.
+        // arrived. An outcome that ANSWERED a delegation is the one exception, and it is answered
+        // outside this switch — the row needs the call the outcome quotes, which one event at a
+        // time cannot reach (`delegationEnded(_:handedOver:within:)`).
         // The stance is one of these too, and pointedly: Mode is standing rather than something
         // that happened, so it belongs on the composer's footer and not as a row in the reading.
         // The seam of a bounded read, drawn where it happened: everything above it is older than

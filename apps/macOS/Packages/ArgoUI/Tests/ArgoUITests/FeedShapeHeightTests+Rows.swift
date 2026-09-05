@@ -53,6 +53,21 @@ extension FeedShapeHeightTests {
             content: .settledWait(SessionWaitSettled(wait: .starting, tookMs: 3200)),
         ),
         Row(name: "mark, excerpted", content: .mark(.excerpted)),
+        // Both figures on it, which is the widest the ending ever draws (#1281).
+        Row(
+            name: "a delegation that ended",
+            content: .delegationEnded(FeedDelegationEnd(
+                subject: .plain("Standards review"),
+                ending: .succeeded,
+                durationMs: 223_591,
+                spend: Usage(
+                    inputTokens: 3600,
+                    outputTokens: 40000,
+                    cacheReadTokens: 100_000,
+                    cacheCreationTokens: 0,
+                ),
+            )),
+        ),
     ]
 
     private static let others: [Row] = [

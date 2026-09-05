@@ -73,6 +73,13 @@ extension SpecimenRegistry {
         SpecimenEntry("feedPermissionExpired") {
             SpecimenScene.sessions(FeedProjection.previewExpiredMarkRows)
         },
+        // A fan-out from the handovers to the last report (#1281): the reader gets the end of a
+        // delegation from the FEED, without opening the rail beside it. Three endings, because the
+        // row has three shapes — priced and timed, failed, and the backgrounded Agent that reports
+        // neither figure and still lands a row (#908).
+        SpecimenEntry("feedDelegationEndings") {
+            SpecimenScene.sessions(FeedProjection.previewDelegationEndRows)
+        },
         SpecimenEntry("feedAgents") {
             AgentsRail(agents: FeedAgents.all(in: FeedProjection.previewRows, of: .running))
                 .frame(width: ArgoAgentsRail.width)
