@@ -31,6 +31,8 @@ struct ArgoApp: App {
         let accounts = AccountsCoordinator(projects: projects)
         // The row's fact is the Hub's, read at every panel rebuild rather than copied once.
         accounts.companionStanding = { ConnectCompanion(standing: cockpit.hub.companionStanding) }
+        // And the other way: the reap an archive makes needs the Binding this half resolves.
+        cockpit.codeHost = { await accounts.binding(.codeHost) }
         _cockpit = State(initialValue: cockpit)
         _accounts = State(initialValue: accounts)
     }
@@ -93,12 +95,12 @@ struct ArgoApp: App {
                     // event worth a code-host read (#745). Keyed on the unnamed set rather than on
                     // the roster, so a turn ending on a named ticket asks nothing.
                     .onChange(of: presentation.untitledTicketNumbers, initial: true) { _, _ in
-                        Task { await cockpit.nameTickets(through: accounts.ticketBinding()) }
+                        Task { await cockpit.nameTickets(through: accounts.binding(.ticket)) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above ends
                     // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
                     // outlived Argo would be a process nobody is left to steer or stop.
-                    .onDisappear { cockpit.endOwnedSessions() }
+                    .onDisappear { cockpit.hub.endOwnedSessions() }
                 }
             }
             // The system focus ring, off for the whole window.

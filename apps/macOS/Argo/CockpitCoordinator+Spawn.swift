@@ -82,20 +82,16 @@ extension CockpitCoordinator {
         return nil
     }
 
-    /// Every agent this window started, ended.
-    func endOwnedSessions() {
-        hub.endOwnedSessions()
-    }
-
-    /// End them on quit as well as on window close: ⌘Q with the window still open never runs the
-    /// view's `onDisappear`, leaving those PTYs to the kernel's hang-up as the process dies.
+    /// Every agent this window started, ended on quit as well as on window close: ⌘Q with the
+    /// window still open never runs the view's `onDisappear`, leaving those PTYs to the kernel's
+    /// hang-up as the process dies.
     func endOwnedSessionsOnQuit() {
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,
             object: nil,
             queue: .main,
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.endOwnedSessions() }
+            MainActor.assumeIsolated { self?.hub.endOwnedSessions() }
         }
     }
 

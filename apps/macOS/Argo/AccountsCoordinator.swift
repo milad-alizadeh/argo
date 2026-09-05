@@ -158,10 +158,11 @@ final class AccountsCoordinator {
         await refresh()
     }
 
-    /// How the active Project's Ticket port reads, for a reader that is not the panel (#745).
-    /// The same resolve the panel and the chip make, so no third answer about one Binding exists.
-    func ticketBinding() async -> BindingResolution {
-        await bindings.resolve(port: .ticket, forProject: project?.id)
+    /// How one of the active Project's ports reads, for a reader that is not the panel (#745,
+    /// #1398). The same resolve the panel and the chip make, so no third answer about one Binding
+    /// exists.
+    func binding(_ port: AccountPort) async -> BindingResolution {
+        await bindings.resolve(port: port, forProject: project?.id)
     }
 
     func unbind(_ port: AccountPort) async {
@@ -187,7 +188,7 @@ final class AccountsCoordinator {
         ))
         // ONE resolve, and both the poll and the room's link verbs are pointed off it: two would
         // let the backlog be read through one Binding while its links addressed another.
-        let resolution = await ticketBinding()
+        let resolution = await binding(.ticket)
         ticketAddress = TicketAddress(binding: resolution)
         // Reported before pointed, always: `point` is the only thing that starts a loop, and it
         // raises the landing itself — so this one call both settles the read and refreshes it.

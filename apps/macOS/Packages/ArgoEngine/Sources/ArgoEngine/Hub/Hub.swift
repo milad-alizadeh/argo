@@ -106,6 +106,11 @@ public final class Hub {
 
     @ObservationIgnored let discovery: SessionDiscovery
     @ObservationIgnored let engine: Engine
+    /// Where the reap asks whether a branch landed (#1398). A `var` with the real adapter in it
+    /// rather than an init parameter: it is the only thing on this Hub that talks to a code host,
+    /// and one more parameter on an init already at its cap would be paid by every caller for a
+    /// port only a suite ever replaces.
+    @ObservationIgnored var codeHost: CodeHostPort = GitHubDeliveries()
     /// What the Hub was last pointed with, held so a retry needs nothing re-supplied.
     @ObservationIgnored private var configuration: LaunchConfiguration
 
