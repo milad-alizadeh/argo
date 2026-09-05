@@ -2,8 +2,7 @@
 ///
 /// The counting keeps every pair either file held on to — 18,402 of them for this repository — and
 /// a picture with 18,402 lines across it is a ball of wool. So the drawing chooses, and the
-/// choosing is here rather than in the view: it is arithmetic over what was counted, it decides
-/// what the reader is being shown, and a rule that lives in a `Canvas` is a rule no test can reach.
+/// choosing is arithmetic over what was counted rather than a rule inside a `Canvas`.
 public extension [AtlasCoupling] {
     /// The strongest ties in the list, strongest first, one line per pair.
     ///
@@ -24,32 +23,36 @@ public extension [AtlasCoupling] {
     }
 }
 
-public extension AtlasMap {
-    /// The strongest ties across the whole map. The Map's own spelling of the choosing above, so
-    /// no caller holding a Map has to reach past it for the list.
-    func strongestTies(cap: Int = AtlasCoupling.cap) -> [AtlasCoupling] {
-        couplings.strongest(cap: cap)
-    }
-
-    /// The files one Plot keeps changing with, which is what pinning it draws.
-    func ties(of path: String, limit: Int = AtlasCoupling.perFile) -> [AtlasCoupling] {
-        couplings.ties(of: path, limit: limit)
-    }
-}
-
 public extension AtlasCoupling {
     /// The most ties the map draws at once. The prototype's own number, and the reason for it:
     /// nine hundred cords is a ball of wool, a hundred and sixty is a reading.
     static let cap = 160
 
-    /// The most of one file's own ties the map draws when that file is pinned. Fewer, because they
+    /// The most of one file's own ties the map draws when that file is open. Fewer, because they
     /// all leave one box: past a handful they stop being separate cords and become a fan.
     static let perFile = 6
 
-    /// The two ends, in the one order neither of them decides: the pair as a KEY, so a Coupling
-    /// stated `a`→`b` and one stated `b`→`a` are recognised as the one tie they are.
-    var pair: String {
-        first < second ? first + "\n" + second : second + "\n" + first
+    /// One tie's two ends, in the one order neither of them decides — so a Coupling stated `a`→`b`
+    /// and one stated `b`→`a` are recognised as the one tie they are.
+    ///
+    /// A type rather than the two paths joined by a separator, because there is no separator a
+    /// path cannot contain: a key built by joining is a key two different pairs can collide on.
+    struct Pair: Hashable, Comparable, Sendable {
+        let low: String
+        let high: String
+
+        init(_ one: String, _ other: String) {
+            self.low = Swift.min(one, other)
+            self.high = Swift.max(one, other)
+        }
+
+        public static func < (left: Pair, right: Pair) -> Bool {
+            left.low == right.low ? left.high < right.high : left.low < right.low
+        }
+    }
+
+    var pair: Pair {
+        Pair(first, second)
     }
 
     /// Strongest first, and where two are equally strong the paths break it. Swift's sort is not
@@ -66,7 +69,7 @@ public extension AtlasCoupling {
     /// elsewhere — which is exactly why it is here. A Map is data, and a rule the drawing depends
     /// on cannot rest on the generator having been the one to write it.
     static func oncePerPair(_ couplings: [AtlasCoupling]) -> [AtlasCoupling] {
-        var seen: Set<String> = []
+        var seen: Set<Pair> = []
         return couplings.filter { seen.insert($0.pair).inserted }
     }
 }

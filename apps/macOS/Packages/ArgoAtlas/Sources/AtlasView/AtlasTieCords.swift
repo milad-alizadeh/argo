@@ -6,12 +6,12 @@ import SwiftUI
 ///
 /// The map shows how big and how bad; the cords show what moves with what — the coupling no import
 /// declares. Two readings out of one counting: the strongest across the whole picture while the
-/// switch is on, and the pinned file's own whatever it is set to.
+/// switch is on, and the open file's own whatever it is set to.
 ///
 /// Over the Metal surface rather than in the shader, for `AtlasOpenTrace`'s reason: the GPU draws
 /// faces, and a curve across a projected picture is the one thing a triangle rasteriser has no
-/// cheap answer for. The geometry is `AtlasCords`, which reads the same camera and the same fit
-/// the surface hands the GPU, so a cord cannot land where its two files are not.
+/// cheap answer for. The geometry is `AtlasCord`, which reads the same camera and the same fit the
+/// surface hands the GPU, so a cord cannot land where its two files are not.
 ///
 /// Over the model rather than into it, too: a cord that disappeared behind a tower would be a tie
 /// the reader is told about from some angles and not from others.
@@ -23,12 +23,16 @@ struct AtlasTieCords: View {
     let projection: AtlasProjection
     /// Every tie the drawn Map carries, and whether the whole-map reading was asked for.
     let ties: AtlasTies
-    /// The file the reader has pinned, whose own ties are drawn however the switch is set.
-    let pinned: String?
+    /// The file the reader has open, whose own ties are drawn however the switch is set.
+    let open: String?
 
     var body: some View {
-        Canvas { context, _ in
-            for drawn in AtlasCords(of: ties, pinned: pinned, through: projection).cords {
+        // Chosen and placed ONCE per body, outside the draw closure: the whole-map reading sorts
+        // 18,402 couplings and seats 2,705 tiles, and a `Canvas` runs its closure on every repaint
+        // — including every frame of a rise.
+        let cords = AtlasDrawnCord.all(of: ties, open: open, through: projection)
+        return Canvas { context, _ in
+            for drawn in cords {
                 context.stroke(
                     Self.path(of: drawn.cord),
                     with: .color(argo.color.atlas.marks.cord.color.opacity(drawn.alpha)),

@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoUI
+import AtlasView
 import SwiftUI
 
 /// The light model and the materials it lands on — the half of this sheet that is the PLACE rather
@@ -91,21 +92,17 @@ extension AtlasContractSpecimen {
             }
             .frame(height: ArgoSpacing.section)
             .overlay {
-                // The two weights the map draws: the whole-map ties at a third of the colour, and
-                // a pinned file's own at nearly all of it.
+                // Both weights the map draws, read off the weights THEMSELVES rather than typed:
+                // a sheet asking whether a cord is still visible over the deepest plate answers
+                // nothing if it draws a thinner line than any cord on the map (#1160).
                 VStack(spacing: ArgoSpacing.snug) {
-                    cordStroke(alpha: 0.3, width: ArgoStroke.hairline)
-                    cordStroke(alpha: 0.95, width: ArgoStroke.indicator)
+                    ForEach(AtlasCordWeight.allCases, id: \.self) { weight in
+                        AtlasCordStroke(weight: weight, ink: argo.color.atlas.marks.cord)
+                    }
                 }
                 .padding(.horizontal, ArgoSpacing.base)
             }
         }
-    }
-
-    private func cordStroke(alpha: Double, width: CGFloat) -> some View {
-        Rectangle()
-            .fill(argo.color.atlas.marks.cord.color.opacity(alpha))
-            .frame(height: width)
     }
 
     /// The one promoted role that is an INK: a domain is inferred, never DIRECT, and every label
@@ -120,5 +117,21 @@ extension AtlasContractSpecimen {
                 .padding(ArgoSpacing.snug)
                 .background(argo.color.atlas.materials.plate2)
         }
+    }
+}
+
+/// One cord weight, drawn at the alpha and the width the map strokes it at (#1160).
+///
+/// A view of its own rather than a function returning one, which is the shape `rules/swift.md`
+/// asks for — and it takes the weight rather than two numbers, so the sheet cannot come to show a
+/// cord the map does not draw.
+private struct AtlasCordStroke: View {
+    let weight: AtlasCordWeight
+    let ink: ArgoColor
+
+    var body: some View {
+        Rectangle()
+            .fill(ink.color.opacity(weight.alpha))
+            .frame(height: weight.width)
     }
 }

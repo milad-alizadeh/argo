@@ -104,10 +104,10 @@ public struct AtlasView: View {
                 )
             }
             // Over the surface and under the mark: a cord belongs to the picture the way the
-            // trace does, and the trace is the nearer of the two to what the reader pinned.
+            // trace does, and the trace is the nearer of the two to what the reader opened.
             .overlay {
                 AtlasTieCords(
-                    projection: projection, ties: marks.ties, pinned: marks.focus.open,
+                    projection: projection, ties: marks.ties, open: marks.focus.open,
                 )
             }
             // Over the cords and under the words: the mark belongs to the picture, and a name

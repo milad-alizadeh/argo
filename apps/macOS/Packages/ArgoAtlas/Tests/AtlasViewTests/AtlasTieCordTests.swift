@@ -4,7 +4,7 @@ import CoreGraphics
 import Testing
 
 /// What the map actually draws when the ties are asked for (#1160): the strongest across the whole
-/// map while the switch is on, and the pinned file's own however it is set.
+/// map while the switch is on, and the open file's own however it is set.
 ///
 /// The cords are chosen here and stroked in a `Canvas`, so this is the seam every claim about what
 /// is on the frame can be made at — including the one the ticket states absolutely: turning ties
@@ -45,22 +45,22 @@ struct AtlasTieCordTests {
 
     static func cords(
         isOn: Bool,
-        pinned: String? = nil,
+        open: String? = nil,
         relief: Double = 0,
     )
-        -> [AtlasCords.Cord] {
-        AtlasCords(
+        -> [AtlasDrawnCord] {
+        AtlasDrawnCord.all(
             of: AtlasTies(couplings: couplings, isOn: isOn),
-            pinned: pinned,
+            open: open,
             through: projection(relief: relief),
-        ).cords
+        )
     }
 
     /// **Turning ties off leaves no trace on the frame.** Asserted where the frame is decided
     /// rather than by looking at a render: a `Canvas` handed nothing to stroke draws nothing, and
     /// this is what says it is handed nothing.
     @Test
-    func `with the switch off and no file pinned, nothing is drawn`() {
+    func `with the switch off and no file open, nothing is drawn`() {
         #expect(Self.cords(isOn: false).isEmpty)
     }
 
@@ -75,30 +75,30 @@ struct AtlasTieCordTests {
     /// Pinning a file draws its own ties whatever the switch is set to — the reader pointed at a
     /// file and asked what it changes with, which is a question the switch does not answer.
     @Test
-    func `a pinned file draws its own ties with the switch off`() {
-        let cords = Self.cords(isOn: false, pinned: "root/f1.swift")
+    func `a open file draws its own ties with the switch off`() {
+        let cords = Self.cords(isOn: false, open: "root/f1.swift")
         #expect(cords.count == 2)
-        #expect(cords.allSatisfy { $0.weight == .ofThePinnedFile })
+        #expect(cords.allSatisfy { $0.weight == .ofTheOpenFile })
     }
 
     /// One pair, one cord, at the WEIGHT the reader asked for: a tie that is both in the strongest
-    /// across the map and in the pinned file's own is drawn once, as the pinned file's — a second
+    /// across the map and in the open file's own is drawn once, as the open file's — a second
     /// stroke laid over the first is the defect, and the fainter of the two is the one to lose.
     @Test
-    func `a tie the pinned file owns is not drawn twice`() {
-        let cords = Self.cords(isOn: true, pinned: "root/f1.swift")
+    func `a tie the open file owns is not drawn twice`() {
+        let cords = Self.cords(isOn: true, open: "root/f1.swift")
         #expect(cords.count == Self.couplings.count)
-        #expect(cords.filter { $0.weight == .ofThePinnedFile }.count == 2)
+        #expect(cords.filter { $0.weight == .ofTheOpenFile }.count == 2)
         #expect(Set(cords.map(\.coupling.pair)).count == cords.count)
     }
 
-    /// The pinned file's own are the ones the reader is reading, so they are the heavier: a cord
+    /// The open file's own are the ones the reader is reading, so they are the heavier: a cord
     /// answering a question just asked cannot be drawn as faintly as the hundred and fifty-nine
     /// the map was already carrying.
     @Test
-    func `the pinned file's cords are drawn heavier than the map's`() {
-        #expect(AtlasCordWeight.ofThePinnedFile.alpha > AtlasCordWeight.acrossTheMap.alpha)
-        #expect(AtlasCordWeight.ofThePinnedFile.width > AtlasCordWeight.acrossTheMap.width)
+    func `the open file's cords are drawn heavier than the map's`() {
+        #expect(AtlasCordWeight.ofTheOpenFile.alpha > AtlasCordWeight.acrossTheMap.alpha)
+        #expect(AtlasCordWeight.ofTheOpenFile.width > AtlasCordWeight.acrossTheMap.width)
     }
 
     /// Ties are drawn in BOTH views. Nothing here decides which — the cords come off the same
@@ -114,11 +114,11 @@ struct AtlasTieCordTests {
     /// wherever a missing rectangle would have been.
     @Test
     func `a tie to a file the map is not drawing draws nothing`() {
-        let cords = AtlasCords(
+        let cords = AtlasDrawnCord.all(
             of: AtlasTies(couplings: [Self.tie(1, 99, 0.9)], isOn: true),
-            pinned: nil,
+            open: nil,
             through: Self.projection(),
         )
-        #expect(cords.cords.isEmpty)
+        #expect(cords.isEmpty)
     }
 }

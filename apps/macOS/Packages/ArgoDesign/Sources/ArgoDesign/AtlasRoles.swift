@@ -34,10 +34,9 @@ public extension ArgoPalette {
     /// The marks laid OVER the map: relations between files rather than facts about one, and the
     /// one family here that is not a surface (#1160).
     ///
-    /// Apart from `MaterialRoles` because the two answer different questions. A material is ground
-    /// a box stands on or is made of, and what it owes is a distance from the operational states.
-    /// A mark is drawn across all of that, and what it owes is a distance from everything it can
-    /// CROSS — which is `AtlasMaterialTests`' own claim, and not the same rule.
+    /// What a mark owes is a distance from everything it can CROSS, which is a different rule from
+    /// the one every material answers — a distance from the operational states — and
+    /// `AtlasMaterialTests` states both.
     struct MarkRoles: Sendable {
         /// The cord one co-change tie is drawn as (#1160).
         ///

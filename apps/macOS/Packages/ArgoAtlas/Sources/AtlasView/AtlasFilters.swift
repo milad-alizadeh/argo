@@ -21,22 +21,16 @@ public struct AtlasFilters: View {
 
     public var body: some View {
         AtlasSidebarSection("Filters") {
-            AtlasSidebarRow("Hide test files") {
-                // The platform's own switch: a boolean is a switch, and a shape with a tap
-                // gesture is a control that can look right and fire nothing (`rules/swift.md`).
-                Toggle("Hide test files", isOn: $hideTests)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .help("Drop test files and re-read the repository without them")
-            }
-            AtlasSidebarRow("Strongest ties") {
-                Toggle("Strongest ties", isOn: $showTies)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .help("The file pairs that keep changing in the same commit")
-            }
+            AtlasFilterSwitch(
+                label: "Hide test files",
+                help: "Drop test files and re-read the repository without them",
+                isOn: $hideTests,
+            )
+            AtlasFilterSwitch(
+                label: "Strongest ties",
+                help: "The file pairs that keep changing in the same commit",
+                isOn: $showTies,
+            )
             cap
         }
     }
@@ -56,5 +50,25 @@ public struct AtlasFilters: View {
             .accessibilityLabel(
                 "Strongest ties draws the strongest \(AtlasCoupling.cap) pairs, one line each",
             )
+    }
+}
+
+/// One filter: what it is called, what it does, and the switch that sets it.
+///
+/// The platform's own switch: a boolean is a switch, and a shape with a tap gesture is a control
+/// that can look right and fire nothing (`rules/swift.md`).
+private struct AtlasFilterSwitch: View {
+    let label: String
+    let help: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        AtlasSidebarRow(label) {
+            Toggle(label, isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .help(help)
+        }
     }
 }

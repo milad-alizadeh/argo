@@ -32,7 +32,7 @@ struct AtlasTieTests {
     @Test
     func `the strongest ties come out strongest first`() {
         let map = Self.map([Self.tie(1, 2, 0.2), Self.tie(3, 4, 0.9), Self.tie(5, 6, 0.5)])
-        #expect(map.strongestTies().map(\.strength) == [0.9, 0.5, 0.2])
+        #expect(map.couplings.strongest().map(\.strength) == [0.9, 0.5, 0.2])
     }
 
     /// The whole of #1160's "the number of ties drawn is capped": the cap is the map's, not the
@@ -40,8 +40,8 @@ struct AtlasTieTests {
     @Test
     func `no more ties are drawn than the cap`() {
         let many = (1 ... 40).map { Self.tie($0, $0 + 1, Double($0) / 100) }
-        #expect(Self.map(many, files: 41).strongestTies(cap: 10).count == 10)
-        #expect(Self.map(many, files: 41).strongestTies(cap: 10).first?.strength == 0.4)
+        #expect(Self.map(many, files: 41).couplings.strongest(cap: 10).count == 10)
+        #expect(Self.map(many, files: 41).couplings.strongest(cap: 10).first?.strength == 0.4)
     }
 
     /// **One pair, one cord.** The counting settles which end is which, but a Map is a FILE and
@@ -50,8 +50,8 @@ struct AtlasTieTests {
     @Test
     func `a reversed twin is the same tie, drawn once`() {
         let map = Self.map([Self.tie(1, 2, 0.6), Self.tie(2, 1, 0.6), Self.tie(3, 4, 0.4)])
-        #expect(map.strongestTies().count == 2)
-        #expect(map.strongestTies().first == Self.tie(1, 2, 0.6))
+        #expect(map.couplings.strongest().count == 2)
+        #expect(map.couplings.strongest().first == Self.tie(1, 2, 0.6))
     }
 
     /// Two ties of one strength cannot swap between two readings of one Map: the paths break the
@@ -60,7 +60,7 @@ struct AtlasTieTests {
     @Test
     func `equal strengths are ordered by their own paths`() {
         let map = Self.map([Self.tie(5, 6, 0.5), Self.tie(1, 2, 0.5), Self.tie(3, 4, 0.5)])
-        let ends = map.strongestTies().map(\.first)
+        let ends = map.couplings.strongest().map(\.first)
         #expect(ends == ["root/f1.swift", "root/f3.swift", "root/f5.swift"])
     }
 
@@ -68,8 +68,8 @@ struct AtlasTieTests {
     /// than by failing.
     @Test
     func `a map that counted nothing draws no ties`() {
-        #expect(Self.map([]).strongestTies().isEmpty)
-        #expect(Self.map([]).ties(of: "root/f1.swift").isEmpty)
+        #expect(Self.map([]).couplings.strongest().isEmpty)
+        #expect(Self.map([]).couplings.ties(of: "root/f1.swift").isEmpty)
     }
 
     /// Pinning a file draws the files it changes with — from EITHER end of the pair, because a
@@ -77,17 +77,17 @@ struct AtlasTieTests {
     @Test
     func `a file's own ties are the ones it stands at either end of`() {
         let map = Self.map([Self.tie(1, 2, 0.3), Self.tie(3, 1, 0.7), Self.tie(4, 5, 0.9)])
-        let own = map.ties(of: "root/f1.swift")
+        let own = map.couplings.ties(of: "root/f1.swift")
         #expect(own.map(\.strength) == [0.7, 0.3])
     }
 
-    /// The pinned file's own list is capped too, and by its own number: sixty cords off one box is
+    /// The open file's own list is capped too, and by its own number: sixty cords off one box is
     /// a ball of wool, and the reader asked which files this one changes with rather than for all
     /// of them.
     @Test
     func `a file keeps no more of its own ties than the per-file cap`() {
         let many = (2 ... 20).map { Self.tie(1, $0, Double($0) / 100) }
-        let own = Self.map(many, files: 20).ties(of: "root/f1.swift", limit: 4)
+        let own = Self.map(many, files: 20).couplings.ties(of: "root/f1.swift", limit: 4)
         #expect(own.count == 4)
         #expect(own.first?.strength == 0.2)
     }
@@ -96,6 +96,6 @@ struct AtlasTieTests {
     @Test
     func `a file that changes with nothing draws nothing`() {
         let map = Self.map([Self.tie(2, 3, 0.5)])
-        #expect(map.ties(of: "root/f1.swift").isEmpty)
+        #expect(map.couplings.ties(of: "root/f1.swift").isEmpty)
     }
 }
