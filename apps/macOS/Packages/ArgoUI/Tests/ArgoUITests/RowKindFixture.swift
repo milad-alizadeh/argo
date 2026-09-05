@@ -15,6 +15,7 @@ enum RowKindFixture {
         .survey(survey),
         .work(work),
         .gallery(gallery),
+        .gallery(pastedGallery),
         .skillLoaded(skill),
         .ask(ask),
         .mark(.compacted),
@@ -41,6 +42,12 @@ enum RowKindFixture {
     ], ending: .failed)
 
     static let gallery = FeedGallery(shots: [absentShot])
+
+    /// Listed beside it because the ORIGIN changes what the row is, not only what it holds: a run
+    /// of pasted pictures is prose the reader asked with, where a produced one is work (#1252). A
+    /// fixture holding only the produced one leaves every `everyKind` filter proving nothing about
+    /// the half of the case that answers differently.
+    static let pastedGallery = FeedGallery(shots: [absentShot], origin: .pasted)
 
     /// A row's shots in the order that makes the choice visible: a press must skip the absence.
     static let anAbsenceThenAPicture = [absentShot, openableShot]

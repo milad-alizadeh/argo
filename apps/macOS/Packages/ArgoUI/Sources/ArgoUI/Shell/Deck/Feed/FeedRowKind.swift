@@ -120,8 +120,27 @@ extension FeedRow.Content {
             )
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes to the
         // picture. Said once here, for the row and the lane beside it both.
+        //
+        // A run of PASTED pictures is drawn the same and read differently: it is the reader
+        // asking, so it stays prose and it stays the row a Turn opens — the work fold's Turn
+        // extents, the feed's Copy Turn, the minimap's prompt band and the composer's echo all
+        // read `isPrompt`. Its words are the empty string those prompts held, because a prompt
+        // with words never joined the run. No copy label with them: there is nothing verbatim
+        // behind a picture, and a menu item that hands over the empty string reads as a copy that
+        // silently failed.
         case let .gallery(gallery):
-            Kind(isCall: true, shots: gallery.shots, activation: .light(oneOf: gallery.shots))
+            switch gallery.origin {
+            case .produced:
+                Kind(isCall: true, shots: gallery.shots, activation: .light(oneOf: gallery.shots))
+            case .pasted:
+                Kind(
+                    isProse: true,
+                    isPrompt: true,
+                    shots: gallery.shots,
+                    words: "",
+                    activation: .light(oneOf: gallery.shots),
+                )
+            }
         // A marker is punctuation too, and it opens onto whatever Argo could read behind it — the
         // SKILL.md body, or the sentence saying why there is none.
         case let .skillLoaded(skill):

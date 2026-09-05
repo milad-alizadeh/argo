@@ -16,15 +16,17 @@ struct FeedRowKindTests {
     }
 
     /// A prompt and a message are the two things somebody said; a thought is reasoning, and prose
-    /// as well. Nothing else is.
+    /// as well. Nothing else is — except the run of PASTED pictures the gallery fold took a run of
+    /// prompts away to make, which is the reader asking with pictures instead of words (#1252).
     @Test
-    func `only the three spoken kinds are prose`() {
+    func `only the spoken kinds are prose`() {
         let prose = RowKindFixture.everyKind.filter(\.kind.isProse)
 
         #expect(prose == [
             .prompt(text: "Rename the deck", shots: []),
             .message("Renamed."),
             .thought("Weighing."),
+            .gallery(RowKindFixture.pastedGallery),
         ])
     }
 
@@ -38,12 +40,16 @@ struct FeedRowKindTests {
         #expect(!kind.isMessage)
     }
 
-    /// What the accent wash on a just-sent echo is read off.
+    /// What the accent wash on a just-sent echo is read off — and the Turn boundary with it, so a
+    /// fold that takes a run of prompt rows away has to answer here in their place.
     @Test
     func `only what the user asked for is a prompt`() {
         let prompts = RowKindFixture.everyKind.filter(\.kind.isPrompt)
 
-        #expect(prompts == [.prompt(text: "Rename the deck", shots: [])])
+        #expect(prompts == [
+            .prompt(text: "Rename the deck", shots: []),
+            .gallery(RowKindFixture.pastedGallery),
+        ])
     }
 
     /// A survey, a card of work and a gallery are counts and pictures rather than lines, but the

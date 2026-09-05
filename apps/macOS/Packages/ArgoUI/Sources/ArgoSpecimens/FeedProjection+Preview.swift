@@ -36,6 +36,11 @@ extension FeedProjection {
     /// the wordless prompt that is nothing but one (#733).
     static let previewPastedRows = rows(from: TranscriptFixtures.pasted)
 
+    /// Six pictures pasted one after another, folded into the one grid they are (#1252). Its own
+    /// fixture rather than a filter: the claim is about a RUN of rows, and no filter over another
+    /// feed holds one.
+    static let previewPastedRunRows = rows(from: TranscriptFixtures.pastedRun)
+
     /// The same feed with the prose taken out. A filter over the shipping rows, never a second set.
     static let previewCallRows = previewRows.filter(\.kind.isCall)
 

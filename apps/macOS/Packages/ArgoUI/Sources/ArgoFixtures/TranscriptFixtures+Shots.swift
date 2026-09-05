@@ -60,9 +60,26 @@ extension TranscriptFixtures {
         ]
     }
 
+    /// Pictures pasted one after another, each in a prompt of its own and none of them carrying a
+    /// word — which is what pasting a set of screenshots into a composer actually writes, and the
+    /// run the gallery fold gathers into one grid (#1252). Six, because the reading this is a
+    /// render of is the one that used to be six rows tall.
+    ///
+    /// Four shapes cycled rather than six of one: the grid wraps by each picture's own drawn
+    /// width, so a run that was all one shape could not show it wrapping.
+    package static let pastedRun: [TranscriptEvent] = (0 ..< 6).map { position in
+        let shapes = [shellCapture, selectionCapture, renderedChart, diskPlate]
+        return .prompt(
+            text: "",
+            images: [picture(shapes[position % shapes.count])],
+            atMs: 1_733_000_200_000 + position * 1000,
+        )
+    }
+
     /// A picture pasted into a prompt, as the reader ends up with it: the placeholder the CLI wrote
     /// beside the pixels is already taken out. The three shapes one renders in — beside words, on
-    /// its own, and two side by side.
+    /// its own, and two side by side. The wordless one in the middle is a run of ONE, so it draws
+    /// as a gallery rather than a bubble; a run of several is `pastedRun`.
     package static let pasted: [TranscriptEvent] = [
         .prompt(
             text: "Look at the rule under the header — it sits a point low against the seam.",

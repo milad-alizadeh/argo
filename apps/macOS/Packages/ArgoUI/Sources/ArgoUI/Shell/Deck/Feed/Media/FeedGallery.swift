@@ -9,7 +9,19 @@
 /// an address and saves nothing, but one thumbnail is a picture where there was a filename. The
 /// treatment does not change with the count.
 package struct FeedGallery: Equatable, Sendable {
+    /// Who put these pictures in the feed. The treatment does not change with it — one treatment
+    /// for a picture in the feed, whoever put it there (#733) — but what the row IS does: a run of
+    /// pasted pictures is still the reader asking, and the Turn it opened is read off that
+    /// (`FeedRowKind`).
+    package enum Origin: Equatable, Sendable {
+        /// Pictures a call came back with.
+        case produced
+        /// Pictures somebody pasted into prompts, which held no words of their own.
+        case pasted
+    }
+
     package let shots: [FeedShot]
+    package let origin: Origin
 
     /// What a screen reader hears in place of the pictures it cannot show.
     package var spoken: String {
@@ -17,7 +29,11 @@ package struct FeedGallery: Equatable, Sendable {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(shots: [FeedShot]) {
+    ///
+    /// The origin is defaulted because a gallery is a call's until a fold says otherwise, and the
+    /// pasted run is the one caller that has to say so.
+    package init(shots: [FeedShot], origin: Origin = .produced) {
         self.shots = shots
+        self.origin = origin
     }
 }
