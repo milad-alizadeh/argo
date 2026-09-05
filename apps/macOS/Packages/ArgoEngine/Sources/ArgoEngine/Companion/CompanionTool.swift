@@ -1,11 +1,15 @@
 import Foundation
 
-/// The three things a managed Session may tell Argo, as MCP tools — what a transcript cannot
+/// The four things a managed Session may tell Argo, as MCP tools — what a transcript cannot
 /// carry. Anything it can already be observed doing stays observed, at the DERIVED tier.
 enum CompanionTool: String, CaseIterable {
     case reportStatus = "report_status"
     case askUser = "ask_user"
     case reportOutcome = "report_outcome"
+    /// The claim a transcript cannot carry either (#1335): the change is ready for a pull
+    /// request. Free text rather than a vocabulary — a file count and a commit count are not a
+    /// closed set of words.
+    case reportReady = "report_ready"
 
     /// The status words the channel accepts. One table read both ways: the `enum` the tool's
     /// schema advertises AND the vocabulary the reply is read against, so the two cannot drift.
@@ -30,6 +34,14 @@ enum CompanionTool: String, CaseIterable {
         ["name": rawValue, "description": summary, "inputSchema": schema]
     }
 
+    /// The name the transcript carries for this call: `mcp__argo__<tool>`, the CLI's own
+    /// qualifying convention over the server key `mcp.json` registers this under
+    /// (`CompanionInvitation`, `"argo"`) — read by `TranscriptReader+Assistant` to tell a
+    /// companion call apart from an ordinary MCP one.
+    var qualifiedName: String {
+        "\(mcpToolPrefix)argo\(mcpNameSeparator)\(rawValue)"
+    }
+
     private var summary: String {
         switch self {
         case .reportStatus:
@@ -38,6 +50,8 @@ enum CompanionTool: String, CaseIterable {
             "Ask the person at the cockpit a question and surface it in their roster."
         case .reportOutcome:
             "Record what you produced: a code change, a ticket, or a written artifact."
+        case .reportReady:
+            "Tell Argo the change is ready for a pull request, with a short reason."
         }
     }
 
@@ -62,6 +76,8 @@ enum CompanionTool: String, CaseIterable {
                 ],
                 required: ["target", "reference", "summary"],
             )
+        case .reportReady:
+            Self.object(["reason": Self.string()], required: ["reason"])
         }
     }
 

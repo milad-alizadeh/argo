@@ -20,9 +20,9 @@ package struct InstrumentDeckShell: View {
     var feed: [FeedRow] = []
     /// What the deck's top zone names, already projected.
     var header: SessionHeaderProjection.Header?
-    /// Hand the shown Session's work to a fresh one. Inert by default, so a specimen draws the
-    /// button without spawning anything.
-    var handOff: () async -> Void = {}
+    /// What the canopy's own controls DO — see `SessionHeaderIntents`. Inert by default, so a
+    /// specimen draws them without spawning or typing anything.
+    var headerIntents = SessionHeaderIntents()
     /// The same Session's plan, which is standing state rather than a row.
     var showing = PlanShowing()
     /// Which call's evidence the panel is showing. A BINDING since #875: the toolbar's toggle
@@ -93,7 +93,7 @@ package struct InstrumentDeckShell: View {
                 session: session,
                 feed: feed,
                 header: header,
-                handOff: handOff,
+                headerIntents: headerIntents,
                 showing: showing,
                 open: open,
                 step: step,
@@ -123,7 +123,7 @@ package struct InstrumentDeckShell: View {
         session: CockpitPresentation.Session.ID? = nil,
         feed: [FeedRow] = [],
         header: SessionHeaderProjection.Header? = nil,
-        handOff: @escaping () async -> Void = {},
+        headerIntents: SessionHeaderIntents = SessionHeaderIntents(),
         showing: PlanShowing = PlanShowing(),
         open: Binding<FeedRow.ID?> = .constant(nil),
         step: Binding<Int?> = .constant(nil),
@@ -140,7 +140,7 @@ package struct InstrumentDeckShell: View {
         self.session = session
         self.feed = feed
         self.header = header
-        self.handOff = handOff
+        self.headerIntents = headerIntents
         self.showing = showing
         self.open = open
         self.step = step

@@ -193,12 +193,25 @@ package struct SessionRow: View {
     }
 
     /// Ahead of the clock, because the leading edge is where the eye lands and this is the slot
-    /// the reader scans to place the row (#745, #1072).
+    /// the reader scans to place the row (#745, #1072). `Ready` shares the slot with the state
+    /// word and never both at once: `state.attention` and `state.failure` outrank it, because a
+    /// row waiting on the reader or reporting a failure has more to say than that it is done
+    /// (`cockpit-roster-row.md`, the badge ink table).
     @ViewBuilder private var stateWord: some View {
-        if let word = row.stateWord {
-            ArgoStateLabel(word: word)
-                .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
+        if let badge = row.badge {
+            ArgoStateLabel(word: badge.word)
+                .foregroundStyle(ink(of: badge))
                 .layoutPriority(1)
+        }
+    }
+
+    /// The state's own tint for a state word, and `delivery.open` for `Ready` — the one ink the
+    /// badge ever spends that is not an operational state's. Read off the badge's own case, so
+    /// the word and the ink cannot come from two different readings of the row.
+    private func ink(of badge: SessionRosterProjection.Row.Badge) -> ArgoColor {
+        switch badge {
+        case let .state(_, tone): tone?.tint(in: argo.color) ?? argo.color.text.tertiary
+        case .readyToShip: argo.color.delivery.open
         }
     }
 

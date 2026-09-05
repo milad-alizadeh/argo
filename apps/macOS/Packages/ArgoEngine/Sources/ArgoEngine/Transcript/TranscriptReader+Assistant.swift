@@ -69,9 +69,16 @@ extension TranscriptReader {
             target: toolCallTarget(use.input),
             narration: toolCallNarration(use.input),
             atMs: message.timestampMs,
-            // Gated on the tool's own name: `AskUserQuestion` is how a record distinguishes a
-            // question that BLOCKS from one the agent merely typed into a message.
-            ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
+            input: ToolCall.Input(
+                // Gated on the tool's own name: `AskUserQuestion` is how a record distinguishes a
+                // question that BLOCKS from one the agent merely typed into a message.
+                ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
+                // Gated the same way, on the qualified name the companion channel's own tool
+                // carries (#1335) — the socket already read the SAME call for the roster's claim;
+                // this is the transcript's own reading of it, for the feed.
+                readyClaim: use.name == CompanionTool.reportReady.qualifiedName
+                    ? CompanionReady.reading(use.input) : nil,
+            ),
         )
         // Both are emitted: the call is what happened, the plan is what it said.
         guard let written = planWritten(by: use, in: message) else { return [.toolCall(call)] }

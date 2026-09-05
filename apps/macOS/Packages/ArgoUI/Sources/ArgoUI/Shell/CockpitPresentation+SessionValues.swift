@@ -131,6 +131,32 @@ public extension CockpitPresentation.Session {
         /// and `nil` for a branch with none open — or one Argo has not read a Delivery for yet.
         /// Never a placeholder: the roster row draws nothing rather than guess.
         public let pullRequest: DeliveryPullRequest?
+        /// Whether the Session's companion claim to be ready for a pull request still draws
+        /// (#1335) — resolved against `pullRequest` HERE, once, so no surface downstream re-asks
+        /// the staleness question (`cockpit-roster-row.md`, decision 7: an open pull request
+        /// always wins over the claim).
+        public let readyToShip: Bool
+
+        /// The two facts a branch's own pull request settles together — grouped so `Work`'s own
+        /// init stays at its cap (rules/house.md, edge 6) rather than growing a fifth parameter.
+        public struct Delivery: Equatable, Sendable {
+            public let pullRequest: DeliveryPullRequest?
+            public let readyToShip: Bool
+
+            /// Takes the CONVENTION claim RAW and resolves it here, which is what makes a stale
+            /// claim unrepresentable (#1335): there is no way to hand this an open pull request
+            /// and a drawn `Ready` together, so no surface — and no fixture — can state the pair
+            /// the design forbids.
+            ///
+            /// A pull request the host has not finished with always wins
+            /// (`cockpit-roster-row.md`, decision 7), and a word the host uses that Argo cannot
+            /// place counts as unfinished — see `DeliveryPullRequest.isFinished`. A merged or
+            /// closed one does not win: a fresh claim after either is not a lie.
+            public init(pullRequest: DeliveryPullRequest? = nil, claim: CompanionReady? = nil) {
+                self.pullRequest = pullRequest
+                self.readyToShip = claim != nil && pullRequest?.isFinished != false
+            }
+        }
 
         /// `unread` is the default because it is the quietest: a Work value built without saying
         /// anything about a Ticket has established nothing about one.
@@ -138,12 +164,13 @@ public extension CockpitPresentation.Session {
             location: String? = nil,
             workspace: Workspace? = nil,
             ticket: TicketLinkReading = .unread,
-            pullRequest: DeliveryPullRequest? = nil,
+            delivery: Delivery = .init(),
         ) {
             self.location = location
             self.workspace = workspace
             self.ticket = ticket
-            self.pullRequest = pullRequest
+            self.pullRequest = delivery.pullRequest
+            self.readyToShip = delivery.readyToShip
         }
     }
 

@@ -50,10 +50,10 @@ package extension TranscriptFixtures {
         .toolCall(ToolCall(
             id: "ask-settled", name: ToolCall.askUserQuestion, kind: .other,
             target: nil, atMs: nil,
-            ask: Ask(questions: [Ask.Question(
+            input: .init(ask: Ask(questions: [Ask.Question(
                 text: "Where should a subagent's spend be drawn?",
                 options: Ask.Option.labelled(["Labelled on the chip", "Moved to hover"]),
-            )]),
+            )])),
         )),
         .toolCallOutcome(printed(
             "ask-settled",
@@ -80,7 +80,7 @@ package extension TranscriptFixtures {
         .toolCall(ToolCall(
             id: "ask-waiting", name: ToolCall.askUserQuestion, kind: .other,
             target: nil, atMs: nil,
-            ask: Ask(questions: [Ask.Question(
+            input: .init(ask: Ask(questions: [Ask.Question(
                 text: "Which reading should the roll-up sum — the turns, or every call that "
                     + "reported a spend?",
                 options: Ask.Option.labelled([
@@ -88,7 +88,7 @@ package extension TranscriptFixtures {
                     "The turns alone",
                     "Both, side by side",
                 ]),
-            )]),
+            )])),
         )),
     ]
 }

@@ -208,7 +208,7 @@ package extension FeedProjection {
             )),
             .toolCall(ToolCall(
                 id: previewAskID, name: ToolCall.askUserQuestion, kind: .other,
-                target: nil, atMs: nil, ask: Ask(questions: questions),
+                target: nil, atMs: nil, input: .init(ask: Ask(questions: questions)),
             )),
         ]
     }

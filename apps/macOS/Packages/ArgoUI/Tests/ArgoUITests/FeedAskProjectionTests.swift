@@ -81,7 +81,8 @@ struct FeedAskProjectionTests {
                 .toolCall(FeedFixture.asking(FeedFixture.askedQuestion)),
                 .toolCall(ToolCall(
                     id: "ask-again", name: ToolCall.askUserQuestion, kind: .other,
-                    target: nil, atMs: nil, ask: Ask(questions: [FeedFixture.askedQuestion]),
+                    target: nil, atMs: nil,
+                    input: .init(ask: Ask(questions: [FeedFixture.askedQuestion])),
                 )),
             ],
             asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),

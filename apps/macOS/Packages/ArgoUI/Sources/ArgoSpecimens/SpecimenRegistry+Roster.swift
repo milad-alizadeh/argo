@@ -57,6 +57,9 @@ extension SpecimenRegistry {
         // The trailing edge of line 3 (#1346): an open, a merged, a closed and a draft pull
         // request beside their Ticket, and a row with neither address.
         SpecimenEntry("deliveryAddresses") { DeliveryAddressesRosterSpecimen() },
+        // The badge slot's `Ready` reading, and the same claim drawing nothing once its branch
+        // has an open pull request (#1335).
+        SpecimenEntry("readyToShip") { ReadyToShipRosterSpecimen() },
         // Every shape the roster's `PlanBar` comes in: mid-flight, complete, frozen and none
         // (#1345).
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },

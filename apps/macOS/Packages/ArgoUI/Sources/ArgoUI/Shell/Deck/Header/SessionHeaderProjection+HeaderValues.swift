@@ -20,5 +20,9 @@ extension SessionHeaderProjection.Header {
         let context: SessionHeaderProjection.Context?
         let spend: String?
         let handoff: SessionHeaderProjection.Handoff?
+        /// Whether the **Create PR** control draws (#1335) — a managed Session only
+        /// (`cockpit-roster-row.md`, decision 6): an external one has no terminal to type
+        /// `/ship` into.
+        let showsCreatePullRequest: Bool
     }
 }

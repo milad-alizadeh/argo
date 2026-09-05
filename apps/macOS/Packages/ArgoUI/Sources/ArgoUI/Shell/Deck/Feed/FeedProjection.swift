@@ -215,7 +215,12 @@ package enum FeedProjection {
         // same words often enough that collapsing them would read a turn's reasoning as its answer.
         case let .thought(markdown): .thought(markdown)
         case let .toolCall(call):
-            asked(call, answeredBy: outcomes) ?? FeedCallReading
+            // Read here, ahead of the generic MCP reading below, on `asked(call:)`'s own terms:
+            // the one companion tool whose input is a claim gets its own row rather than the
+            // bare "argo · report_ready" the generic reading would draw (#1335).
+            call.readyClaim.map { .mark(.readyToShip($0)) }
+                ?? asked(call, answeredBy: outcomes)
+                ?? FeedCallReading
                 .call(call, outcome: outcomes[call.id], within: path)
                 .map(FeedRow.Content.call)
         // Punctuation: what happened TO the reading rather than in it. Each stays exactly where the

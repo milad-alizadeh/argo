@@ -9,6 +9,7 @@ enum CompanionFact: Sendable, Equatable {
     case status(SessionStatus)
     case ask(CompanionAsk)
     case outcome(CompanionOutcome)
+    case ready(CompanionReady)
 }
 
 extension CompanionReport {
@@ -25,11 +26,17 @@ extension CompanionReport {
             if status != .asking {
                 pendingAsk = nil
             }
+            // A standing claim about now, retired by the next claim about now: the agent that
+            // reports what it is doing without repeating "ready" has moved past it (#1335) — the
+            // same reading `pendingAsk` gets from a status that is not `asking` any more.
+            readyToShip = nil
         case let .ask(ask):
             pendingAsk = ask
             status = .asking
         case let .outcome(outcome):
             outcomes.append(outcome)
+        case let .ready(ready):
+            readyToShip = ready
         }
     }
 
@@ -61,5 +68,6 @@ extension CompanionReport {
     mutating func channelClosed() {
         status = nil
         pendingAsk = nil
+        readyToShip = nil
     }
 }
