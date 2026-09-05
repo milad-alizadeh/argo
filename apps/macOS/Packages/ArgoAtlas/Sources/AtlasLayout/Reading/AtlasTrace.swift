@@ -1,6 +1,6 @@
 import CoreGraphics
 
-/// The pinned file, traced: its whole volume drawn edge by edge, in the points the map is drawn in
+/// The open file, traced: its whole volume drawn edge by edge, in the points the map is drawn in
 /// (#1154).
 ///
 /// **Focus never repaints the thing it marks.** The colour IS the measure, so marking a file by

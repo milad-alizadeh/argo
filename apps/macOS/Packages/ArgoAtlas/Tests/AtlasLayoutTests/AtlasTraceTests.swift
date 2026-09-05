@@ -3,10 +3,10 @@ import CoreGraphics
 import Foundation
 import Testing
 
-/// How the pinned file is marked (#1154). The rule the ticket states absolutely: focus never
+/// How the open file is marked (#1154). The rule the ticket states absolutely: focus never
 /// repaints the thing it marks — so the whole mark is geometry, and geometry is a thing a number
 /// can hold to the picture.
-@Suite("Atlas — tracing the pinned file")
+@Suite("Atlas — tracing the open file")
 struct AtlasTraceTests {
     static let ground = CGSize(width: 800, height: 600)
 
@@ -69,19 +69,38 @@ struct AtlasTraceTests {
     @Test func `the roof closes on itself`() {
         let roof = Self.trace(of: Self.standing, relief: 1).strokes[0]
 
-        #expect(roof.count == 5)
         #expect(roof.first == roof.last)
+        // Four corners, the last being the first again — the whole roof and no edge of it missing.
+        #expect(Set(roof.map(\.debugDescription)).count == 4)
     }
 
-    /// The whole volume, edge by edge: the roof, the three standing corners the reader can see,
-    /// and the foot between them. The three behind the box are not drawn — a wireframe of all
-    /// twelve edges reads as a cage rather than as this box being the one.
-    @Test func `a standing file traces its roof, its near corners and its foot`() {
-        let strokes = Self.trace(of: Self.standing, relief: 1).strokes
+    /// The whole volume, edge by edge. A box seen from outside shows SEVEN of its eight corners:
+    /// the four of the roof, and the three of the foot that are not hidden behind the box itself.
+    /// The eighth is the far bottom corner, and tracing it would draw a cage rather than this box
+    /// being the one.
+    @Test func `a standing file traces every corner of itself the reader can see`() {
+        let trace = Self.trace(of: Self.standing, relief: 1)
 
-        #expect(strokes.count == 5)
-        #expect(strokes[1 ... 3].allSatisfy { $0.count == 2 })
-        #expect(strokes[4].count == 3)
+        let drawn = Set(trace.strokes.flatMap(\.self).map(\.debugDescription))
+        #expect(drawn.count == 7)
+    }
+
+    /// The mark reaches the GROUND, which is what makes it read as a volume rather than as a
+    /// rectangle floating over the map. Flat on it would not — every corner projects onto the
+    /// footprint there — so the claim is about the city.
+    @Test func `a standing file's trace runs from its roof down to the ground it stands on`() {
+        let trace = Self.trace(of: Self.standing, relief: 1)
+        let plan = Self.plan([Self.standing])
+        let projection = AtlasProjection(
+            of: plan, through: AtlasCamera(relief: 1, over: Self.ground),
+        )
+        let corner = Self.standing.rect.origin
+        let foot = projection.viewPoint(x: corner.x, y: corner.y, height: 0)
+        let roof = projection.viewPoint(x: corner.x, y: corner.y, height: Self.standing.height)
+
+        let drawn = Set(trace.strokes.flatMap(\.self).map(\.debugDescription))
+        #expect(drawn.contains(foot.debugDescription))
+        #expect(drawn.contains(roof.debugDescription))
     }
 
     /// Flat on, every edge of a box projects onto its own footprint: tracing the standing corners

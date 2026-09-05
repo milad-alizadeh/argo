@@ -20,16 +20,16 @@ struct AtlasReadingFacts: View {
         // very widths where the panel has the most to say.
         ViewThatFits(in: .horizontal) {
             HStack(spacing: ArgoSpacing.comfortable) {
-                ForEach(facts, id: \.fact) { said($0) }
+                ForEach(facts, id: \.fact) { line($0) }
             }
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                ForEach(facts, id: \.fact) { said($0) }
+                ForEach(facts, id: \.fact) { line($0) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func said(_ reading: AtlasFactReading) -> some View {
+    private func line(_ reading: AtlasFactReading) -> some View {
         Text(sentence(of: reading))
             .argoText(ArgoTypography.control)
             .foregroundStyle(argo.color.text.tertiary)
@@ -45,12 +45,12 @@ struct AtlasReadingFacts: View {
     /// only one of them is true of a file git has no history for.
     private func sentence(of reading: AtlasFactReading) -> AttributedString {
         guard let value = reading.value else {
-            return AttributedString("\(word(of: reading.fact)) not measured")
+            return AttributedString(AtlasUnmeasured.beside(reading.fact.noun))
         }
         var figure = AttributedString(figure(of: reading.fact, value: value))
         figure.font = ArgoTypography.machineEmphasis.font
         figure.foregroundColor = argo.color.text.primary.color
-        return figure + AttributedString(" " + counted(reading.fact, value: value))
+        return figure + AttributedString(" " + reading.fact.counted(value))
     }
 
     /// The figure itself. Every fact but the age is a count the generator wrote down; the age is
@@ -58,33 +58,12 @@ struct AtlasReadingFacts: View {
     private func figure(of fact: AtlasFact, value: Double) -> String {
         switch fact {
         case .lines, .authors, .commits: value.formatted(.measured)
-        case .age: AtlasAge(weeks: value).said
-        }
-    }
-
-    /// The word after the figure, singular where the figure is one — "1 authors" is a sentence
-    /// nobody writes, and the panel is read as English rather than as a table.
-    private func counted(_ fact: AtlasFact, value: Double) -> String {
-        switch fact {
-        case .lines: value == 1 ? "line" : "lines"
-        case .authors: value == 1 ? "author" : "authors"
-        case .commits: value == 1 ? "commit" : "commits"
-        case .age: "old"
-        }
-    }
-
-    /// What the fact is called when there is no figure to put in front of it.
-    private func word(of fact: AtlasFact) -> String {
-        switch fact {
-        case .lines: "lines"
-        case .authors: "authors"
-        case .commits: "commits"
-        case .age: "age"
+        case .age: AtlasAge(weeks: value).short
         }
     }
 }
 
-/// How old a file is, said short enough to sit inline beside three counts (#1154).
+/// How old a file is, short enough to sit inline beside three counts (#1154).
 ///
 /// The generator records whole weeks, and weeks is the wrong unit at both ends: a file committed
 /// yesterday reads as 0 weeks, and one untouched for four years reads as 208. So the unit follows
@@ -92,17 +71,51 @@ struct AtlasReadingFacts: View {
 struct AtlasAge {
     let weeks: Double
 
-    var said: String {
-        let days = weeks * 7
-        if days < 14 {
+    /// Where each unit gives way to the next, in DAYS. Editorial cut-offs rather than conversions,
+    /// which is why they are named: a fortnight is where a count of days stops being legible, two
+    /// months is where a count of weeks does, and two years is where a count of months does.
+    private static let weeksFrom: Double = 14
+    private static let monthsFrom: Double = 60
+    private static let yearsFrom: Double = 730
+
+    /// The lengths themselves. `daysPerMonth` is the mean Gregorian month rather than 30, so a
+    /// file two years old does not read as 24 months and 8 days' worth of drift.
+    private static let daysPerWeek: Double = 7
+    private static let daysPerMonth = 30.4
+    private static let daysPerYear: Double = 365
+
+    var short: String {
+        let days = weeks * Self.daysPerWeek
+        if days < Self.weeksFrom {
             return "\(days.rounded().formatted(.measured))d"
         }
-        if days < 60 {
-            return "\((days / 7).rounded().formatted(.measured))w"
+        if days < Self.monthsFrom {
+            return "\((days / Self.daysPerWeek).rounded().formatted(.measured))w"
         }
-        if days < 730 {
-            return "\((days / 30.4).rounded().formatted(.measured))mo"
+        if days < Self.yearsFrom {
+            return "\((days / Self.daysPerMonth).rounded().formatted(.measured))mo"
         }
-        return "\((days / 365).formatted(.measured))y"
+        return "\((days / Self.daysPerYear).formatted(.measured))y"
     }
+}
+
+/// How the panel says a number nobody measured — once, so the three places that have to say it
+/// cannot say it three ways (#1154's "a file with a missing measure says so rather than showing
+/// zero").
+///
+/// It is the panel's own words rather than the Map's, because absence is a fact about the
+/// measurement and the Map has no way to spell it: JSON carries a missing key, not a sentence.
+enum AtlasUnmeasured {
+    /// A row or a cell whose figure is missing, where the name of the thing is already beside it.
+    static let alone = "not measured"
+
+    /// The same absence where the reader needs telling WHAT was not measured, because there is no
+    /// figure for the name to sit in front of.
+    static func beside(_ noun: String) -> String {
+        "\(noun) \(alone)"
+    }
+
+    /// The absence of the banded Measure, which is a whole sentence: the gauge is a block with a
+    /// heading, and a two-word fragment under one reads as a broken control.
+    static let onTheGauge = "Not measured for this file."
 }

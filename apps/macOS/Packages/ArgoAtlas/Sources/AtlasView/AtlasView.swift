@@ -92,7 +92,7 @@ public struct AtlasView: View {
             // Over the surface and under the words: the mark belongs to the picture, and a name
             // the reader is reading must not be crossed by an edge.
             .overlay {
-                AtlasPinTrace(projection: projection, open: focus.open)
+                AtlasOpenTrace(projection: projection, open: focus.open)
             }
             .overlay(alignment: .top) {
                 // Top centre, because both top corners of the stage are already spoken for. It

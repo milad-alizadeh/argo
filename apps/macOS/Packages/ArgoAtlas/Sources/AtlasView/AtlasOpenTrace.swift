@@ -13,7 +13,7 @@ import SwiftUI
 /// triangle rasteriser has no cheap answer for. The geometry is `AtlasTrace`, which reads the same
 /// camera and the same fit the surface hands the GPU, so the mark cannot land where the volume is
 /// not.
-struct AtlasPinTrace: View {
+struct AtlasOpenTrace: View {
     @Environment(\.argo) private var argo
 
     /// The same projection the surface underneath was drawn with, which is the whole of why the

@@ -20,6 +20,29 @@ public enum AtlasFact: String, Equatable, Sendable, CaseIterable {
     public var measure: String {
         rawValue
     }
+
+    /// What the fact is called in a sentence — "lines", "authors", and the age's own word for the
+    /// number in front of it, which is not the Measure's name at all.
+    ///
+    /// Here rather than in the panel because it is the same word whether there is a figure to put
+    /// in front of it or not: with one, the reader gets "47 commits"; with none, "commits not
+    /// measured". A second table of nouns beside the first is how those two come to disagree.
+    public var noun: String {
+        switch self {
+        case .lines: "lines"
+        case .authors: "authors"
+        case .commits: "commits"
+        case .age: "age"
+        }
+    }
+
+    /// The same word for one of a thing — "1 authors" is a sentence nobody writes, and the panel
+    /// is read as English rather than as a table. The age has no plural: the figure in front of it
+    /// already carries its unit.
+    public func counted(_ value: Double) -> String {
+        guard self != .age else { return "old" }
+        return value == 1 ? String(noun.dropLast()) : noun
+    }
 }
 
 /// One fact of a file, read: which fact, and what this file measures for it.

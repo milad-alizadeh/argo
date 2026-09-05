@@ -64,8 +64,37 @@ struct AtlasFileReadingTests {
         let placement = try #require(reading.gauge.placement)
         #expect(reading.gauge.measure == "commits")
         #expect(placement.value == 5)
-        #expect(placement.fraction == 4.0 / 9.0)
+        // The share the panel prints under the needle, at the whole percent it prints it to, and
+        // the band the needle stands in — the two things a reader can check. Four of the nine
+        // measured files score below 5. The percent is spelled here rather than formatted: the
+        // layout half depends on no contract, so `.share` is not reachable from this suite.
+        #expect((placement.fraction * 100).rounded() == 44)
         #expect(placement.band == .quiet)
+    }
+
+    /// The claim the gauge rests on: the same value is placed differently in two repositories,
+    /// because a number means nothing until you know what it beats. Five commits is ordinary in
+    /// the ladder above and the very top of a repository whose files are all quieter.
+    @Test func `the same value places differently in a different repository`() throws {
+        // Seven files nobody touches and one touched five times: seven of eight below it puts the
+        // last one past the hot cut, where the same value sat in the quiet half of the ladder.
+        let settled = (1 ... 7).map {
+            #"{"kind": "plot", "name": "q\#($0).swift", "measures": {"commits": 1}}"#
+        }
+        let busy = #"{"kind": "plot", "name": "f5.swift", "measures": {"commits": 5}}"#
+        let quiet = try AtlasMap(decoding: Data("""
+        {"version": 1, "measuredAt": "2026-09-04T00:00:00Z", "commit": null,
+         "root": {"name": "quiet", "children": [\((settled + [busy]).joined(separator: ","))]}}
+        """.utf8))
+        let here = try #require(AtlasFileReading(
+            of: "quiet/f5.swift", in: quiet, by: AtlasChannels("commits"),
+        ))
+        let there = try #require(AtlasFileReading(
+            of: "ladder/f5.swift", in: Self.ladder(), by: Self.channels,
+        ))
+
+        #expect(here.gauge.placement?.band == .hot)
+        #expect(there.gauge.placement?.band == .quiet)
     }
 
     /// A needle standing at the left of the ramp is a measurement, and this file has none — so the

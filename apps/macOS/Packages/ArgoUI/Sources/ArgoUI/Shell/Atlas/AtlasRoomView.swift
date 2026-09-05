@@ -31,7 +31,7 @@ struct AtlasRoomView: View {
     /// orientation and for the same reason: nothing in the sidebar opens a file, and what is open
     /// is a way of looking at the map rather than a fact about it — so it is not persisted and a
     /// reopened room opens on the whole shape.
-    @State private var pinned: String?
+    @State private var openFile: String?
 
     /// `opened` is the file the room STARTS with open, and nothing in the app ever passes one: a
     /// reading is opened by a click, and a click is the one gesture no screenshot can drive. It is
@@ -39,7 +39,7 @@ struct AtlasRoomView: View {
     /// in the one shape SwiftUI has for seeding state a view then owns.
     init(isActive: Bool = true, opened: String? = nil) {
         self.isActive = isActive
-        _pinned = State(initialValue: opened)
+        _openFile = State(initialValue: opened)
     }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
@@ -70,11 +70,11 @@ struct AtlasRoomView: View {
         // state, so there is one place to clear. `onExitCommand` rather than a key press, because
         // Escape is the platform's own way out of a thing and the responder chain is what knows
         // whether anything nearer wanted it first.
-        .onExitCommand { pinned = nil }
+        .onExitCommand { openFile = nil }
         // Nothing survives a change of Project. A map is scoped to the window's Project
         // (ADR-0015), and a reading left standing would be one repository's file read beside
         // another repository's map.
-        .onChange(of: room.project?.id) { pinned = nil }
+        .onChange(of: room.project?.id) { openFile = nil }
     }
 
     /// The stage: the map, and the camera floating over its top-right corner. Nothing else — what
@@ -88,8 +88,8 @@ struct AtlasRoomView: View {
         // shrinking the map to nothing, and the map is what the reader clicked on.
         return HStack(spacing: ArgoSpacing.flush) {
             stage(drawn)
-            if let pinned, let reading = AtlasFileReading(
-                of: pinned, in: drawn, by: room.choice.channels,
+            if let openFile, let reading = AtlasFileReading(
+                of: openFile, in: drawn, by: room.choice.channels,
             ) {
                 AtlasRoomRail(reading: reading)
             }
@@ -130,7 +130,7 @@ struct AtlasRoomView: View {
                 // Clicking the open file again closes it, and so does clicking the ground — the
                 // design's own three ways out, of which Escape is the third. What is open is open
                 // because the reader opened it, so the same gesture puts it away.
-                focus: AtlasFocus(open: pinned) { pinned = $0 == pinned ? nil : $0 },
+                focus: AtlasFocus(open: openFile) { openFile = $0 == openFile ? nil : $0 },
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }

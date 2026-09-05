@@ -33,7 +33,7 @@ struct AtlasReadingGauge: View {
             } else {
                 // No needle at all, rather than one standing at the foot of the ramp: the bottom
                 // of a range is a measurement, and this file has none (#1154's last criterion).
-                Text("Not measured for this file.")
+                Text(AtlasUnmeasured.onTheGauge)
                     .argoText(ArgoTypography.caption)
                     .foregroundStyle(argo.color.text.tertiary)
                     .padding(.top, ArgoSpacing.snug)
@@ -78,12 +78,15 @@ struct AtlasReadingGauge: View {
             }
             .frame(height: AtlasGaugeMeasure.trackHeight)
             .clipShape(.rect(cornerRadius: ArgoRadius.marker))
-            .frame(height: AtlasGaugeMeasure.needleHeight)
+            // An OVERLAY, which takes no layout: the needle stands proud of the bands at both
+            // ends, and a needle that took its own height would push the ends and the note under
+            // it down by the overhang. The design's own `position: absolute` on a 10px track.
             .overlay(alignment: .leading) {
                 needle.offset(x: proxy.size.width * placement.fraction)
             }
         }
-        .frame(height: AtlasGaugeMeasure.needleHeight)
+        // The TRACK's height, not the needle's, for the same reason.
+        .frame(height: AtlasGaugeMeasure.trackHeight)
         .padding(.top, ArgoSpacing.base)
     }
 
@@ -130,7 +133,9 @@ struct AtlasReadingGauge: View {
     /// file at the very top gets its own, since "higher than 100%" is a claim about itself.
     private func note(_ placement: AtlasPlacement) -> String {
         guard placement.fraction <= AtlasGaugeMeasure.topOfTheRepository else {
-            return "At the very top of this repo. Nothing scores higher."
+            // The design's own words, em dash and all: this is UI copy the approved design
+            // specifies, not prose of ours to restyle.
+            return "At the very top of this repo — nothing scores higher."
         }
         return "Higher than \(placement.fraction.formatted(.share)) of the files in this repo."
     }

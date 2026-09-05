@@ -38,7 +38,10 @@ public struct AtlasReadingPanel: View {
             .padding(.horizontal, ArgoSpacing.loose)
             .padding(.vertical, ArgoSpacing.comfortable)
         }
-        .background(argo.color.surface.base)
+        // The rail sits one step UNDER the stage, which is the design's own `#rail` ground: a
+        // column flush to the window's edge reads as behind the picture beside it, not level with
+        // it.
+        .background(argo.color.surface.sunken)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Reading, \(reading.path)")
     }
