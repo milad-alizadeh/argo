@@ -30,6 +30,18 @@ package struct CockpitSpawn {
         navigation.session = fresh
     }
 
+    /// The handoff's half of the same act (#513, #1229). The app runs `/handoff`, waits for the
+    /// brief and spawns; the shell points at what came back — which is the division this type's own
+    /// note describes, written down here rather than left as a line in a view no test can reach.
+    ///
+    /// A handoff that did not land answers `nil` and the selection stays exactly where the reader
+    /// left it: the failure is reported in that Session's own reading, so moving off it would take
+    /// the row away from the news.
+    func run(handingOff sessionID: String, issue: Int?) async {
+        guard let fresh = await actions.sessions.handOff(sessionID, issue) else { return }
+        navigation.session = fresh
+    }
+
     /// The same act in another Session's folder — what the line on an undriveable Session offers
     /// (#546). `offer` is not consulted: what that check refuses is a spawn with no reachable
     /// Project folder to run in, and this one brings its own.

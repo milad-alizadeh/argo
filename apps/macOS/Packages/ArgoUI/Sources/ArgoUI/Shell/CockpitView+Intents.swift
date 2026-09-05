@@ -126,14 +126,18 @@ extension CockpitView {
     }
 
     /// The header's one intent, bound to the Session the header is naming and the issue it serves.
-    /// The fresh Session becomes the selection (story 48).
+    /// The fresh Session becomes the selection (story 48), through `CockpitSpawn` like every other
+    /// start: the rule that the roster ends up on what Argo just opened is one rule with one test
+    /// (#1229), not a line repeated in each caller.
     var handOff: () async -> Void {
         guard let session = presentation.session(navigation.session) else { return {} }
-        return {
-            let issue = session.ticket.link?.number
-            guard let fresh = await actions.sessions.handOff(session.id, issue) else { return }
-            navigation.session = fresh
-        }
+        let spawn = CockpitSpawn(
+            presentation: presentation,
+            actions: actions,
+            navigation: navigation,
+        )
+        let issue = session.ticket.link?.number
+        return { await spawn.run(handingOff: session.id, issue: issue) }
     }
 
     /// Picking a Session Argo can no longer steer resumes it (#10). There is no button and no

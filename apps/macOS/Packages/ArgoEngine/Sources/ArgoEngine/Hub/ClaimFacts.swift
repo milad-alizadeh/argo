@@ -65,6 +65,16 @@ struct ClaimFacts: Equatable {
     /// act, and what the plinth and the header button both read. `false` the instant it ends,
     /// whichever way.
     var handingOff = false
+    /// The words Argo itself typed at this claim for a handoff (#1229), verbatim. What tells that
+    /// Turn from one the reader types while it runs: both go down the same PTY and both can be
+    /// reported lost, and only the words say whose they were.
+    var handoffPrompt: String?
+    /// Whether that steered Turn was the one the CLI never heard (#1229). Its own fact and not
+    /// `lostTurn`, because the two are answered by different people: a Turn the READER typed goes
+    /// back to the composer for them to send again, and one Argo steered is the handoff's to give
+    /// up on. Both are dropped when the handoff ends, so the news is only ever about the attempt
+    /// that produced it.
+    var handoffTurnLost = false
     /// The handoffs Argo attempted here that did NOT land (#1327), oldest first — each drops a
     /// failed row into the reading. Never taken back, on the same ground `expiries` is: a handoff
     /// that failed is something that happened. A landed one leaves nothing here — the existing
@@ -95,6 +105,8 @@ struct ClaimFacts: Equatable {
             && settledWaits.isEmpty
             && ticket == nil
             && !handingOff
+            && handoffPrompt == nil
+            && !handoffTurnLost
             && handoffFailures.isEmpty
     }
 }

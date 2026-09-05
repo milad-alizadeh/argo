@@ -10,6 +10,13 @@ public protocol HandoffHost: AnyObject {
     /// The brief, once it is there and has something in it. `nil` while it has not arrived — an
     /// empty file is a command that started and did not finish, and reads the same as absence.
     func brief(at path: String) -> String?
+    /// Whether the Turn Argo typed at this Session was reported never heard (#682, #1229) — the
+    /// composer still holding the `/handoff` prompt when the delivery watch gave up.
+    ///
+    /// A reading rather than a callback, because the wait for the brief is already a poll and this
+    /// is the same question asked on the same pass: a Turn that never ran writes no brief, ever, so
+    /// the patience below has nothing left to be patient for.
+    func turnWasLost(sessionID: String) -> Bool
     /// Start a fresh Session, seeded. Returns the id of the row it published.
     func spawn(_ seed: SessionSeed) async throws -> String
     /// Remember that one Session's work now belongs to another — the fourth act, and the only one

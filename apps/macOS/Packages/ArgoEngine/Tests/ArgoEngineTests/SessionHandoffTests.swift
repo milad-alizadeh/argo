@@ -129,6 +129,7 @@ struct SessionHandoffTests {
         #expect(SessionHandoff.Failure.notSteerable.detail.contains("terminal"))
         #expect(SessionHandoff.Failure.briefNeverArrived(afterMs: 1_200_000).detail
             .contains("20 minutes"))
+        #expect(SessionHandoff.Failure.promptNeverSubmitted.detail.contains("composer"))
     }
 
     /// A brief that exists but has nothing in it is `/handoff` having started and not finished.

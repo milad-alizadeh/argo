@@ -29,6 +29,9 @@ final class FakeHandoffHost: HandoffHost {
 
     /// Every ending a handoff reported, in the order it reported it.
     private(set) var ended: [Ended] = []
+    /// What `turnWasLost` answers, under the fact's own name (`ClaimFacts.handoffTurnLost`) — the
+    /// composer still holding the `/handoff` prompt (#1229).
+    var handoffTurnLost = false
 
     func steer(sessionID: String, typing text: String) -> Bool {
         guard isSteerable else { return false }
@@ -58,6 +61,10 @@ final class FakeHandoffHost: HandoffHost {
 
     func handoffEnded(sessionID: String, tookMs: Int, failure: String?) {
         ended.append(Ended(sessionID: sessionID, tookMs: tookMs, failure: failure))
+    }
+
+    func turnWasLost(sessionID _: String) -> Bool {
+        handoffTurnLost
     }
 }
 
