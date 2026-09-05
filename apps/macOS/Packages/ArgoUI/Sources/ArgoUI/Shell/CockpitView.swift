@@ -216,6 +216,11 @@ public struct CockpitView: View {
                 isDrawn: isDrawn,
             )
         }
+        // What was written about the Project's files, on a seam of its own beside the room (#1159).
+        // Set HERE rather than passed into `detail` for the reason it is a separate entry at all:
+        // the written layer is fetched separately, may never arrive, and nothing about the room is
+        // different when it does not.
+        .environment(\.argoAtlasNotes, atlas.notes)
         // The Binding's address, put where the ticket's number can read it (#1242). Set on the
         // split view rather than inside the room: it is a fact about the PROJECT, and the room is
         // rebuilt on every ticket.

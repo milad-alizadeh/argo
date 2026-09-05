@@ -39,6 +39,11 @@ struct AtlasRoomRail: View {
     /// reading rather than showing an empty one.
     let reading: AtlasFileReading?
 
+    /// What was written about the same file, where anybody has (#1159). Beside the reading rather
+    /// than inside it, because the two are different kinds of fact fetched from different files:
+    /// one is measured out of the repository and one is read beside it.
+    let note: AtlasNote?
+
     let select: (String) -> Void
 
     /// What the rail takes of the room — the design's own 356. A fixed width rather than a share:
@@ -78,7 +83,7 @@ struct AtlasRoomRail: View {
     private var inspect: some View {
         Group {
             if let reading {
-                AtlasReadingPanel(reading: reading)
+                AtlasReadingPanel(reading: reading, note: note)
             } else {
                 AtlasReadingIdle()
             }

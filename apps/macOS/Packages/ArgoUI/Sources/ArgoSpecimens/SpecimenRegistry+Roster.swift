@@ -65,6 +65,12 @@ extension SpecimenRegistry {
         // is a panel quietly reading 0 where nothing was counted, which no assertion downstream
         // of the reading can see.
         SpecimenEntry("atlasReadingUnmeasured") { AtlasReadingUnmeasuredSpecimen() },
+        // The same panel with a written layer beside the map (#1159), and the same note read
+        // against a file that has changed since. Rendered rather than asserted because the whole
+        // claim is a pixel one: a sentence somebody wrote has to be visibly a different kind of
+        // fact from every number around it, and a stale one has to stay and say so.
+        SpecimenEntry("atlasReadingNote") { AtlasReadingNoteSpecimen() },
+        SpecimenEntry("atlasReadingStaleNote") { AtlasReadingStaleNoteSpecimen() },
         // The list beside the map and the search that narrows it (#1155). Four frames, because
         // the list has four states and none of them can be reached without a keyboard or a
         // pointer: the whole repository, a question with answers, a row selected with the map

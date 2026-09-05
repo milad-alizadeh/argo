@@ -44,6 +44,49 @@ struct AtlasReadingUnmeasuredSpecimen: View {
     }
 }
 
+/// A file somebody wrote about, with what they wrote beside the numbers (#1159) — the design's own
+/// `.said` block, and the state the ticket's first criterion is about.
+///
+/// Its own specimen rather than a change to the one above, because the pair is the claim: the same
+/// file, the same measurement and the same tiling, drawn once with a written layer beside the map
+/// and once without. A repository with none draws `atlasReading`, and nothing about it moves.
+struct AtlasReadingNoteSpecimen: View {
+    /// What the noted file holds NOW, which is the engine's job in the app — the store digests the
+    /// file on disk and the layer decides what that means. A specimen has no repository to digest,
+    /// so it hands in the answer: the digest the note recorded reads current, and anything else
+    /// reads stale.
+    var digest: String? = writtenFixture.note(ofFile: AtlasReadingSpecimen.opened)?.subject
+
+    /// What the noted file holds now, keyed by its path — the shape the engine's store hands the
+    /// layer, and empty where a specimen wants a Note nothing checked.
+    private var held: [String: String] {
+        digest.map { [AtlasReadingSpecimen.opened: $0] } ?? [:]
+    }
+
+    var body: some View {
+        AtlasRoomHost(reading: .measured(readingFixtureMap), opened: AtlasReadingSpecimen.opened)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .argoDeckSurface()
+            // Set OUTSIDE the host, which is the seam the written layer earns by being separate:
+            // the room reads it off the environment, so nothing in the host's own value has to
+            // grow a field for a fact that may never arrive.
+            .environment(\.argoAtlasNotes, writtenFixture.checked(against: held))
+    }
+}
+
+/// The same note read against a file that has changed since it was written: it STAYS, and it says
+/// so. The failure this guards is a stale sentence that reads exactly like a current one, which no
+/// assertion about the value can see.
+struct AtlasReadingStaleNoteSpecimen: View {
+    var body: some View {
+        AtlasReadingNoteSpecimen(digest: "0000000000000000")
+    }
+}
+
+/// The committed written layer, or nothing written where the bundled file will not load — which is
+/// a repository nobody wrote about, and draws the map either way.
+private let writtenFixture = (try? AtlasNotesFixture.argo()) ?? .none
+
 /// The committed measurement, or the floor with no city on it where the bundled fixture will not
 /// load — a specimen that trapped would be a harness failure dressed as a product one.
 private let readingFixtureMap = (try? AtlasMapFixture.argo())
@@ -57,6 +100,18 @@ private let readingFixtureMap = (try? AtlasMapFixture.argo())
 
 #Preview("Atlas reading — a file the repository measured nothing for") {
     AtlasReadingUnmeasuredSpecimen()
+        .frame(width: 1280, height: 800)
+        .argoAppearance()
+}
+
+#Preview("Atlas reading — a file somebody wrote about") {
+    AtlasReadingNoteSpecimen()
+        .frame(width: 1280, height: 800)
+        .argoAppearance()
+}
+
+#Preview("Atlas reading — a note that has gone stale against its file") {
+    AtlasReadingStaleNoteSpecimen()
         .frame(width: 1280, height: 800)
         .argoAppearance()
 }

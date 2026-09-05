@@ -57,3 +57,23 @@ the 89 files kept, so the history behind them is a fraction of the history behin
 which is the right shape for a fixture and the wrong one for a claim about the repository. What it
 is for is the drawing: enough ties, at enough different strengths, that a cord drawn without its
 own strength or a pair drawn twice is visible in a render rather than plausible.
+
+## The written layer
+
+`argo-notes.json` is the same repository's Notes (#1159), and it is a **second file on purpose**:
+the map is drawn from `argo-map.json` alone, this is fetched separately, and anything that never
+asks for it draws exactly the same map. It is the one fixture here that was **written rather than
+measured** — four notes and three folder captions, written by hand into the shape the prototype's
+writer produces (`docs/designs/prototypes/atlas-notes-write.mjs`), down to the `model` the shape
+records; each note carries the flag the measurements raised that got it written, and a caption
+carries none.
+
+Three of the four record a `subject`: the first sixteen hex digits of the SHA-256 of what was read
+at the time of writing, taken from the checkout at commit `4478553` — real digests, so a check runs
+for real. Two of those three subjects have been edited since, and read **stale**; one has not, and
+reads **current**. The fourth records no digest at all and stays **unchecked**, which is not a claim
+either way.
+
+A folder caption records none either, because a folder holds no content of its own to digest, so a
+caption is never marked. Nothing here is keyed to a path the Map holds no Plot at: a key naming
+nothing on the map costs the reader nothing, it is simply never asked for.

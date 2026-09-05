@@ -15,6 +15,10 @@ struct AtlasRoomView: View {
     /// Injected from above the deck rather than taken as a parameter — `argoAtlasRoom` says why.
     @Environment(\.argoAtlasRoom) private var resolved
     @Environment(\.argoReduceMotion) private var reduceMotion
+    /// What was written about this Project's files, or nothing said (#1159). Its own seam, read
+    /// here and never mixed into the reading: the map, the tiling and every number beside it are
+    /// the same whether this arrives or not.
+    @Environment(\.argoAtlasNotes) private var notes
 
     /// Whether this is the room on screen. `InstrumentDeckShell` keeps every room mounted so a
     /// switch destroys nothing (#1356), which makes this the one thing that still tells the map's
@@ -132,6 +136,10 @@ struct AtlasRoomView: View {
                 reading: openFile.flatMap {
                     AtlasFileReading(of: $0, in: drawn, by: room.choice.channels)
                 },
+                // Looked up on the same path the reading is, and handed over separately: a file
+                // nobody wrote about carries none, which is every file of a Project with no
+                // written layer beside it.
+                note: openFile.flatMap { notes.note(ofFile: $0) },
                 select: { openFile = $0 },
             )
         }

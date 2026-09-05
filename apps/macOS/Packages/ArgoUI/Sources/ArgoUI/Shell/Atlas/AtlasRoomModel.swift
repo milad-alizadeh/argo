@@ -13,6 +13,12 @@ import Observation
 @Observable
 final class AtlasRoomModel {
     private(set) var reading: AtlasReading = .noProject
+    /// What was written about this Project's files, where anybody has written anything (#1159).
+    ///
+    /// Held beside the reading rather than inside it, because the two are fetched from two files
+    /// and only one of them draws the map: a Project with no written layer keeps `.none` here and
+    /// draws exactly the map it drew before this existed.
+    private(set) var notes: AtlasNotes = .none
     /// How many commits the repository has taken since the drawn Map was measured, or `nil` where
     /// there is a Map to draw but nothing to say about its age — see `commitsBehind(of:project:)`.
     private(set) var behind: Int?
@@ -33,6 +39,7 @@ final class AtlasRoomModel {
     /// flat every time so the first thing a reader meets is the reading that carries its names.
     private(set) var isCity = false
     private let store: AtlasMapStore
+    private let notesStore: AtlasNotesStore
     private let preferences: AtlasChannelPreferences
     /// Which Project the reading is of, so a switch of Project cannot leave the last one's map on
     /// screen (ADR-0015).
@@ -40,9 +47,11 @@ final class AtlasRoomModel {
 
     init(
         store: AtlasMapStore = AtlasMapStore(),
+        notesStore: AtlasNotesStore = AtlasNotesStore(),
         preferences: AtlasChannelPreferences = AtlasChannelPreferences(),
     ) {
         self.store = store
+        self.notesStore = notesStore
         self.preferences = preferences
     }
 
@@ -53,6 +62,7 @@ final class AtlasRoomModel {
         guard let project else {
             readProjectID = nil
             reading = .noProject
+            notes = .none
             behind = nil
             return
         }
@@ -60,6 +70,7 @@ final class AtlasRoomModel {
         readProjectID = project.id
         hideTests = preferences.hideTests(for: project.id)
         reading = await read(project)
+        notes = await written(project)
         behind = commitsBehind(project)
         resolveChannels(for: project.id)
     }
@@ -73,6 +84,10 @@ final class AtlasRoomModel {
         let record = record(of: project)
         let map = await store.generate(for: record)
         reading = .measured(map)
+        // Re-read against the Map that was just measured, never carried over: a rebuild is where
+        // a file a note was written about can have changed, which is the whole of what a stale
+        // note reports (#1159).
+        notes = await notesStore.notes(of: record, in: map)
         behind = store.commitsBehind(of: map, project: record)
         // After the reading is written, never before: a regenerated Map can carry Measures the
         // stored choice no longer names, and this reads the channels off what was just measured.
@@ -112,6 +127,14 @@ final class AtlasRoomModel {
     /// the map rather than a fact about it.
     func setIsCity(_ isCity: Bool) {
         self.isCity = isCity
+    }
+
+    /// What was written about the Project, fetched SEPARATELY and after the measurement: the map
+    /// is drawn from the Map file alone, and a written layer that is missing, unreadable or from
+    /// another tool costs the reader nothing but the sentence it would have carried (#1159).
+    private func written(_ project: CockpitPresentation.Project) async -> AtlasNotes {
+        guard case let .measured(map) = reading else { return .none }
+        return await notesStore.notes(of: record(of: project), in: map)
     }
 
     private func read(_ project: CockpitPresentation.Project) async -> AtlasReading {
