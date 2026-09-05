@@ -14,6 +14,18 @@ public extension CockpitPresentation.Session {
         /// whose whole reading this is. `false` by default, which is degrade-down: a fixture that
         /// says nothing about a Turn is not one claiming a Turn is running.
         public let hasUnansweredTurn: Bool
+        /// What a backgrounded delegation is holding open here (#1267) — see `DelegationHold`,
+        /// whose whole reading this is. Beside `hasUnansweredTurn` because it answers the other
+        /// half of the same question: that one says a Turn IS running when the status word does
+        /// not, and this one says the record's open Turn is a child's rather than the parent's.
+        ///
+        /// `none` by default, on `hasUnansweredTurn`'s reasoning: a fixture that says nothing about
+        /// a delegation is not one claiming a Turn is held by one.
+        ///
+        /// Set after the init rather than through it, and deliberately: that list is at the count
+        /// it is grandfathered at (`swift-boundaries` edge 6), and one more parameter would
+        /// authorise the next one. A fixture that wants this states it the same way.
+        public var delegationHold = DelegationHold.none
 
         /// The stamp is the ENGINE's where one is handed over, and derived from the length where
         /// none is: a stream assembled by a fixture has no write history to count, and the default

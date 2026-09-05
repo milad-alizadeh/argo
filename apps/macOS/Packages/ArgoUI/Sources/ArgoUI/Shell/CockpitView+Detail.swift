@@ -76,6 +76,13 @@ extension CockpitView {
         // What the chain link at the foot of a handed-off reading does. Injected here because
         // this is the one view that holds the navigation.
         .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
+        // Stop waiting for one delegation's report (#1267). Injected here for the reason the acts
+        // around it are: the rail is four views down and carries no Session id, and this is where
+        // the selection it is drawing is known.
+        .environment(\.argoEndDelegation) { callID in
+            guard let session = navigation.session else { return }
+            actions.sessions.endDelegation(session, callID)
+        }
         // What the tab line's Ticket link does (#1092) — the mirror of the Session link above,
         // reaching the OTHER room rather than another row of this one.
         .environment(\.argoOpenTicket) { navigation.openTicket($0) }

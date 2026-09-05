@@ -72,7 +72,13 @@ struct SubagentProjectionTests {
     }
 
     private func agent(named subagentID: String?) -> FeedAgent {
-        FeedAgent(id: 0, label: "Review", activity: .finished, spend: nil, subagentID: subagentID)
+        FeedAgent(
+            id: 0,
+            label: "Review",
+            activity: .finished,
+            spend: nil,
+            handover: FeedCall.Handover(subagentID: subagentID),
+        )
     }
 
     /// The reading the shell is handed — the same closure `ArgoApp` builds, so what this suite

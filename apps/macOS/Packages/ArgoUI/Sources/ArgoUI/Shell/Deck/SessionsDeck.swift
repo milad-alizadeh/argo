@@ -52,6 +52,10 @@ package struct SessionsDeck: View {
     /// reads them (#711). A specimen passes fixtures, so the scoped feed is a state somebody has
     /// looked at. See `FeedAgentReader`.
     var readings = FeedAgentReader.unread
+    /// Stop waiting for one delegation's report (#1267) — the act off the environment, already
+    /// bound to the selected Session above the deck (`argoEndDelegation`). Read here rather than
+    /// in the chip so the rail's control is one value the way `select(_:)` is.
+    @Environment(\.argoEndDelegation) private var endDelegation
     /// Which Agent's work the feed is reading. Held above this view since #875, beside `open`: the
     /// toolbar's toggle opens the newest evidence in the rows ON SCREEN, and which rows those are
     /// is this. A scope still names a delegation of THIS Session's and must not survive a switch —
@@ -119,6 +123,7 @@ package struct SessionsDeck: View {
                     scope: scope,
                     isCollapsed: isRailCollapsed,
                     readings: readings,
+                    endDelegation: endDelegation,
                 ),
             )
             // A ROW and not an overlay, unlike the vessel above: the feed runs under a composer and

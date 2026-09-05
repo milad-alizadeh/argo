@@ -100,6 +100,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// words can go back where they were typed instead of being lost to a send that only looked
     /// like one.
     public internal(set) var lostTurn: String?
+    /// The backgrounded delegations the reader ended from the rail (#1267), by call id — see
+    /// `ClaimFacts.endedDelegations`. Not public: it is an INPUT to the status fold below, and
+    /// `delegationHold` is the reading a surface draws. Empty for every external Session, which has
+    /// no claim to file a gesture against.
+    var endedDelegations: Set<String> = []
     /// The CLI's own word for the stance, latest reading and nothing yet where no record said one.
     private(set) var observedMode: String?
     /// How many stance records the Session has written. A rung Argo set stands until this moves

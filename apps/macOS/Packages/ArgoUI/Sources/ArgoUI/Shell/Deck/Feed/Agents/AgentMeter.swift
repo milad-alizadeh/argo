@@ -84,14 +84,14 @@ struct AgentMeter: View {
                 cacheReadTokens: 100_000,
                 cacheCreationTokens: 0,
             ),
-            durationMs: 223_591,
+            handover: .init(durationMs: 223_591),
         ))
         AgentMeter(agent: FeedAgent(
             id: 1,
             label: "Sweep the stop reasons",
             activity: .running,
             spend: nil,
-            startedAtMs: Date().epochMs - 42000,
+            handover: .init(startedAtMs: Date().epochMs - 42000),
         ))
     }
     .padding(ArgoSpacing.loose)

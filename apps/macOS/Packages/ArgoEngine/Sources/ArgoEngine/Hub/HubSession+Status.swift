@@ -59,7 +59,29 @@ public extension HubSession {
         if !startup.heardNothing, submittedTurn?.isAwaitingRecord(events.count) == true {
             return SessionStatusReading(tier: .direct, status: .running)
         }
+        // Below every channel above it and above the record's own fold: the reader ending a
+        // delegation is Argo's own gesture, so it is DIRECT — but a CLI that has SPOKEN since
+        // outranks a decision taken about the silence before it.
+        //
+        // `idle` and never `ended`: the process is up, its prompt is free, and the reader is about
+        // to type at it. What this takes away is the `running` a lost report left standing (#1267),
+        // and nothing more.
+        // The gesture is asked about FIRST because the walk behind the hold is linear in the
+        // record: a Session nobody has ended a delegation on never pays for it.
+        if !endedDelegations.isEmpty, delegationHold.isEnded {
+            return SessionStatusReading(tier: .direct, status: .idle)
+        }
         return SessionStatus.read(signals)
+    }
+
+    /// What a backgrounded delegation is holding open here (#1267) — see `DelegationHold`, which
+    /// owns the whole reading. `none` for the Sessions that have delegated nothing, which is most.
+    ///
+    /// DERIVED, off the record alone. Public because the composer reads it: a Turn held open by a
+    /// child that has already been handed off is not a Turn a follow-up must queue behind, and the
+    /// status word cannot say which of its reasons it was read from.
+    var delegationHold: DelegationHold {
+        DelegationHold.read(events, ended: endedDelegations)
     }
 
     /// Whether Argo has typed a Turn that nothing has answered yet (#1179) — the DIRECT half of

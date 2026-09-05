@@ -140,6 +140,16 @@ final class ClaimLedger {
         }
     }
 
+    /// One backgrounded delegation the reader ended from the rail (#1267).
+    ///
+    /// Only ever ADDS. Ending a delegation is the reader stating that its report is never coming,
+    /// and nothing observed can contradict that — a report arriving afterwards closes the call in
+    /// the record itself, which is where every surface reads the ending from anyway. So there is no
+    /// verb here to take one back with, and nothing to keep this set consistent with.
+    func endDelegation(_ callID: String, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.endedDelegations.insert(callID) }
+    }
+
     /// The gate behind this claim is gone, so its three readings go, and so does everything that
     /// stood on the companion channel and the Turn Argo was driving down it — a claim about what a
     /// Session is doing NOW cannot outlive the channel it was witnessed on (#1048). What the agent

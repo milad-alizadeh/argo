@@ -80,7 +80,7 @@ struct FeedAgentsWritingTests {
             label: "done",
             activity: .finished,
             spend: nil,
-            subagentID: Self.child,
+            handover: FeedCall.Handover(subagentID: Self.child),
         )]
 
         #expect(FeedAgents.told(answered) { _ in .writing }.map(\.activity) == [.finished])

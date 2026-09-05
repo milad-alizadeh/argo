@@ -279,6 +279,13 @@ public extension CockpitPresentation.Session {
     var hasUnansweredTurn: Bool {
         transcript.hasUnansweredTurn
     }
+
+    /// What a backgrounded delegation is holding open in this Session's record (#1267) — the
+    /// engine's own reading, carried through unchanged. What the composer asks it is whether the
+    /// open Turn the status word was read off is the PARENT's work or a child's.
+    var delegationHold: DelegationHold {
+        transcript.delegationHold
+    }
 }
 
 extension CockpitPresentation.Session.Access {

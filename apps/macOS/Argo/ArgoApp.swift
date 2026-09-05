@@ -196,6 +196,7 @@ struct ArgoApp: App {
             Task { await cockpit.setPinnedTicket(ticket, sessionID: id) }
         }
         actions.sessions.clearLostTurn = { id in cockpit.hub.clearLostTurn(for: id) }
+        actions.sessions.endDelegation = { cockpit.hub.endDelegation(callID: $1, for: $0) }
         actions.sessions.handOff = { id, issue in
             await cockpit.handOff(sessionID: id, issue: issue)
         }

@@ -143,7 +143,7 @@ function_parameter_count:
   # INIT: TicketsRoomProjection+Detail.swift 12 — Detail, widened for `claimants` (#1092), off
   # INIT: ConnectPanelProjection.swift 10 — Panel, the connect panel's whole reading, one slot per
   # INIT: DeckIntents.swift 10 — one closure per thing the deck's vessel does; every intent is
-  # INIT: FeedCall.swift 10 — one tool call as a sentence, a slot per part of it
+  # INIT: FeedCall.swift 8 — one tool call as a sentence, a slot per part of it
   # INIT: TicketsRoomProjection.swift 10 — Row, one backlog row, a field per column plus its
   # INIT: FeedTable.swift 9 — the feed's AppKit scroller, whose slots are what the SwiftUI half
   # INIT: FeedTableModel.swift 8 — everything the AppKit half of the feed needs from the SwiftUI
@@ -154,7 +154,7 @@ function_parameter_count:
   # INIT: MermaidCompartmented.swift 8 — MermaidRelation, one relationship: its two ends, its
   # INIT: MinimapReadingStamp.swift 8 — everything a MinimapReading is a function of, in a form
   # INIT: TicketsReading.swift 8 — everything the Tickets room is derived from, provider Tickets
-  # INIT: FeedAgent.swift 7 — a subagent as the rail names one, every fact read off the delegating
+  # INIT: FeedAgent.swift 5 — a subagent as the rail names one, every fact read off the delegating
   # INIT: FeedAskOfferList.swift 7 — one waiting question's options, plus the field and the Other…
   # INIT: HubRosterMemo.swift 7 — HubRosterStamp, five counters and two values the roster fold is
   # INIT: MermaidSequence.swift 7 — Message, one arrow: its two ends, its words, its stroke, its

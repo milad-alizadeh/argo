@@ -222,6 +222,8 @@ extension CockpitPresentation.Session.Transcript {
             lostTurn: session.lostTurn,
             hasUnansweredTurn: session.hasUnansweredTurn,
         )
+        // After the init and not through it — see the property.
+        self.delegationHold = session.delegationHold
     }
 }
 

@@ -51,10 +51,20 @@ enum AgentsRailCopy {
         "Hide \(finished(count))"
     }
 
+    /// What ending a delegation says (#1267). "End" and never "Stop": Argo cannot reach a
+    /// backgrounded child's process, and the honest claim is about the CALL — Argo stops holding a
+    /// handover open whose report is never coming.
+    static let end = "End delegation"
+
+    /// The sentence behind it, on the control that offers it. It says what the act is ABOUT rather
+    /// than what it does, because what it does is the label.
+    static let endHelp = "Stop waiting for this agent's report"
+
     /// Every line the rail draws, for the suite that holds the rename.
     static let all = [
         agents, header(running: 2), main, collapsed, hide, show,
         finished(3), revealFinished(3), hideFinished(3),
         state(.running), state(.finished), state(.unknown),
+        end, endHelp,
     ]
 }

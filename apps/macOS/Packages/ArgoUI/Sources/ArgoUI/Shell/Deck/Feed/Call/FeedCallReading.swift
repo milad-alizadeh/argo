@@ -23,9 +23,16 @@ enum FeedCallReading {
             evidence: [kept(outcome?.result)].compactMap(\.self),
             repeats: 1,
             spend: outcome?.usage,
-            subagentID: outcome?.subagentID,
-            durationMs: outcome?.reportedDurationMs,
-            startedAtMs: call.atMs,
+            handover: FeedCall.Handover(
+                subagentID: outcome?.subagentID,
+                durationMs: outcome?.reportedDurationMs,
+                startedAtMs: call.atMs,
+                // Both halves, or neither: a call id here is a claim that this delegation is
+                // BACKGROUNDED and still open, which the receipt is the whole evidence for.
+                openDelegationID: call.kind == .delegate && outcome?.status == .inProgress
+                    ? call.id
+                    : nil,
+            ),
         )
     }
 

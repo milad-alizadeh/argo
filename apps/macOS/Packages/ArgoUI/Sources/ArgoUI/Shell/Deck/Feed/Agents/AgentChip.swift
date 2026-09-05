@@ -20,8 +20,21 @@ package struct AgentChip: View {
     /// Absent is the ordinary case for a running Agent, and it degrades down: the chip still says
     /// what is happening and simply does not claim to be a control.
     var scope: (() -> Void)?
+    /// Stop waiting for this Agent's report (#1267), or `nil` where there is nothing to end — see
+    /// `AgentsRailControl.end(_:)`, which owns which chips those are.
+    var end: (() -> Void)?
 
     package var body: some View {
+        chip
+            // A context menu and not a control on the line: a fan-out is thirty of these, and a
+            // button per chip would put thirty of them in a column whose whole job is to stay
+            // quiet (D33). The same pair `SessionRow` uses, for the same reason.
+            .contextMenu { endAction }
+            // A menu takes a pointer. This is the way in that does not.
+            .accessibilityActions { endAction }
+    }
+
+    @ViewBuilder private var chip: some View {
         if let scope {
             Button(action: scope) { line }
                 .buttonStyle(FeedRowButtonStyle(isOpen: isSelected))
@@ -31,6 +44,16 @@ package struct AgentChip: View {
             line
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(spoken)
+        }
+    }
+
+    /// Nothing at all where there is nothing to end, rather than a disabled entry: an empty menu
+    /// does not open, which is the honest answer for a chip whose delegation the record can still
+    /// close by itself.
+    @ViewBuilder private var endAction: some View {
+        if let end {
+            Button(AgentsRailCopy.end, action: end)
+                .help(AgentsRailCopy.endHelp)
         }
     }
 
@@ -62,9 +85,15 @@ package struct AgentChip: View {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(agent: FeedAgent, isSelected: Bool = false, scope: (() -> Void)? = nil) {
+    package init(
+        agent: FeedAgent,
+        isSelected: Bool = false,
+        scope: (() -> Void)? = nil,
+        end: (() -> Void)? = nil,
+    ) {
         self.agent = agent
         self.isSelected = isSelected
         self.scope = scope
+        self.end = end
     }
 }

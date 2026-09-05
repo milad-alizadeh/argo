@@ -78,6 +78,11 @@ enum SessionsRoomReadingCache {
         /// `settledWaits` for the reason that one is: each appends a row to the reading and none of
         /// them is in the stream.
         let handoffFailures: [SessionWaitSettled]
+        /// What a backgrounded delegation is holding open, and which of those the reader has ended
+        /// (#1267) — see `DelegationHold`. By VALUE beside the status for the reason
+        /// `hasUnansweredTurn` above is, and one of its own: ending a delegation appends nothing to
+        /// the stream, so a stamp stopping at the events would go on drawing the chip running.
+        let delegationHold: DelegationHold
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -99,6 +104,7 @@ enum SessionsRoomReadingCache {
             self.resuming = session?.resuming ?? false
             self.handingOff = session?.handingOff ?? false
             self.handoffFailures = session?.handoffFailures ?? []
+            self.delegationHold = session?.delegationHold ?? .none
         }
     }
 

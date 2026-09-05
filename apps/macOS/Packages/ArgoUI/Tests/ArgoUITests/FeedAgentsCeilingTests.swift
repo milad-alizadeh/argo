@@ -120,8 +120,11 @@ struct FeedAgentsCeilingTests {
     /// One chip handed over a millisecond past the ceiling, in whatever state the record left it.
     private static func stale(_ activity: AgentActivity) -> [FeedAgent] {
         [FeedAgent(
-            id: 0, label: "out", activity: activity, spend: nil, subagentID: "a-out",
-            startedAtMs: now - DelegationCeiling.reportWindowMs - 1,
+            id: 0, label: "out", activity: activity, spend: nil,
+            handover: FeedCall.Handover(
+                subagentID: "a-out",
+                startedAtMs: now - DelegationCeiling.reportWindowMs - 1,
+            ),
         )]
     }
 

@@ -69,9 +69,7 @@ package enum FeedAgents {
                 label: call.subject.captioned,
                 activity: activity(handover, of: session),
                 spend: call.spend,
-                subagentID: call.subagentID,
-                durationMs: call.durationMs,
-                startedAtMs: call.startedAtMs,
+                handover: call.handover,
             )
         }
     }
@@ -127,7 +125,9 @@ package enum FeedAgents {
     /// true when the parent last wrote, which is the failure this ticket is about, one level down.
     /// This is a cheap pass over a list the memo already holds, so it is taken every time.
     ///
-    /// The ORDER is the ruling: growth is asked first, so an observation outranks a stated ceiling.
+    /// The ORDER is the ruling, and the READER is at the head of it (#1267): a delegation somebody
+    /// ended is over, whatever the child's file is still doing — the gesture is DIRECT and the two
+    /// readings under it are not. Then growth, so an observation outranks a stated ceiling.
     /// `DelegationCeiling` says how long a report can still be in flight and names itself a stated
     /// figure rather than an observation — and Argo watching the child write is an observation, so
     /// a Subagent still going at five hours keeps its dot rather than being quieted for being slow.
@@ -143,13 +143,16 @@ package enum FeedAgents {
     static func told(
         _ agents: [FeedAgent],
         writing: (String) -> SubagentWriting,
+        ended: DelegationHold = .none,
         at nowMs: Int = Date().epochMs,
     )
         -> [FeedAgent] {
         agents.map { agent in
             guard agent.activity != .finished else { return agent }
             var told = agent
-            if agent.subagentID.map({ writing($0) }) == .writing {
+            if ended.isEnded(agent.openDelegationID) {
+                told.activity = .finished
+            } else if agent.subagentID.map({ writing($0) }) == .writing {
                 told.activity = .running
             } else if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
                 told.activity = .finished
