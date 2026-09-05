@@ -29,6 +29,13 @@ import SwiftUI
     var agesWait: TimeInterval?
     var waitStarted: Date?
     var openSession: (String) -> Void = { _ in }
+    /// Point the window at a Ticket the reading names. Beside `openSession` because it is the
+    /// same kind of fact: a route out of a row, held by the shell, replayed into a cell.
+    var openTicket: (Int) -> Void = { _ in }
+    /// Which links in the reading are Tickets, and what Argo calls each. Read by every prose row;
+    /// retires every measured height when it moves, because a link worded differently wraps
+    /// differently (`FeedMeasureStamp.rewraps(against:)`).
+    var tickets: FeedTicketLinks = .none
     var askAnswering: @MainActor (String, AskAnswer) -> Void = { _, _ in }
 
     init() {}
@@ -43,24 +50,31 @@ import SwiftUI
         self.agesWait = values.argoAgesWait
         self.waitStarted = values.argoWaitStarted
         self.openSession = values.argoOpenSession
+        self.openTicket = values.argoOpenTicket
+        self.tickets = values.argoFeedTickets
         self.askAnswering = values.feedAskAnswering
     }
 
-    /// The two facts that re-ink the whole reading and retire its measured heights, as one value —
-    /// so a store that has to remember what its heights were drawn under remembers two scalars
-    /// rather than the whole of this, which carries a palette and two closures (#858).
-    struct Ink: Equatable, Sendable {
+    /// The facts that re-draw the whole reading and retire its measured heights, as one value — so
+    /// a store that has to remember what its heights were taken under remembers this rather than
+    /// the whole of the environment, which carries a palette and three closures (#858).
+    ///
+    /// The two scalars were the whole of it until #1178. The Ticket links joined them because they
+    /// are the same kind of fact: a link worded as its Ticket is different WORDS, so every row
+    /// carrying one wraps differently and stands at a different height.
+    struct Setting: Equatable, Sendable {
         let colorScheme: ColorScheme
         let dynamicTypeSize: DynamicTypeSize
+        var tickets: FeedTicketLinks = .none
     }
 
-    var ink: Ink {
-        Ink(colorScheme: colorScheme, dynamicTypeSize: dynamicTypeSize)
+    var setting: Setting {
+        Setting(colorScheme: colorScheme, dynamicTypeSize: dynamicTypeSize, tickets: tickets)
     }
 
-    /// Whether a cell drawn against the other one would ink differently.
-    func reInks(against other: FeedCellEnvironment?) -> Bool {
-        ink != other?.ink
+    /// Whether a cell drawn against the other one would come out differently.
+    func redraws(against other: FeedCellEnvironment?) -> Bool {
+        setting != other?.setting
     }
 }
 
@@ -75,6 +89,8 @@ extension View {
             .environment(\.argoAgesWait, environment.agesWait)
             .environment(\.argoWaitStarted, environment.waitStarted)
             .environment(\.argoOpenSession, environment.openSession)
+            .environment(\.argoOpenTicket, environment.openTicket)
+            .environment(\.argoFeedTickets, environment.tickets)
             .environment(\.feedAskAnswering, environment.askAnswering)
     }
 }

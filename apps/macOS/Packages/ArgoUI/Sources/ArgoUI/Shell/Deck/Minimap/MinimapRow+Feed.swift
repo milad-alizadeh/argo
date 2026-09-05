@@ -13,17 +13,18 @@ extension MinimapRow {
     /// One feed row as the lane draws it, at the height the table measured for it and after the
     /// step its cell carries above it.
     ///
-    /// `isFolded` is the reader's own state, which only the feed holds — a prompt is the one row it
-    /// changes the shape of.
+    /// `read` is the state the READING is in rather than the row: the reader's own fold, which only
+    /// the feed holds and which a prompt is the one row to change shape under, and the Ticket links
+    /// the words are drawn through.
     @MainActor init(
         _ row: FeedRow,
         height: CGFloat,
         under previous: FeedRow? = nil,
-        isFolded: Bool = true,
+        read: MinimapReadingState = MinimapReadingState(),
     ) {
         self.init(
             height: height,
-            shape: row.content.shape(isFolded: isFolded),
+            shape: row.content.shape(read: read),
             topStep: FeedRow.step(to: row, from: previous),
         )
         let kind = row.kind
@@ -37,17 +38,23 @@ extension MinimapRow {
 }
 
 private extension FeedRow.Content {
-    @MainActor func shape(isFolded: Bool) -> MinimapRowShape {
+    @MainActor func shape(read: MinimapReadingState) -> MinimapRowShape {
         switch self {
         // The prompt's pictures and lines, held against the trailing edge its bubble is drawn on.
         case let .prompt(text, shots): .bubble(
                 text: text,
                 shots: shots.map(\.drawnWidth),
-                isFolded: isFolded,
+                isFolded: read.isFolded,
             )
-        case let .submitted(text): .bubble(text: text, shots: [], isFolded: isFolded)
-        case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
-        case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
+        case let .submitted(text): .bubble(text: text, shots: [], isFolded: read.isFolded)
+        // Worded as the feed words them, so the lane is a miniature of the reading and not of the
+        // record behind it (#1178) — the same string `FeedShapeHeight` took the height from.
+        case let .message(text): MinimapProseBlock.shape(
+                of: FeedTicketProse.worded(text, as: read.tickets), ink: .message,
+            )
+        case let .thought(text): MinimapProseBlock.shape(
+                of: FeedTicketProse.worded(text, as: read.tickets), ink: .thought,
+            )
         case let .call(call): call.shape
         case let .survey(survey): .line(
                 parts: [.words(survey.label, survey.ending.ink)],
@@ -136,4 +143,18 @@ extension SessionWaitSettled {
     var laneInk: FeedInk {
         failure == nil ? .boundary : .failure
     }
+}
+
+/// How the READING a row belongs to is being read, as one value: the reader's own fold, and which
+/// of its links Argo can say as a Ticket.
+///
+/// One value rather than two arguments because neither is a fact about the row — both are the
+/// lane's whole walk, handed down — and because an initializer here is at the four-parameter cap
+/// the boundaries gate holds it to (#755).
+struct MinimapReadingState {
+    /// Whether the reader has this row's prompt folded. Every row but a prompt ignores it.
+    var isFolded = true
+    /// What the feed words as a Ticket, so the lane's silhouette is of the words the feed drew
+    /// rather than of the URLs the record carried (#1178).
+    var tickets: FeedTicketLinks = .none
 }

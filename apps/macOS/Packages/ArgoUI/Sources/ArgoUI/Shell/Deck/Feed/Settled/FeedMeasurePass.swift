@@ -99,7 +99,10 @@ enum FeedMeasurePass {
         guard stamp.rows.indices.contains(index) else { return 0 }
         let row = stamp.rows[index]
         let step = FeedRow.step(to: row, from: index > 0 ? stamp.rows[index - 1] : nil)
-        let shape = FeedShapeHeight(standing: stamp.standing(at: index), measure: stamp.measure)
+        let shape = FeedShapeHeight(
+            standing: stamp.standing(at: index), measure: stamp.measure,
+            tickets: stamp.setting.tickets,
+        )
         return FeedTableCoordinator.usableHeight(ceil(step + shape.height(of: row.content)))
     }
 

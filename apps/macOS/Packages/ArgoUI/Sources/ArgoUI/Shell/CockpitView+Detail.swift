@@ -30,6 +30,20 @@ extension CockpitView {
         )
     }
 
+    /// What the feed may read as a Ticket rather than as a web link (#1178) — the Binding that
+    /// says which URLs address one, and the titles the roster has already read.
+    ///
+    /// A number the listing does not carry is still a Ticket; it is worded `#1175` alone until the
+    /// provider names it, which is what `IssueReading` says about a Ticket with no title.
+    var feedTickets: FeedTicketLinks {
+        FeedTicketLinks(
+            address: ticketAddress,
+            titles: tickets.reduce(into: [Int: String]()) { titles, ticket in
+                titles[ticket.number] = ticket.title
+            },
+        )
+    }
+
     /// What the tab line's Ticket picker offers over the selected Session (#1092) — the backlog
     /// the room already read, and the write that lands a choice.
     var linking: SessionTicketLinking {
@@ -86,6 +100,10 @@ extension CockpitView {
         // What the tab line's Ticket link does (#1092) — the mirror of the Session link above,
         // reaching the OTHER room rather than another row of this one.
         .environment(\.argoOpenTicket) { navigation.openTicket($0) }
+        // …and which of the reading's own links that route is offered on (#1178). Injected beside
+        // the route rather than read down in the row, because recognising a Ticket is a fact about
+        // the PROJECT's Binding and a prose row knows nothing about one.
+        .environment(\.argoFeedTickets, feedTickets)
         // …and what the same link's picker does (#1092). Injected from here for the reason above,
         // plus one of its own: the offering is over the SELECTED Session, and this is where the
         // selection and the backlog behind it are both in hand.

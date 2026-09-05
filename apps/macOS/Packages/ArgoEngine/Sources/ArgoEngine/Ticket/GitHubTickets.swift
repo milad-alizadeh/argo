@@ -20,6 +20,31 @@ public struct GitHubTickets: TicketPort {
         return URL(string: "https://github.com/\(scope)/issues/\(number)")
     }
 
+    /// The host GitHub serves its web pages from, and the one alias it answers to.
+    private static let browseHosts: Set<String> = ["github.com", "www.github.com"]
+
+    /// Which issue of `scope` a URL addresses — `browseURL(of:in:)` read backwards (#1178).
+    ///
+    /// Deliberately narrow. `/pull/<n>` is refused even though GitHub serves a pull request from
+    /// `/issues/<n>` too: a Delivery is not a Ticket, and a link somebody wrote as a PR is a link
+    /// to the PR. So is `/issues` itself — a listing is not one item.
+    ///
+    /// Owner and repository are matched case-insensitively because GitHub itself is: it serves one
+    /// repository under every casing of its name, so a Binding that disowned a link over the shift
+    /// key would drop a Ticket it can read perfectly well. The query and the fragment are ignored
+    /// for the same reason — `?since=` and `#comment-1` address the same page.
+    public static func ticketNumber(of url: URL, in scope: String) -> Int? {
+        guard let host = url.host()?.lowercased(), browseHosts.contains(host) else { return nil }
+        // Dropped so `…/issues/1175/` and `…/issues/1175` are one answer: a trailing slash leaves
+        // an empty last component, and the path is otherwise read positionally.
+        let path = url.pathComponents.filter { $0 != "/" && !$0.isEmpty }
+        guard path.count == 4, path[2] == "issues" else { return nil }
+        guard "\(path[0])/\(path[1])".lowercased() == scope.lowercased() else { return nil }
+        // Providers number Tickets from one, so a `#0` is a misread of a link rather than a page.
+        guard let number = Int(path[3]), number > 0 else { return nil }
+        return number
+    }
+
     /// How many tickets are read at once — and, because a ticket reads its two edges one after the
     /// other, how many requests are in flight. Bounded at all because a repository with hundreds of
     /// open issues is the fan-out GitHub's secondary limits refuse.

@@ -15,8 +15,9 @@ struct FeedMeasureStamp: Equatable, Sendable {
     /// (`FeedRowMeasure.measure(atWidth:)`); the width itself is kept because that is what a table
     /// reports and what a resize changes.
     let width: CGFloat
-    /// The two facts that re-ink the whole reading — see `FeedCellEnvironment.Ink`.
-    let ink: FeedCellEnvironment.Ink
+    /// Everything the reading was drawn and measured under beyond its own words — the scheme, the
+    /// type size and the Ticket links (`FeedCellEnvironment.Setting`).
+    let setting: FeedCellEnvironment.Setting
     let rows: [FeedRow]
     /// What the READER has done to the reading — one value, because both of its halves are the
     /// same kind of fact and a stamp is built on every pass the table applies
@@ -51,7 +52,7 @@ struct FeedMeasureStamp: Equatable, Sendable {
     /// long as they ran. Every seam drag on a deck wider than the column did the same, quietly.
     func rewraps(against other: FeedMeasureStamp?) -> Bool {
         guard let other else { return true }
-        return measure != other.measure || ink != other.ink
+        return measure != other.measure || setting != other.setting
     }
 
     /// Whether the two stamps are of the same reading, whatever else moved. What lets a width
@@ -98,7 +99,7 @@ extension FeedMeasureStamp {
     @MainActor init(of model: FeedTableModel, atWidth width: CGFloat) {
         self.init(
             width: width,
-            ink: model.environment.ink,
+            setting: model.environment.setting,
             rows: model.rows,
             reader: FeedReaderStanding(
                 unfolded: model.unfolded.wrappedValue,

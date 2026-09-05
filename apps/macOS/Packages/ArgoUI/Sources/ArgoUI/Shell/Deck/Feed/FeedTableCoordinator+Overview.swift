@@ -85,7 +85,14 @@ extension FeedTableCoordinator {
                 // The reader's own fold, which is the one state that changes a row's SHAPE rather
                 // than only its height. Off the stamp, which took it from the model the cells are
                 // drawn from — a `Binding` per row was a closure pair per row for one `contains`.
-                isFolded: !stamp.unfolded.contains(stamp.rows[$0].id),
+                read: MinimapReadingState(
+                    isFolded: !stamp.unfolded.contains(stamp.rows[$0].id),
+                    // The cells' own reading of what is a Ticket, so the lane's silhouette is of
+                    // the words the feed drew and not of the URLs the record carried (#1178). Off
+                    // the model rather than the stamp: a Ticket that gains a title re-settles the
+                    // document, and the walk is armed by the measure count that re-settle moves.
+                    tickets: model?.environment.tickets ?? .none,
+                ),
             ) },
             columnWidth: stamp.columnWidth,
             viewportHeight: stamp.viewportHeight,

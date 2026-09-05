@@ -23,6 +23,8 @@ struct FeedProse: View {
     }
 
     @Environment(\.argo) private var argo
+    /// Which links in this block are Tickets — see `FeedTicketLinks`.
+    @Environment(\.argoFeedTickets) private var tickets
 
     let text: String
     let voice: Voice
@@ -32,7 +34,17 @@ struct FeedProse: View {
             // The column is the measure, and nothing narrower — the reader sets it with the seam.
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(voice.spokenAs.map { "\($0): \(text)" } ?? text)
+            .accessibilityLabel(voice.spokenAs.map { "\($0): \(words)" } ?? words)
+    }
+
+    /// The block's words as they are DRAWN: the record's own, with every link Argo can address
+    /// said the way Argo says a Ticket (#1178).
+    ///
+    /// The one place this view reads them, so the glyphs, the accessibility label and the height
+    /// `FeedShapeHeight` took cannot come apart — a screen reader hearing the raw URL while the
+    /// screen says `#1175` is the same drift as a row measured a line short.
+    private var words: String {
+        FeedTicketProse.worded(text, as: tickets)
     }
 
     /// The voice, readable rather than drawn: the surface inks every glyph itself off the frame
@@ -42,7 +54,7 @@ struct FeedProse: View {
     /// rather than a property of a cell, and the frame this row exposes is what that layer will
     /// hit-test. What a reader can still take away whole is the Turn, through its copy chip.
     private var prose: some View {
-        FeedMarkdown(text: text)
+        FeedMarkdown(text: words)
             .environment(\.proseVoice, ink)
     }
 

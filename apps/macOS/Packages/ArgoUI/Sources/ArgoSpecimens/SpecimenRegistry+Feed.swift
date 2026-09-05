@@ -39,6 +39,9 @@ extension SpecimenRegistry {
         // (#1228) — none of which a still of the reading reaches.
         SpecimenEntry("feedFoldNames") { FeedFoldNamesSpecimen() },
         SpecimenEntry("feedProse") { SpecimenScene.sessions(FeedProjection.previewProseRows) },
+        // A Ticket URL the agent printed, in the three readings it has (#1178): addressed and
+        // named, addressed and unnamed, and not this Project's to address.
+        SpecimenEntry("feedTicketLinks") { FeedTicketLinkSpecimen() },
         // The two states of one long prompt (#946). Rendered at the feed's own measure: the fold is
         // a question about the column the bubble landed in, so a still taken at any other width
         // settles nothing about it.

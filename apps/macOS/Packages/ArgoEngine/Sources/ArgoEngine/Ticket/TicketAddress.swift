@@ -39,4 +39,17 @@ public struct TicketAddress: Equatable, Sendable {
         case .linear: return LinearTickets.browseURL(of: number, in: scope)
         }
     }
+
+    /// Which Ticket of THIS Binding a URL addresses, and `nil` for every URL that addresses
+    /// something else (#1178) — `browseURL(of:)` read backwards, routed to the same adapters.
+    ///
+    /// What the feed asks before it words a link as a Ticket: a URL for another repository, another
+    /// workspace, or a provider this Project is not bound to is a web link, and answering `nil` is
+    /// what keeps it one.
+    public func ticketNumber(of url: URL) -> Int? {
+        switch provider {
+        case .github: GitHubTickets.ticketNumber(of: url, in: scope)
+        case .linear: LinearTickets.ticketNumber(of: url, in: scope)
+        }
+    }
 }

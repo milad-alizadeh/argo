@@ -14,12 +14,31 @@ import SwiftUI
 package struct FeedMarkdown: View {
     @Environment(\.argo) private var argo
     @Environment(\.proseVoice) private var voice
-    @Environment(\.openURL) private var open
+    @Environment(\.openURL) private var // Which links here are Tickets, and where a Ticket goes —
+        /// see `FeedTicketLinks`.
+        open
+    @Environment(\.argoFeedTickets) private var tickets
+    @Environment(\.argoOpenTicket) private var openTicket
 
     let text: String
 
     package var body: some View {
-        ProseSurfaceView(showing: showing, theme: argo, open: { open($0) })
+        ProseSurfaceView(showing: showing, theme: argo, open: pressed)
+    }
+
+    /// What a pressed link does. A URL this window's Binding addresses is a Ticket, and a Ticket
+    /// opens the Tickets surface IN THIS WINDOW rather than the browser (#1178); everything else
+    /// opens the way every other link in the app does.
+    ///
+    /// The web route is not lost, and is not duplicated here either: it is the Ticket's own `open
+    /// on host` verb, which is where a reader who wants the browser already looks.
+    private var pressed: (URL) -> Void {
+        { url in
+            switch tickets.route(of: url) {
+            case let .ticket(number): openTicket(number)
+            case let .web(web): open(web)
+            }
+        }
     }
 
     /// What the surface is asked to show. The measure is the surface's own — a representable is
