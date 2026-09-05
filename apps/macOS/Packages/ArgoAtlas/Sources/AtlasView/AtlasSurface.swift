@@ -5,17 +5,22 @@ import SwiftUI
 
 /// The SwiftUI seam the Metal renderer is hosted in (#1147).
 ///
-/// It takes a plan, a camera and resolved pigments rather than reading the environment, so the one
+/// It takes a projection and resolved pigments rather than reading the environment, so the one
 /// thing that decides what the GPU is handed is this view's parameters — the same rule every other
 /// view here follows, and the only way the volumes can be built once and asserted on.
 struct AtlasSurface: NSViewRepresentable {
-    let plan: AtlasPlan
-    let camera: AtlasCamera
+    /// The plan, the camera over it, and the fit between them — one value, so the fit the shader
+    /// draws with is the fit everything drawn OVER it reads (`AtlasProjection`).
+    let projection: AtlasProjection
     let pigments: AtlasPigments
     /// The file under the pointer, said as the pointer moves and said as `nil` the moment it is
     /// over none (#1153). A closure rather than a binding, because the answer is read off a frame
     /// the GPU has already drawn: it arrives on a mouse event, not on a view update.
     var resolve: (String?) -> Void = { _ in }
+    /// The file the reader CLICKED, or none where they clicked the ground (#1154). Read off the
+    /// same id target and answered against the same frame as the hover, so the file that opens is
+    /// the one drawn under the cursor rather than the one nearest it.
+    var pick: (String?) -> Void = { _ in }
 
     func makeCoordinator() -> AtlasPointer {
         AtlasPointer(renderer: AtlasVolumeRenderer(pixelFormat: .bgra8Unorm))
@@ -49,6 +54,9 @@ struct AtlasSurface: NSViewRepresentable {
         view.delegate = context.coordinator
         context.coordinator.attach(view)
         view.moved = { [coordinator = context.coordinator] point in coordinator.moved(to: point) }
+        view.clicked = { [coordinator = context.coordinator] point in
+            coordinator.clicked(at: point)
+        }
         apply(to: view, coordinator: context.coordinator)
         return view
     }
@@ -65,13 +73,13 @@ struct AtlasSurface: NSViewRepresentable {
         // The answer's owner is pushed alongside the map, for the reason the map is: a closure
         // captured once would go on writing the state of a body two renders old.
         coordinator.resolve = resolve
-        // Framed into the plan's own extent rather than the drawable's size, because that is what
-        // `AtlasView` frames the surface at — and it is the shape the flat camera has to be given
-        // for its picture to be the treemap exactly.
-        let fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
+        coordinator.picked = pick
+        // The projection is framed into the plan's own extent rather than the drawable's size,
+        // because that is what `AtlasView` frames the surface at — and it is the shape the flat
+        // camera has to be given for its picture to be the treemap exactly.
         coordinator.renderer?.show(
-            AtlasVolumes.city(of: plan, in: pigments),
-            through: AtlasEye(camera, fit: fit),
+            AtlasVolumes.city(of: projection.plan, in: pigments),
+            through: AtlasEye(projection.camera, fit: projection.fit),
         )
         view.clearColor = pigments.desktop.clearColor
         // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the

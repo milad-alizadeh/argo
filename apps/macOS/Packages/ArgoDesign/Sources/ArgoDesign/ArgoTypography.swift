@@ -73,6 +73,16 @@ public enum ArgoTypography {
         typeface: .machine, rung: .callout, weight: .medium,
     )
     public static let machineCaption = ArgoTextStyle(typeface: .machine, rung: .subheadline)
+    /// The one machine fact set as a HEADING: the value on the Atlas reading's gauge, which is the
+    /// subject of the block it heads rather than a fact beside some words (#1154).
+    ///
+    /// `identityHeading`'s rung and weight in the machine face, which is the pairing the rest of
+    /// the map already draws — the proportional face on the picture, the machine face on every
+    /// number said about it. Not `machineDisplay`, which is a rung larger and exists for a code a
+    /// person reads off one screen and types into another.
+    public static let machineHeading = ArgoTextStyle(
+        typeface: .machine, rung: .title3, weight: .semibold,
+    )
 
     /// Every role, for contract assertions and the specimen.
     public static let all: [(name: String, style: ArgoTextStyle)] = [
@@ -93,6 +103,7 @@ public enum ArgoTypography {
         ("machine", machine),
         ("machineEmphasis", machineEmphasis),
         ("machineCaption", machineCaption),
+        ("machineHeading", machineHeading),
     ]
 
     /// Roles nothing sets yet. See `ArgoMotion.unwired` for why they stay and why they say so.

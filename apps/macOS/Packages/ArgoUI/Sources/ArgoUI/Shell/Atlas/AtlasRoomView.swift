@@ -27,8 +27,19 @@ struct AtlasRoomView: View {
     /// unlike `isCity`: nothing in the sidebar turns the camera.
     @State private var orientation = AtlasOrientation.opening
 
-    init(isActive: Bool = true) {
+    /// The file the reader has open beside the map, or none (#1154). This column's own, like the
+    /// orientation and for the same reason: nothing in the sidebar opens a file, and what is open
+    /// is a way of looking at the map rather than a fact about it — so it is not persisted and a
+    /// reopened room opens on the whole shape.
+    @State private var pinned: String?
+
+    /// `opened` is the file the room STARTS with open, and nothing in the app ever passes one: a
+    /// reading is opened by a click, and a click is the one gesture no screenshot can drive. It is
+    /// what lets the specimen harness render this state at all — the design's own `?state=inspect`,
+    /// in the one shape SwiftUI has for seeding state a view then owns.
+    init(isActive: Bool = true, opened: String? = nil) {
         self.isActive = isActive
+        _pinned = State(initialValue: opened)
     }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
@@ -55,6 +66,15 @@ struct AtlasRoomView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Escape closes the reading and unmarks the file (#1154): the mark and the panel are one
+        // state, so there is one place to clear. `onExitCommand` rather than a key press, because
+        // Escape is the platform's own way out of a thing and the responder chain is what knows
+        // whether anything nearer wanted it first.
+        .onExitCommand { pinned = nil }
+        // Nothing survives a change of Project. A map is scoped to the window's Project
+        // (ADR-0015), and a reading left standing would be one repository's file read beside
+        // another repository's map.
+        .onChange(of: room.project?.id) { pinned = nil }
     }
 
     /// The stage: the map, and the camera floating over its top-right corner. Nothing else — what
@@ -63,7 +83,21 @@ struct AtlasRoomView: View {
     private func measured(_ map: AtlasMap) -> some View {
         // The Map as the reader's filters leave it — the same call the sidebar makes, so the
         // tiling and every number said about it cannot disagree about what was measured.
-        ground(room.choice.drawn(map))
+        let drawn = room.choice.drawn(map)
+        // The stage keeps the room it had: the rail takes its width off the end rather than
+        // shrinking the map to nothing, and the map is what the reader clicked on.
+        return HStack(spacing: ArgoSpacing.flush) {
+            stage(drawn)
+            if let pinned, let reading = AtlasFileReading(
+                of: pinned, in: drawn, by: room.choice.channels,
+            ) {
+                AtlasRoomRail(reading: reading)
+            }
+        }
+    }
+
+    private func stage(_ drawn: AtlasMap) -> some View {
+        ground(drawn)
             .overlay(alignment: .topTrailing) {
                 // The design's own `#orbit`, floating over the stage rather than docked in a bar,
                 // and inset from the corner by what the design insets it by.
@@ -93,6 +127,10 @@ struct AtlasRoomView: View {
                 ),
                 relief: room.choice.isCity.isOn ? 1 : 0,
                 orientation: orientation,
+                // Clicking the open file again closes it, and so does clicking the ground — the
+                // design's own three ways out, of which Escape is the third. What is open is open
+                // because the reader opened it, so the same gesture puts it away.
+                focus: AtlasFocus(open: pinned) { pinned = $0 == pinned ? nil : $0 },
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
