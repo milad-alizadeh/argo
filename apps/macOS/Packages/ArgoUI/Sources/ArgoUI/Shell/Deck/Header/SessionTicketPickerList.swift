@@ -14,6 +14,14 @@ struct SessionTicketPickerList: View {
     let pick: (Int) -> Void
 
     var body: some View {
+        rows
+            // Inset from the surface's own edge, so a cursor row's ground stands INSIDE the
+            // picker rather than running under its rounded corner. The rows' text keeps the
+            // field's inset regardless: what this takes, the row gives back.
+            .padding(.horizontal, ArgoSpacing.tight)
+    }
+
+    @ViewBuilder private var rows: some View {
         if matches.isEmpty {
             SessionTicketPickerZeroLine()
         } else {

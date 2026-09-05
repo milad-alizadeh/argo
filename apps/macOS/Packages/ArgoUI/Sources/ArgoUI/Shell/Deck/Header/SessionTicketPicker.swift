@@ -70,11 +70,17 @@ package struct SessionTicketPicker: View {
         switch key {
         case .up: cursor.up(over: numbers)
         case .down: cursor.down(over: numbers)
-        // Nothing under the cursor is nothing to link, so Return closes nothing and links
-        // nothing — the reader is still mid-query, and the field keeps their characters.
-        case .commit: if let number = cursor.current { link(number) }
+        case .commit: commit()
         case .dismiss: close()
         }
+    }
+
+    /// Return over the cursor's row. Nothing under the cursor is nothing to link, so it closes
+    /// nothing and links nothing — the reader is still mid-query, and the field keeps their
+    /// characters.
+    private func commit() {
+        guard let number = cursor.current else { return }
+        link(number)
     }
 
     private func link(_ number: Int) {

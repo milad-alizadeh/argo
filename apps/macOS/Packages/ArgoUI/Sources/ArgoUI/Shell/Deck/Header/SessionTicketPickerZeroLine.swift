@@ -14,7 +14,9 @@ struct SessionTicketPickerZeroLine: View {
             .argoText(ArgoTypography.rowMeta)
             .foregroundStyle(argo.color.text.tertiary)
             .lineLimit(1)
-            .padding(.horizontal, ArgoSpacing.base)
+            // `SessionTicketPickerRow`'s inset, for its reason: this line stands where a row
+            // would, so it starts where a row's characters start.
+            .padding(.horizontal, ArgoSpacing.tight)
             .frame(height: ArgoTicketPicker.rowHeight, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)

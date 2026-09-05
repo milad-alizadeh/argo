@@ -23,7 +23,10 @@ struct SessionTicketPickerRow: View {
             .lineLimit(1)
             .truncationMode(.tail)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, ArgoSpacing.base)
+            // `tight` and not `base`, because the list around it already spends `tight` insetting
+            // this row's ground from the picker's edge: the two together are what put these
+            // characters on the field's own leading edge, under its search mark.
+            .padding(.horizontal, ArgoSpacing.tight)
             .frame(height: ArgoTicketPicker.rowHeight)
             .background { ground }
             .contentShape(.rect)

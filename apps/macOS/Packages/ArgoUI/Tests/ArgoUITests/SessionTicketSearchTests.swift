@@ -85,7 +85,7 @@ struct SessionTicketSearchTests {
     func `an empty query marks no characters`() {
         let matches = SessionTicketSearch.matches(over: backlog, on: "")
 
-        #expect(matches.allSatisfy { $0.matched.isEmpty })
+        #expect(matches.map(\.matched) == [0 ..< 0, 0 ..< 0, 0 ..< 0])
     }
 
     @Test
