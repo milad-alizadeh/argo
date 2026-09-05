@@ -153,29 +153,32 @@ struct FeedPicturePlate: View {
             )
         }
     }
+
+    // The renders live in the same block as the fixtures they stand on. `#Preview` expands under
+    // every configuration, so a preview left outside referred to symbols that only exist in
+    // debug — which compiles here and fails the first Release build (#1439).
+    #Preview("Markdown picture — waiting") {
+        FeedPicturePlate(alt: "Atlas shading", source: .previewPicture, showing: .waiting)
+            .padding(ArgoFeedRow.inset)
+            .argoDeckSurface()
+            .argoAppearance()
+    }
+
+    #Preview("Markdown picture — nothing could be read") {
+        FeedPicturePlate(alt: "Atlas shading", source: .previewPicture, showing: .unreadable)
+            .padding(ArgoFeedRow.inset)
+            .argoDeckSurface()
+            .argoAppearance()
+    }
+
+    #Preview("Markdown picture — drawn") {
+        FeedPicturePlate(
+            alt: "Atlas shading",
+            source: .previewPicture,
+            showing: .drawn(.previewSwatch),
+        )
+        .padding(ArgoFeedRow.inset)
+        .argoDeckSurface()
+        .argoAppearance()
+    }
 #endif
-
-#Preview("Markdown picture — waiting") {
-    FeedPicturePlate(alt: "Atlas shading", source: .previewPicture, showing: .waiting)
-        .padding(ArgoFeedRow.inset)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Markdown picture — nothing could be read") {
-    FeedPicturePlate(alt: "Atlas shading", source: .previewPicture, showing: .unreadable)
-        .padding(ArgoFeedRow.inset)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-#Preview("Markdown picture — drawn") {
-    FeedPicturePlate(
-        alt: "Atlas shading",
-        source: .previewPicture,
-        showing: .drawn(.previewSwatch),
-    )
-    .padding(ArgoFeedRow.inset)
-    .argoDeckSurface()
-    .argoAppearance()
-}
