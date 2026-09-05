@@ -29,6 +29,21 @@ struct TranscriptContextCursor {
         self = TranscriptContextCursor()
     }
 
+    /// The model a `/model` command NAMED (`CommandedModel`), through the same cursor the reported
+    /// one goes through: the command writes the model's name and the Turn after it writes the
+    /// provider's id, and a cursor that only knew the second would announce that one change twice.
+    mutating func events(forModelNamed named: String?) -> [TranscriptEvent] {
+        guard let named else { return [] }
+        return announcing(model: named)
+    }
+
+    /// One model reading, said only where it is news. The one place `lastModel` moves.
+    private mutating func announcing(model: String) -> [TranscriptEvent] {
+        guard model != lastModel else { return [] }
+        lastModel = model
+        return [.model(model)]
+    }
+
     mutating func events(for message: MessageRecord) -> [TranscriptEvent] {
         var events: [TranscriptEvent] = []
         if let cwd = message.cwd, cwd != lastCwd {
@@ -47,9 +62,8 @@ struct TranscriptContextCursor {
             lastBranch = branch
             events.append(.branch(branch))
         }
-        if let model = message.run.model, model != lastModel {
-            lastModel = model
-            events.append(.model(model))
+        if let model = message.run.model {
+            events += announcing(model: model)
         }
         if let effort = message.run.effort, effort != lastEffort {
             lastEffort = effort
