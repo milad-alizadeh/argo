@@ -36,7 +36,10 @@ for (const [script, tool] of [
     // documentation and reported the mechanism present.
     const code = readFileSync(path.join(ROOT, script), 'utf8').replace(/^\s*#.*$/gm, '')
     assert.match(code, /build-lock\.sh"/, `${script} must source build-lock.sh`)
-    const call = /^[ \t]*build_lock_acquire[ \t]*$/m
+    // Bare, or guarded as `if ! build_lock_acquire; then` — the shape `warm-build.sh` needs now
+    // that it sets a wait limit and has to handle the refusal (#1450). Still a COMMAND at the
+    // start of a line, so a mention inside a longer expression does not count as calling it.
+    const call = /^[ \t]*(?:if !?[ \t]*)?build_lock_acquire[ \t]*(?:;[ \t]*then)?[ \t]*$/m
     assert.match(code, call, `${script} must CALL build_lock_acquire, not merely mention it`)
     const acquireAt = code.search(call)
     const toolAt = code.indexOf(tool, acquireAt)

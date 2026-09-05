@@ -10,9 +10,11 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { check, report } from './check-harness.mjs'
 import { BARE, run, STRICT, scratch } from './swift-tooling.harness.mjs'
 
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const WARM = 'scripts/warm-build.sh'
 // Longer than any plausible startup, so "returned early" cannot be a fast machine getting lucky.
 const SLOW_SECONDS = 5
@@ -116,6 +118,51 @@ check('warm-build.sh holds a live build slot and releases it', () => {
 
   // And it comes back. The stub sleeps per package, so this is the whole warm plus margin.
   waitFor(() => !existsSync(slot), 60, 'the warm released its build slot')
+})
+
+// A warm whose tree has been taken away stops instead of spending a slot on nothing (#1450).
+//
+// This is not hypothetical: two of the thirty-three leaked workers found on one machine named
+// `/private/tmp/argo-main-check`, a directory that had already been deleted. Each would have won
+// a build slot eventually, taken it from work somebody wanted, and compiled nothing.
+check('warm-build.sh stops when its worktree has gone', () => {
+  // A COPY of the tree, not the repo: this case deletes the packages out from under a running
+  // warm, and the harness's `run` points the real script at the real `apps/macOS`.
+  const tree = path.join(scratch, 'gone-tree')
+  mkdirSync(path.join(tree, 'scripts'), { recursive: true })
+  for (const file of ['warm-build.sh', 'swift-tool-guard.sh', 'build-lock.sh']) {
+    writeFileSync(path.join(tree, 'scripts', file), readFileSync(path.join(REPO, 'scripts', file)))
+  }
+  const packages = path.join(tree, 'apps/macOS/Packages')
+  for (const pkg of ['ArgoDesign', 'ArgoEngine', 'ArgoMermaid', 'ArgoAtlas', 'ArgoUI']) {
+    mkdirSync(path.join(packages, pkg), { recursive: true })
+  }
+
+  const log = path.join(scratch, 'gone.log')
+  const lock = path.join(scratch, 'gone-lock')
+  rmSync(lock, { recursive: true, force: true })
+  execFileSync('sh', [path.join(tree, 'scripts/warm-build.sh')], {
+    env: {
+      ...process.env,
+      PATH: `${WARM_BIN}:/usr/bin:/bin`,
+      ARGO_WARM_LOG: log,
+      ARGO_BUILD_LOCK_ROOT: lock,
+      ARGO_BUILD_LOCK_SLOTS: '1',
+    },
+  })
+
+  // Take the packages away while the worker is between them — the stub sleeps per package, so
+  // there is a window, and it is the same window a `worktree-gc` sweep opens.
+  waitFor(() => existsSync(path.join(lock, 'slot-1')), 10, 'the warm took a build slot')
+  rmSync(packages, { recursive: true, force: true })
+
+  waitFor(
+    () => existsSync(log) && readFileSync(log, 'utf8').includes('is gone'),
+    30,
+    'the warm noticed its tree had been removed',
+  )
+  // And it let the slot go on the way out, rather than holding it until something reaped it.
+  waitFor(() => !existsSync(path.join(lock, 'slot-1')), 30, 'the warm released its slot')
 })
 
 rmSync(scratch, { recursive: true, force: true })

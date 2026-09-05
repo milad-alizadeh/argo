@@ -40,6 +40,10 @@ BUILD_LOCK_HELD=""
 # things slower would show up here and nowhere else: every other number would just say the
 # gate took longer, without saying it was queueing rather than working.
 BUILD_LOCK_WAITED=0
+# Seconds to wait for a slot before giving up, or 0 for forever — the default, and what every
+# gate wants. Only a caller whose work is OPTIONAL should set it: `build_lock_acquire` returns
+# non-zero when this fires, and that caller has to handle the refusal rather than build anyway.
+BUILD_LOCK_WAIT_LIMIT=${ARGO_BUILD_LOCK_WAIT_LIMIT:-0}
 # Which arm of the A/B this run is in, for `metrics.sh` to record. Empty unless the experiment
 # is on, which is the state every ordinary run is in.
 #
@@ -240,6 +244,23 @@ build_lock_acquire() {
     if [ $((_bl_waited % 60)) -eq 0 ] && [ "$_bl_waited" -gt 0 ]; then
       echo "build-lock: waiting for one of $BUILD_LOCK_SLOTS build slots (${_bl_waited}s)" >&2
     fi
+
+    # A caller that would rather give up than queue for ever says so with a limit (#1450).
+    # Zero is the default and means forever, which is what a GATE wants: a gate that started
+    # skipping its own checks under contention would be worse than one that waits.
+    #
+    # `bun run warm` is the caller that wants a limit. It is optional work nobody is waiting
+    # for, its parent exited the moment it started, and a warm still queueing an hour later is
+    # behind lanes that began long after it — so when it finally wins a slot it takes one from
+    # work somebody wants, to build a tree that has usually moved on or been removed. Thirty-
+    # three of those had accumulated on one machine, the oldest three hours old, and the queue
+    # they formed was most of why a gate could wait 23 minutes for a slot.
+    if [ "$BUILD_LOCK_WAIT_LIMIT" -gt 0 ] && [ "$_bl_waited" -ge "$BUILD_LOCK_WAIT_LIMIT" ]; then
+      echo "build-lock: gave up after ${_bl_waited}s waiting for a slot" >&2
+      BUILD_LOCK_WAITED=$_bl_waited
+      return 1
+    fi
+
     sleep 5
     _bl_waited=$((_bl_waited + 5))
   done
