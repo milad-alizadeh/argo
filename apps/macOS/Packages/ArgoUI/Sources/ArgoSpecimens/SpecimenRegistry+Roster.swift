@@ -53,6 +53,12 @@ extension SpecimenRegistry {
         // is a panel quietly reading 0 where nothing was counted, which no assertion downstream
         // of the reading can see.
         SpecimenEntry("atlasReadingUnmeasured") { AtlasReadingUnmeasuredSpecimen() },
+        // The same mark on the CITY, where a volume's whole silhouette is traced rather than one
+        // rectangle. The room ships flat, so this is the only frame that shows the five strokes —
+        // and the claim to look at is that the traced tower is the colour it was before.
+        SpecimenEntry("atlasCityReading") {
+            AtlasMapSpecimen(open: AtlasReadingSpecimen.opened)
+        },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the
         // rooms picker, in one frame and on an ACTIVE window — an inactive one draws selection in
