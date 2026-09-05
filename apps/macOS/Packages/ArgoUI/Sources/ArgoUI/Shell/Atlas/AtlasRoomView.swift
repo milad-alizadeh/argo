@@ -172,11 +172,13 @@ struct AtlasRoomView: View {
                 ),
                 standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
                 orientation: orientation,
-                focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
-                // The DRAWN Map's own ties, so hiding test files takes their cords with them:
-                // a cord to a file the map is not drawing has no box to end on (#1160).
-                ties: AtlasTies(
-                    couplings: map.couplings, isOn: room.choice.showTies.isOn,
+                marks: AtlasMarks(
+                    focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
+                    // The DRAWN Map's own ties, so hiding test files takes their cords with it:
+                    // a cord to a file the map is not drawing has no box to end on (#1160).
+                    ties: AtlasTies(
+                        couplings: map.couplings, isOn: room.choice.filters.showTies.isOn,
+                    ),
                 ),
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

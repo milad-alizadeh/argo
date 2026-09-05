@@ -1,5 +1,5 @@
-@testable import AtlasView
 import AtlasLayout
+@testable import AtlasView
 import CoreGraphics
 import Testing
 

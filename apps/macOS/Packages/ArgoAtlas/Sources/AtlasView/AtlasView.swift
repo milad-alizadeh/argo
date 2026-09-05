@@ -48,28 +48,24 @@ public struct AtlasView: View {
     /// caller cannot hold what it has not seen.
     @State private var hovered: String?
 
-    /// The file the reader has open, marked here without being repainted, and what a click means
-    /// (#1154). A parameter rather than state, unlike `hovered`: what is open outlives this view —
-    /// the reading is drawn in a column of its own, and both have to be looking at one file.
-    private let focus: AtlasFocus
-
-    /// What the map draws of the co-change counting (#1160). A parameter for `focus`'s reason and
-    /// one more: the switch that turns the whole-map reading on is in the SIDEBAR, and a view
-    /// cannot hold state another column sets.
-    private let ties: AtlasTies
+    /// What is marked on the map: the file the reader has open — marked without being repainted —
+    /// and the ties drawn over the picture (#1154, #1160).
+    ///
+    /// A parameter rather than state, unlike `hovered`, because both outlive this view. What is
+    /// open is read in a column of its own and the two have to be looking at one file; the switch
+    /// that draws the ties is in the sidebar, which is a column this one cannot hold state for.
+    private let marks: AtlasMarks
 
     public init(
         plan: AtlasPlan,
         standing: AtlasStanding,
         orientation: AtlasOrientation = .opening,
-        focus: AtlasFocus = .none,
-        ties: AtlasTies = .none,
+        marks: AtlasMarks = .none,
     ) {
         self.plan = plan
         self.standing = standing
         self.orientation = orientation
-        self.focus = focus
-        self.ties = ties
+        self.marks = marks
     }
 
     /// Solved fresh from `standing` and `orientation` on every draw rather than stored, because
@@ -104,18 +100,20 @@ public struct AtlasView: View {
                     projection: projection,
                     pigments: AtlasPigments(argo.color.atlas, rim: argo.color.edge.hairline),
                     resolve: { hovered = $0 },
-                    pick: focus.clicked,
+                    pick: marks.focus.clicked,
                 )
             }
             // Over the surface and under the mark: a cord belongs to the picture the way the
             // trace does, and the trace is the nearer of the two to what the reader pinned.
             .overlay {
-                AtlasTieCords(projection: projection, ties: ties, pinned: focus.open)
+                AtlasTieCords(
+                    projection: projection, ties: marks.ties, pinned: marks.focus.open,
+                )
             }
             // Over the cords and under the words: the mark belongs to the picture, and a name
             // the reader is reading must not be crossed by an edge.
             .overlay {
-                AtlasOpenTrace(projection: projection, open: focus.open)
+                AtlasOpenTrace(projection: projection, open: marks.focus.open)
             }
             .overlay(alignment: .top) {
                 // Top centre, because both top corners of the stage are already spoken for. It
@@ -172,16 +170,21 @@ private struct AtlasPreview: View {
     let plan: AtlasPlan
     var standing: AtlasStanding = .city
     var orientation: AtlasOrientation = .opening
-    var open: String?
-    var ties: AtlasTies = .none
+    var marks: AtlasMarks = .none
+
+    /// One file open and nothing to close it with — what every preview of a marked map takes. A
+    /// helper rather than the value written out three times: `AtlasFocus` carries a closure, so
+    /// there is no `let` at file scope that can hold one.
+    static func opened(_ path: String, ties: AtlasTies = .none) -> AtlasMarks {
+        AtlasMarks(focus: AtlasFocus(open: path) { _ in }, ties: ties)
+    }
 
     var body: some View {
         AtlasView(
             plan: plan,
             standing: standing,
             orientation: orientation,
-            focus: AtlasFocus(open: open) { _ in },
-            ties: ties,
+            marks: marks,
         )
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
@@ -250,13 +253,17 @@ private let previewPlan = AtlasPlan(
 // colour it was before it was marked — the band IS the measure, and a mark that repainted it would
 // destroy the fact the reader opened it to read.
 #Preview("Atlas — a file open, traced on the city") {
-    AtlasPreview(plan: previewPlan, open: "argo/rules/house.md")
+    AtlasPreview(plan: previewPlan, marks: AtlasPreview.opened("argo/rules/house.md"))
 }
 
 // The same mark at the other end of the one camera, where every standing edge of a box projects
 // onto its own footprint and the trace is the rectangle alone.
 #Preview("Atlas — a file open, traced on the treemap") {
-    AtlasPreview(plan: previewPlan, standing: .flat, open: "argo/rules/house.md")
+    AtlasPreview(
+        plan: previewPlan,
+        standing: .flat,
+        marks: AtlasPreview.opened("argo/rules/house.md"),
+    )
 }
 
 /// Three files that keep changing together, at three strengths, so a cord drawn without its own
@@ -275,14 +282,14 @@ private let previewTies = AtlasTies(
 // The strongest ties across the whole map, in the city: bowed UP off the ground they would
 // otherwise run along, so a cord reads as a thing over the map rather than as a seam of it.
 #Preview("Atlas — the strongest ties, on the city") {
-    AtlasPreview(plan: previewPlan, ties: previewTies)
+    AtlasPreview(plan: previewPlan, marks: AtlasMarks(ties: previewTies))
 }
 
 // The same ties at the other end of the one camera. There is no up here, so the bow rotates into
 // the plane — always to the same side of its own chord, which is what fans a bundle out instead of
 // laying every cord in it on one shape.
 #Preview("Atlas — the strongest ties, on the treemap") {
-    AtlasPreview(plan: previewPlan, standing: .flat, ties: previewTies)
+    AtlasPreview(plan: previewPlan, standing: .flat, marks: AtlasMarks(ties: previewTies))
 }
 
 // A pinned file's own ties, with the switch OFF: the reader pointed at a file and asked what it
@@ -291,7 +298,9 @@ private let previewTies = AtlasTies(
 #Preview("Atlas — a pinned file's own ties") {
     AtlasPreview(
         plan: previewPlan,
-        open: "argo/rules/house.md",
-        ties: AtlasTies(couplings: previewTies.couplings, isOn: false),
+        marks: AtlasPreview.opened(
+            "argo/rules/house.md",
+            ties: AtlasTies(couplings: previewTies.couplings, isOn: false),
+        ),
     )
 }

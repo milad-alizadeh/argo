@@ -38,25 +38,44 @@ struct AtlasMapSpecimen: View {
     let standing: AtlasStanding
     /// Nothing draws the map of a repository nobody has scanned: the floor, and no city on it.
     private let map: AtlasMap?
-    /// The file to draw as OPEN, traced on the map (#1154). The room's own specimen renders the
-    /// reading beside the treemap; this is the same mark on a city, which is the harder geometry —
-    /// the roof, three standing corners and the foot, rather than one rectangle.
-    private let open: String?
+    /// What is marked ON the map: the file to draw as open, traced (#1154), and the co-change
+    /// ties drawn over the picture (#1160). The room's own specimen renders the reading beside the
+    /// treemap; this is the same marks on a city, which is the harder geometry — a traced roof and
+    /// three standing corners, and cords bowed up off the ground rather than into the plane.
+    private let marks: AtlasMarks
 
     init(
         ground: CGSize = CGSize(width: 1040, height: 660),
         standing: AtlasStanding = .city,
         map: AtlasMap? = try? AtlasMapFixture.argo(),
-        open: String? = nil,
+        marks: AtlasMarks = .none,
     ) {
         self.ground = ground
         self.standing = standing
         self.map = map
-        self.open = open
+        self.marks = marks
+    }
+
+    /// One file open and nothing to close it with: the mark a click leaves, which is the one state
+    /// a screenshot cannot drive.
+    static func opened(_ path: String) -> AtlasMarks {
+        AtlasMarks(focus: AtlasFocus(open: path) { _ in })
+    }
+
+    /// The same, with the fixture's own counting behind it, so a cord on the frame is a tie THIS
+    /// repository has rather than an invented one (#1160). `across` is the Strongest ties switch;
+    /// a pinned file draws its own however it is set.
+    static func tied(open: String? = nil, across: Bool = false) -> AtlasMarks {
+        AtlasMarks(
+            focus: AtlasFocus(open: open) { _ in },
+            ties: AtlasTies(
+                couplings: (try? AtlasMapFixture.argo())?.couplings ?? [], isOn: across,
+            ),
+        )
     }
 
     var body: some View {
-        AtlasView(plan: plan, standing: standing, focus: AtlasFocus(open: open) { _ in })
+        AtlasView(plan: plan, standing: standing, marks: marks)
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
     }

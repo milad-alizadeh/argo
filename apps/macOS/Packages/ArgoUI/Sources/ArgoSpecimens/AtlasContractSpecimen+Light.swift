@@ -78,13 +78,13 @@ extension AtlasContractSpecimen {
     }
 
     /// The one family here that is not a surface: a co-change tie is a line of light drawn OVER
-    /// the map (#1160). Shown crossing the three plates rather than as a chip, for the reason the ink
-    /// is shown as words — a swatch of it says nothing about whether a cord at a third of its own
+    /// the map (#1160). Shown crossing the three plates rather than as a chip, for the reason the
+    /// ink is shown as words — a swatch says nothing about whether a cord at a third of its own
     /// opacity is still visible over the deepest plate, which is the only question about it.
     private var cordLight: some View {
         HStack(alignment: .center, spacing: ArgoSpacing.loose) {
             label("cord")
-            HStack(spacing: 0) {
+            HStack(spacing: ArgoSpacing.flush) {
                 ForEach(argo.color.atlas.materials.plates, id: \.name) { plate in
                     Rectangle().fill(plate.color)
                 }

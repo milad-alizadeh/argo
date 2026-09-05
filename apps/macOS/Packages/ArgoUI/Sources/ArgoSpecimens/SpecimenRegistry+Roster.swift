@@ -77,7 +77,22 @@ extension SpecimenRegistry {
         // rectangle. The room ships flat, so this is the only frame that shows the five strokes —
         // and the claim to look at is that the traced tower is the colour it was before.
         SpecimenEntry("atlasCityReading") {
-            AtlasMapSpecimen(open: AtlasReadingSpecimen.opened)
+            AtlasMapSpecimen(marks: AtlasMapSpecimen.opened(AtlasReadingSpecimen.opened))
+        },
+        // The strongest ties across the whole map (#1160), at both ends of the one camera. On the
+        // city the cords are bowed UP off the ground they would otherwise run along; flat on there
+        // is no up, so the bow rotates into the plane and a bundle fans out instead of stacking.
+        SpecimenEntry("atlasTies") {
+            AtlasMapSpecimen(marks: AtlasMapSpecimen.tied(across: true))
+        },
+        SpecimenEntry("atlasTiesTreemap") {
+            AtlasMapSpecimen(standing: .flat, marks: AtlasMapSpecimen.tied(across: true))
+        },
+        // One pinned file's own ties, with the switch OFF: the reader pointed at a file and asked
+        // what it changes with, which is a question the switch does not answer — and the frame
+        // beside `atlasCityReading` is what says the cords came from the pin rather than from it.
+        SpecimenEntry("atlasTiesPinned") {
+            AtlasMapSpecimen(marks: AtlasMapSpecimen.tied(open: AtlasReadingSpecimen.opened))
         },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
         // Where the identity is spent (#875, narrowed by #944): the roster's selected row and the

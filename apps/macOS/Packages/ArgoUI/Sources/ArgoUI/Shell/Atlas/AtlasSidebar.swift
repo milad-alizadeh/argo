@@ -65,8 +65,8 @@ package struct AtlasSidebar: View {
             )
             divider
             AtlasFilters(
-                hideTests: room.choice.hideTests.binding,
-                showTies: room.choice.showTies.binding,
+                hideTests: room.choice.filters.hideTests.binding,
+                showTies: room.choice.filters.showTies.binding,
             )
             divider
             // Banded here rather than read off the plan: both ends come from the banding and none

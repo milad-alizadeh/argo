@@ -74,8 +74,10 @@ package struct AtlasRoomHost: View {
             choice: AtlasMapChoice(
                 channels: channels,
                 setChannels: { channels = $0 },
-                hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
-                showTies: AtlasSwitch(isOn: showTies) { showTies = $0 },
+                filters: AtlasFilterChoice(
+                    hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
+                    showTies: AtlasSwitch(isOn: showTies) { showTies = $0 },
+                ),
                 isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
             ),
         )
