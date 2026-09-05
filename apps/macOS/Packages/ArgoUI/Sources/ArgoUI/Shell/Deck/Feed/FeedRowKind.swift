@@ -67,13 +67,18 @@ extension FeedRow.Content {
     /// The one exhaustive `switch` over the kinds that answers a FACT about a row. No `default`, so
     /// a twelfth kind fails this build rather than quietly inheriting answers written for the
     /// eleven
-    /// that exist. Three switches remain, each resolving a payload per case rather than a fact and
-    /// none of them precomputable per row per reshape: `opened` below, `FeedRowView.body` and
-    /// `MinimapRow.shape`.
+    /// that exist. Four switches remain, each resolving a payload per case rather than a fact and
+    /// none of them precomputable per row per reshape: `opened` below, `FeedRowView.body`,
+    /// `MinimapRow.shape` and `FeedGalleryFold.pictures(in:)`.
     var kind: Kind {
         switch self {
         // A prompt that is ONLY a picture has no fold for the key to work, so it opens the picture
         // instead — the gallery's answer, on the row the picture arrived in.
+        //
+        // The projection no longer hands one over: the gallery fold takes every wordless prompt
+        // that holds pictures, a run of one included (#1252). The answer stays because the VALUE
+        // stays constructible, and a row built by hand must not be a control that swallows the key
+        // while doing nothing.
         case let .prompt(text, shots):
             Kind(
                 isProse: true,
@@ -120,8 +125,27 @@ extension FeedRow.Content {
             )
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes to the
         // picture. Said once here, for the row and the lane beside it both.
+        //
+        // A run of PASTED pictures is drawn the same and read differently: it is the reader
+        // asking, so it stays prose and it stays the row a Turn opens — the work fold's Turn
+        // extents, the feed's Copy Turn, the minimap's prompt band and the composer's echo all
+        // read `isPrompt`. Its words are the empty string those prompts held, because a prompt
+        // with words never joined the run. No copy label with them: there is nothing verbatim
+        // behind a picture, and a menu item that hands over the empty string reads as a copy that
+        // silently failed.
         case let .gallery(gallery):
-            Kind(isCall: true, shots: gallery.shots, activation: .light(oneOf: gallery.shots))
+            switch gallery.origin {
+            case .produced:
+                Kind(isCall: true, shots: gallery.shots, activation: .light(oneOf: gallery.shots))
+            case .pasted:
+                Kind(
+                    isProse: true,
+                    isPrompt: true,
+                    shots: gallery.shots,
+                    words: "",
+                    activation: .light(oneOf: gallery.shots),
+                )
+            }
         // A marker is punctuation too, and it opens onto whatever Argo could read behind it — the
         // SKILL.md body, or the sentence saying why there is none.
         case let .skillLoaded(skill):

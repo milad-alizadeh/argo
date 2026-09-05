@@ -36,8 +36,10 @@ package struct FeedPrompt: View {
     private var bubble: some View {
         PromptBubbleLayout(text: text) {
             VStack(alignment: .trailing, spacing: ArgoSpacing.snug) {
-                // A prompt that was only a picture draws no block of words: an empty one above the
-                // thumbnail is a line of prose the reader never wrote.
+                // A prompt that was only a picture never reaches here — the gallery fold takes it
+                // (#1252) — so in practice this pairs a grid with the words pasted beside it. The
+                // empty case is still answered, because an empty block of prose above a thumbnail
+                // is a line the reader never wrote.
                 if !shots.isEmpty {
                     FeedGalleryRow(gallery: FeedGallery(shots: shots), open: open)
                 }

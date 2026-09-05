@@ -208,9 +208,15 @@ extension SpecimenRegistry {
             SpecimenScene.sessions(FeedProjection.previewSingleShotRows)
         },
         // The other way a picture reaches the feed: pasted into a prompt rather than produced by
-        // a call, so it is drawn inside the bubble instead of across the measure.
+        // a call. It is drawn inside the bubble where the prompt carried words too, and as a
+        // gallery across the measure where it carried none.
         SpecimenEntry("feedPastedShots") {
             SpecimenScene.sessions(FeedProjection.previewPastedRows)
+        },
+        // The run the fold is for: six pictures pasted one after another, as one wrapping grid
+        // rather than a column of one thumbnail per row (#1252).
+        SpecimenEntry("feedPastedRun") {
+            SpecimenScene.sessions(FeedProjection.previewPastedRunRows)
         },
         SpecimenEntry("feedAbsentShot") {
             SpecimenScene.sessions(FeedProjection.previewAbsentShotRows)

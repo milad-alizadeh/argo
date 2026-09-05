@@ -32,7 +32,9 @@ package enum FeedProjection {
         // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
         // its captions need — after the fold its filename is no longer in the feed to compare.
         // The gallery next, over a stream the survey has already left every picture out of: its
-        // break rule is the wider of the two, so no call is counted here and drawn there.
+        // break rule is the wider of the two, so no call is counted here and drawn there. It also
+        // takes the prompt rows that hold nothing but pictures, and hands back a gallery that is
+        // still a prompt — which is what leaves the Turn boundary below it where it was.
         // The Turn's own fold LAST, over what all of those left behind: it reads the Turn
         // boundaries out of the rows, and every pass above it takes rows away without moving one
         // across a prompt or a stop reason. Then the runs of looking that the card left standing

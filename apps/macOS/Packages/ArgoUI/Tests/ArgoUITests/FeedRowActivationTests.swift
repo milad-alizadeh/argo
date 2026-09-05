@@ -91,6 +91,9 @@ struct FeedRowActivationTests {
     func `no other kind holds a picture`() {
         let holders = RowKindFixture.everyKind.filter { !$0.kind.shots.isEmpty }
 
-        #expect(holders == [.gallery(RowKindFixture.gallery)])
+        #expect(holders == [
+            .gallery(RowKindFixture.gallery),
+            .gallery(RowKindFixture.pastedGallery),
+        ])
     }
 }

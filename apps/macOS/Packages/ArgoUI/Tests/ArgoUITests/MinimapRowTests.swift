@@ -68,6 +68,15 @@ struct MinimapRowTests {
         #expect(MinimapRowFixture.row(.message("Fixed it")).prompt == nil)
     }
 
+    /// A Turn asked for with pictures alone names itself with nothing. Reported as words all the
+    /// same, the empty label takes a slot from `MinimapAnnotation.legible`, which drops the words
+    /// of any label landing on the one above it — so an unnamed Turn silenced a named one (#1252).
+    @Test
+    func `a Turn asked for without words names itself with nothing`() {
+        #expect(MinimapRowFixture.row(.prompt(text: "", shots: [])).prompt == nil)
+        #expect(MinimapRowFixture.row(.gallery(RowKindFixture.pastedGallery)).prompt == nil)
+    }
+
     @Test
     func `a call is the pieces of its sentence, in the order the row sets them`() {
         let parts = Self.parts(.call(Self.call(churn: nil)))
