@@ -77,7 +77,10 @@ struct AtlasReadingNote: View {
     private var staleness: some View {
         Text(AtlasNoteMeasure.stale)
             .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.secondary)
+            // The loudest line in the block, which is what MARKED means: at the tertiary rung it
+            // read as a third paragraph of the note rather than as something said ABOUT it, and a
+            // mark nobody notices is a note quietly passing itself off as current.
+            .foregroundStyle(argo.color.text.primary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, ArgoSpacing.base)
     }
