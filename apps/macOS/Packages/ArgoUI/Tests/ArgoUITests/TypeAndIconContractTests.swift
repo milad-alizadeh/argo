@@ -22,6 +22,9 @@ struct TypeAndIconContractTests {
             .map(\.name)
         #expect(machineRoles == [
             "machineDisplay", "machineBody", "machine", "machineEmphasis", "machineCaption",
+            // The Atlas reading's gauge value (#1154): a measured number set as the heading of the
+            // block it heads, which is still a machine fact.
+            "machineHeading",
         ])
     }
 
