@@ -17,6 +17,7 @@ public final class Hub {
     @ObservationIgnored lazy var watch: TranscriptWatch = {
         let watch = TranscriptWatch(engine: engine, discovery: discovery, readings: subagents)
         watch.onApplied = { [weak self] in await self?.didApply() }
+        watch.onSwept = { [weak self] in self?.reconcileSpawns() }
         return watch
     }()
 

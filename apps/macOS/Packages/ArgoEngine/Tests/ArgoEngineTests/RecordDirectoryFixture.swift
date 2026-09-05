@@ -87,6 +87,17 @@ struct RecordDirectoryFixture {
         )
     }
 
+    /// Give one transcript the mtime another has — the pair a relocation leaves, which is one
+    /// file under two paths and so one moment of last activity under both.
+    func matchModificationTime(of url: URL, to other: URL) throws {
+        let held = try FileManager.default.attributesOfItem(atPath: other.path)
+        guard let modified = held[.modificationDate] else { return }
+        try FileManager.default.setAttributes(
+            [.modificationDate: modified],
+            ofItemAtPath: url.path,
+        )
+    }
+
     func remove() {
         try? FileManager.default.removeItem(at: rootURL)
     }

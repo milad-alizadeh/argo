@@ -100,12 +100,17 @@ struct SpawnFixture {
     let runFileURL: URL
     private let services: SpawnServices
     private let engine: Engine
+    /// The sweep this fixture's Hubs read the world through, held so a restart reads the same
+    /// record directory the launch before it did.
+    private let discovery: SessionDiscovery
 
     init(
         liveness: @escaping LivenessRead = noLiveProcesses,
         permissionPatience: PermissionPatience = .default,
         startupPatience: StartupPatience = .default,
+        discovery: SessionDiscovery = SessionDiscovery(),
     ) throws {
+        self.discovery = discovery
         let token = String(UUID().uuidString.prefix(8))
         self.root = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-spawn-\(token)", directoryHint: .isDirectory)
@@ -157,13 +162,23 @@ struct SpawnFixture {
             // fixture's record answering to a name no claim is waiting for.
             mintTranscriptID: { spawnedChainID },
         )
-        self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)
+        self.hub = Hub(
+            projectURL: projectURL,
+            engine: engine,
+            discovery: discovery,
+            spawnServices: services,
+        )
     }
 
     /// A second Hub over the same folders and the same chain file — a restart, for everything that
     /// is meant to survive one. The claims and the PTYs do not come with it, which is the point.
     func restarted() -> Hub {
-        Hub(projectURL: projectURL, engine: engine, spawnServices: services)
+        Hub(
+            projectURL: projectURL,
+            engine: engine,
+            discovery: discovery,
+            spawnServices: services,
+        )
     }
 
     /// The plugin directory one claim of a Hub of this fixture wrote — under that HUB's corner of
