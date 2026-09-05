@@ -59,17 +59,9 @@ if step_cached "$BUILD_KEY" && [ -d "$PRODUCT" ]; then
   exit 0
 fi
 
-# One of the machine's build slots, from here to the end of the script.
-#
-# `xcodebuild` fans out to every core, and the cap on that was wired only to `swift-gate.sh`
-# when it was written (#1377) — so the push path was serialised and the path agents actually
-# spend their day on, `bun run build`, was not. Six lanes building at once put 65
-# `swift-frontend` processes and a load average of 137 on a twelve-core machine.
-#
-# AFTER the cache check above, for the reason `swift-gate.sh` gives at its own call: a run with
-# nothing to do must not queue behind a run that has. A gate that already holds a slot passes
-# ARGO_BUILD_LOCK_HELD_BY down to this script, so this call returns at once rather than taking
-# a second one.
+# One of the machine's build slots (#1377), after the cache check above for the reason
+# `swift-gate.sh` gives at its own call: a run with nothing to do must not queue behind a run
+# that has.
 build_lock_acquire
 
 BUILD_STARTED=$(metric_now)
@@ -84,4 +76,5 @@ xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" 
   exit 1
 }
 step_record "$BUILD_KEY" "xcodebuild:$configuration" apps/macOS
-metric_append step "xcodebuild:$configuration" run "$(($(metric_now) - BUILD_STARTED))" 0
+metric_append step "xcodebuild:$configuration" run \
+  "$(($(metric_now) - BUILD_STARTED))" "$BUILD_LOCK_WAITED"

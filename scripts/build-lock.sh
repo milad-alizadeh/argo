@@ -46,6 +46,28 @@ build_lock_release() {
   unset ARGO_BUILD_LOCK_HELD_BY
 }
 
+# Install this lock's cleanup for signal $1, KEEPING whatever handler is already there, and
+# appending `exit $2` when one is given.
+#
+# Chaining rather than clobbering, because `trap … EXIT` inside a function replaces the
+# script-level one. `swift-test.sh` removes its xunit report directory in an EXIT trap set long
+# before it asks for a slot, and a plain `trap 'build_lock_release' EXIT` here leaked one temp
+# directory per run — on the very path the cap was added to cover, and on no other, since a
+# caller that inherits a slot returns above without reaching this.
+#
+# `trap` with no arguments prints the handler it currently holds, one line per signal, in a form
+# this reads back. The caller's handler runs AFTER the slot is freed and BEFORE the exit, so a
+# slow cleanup never keeps the next lane waiting.
+_bl_chain() {
+  _bl_sig=$1
+  _bl_exit=$2
+  _bl_old=$(trap | sed -n "s/^trap -- '\(.*\)' $_bl_sig\$/\1/p")
+  _bl_cmd='build_lock_release'
+  [ -n "$_bl_old" ] && _bl_cmd="$_bl_cmd; $_bl_old"
+  [ -n "$_bl_exit" ] && _bl_cmd="$_bl_cmd; exit $_bl_exit"
+  trap "$_bl_cmd" "$_bl_sig"
+}
+
 # Take one of $BUILD_LOCK_SLOTS slots, waiting as long as it takes.
 #
 # It NEVER fails the caller. A lock is a throughput device, and a gate that refused to run
@@ -55,7 +77,12 @@ build_lock_acquire() {
   # Already inside a slot this process tree paid for. Not an error and not a wait: the caller
   # is the `bun run build` that a gate holding a slot just started, and the machine is already
   # counting it.
-  if [ -n "${ARGO_BUILD_LOCK_HELD_BY:-}" ]; then
+  #
+  # The holder has to still be RUNNING for that to be true. `build_lock_release` can only unset
+  # the variable in its own shell, so a child spawned before the release keeps the exported
+  # value for ever — and would then build uncapped, permanently, with nothing to notice. The
+  # pid is in the marker, so proving it is one signal.
+  if [ -n "${ARGO_BUILD_LOCK_HELD_BY:-}" ] && kill -0 "$ARGO_BUILD_LOCK_HELD_BY" 2>/dev/null; then
     return 0
   fi
 
@@ -79,9 +106,9 @@ build_lock_acquire() {
         BUILD_LOCK_WAITED=$_bl_waited
         ARGO_BUILD_LOCK_HELD_BY=$$
         export ARGO_BUILD_LOCK_HELD_BY
-        trap 'build_lock_release' EXIT
-        trap 'build_lock_release; exit 130' INT
-        trap 'build_lock_release; exit 143' TERM
+        _bl_chain EXIT ''
+        _bl_chain INT 130
+        _bl_chain TERM 143
         return 0
       fi
 

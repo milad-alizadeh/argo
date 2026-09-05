@@ -221,18 +221,14 @@ for package in $PACKAGES; do
     fi
   fi
 
-  # One of the machine's build slots, taken before the first package that actually has to run.
-  #
-  # `swift test` compiles before it tests and fans that out to every core, and the cap on it
-  # was wired only to `swift-gate.sh` when it was written (#1377) — leaving `bun run test`,
-  # which is what agents run all day, uncapped. Six lanes at once measured 65 `swift-frontend`
-  # processes and load average 137 on twelve cores.
-  #
-  # Inside the loop and after the cached check, so a tree whose every package already passed
-  # never queues for a slot it would not use. `build_lock_acquire` is a no-op once this process
-  # tree holds one, so the packages after the first do not each take another — and neither does
-  # a run started by a gate that is already holding one.
+  # One of the machine's build slots (#1377), inside the loop and after the cached check so a
+  # tree whose every package already passed never queues for a slot it would not use.
   build_lock_acquire
+  # The wait belongs to the package that actually paid it. The acquire returns at once for every
+  # package after the first, so carrying the figure into their rows would report one wait four
+  # times and read as a cap four times as expensive as it is.
+  package_waited=$BUILD_LOCK_WAITED
+  BUILD_LOCK_WAITED=0
 
   echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
   package_started=$(metric_now)
@@ -257,5 +253,5 @@ for package in $PACKAGES; do
   verdict "$package"
   step_record "$package_key" "swift-test:$package:$CONFIGURATION" apps/macOS
   metric_append step "swift-test:$package:$CONFIGURATION" run \
-    "$(($(metric_now) - package_started))" 0
+    "$(($(metric_now) - package_started))" "$package_waited"
 done
