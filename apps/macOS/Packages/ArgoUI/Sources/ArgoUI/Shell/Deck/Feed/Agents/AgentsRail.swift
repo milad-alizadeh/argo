@@ -45,6 +45,7 @@ package struct AgentsRail: View {
                         agent: agent,
                         isSelected: control.scope.agent == agent.id,
                         scope: control.select(agent),
+                        end: control.end(agent),
                     )
                 }
                 // Nothing at all where nothing is held back: a control that opens onto an empty

@@ -146,6 +146,20 @@ public extension Hub {
         rememberLostTurn(nil, for: sessionID)
     }
 
+    /// The reader has ended one backgrounded delegation from the rail (#1267).
+    ///
+    /// Against the CLAIM, on `rememberLostTurn` above's reasoning, and refused for a Session with
+    /// no claim on the same ground: an external Session is one Argo cannot type at either, so there
+    /// is no composer of ours for this to give back.
+    ///
+    /// It takes the delegation's own call id and not the chip's position: the rail re-numbers its
+    /// rows whenever a delegation lands, and a position filed here would end whichever child that
+    /// number reached next.
+    func endDelegation(callID: String, for sessionID: String) {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        claims.endDelegation(callID, for: claim)
+    }
+
     /// How many stance records a Session has written, read before a walk begins — see
     /// `SessionModeSet` for why the count and not the value.
     ///

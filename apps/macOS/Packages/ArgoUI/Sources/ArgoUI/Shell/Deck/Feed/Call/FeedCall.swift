@@ -23,21 +23,26 @@ package struct FeedCall: Equatable, Sendable {
     /// result carries the whole spend of the subagent it ran, the only place a sidechain's cost is
     /// ever reported.
     let spend: Usage?
-    /// The Subagent a delegation started, where the record named one. `nil` for every other call,
-    /// and for a delegation the record has not answered yet — the name arrives with the result.
-    ///
-    /// The rail's join key: it pairs a chip with the Subagent's own reading, so a selected Agent
-    /// scopes the feed onto its work rather than onto the line that handed it over. `var` so the
-    /// memberwise initialiser defaults it, which leaves every other caller of this type unchanged.
-    var subagentID: String?
-    /// How long a delegation reported taking, and when it was handed over. Both for the rail's chip
-    /// and neither drawn on this row, so the sentence above is unaffected — the rule that keeps a
-    /// timestamp out of a call row is about the row's LAYOUT, not about what the reading carries.
-    ///
-    /// `durationMs` is absent while the Subagent is still working; `startedAtMs` is what the chip
-    /// counts up from until then.
-    var durationMs: Int?
-    var startedAtMs: Int?
+    /// What a DELEGATING call handed over, as ONE value (#755, #1267) — see `Handover`. Every
+    /// field in it is `nil` for every other call, which is a thing said once here rather than four
+    /// times in a row of slots the sentence above never draws.
+    package var handover = Handover()
+
+    /// The Subagent this delegation started — `Handover.subagentID`, forwarded so the surfaces that
+    /// read it are about the fact rather than about where it is stored.
+    package var subagentID: String? {
+        handover.subagentID
+    }
+
+    /// How long it reported taking, and when the work was handed over — `Handover`'s own two, and
+    /// forwarded for its reason.
+    var durationMs: Int? {
+        handover.durationMs
+    }
+
+    var startedAtMs: Int? {
+        handover.startedAtMs
+    }
 
     /// Whether the row could open onto anything. Derived from the evidence and never from the kind.
     var disclosure: Disclosure {
@@ -188,9 +193,7 @@ package extension FeedCall {
             evidence: evidence,
             repeats: repeats,
             spend: spend,
-            subagentID: subagentID,
-            durationMs: durationMs,
-            startedAtMs: startedAtMs,
+            handover: handover,
         )
     }
 }

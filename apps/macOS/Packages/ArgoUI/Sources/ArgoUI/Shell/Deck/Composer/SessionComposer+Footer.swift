@@ -34,7 +34,12 @@ extension SessionComposer {
             ),
             send: SendButtonControl(
                 isSendable: draft.isSendable,
-                isRunning: composer.isRunning,
+                // The status WORD, minus the one reading of it that is not the parent's own work
+                // (#1267): a Turn held open by a handed-off child has nothing here to stop, and a
+                // Stop drawn over it is the dead control this ticket was written from. The field
+                // beside it already sends straight through at that reading, so a button still
+                // saying Stop would answer Return with one act and the click with another.
+                isRunning: composer.isRunning && !composer.isHeldByDelegation,
                 send: submit,
                 stop: interrupt,
             ),

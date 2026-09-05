@@ -134,6 +134,17 @@ package enum SessionComposerProjection {
         /// which is the state a fixture that has said nothing about this is in.
         package var takesTypedLine = true
 
+        /// Whether the only thing holding this Session's Turn open is a delegation the parent
+        /// already handed off (#1267) — `SessionComposerProjection.heldByDelegation(_:)`.
+        ///
+        /// Beside `isRunning` rather than instead of it, and that pair is the whole point: the
+        /// status WORD still says `running`, because the record's Turn is open and the rail is
+        /// still drawing a child. What this says is that none of it is the PARENT's work, which is
+        /// what the footer needs to draw Send where it was drawing a Stop with nothing to stop.
+        ///
+        /// Set after the init for the reason `endedByInterrupt` above is.
+        package var isHeldByDelegation = false
+
         /// Spelled out because Swift synthesises no memberwise initializer above
         /// `internal`, and the specimens build this from their own target (#1085).
         package init(
@@ -187,11 +198,15 @@ package enum SessionComposerProjection {
         // time would cost a read whether or not the walk behind it is cheap — and this one is
         // bounded by the open Turn where the other is linear in the whole transcript.
         let events = session.events
+        // Taken once and read twice — the placeholder below and the three readings at the foot are
+        // one answer, and a field that invites a queued follow-up while send goes straight through
+        // is the two disagreeing on screen.
+        let isHeld = heldByDelegation(session)
         var composer = Composer(
             sessionID: session.id,
-            placeholder: isTurnInFlight(session)
-                ? queuePlaceholder
-                : placeholder(addressing: session.cli),
+            placeholder: isHeld || !isTurnInFlight(session)
+                ? placeholder(addressing: session.cli)
+                : queuePlaceholder,
             facts: RunFacts(
                 model: session.model,
                 // Read here rather than held: `effort` comes off the records verbatim, and what it
@@ -214,7 +229,35 @@ package enum SessionComposerProjection {
         composer.hasTurnEnded = hasTurnEnded(session.status)
         composer.endedByInterrupt = endedByInterrupt(events)
         composer.takesTypedLine = session.status.takesTypedLine
-        return composer
+        return isHeld ? freed(composer) : composer
+    }
+
+    /// Whether the only thing holding this Session's Turn open is a delegation the parent already
+    /// handed off (#1267) — `DelegationHold` is the whole reading, and this is the one place the
+    /// composer asks it.
+    ///
+    /// Argo's own submit is asked FIRST and outranks it. `hasUnansweredTurn` is a Turn this
+    /// composer typed and the record has not answered, which is DIRECT and about the PARENT: a
+    /// backgrounded child out at the same time says nothing about it.
+    private static func heldByDelegation(_ session: CockpitPresentation.Session) -> Bool {
+        !session.hasUnansweredTurn && session.delegationHold.holdsTurn
+    }
+
+    /// The same composer with its three Turn readings answered by the hold rather than by the
+    /// status word (#1267).
+    ///
+    /// All three, because they are three readings of one fact and the bug is what happens when they
+    /// disagree with it: a queue-only field (`isTurnInFlight`), a queue nothing will ever release
+    /// (`hasTurnEnded`), and two run-settings knobs drawn inert (`takesTypedLine`). The status word
+    /// itself is left alone — the record's Turn IS open, and the rail goes on saying so until the
+    /// reader ends the delegation or its report arrives.
+    private static func freed(_ composer: Composer) -> Composer {
+        var freed = composer
+        freed.isTurnInFlight = false
+        freed.hasTurnEnded = true
+        freed.takesTypedLine = true
+        freed.isHeldByDelegation = true
+        return freed
     }
 
     /// Whether a Turn is in flight, asked of BOTH readings that can answer (#1179).

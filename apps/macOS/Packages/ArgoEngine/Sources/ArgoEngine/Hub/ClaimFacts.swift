@@ -37,6 +37,15 @@ struct ClaimFacts: Equatable {
     /// `SessionTurnSubmission.isRunning`'s answer and not this field's, so it outlives the Turn it
     /// stands for. Unreachable for an external Session, which has no claim to file one against.
     var submittedTurn: SessionTurnSubmission?
+    /// The backgrounded delegations the reader ENDED from the rail (#1267), by call id. Argo's own
+    /// gesture and DIRECT: the report that would have closed the call is lost, so the reader says
+    /// so instead, and this is the record of their having said it.
+    ///
+    /// A SET, because the same call can only be ended once and the order it happened in decides
+    /// nothing. Held on the claim beside `lostTurn` for the same reason: the row is re-keyed the
+    /// moment its CLI writes a record, and a decision taken before that would be lost at the
+    /// re-key.
+    var endedDelegations: Set<String> = []
     /// The last Turn typed at it that the CLI never heard, verbatim (#682). Held so the words can
     /// go back where they were typed: the composer cleared on the strength of a keystroke that was
     /// written, and this is the later news that it was never read.
@@ -82,6 +91,7 @@ struct ClaimFacts: Equatable {
             && driveStatus == nil
             && submittedTurn == nil
             && lostTurn == nil
+            && endedDelegations.isEmpty
             && settledWaits.isEmpty
             && ticket == nil
             && !handingOff

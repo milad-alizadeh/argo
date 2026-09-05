@@ -23,18 +23,37 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     /// the launch receipt carries no `usage`, and the late report's spend is a shape Argo will not
     /// read (`TranscriptReader.swift`), so a finished async chip honestly has no spend to draw.
     let spend: Usage?
+    /// What the delegating call handed over — see `FeedCall.Handover`, whose whole value this is.
+    /// One value rather than four slots, for the reason it is one there (#755).
+    package var handover: FeedCall.Handover
+
     /// The CLI's own id for this subagent, which is what its reading is keyed by — see
-    /// `FeedAgentReader`. Synchronously it arrives with the result, so a running chip has nothing
-    /// to key a reading by and is the UNSELECTABLE one; a backgrounded launch names `agentId` in
-    /// the receipt, so a running async chip has its id from the start.
-    package var subagentID: String?
-    /// How long it ran, as the host measured it. `nil` while a synchronous agent is still working —
-    /// the total arrives with the result, as `spend` does — and `nil` for the whole life of a
-    /// backgrounded one, which reports no total at either end.
-    var durationMs: Int?
-    /// When the work was handed over. What a running chip counts up from, since a total it does not
-    /// have yet cannot be drawn.
-    var startedAtMs: Int?
+    /// `FeedAgentReader`. Forwarded off `handover` so the surfaces that read it are about the fact
+    /// rather than about where it is stored.
+    ///
+    /// Synchronously it arrives with the result, so a running chip has nothing to key a reading by
+    /// and is the UNSELECTABLE one; a backgrounded launch names `agentId` in the receipt, so a
+    /// running async chip has its id from the start.
+    package var subagentID: String? {
+        handover.subagentID
+    }
+
+    /// How long it ran, as the host measured it, and when the work was handed over. `FeedCall
+    /// .Handover`'s own two, forwarded for the reason above.
+    var durationMs: Int? {
+        handover.durationMs
+    }
+
+    var startedAtMs: Int? {
+        handover.startedAtMs
+    }
+
+    /// The BACKGROUNDED delegation's own call id, where this chip is one the record has not closed
+    /// (#1267) — what the reader's End gesture names, and `nil` for every chip there is nothing to
+    /// end. See `FeedCall.Handover.openDelegationID`, which is where both halves of that are read.
+    package var openDelegationID: String? {
+        handover.openDelegationID
+    }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
@@ -42,16 +61,12 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
         label: String,
         activity: AgentActivity,
         spend: Usage?,
-        subagentID: String? = nil,
-        durationMs: Int? = nil,
-        startedAtMs: Int? = nil,
+        handover: FeedCall.Handover = FeedCall.Handover(),
     ) {
         self.id = id
         self.label = label
         self.activity = activity
         self.spend = spend
-        self.subagentID = subagentID
-        self.durationMs = durationMs
-        self.startedAtMs = startedAtMs
+        self.handover = handover
     }
 }

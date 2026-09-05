@@ -143,6 +143,7 @@ extension Hub {
         published.ticket = facts.ticket ?? session.ticket
             ?? ownership.spawnTicket(ofSessionID: session.id)
         published.lostTurn = facts.lostTurn
+        published.endedDelegations = facts.endedDelegations
         // Read through the claim rather than as recorded: the fresh row is re-keyed to its CLI's
         // own id the moment its record appears, and the link has to follow it there.
         published.handedOffTo = handoff.edge(of: session.id).map(ownership.rowID(ofClaim:))

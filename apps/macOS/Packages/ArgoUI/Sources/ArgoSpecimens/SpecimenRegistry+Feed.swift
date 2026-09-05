@@ -103,6 +103,15 @@ extension SpecimenRegistry {
         // An idle parent waiting on its fan-out, two chips running off the children's own
         // records and one unknown (#1269).
         SpecimenEntry("agentsRailWaiting") { AgentsRailSpecimen(subject: .waiting) },
+        // The lost report, with the composer beside it (#1267): the rail still says a child is out
+        // and the field still takes the next Turn — the pair no earlier still could show, because
+        // until now the second half of it was a Stop.
+        SpecimenEntry("unclosedDelegation") { UnclosedDelegationSpecimen() },
+        // The same reading after the reader ended one of the two from the rail: that chip quiet,
+        // the other still out, and the count line down to one.
+        SpecimenEntry("unclosedDelegationEnded") {
+            UnclosedDelegationSpecimen(ended: [UnclosedDelegationSpecimen.calls.spec])
+        },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
         // missing, since the strip has no room for the word Main (#1013).

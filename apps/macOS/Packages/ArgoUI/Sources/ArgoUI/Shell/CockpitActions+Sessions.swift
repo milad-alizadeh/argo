@@ -42,6 +42,13 @@ public extension CockpitActions {
         /// stops reporting it. Not on the drive port: nothing is being asked of the Session — this
         /// is Argo taking back its own news, and the port is what Argo does TO an agent.
         public var clearLostTurn: (String) -> Void = { _ in }
+        /// Stop waiting for one backgrounded delegation's report (#1267) — the Session's id, then
+        /// the delegating call's own id.
+        ///
+        /// Beside `clearLostTurn` and not on the drive port, for that act's reason: nothing is
+        /// being asked of the agent. The child is out of reach — its report is what was lost — and
+        /// what this changes is Argo's own claim that one is still coming.
+        public var endDelegation: (String, String) -> Void = { _, _ in }
         /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
         /// start a Session seeded with it in the same folder and against the same issue (#513).
         ///

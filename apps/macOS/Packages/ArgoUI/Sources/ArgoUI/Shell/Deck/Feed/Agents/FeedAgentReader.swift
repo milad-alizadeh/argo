@@ -35,6 +35,10 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// Whether the Session these delegations belong to is itself running (`DelegatingSession`).
     /// Read off the stamp below, so the cache's memo and the walk this file does cannot disagree.
     private let liveness: DelegatingSession
+    /// What a backgrounded delegation is holding open here, and which of them the reader has ENDED
+    /// (#1267). Read off the stamp beside `liveness`, for the same reason: one fact, taken where
+    /// the Session is in hand, so the memo and this file's walk cannot disagree about it.
+    private let hold: DelegationHold
 
     /// A reader that has nothing to ask.
     public static let unread = FeedAgentReader()
@@ -55,6 +59,7 @@ public struct FeedAgentReader: Equatable, Sendable {
         self.grewAtMs = grewAtMs
         self.stamp = nil
         self.liveness = .notRunning
+        self.hold = .none
     }
 
     /// The readings a fixture or a specimen has in hand, which are a dictionary and never a live
@@ -63,16 +68,23 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// `writing` names the Subagents whose files are growing as the state is drawn. A set rather
     /// than a date, because what a fixture is stating is the CLAIM — this child is writing — and a
     /// moment it had to pick relative to a clock is a moment that ages.
+    ///
+    /// `ended` names the delegations the reader has ended, by CALL id (#1267) — the other set the
+    /// rail's dots are read from, and the reason a specimen can draw the state a lost report leaves
+    /// without a Hub behind it. It states nothing about what is holding the Turn open: that is a
+    /// reading of the Session's own stream, and a fixture's chips are handed over already made.
     package init(
         events: [String: [TranscriptEvent]],
         of session: DelegatingSession = .notRunning,
         writing: Set<String> = [],
+        ended: Set<String> = [],
     ) {
         self.identity = .fixture(events, writing: writing)
         self.read = { events[$0] }
         self.grewAtMs = { writing.contains($0) ? Date().epochMs : nil }
         self.stamp = nil
         self.liveness = session
+        self.hold = DelegationHold.stating(ended: ended)
     }
 
     private init() {
@@ -81,6 +93,7 @@ public struct FeedAgentReader: Equatable, Sendable {
         self.grewAtMs = { _ in nil }
         self.stamp = nil
         self.liveness = .notRunning
+        self.hold = .none
     }
 
     private init(_ other: FeedAgentReader, stamp: SessionsRoomReadingCache.Stamp?) {
@@ -89,6 +102,7 @@ public struct FeedAgentReader: Equatable, Sendable {
         self.grewAtMs = other.grewAtMs
         self.stamp = stamp
         self.liveness = DelegatingSession.of(stamp?.status)
+        self.hold = stamp?.delegationHold ?? .none
     }
 
     /// The same reader, told which reading of the Session it is being asked alongside. Taken by
@@ -100,7 +114,14 @@ public struct FeedAgentReader: Equatable, Sendable {
 
     public static func == (first: FeedAgentReader, second: FeedAgentReader) -> Bool {
         first.identity == second.identity && first.stamp == second.stamp
-            && first.liveness == second.liveness
+            && first.liveness == second.liveness && first.hold == second.hold
+    }
+
+    /// Whether the reader has already ended this delegation (#1267), by the delegating call's own
+    /// id — what takes the act off a chip it has been used on. Off the hold this reader was stamped
+    /// with, so the rail's control and the rail's dots read one value rather than two.
+    func hasEnded(_ callID: String) -> Bool {
+        hold.isEnded(callID)
     }
 
     /// Whether Argo has read this Agent's file at all. Asked by the rail per chip, which is why it
@@ -182,6 +203,7 @@ public struct FeedAgentReader: Equatable, Sendable {
         return FeedAgents.told(
             agents,
             writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+            ended: hold,
             at: nowMs,
         )
     }

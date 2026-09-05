@@ -157,7 +157,7 @@ final class LiveClaudeFixture {
     /// `HubSession.mode`, which prefers the rung Argo asked for until the record moves — the whole
     /// claim of a mode test is that the CLI agrees, so Argo's own answer cannot be the evidence.
     var reportedRung: String? {
-        hub.sessions.compactMap(\.observedMode).last
+        hub.sessions.compactMap(\.observed.mode).last
     }
 
     /// Wait, watching for a Permission for the whole wait, and answer whether one was ever up.

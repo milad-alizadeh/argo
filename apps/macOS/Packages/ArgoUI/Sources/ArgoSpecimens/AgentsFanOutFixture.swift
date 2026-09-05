@@ -25,11 +25,17 @@ enum AgentsFanOutFixture {
             // per position, because a column of twenty identical figures proves nothing about the
             // column's rhythm.
             spend: isRunning || isAsync ? nil : spent(at: position),
-            subagentID: isRunning && !isAsync ? nil : "a-\(position)",
-            durationMs: isRunning || isAsync ? nil : 40000 + position * 23000,
-            // Set whatever the chip's state: the handover is a moment the delegating call always
-            // wrote, and a finished async chip having one is what `AgentMeter` must NOT tick on.
-            startedAtMs: Date().epochMs - (30 + position) * 1000,
+            handover: FeedCall.Handover(
+                subagentID: isRunning && !isAsync ? nil : "a-\(position)",
+                durationMs: isRunning || isAsync ? nil : 40000 + position * 23000,
+                // Set whatever the chip's state: the handover is a moment the delegating call
+                // always wrote, and a finished async chip having one is what `AgentMeter` must NOT
+                // tick on.
+                startedAtMs: Date().epochMs - (30 + position) * 1000,
+                // The live async ones are the chips the reader can End (#1267): a launch receipt
+                // came back and no report has.
+                openDelegationID: isRunning && isAsync ? "call-\(position)" : nil,
+            ),
         )
     }
 
