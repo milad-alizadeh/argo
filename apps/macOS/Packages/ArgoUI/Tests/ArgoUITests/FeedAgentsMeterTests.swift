@@ -107,6 +107,7 @@ struct FeedAgentsMeterTests {
 
         let told = FeedAgents.told([whole], by: SubagentEvidence(
             writing: { _ in .quiet },
+            ending: { _ in .open },
             measure: { _ in
                 asked += 1
                 return Fixture.measured

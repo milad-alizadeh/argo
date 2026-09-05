@@ -112,7 +112,7 @@ struct FeedAgentsWritingTests {
     private static func readings(writing: Set<String> = []) -> FeedAgentReader {
         FeedAgentReader(
             events: [child: [.toolCall(FeedFixture.call("dig", tool: "Bash", kind: .execute))]],
-            writing: writing,
+            growth: StatedGrowth(writing: writing),
         )
     }
 

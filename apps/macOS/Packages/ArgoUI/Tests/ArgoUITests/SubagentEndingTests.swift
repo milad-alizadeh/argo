@@ -111,12 +111,19 @@ struct SubagentEndingTests {
     @Test
     func `an ending never reopens a delegation the record answered`() {
         let answered = [FeedAgent(
-            id: 0, label: "done", activity: .finished, spend: nil, subagentID: Self.child,
+            id: 0,
+            label: "done",
+            activity: .finished,
+            spend: nil,
+            handover: FeedCall.Handover(subagentID: Self.child),
         )]
         let told = FeedAgents.told(
             answered,
-            writing: { _ in .quiet },
-            ending: { _ in .open },
+            by: SubagentEvidence(
+                writing: { _ in .quiet },
+                ending: { _ in .open },
+                measure: { _ in .unmeasured },
+            ),
             at: Self.now,
         )
 
@@ -152,8 +159,11 @@ struct SubagentEndingTests {
         -> [FeedAgent] {
         FeedAgents.told(
             FeedAgents.all(in: FeedProjection.rows(from: launched), of: .undecided),
-            writing: { _ in writing },
-            ending: { _ in SubagentEnding.read(reading) },
+            by: SubagentEvidence(
+                writing: { _ in writing },
+                ending: { _ in SubagentEnding.read(reading) },
+                measure: { _ in .unmeasured },
+            ),
             at: now,
         )
     }

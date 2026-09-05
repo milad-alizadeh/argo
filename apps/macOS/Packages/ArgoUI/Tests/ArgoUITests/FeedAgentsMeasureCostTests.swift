@@ -32,7 +32,7 @@ struct FeedAgentsMeasureCostTests {
         let opening = FeedAgentReader(events: [Fixture.child: Array(Fixture.ran.prefix(2))])
         let grown = FeedAgentReader(
             events: [Fixture.child: Fixture.ran],
-            writing: [Fixture.child],
+            growth: StatedGrowth(writing: Set([Fixture.child])),
         )
 
         let first = opening.stamped(room.stamp).agents(in: room.feed)
@@ -71,7 +71,7 @@ struct FeedAgentsMeasureCostTests {
         let opened = FeedAgentReader(events: [Fixture.child: Fixture.ran]).stamped(room.stamp)
         let again = FeedAgentReader(
             events: [Fixture.child: Fixture.ran],
-            writing: [Fixture.child],
+            growth: StatedGrowth(writing: Set([Fixture.child])),
         ).stamped(room.stamp)
 
         _ = opened.reading(of: room.feed, under: .subagent(0))
