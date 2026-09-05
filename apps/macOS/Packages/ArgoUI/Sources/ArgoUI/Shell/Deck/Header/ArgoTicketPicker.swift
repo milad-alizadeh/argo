@@ -12,10 +12,9 @@ enum ArgoTicketPicker {
     /// wide as the longest title in the backlog is the same fault as one as tall as it is long.
     static let width: CGFloat = 320
 
-    /// How tall one result row stands: a line of the row's own type with `snug` either side. The
-    /// shape `ArgoComposerVessel.commandRowHeight` is built at, derived again rather than borrowed
-    /// — the composer's rows are set in the machine face and these are not, so one number serving
-    /// both would be a coincidence rather than a rule.
+    /// How tall one result row stands: a line of the row's own type with `snug` either side. It
+    /// comes out near `ArgoComposerVessel.commandRowHeight` and is not that number — the composer's
+    /// rows are set in the machine face and these are not.
     static var rowHeight: CGFloat {
         ArgoTypography.body.nominalLineBox.rounded(.up) + ArgoSpacing.snug * 2
     }

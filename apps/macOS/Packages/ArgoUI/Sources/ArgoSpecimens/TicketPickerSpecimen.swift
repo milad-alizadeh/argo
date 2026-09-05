@@ -8,10 +8,10 @@ import SwiftUI
 ///
 /// The three side by side, because the judgement is comparative and it is about SIZE: ten open
 /// Tickets and one and none all have to come out the same width, and the first has to stop at the
-/// list's ceiling rather than run to the height of the backlog.
+/// list's ceiling.
 ///
-/// Drawn inline rather than out of the link it hangs off, because a popover is its own window and
-/// never lands in a screenshot of this one.
+/// Drawn inline rather than out of the link it hangs off: a popover is its own window and never
+/// lands in a screenshot of this one.
 struct TicketPickerSpecimen: View {
     var body: some View {
         HStack(alignment: .top, spacing: ArgoSpacing.loose) {

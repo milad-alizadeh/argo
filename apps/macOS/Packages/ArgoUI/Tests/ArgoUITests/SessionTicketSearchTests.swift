@@ -88,6 +88,22 @@ struct SessionTicketSearchTests {
         #expect(matches.map(\.matched) == [0 ..< 0, 0 ..< 0, 0 ..< 0])
     }
 
+    /// The three runs are what the row draws, so together they have to BE the label — over a
+    /// title carrying a character whose lowercase is longer than itself as well, which is where a
+    /// range measured over a folded copy would slice past the end of the real one.
+    @Test
+    func `the runs it cuts reassemble the label they were cut from`() {
+        let backlog: [SessionTicketLinking.Option] = [
+            .init(number: 512, title: "STRASSE and ẞ in one title, then route"),
+        ]
+
+        let match = SessionTicketSearch.matches(over: backlog, on: "route").first
+
+        #expect(match?.highlighted == "route")
+        #expect((match?.before ?? "") + (match?.highlighted ?? "") + (match?.after ?? "")
+            == backlog[0].label)
+    }
+
     @Test
     func `a query nothing carries keeps nothing`() {
         let matches = SessionTicketSearch.matches(over: backlog, on: "zzz")

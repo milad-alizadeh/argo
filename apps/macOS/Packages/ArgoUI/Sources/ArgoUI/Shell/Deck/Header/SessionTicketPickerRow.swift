@@ -17,7 +17,7 @@ struct SessionTicketPickerRow: View {
     @State private var isHovered = false
 
     var body: some View {
-        Text("\(part(before: match.matched))\(matched)\(part(after: match.matched))")
+        Text("\(match.before)\(matched)\(match.after)")
             .argoText(ArgoTypography.body)
             .foregroundStyle(argo.color.text.primary)
             .lineLimit(1)
@@ -38,7 +38,7 @@ struct SessionTicketPickerRow: View {
     /// The characters the reader typed, which are the only part of the row that lifts. An
     /// interpolated `Text` keeps its own styling; the plain runs around it take the outer one.
     private var matched: Text {
-        Text(part(in: match.matched))
+        Text(match.highlighted)
             .foregroundStyle(argo.color.interaction.accentBright.color)
             .fontWeight(.semibold)
     }
@@ -56,21 +56,5 @@ struct SessionTicketPickerRow: View {
         case (false, true): argo.color.surface.hover
         case (false, false): nil
         }
-    }
-
-    private var label: [Character] {
-        Array(match.option.label)
-    }
-
-    private func part(before matched: Range<Int>) -> String {
-        String(label[..<matched.lowerBound])
-    }
-
-    private func part(in matched: Range<Int>) -> String {
-        String(label[matched])
-    }
-
-    private func part(after matched: Range<Int>) -> String {
-        String(label[matched.upperBound...])
     }
 }

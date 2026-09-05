@@ -42,7 +42,9 @@ package struct SessionTicketPicker: View {
 
     package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            SessionTicketPickerField(query: $query, press: press)
+            SearchFieldLine(
+                query: $query, prompt: Self.prompt, opensFocused: true, press: press,
+            )
             Divider()
             SessionTicketPickerList(matches: matches, current: cursor.current, pick: link)
         }
@@ -66,7 +68,7 @@ package struct SessionTicketPicker: View {
 
     /// Every key the field hands over, off ONE switch: a fifth fails to compile here rather than
     /// being quietly swallowed by a default arm.
-    private func press(_ key: SessionTicketPickerField.Key) {
+    private func press(_ key: SearchFieldLine.Key) {
         switch key {
         case .up: cursor.up(over: numbers)
         case .down: cursor.down(over: numbers)
@@ -90,21 +92,11 @@ package struct SessionTicketPicker: View {
 
     /// What a screen reader calls the surface — the act, because that is what opening it is for.
     static let label = "Link this Session to a Ticket"
+
+    /// Says what may be typed: the two things that match are not the same kind of thing, and a
+    /// reader who only knows one of them types less than they could.
+    static let prompt = "Search Tickets by number or title"
 }
 
-#Preview("Session ticket picker — whole backlog, a query, nothing matched") {
-    let linking = SessionTicketLinking(options: [
-        .init(number: 1231, title: "Link a ticket opens the whole backlog"),
-        .init(number: 1217, title: "Anchor the feed on its newest line"),
-        .init(number: 1092, title: "Route between Session and Ticket"),
-    ])
-
-    return HStack(alignment: .top, spacing: ArgoSpacing.loose) {
-        SessionTicketPicker(linking: linking)
-        SessionTicketPicker(linking: linking, query: "1217")
-        SessionTicketPicker(linking: linking, query: "zzz")
-    }
-    .padding(ArgoSpacing.loose)
-    .argoDeckSurface()
-    .argoAppearance()
-}
+// The states this draws are rendered by `TicketPickerSpecimen`, which is where the sample backlog
+// they need lives (`docs/agents/module-boundaries.md`, edge 8).
