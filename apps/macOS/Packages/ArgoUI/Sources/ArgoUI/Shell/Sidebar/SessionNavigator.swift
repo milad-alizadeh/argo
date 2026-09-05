@@ -36,17 +36,27 @@ package struct SessionNavigator: View {
     /// keyboard selection, a row leaving, the window resizing (#1235).
     @State private var isAtTop = true
 
-    /// The list, and the one thing scrolled from outside it: a Session landing at the roster's
-    /// head brings a list that is already at the top back to the top (#1235).
+    /// The list, and the two things scrolled from outside it: a Session landing at the roster's
+    /// head brings a list that is already at the top back to the top (#1235), and a selection made
+    /// on another surface brings its own row into view — `RosterReveal` (#1273).
     package var body: some View {
         ScrollViewReader { roster in
-            list.onChange(of: rows.first?.id) { previous, leading in
-                guard let top = SessionRosterProjection.topRow(
-                    whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
-                ) else { return }
-                roster.scrollTo(top, anchor: .top)
-            }
+            list
+                .onChange(of: rows.first?.id) { previous, leading in
+                    guard let top = SessionRosterProjection.topRow(
+                        whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
+                    ) else { return }
+                    roster.scrollTo(top, anchor: .top)
+                }
+                .modifier(RosterReveal(selection: selection, drawn: drawnRows, roster: roster))
         }
+    }
+
+    /// Every row the list is drawing, in its order — the kept rows, and what is behind the foot
+    /// only while the foot is open. Read here rather than by the body, because a scroll may only
+    /// name a row the list actually has.
+    private var drawnRows: [SessionRosterProjection.Row] {
+        rows + (isArchiveOpen ? archived : [])
     }
 
     private var list: some View {
