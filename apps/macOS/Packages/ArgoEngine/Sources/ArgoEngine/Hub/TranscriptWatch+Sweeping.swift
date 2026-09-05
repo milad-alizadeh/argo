@@ -44,7 +44,7 @@ extension TranscriptWatch {
         // Last, so what it reads is the working set this sweep settled on rather than the one it
         // started from. A row re-keyed by the drop above reaches the claim that owns it here, and
         // here only: the batches that would otherwise carry it are behind the file that moved.
-        onSwept()
+        onWorkingSetMoved()
     }
 
     /// Stop reading a transcript the sweep no longer names. Aged out of the window it keeps its

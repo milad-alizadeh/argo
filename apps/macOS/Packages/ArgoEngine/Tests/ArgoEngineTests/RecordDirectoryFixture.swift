@@ -81,19 +81,26 @@ struct RecordDirectoryFixture {
 
     /// Move a transcript's mtime back, which is the only way a file leaves the working set.
     func age(_ url: URL, by interval: TimeInterval) throws {
-        try FileManager.default.setAttributes(
-            [.modificationDate: Date().addingTimeInterval(-interval)],
-            ofItemAtPath: url.path,
-        )
+        try setModificationTime(of: url, to: Date().addingTimeInterval(-interval))
     }
 
     /// Give one transcript the mtime another has — the pair a relocation leaves, which is one
     /// file under two paths and so one moment of last activity under both.
+    ///
+    /// Throws where the file has no mtime to copy, rather than returning having done nothing: this
+    /// is a test's PREMISE, and one that quietly did not hold is an assertion about something else.
     func matchModificationTime(of url: URL, to other: URL) throws {
         let held = try FileManager.default.attributesOfItem(atPath: other.path)
-        guard let modified = held[.modificationDate] else { return }
+        guard let modified = held[.modificationDate] as? Date else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        try setModificationTime(of: url, to: modified)
+    }
+
+    /// The one write behind both of the above.
+    private func setModificationTime(of url: URL, to date: Date) throws {
         try FileManager.default.setAttributes(
-            [.modificationDate: modified],
+            [.modificationDate: date],
             ofItemAtPath: url.path,
         )
     }
