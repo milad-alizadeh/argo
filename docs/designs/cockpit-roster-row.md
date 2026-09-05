@@ -1,4 +1,6 @@
-<!-- status: approved
+<!-- status: built
+     approved-at: 94120322
+     built-at: f76d2c30
      prototype: argo/#1310-roster-agent-count -->
 
 # The Sessions roster row
@@ -56,6 +58,8 @@ Everything below is a token or is derived from one. Nothing is a number a builde
 | dot inset from the row's top | `(row line − statusDot) / 2` | the dot sits on the **title's optical centre**. Derived, never nudged: a marker aligned by a magic number drifts the moment the type scale moves. The row line is `rowTitle`'s box |
 | what "`rowTitle`'s box" is | `ArgoTypeScale.drawnLineBox` | amended in the build (#1343). The `.html` sets `--row-line: 13 × 1.45`, which is CSS's own leading and stands ~1.6pt over the box SwiftUI actually draws a `Text` in; centring against it puts the dot visibly under the title. The box is the resolved face's `ascender − descender`, measured on the render at 12px dot centre against a 106–125px cap band |
 | Subagent dot | **4** | half the state dot. What runs *under* a Session is drawn smaller than the Session's own state |
+| Subagent dot ink | `state.running` | added to this table in the build (#1349). It was only ever in the explorable's CSS, and the build read the prose and drew the whole stack in `text.tertiary`, which made a live stack and a stack that has all gone home one voice. A dot says a Subagent is RUNNING, so it is drawn in the ink that says so — this is not the third teal rule 2 forbids, because that rule is about *progress*, and these dots are *state* |
+| the dash, and the outline pip | `text.disabled` | the two readings that are **over** or **unreadable**, held below the dots on purpose: rule 4 only tells zero from never-delegated if the two are told apart by more than shape |
 | gap between marks | **3** | tighter than `hair` would place them; the stack has to read as one column, not as a list |
 | ceiling | **5**, then `+n` | five is where a stack stops being countable at a glance, and the figure is exact where a longer stack is texture |
 | the `+n` label | `machineCaption`, `text.tertiary` | in the column's **flow** at `width: 100%` of a fixed 6pt column, so it overflows evenly on both sides and the column does not grow by a point. Measured: every title stays on one x |
@@ -199,6 +203,26 @@ the platform's own list fill switched off at the table (D30 as amended by #875/#
 is no custom grey wash to replace and no second selection vocabulary to unify — the roster and
 the Tickets room already draw one ground. The ground carries the selection and nothing else does:
 still no leading accent rule.
+
+**The padlock beside the title stands, and the explorable never modelled it.** An `external`
+Session draws `ArgoSymbol.readOnlySession` after its name, and none of the ten renders carries
+one — the explorable models `SessionState`, and the padlock answers to `Access`, which is a
+different axis. It says the one thing the ghosting cannot: `external` and `orphaned` both ghost,
+and only `external` stays read-only, because selecting an `orphaned` Session resumes its chain
+(ADR-0026). It predates #1310 and this design retires nothing, so it is a **gap in the
+explorable**, not drift in the row. "The title then carries the sentence alone" is about the
+Ticket number leaving, not a clearing of line 1.
+
+**The row's padding was measured and matches** (#1349). The app's ground is a
+`listRowBackground` and the explorable's is a padded `div`, so the two boxes are not the same
+object and their heights differ by 3.5pt — 68 against 71.5. Measured ink-to-ground instead, on
+`roster-row/running.png` at 1x against the app's `roster` specimen at 2x, the margins are
+11.0 / 10.0 and 10.5 / 11.5: the same box within half a point at each end. Those halves are 1pt
+of the 3.5; the other 2.5 is the three lines themselves, 47pt in CSS against 49.5pt drawn, which
+is the leading difference the `drawnLineBox` row above already records and whose sign that row
+warns is not fixed. Re-derive it by rendering the specimen —
+`sh apps/macOS/scripts/specimens.sh <dir> roster` — and measuring the selected row's ground
+against the ink inside it.
 
 ## What the prototype exposed that the renders do not show
 
