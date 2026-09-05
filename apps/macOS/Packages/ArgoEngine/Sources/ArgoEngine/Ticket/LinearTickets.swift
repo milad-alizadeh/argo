@@ -27,8 +27,7 @@ public struct LinearTickets: TicketPort {
 
     /// Nothing, and for the reason above read backwards (#1178). A `linear.app` link names a
     /// workspace slug and a team KEY; a Linear Binding holds neither, so nothing here can tell one
-    /// bound team's issue from another workspace's. Recognising it on the host alone would route a
-    /// stranger's ticket into this Project's Tickets surface, which is worse than a web link.
+    /// bound team's issue from another workspace's.
     public static func ticketNumber(of _: URL, in _: String) -> Int? {
         nil
     }

@@ -35,6 +35,10 @@ final class ProseSurface: NSView {
     /// What to do with one when it is pressed. The environment's own opener, handed in by the
     /// representable, so a link opens the way every other link in the app does.
     var open: (URL) -> Void = { NSWorkspace.shared.open($0) }
+    /// What a link is CALLED where Argo has its own name for it — a Ticket's words (#1178), and
+    /// `nil` for every link whose address is the only name it has. Read by the accessibility
+    /// element and nowhere else: the glyphs are already the words the reader can see.
+    var words: (URL) -> String? = { _ in nil }
 
     /// The blocks placed, and what they were placed for.
     private(set) var placed = FeedProseFrame()

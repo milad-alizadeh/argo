@@ -7,12 +7,8 @@ import SwiftUI
 /// a link this Project's Binding addresses and the roster has named, one it addresses and nothing
 /// has named yet, and one it does not address at all.
 ///
-/// The three stacked in ONE reading, deliberately. The judgement is comparative — the first two
-/// have to read as the same kind of thing the roster draws, and the third has to still read as a
-/// web link beside them — and three separate stills settle none of that.
-///
-/// It is a reading and not three rows drawn by hand: the words are worded where the feed words
-/// them, so a still here is of the same path the shell renders.
+/// The three stacked in ONE reading, because the judgement is comparative: the first two have to
+/// read as the thing the roster draws, and the third has to still read as a web link beside them.
 struct FeedTicketLinkSpecimen: View {
     var body: some View {
         SpecimenScene.sessions(Self.rows)

@@ -23,7 +23,10 @@ struct FeedShapeHeight {
     let measure: CGFloat
     /// Which links in the row are Tickets, and what Argo calls each (#1178). A height is a fact
     /// about the WORDS, and a link worded as its Ticket is not the words the record carried.
-    var tickets: FeedTicketLinks = .none
+    ///
+    /// Never defaulted: a call site that left it out would take a height off the URL the record
+    /// carried while the surface inked `#1175` into it (ADR-0030, Rule 2).
+    let tickets: FeedTicketLinks
 
     /// The row's own height, without the step above it: that is a fact about a PAIR of rows, and
     /// `FeedRow.step(to:from:)` is where it is answered.

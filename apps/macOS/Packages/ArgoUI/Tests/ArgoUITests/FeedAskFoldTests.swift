@@ -184,6 +184,7 @@ struct FeedAskFoldTests {
         return FeedShapeHeight(
             standing: FeedMeasureStamp(of: model, atWidth: width).standing(at: 0),
             measure: FeedRowMeasure.measure(atWidth: width),
+            tickets: .none,
         ).height(of: .ask(ask))
     }
 }

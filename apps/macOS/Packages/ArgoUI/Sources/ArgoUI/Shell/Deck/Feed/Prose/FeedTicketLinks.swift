@@ -4,15 +4,10 @@ import SwiftUI
 
 /// Which Ticket URLs this window can read, and what Argo calls each one (#1178).
 ///
-/// A URL the agent typed is the one route into a Ticket that leaves the app. Argo already reads
-/// Tickets from a provider and opens a panel on one, so a link it can address is not a web link at
-/// all — it is a Ticket, and it is worded like every other Ticket the cockpit draws.
-///
 /// Recognition comes off the BINDING (`TicketAddress`) and never off the host: a `github.com` link
-/// to some other repository is a web link and stays one, and so is every link for a provider this
-/// Project is not bound to. A Binding that cannot address an item recognises none either — that is
-/// the same fact read backwards, and it is why Linear is honestly empty here rather than guessed at
-/// (`LinearTickets.ticketNumber(of:in:)`).
+/// to another repository is a web link and stays one, as is every link for a provider this Project
+/// is not bound to. Linear recognises nothing at all — `LinearTickets.ticketNumber(of:in:)` says
+/// why.
 ///
 /// Empty by default, so every specimen, `#Preview` and unbound Project draws its links as links.
 package struct FeedTicketLinks: Equatable, Sendable {
@@ -52,8 +47,8 @@ package struct FeedTicketLinks: Equatable, Sendable {
         return IssueReading.words(number: number, title: titles[number])
     }
 
-    /// Where a press on this link goes. Named rather than left inline in the view, so the one
-    /// decision the feature turns on is testable without rendering a row.
+    /// Where a press on this link goes. Named rather than left inline in the view, so the
+    /// decision is testable without rendering a row.
     package func route(of url: URL) -> Route {
         number(of: url).map(Route.ticket) ?? .web(url)
     }

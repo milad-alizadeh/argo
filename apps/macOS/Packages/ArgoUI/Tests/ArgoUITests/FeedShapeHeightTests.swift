@@ -46,7 +46,9 @@ struct FeedShapeHeightTests {
             let model = Self.model(for: row)
             let standing = FeedMeasureStamp(of: model, atWidth: width).standing(at: 0)
             let worked = FeedShapeHeight(
-                standing: standing, measure: FeedRowMeasure.measure(atWidth: width),
+                standing: standing,
+                measure: FeedRowMeasure.measure(atWidth: width),
+                tickets: .none,
             ).height(of: row.content)
             let drawn = Self.drawn(model, at: width)
             #expect(

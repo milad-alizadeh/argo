@@ -38,6 +38,17 @@ extension MinimapRow {
 }
 
 private extension FeedRow.Content {
+    /// A block of the agent's own words at the lane's scale. One path for both voices, because
+    /// the ink is the only thing that differs between them.
+    @MainActor func prose(
+        _ text: String,
+        ink: FeedInk,
+        read: MinimapReadingState,
+    )
+        -> MinimapRowShape {
+        MinimapProseBlock.shape(of: FeedTicketProse.worded(text, as: read.tickets), ink: ink)
+    }
+
     @MainActor func shape(read: MinimapReadingState) -> MinimapRowShape {
         switch self {
         // The prompt's pictures and lines, held against the trailing edge its bubble is drawn on.
@@ -49,12 +60,8 @@ private extension FeedRow.Content {
         case let .submitted(text): .bubble(text: text, shots: [], isFolded: read.isFolded)
         // Worded as the feed words them, so the lane is a miniature of the reading and not of the
         // record behind it (#1178) — the same string `FeedShapeHeight` took the height from.
-        case let .message(text): MinimapProseBlock.shape(
-                of: FeedTicketProse.worded(text, as: read.tickets), ink: .message,
-            )
-        case let .thought(text): MinimapProseBlock.shape(
-                of: FeedTicketProse.worded(text, as: read.tickets), ink: .thought,
-            )
+        case let .message(text): prose(text, ink: .message, read: read)
+        case let .thought(text): prose(text, ink: .thought, read: read)
         case let .call(call): call.shape
         case let .survey(survey): .line(
                 parts: [.words(survey.label, survey.ending.ink)],

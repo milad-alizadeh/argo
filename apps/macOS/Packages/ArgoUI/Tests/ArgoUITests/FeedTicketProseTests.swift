@@ -138,7 +138,9 @@ struct FeedTicketProseTests {
         let row = FeedRow.Content.message("Fixed in \(Self.link)")
         let measure: CGFloat = 220
 
-        let asRecord = FeedShapeHeight(standing: FeedRowStanding(), measure: measure)
+        let asRecord = FeedShapeHeight(
+            standing: FeedRowStanding(), measure: measure, tickets: .none,
+        )
         let asDrawn = FeedShapeHeight(
             standing: FeedRowStanding(), measure: measure, tickets: Self.unnamed,
         )

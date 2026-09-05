@@ -14,24 +14,28 @@ import SwiftUI
 package struct FeedMarkdown: View {
     @Environment(\.argo) private var argo
     @Environment(\.proseVoice) private var voice
-    @Environment(\.openURL) private var // Which links here are Tickets, and where a Ticket goes —
-        /// see `FeedTicketLinks`.
-        open
-    @Environment(\.argoFeedTickets) private var tickets
+    @Environment(\.openURL) private var open
     @Environment(\.argoOpenTicket) private var openTicket
 
     let text: String
+    /// Which links in `text` are Tickets — see `FeedTicketLinks`.
+    ///
+    /// Handed in rather than read off the environment, and empty by default. This view is drawn by
+    /// the Ticket detail and the evidence pane as well as by the feed, and only the caller that
+    /// WORDED a link as a Ticket may route a press on it to one: a surface showing the raw URL and
+    /// opening the Tickets surface on it would be saying two things at once (#1178).
+    var tickets: FeedTicketLinks = .none
 
     package var body: some View {
-        ProseSurfaceView(showing: showing, theme: argo, open: pressed)
+        ProseSurfaceView(
+            showing: showing, theme: argo, open: pressed, words: tickets.words(of:),
+        )
     }
 
-    /// What a pressed link does. A URL this window's Binding addresses is a Ticket, and a Ticket
-    /// opens the Tickets surface IN THIS WINDOW rather than the browser (#1178); everything else
-    /// opens the way every other link in the app does.
+    /// What a pressed link does. A URL this window's Binding addresses opens the Tickets surface
+    /// IN THIS WINDOW (#1178); everything else opens the way every other link in the app does.
     ///
-    /// The web route is not lost, and is not duplicated here either: it is the Ticket's own `open
-    /// on host` verb, which is where a reader who wants the browser already looks.
+    /// The browser is still reachable for a Ticket, through the detail's own `open on host` verb.
     private var pressed: (URL) -> Void {
         { url in
             switch tickets.route(of: url) {
@@ -79,8 +83,9 @@ package struct FeedMarkdown: View {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(text: String) {
+    package init(text: String, tickets: FeedTicketLinks = .none) {
         self.text = text
+        self.tickets = tickets
     }
 }
 
@@ -90,6 +95,9 @@ private struct ProseSurfaceView: NSViewRepresentable {
     let showing: (CGFloat) -> ProseShowing
     let theme: ArgoTheme
     let open: (URL) -> Void
+    /// What a link is CALLED, for the reader who is not looking — see
+    /// `ProseSurface.accessibilityChildren()`.
+    let words: (URL) -> String?
 
     func makeNSView(context _: Context) -> ProseSurface {
         ProseSurface()
@@ -100,6 +108,7 @@ private struct ProseSurfaceView: NSViewRepresentable {
     /// that draws nothing and is never asked again.
     func updateNSView(_ surface: ProseSurface, context _: Context) {
         surface.open = open
+        surface.words = words
         surface.reink(theme, pending: showing)
     }
 

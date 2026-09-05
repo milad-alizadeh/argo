@@ -5,11 +5,11 @@ import Foundation
 // by, so a run this rewords is exactly a run the feed already drew as a link (#1178).
 
 extension FeedTicketProse {
-    /// One URL as it was written, and where the words after it start again.
+    /// One URL as it was written. Where the words after it start again is `text.endIndex`, which
+    /// is why the run is not carried as a range beside it.
     struct Link {
         var text: Substring
         var url: URL
-        var end: String.Index
     }
 
     /// The punctuation a sentence puts after a link and the reader never means as part of it. The
@@ -51,7 +51,7 @@ extension FeedTicketProse {
         let run = span[start...].prefix { !$0.isWhitespace }
         let text = trimmed(run)
         guard text.contains("://"), let url = URL(string: String(text)) else { return nil }
-        return Link(text: text, url: url, end: text.endIndex)
+        return Link(text: text, url: url)
     }
 
     /// The link's own words, safe to set between brackets.

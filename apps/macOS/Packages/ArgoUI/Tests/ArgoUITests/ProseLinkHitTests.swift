@@ -102,6 +102,22 @@ struct ProseLinkHitTests {
         #expect(opened.count == 1)
     }
 
+    /// A reader who is not looking hears what the screen says. A Ticket the feed worded `#1175`
+    /// read out as `https://github.com/…/issues/1175` is the drift #1178 exists to close, and the
+    /// address is still the label for every link Argo has no name of its own for.
+    @Test
+    func `a link is read out by the name Argo has for it`() throws {
+        let surface = Self.surface(
+            "Fixed in [#1175: Anchor the feed](https://example.com/issues/1175), "
+                + "see also [the write-up](https://example.com/notes).",
+        )
+        surface.words = { $0.absoluteString.hasSuffix("1175") ? "#1175: Anchor the feed" : nil }
+
+        let spoken = try #require(surface.accessibilityChildren() as? [NSAccessibilityElement])
+            .map { $0.accessibilityLabel() }
+        #expect(spoken == ["#1175: Anchor the feed", "https://example.com/notes"])
+    }
+
     /// Every rectangle sits inside the row's own frame: a link drawn past the foot would be a link
     /// pressed on the row below.
     @Test

@@ -35,14 +35,10 @@ public protocol TicketPort: Sendable {
     /// provider addresses pages, not about what an identity can see. `TicketAddress` routes here.
     static func browseURL(of number: Int, in scope: String) -> URL?
 
-    /// The same fact read the other way: which Ticket IN THIS SCOPE a URL addresses, and `nil` for
-    /// every URL that addresses something else (#1178).
+    /// `browseURL(of:in:)` read the other way: which Ticket IN THIS SCOPE a URL addresses, and
+    /// `nil` for every URL that addresses something else (#1178).
     ///
-    /// Scoped, and that is the whole point of it: a link to another repository on the same host is
-    /// a web link and stays one, so the answer cannot come off the host alone.
-    ///
-    /// A provider that cannot address one of its items cannot recognise one either — the two are
-    /// the same fact about how it spells a page, and an adapter answering `nil` to `browseURL` and
-    /// a number here would be claiming a route it has no URL for.
+    /// Scoped, so a link to another repository on the same host answers `nil` here. An adapter
+    /// that answers `nil` to `browseURL` answers `nil` here too: it has no URL to recognise.
     static func ticketNumber(of url: URL, in scope: String) -> Int?
 }

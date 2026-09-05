@@ -14,15 +14,15 @@ import Foundation
 /// that is affordable: a row with no `://` in it and a Project with no Ticket provider bound both
 /// return the string they were handed, unexamined.
 enum FeedTicketProse {
-    /// What every URL the agent typed begins with. The `//` is in it deliberately — a bare `http:`
-    /// is not a link the markdown reader makes.
-    private static let scheme = "://"
+    /// What separates a URL's scheme from its host. A run without one is not a link the markdown
+    /// reader makes, and a row without one holds no link at all.
+    private static let schemeSeparator = "://"
     /// A fence's own opener, either spelling. A line beginning with one puts the reading inside
     /// code, where a URL is a URL and nothing is reworded.
     private static let fences = ["```", "~~~"]
 
     static func worded(_ text: String, as links: FeedTicketLinks) -> String {
-        guard links.readsAny, text.contains(scheme) else { return text }
+        guard links.readsAny, text.contains(schemeSeparator) else { return text }
         var fenced = false
         var lines: [String] = []
         for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
@@ -61,8 +61,8 @@ enum FeedTicketProse {
                 continue
             }
             reworded += span[copied ..< at] + "[\(escaped(words))](\(link.text))"
-            copied = link.end
-            at = link.end
+            copied = link.text.endIndex
+            at = link.text.endIndex
         }
         return reworded + span[copied...]
     }

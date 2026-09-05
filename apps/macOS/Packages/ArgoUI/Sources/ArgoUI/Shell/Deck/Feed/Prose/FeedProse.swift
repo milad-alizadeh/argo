@@ -41,8 +41,9 @@ struct FeedProse: View {
     /// said the way Argo says a Ticket (#1178).
     ///
     /// The one place this view reads them, so the glyphs, the accessibility label and the height
-    /// `FeedShapeHeight` took cannot come apart — a screen reader hearing the raw URL while the
-    /// screen says `#1175` is the same drift as a row measured a line short.
+    /// `FeedShapeHeight` took cannot come apart. The label is the block's markdown, as it has
+    /// always been; what says `#1175` to a reader who is not looking is the link element the
+    /// surface publishes (`ProseSurface.accessibilityChildren()`).
     private var words: String {
         FeedTicketProse.worded(text, as: tickets)
     }
@@ -54,7 +55,7 @@ struct FeedProse: View {
     /// rather than a property of a cell, and the frame this row exposes is what that layer will
     /// hit-test. What a reader can still take away whole is the Turn, through its copy chip.
     private var prose: some View {
-        FeedMarkdown(text: words)
+        FeedMarkdown(text: words, tickets: tickets)
             .environment(\.proseVoice, ink)
     }
 

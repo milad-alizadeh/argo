@@ -21,11 +21,14 @@ extension ProseSurface {
 
     /// One element per link, at the rectangle its words were inked at, so the links a pointer can
     /// reach are the links a keyboard and VoiceOver can reach.
+    ///
+    /// Labelled with what the link is CALLED where Argo has its own name for it, and with its
+    /// address otherwise: a Ticket the screen says `#1175` must not be read out as a URL (#1178).
     override func accessibilityChildren() -> [Any]? {
         links.map { place in
             let element = NSAccessibilityElement()
             element.setAccessibilityRole(.link)
-            element.setAccessibilityLabel(place.url.absoluteString)
+            element.setAccessibilityLabel(words(place.url) ?? place.url.absoluteString)
             element.setAccessibilityParent(self)
             element.setAccessibilityFrameInParentSpace(place.rect)
             return element

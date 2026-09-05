@@ -87,11 +87,11 @@ extension FeedTableCoordinator {
                 // drawn from — a `Binding` per row was a closure pair per row for one `contains`.
                 read: MinimapReadingState(
                     isFolded: !stamp.unfolded.contains(stamp.rows[$0].id),
-                    // The cells' own reading of what is a Ticket, so the lane's silhouette is of
-                    // the words the feed drew and not of the URLs the record carried (#1178). Off
-                    // the model rather than the stamp: a Ticket that gains a title re-settles the
-                    // document, and the walk is armed by the measure count that re-settle moves.
-                    tickets: model?.environment.tickets ?? .none,
+                    // Off the SETTLED document's own stamp, so the lane's silhouette is of the very
+                    // words the heights beside it were taken from (#1178). The model's live value
+                    // would be a second source: a title arriving between the settle and this walk
+                    // would draw a lane against words no height was measured under.
+                    tickets: geometry.settled?.stamp.setting.tickets ?? .none,
                 ),
             ) },
             columnWidth: stamp.columnWidth,
