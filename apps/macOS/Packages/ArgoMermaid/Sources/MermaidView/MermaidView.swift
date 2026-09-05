@@ -1,3 +1,4 @@
+import ArgoAtoms
 import ArgoDesign
 import MermaidLayout
 import SwiftUI
@@ -30,7 +31,7 @@ public struct MermaidView: View {
         // chart's labels walk its whole tick choice to answer, so reading them live here would cost
         // that walk per visible row, per frame, all the way through a seam drag.
         let labels = MermaidPlans.of(diagram).captions.map(\.label)
-        ScrollView(.horizontal) {
+        ArgoScrollAcross {
             MermaidCaptionLayout(diagram: diagram) {
                 ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
                     Text(label.text)
