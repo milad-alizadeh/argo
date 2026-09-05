@@ -40,6 +40,77 @@ BUILD_LOCK_HELD=""
 # things slower would show up here and nowhere else: every other number would just say the
 # gate took longer, without saying it was queueing rather than working.
 BUILD_LOCK_WAITED=0
+# Which arm of the A/B this run is in, for `metrics.sh` to record. Empty unless the experiment
+# is on, which is the state every ordinary run is in.
+#
+# INHERITED, not reset. A child that sources this file inside its parent's slot returns before
+# drawing an arm, so a plain `BUILD_LOCK_ARM=""` here would erase the arm the parent exported and
+# the child's rows would go into the file unlabelled — the gate's own `bun run test` being
+# exactly such a child.
+BUILD_LOCK_ARM=${BUILD_LOCK_ARM:-}
+
+# The number of slots that means "no cap". Not infinity and not a special case: the acquire
+# below still runs, still takes a directory, still releases it, so the uncapped arm exercises
+# exactly the same code as the capped one and differs only in how many holders fit. An arm
+# implemented by SKIPPING the lock would be measuring the lock's overhead as well as its
+# contention, and the overhead is a `mkdir`.
+BUILD_LOCK_UNCAPPED=64
+
+# How long the machine stays in one arm, in seconds. Longer than a full gate (median about
+# 200s, worst case over twenty minutes) so most runs sit inside one window rather than across a
+# flip, and short enough that a day contains dozens of windows rather than two.
+BUILD_LOCK_AB_WINDOW=${ARGO_BUILD_LOCK_AB_WINDOW:-1200}
+
+# Assign this run to an arm of the cap experiment (#1440).
+#
+# The arm is a property of the CLOCK, not of the run — every build that starts in the same
+# twenty-minute window gets the same one. That is forced by what is being measured: the cap is a
+# fact about the machine, so an uncapped run alongside a capped one does not give two
+# observations, it gives one contaminated one. The uncapped lane floods all twelve cores and the
+# capped lane it is being compared against wears the cost. Per-run alternation reads as the
+# tidier experiment and silently measures nothing.
+#
+# Alternating windows rather than an hour of each, because this machine does not hold still: an
+# editor indexing every worktree took the load average from 34 to 412 inside a minute, and a
+# before-and-after spanning that is a measurement of the editor. Windows put a spike in BOTH
+# arms, so a ratio between them survives it.
+#
+# A run that straddles a flip is attributed to the window it STARTED in. That mis-attributes
+# some tail of the longest runs, and it does so to both arms equally, which is the property that
+# matters — the alternative is discarding exactly the slowest runs, which is the sample the
+# question is about.
+# `ARGO_BUILD_LOCK_AB` is `off` (the default), `on` to alternate by window, or the name of one
+# arm to pin the machine to it. Pinning is what a person uses to sanity-check a result by hand —
+# an hour of each, watched — and it is how the cases below get a deterministic arm without
+# waiting for the clock.
+_bl_pick_arm() {
+  case "${ARGO_BUILD_LOCK_AB:-off}" in
+    capped)
+      BUILD_LOCK_ARM=capped
+      export BUILD_LOCK_ARM
+      return 0
+      ;;
+    uncapped)
+      BUILD_LOCK_ARM=uncapped
+      BUILD_LOCK_SLOTS=$BUILD_LOCK_UNCAPPED
+      export BUILD_LOCK_ARM
+      return 0
+      ;;
+    on) ;;
+    *) return 0 ;;
+  esac
+
+  _bl_window=$(($(date +%s) / BUILD_LOCK_AB_WINDOW))
+  if [ $((_bl_window % 2)) -eq 0 ]; then
+    BUILD_LOCK_ARM=uncapped
+    BUILD_LOCK_SLOTS=$BUILD_LOCK_UNCAPPED
+  else
+    BUILD_LOCK_ARM=capped
+  fi
+  # Exported so the children that inherit the slot report the arm their parent was assigned,
+  # rather than a blank or, worse, a second draw in a window that has since flipped.
+  export BUILD_LOCK_ARM
+}
 
 # Release the slot this process holds, if any. Idempotent, so the EXIT trap and an explicit
 # call cannot double-free a slot another process has since taken.
@@ -116,6 +187,11 @@ build_lock_acquire() {
     echo "build-lock: cannot create $BUILD_LOCK_ROOT — running unserialised" >&2
     return 0
   fi
+
+  # AFTER the inherited-slot return above, so a child that is already inside its parent's slot
+  # keeps the arm its parent drew instead of drawing a second one. A gate and its `bun run test`
+  # are one observation, not two.
+  _bl_pick_arm
 
   _bl_waited=0
   while :; do

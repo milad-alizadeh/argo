@@ -20,6 +20,11 @@
 #   7 branch          the branch it ran on
 #   8 loadavg         one-minute load average when it started
 #   9 free_gb         free space on the data volume when it started
+#  10 arm             capped | uncapped when the cap A/B is on, `-` otherwise (#1440)
+#
+# The arm is stamped at write time rather than worked out later, because "which runs were
+# capped" is not recoverable from a timestamp: the arms alternate per run, and two lanes
+# starting a second apart are in different ones.
 #
 # Nothing here is ever fatal, and nothing here is read back by the gate. A metrics file that
 # could fail a push, or change what the gate decides, would be a liability rather than a record.
@@ -42,10 +47,13 @@ metric_append() {
   _metric_load=$(uptime | sed -n 's/.*load averages*: *\([0-9.]*\).*/\1/p')
   _metric_free=$(df -g /System/Volumes/Data 2>/dev/null | awk 'NR == 2 { print $4 }')
 
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  # Read off the lock rather than passed in, so every existing `metric_append` call site keeps
+  # its five arguments and no caller has to know the experiment exists.
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
     "$1" "$2" "$3" "${4:-0}" "${5:-0}" \
     "${_metric_branch:-unknown}" "${_metric_load:-0}" "${_metric_free:-0}" \
+    "${BUILD_LOCK_ARM:--}" \
     >> "$ARGO_METRICS_FILE" 2>/dev/null || return 0
   return 0
 }
