@@ -5,7 +5,9 @@
 
 # The roster Turn clock
 
-The approved design for **how long a Turn has been running** (#618). The reading lives in the
+The approved design for **how long the Session has been running** (#618, corrected by #1330,
+which found the built reading counted the open Turn instead — resetting at every prompt rather
+than holding since the Session's first one). The reading lives in the
 Sessions roster row — the age slot on the secondary line — and nowhere else. The Session header
 stays silent, and the feed stays silent, which
 [`cockpit-feed-working.md`](cockpit-feed-working.md) already settled.
@@ -40,15 +42,21 @@ no new vocabulary — it *uses* the distinction the wording already carried.
 
 | Condition | Reading | Ink | Tier |
 |---|---|---|---|
-| managed and `running`, Turn start known | `4m 12s` — live duration, ticking | `state.running` | DIRECT |
+| managed and `running`, Session start known | `4m 12s` — live duration since the Session's first prompt, ticking | `state.running` | DIRECT |
 | observed (external) and mid-turn per its transcript | `output 12s ago` — resets as records land | `text.tertiary` | DERIVED |
 | anything else | `2m ago` — the existing seen reading, unchanged | `text.tertiary` | as today |
 
-**Degrade-down is the row's rule.** A managed Session whose Turn start Argo cannot vouch for
-(resumed mid-turn, record missing) takes the seen reading, never a guessed duration. An observed
-Session never shows a duration at all — Argo has only the last record's arrival, and a quiet
-mid-turn genuinely reads as idle, so `output … ago` states exactly what is known and nothing
-more. It never takes `state.running` ink: mint on a derived reading would render a false DIRECT.
+**The total covers gaps as well as work** — the simpler rule, and the one the picture asks for.
+The clock does not pause between Turns and resume at the next prompt; it runs from the resume-
+chain's first prompt straight through, so a Session that waited five minutes between two Turns
+reads that wait into its total the same as the work either side of it.
+
+**Degrade-down is the row's rule.** A managed Session whose start Argo cannot vouch for (its
+first prompt carries no stamp, or the record is missing one entirely) takes the seen reading,
+never a guessed duration. An observed Session never shows a duration at all — Argo has only the
+last record's arrival, and a quiet mid-turn genuinely reads as idle, so `output … ago` states
+exactly what is known and nothing more. It never takes `state.running` ink: mint on a derived
+reading would render a false DIRECT.
 
 ## Measurements
 
@@ -60,14 +68,14 @@ more. It never takes `state.running` ink: mint on a derived reading would render
 | Derived + seen ink | `text.tertiary` `#929AA1` | the secondary line's existing ink |
 | Format, under a minute | `42s` | |
 | Format, under an hour | `4m 12s` — seconds padded to two digits | |
-| Format, past an hour | `1h 04m` — minutes padded, no seconds | an hour-long turn is not read to the second |
+| Format, past an hour | `1h 04m` — minutes padded, no seconds | an hour-long Session is not read to the second |
 | Tick cadence | 1s | a content change, not motion — no `ArgoMotion` role, unaffected by Reduce Motion |
 | Layout priority | the reading keeps the age's priority: above the worktree label, below nothing | `SessionRow.secondaryLine` today |
 | Announcement | appended to `row.announcement`: “running for 4 minutes 12 seconds” / “last output 12 seconds ago” | the reading must reach the screen reader the same way it reaches the eye |
 
 ## What this changes, and what it does not
 
-- `SessionRosterProjection.Row` gains the Turn reading; the split between the three readings is
+- `SessionRosterProjection.Row` gains the clock reading; the split between the three readings is
   the **projection's** job, in one place — the view renders whichever it is handed.
 - The header's facts, the tab line's `tokens used · started · worked`, and the feed's ion/thread
   are untouched.

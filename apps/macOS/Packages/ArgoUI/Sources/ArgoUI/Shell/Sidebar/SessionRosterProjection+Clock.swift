@@ -4,7 +4,8 @@ extension SessionRosterProjection {
     /// The one age slot's reading (`cockpit-roster-turn-clock.md`): which of the three the row
     /// draws, and the moment a ticking one counts from.
     enum Clock: Equatable, Sendable {
-        /// A Turn Argo owns the start of — DIRECT. Drawn as a live duration, `4m 12s`.
+        /// A Session Argo owns the start of — DIRECT. Drawn as a live duration, `4m 12s`, counted
+        /// from the resume-chain's first prompt and unbroken by Turn boundaries (#1330).
         case turn(startedAtMs: Int)
         /// An observed Session mid-turn — DERIVED. Argo only ever saw the last record land, so
         /// this is worded `output … ago` and never as a duration a quiet gap would falsify.
@@ -13,7 +14,7 @@ extension SessionRosterProjection {
         case seen(String)
     }
 
-    /// One slot, three readings, degrade-down: a managed running Session whose Turn start the
+    /// One slot, three readings, degrade-down: a managed running Session whose start the
     /// records do not stamp takes the seen reading, never a guess — and an observed one never
     /// takes a duration at all.
     ///
@@ -39,7 +40,7 @@ extension SessionRosterProjection {
         -> Clock? {
         switch session.access {
         case .managed:
-            openTurnStartMs(events).map { .turn(startedAtMs: $0) }
+            sessionStartMs(events).map { .turn(startedAtMs: $0) }
         case .external, .orphaned:
             session.lastSeenAtMs.map { .output(sinceMs: $0) }
         }
@@ -64,37 +65,32 @@ extension SessionRosterProjection {
         TurnClockPhrase.spoken(seconds: TurnClockPhrase.seconds(sinceMs: sinceMs, nowMs: nowMs))
     }
 
-    /// The open Turn's start: the FIRST prompt after the last Turn boundary. A steer typed
-    /// mid-turn arrives as another prompt into the same sequence and must not restart the clock.
+    /// The Session's own start: the FIRST prompt of the resume-chain, full stop — never a later
+    /// one, and never reset by a Turn boundary in between (#1330). A steer typed mid-turn is
+    /// another prompt into the same sequence and does not restart it, and neither does a
+    /// `turnEnded` / `turnResumed` pair moving the Session from one Turn into the next: the
+    /// total the row draws covers the gap between them the same as the work either side of it —
+    /// the simpler rule, and the one the design's picture asks for.
     ///
-    /// `queued` is ignored on purpose: whether a Turn is actually open is the status's claim
-    /// (`SessionStatus.read`), and this scan is consulted only once it says `running`.
+    /// `queued` is ignored on purpose: whether the Session is actually running is the status's
+    /// claim (`SessionStatus.read`), and this scan is consulted only once it says `running`.
     ///
-    /// **Backwards, and it stops at the boundary** (ADR-0028 Rule 1). The answer is a fact about
-    /// the OPEN Turn, so reading it cost a walk of every Turn that had already ended — once per
-    /// running Session, on every pass of the shell's body, including the one between a click and
-    /// the frame it asks for. Walking back, the last `turnEnded` is where the open Turn begins and
-    /// there is nothing behind it worth reading; `start` is overwritten by each earlier prompt, so
-    /// what survives to the boundary is the first prompt of the Turn — the same answer the forward
-    /// walk built with a flag.
-    private static func openTurnStartMs(_ events: [TranscriptEvent]) -> Int? {
-        var start: Int?
-        for event in events.reversed() {
+    /// Forward, and it takes the FIRST match, stamped or not. A `.prompt` with no stamp degrades
+    /// the whole reading to the seen phrase (`clock(for:in:nowMs:)` falls back once this returns
+    /// `nil`) rather than let a later, stamped prompt stand in for the one Argo cannot vouch for.
+    private static func sessionStartMs(_ events: [TranscriptEvent]) -> Int? {
+        for event in events {
             switch event {
             case let .prompt(_, _, atMs):
-                start = atMs
-            // A Turn nobody typed starts where the report that woke it landed (#1299), and is
-            // overwritten by an earlier prompt like any other start.
+                return atMs
+            // A Turn nobody typed starts where the report that woke it landed (#1299); the
+            // resume-chain's first record can be one of these when it began headless.
             case let .turnResumed(atMs):
-                start = atMs
-            // An interrupt is a boundary like any other, and the commoner one on a Session
-            // somebody is watching: the walk stops at it (#1189).
-            case .turnEnded, .interrupted:
-                return start
+                return atMs
             default:
-                break
+                continue
             }
         }
-        return start
+        return nil
     }
 }

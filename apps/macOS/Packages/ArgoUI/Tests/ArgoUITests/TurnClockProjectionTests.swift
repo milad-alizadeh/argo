@@ -3,14 +3,14 @@ import ArgoEngine
 import Foundation
 import Testing
 
-/// The one age slot's three readings (`cockpit-roster-turn-clock.md`): a live Turn duration for
+/// The one age slot's three readings (`cockpit-roster-turn-clock.md`): a live Session duration for
 /// a managed running Session, `output … ago` for an observed one, the seen phrase otherwise.
 @Suite("Roster Turn clock projection")
 struct TurnClockProjectionTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
     @Test
-    func `a managed running Session's slot counts from its open Turn's prompt`() throws {
+    func `a managed running Session's slot counts from its first prompt`() throws {
         let row = try #require(rows(session(
             status: .running,
             events: [.prompt(text: "go", images: [], atMs: msAgo(252))],
@@ -21,8 +21,8 @@ struct TurnClockProjectionTests {
 
     @Test
     func `a steer typed mid-turn does not restart the clock`() throws {
-        // A steer is a prompt into the same sequence (`TranscriptEvent.prompt`), so the Turn's
-        // start is the FIRST prompt after the last boundary, never the latest one.
+        // A steer is a prompt into the same sequence (`TranscriptEvent.prompt`), so the Session's
+        // start is its FIRST prompt, never the latest one.
         let row = try #require(rows(session(
             status: .running,
             events: [
@@ -35,7 +35,9 @@ struct TurnClockProjectionTests {
     }
 
     @Test
-    func `a prompt before the last boundary belongs to a Turn already over`() throws {
+    func `a Turn boundary crossed mid-session does not restart the clock`() throws {
+        // Unbroken by Turn boundaries (#1330): the total still counts from the Session's very
+        // first prompt, the gap folded into it the same as the work either side.
         let row = try #require(rows(session(
             status: .running,
             lastSeenAtMs: msAgo(120),
@@ -46,11 +48,11 @@ struct TurnClockProjectionTests {
             ],
         )).first)
 
-        #expect(row.clock == .turn(startedAtMs: msAgo(45)))
+        #expect(row.clock == .turn(startedAtMs: msAgo(600)))
     }
 
     @Test
-    func `a Turn whose prompt carries no stamp degrades to the seen reading`() throws {
+    func `a Session whose first prompt carries no stamp degrades to the seen reading`() throws {
         // Degrade-down: a duration Argo cannot anchor is never guessed at.
         let row = try #require(rows(session(
             status: .running,
@@ -67,7 +69,7 @@ struct TurnClockProjectionTests {
             access: .external,
             status: .running,
             lastSeenAtMs: msAgo(12),
-            // Even a stamped prompt is not Argo's Turn start: the file was only ever observed.
+            // Even a stamped prompt is not Argo's Session start: the file was only ever observed.
             events: [.prompt(text: "go", images: [], atMs: msAgo(252))],
         )).first)
 
