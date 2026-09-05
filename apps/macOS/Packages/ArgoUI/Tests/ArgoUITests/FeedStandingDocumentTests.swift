@@ -13,7 +13,7 @@ struct FeedStandingDocumentTests {
     private static func stamp(_ rows: [FeedRow], atWidth width: CGFloat = 800) -> FeedMeasureStamp {
         FeedMeasureStamp(
             width: width,
-            ink: FeedCellEnvironment.Ink(colorScheme: .dark, dynamicTypeSize: .medium),
+            setting: FeedCellEnvironment.Setting(colorScheme: .dark, dynamicTypeSize: .medium),
             rows: rows,
             reader: FeedReaderStanding(),
         )

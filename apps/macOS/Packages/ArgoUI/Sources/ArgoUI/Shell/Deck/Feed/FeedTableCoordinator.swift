@@ -292,9 +292,10 @@ import SwiftUI
         against fresh: FeedTableModel,
         from staleEnvironment: FeedCellEnvironment?,
     ) {
-        // A theme or type-size flip re-inks everything. The heights it retires are the settling
-        // half's — a fresh ink is a fresh stamp, which is a re-wrap.
-        if fresh.environment.reInks(against: staleEnvironment) {
+        // A theme flip, a type-size flip or a Ticket that gained a title re-draws everything. The
+        // heights it retires are the settling half's — a fresh setting is a fresh stamp, which is
+        // a re-wrap.
+        if fresh.environment.redraws(against: staleEnvironment) {
             refresh(rows: visibleRows())
         }
         var affected = IndexSet()

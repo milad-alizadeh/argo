@@ -24,7 +24,7 @@ struct FeedRewrapMeasureTests {
     private static func stamp(atWidth width: CGFloat) -> FeedMeasureStamp {
         FeedMeasureStamp(
             width: width,
-            ink: FeedCellEnvironment.Ink(colorScheme: .dark, dynamicTypeSize: .medium),
+            setting: FeedCellEnvironment.Setting(colorScheme: .dark, dynamicTypeSize: .medium),
             rows: [],
             reader: FeedReaderStanding(),
         )
@@ -68,7 +68,7 @@ struct FeedRewrapMeasureTests {
         let dark = Self.stamp(atWidth: Self.tiled.wide)
         let light = FeedMeasureStamp(
             width: Self.tiled.wide,
-            ink: FeedCellEnvironment.Ink(colorScheme: .light, dynamicTypeSize: .medium),
+            setting: FeedCellEnvironment.Setting(colorScheme: .light, dynamicTypeSize: .medium),
             rows: [],
             reader: FeedReaderStanding(),
         )

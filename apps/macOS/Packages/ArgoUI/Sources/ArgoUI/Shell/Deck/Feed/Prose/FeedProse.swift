@@ -23,6 +23,8 @@ struct FeedProse: View {
     }
 
     @Environment(\.argo) private var argo
+    /// Which links in this block are Tickets — see `FeedTicketLinks`.
+    @Environment(\.argoFeedTickets) private var tickets
 
     let text: String
     let voice: Voice
@@ -32,7 +34,18 @@ struct FeedProse: View {
             // The column is the measure, and nothing narrower — the reader sets it with the seam.
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(voice.spokenAs.map { "\($0): \(text)" } ?? text)
+            .accessibilityLabel(voice.spokenAs.map { "\($0): \(words)" } ?? words)
+    }
+
+    /// The block's words as they are DRAWN: the record's own, with every link Argo can address
+    /// said the way Argo says a Ticket (#1178).
+    ///
+    /// The one place this view reads them, so the glyphs, the accessibility label and the height
+    /// `FeedShapeHeight` took cannot come apart. The label is the block's markdown, as it has
+    /// always been; what says `#1175` to a reader who is not looking is the link element the
+    /// surface publishes (`ProseSurface.accessibilityChildren()`).
+    private var words: String {
+        FeedTicketProse.worded(text, as: tickets)
     }
 
     /// The voice, readable rather than drawn: the surface inks every glyph itself off the frame
@@ -42,7 +55,7 @@ struct FeedProse: View {
     /// rather than a property of a cell, and the frame this row exposes is what that layer will
     /// hit-test. What a reader can still take away whole is the Turn, through its copy chip.
     private var prose: some View {
-        FeedMarkdown(text: text)
+        FeedMarkdown(text: words, tickets: tickets)
             .environment(\.proseVoice, ink)
     }
 

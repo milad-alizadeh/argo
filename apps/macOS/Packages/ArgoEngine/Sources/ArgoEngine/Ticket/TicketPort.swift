@@ -34,4 +34,11 @@ public protocol TicketPort: Sendable {
     /// `static` and grant-free because it reads nothing: a browse URL is a fact about how this
     /// provider addresses pages, not about what an identity can see. `TicketAddress` routes here.
     static func browseURL(of number: Int, in scope: String) -> URL?
+
+    /// `browseURL(of:in:)` read the other way: which Ticket IN THIS SCOPE a URL addresses, and
+    /// `nil` for every URL that addresses something else (#1178).
+    ///
+    /// Scoped, so a link to another repository on the same host answers `nil` here. An adapter
+    /// that answers `nil` to `browseURL` answers `nil` here too: it has no URL to recognise.
+    static func ticketNumber(of url: URL, in scope: String) -> Int?
 }

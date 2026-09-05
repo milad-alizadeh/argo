@@ -21,6 +21,12 @@ struct FeedShapeHeight {
     let standing: FeedRowStanding
     /// The column the row's content is drawn across — `FeedRowMeasure.measure(atWidth:)`.
     let measure: CGFloat
+    /// Which links in the row are Tickets, and what Argo calls each (#1178). A height is a fact
+    /// about the WORDS, and a link worded as its Ticket is not the words the record carried.
+    ///
+    /// Never defaulted: a call site that left it out would take a height off the URL the record
+    /// carried while the surface inked `#1175` into it (ADR-0030, Rule 2).
+    let tickets: FeedTicketLinks
 
     /// The row's own height, without the step above it: that is a fact about a PAIR of rows, and
     /// `FeedRow.step(to:from:)` is where it is answered.
@@ -53,8 +59,16 @@ struct FeedShapeHeight {
     }
 
     /// A block of the agent's own words, typeset. The one branch that is not a formula.
+    ///
+    /// Read for its Ticket links FIRST, because that is what the surface will ink: the height and
+    /// the glyphs have to come off one string, or a row with a Ticket link in it stands a line
+    /// short of what it draws (ADR-0030, Rule 2).
     private func prose(_ text: String) -> CGFloat {
-        FeedRowMeasure.height(ofProse: text, chip: standing.drawsChip, across: measure)
+        FeedRowMeasure.height(
+            ofProse: FeedTicketProse.worded(text, as: tickets),
+            chip: standing.drawsChip,
+            across: measure,
+        )
     }
 
     /// A fold of a run of calls: its own line, and the calls it stands for listed under it while

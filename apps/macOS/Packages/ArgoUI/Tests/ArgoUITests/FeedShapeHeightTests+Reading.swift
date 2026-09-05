@@ -28,8 +28,12 @@ extension FeedShapeHeightTests {
         for at in rows.indices {
             let standing = stamp.standing(at: at)
             let step = FeedRow.step(to: rows[at], from: at > 0 ? rows[at - 1] : nil)
-            let worked = step + FeedShapeHeight(standing: standing, measure: measure)
-                .height(of: rows[at].content)
+            let worked = step + FeedShapeHeight(
+                standing: standing,
+                measure: measure,
+                tickets: .none,
+            )
+            .height(of: rows[at].content)
             let drawn = Self.drawn(model, at: at, across: width)
             let told = "row \(at) (\(rows[at].content.shape)) at \(width): "
                 + "worked out \(worked), drawn \(drawn)"
