@@ -18,6 +18,9 @@ package enum FeedWait: Equatable {
     case thinking
     /// The Turn is running this row's call, and the ion crosses its own type.
     case call(FeedRow.ID)
+    /// Argo is running `/handoff` in this Session and waiting for the brief it writes (#513,
+    /// #1327) — a wait on the ACT rather than on a record, the same way `starting` is.
+    case handingOff
 
     /// What the ROWS say this reading is waiting on. A row appended while the wait runs does not
     /// change it, so a think that says something and goes on thinking stays one wait.

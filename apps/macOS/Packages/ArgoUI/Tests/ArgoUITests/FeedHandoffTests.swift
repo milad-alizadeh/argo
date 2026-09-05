@@ -62,6 +62,42 @@ struct FeedHandoffTests {
         #expect(Self.presentation([full]).handoff(of: nil) == nil)
     }
 
+    /// A handoff that did NOT land drops a failed row at the FOOT (#1327) — beside where the link
+    /// goes, never at the head with `starting` and `resuming`: those two wait for a process with
+    /// no record yet, and a handoff runs well after one exists.
+    @Test
+    func `a failed handoff lands a failed row at the foot, under the record`() throws {
+        let failure = SessionWaitSettled(
+            wait: .handingOff,
+            tookMs: 4000,
+            failure: "the process exited with code 1",
+        )
+        let rows = FeedProjection.rows(from: Self.transcript, handoffFailures: [failure])
+
+        let last = try #require(rows.last)
+        #expect(last.content == .settledWait(failure))
+        #expect(rows.dropLast().last?.content == .mark(.turnEnded))
+    }
+
+    /// A landed handoff drops no settled row of its own: the link row already told the reading
+    /// where the work went, so a reading with a landed handoff and no failure shows exactly one
+    /// row about it, never two saying the same thing.
+    @Test
+    func `a landed handoff shows the link and nothing else about it`() {
+        let rows = FeedProjection.rows(from: Self.transcript, handedOff: Self.handoff)
+
+        let handoffRelated = rows.filter {
+            if case .mark(.handedOff) = $0.content {
+                return true
+            }
+            if case .settledWait = $0.content {
+                return true
+            }
+            return false
+        }
+        #expect(handoffRelated.count == 1)
+    }
+
     private static let handoff = FeedHandoff(
         sessionID: "fresh",
         title: "Continue the shell work",
@@ -95,7 +131,10 @@ struct FeedHandoffTests {
             title: title,
             access: .managed,
             status: .idle,
-            chain: .init(program: .init(model: "claude-opus-5"), handedOffTo: handedOffTo),
+            chain: .init(
+                program: .init(model: "claude-opus-5"),
+                handoff: .init(handedOffTo: handedOffTo),
+            ),
             work: .init(location: "/Users/milad/Developer/argo"),
         )
     }

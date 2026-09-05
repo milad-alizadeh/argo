@@ -52,6 +52,15 @@ struct ClaimFacts: Equatable {
     /// cut. Here rather than on the row alone because the row is re-keyed the moment its CLI
     /// writes a record, and a claim outlives that.
     var ticket: Int?
+    /// Whether Argo is running `/handoff` at this claim right now (#1327) — DIRECT, off Argo's own
+    /// act, and what the plinth and the header button both read. `false` the instant it ends,
+    /// whichever way.
+    var handingOff = false
+    /// The handoffs Argo attempted here that did NOT land (#1327), oldest first — each drops a
+    /// failed row into the reading. Never taken back, on the same ground `expiries` is: a handoff
+    /// that failed is something that happened. A landed one leaves nothing here — the existing
+    /// `handedOff` link row is its record.
+    var handoffFailures: [SessionWaitSettled] = []
 
     /// Spelled out and taking NOTHING, which suppresses the memberwise init Swift would otherwise
     /// synthesise across every field above. Nothing builds one from a list — the ledger starts from
@@ -75,5 +84,7 @@ struct ClaimFacts: Equatable {
             && lostTurn == nil
             && settledWaits.isEmpty
             && ticket == nil
+            && !handingOff
+            && handoffFailures.isEmpty
     }
 }

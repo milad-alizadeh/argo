@@ -70,6 +70,14 @@ enum SessionsRoomReadingCache {
         /// (#1328), by VALUE beside `startedQuietly` for the same reason: the plinth reads off this
         /// stamp rather than off the Session directly.
         let resuming: Bool
+        /// Whether Argo is running `/handoff` on this Session right now (#1327), by VALUE beside
+        /// `resuming` for the same reason: the plinth reads off this stamp, and it is a claim about
+        /// NOW rather than something appended to the stream.
+        let handingOff: Bool
+        /// The handoffs Argo attempted here that did NOT land (#1327), by VALUE beside
+        /// `settledWaits` for the reason that one is: each appends a row to the reading and none of
+        /// them is in the stream.
+        let handoffFailures: [SessionWaitSettled]
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -89,6 +97,8 @@ enum SessionsRoomReadingCache {
             self.settledWaits = session?.settledWaits ?? []
             self.hasUnansweredTurn = session?.hasUnansweredTurn ?? false
             self.resuming = session?.resuming ?? false
+            self.handingOff = session?.handingOff ?? false
+            self.handoffFailures = session?.handoffFailures ?? []
         }
     }
 

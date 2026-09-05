@@ -19,6 +19,8 @@ enum FeedWaitWords: Equatable {
     case thinking
     /// Argo continued an orphaned Session's chain and has not heard it (#10, ADR-0026, #1328).
     case resuming
+    /// `/handoff` run in this Session, waiting for the brief (#513, #1327).
+    case handingOff
 
     /// The wait, live, on the plinth.
     var running: String {
@@ -26,17 +28,19 @@ enum FeedWaitWords: Equatable {
         case .starting: "Starting the agent"
         case .thinking: "Waiting for the agent to answer"
         case .resuming: "Resuming the session"
+        case .handingOff: "Handing off the current session"
         }
     }
 
-    /// The same wait, over, in the settled row. Unreachable for `.thinking`: the agent's answer IS
-    /// the record of it, so a Turn that ends the way it was meant to drops no row for this to say
-    /// (`cockpit-feed-waiting.md`) — defined only so the switch stays exhaustive.
+    /// The same wait, over, in the settled row. Unreachable for `.thinking` and `.handingOff`: the
+    /// agent's answer, and the existing `handedOff` link row, are each already the record of one
+    /// that ended the way it was meant to — defined only so the switch stays exhaustive.
     var settled: String {
         switch self {
         case .starting: "Started the agent"
         case .thinking: "The agent answered"
         case .resuming: "Resumed the session"
+        case .handingOff: "Handed off the session"
         }
     }
 
@@ -47,6 +51,7 @@ enum FeedWaitWords: Equatable {
         case .starting: "The agent did not start"
         case .thinking: "The turn ended without an answer"
         case .resuming: "The session did not resume"
+        case .handingOff: "The handoff failed"
         }
     }
 
@@ -62,6 +67,7 @@ enum FeedWaitWords: Equatable {
         case .starting: ArgoSymbol.startSession
         case .thinking: nil
         case .resuming: ArgoSymbol.retry
+        case .handingOff: ArgoSymbol.handedOff
         }
     }
 
@@ -74,6 +80,7 @@ enum FeedWaitWords: Equatable {
         case .starting: "The agent is starting"
         case .thinking: "Waiting for the agent to answer"
         case .resuming: "The session is resuming"
+        case .handingOff: "The current session is being handed off"
         }
     }
 
@@ -88,6 +95,7 @@ enum FeedWaitWords: Equatable {
         case .starting: self = .starting
         case .thinking: self = .thinking
         case .resuming: self = .resuming
+        case .handingOff: self = .handingOff
         case .call: return nil
         }
     }
@@ -98,6 +106,7 @@ enum FeedWaitWords: Equatable {
         case .starting: self = .starting
         case .thinking: self = .thinking
         case .resuming: self = .resuming
+        case .handingOff: self = .handingOff
         }
     }
 }

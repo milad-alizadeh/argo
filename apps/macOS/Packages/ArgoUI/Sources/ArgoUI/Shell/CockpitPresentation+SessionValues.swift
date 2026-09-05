@@ -88,6 +88,8 @@ public extension CockpitPresentation.Session {
         public let startedAtMs: Int?
         public let lastSeenAtMs: Int?
         public let handedOffTo: String?
+        public let handingOff: Bool
+        public let handoffFailures: [SessionWaitSettled]
         public let companionChannel: CompanionLiveness
         public let startedQuietlyAtMs: Int?
         /// The waits Argo held on this link that have ENDED (#1323), oldest first. A property of
@@ -101,7 +103,7 @@ public extension CockpitPresentation.Session {
         public init(
             program: Program = .init(),
             span: Span = .init(),
-            handedOffTo: String? = nil,
+            handoff: Handoff = .init(),
             companionChannel: CompanionLiveness = .notApplicable,
         ) {
             self.cli = program.cli
@@ -110,7 +112,9 @@ public extension CockpitPresentation.Session {
             self.entry = program.entry
             self.startedAtMs = span.startedAtMs
             self.lastSeenAtMs = span.lastSeenAtMs
-            self.handedOffTo = handedOffTo
+            self.handedOffTo = handoff.handedOffTo
+            self.handingOff = handoff.handingOff
+            self.handoffFailures = handoff.handoffFailures
             self.companionChannel = companionChannel
             self.startedQuietlyAtMs = span.startup.quietAtMs
             self.settledWaits = span.settledWaits

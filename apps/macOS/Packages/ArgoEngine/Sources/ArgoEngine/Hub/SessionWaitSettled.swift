@@ -10,8 +10,7 @@ import Foundation
 /// DIRECT throughout, and by construction: every wait here is one Argo started and held itself, so
 /// nothing observed from outside can produce one.
 public struct SessionWaitSettled: Sendable, Equatable {
-    /// Which wait this was. Three cases today — `/handoff` (#1229) is the one the design names that
-    /// still arrives with its own ticket.
+    /// Which wait this was.
     public enum Wait: Sendable, Equatable {
         /// Argo started a CLI and waited for the first byte off its PTY (#587).
         case starting
@@ -22,6 +21,10 @@ public struct SessionWaitSettled: Sendable, Equatable {
         /// byte off its PTY (#10, ADR-0026, #1328) — the same wait as `starting`, named for what
         /// Argo was doing.
         case resuming
+        /// `/handoff` run in this Session, and the wait for the brief it writes (#513, #1327).
+        /// Never settles to a row on its own — the existing `handedOff` link row is the record of
+        /// a landed one — so this Wait only ever reaches here failed.
+        case handingOff
     }
 
     public let wait: Wait

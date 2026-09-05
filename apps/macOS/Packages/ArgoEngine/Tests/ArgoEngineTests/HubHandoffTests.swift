@@ -150,7 +150,78 @@ struct HubHandoffTests {
             == ProjectRegistryStore.defaultFileURL.deletingLastPathComponent())
     }
 
+    /// The plinth's own fact (#1327): DIRECT while Argo is running `/handoff`, and gone the
+    /// instant it ends — the header button and the plinth both read this off the Session, so
+    /// neither surface can say a handoff is running that the other does not.
+    @Test
+    func `a Session reads handingOff for exactly as long as the handoff runs`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        _ = try await fixture.hub.spawnSession()
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
+
+        #expect(Self.handingOff(in: fixture.hub, sessionID: spawnedSessionID) == false)
+
+        fixture.hub.handoffStarted(sessionID: spawnedSessionID)
+        #expect(Self.handingOff(in: fixture.hub, sessionID: spawnedSessionID) == true)
+
+        fixture.hub.handoffEnded(sessionID: spawnedSessionID, tookMs: 4000, failure: nil)
+        #expect(Self.handingOff(in: fixture.hub, sessionID: spawnedSessionID) == false)
+    }
+
+    /// A landed handoff drops no row of its own: `handedOff(sessionID:to:)` already told the
+    /// reading where the work went, so `handoffEnded` with no failure leaves `handoffFailures`
+    /// exactly as empty as it was.
+    @Test
+    func `a handoff that lands adds no failure`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        _ = try await fixture.hub.spawnSession()
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
+
+        fixture.hub.handoffStarted(sessionID: spawnedSessionID)
+        fixture.hub.handoffEnded(sessionID: spawnedSessionID, tookMs: 4000, failure: nil)
+
+        #expect(Self.handoffFailures(in: fixture.hub, sessionID: spawnedSessionID).isEmpty)
+    }
+
+    /// A handoff that did NOT land is a thing that happened, so it stays — on the same ground an
+    /// expired Permission does — and each attempt is its own entry rather than one kind deduped.
+    @Test
+    func `a handoff that fails is remembered, and a second attempt adds its own entry`()
+        async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        _ = try await fixture.hub.spawnSession()
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
+
+        fixture.hub.handoffStarted(sessionID: spawnedSessionID)
+        fixture.hub.handoffEnded(
+            sessionID: spawnedSessionID,
+            tookMs: 1200,
+            failure: "the process exited with code 1",
+        )
+        fixture.hub.handoffStarted(sessionID: spawnedSessionID)
+        fixture.hub.handoffEnded(sessionID: spawnedSessionID, tookMs: 900, failure: "no folder")
+
+        let failures = Self.handoffFailures(in: fixture.hub, sessionID: spawnedSessionID)
+        #expect(failures.map(\.wait) == [.handingOff, .handingOff])
+        #expect(failures.map(\.failure) == ["the process exited with code 1", "no folder"])
+    }
+
     private static func handedOffTo(in hub: Hub, from sessionID: String) -> String? {
         hub.sessions.first { $0.id == sessionID }?.handedOffTo
+    }
+
+    private static func handingOff(in hub: Hub, sessionID: String) -> Bool {
+        hub.sessions.first { $0.id == sessionID }?.handingOff ?? false
+    }
+
+    private static func handoffFailures(
+        in hub: Hub,
+        sessionID: String,
+    )
+        -> [SessionWaitSettled] {
+        hub.sessions.first { $0.id == sessionID }?.handoffFailures ?? []
     }
 }

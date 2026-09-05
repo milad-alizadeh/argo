@@ -67,26 +67,42 @@ public final class SessionHandoff {
     }
 
     public func run(_ request: Request) async throws -> Outcome {
-        let brief = HandoffScript.briefURL(
-            in: root,
-            sessionID: request.sessionID,
-            atMs: wait.now(),
-        )
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        guard host.steer(
-            sessionID: request.sessionID,
-            typing: HandoffScript.command(writingBriefTo: brief.path),
-        ) else { throw Failure.notSteerable }
+        host.handoffStarted(sessionID: request.sessionID)
+        let startedAtMs = wait.now()
+        do {
+            let brief = HandoffScript.briefURL(
+                in: root,
+                sessionID: request.sessionID,
+                atMs: wait.now(),
+            )
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            guard host.steer(
+                sessionID: request.sessionID,
+                typing: HandoffScript.command(writingBriefTo: brief.path),
+            ) else { throw Failure.notSteerable }
 
-        try await awaitBrief(at: brief.path)
-        let sessionID = try await host.spawn(SessionSeed(
-            cwd: request.cwd,
-            opening: HandoffScript.opening(fromBriefAt: brief.path, issue: request.issue),
-        ))
-        // Last, and only where a fresh Session actually exists: an edge recorded before the spawn
-        // returned would name a Session a refusal has just prevented from being there.
-        host.handedOff(sessionID: request.sessionID, to: sessionID)
-        return Outcome(briefPath: brief.path, sessionID: sessionID)
+            try await awaitBrief(at: brief.path)
+            let sessionID = try await host.spawn(SessionSeed(
+                cwd: request.cwd,
+                opening: HandoffScript.opening(fromBriefAt: brief.path, issue: request.issue),
+            ))
+            // Last, and only where a fresh Session actually exists: an edge recorded before the
+            // spawn returned would name a Session a refusal has just prevented from being there.
+            host.handedOff(sessionID: request.sessionID, to: sessionID)
+            host.handoffEnded(
+                sessionID: request.sessionID,
+                tookMs: wait.now() - startedAtMs,
+                failure: nil,
+            )
+            return Outcome(briefPath: brief.path, sessionID: sessionID)
+        } catch {
+            host.handoffEnded(
+                sessionID: request.sessionID,
+                tookMs: wait.now() - startedAtMs,
+                failure: (error as? Failure)?.detail ?? "\(error)",
+            )
+            throw error
+        }
     }
 
     /// Poll until the brief is there, or until Argo has waited longer than it said it would.

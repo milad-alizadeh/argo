@@ -112,6 +112,29 @@ struct SessionHeaderHandoffTests {
         #expect(handoff.runningLabel == "Handing off…")
     }
 
+    /// The control and the plinth read one fact (#1327): a Session Argo is running `/handoff` on
+    /// draws the button already disabled and reading its running word, off `session.handingOff`
+    /// alone — nothing local to the button.
+    @Test
+    func `a Session Argo is handing off draws the button disabled and running`() throws {
+        let handoff = try #require(SessionHeaderProjection.header(from: CockpitPresentation.Session(
+            id: "handing-off",
+            title: "Session",
+            access: .managed,
+            status: .idle,
+            chain: .init(
+                program: .init(cli: .claude, model: "claude-opus-5"),
+                handoff: .init(handingOff: true),
+            ),
+            work: .init(location: "/Users/milad/Developer/argo"),
+            spend: .init(context: .held(Self.pastWarn)),
+        )).handoff)
+
+        #expect(handoff.isRunning)
+        // Launchable in principle — nothing blocks it — but disabled all the same while running.
+        #expect(handoff.isLaunchable)
+    }
+
     /// A handoff that cannot be launched is DISABLED with a reason rather than silently nothing.
     /// The reachable value-level case is a Session with no folder to start one beside.
     @Test
@@ -173,7 +196,7 @@ struct SessionHeaderHandoffTests {
             status: .idle,
             chain: .init(
                 program: .init(cli: .claude, model: "claude-opus-5"),
-                handedOffTo: handedOffTo,
+                handoff: .init(handedOffTo: handedOffTo),
             ),
             work: .init(location: "/Users/milad/Developer/argo", workspace: .init(branch: "main")),
             spend: .init(context: context),

@@ -117,6 +117,15 @@ public extension CockpitPresentation {
         /// within one). Absent for every Session that has not handed off, which is nearly all of
         /// them.
         public let handedOffTo: String?
+        /// Whether Argo is running `/handoff` here right now (#1327) — DIRECT, off the engine's own
+        /// `handingOff`. What the header button and the plinth both read, so neither carries the
+        /// fact on its own (`SessionHandoffButton`).
+        public let handingOff: Bool
+        /// The handoffs Argo attempted here that did NOT land (#1327), oldest first — each drops a
+        /// failed row into the reading. Empty for every Session that never tried one, or whose only
+        /// attempt landed: a landed handoff leaves nothing here, because `handedOffTo` above is its
+        /// record.
+        public let handoffFailures: [SessionWaitSettled]
         /// Whether the companion channel this Session's CONVENTION-tier facts arrive over is up
         /// (#493). `notApplicable` draws NOTHING rather than a negative claim.
         public let companionChannel: CompanionLiveness
@@ -216,6 +225,8 @@ public extension CockpitPresentation {
             self.lastSeenAtMs = chain.lastSeenAtMs
             self.startedAtMs = chain.startedAtMs
             self.handedOffTo = chain.handedOffTo
+            self.handingOff = chain.handingOff
+            self.handoffFailures = chain.handoffFailures
             self.companionChannel = chain.companionChannel
             self.startedQuietlyAtMs = chain.startedQuietlyAtMs
             self.settledWaits = chain.settledWaits
@@ -262,5 +273,18 @@ public extension CockpitPresentation.Session {
     /// what the composer asks it for.
     var hasUnansweredTurn: Bool {
         transcript.hasUnansweredTurn
+    }
+}
+
+extension CockpitPresentation.Session.Access {
+    /// Access is what provenance IS, rather than a policy applied to it: Argo owns no PTY for a
+    /// Session it did not spawn, and an orphaned one lost the PTY it had. One case each, so the
+    /// shell can say which of the two it is looking at.
+    init(provenance: SessionProvenance) {
+        self = switch provenance {
+        case .managed: .managed
+        case .external: .external
+        case .orphaned: .orphaned
+        }
     }
 }
