@@ -15,6 +15,8 @@ extension FeedRow.Content {
     /// measure pass and bought nothing.
     enum Shape: String, Sendable, CaseIterable {
         case prompt
+        /// A Turn Argo typed that no record has answered — the same bubble, at a tier of its own.
+        case submitted
         case message
         case thought
         case call
@@ -36,6 +38,7 @@ extension FeedRow.Content {
     var shape: Shape {
         switch self {
         case .prompt: .prompt
+        case .submitted: .submitted
         case .message: .message
         case .thought: .thought
         case .call: .call

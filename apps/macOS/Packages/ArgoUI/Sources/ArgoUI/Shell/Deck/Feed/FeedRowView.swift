@@ -13,7 +13,15 @@ struct FeedRowView: View {
     var body: some View {
         switch row.content {
         case let .prompt(text, shots):
-            FeedPrompt(text: text, shots: shots, open: selection.light, isExpanded: $isExpanded)
+            FeedPrompt(
+                prompt: FeedPromptReading(text: text, shots: shots),
+                open: selection.light, isExpanded: $isExpanded,
+            )
+        case let .submitted(text):
+            FeedPrompt(
+                prompt: FeedPromptReading(text: text, tier: .submitted),
+                open: selection.light, isExpanded: $isExpanded,
+            )
         case let .message(markdown): FeedProse(text: markdown, voice: .message)
         case let .thought(markdown): FeedProse(text: markdown, voice: .thought)
         case let .call(call):

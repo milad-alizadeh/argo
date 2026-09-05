@@ -22,6 +22,12 @@ extension FeedShapeHeightTests {
         Row(name: "prompt, only a picture", content: .prompt(
             text: "", shots: [RowKindFixture.absentShot, RowKindFixture.openableShot],
         )),
+        // The drawn Turn (#1278). Both states, because the whole claim of the swap is that the row
+        // stands where the record's own row will: a drawn Turn that measured differently from the
+        // prompt beside it here would move the feed the moment the record landed.
+        Row(name: "submitted, one line", content: .submitted(text: "Rename the deck")),
+        Row(name: "submitted, past the fold", content: .submitted(text: long)),
+        Row(name: "submitted, unfolded", content: .submitted(text: long), isUnfolded: true),
     ]
 
     private static let calls: [Row] = [

@@ -9,6 +9,11 @@
 /// arrives long after the keystroke, and only "has the file grown since" can tell a record that has
 /// not caught up from one that has.
 struct SessionTurnSubmission: Equatable, Sendable {
+    /// The words Argo typed, verbatim (#1278). Held for the same reason `ClaimFacts.lostTurn` holds
+    /// its own: the composer clears on the keystroke, and until the record catches up this is the
+    /// only copy of what was sent. It is what the feed draws in that window, so the reader sees
+    /// their own words the frame they send them rather than a second of nothing.
+    let text: String
     let recordsWhenSubmitted: Int
 
     /// Whether the record has yet to answer the Turn this stands for — the one window in which

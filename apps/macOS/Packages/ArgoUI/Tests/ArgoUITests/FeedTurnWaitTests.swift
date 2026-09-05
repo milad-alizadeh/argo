@@ -11,7 +11,7 @@ struct FeedTurnWaitTests {
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         events: [TranscriptEvent] = [],
-        hasUnansweredTurn: Bool = false,
+        submittedTurn: String? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -20,7 +20,7 @@ struct FeedTurnWaitTests {
             access: access,
             status: status,
             chain: .init(program: .init(cli: .claude)),
-            transcript: .init(events: events, hasUnansweredTurn: hasUnansweredTurn),
+            transcript: .init(events: events, submittedTurn: submittedTurn),
         )
     }
 
@@ -29,7 +29,7 @@ struct FeedTurnWaitTests {
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         events: [TranscriptEvent] = [],
-        hasUnansweredTurn: Bool = false,
+        submittedTurn: String? = nil,
     )
         -> SessionsRoomReading {
         SessionsRoomReading(
@@ -38,7 +38,7 @@ struct FeedTurnWaitTests {
                 activeProjectID: nil,
                 sessions: [session(
                     access: access, status: status, events: events,
-                    hasUnansweredTurn: hasUnansweredTurn,
+                    submittedTurn: submittedTurn,
                 )],
                 connection: .idle,
             ),
@@ -54,7 +54,7 @@ struct FeedTurnWaitTests {
     func `a running Turn draws both the thread and a wordless plinth`() {
         let reading = Self.reading(
             status: .running, events: [.message(markdown: "Working…")],
-            hasUnansweredTurn: true,
+            submittedTurn: "Fix the caption, not the sort.",
         )
 
         #expect(reading.feed.contains { $0.content == .mark(.working) })
@@ -68,7 +68,9 @@ struct FeedTurnWaitTests {
     @Test
     func `the reading carries whether the Turn in flight is Argo's own`() {
         #expect(!Self.reading(status: .running).hasUnansweredTurn)
-        #expect(Self.reading(status: .running, hasUnansweredTurn: true).hasUnansweredTurn)
+        #expect(Self.reading(
+            status: .running, submittedTurn: "Fix the caption, not the sort.",
+        ).hasUnansweredTurn)
     }
 
     // MARK: - A Turn in flight settles into nothing, or one failed row

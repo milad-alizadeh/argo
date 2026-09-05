@@ -119,6 +119,9 @@ extension CockpitPresentation.Session {
     /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
     ///
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/house.md).
+    /// renamed: submittedTurn <- unansweredTurn — the engine names the WINDOW, because what it
+    /// owns is a claim that ends (`HubSession.unansweredTurn`); the projection names the ACT,
+    /// beside `lostTurn`, which is the other answer about the same Turn Argo typed (#1278).
     /// renamed: claimedAt <- ticket — the slot sits beside a title reading also about the ticket,
     /// and beside the reader's own pin, which is a second DIRECT number about it (#1092): the name
     /// has to say WHICH fact and WHEN it was taken (#881). `Issue.directNumber` ranks the two.
@@ -220,7 +223,7 @@ extension CockpitPresentation.Session.Transcript {
             events: session.events,
             transcriptStamp: session.transcriptStamp,
             lostTurn: session.lostTurn,
-            hasUnansweredTurn: session.hasUnansweredTurn,
+            submittedTurn: session.unansweredTurn,
         )
         // After the init and not through it — see the property.
         self.delegationHold = session.delegationHold

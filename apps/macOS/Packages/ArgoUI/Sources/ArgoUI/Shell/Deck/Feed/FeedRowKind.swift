@@ -88,6 +88,12 @@ extension FeedRow.Content {
                 copyLabel: "Copy Prompt",
                 activation: text.isEmpty ? .light(oneOf: shots) : .fold,
             )
+        // Exactly what a prompt is, minus the pictures it has none of — asked of the prompt arm
+        // rather than answered again, because it IS the reader asking: the Turn extents, the Copy
+        // turn, the minimap's prompt band and the composer's echo all read it as one, and a second
+        // copy of those five fields is one that drifts. What separates the two is the tier the
+        // VIEW draws them at (`FeedPromptTier`), which is not a fact this switch answers.
+        case let .submitted(text): FeedRow.Content.prompt(text: text, shots: []).kind
         case let .message(text):
             Kind(
                 isProse: true,
@@ -176,8 +182,8 @@ extension FeedRow.Content {
         case let .call(call): [call]
         case let .survey(survey): survey.calls
         case let .work(work): work.calls
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .skillLoaded, .settledWait,
-             .delegationEnded, .unreadable: []
+        case .prompt, .submitted, .message, .thought, .gallery, .ask, .mark, .skillLoaded,
+             .settledWait, .delegationEnded, .unreadable: []
         }
     }
 
@@ -189,7 +195,8 @@ extension FeedRow.Content {
         case let .survey(survey): survey.opened
         case let .work(work): work.opened
         case let .skillLoaded(skill): skill.opened
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .settledWait, .delegationEnded,
+        case .prompt, .submitted, .message, .thought, .gallery, .ask, .mark, .settledWait,
+             .delegationEnded,
              .unreadable: nil
         }
     }

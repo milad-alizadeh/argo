@@ -90,7 +90,9 @@ final class TurnDelivery {
         let before = watch.says.records(sessionID)
         // The same reading, filed: a Turn Argo wrote is DIRECT news that one opened, and it is
         // this count that later says whether the record has answered it (#1048).
-        watch.submitted(SessionTurnSubmission(recordsWhenSubmitted: before), sessionID)
+        watch.submitted(
+            SessionTurnSubmission(text: text, recordsWhenSubmitted: before), sessionID,
+        )
         watching[sessionID] = Task { [weak self] in
             await self?.watchForAnswer(to: text, at: sessionID, since: before)
         }

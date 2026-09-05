@@ -42,6 +42,17 @@ extension SpecimenRegistry {
         // The two states of one long prompt (#946). Rendered at the feed's own measure: the fold is
         // a question about the column the bubble landed in, so a still taken at any other width
         // settles nothing about it.
+        // A Turn Argo typed with no record for it yet (#1278) — first alone, which is the exact
+        // second the ticket is about, then at the foot of a reading that already has work in it.
+        // The pair is the judgement: the drawn row has to read as the reader's own words the
+        // frame they send them, and as words the CLI has NOT answered when a confirmed prompt is
+        // on the same screen to compare it against.
+        SpecimenEntry("feedSubmittedTurnAlone") {
+            SpecimenScene.sessions(FeedProjection.previewSubmittedTurnAloneRows)
+        },
+        SpecimenEntry("feedSubmittedTurn") {
+            SpecimenScene.sessions(FeedProjection.previewSubmittedTurnRows)
+        },
         SpecimenEntry("feedPromptFolded") { SpecimenScene.longPrompt(unfolded: false) },
         SpecimenEntry("feedPromptUnfolded") { SpecimenScene.longPrompt(unfolded: true) },
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },

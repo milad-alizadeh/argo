@@ -30,6 +30,9 @@ struct FeedShapeHeight {
     func height(of content: FeedRow.Content) -> CGFloat {
         switch content {
         case let .prompt(text, shots): bubble(text: text, shots: shots)
+        // The bubble's own formula, over the words alone: the drawn Turn stands exactly where the
+        // record's row will, so the swap when the record lands moves nothing (#1278).
+        case let .submitted(text): bubble(text: text, shots: [])
         case let .message(text): prose(text)
         case let .thought(text): prose(text)
         case .call: pressedLine

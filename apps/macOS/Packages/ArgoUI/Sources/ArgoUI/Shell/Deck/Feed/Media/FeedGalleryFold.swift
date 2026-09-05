@@ -67,7 +67,7 @@ enum FeedGalleryFold {
         case let .prompt(text, shots):
             text.trimmed.isEmpty ? FeedGallery(shots: shots, origin: .pasted) : nil
         case .message, .thought, .survey, .work, .gallery, .ask, .skillLoaded, .mark,
-             .settledWait, .delegationEnded, .unreadable: nil
+             .settledWait, .submitted, .delegationEnded, .unreadable: nil
         }
         return held.flatMap { $0.shots.isEmpty ? nil : $0 }
     }

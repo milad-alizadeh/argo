@@ -86,20 +86,27 @@ public extension HubSession {
         DelegationHold.read(events, ended: endedDelegations)
     }
 
-    /// Whether Argo has typed a Turn that nothing has answered yet (#1179) — the DIRECT half of
-    /// "is a Turn running", and a stronger answer than the status word wherever the two disagree.
+    /// The Turn Argo has typed that nothing has answered yet (#1179, #1278), verbatim — the
+    /// DIRECT half of "is a Turn running", and a stronger answer than the status word wherever the
+    /// two disagree.
     ///
     /// The same claim `statusReading` reads `running` off, asked separately because the status word
     /// can be overruled above it: a drive port or a companion that reports `idle` wins the status,
     /// and Argo's own submit is still the firmer news. What the composer needs is that news alone,
-    /// not the word it usually produces.
+    /// not the word it usually produces — and the WORDS with it, because the feed draws them the
+    /// frame they are sent rather than waiting for a record to hold them.
     ///
     /// It answers ONLY about a Turn Argo itself typed. An open Turn the record carries is
     /// deliberately not in here: `SessionTurnState.merge` carries a root's open Turn across a
     /// resume (ADR-0026), so a Session whose CLI died mid-Turn reads one open forever — and a
     /// composer that held its queue against that would never release it.
-    var hasUnansweredTurn: Bool {
-        submittedTurn?.isAwaitingRecord(events.count) == true
+    ///
+    /// Words rather than a flag, and one reading rather than two: whether there IS such a Turn is
+    /// `nil`-ness, and a second stored answer beside it is how a feed comes to draw a Turn the
+    /// composer has already released.
+    var unansweredTurn: String? {
+        guard let submittedTurn, submittedTurn.isAwaitingRecord(events.count) else { return nil }
+        return submittedTurn.text
     }
 
     var status: SessionStatus {

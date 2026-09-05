@@ -133,6 +133,7 @@ struct SessionsRoomReading {
                 expired: stamp.expired,
                 asking: asking,
                 reported: stamp.reported,
+                submitted: stamp.submittedTurn,
             ),
             // Off the engine's own facts, which are DIRECT and managed-only, and never off an
             // empty reading: a Session observed from outside that has written nothing is a

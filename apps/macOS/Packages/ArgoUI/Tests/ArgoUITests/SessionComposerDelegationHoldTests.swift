@@ -106,7 +106,7 @@ struct SessionComposerDelegationHoldTests {
     )
         -> CockpitPresentation.Session.Transcript {
         var transcript = CockpitPresentation.Session
-            .Transcript(hasUnansweredTurn: hasUnansweredTurn)
+            .Transcript(submittedTurn: hasUnansweredTurn ? "a Turn nothing has answered" : nil)
         transcript.delegationHold = held
             ? DelegationHold(backgrounded: ["call-1"], isAlone: true)
             : .none
