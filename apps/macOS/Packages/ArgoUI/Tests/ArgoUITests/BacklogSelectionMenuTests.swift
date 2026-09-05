@@ -40,10 +40,12 @@ struct BacklogSelectionMenuTests {
         var selection = RowSelection<Int>()
         selection.click(272)
         selection.toggle(607)
-        let acts = BacklogSelectionActs()
+        let held = BacklogList.Held(
+            picking: .init(selection: .constant(selection)), shut: .constant([]),
+        )
 
-        #expect(acts.targets(of: 607, in: selection) == [272, 607])
-        #expect(acts.targets(of: 819, in: selection) == [819])
+        #expect(held.targets(of: 607) == [272, 607])
+        #expect(held.targets(of: 819) == [819])
     }
 
     /// The report names the Tickets that did NOT move, and says the rest did — the load-bearing
@@ -71,7 +73,7 @@ struct BacklogSelectionMenuTests {
             refusals: [.init(number: 272, reason: "No status for in progress")],
         )
 
-        #expect(report.title == "One ticket was not changed")
+        #expect(report.title == "One Ticket was not changed")
         #expect(report.message.hasPrefix("The change to In Progress"))
     }
 }

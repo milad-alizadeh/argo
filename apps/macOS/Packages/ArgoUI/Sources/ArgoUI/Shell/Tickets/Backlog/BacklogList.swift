@@ -45,6 +45,32 @@ package struct BacklogList: View {
         /// because it is the SELECTION's verbs: what the menu covers is what `picking` holds.
         var acts = BacklogSelectionActs()
 
+        /// Whether Argo grounds this row — the `List`'s own answer, so the two cannot disagree.
+        func isSelected(_ row: Int) -> Bool {
+            picking.selection.contains(row)
+        }
+
+        /// Whether this parent is drawn open.
+        func isOpen(_ row: Int) -> Bool {
+            !shut.contains(row)
+        }
+
+        /// What a menu opened on this row acts on: the whole selection when the row is in it, and
+        /// that row alone when it is not (`RowSelection.aim`). Sorted, because a set has no order
+        /// and a batch reported back has to name its Tickets in one.
+        func targets(of row: Int) -> [Int] {
+            picking.selection.aim(at: row).sorted()
+        }
+
+        /// Fold this parent, or open it.
+        func toggle(_ row: Int) {
+            if shut.contains(row) {
+                shut.remove(row)
+            } else {
+                shut.insert(row)
+            }
+        }
+
         /// Spelled out because Swift synthesises no memberwise initializer above
         /// `internal`, and the specimens build this from their own target (#1085).
         package init(
@@ -62,7 +88,10 @@ package struct BacklogList: View {
     /// through `absorb`, so the platform's shift-click and cmd-click reach the anchor and the
     /// open ticket by the one route.
     private var listSelection: Binding<Set<Int>> {
-        Binding(get: { held.picking.selection.rows }, set: { held.picking.selection.absorb($0) })
+        Binding(
+            get: { held.picking.selection.rows },
+            set: { held.picking.selection.absorb($0, over: drawnRows) },
+        )
     }
 
     /// Every row a range may reach: what the list is drawing now, folds resolved. A row behind a
@@ -99,18 +128,7 @@ package struct BacklogList: View {
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
         .accessibilityLabel("Backlog")
-        // The pane follows the last row CLICKED. Guarded against the ticket it is already open
-        // on, so a link opening the room is one act and not two (#1247).
-        .onChange(of: held.picking.selection.last) { _, row in
-            guard row != held.picking.pointed else { return }
-            held.picking.pick(row)
-        }
-        // A row the list has stopped drawing is not selected any more: a parent folded over a
-        // range must not leave the menu offering to delete what is behind it.
-        .onChange(of: drawnRows) { _, drawn in
-            guard !drawn.isEmpty else { return }
-            held.picking.selection.confine(to: drawn)
-        }
+        .modifier(RowSelectionReactions(held: held.picking, drawn: drawnRows))
     }
 
     /// The list `Closed` draws: one run of rows in the order the projection put them, and no

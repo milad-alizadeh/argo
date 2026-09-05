@@ -16,13 +16,6 @@ package struct BacklogSelectionActs {
     /// Remove every Ticket named.
     var delete: @MainActor ([Int]) -> Void = { _ in }
 
-    /// What a menu opened on this row acts on: the whole selection when the row is in it, and
-    /// that row alone when it is not (`RowSelection.aim`). Sorted, because a set has no order and
-    /// a batch reported back has to name its Tickets in one.
-    func targets(of row: Int, in selection: RowSelection<Int>) -> [Int] {
-        selection.aim(at: row).sorted()
-    }
-
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         states: [TicketCanonicalState] = [],

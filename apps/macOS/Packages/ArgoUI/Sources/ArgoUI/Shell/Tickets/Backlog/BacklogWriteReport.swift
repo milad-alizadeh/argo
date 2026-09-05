@@ -19,14 +19,15 @@ struct BacklogWriteReport: Identifiable, Equatable {
     let refusals: [Refusal]
 
     /// Keyed on what it covers, so a second batch redraws one prompt rather than stacking two.
+    /// Ticket numbers, so nothing here needs a separator no title could contain.
     var id: String {
-        "\(verb)\u{1F}\(refusals.map { "\($0.number)" }.joined(separator: ","))"
+        "\(verb) \(refusals.map { "#\($0.number)" }.joined(separator: " "))"
     }
 
     var title: String {
         refusals.count > 1
             ? "\(refusals.count) Tickets were not changed"
-            : "One ticket was not changed"
+            : "One Ticket was not changed"
     }
 
     /// The numbers and the reasons, one line each, under a sentence saying the rest DID change —

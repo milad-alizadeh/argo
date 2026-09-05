@@ -75,7 +75,10 @@ package struct SessionNavigator: View {
     /// keyboard move — reaches the anchor and the deck by the same route a click on the title
     /// does.
     private var listSelection: Binding<Set<CockpitPresentation.Session.ID>> {
-        Binding(get: { held.selection.rows }, set: { held.selection.absorb($0) })
+        Binding(
+            get: { held.selection.rows },
+            set: { held.selection.absorb($0, over: selectableRows) },
+        )
     }
 
     private var list: some View {
@@ -113,21 +116,7 @@ package struct SessionNavigator: View {
         .onChange(of: archived.isEmpty) { _, isEmpty in
             isArchiveShowing = isArchiveShowing && !isEmpty
         }
-        // The deck follows the last row CLICKED, wherever the click landed — the title's own
-        // layer, the platform's row, or the keyboard. Guarded against the row the deck already
-        // draws, so pointing the window from outside the roster is one pick and not two (#1247).
-        .onChange(of: held.selection.last) { _, row in
-            guard row != held.pointed else { return }
-            held.pick(row)
-        }
-        // A row the list has stopped drawing is not selected any more: a fold shut over a range
-        // must not leave the menu offering to archive what is behind it. An EMPTY roster is
-        // skipped — the list draws empty for a moment between a Project switch and the first
-        // reading, and reconciliation is what clears a selection for real.
-        .onChange(of: selectableRows) { _, drawn in
-            guard !drawn.isEmpty else { return }
-            held.selection.confine(to: drawn)
-        }
+        .modifier(RowSelectionReactions(held: held, drawn: selectableRows))
     }
 
     /// The archived Sessions, behind a count and shut by default. Absent entirely when nothing

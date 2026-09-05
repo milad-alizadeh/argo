@@ -62,11 +62,15 @@ package struct RowSelection<Row: Hashable & Sendable>: Equatable, Sendable {
 
     /// A cmd-click: this row in or out on its own, and the anchor lands on it either way, so the
     /// next shift-click grows from where the reader last pointed.
-    mutating func toggle(_ row: Row) {
+    ///
+    /// Taking the DRAWN row out moves the deck to what is left rather than closing it: the reader
+    /// asked for one row less, not for the surface beside the list to go blank. It lands on the
+    /// first row still selected, in the list's own order, and on nothing only where nothing is.
+    mutating func toggle(_ row: Row, over visible: [Row] = []) {
         if rows.contains(row) {
             rows.remove(row)
             if last == row {
-                last = nil
+                last = visible.first { rows.contains($0) }
             }
         } else {
             rows.insert(row)
@@ -113,13 +117,16 @@ package struct RowSelection<Row: Hashable & Sendable>: Equatable, Sendable {
     /// anywhere but the row's own gestures, and this is the one way its answer reaches the anchor
     /// and the deck: a set of one is a plain click, and any wider set leaves both where the click
     /// that started it put them.
-    mutating func absorb(_ selected: Set<Row>) {
+    mutating func absorb(_ selected: Set<Row>, over visible: [Row] = []) {
         guard selected != rows else { return }
         if selected.count == 1, let one = selected.first {
             return click(one)
         }
         rows = selected
         anchor = anchor.flatMap { selected.contains($0) ? $0 : nil }
+        // The drawn row leaving moves the deck to what is left rather than closing it, on
+        // `toggle`'s rule: the reader took a row out, not the surface beside the list.
         last = last.flatMap { selected.contains($0) ? $0 : nil }
+            ?? visible.first { selected.contains($0) }
     }
 }

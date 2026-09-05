@@ -58,13 +58,3 @@ extension CockpitView {
         }
     }
 }
-
-extension TicketsProvider {
-    /// What the bound Ticket adapter DECLARES it can write, and `nil` where nothing is bound —
-    /// read before a control is drawn, never after a write comes back refused (ADR-0014).
-    static func surface(of reading: ConnectionHealthReading) -> TicketSurface? {
-        guard let found = reading.connections.first(where: { $0.port == .ticket })
-        else { return nil }
-        return ProviderTicketWrites().port(of: found.account.provider).surface
-    }
-}

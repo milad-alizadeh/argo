@@ -94,23 +94,37 @@ struct RowSelectionTests {
         selection.click("b")
         selection.extend(to: "d", over: visible)
 
-        selection.toggle("c")
+        selection.toggle("c", over: visible)
 
         #expect(selection.rows == ["b", "d"])
         #expect(selection.anchor == "c")
     }
 
-    /// The deck draws the last row that was clicked, and a row that was just taken out of the
-    /// selection is not one — the deck falls back rather than drawing an unselected Session.
+    /// The deck draws the last row that was clicked, and a row just taken out of the selection is
+    /// not one. Taking the LAST row out leaves nothing to draw.
     @Test
-    func `a cmd-click that removes the drawn row leaves the deck pointing at nothing`() {
+    func `a cmd-click that empties the selection leaves the deck on nothing`() {
         var selection = RowSelection<String>()
         selection.click("b")
 
-        selection.toggle("b")
+        selection.toggle("b", over: visible)
 
         #expect(selection.rows.isEmpty)
         #expect(selection.last == nil)
+    }
+
+    /// Taking the drawn row out of a RANGE moves the deck to what is left rather than closing it:
+    /// the reader asked for one row less, not for the surface beside the list to go blank.
+    @Test
+    func `a cmd-click off the drawn row moves the deck to what is left`() {
+        var selection = RowSelection<String>()
+        selection.click("b")
+        selection.extend(to: "d", over: visible)
+
+        selection.toggle("b", over: visible)
+
+        #expect(selection.rows == ["c", "d"])
+        #expect(selection.last == "c")
     }
 
     /// Growing a selection is not a second act of opening a row: the deck stays on the one click

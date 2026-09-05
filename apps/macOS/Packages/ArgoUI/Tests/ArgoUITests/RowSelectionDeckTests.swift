@@ -14,7 +14,7 @@ struct RowSelectionDeckTests {
         var selection = RowSelection<String>()
         selection.click("b")
 
-        let retried = selection.clicked(.plain, on: "b", over: visible)
+        let retried = selection.retriesDrawnRow(.plain, on: "b", over: visible)
 
         #expect(retried)
     }
@@ -24,7 +24,7 @@ struct RowSelectionDeckTests {
         var selection = RowSelection<String>()
         selection.click("b")
 
-        let retried = selection.clicked(.plain, on: "c", over: visible)
+        let retried = selection.retriesDrawnRow(.plain, on: "c", over: visible)
 
         #expect(!retried)
         #expect(selection.last == "c")
@@ -36,7 +36,7 @@ struct RowSelectionDeckTests {
         var selection = RowSelection<String>()
         selection.click("a")
 
-        let retried = selection.clicked(.extending, on: "c", over: visible)
+        let retried = selection.retriesDrawnRow(.extending, on: "c", over: visible)
 
         #expect(!retried)
         #expect(selection.last == "a")
@@ -47,7 +47,7 @@ struct RowSelectionDeckTests {
         var selection = RowSelection<String>()
         selection.click("b")
 
-        let retried = selection.clicked(.toggling, on: "b", over: visible)
+        let retried = selection.retriesDrawnRow(.toggling, on: "b", over: visible)
 
         #expect(!retried)
     }

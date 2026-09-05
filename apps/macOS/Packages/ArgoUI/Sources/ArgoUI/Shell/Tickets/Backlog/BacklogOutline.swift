@@ -30,7 +30,7 @@ package struct BacklogOutline: View {
             // ONE reading of "is this row selected", for both halves that draw it: the ground and
             // the ink read on that ground. Two would be two selected states the moment they
             // disagree — the roster's own rule (`SessionRosterProjection.Selection`).
-            let isSelected = held.picking.selection.contains(drawn.id)
+            let isSelected = held.isSelected(drawn.id)
             let ink = BacklogRowInk(
                 isSelected: isSelected,
                 isRail: drawn.row.isRail,
@@ -38,9 +38,9 @@ package struct BacklogOutline: View {
             )
             BacklogRow(
                 drawn: drawn,
-                isOpen: !held.shut.contains(drawn.id),
+                isOpen: held.isOpen(drawn.id),
                 ink: ink,
-                toggle: folds && drawn.isParent ? { toggle(drawn.id) } : nil,
+                toggle: folds && drawn.isParent ? { held.toggle(drawn.id) } : nil,
             )
             .previewSafeListRow()
             // On the ROW and from HERE: a `listRowBackground` declared inside the row's own body
@@ -52,22 +52,11 @@ package struct BacklogOutline: View {
             // On the ROW rather than inside it: a menu declared in the row's own body would be
             // one more thing `BacklogRow` takes, and what it acts on is the LIST's selection.
             .contextMenu {
-                BacklogRowMenu(
-                    targets: held.acts.targets(of: drawn.id, in: held.picking.selection),
-                    acts: held.acts,
-                )
+                BacklogRowMenu(targets: held.targets(of: drawn.id), acts: held.acts)
             }
             // On the ROW, not the list: declared on the `List` the modifier reaches nothing. A rule
             // under every row turns a list into a table.
             .listRowSeparator(.hidden)
-        }
-    }
-
-    private func toggle(_ id: Int) {
-        if held.shut.contains(id) {
-            held.shut.remove(id)
-        } else {
-            held.shut.insert(id)
         }
     }
 

@@ -22,7 +22,15 @@ extension SessionNavigator {
                     set: { renamingRowID.wrappedValue = $0 ? row.id : nil },
                 ),
             ),
-            archiving: SessionRowArchiving(targets: archiveTargets(under: row), act: archive),
+            archiving: SessionRowArchiving(
+                // The whole selection when the row is in it, that row alone when it is not, and
+                // only the rows on the SAME side of the foot — so the count in the menu is the
+                // number of Sessions the press actually archives.
+                targets: SessionRosterProjection.archiveTargets(
+                    under: row, aimed: held.selection.aim(at: row.id), in: drawnRows,
+                ),
+                act: archive,
+            ),
             // The selection the `List`'s own click would have made, made by the row instead — the
             // row carries a double-click, and the two cannot share one click. Written through the
             // same binding, so the highlight, the keyboard and the deck all still read one fact.
@@ -62,17 +70,6 @@ extension SessionNavigator {
         }
     }
 
-    /// What an Archive pressed on this row acts on (#1247): the whole selection when the row is
-    /// in it, that row alone when it is not — and only the rows on the SAME side of the foot, so
-    /// the count in the menu is the number of Sessions the press actually archives.
-    ///
-    /// In the roster's own drawn order, never the set's, which has none.
-    func archiveTargets(under row: SessionRosterProjection.Row) -> [String] {
-        SessionRosterProjection.archiveTargets(
-            under: row, aimed: held.selection.aim(at: row.id), in: drawnRows,
-        )
-    }
-
     /// The one reading of "which row is selected", which the ground is drawn from.
     var reading: SessionRosterProjection.Selection {
         SessionRosterProjection.Selection(rows: held.selection.rows)
@@ -88,7 +85,8 @@ extension SessionNavigator {
         guard row.takesSelection else { return openFold(row.id) }
         // The deck follows the last click through `onChange` above. The one move that does not
         // reach it that way is a plain click on the row it is already drawing (#10).
-        guard held.selection.clicked(.current, on: row.id, over: selectableRows) else { return }
+        guard held.selection.retriesDrawnRow(.current, on: row.id, over: selectableRows)
+        else { return }
         held.pick(row.id)
     }
 
