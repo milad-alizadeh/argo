@@ -225,7 +225,6 @@ public extension ArgoMotion {
         // The Atlas roles are decided (#1420) and the map does not read them yet: the motion is
         // ported per surface, and each of these is waiting on the surface that spends it.
         "rise": "the plan-to-city transition",
-        "lieDown": "the city/treemap flip",
         "snap": "the camera flight to a picked box",
         "reshuffle": "the domain re-arrangement",
         "layerFade": "the map's filter and search repaints",

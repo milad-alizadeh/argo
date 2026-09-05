@@ -52,7 +52,7 @@ package struct AtlasSidebar: View {
             // the file count move with the filter the way the tiles do (#1161).
             let drawn = room.choice.drawn(map)
 
-            AtlasArrangement(isCity: resettled(room.choice.isCity))
+            AtlasArrangement(isCity: laidDown(room.choice.isCity))
             divider
             AtlasEncoding(
                 // The UNFILTERED Map's Measures, unlike everything else in this column: a Measure
@@ -89,13 +89,20 @@ package struct AtlasSidebar: View {
     /// The view switch, wrapped so the step between the city and the treemap carries an animation
     /// `AtlasView` can tween `relief` through — plain assignment changes the value with nothing to
     /// interpolate between the old picture and the new one. Nil under Reduce Motion, which is
-    /// `resettle`'s own answer to it (#1152's "reduced motion is honoured: the transition becomes
+    /// `lieDown`'s own answer to it (#1152's "reduced motion is honoured: the transition becomes
     /// instant").
-    private func resettled(_ view: AtlasSwitch) -> Binding<Bool> {
+    ///
+    /// `lieDown` and not `resettle` (#1422). A list settling into a new order and a city lying down
+    /// into the treemap are not one move: the first rearranges rows the reader is still looking at,
+    /// and the second changes what they are looking at. So the flip is eased at BOTH ends rather
+    /// than out alone — it starts from a picture that was standing still, and `resettle`'s abrupt
+    /// start reads as the map being dropped rather than laid down — and it runs the longest of any
+    /// single move on the map. The numbers belong to the role, not to this call site.
+    private func laidDown(_ view: AtlasSwitch) -> Binding<Bool> {
         Binding(
             get: { view.isOn },
             set: { newValue in
-                withAnimation(ArgoMotion.resettle.resolved(reduceMotion: reduceMotion)) {
+                withAnimation(ArgoMotion.lieDown.resolved(reduceMotion: reduceMotion)) {
                     view.set(newValue)
                 }
             },
