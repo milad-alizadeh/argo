@@ -215,8 +215,8 @@ package enum SessionHeaderProjection {
     /// with no event appended.
     ///
     /// `title` is the roster's own decision for this Session
-    /// (`SessionTitle.namedTitle(for:across:)`) where the caller holds the whole roster, and `nil`
-    /// where it does not — a fixture or a test drawing this one Session alone, which
+    /// (`SessionRosterProjection.namedTitle(for:among:)`) where the caller holds the whole roster,
+    /// and `nil` where it does not — a fixture or a test drawing this one Session alone, which
     /// `SessionTitle.resolved(for:)` then decides exactly as it would if this Session were the
     /// whole roster (#1391).
     package static func header(

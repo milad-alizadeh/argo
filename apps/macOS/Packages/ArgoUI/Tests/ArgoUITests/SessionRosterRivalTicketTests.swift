@@ -48,16 +48,18 @@ struct SessionRosterRivalTicketTests {
     }
 
     @Test
-    func `an archived Session on the same ticket still costs the roster row its title`() {
+    func `an archived Session on the same ticket leaves the roster row its title`() {
         let sessions = [
             Self.session(id: "live", title: "Name the widest module"),
             Self.session(id: "filed", title: "Write a caption", archived: true),
         ]
 
-        // Both lists are drawn in one column, so a row told apart only from its own list would
-        // read the same as one behind the foot.
+        // #1251: a row behind the foot was taking the Ticket's words off one on the roster, so
+        // that row read as stuck on its derived name with nothing on screen to say why.
         #expect(SessionRosterProjection.rows(from: sessions).map(\.title)
-            == ["Name the widest module"])
+            == ["Rough atlas for Argo itself"])
+        // The archive gives way to the roster and not the other way about, so the column the two
+        // lists share still never draws one Ticket's words twice.
         #expect(SessionRosterProjection.archivedRows(from: sessions).map(\.title)
             == ["Write a caption"])
     }
@@ -75,11 +77,30 @@ struct SessionRosterRivalTicketTests {
         let row = try #require(SessionRosterProjection.rows(from: sessions).first)
         let header = SessionHeaderProjection.header(
             from: sessions[0],
-            title: SessionTitle.namedTitle(for: sessions[0].id, across: sessions),
+            title: SessionRosterProjection.namedTitle(for: sessions[0].id, among: sessions),
         )
 
         #expect(row.title == "Write a caption for one folder")
         #expect(header.title == "Write a caption for one folder")
+    }
+
+    @Test
+    func `the deck header keeps the words a rival the reader cannot see left alone`() throws {
+        let sessions = [
+            Self.session(id: "live", title: "Name the widest module"),
+            Self.session(id: "filed", title: "Write a caption", archived: true),
+        ]
+
+        // #1251: the header asked across the whole roster while the row asked across the list it
+        // is drawn in, so the archived rival moved one surface and not the other.
+        let row = try #require(SessionRosterProjection.rows(from: sessions).first)
+        let header = SessionHeaderProjection.header(
+            from: sessions[0],
+            title: SessionRosterProjection.namedTitle(for: sessions[0].id, among: sessions),
+        )
+
+        #expect(row.title == "Rough atlas for Argo itself")
+        #expect(header.title == "Rough atlas for Argo itself")
     }
 
     @Test

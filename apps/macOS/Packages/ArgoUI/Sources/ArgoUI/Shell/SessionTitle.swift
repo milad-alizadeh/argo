@@ -3,7 +3,8 @@
 /// resolves through a stable fallback chain — explicit name → linked ticket → conversation-derived
 /// … so rail and header always match" (#502 §Seams). #1072 spent a shared Ticket's words on only
 /// one of its rows; #1391 held the header to that SAME spend rather than one taken in isolation,
-/// so rail and header still always match.
+/// so rail and header still always match. Which rows do the spending is the ROSTER's question —
+/// `SessionRosterProjection.namedTitle(for:among:)` is the one route to it (#1251).
 ///
 /// It is also where the title is SPELLED: whichever link of the chain answers, no title the
 /// cockpit draws carries an em dash — see `spelled(_:)`.
@@ -20,10 +21,13 @@ enum SessionTitle {
 
     /// `explicit → ticket → derived` (#502, story 19) for a caller with no roster to hand —
     /// isolated fixtures and tests, and a single Session that is the whole roster it is drawn in.
-    /// A caller that HAS the roster must go through `namedTitle(for:across:)` instead (#1391): a
-    /// Session drawn against only itself always reads as if its Ticket names it alone.
+    /// A caller that HAS the roster must go through
+    /// `SessionRosterProjection.namedTitle(for:among:)` instead (#1391): a Session drawn against
+    /// only itself always reads as if its Ticket names it alone.
     static func resolved(for session: CockpitPresentation.Session) -> String {
-        naming(for: session, drawn: ticketsDrawn(across: [session])).title
+        naming(
+            for: session, drawn: ticketsDrawn(across: [session]), contesting: [session.id],
+        ).title
     }
 
     /// The name each roster row draws, decided across the WHOLE roster in one pass — the way
@@ -33,19 +37,23 @@ enum SessionTitle {
     /// would draw them, each takes its own derived name and the Ticket rides the secondary line
     /// (#1072). The chain is #745's, held to the case it is true in.
     static func namings(across sessions: [CockpitPresentation.Session]) -> [Naming] {
-        let drawn = ticketsDrawn(across: sessions)
-        return sessions.map { naming(for: $0, drawn: drawn) }
+        namings(of: sessions, against: sessions)
     }
 
-    /// One Session's title, decided the same way its roster row's is — the deck header's route to
-    /// the SAME decision rather than a second one taken in isolation (#1391): the header used to
-    /// resolve a Session against itself alone, so it kept a shared Ticket's words on a row that had
-    /// just given them up to its rivals. `nil` where `id` is not in `sessions`.
-    static func namedTitle(
-        for id: CockpitPresentation.Session.ID, across sessions: [CockpitPresentation.Session],
+    /// The same decision where the rows that CONTEST a Ticket's words are not the rows being
+    /// named: only a row the reader can actually see spends a Ticket, so a roster pass names
+    /// every Session it holds against the visible ones alone (#1251).
+    ///
+    /// A Session outside `rivals` draws no words of its own, so it neither takes them from
+    /// anybody nor is asked to give up ones nothing else is drawing.
+    static func namings(
+        of sessions: [CockpitPresentation.Session],
+        against rivals: [CockpitPresentation.Session],
     )
-        -> String? {
-        zip(sessions, namings(across: sessions)).first { $0.0.id == id }?.1.title
+        -> [Naming] {
+        let drawn = ticketsDrawn(across: rivals)
+        let contesting = Set(rivals.map(\.id))
+        return sessions.map { naming(for: $0, drawn: drawn, contesting: contesting) }
     }
 
     /// The linked Ticket's own sentence, and nothing else (#1347): the number that used to ride
@@ -73,10 +81,13 @@ enum SessionTitle {
     }
 
     private static func naming(
-        for session: CockpitPresentation.Session, drawn: [Int: Int],
+        for session: CockpitPresentation.Session,
+        drawn: [Int: Int],
+        contesting: Set<CockpitPresentation.Session.ID>,
     )
         -> Naming {
-        let words = namesOneRow(for: session, drawn: drawn) ? ticket(for: session) : nil
+        let names = namesOneRow(for: session, drawn: drawn, contesting: contesting)
+        let words = names ? ticket(for: session) : nil
         let resetsTo = spelled(words ?? session.title)
         return Naming(
             // Reset's words are spelled the same way, so the dialog can never offer a title the
@@ -111,12 +122,17 @@ enum SessionTitle {
     /// Whether this Session is the only row a Ticket's words would name. Its own draw comes out of
     /// the count, so a renamed row — which draws no words now, and would draw them the moment
     /// Reset takes its name off — is asked exactly the same question.
+    ///
+    /// Only where the count HELD its draw: a Session outside the contesting set was never added
+    /// to `drawn`, and taking one off there would hand it every Ticket a visible row is drawing.
     private static func namesOneRow(
-        for session: CockpitPresentation.Session, drawn: [Int: Int],
+        for session: CockpitPresentation.Session,
+        drawn: [Int: Int],
+        contesting: Set<CockpitPresentation.Session.ID>,
     )
         -> Bool {
         guard let number = session.ticket.link?.number else { return false }
-        let ownDraw = session.explicitName == nil ? 1 : 0
-        return drawn[number, default: 0] - ownDraw == 0
+        let draws = contesting.contains(session.id) && session.explicitName == nil
+        return drawn[number, default: 0] - (draws ? 1 : 0) == 0
     }
 }

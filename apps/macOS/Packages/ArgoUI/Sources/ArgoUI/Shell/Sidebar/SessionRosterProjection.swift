@@ -53,10 +53,9 @@ package enum SessionRosterProjection {
     )
         -> [Row] {
         let nowMs = now.epochMs
-        // Decided before the split and filtered after: the kept rows and the archived ones are
-        // drawn in one column, so a Session told apart only from its own list would come out
-        // reading the same as one in the other.
-        let kept = zip(sessions, decided(across: sessions))
+        // Decided before the split and filtered after: a Session's workspace label is told apart
+        // from every other Session's, whichever of the two lists each is drawn in.
+        let kept = zip(sessions, decided(across: sessions, in: pass))
             .filter { session, _ in session.isArchived == pass.isArchived }
         // Once over the list this pass is drawing, never once per row (ADR-0028) — and over the
         // kept half, so a fold's count is what the reader can see rather than what is behind the
@@ -83,8 +82,12 @@ package enum SessionRosterProjection {
         let worktree: String?
     }
 
-    private static func decided(across sessions: [CockpitPresentation.Session]) -> [Decided] {
-        zip(SessionTitle.namings(across: sessions), worktrees(of: sessions)).map(Decided.init)
+    private static func decided(
+        across sessions: [CockpitPresentation.Session], in pass: Pass,
+    )
+        -> [Decided] {
+        let namings = namings(across: sessions, isArchived: pass.isArchived)
+        return zip(namings, worktrees(of: sessions)).map(Decided.init)
     }
 
     /// The label each row spends on its workspace, decided across the WHOLE roster in one pass:
