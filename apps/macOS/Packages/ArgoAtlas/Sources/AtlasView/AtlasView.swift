@@ -47,13 +47,11 @@ public struct AtlasView: View {
         AtlasCamera(relief: relief, orientation: orientation, over: plan.extent)
     }
 
+    /// The map alone. The key that says what the colour is worth is a section of the sidebar now,
+    /// beside the channel that decides it (#1161) — the design puts nothing over the stage but the
+    /// picture and the camera.
     public var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-            map
-            if let legend = plan.legend {
-                AtlasLegendKey(legend: legend, measure: argo.color.atlas.measure)
-            }
-        }
+        map
     }
 
     private var map: some View {

@@ -10,10 +10,16 @@ extension CockpitView {
         AtlasRoom(
             reading: atlas.reading,
             project: presentation.activeProject,
-            behind: atlas.behind,
-        ) {
-            Task { await atlas.rebuild(presentation.activeProject) }
-        }
+            currency: AtlasCurrency(behind: atlas.behind) {
+                Task { await atlas.rebuild(presentation.activeProject) }
+            },
+            choice: AtlasMapChoice(
+                channels: atlas.channels,
+                setChannels: { atlas.setChannels($0) },
+                hideTests: AtlasSwitch(isOn: atlas.hideTests) { atlas.setHideTests($0) },
+                isCity: AtlasSwitch(isOn: atlas.isCity) { atlas.setIsCity($0) },
+            ),
+        )
     }
 
     /// What re-reads the map: which room the window is in, and which Project it is scoped to. A

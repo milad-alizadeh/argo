@@ -7,7 +7,9 @@ import Testing
 /// What the Atlas room reads on arriving at a Project, and what the reader's one lever does.
 ///
 /// The store is pointed at a throwaway folder, never at the machine's own application support: a
-/// suite that wrote a Map file for a real Project would leave it there.
+/// suite that wrote a Map file for a real Project would leave it there. The channel preferences
+/// take a suite of their own for the same reason — this suite's Project ids collide with a real
+/// developer's own checkout named `argo`, and `UserDefaults.standard` is that developer's.
 @MainActor
 @Suite("Atlas room model")
 struct AtlasRoomModelTests {
@@ -15,7 +17,33 @@ struct AtlasRoomModelTests {
         let rootURL = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-atlas-room-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
-        return (AtlasRoomModel(store: AtlasMapStore(directoryURL: rootURL)), rootURL)
+        let suite = try #require(
+            UserDefaults(suiteName: "argo.atlas-room-\(UUID().uuidString)"),
+            "The suite could not make defaults of its own.",
+        )
+        return (
+            AtlasRoomModel(
+                store: AtlasMapStore(directoryURL: rootURL),
+                preferences: AtlasChannelPreferences(defaults: suite),
+            ),
+            rootURL,
+        )
+    }
+
+    /// A second model over a Map directory a first `fixture()` already made — what "reopening the
+    /// Atlas" is, for a test.
+    private func fixture(reusing rootURL: URL) throws -> (model: AtlasRoomModel, rootURL: URL) {
+        let suite = try #require(
+            UserDefaults(suiteName: "argo.atlas-room-\(UUID().uuidString)"),
+            "The suite could not make defaults of its own.",
+        )
+        return (
+            AtlasRoomModel(
+                store: AtlasMapStore(directoryURL: rootURL),
+                preferences: AtlasChannelPreferences(defaults: suite),
+            ),
+            rootURL,
+        )
     }
 
     private func project(_ id: String, at rootURL: URL) -> CockpitPresentation.Project {
@@ -93,7 +121,7 @@ struct AtlasRoomModelTests {
 
         await model.rebuild(project)
         let measured = model.reading
-        let reopened = AtlasRoomModel(store: AtlasMapStore(directoryURL: rootURL))
+        let (reopened, _) = try fixture(reusing: rootURL)
         await reopened.open(project)
 
         #expect(measured == reopened.reading)

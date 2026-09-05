@@ -135,6 +135,9 @@ extension CockpitView {
     @ViewBuilder func sidebar(tickets: TicketsRoom) -> some View {
         @Bindable var navigation = navigation
         let isTickets = navigation.room == .tickets
+        // The Atlas room owns its rail too: what the map measures is chosen there rather than over
+        // the map itself (#1161), which is the same trade Tickets makes with its views.
+        let isAtlas = navigation.room == .atlas
 
         Group {
             ShellSidebar(
@@ -148,10 +151,13 @@ extension CockpitView {
                 rename: actions.sessions.setName,
                 renamingSessionID: $renamingSessionID,
             )
-            .room(isActive: !isTickets)
+            .room(isActive: !isTickets && !isAtlas)
 
             tickets.sidebar
                 .room(isActive: isTickets)
+
+            AtlasSidebar(cockpitRoom: $navigation.room)
+                .room(isActive: isAtlas)
         }
     }
 
