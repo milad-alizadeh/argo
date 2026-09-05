@@ -47,6 +47,12 @@ public extension ArgoWaitAge {
         all.last { age >= $0.after } ?? freshest
     }
 
+    /// The one role the ladder cools, by name. `working` reports a WAIT, and a wait ages; the
+    /// map's `travel` loops for as long as a dependency is live, and a dependency being live is not
+    /// late. Stated here rather than at the surface that draws the difference, so the ladder's
+    /// scope is a fact of the ladder.
+    static let cooledRole = "working"
+
     /// Where a wait starts.
     static var freshest: ArgoWaitAge {
         all[0]

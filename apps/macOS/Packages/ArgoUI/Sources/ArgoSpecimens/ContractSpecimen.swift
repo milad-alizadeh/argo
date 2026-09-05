@@ -111,38 +111,13 @@ struct ContractSpecimen: View, SpecimenSheet {
 
     private var motion: some View {
         section("Motion — every role, its duration, and its Reduce Motion answer") {
-            VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
-                ForEach(ArgoMotion.all, id: \.name) { role in
-                    HStack(spacing: ArgoSpacing.loose) {
-                        Text(role.name)
-                            .argoText(ArgoTypography.machineCaption)
-                            .frame(width: 132, alignment: .leading)
-                        Text(duration(role.motion, cooling: role.name == "working"))
-                            .argoText(ArgoTypography.machineCaption)
-                        unwired(ArgoMotion.unwired[role.name])
-                    }
-                    .foregroundStyle(argo.color.text.secondary)
-                }
-            }
+            MotionRoles()
         }
     }
 
     /// The words the roster actually spends, so the legibility specimen proves the ink on the text
     /// it is drawn under.
     private let stateWords = ["running", "idle", "Needs input", "Stopped"]
-
-    /// A loop is read differently from a transition, so it is said differently: its number is a
-    /// period rather than a wait, and Reduce Motion stops it rather than shortening it. Only
-    /// `working` also cools — the ladder is a property of the wait it reports, and a cord that has
-    /// been live for an hour is not a wait at all — so the clause is asked for rather than assumed.
-    private func duration(_ motion: ArgoMotion, cooling: Bool) -> String {
-        let reduced = motion.reducedDuration.map { "\(Int($0 * 1000))ms fade" } ?? "instant"
-        let pass = "\(Int(motion.duration * 1000))ms"
-        let coldest = Int(ArgoWaitAge.coldest.period * 1000)
-        guard motion.repeats else { return "\(pass) · reduce motion: \(reduced)" }
-        let cools = cooling ? ", cooling to \(coldest)ms" : ""
-        return "\(pass) per pass\(cools) · reduce motion: stopped"
-    }
 }
 
 #Preview("Contract roles") {

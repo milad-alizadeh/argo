@@ -129,58 +129,67 @@ public extension ArgoMotion {
 
     // MARK: - The Atlas
 
-    // The map's roles, ported from the prototype's own numbers (`docs/designs/cockpit-atlas.html`)
-    // and COMPRESSED to fit `durationCeiling` (#1420). The prototype ran the rise over 1020ms end
-    // to end, the flip over 980 and the reshuffle over 1080; the contract stays sealed and the map
-    // reads faster than the prototype did. What survives the compression is the RATIO between the
-    // roles — the flip is still the longest single move, the naming still the shortest — because
-    // that is what tells one kind of change from another.
+    // The map's roles, ported from the prototype's own numbers (`docs/designs/cockpit-atlas.html`;
+    // the line numbers are in #1420) and COMPRESSED to fit `durationCeiling`. The prototype ran
+    // the reshuffle over 1080ms end to end, the rise over 1020 and the flip over 980; the contract
+    // stays sealed and the map reads faster than the prototype did.
+    //
+    // ONE factor, 0.5/1.08, applied to every number rather than a cap applied to the four that
+    // broke the ceiling. Capping only those would have flattened the flip onto the snap and sunk
+    // the rise below the naming, and the map says with SPEED which kind of change it is making —
+    // a reshuffle is slower than a snap because it moves more of the reader's picture. The order
+    // is the thing being preserved, and `MotionContractTests` holds it against the prototype's
+    // milliseconds directly.
     //
     // Every one of them cuts under Reduce Motion rather than fading, which is what the
-    // prototype's `CALM` flag does at every call site: the map jumps to the settled frame. None
-    // of them is a status word whose change has to be noticed, so there is nothing left to fade.
+    // prototype's `CALM` flag does at every call site — including the naming, whose fade exists
+    // only to stop a name popping and which `CALM` collapses to a cut at line 2695. None of them
+    // is a status word whose change has to be noticed, so there is nothing left to fade.
 
-    /// The plan standing up into the city, one box. Overshoots, because a box that stops dead at
-    /// its height reads as a box that was always there.
-    static let rise = ArgoMotion(duration: 0.20, curve: .spring(damping: 0.7), reducedDuration: nil)
+    /// The plan standing up into the city, one box. Eased rather than sprung, though the prototype
+    /// overshoots: `Curve.spring` spends `duration` as SwiftUI's `response`, which is not when the
+    /// box stops moving, so a sprung role would be one the ceiling cannot bound. A ceiling that
+    /// cannot measure its own role is worth more here than the overshoot.
+    static let rise = ArgoMotion(duration: 0.18, curve: .easeOut, reducedDuration: nil)
 
-    /// The gap between the first box rising and the last one starting. A SPAN and not a duration:
-    /// `rise` runs for its own length inside it, so the two together are what the reader waits, and
-    /// that sum is what `durationCeiling` bounds.
-    static let riseStagger: TimeInterval = 0.30
+    /// The gap between the FIRST box rising and the LAST one starting. A SPAN and not a duration:
+    /// one `rise` still runs at the end of it, so the two together are what the reader waits, and
+    /// that sum is what `durationCeiling` bounds. See `staggered`.
+    static let riseStagger: TimeInterval = 0.29
 
     /// The city lying down into the treemap, and standing back up. The longest single move on the
     /// map, because it is the only one that changes what the reader is looking at rather than
     /// where.
-    static let lieDown = ArgoMotion(duration: 0.50, curve: .easeInOut, reducedDuration: nil)
+    static let lieDown = ArgoMotion(duration: 0.45, curve: .easeInOut, reducedDuration: nil)
 
     /// The camera flying to a box the reader picked. Eased OUT alone: the flight starts the instant
     /// the click lands, so easing into it would read as the click being missed.
-    static let snap = ArgoMotion(duration: 0.50, curve: .easeOut, reducedDuration: nil)
+    static let snap = ArgoMotion(duration: 0.23, curve: .easeOut, reducedDuration: nil)
 
     /// One domain's boxes moving to their places in a new arrangement.
     static let reshuffle = ArgoMotion(duration: 0.36, curve: .easeInOut, reducedDuration: nil)
 
-    /// The gap between one domain starting to move and the next. A SPAN, on the same terms as
-    /// `riseStagger`.
+    /// The gap between the FIRST domain starting to move and the LAST one starting, on the same
+    /// terms as `riseStagger`. The prototype spreads it over each domain's RANK as a fraction of
+    /// the whole, so it is a span however many domains there turn out to be.
     static let reshuffleStagger: TimeInterval = 0.14
 
     /// A layer of the map arriving or leaving — a filter applied, a search typed. A cut at this
     /// size reads as the map being replaced rather than as it answering.
-    static let layerFade = ArgoMotion(duration: 0.42, curve: .easeInOut, reducedDuration: nil)
+    static let layerFade = ArgoMotion(duration: 0.19, curve: .easeInOut, reducedDuration: nil)
 
     /// A box's name arriving or leaving. The shortest role on the map: a name that takes as long as
     /// a move pops after the box it belongs to has already settled.
-    static let naming = ArgoMotion(duration: 0.22, curve: .easeOut, reducedDuration: nil)
+    static let naming = ArgoMotion(duration: 0.10, curve: .easeOut, reducedDuration: nil)
 
     /// The rim closing around the box the reader pointed at.
-    static let pin = ArgoMotion(duration: 0.42, curve: .easeInOut, reducedDuration: nil)
+    static let pin = ArgoMotion(duration: 0.19, curve: .easeInOut, reducedDuration: nil)
 
     /// The second loop: one lap of a travel cord, the map's report that a dependency is live. A
-    /// PERIOD rather than a wait, so `durationCeiling` does not reach it, and far slower than
-    /// `working` because a cord is read out of the corner of the eye while the reader is doing
-    /// something else. `nil` under Reduce Motion for the reason every loop has: it stops, and the
-    /// still cords still say what depends on what.
+    /// PERIOD rather than a wait, so neither `durationCeiling` nor the compression above reaches
+    /// it, and far slower than `working` because a cord is read out of the corner of the eye while
+    /// the reader is doing something else. `nil` under Reduce Motion for the reason every loop has:
+    /// it stops, and the still cords still say what depends on what.
     static let travel = ArgoMotion(
         duration: 5.2,
         curve: .linear,
@@ -188,12 +197,18 @@ public extension ArgoMotion {
         repeats: true,
     )
 
-    static let all: [(name: String, motion: ArgoMotion)] = [
-        ("stateChange", stateChange), ("selection", selection), ("reveal", reveal),
-        ("bloom", bloom), ("resettle", resettle), ("working", working),
+    /// The map's roles as one list. The Atlas is a surface of its own, so a test or a specimen that
+    /// has something to say about the map says it over this rather than over eight names it
+    /// restates — a ninth role added here is judged by everything that reads it.
+    static let atlas: [(name: String, motion: ArgoMotion)] = [
         ("rise", rise), ("lieDown", lieDown), ("snap", snap), ("reshuffle", reshuffle),
         ("layerFade", layerFade), ("naming", naming), ("pin", pin), ("travel", travel),
     ]
+
+    static let all: [(name: String, motion: ArgoMotion)] = [
+        ("stateChange", stateChange), ("selection", selection), ("reveal", reveal),
+        ("bloom", bloom), ("resettle", resettle), ("working", working),
+    ] + atlas
 
     /// A role and the span it is staggered over, for the two the map spreads across many boxes.
     /// The pair is what the reader waits, so it is the pair the ceiling is asserted against.
@@ -219,8 +234,8 @@ public extension ArgoMotion {
         "travel": "the dependency cords",
     ]
 
-    /// Spent by `RhythmTests`, never by a surface: a ceiling a call site reached for would be a
-    /// duration, which is the thing it forbids.
+    /// Spent by `MotionContractTests`, never by a surface: a ceiling a call site reached for
+    /// would be a duration, which is the thing it forbids.
     ///
     /// No NON-REPEATING role may run longer than this. Past it a transition stops reading as
     /// feedback and starts reading as latency. A repeating role is outside the cap because the

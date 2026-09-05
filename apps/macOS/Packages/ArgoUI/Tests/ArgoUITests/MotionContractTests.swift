@@ -1,4 +1,5 @@
 import ArgoDesign
+import Foundation
 import Testing
 
 /// What the cockpit claims about MOTION: how long each role runs, which of them repeat, and what
@@ -54,11 +55,57 @@ struct MotionContractTests {
     /// site's decision re-entering the contract.
     @Test
     func `the map's roles cut under Reduce Motion rather than fading`() {
-        let map = ["rise", "lieDown", "snap", "reshuffle", "layerFade", "naming", "pin", "travel"]
-        for role in ArgoMotion.all where map.contains(role.name) {
+        for role in ArgoMotion.atlas {
             #expect(role.motion.reducedDuration == nil, "\(role.name) fades instead of cutting")
         }
-        #expect(Set(ArgoMotion.all.map(\.name)).isSuperset(of: map))
+    }
+
+    /// The map is one catalogue, so a role that reached the Atlas without reaching the contract's
+    /// own list would ship unjudged by every claim above and undrawn by the specimen.
+    @Test
+    func `every map role is a role the contract enumerates`() {
+        let all = Set(ArgoMotion.all.map(\.name))
+        for role in ArgoMotion.atlas {
+            #expect(all.contains(role.name), "\(role.name) is missing from ArgoMotion.all")
+        }
+    }
+
+    /// The prototype's own milliseconds (`docs/designs/cockpit-atlas.html`; the line numbers are in
+    /// #1420). Held here rather than in the contract, because the contract states what the cockpit
+    /// DOES and these are only what it was compressed from.
+    static let prototypeMilliseconds = [
+        "rise": 400.0, "lieDown": 980.0, "snap": 500.0, "reshuffle": 780.0,
+        "layerFade": 420.0, "naming": 220.0, "pin": 420.0, "travel": 5200.0,
+    ]
+
+    /// What the compression was FOR. Fitting the ceiling by capping only the four roles that broke
+    /// it would have left every number under it untouched and flattened the map's order — the flip
+    /// onto the snap, the rise under the naming. One factor over all of them keeps the order, and
+    /// the order is how a reader tells a reshuffle from a snap without being told which it was.
+    @Test
+    func `compressing the map to the ceiling reordered none of its roles`() {
+        for first in ArgoMotion.atlas {
+            for second in ArgoMotion.atlas {
+                guard let was = Self.prototypeMilliseconds[first.name],
+                      let then = Self.prototypeMilliseconds[second.name]
+                else {
+                    Issue.record("\(first.name)/\(second.name) has no prototype number")
+                    continue
+                }
+                #expect(
+                    ordering(first.motion.duration, second.motion.duration) == ordering(was, then),
+                    "\(first.name) and \(second.name) swapped places under the compression",
+                )
+            }
+        }
+    }
+
+    /// Which of two numbers is the larger, as a value two orderings can be compared by.
+    private func ordering(_ first: Double, _ second: Double) -> ComparisonResult {
+        if first < second {
+            return .orderedAscending
+        }
+        return first > second ? .orderedDescending : .orderedSame
     }
 
     @Test
