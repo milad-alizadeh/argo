@@ -151,6 +151,12 @@
       "skillPath": "packages/argo-skills/skills/ship/SKILL.md",
       "computedHash": "c8373a467485a0455c90207a558800f43e26cabe263aaa0bc576e998a0ba0c1b"
     },
+    "simple-english": {
+      "source": "AminBlg/SimpleEnglish",
+      "sourceType": "github",
+      "skillPath": "skills/simple-english/SKILL.md",
+      "computedHash": "8124a69e9d2cf3831fc28d769cf1db7d1f68a76fd655b5f57a9cf942d286c27a"
+    },
     "skill-creator": {
       "source": "anthropics/skills",
       "sourceType": "github",
