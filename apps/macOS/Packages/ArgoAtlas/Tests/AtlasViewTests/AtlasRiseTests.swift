@@ -92,12 +92,8 @@ struct AtlasRiseTests {
     /// Asserted as "there is a moment above its height", because the moment itself is the curve's
     /// business and the claim is that the box passes its roof and comes back.
     @Test func `a box passes its own height before it settles onto it`() {
-        var overshot = false
-        for step in stride(from: 0.0, through: 1.0, by: 0.01) {
-            if AtlasRise(clock: step, over: plan).growth(at: 0) > 1 {
-                overshot = true
-            }
-        }
+        let overshot = stride(from: 0.0, through: 1.0, by: 0.01)
+            .contains { AtlasRise(clock: $0, over: plan).growth(at: 0) > 1 }
 
         #expect(overshot)
     }

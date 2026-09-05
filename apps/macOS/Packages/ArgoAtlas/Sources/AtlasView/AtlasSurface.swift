@@ -13,10 +13,6 @@ struct AtlasSurface: NSViewRepresentable {
     /// draws with is the fit everything drawn OVER it reads (`AtlasProjection`).
     let projection: AtlasProjection
     let pigments: AtlasPigments
-    /// Where the city is in its climb out of the plates (#1421). A parameter like everything else
-    /// here: the clock is animated by the view above, and this draws whatever point of it it is
-    /// handed.
-    var rise: AtlasRise = .settled
     /// The file under the pointer, said as the pointer moves and said as `nil` the moment it is
     /// over none (#1153). A closure rather than a binding, because the answer is read off a frame
     /// the GPU has already drawn: it arrives on a mouse event, not on a view update.
@@ -84,7 +80,7 @@ struct AtlasSurface: NSViewRepresentable {
         coordinator.renderer?.show(
             AtlasVolumes.city(of: projection.plan, in: pigments),
             through: AtlasEye(projection.camera, fit: projection.fit),
-            rising: rise,
+            rising: AtlasRise(clock: projection.rise, over: projection.plan.extent),
         )
         view.clearColor = pigments.desktop.clearColor
         // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the

@@ -22,10 +22,6 @@ struct AtlasOpenTrace: View {
     /// The file the reader has open, or nothing — in which case nothing is drawn, which is what
     /// makes closing the reading unmark the map.
     let open: String?
-    /// Where the city is in its climb (#1421). The mark has to climb with the box it marks: a
-    /// rebuild leaves a reading open, and a trace drawn at the settled height would hang in the
-    /// air over a box that has not stood up yet.
-    var rise: AtlasRise = .settled
 
     var body: some View {
         Canvas { context, _ in
@@ -57,8 +53,11 @@ struct AtlasOpenTrace: View {
 
     /// The tile at the height it is STANDING at this frame, which is its measured height once the
     /// rise has settled and a share of it while the city is still coming up. The same curve the
-    /// shader climbs the box on, read at the same place — the box's own middle, in plan points.
+    /// shader climbs the box on, read at the same place — the box's own middle, in plan points —
+    /// and off the same projection, which is why the mark cannot be drawn at a height the box is
+    /// not standing at.
     private func risen(_ tile: AtlasTile) -> AtlasTile {
+        let rise = AtlasRise(clock: projection.rise, over: projection.plan.extent)
         let middle = SIMD2<Float>(Float(tile.rect.midX), Float(tile.rect.midY))
         let centre = SIMD2<Float>(
             Float(projection.camera.centre.x),

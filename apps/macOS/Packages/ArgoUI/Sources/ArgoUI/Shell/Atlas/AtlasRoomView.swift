@@ -170,8 +170,7 @@ struct AtlasRoomView: View {
                         height: proxy.size.height - ArgoSpacing.loose * 2,
                     ),
                 ),
-                relief: room.choice.isCity.isOn ? 1 : 0,
-                rise: rise,
+                standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
                 orientation: orientation,
                 focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
             )
