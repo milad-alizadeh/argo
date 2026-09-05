@@ -55,6 +55,10 @@ public struct CockpitView: View {
     /// and not one value beside `ticketWrite`: a refusal on the ticket the reader just left must
     /// not surface beside the one they opened next.
     @State var closureWrite: [Int: WriteAttempt] = [:]
+    /// What a write over a whole backlog selection left refused, while the prompt saying so is up
+    /// (#1247). Held here for the archive prompt's reason: it is raised from the backlog and shown
+    /// over the window.
+    @State var backlogWriteReport: BacklogWriteReport?
     /// Which call's evidence the panel is showing, and which result inside it. Held HERE rather
     /// than in the deck since #875: the toolbar's toggle reaches them and the toolbar is outside
     /// the deck. See `CockpitView+Evidence`.
@@ -243,13 +247,13 @@ public struct CockpitView: View {
                 create: createTicket,
             )
         }
-        // Archiving a Session Argo owns ends its agent, so an archive that would end live work is
-        // asked about first (#1290). On the shell beside the sheets above, and for their reason:
-        // both gestures that raise it — the menu bar's item and the roster row's swipe — are
-        // outside the deck, and the row's own swipe closes over the prompt it would present.
-        .modifier(ArchiveConfirmationDialog(pending: $archiveConfirmation) { sessionID in
-            actions.sessions.setArchived(sessionID, true)
-        })
+        // Both prompts the window raises, in one place: the archive that would end live work
+        // (#1290), and the backlog batch a provider took only part of (#1247). See `ShellPrompts`.
+        .modifier(ShellPrompts(
+            archiving: $archiveConfirmation,
+            report: $backlogWriteReport,
+            archive: { $0.forEach { actions.sessions.setArchived($0, true) } },
+        ))
         .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
             navigation.reconcile(against: sessionIDs)

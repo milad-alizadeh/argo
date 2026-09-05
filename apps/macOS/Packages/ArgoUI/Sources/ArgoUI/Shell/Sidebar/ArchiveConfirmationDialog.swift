@@ -9,24 +9,24 @@ struct ArchiveConfirmationDialog: ViewModifier {
     /// The archive waiting on an answer, or nothing. Cleared by every way out — the buttons, and
     /// the dismissal below.
     @Binding var pending: ArchiveConfirmation?
-    /// Archive the Session named, now that the reader has said so.
-    let archive: @MainActor (String) -> Void
+    /// Archive the Sessions named, now that the reader has said so.
+    let archive: @MainActor ([String]) -> Void
 
     func body(content: Content) -> some View {
         content.confirmationDialog(
-            pending.map { SessionArchiveProjection.confirmTitle(name: $0.name) } ?? "",
+            pending.map { SessionArchiveProjection.confirmTitle(names: $0.names) } ?? "",
             isPresented: isPresented,
             presenting: pending,
-        ) { session in
+        ) { batch in
             // `.destructive`, because this ends a running agent. Cancel takes the `.cancel` role
             // and with it the Escape key: the prompt is only ever raised over live work, so every
             // way of dismissing it without choosing leaves that work alone.
             Button(SessionArchiveProjection.confirmVerb, role: .destructive) {
-                archive(session.id)
+                archive(batch.ids)
             }
             Button("Cancel", role: .cancel) {}
-        } message: { _ in
-            Text(SessionArchiveProjection.confirmMessage)
+        } message: { batch in
+            Text(SessionArchiveProjection.confirmMessage(count: batch.sessions.count))
         }
     }
 
@@ -51,10 +51,9 @@ struct ArchiveConfirmationDialog: ViewModifier {
 // name without swallowing it, that the message's two sentences read in the order that matters, and
 // that the destructive verb and Cancel sit the way macOS puts them.
 #Preview("Archive prompt — over a running Session") {
-    @Previewable @State var pending: ArchiveConfirmation? = ArchiveConfirmation(
-        id: "session",
-        name: "Rebuild the roster's archived foot",
-    )
+    @Previewable @State var pending: ArchiveConfirmation? = ArchiveConfirmation(sessions: [
+        .init(id: "session", name: "Rebuild the roster's archived foot"),
+    ])
 
     Color.clear
         .frame(width: 420, height: 260)

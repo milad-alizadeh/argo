@@ -13,7 +13,29 @@ public final class CockpitNavigationModel {
 
     /// The ticket the Tickets room is open on. Beside the Session and not inside it: a room keeps
     /// where it was pointing while the reader is in another one.
-    package var ticket: Int?
+    package var ticket: Int? {
+        get { openTicketNumber }
+        set {
+            openTicketNumber = newValue
+            // Everything that writes this opens the pane from outside the backlog — a link, the
+            // detail pane's own child rows, a restore — and that is one click's worth of
+            // selection, never an addition to the range the reader built (#1247).
+            ticketSelection.point(at: newValue)
+        }
+    }
+
+    /// The backlog's whole selection, which the open ticket above is the last click out of
+    /// (#1247). Beside the open ticket rather than derived from it, for the roster's own reason.
+    var ticketSelection = RowSelection<Int>()
+
+    private var openTicketNumber: Int?
+
+    /// The pane opened by a click the backlog has ALREADY settled the selection for. The setter
+    /// above cannot serve that: it would collapse the range the same click just made.
+    func paneOpened(at number: Int?) {
+        openTicketNumber = number
+    }
+
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
     var ticketsView = TicketsView.allOpen
@@ -36,9 +58,28 @@ public final class CockpitNavigationModel {
     public var session: CockpitPresentation.Session.ID? {
         get { pointedSession }
         set {
-            pointedSession = newValue
-            chosenSession = Pick(session: newValue, ordinal: chosenSession.ordinal + 1)
+            pick(newValue)
+            // Everything that writes this is pointing the window from OUTSIDE the roster — a
+            // link, a reveal, the menu bar — and that is one click's worth of selection, never an
+            // addition to the range the reader built (#1247).
+            sessionSelection.point(at: newValue)
         }
+    }
+
+    /// The roster's whole selection, which the deck's row above is the last click out of (#1247).
+    /// Held beside `session` rather than derived from it: a range of four rows has one deck row,
+    /// and the deck may not be moved by growing a range.
+    var sessionSelection = RowSelection<CockpitPresentation.Session.ID>()
+
+    /// The deck moved by a click the roster has ALREADY settled the selection for. The setter
+    /// above cannot serve that: it would collapse the range the same click just made.
+    func deckPointed(at id: CockpitPresentation.Session.ID?) {
+        pick(id)
+    }
+
+    private func pick(_ id: CockpitPresentation.Session.ID?) {
+        pointedSession = id
+        chosenSession = Pick(session: id, ordinal: chosenSession.ordinal + 1)
     }
 
     /// One act of picking a row. The ordinal is what makes picking the SAME row twice two events:
@@ -77,10 +118,14 @@ public final class CockpitNavigationModel {
     /// Repoints a selection that no longer names a live Session, falling back to the first.
     /// An empty roster leaves it `nil` — there is nothing honest to point at.
     func reconcile(against sessionIDs: [CockpitPresentation.Session.ID]) {
+        // Whatever happens to the deck's row, a Session that has left cannot stay selected: the
+        // menu would be offering to archive rows nobody can see (#1247).
+        sessionSelection.confine(to: sessionIDs)
         if let pointedSession, sessionIDs.contains(pointedSession) {
             return
         }
         pointedSession = sessionIDs.first
+        sessionSelection.point(at: sessionIDs.first)
         chosenSession = Pick(session: nil, ordinal: chosenSession.ordinal + 1)
     }
 }

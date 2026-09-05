@@ -100,6 +100,9 @@ extension SpecimenRegistry {
         // the system's neutral grey whatever the accent says, so an inactive render here proves
         // nothing about either.
         SpecimenEntry("selectedRow") { SelectedRowSpecimen() },
+        // A shift-click's own state (#1247): three grounds in a row, drawn the same as one, with
+        // nothing marking which of them the deck is on.
+        SpecimenEntry("rangeSelectedRoster") { RangeSelectedRosterSpecimen() },
         // The strip at the sidebar's narrowest — where its four segments have least room, and
         // where a fifth room would first go wrong (#1163).
         SpecimenEntry("narrowRoomStrip") { NarrowRoomStripSpecimen() },

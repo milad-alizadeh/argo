@@ -78,13 +78,30 @@ package struct TicketsRoom {
 
     package struct Held {
         var query: Binding<String>
+        /// The backlog's selection (#1247). Beside the query and above the room, for the query's
+        /// own reason: the panes are rebuilt on every ticket, and a range owned any lower would
+        /// be lost by the first click that changed anything.
+        var selection: Binding<RowSelection<Int>> = .constant(RowSelection())
+        /// Open the ticket pane on a row the backlog has already settled the selection for.
+        var opened: @MainActor (Int?) -> Void = { _ in }
+        /// What a backlog row's right-click menu offers, and what pressing an item does (#1247).
+        /// Inert by default: a preview draws the menu without a provider behind it.
+        var acts = BacklogSelectionActs()
 
         /// Nothing remembers it, for a `#Preview` and a specimen with no window above them.
         package static let unheld = Held(query: .constant(""))
 
         /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-        package init(query: Binding<String>) {
+        package init(
+            query: Binding<String>,
+            selection: Binding<RowSelection<Int>> = .constant(RowSelection()),
+            opened: @escaping @MainActor (Int?) -> Void = { _ in },
+            acts: BacklogSelectionActs = BacklogSelectionActs(),
+        ) {
             self.query = query
+            self.selection = selection
+            self.opened = opened
+            self.acts = acts
         }
     }
 
@@ -179,7 +196,15 @@ package struct TicketsRoom {
                 )
                 BacklogList(
                     rows: room.backlog,
-                    held: BacklogList.Held(selection: $ticket, shut: $shut),
+                    held: BacklogList.Held(
+                        // Not `$ticket`: the selection is settled by the click that opened this,
+                        // and writing through the binding would collapse the range it made.
+                        picking: RowSelectionHold(
+                            selection: held.selection, pointed: ticket, pick: held.opened,
+                        ),
+                        shut: $shut,
+                        acts: held.acts,
+                    ),
                     header: chrome,
                     // Only where the provider said there IS another page. A `Load more` that
                     // survived the last one is the control-that-does-nothing this room keeps

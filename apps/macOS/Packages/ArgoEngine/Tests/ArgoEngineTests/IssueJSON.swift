@@ -32,6 +32,7 @@ struct IssueJSON {
     var json: String {
         """
         { "id": \(identifier ?? Self.identifier(of: number)),
+          "node_id": "\(Self.node(of: number))",
           "number": \(number), "title": "\(title)", "state": "\(state)",
           "state_reason": \(reason.map { "\"\($0)\"" } ?? "null"),
           "labels": [\(labelObjects)],
@@ -49,6 +50,12 @@ struct IssueJSON {
     /// write test can still say which id it expected to travel.
     static func identifier(of number: Int) -> Int {
         1_000_000 + number
+    }
+
+    /// The GLOBAL node id GitHub would have given this number — a third spelling of "which issue",
+    /// deliberately unlike both others, so a delete sending the wrong one fails the assertion.
+    static func node(of number: Int) -> String {
+        "I_kwDO\(number)"
     }
 
     static func list(_ issues: [IssueJSON]) -> String {

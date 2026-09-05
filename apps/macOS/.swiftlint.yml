@@ -134,7 +134,7 @@ function_parameter_count:
   # INIT: IssueJSON.swift 15 — the GitHub issue fixture, spelled the way GitHub spells it so the
   # INIT: TranscriptRecord.swift 14 — MessageRecord, the facts every message-bearing record
   # INIT: LinearIssueJSON.swift 14 — the Linear issue fixture, field for field as its GraphQL API
-  # INIT: GitHubIssue.swift 13 — one issue as GitHub's REST API serves it, parsed at the boundary
+  # INIT: GitHubIssue.swift 14 — one issue as GitHub's REST API serves it, parsed at the boundary
   # INIT: SessionComposerProjection.swift 13 — Composer, the composer's whole reading, one fact per
   # INIT: FeedRowKind.swift 12 — Kind, what a row IS, one flag per question the feed asks of it
   # INIT: FrameProbeSummary.swift 12 — one measurement window reduced to the figures a frame budget

@@ -10,6 +10,12 @@ struct GitHubIssue: Decodable {
     /// dependency and sub-issue endpoint names the ticket at the far end of an edge by this and
     /// never by the number (#257).
     let id: Int
+    /// GitHub's GLOBAL node id, which is neither the database id above nor the number a human
+    /// reads. Carried because the GraphQL API addresses a record by this and by nothing else, and
+    /// deleting an issue is only offered there (`GitHubTickets+Delete`). Optional because the
+    /// trimmed issue objects some events embed carry no `node_id`, and a decode that failed over
+    /// one would cost a poll the whole page.
+    let nodeId: String?
     let number: Int
     let title: String
     let state: String

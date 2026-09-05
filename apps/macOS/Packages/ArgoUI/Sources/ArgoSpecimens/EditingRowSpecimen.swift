@@ -21,10 +21,10 @@ struct EditingRowSpecimen: View {
             ForEach(RenameFixture.rows) { row in
                 SessionRow(
                     row: row,
-                    isRenaming: Binding(
+                    renaming: .init(isOpen: Binding(
                         get: { renamingRowID == row.id },
                         set: { renamingRowID = $0 ? row.id : nil },
-                    ),
+                    )),
                 )
                 .previewSafeListRow()
             }

@@ -8,7 +8,7 @@
 /// somewhere else, so the conformance claims are about the port rather than about GitHub.
 actor WorkflowTracker: TicketWriting {
     nonisolated let surface = TicketSurface(
-        writes: [.create, .updateFields, .transition, .labels, .priority, .closure],
+        writes: [.create, .updateFields, .transition, .labels, .priority, .closure, .delete],
         states: [.todo, .inProgress, .done, .closed],
     )
 
@@ -33,6 +33,13 @@ actor WorkflowTracker: TicketWriting {
         held[next] = filed
         positions[next] = .todo
         return filed
+    }
+
+    func delete(_ number: Int, through _: ResolvedBinding) async throws {
+        guard held.removeValue(forKey: number) != nil else {
+            throw TicketWriteError.refused("No issue \(number)")
+        }
+        positions[number] = nil
     }
 
     func apply(

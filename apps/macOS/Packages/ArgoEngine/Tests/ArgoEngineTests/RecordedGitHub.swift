@@ -19,6 +19,10 @@ actor RecordedGitHub: HTTPTransport {
             + "&per_page=\(ClosedTicketPage.size)&page=\(page)"
     }
 
+    /// What GitHub answers a landed `deleteIssue` with — a GraphQL reply carrying no `errors`,
+    /// which is the only half of it the adapter reads (#1247).
+    static let deleted = #"{ "data": { "deleteIssue": { "clientMutationId": null } } }"#
+
     private let replies: [String: String]
     private let failure: Error?
     private var sent: [HTTPRequest] = []

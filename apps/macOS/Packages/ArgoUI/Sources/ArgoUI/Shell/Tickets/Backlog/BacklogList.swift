@@ -36,15 +36,68 @@ package struct BacklogList: View {
     }
 
     package struct Held {
-        @Binding var selection: Int?
+        /// Every selected row, the ticket the pane is open on, and the way to open another
+        /// (#1247). One value, because the `List`'s own binding and the row's ground are both
+        /// read off the selection in here.
+        var picking: RowSelectionHold<Int>
         @Binding var shut: Set<Int>
+        /// What the row's right-click menu offers, and what pressing an item does (#1247). Here
+        /// because it is the SELECTION's verbs: what the menu covers is what `picking` holds.
+        var acts = BacklogSelectionActs()
+
+        /// Whether Argo grounds this row — the `List`'s own answer, so the two cannot disagree.
+        func isSelected(_ row: Int) -> Bool {
+            picking.selection.contains(row)
+        }
+
+        /// Whether this parent is drawn open.
+        func isOpen(_ row: Int) -> Bool {
+            !shut.contains(row)
+        }
+
+        /// What a menu opened on this row acts on: the whole selection when the row is in it, and
+        /// that row alone when it is not (`RowSelection.aim`). Sorted, because a set has no order
+        /// and a batch reported back has to name its Tickets in one.
+        func targets(of row: Int) -> [Int] {
+            picking.selection.aim(at: row).sorted()
+        }
+
+        /// Fold this parent, or open it.
+        func toggle(_ row: Int) {
+            if shut.contains(row) {
+                shut.remove(row)
+            } else {
+                shut.insert(row)
+            }
+        }
 
         /// Spelled out because Swift synthesises no memberwise initializer above
         /// `internal`, and the specimens build this from their own target (#1085).
-        package init(selection: Binding<Int?>, shut: Binding<Set<Int>>) {
-            _selection = selection
+        package init(
+            picking: RowSelectionHold<Int>,
+            shut: Binding<Set<Int>>,
+            acts: BacklogSelectionActs = BacklogSelectionActs(),
+        ) {
+            self.picking = picking
             _shut = shut
+            self.acts = acts
         }
+    }
+
+    /// The `List`'s own selection, which is the held set and nothing beside it. Written back
+    /// through `absorb`, so the platform's shift-click and cmd-click reach the anchor and the
+    /// open ticket by the one route.
+    private var listSelection: Binding<Set<Int>> {
+        Binding(
+            get: { held.picking.selection.rows },
+            set: { held.picking.selection.absorb($0, over: drawnRows) },
+        )
+    }
+
+    /// Every row a range may reach: what the list is drawing now, folds resolved. A row behind a
+    /// shut parent is not in here, which is what keeps a range off rows nobody can see (#1247).
+    private var drawnRows: [Int] {
+        TicketsRoomProjection.drawn(rows, shut: shut).map(\.id)
     }
 
     package var body: some View {
@@ -59,7 +112,7 @@ package struct BacklogList: View {
     }
 
     private var list: some View {
-        List(selection: held.$selection) {
+        List(selection: listSelection) {
             if header.structure.groups {
                 banded
             } else {
@@ -75,6 +128,7 @@ package struct BacklogList: View {
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
         .accessibilityLabel("Backlog")
+        .modifier(RowSelectionReactions(held: held.picking, drawn: drawnRows))
     }
 
     /// The list `Closed` draws: one run of rows in the order the projection put them, and no
@@ -83,8 +137,7 @@ package struct BacklogList: View {
     private var flat: some View {
         BacklogOutline(
             drawn: TicketsRoomProjection.drawn(rows, shut: shut),
-            shut: held.$shut,
-            selection: held.selection,
+            held: held,
             folds: header.structure.folds,
         )
     }
@@ -105,12 +158,7 @@ package struct BacklogList: View {
                 .previewSafeListRow()
                 .listRowSeparator(.hidden)
                 .selectionDisabled()
-            BacklogOutline(
-                drawn: drawn,
-                shut: held.$shut,
-                selection: held.selection,
-                folds: header.structure.folds,
-            )
+            BacklogOutline(drawn: drawn, held: held, folds: header.structure.folds)
         }
     }
 
@@ -130,8 +178,10 @@ package struct BacklogList: View {
 // …and the last page, where the foot is not drawn at all.
 
 #Preview("Backlog list — the provider answered with nothing") {
-    BacklogList(rows: [], held: .init(selection: .constant(nil), shut: .constant([])))
-        .frame(width: ArgoBacklogList.width, height: 320)
-        .argoDeckSurface()
-        .argoAppearance()
+    BacklogList(rows: [], held: .init(
+        picking: .init(selection: .constant(RowSelection())), shut: .constant([]),
+    ))
+    .frame(width: ArgoBacklogList.width, height: 320)
+    .argoDeckSurface()
+    .argoAppearance()
 }

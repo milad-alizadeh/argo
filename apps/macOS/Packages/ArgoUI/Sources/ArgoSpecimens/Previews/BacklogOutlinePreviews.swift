@@ -10,11 +10,21 @@ import SwiftUI
     HStack(spacing: ArgoSpacing.flush) {
         List {
             BacklogOutline(
-                drawn: TicketsRoomProjection.drawn(high, shut: open), shut: $open, selection: 272,
+                drawn: TicketsRoomProjection.drawn(high, shut: open),
+                held: .init(
+                    picking: .init(selection: .constant(RowSelection(one: 272))),
+                    shut: $open,
+                ),
             )
         }
         List {
-            BacklogOutline(drawn: TicketsRoomProjection.drawn(high, shut: folded), shut: $folded)
+            BacklogOutline(
+                drawn: TicketsRoomProjection.drawn(high, shut: folded),
+                held: .init(
+                    picking: .init(selection: .constant(RowSelection())),
+                    shut: $folded,
+                ),
+            )
         }
     }
     .listStyle(.inset)
@@ -25,10 +35,18 @@ import SwiftUI
 }
 
 #Preview("Backlog outline — the provider answered with nothing") {
-    List { BacklogOutline(drawn: [], shut: .constant([])) }
-        .listStyle(.inset)
-        .frame(width: ArgoBacklogList.width, height: 240)
-        .argoDeckSurface()
-        .argoAppearance()
-        .environment(\.backlogNow, TicketsFixture.asOf)
+    List {
+        BacklogOutline(
+            drawn: [],
+            held: .init(
+                picking: .init(selection: .constant(RowSelection())),
+                shut: .constant([]),
+            ),
+        )
+    }
+    .listStyle(.inset)
+    .frame(width: ArgoBacklogList.width, height: 240)
+    .argoDeckSurface()
+    .argoAppearance()
+    .environment(\.backlogNow, TicketsFixture.asOf)
 }

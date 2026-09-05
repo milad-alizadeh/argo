@@ -20,7 +20,7 @@ struct FoldedRosterSpecimen: View {
     var body: some View {
         SessionNavigator(
             rows: Self.rows(opened: shown),
-            selection: .constant("steered-0"),
+            held: .init(selection: .constant(RowSelection(one: "steered-0"))),
             openFold: { opened.formSymmetricDifference([$0]) },
         )
         .frame(width: width)

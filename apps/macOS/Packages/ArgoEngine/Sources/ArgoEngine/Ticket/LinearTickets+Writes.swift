@@ -39,6 +39,16 @@ extension LinearTickets: TicketWriting {
         return try await adopted(number, through: binding)
     }
 
+    /// Linear's own `issueDelete`, which moves the issue to the team's trash and takes it out
+    /// of every listing (#1247). Grounded on Linear's GraphQL schema, read 2026-09-05.
+    public func delete(_ number: Int, through binding: ResolvedBinding) async throws {
+        guard surface.offers(.delete) else { throw TicketWriteError.unavailable(.delete) }
+        let id = try await identifier(of: number, through: binding)
+        _ = try await sent(
+            LinearOperation(LinearDocuments.issueDelete, ["id": .string(id)]), through: binding,
+        )
+    }
+
     public func apply(
         _ intent: TicketIntent, to number: Int, through binding: ResolvedBinding,
     ) async throws

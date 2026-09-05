@@ -82,16 +82,40 @@ struct SessionArchiveProjectionTests {
     /// gesture is reachable from the menu bar, where the row it acts on may not be in view.
     @Test
     func `the prompt names the Session and says what ending it does`() {
-        #expect(SessionArchiveProjection.confirmTitle(name: "Rebuild the roster")
+        #expect(SessionArchiveProjection.confirmTitle(names: ["Rebuild the roster"])
             == "Archive \u{201C}Rebuild the roster\u{201D}?")
         // The message is not re-typed here to be compared with itself: an assertion that can only
         // fail when somebody edits the copy is a change detector, and it would be edited in both
         // places. What is asserted is what the words have to DO — say that ending is not losing,
         // which is the sentence a reader needs before they dare archive a Session mid-turn.
-        #expect(SessionArchiveProjection.confirmMessage.contains("ends that agent"))
-        #expect(SessionArchiveProjection.confirmMessage.contains("keeps the history"))
+        #expect(SessionArchiveProjection.confirmMessage(count: 1).contains("ends that agent"))
+        #expect(SessionArchiveProjection.confirmMessage(count: 1).contains("keeps the history"))
         // The verb says both halves. "Archive" alone reads as the gesture that only hid the row.
         #expect(SessionArchiveProjection.confirmVerb.contains("Archive"))
         #expect(SessionArchiveProjection.confirmVerb.contains("End"))
+    }
+
+    /// A batch is counted rather than listed: four names in a title is a title nobody reads, and
+    /// the plural message has to say the same thing about ending agents that the singular does.
+    @Test
+    func `a batch prompt counts the Sessions and speaks of them in the plural`() {
+        #expect(SessionArchiveProjection.confirmTitle(names: ["one", "two", "three"])
+            == "Archive 3 Sessions?")
+        #expect(SessionArchiveProjection.confirmMessage(count: 3).contains("ends those agents"))
+        #expect(SessionArchiveProjection.confirmMessage(count: 3).contains("keeps the history"))
+    }
+
+    /// The menu carries no rows to point at, so it says how many it covers (#1247). One row keeps
+    /// the singular the menu bar already uses.
+    @Test
+    func `the menu counts what a multi-row selection archives`() {
+        #expect(SessionArchiveProjection.menuTitle(isArchived: false, count: 4)
+            == "Archive 4 Sessions")
+        #expect(SessionArchiveProjection.menuTitle(isArchived: true, count: 4)
+            == "Put 4 Sessions Back on the Roster")
+        #expect(SessionArchiveProjection.menuTitle(isArchived: false, count: 1)
+            == SessionArchiveProjection.menuTitle(isArchived: false))
+        #expect(SessionArchiveProjection.menuTitle(isArchived: true, count: 1)
+            == SessionArchiveProjection.menuTitle(isArchived: true))
     }
 }

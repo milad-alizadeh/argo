@@ -197,16 +197,13 @@ struct ArgoApp: App {
         }
         actions.sessions.clearLostTurn = { id in cockpit.hub.clearLostTurn(for: id) }
         actions.sessions.endDelegation = { cockpit.hub.endDelegation(callID: $1, for: $0) }
-        actions.sessions.handOff = { id, issue in
-            await cockpit.handOff(sessionID: id, issue: issue)
-        }
+        actions.sessions.handOff = { await cockpit.handOff(sessionID: $0, issue: $1) }
         actions.composer.skills = { await cockpit.builtins.catalog(forProjectAt: projectURL) }
-        actions.composer.workspaceFiles = { root in
-            await gitWorkspaceFileRead(URL(fileURLWithPath: root))
-        }
+        actions.composer.workspaceFiles = { await gitWorkspaceFileRead(URL(fileURLWithPath: $0)) }
         actions.tickets.writes.createTicket = { await accounts.createTicket($0) }
         actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1, opening: $2) }
         actions.tickets.writes.applyIntent = { await accounts.applyTicket($0, to: $1) }
+        actions.tickets.writes.deleteTicket = { await accounts.deleteTicket($0) }
         actions.tickets.designedScreens = DesignedScreens(projectURL: projectURL).screens
         actions.tickets.read = { await accounts.read($0) }
         return actions

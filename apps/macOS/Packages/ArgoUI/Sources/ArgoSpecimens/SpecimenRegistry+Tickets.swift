@@ -7,6 +7,9 @@ import SwiftUI
 extension SpecimenRegistry {
     static let tickets: [SpecimenEntry] = [
         SpecimenEntry("ticketsRoom") { TicketsRoomSpecimen() },
+        // The backlog's own range (#1247): the grounds run continuously down the tree, and a row
+        // behind a shut parent is not in the range at all.
+        SpecimenEntry("rangeSelectedBacklog") { RangeSelectedBacklogSpecimen() },
         // Nothing bound: the room hides WHOLE — no sidebar, no list, no ticket, and a panel saying
         // nothing has been read rather than that there is nothing. `unbound.png`.
         SpecimenEntry("unboundTicketsRoom") { TicketsPanesSpecimen(reading: TicketsFixture.unbound)
