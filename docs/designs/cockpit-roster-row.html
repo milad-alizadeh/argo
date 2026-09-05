@@ -220,7 +220,8 @@
   /* The Session claimed it is done and there is no pull request yet. A STATE, drawn where the
      states the row derives are drawn — the control that opens the PR is in the deck header, and
      never on a row: the roster has one click and it selects a Session. */
-  .badge.is-ready { color: var(--delivery-open); display: inline-flex; align-items: center; gap: var(--tight); }
+     The word alone, like the two states it shares the slot with (#1348). */
+  .badge.is-ready { color: var(--delivery-open); }
 
   /* Line 3 — how it is going. */
   .progress-line { display: flex; align-items: center; gap: var(--base); margin-top: var(--hair); }
@@ -304,7 +305,6 @@ const SVG = {
        <path d="M8.8 3 7.2 4.6l1.6 1.6"/>`,
   merged: `<circle cx="4.2" cy="4" r="1.7"/><circle cx="4.2" cy="12.2" r="1.7"/><path d="M4.2 5.7v4.8"/>
            <circle cx="11.8" cy="4" r="1.7"/><path d="M11.8 5.7v.8a4 4 0 0 1-4 4H5.9"/>`,
-  ship: `<path d="M8 12.6V3.4"/><path d="M4.6 6.8 8 3.4l3.4 3.4"/><path d="M3.4 13.6h9.2"/>`,
   chevron: `<path d="M6.5 4 10.5 8l-4 4"/>`,
 };
 const glyph = d => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
@@ -425,7 +425,7 @@ function addresses(r) {
 }
 
 function trailingWord(r) {
-  if (r.ready) return `<span class="badge is-ready">${glyph(SVG.ship)}Ready</span>`;
+  if (r.ready) return `<span class="badge is-ready">Ready</span>`;
   if (r.word) return `<span class="badge">${r.word}</span>`;
   return '';
 }

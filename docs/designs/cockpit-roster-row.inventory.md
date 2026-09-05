@@ -1,4 +1,4 @@
-# The Sessions roster row — build inventory (#1344, #1346)
+# The Sessions roster row — build inventory (#1344, #1346, #1348)
 
 What each ticket's build actually extracted from
 [`cockpit-roster-row.md`](cockpit-roster-row.md). Names are frozen at approval; renaming one is
@@ -96,4 +96,53 @@ this build by #1341; `machineCaption` and `text.tertiary` are pre-existing roles
   honest reading of an unread Project (`cockpit-roster-row.md`: "a row whose branch has no
   Delivery … draws no pull request — never a placeholder").
 - **Rule 7** ("a ready claim with an open pull request never draws") has no `Ready` state to
-  conflict with yet — that arrives with #1335/#1348.
+  conflict with yet — that arrives with #1335/#1348. **Closed by #1348 below.**
+
+## Extracted — #1348
+
+**Nothing.** The word slot already had its component: `ArgoStateLabel` (`ArgoAtoms`) is nothing
+but the word, upper-cased there so no caller can draw one in sentence case, and it takes its ink
+from the caller because *which* ink a state spends is the state's to say. `Ready` is a third word
+through it, at `delivery.open`. A `ReadyBadge` beside it would have been a second component
+drawing the same slot, and the slot's whole rule is that only one thing is ever in it.
+
+None of the three extraction tests fires: the markup appears once, the shape is `ArgoStateLabel`
+rather than a new cross-screen unit, and the unexercised states are the ones the badge slot
+already had a component for.
+
+### What stayed inline
+
+- **The rank between the state word and `Ready`** — `SessionRosterProjection.Row.badge`, a
+  two-case enum (`.state(String, ArgoOperationalState?)` · `.readyToShip`) resolved on the
+  projection, not in the view. A row waiting on the reader or reporting a failure has more to
+  say than that it is done, and the slot holds one thing, so the two cannot both be present:
+  making them one optional is what stops a surface drawing both.
+- **The staleness resolution** — `CockpitPresentation.Session.Work.Delivery.init(pullRequest:claim:)`,
+  which takes the CONVENTION claim RAW and resolves it against the DERIVED pull request once.
+  Downstream there is only a `Bool`, so no surface and no fixture can state the pair rule 7
+  forbids. `DeliveryPullRequest.isFinished` is the degrade-down: a host word Argo cannot place
+  is not evidence the pull request is over, so the claim stays off the row.
+- **The ink** — `SessionRow.ink(of:)`, one `switch` over the badge's own case. Read off the case
+  rather than off the row, so the word and the ink cannot come from two different readings.
+
+### What #1348 changed
+
+The reading, the ink and the suite all landed whole with #1335. What #1348 found missing was the
+**shape** the design pairs with the word: `roster-row/ready.png` draws a completed Plan bar and no
+pull request mark, and the ticket says the shape says it before the word does.
+`ReadyToShipRosterSpecimen` carried no Plan at all, so the state rendered at half. Both claiming
+rows now carry the same claim and the same finished Plan, so the pull request is the only thing
+the badge slot answers to differently — the one fact the specimen exists to show.
+
+### A correction to the design
+
+`cockpit-roster-row.html` drew `Ready` behind a ship glyph. It never rendered: `.badge svg`
+carried no size rule, unlike `.addr svg` and the chevron, so every `roster-row/ready.png` in the
+repo has been the word alone. The word is also what the design's own prose asks for — the
+measurements table calls the slot "the one word", and the two states sharing it draw words alone.
+The glyph is gone from the explorable. Re-rendering all ten states after the removal changed no
+byte of any PNG, which is the proof it drew nothing.
+
+### Contract changes these needed
+
+None. `delivery.open` was promoted by #1341 and `ArgoStateLabel` predates all three tickets.

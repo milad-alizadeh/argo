@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import ArgoFixtures
 import ArgoUI
 import SwiftUI
 
@@ -17,17 +18,20 @@ struct ReadyToShipRosterSpecimen: View {
         [
             session(
                 id: "ready", title: "Add the fourth companion tool",
-                pullRequest: nil, claim: claim,
+                delivery: .init(claim: claim), plan: finished,
             ),
             // The claim is HELD here too, and the row still draws no word: the pull request is
-            // open, and the projection resolves the pair (decision 7).
+            // open, and the projection resolves the pair (decision 7). Same claim and the same
+            // finished Plan as the row above, so the pull request is the only thing the badge
+            // slot answers to differently.
             session(
                 id: "stale", title: "Draw the Ready badge on the roster row",
-                pullRequest: .fixture(number: 1400, state: "open"), claim: claim,
+                delivery: .init(pullRequest: .fixture(number: 1400, state: "open"), claim: claim),
+                plan: finished,
             ),
             session(
-                id: "running", title: "Nothing claimed yet",
-                pullRequest: nil, claim: nil,
+                id: "unclaimed", title: "Nothing claimed yet",
+                delivery: .init(), plan: partDone,
             ),
         ]
     }
@@ -36,8 +40,34 @@ struct ReadyToShipRosterSpecimen: View {
     /// reason, and the feed is where that is read (`FeedMark.readyToShip`).
     private static let claim = CompanionReady(reason: "3 files, 2 commits")
 
+    /// A Session that says it is ready reads as a FULL Plan bar with no pull request mark beside
+    /// it (`cockpit-roster-row.md`, the `ready` state) — the shape says it before the word does,
+    /// so the specimen has to carry the shape or it renders half the state.
+    private static let finished: [(String, PlanEntryStatus)] = [
+        ("Read the anatomy study in full", .completed),
+        ("Add the fourth companion tool", .completed),
+        ("Fold the claim into the report", .completed),
+        ("Resolve it against the pull request", .completed),
+        ("Draw it in the badge slot", .completed),
+        ("Independent review, then PR", .completed),
+    ]
+
+    /// A Plan that stopped part-way, so the contrast row's bar is visibly short of the two above
+    /// it. Every Session here is `idle`, so all three bars draw at `progress.still` (rule 3) and
+    /// the only thing separating them is how far the fill got — which is the comparison the
+    /// fixed 64pt width exists to make.
+    private static let partDone: [(String, PlanEntryStatus)] = [
+        ("Read the anatomy study in full", .completed),
+        ("Implement the projection seam", .inProgress),
+        ("Independent review, then PR", .pending),
+    ]
+
+    /// Takes the `Delivery` group whole, as `Work.Delivery` does and for its stated reason.
     private static func session(
-        id: String, title: String, pullRequest: DeliveryPullRequest?, claim: CompanionReady?,
+        id: String,
+        title: String,
+        delivery: CockpitPresentation.Session.Work.Delivery,
+        plan: [(String, PlanEntryStatus)],
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -49,8 +79,9 @@ struct ReadyToShipRosterSpecimen: View {
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .main, branch: "argo/#\(id)"),
-                delivery: .init(pullRequest: pullRequest, claim: claim),
+                delivery: delivery,
             ),
+            transcript: .init(events: [TranscriptFixtures.plan(plan)]),
         )
     }
 
