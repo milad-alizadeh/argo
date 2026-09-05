@@ -23,7 +23,7 @@ package enum FeedAgents {
         of session: DelegatingSession,
     )
         -> [FeedAgent] {
-        agents(handedOver: rows.compactMap(delegation(in:)), of: session)
+        agents(handedOver: handovers(in: rows), of: session)
     }
 
     /// The same list off the Session's own STREAM, for a surface with no feed rows to read that
@@ -42,20 +42,32 @@ package enum FeedAgents {
         within path: FeedPath,
     )
         -> [FeedAgent] {
-        agents(handedOver: delegations(in: events, within: path), of: session)
+        agents(handedOver: handovers(in: events, within: path), of: session)
+    }
+
+    /// One delegation as the rail reads it: the call, and the delegation's OWN half of every
+    /// running claim made about it.
+    private struct Handover {
+        let call: FeedCall
+        /// A Turn ended, or somebody stopped one, AFTER the work was handed over
+        /// (`FeedMark.endsTurn`). A synchronous delegation blocks the Turn that made it, so its own
+        /// Turn cannot have ended while it runs; a backgrounded one outlives its Turn by design and
+        /// is reached instead by the child's own file (`told(_:writing:at:)`, #1269).
+        let turnEnded: Bool
     }
 
     /// One `FeedAgent` per delegation, in the order the work was handed over. The single place a
     /// `FeedAgent` is built, so neither entry point can grow a reading of its own.
-    private static func agents(handedOver calls: [FeedCall], of session: DelegatingSession)
+    private static func agents(handedOver handovers: [Handover], of session: DelegatingSession)
         -> [FeedAgent] {
-        calls.enumerated().map { position, call in
-            FeedAgent(
+        handovers.enumerated().map { position, handover in
+            let call = handover.call
+            return FeedAgent(
                 id: position,
                 // The disambiguated address: a row here stands alone in a column of its own, with
                 // no line beside it to tell two same-named subjects apart.
                 label: call.subject.captioned,
-                activity: activity(call, of: session),
+                activity: activity(handover, of: session),
                 spend: call.spend,
                 subagentID: call.subagentID,
                 durationMs: call.durationMs,
@@ -64,24 +76,45 @@ package enum FeedAgents {
         }
     }
 
-    /// The delegate calls in the stream, each paired with the outcome that answered it.
+    /// The delegate rows, each told whether a Turn closed below it. One `lastIndex` rather than a
+    /// search per delegation: boundaries only ever move forwards, so a call sits in a closed Turn
+    /// exactly when it is above the LAST of them.
+    private static func handovers(in rows: [FeedRow]) -> [Handover] {
+        let closed = rows.lastIndex { $0.kind.endsTurn }
+        return rows.enumerated().compactMap { position, row in
+            delegation(in: row).map {
+                Handover(call: $0, turnEnded: closed.map { position < $0 } ?? false)
+            }
+        }
+    }
+
+    /// The delegate calls in the stream, each paired with the outcome that answered it and told the
+    /// same fact about its Turn.
     ///
     /// Forwards, gathering the outcomes in the same pass: a call and its result sit arbitrarily far
     /// apart, and a backgrounded delegation is answered twice — a receipt at once and a report
     /// later (#908) — so the LAST outcome under an id is the one that decides it.
-    private static func delegations(in events: [TranscriptEvent], within path: FeedPath)
-        -> [FeedCall] {
+    private static func handovers(in events: [TranscriptEvent], within path: FeedPath)
+        -> [Handover] {
         var outcomes: [String: ToolCallOutcome] = [:]
-        var handedOver: [ToolCall] = []
-        for event in events {
+        var handedOver: [(call: ToolCall, at: Int)] = []
+        var closed: Int?
+        for (position, event) in events.enumerated() {
+            // ASKED, never restated: the boundary rule the rows read off their marks
+            // (`TranscriptEvent.endsTurn`), so the roster and the rail cannot part company on it.
+            if event.endsTurn {
+                closed = position
+            }
             switch event {
             case let .toolCallOutcome(outcome): outcomes[outcome.id] = outcome
-            case let .toolCall(call) where call.kind == .delegate: handedOver.append(call)
+            case let .toolCall(call) where call.kind == .delegate:
+                handedOver.append((call, position))
             default: break
             }
         }
-        return handedOver.compactMap {
-            FeedCallReading.call($0, outcome: outcomes[$0.id], within: path)
+        return handedOver.compactMap { handed in
+            FeedCallReading.call(handed.call, outcome: outcomes[handed.call.id], within: path)
+                .map { Handover(call: $0, turnEnded: closed.map { handed.at < $0 } ?? false) }
         }
     }
 
@@ -128,9 +161,11 @@ package enum FeedAgents {
     /// How many of them are running right now — the count line's figure and the list under it,
     /// from one reading (`AgentsRail`).
     ///
-    /// THREE facts behind each one, never one: a delegation the transcript has not resolved, in a
-    /// Session that is itself running (`DelegatingSession`), handed over recently enough that its
-    /// report could still be coming (`DelegationCeiling`). A backgrounded launch is answered at
+    /// THREE facts behind each one, never one: a delegation the transcript has not resolved, by a
+    /// Turn a Session that is itself running has not yet closed (`DelegatingSession`, `Handover`),
+    /// handed over recently enough that its report could still be coming (`DelegationCeiling`). The
+    /// Turn is what keeps the first two from being a fact about the PARENT alone, which is the rail
+    /// opening on a status change (#1277). A backgrounded launch is answered at
     /// once by a receipt that resolves nothing (#908), so where its report never lands the call
     /// stays pending for the life of the record (#1076) — and the Session's own status closes only
     /// the half of that gap where the Session has gone. The ceiling closes the other half, which is
@@ -150,14 +185,20 @@ package enum FeedAgents {
     /// resolved is over. What is left is an open delegation, and the delegating Session decides it
     /// — down to `unknown` where that Session is one whose silence says nothing about it
     /// (`DelegatingSession`).
+    ///
+    /// A running Session only decides the ones handed over by the Turn it is STILL IN: its status
+    /// is a fact about the PARENT, and read off that alone every pending call the record never
+    /// closed counted again the moment somebody sent an unrelated Turn (#1277). Past that boundary
+    /// Argo cannot say from the record — `unknown` and not `finished`, because a backgrounded
+    /// Subagent genuinely outlives the Turn that launched it.
     private static func activity(
-        _ call: FeedCall,
+        _ handover: Handover,
         of session: DelegatingSession,
     )
         -> AgentActivity {
-        guard call.ending == .pending else { return .finished }
+        guard handover.call.ending == .pending else { return .finished }
         switch session {
-        case .running: return .running
+        case .running: return handover.turnEnded ? .unknown : .running
         case .notRunning: return .finished
         case .undecided: return .unknown
         }

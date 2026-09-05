@@ -154,3 +154,25 @@ extension FeedMark {
         }
     }
 }
+
+extension TranscriptEvent {
+    /// `FeedMark.endsTurn`, asked of the STREAM: the same rule, on the shape a surface with no rows
+    /// to read has (`FeedAgents.all(in:of:within:)`, #1394). It lives beside that property rather
+    /// than where it is used, because two spellings of one rule that sit apart eventually disagree
+    /// (`TurnExtents`) — and the two surfaces would then answer the same question two ways.
+    ///
+    /// Switched with no `default` for the reason the property above has none: an event added to the
+    /// domain has to say whether it closes a Turn rather than inherit an answer written for the
+    /// events that exist today.
+    var endsTurn: Bool {
+        switch self {
+        case .turnEnded, .interrupted: true
+        // `.turnResumed` OPENS one; the rest are things said, done, or noted inside a Turn.
+        case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort, .branch,
+             .entry, .mode, .prompt, .message, .thought, .skillLoaded, .toolCall, .toolCallOutcome,
+             .turnResumed, .queued, .usage, .plan, .compaction, .unreadableLine, .superseded,
+             .excerpted:
+            false
+        }
+    }
+}
