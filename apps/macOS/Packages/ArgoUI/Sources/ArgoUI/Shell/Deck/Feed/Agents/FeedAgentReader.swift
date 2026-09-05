@@ -65,9 +65,15 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// The readings a fixture or a specimen has in hand, which are a dictionary and never a live
     /// file — so a state rendered for review is the state that ships.
     ///
-    /// `writing` names the Subagents whose files are growing as the state is drawn. A set rather
-    /// than a date, because what a fixture is stating is the CLAIM — this child is writing — and a
-    /// moment it had to pick relative to a clock is a moment that ages.
+    /// `growth` names what a fixture states about the children's files: which are GROWING as the
+    /// state is drawn, and which Argo watched and has not seen grow since the window lapsed. Sets
+    /// rather than dates, because what a fixture states is the CLAIM — this child is writing, that
+    /// one has fallen quiet — and a moment it had to pick relative to a clock is a moment that
+    /// ages. A child in NEITHER set is one Argo never watched grow, which is a third claim again
+    /// (`SubagentWriting.unwatched`) and the one a chip's ending may not be read against (#1392).
+    ///
+    /// One value rather than two parameters, because they are one reading — and because the cap
+    /// this init is held to counts parameters, never readings (`swift-boundaries` edge 6).
     ///
     /// `ended` names the delegations the reader has ended, by CALL id (#1267) — the other set the
     /// rail's dots are read from, and the reason a specimen can draw the state a lost report leaves
@@ -76,12 +82,18 @@ public struct FeedAgentReader: Equatable, Sendable {
     package init(
         events: [String: [TranscriptEvent]],
         of session: DelegatingSession = .notRunning,
-        writing: Set<String> = [],
+        growth: StatedGrowth = StatedGrowth(),
         ended: Set<String> = [],
     ) {
-        self.identity = .fixture(events, writing: writing)
+        self.identity = .fixture(events, writing: growth.writing, silent: growth.silent)
         self.read = { events[$0] }
-        self.grewAtMs = { writing.contains($0) ? Date().epochMs : nil }
+        self.grewAtMs = {
+            if growth.writing.contains($0) {
+                return Date().epochMs
+            }
+            guard growth.silent.contains($0) else { return nil }
+            return Date().epochMs - SubagentWriting.growthWindowMs - 1
+        }
         self.stamp = nil
         self.liveness = session
         self.hold = DelegationHold.stating(ended: ended)
@@ -303,9 +315,9 @@ public struct FeedAgentReader: Equatable, Sendable {
     private enum Identity: Equatable, Sendable {
         case nothing
         case source(ObjectIdentifier)
-        /// The writing set rides along because two fixtures with the same events and different
+        /// Both growth sets ride along because two fixtures with the same events and different
         /// children writing are two different states, and a `#Preview` that swapped one for the
         /// other would otherwise fail SwiftUI's comparison and never redraw.
-        case fixture([String: [TranscriptEvent]], writing: Set<String>)
+        case fixture([String: [TranscriptEvent]], writing: Set<String>, silent: Set<String>)
     }
 }

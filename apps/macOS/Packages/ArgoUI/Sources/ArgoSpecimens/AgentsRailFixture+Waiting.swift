@@ -21,7 +21,7 @@ extension AgentsRailFixture {
     static let waitingReadings = FeedAgentReader(
         events: Dictionary(uniqueKeysWithValues: briefs.map { ($0.child, verifier) }),
         of: .undecided,
-        writing: Set(briefs.filter(\.isWriting).map(\.child)),
+        growth: StatedGrowth(writing: Set(briefs.filter(\.isWriting).map(\.child))),
     )
 
     private static let waiting: [TranscriptEvent] = [

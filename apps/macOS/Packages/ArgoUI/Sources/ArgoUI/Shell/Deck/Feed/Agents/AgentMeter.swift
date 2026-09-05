@@ -69,12 +69,7 @@ struct AgentMeter: View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
         } else if agent.activity == .running, let startedAtMs = agent.startedAtMs {
-            // A FIXED origin, not `.now`: the column above re-takes its reading on a beat of its
-            // own (`AgentsRailZone`, #1392), and every rebuild that causes would otherwise restart
-            // this schedule — a second counter that holds a digit a little too long each time the
-            // rail re-dates. Off a fixed origin the beat is the same beat whoever rebuilt it, and
-            // every chip's clock ticks together rather than each on its own phase.
-            TimelineView(.periodic(from: Self.epoch, by: 1)) { context in
+            TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(counted(from: startedAtMs, at: context.date))
             }
             // The dot's own ink as a figure, exactly as `RosterTurnClock` spends it: a duration
@@ -82,10 +77,6 @@ struct AgentMeter: View {
             .foregroundStyle(ArgoOperationalState.running.tint(in: argo.color))
         }
     }
-
-    /// The schedule's origin, per the note above. Any fixed instant does — the beat is one a
-    /// second, and where it started is only ever a phase.
-    private static let epoch = Date(timeIntervalSinceReferenceDate: 0)
 
     private func counted(from startedAtMs: Int, at now: Date) -> String {
         TurnClockPhrase.figure(

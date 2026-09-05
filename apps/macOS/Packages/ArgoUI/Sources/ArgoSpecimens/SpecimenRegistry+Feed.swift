@@ -136,6 +136,9 @@ extension SpecimenRegistry {
         // The third of those, which only the OPEN disclosure shows: the one that landed, drawn
         // with the span and the roll-up of the file it left behind (#1279, #1090).
         SpecimenEntry("agentsRailMeasuredLanded") { AgentsRailMeasuredSpecimen() },
+        // A RUNNING parent whose four children have each filed a report and stopped, inside the
+        // ceiling and past the growth window — the state that read as four green dots (#1392).
+        SpecimenEntry("agentsRailEnded") { AgentsRailSpecimen(subject: .ended) },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go
         // missing, since the strip has no room for the word Main (#1013).

@@ -7,11 +7,19 @@
 extension SubagentEvidence {
     /// The growth reading alone, said about every child. What the writing and ceiling suites state.
     static func watching(_ writing: SubagentWriting) -> SubagentEvidence {
-        SubagentEvidence(writing: { _ in writing }, ending: { _ in .open }, measure: { _ in .unmeasured })
+        SubagentEvidence(
+            writing: { _ in writing },
+            ending: { _ in .open },
+            measure: { _ in .unmeasured },
+        )
     }
 
     /// One measure, said about every child. What the meter suites state.
     static func measuring(_ measure: SubagentMeasure) -> SubagentEvidence {
-        SubagentEvidence(writing: { _ in .quiet }, ending: { _ in .open }, measure: { _ in measure })
+        SubagentEvidence(
+            writing: { _ in .quiet },
+            ending: { _ in .open },
+            measure: { _ in measure },
+        )
     }
 }

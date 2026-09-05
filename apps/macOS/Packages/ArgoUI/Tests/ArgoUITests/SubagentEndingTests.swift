@@ -87,6 +87,24 @@ struct SubagentEndingTests {
         #expect(Self.told(Self.reported, writing: .writing).map(\.activity) == [.running])
     }
 
+    /// The OTHER half of the same rule, and the one absence of evidence would break. A file Argo
+    /// has never watched grow dates nothing: it is the state every child is in for the frame after
+    /// its backfill, live ones included, and the CLI's split records mean a live child's backfill
+    /// can END ON PROSE. Read as silence, this would quiet a Subagent mid-tool.
+    @Test
+    func `a child whose file was never watched grow is not quieted by its record`() {
+        #expect(Self.told(Self.reported, writing: .unwatched).map(\.activity) == [.unknown])
+    }
+
+    /// A chip Argo cannot resolve to one file is decided exactly as it was before this ticket. Two
+    /// files carrying one id answer nothing — `SubagentReadings` refuses both, and
+    /// `SubagentReadingsTests` pins that refusal — so there is no reading here to end.
+    @Test
+    func `a chip with no reading to resolve is left to the facts that were already there`() {
+        #expect(SubagentEnding.read(nil) == .open)
+        #expect(Self.told(nil, writing: .quiet).map(\.activity) == [.unknown])
+    }
+
     /// One-directional the other way too, exactly as `SubagentWriting` and `DelegationCeiling` are:
     /// this only ever TAKES a running claim away. A delegation the record already answered is not
     /// reopened, and one it left open is never called running on the strength of an ending.
@@ -128,7 +146,7 @@ struct SubagentEndingTests {
     /// chip in the Session this ticket was written from takes — read through the shipping seam with
     /// the child's record in hand.
     private static func told(
-        _ reading: [TranscriptEvent],
+        _ reading: [TranscriptEvent]?,
         writing: SubagentWriting,
     )
         -> [FeedAgent] {

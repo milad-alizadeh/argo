@@ -132,16 +132,14 @@ package enum FeedAgents {
     ///
     /// GROWTH next, so an observation outranks everything stated: Argo watching the child write is
     /// evidence somebody is working, and a Subagent still going at five hours keeps its dot rather
-    /// than being quieted for being slow. It is also what keeps the reading below honest — the CLI
-    /// splits one assistant message across a record per content block, so a live child's file
-    /// passes through "ends in prose" on its way to the tool call in the same message, and only the
-    /// bytes still arriving tell that moment from an ending (`SubagentEnding`).
+    /// than being quieted for being slow.
     ///
-    /// The child's own ENDING next, on what is left: a file that has gone quiet, whose last words
-    /// were the report the Subagent stopped to file (#1392). That is the child's record answering
-    /// about itself, so it outranks a figure Argo states about reports in general — and it reaches
-    /// in minutes the fan-out whose closing `task-notification` never landed, which the ceiling
-    /// below took four hours to reach.
+    /// The child's own ENDING next, and it takes BOTH HALVES: the record's last words say the
+    /// Subagent stopped, AND Argo has watched that file fall silent since (#1392). A trailing
+    /// ending on a file still growing is a Subagent between Turns; and `unwatched` is not the same
+    /// silence, because a file Argo never saw grow dates nothing — reading the two alike would
+    /// quiet a live child on the first frame after its backfill. It reaches in minutes the fan-out
+    /// whose closing `task-notification` never landed, which the ceiling below took four hours to.
     ///
     /// The ceiling LAST, on what none of those settled: silence from a child Argo has no reading
     /// of, past the age at which silence means the report was lost (#1090).
@@ -177,14 +175,18 @@ package enum FeedAgents {
         -> FeedAgent {
         guard agent.activity != .finished else { return agent }
         var told = agent
-        if ended.isEnded(agent.openDelegationID) {
+        guard !ended.isEnded(agent.openDelegationID) else {
             told.activity = .finished
-        } else if agent.subagentID.map({ evidence.writing($0) }) == .writing {
-            told.activity = .running
-        } else if agent.subagentID.map({ evidence.ending($0) }) == .stopped {
+            return told
+        }
+        switch agent.subagentID.map({ evidence.writing($0) }) {
+        case .writing: told.activity = .running
+        case .quiet where agent.subagentID.map { evidence.ending($0) } == .stopped:
             told.activity = .finished
-        } else if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
-            told.activity = .finished
+        case .quiet, .unwatched, nil:
+            if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {
+                told.activity = .finished
+            }
         }
         return told
     }

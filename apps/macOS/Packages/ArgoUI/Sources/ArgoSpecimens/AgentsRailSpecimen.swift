@@ -33,6 +33,13 @@ struct AgentsRailSpecimen: View {
         /// the Session had gone. The rail lists the one live Agent, says `1 running`, and holds the
         /// three stale ones behind the disclosure at the foot (`AgentsRailFixture.staleRows`).
         case stale
+        /// A parent that IS running, holding four delegations whose children have each filed a
+        /// report and stopped, at 25 minutes and 2h29m (#1392). `stale` cannot show it — there the
+        /// delegations are a day old and the ceiling reaches them — and `waiting` cannot, because
+        /// there the children are still writing. The column is empty over its disclosure: `0
+        /// running`, where every earlier reading of these rows drew four green dots and four
+        /// climbing clocks. `AgentsRailFixture.endedRows` carries the rest.
+        case ended
         /// A parent that handed its whole fan-out over and is now WAITING on it (#1269): two
         /// chips drawn running off the children's OWN files, and one drawn unknown. The state
         /// `quiet` and `stale` cannot show — in both of those the parent's status decided the
@@ -77,6 +84,7 @@ struct AgentsRailSpecimen: View {
         case .quiet: AgentsRailFixture.quietReadings
         case .waiting: AgentsRailFixture.waitingReadings
         case .measured: AgentsRailFixture.measuredReadings
+        case .ended: AgentsRailFixture.endedReadings
         default: AgentsRailFixture.readings
         }
     }
@@ -87,6 +95,7 @@ struct AgentsRailSpecimen: View {
         case .stale: AgentsRailFixture.staleRows
         case .waiting: AgentsRailFixture.waitingRows
         case .measured: AgentsRailFixture.measuredRows
+        case .ended: AgentsRailFixture.endedRows
         case .scoped, .rescoped, .quiet, .collapsed, .collapsedScoped:
             FeedProjection.previewRows
         }
@@ -137,6 +146,12 @@ struct AgentsRailSpecimen: View {
 
 #Preview("Agents rail — three background chips, measured off their own files") {
     AgentsRailSpecimen(subject: .measured)
+        .frame(width: 1000, height: 620)
+        .argoAppearance()
+}
+
+#Preview("Agents rail — a running session whose children have all ended") {
+    AgentsRailSpecimen(subject: .ended)
         .frame(width: 1000, height: 620)
         .argoAppearance()
 }
