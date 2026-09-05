@@ -42,9 +42,10 @@ package extension TicketsFixture {
         Ticket(copying: item, priority: word)
     }
 
-    /// The bodies, on the two tickets a render opens on. Every other ticket carries none, which is
-    /// the ordinary case: a listing answers with what the provider filed, and most of it is empty.
-    static let bodies: [Int: String] = [272: body, 607: parentBody]
+    /// The bodies, on the three tickets a render opens on. Every other ticket carries none, which
+    /// is the ordinary case: a listing answers with what the provider filed, and most of it is
+    /// empty.
+    static let bodies: [Int: String] = [272: body, 607: parentBody, 609: screenshotBody]
 
     /// Two Deliveries on one ticket, and one on each of two others — the counts the chips have to
     /// survive, and the two check readings side by side.

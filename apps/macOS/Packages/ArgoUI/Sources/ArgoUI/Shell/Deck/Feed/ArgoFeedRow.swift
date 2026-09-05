@@ -53,13 +53,26 @@ public enum ArgoFeedRow {
     public static let shotWidths: ClosedRange<CGFloat> = shotHeight / 2 ... shotWidth * 2
 
     /// How wide a picture of `ratio` is drawn at the fixed height, inside those bounds — and the
-    /// fixed box where nothing said what its ratio is. The ONE answer, so a gallery's shot
-    /// (`FeedShot.drawnWidth`) and a body's markdown picture (`FeedMarkdownPicture`) cannot come
-    /// out at two widths from one arithmetic.
+    /// fixed box where nothing said what its ratio is — `FeedShot.drawnWidth`'s own arithmetic,
+    /// named here so the number and its bounds sit beside the two they are built from.
     public static func shotWidth(ofRatio ratio: CGFloat?) -> CGFloat {
         guard let ratio, ratio > 0 else { return shotWidth }
         return min(max(shotHeight * ratio, shotWidths.lowerBound), shotWidths.upperBound)
     }
+
+    /// The band a picture a body NAMES is drawn in, as a fraction of the measure it has to itself
+    /// (#1412). Sixteen by nine, which is the shape a screenshot arrives in.
+    ///
+    /// A fraction of the MEASURE and never of the picture, which is the whole point: the row's
+    /// height is then known before the bytes are, and does not move when they land. A band off the
+    /// picture's own ratio would re-wrap the body under the reader as its screenshots arrived.
+    /// A picture at another ratio is fitted inside this rather than cut to it.
+    public static let pictureBand: CGFloat = 9.0 / 16
+
+    /// The box a body's picture is decoded to: the widest band it is ever drawn in, which is the
+    /// feed's own column cap. One box whatever the pane's measure, so a seam dragged from one
+    /// width to another adds no second decode under the same address (`MediaBox.union`).
+    static let picturePlate = CGSize(width: column, height: column * pictureBand)
 
     /// The box one shot's picture is decoded to. Its HEIGHT and not its width, which is the pair
     /// this file fixes: a plate bounding a side the gallery does not bound decodes a tall picture

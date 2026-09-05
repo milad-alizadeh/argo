@@ -5,10 +5,9 @@ import SwiftUI
 /// (#1412).
 ///
 /// The fetch and the state around `FeedPicturePlate`, which draws whichever of the three it is
-/// handed. The gallery's own box: the fixed height, the picture's ratio for the width, and the
-/// fitted draw that #1015 settled. The height is fixed BEFORE the bytes arrive and does not move
-/// when they do, which is what lets `FeedProseFrame` measure the block; the picture is fitted
-/// inside it rather than the box grown to the picture.
+/// handed. The block takes the body's whole measure, at the band `ArgoFeedRow.pictureBand` sets
+/// over it — a height off the MEASURE and never off the picture, so it is settled before the bytes
+/// arrive and does not move when they land. The picture is fitted inside that band.
 struct FeedMarkdownPicture: View {
     let alt: String
     let source: URL
@@ -19,7 +18,6 @@ struct FeedMarkdownPicture: View {
 
     var body: some View {
         FeedPicturePlate(alt: alt, source: source, showing: showing)
-            .frame(height: ArgoFeedRow.shotHeight, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
             .task(id: source) { await fetch() }
     }
@@ -36,7 +34,7 @@ struct FeedMarkdownPicture: View {
             showing = .drawn(held)
             return
         }
-        let fetched = await pictures.picture(at: source, in: .plate(ArgoFeedRow.shotPlate))
+        let fetched = await pictures.picture(at: source, in: .plate(ArgoFeedRow.picturePlate))
         guard !Task.isCancelled else { return }
         showing = fetched.map { .drawn($0) } ?? .unreadable
     }

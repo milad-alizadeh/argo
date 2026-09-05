@@ -47,23 +47,16 @@ extension MinimapProseBlock {
         }
     }
 
-    /// A picture: one frame at the gallery's own box, in the ink the lane marks pictures with, so a
+    /// A picture: the band it is drawn in, whole, in the ink the lane marks pictures with — so a
     /// body holding a screenshot reads as one from the lane (#1412).
     ///
-    /// The FIXED box and not the measure. The lane holds no bytes, so it knows no ratio — which is
-    /// exactly what `ArgoFeedRow.shotWidth` is for — and a frame drawn to the full measure would
-    /// claim a silhouette the feed never draws.
+    /// The band is the feed's own (`ArgoFeedRow.pictureBand`), so the lane and the row cannot
+    /// disagree about it: neither holds bytes, and neither needs to.
     @MainActor private static func picture(across measure: CGFloat)
         -> (rects: [MinimapRowRect], height: CGFloat) {
-        let height = ArgoFeedRow.shotHeight
+        let height = ceil(measure * ArgoFeedRow.pictureBand)
         return (
-            [MinimapRowRect(
-                y: 0,
-                height: height,
-                from: 0,
-                to: min(measure, ArgoFeedRow.shotWidth),
-                ink: .media,
-            )],
+            [MinimapRowRect(y: 0, height: height, from: 0, to: measure, ink: .media)],
             height,
         )
     }

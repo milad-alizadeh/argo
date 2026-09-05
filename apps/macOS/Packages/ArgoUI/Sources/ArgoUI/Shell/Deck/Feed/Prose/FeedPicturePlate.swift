@@ -62,46 +62,47 @@ struct FeedPicturePlate: View {
         }
     }
 
-    /// The picture at its own ratio, fitted into the fixed plate. Drawn as an overlay on a clear
-    /// frame for `FeedShotView`'s reason: a scaled `Image` reports the size it scaled TO, so a fit
-    /// would hand the plate the picture's own smaller box back and the ground would come out short.
+    /// The picture fitted into the band, which is as wide as the body's own measure. Drawn as an
+    /// overlay on a clear frame for `FeedShotView`'s reason: a scaled `Image` reports the size it
+    /// scaled TO, so a fit would hand the band the picture's own smaller box back and the ground
+    /// would come out short of it.
     private func drawn(_ picture: MediaBitmap) -> some View {
-        Color.clear
-            .frame(width: width(of: picture), height: ArgoFeedRow.shotHeight)
-            .overlay {
-                Image(nsImage: picture.image)
-                    .resizable()
-                    .scaledToFit()
-            }
-            .background(argo.color.surface.raised)
-            .clipShape(.rect(cornerRadius: ArgoRadius.control))
-            .overlay { frame }
+        band {
+            Image(nsImage: picture.image)
+                .resizable()
+                .scaledToFit()
+        }
+        .background(argo.color.surface.raised)
     }
 
     /// A picture that is COMING, in the box it will fill. Wordless: the one thing a wait must not
     /// do is say the picture is missing.
     private var waiting: some View {
-        Rectangle()
-            .fill(argo.color.surface.sunken)
-            .frame(width: ArgoFeedRow.shotWidth, height: ArgoFeedRow.shotHeight)
-            .clipShape(.rect(cornerRadius: ArgoRadius.control))
-            .overlay { frame }
+        band { Color.clear }
+            .background(argo.color.surface.sunken)
     }
 
     /// A source nothing could read, as the words the author wrote for exactly this — and the
     /// address where there were none, since it is the one thing a reader can still act on.
     private var absence: some View {
-        Text(alt.isEmpty ? source.absoluteString : alt)
-            .argoText(ArgoTypography.caption)
-            .foregroundStyle(argo.color.text.disabled)
-            .multilineTextAlignment(.leading)
-            .padding(ArgoSpacing.base)
-            .frame(
-                width: ArgoFeedRow.shotWidth,
-                height: ArgoFeedRow.shotHeight,
-                alignment: .topLeading,
-            )
-            .background(argo.color.surface.sunken)
+        band {
+            Text(alt.isEmpty ? source.absoluteString : alt)
+                .argoText(ArgoTypography.caption)
+                .foregroundStyle(argo.color.text.disabled)
+                .multilineTextAlignment(.leading)
+                .padding(ArgoSpacing.base)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .background(argo.color.surface.sunken)
+    }
+
+    /// The box all three states stand in: the measure's own width, the band's height under it, and
+    /// the edge around both. One place, so a wait cannot be a different shape from what follows it.
+    private func band(@ViewBuilder _ inside: () -> some View) -> some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1 / ArgoFeedRow.pictureBand, contentMode: .fit)
+            .overlay { inside() }
             .clipShape(.rect(cornerRadius: ArgoRadius.control))
             .overlay { frame }
     }
@@ -117,18 +118,6 @@ struct FeedPicturePlate: View {
                     dash: showing.isDrawn ? [] : [ArgoStroke.dash],
                 ),
             )
-    }
-
-    /// How wide the picture is drawn — the gallery's own arithmetic, off the same function a shot
-    /// takes its width from, so the two cannot come out differently.
-    ///
-    /// The width SETTLES when the bytes land, where a gallery's is fixed before they do. That is
-    /// sound here and would not be there: a shot's width packs several pictures into a wrapping
-    /// row, and this block has the measure to itself with the next block below it, so nothing
-    /// re-wraps. The HEIGHT, which is what the row was measured at, never moves either way.
-    private func width(of picture: MediaBitmap) -> CGFloat {
-        let drawn = picture.drawn
-        return ArgoFeedRow.shotWidth(ofRatio: drawn.height > 0 ? drawn.width / drawn.height : nil)
     }
 
     private var spoken: String {
@@ -160,7 +149,7 @@ struct FeedPicturePlate: View {
                     pixels: (width: Int(pixels.width), height: Int(pixels.height)),
                     points: pixels,
                 ),
-                box: .plate(ArgoFeedRow.shotPlate),
+                box: .plate(ArgoFeedRow.picturePlate),
             )
         }
     }

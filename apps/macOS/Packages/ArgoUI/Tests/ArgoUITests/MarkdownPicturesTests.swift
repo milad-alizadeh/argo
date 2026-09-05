@@ -16,7 +16,7 @@ import Testing
 @MainActor
 @Suite("Markdown pictures")
 struct MarkdownPicturesTests {
-    private static let box = MediaBox.plate(ArgoFeedRow.shotPlate)
+    private static let box = MediaBox.plate(ArgoFeedRow.picturePlate)
 
     /// One PNG, made rather than fixtured: what matters is that it decodes, not what is in it.
     private static func png() throws -> Data {
