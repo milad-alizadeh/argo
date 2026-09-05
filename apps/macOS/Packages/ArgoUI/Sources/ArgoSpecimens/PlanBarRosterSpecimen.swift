@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import ArgoFixtures
 import ArgoUI
 import SwiftUI
 
@@ -64,9 +65,7 @@ struct PlanBarRosterSpecimen: View {
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .main, branch: "main"),
             ),
-            transcript: .init(events: entries.isEmpty ? [] : [
-                .plan(Plan(entries: entries.map { PlanEntry(text: $0.0, status: $0.1) })),
-            ]),
+            transcript: .init(events: entries.isEmpty ? [] : [TranscriptFixtures.plan(entries)]),
         )
     }
 

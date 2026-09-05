@@ -131,8 +131,8 @@ The reading, the ink and the suite all landed whole with #1335. What #1348 found
 **shape** the design pairs with the word: `roster-row/ready.png` draws a completed Plan bar and no
 pull request mark, and the ticket says the shape says it before the word does.
 `ReadyToShipRosterSpecimen` carried no Plan at all, so the state rendered at half. Both claiming
-rows now carry the same finished Plan, which leaves the pull request as the only difference
-between them — the one fact the specimen exists to show.
+rows now carry the same claim and the same finished Plan, so the pull request is the only thing
+the badge slot answers to differently — the one fact the specimen exists to show.
 
 ### A correction to the design
 

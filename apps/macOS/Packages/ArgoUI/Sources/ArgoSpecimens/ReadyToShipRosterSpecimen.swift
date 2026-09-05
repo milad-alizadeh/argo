@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import ArgoFixtures
 import ArgoUI
 import SwiftUI
 
@@ -20,17 +21,17 @@ struct ReadyToShipRosterSpecimen: View {
                 delivery: .init(claim: claim), plan: finished,
             ),
             // The claim is HELD here too, and the row still draws no word: the pull request is
-            // open, and the projection resolves the pair (decision 7). It carries the SAME
-            // finished Plan as the row above, so the only difference between the two rows is
-            // the pull request — which is the one fact this specimen exists to show.
+            // open, and the projection resolves the pair (decision 7). Same claim and the same
+            // finished Plan as the row above, so the pull request is the only thing the badge
+            // slot answers to differently.
             session(
                 id: "stale", title: "Draw the Ready badge on the roster row",
                 delivery: .init(pullRequest: .fixture(number: 1400, state: "open"), claim: claim),
                 plan: finished,
             ),
             session(
-                id: "running", title: "Nothing claimed yet",
-                delivery: .init(), plan: midFlight,
+                id: "unclaimed", title: "Nothing claimed yet",
+                delivery: .init(), plan: partDone,
             ),
         ]
     }
@@ -51,17 +52,17 @@ struct ReadyToShipRosterSpecimen: View {
         ("Independent review, then PR", .completed),
     ]
 
-    /// The contrast row is mid-flight, which is what a Session with nothing to claim looks like.
-    private static let midFlight: [(String, PlanEntryStatus)] = [
+    /// A Plan that stopped part-way, so the contrast row's bar is visibly short of the two above
+    /// it. Every Session here is `idle`, so all three bars draw at `progress.still` (rule 3) and
+    /// the only thing separating them is how far the fill got — which is the comparison the
+    /// fixed 64pt width exists to make.
+    private static let partDone: [(String, PlanEntryStatus)] = [
         ("Read the anatomy study in full", .completed),
         ("Implement the projection seam", .inProgress),
         ("Independent review, then PR", .pending),
     ]
 
-    /// Takes the `Delivery` group whole rather than the pull request and the claim apart, which
-    /// is the same grouping the production type makes (`Work.Delivery`, #1335) and for the same
-    /// reason: the pair resolves in one place, so no fixture here can state the one the design
-    /// forbids — a drawn `Ready` beside an open pull request.
+    /// Takes the `Delivery` group whole, as `Work.Delivery` does and for its stated reason.
     private static func session(
         id: String,
         title: String,
@@ -80,9 +81,7 @@ struct ReadyToShipRosterSpecimen: View {
                 workspace: .init(kind: .main, branch: "argo/#\(id)"),
                 delivery: delivery,
             ),
-            transcript: .init(events: [
-                .plan(Plan(entries: plan.map { PlanEntry(text: $0.0, status: $0.1) })),
-            ]),
+            transcript: .init(events: [TranscriptFixtures.plan(plan)]),
         )
     }
 
