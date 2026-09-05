@@ -41,7 +41,10 @@ public extension AtlasMap {
             measuredAt: wire.measuredAt,
             commit: wire.commit,
             root: root,
-            couplings: AtlasMap.couplings(wire.couplings ?? [], joining: root.plots),
+            relations: AtlasRelations(
+                couplings: AtlasMap.couplings(wire.couplings ?? [], joining: root.plots),
+                inference: AtlasMap.inference(wire.inference, joining: root.plots),
+            ),
         )
     }
 
@@ -71,20 +74,15 @@ private extension AtlasMap {
     ) throws(AtlasMapError)
         -> [AtlasCoupling] {
         var built: [AtlasCoupling] = []
+        let missing = AtlasMapError.couplingAtNoPlot
         for coupling in wire {
             try built.append(AtlasCoupling(
-                first: path(at: coupling.first, among: plots),
-                second: path(at: coupling.second, among: plots),
+                first: plotPath(at: coupling.first, among: plots, missing: missing),
+                second: plotPath(at: coupling.second, among: plots, missing: missing),
                 strength: coupling.strength,
             ))
         }
         return built
-    }
-
-    /// The Plot one end of a Coupling names.
-    static func path(at position: Int, among plots: [AtlasPlot]) throws(AtlasMapError) -> String {
-        guard plots.indices.contains(position) else { throw .couplingAtNoPlot(position) }
-        return plots[position].path
     }
 
     /// Where a node sits, given what it is called and where its Plate sits.
@@ -141,7 +139,10 @@ private extension AtlasMap {
                 name: root.path,
                 children: AtlasMap.wire(root.children, inside: root.path),
             ),
-            couplings: AtlasMap.wire(couplings, at: position),
+            relations: AtlasRelationsWire(
+                couplings: AtlasMap.wire(couplings, at: position),
+                inference: AtlasMap.wire(inference, at: position),
+            ),
         )
     }
 
@@ -155,24 +156,15 @@ private extension AtlasMap {
     ) throws(AtlasMapError)
         -> [AtlasCouplingWire] {
         var built: [AtlasCouplingWire] = []
+        let missing = AtlasMapError.couplingOutsideMap
         for coupling in couplings {
             try built.append(AtlasCouplingWire(
-                first: place(of: coupling.first, in: position),
-                second: place(of: coupling.second, in: position),
+                first: place(of: coupling.first, in: position, missing: missing),
+                second: place(of: coupling.second, in: position, missing: missing),
                 strength: coupling.strength,
             ))
         }
         return built
-    }
-
-    /// Where one end of a Coupling sits in the Map's Plot order.
-    static func place(
-        of path: String,
-        in position: [String: Int],
-    ) throws(AtlasMapError)
-        -> Int {
-        guard let found = position[path] else { throw .couplingOutsideMap(path) }
-        return found
     }
 
     static func wire(

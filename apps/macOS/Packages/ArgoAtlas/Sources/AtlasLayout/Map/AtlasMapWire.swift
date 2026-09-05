@@ -20,21 +20,35 @@ struct AtlasMapWire: Codable {
     /// were counted is a valid measurement of a repository, and it reads as one nothing was
     /// paired in — the same reading a one-commit repository gets (#1149).
     let couplings: [AtlasCouplingWire]?
+    /// Optional for the same reason, and separately: a Map file written after couplings were
+    /// counted and before domains were inferred states one and not the other (#1157).
+    let inference: AtlasInferenceWire?
 
     /// The version is not a parameter. It is this reader's own shape, so a caller that could pass
     /// one could write a file claiming to be a shape it is not.
+    ///
+    /// The two cross-file readings arrive as one value while the FILE keeps them as two keys: they
+    /// are one reading of one repository, and the initialiser cap is four.
     init(
         measuredAt: Date,
         commit: String?,
         root: AtlasPlateWire,
-        couplings: [AtlasCouplingWire],
+        relations: AtlasRelationsWire,
     ) {
         self.version = AtlasMap.version
         self.measuredAt = measuredAt
         self.commit = commit
         self.root = root
-        self.couplings = couplings
+        self.couplings = relations.couplings
+        self.inference = relations.inference
     }
+}
+
+/// What the Map file says about its Plots together, on the way to being written. Not `Codable`
+/// itself: the file holds these as two top-level keys, and only the initialiser above groups them.
+struct AtlasRelationsWire {
+    let couplings: [AtlasCouplingWire]
+    let inference: AtlasInferenceWire?
 }
 
 /// One Coupling, its two ends given as POSITIONS in the Map's own Plot order rather than as paths.

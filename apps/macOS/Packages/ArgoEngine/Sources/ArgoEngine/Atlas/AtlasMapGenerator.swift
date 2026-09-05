@@ -44,21 +44,39 @@ actor AtlasMapGenerator {
         }
         let name = repositoryURL.lastPathComponent
         let root = AtlasNesting.plate(named: name, holding: files)
-        // Counted over the paths that REACHED the map rather than over everything git tracks. A
-        // path the nesting settled as a folder gets no Plot, and a Coupling naming one cannot be
-        // written at all — so the map would be lost over a tie.
-        let plotted = Set(root.plots.map(\.path))
         return AtlasMap(
             measuredAt: measuredAt,
             // Absent for a repository with no commits, which still gets a map: git refuses to name
             // a HEAD that no commit is under.
             commit: gitValue(git, ["rev-parse", "HEAD"], at: repositoryURL),
             root: root,
-            couplings: AtlasCoChange.couplings(
-                over: history.commits,
-                among: tracked.filter { plotted.contains(name + "/" + $0) },
-                under: name,
-            ),
+            relations: relations(over: root.plots.map(\.path), in: history, named: name),
+        )
+    }
+
+    /// What the repository says about its files TOGETHER: what changes with what, counted from
+    /// the history, and the subjects inferred over those counts and the filenames (#1157).
+    ///
+    /// Both are read over the paths that REACHED the map rather than over everything git tracks.
+    /// A path the nesting settled as a folder gets no Plot, and neither a Coupling nor a Domain
+    /// naming one can be written at all — so the whole map would be lost over one tie.
+    ///
+    /// The counting comes first because the inference reads it: the two are one reading of one
+    /// repository, and taking them in one pass is what keeps them from disagreeing.
+    private func relations(
+        over plots: [String],
+        in history: AtlasHistory,
+        named name: String,
+    )
+        -> AtlasRelations {
+        let couplings = AtlasCoChange.couplings(
+            over: history.commits,
+            among: plots.map { String($0.dropFirst(name.count + 1)) },
+            under: name,
+        )
+        return AtlasRelations(
+            couplings: couplings,
+            inference: AtlasDomains.inferred(over: plots, coupledBy: couplings, called: name),
         )
     }
 

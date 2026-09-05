@@ -89,9 +89,9 @@ struct AtlasMapRoundTripTests {
                     .plot(AtlasPlot(path: "argo/rules/house.md", measures: [:])),
                 ])),
             ]),
-            couplings: [AtlasCoupling(
+            relations: AtlasRelations(couplings: [AtlasCoupling(
                 first: "argo/a.swift", second: "argo/rules/house.md", strength: 0.5,
-            )],
+            )]),
         )
         #expect(try AtlasMap(decoding: map.encoded()) == map)
     }
@@ -113,7 +113,9 @@ struct AtlasMapRoundTripTests {
             root: AtlasPlate(path: "argo", children: [
                 .plot(AtlasPlot(path: "argo/a.swift", measures: [:])),
             ]),
-            couplings: [AtlasCoupling(first: "argo/a.swift", second: "argo/b.swift", strength: 1)],
+            relations: AtlasRelations(couplings: [
+                AtlasCoupling(first: "argo/a.swift", second: "argo/b.swift", strength: 1),
+            ]),
         )
         #expect(throws: AtlasMapError.couplingOutsideMap("argo/b.swift")) {
             try map.encoded()

@@ -10,6 +10,13 @@ A property **of each rendered fact**, not a session-wide mode — one Session mi
 - **CONVENTION** — arrived over the companion-plugin/MCP channel (managed-only, e.g.
   `report_status`); never existed in a transcript.
 
+**INFERRED is the Atlas's own mark on a DERIVED fact, not a fourth tier** (#1157). Everything the
+Atlas holds is DERIVED — the repository is the only source — but a Domain is not observed the way
+a Measure or a Coupling is: it is guessed by a technique whose own literature reports it scoring
+36 on one codebase and 94 on another. So the Atlas marks that one kind of fact INFERRED wherever
+it is drawn, which is a statement about how a fact was arrived at inside one tier rather than a
+new tier. What it means: `docs/domain/atlas.md`, Domain and Inference; how it is drawn: #650.
+
 **Orthogonal to quality/Score** — tier is provenance confidence (*how we know*), never output
 quality (*was it good*); the Score/eval slot stays empty for v1.
 

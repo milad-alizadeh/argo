@@ -13,15 +13,12 @@ public struct AtlasCoupling: Equatable, Sendable {
     /// Jaccard: the commits that touched both over the commits that touched either, 0 to 1.
     public let strength: Double
 
-    /// `strength` is held to three decimals, which is what the file keeps.
-    ///
-    /// The same reason `AtlasMap` truncates `measuredAt`: a value the file cannot spell back is a
-    /// Map read that differs from the Map written. Three decimals separate 0.001 from nothing at
-    /// all, which is finer than any band a reader is offered, and rounding this repository's
-    /// 18,402 ties takes 105 KB off app data that is read on every open.
+    /// `strength` is held to what the file keeps, the same reason `AtlasMap` truncates
+    /// `measuredAt`: a value the file cannot spell back is a Map read that differs from the Map
+    /// written. The figure itself is `Double.heldByTheMapFile`.
     public init(first: String, second: String, strength: Double) {
         self.first = first
         self.second = second
-        self.strength = (strength * 1000).rounded() / 1000
+        self.strength = strength.heldByTheMapFile
     }
 }

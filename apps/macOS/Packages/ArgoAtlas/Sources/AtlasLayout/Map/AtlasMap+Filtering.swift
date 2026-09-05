@@ -17,7 +17,30 @@ public extension AtlasMap {
             measuredAt: measuredAt,
             commit: commit,
             root: root,
-            couplings: couplings.filter { kept.contains($0.first) && kept.contains($0.second) },
+            relations: AtlasRelations(
+                couplings: couplings.filter { kept.contains($0.first) && kept.contains($0.second) },
+                inference: inference?.keeping(kept),
+            ),
+        )
+    }
+}
+
+private extension AtlasInference {
+    /// The same inference over fewer files. The Domains are NOT re-inferred — that needs the
+    /// history and the whole file list, which is the generator's reading and not this one — so a
+    /// Domain here is what it was, minus the files that left, and a Domain the filter emptied is
+    /// gone. The two numbers stand as taken: they describe the partition the generator settled on,
+    /// and restating them against a subset would be inventing a second inference.
+    func keeping(_ paths: Set<String>) -> AtlasInference {
+        AtlasInference(
+            domains: domains.compactMap { domain in
+                let members = domain.members.filter { paths.contains($0.path) }
+                guard !members.isEmpty else { return nil }
+                return AtlasDomain(name: domain.name, tokens: domain.tokens, members: members)
+            },
+            resolution: resolution,
+            settled: settled,
+            agreement: agreement,
         )
     }
 }
