@@ -2,13 +2,15 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// Both composer menus are navigable and selectable by keyboard alone (#685, #687), which is a
-/// behaviour rather than a look — so it is asserted here and not left to a render.
-@Suite("Composer menu cursor")
-struct ComposerMenuCursorTests {
+/// Every filtering list this app draws — both composer menus, and the ticket picker — is
+/// navigable and selectable by keyboard alone (#685, #687, #1231), which is a behaviour rather
+/// than a look, so it is asserted here and not left to a render. Asserted over one id type,
+/// because the walking is the same whatever the rows are keyed by.
+@Suite("Menu cursor")
+struct MenuCursorTests {
     @Test
     func `it starts on the first row`() {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: ids)
 
         #expect(cursor.current == "/ask-argo")
@@ -16,7 +18,7 @@ struct ComposerMenuCursorTests {
 
     @Test
     func `down and up walk the list`() {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: ids)
         cursor.down(over: ids)
         #expect(cursor.current == "/code-review")
@@ -29,7 +31,7 @@ struct ComposerMenuCursorTests {
     /// cursor having been lost rather than as having reached the end.
     @Test
     func `it stops at both ends rather than wrapping`() {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: ids)
         cursor.up(over: ids)
         #expect(cursor.current == "/ask-argo")
@@ -44,7 +46,7 @@ struct ComposerMenuCursorTests {
     /// on an index would land on whatever row inherited the number.
     @Test
     func `it stays on its row while that row survives a filter`() {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: ids)
         cursor.down(over: ids)
 
@@ -54,7 +56,7 @@ struct ComposerMenuCursorTests {
 
     @Test
     func `it goes back to the top when its row is filtered away`() {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: ids)
         cursor.down(over: ids)
 
@@ -66,7 +68,7 @@ struct ComposerMenuCursorTests {
     /// matched still sends as written (decision 8).
     @Test
     func `an empty list leaves no row current, so Return stays the field's`() throws {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: ids)
         cursor.settle(over: [])
         let nothingMatched = try #require(ComposerMenu.files(
@@ -88,7 +90,7 @@ struct ComposerMenuCursorTests {
             in: ["README.md", "docs/adr/ADR-0024.md"],
             touched: [],
         ))
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: listing.rows.map(\.id))
         cursor.down(over: listing.rows.map(\.id))
 
@@ -100,7 +102,7 @@ struct ComposerMenuCursorTests {
     /// stayed nil, and ⏎ fell past both menus and sent the half-typed line.
     @Test
     func `a list that arrives late still gets the cursor on its top row`() {
-        var cursor = ComposerMenuCursor()
+        var cursor = MenuCursor<String>()
         cursor.settle(over: [])
         #expect(cursor.current == nil)
 

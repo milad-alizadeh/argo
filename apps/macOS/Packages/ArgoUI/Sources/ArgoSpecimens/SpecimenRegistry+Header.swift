@@ -67,6 +67,10 @@ extension SpecimenRegistry {
             SessionHeaderSpecimen(header: SessionHeaderFixture.unlinked)
                 .environment(\.argoTicketLinking, SessionHeaderFixture.offering)
         },
+        // What that offer opens onto since #1231: a small searchable picker rather than the whole
+        // backlog as one menu. Three states in one entry, because what has to be judged is that
+        // all three are the same size.
+        SpecimenEntry("ticketPicker") { TicketPickerSpecimen() },
     ]
 
     private static let postures: [SpecimenEntry] = [

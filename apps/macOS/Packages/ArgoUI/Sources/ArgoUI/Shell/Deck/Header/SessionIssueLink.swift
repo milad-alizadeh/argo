@@ -24,6 +24,11 @@ struct SessionIssueLink: View {
 
     let row: SessionHeaderProjection.Header.IssueRow?
 
+    /// Whether the searchable picker is open over this link (#1231). Held here rather than in the
+    /// picker, because a popover's presentation is the ANCHOR's state and the picker is what it
+    /// presents.
+    @State private var isPicking = false
+
     var body: some View {
         switch row {
         case let .link(link):
@@ -34,13 +39,11 @@ struct SessionIssueLink: View {
             }
             .buttonStyle(.plain)
             .help(helpForLink(named: link.label))
-            .contextMenu { SessionTicketPicker(linking: linking) }
+            .contextMenu { SessionTicketMenu(linking: linking) }
         case .unlinked where linking.isOffered:
             // Nothing to route to, so the press is the repair itself rather than a menu hidden
             // behind a secondary click nobody would look for on a word that reads as a dead end.
-            Menu {
-                SessionTicketPicker(linking: linking)
-            } label: {
+            Button { isPicking = true } label: {
                 // The accent, like every other pressable thing on this line: the reading it
                 // replaces is quiet because it is a statement, and this one is an offer.
                 GlyphMarkLine(
@@ -48,10 +51,13 @@ struct SessionIssueLink: View {
                     ink: linkInk,
                 )
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
+            .buttonStyle(.plain)
             .help("Attach this Session to a Ticket")
+            // A popover and not a `Menu` (#1231): the picker opens ON its field, and a menu
+            // leaves key focus where it was.
+            .popover(isPresented: $isPicking, arrowEdge: .bottom) {
+                SessionTicketPicker(linking: linking) { isPicking = false }
+            }
         case .unlinked:
             // States the reading and offers nothing: no backlog was read, so there is no ticket to
             // pick and a picker here would be a control that refuses every press.

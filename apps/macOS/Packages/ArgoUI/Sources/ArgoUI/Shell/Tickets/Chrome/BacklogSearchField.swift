@@ -1,4 +1,3 @@
-import ArgoAtoms
 import ArgoDesign
 import SwiftUI
 
@@ -9,12 +8,13 @@ import SwiftUI
 /// it clears the trailing edge at the 1280 window. Everything else about it is the stock field —
 /// focus, the escape key, and the system's own clear button.
 ///
+/// The line inside the capsule is `SearchFieldLine`, shared with the ticket picker's own field
+/// (#1231). What is left here is the capsule and the width.
+///
 /// **It stands exactly as tall as the icon vessels beside it** — `ArgoControlBox.vessel`, the same
 /// number a capsule holding one mark comes out at. It had a 28 of its own, which made the one row
 /// of controls three heights of container; a field is a container on this band like any other.
 package struct BacklogSearchField: View {
-    @Environment(\.argo) private var argo
-
     @Binding var query: String
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal`, and the
@@ -24,19 +24,12 @@ package struct BacklogSearchField: View {
     }
 
     package var body: some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            ArgoGlyph(ArgoSymbol.searchBacklog, .inline)
-                .foregroundStyle(argo.color.text.tertiary)
-            TextField("Search the backlog", text: $query)
-                .textFieldStyle(.plain)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.primary)
-        }
-        .padding(.horizontal, ArgoSpacing.base)
-        .frame(width: ArgoTicketsChrome.searchWidth, height: ArgoControlBox.vessel)
-        .argoFloatingGlass(in: .capsule)
-        .accessibilityLabel("Search the backlog")
+        SearchFieldLine(query: $query, prompt: Self.prompt)
+            .frame(width: ArgoTicketsChrome.searchWidth)
+            .argoFloatingGlass(in: .capsule)
     }
+
+    static let prompt = "Search the backlog"
 }
 
 // Empty, which is the state every render of this room shows and the one the 210 was measured

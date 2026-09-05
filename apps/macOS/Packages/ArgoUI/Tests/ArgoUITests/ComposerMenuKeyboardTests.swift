@@ -5,7 +5,7 @@ import Testing
 /// Both composer menus are walkable and pickable by keyboard alone over the rows actually drawn
 /// (#685, #687, #752) — so what ⏎ takes cannot fall out of step with the list on screen.
 ///
-/// `ComposerMenuCursorTests` asserts the cursor by itself; this asserts it against a listing.
+/// `MenuCursorTests` asserts the cursor by itself; this asserts it against a listing.
 @Suite("Composer menu keyboard")
 struct ComposerMenuKeyboardTests {
     @Test

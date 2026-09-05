@@ -165,6 +165,26 @@ enum SessionHeaderFixture {
         ])
     }
 
+    /// A backlog past the picker's own ceiling (#1231) — the state the ticket is about, where the
+    /// old menu grew to the height of the window. Ten open Tickets against a list that shows six:
+    /// what a render has to show is that the picker is the same size here as over three.
+    ///
+    /// Computed for `offering`'s reason.
+    static var crowdedOffering: SessionTicketLinking {
+        SessionTicketLinking(options: [
+            .init(number: 1231, title: "Link a ticket opens the whole backlog"),
+            .init(number: 1217, title: "Anchor the feed on its newest line"),
+            .init(number: 1092, title: "Route between Session and Ticket"),
+            .init(number: 1074, title: "A claimed row keeps the place an unclaimed one had"),
+            .init(number: 894, title: "The Issue row over a branch that names no ticket"),
+            .init(number: 812, title: "The Work room reads the backlog"),
+            .init(number: 752, title: "The composer's menus read no projection"),
+            .init(number: 693, title: "The tab line takes the identity band's instruments"),
+            .init(number: 476, title: "Anchor the feed on its newest line"),
+            .init(number: 388, title: "Ticket read path: listing, status, dependency edges"),
+        ])
+    }
+
     static func header(for access: CockpitPresentation.Session.Access)
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
