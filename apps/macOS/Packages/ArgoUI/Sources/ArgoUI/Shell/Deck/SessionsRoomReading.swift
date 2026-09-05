@@ -90,7 +90,7 @@ struct SessionsRoomReading {
         }
         self.feed = body.feed
         self.wait = body.wait
-        self.hasUnansweredTurn = stamp.submittedTurn != nil
+        self.hasUnansweredTurn = stamp.hasUnansweredTurn
         self.showing = body.showing
         // Taken every pass, and only its one stream walk remembered: the header reads facts that
         // move with no event appended — spend, context, what the roster calls the Session — so

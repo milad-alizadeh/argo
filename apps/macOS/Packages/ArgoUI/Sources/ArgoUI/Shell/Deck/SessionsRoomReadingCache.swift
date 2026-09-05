@@ -68,6 +68,13 @@ enum SessionsRoomReadingCache {
         /// flag, because the reading draws them: a stamp that stopped at "there is one" would go
         /// on drawing the first sentence after a second Turn replaced it.
         let submittedTurn: String?
+
+        /// Whether there IS such a Turn — derived here rather than compared at each reader, so the
+        /// sentinel is spelled once (`rules/house.md`, one source of truth).
+        var hasUnansweredTurn: Bool {
+            submittedTurn != nil
+        }
+
         /// Whether the `starting` status this stamp carries is a resume rather than a fresh spawn
         /// (#1328), by VALUE beside `startedQuietly` for the same reason: the plinth reads off this
         /// stamp rather than off the Session directly.

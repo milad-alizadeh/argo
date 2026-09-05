@@ -11,6 +11,11 @@ import Testing
 ///
 /// What the suite has to pin is the pair of claims that makes that honest: one row and never two,
 /// and a row that says Argo typed the words rather than that the CLI answered them.
+///
+/// A queued follow-up (#541, #1238) is not tested here and cannot be: Argo holds one and never
+/// types it, so nothing files a submission and this projection is handed no words — a test of that
+/// here could only assert the argument it was passed. What actually holds the queue shut is the
+/// composer, and `SessionComposerInFlightTests` is where that claim can fail.
 @Suite("Feed submitted turn")
 @MainActor
 struct FeedSubmittedTurnTests {
@@ -81,19 +86,6 @@ struct FeedSubmittedTurnTests {
     @Test
     func `a Session with no submitted Turn draws no drawn row`() {
         let rows = FeedProjection.rows(from: [.message(markdown: "Done.")])
-
-        #expect(!rows.contains { $0.content.isSubmitted })
-    }
-
-    /// A queued follow-up is held by Argo and never typed at the PTY (#541, #1238), so no
-    /// submission is ever filed for one and the feed draws nothing until it really goes down. The
-    /// projection cannot invent a row it is handed no words for, which is what this pins.
-    @Test
-    func `a queued follow-up draws no row of its own`() {
-        let rows = FeedProjection.rows(from: [
-            .queued,
-            .prompt(text: "Held until the Turn ends", images: [], atMs: 1000),
-        ])
 
         #expect(!rows.contains { $0.content.isSubmitted })
     }

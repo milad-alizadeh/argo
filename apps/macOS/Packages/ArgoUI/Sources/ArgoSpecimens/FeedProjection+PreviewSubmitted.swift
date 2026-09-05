@@ -20,11 +20,23 @@ extension FeedProjection {
         submitted: "Fix the caption on the roster row, not the sort order behind it.",
     )
 
-    /// The same row at the foot of a reading that already has work in it — the judgement the still
-    /// above cannot make: whether the drawn Turn is told apart from the confirmed prompts higher up
-    /// the same screen, and whether it sits where the record's own row will land.
+    /// The same row under a Turn the record DID carry — the judgement the still above cannot make:
+    /// whether the drawn Turn is told apart from a confirmed prompt on the same screen, and whether
+    /// it sits where the record's own row will land.
+    ///
+    /// Short on purpose, and its own events rather than a shipping fixture: the claim is a
+    /// comparison between two bubbles, and a still cannot scroll to a prompt that a long reading
+    /// has carried off the top of the screen.
     static let previewSubmittedTurnRows = rows(
-        from: TranscriptFixtures.surveyed,
+        from: [
+            .prompt(
+                text: "Name the two measurements the bubble is laid out from.",
+                images: [],
+                atMs: 1_733_000_000_000,
+            ),
+            .message(markdown: "The proposal's width and the words' own typeset height."),
+            .turnEnded(.endTurn),
+        ],
         working: true,
         submitted: "Fix the caption on the roster row, not the sort order behind it.",
     )

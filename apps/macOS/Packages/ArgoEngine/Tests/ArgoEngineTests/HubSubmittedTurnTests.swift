@@ -138,7 +138,7 @@ struct HubSubmittedTurnTests {
 
         try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
 
-        #expect(fixture.hub.session(id: claim.value)?.hasUnansweredTurn == true)
+        #expect(fixture.hub.session(id: claim.value)?.unansweredTurn != nil)
     }
 
     /// And it ends where the claim ends: the record answered the Turn, so what the Session is doing
@@ -154,7 +154,7 @@ struct HubSubmittedTurnTests {
         session.yield([.prompt(text: "Fix the caption, not the sort.", images: [], atMs: 2000)])
 
         await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 4 }
-        #expect(fixture.hub.session(id: spawnedSessionID)?.hasUnansweredTurn == false)
+        #expect(fixture.hub.session(id: spawnedSessionID)?.unansweredTurn == nil)
     }
 
     /// What the feed draws in that window (#1278). The claim alone says a Turn is running; the

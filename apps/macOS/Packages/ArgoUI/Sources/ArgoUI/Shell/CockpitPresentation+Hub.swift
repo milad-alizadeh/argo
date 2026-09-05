@@ -110,10 +110,6 @@ extension CockpitPresentation.Session {
     /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
-    /// not-projected: hasUnansweredTurn — whether `unansweredTurn` below is there at all. The
-    ///   projection carries the WORDS and derives this from them
-    ///   (`CockpitPresentation.Session.Transcript`), so the surfaces that only need the flag still
-    ///   read it under its own name and the two can never say different things.
     /// not-projected: transcriptExtent — how much of the record was read. It reaches no surface
     ///   because nothing below the shell has to know: every fact a bounded reading cannot state is
     ///   withheld by the engine itself (`HubSession+Spend`), which is degrade-down at the source

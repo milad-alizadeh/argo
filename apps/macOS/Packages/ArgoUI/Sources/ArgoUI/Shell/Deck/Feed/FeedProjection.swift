@@ -49,7 +49,7 @@ package enum FeedProjection {
         let held = standing(asking, over: work)
         let foot = wentQuiet(startedQuietly) + inFlight(working, over: work) +
             unanswered(expired) + handoffEndings(handoffFailures) + chained(handedOff)
-        let contents = opening(settledWaits) + work + typed(submitted) + held +
+        let contents = opening(settledWaits) + work + submittedRow(submitted) + held +
             self.reported(reported, asking, over: work + held) + foot
         return contents.enumerated().map { position, content in
             FeedRow(id: position, content: content)
@@ -84,7 +84,7 @@ package enum FeedProjection {
     /// A QUEUED follow-up reaches none of this (#541, #1238): Argo holds those and never types
     /// them, so nothing files a submission and the feed draws no row until the Turn actually goes
     /// down the PTY.
-    private static func typed(_ submitted: String?) -> [FeedRow.Content] {
+    private static func submittedRow(_ submitted: String?) -> [FeedRow.Content] {
         submitted.map { [.submitted(text: $0)] } ?? []
     }
 

@@ -88,18 +88,12 @@ extension FeedRow.Content {
                 copyLabel: "Copy Prompt",
                 activation: text.isEmpty ? .light(oneOf: shots) : .fold,
             )
-        // Everything a prompt is, minus the pictures it has none of — it IS the reader asking,
-        // so the Turn extents, the Copy turn, the minimap's prompt band and the composer's echo
-        // all read it as one. What separates it is the tier the view draws it at, not the facts
-        // the reading takes off it.
-        case let .submitted(text):
-            Kind(
-                isProse: true,
-                isPrompt: true,
-                words: text,
-                copyLabel: "Copy Prompt",
-                activation: .fold,
-            )
+        // Exactly what a prompt is, minus the pictures it has none of — asked of the prompt arm
+        // rather than answered again, because it IS the reader asking: the Turn extents, the Copy
+        // turn, the minimap's prompt band and the composer's echo all read it as one, and a second
+        // copy of those five fields is one that drifts. What separates the two is the tier the
+        // VIEW draws them at (`FeedPromptTier`), which is not a fact this switch answers.
+        case let .submitted(text): FeedRow.Content.prompt(text: text, shots: []).kind
         case let .message(text):
             Kind(
                 isProse: true,
