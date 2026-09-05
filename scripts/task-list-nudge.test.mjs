@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 // harness's own mention of a task tool as a list the session already wrote — that false positive
 // silences the hook completely, and silently.
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -45,6 +45,21 @@ check('a session with no list gets the nudge', () => {
 check('the nudge carries the order rule', () =>
   assert.match(injected(run({ transcript_path: transcript(['{}']) })), /item 1 to item 3/),
 )
+
+// The nudge and AGENTS.md state the same rule and nothing projects one from the other, so both
+// halves are asserted here: an edit that drops the tail from either side fails (#1419).
+check('the nudge carries the tail rule', () => {
+  const text = injected(run({ transcript_path: transcript(['{}']) }))
+  assert.match(text, /verification tail/)
+  assert.match(text, /open PR/)
+})
+
+check('AGENTS.md states the tail rule too', () => {
+  const rule = readFileSync(path.resolve('AGENTS.md'), 'utf8')
+  const section = rule.slice(rule.indexOf('## Task tracking'), rule.indexOf('## Rules'))
+  assert.match(section, /verification tail/)
+  assert.match(section, /open PR/)
+})
 
 check('a session that already wrote a list is left alone', () => {
   const file = transcript(['{"message":{"content":[{"type":"tool_use","name":"TaskCreate"}]}}'])
