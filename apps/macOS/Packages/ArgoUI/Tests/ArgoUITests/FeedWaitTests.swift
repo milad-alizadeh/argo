@@ -18,7 +18,7 @@ struct FeedWaitTests {
         status: SessionStatus = .idle,
         settledWaits: [SessionWaitSettled] = [],
         events: [TranscriptEvent] = [],
-        hasUnansweredTurn: Bool = false,
+        submittedTurn: String? = nil,
         resuming: Bool = false,
     )
         -> CockpitPresentation.Session {
@@ -34,7 +34,7 @@ struct FeedWaitTests {
                     settledWaits: settledWaits,
                 ),
             ),
-            transcript: .init(events: events, hasUnansweredTurn: hasUnansweredTurn),
+            transcript: .init(events: events, submittedTurn: submittedTurn),
         )
     }
 
@@ -44,7 +44,7 @@ struct FeedWaitTests {
         status: SessionStatus = .idle,
         settledWaits: [SessionWaitSettled] = [],
         events: [TranscriptEvent] = [],
-        hasUnansweredTurn: Bool = false,
+        submittedTurn: String? = nil,
         resuming: Bool = false,
     )
         -> SessionsRoomReading {
@@ -57,7 +57,7 @@ struct FeedWaitTests {
                     status: status,
                     settledWaits: settledWaits,
                     events: events,
-                    hasUnansweredTurn: hasUnansweredTurn,
+                    submittedTurn: submittedTurn,
                     resuming: resuming,
                 )],
                 connection: .idle,

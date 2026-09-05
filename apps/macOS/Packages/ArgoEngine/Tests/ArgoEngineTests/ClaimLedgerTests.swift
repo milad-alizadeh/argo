@@ -108,7 +108,10 @@ struct ClaimLedgerTests {
             options: ["main", "next"],
         )), for: claim)
 
-        ledger.setSubmittedTurn(SessionTurnSubmission(recordsWhenSubmitted: 3), for: claim)
+        ledger.setSubmittedTurn(
+            SessionTurnSubmission(text: "Fix the caption.", recordsWhenSubmitted: 3),
+            for: claim,
+        )
 
         let report = ledger.facts(for: claim).report
         #expect(report?.pendingAsk == nil)
@@ -125,7 +128,10 @@ struct ClaimLedgerTests {
         ledger.record(.outcome(landed), for: claim)
         ledger.record(.status(.running), for: claim)
 
-        ledger.setSubmittedTurn(SessionTurnSubmission(recordsWhenSubmitted: 3), for: claim)
+        ledger.setSubmittedTurn(
+            SessionTurnSubmission(text: "Fix the caption.", recordsWhenSubmitted: 3),
+            for: claim,
+        )
 
         let report = ledger.facts(for: claim).report
         #expect(report?.outcomes == [landed])

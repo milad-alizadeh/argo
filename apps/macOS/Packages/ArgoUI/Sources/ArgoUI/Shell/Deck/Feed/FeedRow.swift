@@ -8,6 +8,15 @@ package struct FeedRow: Identifiable, Equatable, Sendable {
         /// What someone asked for, verbatim, and whatever was pasted in with it. A steer typed
         /// mid-run is one of these too.
         case prompt(text: String, shots: [FeedShot])
+        /// A Turn ARGO typed that no record has answered yet (#1278), verbatim. DIRECT: Argo
+        /// performed the submit, so the words exist on its own act and need no record to say so.
+        ///
+        /// Its own case rather than a flag on `prompt`, and that is the point of it: the two rows
+        /// stand on different evidence, so every switch that draws one has to answer for the other
+        /// rather than inheriting a treatment written for a Turn the transcript confirmed. It
+        /// carries no pictures — what was pasted is in the record's own row when that lands, and
+        /// nothing here is drawn from a file the CLI has not read yet.
+        case submitted(text: String)
         /// What the agent said, verbatim.
         case message(String)
         /// What the agent reasoned, verbatim. Never a message — see `FeedProjection`.

@@ -5,8 +5,10 @@ import SwiftUI
     @Previewable @State var isExpanded = false
 
     FeedPrompt(
-        text: "Look at the rule under the header — it sits a point low against the seam.",
-        shots: Array(FeedProjection.previewShots.prefix(1)),
+        prompt: FeedPromptReading(
+            text: "Look at the rule under the header — it sits a point low against the seam.",
+            shots: Array(FeedProjection.previewShots.prefix(1)),
+        ),
         open: { _ in },
         isExpanded: $isExpanded,
     )
@@ -20,8 +22,10 @@ import SwiftUI
     @Previewable @State var isExpanded = false
 
     FeedPrompt(
-        text: "",
-        shots: Array(FeedProjection.previewShots.prefix(1)),
+        prompt: FeedPromptReading(
+            text: "",
+            shots: Array(FeedProjection.previewShots.prefix(1)),
+        ),
         open: { _ in },
         isExpanded: $isExpanded,
     )

@@ -24,6 +24,7 @@ package enum FeedProjection {
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
         reported: Ask? = nil,
+        submitted: String? = nil,
     )
         -> [FeedRow] {
         let read = contents(of: events)
@@ -48,7 +49,7 @@ package enum FeedProjection {
         let held = standing(asking, over: work)
         let foot = wentQuiet(startedQuietly) + inFlight(working, over: work) +
             unanswered(expired) + handoffEndings(handoffFailures) + chained(handedOff)
-        let contents = opening(settledWaits) + work + held +
+        let contents = opening(settledWaits) + work + typed(submitted) + held +
             self.reported(reported, asking, over: work + held) + foot
         return contents.enumerated().map { position, content in
             FeedRow(id: position, content: content)
@@ -64,6 +65,27 @@ package enum FeedProjection {
     /// elsewhere in the reading, and each arrives with its own ticket and its own position.
     private static func opening(_ settled: [SessionWaitSettled]) -> [FeedRow.Content] {
         settled.map { .settledWait($0) }
+    }
+
+    /// The Turn Argo has typed that no record has answered yet (#1278), at the foot of the work
+    /// and in the place the record's own prompt row will take.
+    ///
+    /// There rather than at the very bottom, because that is where it settles: the record appends
+    /// the prompt after everything the stream already held, so the drawn row and the row that
+    /// replaces it stand at the same height in the same place, and the swap moves nothing. A held
+    /// question sits BELOW it for the same reason the working row does — the words came first, and
+    /// what the reading is waiting on comes after them.
+    ///
+    /// One row or none. Nothing here matches it against the stream: the engine already ends the
+    /// submission the moment the record grows (`HubSession.unansweredTurn`), so a Turn drawn here
+    /// is by construction one no record holds — which is what keeps the feed from ever showing the
+    /// same words twice. A Turn reported lost ends it the same way, and its row goes with it.
+    ///
+    /// A QUEUED follow-up reaches none of this (#541, #1238): Argo holds those and never types
+    /// them, so nothing files a submission and the feed draws no row until the Turn actually goes
+    /// down the PTY.
+    private static func typed(_ submitted: String?) -> [FeedRow.Content] {
+        submitted.map { [.submitted(text: $0)] } ?? []
     }
 
     /// The Turn still running, under what it has done and ABOVE the statements at the foot. Those

@@ -157,6 +157,53 @@ struct HubSubmittedTurnTests {
         #expect(fixture.hub.session(id: spawnedSessionID)?.hasUnansweredTurn == false)
     }
 
+    /// What the feed draws in that window (#1278). The claim alone says a Turn is running; the
+    /// WORDS are what puts the reader's own sentence back on screen the frame they send it, and
+    /// nothing but this submission holds them until the record does.
+    @Test
+    func `a Turn Argo typed reads back verbatim while it is unanswered`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
+
+        try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
+
+        #expect(fixture.hub.session(id: claim.value)?.unansweredTurn
+            == "Fix the caption, not the sort.")
+    }
+
+    /// And the words go the moment the record carries them, which is what stops the feed drawing
+    /// one Turn twice: the drawn row and the record's own row can never both stand.
+    @Test
+    func `the record answering the Turn takes the words back`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await Self.boundSession(of: fixture)
+        try fixture.hub.driver.send("Fix the caption, not the sort.", to: spawnedSessionID)
+
+        session.yield([.prompt(text: "Fix the caption, not the sort.", images: [], atMs: 2000)])
+
+        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == 4 }
+        #expect(fixture.hub.session(id: spawnedSessionID)?.unansweredTurn == nil)
+    }
+
+    /// A Turn the CLI never heard takes its drawn row away with it (#682): the words go back into
+    /// the composer, and a row still standing for them would have the reader looking at a sentence
+    /// they are being asked to send again.
+    @Test
+    func `a Turn reported lost leaves no words for the feed to draw`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
+        try fixture.hub.driver.send("what is @README.md about?", to: claim.value)
+
+        fixture.hub.rememberLostTurn("what is @README.md about?", for: claim.value)
+
+        #expect(fixture.hub.session(id: claim.value)?.unansweredTurn == nil)
+    }
+
     /// A spawned Session whose CLI has written a record, with the stream still open so a test can
     /// say what lands next. The claim binds to it on the chain uuid inside the path (#742).
     private static func boundSession(

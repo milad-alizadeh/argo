@@ -34,7 +34,7 @@ struct SessionComposerInFlightTests {
     @Test
     func `a Turn Argo typed and nothing has answered is in flight whatever the word says`() throws {
         let composer = try #require(SessionComposerProjection.composer(
-            for: session(status: .idle, hasUnansweredTurn: true),
+            for: session(status: .idle, submittedTurn: "Fix the caption, not the sort."),
         ))
 
         #expect(composer.isTurnInFlight)
@@ -98,7 +98,7 @@ struct SessionComposerInFlightTests {
 
     private func session(
         status: SessionStatus,
-        hasUnansweredTurn: Bool = false,
+        submittedTurn: String? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -107,7 +107,7 @@ struct SessionComposerInFlightTests {
             access: .managed,
             status: status,
             chain: .init(program: .init(cli: .claude, model: "claude-opus-5", effort: "medium")),
-            transcript: .init(hasUnansweredTurn: hasUnansweredTurn),
+            transcript: .init(submittedTurn: submittedTurn),
         )
     }
 }

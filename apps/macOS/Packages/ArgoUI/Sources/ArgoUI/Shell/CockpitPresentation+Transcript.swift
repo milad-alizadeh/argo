@@ -4,16 +4,25 @@ public extension CockpitPresentation.Session {
     /// What the transcript said, undigested — never the Transcript file itself (`CONTEXT.md` L2),
     /// which this projection does not carry. The two flat facts beside the stream are the record's
     /// two answers about a Turn Argo typed: `lostTurn` is the one that never reached it, and
-    /// `hasUnansweredTurn` the one it has not answered yet.
+    /// `submittedTurn` the one it has not answered yet.
     struct Transcript: Equatable, Sendable {
         /// The stream, compared by its stamp — see `Stream`, which is where the whole cost of this
         /// value is.
         public let stream: Stream
         public let lostTurn: String?
-        /// Whether Argo has typed a Turn nothing has answered — see `HubSession.hasUnansweredTurn`,
-        /// whose whole reading this is. `false` by default, which is degrade-down: a fixture that
-        /// says nothing about a Turn is not one claiming a Turn is running.
-        public let hasUnansweredTurn: Bool
+        /// The Turn Argo typed that nothing has answered, verbatim — see
+        /// `HubSession.unansweredTurn`, whose whole reading this is. `nil` by default, which is
+        /// degrade-down: a fixture that says nothing about a Turn is not one claiming a Turn is
+        /// running.
+        public let submittedTurn: String?
+
+        /// Whether there IS such a Turn. Derived rather than stored beside the words, so the two
+        /// readings cannot drift apart — a stored pair is how a feed comes to draw a Turn the
+        /// composer has already released.
+        public var hasUnansweredTurn: Bool {
+            submittedTurn != nil
+        }
+
         /// What a backgrounded delegation is holding open here (#1267) — see `DelegationHold`,
         /// whose whole reading this is. Beside `hasUnansweredTurn` because it answers the other
         /// half of the same question: that one says a Turn IS running when the status word does
@@ -34,14 +43,14 @@ public extension CockpitPresentation.Session {
             events: [TranscriptEvent] = [],
             transcriptStamp: TranscriptStamp? = nil,
             lostTurn: String? = nil,
-            hasUnansweredTurn: Bool = false,
+            submittedTurn: String? = nil,
         ) {
             self.stream = Stream(
                 events: events,
                 stamp: transcriptStamp ?? TranscriptStamp(events: events),
             )
             self.lostTurn = lostTurn
-            self.hasUnansweredTurn = hasUnansweredTurn
+            self.submittedTurn = submittedTurn
         }
     }
 }

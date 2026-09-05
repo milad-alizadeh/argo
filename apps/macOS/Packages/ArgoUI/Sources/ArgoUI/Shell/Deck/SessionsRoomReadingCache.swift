@@ -61,11 +61,13 @@ enum SessionsRoomReadingCache {
         /// stopping at the events would keep drawing the reading as it stood before the wait
         /// settled.
         let settledWaits: [SessionWaitSettled]
-        /// Whether Argo itself submitted the Turn now in flight (#1179, #1323) — the DIRECT gate
-        /// the plinth's `.thinking` wait stands behind. By VALUE beside the status, and not read
-        /// off it: two Sessions can both read `running` while only one of them is a Turn Argo
-        /// itself typed.
-        let hasUnansweredTurn: Bool
+        /// The Turn Argo itself submitted that no record has answered (#1179, #1278, #1323) —
+        /// the DIRECT gate the plinth's `.thinking` wait stands behind, and the row the feed draws
+        /// for it. By VALUE beside the status, and not read off it: two Sessions can both read
+        /// `running` while only one of them is a Turn Argo itself typed. The WORDS rather than a
+        /// flag, because the reading draws them: a stamp that stopped at "there is one" would go
+        /// on drawing the first sentence after a second Turn replaced it.
+        let submittedTurn: String?
         /// Whether the `starting` status this stamp carries is a resume rather than a fresh spawn
         /// (#1328), by VALUE beside `startedQuietly` for the same reason: the plinth reads off this
         /// stamp rather than off the Session directly.
@@ -100,7 +102,7 @@ enum SessionsRoomReadingCache {
             self.status = session?.status
             self.startedQuietly = session?.startedQuietlyAtMs != nil
             self.settledWaits = session?.settledWaits ?? []
-            self.hasUnansweredTurn = session?.hasUnansweredTurn ?? false
+            self.submittedTurn = session?.submittedTurn
             self.resuming = session?.resuming ?? false
             self.handingOff = session?.handingOff ?? false
             self.handoffFailures = session?.handoffFailures ?? []

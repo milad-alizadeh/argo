@@ -90,7 +90,7 @@ struct SessionsRoomReading {
         }
         self.feed = body.feed
         self.wait = body.wait
-        self.hasUnansweredTurn = stamp.hasUnansweredTurn
+        self.hasUnansweredTurn = stamp.submittedTurn != nil
         self.showing = body.showing
         // Taken every pass, and only its one stream walk remembered: the header reads facts that
         // move with no event appended — spend, context, what the roster calls the Session — so
@@ -133,6 +133,7 @@ struct SessionsRoomReading {
                 expired: stamp.expired,
                 asking: asking,
                 reported: stamp.reported,
+                submitted: stamp.submittedTurn,
             ),
             // Off the engine's own facts, which are DIRECT and managed-only, and never off an
             // empty reading: a Session observed from outside that has written nothing is a

@@ -110,6 +110,10 @@ extension CockpitPresentation.Session {
     /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.
+    /// not-projected: hasUnansweredTurn — whether `unansweredTurn` below is there at all. The
+    ///   projection carries the WORDS and derives this from them
+    ///   (`CockpitPresentation.Session.Transcript`), so the surfaces that only need the flag still
+    ///   read it under its own name and the two can never say different things.
     /// not-projected: transcriptExtent — how much of the record was read. It reaches no surface
     ///   because nothing below the shell has to know: every fact a bounded reading cannot state is
     ///   withheld by the engine itself (`HubSession+Spend`), which is degrade-down at the source
@@ -119,6 +123,9 @@ extension CockpitPresentation.Session {
     /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
     ///
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/house.md).
+    /// renamed: submittedTurn <- unansweredTurn — the engine names the WINDOW, because what it
+    /// owns is a claim that ends (`HubSession.unansweredTurn`); the projection names the ACT,
+    /// beside `lostTurn`, which is the other answer about the same Turn Argo typed (#1278).
     /// renamed: claimedAt <- ticket — the slot sits beside a title reading also about the ticket,
     /// and beside the reader's own pin, which is a second DIRECT number about it (#1092): the name
     /// has to say WHICH fact and WHEN it was taken (#881). `Issue.directNumber` ranks the two.
@@ -220,7 +227,7 @@ extension CockpitPresentation.Session.Transcript {
             events: session.events,
             transcriptStamp: session.transcriptStamp,
             lostTurn: session.lostTurn,
-            hasUnansweredTurn: session.hasUnansweredTurn,
+            submittedTurn: session.unansweredTurn,
         )
         // After the init and not through it — see the property.
         self.delegationHold = session.delegationHold

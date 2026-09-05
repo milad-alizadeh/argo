@@ -88,6 +88,18 @@ extension FeedRow.Content {
                 copyLabel: "Copy Prompt",
                 activation: text.isEmpty ? .light(oneOf: shots) : .fold,
             )
+        // Everything a prompt is, minus the pictures it has none of — it IS the reader asking,
+        // so the Turn extents, the Copy turn, the minimap's prompt band and the composer's echo
+        // all read it as one. What separates it is the tier the view draws it at, not the facts
+        // the reading takes off it.
+        case let .submitted(text):
+            Kind(
+                isProse: true,
+                isPrompt: true,
+                words: text,
+                copyLabel: "Copy Prompt",
+                activation: .fold,
+            )
         case let .message(text):
             Kind(
                 isProse: true,
@@ -176,8 +188,8 @@ extension FeedRow.Content {
         case let .call(call): [call]
         case let .survey(survey): survey.calls
         case let .work(work): work.calls
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .skillLoaded, .settledWait,
-             .delegationEnded, .unreadable: []
+        case .prompt, .submitted, .message, .thought, .gallery, .ask, .mark, .skillLoaded,
+             .settledWait, .delegationEnded, .unreadable: []
         }
     }
 
@@ -189,7 +201,8 @@ extension FeedRow.Content {
         case let .survey(survey): survey.opened
         case let .work(work): work.opened
         case let .skillLoaded(skill): skill.opened
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .settledWait, .delegationEnded,
+        case .prompt, .submitted, .message, .thought, .gallery, .ask, .mark, .settledWait,
+             .delegationEnded,
              .unreadable: nil
         }
     }

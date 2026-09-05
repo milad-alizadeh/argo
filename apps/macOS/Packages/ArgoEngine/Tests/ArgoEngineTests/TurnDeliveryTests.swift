@@ -33,7 +33,9 @@ struct TurnDeliveryTests {
         delivery.typed("Fix the caption.", to: "session-a")
         watch.records = 8
 
-        #expect(watch.submitted == [SessionTurnSubmission(recordsWhenSubmitted: 7)])
+        #expect(watch.submitted == [
+            SessionTurnSubmission(text: "Fix the caption.", recordsWhenSubmitted: 7),
+        ])
     }
 
     /// The failure this exists for: the Return was eaten, so the transcript never moved. Argo types

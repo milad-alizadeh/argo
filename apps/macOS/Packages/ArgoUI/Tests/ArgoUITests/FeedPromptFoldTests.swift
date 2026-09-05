@@ -33,9 +33,12 @@ struct FeedPromptFoldTests {
         let ruler = NSHostingController(rootView: AnyView(EmptyView()))
         ruler.sizingOptions = []
         ruler.rootView = AnyView(
-            FeedPrompt(text: text, shots: shots, open: { _ in }, isExpanded: .constant(expanded))
-                .frame(width: Self.measure)
-                .argoAppearance(),
+            FeedPrompt(
+                prompt: FeedPromptReading(text: text, shots: shots),
+                open: { _ in }, isExpanded: .constant(expanded),
+            )
+            .frame(width: Self.measure)
+            .argoAppearance(),
         )
         return ruler.sizeThatFits(
             in: NSSize(width: Self.measure, height: CGFloat.greatestFiniteMagnitude),

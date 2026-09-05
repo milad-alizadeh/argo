@@ -45,6 +45,7 @@ private extension FeedRow.Content {
                 shots: shots.map(\.drawnWidth),
                 isFolded: isFolded,
             )
+        case let .submitted(text): .bubble(text: text, shots: [], isFolded: isFolded)
         case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
         case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
         case let .call(call): call.shape

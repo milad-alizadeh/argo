@@ -99,7 +99,19 @@ public extension HubSession {
     /// resume (ADR-0026), so a Session whose CLI died mid-Turn reads one open forever — and a
     /// composer that held its queue against that would never release it.
     var hasUnansweredTurn: Bool {
-        submittedTurn?.isAwaitingRecord(events.count) == true
+        unansweredTurn != nil
+    }
+
+    /// The words of that Turn, verbatim, and `nil` the moment the record answers it (#1278).
+    ///
+    /// The same window `hasUnansweredTurn` answers about, carrying what was typed rather than only
+    /// that something was: the feed draws these the frame they are sent, so the reader has their
+    /// own words back before any record exists to hold them. It ends exactly where the claim above
+    /// does, which is what keeps the drawn Turn and the record's own row from ever standing
+    /// together.
+    var unansweredTurn: String? {
+        guard let submittedTurn, submittedTurn.isAwaitingRecord(events.count) else { return nil }
+        return submittedTurn.text
     }
 
     var status: SessionStatus {
