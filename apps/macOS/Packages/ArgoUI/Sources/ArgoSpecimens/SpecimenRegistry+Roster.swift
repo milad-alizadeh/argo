@@ -65,6 +65,10 @@ extension SpecimenRegistry {
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
+        // #1404: a roster longer than the window, which no other entry here carries — the state the
+        // `Group` in the sidebar column halved, so eight rows drew and the rest of the pane was the
+        // hidden Tickets sidebar's ground. Judged on the LAST row, not the first.
+        SpecimenEntry("manyMixedRoster") { ManyMixedRosterSpecimen() },
         // The leading column's four Subagent readings and the ceiling, one row each (#1344).
         SpecimenEntry("subagentDots") { SubagentDotsRosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },
