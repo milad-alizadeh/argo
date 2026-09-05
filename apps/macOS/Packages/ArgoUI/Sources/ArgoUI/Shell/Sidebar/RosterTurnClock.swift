@@ -1,7 +1,7 @@
 import ArgoDesign
 import SwiftUI
 
-/// The roster row's one age slot (`cockpit-roster-turn-clock.md`): a live Turn duration in the
+/// The roster row's one age slot (`cockpit-roster-turn-clock.md`): a live Session duration in the
 /// running ink, an observed Session's `output … ago`, or the seen phrase every other row keeps.
 /// Which of the three it draws was decided in the projection; this view claims nothing itself.
 ///
