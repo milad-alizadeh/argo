@@ -11,14 +11,14 @@ import Testing
 @MainActor
 struct RememberingDriverTests {
     /// The three files, with the ones a case does not care about left doing nothing. A helper
-    /// rather than a default on `Remembers` itself: production must state all three, and a default
+    /// rather than a default on `Remembered` itself: production must state all three, and a default
     /// there is how one silently stops being filed.
     static func remembers(
         mode: @escaping (SessionModeSet, String) -> Void = { _, _ in },
         run: @escaping (SessionRunPick) -> Void = { _ in },
         stoppedTurn: @escaping (String) -> Void = { _ in },
     )
-        -> RememberingDriver<InMemorySessionDriver>.Remembers {
+        -> RememberingDriver<InMemorySessionDriver>.Remembered {
         .init(mode: mode, run: run, stoppedTurn: stoppedTurn)
     }
 

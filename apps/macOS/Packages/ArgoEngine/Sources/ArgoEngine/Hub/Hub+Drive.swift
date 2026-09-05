@@ -127,11 +127,14 @@ public extension Hub {
     /// File the Turn Argo just typed at a Session (#1048), against the CLAIM for the reason
     /// `rememberLostTurn` below is, and refused for a Session with no claim for the same reason —
     /// which is also what keeps an external Session off a status only Argo's own channel supports.
+    /// `nil` is the watch saying the claim is OVER (#1409) — see `TurnDelivery.over(_:)`, and
+    /// `ClaimLedger.stopSubmittedTurn`, which is the one place a claim of Argo's ends.
     private func rememberSubmittedTurn(
-        _ submission: SessionTurnSubmission,
+        _ submission: SessionTurnSubmission?,
         for sessionID: String,
     ) {
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        guard let submission else { return claims.stopSubmittedTurn(for: claim) }
         claims.setSubmittedTurn(submission, for: claim)
     }
 

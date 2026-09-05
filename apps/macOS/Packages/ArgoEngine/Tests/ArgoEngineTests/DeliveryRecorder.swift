@@ -11,6 +11,9 @@ final class DeliveryRecorder {
     var onRetype: (() -> Void)?
     private(set) var retyped = 0
     private(set) var submitted: [SessionTurnSubmission] = []
+    /// How many times the watch said Argo's own claim is OVER (#1409) — the `nil` half of
+    /// `Watch.submitted`, counted apart so a suite can assert the bound without the submissions.
+    private(set) var ended = 0
     private(set) var lost: [(text: String, sessionID: String)] = []
 
     init(records: Int) {
@@ -24,6 +27,10 @@ final class DeliveryRecorder {
                 echo: { [weak self] _, _ in self?.echo ?? .unreadable },
             ),
             submitted: { [weak self] submission, _ in
+                guard let submission else {
+                    self?.ended += 1
+                    return
+                }
                 self?.submitted.append(submission)
             },
             retype: { [weak self] _ in

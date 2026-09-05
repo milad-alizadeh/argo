@@ -11,11 +11,11 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     /// already include a record the walk itself provoked (#653).
     private let records: (String) -> Int
     /// Where each act that landed is filed.
-    private let remembers: Remembers
+    private let remembers: Remembered
 
     /// What this driver files, and where — one value rather than a parameter each, because they
     /// are one question asked three ways: what the port just did, and who has to know it did.
-    struct Remembers {
+    struct Remembered {
         /// Handed the rung only once it landed. A refusal filed as a set is the same stale count.
         let mode: (SessionModeSet, String) -> Void
         /// Handed a Model or an Effort only once the port took it, for the same reason (#1175): a
@@ -29,7 +29,7 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     init(
         base: Base,
         records: @escaping (String) -> Int,
-        remembers: Remembers,
+        remembers: Remembered,
     ) {
         self.base = base
         self.records = records
@@ -44,14 +44,12 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         try base.send(text, to: sessionID)
     }
 
-    /// The `ESC`, and the claim it was pressed against ended with it (#1409).
+    /// The `ESC`, and the claim it was pressed against ended with it (#1409) — see
+    /// `ClaimLedger.stopSubmittedTurn` for why an `ESC` alone can never end one.
     ///
     /// Filed AFTER the keystroke and only where it went, exactly as the rung is: a Stop that could
     /// not reach the PTY stopped nothing. And filed HERE rather than at the surface that pressed
-    /// it, because the reason is the port's own — an interrupt reaching a CLI already back at its
-    /// prompt writes no record, so nothing else ever ends the submission Argo filed when it typed
-    /// the Turn, and the Session reads `running` for the rest of the window with Stop doing
-    /// nothing each time it is pressed. A steer's own interrupt comes through here too, and refiles
+    /// it, so every caller of the port gets it — a steer's own interrupt included, which refiles
     /// its submission on the send behind it.
     func interrupt(_ sessionID: String) throws {
         try base.interrupt(sessionID)

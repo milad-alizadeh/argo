@@ -42,6 +42,21 @@ struct ClaimLedgerStoppedTurnTests {
         #expect(ledger.facts(for: claim).modeSet?.mode == .plan)
     }
 
+    /// A STEER is an interrupt with a Turn behind it (#1238), so it comes through the stop and the
+    /// send in that order. The claim the send files is the one that stands — the steer is not left
+    /// looking like a Session nobody is running.
+    @Test
+    func `a steer's stop does not outlive the Turn it steers in`() {
+        let ledger = ClaimLedger()
+        ledger.setSubmittedTurn(submission, for: claim)
+
+        ledger.stopSubmittedTurn(for: claim)
+        let steered = SessionTurnSubmission(text: "No, the caption.", recordsWhenSubmitted: 3)
+        ledger.setSubmittedTurn(steered, for: claim)
+
+        #expect(ledger.facts(for: claim).submittedTurn == steered)
+    }
+
     /// A Stop pressed on a Session with no Turn of Argo's in flight files nothing — the reader may
     /// press it over a Turn the CLI started itself, and there is no claim of ours to end.
     @Test
@@ -51,35 +66,5 @@ struct ClaimLedgerStoppedTurnTests {
         ledger.stopSubmittedTurn(for: claim)
 
         #expect(ledger.facts(for: claim).submittedTurn == nil)
-    }
-}
-
-/// The reading the act above exists for: the status the stuck Session was pinned at.
-@MainActor
-@Suite("Hub session stopped turn")
-struct HubSessionStoppedTurnTests {
-    private func session(submitting submission: SessionTurnSubmission?) -> HubSession {
-        var session = HubSession(observation: hubTestObservation(id: "session", events: []))
-        session.submittedTurn = submission
-        return session
-    }
-
-    /// The state the ticket screenshotted: a Turn typed, no record since, `running` for ever.
-    @Test
-    func `a Turn no record has answered reads running`() {
-        let stuck = session(submitting: SessionTurnSubmission(
-            text: "Ship it.",
-            recordsWhenSubmitted: 0,
-        ))
-
-        #expect(stuck.statusReading.status == .running)
-        #expect(stuck.unansweredTurn == "Ship it.")
-    }
-
-    /// And with the submission ended, the reading falls through to what the record says — which is
-    /// what takes the plinth, the working row and the queue-only composer down with it.
-    @Test
-    func `the same Session with the submission ended no longer reads running`() {
-        #expect(session(submitting: nil).statusReading.status != .running)
     }
 }

@@ -20,10 +20,16 @@ struct HubSessionReportedAskingTests {
         return session
     }
 
-    /// Degrade-down (ADR-0008): with no question to show, the quieter reading is the honest one.
+    /// Degrade-down (ADR-0008): with no question to show, the quieter reading is the honest one —
+    /// and the word it lands on is named rather than merely ruled out. `unknown` at DERIVED is the
+    /// record's own answer for a Session that has written nothing, which is the whole point: the
+    /// reading falls THROUGH the report rather than being overruled by it.
     @Test
     func `an asking status with no question behind it does not hold the status`() {
-        #expect(session(reporting: .status(.asking)).statusReading.status != .asking)
+        let reading = session(reporting: .status(.asking)).statusReading
+
+        #expect(reading.status == .unknown)
+        #expect(reading.tier == .derived)
     }
 
     /// The half that must not move: a question the agent really did raise still reads `asking`, at

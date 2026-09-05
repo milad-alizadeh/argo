@@ -23,8 +23,7 @@ public extension HubSession {
     /// Session is exact rather than the working directory and time window a transcript is matched
     /// on. Below those, a status the agent REPORTED wins at the CONVENTION tier, for as long as the
     /// channel it arrived over is still there to stand behind it (`HubSession.reported`) and the
-    /// report still stands behind the WORD (`holds(_:)`, #1409). Then a
-    /// CLI Argo is
+    /// report still stands behind the WORD (`holds(_:)`, #1409). Then a CLI Argo is
     /// still waiting on, at DIRECT on the same ground — the PTY those bytes have not come out of is
     /// Argo's own. Then a Turn Argo TYPED at that PTY, DIRECT on the same ground again and until
     /// the record answers it (#1048). A Session with no channel, or one that has said nothing,
