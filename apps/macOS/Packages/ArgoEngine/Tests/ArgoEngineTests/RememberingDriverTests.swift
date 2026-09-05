@@ -10,12 +10,24 @@ import Testing
 @Suite("Remembering driver")
 @MainActor
 struct RememberingDriverTests {
+    /// The three files, with the ones a case does not care about left doing nothing. A helper
+    /// rather than a default on `Remembers` itself: production must state all three, and a default
+    /// there is how one silently stops being filed.
+    static func remembers(
+        mode: @escaping (SessionModeSet, String) -> Void = { _, _ in },
+        run: @escaping (SessionRunPick) -> Void = { _ in },
+        stoppedTurn: @escaping (String) -> Void = { _ in },
+    )
+        -> RememberingDriver<InMemorySessionDriver>.Remembers {
+        .init(mode: mode, run: run, stoppedTurn: stoppedTurn)
+    }
+
     /// Every act but `setMode` reaches the adapter untouched, so wrapping cannot quietly cost one.
     @Test
     func `the acts it does not record still reach the adapter`() throws {
         let base = InMemorySessionDriver()
         let driver = RememberingDriver(
-            base: base, records: { _ in 0 }, remember: { _, _ in }, rememberRun: { _ in },
+            base: base, records: { _ in 0 }, remembers: Self.remembers(),
         )
 
         try driver.send("Off you go.", to: "session-a")
@@ -35,7 +47,7 @@ struct RememberingDriverTests {
             takesAttachments: declared, runsCommands: declared, resolvesMentions: declared,
         )
         let driver = RememberingDriver(
-            base: base, records: { _ in 0 }, remember: { _, _ in }, rememberRun: { _ in },
+            base: base, records: { _ in 0 }, remembers: Self.remembers(),
         )
 
         #expect(driver.surface(of: "s1") == base.declaredSurface)
@@ -46,8 +58,8 @@ struct RememberingDriverTests {
         let base = InMemorySessionDriver()
         var filed: [(SessionModeSet, String)] = []
         let driver = RememberingDriver(
-            base: base, records: { _ in 0 }, remember: { filed.append(($0, $1)) },
-            rememberRun: { _ in },
+            base: base, records: { _ in 0 },
+            remembers: Self.remembers(mode: { filed.append(($0, $1)) }),
         )
 
         try await driver.setMode(.plan, for: "session-a")
@@ -65,8 +77,8 @@ struct RememberingDriverTests {
         var records = 4
         var filed: [SessionModeSet] = []
         let driver = RememberingDriver(
-            base: base, records: { _ in records }, remember: { set, _ in filed.append(set) },
-            rememberRun: { _ in },
+            base: base, records: { _ in records },
+            remembers: Self.remembers(mode: { set, _ in filed.append(set) }),
         )
         base.duringSetMode = { records = 9 }
 
@@ -83,8 +95,8 @@ struct RememberingDriverTests {
         base.refusal = .modeBusy
         var filed: [SessionMode] = []
         let driver = RememberingDriver(
-            base: base, records: { _ in 0 }, remember: { set, _ in filed.append(set.mode) },
-            rememberRun: { _ in },
+            base: base, records: { _ in 0 },
+            remembers: Self.remembers(mode: { set, _ in filed.append(set.mode) }),
         )
 
         await #expect(throws: SessionDriveError.modeBusy) {
@@ -103,14 +115,50 @@ struct RememberingDriverTests {
         )
         var picked: [SessionRunPick] = []
         let driver = RememberingDriver(
-            base: base, records: { _ in 0 }, remember: { _, _ in },
-            rememberRun: { picked.append($0) },
+            base: base, records: { _ in 0 },
+            remembers: Self.remembers(run: { picked.append($0) }),
         )
 
         try await driver.setModel("sonnet", for: "session-a")
         try await driver.setEffort(.high, for: "session-a")
 
         #expect(picked == [.model("sonnet"), .effort(.high)])
+    }
+
+    /// The Stop's own file (#1409). Nothing else ever ends the submission Argo filed when it typed
+    /// the Turn: the `ESC` reaches a CLI already back at its prompt, so no record is written and
+    /// the count `SessionTurnSubmission` watches never moves.
+    @Test
+    func `a Turn that was stopped is filed against the Session it was stopped on`() throws {
+        let base = InMemorySessionDriver()
+        var stopped: [String] = []
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 },
+            remembers: Self.remembers(stoppedTurn: { stopped.append($0) }),
+        )
+
+        try driver.interrupt("session-a")
+
+        #expect(stopped == ["session-a"])
+    }
+
+    /// After the keystroke and only where it went, exactly as a rung is: a Stop that could not
+    /// reach the PTY stopped nothing, and filing one would end a claim that still stands.
+    @Test
+    func `a Stop the adapter refuses is not filed`() {
+        let base = InMemorySessionDriver()
+        base.refusal = .notDrivable
+        var stopped: [String] = []
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 },
+            remembers: Self.remembers(stoppedTurn: { stopped.append($0) }),
+        )
+
+        #expect(throws: SessionDriveError.notDrivable) {
+            try driver.interrupt("session-a")
+        }
+
+        #expect(stopped.isEmpty)
     }
 
     /// A pick the port refused is not one the next New Session should open on, which is the whole
@@ -123,8 +171,8 @@ struct RememberingDriverTests {
         )
         var picked: [SessionRunPick] = []
         let driver = RememberingDriver(
-            base: base, records: { _ in 0 }, remember: { _, _ in },
-            rememberRun: { picked.append($0) },
+            base: base, records: { _ in 0 },
+            remembers: Self.remembers(run: { picked.append($0) }),
         )
 
         await #expect(throws: SessionDriveError.runFactsUnsupported) {

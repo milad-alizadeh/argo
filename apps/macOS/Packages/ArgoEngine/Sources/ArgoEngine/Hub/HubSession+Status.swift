@@ -22,7 +22,8 @@ public extension HubSession {
     /// reported it is one Argo started and holds the pipe to, so the join from the report to this
     /// Session is exact rather than the working directory and time window a transcript is matched
     /// on. Below those, a status the agent REPORTED wins at the CONVENTION tier, for as long as the
-    /// channel it arrived over is still there to stand behind it (`HubSession.reported`). Then a
+    /// channel it arrived over is still there to stand behind it (`HubSession.reported`) and the
+    /// report still stands behind the WORD (`holds(_:)`, #1409). Then a
     /// CLI Argo is
     /// still waiting on, at DIRECT on the same ground — the PTY those bytes have not come out of is
     /// Argo's own. Then a Turn Argo TYPED at that PTY, DIRECT on the same ground again and until
@@ -41,7 +42,7 @@ public extension HubSession {
         if let driveStatus {
             return SessionStatusReading(tier: .direct, status: driveStatus)
         }
-        if let reported = reported?.status {
+        if let reported = reported?.status, holds(reported) {
             return SessionStatusReading(tier: .convention, status: reported)
         }
         // Below every channel above it, because a channel that has SPOKEN is itself proof the CLI
@@ -74,6 +75,26 @@ public extension HubSession {
             return SessionStatusReading(tier: .direct, status: .idle)
         }
         return SessionStatus.read(signals)
+    }
+
+    /// Whether a status the agent REPORTED is still one the report itself stands behind (#1409).
+    ///
+    /// One word is gated, and only one. `asking` is the single reported status that names something
+    /// the reader is meant to ACT on, and the thing to act on is the question beside it — so a
+    /// report claiming `asking` while carrying no `pendingAsk` is telling the reader to answer
+    /// something no surface can show them. `CompanionReport.answered` already refuses that pair
+    /// where an answer arrives (#1205); this refuses it where none ever can, because the agent
+    /// reported the word off `report_status` alone and raised no question to answer.
+    ///
+    /// Nothing here expires and nothing is timed: the claim is read against the report's OWN other
+    /// fact, at the moment it is read, so an agent that raises its question a moment later reads
+    /// `asking` from that moment on. Degrade-down (ADR-0008) is what settles the gap — the quieter
+    /// reading below stands while the louder one has nothing behind it.
+    ///
+    /// Every other word is a claim about what the agent is DOING, which needs no second fact to be
+    /// about something, so none of them is gated.
+    private func holds(_ reported: SessionStatus) -> Bool {
+        reported != .asking || companionAsk != nil
     }
 
     /// What a backgrounded delegation is holding open here (#1267) — see `DelegationHold`, which

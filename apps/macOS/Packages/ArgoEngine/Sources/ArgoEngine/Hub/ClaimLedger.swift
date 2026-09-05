@@ -128,6 +128,26 @@ final class ClaimLedger {
         }
     }
 
+    /// The reader STOPPED the Turn Argo typed (#1409), so the claim that one is in flight ends.
+    ///
+    /// The submission ends on the record growing and on nothing else, which leaves one act with no
+    /// way out: an interrupt reaching a CLI that has already returned to its prompt writes no
+    /// record, so the count never moves and the Session reads `running` at DIRECT for the rest of
+    /// the window's life — with Stop, on screen, doing nothing each time it is pressed. The `ESC`
+    /// really did go down the PTY; the claim it was pressed against is simply not one an `ESC` can
+    /// end.
+    ///
+    /// It is the reader's own gesture that ends it, on `setLostTurn` below's exact ground: a Turn
+    /// Argo typed and then stopped is not a Turn in flight, whatever the record says next. And it
+    /// takes ONLY that — a status the agent reported and the rung Argo set are things that
+    /// happened, which stopping a Turn does not un-say.
+    func stopSubmittedTurn(for claim: SessionOwnership.ClaimID) {
+        // A Stop pressed over a Turn the CLI started itself files nothing: there is no claim of
+        // ours to end, and publishing over an untouched claim would move the roster for it.
+        guard byClaim[claim]?.submittedTurn != nil else { return }
+        update(claim) { $0.submittedTurn = nil }
+    }
+
     /// A Turn the CLI never heard (#682), or `nil` to take the news back once the composer has it.
     ///
     /// It ends the submission above in the same write, because the two are one act read in opposite

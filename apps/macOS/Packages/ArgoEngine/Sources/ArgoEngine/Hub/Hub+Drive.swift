@@ -15,10 +15,15 @@ public extension Hub {
         RememberingDriver(
             base: adapters,
             records: { [weak self] sessionID in self?.observedModeCount(of: sessionID) ?? 0 },
-            remember: { [weak self] set, sessionID in
-                self?.rememberMode(set, for: sessionID)
-            },
-            rememberRun: { [weak self] pick in self?.runStore.remember(pick) },
+            remembers: .init(
+                mode: { [weak self] set, sessionID in
+                    self?.rememberMode(set, for: sessionID)
+                },
+                run: { [weak self] pick in self?.runStore.remember(pick) },
+                stoppedTurn: { [weak self] sessionID in
+                    self?.stopSubmittedTurn(for: sessionID)
+                },
+            ),
         )
     }
 }
@@ -138,6 +143,17 @@ public extension Hub {
     internal func rememberLostTurn(_ text: String?, for sessionID: String) {
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
         claims.setLostTurn(text, for: claim)
+    }
+
+    /// The reader stopped the Turn Argo typed at that Session (#1409) — see
+    /// `ClaimLedger.stopSubmittedTurn`, which is the whole rule.
+    ///
+    /// Against the CLAIM, on `rememberLostTurn` above's reasoning, and refused for a Session with
+    /// no claim on the same ground: an external Session is one Argo never typed at, so there is no
+    /// Turn of ours to stop.
+    func stopSubmittedTurn(for sessionID: String) {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        claims.stopSubmittedTurn(for: claim)
     }
 
     /// The composer has the words back, so the news is spent. Taken back rather than left standing:

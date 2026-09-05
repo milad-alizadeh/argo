@@ -10,22 +10,30 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     /// keystroke at a time with the roster live in between, so a count read afterwards could
     /// already include a record the walk itself provoked (#653).
     private let records: (String) -> Int
-    /// Handed the rung only once it landed. A refusal filed as a set is the same stale count.
-    private let remember: (SessionModeSet, String) -> Void
-    /// Handed a Model or an Effort only once the port took it, for the same reason (#1175): a pick
-    /// the CLI refused is not the one the next New Session should open on.
-    private let rememberRun: (SessionRunPick) -> Void
+    /// Where each act that landed is filed.
+    private let remembers: Remembers
+
+    /// What this driver files, and where — one value rather than a parameter each, because they
+    /// are one question asked three ways: what the port just did, and who has to know it did.
+    struct Remembers {
+        /// Handed the rung only once it landed. A refusal filed as a set is the same stale count.
+        let mode: (SessionModeSet, String) -> Void
+        /// Handed a Model or an Effort only once the port took it, for the same reason (#1175): a
+        /// pick the CLI refused is not the one the next New Session should open on.
+        let run: (SessionRunPick) -> Void
+        /// Handed the Session whose Turn was just STOPPED (#1409) — see
+        /// `ClaimLedger.stopSubmittedTurn`, which is the whole rule.
+        let stoppedTurn: (String) -> Void
+    }
 
     init(
         base: Base,
         records: @escaping (String) -> Int,
-        remember: @escaping (SessionModeSet, String) -> Void,
-        rememberRun: @escaping (SessionRunPick) -> Void,
+        remembers: Remembers,
     ) {
         self.base = base
         self.records = records
-        self.remember = remember
-        self.rememberRun = rememberRun
+        self.remembers = remembers
     }
 
     func surface(of sessionID: String) -> DriveSurface {
@@ -36,8 +44,18 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         try base.send(text, to: sessionID)
     }
 
+    /// The `ESC`, and the claim it was pressed against ended with it (#1409).
+    ///
+    /// Filed AFTER the keystroke and only where it went, exactly as the rung is: a Stop that could
+    /// not reach the PTY stopped nothing. And filed HERE rather than at the surface that pressed
+    /// it, because the reason is the port's own — an interrupt reaching a CLI already back at its
+    /// prompt writes no record, so nothing else ever ends the submission Argo filed when it typed
+    /// the Turn, and the Session reads `running` for the rest of the window with Stop doing
+    /// nothing each time it is pressed. A steer's own interrupt comes through here too, and refiles
+    /// its submission on the send behind it.
     func interrupt(_ sessionID: String) throws {
         try base.interrupt(sessionID)
+        remembers.stoppedTurn(sessionID)
     }
 
     func attach(_ attachments: [SessionAttachment], to sessionID: String) throws -> [URL] {
@@ -63,7 +81,7 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     func setMode(_ mode: SessionMode, for sessionID: String) async throws {
         let before = records(sessionID)
         try await base.setMode(mode, for: sessionID)
-        remember(SessionModeSet(mode: mode, recordsWhenSet: before), sessionID)
+        remembers.mode(SessionModeSet(mode: mode, recordsWhenSet: before), sessionID)
     }
 
     /// Remembered APP-WIDE and never against this Session (#1175). Where `setMode` files a rung and
@@ -72,12 +90,12 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     /// question its own next record answers. What is kept is what the next New Session opens on.
     func setModel(_ modelID: String, for sessionID: String) async throws {
         try await base.setModel(modelID, for: sessionID)
-        rememberRun(.model(modelID))
+        remembers.run(.model(modelID))
     }
 
     func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
         try await base.setEffort(effort, for: sessionID)
-        rememberRun(.effort(effort))
+        remembers.run(.effort(effort))
     }
 
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
