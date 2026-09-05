@@ -33,13 +33,20 @@ struct AtlasRoomView: View {
     /// reopened room opens on the whole shape.
     @State private var openFile: String?
 
-    /// `opened` is the file the room STARTS with open, and nothing in the app ever passes one: a
-    /// reading is opened by a click, and a click is the one gesture no screenshot can drive. It is
-    /// what lets the specimen harness render this state at all — the design's own `?state=inspect`,
-    /// in the one shape SwiftUI has for seeding state a view then owns.
-    init(isActive: Bool = true, opened: String? = nil) {
+    /// What the reader has typed into the rail's find field (#1155). This column's own for
+    /// `openFile`'s reason, and not persisted for the same one: a question is a way of looking at
+    /// the map rather than a fact about it, and a reopened room opens on the whole repository.
+    @State private var query = ""
+
+    /// `opened` is the file the room STARTS with open, and `typed` the question it starts with
+    /// asked. Nothing in the app ever passes either: a reading is opened by a click and a question
+    /// is asked at a keyboard, and neither is a gesture a screenshot can drive. They are what let
+    /// the specimen harness render those states at all — the design's own `?state=inspect` and
+    /// `?state=search`, in the one shape SwiftUI has for seeding state a view then owns.
+    init(isActive: Bool = true, opened: String? = nil, typed: String = "") {
         self.isActive = isActive
         _openFile = State(initialValue: opened)
+        _query = State(initialValue: typed)
     }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
@@ -74,7 +81,10 @@ struct AtlasRoomView: View {
         // Nothing survives a change of Project. A map is scoped to the window's Project
         // (ADR-0015), and a reading left standing would be one repository's file read beside
         // another repository's map.
-        .onChange(of: room.project?.id) { openFile = nil }
+        .onChange(of: room.project?.id) {
+            openFile = nil
+            query = ""
+        }
     }
 
     /// The stage: the map, and the camera floating over its top-right corner. Nothing else — what
@@ -88,11 +98,17 @@ struct AtlasRoomView: View {
         // shrinking the map to nothing, and the map is what the reader clicked on.
         return HStack(spacing: ArgoSpacing.flush) {
             stage(drawn)
-            if let openFile, let reading = AtlasFileReading(
-                of: openFile, in: drawn, by: room.choice.channels,
-            ) {
-                AtlasRoomRail(reading: reading)
-            }
+            AtlasRoomRail(
+                query: $query,
+                // The list is read off the SAME Map the picture is tiled from, by the same
+                // filters, so the two can never disagree about what is in the repository.
+                entries: drawn.index(matching: query, by: room.choice.channels),
+                open: openFile,
+                reading: openFile.flatMap {
+                    AtlasFileReading(of: $0, in: drawn, by: room.choice.channels)
+                },
+                select: { openFile = $0 },
+            )
         }
     }
 

@@ -56,6 +56,14 @@ extension SpecimenRegistry {
         // is a panel quietly reading 0 where nothing was counted, which no assertion downstream
         // of the reading can see.
         SpecimenEntry("atlasReadingUnmeasured") { AtlasReadingUnmeasuredSpecimen() },
+        // The list beside the map and the search that narrows it (#1155). Four frames, because
+        // the list has four states and none of them can be reached without a keyboard or a
+        // pointer: the whole repository, a question with answers, a row selected with the map
+        // marked from it, and a question nothing answers.
+        SpecimenEntry("atlasIndex") { AtlasIndexRestingSpecimen() },
+        SpecimenEntry("atlasIndexFound") { AtlasIndexSpecimen() },
+        SpecimenEntry("atlasIndexSelected") { AtlasIndexSelectedSpecimen() },
+        SpecimenEntry("atlasIndexEmpty") { AtlasIndexEmptySpecimen() },
         // The same mark on the CITY, where a volume's whole silhouette is traced rather than one
         // rectangle. The room ships flat, so this is the only frame that shows the five strokes —
         // and the claim to look at is that the traced tower is the colour it was before.

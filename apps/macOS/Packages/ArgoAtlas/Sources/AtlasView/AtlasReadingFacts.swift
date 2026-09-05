@@ -115,6 +115,12 @@ enum AtlasUnmeasured {
         "\(noun) \(alone)"
     }
 
+    /// The same absence in a column too narrow for words — the legend's two ends, and the figure
+    /// on an index row (#1155). A glyph rather than a phrase because the column is a few digits
+    /// wide, and blank rather than a glyph would be indistinguishable from a row that failed to
+    /// draw its number.
+    static let compact = "\u{2014}"
+
     /// The absence of the banded Measure, which is a whole sentence: the gauge is a block with a
     /// heading, and a two-word fragment under one reads as a broken control.
     static let onTheGauge = "Not measured for this file."
