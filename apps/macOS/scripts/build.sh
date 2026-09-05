@@ -24,6 +24,8 @@ cd "$APP_DIR"
 . "$APP_DIR/../../scripts/gate-cache.sh"
 # shellcheck source=scripts/metrics.sh
 . "$APP_DIR/../../scripts/metrics.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
 
 case "${ARGO_BUILD_CONFIGURATION:-debug}" in
   debug) configuration=Debug ;;
@@ -56,6 +58,19 @@ if step_cached "$BUILD_KEY" && [ -d "$PRODUCT" ]; then
   metric_append step "xcodebuild:$configuration" hit 0 0
   exit 0
 fi
+
+# One of the machine's build slots, from here to the end of the script.
+#
+# `xcodebuild` fans out to every core, and the cap on that was wired only to `swift-gate.sh`
+# when it was written (#1377) — so the push path was serialised and the path agents actually
+# spend their day on, `bun run build`, was not. Six lanes building at once put 65
+# `swift-frontend` processes and a load average of 137 on a twelve-core machine.
+#
+# AFTER the cache check above, for the reason `swift-gate.sh` gives at its own call: a run with
+# nothing to do must not queue behind a run that has. A gate that already holds a slot passes
+# ARGO_BUILD_LOCK_HELD_BY down to this script, so this call returns at once rather than taking
+# a second one.
+build_lock_acquire
 
 BUILD_STARTED=$(metric_now)
 # shellcheck disable=SC2086 # $signing is a deliberate argument list, empty when signing stays on.

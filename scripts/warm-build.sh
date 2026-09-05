@@ -18,6 +18,8 @@ APP_DIR=$(cd "$(dirname "$0")/../apps/macOS" && pwd)
 
 # shellcheck source=scripts/swift-tool-guard.sh
 . "$(dirname "$0")/swift-tool-guard.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$(dirname "$0")/build-lock.sh"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   swift_unavailable "not macOS" "there is nothing to warm without a Swift toolchain"
@@ -41,6 +43,15 @@ mkdir -p "$(dirname "$LOG")"
 # `--build-tests` because the test target is what the gate builds, and building only the library
 # would leave half the cost still to pay.
 {
+  # One of the machine's build slots, taken INSIDE the background block.
+  #
+  # AGENTS.md tells every new Swift worktree to run this first, so on a morning where several
+  # lanes are cut at once this is the single largest uncapped fan-out on the machine — four
+  # packages of `swift build --build-tests`, each taking every core. Waiting here costs the
+  # caller nothing, because the caller has already been handed its prompt back: a warm nobody
+  # is waiting for is exactly the work that should yield to a build somebody is.
+  build_lock_acquire
+
   # shellcheck disable=SC2086 # ARGO_BUILD_PACKAGES is a word list, not one argument.
   for package in $ARGO_BUILD_PACKAGES; do
     echo "warm: $package"

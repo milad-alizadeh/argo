@@ -20,6 +20,12 @@
 #
 # The lock lives outside every worktree, because it is a fact about the MACHINE. A per-tree
 # lock would be no lock at all: the lanes it has to hold apart are in different trees.
+#
+# A slot is held for a process TREE, not a process. `swift-gate.sh` takes one and then runs
+# `bun run build` and `bun run test`, each a child that sources this file — so a second
+# acquire would make one gate occupy two of the two slots, and two gates would each hold one
+# and then wait forever for the other's. The holder exports ARGO_BUILD_LOCK_HELD_BY; every
+# descendant reads it and runs inside the slot already paid for.
 
 BUILD_LOCK_ROOT=${ARGO_BUILD_LOCK_ROOT:-${TMPDIR:-/tmp}/argo-build-lock}
 BUILD_LOCK_SLOTS=${ARGO_BUILD_LOCK_SLOTS:-2}
@@ -35,6 +41,9 @@ build_lock_release() {
   [ -n "$BUILD_LOCK_HELD" ] || return 0
   rm -rf "$BUILD_LOCK_HELD"
   BUILD_LOCK_HELD=""
+  # Cleared with the slot, not left behind: a script that releases and then acquires again is
+  # asking for a second slot, and an inherited marker would silently hand it none.
+  unset ARGO_BUILD_LOCK_HELD_BY
 }
 
 # Take one of $BUILD_LOCK_SLOTS slots, waiting as long as it takes.
@@ -43,6 +52,13 @@ build_lock_release() {
 # because it could not write a lock directory would be a gate turned off by a full disk —
 # which is exactly the condition this whole change exists to relieve.
 build_lock_acquire() {
+  # Already inside a slot this process tree paid for. Not an error and not a wait: the caller
+  # is the `bun run build` that a gate holding a slot just started, and the machine is already
+  # counting it.
+  if [ -n "${ARGO_BUILD_LOCK_HELD_BY:-}" ]; then
+    return 0
+  fi
+
   if ! mkdir -p "$BUILD_LOCK_ROOT" 2>/dev/null; then
     echo "build-lock: cannot create $BUILD_LOCK_ROOT — running unserialised" >&2
     return 0
@@ -61,6 +77,8 @@ build_lock_acquire() {
         echo $$ > "$_bl_slot/pid"
         BUILD_LOCK_HELD="$_bl_slot"
         BUILD_LOCK_WAITED=$_bl_waited
+        ARGO_BUILD_LOCK_HELD_BY=$$
+        export ARGO_BUILD_LOCK_HELD_BY
         trap 'build_lock_release' EXIT
         trap 'build_lock_release; exit 130' INT
         trap 'build_lock_release; exit 143' TERM

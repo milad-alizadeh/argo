@@ -29,7 +29,11 @@ function workspace() {
 
 // Run `body` inside a shell that has sourced the lock, with the lock root and slot count set.
 // Returns the process's stdout.
-function withLock(dir, body, { slots = 1, env = {} } = {}) {
+// `timeout` matters for any case whose REGRESSION is a wait rather than a wrong answer.
+// `build_lock_acquire` blocks until a slot frees, by design and for ever, so a test that
+// asserts something does not block would hang the suite instead of failing it — and a suite
+// that hangs is one somebody kills, not one somebody reads.
+function withLock(dir, body, { slots = 1, env = {}, timeout } = {}) {
   const script = `
 set -e
 . "${LOCK}"
@@ -37,6 +41,7 @@ ${body}
 `
   return execFileSync('sh', ['-c', script], {
     encoding: 'utf8',
+    ...(timeout ? { timeout } : {}),
     env: {
       ...process.env,
       ARGO_BUILD_LOCK_ROOT: path.join(dir, 'lock'),
@@ -156,6 +161,75 @@ check('swift-gate.sh takes a build slot', () => {
   const buildAt = gate.indexOf('bun run build')
   assert.ok(acquireAt < buildAt, 'the slot must be held before the build starts, not after')
   assert.ok(existsSync(LOCK))
+})
+
+// The three entrypoints an agent actually runs. The cap existed from #1377 but was wired only
+// to `swift-gate.sh` — the push path — so `bun run build`, `bun run test` and `bun run warm`
+// each fanned out to every core uncapped. Measured on a twelve-core machine with six lanes:
+// 65 concurrent `swift-frontend`, load average 137, and not one lock directory on the disk.
+//
+// Asserted structurally, the way the gate above is: the alternative is a test that runs a real
+// Swift build, which costs minutes and needs a toolchain the Linux jobs do not have.
+for (const [script, tool] of [
+  ['apps/macOS/scripts/build.sh', 'xcodebuild'],
+  ['apps/macOS/scripts/swift-test.sh', 'swift test'],
+  ['scripts/warm-build.sh', 'swift build'],
+]) {
+  check(`${script} takes a build slot`, () => {
+    const text = readFileSync(path.join(ROOT, script), 'utf8')
+    assert.match(text, /build-lock\.sh"/, `${script} must source build-lock.sh`)
+    const acquireAt = text.indexOf('build_lock_acquire')
+    assert.ok(acquireAt !== -1, `${script} must call build_lock_acquire`)
+    const toolAt = text.indexOf(tool, acquireAt)
+    assert.ok(toolAt > acquireAt, `${script} must hold the slot before it runs ${tool}`)
+  })
+}
+
+// The deadlock this guard exists to prevent, and the reason wiring the children was not a
+// one-line change. `swift-gate.sh` holds a slot and then runs `bun run build` and `bun run
+// test` as CHILD PROCESSES. Without inheritance each child takes a second slot, so with the
+// default of two one gate occupies both — and two gates each holding one would then wait
+// forever for the other's. One slot here is the two-gate case in miniature: the child must
+// return immediately, not block.
+check('a child of a slot holder does not take a second slot', () => {
+  const dir = workspace()
+  const out = withLock(
+    dir,
+    `
+build_lock_acquire
+sh -c '. "${LOCK}"; build_lock_acquire; echo child-ran'
+echo parent-done
+`,
+    { slots: 1, timeout: 20_000 },
+  )
+  assert.match(out, /child-ran/, "the child must proceed inside its parent's slot")
+  assert.match(out, /parent-done/, 'the parent must not have deadlocked behind its own child')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+// The marker is cleared with the slot. A script that releases and then acquires again is asking
+// for a real second slot, and a stale inherited marker would hand it none — the lock would read
+// as held by a process that let it go, and two lanes would build believing they were serialised.
+check('releasing a slot clears the inherited marker', () => {
+  const dir = workspace()
+  const out = withLock(
+    dir,
+    `
+build_lock_acquire
+build_lock_release
+echo "after-release:[\${ARGO_BUILD_LOCK_HELD_BY:-unset}]"
+build_lock_acquire
+echo "reacquired:[$BUILD_LOCK_HELD]"
+`,
+    { slots: 1 },
+  )
+  assert.match(out, /after-release:\[unset\]/, 'release must unset ARGO_BUILD_LOCK_HELD_BY')
+  assert.match(
+    out,
+    /reacquired:\[.*slot-1\]/,
+    'a released holder must be able to take a real slot again',
+  )
+  rmSync(dir, { recursive: true, force: true })
 })
 
 report('build-lock')

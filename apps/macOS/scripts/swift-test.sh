@@ -16,6 +16,8 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 . "$APP_DIR/../../scripts/gate-cache.sh"
 # shellcheck source=scripts/metrics.sh
 . "$APP_DIR/../../scripts/metrics.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
 
 # Every package with a test target, not just the engine: ArgoUI carries the visual contract's
 # tests (#375), ArgoMermaid the renderer's layout suites (#1087) and ArgoAtlas the map's (#1143).
@@ -218,6 +220,19 @@ for package in $PACKAGES; do
       continue
     fi
   fi
+
+  # One of the machine's build slots, taken before the first package that actually has to run.
+  #
+  # `swift test` compiles before it tests and fans that out to every core, and the cap on it
+  # was wired only to `swift-gate.sh` when it was written (#1377) — leaving `bun run test`,
+  # which is what agents run all day, uncapped. Six lanes at once measured 65 `swift-frontend`
+  # processes and load average 137 on twelve cores.
+  #
+  # Inside the loop and after the cached check, so a tree whose every package already passed
+  # never queues for a slot it would not use. `build_lock_acquire` is a no-op once this process
+  # tree holds one, so the packages after the first do not each take another — and neither does
+  # a run started by a gate that is already holding one.
+  build_lock_acquire
 
   echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
   package_started=$(metric_now)
