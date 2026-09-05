@@ -41,11 +41,9 @@ the task; a session that waits until it wants the list writes no list at all.
   two of them folded together.
 - **No item holds more than one gate, suite or review.** A subject that comma-lists what it covers
   — "Verify: gates, render, pixel-review, code-review", "Full suites, quality gates, review,
-  commit" — is the shape to reject. Those are real subjects, and they ran 533 and 449 minutes
-  behind one checkbox while the edit steps ahead of them took 4 to 9 minutes each (#1419).
+  commit" — is the shape to reject (#1419).
 - **The list runs to the open PR**, so the last item completes when the session does. A full bar
-  is otherwise not a finished session: the median one runs 17.5 more minutes and 25 more tool
-  calls after its last completion (#1419).
+  is otherwise not a finished session (#1419).
 
 ## Rules
 

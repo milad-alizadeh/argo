@@ -54,7 +54,10 @@ then `TaskUpdate` for each status change — both are deferred, so load them onc
 - Keep single-step edits, lookups, and conversational turns off the list.
 - **Split the verification tail into one item each**: the gates, the test suite, the render, the
   code review, the review fixes, the PR. Only the ones the change needs, never two folded
-  together — a subject that comma-lists what it covers is the shape to reject.
+  together.
+- **No item holds more than one gate, suite or review.** A subject that comma-lists what it
+  covers — "Verify: gates, render, review", "Full suites, quality gates, review, commit" — is
+  the shape to reject.
 - **The list runs to the open PR**, so the last item completes when the session does.
 ```
 
