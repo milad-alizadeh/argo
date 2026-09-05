@@ -50,6 +50,18 @@ struct MotionContractTests {
         }
     }
 
+    /// A staggered role's own clock is what a surface that runs the stagger itself drives, so it
+    /// has to answer Reduce Motion the way the role does — otherwise the map's roles would cut box
+    /// by box and sweep as a whole, which is the call site deciding.
+    @Test
+    func `a staggered role's clock is the whole wait, and cuts where its role cuts`() {
+        for role in ArgoMotion.staggered {
+            #expect(role.sweep.duration == role.wait)
+            #expect(role.sweep.reducedDuration == role.motion.reducedDuration)
+            #expect(abs(role.wait * role.staggerShare - role.stagger) < 0.000_001)
+        }
+    }
+
     /// The prototype's `CALM` flag cuts to the settled frame at every one of these call sites, and
     /// none of them is a status word whose change has to be noticed. A fade here would be a call
     /// site's decision re-entering the contract.

@@ -38,6 +38,11 @@ struct AtlasRoomView: View {
     /// the map rather than a fact about it, and a reopened room opens on the whole repository.
     @State private var query = ""
 
+    /// How far the city has climbed out of its plates, 0 to 1 (#1421). This column's own, like the
+    /// orientation: the rise is what the map DOES when it arrives, not a fact about the Project,
+    /// and nothing in the sidebar starts one.
+    @State private var rise: Double = 0
+
     /// `opened` is the file the room STARTS with open, and `typed` the question it starts with
     /// asked. Nothing in the app ever passes either: a reading is opened by a click and a question
     /// is asked at a keyboard, and neither is a gesture a screenshot can drive. They are what let
@@ -165,88 +170,76 @@ struct AtlasRoomView: View {
                         height: proxy.size.height - ArgoSpacing.loose * 2,
                     ),
                 ),
-                relief: room.choice.isCity.isOn ? 1 : 0,
+                standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
                 orientation: orientation,
                 focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(ArgoSpacing.loose)
+        // A Map arriving, and the reader turning the city on: the two moments there is a city to
+        // stand up. Keyed on WHEN the Map was measured rather than on the plan, so a channel
+        // change repaints and a filter re-tiles without the city reassembling — a model that
+        // rebuilds every time the reader touches a menu is a loading screen.
+        .task(id: arrival) { await stand() }
+    }
+
+    /// What a rise is spent on: a Map, and whether there is a city to spend it on. Two facts
+    /// rather than one, because the room OPENS at the flat end of the camera — a rise run there
+    /// climbs heights a straight-down camera does not project, and the reader who then turns the
+    /// city on gets it fully built, which is the sentence #1421 opens by complaining about.
+    private var arrival: AtlasArrival {
+        AtlasArrival(measuredAt: measuredAt, isCity: room.choice.isCity.isOn)
+    }
+
+    /// When the drawn Map was measured, or nothing where none is drawn.
+    private var measuredAt: Date? {
+        guard case let .measured(map) = room.reading else { return nil }
+        return map.measuredAt
+    }
+
+    /// The city stands up out of its plates (#1421). Every box starts flat and climbs to its
+    /// measured height, staggered outwards from the middle of the plan — but none of that is here:
+    /// this drives ONE scalar over the role's whole span, and the shader works each box's own
+    /// phase out of it against where the box stands.
+    ///
+    /// `@MainActor` for `FeedIonLoop.run`'s reason: every line writes view state, and `.task`
+    /// alone does not keep an `async` method on the main actor.
+    @MainActor private func stand() async {
+        // Two ways the map is simply THERE, and both answered before the reset rather than by a
+        // nil animation: the reset and the tick after it would otherwise put a flat map on screen
+        // for a frame, which is the one thing either reader asked not to see.
+        //
+        // The treemap draws no heights, so `docs/designs/cockpit-atlas.html`'s own `rise()`
+        // refuses to spend the role there — and Reduce Motion cuts, which is what
+        // `ArgoMotion.rise` carrying no reduced duration means, read off the role rather than
+        // decided here.
+        guard room.choice.isCity.isOn,
+              let sweep = ArgoMotion.risen.sweep.resolved(reduceMotion: reduceMotion)
+        else {
+            rise = 1
+            return
+        }
+        var cut = Transaction()
+        cut.disablesAnimations = true
+        withTransaction(cut) { rise = 0 }
+        // A tick between the two, for `FeedIonLoop`'s reason: SwiftUI folds every change in one
+        // tick into the last value, so a reset in the same tick as the climb leaves nothing to
+        // animate — and a rebuild would then show no rise at all.
+        try? await Task.sleep(for: .seconds(ArgoMotion.passReentry))
+        withAnimation(sweep) { rise = 1 }
     }
 }
 
-/// A small measured Map, so the state that matters most has a render. Two plates, one nested, and
-/// files spread over the three bands — the shape a treemap has to survive at any size.
-private let previewMap = AtlasMap(
-    measuredAt: Date(timeIntervalSince1970: 1_772_000_000),
-    commit: "4478553597b9f54568ed277d3753aba87ab1d980",
-    root: AtlasPlate(path: "argo", children: [
-        .plate(AtlasPlate(path: "argo/Sources", children: [
-            .plot(AtlasPlot(path: "argo/Sources/Engine.swift", measures: ["lines": 420])),
-            .plot(AtlasPlot(path: "argo/Sources/Roster.swift", measures: ["lines": 180])),
-            .plate(AtlasPlate(path: "argo/Sources/Atlas", children: [
-                .plot(AtlasPlot(path: "argo/Sources/Atlas/Map.swift", measures: ["lines": 90])),
-                .plot(AtlasPlot(path: "argo/Sources/Atlas/Tiler.swift", measures: ["lines": 60])),
-                .plot(AtlasPlot(path: "argo/Sources/Atlas/logo.png", measures: [:])),
-            ])),
-        ])),
-        .plate(AtlasPlate(path: "argo/docs", children: [
-            .plot(AtlasPlot(path: "argo/docs/CONTEXT.md", measures: ["lines": 140])),
-            .plot(AtlasPlot(path: "argo/docs/README.md", measures: ["lines": 30])),
-        ])),
-    ]),
-)
-
-private let previewProject = CockpitPresentation.Project(
-    id: "argo",
-    name: "argo",
-    location: "/Users/somebody/Developer/argo",
-    isReachable: true,
-    isRegistered: true,
-)
-
-#Preview("Atlas room, a generated atlas") {
-    @Previewable @State var channels = AtlasChannels.opening(for: previewMap)
-    @Previewable @State var hideTests = false
-    @Previewable @State var isCity = false
-
-    AtlasRoomView()
-        .environment(
-            \.argoAtlasRoom,
-            AtlasRoom(
-                reading: .measured(previewMap), project: previewProject,
-                currency: AtlasCurrency {},
-                choice: AtlasMapChoice(
-                    channels: channels,
-                    setChannels: { channels = $0 },
-                    hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
-                    isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
-                ),
-            ),
-        )
-        .frame(width: 960, height: 620)
-        .argoAppearance()
-}
-
-#Preview("Atlas room, no atlas yet") {
-    AtlasRoomView()
-        .environment(
-            \.argoAtlasRoom,
-            AtlasRoom(
-                reading: .unmeasured, project: previewProject,
-                currency: AtlasCurrency {}, choice: .inert,
-            ),
-        )
-        .frame(width: 960, height: 620)
-        .argoDeckSurface()
-        .argoAppearance()
-}
-
-// A Map the repository has moved on from (#1162). The whole room rather than the stage alone,
-// because the sentence that says so is the SIDEBAR's now: #1161 took the reading strip off the
-// stage, and the staleness clause went with the rest of the provenance into Repository data.
-#Preview("Atlas room, a stale atlas") {
-    AtlasRoomHost(reading: .measured(previewMap), behind: 12)
-        .frame(width: 960, height: 620)
-        .argoAppearance()
+/// The two facts that decide whether a city has just arrived: which measurement is drawn, and
+/// whether the camera is at the end that shows heights (#1421).
+///
+/// A value rather than two `onChange`s, so the rise has ONE trigger. Two would let a rebuild land
+/// in the same frame as a flip and start the climb twice, from two different points.
+///
+/// The treemap-to-city turn is `ArgoMotion.lieDown`'s when that lands, and the two will have to be
+/// reconciled there: a flip that also rises is one move too many.
+private struct AtlasArrival: Equatable {
+    let measuredAt: Date?
+    let isCity: Bool
 }

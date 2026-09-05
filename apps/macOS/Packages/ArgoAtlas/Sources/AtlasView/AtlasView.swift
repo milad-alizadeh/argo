@@ -24,12 +24,20 @@ public struct AtlasView: View {
     @Environment(\.argo) private var argo
 
     private let plan: AtlasPlan
-    /// `relief` is 1 for the city and 0 for the treemap, and it has no default: it is the one thing
-    /// that decides which of the two readings reaches the screen. `var` rather than `let`: this is
-    /// the whole of `animatableData` below, which is what lets a caller drive it through
-    /// `withAnimation` and have every frame in between drawn as its own camera, rather than a jump
-    /// from one end to the other (#1152).
-    private var relief: Double
+    /// How much of the map is standing up: `relief` at 1 the city and at 0 the treemap (#1152),
+    /// and `rise` how far the boxes have come out of their plates over `ArgoMotion.risen.sweep`
+    /// (#1421). It has no default — `relief` is the one thing that decides which of the two
+    /// readings reaches the screen.
+    ///
+    /// `var` rather than `let`: this is the whole of `animatableData` below, which is what lets a
+    /// caller drive both through `withAnimation` and have every frame in between drawn as its own
+    /// city, rather than a jump from one end to the other.
+    ///
+    /// The rise is ONE number for the whole map. The stagger that opens the city from its centre
+    /// is not in here at all — each box works its own phase out of it against where it stands, in
+    /// `AtlasVolume.metal`, which is the only place that can do it per box without the CPU walking
+    /// the plan once a frame.
+    private var standing: AtlasStanding
     /// The city's own turn and tilt (#1152). Not animated here — a drag or a key press moves this
     /// live, one frame at a time, and a caller re-rendering this view on every one of those frames
     /// is a rate `Animatable` has no reason to also own.
@@ -47,18 +55,18 @@ public struct AtlasView: View {
 
     public init(
         plan: AtlasPlan,
-        relief: Double,
+        standing: AtlasStanding,
         orientation: AtlasOrientation = .opening,
         focus: AtlasFocus = .none,
     ) {
         self.plan = plan
-        self.relief = relief
+        self.standing = standing
         self.orientation = orientation
         self.focus = focus
     }
 
-    /// Solved fresh from `relief` and `orientation` on every draw rather than stored, because
-    /// `relief` changes under `Animatable` between the values a caller ever set it to.
+    /// Solved fresh from `standing` and `orientation` on every draw rather than stored, because
+    /// `standing` changes under `Animatable` between the values a caller ever set it to.
     ///
     /// ONE projection, handed to the shader and to everything drawn over it. A second solved
     /// beside it is a second camera to drift, which is the class of defect the id target exists to
@@ -66,7 +74,10 @@ public struct AtlasView: View {
     private var projection: AtlasProjection {
         AtlasProjection(
             of: plan,
-            through: AtlasCamera(relief: relief, orientation: orientation, over: plan.extent),
+            through: AtlasCamera(
+                relief: standing.relief, orientation: orientation, over: plan.extent,
+            ),
+            rising: standing.rise,
         )
     }
 
@@ -123,14 +134,20 @@ public struct AtlasView: View {
 }
 
 extension AtlasView: @MainActor Animatable {
-    /// `relief` alone. SwiftUI interpolates this between an old value and a new one over whatever
-    /// animation a caller's `withAnimation` set, and every step lands back in `camera` above — so
-    /// a city-to-treemap toggle tweens the whole projection rather than cutting between two static
-    /// pictures. No animation at the call site means no interpolation here either, which is what
-    /// makes Reduce Motion's answer "call it with none" rather than a branch this view has to hold.
-    public var animatableData: Double {
-        get { relief }
-        set { relief = newValue }
+    /// The two scalars the map is drawn from, and nothing else. SwiftUI interpolates them between
+    /// an old value and a new one over whatever animation a caller's `withAnimation` set, and
+    /// every step lands back in `camera` and in the rise above — so a city-to-treemap toggle
+    /// tweens the whole projection, and a rise tweens the whole city's climb, rather than either
+    /// cutting between two static pictures. No animation at the call site means no interpolation
+    /// here either, which is what makes Reduce Motion's answer "call it with none" rather than a
+    /// branch this view has to hold.
+    ///
+    /// A PAIR rather than two `Animatable` views, because they are one picture: the two run on
+    /// their own clocks and a reader who flips the map mid-rise is owed one city doing both, not
+    /// a flip that cancels a climb.
+    public var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(standing.relief, standing.rise) }
+        set { standing = AtlasStanding(relief: newValue.first, rise: newValue.second) }
     }
 }
 
@@ -141,14 +158,14 @@ extension AtlasView: @MainActor Animatable {
 /// looked at the tiled one beside it.
 private struct AtlasPreview: View {
     let plan: AtlasPlan
-    var relief: Double = 1
+    var standing: AtlasStanding = .city
     var orientation: AtlasOrientation = .opening
     var open: String?
 
     var body: some View {
         AtlasView(
             plan: plan,
-            relief: relief,
+            standing: standing,
             orientation: orientation,
             focus: AtlasFocus(open: open) { _ in },
         )
@@ -196,11 +213,18 @@ private let previewPlan = AtlasPlan(
 // The other end of the one camera, and the picture the identity is about: the same plan, drawn
 // straight down.
 #Preview("Atlas — the map tiled flat") {
-    AtlasPreview(plan: previewPlan, relief: 0)
+    AtlasPreview(plan: previewPlan, standing: .flat)
 }
 
 #Preview("Atlas — the empty map") {
     AtlasPreview(plan: .empty)
+}
+
+// The city part way out of its plates (#1421). A still of a moving thing, and the one frame worth
+// keeping: the middle of the plan is up, the edges are still flat, and the wave between them is
+// what says the city opened from its centre rather than lifting all at once.
+#Preview("Atlas — the city half risen") {
+    AtlasPreview(plan: previewPlan, standing: AtlasStanding(relief: 1, rise: 0.5))
 }
 
 // A turn and a tilt away from the opening view — the reader having driven the camera (#1152).
@@ -218,5 +242,5 @@ private let previewPlan = AtlasPlan(
 // The same mark at the other end of the one camera, where every standing edge of a box projects
 // onto its own footprint and the trace is the rectangle alone.
 #Preview("Atlas — a file open, traced on the treemap") {
-    AtlasPreview(plan: previewPlan, relief: 0, open: "argo/rules/house.md")
+    AtlasPreview(plan: previewPlan, standing: .flat, open: "argo/rules/house.md")
 }

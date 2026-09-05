@@ -30,8 +30,11 @@ package enum AtlasElevation {
         min(extent.width, extent.height) * ceilingShare
     }
 
-    /// The shallowest a file stands on this ground.
-    static func floor(of extent: CGSize) -> CGFloat {
+    /// The shallowest a file stands on this ground. `package` because the RISE starts every box
+    /// here rather than at nothing (#1421): a box on the exact plane of its plate is the one thing
+    /// the note above says this number exists to avoid, and a rise that began at zero would put
+    /// every box in the map there at once.
+    package static func floor(of extent: CGSize) -> CGFloat {
         min(extent.width, extent.height) * floorShare
     }
 

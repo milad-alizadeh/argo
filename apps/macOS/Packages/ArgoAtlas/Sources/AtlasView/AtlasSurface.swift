@@ -49,6 +49,12 @@ struct AtlasSurface: NSViewRepresentable {
         // A still frame, drawn on demand. Nothing on this map moves at rest, and a display link
         // spinning at 120 Hz over a city nobody is touching is a battery cost with no picture
         // to show for it.
+        //
+        // It stays paused through the rise (#1421) and through the flip: both are animated by
+        // `AtlasView`'s `animatableData`, so SwiftUI re-runs the body once per frame and
+        // `apply(to:coordinator:)` below marks the view dirty each time. The frames come from the
+        // animation rather than from a clock this view owns, which is what leaves "nothing on
+        // this map moves at rest" true with nothing to switch back off when the rise ends.
         view.isPaused = true
         view.enableSetNeedsDisplay = true
         view.delegate = context.coordinator
@@ -80,6 +86,7 @@ struct AtlasSurface: NSViewRepresentable {
         coordinator.renderer?.show(
             AtlasVolumes.city(of: projection.plan, in: pigments),
             through: AtlasEye(projection.camera, fit: projection.fit),
+            rising: AtlasRise(projection),
         )
         view.clearColor = pigments.desktop.clearColor
         // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the

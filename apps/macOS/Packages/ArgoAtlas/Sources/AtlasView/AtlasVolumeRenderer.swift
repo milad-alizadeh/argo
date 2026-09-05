@@ -43,6 +43,10 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     private var eye: AtlasEye?
     private var volumes: MTLBuffer?
     private var volumeCount = 0
+    /// Where the city is in its climb out of the plates (#1421). Pushed with the camera and the
+    /// map, because it changes on the same clock they do — and `settled` until one is, so a
+    /// renderer nobody has told about a rise draws the measured heights rather than nothing.
+    private var rise = AtlasRise.settled
     /// Which file each drawn id names. Held here, beside the buffer it was drawn from, so a pick
     /// can never be resolved against a map the picture is not of (#1153).
     private var city = AtlasCity.empty
@@ -140,9 +144,10 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// The map to draw next. The buffer is rebuilt here rather than per frame: the view is paused
     /// and draws on demand, so a frame is a redraw of a map that did not change and copying the
     /// whole city into a fresh allocation to redraw it would be work with no picture to show.
-    func show(_ city: AtlasCity, through eye: AtlasEye) {
+    func show(_ city: AtlasCity, through eye: AtlasEye, rising rise: AtlasRise = .settled) {
         self.eye = eye
         self.city = city
+        self.rise = rise
         volumeCount = city.volumes.count
         volumes = city.volumes.isEmpty ? nil : device.makeBuffer(
             bytes: city.volumes,
@@ -247,6 +252,11 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         encoder.setVertexBytes(&eye, length: MemoryLayout<AtlasEye>.stride, index: 1)
         var lighting = AtlasLighting.city
         encoder.setVertexBytes(&lighting, length: MemoryLayout<AtlasLighting>.stride, index: 2)
+        // The clock the city is standing up on, on the same terms (#1421): four floats, and one
+        // value for the whole draw — every box works its own phase out of it against where it
+        // stands, so a staggered rise costs the instance buffer nothing either.
+        var rise = rise
+        encoder.setVertexBytes(&rise, length: MemoryLayout<AtlasRise>.stride, index: 3)
         // One instanced draw for the whole map, in the order `AtlasVolumes` painted them: a nested
         // plate over the one it stands on, and the files over the plate they stand on. What the
         // order cannot settle — a near tower over a far plate — the depth buffer does. The id

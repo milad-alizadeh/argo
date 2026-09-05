@@ -48,7 +48,20 @@ struct AtlasOpenTrace: View {
         guard let open, let tile = projection.plan.tiles.first(where: { $0.path == open }) else {
             return nil
         }
-        return AtlasTrace(of: tile, through: projection)
+        return AtlasTrace(of: risen(tile), through: projection)
+    }
+
+    /// The tile at the height it is STANDING at this frame, which is its measured height once the
+    /// rise has settled and a share of it while the city is still coming up (#1421). Solved off
+    /// the same projection the surface underneath was handed, which is why the mark cannot be
+    /// drawn at a height the box is not standing at.
+    private func risen(_ tile: AtlasTile) -> AtlasTile {
+        AtlasTile(
+            path: tile.path,
+            rect: tile.rect,
+            band: tile.band,
+            height: AtlasRise(projection).height(of: tile, about: projection.camera.centre),
+        )
     }
 
     private static func path(of stroke: [CGPoint]) -> Path {
