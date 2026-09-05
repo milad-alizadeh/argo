@@ -25,13 +25,17 @@ export function workspace() {
 // `build_lock_acquire` blocks until a slot frees, by design and for ever, so a test that asserts
 // something does not block would hang the suite instead of failing it — and a suite that hangs is
 // one somebody kills, not one somebody reads.
-export function withLock(dir, body, { slots = 1, env = {}, timeout } = {}) {
+// `shell` runs the same body under a named shell. macOS `/bin/sh` is bash in POSIX mode and
+// Linux's is dash, and they do NOT agree about `trap` — bash reports the caller's handlers inside
+// a command substitution, dash reports nothing there (#1431). So a lock case that only ever ran
+// under one of them proved the mechanism on one half of the machines it ships to.
+export function withLock(dir, body, { slots = 1, env = {}, timeout, shell = 'sh' } = {}) {
   const script = `
 set -e
 . "${LOCK}"
 ${body}
 `
-  return execFileSync('sh', ['-c', script], {
+  return execFileSync(shell, ['-c', script], {
     encoding: 'utf8',
     ...(timeout ? { timeout } : {}),
     env: {
