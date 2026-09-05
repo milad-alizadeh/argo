@@ -143,8 +143,15 @@ public extension Hub {
     /// the id it had before would be lost at the re-key.
     ///
     /// A Session with no claim is one Argo cannot type at, so there was no Turn of ours to lose.
+    /// A Turn ARGO steered for a handoff is filed apart from one the reader typed (#1229). The
+    /// composer restores what it holds, and the `/handoff` prompt is not the reader's to send
+    /// again: it arrives there as a line of Argo's own words with no explanation, and it is the
+    /// handoff — waiting on a brief that Turn will now never write — that has to hear about it.
     internal func rememberLostTurn(_ text: String?, for sessionID: String) {
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        guard text == nil || !claims.facts(for: claim).handingOff else {
+            return claims.setHandoffTurnLost(true, for: claim)
+        }
         claims.setLostTurn(text, for: claim)
     }
 

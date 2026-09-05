@@ -42,7 +42,17 @@ extension Hub: HandoffHost {
     /// type at, so there is no handoff of ours to report either way.
     public func handoffStarted(sessionID: String) {
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        // Cleared before the prompt is typed, not after: a `true` left standing by the last attempt
+        // would end this one before its own Turn had been written.
+        claims.setHandoffTurnLost(false, for: claim)
         claims.publish(handingOff: true, for: claim)
+    }
+
+    /// What the delivery watch said about the `/handoff` prompt (#682, #1229): `true` only where
+    /// the composer was seen still holding it. A Session with no claim was never typed at, so there
+    /// is no Turn of ours to have lost.
+    public func turnWasLost(sessionID: String) -> Bool {
+        claims.facts(for: ownership.boundClaim(ofSessionID: sessionID)).handoffTurnLost
     }
 
     public func handoffEnded(sessionID: String, tookMs: Int, failure: String?) {

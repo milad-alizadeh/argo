@@ -92,6 +92,21 @@ final class ClaimLedger {
         update(claim) { $0.handingOff = handingOff }
     }
 
+    /// The `/handoff` Turn Argo steered at this claim, never heard (#1229) — or `false` as a fresh
+    /// handoff begins, which is the only thing that takes it back.
+    ///
+    /// It ends the submission in the same write, exactly as `setLostTurn` does and for the same
+    /// reason: a Turn nobody heard is not a Turn in flight. What it does NOT do is fill the
+    /// composer — the words were Argo's, and the reader has no second copy to send.
+    func setHandoffTurnLost(_ lost: Bool, for claim: SessionOwnership.ClaimID) {
+        update(claim) { facts in
+            facts.handoffTurnLost = lost
+            if lost {
+                facts.submittedTurn = nil
+            }
+        }
+    }
+
     /// A handoff at this claim that did NOT land (#1327). Appended and never taken back, on the
     /// same ground `setTicket` is: the attempt happened, however the Session goes on. Unlike
     /// `settle`, nothing here is deduped by kind — a Session can be handed off from more than

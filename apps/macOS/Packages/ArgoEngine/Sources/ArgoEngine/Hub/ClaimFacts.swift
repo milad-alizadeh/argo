@@ -65,6 +65,12 @@ struct ClaimFacts: Equatable {
     /// act, and what the plinth and the header button both read. `false` the instant it ends,
     /// whichever way.
     var handingOff = false
+    /// Whether the `/handoff` Turn Argo steered at this claim was the one the CLI never heard
+    /// (#1229). Its own fact and not `lostTurn`, because the two are answered by different people:
+    /// a Turn the READER typed goes back to the composer for them to send again, and one Argo
+    /// steered is the handoff's to give up on. Cleared when a handoff begins, so the news can only
+    /// ever be about the attempt now running.
+    var handoffTurnLost = false
     /// The handoffs Argo attempted here that did NOT land (#1327), oldest first — each drops a
     /// failed row into the reading. Never taken back, on the same ground `expiries` is: a handoff
     /// that failed is something that happened. A landed one leaves nothing here — the existing
@@ -95,6 +101,7 @@ struct ClaimFacts: Equatable {
             && settledWaits.isEmpty
             && ticket == nil
             && !handingOff
+            && !handoffTurnLost
             && handoffFailures.isEmpty
     }
 }

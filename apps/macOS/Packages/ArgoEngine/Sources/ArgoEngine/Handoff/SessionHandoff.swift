@@ -42,6 +42,11 @@ public final class SessionHandoff {
         case noFolder
         /// `/handoff` was typed and no brief appeared before Argo stopped waiting.
         case briefNeverArrived(afterMs: Int)
+        /// The prompt was written to the PTY and the CLI never took it — the composer was still
+        /// holding it when the delivery watch gave up (#682, #1229). The one refusal here that is
+        /// news from OUTSIDE the sequence: nothing this class does can produce it, and waiting the
+        /// full patience for a Turn nobody received reports a hang as work.
+        case promptNeverSubmitted
 
         public var detail: String {
             switch self {
@@ -51,6 +56,8 @@ public final class SessionHandoff {
                 "Argo has not read this Session's folder, so it cannot start one beside it"
             case let .briefNeverArrived(afterMs):
                 "/handoff wrote no brief in \(afterMs / 60000) minutes"
+            case .promptNeverSubmitted:
+                "The /handoff prompt never left this Session's composer, so nothing ran"
             }
         }
     }
@@ -81,7 +88,7 @@ public final class SessionHandoff {
                 typing: HandoffScript.command(writingBriefTo: brief.path),
             ) else { throw Failure.notSteerable }
 
-            try await awaitBrief(at: brief.path)
+            try await awaitBrief(at: brief.path, typedAt: request.sessionID)
             let sessionID = try await host.spawn(SessionSeed(
                 cwd: request.cwd,
                 opening: HandoffScript.opening(fromBriefAt: brief.path, issue: request.issue),
@@ -96,19 +103,31 @@ public final class SessionHandoff {
             )
             return Outcome(briefPath: brief.path, sessionID: sessionID)
         } catch {
+            // The same sentence the alert would have said, because the row IS the report now
+            // (#1229): a spawn refusal reaching the reading as a Swift enum's description would be
+            // the one failure nobody can act on.
             host.handoffEnded(
                 sessionID: request.sessionID,
                 tookMs: wait.now() - startedAtMs,
-                failure: (error as? Failure)?.detail ?? "\(error)",
+                failure: AgentRefusal.detail(of: error),
             )
             throw error
         }
     }
 
-    /// Poll until the brief is there, or until Argo has waited longer than it said it would.
-    private func awaitBrief(at path: String) async throws {
+    /// Poll until the brief is there, until the Turn that asks for it is reported lost, or until
+    /// Argo has waited longer than it said it would.
+    ///
+    /// The brief is read FIRST on every pass, and that order is the rule rather than an accident: a
+    /// brief on disk is the CLI's own answer, while a lost Turn is a screen read seconds after the
+    /// paste went down. Where both are true the file wins, so a watch that misread a composer
+    /// cannot throw away a handoff that actually landed.
+    private func awaitBrief(at path: String, typedAt sessionID: String) async throws {
         let deadline = wait.now() + wait.patience.limitMs
         while !hasArrived(at: path) {
+            guard !host.turnWasLost(sessionID: sessionID) else {
+                throw Failure.promptNeverSubmitted
+            }
             guard wait.now() < deadline else {
                 throw Failure.briefNeverArrived(afterMs: wait.patience.limitMs)
             }
