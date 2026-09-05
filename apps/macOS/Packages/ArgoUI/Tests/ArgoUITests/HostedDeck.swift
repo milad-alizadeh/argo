@@ -166,12 +166,21 @@ import Testing
     /// decks stand beside this one inside `FeedDeckStack`, hidden (ADR-0030, Rule 4), and a search
     /// that took the first table it found would answer with whichever deck happens to be first in
     /// the stack's subviews.
+    ///
+    /// Siblings are walked BACK TO FRONT, which is what "on screen" means when two of them overlap.
+    /// For the turn after a switch the deck going away is still unhidden — it stops DRAWING in the
+    /// pass and is hidden a turn later, because hiding inside the pass re-enters the view graph
+    /// (#1260) — so `isHidden` alone names two decks for that turn, and z-order names the right
+    /// one.
+    /// Alpha would too, and is not read here: SwiftUI animates a room change on opacity, so a
+    /// search
+    /// that skipped a subtree at zero alpha would find nothing mid-transition.
     static func find<V: NSView>(_ kind: V.Type, in view: NSView) -> V? {
         guard !view.isHidden else { return nil }
         if let hit = view as? V {
             return hit
         }
-        for child in view.subviews {
+        for child in view.subviews.reversed() {
             if let found = find(kind, in: child) {
                 return found
             }

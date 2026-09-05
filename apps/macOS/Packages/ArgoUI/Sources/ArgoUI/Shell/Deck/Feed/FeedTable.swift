@@ -11,7 +11,7 @@ import SwiftUI
 /// cells, measures rows lazily, and keeps the reading still through a re-wrap, none of which this
 /// layer has to re-implement. The rows themselves stay SwiftUI, hosted per cell.
 ///
-/// One table per reading, all of them inside one `FeedDeckStack` and exactly one shown (ADR-0030,
+/// One table per reading, all of them inside one `FeedDeckStack` and exactly one drawn (ADR-0030,
 /// Rule 4). This representable never re-points a table at another reading: it asks the store which
 /// deck this reading is, and hands a model to that deck alone.
 struct FeedTable: NSViewRepresentable {
