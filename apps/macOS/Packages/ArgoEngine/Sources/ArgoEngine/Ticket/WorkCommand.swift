@@ -61,14 +61,16 @@ public enum WorkCommand: String, Sendable {
     /// a rule printed beside a command nobody picked reads as a claim about that command.
     ///
     /// `implement`'s reason is worded for BOTH ways it is reached, the build label and the default
-    /// under it (#1182).
+    /// under it (#1182). It says what the two have in common and nothing more: a `bug` beside a
+    /// `needs-triage` is reached by the build label, and "no label says otherwise" printed beside
+    /// it would name the one that did and lost.
     public static func why(_ command: WorkCommand) -> String? {
         switch command {
         case .designToCode: "the screen has a design"
         case .grillMe: "labelled wayfinder:grilling"
         case .wayfinder: "labelled wayfinder:map"
         case .prototype: "labelled wayfinder:prototype"
-        case .implement: "no label says otherwise"
+        case .implement: "nothing refuses it"
         // No rule resolves it, so there is never a reason to give beside it.
         case .triage: nil
         }
@@ -123,19 +125,19 @@ public enum WorkCommand: String, Sendable {
         ("wayfinder:prototype", .prototype),
     ]
 
-    /// Rule 6: the labels that say a Ticket IS build work. The last rule answers `.implement` too,
-    /// so the only effect left to this set is to OUTRANK rule 7 — `needs-triage` beside a `bug`
-    /// loses, and it has to: it rides along on about fifty of this tracker's build tickets.
-    private static let builds: Set<String> = [
-        "bug", "enhancement", "ready-for-agent", "wayfinder:task",
-    ]
-
     /// Rule 5: not an agent's work, whatever KIND of work it is — so it is read before the build
     /// labels and beats them. Three say the Ticket will never be actioned and one reserves it for
     /// a person, and a build label beside any of them does not make it an agent's again: 3 Tickets
     /// here carry `ready-for-human` next to `bug` or `enhancement`, and 2 carry `duplicate`.
     private static let notForAnAgent: Set<String> = [
         "wontfix", "duplicate", "invalid", "ready-for-human",
+    ]
+
+    /// Rule 6: the labels that say a Ticket IS build work. The last rule answers `.implement` too,
+    /// so the only effect left to this set is to OUTRANK rule 7 — `needs-triage` beside a `bug`
+    /// loses, and it has to: it rides along on about fifty of this tracker's build tickets.
+    private static let builds: Set<String> = [
+        "bug", "enhancement", "ready-for-agent", "wayfinder:task",
     ]
 
     /// Rule 7: not settled YET, which is a different claim and loses to a build label. A Ticket

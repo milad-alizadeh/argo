@@ -47,7 +47,8 @@ extension CockpitCoordinator {
     /// ticket's Session is the seed naming it — which is also what the Tickets room reads back to
     /// draw the row as claimed.
     ///
-    /// `opening` is `nil` where the ticket matched no rule, which is the plain empty composer.
+    /// `opening` is `nil` where the ticket's labels REFUSE a command (#1182), which is the plain
+    /// empty composer.
     func spawnSession(on ticket: Int, mode: SessionMode, opening: String?) async -> String? {
         await spawn(SessionSeed(opening: opening, mode: mode, ticket: ticket))
     }

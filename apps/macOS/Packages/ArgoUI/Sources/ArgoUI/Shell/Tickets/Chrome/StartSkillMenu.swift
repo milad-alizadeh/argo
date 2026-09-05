@@ -65,8 +65,8 @@ struct StartSkillMenu: View {
             if let command {
                 StartCommandWord(command: command)
             } else {
-                // The ticket matched no rule. The word says what the press does rather than
-                // leaving an empty segment nobody can aim — and `Start` beside it still opens the
+                // The ticket's labels refused a command (#1182). The word says what the press does
+                // rather than leaving an empty segment nobody can aim — and `Start` beside it opens
                 // empty composer, which is the honest answer to a ticket that asks for nothing.
                 Text("pick a skill")
                     .argoText(ArgoTypography.machineCaption)

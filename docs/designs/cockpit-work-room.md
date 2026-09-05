@@ -706,7 +706,7 @@ shape:
   test #872 applied and the precise test the Mode menu failed.
 
 **The menu names why the default matched**, so the guess is inspectable rather than magic —
-`/implement · no label says otherwise`, `/design-to-code · the screen has a design`. It ends with **Fresh
+`/implement · nothing refuses it`, `/design-to-code · the screen has a design`. It ends with **Fresh
 Session**, which opens the composer with no command in it.
 
 #### The Session carries the ticket, whichever skill runs
