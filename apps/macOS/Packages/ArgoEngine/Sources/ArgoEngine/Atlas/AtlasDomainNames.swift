@@ -21,11 +21,17 @@ enum AtlasDomainNames {
 
     /// The words no Domain may be named after: the ones on too many files to say anything, plus
     /// the repository's own. Both stay in the vectors, where they are harmless — they are barred
-    /// from the LABEL only.
-    static func house(over paths: [String], called repository: String) -> Set<String> {
+    /// from the LABEL only. Counted at the weight the VECTORS were built at: a repository reading
+    /// its folder names would otherwise bar a different set of words than it clustered on.
+    static func house(
+        over paths: [String],
+        weighing directoryWeight: Double,
+        called repository: String,
+    )
+        -> Set<String> {
         var documents: [String: Int] = [:]
         for path in paths {
-            for word in AtlasNames.tokens(of: path).keys {
+            for word in AtlasNames.tokens(of: path, directoryWeight: directoryWeight).keys {
                 documents[word, default: 0] += 1
             }
         }

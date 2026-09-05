@@ -14,13 +14,14 @@ enum AtlasAgreement {
     /// partition left out of everything is not evidence either way, and `nil` where fewer than
     /// two files are left, which has no pairs to agree about.
     ///
-    /// A community of `unplaced` is what "belongs to nothing" is spelled as, on both sides.
+    /// `AtlasMembership.unplaced` is what "belongs to nothing" is spelled as, on both sides.
     static func between(_ one: [Int], _ other: [Int]) -> Double? {
         var cells: [Cell: Int] = [:]
         var rows: [Int: Int] = [:]
         var columns: [Int: Int] = [:]
         var placed = 0
-        for (left, right) in zip(one, other) where left != unplaced && right != unplaced {
+        let out = AtlasMembership.unplaced
+        for (left, right) in zip(one, other) where left != out && right != out {
             placed += 1
             cells[Cell(row: left, column: right), default: 0] += 1
             rows[left, default: 0] += 1
@@ -32,10 +33,6 @@ enum AtlasAgreement {
         return (all - pairs(among: rows.values) - pairs(among: columns.values) + 2 * together)
             / all
     }
-
-    /// What a file that belongs to nothing is spelled as. Negative rather than an optional so the
-    /// membership pass and the partitions it is compared against are one shape.
-    static let unplaced = -1
 
     /// How many pairs the counts hold between them.
     private static func pairs(among counts: some Collection<Int>) -> Double {

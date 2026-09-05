@@ -24,14 +24,6 @@ public struct AtlasDomain: Equatable, Sendable {
         self.members = members
     }
 
-    /// How sure the Domain is of itself: its members' confidence, averaged. Computed rather than
-    /// stored, so it can never disagree with the members it is an average of — the same reason a
-    /// Plate carries no number of its own.
-    public var confidence: Double {
-        guard !members.isEmpty else { return 0 }
-        return members.reduce(0) { $0 + $1.confidence } / Double(members.count)
-    }
-
     /// Where the members sit, in the Map's own Plot order.
     public var paths: [String] {
         members.map(\.path)
@@ -48,14 +40,11 @@ public struct AtlasDomainMember: Equatable, Sendable {
     public let path: String
 
     /// The margin, 0 to 1: this Domain's pull on the file against the next Domain's, over both.
-    ///
-    /// Held to three decimals, which is what the file keeps — the same reason `AtlasCoupling`
-    /// rounds its strength: a value the file cannot spell back is a Map read that differs from
-    /// the Map written.
+    /// Held to what the file keeps, like every other number in the Map (`heldByTheMapFile`).
     public let confidence: Double
 
     public init(path: String, confidence: Double) {
         self.path = path
-        self.confidence = (confidence * 1000).rounded() / 1000
+        self.confidence = confidence.heldByTheMapFile
     }
 }

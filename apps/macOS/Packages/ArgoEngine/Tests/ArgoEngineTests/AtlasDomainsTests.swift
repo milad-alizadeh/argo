@@ -94,10 +94,18 @@ struct AtlasDomainsTests {
     @Test func `the agreement between the two readings is reported`() throws {
         // With no answer key, the rate at which two independent readings agree is the only
         // accuracy number there is. It is stated, never acted on.
-        let agreement = try #require(inferred().agreement)
+        //
+        // A repository with no history is the case where the two readings ARE one reading — the
+        // blend is the name graph at six tenths of its weight, and scaling every edge changes no
+        // decision — so anything under 1 here is the blend reading its own signal differently.
+        // A history that says one ticket file changes with the permission files every time then
+        // moves it across, while the names keep it where it was, and the number says so.
+        let crossed = paths.filter { $0.contains("Permission") }.map {
+            AtlasCoupling(first: "argo/Sources/TicketRow.swift", second: $0, strength: 1)
+        }
 
-        #expect(agreement >= 0)
-        #expect(agreement <= 1)
+        #expect(try #require(inferred().agreement) == 1)
+        #expect(try #require(inferred(crossed).agreement) < 1)
     }
 
     @Test func `a repository too small to hold a Domain infers none, and says so`() {

@@ -89,6 +89,11 @@ enum AtlasNames {
 
     /// A filename without its extension, and a dotfile left whole: `.gitignore` is a name, not an
     /// extension on an empty name.
+    ///
+    /// The prototype cuts at the last dot unconditionally, which leaves a dotfile with no words at
+    /// all. Keeping it is a departure, and it changes the answer: `gitignore` is then a word like
+    /// any other, in the vectors, in the IDF denominators and in the house-word counts. A file the
+    /// reading can say nothing about is one that can only ever belong to nothing.
     private static func withoutExtension(_ file: String) -> String {
         guard let dot = file.lastIndex(of: "."), dot != file.startIndex else { return file }
         return String(file[file.startIndex ..< dot])

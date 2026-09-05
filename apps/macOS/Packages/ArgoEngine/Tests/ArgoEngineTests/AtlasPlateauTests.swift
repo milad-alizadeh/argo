@@ -27,14 +27,14 @@ struct AtlasAgreementTests {
     @Test func `a file either reading placed nowhere is no evidence either way`() {
         // A file that belongs to nothing is not a file the two readings disagree about.
         let placed = AtlasAgreement.between([0, 0, 1, 1], [0, 0, 1, 1])
-        let withOneOut = AtlasAgreement.between([0, 0, 1, 1], [0, 0, 1, AtlasAgreement.unplaced])
+        let withOneOut = AtlasAgreement.between([0, 0, 1, 1], [0, 0, 1, AtlasMembership.unplaced])
 
         #expect(placed == 1)
         #expect(withOneOut == 1)
     }
 
     @Test func `fewer than two files placed have no pairs to agree about`() {
-        let out = AtlasAgreement.unplaced
+        let out = AtlasMembership.unplaced
 
         #expect(AtlasAgreement.between([0, out, out], [0, out, out]) == nil)
     }

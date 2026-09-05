@@ -1,31 +1,6 @@
-/// Reading and writing the inferred half of a Map file (#1157), and the two position lookups the
-/// Couplings share with it — both ends of both readings name a Plot by where it sits.
+/// Reading and writing the inferred half of a Map file (#1157). Both directions spell a member as
+/// a position in the Map's own Plot order, which `AtlasMap+Positions` resolves.
 extension AtlasMap {
-    /// The Plot a position names, and the caller's own account of a position naming none: a
-    /// Coupling and a Domain fail differently over the same off-by-one, and the log is what says
-    /// which half of the file disagreed with the nesting.
-    static func plotPath(
-        at position: Int,
-        among plots: [AtlasPlot],
-        missing: (Int) -> AtlasMapError,
-    ) throws(AtlasMapError)
-        -> String {
-        guard plots.indices.contains(position) else { throw missing(position) }
-        return plots[position].path
-    }
-
-    /// Where a path sits in the Map's Plot order, and the caller's own account of a path that
-    /// sits nowhere.
-    static func place(
-        of path: String,
-        in position: [String: Int],
-        missing: (String) -> AtlasMapError,
-    ) throws(AtlasMapError)
-        -> Int {
-        guard let found = position[path] else { throw missing(path) }
-        return found
-    }
-
     /// The inference a file states, read back against the Plots it was taken over. A member at a
     /// position the Map has no Plot at is refused rather than dropped, for the reason a Coupling
     /// is: it means the two halves of the file disagree about which repository was measured, and

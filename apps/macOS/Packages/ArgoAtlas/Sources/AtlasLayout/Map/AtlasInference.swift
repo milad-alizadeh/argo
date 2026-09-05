@@ -33,7 +33,7 @@ public struct AtlasInference: Equatable, Sendable {
     /// Absent where there is nothing to compare — fewer than two files placed by either.
     public let agreement: Double?
 
-    /// `agreement` is held to three decimals, which is what the file keeps.
+    /// `resolution` and `agreement` are held to what the file keeps (`heldByTheMapFile`).
     public init(
         domains: [AtlasDomain],
         resolution: Double,
@@ -41,9 +41,9 @@ public struct AtlasInference: Equatable, Sendable {
         agreement: Double?,
     ) {
         self.domains = domains
-        self.resolution = (resolution * 1000).rounded() / 1000
+        self.resolution = resolution.heldByTheMapFile
         self.settled = settled
-        self.agreement = agreement.map { ($0 * 1000).rounded() / 1000 }
+        self.agreement = agreement.map(\.heldByTheMapFile)
     }
 
     /// The Domain a path belongs to, and `nil` for a path that belongs to nothing.
