@@ -131,11 +131,13 @@ private extension MarkdownBlock {
     static func picture(_ line: String) -> MarkdownBlock? {
         guard line.hasPrefix("!["), line.hasSuffix(")") else { return nil }
         let rest = line.dropFirst(2)
-        // The LAST `](` before the end, so alt text holding a bracket of its own still parses.
-        guard let split = rest.range(of: "](", options: .backwards) else { return nil }
+        // The FIRST `](`, and a source holding no `)` of its own. Searching backwards instead
+        // swallowed a whole second image: `![a](one.png) ![b](two.png)` came out as one picture
+        // with `a](one.png) ![b` for alt text, dropping the first image without a word.
+        guard let split = rest.range(of: "](") else { return nil }
         let alt = String(rest[rest.startIndex ..< split.lowerBound])
         let inside = rest[split.upperBound ..< rest.index(before: rest.endIndex)]
-        guard let source = URL(string: sourceOf(inside)),
+        guard !inside.contains(")"), let source = URL(string: sourceOf(inside)),
               ["http", "https"].contains(source.scheme?.lowercased() ?? "")
         else { return nil }
         return .picture(alt: alt, source: source)

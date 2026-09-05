@@ -145,6 +145,15 @@ struct MarkdownBlockTests {
         ])
     }
 
+    /// Two on one line is not one picture with the first one inside its alt text. A backwards
+    /// search for `](` read exactly that, and dropped the first image without a word.
+    @Test
+    func `two images on one line are prose, not one picture`() {
+        let line = "![a](https://example.com/1.png) ![b](https://example.com/2.png)"
+
+        #expect(MarkdownBlock.blocks(in: line) == [.paragraph(line)])
+    }
+
     /// Words share the line, so there is no block here — prose that happens to hold a mark.
     @Test
     func `an image inside a sentence stays prose`() {

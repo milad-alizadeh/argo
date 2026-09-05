@@ -9,44 +9,34 @@ import Foundation
 /// `HTTPTransport`: a view that reached the network itself would be a second HTTP client, with a
 /// second set of answers about what a refusal means.
 ///
-/// What is held is the DECODE and not the bytes, in the same bounded store the gallery's pictures
-/// are held in, so a body full of screenshots is charged against one ceiling with them rather than
-/// against a second one nothing sweeps.
+/// What is held is the DECODE and not the bytes, in `MediaCache`'s own store under `MediaCache`'s
+/// own ceiling — one ceiling and not two, so a body full of screenshots is charged against the
+/// number ADR-0028 Rule 4 already bounds rather than against a second one beside it.
 ///
 /// Every source reaching here is a web address, because that is what `MarkdownBlock.picture(_:)`
 /// finds: a relative source has no base to resolve against and a `file:` one is somebody else's
 /// disk, so neither is ever a picture block in the first place.
+///
+/// A fetch that fails is NOT written off. The surface that asked draws its alt text and asks again
+/// the next time it appears, which is what makes a body opened while the machine was offline draw
+/// its pictures when it is opened again.
 @MainActor
 final class MarkdownPictures {
     static let shared = MarkdownPictures()
 
-    private let entries: MediaStore
     private let transport: HTTPTransport
-    /// The sources a fetch has already settled as unreadable. Held so a body that names a dead URL
-    /// asks for it once per window rather than once per layout pass.
-    private var unreadable: Set<URL> = []
     /// The fetches in flight, keyed by source, so two surfaces drawing one picture in the same
     /// frame share the one request.
     private var inFlight: [URL: Task<MediaBitmap?, Never>] = [:]
 
-    init(
-        transport: HTTPTransport = URLSessionTransport(),
-        costLimit: Int = MediaCache.costLimit(scale: MediaScale.display),
-    ) {
+    init(transport: HTTPTransport = URLSessionTransport()) {
         self.transport = transport
-        self.entries = MediaStore(costLimit: costLimit)
     }
 
     /// Whatever is already decoded for `source`, fetching nothing. What a surface can draw the
     /// frame it appears in, so a picture drawn once is drawn again with no wait at all.
     func held(_ source: URL) -> MediaBitmap? {
-        entries.object(for: source.absoluteString)
-    }
-
-    /// Whether a source has been fetched and turned out not to be a picture — a 404, a refusal, or
-    /// bytes nothing can decode. A surface draws that as the alt text rather than as a wait.
-    func isUnreadable(_ source: URL) -> Bool {
-        unreadable.contains(source)
+        MediaCache.shared.held(key: source.absoluteString)
     }
 
     /// The picture at `source`, decoded for `box`. Held decodes answer at once; everything else is
@@ -54,9 +44,6 @@ final class MarkdownPictures {
     func picture(at source: URL, in box: MediaBox) async -> MediaBitmap? {
         if let held = held(source), held.box.covers(box) {
             return held
-        }
-        if unreadable.contains(source) {
-            return nil
         }
         if let running = inFlight[source] {
             return await running.value
@@ -67,14 +54,8 @@ final class MarkdownPictures {
         inFlight[source] = fetch
         let bitmap = await fetch.value
         inFlight[source] = nil
-        // A cancelled fetch settles nothing: the picture is neither held nor written off, so the
-        // next surface to ask starts a request rather than inheriting a verdict nobody reached.
-        guard !Task.isCancelled else { return nil }
-        guard let bitmap else {
-            unreadable.insert(source)
-            return nil
-        }
-        entries.set(bitmap, for: source.absoluteString)
+        guard let bitmap, !Task.isCancelled else { return nil }
+        MediaCache.shared.keep(bitmap, for: source.absoluteString)
         return bitmap
     }
 

@@ -51,6 +51,16 @@ public enum ArgoFeedRow {
     /// it — a panorama would otherwise take a whole line of the column on its own, and a
     /// column-shaped capture would come out a sliver with nothing readable in it.
     public static let shotWidths: ClosedRange<CGFloat> = shotHeight / 2 ... shotWidth * 2
+
+    /// How wide a picture of `ratio` is drawn at the fixed height, inside those bounds — and the
+    /// fixed box where nothing said what its ratio is. The ONE answer, so a gallery's shot
+    /// (`FeedShot.drawnWidth`) and a body's markdown picture (`FeedMarkdownPicture`) cannot come
+    /// out at two widths from one arithmetic.
+    public static func shotWidth(ofRatio ratio: CGFloat?) -> CGFloat {
+        guard let ratio, ratio > 0 else { return shotWidth }
+        return min(max(shotHeight * ratio, shotWidths.lowerBound), shotWidths.upperBound)
+    }
+
     /// The box one shot's picture is decoded to. Its HEIGHT and not its width, which is the pair
     /// this file fixes: a plate bounding a side the gallery does not bound decodes a tall picture
     /// finer than anything draws it. One box for every shot whatever its ratio, so a per-shot width
