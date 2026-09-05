@@ -69,6 +69,24 @@ final class MediaCache {
         entries.object(for: bytes.identity)
     }
 
+    /// The same store, reached by a key that is not a byte run's signature — the web address a
+    /// markdown image NAMES (`MarkdownPictures`, #1412). One ceiling and not two: a second store
+    /// the same size beside this one would double what the app may hold in pictures, which is the
+    /// number ADR-0028 Rule 4 exists to bound.
+    ///
+    /// The key is the caller's whole namespace to keep apart. A signature is 32 base64 characters
+    /// and an address is a URL, so the two cannot collide.
+    func held(key: String) -> MediaBitmap? {
+        entries.object(for: key)
+    }
+
+    /// File a picture the caller decoded itself, under its own key. `MarkdownPictures` fetches its
+    /// bytes rather than reading them off disk, so it does its own decode and hands the result
+    /// here to be held.
+    func keep(_ picture: MediaBitmap, for key: String) {
+        entries.set(picture, for: key)
+    }
+
     /// One picture read and decoded, off the main actor and held by nobody. 25 ms for a 2560 × 1600
     /// capture, measured, which is a frame and a half of the lightbox's fade — run on the main
     /// thread it stalled the fade's first frames and read as a flash. The READ in front of it is

@@ -103,6 +103,24 @@ extension TicketsFixture {
     - `TicketsRoomProjection.room(from:in:)` is where both halves are assembled.
     """
 
+    /// A bug report with its screenshot under it, which is the shape #1400 arrived in and the body
+    /// #1412 was filed against: the pane drew the words `Atlas shading` where the picture belongs.
+    ///
+    /// The address is the real one from #1400, so this render is the reported screen and not a
+    /// likeness of it. It reaches the network, so the first frame of a shot is a wait.
+    package static let screenshotBody = """
+    The user reported: "shading looks really weird" while looking at the Atlas 3D city view \
+    (argo repo, 2801 files, sized by lines, coloured by commits).
+
+    Some blocks show hard, flat-looking faces with abrupt light/dark transitions and jagged \
+    edges, rather than a consistent lighting model across the scene.
+
+    ## Screenshot
+
+    ![Atlas shading](https://raw.githubusercontent.com/milad-alizadeh/argo/\
+    46dd0d78e2a4ead04d20dae07d903998b5e89829/atlas-shading.png)
+    """
+
     /// How long before `TicketsFixture.asOf` the provider last saw each ticket change (#897).
     ///
     /// A SPREAD across every rung of the stamp — hours, days, weeks, months, a year — because a

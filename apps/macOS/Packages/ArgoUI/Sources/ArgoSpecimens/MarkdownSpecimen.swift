@@ -46,6 +46,22 @@ struct MarkdownSpecimen: View {
     ```
     """
 
+    /// A body that NAMES its pictures — what a tracker writes a screenshot in (#1412).
+    ///
+    /// Two addresses, and only the first resolves. Both answers belong in one render: the picture
+    /// at the gallery's own box, and beside it the alt text a source nothing could read stands as.
+    /// It reaches the network, so this is the one specimen whose first frame is a wait.
+    nonisolated static let pictures = """
+    ## Screenshot
+
+    ![Atlas shading](https://raw.githubusercontent.com/milad-alizadeh/argo/\
+    46dd0d78e2a4ead04d20dae07d903998b5e89829/atlas-shading.png)
+
+    The shading above is what #1400 reported. Below is an address that answers with nothing.
+
+    ![The render that never landed](https://example.invalid/missing.png)
+    """
+
     /// A diagram Argo reads beside a fence declaring the same grammar it cannot, so both halves of
     /// the bargain are on one screen: what is read is drawn, and what is not is the grey source it
     /// has always been.

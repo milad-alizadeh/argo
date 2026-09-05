@@ -34,11 +34,7 @@ package struct FeedShot: Equatable, Sendable {
     /// and the lane all lay out from (#1015) — so it is read off the signature and never off a
     /// decode, and it does not move when a decode later fails.
     var drawnWidth: CGFloat {
-        guard let ratio, ratio > 0 else { return ArgoFeedRow.shotWidth }
-        return min(
-            max(ArgoFeedRow.shotHeight * ratio, ArgoFeedRow.shotWidths.lowerBound),
-            ArgoFeedRow.shotWidths.upperBound,
-        )
+        ArgoFeedRow.shotWidth(ofRatio: ratio)
     }
 
     /// Whether clicking this opens anything — a shot with no picture is not a control.

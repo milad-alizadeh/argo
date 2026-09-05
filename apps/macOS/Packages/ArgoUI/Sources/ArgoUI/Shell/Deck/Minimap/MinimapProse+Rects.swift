@@ -42,7 +42,23 @@ extension MinimapProseBlock {
             table.laid(across: measure)
         case let .diagram(diagram):
             diagram.mapped(across: measure)
+        case .picture:
+            Self.picture(across: measure)
         }
+    }
+
+    /// A picture: the band it is drawn in, whole, in the ink the lane marks pictures with — so a
+    /// body holding a screenshot reads as one from the lane (#1412).
+    ///
+    /// The band is the feed's own (`ArgoFeedRow.pictureBand`), so the lane and the row cannot
+    /// disagree about it: neither holds bytes, and neither needs to.
+    @MainActor private static func picture(across measure: CGFloat)
+        -> (rects: [MinimapRowRect], height: CGFloat) {
+        let height = ceil(measure * ArgoFeedRow.pictureBand)
+        return (
+            [MinimapRowRect(y: 0, height: height, from: 0, to: measure, ink: .media)],
+            height,
+        )
     }
 
     /// A fence: one slab where the paragraphs around it are ragged lines, which is what the feed

@@ -38,6 +38,9 @@ struct ProseLaidBlockHeightTests {
             + "to be, which takes more than one line to say | `FeedMarkdownTable` |",
         "```mermaid\ngraph TD\n  Reader --> Layout\n  Reader --> Plan\n```",
         "```mermaid\nC4Context\n  Person(dev, \"Nothing here can read this\")\n```",
+        // A picture nothing fetches under test, which is the state that must still stand at the
+        // fixed box: the alt text is drawn INSIDE the plate, never in place of it.
+        "![Atlas shading](https://example.invalid/a.png)",
     ]
 
     @Test(arguments: widths)
@@ -81,11 +84,12 @@ struct ProseLaidBlockHeightTests {
                 case .fenced: kinds.insert("fenced")
                 case .table: kinds.insert("table")
                 case .diagram: kinds.insert("diagram")
+                case .picture: kinds.insert("picture")
                 // Words, which the surface inks itself — no frame is handed to anything.
                 case .paragraph, .heading, .bullet, .numbered: break
                 }
             }
         }
-        #expect(kinds == ["fenced", "table", "diagram"])
+        #expect(kinds == ["fenced", "table", "diagram", "picture"])
     }
 }

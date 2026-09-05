@@ -22,6 +22,8 @@ struct FeedProseLaidBlock: View {
             MermaidView(diagram: diagram)
         case let .table(table):
             FeedMarkdownTable(table: table)
+        case let .picture(alt, source):
+            FeedMarkdownPicture(alt: alt, source: source)
         // Words, which the surface inks. Reached only where the two readings of one string came
         // apart, which nothing has ever seen them do.
         case .paragraph, .heading, .bullet, .numbered:

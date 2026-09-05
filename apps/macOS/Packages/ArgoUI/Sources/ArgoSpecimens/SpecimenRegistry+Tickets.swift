@@ -173,6 +173,12 @@ extension SpecimenRegistry {
         // A provider that exposes no dependency edges. The `Blocked by` section is ABSENT, not
         // empty — nobody has told us there are no blockers.
         SpecimenEntry("edgelessTicket") { TicketDetailSpecimen(reading: TicketsFixture.edgeless) },
+        // The screen #1412 was filed against: a bug report whose body names a screenshot. The pane
+        // drew the alt text where the picture belongs. Reaches the network, so a shot of it needs a
+        // moment to settle — `ARGO_KEEP_RUNNING=1` and a second before the shutter.
+        SpecimenEntry("screenshotTicket") {
+            TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 609))
+        },
         SpecimenEntry("deliveryChips") { DeliveryChipsSpecimen() },
         // A CLOSED ticket, open in the pane (#895). It is in no listing and no sidebar view, so the
         // only way here is a link — and the head sets the provider's `Closed` beside Argo's own
