@@ -4,12 +4,15 @@ import SwiftUI
 /// Switches off the selection paint a `List`'s own `NSTableView` draws, so the only selection in
 /// the list is the ground Argo draws (`argoSelectedRowGround`).
 ///
-/// The table's fill is the `AccentColor` asset at full strength while the list is first responder,
-/// and it moves to the pressed row on mouse-DOWN. Argo's ground follows the `List`'s selection
-/// binding, which moves on mouse-UP — the row selects itself from a tap gesture, because the title
-/// carries a double-click (`SessionRow`). Covering the fill on the selected row therefore left the
-/// pressed row wearing the platform's blue for the length of every held click, beside the old row
-/// still on Argo's ground (#1137). Switched off at the table, there is nothing to cover.
+/// The table's fill is a FIXED NEUTRAL, not the `AccentColor` asset: with Argo's ground taken away
+/// the capsule renders `(70,70,70)`, and it renders `(70,70,70)` under `.tint(.red)` too — the
+/// same finding as #875's scarlet probe, re-measured in #1443, and what `selection-accent.md`
+/// states. It moves to the pressed row on mouse-DOWN, while Argo's ground follows the `List`'s
+/// selection binding, which moves on mouse-UP — the row selects itself from a tap gesture, because
+/// the title carries a double-click (`SessionRow`). Covering the fill on the selected row
+/// therefore left the pressed row wearing the platform's own capsule for the length of every held
+/// click, beside the old row still on Argo's ground (#1137). Switched off at the table, there is
+/// nothing to cover.
 ///
 /// `.inset` is `NSTableView`-backed like `.sidebar` and honours the same property, measured rather
 /// than assumed — `InsetListSelectionFillTests` (#1165).
