@@ -185,13 +185,16 @@ extension CockpitPresentation.Session.Chain {
     /// handed to, and whether Argo's own channel to it is up. Assembled here rather than inline
     /// above for the reason `Workspace` and `Transcript` are — the Session's own init reads one
     /// value per reading, and every one of them is built from the Session it came off.
+    ///
+    /// renamed: quietAtMs <- startedQuietlyAtMs — grouped under `Startup` beside `resuming`, which
+    /// names the same wait (#1328).
     init(observed session: HubSession) {
         self.init(
             program: Program(observed: session),
             span: Span(
                 startedAtMs: session.startedAtMs,
                 lastSeenAtMs: session.lastSeenAtMs,
-                startedQuietlyAtMs: session.startedQuietlyAtMs,
+                startup: Startup(quietAtMs: session.startedQuietlyAtMs, resuming: session.resuming),
                 settledWaits: session.settledWaits,
             ),
             handedOffTo: session.handedOffTo,

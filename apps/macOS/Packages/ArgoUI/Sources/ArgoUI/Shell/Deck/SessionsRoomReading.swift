@@ -100,8 +100,10 @@ struct SessionsRoomReading {
                 // Off the engine's own `starting` reading, which is DIRECT and managed-only, and
                 // never off an empty reading: a Session observed from outside that has written
                 // nothing is a Session nobody here started, and a plinth over it would claim an act
-                // Argo did not perform.
-                wait: FeedWorking.isStarting(stamp.status) ? .starting : nil,
+                // Argo did not perform. `resuming` picks which of the two identical waits this is.
+                wait: FeedWorking.isStarting(stamp.status)
+                    ? (stamp.resuming ? .resuming : .starting)
+                    : nil,
                 showing: PlanShowing(
                     plan: PlanProjection.reading(from: session?.events ?? []),
                     // The same reading the row's own `PlanBar` freezes on (#1345): a Session

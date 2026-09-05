@@ -66,6 +66,10 @@ enum SessionsRoomReadingCache {
         /// off it: two Sessions can both read `running` while only one of them is a Turn Argo
         /// itself typed.
         let hasUnansweredTurn: Bool
+        /// Whether the `starting` status this stamp carries is a resume rather than a fresh spawn
+        /// (#1328), by VALUE beside `startedQuietly` for the same reason: the plinth reads off this
+        /// stamp rather than off the Session directly.
+        let resuming: Bool
 
         /// Derived from the Session rather than spelled out at the call site: a stamp assembled by
         /// hand is one a later projection input can quietly fall out of.
@@ -84,6 +88,7 @@ enum SessionsRoomReadingCache {
             self.startedQuietly = session?.startedQuietlyAtMs != nil
             self.settledWaits = session?.settledWaits ?? []
             self.hasUnansweredTurn = session?.hasUnansweredTurn ?? false
+            self.resuming = session?.resuming ?? false
         }
     }
 

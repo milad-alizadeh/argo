@@ -11,6 +11,9 @@ package enum FeedWait: Equatable {
     /// Argo started a CLI and it has not spoken yet — a wait on the PROCESS rather than on the
     /// agent, so it ends on the first bytes off the PTY rather than on a record (#587).
     case starting
+    /// Argo continued an orphaned Session's chain in a fresh process and it has not spoken yet
+    /// (#10, ADR-0026, #1328) — the same wait as `starting`, named for what Argo was doing.
+    case resuming
     /// The Turn is thinking, and the thread stands over the whole measure.
     case thinking
     /// The Turn is running this row's call, and the ion crosses its own type.
@@ -20,9 +23,10 @@ package enum FeedWait: Equatable {
     /// change it, so a think that says something and goes on thinking stays one wait.
     ///
     /// They are read back rather than decided a second time: `FeedProjection` owns the split
-    /// between the thread and a lit row. `starting` is never among the answers, because it draws no
-    /// row at all — it stands on the plinth alone, and reaches the surface through
-    /// `EnvironmentValues.argoFeedWait` instead. `FeedColumn.waiting` is where the two meet.
+    /// between the thread and a lit row. `starting` and `resuming` are never among the answers,
+    /// because neither draws a row at all — both stand on the plinth alone, and reach the surface
+    /// through `EnvironmentValues.argoFeedWait` instead. `FeedColumn.waiting` is where the two
+    /// meet.
     package static func showing(in rows: [FeedRow]) -> FeedWait? {
         if let lit = rows.first(where: { $0.kind.isCallInFlight }) {
             return .call(lit.id)

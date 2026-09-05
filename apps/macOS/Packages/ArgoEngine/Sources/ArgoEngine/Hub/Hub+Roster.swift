@@ -146,6 +146,16 @@ extension Hub {
         // Read through the claim rather than as recorded: the fresh row is re-keyed to its CLI's
         // own id the moment its record appears, and the link has to follow it there.
         published.handedOffTo = handoff.edge(of: session.id).map(ownership.rowID(ofClaim:))
+        // A resuming spawn publishes no row of its own (`provisionalSessions`), so its wait for the
+        // first byte off the fresh PTY has to reach THIS row directly instead — off the claim this
+        // Session is bound to, which is the resume's own (#1328). Absent once the wait settles: the
+        // claim's own settle retires the spawn, and this Session's `startup` falls back to what its
+        // own record says, exactly as before it was resumed.
+        if let claim = ownership.boundClaim(ofSessionID: session.id), let spawn = spawns[claim],
+           spawn.startup.resuming {
+            published.startup = SessionStartup(spawn)
+            published.resuming = true
+        }
         return published
     }
 
@@ -184,9 +194,14 @@ extension Hub {
 
     /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a
     /// Project switch and keep their PTYs, so they need scoping the re-pointed join gives the rest.
+    ///
+    /// A resuming spawn is never among these (#1328): it already has a row, published when Argo
+    /// first spawned it, and a second one here would draw that Session twice until the CLI wrote a
+    /// record. `observed(_:)` merges its wait onto that existing row instead.
     private var provisionalSessions: [HubSession] {
         let root = readings.spelled(project.url.path)
         return spawns.values
+            .filter { !$0.startup.resuming }
             .filter { ProjectScope.contains(cwd: readings.spelled($0.cwd), projectRoot: root) }
             .map { observed(HubSession(spawn: $0)) }
     }

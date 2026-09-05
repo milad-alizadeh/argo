@@ -27,6 +27,12 @@ struct AgentSpawn: Sendable, Equatable {
         /// How the PTY went away, once it has — and only for a spawn whose CLI never wrote a
         /// record, the one row no observation can reach.
         var exit: Exit?
+
+        /// Whether this spawn continues a chain rather than opening one (#10, ADR-0026, #1328) —
+        /// DIRECT off the seed that started it. Grouped here, not flat on `AgentSpawn`: it names
+        /// the same wait the three facts above do, and decides only which words that wait takes
+        /// (`SessionWaitSettled.startup`).
+        var resuming = false
     }
 
     struct Exit: Sendable, Equatable {
@@ -66,6 +72,7 @@ extension AgentSpawn {
             cwd: plan.cwd,
             spawnedAtMs: atMs,
             ticket: plan.seed.ticket,
+            startup: Startup(resuming: plan.seed.resuming != nil),
         )
     }
 }

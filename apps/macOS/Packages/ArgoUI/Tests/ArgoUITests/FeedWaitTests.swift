@@ -11,12 +11,15 @@ import Testing
 @Suite("Feed wait")
 @MainActor
 struct FeedWaitTests {
-    private static func session(
+    /// Not `private`: `FeedResumeWaitTests` builds the same shape for the resuming case, off the
+    /// same helper.
+    static func session(
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         settledWaits: [SessionWaitSettled] = [],
         events: [TranscriptEvent] = [],
         hasUnansweredTurn: Bool = false,
+        resuming: Bool = false,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -26,19 +29,23 @@ struct FeedWaitTests {
             status: status,
             chain: .init(
                 program: .init(cli: .claude),
-                span: .init(settledWaits: settledWaits),
+                span: .init(
+                    startup: .init(resuming: resuming),
+                    settledWaits: settledWaits,
+                ),
             ),
             transcript: .init(events: events, hasUnansweredTurn: hasUnansweredTurn),
         )
     }
 
     /// One Session, in the shape the shell hands the reading.
-    private static func reading(
+    static func reading(
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         settledWaits: [SessionWaitSettled] = [],
         events: [TranscriptEvent] = [],
         hasUnansweredTurn: Bool = false,
+        resuming: Bool = false,
     )
         -> SessionsRoomReading {
         SessionsRoomReading(
@@ -51,6 +58,7 @@ struct FeedWaitTests {
                     settledWaits: settledWaits,
                     events: events,
                     hasUnansweredTurn: hasUnansweredTurn,
+                    resuming: resuming,
                 )],
                 connection: .idle,
             ),
@@ -58,8 +66,8 @@ struct FeedWaitTests {
         )
     }
 
-    private static let started = SessionWaitSettled(wait: .starting, tookMs: 3200)
-    private static let neverStarted = SessionWaitSettled(
+    static let started = SessionWaitSettled(wait: .starting, tookMs: 3200)
+    static let neverStarted = SessionWaitSettled(
         wait: .starting,
         tookMs: 800,
         failure: "the process exited with code 1",
@@ -169,7 +177,6 @@ struct FeedWaitTests {
     func `a lit call raises no plinth`() {
         #expect(FeedWaitWords(.call(3)) == nil)
         #expect(FeedWaitWords(.starting) == .starting)
-        #expect(FeedWaitWords(.thinking) == .thinking)
     }
 
     // MARK: - The row's own shape

@@ -38,16 +38,30 @@ public extension CockpitPresentation.Session {
             }
         }
 
+        /// The wait for a link's own fresh PTY, off the engine's own `startup` and `resuming`
+        /// (#1245, #1328) — grouped because both name the one wait Argo is timing on the process
+        /// itself, never on a record. Beside `Span` rather than inside it: nested any deeper and
+        /// `Chain.Span.Startup` breaks the two-level cap this file's own inits are already at.
+        public struct Startup: Equatable, Sendable {
+            /// When the wait ran out with the process still up. Absent for every Session Argo did
+            /// not start and every one that came up and printed something.
+            public let quietAtMs: Int?
+            /// Whether the wait is a resume rather than a plain start. `false` for every Session
+            /// Argo did not start, which is what keeps the plinth off a resume nobody performed.
+            public let resuming: Bool
+
+            public init(quietAtMs: Int? = nil, resuming: Bool = false) {
+                self.quietAtMs = quietAtMs
+                self.resuming = resuming
+            }
+        }
+
         /// When it ran, and the waits Argo timed inside that. Neither of the first two moments is a
         /// duration alone, and the span is all either is read for.
         public struct Span: Equatable, Sendable {
             public let startedAtMs: Int?
             public let lastSeenAtMs: Int?
-            /// When the wait for this Session's first byte ran out with its process still up
-            /// (#1245) — a moment of the same kind as the two above, and the third thing this
-            /// link's life is dated by. Absent for every Session Argo did not start and every one
-            /// that came up and printed something.
-            public let startedQuietlyAtMs: Int?
+            public let startup: Startup
             /// The waits Argo HELD on this link that have ended (#1323), oldest first — see
             /// `SessionWaitSettled`. Here beside the three moments because it is the same kind of
             /// fact: a stretch of this link's life that Argo timed itself, and one no CLI wrote a
@@ -57,12 +71,12 @@ public extension CockpitPresentation.Session {
             public init(
                 startedAtMs: Int? = nil,
                 lastSeenAtMs: Int? = nil,
-                startedQuietlyAtMs: Int? = nil,
+                startup: Startup = .init(),
                 settledWaits: [SessionWaitSettled] = [],
             ) {
                 self.startedAtMs = startedAtMs
                 self.lastSeenAtMs = lastSeenAtMs
-                self.startedQuietlyAtMs = startedQuietlyAtMs
+                self.startup = startup
                 self.settledWaits = settledWaits
             }
         }
@@ -80,6 +94,9 @@ public extension CockpitPresentation.Session {
         /// the process rather than of the record, which is why it is here beside the moment above:
         /// no CLI wrote a word about any of them. Empty for every Session Argo did not start.
         public let settledWaits: [SessionWaitSettled]
+        /// Whether this link is continuing a chain rather than opening one (#1328) — beside the
+        /// moments above for the same reason: a property of the process, not of the record.
+        public let resuming: Bool
 
         public init(
             program: Program = .init(),
@@ -95,8 +112,9 @@ public extension CockpitPresentation.Session {
             self.lastSeenAtMs = span.lastSeenAtMs
             self.handedOffTo = handedOffTo
             self.companionChannel = companionChannel
-            self.startedQuietlyAtMs = span.startedQuietlyAtMs
+            self.startedQuietlyAtMs = span.startup.quietAtMs
             self.settledWaits = span.settledWaits
+            self.resuming = span.startup.resuming
         }
     }
 
