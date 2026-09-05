@@ -35,9 +35,16 @@ struct AtlasIndexRestingSpecimen: View {
 
 /// A row selected and the map marked from it: the ticket's claim that the two agree, in the one
 /// frame where both are visible at once.
+///
+/// The file opened is one the question FINDS, which is the whole point: a file open while the list
+/// is narrowed past it would show a marked map beside a list with nothing selected in it, which is
+/// the state this frame exists to rule out.
 struct AtlasIndexSelectedSpecimen: View {
     var body: some View {
-        AtlasIndexSpecimen(typed: "atlas swift", opened: AtlasReadingSpecimen.opened)
+        AtlasIndexSpecimen(
+            typed: "atlas swift",
+            opened: "argo/apps/macOS/Packages/ArgoAtlas/Sources/AtlasView/AtlasView.swift",
+        )
     }
 }
 
