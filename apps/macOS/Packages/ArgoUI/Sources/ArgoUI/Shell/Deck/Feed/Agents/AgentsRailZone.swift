@@ -32,10 +32,8 @@ struct AgentsRailZone: View {
     /// by more than an order, and a reader cannot see a chip go stale between two of them.
     ///
     /// Not a second, which is what the chip's own clock ticks at (`AgentMeter`). That clock
-    /// re-reads
-    /// one number in one text; this rebuilds the column, and a rebuild a second is the per-pass
-    /// cost
-    /// the deck spent three tickets getting rid of.
+    /// re-reads one number inside one text; this rebuilds the column, and a column rebuilt every
+    /// second is the per-pass cost the deck spent three tickets getting rid of.
     private static let beatSeconds: TimeInterval = 30
 
     /// A FIXED origin, not `.now`. The beat has to survive this view being rebuilt — a seam drag, a
