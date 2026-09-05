@@ -66,8 +66,10 @@ public extension HubSession {
         // `idle` and never `ended`: the process is up, its prompt is free, and the reader is about
         // to type at it. What this takes away is the `running` a lost report left standing (#1267),
         // and nothing more.
-        // The gesture is asked about FIRST because the walk behind the hold is linear in the
-        // record: a Session nobody has ended a delegation on never pays for it.
+        // The gesture is asked about FIRST: a Session nobody has ended a delegation on takes no
+        // walk on THIS road. It still pays for one on the projection's, which reads the hold for
+        // every row on every publish — the same order as the roster's own delegation walk, and
+        // about a thirtieth of what building the rows would cost (#1394).
         if !endedDelegations.isEmpty, delegationHold.isEnded {
             return SessionStatusReading(tier: .direct, status: .idle)
         }

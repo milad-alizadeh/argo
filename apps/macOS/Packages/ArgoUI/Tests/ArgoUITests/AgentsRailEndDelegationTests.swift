@@ -27,11 +27,31 @@ struct AgentsRailEndDelegationTests {
         #expect(Self.control().end(Self.chip(activity: .unknown)) != nil)
     }
 
-    /// A call the record has answered is already over, so there is nothing left to stop waiting
-    /// for.
+    /// The chip `DelegationCeiling` quieted at four hours — the very state a lost report ends in,
+    /// with the dot off and the Session still reading `running`. Offering nothing here would take
+    /// the way out away from exactly the reader who needs it.
+    @Test
+    func `a chip the ceiling already quieted still offers it`() {
+        #expect(Self.control().end(Self.chip(activity: .finished)) != nil)
+    }
+
+    /// A call the record ANSWERED is already over, and it is excluded by carrying no call id at all
+    /// — the report landing is what clears `openDelegationID`.
     @Test
     func `a delegation the record answered offers nothing`() {
-        #expect(Self.control().end(Self.chip(activity: .finished)) == nil)
+        #expect(Self.control().end(Self.chip(activity: .finished, callID: nil)) == nil)
+    }
+
+    /// Ending it twice changes nothing, so the second offer is not made.
+    @Test
+    func `a delegation the reader already ended offers nothing`() {
+        let control = AgentsRailControl(
+            scope: .constant(.session),
+            isCollapsed: .constant(false),
+            readings: FeedAgentReader(events: [:], ended: [Self.call]),
+        )
+
+        #expect(control.end(Self.chip(activity: .running)) == nil)
     }
 
     /// A SYNCHRONOUS delegation is the parent blocked inside a tool call, and ending one would take

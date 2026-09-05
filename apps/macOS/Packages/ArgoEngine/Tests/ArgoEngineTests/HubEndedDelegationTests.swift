@@ -82,6 +82,35 @@ struct HubEndedDelegationTests {
         #expect(fixture.hub.session(id: session)?.status == .running)
     }
 
+    /// The regression the review caught. A lost report writes no ENDING boundary, so the abandoned
+    /// call sits in the record for good — and once the reader has typed a fresh Turn and the CLI
+    /// has answered it, a hold that still counted that call would report `idle` at DIRECT over a
+    /// Session somebody is watching work.
+    @Test
+    func `a Turn typed after the ending is not quieted by the call that was ended`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let session = try await Self.delegating(in: fixture)
+        fixture.hub.endDelegation(callID: "call-1", for: session)
+        try #require(fixture.hub.session(id: session)?.status == .idle)
+
+        try await Self.carryingOn(in: fixture)
+
+        #expect(fixture.hub.session(id: session)?.status == .running)
+        #expect(fixture.hub.session(id: session)?.delegationHold.backgrounded.isEmpty == true)
+    }
+
+    /// The reader's next Turn, and the CLI at work on it with nothing handed over.
+    private static func carryingOn(in fixture: SpawnFixture) async throws {
+        let (observation, continuation) = hubLiveObservation(at: spawnedTranscriptURL)
+        await fixture.hub.startObserving(observation)
+        continuation.yield([
+            .prompt(text: "Never mind the review — carry on.", images: [], atMs: 2000),
+            .message(markdown: "Carrying on."),
+        ])
+        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.status == .running }
+    }
+
     /// One spawned Session with a delegation handed over and never reported on, published under the
     /// id its record names. Answers that id, which is what every act above is keyed by.
     private static func delegating(

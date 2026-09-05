@@ -110,7 +110,7 @@ extension SpecimenRegistry {
         // The same reading after the reader ended one of the two from the rail: that chip quiet,
         // the other still out, and the count line down to one.
         SpecimenEntry("unclosedDelegationEnded") {
-            UnclosedDelegationSpecimen(ended: [UnclosedDelegationSpecimen.call.spec])
+            UnclosedDelegationSpecimen(ended: [UnclosedDelegationSpecimen.calls.spec])
         },
         SpecimenEntry("agentsRailCollapsed") { AgentsRailSpecimen(subject: .collapsed) },
         // Collapsed AND scoped: the one state where the way back out of a Subagent could still go

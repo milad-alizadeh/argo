@@ -84,7 +84,7 @@ public struct FeedAgentReader: Equatable, Sendable {
         self.grewAtMs = { writing.contains($0) ? Date().epochMs : nil }
         self.stamp = nil
         self.liveness = session
-        self.hold = DelegationHold(backgrounded: [], isAlone: false, ended: ended)
+        self.hold = DelegationHold.stating(ended: ended)
     }
 
     private init() {
@@ -115,6 +115,13 @@ public struct FeedAgentReader: Equatable, Sendable {
     public static func == (first: FeedAgentReader, second: FeedAgentReader) -> Bool {
         first.identity == second.identity && first.stamp == second.stamp
             && first.liveness == second.liveness && first.hold == second.hold
+    }
+
+    /// Whether the reader has already ended this delegation (#1267), by the delegating call's own
+    /// id — what takes the act off a chip it has been used on. Off the hold this reader was stamped
+    /// with, so the rail's control and the rail's dots read one value rather than two.
+    func hasEnded(_ callID: String) -> Bool {
+        hold.isEnded(callID)
     }
 
     /// Whether Argo has read this Agent's file at all. Asked by the rail per chip, which is why it

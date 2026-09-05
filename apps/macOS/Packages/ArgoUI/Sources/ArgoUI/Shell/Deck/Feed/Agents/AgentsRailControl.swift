@@ -53,19 +53,20 @@ extension AgentsRailControl {
     /// (#1267).
     ///
     /// TWO facts, and each of them takes the act away from a chip that would be lying with it. The
-    /// chip has to be one the record still holds open — `running` here rather than `finished`,
-    /// because a call the record answered is already over. And it has to carry an
-    /// `openDelegationID`, which says both of the remaining things at once: the record NAMED the
-    /// call, and the host answered it with a launch receipt rather than leaving the parent blocked
-    /// inside a synchronous handover.
+    /// chip has to carry an `openDelegationID`, which says three things at once: the call was a
+    /// delegation, the record NAMED it, and the host answered it with a launch receipt rather than
+    /// leaving the parent blocked inside a synchronous handover. And it must not be one the reader
+    /// has already ended, since ending it a second time changes nothing.
     ///
-    /// `unknown` is deliberately offered too, and it is the state the reader is most often looking
-    /// at: an idle parent holding an open delegation is exactly the reading `DelegatingSession`
-    /// cannot settle (#1269), and leaving it out would refuse the act on the chip this ticket is
-    /// about.
+    /// The chip's DOT is deliberately not among them, and that is the correction the review of
+    /// #1267 made. `unknown` is the reading the reader is most often looking at — an idle parent
+    /// holding an open delegation, which `DelegatingSession` cannot settle (#1269). And `finished`
+    /// reaches the chips `DelegationCeiling` quieted at four hours, which is the very state a lost
+    /// report ends in: the dot is off and the Session still reads `running`, so a guard on the dot
+    /// would take the way out away from exactly the reader who needs it. What the record ANSWERED
+    /// is excluded above rather than here — a report landing clears `openDelegationID`.
     @MainActor func end(_ agent: FeedAgent) -> (() -> Void)? {
-        guard agent.activity != .finished,
-              let callID = agent.openDelegationID else { return nil }
+        guard let callID = agent.openDelegationID, !readings.hasEnded(callID) else { return nil }
         return { endDelegation(callID) }
     }
 

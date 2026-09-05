@@ -72,14 +72,44 @@ public struct DelegationHold: Equatable, Sendable {
     /// with no stream to read takes.
     public static let none = DelegationHold(backgrounded: [], isAlone: false)
 
+    /// A hold that states only what the reader ENDED — for a fixture whose chips are handed over
+    /// already made, and which therefore has no stream to read a hold off (`FeedAgentReader`).
+    ///
+    /// It answers `isEnded(_:)` and nothing else, deliberately: what is holding a Turn open is a
+    /// reading of a Session's own record, and a fixture that stated one here would be claiming
+    /// something about a Session it does not have.
+    public static func stating(ended: Set<String>) -> DelegationHold {
+        DelegationHold(backgrounded: [], isAlone: false, ended: ended)
+    }
+
+    /// Whether one answered call is a BACKGROUNDED delegation — handed off, with its report still
+    /// to come (#908). The one place that rule is written.
+    ///
+    /// Public because the cockpit asks it too: `FeedCallReading` reads the same receipt to decide
+    /// whether the rail's chip carries a call id the reader can End, and the same fact stated in
+    /// two packages is a fact that drifts the day the receipt's shape changes.
+    public static func isBackgrounded(_ call: ToolCall, answeredBy outcome: ToolCallOutcome?)
+        -> Bool {
+        call.kind == .delegate && outcome?.status == .inProgress
+    }
+
     /// What one stream leaves open, in a single forward pass.
     ///
     /// The LAST outcome under an id decides it, exactly as `FeedAgents` reads them: a backgrounded
     /// call is answered twice, and the receipt is only the first of the two.
     ///
-    /// A Turn boundary clears the slate. A call left unanswered by a Turn that has since ended is
-    /// not holding anything open — it is a call the CLI abandoned — and counting one would refuse
-    /// the reading for every Session that has ever been interrupted mid-tool.
+    /// Every Turn BOUNDARY clears the slate, and that is what confines the reading to the Turn
+    /// actually in flight. A call holds a Turn open only if it was emitted in that Turn: one left
+    /// unanswered by a Turn that has since ended is a call the CLI abandoned, and one from before
+    /// the reader's last prompt is holding nothing at all.
+    ///
+    /// The prompt is the boundary that matters most here, because a lost report means no ENDING
+    /// boundary is ever written: the abandoned call would otherwise sit in this set for the life of
+    /// the record, and every later Turn with no other call open would read as held by it — a
+    /// Session quieted at DIRECT while somebody was watching it work.
+    ///
+    /// `turnResumed` clears it for the same reason (#1299): a report waking the agent starts the
+    /// agent's OWN next Turn, and whatever was out when it arrived is not what holds that one.
     public static func read(
         _ events: [TranscriptEvent],
         ended: Set<String> = [],
@@ -96,7 +126,7 @@ public struct DelegationHold: Equatable, Sendable {
                 outcomes[call.id] = nil
             case let .toolCallOutcome(outcome):
                 outcomes[outcome.id] = outcome.status
-            case .turnEnded, .interrupted:
+            case .turnEnded, .interrupted, .prompt, .turnResumed:
                 open = [:]
                 order = []
                 outcomes = [:]
@@ -111,7 +141,8 @@ public struct DelegationHold: Equatable, Sendable {
             }
         }
         let backgrounded = unanswered.filter {
-            open[$0]?.kind == .delegate && outcomes[$0] == .inProgress
+            guard let call = open[$0] else { return false }
+            return call.kind == .delegate && outcomes[$0] == .inProgress
         }
         return DelegationHold(
             backgrounded: backgrounded,

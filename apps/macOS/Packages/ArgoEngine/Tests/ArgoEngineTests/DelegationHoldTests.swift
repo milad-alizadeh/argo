@@ -69,6 +69,42 @@ struct DelegationHoldTests {
         #expect(!hold.holdsTurn)
     }
 
+    /// The bug the review caught: a lost report means no ENDING boundary is ever written, so the
+    /// abandoned call would sit in the reading for the life of the record — and every later Turn
+    /// with no other call open would read as held by it. A Session the reader is watching work,
+    /// quieted at DIRECT.
+    @Test
+    func `a call from before the reader's last prompt holds the Turn it is not in`() {
+        let hold = DelegationHold.read([
+            call("a"),
+            answer("a", .inProgress),
+            .prompt(text: "Carry on without it.", images: [], atMs: nil),
+        ])
+
+        #expect(hold.backgrounded.isEmpty)
+        #expect(!hold.holdsTurn)
+        // And the gesture cannot reach it either, which is what keeps the ending from quieting a
+        // Session for the life of its record.
+        #expect(!DelegationHold.read([
+            call("a"),
+            answer("a", .inProgress),
+            .prompt(text: "Carry on without it.", images: [], atMs: nil),
+        ], ended: ["a"]).isEnded)
+    }
+
+    /// A report waking the agent starts the agent's own next Turn (#1299), and whatever was still
+    /// out when it arrived is not what holds that one.
+    @Test
+    func `a report waking the agent starts a Turn the earlier handovers do not hold`() {
+        let hold = DelegationHold.read([
+            call("a"), answer("a", .inProgress),
+            call("b"), answer("b", .inProgress),
+            .turnResumed(atMs: nil),
+        ])
+
+        #expect(!hold.holdsTurn)
+    }
+
     @Test
     func `a record with no delegation in it claims nothing about the parent`() {
         #expect(!DelegationHold.read([.message(markdown: "done")]).holdsTurn)

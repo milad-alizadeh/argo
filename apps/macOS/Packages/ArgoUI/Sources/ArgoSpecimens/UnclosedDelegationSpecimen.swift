@@ -44,7 +44,7 @@ struct UnclosedDelegationSpecimen: View {
     // MARK: - The record
 
     /// The two handovers, each answered by a launch receipt and by nothing else.
-    static let call = (spec: "review-spec", standards: "review-standards")
+    static let calls = (spec: "review-spec", standards: "review-standards")
 
     private static let handedOver: [TranscriptEvent] = [
         .prompt(
@@ -54,8 +54,8 @@ struct UnclosedDelegationSpecimen: View {
         ),
         .message(markdown: "Two agents out — one on the spec, one on the standards."),
     ]
-        + delegation(call.spec, brief: "Spec axis review", minutesAgo: 50)
-        + delegation(call.standards, brief: "Standards axis review", minutesAgo: 48)
+        + delegation(calls.spec, brief: "Spec axis review", minutesAgo: 50)
+        + delegation(calls.standards, brief: "Standards axis review", minutesAgo: 48)
 
     private static let rows = FeedProjection.rows(from: handedOver, working: true)
 
@@ -111,7 +111,7 @@ struct UnclosedDelegationSpecimen: View {
 }
 
 #Preview("Unclosed delegation — one ended from the rail") {
-    UnclosedDelegationSpecimen(ended: [UnclosedDelegationSpecimen.call.spec])
+    UnclosedDelegationSpecimen(ended: [UnclosedDelegationSpecimen.calls.spec])
         .frame(width: 1000, height: 700)
         .argoAppearance()
 }
