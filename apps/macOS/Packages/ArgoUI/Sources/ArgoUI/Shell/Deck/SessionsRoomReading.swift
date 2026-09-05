@@ -86,37 +86,7 @@ struct SessionsRoomReading {
         )
         self.stamp = stamp
         let body = SessionsRoomReadingCache.body(at: stamp) {
-            SessionsRoomReadingCache.Body(
-                feed: FeedProjection.rows(
-                    from: session?.events ?? [],
-                    working: FeedWorking.isWorking(stamp.status),
-                    startedQuietly: stamp.startedQuietly,
-                    settledWaits: stamp.settledWaits,
-                    handoffFailures: stamp.handoffFailures,
-                    handedOff: handedOff,
-                    expired: stamp.expired,
-                    asking: asking,
-                    reported: stamp.reported,
-                ),
-                // Off the engine's own facts, which are DIRECT and managed-only, and never off an
-                // empty reading: a Session observed from outside that has written nothing is a
-                // Session nobody here started, and a plinth over it would claim an act Argo did not
-                // perform. A running handoff outranks the startup wait — the two cannot overlap,
-                // since a Session running `/handoff` has long since printed its first byte — and
-                // `resuming` picks which of the two identical startup waits this is.
-                wait: stamp.handingOff
-                    ? .handingOff
-                    : (FeedWorking.isStarting(stamp.status)
-                        ? (stamp.resuming ? .resuming : .starting)
-                        : nil),
-                showing: PlanShowing(
-                    plan: PlanProjection.reading(from: session?.events ?? []),
-                    // The same reading the row's own `PlanBar` freezes on (#1345): a Session
-                    // that is not running is not progressing.
-                    isStill: !FeedWorking.isWorking(stamp.status),
-                ),
-                worked: .read(across: session?.events ?? []),
-            )
+            Self.body(of: session, at: stamp, asking: asking, handedOff: handedOff)
         }
         self.feed = body.feed
         self.wait = body.wait
@@ -137,6 +107,52 @@ struct SessionsRoomReading {
                 worked: body.worked,
             )
         }
+    }
+
+    /// The one stream walk a pass pays for, and the only part of a reading the cache remembers.
+    ///
+    /// Lifted out of the initializer above rather than left inline, because two lanes each added a
+    /// few lines to it and the pair went one line past SwiftLint's body cap while each was under
+    /// it alone (#1442). It reads better named in any case: what the cache holds is this, and the
+    /// initializer's job is the four facts around it that no stamp can remember.
+    @MainActor private static func body(
+        of session: CockpitPresentation.Session?,
+        at stamp: SessionsRoomReadingCache.Stamp,
+        asking: FeedAskProjection.Asking,
+        handedOff: FeedHandoff?,
+    )
+        -> SessionsRoomReadingCache.Body {
+        SessionsRoomReadingCache.Body(
+            feed: FeedProjection.rows(
+                from: session?.events ?? [],
+                working: FeedWorking.isWorking(stamp.status),
+                startedQuietly: stamp.startedQuietly,
+                settledWaits: stamp.settledWaits,
+                handoffFailures: stamp.handoffFailures,
+                handedOff: handedOff,
+                expired: stamp.expired,
+                asking: asking,
+                reported: stamp.reported,
+            ),
+            // Off the engine's own facts, which are DIRECT and managed-only, and never off an
+            // empty reading: a Session observed from outside that has written nothing is a
+            // Session nobody here started, and a plinth over it would claim an act Argo did not
+            // perform. A running handoff outranks the startup wait — the two cannot overlap,
+            // since a Session running `/handoff` has long since printed its first byte — and
+            // `resuming` picks which of the two identical startup waits this is.
+            wait: stamp.handingOff
+                ? .handingOff
+                : (FeedWorking.isStarting(stamp.status)
+                    ? (stamp.resuming ? .resuming : .starting)
+                    : nil),
+            showing: PlanShowing(
+                plan: PlanProjection.reading(from: session?.events ?? []),
+                // The same reading the row's own `PlanBar` freezes on (#1345): a Session
+                // that is not running is not progressing.
+                isStill: !FeedWorking.isWorking(stamp.status),
+            ),
+            worked: .read(across: session?.events ?? []),
+        )
     }
 }
 
