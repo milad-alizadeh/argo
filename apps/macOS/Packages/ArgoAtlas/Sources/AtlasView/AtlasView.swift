@@ -35,6 +35,11 @@ public struct AtlasView: View {
     /// is a rate `Animatable` has no reason to also own.
     private let orientation: AtlasOrientation
 
+    /// The file under the pointer, read off the id target the frame was drawn into (#1153). State
+    /// rather than a parameter: it is a fact about a picture only this view has drawn, and a
+    /// caller cannot hold what it has not seen.
+    @State private var hovered: String?
+
     public init(plan: AtlasPlan, relief: Double, orientation: AtlasOrientation = .opening) {
         self.plan = plan
         self.relief = relief
@@ -62,7 +67,23 @@ public struct AtlasView: View {
                     plan: plan,
                     camera: camera,
                     pigments: AtlasPigments(argo.color.atlas, rim: argo.color.edge.hairline),
+                    resolve: { hovered = $0 },
                 )
+            }
+            .overlay(alignment: .top) {
+                // Top centre, because both top corners of the stage are already spoken for. It
+                // speaks only when there is a file to name: a strip standing empty over the map
+                // would be a second thing to read that says nothing.
+                //
+                // The design's own rule is narrower — the bar speaks only where the box could not
+                // carry its own name — and nothing here has to test for that, because no box on
+                // this map carries one. `AtlasPlateNames` names FOLDERS, and only flat; a file is
+                // never captioned where it stands, so the bar is the only answer there is.
+                if let hovered {
+                    AtlasHoverName(path: hovered)
+                        .frame(maxWidth: AtlasHoverName.width(over: plan.extent.width))
+                        .padding(.top, ArgoSpacing.base)
+                }
             }
             .overlay {
                 // The names are laid out in PLAN coordinates, which is the map seen straight down.

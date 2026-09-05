@@ -23,6 +23,16 @@ struct AtlasVolume {
     /// already names between `heights` and `pigment` — a scalar put after `pigment` instead would
     /// leave Metal rounding the struct up somewhere Swift's `MemoryLayout` does not follow it.
     var shade: Float = 1
+    /// Which file this box is, as the id target writes it (#1153). 0 is NOTHING — a plate, a rim,
+    /// a shadow decal — and a file is its place in the roster the same call built, plus one, so
+    /// the pixel a reader points at either names a file or names none.
+    ///
+    /// It sits in the four bytes `shade` left of the eight both languages pad out before the
+    /// `float3`, so a whole channel of picking costs the instance buffer nothing.
+    /// `AtlasVolumeTests`
+    /// asserts that, because a field that outgrew the gap would silently push `pigment` and draw a
+    /// plausible wrong city.
+    var id: UInt32 = 0
     /// The pigment as it will be drawn. Whatever a face is painted in is already decided by the
     /// time it gets here.
     var pigment: SIMD3<Float>
@@ -37,6 +47,18 @@ struct AtlasVolume {
         self.heights = SIMD2<Float>(0, Float(roof))
         self.shade = Float(shade)
         self.pigment = pigment.simd
+    }
+
+    /// The same box, told which file it is (#1153).
+    ///
+    /// Chained rather than a fifth initialiser parameter, and it reads better for it: an id is not
+    /// a property of the SHAPE the way its rect, its roof and its paint are — every box carries one
+    /// and only a file's is anything but zero, so the boxes that are not files say nothing about it
+    /// at all.
+    func identified(as id: UInt32) -> AtlasVolume {
+        var volume = self
+        volume.id = id
+        return volume
     }
 }
 

@@ -12,13 +12,17 @@ struct AtlasSurface: NSViewRepresentable {
     let plan: AtlasPlan
     let camera: AtlasCamera
     let pigments: AtlasPigments
+    /// The file under the pointer, said as the pointer moves and said as `nil` the moment it is
+    /// over none (#1153). A closure rather than a binding, because the answer is read off a frame
+    /// the GPU has already drawn: it arrives on a mouse event, not on a view update.
+    var resolve: (String?) -> Void = { _ in }
 
-    func makeCoordinator() -> AtlasVolumeRenderer? {
-        AtlasVolumeRenderer(pixelFormat: .bgra8Unorm)
+    func makeCoordinator() -> AtlasPointer {
+        AtlasPointer(renderer: AtlasVolumeRenderer(pixelFormat: .bgra8Unorm))
     }
 
     func makeNSView(context: Context) -> MTKView {
-        let view = MTKView(frame: .zero, device: context.coordinator?.device)
+        let view = AtlasMapView(frame: .zero, device: context.coordinator.renderer?.device)
         view.colorPixelFormat = .bgra8Unorm
         // The city is ordered by a depth buffer rather than by a sort, so the view has to carry
         // one: without the attachment the pass has nothing to test against and every tower draws
@@ -30,7 +34,7 @@ struct AtlasSurface: NSViewRepresentable {
         // a pass it cannot draw into. Setting it makes `MTKView` allocate the multisample colour
         // and depth textures and resolve them into the drawable itself, which is the whole of the
         // work — nothing in the pass or the shader knows the difference.
-        view.sampleCount = context.coordinator?.sampleCount ?? 1
+        view.sampleCount = context.coordinator.renderer?.sampleCount ?? 1
         // The drawable is colour-matched to sRGB, which is the space `ArgoColor`'s components are
         // in. Left nil it would be UNMANAGED, and the window server would read the shader's numbers
         // in the display's own space — on a P3 Mac, which is every current one, a green file would
@@ -43,7 +47,9 @@ struct AtlasSurface: NSViewRepresentable {
         view.isPaused = true
         view.enableSetNeedsDisplay = true
         view.delegate = context.coordinator
-        apply(to: view, renderer: context.coordinator)
+        context.coordinator.attach(view)
+        view.moved = { [coordinator = context.coordinator] point in coordinator.moved(to: point) }
+        apply(to: view, coordinator: context.coordinator)
         return view
     }
 
@@ -52,21 +58,27 @@ struct AtlasSurface: NSViewRepresentable {
     /// plan in would keep drawing the old one through an appearance change — and through the very
     /// next caller that passes a second map.
     func updateNSView(_ view: MTKView, context: Context) {
-        apply(to: view, renderer: context.coordinator)
+        apply(to: view, coordinator: context.coordinator)
     }
 
-    private func apply(to view: MTKView, renderer: AtlasVolumeRenderer?) {
+    private func apply(to view: MTKView, coordinator: AtlasPointer) {
+        // The answer's owner is pushed alongside the map, for the reason the map is: a closure
+        // captured once would go on writing the state of a body two renders old.
+        coordinator.resolve = resolve
         // Framed into the plan's own extent rather than the drawable's size, because that is what
         // `AtlasView` frames the surface at — and it is the shape the flat camera has to be given
         // for its picture to be the treemap exactly.
         let fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
-        renderer?.show(
-            AtlasVolumes.volumes(of: plan, in: pigments),
+        coordinator.renderer?.show(
+            AtlasVolumes.city(of: plan, in: pigments),
             through: AtlasEye(camera, fit: fit),
         )
         view.clearColor = pigments.desktop.clearColor
         // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the
         // view's bounds are still zero, and invalidating an empty rect marks nothing dirty.
+        // The answer under the pointer changed with the map, but it cannot be re-read HERE: the
+        // line above only marks the view dirty, and the id target still holds the frame before.
+        // `AtlasPointer` re-reads once the redraw has actually happened.
         view.needsDisplay = true
     }
 }
