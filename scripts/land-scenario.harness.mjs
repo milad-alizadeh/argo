@@ -26,6 +26,10 @@ const GATE_STUB = `#!/bin/sh
 . "$(dirname "$0")/build-lock.sh"
 build_lock_acquire
 echo "lock root \${ARGO_BUILD_LOCK_ROOT:-unset} slots \${ARGO_BUILD_LOCK_SLOTS:-unset}" >> "$STUB_GATE_LOG"
+# The slot it actually took, or none. "Which root was I given" cannot see the other half of the
+# leak: a gate handed a live inherited marker returns from the acquire holding nothing at all,
+# and then builds outside the cap while every line above still reads correct.
+echo "held \${BUILD_LOCK_HELD:-none}" >> "$STUB_GATE_LOG"
 echo "gate ran" >> "$STUB_GATE_LOG"
 exit \${STUB_GATE_STATUS:-0}
 `
@@ -97,6 +101,8 @@ export function landScenario({ conflicting = false } = {}) {
   execFileSync('chmod', ['+x', path.join(bin, 'gh')])
 
   const gateLog = path.join(dir, 'gate.log')
+  const buildLockTmp = path.join(dir, 'tmp')
+  mkdirSync(buildLockTmp, { recursive: true })
   // spawnSync, not execFileSync: land.sh reports what it REFUSED to do on stderr, and those
   // lines are what most of the cases are asserting on.
   const run = (args, env = {}) => {
@@ -112,6 +118,11 @@ export function landScenario({ conflicting = false } = {}) {
         PATH: `${bin}:${process.env.PATH}`,
         STUB_GATE_LOG: gateLog,
         ARGO_LAND_LOCK_ROOT: path.join(dir, 'land-lock'),
+        // land.sh UNSETS the build lock root before the gate, deliberately, so the gate falls
+        // back to the machine's own — which on a developer's box is held by whatever lanes are
+        // building. TMPDIR is the only handle on that default, and without it these cases queue
+        // behind real work and time out having proved nothing.
+        TMPDIR: buildLockTmp,
         ...env,
       },
     })
@@ -139,6 +150,7 @@ export function landScenario({ conflicting = false } = {}) {
     // Occurrences of the marker, not lines: the stub writes the lock it was handed as well.
     gated: () => (read(gateLog).match(/gate ran/g) ?? []).length,
     lockLines: () => read(gateLog).match(/^lock root .*$/gm) ?? [],
+    heldLines: () => read(gateLog).match(/^held .*$/gm) ?? [],
     cleanup: () => rmSync(dir, { recursive: true, force: true }),
   }
 }

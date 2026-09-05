@@ -43,6 +43,14 @@ for (const dir of [path.join(appDir, 'scripts'), path.dirname(appBinary), stubDi
 for (const name of ['screenshot.sh', 'WindowID.swift']) {
   symlinkSync(path.join(REPO_ROOT, 'apps/macOS/scripts', name), path.join(appDir, 'scripts', name))
 }
+// The render takes a build slot before it builds (#1377), and reaches out of `apps/macOS` for the
+// lock. A `.` of a file this tree does not have fails the script before it launches anything, so
+// every case here would report a scoping bug that is really a missing fixture.
+mkdirSync(path.join(scratch, 'scripts'), { recursive: true })
+symlinkSync(
+  path.join(REPO_ROOT, 'scripts/build-lock.sh'),
+  path.join(scratch, 'scripts/build-lock.sh'),
+)
 // PROJECT_ROOT comes from `git rev-parse`, so the throwaway tree has to be a repository.
 spawnSync('git', ['init', '-q'], { cwd: scratch })
 
@@ -107,6 +115,9 @@ export function run(env = {}) {
       HOME: process.env.HOME,
       STUB_NO_WINDOW: '',
       STUB_CAPTURE_FAILS: '',
+      // The lock goes with the fixture. A suite queueing on the machine's own slots would wait
+      // behind a real build, and one that left a slot behind would throttle every lane on the box.
+      ARGO_BUILD_LOCK_ROOT: path.join(scratch, 'lock'),
       ...env,
     },
     // Longer than the slowest honest run (the 10s window poll), shorter than the stub app's life,

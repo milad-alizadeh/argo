@@ -21,6 +21,8 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
 # shellcheck source=scripts/swift-tool-guard.sh
 . "$APP_DIR/../../scripts/swift-tool-guard.sh"
+# shellcheck source=scripts/build-lock.sh
+. "$APP_DIR/../../scripts/build-lock.sh"
 
 if [ "$(uname -s)" != "Darwin" ]; then
   swift_unavailable "not macOS" "the harness measures AppKit and Core Text"
@@ -65,6 +67,13 @@ cd "$APP_DIR/Packages/ArgoUI"
 # for a debug build and not for a release one, so without it the release arm stops at
 # `module 'ArgoUI' was not compiled for testing` and the run ends having measured one arm.
 RELEASE='-c release -Xswiftc -DDEBUG -Xswiftc -enable-testing'
+
+# One of the machine's build slots (#1377), and held past the builds through the timed rounds
+# rather than released after them. This script asks for a quiet machine in its own usage note,
+# and a cap that let go the moment the compile finished would hand the next lane a core in the
+# middle of the measurement — the loudest neighbour a run can have, arriving by the one door
+# this repo can close.
+build_lock_acquire
 
 echo "record-figures: building both configurations"
 swift build --build-tests

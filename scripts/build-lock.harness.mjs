@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// The shared fixture for the two `build-lock.sh` suites, extracted when the second one was
-// written — `build-lock.test.mjs` holds the mutual exclusion itself, and
-// `build-lock-entrypoints.test.mjs` holds which callers take a slot and how a slot passes down a
-// process tree. Same split, and the same reason, as `swift-tooling.harness.mjs` (#998): one file
-// past the line ceiling is two files, never a raised ceiling.
+// The shared fixture for the three `build-lock.sh` suites, split by subject as each went past
+// the line ceiling: `build-lock.test.mjs` is the mutual exclusion itself,
+// `build-lock-entrypoints.test.mjs` is which callers take a slot, and
+// `build-lock-inheritance.test.mjs` is how one slot passes down a process tree. Same split, and
+// the same reason, as `swift-tooling.harness.mjs` (#998): one file past the ceiling is two
+// files, never a raised ceiling.
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'

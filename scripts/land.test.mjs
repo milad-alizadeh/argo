@@ -99,6 +99,14 @@ check('the gate does not wait for the landing lock its own parent holds', () => 
   for (const line of s.lockLines()) {
     assert.doesNotMatch(line, /land-lock/, `the gate inherited the landing lock: ${line}`)
   }
+  // And it queued for one at all. The root is only half the answer: a gate handed a live
+  // inherited marker returns holding NOTHING, so every line above reads correct while the
+  // landing's `quality:swift`, `xcodebuild` and four `swift test` builds run outside the cap
+  // entirely. That is the shape the marker names its root to close.
+  assert.ok(s.heldLines().length > 0, 'the gate logged no slot at all')
+  for (const line of s.heldLines()) {
+    assert.doesNotMatch(line, /^held none$/, 'the gate took no build slot, so it built uncapped')
+  }
 })
 
 check('only one landing runs at a time', () => {

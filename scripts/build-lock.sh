@@ -26,6 +26,12 @@
 # acquire would make one gate occupy two of the two slots, and two gates would each hold one
 # and then wait forever for the other's. The holder exports ARGO_BUILD_LOCK_HELD_BY; every
 # descendant reads it and runs inside the slot already paid for.
+#
+# That marker names the ROOT as well as the pid, and a descendant honours it only for the root
+# it came from. There is more than one pool: `land.sh` runs one landing at a time out of a lock
+# root of its own, and then runs the gate, which has to queue for a MACHINE build slot like any
+# lane. A marker trusted on presence alone would exempt that gate from the build cap entirely —
+# the landing would build uncapped while claiming to be serialised.
 
 BUILD_LOCK_ROOT=${ARGO_BUILD_LOCK_ROOT:-${TMPDIR:-/tmp}/argo-build-lock}
 BUILD_LOCK_SLOTS=${ARGO_BUILD_LOCK_SLOTS:-2}
@@ -58,14 +64,14 @@ build_lock_release() {
 # `trap` with no arguments prints the handler it currently holds, one line per signal, in a form
 # this reads back. The caller's handler runs AFTER the slot is freed and BEFORE the exit, so a
 # slow cleanup never keeps the next lane waiting.
-_bl_chain() {
-  _bl_sig=$1
-  _bl_exit=$2
-  _bl_old=$(trap | sed -n "s/^trap -- '\(.*\)' $_bl_sig\$/\1/p")
-  _bl_cmd='build_lock_release'
-  [ -n "$_bl_old" ] && _bl_cmd="$_bl_cmd; $_bl_old"
-  [ -n "$_bl_exit" ] && _bl_cmd="$_bl_cmd; exit $_bl_exit"
-  trap "$_bl_cmd" "$_bl_sig"
+_bl_install_release() {
+  _bl_signal=$1
+  _bl_exit_code=$2
+  _bl_existing=$(trap | sed -n "s/^trap -- '\(.*\)' $_bl_signal\$/\1/p")
+  _bl_handler='build_lock_release'
+  [ -n "$_bl_existing" ] && _bl_handler="$_bl_handler; $_bl_existing"
+  [ -n "$_bl_exit_code" ] && _bl_handler="$_bl_handler; exit $_bl_exit_code"
+  trap "$_bl_handler" "$_bl_signal"
 }
 
 # Take one of $BUILD_LOCK_SLOTS slots, waiting as long as it takes.
@@ -78,12 +84,22 @@ build_lock_acquire() {
   # is the `bun run build` that a gate holding a slot just started, and the machine is already
   # counting it.
   #
-  # The holder has to still be RUNNING for that to be true. `build_lock_release` can only unset
-  # the variable in its own shell, so a child spawned before the release keeps the exported
-  # value for ever — and would then build uncapped, permanently, with nothing to notice. The
-  # pid is in the marker, so proving it is one signal.
-  if [ -n "${ARGO_BUILD_LOCK_HELD_BY:-}" ] && kill -0 "$ARGO_BUILD_LOCK_HELD_BY" 2>/dev/null; then
-    return 0
+  # Two things have to hold. The marker's root must be THIS root, or a holder of some other
+  # pool's slot would walk straight through this one. And its holder must still be RUNNING:
+  # `build_lock_release` can only unset the variable in its own shell, so a child spawned
+  # before the release keeps the exported value for ever, and would then build uncapped,
+  # permanently, with nothing to notice.
+  #
+  # Split on the LAST space, so a lock root with a space in it still parses.
+  if [ -n "${ARGO_BUILD_LOCK_HELD_BY:-}" ]; then
+    _bl_marked_root=${ARGO_BUILD_LOCK_HELD_BY% *}
+    _bl_marked_pid=${ARGO_BUILD_LOCK_HELD_BY##* }
+    if [ "$_bl_marked_root" = "$BUILD_LOCK_ROOT" ] && kill -0 "$_bl_marked_pid" 2>/dev/null; then
+      # Nothing was waited for, and the caller reports this number: left at the previous
+      # acquire's figure it would bill one wait once per package that inherited the slot.
+      BUILD_LOCK_WAITED=0
+      return 0
+    fi
   fi
 
   if ! mkdir -p "$BUILD_LOCK_ROOT" 2>/dev/null; then
@@ -104,11 +120,11 @@ build_lock_acquire() {
         echo $$ > "$_bl_slot/pid"
         BUILD_LOCK_HELD="$_bl_slot"
         BUILD_LOCK_WAITED=$_bl_waited
-        ARGO_BUILD_LOCK_HELD_BY=$$
+        ARGO_BUILD_LOCK_HELD_BY="$BUILD_LOCK_ROOT $$"
         export ARGO_BUILD_LOCK_HELD_BY
-        _bl_chain EXIT ''
-        _bl_chain INT 130
-        _bl_chain TERM 143
+        _bl_install_release EXIT ''
+        _bl_install_release INT 130
+        _bl_install_release TERM 143
         return 0
       fi
 

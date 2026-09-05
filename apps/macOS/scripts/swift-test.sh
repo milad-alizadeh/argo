@@ -223,12 +223,9 @@ for package in $PACKAGES; do
 
   # One of the machine's build slots (#1377), inside the loop and after the cached check so a
   # tree whose every package already passed never queues for a slot it would not use.
+  # The wait it reports below belongs to the package that actually paid it: the acquire returns
+  # at once for every package after the first, and zeroes its own figure when it does.
   build_lock_acquire
-  # The wait belongs to the package that actually paid it. The acquire returns at once for every
-  # package after the first, so carrying the figure into their rows would report one wait four
-  # times and read as a cap four times as expensive as it is.
-  package_waited=$BUILD_LOCK_WAITED
-  BUILD_LOCK_WAITED=0
 
   echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
   package_started=$(metric_now)
@@ -253,5 +250,5 @@ for package in $PACKAGES; do
   verdict "$package"
   step_record "$package_key" "swift-test:$package:$CONFIGURATION" apps/macOS
   metric_append step "swift-test:$package:$CONFIGURATION" run \
-    "$(($(metric_now) - package_started))" "$package_waited"
+    "$(($(metric_now) - package_started))" "$BUILD_LOCK_WAITED"
 done
