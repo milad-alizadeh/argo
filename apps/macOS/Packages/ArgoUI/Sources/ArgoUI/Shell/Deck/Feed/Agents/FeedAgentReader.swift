@@ -213,6 +213,10 @@ public struct FeedAgentReader: Equatable, Sendable {
     ///
     /// `nowMs` is read here rather than threaded: this is the one place the deck asks, and both
     /// datings below want the same moment.
+    ///
+    /// `read` is the child's events as the engine already holds them, never `rows(of:)`: the ending
+    /// is the last few of them, and projecting a whole transcript to look at its tail is the cost
+    /// `hasReading(of:)` exists to avoid.
     @MainActor private func told(_ agents: [FeedAgent]) -> [FeedAgent] {
         let nowMs = Date().epochMs
         let measured = measures(of: agents)
@@ -220,6 +224,7 @@ public struct FeedAgentReader: Equatable, Sendable {
             agents,
             by: SubagentEvidence(
                 writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+                ending: { SubagentEnding.read(read($0)) },
                 measure: { measured[$0] ?? .unmeasured },
             ),
             ended: hold,

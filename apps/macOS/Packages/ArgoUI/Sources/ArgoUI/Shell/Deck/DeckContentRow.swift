@@ -94,7 +94,12 @@ struct DeckContentRow: View {
 
             HStack(spacing: ArgoSpacing.flush) {
                 if zoning.showsRail {
-                    AgentsRail(agents: zoning.agents, control: rail)
+                    // The list is handed in as the READING and not as the value the pass already
+                    // took: the chips' dots expire on a clock nothing else in the deck watches, so
+                    // the column re-takes it on a beat of its own (`AgentsRailZone`, #1392).
+                    // `zoning` still reads the value above, because whether there IS a rail is a
+                    // fact about delegations and carries no clock.
+                    AgentsRailZone(dating: { self.agents }, control: rail)
                         .frame(width: zoning.railWidth)
                     railEdge(zoning)
                 }

@@ -126,6 +126,17 @@ struct FeedAgentsHonestyTests {
 
     private static let readings = FeedAgentReader(events: [read: [.message(markdown: said)]])
 
+    /// The same Subagent left MID-TOOL, for the claims that go through `listing` below.
+    ///
+    /// Those are about what the delegating SESSION's status decides, so the child's own record has
+    /// to be one that decides nothing: a record ending in prose is the child saying it stopped, and
+    /// that outranks the parent (`SubagentEnding`, #1392) — every chip would read finished before
+    /// the status under test was reached. The reader above keeps the prose, because the scope
+    /// claims need a line to find.
+    private static let working = FeedAgentReader(
+        events: [read: [.toolCall(FeedFixture.call("dig", tool: "Bash", kind: .execute))]],
+    )
+
     /// One backgrounded delegation, its receipt filed and no report behind it — the shape of all 73
     /// chips in the Session this ticket was written from.
     private static let launched: [TranscriptEvent] = [
@@ -152,7 +163,7 @@ struct FeedAgentsHonestyTests {
             ),
             sessionID: "one",
         )
-        return readings.stamped(reading.stamp).agents(in: reading.feed)
+        return working.stamped(reading.stamp).agents(in: reading.feed)
     }
 
     private static func session(
