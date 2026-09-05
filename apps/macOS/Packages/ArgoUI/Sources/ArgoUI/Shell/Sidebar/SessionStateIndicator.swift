@@ -17,11 +17,6 @@ struct SessionStateIndicator: View {
     /// gutter rather than washing the first letter of a name.
     private static let glowSpread: CGFloat = 1.7
 
-    /// The share of the rung's glow the breath never goes below. The light rises and falls; it does
-    /// not switch. A halo that reached zero would read as a blink, which says a Turn started and
-    /// stopped rather than one that is running.
-    private static let restingGlow: Double = 0.4
-
     let state: ArgoOperationalState?
     /// When the Turn this dot is reporting began, where Argo owns that stamp. It is what the loop
     /// ages the breath off; `nil` leaves it ageing from the row's own first frame, which is all a
@@ -62,8 +57,9 @@ struct SessionStateIndicator: View {
                     .modifier(BreathingGlow(
                         phase: phase ?? 0,
                         peak: aged.glow,
-                        resting: Self.restingGlow,
-                        isStill: phase == nil,
+                        // A halo is light around the dot, and the dot keeps its own ink whatever
+                        // the breath does — so a still parks at the breath's own floor.
+                        parked: phase == nil ? BreathingGlow.resting : nil,
                     ))
             }
             // The loop ages the breath off this. Without it a window opened onto a Turn six
@@ -82,42 +78,6 @@ struct SessionStateIndicator: View {
             .fill(state.tint(in: argo.color))
             .frame(width: size, height: size)
             .blur(radius: ArgoElevation.bloom.blur)
-    }
-}
-
-/// One breath of the halo, as a function of the loop's phase.
-///
-/// `Animatable` is the whole point. SwiftUI interpolates a modifier's `animatableData` and rebuilds
-/// its body at each step, so the curve below is evaluated ALONG the pass. An opacity computed in a
-/// view body would instead be interpolated between its two end values, and a curve that starts and
-/// ends in the same place would not animate at all.
-private struct BreathingGlow: ViewModifier, Animatable {
-    var phase: Double
-    /// The rung's own glow, which is the strength at the top of the breath.
-    let peak: Double
-    /// The share of `peak` the bottom of the breath holds.
-    let resting: Double
-    /// Whether movement is off, in which case the halo parks at the bottom of the breath.
-    let isStill: Bool
-
-    /// `nonisolated` because `ViewModifier` is main-actor isolated and `Animatable` is not:
-    /// SwiftUI interpolates this off the main actor, and the conformance does not compile without
-    /// saying so.
-    nonisolated var animatableData: Double {
-        get { phase }
-        set { phase = newValue }
-    }
-
-    func body(content: Content) -> some View {
-        content.opacity(peak * (isStill ? resting : strength))
-    }
-
-    /// A cosine rise and fall over the pass: `resting` at both ends, full in the middle. Equal ends
-    /// are what makes the loop's re-entry invisible — the phase snaps back to 0 between passes, and
-    /// a curve that did not close would snap the light with it.
-    private var strength: Double {
-        let rise = (1 - cos(2 * .pi * phase)) / 2
-        return resting + (1 - resting) * rise
     }
 }
 

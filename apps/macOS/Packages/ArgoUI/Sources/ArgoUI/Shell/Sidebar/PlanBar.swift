@@ -40,14 +40,44 @@ package struct PlanBar: View {
     package var body: some View {
         HStack(spacing: ArgoSpacing.hair) {
             ForEach(plan.steps) { step in
-                Capsule()
-                    .fill(ink(for: step.status))
-                    .frame(width: segmentWidth, height: Self.height)
+                segment(reading: PlanBarFill.reading(status: step.status, isStill: isStill))
             }
         }
         // The counter beside the pill already says this in words; a second reading here would
         // be the same fact twice.
         .accessibilityHidden(true)
+    }
+
+    /// One step. The step in progress BREATHES, on the row's own pass and the state dot's own
+    /// curve, so the two live marks on a running row rise and fall together (#1403 — the second
+    /// exception to `cockpit-roster-row.md` rule 8). Every other step is still: a bar where more
+    /// than the live step moved would be the pulsing list rule 8 forbids.
+    ///
+    /// Only `.doing` is ever handed the breath, and a Session that is not running has no `.doing`
+    /// step (`PlanBarFill`) — so "is this bar moving" and "is this Session live" are one answer and
+    /// cannot come apart.
+    ///
+    /// It peaks at full strength, where the dot's halo peaks at the rung's own glow: the halo is
+    /// LIGHT and dims as the wait ages, while a segment is ink the design fixed at
+    /// `interaction.accentBright` because it is the one step anybody can act on, and ink that
+    /// cooled would say a long Turn had stopped being the live step. The age still reaches the
+    /// breath through the pass's PERIOD, so an old Turn breathes slower here exactly as on the dot.
+    @ViewBuilder private func segment(reading: PlanBarFill) -> some View {
+        let capsule = Capsule()
+            .fill(ink(for: reading))
+            .frame(width: segmentWidth, height: Self.height)
+        if reading == .doing {
+            FeedIonLoop { phase, _ in
+                capsule.modifier(
+                    // A still parks at FULL, not at the breath's floor: the segment is the mark
+                    // itself, and one dimmed to the floor would draw under the completed steps
+                    // beside it — saying the step nobody can act on is the brighter one.
+                    BreathingGlow(phase: phase ?? 0, peak: 1, parked: phase == nil ? 1 : nil),
+                )
+            }
+        } else {
+            capsule
+        }
     }
 
     /// Derived from the count, floored so a long plan never draws a hairline: `(64 − hair ×
@@ -58,8 +88,8 @@ package struct PlanBar: View {
         return max(2, (Self.totalWidth - gaps) / CGFloat(count))
     }
 
-    private func ink(for status: PlanEntryStatus) -> ArgoColor {
-        switch PlanBarFill.reading(status: status, isStill: isStill) {
+    private func ink(for reading: PlanBarFill) -> ArgoColor {
+        switch reading {
         case .done: isStill ? argo.color.progress.still : argo.color.interaction.accent
         case .doing: argo.color.interaction.accentBright
         case .pending: argo.color.edge.subtle

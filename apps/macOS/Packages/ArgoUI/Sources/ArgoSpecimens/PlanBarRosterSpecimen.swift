@@ -7,6 +7,10 @@ import SwiftUI
 /// mid-flight, one complete, one frozen where an idle Session stopped, and a row with none at
 /// all.
 struct PlanBarRosterSpecimen: View {
+    /// Movement off, so the half a still cannot otherwise carry is renderable: the step in
+    /// progress parks at the breath's own floor rather than moving (#1403).
+    var isStill = false
+
     static var rows: [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(from: sessions)
     }
@@ -78,11 +82,20 @@ struct PlanBarRosterSpecimen: View {
         }
         .listStyle(.sidebar)
         .frame(width: ArgoLayout.sidebarIdealWidth)
+        .environment(\.argoStillsMotion, isStill)
     }
 }
 
 #Preview("PlanBar — mid-flight, complete, frozen, and none") {
     PlanBarRosterSpecimen()
+        .frame(height: 340)
+        .argoAppearance()
+}
+
+// The half a still cannot carry: with movement off the step in progress has to sit at the breath's
+// floor, where the same still with movement on catches it anywhere along the curve.
+#Preview("PlanBar — with movement off") {
+    PlanBarRosterSpecimen(isStill: true)
         .frame(height: 340)
         .argoAppearance()
 }
