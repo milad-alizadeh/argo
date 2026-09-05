@@ -8,6 +8,14 @@ enum AtlasPath {
         String(path.split(separator: "/").last ?? "")
     }
 
+    /// What holds the node at a path — everything in front of the last component, and nothing at
+    /// all for a root that has none. The other half of `name(of:)`, and here for the same reason:
+    /// a list sets the two differently, and a second split spelled at the call site is a second
+    /// answer about a file called `a/b/`.
+    static func folder(of path: String) -> String {
+        path.split(separator: "/").dropLast().joined(separator: "/")
+    }
+
     /// A directory component conventionally reserved for tests, in any of the languages the map
     /// has no parser for. Matched whole, not as a substring — a plate named `latest` must not
     /// read as one named `test`.

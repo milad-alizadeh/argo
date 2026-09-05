@@ -47,11 +47,11 @@ public struct AtlasLegendKey: View {
     /// the hot top. A Measure the repository carries no value for names no number — an em dash
     /// rather than a zero, because zero is a measurement and this is the absence of one.
     private var quiet: String {
-        legend.greatestQuiet.map { "≤ " + $0.formatted(.measured) } ?? "—"
+        legend.greatestQuiet.map { "≤ " + $0.formatted(.measured) } ?? AtlasUnmeasured.compact
     }
 
     private var hot: String {
-        legend.leastHot.map { "> " + $0.formatted(.measured) } ?? "—"
+        legend.leastHot.map { "> " + $0.formatted(.measured) } ?? AtlasUnmeasured.compact
     }
 
     /// What share of the repository each end stands for, READ OFF THE CUTS rather than written

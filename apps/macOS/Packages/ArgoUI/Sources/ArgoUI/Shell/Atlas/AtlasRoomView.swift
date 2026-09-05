@@ -33,13 +33,20 @@ struct AtlasRoomView: View {
     /// reopened room opens on the whole shape.
     @State private var openFile: String?
 
-    /// `opened` is the file the room STARTS with open, and nothing in the app ever passes one: a
-    /// reading is opened by a click, and a click is the one gesture no screenshot can drive. It is
-    /// what lets the specimen harness render this state at all — the design's own `?state=inspect`,
-    /// in the one shape SwiftUI has for seeding state a view then owns.
-    init(isActive: Bool = true, opened: String? = nil) {
+    /// What the reader has typed into the rail's find field (#1155). This column's own for
+    /// `openFile`'s reason, and not persisted for the same one: a question is a way of looking at
+    /// the map rather than a fact about it, and a reopened room opens on the whole repository.
+    @State private var query = ""
+
+    /// `opened` is the file the room STARTS with open, and `typed` the question it starts with
+    /// asked. Nothing in the app ever passes either: a reading is opened by a click and a question
+    /// is asked at a keyboard, and neither is a gesture a screenshot can drive. They are what let
+    /// the specimen harness render those states at all — the design's own `?state=inspect` and
+    /// `?state=search`, in the one shape SwiftUI has for seeding state a view then owns.
+    init(isActive: Bool = true, opened: String? = nil, typed: String = "") {
         self.isActive = isActive
         _openFile = State(initialValue: opened)
+        _query = State(initialValue: typed)
     }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
@@ -74,7 +81,10 @@ struct AtlasRoomView: View {
         // Nothing survives a change of Project. A map is scoped to the window's Project
         // (ADR-0015), and a reading left standing would be one repository's file read beside
         // another repository's map.
-        .onChange(of: room.project?.id) { openFile = nil }
+        .onChange(of: room.project?.id) {
+            openFile = nil
+            query = ""
+        }
     }
 
     /// The stage: the map, and the camera floating over its top-right corner. Nothing else — what
@@ -84,20 +94,50 @@ struct AtlasRoomView: View {
         // The Map as the reader's filters leave it — the same call the sidebar makes, so the
         // tiling and every number said about it cannot disagree about what was measured.
         let drawn = room.choice.drawn(map)
+        // The list is read off the SAME Map the picture is tiled from, by the same filters, and
+        // ONCE — both columns are handed this one answer, so the two can never disagree about
+        // what is in the repository.
+        let entries = drawn.index(matching: query, by: room.choice.channels)
         // The stage keeps the room it had: the rail takes its width off the end rather than
         // shrinking the map to nothing, and the map is what the reader clicked on.
         return HStack(spacing: ArgoSpacing.flush) {
-            stage(drawn)
-            if let openFile, let reading = AtlasFileReading(
-                of: openFile, in: drawn, by: room.choice.channels,
-            ) {
-                AtlasRoomRail(reading: reading)
-            }
+            stage(drawn, among: entries)
+            AtlasRoomRail(
+                query: $query,
+                entries: entries,
+                open: openFile,
+                reading: openFile.flatMap {
+                    AtlasFileReading(of: $0, in: drawn, by: room.choice.channels)
+                },
+                select: { openFile = $0 },
+            )
         }
     }
 
-    private func stage(_ drawn: AtlasMap) -> some View {
-        ground(drawn)
+    /// What a pick on the map means (#1153, #1154, #1155).
+    ///
+    /// Picking the open file again closes it, and so does picking the ground — the design's own
+    /// three ways out, of which Escape is the third. What is open is open because the reader
+    /// opened it, so the same gesture puts it away.
+    ///
+    /// **A pick the question excludes puts the question away.** The list has to select the row of
+    /// the file the map just marked, and it cannot select a row it is not drawing — so the
+    /// narrower of the two facts gives. Clearing the reader's words is the visible answer; leaving
+    /// them is a marked map beside a list denying the file exists, which is the one state the
+    /// ticket rules out.
+    private func pick(_ picked: String?, among entries: [AtlasIndexEntry]) {
+        guard picked != openFile else {
+            openFile = nil
+            return
+        }
+        openFile = picked
+        if let picked, !entries.contains(where: { $0.path == picked }) {
+            query = ""
+        }
+    }
+
+    private func stage(_ drawn: AtlasMap, among entries: [AtlasIndexEntry]) -> some View {
+        ground(drawn, among: entries)
             .overlay(alignment: .topTrailing) {
                 // The design's own `#orbit`, floating over the stage rather than docked in a bar,
                 // and inset from the corner by what the design insets it by.
@@ -114,7 +154,7 @@ struct AtlasRoomView: View {
     /// The room ships at the FLAT end of the camera: the plates carry their names there, and a
     /// name is laid out in plan coordinates — turned, every caption would sit over a building it
     /// does not name, which is why the city draws with none.
-    private func ground(_ map: AtlasMap) -> some View {
+    private func ground(_ map: AtlasMap, among entries: [AtlasIndexEntry]) -> some View {
         GeometryReader { proxy in
             AtlasView(
                 plan: AtlasPlan(
@@ -127,10 +167,7 @@ struct AtlasRoomView: View {
                 ),
                 relief: room.choice.isCity.isOn ? 1 : 0,
                 orientation: orientation,
-                // Clicking the open file again closes it, and so does clicking the ground — the
-                // design's own three ways out, of which Escape is the third. What is open is open
-                // because the reader opened it, so the same gesture puts it away.
-                focus: AtlasFocus(open: openFile) { openFile = $0 == openFile ? nil : $0 },
+                focus: AtlasFocus(open: openFile) { pick($0, among: entries) },
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
