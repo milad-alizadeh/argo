@@ -38,7 +38,7 @@ package struct SessionNavigator: View {
 
     /// The list, and the two things scrolled from outside it: a Session landing at the roster's
     /// head brings a list that is already at the top back to the top (#1235), and a selection made
-    /// on another surface brings its own row into view (#1273).
+    /// on another surface brings its own row into view — `RosterReveal` (#1273).
     package var body: some View {
         ScrollViewReader { roster in
             list
@@ -48,16 +48,7 @@ package struct SessionNavigator: View {
                     ) else { return }
                     roster.scrollTo(top, anchor: .top)
                 }
-                // No anchor, deliberately: with none, the list scrolls the LEAST it can to put the
-                // row on screen, which is what leaves a row already visible exactly where it is —
-                // and a click in the roster is a selection change over a row the reader is looking
-                // at, so this rule costs their own picks no movement at all.
-                .onChange(of: selection) { _, chosen in
-                    guard let reveal = SessionRosterProjection.rowToReveal(
-                        for: chosen, among: drawnRows,
-                    ) else { return }
-                    roster.scrollTo(reveal)
-                }
+                .modifier(RosterReveal(selection: selection, drawn: drawnRows, roster: roster))
         }
     }
 
