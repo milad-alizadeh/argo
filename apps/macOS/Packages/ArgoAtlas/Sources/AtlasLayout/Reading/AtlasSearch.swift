@@ -30,15 +30,3 @@ public struct AtlasSearch: Sendable {
         return terms.allSatisfy(lowered.contains)
     }
 }
-
-public extension AtlasMap {
-    /// The paths of the files this query finds, in the order the Map holds them (#1155).
-    ///
-    /// The Map's own order rather than a sorted or scored one: the rule has no ranking in it, so
-    /// there is nothing to rank by, and the order a reader sees twice for one query is the order
-    /// the measurement was written in.
-    func files(matching query: String) -> [String] {
-        let search = AtlasSearch(query)
-        return plots.map(\.path).filter(search.matches)
-    }
-}

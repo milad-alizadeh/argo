@@ -38,7 +38,11 @@ public struct AtlasIndex: View {
                 .padding(.horizontal, ArgoSpacing.loose)
                 .padding(.top, ArgoSpacing.comfortable)
             head
+            // The list's own box, which both the rows and the sentence that stands in for them
+            // are inset from — the design's `#rows`. Each of them then takes its own inset inside
+            // it, so an empty list starts exactly where a row's name would have.
             rows
+                .padding(.horizontal, ArgoSpacing.base)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .accessibilityElement(children: .contain)
@@ -57,38 +61,78 @@ public struct AtlasIndex: View {
             .padding(.bottom, ArgoSpacing.snug)
     }
 
+    /// The reader's question, read once for the two lines that are worded by whether one was
+    /// asked at all. One value rather than two constructions: the rule lives in `AtlasSearch`, and
+    /// the count and the empty sentence must never disagree about whether anything was typed.
+    private var search: AtlasSearch {
+        AtlasSearch(query)
+    }
+
     /// `found` where a question was asked and not where one was not: a reader who has typed
     /// nothing has found nothing, they are looking at the whole repository.
     private var count: String {
         let files = "\(entries.count) file\(entries.count == 1 ? "" : "s")"
-        return AtlasSearch(query).isAsking ? "\(files) found" : files
+        return search.isAsking ? "\(files) found" : files
     }
 
     @ViewBuilder private var rows: some View {
         if entries.isEmpty {
-            // Said rather than shown: an empty box is a list that might still be loading, and this
-            // is a question that has already been answered.
-            Text("Nothing here matches all of those words.")
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, ArgoSpacing.comfortable)
-                .padding(.vertical, ArgoSpacing.base)
+            // Said rather than shown: an empty box is a list that might still be loading, and both
+            // of these are answers already given. WHICH answer depends on whether the reader
+            // asked anything — telling someone their words matched nothing when they typed none is
+            // the same list saying two different things about itself.
+            Text(
+                search.isAsking
+                    ? "Nothing here matches all of those words."
+                    : "The map is drawing no files.",
+            )
+            .argoText(ArgoTypography.body)
+            // The label above it, not louder: a sentence saying a list is empty must not be the
+            // brightest thing in the column.
+            .foregroundStyle(argo.color.text.tertiary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Flush with the row names above, which take the same inset from inside the same
+            // region — a sentence that stands in for the rows must start where they start.
+            .padding(.horizontal, ArgoSpacing.base)
+            .padding(.vertical, ArgoSpacing.base)
         } else {
-            ScrollView(.vertical) {
-                LazyVStack(spacing: ArgoSpacing.flush) {
-                    ForEach(entries, id: \.path) { entry in
-                        AtlasFileRow(
-                            entry: entry,
-                            isOpen: entry.path == open,
-                            select: { select(entry.path) },
-                        )
+            // **A marked row nobody can see is not a selected row.** The map is picked with a
+            // pointer and this list holds every file in the repository, so a box clicked near the
+            // middle of the map marks a row hundreds down. The ticket's "picking a file on the map
+            // selects its row in the list" is a claim about what the reader can SEE, and a ground
+            // painted off screen answers half of it.
+            //
+            // Driven by a CHANGE of what is open, never by a value the list reads back: where the
+            // reader has scrolled to by hand is theirs, and a position bound to the open file
+            // would take the scroller off them for as long as one is open.
+            ScrollViewReader { rows in
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: ArgoSpacing.flush) {
+                        ForEach(entries, id: \.path) { entry in
+                            AtlasFileRow(
+                                entry: entry,
+                                isOpen: entry.path == open,
+                                select: { select(entry.path) },
+                            )
+                            .id(entry.path)
+                        }
                     }
+                    .padding(.bottom, ArgoSpacing.comfortable)
                 }
-                .padding(.horizontal, ArgoSpacing.base)
-                .padding(.bottom, ArgoSpacing.comfortable)
+                .onChange(of: open) { reveal(open, in: rows) }
+                // The list is rebuilt when the question changes, and a row scrolled to before the
+                // rebuild is a row at another offset after it.
+                .onChange(of: entries.count) { reveal(open, in: rows) }
             }
         }
+    }
+
+    /// Scrolls the open row into the middle of the list, or does nothing where there is no open
+    /// row to scroll to — which is both "nothing is open" and "the question has narrowed the list
+    /// past what is".
+    private func reveal(_ path: String?, in rows: ScrollViewProxy) {
+        guard let path, entries.contains(where: { $0.path == path }) else { return }
+        rows.scrollTo(path, anchor: .center)
     }
 }
 

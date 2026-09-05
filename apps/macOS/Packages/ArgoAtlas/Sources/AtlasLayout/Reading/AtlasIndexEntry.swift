@@ -25,23 +25,3 @@ public struct AtlasIndexEntry: Equatable, Sendable {
         self.value = value
     }
 }
-
-public extension AtlasMap {
-    /// The index of this Map, as the reader's question leaves it (#1155).
-    ///
-    /// One walk over the Plots: the question decides which stand, and the band channel decides
-    /// what each one is worth. Both here rather than in the view, so the list and the map are read
-    /// off one Map by one rule and cannot come to disagree about what is in the repository.
-    func index(matching query: String, by channels: AtlasChannels) -> [AtlasIndexEntry] {
-        let search = AtlasSearch(query)
-        return plots.filter { search.matches($0.path) }.map { plot in
-            let components = plot.path.split(separator: "/")
-            return AtlasIndexEntry(
-                path: plot.path,
-                name: String(components.last ?? ""),
-                folder: components.dropLast().joined(separator: "/"),
-                value: plot.measures[channels.band],
-            )
-        }
-    }
-}

@@ -36,7 +36,11 @@ struct AtlasFileRow: View {
         .background(ground, in: RoundedRectangle(cornerRadius: ArgoRadius.control))
         .onHover { isHovered = $0 }
         .help(entry.path)
-        .accessibilityLabel(entry.path)
+        // The whole row, figure included: the path alone is what a sighted reader sees minus the
+        // one number the row is also carrying.
+        .accessibilityLabel(
+            "\(entry.path), \(entry.value.map { $0.formatted(.measured) } ?? AtlasUnmeasured.alone)",
+        )
         .accessibilityAddTraits(isOpen ? [.isSelected] : [])
     }
 
@@ -53,7 +57,9 @@ struct AtlasFileRow: View {
     }
 
     private var path: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+        // Flush: the two lines are ONE address broken over two clips, not a title and a subtitle,
+        // and a gap between them reads as the second belonging to something else.
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             Text(entry.name)
                 .argoText(ArgoTypography.machine)
                 .foregroundStyle(argo.color.text.primary)
