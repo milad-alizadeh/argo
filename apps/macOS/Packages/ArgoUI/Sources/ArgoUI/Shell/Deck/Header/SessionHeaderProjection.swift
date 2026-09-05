@@ -209,16 +209,24 @@ package enum SessionHeaderProjection {
     /// that has already taken it at a known stamp (`SessionsRoomReadingCache`) and read here
     /// otherwise. It is the only header fact a remembered reading may carry: everything else moves
     /// with no event appended.
+    ///
+    /// `title` is the roster's own decision for this Session
+    /// (`SessionTitle.namedTitle(for:across:)`) where the caller holds the whole roster, and `nil`
+    /// where it does not — a fixture or a test drawing this one Session alone, which
+    /// `SessionTitle.resolved(for:)` then decides exactly as it would if this Session were the
+    /// whole roster (#1391).
     package static func header(
         from session: CockpitPresentation.Session,
+        title: String? = nil,
         worked: Worked? = nil,
     )
         -> Header {
         let worked = worked ?? .read(across: session.events)
         return Header(
             identity: Header.Identity(
-                // The same chain the roster row reads, through the same function (#502, story 19).
-                title: SessionTitle.resolved(for: session),
+                // The same chain the roster row reads, across the same roster
+                // (#502 story 19, #1391).
+                title: title ?? SessionTitle.resolved(for: session),
                 agent: agent(cli: session.cli),
                 issue: row(for: session.ticket),
                 checkout: checkout(for: session.workspace, at: session.workspaceLocation),

@@ -58,6 +58,37 @@ struct SessionsRoomReadingTests {
         #expect(reading.showing.plan == nil)
     }
 
+    /// #1391: the header used to resolve its Session's title against itself alone, so a Session
+    /// that had given its linked Ticket's words up to a rival row (#1072) kept them on the header
+    /// anyway. The row and the header now read the SAME decision.
+    @Test
+    func `the header reads the title its own row draws, not the ticket a rival row keeps`() throws {
+        let issue = CockpitPresentation.Session.Issue(
+            number: 1333,
+            title: "The room can file a ticket and start it, but never close it",
+        )
+        let presentation = CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: [
+                RosterSessionFixture.session(
+                    id: "one", title: "/implement 1333", ticket: .linked(issue),
+                ),
+                RosterSessionFixture.session(
+                    id: "two", title: "/implement 1333 again", ticket: .linked(issue),
+                ),
+            ],
+            connection: .idle,
+        )
+
+        let row = try #require(SessionRosterProjection.rows(from: presentation.sessions)
+            .first { $0.id == "one" })
+        let reading = SessionsRoomReading(presentation: presentation, sessionID: "one")
+
+        #expect(reading.header?.title == row.title)
+        #expect(reading.header?.title == "/implement 1333")
+    }
+
     /// The gate `CockpitView.body` evaluates on every pass, in every room: only the room that
     /// DRAWS a transcript pays for the projection behind one (#858).
     @Test(arguments: [(CockpitRoom.sessions, true), (.tickets, false), (.code, false)])

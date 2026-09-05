@@ -177,9 +177,13 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
     of its Sessions would draw the same ticket, each row falls back to its conversation-derived
     name and the ticket rides the secondary line. The chain is not reordered — it is held to the
     case it is true in: one worktree's caption loop drew fourteen rows reading
-    `#650 — Rough atlas…` alike, the ticket being the least distinguishing fact on the row. The
-    header, which draws one Session beside its own Issue row, still reads the chain whole, so rail
-    and header match on every row the ticket does distinguish.
+    `#650 — Rough atlas…` alike, the ticket being the least distinguishing fact on the row.
+  - **Amended by [#1391](https://github.com/milad-alizadeh/argo/issues/1391) — 2026-09-05:** #1072
+    let the header keep the ticket's words on a row that had just given them up to its rivals,
+    reasoning the header's own Issue row already said which ticket it was — but that is a second
+    name for the same Session, which is the one thing this rule exists to rule out. The header now
+    reads #1072's own decision for this Session rather than taking one in isolation, so rail and
+    header always match, on every row.
 - **Meta line order: `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`** — the natural
   triage sweep. When the session is titled from its ticket the intent chip collapses to `#<n> ↗`
   so the link never echoes the title.
