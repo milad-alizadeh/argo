@@ -30,11 +30,11 @@ struct SessionTitleSpellingTests {
             issue: .init(number: 1291, title: "The roster row — a pulse and a second line"),
         )
 
-        // Both dashes: the one `IssueReading` joins with, and the one the provider's own title
-        // carried.
+        // The provider's own em dash, and no number joined in front of it: the title is the
+        // Ticket's sentence alone (#1347).
         #expect(
             SessionTitle.resolved(for: session)
-                == "#1291: The roster row: a pulse and a second line",
+                == "The roster row: a pulse and a second line",
         )
     }
 

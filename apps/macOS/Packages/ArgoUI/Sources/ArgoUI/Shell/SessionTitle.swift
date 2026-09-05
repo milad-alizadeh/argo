@@ -48,13 +48,14 @@ enum SessionTitle {
         zip(sessions, namings(across: sessions)).first { $0.0.id == id }?.1.title
     }
 
-    /// The linked Ticket as a title, in the house form (#745).
+    /// The linked Ticket's own sentence, and nothing else (#1347): the number that used to ride
+    /// beside it here now draws on line 3, beside the pull request (#1346) — a title carrying both
+    /// read as one run against two tickets the moment a pull request landed on the same row.
     ///
     /// `nil` for a link the provider has not named, and not `#741` alone: a bare number carries no
     /// more than the `/implement 741` it would be replacing, and it costs the reader the words.
     private static func ticket(for session: CockpitPresentation.Session) -> String? {
-        guard let issue = session.ticket.link, let title = issue.title else { return nil }
-        return IssueReading.words(number: issue.number, title: title)
+        session.ticket.link?.title
     }
 
     /// How many rows draw each Ticket's words as their title. A row that draws something else is

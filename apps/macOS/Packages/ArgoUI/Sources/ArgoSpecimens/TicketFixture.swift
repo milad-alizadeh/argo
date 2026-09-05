@@ -5,9 +5,9 @@ import ArgoUI
 /// on another, and one on no ticket at all.
 ///
 /// Three on one is the case worth a render: the ticket names none of them apart, so each keeps its
-/// own derived title and `#741` rides the secondary line — except on the row whose title already
-/// carries the number. One of the three opened on prose, which is the shape #1072 was reported
-/// against. Whether three rows still read as three is what a reviewer's eye is for.
+/// own derived title and `#741` rides line 3's own address instead (#1347), never the secondary
+/// line. One of the three opened on prose, which is the shape #1072 was reported against. Whether
+/// three rows still read as three is what a reviewer's eye is for.
 enum TicketFixture {
     /// Projected through `SessionRosterProjection` exactly as the shell projects it, so a PNG is
     /// evidence about the row the app draws.

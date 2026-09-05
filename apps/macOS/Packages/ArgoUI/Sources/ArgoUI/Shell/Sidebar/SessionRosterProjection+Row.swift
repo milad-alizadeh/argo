@@ -28,11 +28,11 @@ extension SessionRosterProjection {
         /// Read only through `secondaryFact` on the row itself: the line has one arrangement now,
         /// so which of the two facts fills the slot no longer changes where anything sits (#1291).
         let activity: String?
-        /// The one fact on that second line that tells this Session from the rows beside it:
-        /// the slash command it opened with where the Ticket holds the title
-        /// (#745), and the Ticket itself where the title fell back to the Session's own derived
-        /// name (#1072). Never both — the slot says whatever the title is not saying, and a row
-        /// with nothing left to add draws nothing.
+        /// The one fact on that second line that tells this Session from the rows beside it: the
+        /// slash command it opened with, where the Ticket holds the title (#745). A linked Ticket
+        /// used to fill this slot instead wherever the title fell back to a derived name (#1072);
+        /// it now has its own address on line 3 regardless of the title (`ticketNumber`,
+        /// `DeliveryAddresses`), so the slot has nothing left to add there (#1347).
         let toldApart: String?
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
@@ -129,6 +129,10 @@ extension SessionRosterProjection {
 
         /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
         /// fact, which the row spends on ink a screen reader has no way to hear.
+        ///
+        /// The Ticket is spoken here even though line 3 draws it rather than the meta slot
+        /// (#1347): `DeliveryAddresses` is its own ink, and a screen reader that never visited
+        /// this row's meta slot would otherwise never hear the number at all.
         var announcement: String {
             [
                 title,
@@ -136,6 +140,7 @@ extension SessionRosterProjection {
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
                 secondaryFact,
+                ticketNumber.map { "on \(IssueReading.mark($0))" },
                 spokenWorktree.map { "in \($0)" },
                 spokenClock,
             ]

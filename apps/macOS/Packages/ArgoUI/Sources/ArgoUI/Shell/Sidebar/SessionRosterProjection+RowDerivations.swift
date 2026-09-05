@@ -6,18 +6,16 @@ import ArgoEngine
 extension SessionRosterProjection {
     /// The first fact the title is not already saying, in the row's one leading meta slot.
     ///
-    /// The Ticket, where the title fell back to the derived name or the user renamed the row — it
-    /// is then the fact the row is missing (#1072). The slash command otherwise, which is where
-    /// the ticket freeing the title put it (#745). Nothing at all for a row whose title already
-    /// carries both, like `/implement 741`, because saying either twice is the waste #745 named.
+    /// The slash command, where the Ticket holds the title (#745) — the words it opened with are
+    /// then the fact the title has no room for. Nothing where the title is the Session's own
+    /// derived name: that title already IS the words this slot would otherwise repeat, so saying
+    /// either twice is the waste #745 named. The Ticket used to fill that second case, but it now
+    /// has an address of its own on line 3 beside the pull request (#1346), so re-saying it here
+    /// is the same waste one line down (#1347).
     static func toldApart(
         for session: CockpitPresentation.Session, naming: SessionTitle.Naming,
     )
         -> String? {
-        if let number = session.ticket.link?.number,
-           !IssueReading.names(number: number, in: naming.title) {
-            return IssueReading.words(number: number, title: nil)
-        }
         guard !naming.drawsDerivedTitle else { return nil }
         return SessionRunKind.command(inDerivedTitle: session.title)
     }
