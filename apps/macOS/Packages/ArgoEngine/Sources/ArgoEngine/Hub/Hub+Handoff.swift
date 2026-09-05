@@ -36,6 +36,26 @@ extension Hub: HandoffHost {
         )
     }
 
+    /// Filed against the CLAIM, exactly as a submitted or a lost Turn is (#1048, #682): the row is
+    /// re-keyed to its CLI's own id the moment its first record lands, and a fact filed under the
+    /// id it had before would be lost at the re-key. A Session with no claim is one Argo cannot
+    /// type at, so there is no handoff of ours to report either way.
+    public func handoffStarted(sessionID: String) {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        claims.publish(handingOff: true, for: claim)
+    }
+
+    public func handoffEnded(sessionID: String, tookMs: Int, failure: String?) {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        claims.publish(handingOff: false, for: claim)
+        if let failure {
+            claims.recordHandoffFailure(
+                SessionWaitSettled(wait: .handingOff, tookMs: tookMs, failure: failure),
+                for: claim,
+            )
+        }
+    }
+
     /// The address `HandoffScript` explains, made concrete: Argo's own per-machine data, beside the
     /// Project registry.
     public static let handoffRoot = ProjectRegistryStore.defaultFileURL

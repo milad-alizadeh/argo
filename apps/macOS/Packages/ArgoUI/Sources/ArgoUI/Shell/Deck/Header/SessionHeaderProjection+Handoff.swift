@@ -12,12 +12,21 @@ import ArgoEngine
 /// Session that took it; a second press would fork the branch rather than chain it.
 package extension SessionHeaderProjection {
     struct Handoff: Equatable, Sendable {
-        /// The verb, and the whole of the control's ink — **no caption** (story 46).
-        let label: String
-        /// What the control reads while the handoff is running. `/handoff` is a whole turn of an
-        /// agent's work, so the press is answered in minutes rather than instantly, and each press
-        /// starts another handoff.
-        let runningLabel: String
+        /// The control's two words, grouped so `Handoff`'s own synthesized init stays inside the
+        /// house's parameter cap (#755, #1327) — the resting verb and the one it reads while
+        /// running are one reading: the control's own ink, with **no caption** (story 46).
+        struct Words: Equatable, Sendable {
+            let label: String
+            /// What the control reads while the handoff is running. `/handoff` is a whole turn of
+            /// an agent's work, so the press is answered in minutes rather than instantly.
+            let running: String
+        }
+
+        let words: Words
+        /// Whether Argo is running `/handoff` here right now (#1327) — off the same fact the
+        /// plinth stands on (`FeedWaitPlinth`), never a state of the control's own. Each press
+        /// starts another handoff, so this is what disables the button the moment one begins.
+        let isRunning: Bool
         /// Which reading the button is standing beside, so its urgency is the same fact as the
         /// reading's (story 45). Never `.okay` and never absent.
         let tier: Context.Tier
@@ -26,6 +35,14 @@ package extension SessionHeaderProjection {
         /// Why it cannot be launched, or `nil` when it can. Present means the control is drawn and
         /// DISABLED with this sentence on it.
         let blocked: String?
+
+        var label: String {
+            words.label
+        }
+
+        var runningLabel: String {
+            words.running
+        }
 
         var isLaunchable: Bool {
             blocked == nil
@@ -47,8 +64,8 @@ package extension SessionHeaderProjection {
               tier != .okay
         else { return nil }
         return Handoff(
-            label: HandoffWords.label,
-            runningLabel: HandoffWords.running,
+            words: Handoff.Words(label: HandoffWords.label, running: HandoffWords.running),
+            isRunning: session.handingOff,
             tier: tier,
             detail: HandoffWords.detail,
             // The refusal's wording is the ENGINE's, read off the failure the orchestration would

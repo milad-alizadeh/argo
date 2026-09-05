@@ -18,6 +18,17 @@ final class FakeHandoffHost: HandoffHost {
     /// Run on every pause, so a test can make the brief arrive on the second look rather than
     /// racing a real file system.
     var onPause: () -> Void = {}
+    /// Every `sessionID` a handoff began against, in the order it began.
+    private(set) var started: [String] = []
+    /// One handoff's ending, as `handoffEnded` reported it.
+    struct Ended: Equatable {
+        let sessionID: String
+        let tookMs: Int
+        let failure: String?
+    }
+
+    /// Every ending a handoff reported, in the order it reported it.
+    private(set) var ended: [Ended] = []
 
     func steer(sessionID: String, typing text: String) -> Bool {
         guard isSteerable else { return false }
@@ -39,6 +50,14 @@ final class FakeHandoffHost: HandoffHost {
 
     func handedOff(sessionID: String, to fresh: String) {
         chained.append((sessionID, fresh))
+    }
+
+    func handoffStarted(sessionID: String) {
+        started.append(sessionID)
+    }
+
+    func handoffEnded(sessionID: String, tookMs: Int, failure: String?) {
+        ended.append(Ended(sessionID: sessionID, tookMs: tookMs, failure: failure))
     }
 }
 

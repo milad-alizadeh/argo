@@ -7,17 +7,19 @@ import ArgoEngine
 package enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
-    /// `working`, `handedOff`, `expired`, the question `asking` is holding and the one `reported`
-    /// carries are the inputs that are not the record's — a Turn in progress (`FeedWorking`), a
-    /// handoff (`CONTEXT.md` L2), a Permission Argo's own gate refused (#573), a question it is
-    /// still holding (#1190), one the agent raised over the companion plugin (#1205), and a wait
-    /// Argo held that has ended (#1323). No CLI wrote a word about any of them, so they arrive
-    /// beside the stream rather than being looked for inside it.
+    /// `working`, `handedOff`, `handoffFailures`, `expired`, the question `asking` is holding and
+    /// the one `reported` carries are the inputs that are not the record's — a Turn in progress
+    /// (`FeedWorking`), a handoff and the ones that failed (`CONTEXT.md` L2, #1327), a Permission
+    /// Argo's own gate refused (#573), a question it is still holding (#1190), one the agent raised
+    /// over the companion plugin (#1205), and a wait Argo held that has ended (#1323). No CLI wrote
+    /// a word about any of them, so they arrive beside the stream rather than being looked for
+    /// inside it.
     package static func rows(
         from events: [TranscriptEvent],
         working: Bool = false,
         startedQuietly: Bool = false,
         settledWaits: [SessionWaitSettled] = [],
+        handoffFailures: [SessionWaitSettled] = [],
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
         asking: FeedAskProjection.Asking = .none,
@@ -43,7 +45,7 @@ package enum FeedProjection {
         // channels share no id, so the only thing that can tell one question from two is the words.
         let held = standing(asking, over: work)
         let foot = wentQuiet(startedQuietly) + inFlight(working, over: work) +
-            unanswered(expired) + chained(handedOff)
+            unanswered(expired) + handoffEndings(handoffFailures) + chained(handedOff)
         let contents = opening(settledWaits) + work + held +
             self.reported(reported, asking, over: work + held) + foot
         return contents.enumerated().map { position, content in
@@ -95,6 +97,13 @@ package enum FeedProjection {
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {
         handedOff.map { [.mark(.handedOff($0))] } ?? []
+    }
+
+    /// The handoffs Argo attempted here that did NOT land (#1327), at the foot beside the link a
+    /// landed one leaves — never at the head with `starting` and `resuming`: those two wait for a
+    /// process that has not written a record yet, and a handoff runs well after one has.
+    private static func handoffEndings(_ failures: [SessionWaitSettled]) -> [FeedRow.Content] {
+        failures.map { .settledWait($0) }
     }
 
     /// The calls the gate refused because nobody answered, at the foot of the work they

@@ -32,7 +32,7 @@ extension SessionHeaderFixture {
             status: status,
             chain: .init(
                 program: .init(cli: .claude, model: "claude-opus-5"),
-                handedOffTo: handedOffTo,
+                handoff: .init(handedOffTo: handedOffTo),
             ),
             work: .init(
                 location: "/Users/milad/Developer/argo/.claude/worktrees/tkt-510",

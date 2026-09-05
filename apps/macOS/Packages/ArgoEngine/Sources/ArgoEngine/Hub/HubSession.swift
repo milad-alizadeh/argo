@@ -53,6 +53,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Set by the Hub from its own record of the handoff, never read from a transcript: neither CLI
     /// knows anything happened.
     public internal(set) var handedOffTo: String?
+    /// Whether Argo is running `/handoff` here right now (#1327) — DIRECT, off Argo's own act. What
+    /// the header button and the plinth both read, so neither carries the fact on its own.
+    ///
+    /// Beside `handoffFailures`, the handoffs Argo attempted here that did NOT land, oldest first
+    /// — each drops a failed row into the reading. Empty for every Session that never tried one,
+    /// or whose only attempt landed: a landed handoff leaves nothing here, because `handedOffTo`
+    /// above is its record.
+    public internal(set) var handingOff = false, handoffFailures: [SessionWaitSettled] = []
     /// The Ticket this Session was STARTED on, by number (#872). DIRECT — Argo was told at the
     /// spawn — and absent for every Session started on no ticket, which is every external one and
     /// every plain New Session. The link read off a branch is the DERIVED reading beside it, and

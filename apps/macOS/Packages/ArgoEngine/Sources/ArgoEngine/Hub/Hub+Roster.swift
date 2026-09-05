@@ -146,6 +146,10 @@ extension Hub {
         // Read through the claim rather than as recorded: the fresh row is re-keyed to its CLI's
         // own id the moment its record appears, and the link has to follow it there.
         published.handedOffTo = handoff.edge(of: session.id).map(ownership.rowID(ofClaim:))
+        // DIRECT off the claim, exactly as the facts above are: a fresh `/handoff` filed against
+        // the row's OLD id would be lost at the re-key the same way a lost Turn would be.
+        published.handingOff = facts.handingOff
+        published.handoffFailures = facts.handoffFailures
         // A resuming spawn publishes no row of its own (`provisionalSessions`), so its wait for the
         // first byte off the fresh PTY has to reach THIS row directly instead — off the claim this
         // Session is bound to, which is the resume's own (#1328). Absent once the wait settles: the

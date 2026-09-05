@@ -86,6 +86,20 @@ final class ClaimLedger {
         }
     }
 
+    /// Argo has started, or ended, running `/handoff` at this claim (#1327). Published on both
+    /// edges: the plinth stands exactly as long as this reads `true`.
+    func publish(handingOff: Bool, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.handingOff = handingOff }
+    }
+
+    /// A handoff at this claim that did NOT land (#1327). Appended and never taken back, on the
+    /// same ground `setTicket` is: the attempt happened, however the Session goes on. Unlike
+    /// `settle`, nothing here is deduped by kind — a Session can be handed off from more than
+    /// once, and each failed attempt is its own row.
+    func recordHandoffFailure(_ failure: SessionWaitSettled, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.handoffFailures.append(failure) }
+    }
+
     func setMode(_ modeSet: SessionModeSet, for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.modeSet = modeSet }
     }

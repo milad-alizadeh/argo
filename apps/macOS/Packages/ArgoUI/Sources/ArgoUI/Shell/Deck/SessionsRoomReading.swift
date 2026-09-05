@@ -92,18 +92,23 @@ struct SessionsRoomReading {
                     working: FeedWorking.isWorking(stamp.status),
                     startedQuietly: stamp.startedQuietly,
                     settledWaits: stamp.settledWaits,
+                    handoffFailures: stamp.handoffFailures,
                     handedOff: handedOff,
                     expired: stamp.expired,
                     asking: asking,
                     reported: stamp.reported,
                 ),
-                // Off the engine's own `starting` reading, which is DIRECT and managed-only, and
-                // never off an empty reading: a Session observed from outside that has written
-                // nothing is a Session nobody here started, and a plinth over it would claim an act
-                // Argo did not perform. `resuming` picks which of the two identical waits this is.
-                wait: FeedWorking.isStarting(stamp.status)
-                    ? (stamp.resuming ? .resuming : .starting)
-                    : nil,
+                // Off the engine's own facts, which are DIRECT and managed-only, and never off an
+                // empty reading: a Session observed from outside that has written nothing is a
+                // Session nobody here started, and a plinth over it would claim an act Argo did not
+                // perform. A running handoff outranks the startup wait — the two cannot overlap,
+                // since a Session running `/handoff` has long since printed its first byte — and
+                // `resuming` picks which of the two identical startup waits this is.
+                wait: stamp.handingOff
+                    ? .handingOff
+                    : (FeedWorking.isStarting(stamp.status)
+                        ? (stamp.resuming ? .resuming : .starting)
+                        : nil),
                 showing: PlanShowing(
                     plan: PlanProjection.reading(from: session?.events ?? []),
                     // The same reading the row's own `PlanBar` freezes on (#1345): a Session

@@ -201,7 +201,11 @@ extension CockpitPresentation.Session.Chain {
                 startup: Startup(quietAtMs: session.startedQuietlyAtMs, resuming: session.resuming),
                 settledWaits: session.settledWaits,
             ),
-            handedOffTo: session.handedOffTo,
+            handoff: Handoff(
+                handedOffTo: session.handedOffTo,
+                handingOff: session.handingOff,
+                handoffFailures: session.handoffFailures,
+            ),
             companionChannel: session.companionChannel,
         )
     }
@@ -241,19 +245,6 @@ extension CockpitPresentation.Session.Workspace {
     }
 }
 
-extension CockpitPresentation.Session.Access {
-    /// Access is what provenance IS, rather than a policy applied to it: Argo owns no PTY for a
-    /// Session it did not spawn, and an orphaned one lost the PTY it had. One case each, so the
-    /// shell can say which of the two it is looking at.
-    init(provenance: SessionProvenance) {
-        self = switch provenance {
-        case .managed: .managed
-        case .external: .external
-        case .orphaned: .orphaned
-        }
-    }
-}
-
 /// What is running the chain, read off the Hub's own reading of it.
 ///
 /// Its own initializer rather than four arguments at the one call site: all four are read off the
@@ -276,9 +267,7 @@ extension CockpitPresentation.Session.Chain.Program {
 public extension FeedAgentReader {
     static func reading(_ hub: Hub) -> FeedAgentReader {
         FeedAgentReader(
-            asking: hub,
-            read: hub.subagentReading(of:),
-            grewAtMs: hub.subagentGrewAtMs(of:),
+            asking: hub, read: hub.subagentReading(of:), grewAtMs: hub.subagentGrewAtMs(of:),
         )
     }
 }

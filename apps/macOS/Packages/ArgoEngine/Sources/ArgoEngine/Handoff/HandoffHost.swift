@@ -16,6 +16,15 @@ public protocol HandoffHost: AnyObject {
     /// after the handoff has succeeded. Told to the host rather than returned to the caller, so the
     /// sequence that PRODUCED the edge is the sequence that records it.
     func handedOff(sessionID: String, to fresh: String)
+    /// The handoff has begun (#1327) — the moment the plinth over this Session starts standing.
+    /// Told to the host before any of the three acts above, so the fact is DIRECT for exactly as
+    /// long as Argo is actually running one.
+    func handoffStarted(sessionID: String)
+    /// The handoff has ended, however it went — the moment the plinth stands down. `failure` is
+    /// `nil` for one that landed, in Argo's own words for one that did not; a landed handoff drops
+    /// no row of its own here, because `handedOff(sessionID:to:)` already told the reading where
+    /// the work went.
+    func handoffEnded(sessionID: String, tookMs: Int, failure: String?)
 }
 
 /// How long Argo waits for a brief, and how often it looks. The limit is generous because

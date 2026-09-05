@@ -158,6 +158,40 @@ struct SessionHandoffTests {
         #expect(first.briefPath != second.briefPath)
     }
 
+    /// The host is told when the handoff begins and when it ends, around the whole of the other
+    /// three acts — what the plinth and the header button both stand on (#1327).
+    @Test
+    func `a landed handoff reports itself started and then ended with no failure`() async throws {
+        let fixture = HandoffFixture()
+        defer { fixture.remove() }
+        fixture.host.onPause = { fixture.writeBriefOnce() }
+
+        _ = try await fixture.handoff.run(fixture.request)
+
+        #expect(fixture.host.started == ["full-session"])
+        let ended = try #require(fixture.host.ended.first)
+        #expect(fixture.host.ended.count == 1)
+        #expect(ended.sessionID == "full-session")
+        #expect(ended.failure == nil)
+    }
+
+    /// A refusal still ends the handoff, and the words on the row it drops are the same ones the
+    /// alert would have said.
+    @Test
+    func `a refused handoff reports itself ended with the failure's own words`() async throws {
+        let fixture = HandoffFixture(patience: HandoffPatience(pollMs: 100, limitMs: 300))
+        defer { fixture.remove() }
+
+        await #expect(throws: SessionHandoff.Failure.self) {
+            try await fixture.handoff.run(fixture.request)
+        }
+
+        let ended = try #require(fixture.host.ended.first)
+        #expect(fixture.host.started == ["full-session"])
+        #expect(ended.sessionID == "full-session")
+        #expect(ended.failure == SessionHandoff.Failure.briefNeverArrived(afterMs: 300).detail)
+    }
+
     /// The path is Argo's own and is passed TO the command. A CLI picks its own Session id, so that
     /// id is cut to what a filename can hold rather than trusted into a path.
     @Test
