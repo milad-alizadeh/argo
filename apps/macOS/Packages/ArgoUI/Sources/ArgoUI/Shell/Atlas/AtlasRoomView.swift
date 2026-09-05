@@ -4,11 +4,12 @@ import AtlasView
 import Foundation
 import SwiftUI
 
-/// The Atlas room: the map of the active Project, and what was measured to draw it.
+/// The Atlas room: the map of the active Project, and the camera over it. Nothing else.
 ///
-/// The reading strip above the map is what makes a measurement checkable — how many files were
-/// found, which commit was measured, when, and which Measure is on each channel. A map with no
-/// numbers beside it is a picture nobody can falsify.
+/// What makes a measurement checkable — how many files were found, which commit was measured, and
+/// which Measure is on each channel — is the SIDEBAR's now (`AtlasSidebar`), which is where the
+/// design puts it and where the controls that decide those channels already are. A map with no
+/// numbers beside it is still a picture nobody can falsify; the numbers moved, they did not go.
 struct AtlasRoomView: View {
     @Environment(\.argo) private var argo
     /// Injected from above the deck rather than taken as a parameter — `argoAtlasRoom` says why.
@@ -22,11 +23,9 @@ struct AtlasRoomView: View {
     var isActive = true
 
     /// The turn and tilt the reader has driven the city to (#1152) — held here rather than in
-    /// `AtlasView`, which stays a pure function of what it is handed.
+    /// `AtlasView`, which stays a pure function of what it is handed. Genuinely this column's own,
+    /// unlike `isCity`: nothing in the sidebar turns the camera.
     @State private var orientation = AtlasOrientation.opening
-    /// Whether the map is showing the city or the treemap. The room ships flat (below), so this
-    /// starts `false` until the reader reaches for the toggle.
-    @State private var isCity = false
 
     init(isActive: Bool = true) {
         self.isActive = isActive
@@ -34,7 +33,9 @@ struct AtlasRoomView: View {
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
     private var room: AtlasRoom {
-        resolved ?? AtlasRoom(reading: .noProject, project: nil, rebuild: {})
+        resolved ?? AtlasRoom(
+            reading: .noProject, project: nil, currency: AtlasCurrency {}, choice: .inert,
+        )
     }
 
     var body: some View {
@@ -49,137 +50,53 @@ struct AtlasRoomView: View {
                 AtlasRoomVacancy(
                     reading: room.reading,
                     project: room.project?.name,
-                    rebuild: room.rebuild,
+                    rebuild: room.currency.rebuild,
                 )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// The stage: the map, and the camera floating over its top-right corner. Nothing else — what
+    /// was measured and what it is drawn by are the sidebar's sections now, and the design puts no
+    /// bar over the picture (`docs/designs/cockpit-atlas.html`, `#stage`).
     private func measured(_ map: AtlasMap) -> some View {
-        VStack(spacing: ArgoSpacing.flush) {
-            strip(map)
-            ground(map)
-        }
+        // The Map as the reader's filters leave it — the same call the sidebar makes, so the
+        // tiling and every number said about it cannot disagree about what was measured.
+        ground(room.choice.drawn(map))
+            .overlay(alignment: .topTrailing) {
+                // The design's own `#orbit`, floating over the stage rather than docked in a bar,
+                // and inset from the corner by what the design insets it by.
+                AtlasCameraControl(orientation: $orientation, isCity: room.choice.isCity.isOn)
+                    .padding(ArgoSpacing.comfortable)
+            }
     }
 
-    /// The map, tiled into the room's own ground. `AtlasView` frames itself at the plan's extent
-    /// and hangs its key under that, so the ground is what the tiling is sized by and the key
-    /// falls in the room's padding below it.
+    /// The map, tiled into the room's own ground.
     ///
     /// Tiled in the BODY rather than inside the view, because a plan is recomputed when the size
     /// moves and a body is not a frame (ADR-0028 rule 3).
     ///
     /// The room ships at the FLAT end of the camera: the plates carry their names there, and a
     /// name is laid out in plan coordinates — turned, every caption would sit over a building it
-    /// does not name, which is why the city draws with none. `AtlasCameraControl` is what moves
-    /// `relief` and `orientation` from here (#1152); the room only holds the state it drives.
+    /// does not name, which is why the city draws with none.
     private func ground(_ map: AtlasMap) -> some View {
         GeometryReader { proxy in
             AtlasView(
                 plan: AtlasPlan(
                     tiling: map,
-                    by: channels(of: map),
+                    by: room.choice.channels,
                     into: CGSize(
                         width: proxy.size.width - ArgoSpacing.loose * 2,
-                        height: proxy.size.height - Self.keyRoom,
+                        height: proxy.size.height - ArgoSpacing.loose * 2,
                     ),
                 ),
-                relief: isCity ? 1 : 0,
+                relief: room.choice.isCity.isOn ? 1 : 0,
                 orientation: orientation,
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .overlay(alignment: .topTrailing) {
-                AtlasCameraControl(orientation: $orientation, isCity: animatedIsCity)
-                    .padding(ArgoSpacing.base)
-            }
         }
-        .padding(.horizontal, ArgoSpacing.loose)
-        .padding(.bottom, ArgoSpacing.base)
-    }
-
-    /// What the key under the map costs the tiling. A measure beside the one surface that reads it
-    /// rather than a token (`rules/swift.md`): it is what `AtlasLegendKey` stands in, not a rhythm
-    /// step, and it comes off the ground so the two do not overrun the room between them.
-    private static let keyRoom: CGFloat = 76
-
-    /// The toggle's own write to `isCity`, wrapped so the flip carries an animation `AtlasView`
-    /// can tween `relief` through — plain assignment changes the value with nothing to interpolate
-    /// between the old picture and the new one. Nil under Reduce Motion, which is `resettle`'s own
-    /// answer to it (#1152's "reduced motion is honoured: the transition becomes instant").
-    private var animatedIsCity: Binding<Bool> {
-        Binding(
-            get: { isCity },
-            set: { newValue in
-                withAnimation(ArgoMotion.resettle.resolved(reduceMotion: reduceMotion)) {
-                    isCity = newValue
-                }
-            },
-        )
-    }
-
-    private func strip(_ map: AtlasMap) -> some View {
-        HStack(spacing: ArgoSpacing.comfortable) {
-            Text(room.project?.name ?? "Atlas")
-                .argoText(ArgoTypography.rowTitle)
-                .foregroundStyle(argo.color.text.primary)
-            Text(reading(of: map))
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
-                .lineLimit(1)
-            Spacer(minLength: ArgoSpacing.base)
-            AtlasRebuildButton(title: "Generate again", rebuild: room.rebuild)
-        }
-        .padding(.horizontal, ArgoSpacing.loose)
-        .padding(.vertical, ArgoSpacing.base)
-    }
-
-    /// Everything a reader needs to say whether the map is current: how much was found, what it was
-    /// measured against, which Measure each channel is spending, and how far the repository has
-    /// moved since (#1162) — silent where that last clause has nothing to say, because a map that
-    /// is current earns no mention of a gap that does not exist.
-    ///
-    /// One clause per fact, in the order a reader asks them. The channels collapse to one clause
-    /// while the same Measure drives both, which is what the opening reading does — "sized and
-    /// coloured by lines" says in four words what naming the channels twice says in eight.
-    private func reading(of map: AtlasMap) -> String {
-        let commit = map.commit.map { String($0.prefix(7)) } ?? "no commits yet"
-        let measure = channels(of: map)
-        let channels = measure.footprint == measure.band
-            ? "sized and coloured by \(measure.footprint)"
-            : "sized by \(measure.footprint), coloured by \(measure.band)"
-        return "\(map.plots.count) files · \(commit) · \(channels)\(staleness)"
-    }
-
-    /// " · N commits behind", or nothing where the room has no Map to be behind anything, or
-    /// nothing to say about its age, or the age is zero. A map this stale is still drawn — it is a
-    /// reading of a real commit, not an error — but the reader is told it is no longer the one the
-    /// working tree is on (#1162).
-    private var staleness: String {
-        guard let behind = room.behind, behind > 0 else { return "" }
-        return " · \(behind) commit\(behind == 1 ? "" : "s") behind"
-    }
-
-    /// The opening reading, before anything can be chosen. #1161 gives the reader the choice.
-    ///
-    /// A PREFERENCE and not an assumption: the Measure set is open and belongs to the repository
-    /// (#1145), so each channel tries its names in turn and falls back on what the Map carries.
-    /// Alphabetical order alone put `age_in_weeks` on footprint, which sizes every file committed
-    /// this week to nothing. `bytes` was tried next and is worse on a real repository: one 4.8 MB
-    /// fixture takes most of the map and everything else becomes a sliver.
-    ///
-    /// Two DIFFERENT Measures where the repository has both, which is what `AtlasMapSpecimen`
-    /// picked for its own reason: with one Measure on both channels, nothing in the picture can be
-    /// read off a colour that the size has not already said.
-    ///
-    /// The height channel takes the band's Measure. The room draws flat, where every height is
-    /// scaled to nothing, so this is the channel's name and not a reading — the reader chooses one
-    /// at #1161, and until then a third preference here would be a claim nobody can see.
-    private func channels(of map: AtlasMap) -> AtlasChannels {
-        let names = map.measureNames
-        let footprint = ["lines", "bytes"].first { names.contains($0) } ?? names.first ?? ""
-        let band = ["commits", "authors"].first { names.contains($0) } ?? footprint
-        return AtlasChannels(footprint: footprint, band: band, height: band)
+        .padding(ArgoSpacing.loose)
     }
 }
 
@@ -214,10 +131,23 @@ private let previewProject = CockpitPresentation.Project(
 )
 
 #Preview("Atlas room, a generated atlas") {
+    @Previewable @State var channels = AtlasChannels.opening(for: previewMap)
+    @Previewable @State var hideTests = false
+    @Previewable @State var isCity = false
+
     AtlasRoomView()
         .environment(
             \.argoAtlasRoom,
-            AtlasRoom(reading: .measured(previewMap), project: previewProject, rebuild: {}),
+            AtlasRoom(
+                reading: .measured(previewMap), project: previewProject,
+                currency: AtlasCurrency {},
+                choice: AtlasMapChoice(
+                    channels: channels,
+                    setChannels: { channels = $0 },
+                    hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
+                    isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
+                ),
+            ),
         )
         .frame(width: 960, height: 620)
         .argoAppearance()
@@ -227,19 +157,21 @@ private let previewProject = CockpitPresentation.Project(
     AtlasRoomView()
         .environment(
             \.argoAtlasRoom,
-            AtlasRoom(reading: .unmeasured, project: previewProject, rebuild: {}),
+            AtlasRoom(
+                reading: .unmeasured, project: previewProject,
+                currency: AtlasCurrency {}, choice: .inert,
+            ),
         )
         .frame(width: 960, height: 620)
         .argoDeckSurface()
         .argoAppearance()
 }
 
+// A Map the repository has moved on from (#1162). The whole room rather than the stage alone,
+// because the sentence that says so is the SIDEBAR's now: #1161 took the reading strip off the
+// stage, and the staleness clause went with the rest of the provenance into Repository data.
 #Preview("Atlas room, a stale atlas") {
-    AtlasRoomView()
-        .environment(
-            \.argoAtlasRoom,
-            AtlasRoom(reading: .measured(previewMap), project: previewProject, behind: 12) {},
-        )
+    AtlasRoomHost(reading: .measured(previewMap), behind: 12)
         .frame(width: 960, height: 620)
         .argoAppearance()
 }

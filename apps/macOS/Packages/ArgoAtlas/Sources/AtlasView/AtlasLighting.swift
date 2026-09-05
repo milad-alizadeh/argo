@@ -29,11 +29,11 @@ struct AtlasLighting: Equatable {
     /// Solved from the contract's own lamps. An ambient term has no direction, so it lights every
     /// face alike and is folded into all three before either directional lamp is added.
     init(ambient: ArgoLight.Lamp, key: ArgoLight.Lamp, fill: ArgoLight.Lamp, contactFoot: Double) {
-        let base = ambient.intensity * Self.luminance(ambient.tint)
+        let base = Self.strength(of: ambient)
         let keyDirection = Self.normalized(key.direction)
         let fillDirection = Self.normalized(fill.direction)
-        let keyStrength = key.intensity * Self.luminance(key.tint)
-        let fillStrength = fill.intensity * Self.luminance(fill.tint)
+        let keyStrength = Self.strength(of: key)
+        let fillStrength = Self.strength(of: fill)
 
         func factor(_ normal: SIMD3<Double>) -> Float {
             let keyed = max(0, dot(normal, keyDirection)) * keyStrength
@@ -59,12 +59,19 @@ struct AtlasLighting: Equatable {
         return length > 0 ? vector / length : vector
     }
 
+    /// How hard one lamp drives, all of it: its intensity through its own tint. The one place a
+    /// lamp becomes a number, so the city's faces (above) and the orbit ball
+    /// (`AtlasOrbitShading`) cannot disagree about what the same lamp is worth.
+    static func strength(of lamp: ArgoLight.Lamp) -> Double {
+        lamp.intensity * tone(lamp.tint)
+    }
+
     /// A lamp's own colour, spent as the one number a direction and a strength cannot carry
     /// between them: how bright the lamp reads, independent of which channel it leans on.
     /// `ArgoColor.rec709Weights` — the same three numbers `relativeLuminance` reads — but without
     /// its gamma curve: a lamp's tint is a plain multiplier here, not a displayed colour to
     /// linearise.
-    private static func luminance(_ tint: ArgoColor) -> Double {
+    static func tone(_ tint: ArgoColor) -> Double {
         ArgoColor.rec709Weights.red * tint.red
             + ArgoColor.rec709Weights.green * tint.green
             + ArgoColor.rec709Weights.blue * tint.blue
