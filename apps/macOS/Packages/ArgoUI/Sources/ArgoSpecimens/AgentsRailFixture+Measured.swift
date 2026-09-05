@@ -20,12 +20,12 @@ extension AgentsRailFixture {
     /// decides none of the three and each chip is settled by its own evidence.
     static let measuredReadings = FeedAgentReader(
         events: Dictionary(
-            uniqueKeysWithValues: handovers.compactMap { handover in
-                handover.reading.map { (handover.child, $0) }
+            uniqueKeysWithValues: axes.compactMap { axis in
+                axis.reading.map { (axis.child, $0) }
             },
         ),
         of: .undecided,
-        writing: Set(handovers.filter(\.isWriting).map(\.child)),
+        writing: Set(axes.filter(\.isWriting).map(\.child)),
     )
 
     private static let measured: [TranscriptEvent] = [
@@ -36,23 +36,23 @@ extension AgentsRailFixture {
         ),
         .message(markdown: "Three agents out, one per axis. I will wait for all three."),
     ]
-        + handovers.flatMap(delegation)
+        + axes.flatMap(delegation)
 
     /// One backgrounded delegation as the record leaves it: the handover, the receipt that resolves
     /// nothing (#908), and — for the one that came back — the late report, which ANSWERS the call
     /// and states neither figure.
-    private static func delegation(_ handover: Handover) -> [TranscriptEvent] {
+    private static func delegation(_ axis: ReviewAxis) -> [TranscriptEvent] {
         [
             .toolCall(ToolCall(
-                id: handover.child,
+                id: axis.child,
                 name: "Agent",
                 kind: .delegate,
-                target: handover.said,
-                narration: handover.said,
-                atMs: TranscriptFixtures.handedOver(handover.minutesAgo * 60),
+                target: axis.said,
+                narration: axis.said,
+                atMs: TranscriptFixtures.handedOver(axis.minutesAgo * 60),
             )),
-            .toolCallOutcome(TranscriptFixtures.launched(handover.child, subagent: handover.child)),
-        ] + (handover.hasReported ? [.toolCallOutcome(reported(handover.child))] : [])
+            .toolCallOutcome(TranscriptFixtures.launched(axis.child, subagent: axis.child)),
+        ] + (axis.hasReported ? [.toolCallOutcome(reported(axis.child))] : [])
     }
 
     /// The late report, in the shape the rail actually gets one: it closes the call and carries no
@@ -69,8 +69,8 @@ extension AgentsRailFixture {
         )
     }
 
-    /// One handover: what it was, whose file it is, and where the delegation stands.
-    private struct Handover {
+    /// One axis: what it was, whose file it is, and where the delegation stands.
+    private struct ReviewAxis {
         let said: String
         let child: String
         let minutesAgo: Int
@@ -111,15 +111,15 @@ extension AgentsRailFixture {
         case unread
     }
 
-    private static let handovers = [
-        Handover(
+    private static let axes = [
+        ReviewAxis(
             said: "Standards review of #1269",
             child: "m-standards",
             minutesAgo: 9,
             // Dated at both ends and pricing three of its records: the finished chip's whole meter.
             standing: .reported(ran(seconds: 223, requests: 3)),
         ),
-        Handover(
+        ReviewAxis(
             said: "Spec review of #1269",
             child: "m-spec",
             minutesAgo: 4,
@@ -129,7 +129,7 @@ extension AgentsRailFixture {
         ),
         // The one Argo has no file for: no report, nothing written, nothing read. Its meter is the
         // empty one, which is the honest state and the third thing this still has to show.
-        Handover(
+        ReviewAxis(
             said: "Test review of #1269",
             child: "m-tests",
             minutesAgo: 4,

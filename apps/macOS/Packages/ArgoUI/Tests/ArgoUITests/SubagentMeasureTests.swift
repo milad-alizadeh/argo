@@ -37,6 +37,27 @@ struct SubagentMeasureTests {
         #expect(measure.durationMs == nil)
     }
 
+    /// A reading with a HOLE in it measures nothing. Behind the seam a bounded read leaves is a
+    /// stretch nobody opened, so the span would be shorter than the run and the roll-up would be
+    /// missing whatever was priced in the gap — both drawn as whole figures, which is the `0`'s
+    /// untruth with a plausible number on it.
+    @Test
+    func `a reading with a seam in it measures nothing`() {
+        let measure = SubagentMeasure.read([
+            .excerpted,
+            .prompt(text: "Go", images: [], atMs: 1000),
+            .usage(Usage(
+                inputTokens: 10,
+                outputTokens: 1,
+                cacheReadTokens: 0,
+                cacheCreationTokens: 0,
+            )),
+            .toolCall(Self.call(at: 9000)),
+        ])
+
+        #expect(measure == .unmeasured)
+    }
+
     /// A record priced at nothing and a record nothing priced are two different claims. Only the
     /// first is a figure, and an object naming no term this reader knows is not the first.
     @Test

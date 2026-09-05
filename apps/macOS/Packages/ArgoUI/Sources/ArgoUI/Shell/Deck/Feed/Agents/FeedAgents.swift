@@ -187,9 +187,7 @@ package enum FeedAgents {
     /// other side. The spend is not withheld: tokens read so far are tokens spent so far, and that
     /// figure only grows.
     private static func measured(_ agent: FeedAgent, by evidence: SubagentEvidence) -> FeedAgent {
-        guard let id = agent.subagentID,
-              agent.spend == nil || agent.durationMs == nil || agent.startedAtMs == nil
-        else { return agent }
+        guard let id = agent.subagentID, agent.wantsMeasuring else { return agent }
         var told = agent
         told.measure = evidence.measure(id)
         return told

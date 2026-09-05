@@ -54,6 +54,12 @@ struct SubagentMeasure: Equatable, Sendable {
         var lastAtMs: Int?
         var usage: Usage?
         for event in events {
+            // A reading with a HOLE in it measures nothing. `excerpted` is the seam a bounded read
+            // leaves (`TranscriptEvent.excerpted`), and behind it is a stretch nobody opened: the
+            // span would be shorter than the run and the roll-up would be missing whatever was
+            // priced in the gap. Both would be drawn as whole figures, which is the `0`'s untruth
+            // with a plausible number on it — so the whole measure is withheld instead.
+            guard event != .excerpted else { return .unmeasured }
             if let atMs = moment(of: event) {
                 firstAtMs = min(firstAtMs ?? atMs, atMs)
                 lastAtMs = max(lastAtMs ?? atMs, atMs)
@@ -67,6 +73,9 @@ struct SubagentMeasure: Equatable, Sendable {
 
     /// The moment one event carries, or `nil` for one that carries none. A call's own two moments
     /// arrive as two events — emitted, and answered — so each is read where it is written.
+    ///
+    /// No `default`, so a new dated case fails this build rather than falling silently out of the
+    /// span — the convention `FeedRowKind` and `FeedWaitWords` are written to.
     private static func moment(of event: TranscriptEvent) -> Int? {
         switch event {
         case let .prompt(_, _, atMs): atMs
@@ -75,7 +84,12 @@ struct SubagentMeasure: Equatable, Sendable {
         case let .compaction(atMs): atMs
         case let .toolCall(call): call.atMs
         case let .toolCallOutcome(outcome): outcome.endedAtMs
-        default: nil
+        // Everything the host writes without a clock on it. A record's identity, the facts read
+        // off it, what was said, what was reasoned, what it spent and where its Turn ended: none
+        // of them dates anything, so none of them bounds a run.
+        case .recordIdentity, .headLeaf, .originSession, .title, .cwd, .model, .effort, .branch,
+             .entry, .mode, .message, .thought, .skillLoaded, .turnEnded, .queued, .usage, .plan,
+             .unreadableLine, .superseded, .excerpted: nil
         }
     }
 }

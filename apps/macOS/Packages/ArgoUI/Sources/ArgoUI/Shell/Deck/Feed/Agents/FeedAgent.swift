@@ -35,7 +35,7 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     /// Set after the init rather than through it, and for `delegationHold`'s reason: that list is
     /// at the count it is grandfathered at (`swift-boundaries` edge 6), and one more parameter
     /// would authorise the next one.
-    package var measure = SubagentMeasure.unmeasured
+    var measure = SubagentMeasure.unmeasured
 
     /// The CLI's own id for this subagent, which is what its reading is keyed by — see
     /// `FeedAgentReader`. Forwarded off `handover` so the surfaces that read it are about the fact
@@ -60,7 +60,9 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     /// #1076 and #1090 removed, arrived at from the other side. The spend is not withheld, because
     /// tokens read so far are tokens spent so far and that figure only grows.
     var durationMs: Int? {
-        if let reported = handover.durationMs { return reported }
+        if let reported = handover.durationMs {
+            return reported
+        }
         return activity.isRunning ? nil : measure.durationMs
     }
 
@@ -70,17 +72,20 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
         handover.startedAtMs ?? measure.firstAtMs
     }
 
-    /// Whether anything is still missing that the child's record could answer — asked before a
-    /// reading is taken, so a chip whose delegation stated all three costs nothing.
-    var wantsMeasuring: Bool {
-        reportedSpend == nil || handover.durationMs == nil || handover.startedAtMs == nil
-    }
-
     /// The BACKGROUNDED delegation's own call id, where this chip is one the record has not closed
     /// (#1267) — what the reader's End gesture names, and `nil` for every chip there is nothing to
     /// end. See `FeedCall.Handover.openDelegationID`, which is where both halves of that are read.
     package var openDelegationID: String? {
         handover.openDelegationID
+    }
+
+    /// Whether the delegation left any figure for the child's own record to fill (#1279).
+    ///
+    /// Read in TWO places — `FeedAgentReader`, which decides whose file to look up, and
+    /// `FeedAgents.measured`, which applies the answer — so the rule is spelled here rather than in
+    /// either of them. A chip whose record stated all three asks the reading nothing at all.
+    var wantsMeasuring: Bool {
+        spend == nil || durationMs == nil || startedAtMs == nil
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

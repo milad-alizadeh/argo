@@ -50,19 +50,25 @@ struct AgentMeter: View {
         .lineLimit(1)
     }
 
+    /// The moment a live chip counts UP from, or `nil` where nothing should be counting. The
+    /// `.running` gate, spelled once: the separator above and the slot below both stand on it, and
+    /// two spellings of one gate is how they come to disagree.
+    private var countingFrom: Int? {
+        agent.activity == .running ? agent.startedAtMs : nil
+    }
+
+    /// Whether the slot below draws anything at all — a stated total, or a clock still counting.
+    private var drawsDuration: Bool {
+        agent.durationMs != nil || countingFrom != nil
+    }
+
     /// The reported total once it lands, and a live count until then. Ticking wraps only this text:
     /// a timeline any wider re-renders the whole chip, which restarts its siblings' animation
     /// mid-pass — the trap `RosterTurnClock` names.
-    /// Whether the slot below draws anything — a stated total, or a clock still counting. Spelled
-    /// once so the separator above and the view below cannot part company on it.
-    private var drawsDuration: Bool {
-        agent.durationMs != nil || (agent.activity == .running && agent.startedAtMs != nil)
-    }
-
     @ViewBuilder private var duration: some View {
         if let durationMs = agent.durationMs {
             Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
-        } else if agent.activity == .running, let startedAtMs = agent.startedAtMs {
+        } else if let startedAtMs = countingFrom {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 Text(counted(from: startedAtMs, at: context.date))
             }
@@ -108,6 +114,21 @@ struct AgentMeter: View {
             activity: .running,
             spend: nil,
             handover: .init(startedAtMs: Date().epochMs - 42000),
+        ))
+        // The state #1279 added: a backgrounded chip still working, whose spend is derived from
+        // what its own file has priced so far. The one case where a clock and a figure are drawn
+        // together with no reported total between them — which is what `drawsDuration` is for.
+        AgentMeter(agent: FeedAgent(
+            id: 2,
+            label: "Standards review of #1269",
+            activity: .running,
+            spend: Usage(
+                inputTokens: 1200,
+                outputTokens: 9400,
+                cacheReadTokens: 120_000,
+                cacheCreationTokens: 0,
+            ),
+            handover: FeedCall.Handover(startedAtMs: Date().epochMs - 96000),
         ))
     }
     .padding(ArgoSpacing.loose)
