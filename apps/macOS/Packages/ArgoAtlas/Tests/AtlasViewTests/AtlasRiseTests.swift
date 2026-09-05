@@ -17,7 +17,8 @@ struct AtlasRiseTests {
         #expect(MemoryLayout<AtlasRise>.offset(of: \.clock) == 0)
         #expect(MemoryLayout<AtlasRise>.offset(of: \.share) == 4)
         #expect(MemoryLayout<AtlasRise>.offset(of: \.reach) == 8)
-        #expect(MemoryLayout<AtlasRise>.stride == 12)
+        #expect(MemoryLayout<AtlasRise>.offset(of: \.floor) == 12)
+        #expect(MemoryLayout<AtlasRise>.stride == 16)
     }
 
     /// The stagger the shader spreads across the plan is the contract's, not a number of the map's
@@ -107,5 +108,31 @@ struct AtlasRiseTests {
                 #expect(rise.growth(at: distance) >= 0)
             }
         }
+    }
+
+    /// FLAT is the map's own floor, never nothing. A roof on the exact plane of the plate under it
+    /// is two coplanar faces for the depth buffer to tear apart, and a rise that started at zero
+    /// would put every box in the map on that plane at once — which is what the first render of
+    /// this showed, as a shredded far corner (`AtlasElevation.floorShare`).
+    @Test func `a box that has not started stands at the map's floor, not on the plate`() {
+        let rise = AtlasRise(clock: 0, over: plan)
+
+        #expect(rise.height(of: 60, at: 0) == rise.floor)
+        #expect(rise.floor > 0)
+    }
+
+    /// A hand-written plan may stand a box below the floor — the tiler never does — and the rise
+    /// must not lift such a box before dropping it back.
+    @Test func `a box shorter than the floor climbs no higher than its own height`() {
+        let rise = AtlasRise(clock: 0, over: plan)
+
+        #expect(rise.height(of: 0, at: 0) == 0)
+    }
+
+    @Test func `a settled box stands at exactly what it measured`() {
+        let rise = AtlasRise(clock: 1, over: plan)
+
+        #expect(rise.height(of: 60, at: 0) == 60)
+        #expect(rise.height(of: 60, at: 1) == 60)
     }
 }

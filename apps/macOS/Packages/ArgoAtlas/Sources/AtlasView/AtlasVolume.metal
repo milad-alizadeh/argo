@@ -56,7 +56,7 @@ struct AtlasEye {
 };
 
 /// The city standing up out of its plates, as one clock (#1421). `AtlasRise` on the Swift side is
-/// the same three fields and the same curve; `AtlasRiseTests` asserts both.
+/// the same four fields and the same curve; `AtlasRiseTests` asserts both.
 struct AtlasRise {
     /// 0 the instant the first box leaves its plate, 1 once the last one has settled.
     float clock;
@@ -64,6 +64,10 @@ struct AtlasRise {
     float share;
     /// What a box's distance from the middle of the plan is divided by.
     float reach;
+    /// The shallowest a file stands on this ground, which is where every box starts rather than
+    /// at nothing: a roof on the exact plane of its own plate is two coplanar faces for the depth
+    /// buffer to tear apart (`AtlasElevation.floorShare`).
+    float floor;
 };
 
 /// The light, solved. `AtlasLighting` on the Swift side folds every lamp's direction and tint down
@@ -181,11 +185,13 @@ vertex AtlasFragment atlas_volume_vertex(
     float2 low = volume.origin;
     float2 high = volume.origin + volume.size;
     float foot = volume.heights.x;
-    // The rise is a multiply on the box's own height, so a box with none does not move: a plate's
-    // foot IS its roof, and a cast shadow's decal is flat. Every box in the map goes through this
-    // one expression rather than being told which kind it is — nothing here has to know.
+    // The rise climbs the box's own height, from the map's floor rather than from nothing, so a
+    // box with no height does not move: a plate's foot IS its roof, and a cast shadow's decal is
+    // flat. Every box in the map goes through this one expression rather than being told which
+    // kind it is — nothing here has to know. `AtlasRise.height` in Swift is the same expression.
     float growth = atlas_growth(volume, eye, rise);
-    float roof = mix(foot, volume.heights.y, growth);
+    float base = min(rise.floor, volume.heights.y);
+    float roof = base + (volume.heights.y - base) * growth;
 
     // The near corner: the plan corner this turn puts closest, and the two walls meeting there are
     // the two that can be seen. It is the same corner for every box in a frame, because it depends

@@ -63,12 +63,15 @@ struct AtlasOpenTrace: View {
             Float(projection.camera.centre.x),
             Float(projection.camera.centre.y),
         )
-        let growth = rise.growth(at: rise.distance(of: middle, from: centre))
+        let standing = rise.height(
+            of: Float(tile.height),
+            at: rise.distance(of: middle, from: centre),
+        )
         return AtlasTile(
             path: tile.path,
             rect: tile.rect,
             band: tile.band,
-            height: tile.height * CGFloat(growth),
+            height: CGFloat(standing),
         )
     }
 

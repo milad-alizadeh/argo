@@ -1,4 +1,5 @@
 import ArgoDesign
+import AtlasLayout
 import CoreGraphics
 import simd
 
@@ -26,11 +27,18 @@ struct AtlasRise {
     /// so the furthest corner is the last to start and the wave is a PLAN measurement — the same
     /// at any zoom, and the same whatever the window is.
     var reach: Float
+    /// The shallowest a file stands on this ground — where every box STARTS, rather than at
+    /// nothing. `AtlasElevation.floorShare` exists to keep a roof off the exact plane of the plate
+    /// under it, and a rise that began at zero would put every box in the map on that plane at
+    /// once: coplanar with the ground it stands on, the depth buffer tears them both to shreds.
+    /// Two units of a thousand reads as flat at every camera, which is what the design calls flat
+    /// anyway.
+    var floor: Float
 
     /// The map already standing at its measured heights. What every still frame draws, and what
     /// Reduce Motion cuts to: `ArgoMotion.rise` carries no reduced duration, so a reader with
     /// movement off is handed the settled city rather than a faster one.
-    static let settled = AtlasRise(clock: 1, share: 0, reach: 1)
+    static let settled = AtlasRise(clock: 1, share: 0, reach: 1, floor: 0)
 
     /// The rise over one plan, at one point on its clock.
     ///
@@ -42,12 +50,14 @@ struct AtlasRise {
         self.share = Float(ArgoMotion.risen.staggerShare)
         let diagonal = (plan.width * plan.width + plan.height * plan.height).squareRoot()
         self.reach = Float(max(diagonal / 2, 1))
+        self.floor = Float(AtlasElevation.floor(of: plan))
     }
 
-    private init(clock: Float, share: Float, reach: Float) {
+    private init(clock: Float, share: Float, reach: Float, floor: Float) {
         self.clock = clock
         self.share = share
         self.reach = reach
+        self.floor = floor
     }
 
     /// How far out from the middle of the plan a box stands, 0 at the centre and 1 at the corner
@@ -55,6 +65,17 @@ struct AtlasRise {
     /// sweeping across.
     func distance(of point: SIMD2<Float>, from centre: SIMD2<Float>) -> Float {
         min(1, simd_distance(point, centre) / reach)
+    }
+
+    /// How tall one box STANDS this frame: its own measured height, climbed from the map's floor
+    /// rather than from nothing.
+    ///
+    /// `min` on the way in, because a plan written by hand may put a box below the floor — the
+    /// tiler never does — and a rise that lifted such a box before dropping it back would be a
+    /// climb the wrong way round.
+    func height(of measured: Float, at distance: Float) -> Float {
+        let low = min(floor, measured)
+        return low + (measured - low) * growth(at: distance)
     }
 
     /// The share of its own measured height a box at that distance stands at, this frame.
