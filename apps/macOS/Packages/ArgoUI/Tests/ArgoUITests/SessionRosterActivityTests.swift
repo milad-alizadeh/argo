@@ -98,10 +98,10 @@ struct SessionRosterActivityTests {
             ran("bun run quality", id: "one"),
             .toolCall(ToolCall(
                 id: "two", name: ToolCall.askUserQuestion, kind: .other, target: nil, atMs: nil,
-                ask: Ask(questions: [Ask.Question(
+                input: .init(ask: Ask(questions: [Ask.Question(
                     text: "Which edge should the clock take?",
                     options: Ask.Option.labelled(["Leading", "Trailing"]),
-                )]),
+                )])),
             )),
         ]).first)
 

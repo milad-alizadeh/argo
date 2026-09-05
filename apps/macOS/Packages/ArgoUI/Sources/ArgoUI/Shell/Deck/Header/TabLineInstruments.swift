@@ -8,11 +8,8 @@ package struct TabLineInstruments: View {
 
     /// Absent when nothing is selected, and the group draws nothing.
     let header: SessionHeaderProjection.Header?
-    /// `async` because `/handoff` is answered in minutes, so the control holds itself that long.
-    var handOff: () async -> Void = {}
-    /// Send `/ship` to the shown Session (#1335). Sync, unlike `handOff`: the control asserts
-    /// nothing about how long shipping takes, it only types the one Turn.
-    var createPullRequest: () -> Void = {}
+    /// What the two controls on this line DO — see `SessionHeaderIntents`.
+    var intents = SessionHeaderIntents()
 
     package var body: some View {
         // The instrument is a bar with no baseline of its own.
@@ -26,12 +23,12 @@ package struct TabLineInstruments: View {
                 if let context = header.context {
                     SessionHeaderContext(context: context, facts: header.facts)
                 }
-                if header.showsCreatePR {
-                    CreatePRButton(run: createPullRequest)
+                if header.showsCreatePullRequest {
+                    CreatePullRequestButton(run: intents.createPullRequest)
                 }
                 // LAST: the design puts the remedy on the trailing edge, ahead of the instrument.
                 if let handoff = header.handoff {
-                    SessionHandoffButton(handoff: handoff, run: handOff)
+                    SessionHandoffButton(handoff: handoff, run: intents.handOff)
                 }
             }
         }
@@ -49,11 +46,9 @@ package struct TabLineInstruments: View {
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         header: SessionHeaderProjection.Header?,
-        handOff: @escaping () async -> Void = {},
-        createPullRequest: @escaping () -> Void = {},
+        intents: SessionHeaderIntents = SessionHeaderIntents(),
     ) {
         self.header = header
-        self.handOff = handOff
-        self.createPullRequest = createPullRequest
+        self.intents = intents
     }
 }

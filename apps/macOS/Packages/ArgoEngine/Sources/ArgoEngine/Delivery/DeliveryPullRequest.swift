@@ -22,6 +22,17 @@ public struct DeliveryPullRequest: Equatable, Sendable {
     /// The host's page for it, and `nil` where the host gave none.
     public let url: URL?
 
+    /// Whether the host says this one's life is over — merged, or closed without merging. Its own
+    /// two words, read once HERE so no surface branches on the string a second time.
+    ///
+    /// A word this does not recognise is NOT finished, and that direction is the point: it is what
+    /// keeps a ready claim OFF a row whose pull request Argo cannot place (#1335), which is
+    /// degrade-down resolving an unknown host word to the quieter rendering rather than the
+    /// louder one. A draft is unfinished too — the host calls it open, and the claim yields to it.
+    public var isFinished: Bool {
+        isMerged || state == "closed"
+    }
+
     public init(
         number: Int,
         title: String,

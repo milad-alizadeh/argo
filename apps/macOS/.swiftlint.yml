@@ -107,7 +107,7 @@ function_parameter_count:
   # and the two waits it runs are grouped (#1245), and so are the three the app composes (#1266)
   # INIT: ConnectReading.swift 9 — the connect panel's whole reading
   # INIT: ConnectPanelActions.swift 8 — one closure per connect step
-  # INIT: ToolCall.swift 8 — a call as the transcript declares it, plus `readyClaim` (#1335)
+  # INIT: ToolCall.swift 7 — a call as the transcript declares it
   # INIT: ComposerDraft.swift 7 — what the composer holds between sends
   # INIT: ArgoPalette.swift 8 — the palette's role groups, one per reading
   # INIT: AtlasRoles.swift 8 — one material per surface the map draws
@@ -213,10 +213,8 @@ function_parameter_count:
   # because a `private` stored property looked like a seal, which a DEFAULTED private property is
   # not: it leaves the list rather than closing it. Nothing here is a wider call than the module
   # already made, and each shrinks when the struct's own fields are grouped.
-  # INIT: InstrumentDeckShell.swift 17 — the deck shell's fields, as the memberwise init had them,
-# plus `createPullRequest` (#1335)
-  # INIT: SessionsDeck.swift 16 — the deck's fields, as the memberwise init had them, plus
-# `createPullRequest` (#1335)
+  # INIT: InstrumentDeckShell.swift 16 — the deck shell's fields, as the memberwise init had them
+  # INIT: SessionsDeck.swift 15 — the deck's fields, as the memberwise init had them
   # INIT: FeedView.swift 8 — the reading, and the state the deck owns around it
   # INIT: SessionNavigator.swift 8 — the roster's rows and the acts on them
   # INIT: ShellSidebar.swift 6 — the sidebar's rooms, its roster and what is selected in them

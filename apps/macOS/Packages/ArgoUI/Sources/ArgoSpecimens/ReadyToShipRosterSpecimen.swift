@@ -17,21 +17,27 @@ struct ReadyToShipRosterSpecimen: View {
         [
             session(
                 id: "ready", title: "Add the fourth companion tool",
-                pullRequest: nil, readyToShip: true,
+                pullRequest: nil, claim: claim,
             ),
+            // The claim is HELD here too, and the row still draws no word: the pull request is
+            // open, and the projection resolves the pair (decision 7).
             session(
                 id: "stale", title: "Draw the Ready badge on the roster row",
-                pullRequest: .fixture(number: 1400, state: "open"), readyToShip: true,
+                pullRequest: .fixture(number: 1400, state: "open"), claim: claim,
             ),
             session(
                 id: "running", title: "Nothing claimed yet",
-                pullRequest: nil, readyToShip: false,
+                pullRequest: nil, claim: nil,
             ),
         ]
     }
 
+    /// The claim as the channel delivered it, reason and all — the roster draws none of the
+    /// reason, and the feed is where that is read (`FeedMark.readyToShip`).
+    private static let claim = CompanionReady(reason: "3 files, 2 commits")
+
     private static func session(
-        id: String, title: String, pullRequest: DeliveryPullRequest?, readyToShip: Bool,
+        id: String, title: String, pullRequest: DeliveryPullRequest?, claim: CompanionReady?,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -43,7 +49,7 @@ struct ReadyToShipRosterSpecimen: View {
             work: .init(
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .main, branch: "argo/#\(id)"),
-                delivery: .init(pullRequest: pullRequest, readyToShip: readyToShip),
+                delivery: .init(pullRequest: pullRequest, claim: claim),
             ),
         )
     }

@@ -92,6 +92,17 @@ struct CompanionReportTests {
         #expect(report.readyToShip == ready)
     }
 
+    /// A claim about NOW, on `status`'s own terms: the newest reason is the one that holds, and
+    /// nothing accumulates.
+    @Test
+    func `a second ready claim replaces the first, reason and all`() {
+        var report = CompanionReport()
+        report.apply(.ready(ready))
+        report.apply(.ready(CompanionReady(reason: "1 file, 1 commit")))
+
+        #expect(report.readyToShip == CompanionReady(reason: "1 file, 1 commit"))
+    }
+
     /// The claim is about NOW, exactly as `status` is: an agent that reports what it is doing
     /// without repeating "ready" has moved past it.
     @Test

@@ -132,15 +132,35 @@ extension SessionRosterProjection {
             return Date(epochMs: startedAtMs)
         }
 
-        /// The word `cockpit-roster-row.md` spells for the claim — `ArgoStateLabel` upper-cases
-        /// it, so this stays sentence case like every other word the row spends.
-        static let readyWord = "Ready"
+        /// What the row's one word slot draws, and the ink it takes with it — the two are one
+        /// value, so no surface can pair a word with an ink of its own choosing.
+        ///
+        /// `state` outranks `readyToShip` in the slot they share: a row waiting on the reader or
+        /// reporting a failure has more to say than that it is done
+        /// (`cockpit-roster-row.md`, the badge ink table).
+        enum Badge: Equatable, Sendable {
+            case state(String, ArgoOperationalState?)
+            case readyToShip
 
-        /// The word the badge slot draws — `stateWord` where there is one, else `Ready` where the
-        /// claim stands, else nothing. One authority for the view and for `announcement`, so the
-        /// two cannot draw the slot two different ways.
-        var badgeWord: String? {
-            stateWord ?? (readyToShip ? Self.readyWord : nil)
+            /// The word `cockpit-roster-row.md` spells for the claim — `ArgoStateLabel`
+            /// upper-cases it, so this stays sentence case like every other word the row spends.
+            static let readyWord = "Ready"
+
+            var word: String {
+                switch self {
+                case let .state(word, _): word
+                case .readyToShip: Self.readyWord
+                }
+            }
+        }
+
+        /// The badge slot's whole reading, and `nil` where the row spends no word at all. One
+        /// authority for the view and for `announcement`, so the two cannot draw it two ways.
+        var badge: Badge? {
+            if let stateWord {
+                return .state(stateWord, state)
+            }
+            return readyToShip ? .readyToShip : nil
         }
 
         /// What a screen reader hears: the same word the row draws, plus the read-only
@@ -148,7 +168,7 @@ extension SessionRosterProjection {
         var announcement: String {
             [
                 title,
-                badgeWord,
+                badge?.word,
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
                 secondaryFact,

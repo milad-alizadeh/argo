@@ -11,8 +11,8 @@ package struct SessionTabLine: View {
     /// Absent when nothing is selected. The line holds its height and says nothing — every zone
     /// below the canopy is inset by it.
     let header: SessionHeaderProjection.Header?
-    var handOff: () async -> Void = {}
-    var createPullRequest: () -> Void = {}
+    /// What this line's two controls DO — see `SessionHeaderIntents`.
+    var intents = SessionHeaderIntents()
 
     /// Which pane the deck is reading. Held here rather than above, because the deck draws one
     /// pane: the day a second one ships (#269 is Delivery's) this rises to whoever holds the two.
@@ -24,11 +24,7 @@ package struct SessionTabLine: View {
             SessionCheckoutMark(checkout: header?.checkout)
             // The strip takes what the instruments leave, which is what holds the tabs leading.
             DeckTabs(selection: $tab)
-            TabLineInstruments(
-                header: header,
-                handOff: handOff,
-                createPullRequest: createPullRequest,
-            )
+            TabLineInstruments(header: header, intents: intents)
         }
         .padding(.horizontal, ArgoSpacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -37,12 +33,10 @@ package struct SessionTabLine: View {
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         header: SessionHeaderProjection.Header?,
-        handOff: @escaping () async -> Void = {},
-        createPullRequest: @escaping () -> Void = {},
+        intents: SessionHeaderIntents = SessionHeaderIntents(),
     ) {
         self.header = header
-        self.handOff = handOff
-        self.createPullRequest = createPullRequest
+        self.intents = intents
     }
 }
 

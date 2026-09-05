@@ -42,7 +42,7 @@ struct FeedReadyToShipTests {
             kind: .mcp,
             target: nil,
             atMs: 1000,
-            readyClaim: claim,
+            input: .init(readyClaim: claim),
         )
         let rows = FeedProjection.rows(from: [
             .prompt(text: "Ship it", images: [], atMs: 1000),

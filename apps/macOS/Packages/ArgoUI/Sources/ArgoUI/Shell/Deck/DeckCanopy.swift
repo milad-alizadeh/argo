@@ -18,12 +18,9 @@ package struct DeckCanopy: View {
     /// at the safe area leaves the icons on a strip of bare window. Zero where there is no
     /// toolbar over the deck, and everything below draws exactly as before.
     var reach: CGFloat = 0
-    /// Hand this Session's work to a fresh one. Inert by default, so a specimen draws the button
-    /// and spawns nothing.
-    var handOff: () async -> Void = {}
-    /// Send `/ship` to this Session (#1335). Inert by default, so a specimen draws the button
-    /// without typing anything.
-    var createPullRequest: () -> Void = {}
+    /// What the tab line's controls DO — see `SessionHeaderIntents`. Inert by default, so a
+    /// specimen draws them with nothing behind them.
+    var intents = SessionHeaderIntents()
 
     /// The canopy's own width — which IS the detail pane's, since the canopy spans it. What the
     /// centred title's share is taken of (#692).
@@ -35,7 +32,7 @@ package struct DeckCanopy: View {
             // alone draws no title.
             TitlebarTitle(header: header, paneWidth: paneWidth)
                 .frame(height: reach)
-            SessionTabLine(header: header, handOff: handOff, createPullRequest: createPullRequest)
+            SessionTabLine(header: header, intents: intents)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
         }
         .frame(height: ArgoLayout.deckCanopyHeight + reach)
@@ -48,13 +45,11 @@ package struct DeckCanopy: View {
     package init(
         header: SessionHeaderProjection.Header?,
         reach: CGFloat = 0,
-        handOff: @escaping () async -> Void = {},
-        createPullRequest: @escaping () -> Void = {},
+        intents: SessionHeaderIntents = SessionHeaderIntents(),
     ) {
         self.header = header
         self.reach = reach
-        self.handOff = handOff
-        self.createPullRequest = createPullRequest
+        self.intents = intents
     }
 }
 

@@ -45,14 +45,39 @@ public struct ToolCall: Sendable, Equatable {
     public let narration: String?
     /// When the agent emitted the call.
     public let atMs: Int?
-    /// The question this call put, for the one tool whose input IS a question. `nil` for every
-    /// other call, and for an `AskUserQuestion` whose input carried no readable question — such a
-    /// call is still a call, and no question is invented for it.
-    public let ask: Ask?
-    /// The claim this call made, for the one companion tool whose input IS one (#1335). `nil` for
-    /// every other call — `report_ready`'s own reading never refuses on a shape it did not
-    /// expect, so this is present whenever the call is that tool, whatever its reason carries.
-    public let readyClaim: CompanionReady?
+    /// What this call's INPUT carried, for the two tools whose input IS a domain value — read
+    /// into types at the wire boundary and empty for every other call.
+    public let input: Input
+
+    /// The two readings of a call's own input. One value rather than two parameters: both are
+    /// read off `use.input` at the same moment, by the same gate on the tool's name, and no
+    /// call site names one without the other (`TranscriptReader+Assistant`).
+    public struct Input: Sendable, Equatable {
+        /// The question this call put, for the one tool whose input IS a question. `nil` for
+        /// every other call, and for an `AskUserQuestion` whose input carried no readable
+        /// question — such a call is still a call, and no question is invented for it.
+        public let ask: Ask?
+        /// The claim this call made, for the one companion tool whose input IS one (#1335).
+        /// `nil` for every other call — `report_ready`'s own reading never refuses on a shape it
+        /// did not expect, so this is present whenever the call is that tool, whatever its
+        /// reason carries.
+        public let readyClaim: CompanionReady?
+
+        public init(ask: Ask? = nil, readyClaim: CompanionReady? = nil) {
+            self.ask = ask
+            self.readyClaim = readyClaim
+        }
+    }
+
+    /// Read THROUGH `input` rather than stored beside it, so the two facts above stay one
+    /// parameter while every call site goes on reading `call.ask` (rules/house.md, edge 6).
+    public var ask: Ask? {
+        input.ask
+    }
+
+    public var readyClaim: CompanionReady? {
+        input.readyClaim
+    }
 
     public init(
         id: String,
@@ -61,8 +86,7 @@ public struct ToolCall: Sendable, Equatable {
         target: String?,
         narration: String? = nil,
         atMs: Int?,
-        ask: Ask? = nil,
-        readyClaim: CompanionReady? = nil,
+        input: Input = Input(),
     ) {
         self.id = id
         self.name = name
@@ -70,8 +94,7 @@ public struct ToolCall: Sendable, Equatable {
         self.target = target
         self.narration = narration
         self.atMs = atMs
-        self.ask = ask
-        self.readyClaim = readyClaim
+        self.input = input
     }
 
     /// The host's own name for the structured question. Matched verbatim, because the tool name IS

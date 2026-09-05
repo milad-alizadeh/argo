@@ -6,16 +6,16 @@ import Testing
 /// (`cockpit-roster-row.md`, decision 6): an external or orphaned one has no terminal to type
 /// `/ship` into.
 @Suite("Session header Create PR")
-struct SessionHeaderCreatePRTests {
+struct SessionHeaderCreatePullRequestTests {
     @Test
     func `a managed Session is offered Create PR`() {
-        #expect(header(access: .managed).showsCreatePR)
+        #expect(header(access: .managed).showsCreatePullRequest)
     }
 
     @Test
     func `an external or orphaned Session is offered nothing`() {
-        #expect(!header(access: .external).showsCreatePR)
-        #expect(!header(access: .orphaned).showsCreatePR)
+        #expect(!header(access: .external).showsCreatePullRequest)
+        #expect(!header(access: .orphaned).showsCreatePullRequest)
     }
 
     private func header(
