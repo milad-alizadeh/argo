@@ -103,14 +103,13 @@ Each of these belongs in the PR body, and the ship continues past it.
    the `CONFLICTING` case above — and a bare `--force` belongs to none, because it drops a
    teammate's push. A `stale info` rejection there means the remote branch moved since the
    fetch: fetch again, rebase again, and push.
-3. **Write the PR title and body through the `simple-english` skill.** This holds every time,
-   for every PR, and not only when the text reads badly. Draft the title and the body, run the
-   skill over both, and pass what it gives back to `gh pr create`. Its rules, so this step does
-   not depend on a repo doc: one sentence says one thing and stays under 20 words; active voice
-   and a simple tense; one word for one meaning, no synonym rotation; the condition before the
-   command; no filler, no hedge, no decorative clause. Facts and identifiers are untouchable —
-   rewrite the style, never the content, and leave code, paths, error strings and `Closes #<N>`
-   exactly as they are. If the skill is not installed, apply those rules by hand.
+3. **Run the PR title and body through the `simple-english` skill.** This holds for every PR,
+   and it holds when the text already reads well. Draft the title and the body. Put both through
+   the skill. Give `gh pr create` what it returns. The skill carries its own rules, so this step
+   states none of them: a copy here goes stale against the skill. Change the style only. Keep
+   every fact, and leave code, paths, error strings and `Closes #<N>` exactly as they are. If
+   the skill is not installed, write short sentences in the active voice and change no
+   identifier.
 4. Open exactly one PR with `gh pr create --base <base>`, ready for review, its body carrying
    `Closes #<N>` and everything the section above told you to carry. Skip this step for a branch
    that already had a PR open — the push updated it.
