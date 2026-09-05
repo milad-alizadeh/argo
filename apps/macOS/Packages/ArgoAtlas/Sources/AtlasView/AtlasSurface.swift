@@ -25,6 +25,12 @@ struct AtlasSurface: NSViewRepresentable {
         // over whatever it was handed after.
         view.depthStencilPixelFormat = AtlasVolumeRenderer.depthFormat
         view.clearDepth = 1
+        // Taken from the renderer rather than named again here: the pipeline was compiled at the
+        // count the DEVICE agreed to, and a view that set a different one would hand that pipeline
+        // a pass it cannot draw into. Setting it makes `MTKView` allocate the multisample colour
+        // and depth textures and resolve them into the drawable itself, which is the whole of the
+        // work — nothing in the pass or the shader knows the difference.
+        view.sampleCount = context.coordinator?.sampleCount ?? 1
         // The drawable is colour-matched to sRGB, which is the space `ArgoColor`'s components are
         // in. Left nil it would be UNMANAGED, and the window server would read the shader's numbers
         // in the display's own space — on a P3 Mac, which is every current one, a green file would

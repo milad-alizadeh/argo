@@ -25,8 +25,7 @@ struct AtlasLightingTests {
     }
 
     /// Every face reads something: the ambient term alone is enough that no face is ever the same
-    /// as no light at all. The key is driven above one on purpose — a face it rakes across reads
-    /// brighter than its own swatch, not darker — so only the wall it never reaches stays under 1.
+    /// as no light at all.
     @Test(arguments: faces)
     func `every face is a real, positive term`(_ face: (name: String, factor: Float)) {
         #expect(face.factor > 0)
@@ -50,13 +49,20 @@ struct AtlasLightingTests {
         }
     }
 
-    /// The lamp direction rakes across on purpose: one visible wall reads mostly key, the other
-    /// mostly fill, and the fill is the quieter lamp — so the two walls read at two different
-    /// depths of shade rather than going flat together.
+    /// The lamp direction rakes across on purpose: the roof reads brightest, then the wall the key
+    /// rakes, then the wall the fill lifts. They have to STEP, not merely differ — two faces a
+    /// rounding error apart meet at an edge no reader can see, and a city of those reads flat
+    /// however many boxes stand in it (#1400). `ArgoLight.faceStep` is the least ratio an edge is
+    /// visible at, and every adjacent pair has to clear it. The ordering falls out of the ratios,
+    /// so it is not asserted twice.
     @Test
-    func `the two visible walls read at different depths of shade`() {
-        #expect(AtlasLighting.city.nearX != AtlasLighting.city.nearY)
-        #expect(AtlasLighting.city.roof > max(AtlasLighting.city.nearX, AtlasLighting.city.nearY))
+    func `each face steps clear of the next`() {
+        let ordered = [
+            AtlasLighting.city.roof, AtlasLighting.city.nearX, AtlasLighting.city.nearY,
+        ]
+        for (brighter, darker) in zip(ordered, ordered.dropFirst()) {
+            #expect(Double(brighter / darker) >= ArgoLight.faceStep)
+        }
     }
 
     /// The roof is what the legend is held against — the flat swatch beside a map whose roofs are

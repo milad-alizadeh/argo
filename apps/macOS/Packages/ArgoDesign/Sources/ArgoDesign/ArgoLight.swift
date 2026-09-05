@@ -33,16 +33,32 @@ public enum ArgoLight {
     }
 
     /// The warm key: the lamp a face is read by.
+    ///
+    /// It is OVERHEAD FIRST: `|z|` is the largest term, then `|x|`, then `|y|`. The three faces a
+    /// fixed yaw ever shows have the normals `(0,0,1)`, `(-1,0,0)` and `(0,-1,0)`, so these three
+    /// components ARE, one for one, how hard the key rakes each of them, and an ordering here is
+    /// the only thing that makes the three faces come out ordered by `faceStep` (#1400).
+    /// `ArgoLightTests` holds the ordering; `AtlasLightingTests` spends the step it buys.
+    ///
+    /// `x` and `y` are also the throw of every cast shadow — `AtlasShadow.decal` offsets a file's
+    /// decal along `-(x, y)` — so a sign change on either moves every shadow on the map to the
+    /// other side of its file. `AtlasShadowTests` pins the side.
     public static let key = Lamp(
-        direction: SIMD3(-0.66, 0.36, 0.66),
+        direction: SIMD3(-0.56, -0.15, 0.82),
         tint: ArgoColor(red: 1.00, green: 0.93, blue: 0.82),
-        intensity: 1.14,
+        intensity: 1.00,
     )
 
-    /// The cool fill, opposite the key. It lifts the dark side rather than competing with it —
-    /// a third of the key's strength, or the map grows a second set of highlights.
+    /// The cool fill. It lifts the dark side rather than competing with the key — a third of its
+    /// strength, or the map grows a second set of highlights.
+    ///
+    /// It opposes the key across the plan, which is the `x` term doing the work: the two point
+    /// opposite ways there, so the wall the key rakes is the wall the fill misses and the reverse.
+    /// It is a SIDE lamp, which is why `z` is the smallest term it has — the key is the one that
+    /// comes from above, and a fill lifted to meet it would be a second overhead lamp brightening
+    /// the roof the key already owns instead of the wall the key barely reaches.
     public static let fill = Lamp(
-        direction: SIMD3(0.58, -0.36, 0.30),
+        direction: SIMD3(0.58, -0.36, 0.10),
         tint: ArgoColor(red: 0.58, green: 0.76, blue: 1.00),
         intensity: 0.32,
     )
@@ -89,12 +105,21 @@ public enum ArgoLight {
     /// legend does not name.
     public static let shadowDepth = 0.45
 
+    /// The least ratio two faces of the SAME box are allowed to read apart by — the roof against
+    /// the wall below it, and that wall against the other one. It is what makes a box a solid
+    /// rather than a silhouette: two faces meeting at an edge and lit within a few percent of each
+    /// other have no edge a reader can see, and a city of those reads flat however many boxes are
+    /// standing in it (#1400). A ratio rather than a difference, because that is how the eye reads
+    /// two tones of one pigment — and because every face here is a multiply on that pigment.
+    /// `AtlasLightingTests` is what spends it, over the three faces the fixed yaw ever shows.
+    public static let faceStep = 1.2
+
     /// How far a fully-lit roof may drift from its own legend swatch, in `ArgoColor.distance(to:)`
-    /// units — the key's own intensity is driven above one on purpose, so the city's roof reads
-    /// brighter than the swatch beside it, not merely darker. The legend stays one fixed reading
-    /// across both cameras rather than tracking `relief`, so this bounds how far apart the two are
-    /// ever allowed to read rather than asking them to match exactly. `AtlasLightingTests` is what
-    /// spends it.
+    /// units. The sky, the key and the fill summed on the `(0,0,1)` normal land above one on
+    /// purpose, so the city's roof reads BRIGHTER than the swatch beside it rather than merely
+    /// darker. The legend stays one fixed reading across both cameras rather than tracking
+    /// `relief`, so this bounds how far apart the two may ever read rather than asking them to
+    /// match exactly. `AtlasLightingTests` is what spends it.
     public static let legendTolerance = 0.15
 
     /// Every lamp, for the contract sheet.

@@ -21,6 +21,23 @@ struct ArgoLightTests {
         #expect(ArgoLight.ambient.direction == .zero)
     }
 
+    /// The key is OVERHEAD FIRST, and the order of its three components is the whole reason the
+    /// three faces of a box come out at three different brightnesses: they are the normals
+    /// `(0,0,1)`, `(-1,0,0)` and `(0,-1,0)`, so `|z| > |x| > |y|` here IS roof over lit wall over
+    /// shaded wall there. `AtlasLightingTests` measures the step this buys; this is the rule that
+    /// buys it (#1400).
+    @Test
+    func `the key rakes the three faces in order, overhead first`() {
+        let key = ArgoLight.key.direction
+
+        #expect(abs(key.z) > abs(key.x))
+        #expect(abs(key.x) > abs(key.y))
+        // Overhead and from the reader's left: a positive z, a negative x. The signs are what put
+        // the light on the -x wall rather than the one behind the box.
+        #expect(key.z > 0)
+        #expect(key.x < 0)
+    }
+
     /// Warm key, cool fill, cool sky — the one place this contract spends a tint on a LAMP rather
     /// than on the pigment it lands on.
     @Test
