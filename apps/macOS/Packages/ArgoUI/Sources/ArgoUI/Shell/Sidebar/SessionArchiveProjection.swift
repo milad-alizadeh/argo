@@ -32,18 +32,30 @@ enum SessionArchiveProjection {
     }
 
     /// The prompt names the Session rather than asking about "this session": the gesture is on the
-    /// menu bar too, where the row it acts on may be scrolled out of view.
-    static func confirmTitle(name: String) -> String {
-        "Archive \u{201C}\(name)\u{201D}?"
+    /// menu bar too, where the row it acts on may be scrolled out of view. A batch is COUNTED
+    /// instead (#1247) — a title listing four names is a title nobody reads.
+    static func confirmTitle(names: [String]) -> String {
+        guard names.count == 1, let one = names.first else {
+            return "Archive \(names.count) Sessions?"
+        }
+        return "Archive \u{201C}\(one)\u{201D}?"
     }
 
     /// What is lost and what is not, in that order. The second sentence is the load-bearing one:
     /// ending the agent is not losing the work, and a reader who does not know that will keep a
     /// finished Session on the roster rather than risk it.
-    static let confirmMessage = """
-    Its agent is working. Archiving ends that agent and takes the Session off the roster. \
-    Putting it back keeps the history, and it can be continued from there.
-    """
+    static func confirmMessage(count: Int) -> String {
+        guard count == 1 else {
+            return """
+            Their agents are working. Archiving ends those agents and takes the Sessions off the \
+            roster. Putting them back keeps the history, and each can be continued from there.
+            """
+        }
+        return """
+        Its agent is working. Archiving ends that agent and takes the Session off the roster. \
+        Putting it back keeps the history, and it can be continued from there.
+        """
+    }
 
     /// The button says both halves of what it does. "Archive" alone would read as the gesture that
     /// only hid the row, which is the behaviour this prompt exists because of.
@@ -52,6 +64,16 @@ enum SessionArchiveProjection {
     /// has to say what it acts on (#800).
     static func menuTitle(isArchived: Bool) -> String {
         isArchived ? "Put Back on the Roster" : "Archive Session"
+    }
+
+    /// The same verb over a whole selection (#1247). One row keeps the singular the menu bar
+    /// uses; more than one says how many, because the menu is the only place the reader can see
+    /// what a batch covers before pressing it.
+    static func menuTitle(isArchived: Bool, count: Int) -> String {
+        guard count > 1 else { return menuTitle(isArchived: isArchived) }
+        return isArchived
+            ? "Put \(count) Sessions Back on the Roster"
+            : "Archive \(count) Sessions"
     }
 
     /// The same verb on the row, which is already the Session the menu has to name. The swipe

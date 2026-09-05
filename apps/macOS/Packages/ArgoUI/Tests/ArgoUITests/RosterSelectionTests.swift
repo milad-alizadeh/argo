@@ -1,3 +1,4 @@
+@testable import ArgoSpecimens
 @testable import ArgoUI
 import Testing
 
@@ -47,5 +48,45 @@ struct RosterSelectionTests {
         let selection = SessionRosterProjection.Selection(named: fold.id)
 
         #expect(drawn.filter(selection.isSelected).isEmpty)
+    }
+
+    /// A range grounds every row in it, not just the one the deck is drawing (#1247).
+    @Test
+    func `the ground lands on every row of a range`() {
+        let drawn = rows(selection: "run-1")
+        let selection = SessionRosterProjection.Selection(rows: ["run-1", "run-2"])
+
+        #expect(drawn.filter(selection.isSelected).map(\.id) == ["run-1", "run-2"])
+    }
+
+    /// The menu's Archive acts on the whole selection when the pointer's row is in it, and on
+    /// that row alone when it is not — in the ROSTER's order, which a set does not have.
+    @Test
+    func `archive covers the selection the pointer's row is in`() throws {
+        let drawn = rows(selection: "run-1").filter(\.takesSelection)
+        let pointed = try #require(drawn.last)
+        let ids = drawn.map(\.id)
+
+        #expect(SessionRosterProjection.archiveTargets(
+            under: pointed, aimed: [pointed.id, ids[0]], in: drawn,
+        ) == [ids[0], pointed.id])
+        #expect(SessionRosterProjection.archiveTargets(
+            under: pointed, aimed: [pointed.id], in: drawn,
+        ) == [pointed.id])
+    }
+
+    /// A selection spanning the foot is cut at it: the menu says ONE verb and a count, and putting
+    /// a Session back is the opposite act to archiving one.
+    @Test
+    @MainActor
+    func `archive never reaches across the foot`() throws {
+        let kept = ArchivedRosterSpecimen.rows
+        let behind = ArchivedRosterSpecimen.archived
+        let pointed = try #require(kept.first { $0.takesSelection })
+        let everything = Set((kept + behind).map(\.id))
+
+        #expect(SessionRosterProjection.archiveTargets(
+            under: pointed, aimed: everything, in: kept + behind,
+        ) == kept.filter(\.takesSelection).map(\.id))
     }
 }

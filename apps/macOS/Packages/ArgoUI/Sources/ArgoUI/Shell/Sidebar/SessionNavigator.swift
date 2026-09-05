@@ -4,15 +4,19 @@ import SwiftUI
 
 /// Native Sessions navigation with stable, information-dense rows.
 package struct SessionNavigator: View {
-    @Environment(\.argo) private var argo
+    /// Internal rather than private for the split into `SessionNavigator+Rows.swift`: an
+    /// extension in another file cannot see a view's private members.
+    @Environment(\.argo) var argo
 
     package let rows: [SessionRosterProjection.Row]
     /// What is behind the foot. Which list a Session belongs to is the projection's decision.
     var archived: [SessionRosterProjection.Row] = []
-    @Binding var selection: CockpitPresentation.Session.ID?
+    /// Every selected row, the row the deck is drawing, and the way to move it (#1247). The
+    /// `List`'s own binding and Argo's ground are both read off the one selection in here.
+    var held: RowSelectionHold<CockpitPresentation.Session.ID>
     /// Clear a Session off the roster, or put one back. Inert by default, so every preview and
     /// specimen draws the gesture without wiring a store to it.
-    var archive: (String, Bool) -> Void = { _, _ in }
+    var archive: ([String], Bool) -> Void = { _, _ in }
     /// Name a Session, or — with `nil` — drop the name it has. Inert by default, like the archive.
     var rename: (String, String?) -> Void = { _, _ in }
     /// Which row is being typed into, if any — at most one, by construction. Held above the rows
@@ -48,19 +52,34 @@ package struct SessionNavigator: View {
                     ) else { return }
                     roster.scrollTo(top, anchor: .top)
                 }
-                .modifier(RosterReveal(selection: selection, drawn: drawnRows, roster: roster))
+                .modifier(RosterReveal(selection: held.pointed, drawn: drawnRows, roster: roster))
         }
+    }
+
+    /// Every row a range may reach: what the list is drawing, minus the folds, which are opened
+    /// rather than selected. A row behind a shut fold is not in `rows` at all, which is what keeps
+    /// a range off rows the reader cannot see (#1247).
+    var selectableRows: [CockpitPresentation.Session.ID] {
+        drawnRows.filter(\.takesSelection).map(\.id)
     }
 
     /// Every row the list is drawing, in its order — the kept rows, and what is behind the foot
     /// only while the foot is open. Read here rather than by the body, because a scroll may only
     /// name a row the list actually has.
-    private var drawnRows: [SessionRosterProjection.Row] {
+    var drawnRows: [SessionRosterProjection.Row] {
         rows + (isArchiveOpen ? archived : [])
     }
 
+    /// The `List`'s own selection, which is the held set and nothing beside it. Written back
+    /// through `absorb`, so a click the platform answered — anywhere but the title, and every
+    /// keyboard move — reaches the anchor and the deck by the same route a click on the title
+    /// does.
+    private var listSelection: Binding<Set<CockpitPresentation.Session.ID>> {
+        Binding(get: { held.selection.rows }, set: { held.selection.absorb($0) })
+    }
+
     private var list: some View {
-        List(selection: $selection) {
+        List(selection: listSelection) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
             } else {
@@ -94,6 +113,21 @@ package struct SessionNavigator: View {
         .onChange(of: archived.isEmpty) { _, isEmpty in
             isArchiveShowing = isArchiveShowing && !isEmpty
         }
+        // The deck follows the last row CLICKED, wherever the click landed — the title's own
+        // layer, the platform's row, or the keyboard. Guarded against the row the deck already
+        // draws, so pointing the window from outside the roster is one pick and not two (#1247).
+        .onChange(of: held.selection.last) { _, row in
+            guard row != held.pointed else { return }
+            held.pick(row)
+        }
+        // A row the list has stopped drawing is not selected any more: a fold shut over a range
+        // must not leave the menu offering to archive what is behind it. An EMPTY roster is
+        // skipped — the list draws empty for a moment between a Project switch and the first
+        // reading, and reconciliation is what clears a selection for real.
+        .onChange(of: selectableRows) { _, drawn in
+            guard !drawn.isEmpty else { return }
+            held.selection.confine(to: drawn)
+        }
     }
 
     /// The archived Sessions, behind a count and shut by default. Absent entirely when nothing
@@ -125,93 +159,16 @@ package struct SessionNavigator: View {
     /// view's; everything else is the roster's own, stated where a test can reach it.
     private var isArchiveOpen: Bool {
         isArchiveRevealed || SessionRosterProjection.isArchiveOpen(
-            showing: isArchiveShowing, selection: selection, in: archived,
+            showing: isArchiveShowing, selection: held.pointed, in: archived,
         )
-    }
-
-    /// `.swipeActions` gives the system's reveal, spring back, close-when-another-opens and
-    /// full-swipe commit. `allowsFullSwipe` is what keeps story 12 — a hard pull still archives
-    /// outright, without a second click.
-    @ViewBuilder private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
-        let drawn = SessionRow(
-            row: row,
-            rename: { rename(row.id, $0) },
-            isRenaming: Binding(
-                get: { renamingRowID.wrappedValue == row.id },
-                set: { renamingRowID.wrappedValue = $0 ? row.id : nil },
-            ),
-            // The selection the `List`'s own click would have made, made by the row instead — the
-            // row carries a double-click, and the two cannot share one click. Written through the
-            // same binding, so the highlight, the keyboard and the deck all still read one fact.
-            select: { chose(row) },
-        )
-        .previewSafeListRow()
-
-        // A fold takes neither tag nor selection, deliberately: `ForEach` tags a row with its
-        // `Identifiable` id whether or not `.tag` is written, so leaving `.tag` off never kept the
-        // platform off a fold — and a fold is the one row that carries no ground, and so no probe.
-        // `selectionDisabled` is how the app refuses selection there, as `BacklogList` does. It
-        // is archived and renamed through the runs under it, so it carries neither gesture either.
-        if row.takesSelection {
-            drawn
-                // Holds its colour while the list is not first responder, where the platform would
-                // grey its own selection out: this is the one piece of state a reader tracks all
-                // day. The platform's own fill is switched off under it (`ListSelectionFill`),
-                // so a row this misses draws no selection at all rather than the wrong one
-                // (D30, 2026-08-31; #1137).
-                .argoSelectedRowGround(isSelected: reading.isSelected(row))
-                .tag(row.id)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    // A swipe action is re-drawn by the platform from its title and image alone,
-                    // so `ArgoRadius.control` cannot reach this button's corner and the capsule
-                    // here is not drift (#1257).
-                    Button(
-                        SessionArchiveProjection.rowTitle(isArchived: row.isArchived),
-                        systemImage: SessionArchiveProjection.symbol(isArchived: row.isArchived),
-                    ) {
-                        archive(row.id, !row.isArchived)
-                    }
-                    .tint(argo.color.interaction.destructive)
-                }
-        } else {
-            // Refused outright rather than covered: there is no ground to cover it with.
-            drawn.selectionDisabled()
-        }
-    }
-
-    /// The one reading of "which row is selected", which the ground is drawn from.
-    private var reading: SessionRosterProjection.Selection {
-        SessionRosterProjection.Selection(named: selection)
-    }
-
-    /// What a click on a row does. A fold is not a Session, so it cannot be selected: it OPENS,
-    /// and the runs under it are then ordinary rows the reader can select one by one (#1073).
-    private func chose(_ row: SessionRosterProjection.Row) {
-        if row.takesSelection {
-            selection = row.id
-        } else {
-            openFold(row.id)
-        }
-    }
-
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            Text("No Sessions yet")
-                .argoText(ArgoTypography.rowTitle)
-            Text("Observed Sessions appear here.")
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
-        }
-        .padding(.vertical, ArgoSpacing.tight)
-        .listRowSeparator(.hidden)
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         rows: [SessionRosterProjection.Row],
         archived: [SessionRosterProjection.Row] = [],
-        selection: Binding<CockpitPresentation.Session.ID?>,
-        archive: @escaping (String, Bool) -> Void = { _, _ in },
+        held: RowSelectionHold<CockpitPresentation.Session.ID>,
+        archive: @escaping ([String], Bool) -> Void = { _, _ in },
         rename: @escaping (String, String?) -> Void = { _, _ in },
         renamingRowID: Binding<String?> = .constant(nil),
         openFold: @escaping (String) -> Void = { _ in },
@@ -219,7 +176,7 @@ package struct SessionNavigator: View {
     ) {
         self.rows = rows
         self.archived = archived
-        _selection = selection
+        self.held = held
         self.archive = archive
         self.rename = rename
         self.renamingRowID = renamingRowID
@@ -229,7 +186,7 @@ package struct SessionNavigator: View {
 }
 
 #Preview("Sessions navigation — empty") {
-    SessionNavigator(rows: [], selection: .constant(nil))
+    SessionNavigator(rows: [], held: .init(selection: .constant(RowSelection())))
         .frame(width: 320, height: 480)
         .argoAppearance()
 }

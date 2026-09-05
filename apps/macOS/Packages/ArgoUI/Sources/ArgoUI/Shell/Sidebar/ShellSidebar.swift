@@ -19,14 +19,15 @@ package struct ShellSidebar: View {
     @Environment(\.controlActiveState) private var activeState
 
     let presentation: CockpitPresentation
-    @Binding var selection: CockpitPresentation.Session.ID?
+    /// The roster's selection, the row the deck is drawing, and the way to move it (#1247).
+    var held: RowSelectionHold<CockpitPresentation.Session.ID>
     /// Which room the window is in. Here because the rooms picker is the sidebar's strip and no
     /// longer the titlebar's (#816). No default: a strip bound to a constant would draw a selection
     /// that cannot be true of the window it is in.
     @Binding var room: CockpitRoom
     /// Clear a Session off the roster, or put one back (#502, story 14). Inert by default, so a
     /// preview draws the gesture without a store.
-    var archive: (String, Bool) -> Void = { _, _ in }
+    var archive: ([String], Bool) -> Void = { _, _ in }
     /// Name a Session, or drop the name it has (#502, story 18). Inert by default.
     var rename: (String, String?) -> Void = { _, _ in }
     /// Passed in rather than held here: the menu bar's Rename sets it from outside the sidebar
@@ -58,13 +59,13 @@ package struct ShellSidebar: View {
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
         let reading = roster.reading(
-            of: presentation.sessions, opened: openFolds, selection: selection,
+            of: presentation.sessions, opened: openFolds, selection: held.pointed,
         )
 
         return SessionNavigator(
             rows: reading.rows,
             archived: reading.archived,
-            selection: $selection,
+            held: held,
             archive: archive,
             rename: rename,
             renamingRowID: renamingSessionID,
@@ -102,14 +103,14 @@ package struct ShellSidebar: View {
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         presentation: CockpitPresentation,
-        selection: Binding<CockpitPresentation.Session.ID?>,
+        held: RowSelectionHold<CockpitPresentation.Session.ID>,
         room: Binding<CockpitRoom>,
-        archive: @escaping (String, Bool) -> Void = { _, _ in },
+        archive: @escaping ([String], Bool) -> Void = { _, _ in },
         rename: @escaping (String, String?) -> Void = { _, _ in },
         renamingSessionID: Binding<String?> = .constant(nil),
     ) {
         self.presentation = presentation
-        _selection = selection
+        self.held = held
         _room = room
         self.archive = archive
         self.rename = rename

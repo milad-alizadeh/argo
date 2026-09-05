@@ -142,12 +142,18 @@ extension CockpitView {
         Group {
             ShellSidebar(
                 presentation: presentation,
-                selection: $navigation.session,
+                held: RowSelectionHold(
+                    selection: $navigation.sessionSelection,
+                    pointed: navigation.session,
+                    // Not `navigation.session =`: the selection is already settled by the click
+                    // that caused this, and the setter would collapse the range it just made.
+                    pick: { navigation.deckPointed(at: $0) },
+                ),
                 room: $navigation.room,
                 // The shell's intent and not the action itself: an archive that would end live work
                 // is asked about first, and the row's swipe raises the same prompt the menu item
                 // does (#1290).
-                archive: { archive(sessionID: $0, isArchived: $1) },
+                archive: { archive(sessionIDs: $0, isArchived: $1) },
                 rename: actions.sessions.setName,
                 renamingSessionID: $renamingSessionID,
             )

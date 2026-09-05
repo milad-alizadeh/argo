@@ -183,14 +183,29 @@ extension CockpitView {
     /// A Session the presentation cannot name is archived without a prompt rather than dropped: it
     /// is a row that exists (the gesture came off one), and a gesture that silently did nothing is
     /// worse than one that skips a question about a Session nothing can describe.
+    /// A whole selection archives as one gesture (#1247): the Sessions that end no live work go
+    /// at once, and the ones that would are gathered into the SINGLE prompt the reader answers.
+    /// Two prompts in a row for one menu press is a prompt that stops being read.
+    func archive(sessionIDs: [String], isArchived: Bool) {
+        let asked = sessionIDs.compactMap { sessionID -> ArchiveConfirmation.Session? in
+            guard let session = presentation.session(sessionID),
+                  SessionArchiveProjection.confirms(
+                      access: session.access,
+                      status: session.status,
+                      archiving: isArchived,
+                  )
+            else {
+                actions.sessions.setArchived(sessionID, isArchived)
+                return nil
+            }
+            return ArchiveConfirmation.Session(id: session.id, name: session.title)
+        }
+        guard !asked.isEmpty else { return }
+        archiveConfirmation = ArchiveConfirmation(sessions: asked)
+    }
+
+    /// The archive gesture over ONE Session, which is what the menu bar and the row's swipe make.
     func archive(sessionID: String, isArchived: Bool) {
-        guard let session = presentation.session(sessionID),
-              SessionArchiveProjection.confirms(
-                  access: session.access,
-                  status: session.status,
-                  archiving: isArchived,
-              )
-        else { return actions.sessions.setArchived(sessionID, isArchived) }
-        archiveConfirmation = ArchiveConfirmation(id: session.id, name: session.title)
+        archive(sessionIDs: [sessionID], isArchived: isArchived)
     }
 }

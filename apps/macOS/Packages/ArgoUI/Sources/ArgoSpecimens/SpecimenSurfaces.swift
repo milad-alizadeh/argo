@@ -32,11 +32,11 @@ struct SessionRowsSpecimen: View {
 /// harness focuses first is free to change. The ground here is the harness's own and sits far
 /// lighter than the app's, so the two selections are judged on `roster` (#944), not on this.
 struct SelectedRowSpecimen: View {
-    @State private var selection = CockpitPresentation.preview.sessions.first?.id
+    @State private var selection = RowSelection(one: CockpitPresentation.preview.sessions.first?.id)
     @State private var room = CockpitRoom.sessions
 
     var body: some View {
-        ShellSidebar(presentation: .preview, selection: $selection, room: $room)
+        ShellSidebar(presentation: .preview, held: .init(selection: $selection), room: $room)
             .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 }
@@ -45,11 +45,11 @@ struct SelectedRowSpecimen: View {
 /// the one #1163's fourth (the Atlas) must still fit at. Four short names were the point; a
 /// fifth would need this render looked at again, not assumed away.
 struct NarrowRoomStripSpecimen: View {
-    @State private var selection = CockpitPresentation.preview.sessions.first?.id
+    @State private var selection = RowSelection(one: CockpitPresentation.preview.sessions.first?.id)
     @State private var room = CockpitRoom.atlas
 
     var body: some View {
-        ShellSidebar(presentation: .preview, selection: $selection, room: $room)
+        ShellSidebar(presentation: .preview, held: .init(selection: $selection), room: $room)
             .frame(width: ArgoLayout.sidebarMinimumWidth)
     }
 }

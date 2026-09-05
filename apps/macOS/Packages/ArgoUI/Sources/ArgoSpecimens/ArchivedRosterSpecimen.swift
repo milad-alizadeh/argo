@@ -18,7 +18,7 @@ struct ArchivedRosterSpecimen: View {
         SessionNavigator(
             rows: Self.rows,
             archived: Self.archived,
-            selection: .constant(selection),
+            held: .init(selection: .constant(RowSelection(one: selection)), pointed: selection),
             isArchiveRevealed: isRevealed,
         )
         .frame(width: ArgoLayout.sidebarIdealWidth)

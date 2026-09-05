@@ -7,14 +7,41 @@ import SwiftUI
 /// another file cannot see the view's private members, and nothing outside this pair of files
 /// names any of them.
 extension SessionRow {
-    @ViewBuilder var copyActions: some View {
+    /// The whole menu, in the order a reader reaches for it: the two names, the archive over
+    /// whatever the pointer's row stands for (#1247), and the copies.
+    @ViewBuilder var rowActions: some View {
+        renameActions
+        Divider()
+        archiveAction
+        Divider()
+        copyActions
+    }
+
+    /// Archive, or put back, everything this row stands for. The count is the menu's, because a
+    /// menu carries no rows to point at (#800). Absent on a fold, which is opened and never
+    /// selected, so it stands for nothing.
+    @ViewBuilder private var archiveAction: some View {
+        if !archiving.targets.isEmpty {
+            Button(SessionArchiveProjection.menuTitle(
+                isArchived: row.isArchived, count: archiving.targets.count,
+            )) {
+                archiving.act(archiving.targets, !row.isArchived)
+            }
+        }
+    }
+
+    @ViewBuilder private var renameActions: some View {
         // Rename and Reset are not copies: they name the gestures nothing else on screen does.
         // Absent on a fold, which stands for many Sessions and so has no name of its own.
         if row.rename != nil {
             Button(SessionRenameProjection.heading) { beginRenaming() }
         }
         resetAction
-        Divider()
+    }
+
+    /// The copies, single-row throughout however many rows are selected: a clipboard holding four
+    /// branches is not four things a reader can paste (#1247).
+    @ViewBuilder private var copyActions: some View {
         if row.fold == nil {
             Button("Copy Session title") { ArgoPasteboard.put(row.title) }
         }
@@ -30,7 +57,7 @@ extension SessionRow {
     /// nobody renamed, and it names the title it restores — nothing else on screen shows it.
     @ViewBuilder private var resetAction: some View {
         if let derived = row.rename?.derived {
-            Button("\(SessionRenameProjection.reset) “\(derived)”") { rename(nil) }
+            Button("\(SessionRenameProjection.reset) “\(derived)”") { renaming.rename(nil) }
         }
     }
 

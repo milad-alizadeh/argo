@@ -14,11 +14,10 @@ package struct SessionRow: View {
     @Environment(\.argo) private var argo
 
     let row: SessionRosterProjection.Row
-    /// Name this Session, or — with `nil` — drop the name it has. Inert by default.
-    var rename: (String?) -> Void = { _ in }
-    /// Whether this row is the one being typed into. Owned ABOVE the row, because the menu bar's
-    /// Rename and the render harness both open the field from outside it.
-    var isRenaming: Binding<Bool> = .constant(false)
+    /// Naming this Session, and whether its field is open — see `SessionRowRenaming`.
+    var renaming = SessionRowRenaming()
+    /// What the menu's Archive item covers, and the write it performs (#1247).
+    var archiving = SessionRowArchiving()
     /// Make this row the selected one. The row selects ITSELF because a tap gesture inside a `List`
     /// row swallows the click the `List` selects with — see the gestures on `body`.
     var select: () -> Void = {}
@@ -47,12 +46,12 @@ package struct SessionRow: View {
         .contentShape(.rect)
         // `.contain` while the field is open so it stays reachable; `.ignore` at rest makes the
         // whole row one element to a screen reader.
-        .accessibilityElement(children: isRenaming.wrappedValue ? .contain : .ignore)
+        .accessibilityElement(children: renaming.isOpen.wrappedValue ? .contain : .ignore)
         .accessibilityLabel(row.announcement)
         // AFTER the title's own gestures, so the double-click layer cannot stand between the
         // pointer and the menu holding Reset (#502, story 20).
         .help(inspectionText)
-        .contextMenu { copyActions }
+        .contextMenu { rowActions }
         // A fold takes no `List` tag, so neither the keyboard nor a screen reader's own
         // activation can reach it (`SessionNavigator`). This is the way in that does not need a
         // pointer.
@@ -91,7 +90,7 @@ package struct SessionRow: View {
     }
 
     @ViewBuilder private var title: some View {
-        if isRenaming.wrappedValue {
+        if renaming.isOpen.wrappedValue {
             nameField
         } else {
             Text(row.title)
@@ -140,19 +139,19 @@ package struct SessionRow: View {
     /// A fold has no name of its own to change, so the field never opens on one.
     func beginRenaming() {
         guard row.rename != nil else { return }
-        isRenaming.wrappedValue = true
+        renaming.isOpen.wrappedValue = true
     }
 
     /// A blank field is not a rename and not a reset, by the engine's own rule
     /// (`SessionAnnotations`); the row closes on the title it already had.
     private func commitRenaming() {
-        defer { isRenaming.wrappedValue = false }
+        defer { renaming.isOpen.wrappedValue = false }
         guard SessionAnnotations.name(from: typed) != nil else { return }
-        rename(typed)
+        renaming.rename(typed)
     }
 
     private func cancelRenaming() {
-        isRenaming.wrappedValue = false
+        renaming.isOpen.wrappedValue = false
     }
 
     /// Line 2 — what the Session is doing, at the full width of the row (#1343). Absent entirely
@@ -224,13 +223,13 @@ package struct SessionRow: View {
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         row: SessionRosterProjection.Row,
-        rename: @escaping (String?) -> Void = { _ in },
-        isRenaming: Binding<Bool> = .constant(false),
+        renaming: SessionRowRenaming = SessionRowRenaming(),
+        archiving: SessionRowArchiving = SessionRowArchiving(),
         select: @escaping () -> Void = {},
     ) {
         self.row = row
-        self.rename = rename
-        self.isRenaming = isRenaming
+        self.renaming = renaming
+        self.archiving = archiving
         self.select = select
     }
 }
