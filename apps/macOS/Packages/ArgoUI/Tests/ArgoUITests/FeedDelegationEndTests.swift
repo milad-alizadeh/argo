@@ -8,12 +8,7 @@ import Testing
 /// prose to learn the children had come back.
 @Suite("Feed delegation endings")
 struct FeedDelegationEndTests {
-    private static let spend = Usage(
-        inputTokens: 1200,
-        outputTokens: 3400,
-        cacheReadTokens: 139_000,
-        cacheCreationTokens: 0,
-    )
+    private static let spend = TranscriptFixtures.subagentSpend
 
     private func rows(_ events: [TranscriptEvent]) -> [FeedRow] {
         FeedProjection.rows(from: events)
@@ -59,17 +54,17 @@ struct FeedDelegationEndTests {
     }
 
     @Test
-    func `the row carries what the record reported`() {
+    func `the row carries what the record reported`() throws {
         let events = [
             Self.handedOver("standards", naming: "Standards review"),
             .toolCallOutcome(TranscriptFixtures.spent("standards", Self.spend, reportedMs: 94000)),
         ]
 
-        let end = try? #require(endings(in: events).first)
+        let end = try #require(endings(in: events).first)
 
-        #expect(end?.durationMs == 94000)
-        #expect(end?.spend == Self.spend)
-        #expect(end?.ending == .succeeded)
+        #expect(end.durationMs == 94000)
+        #expect(end.spend == Self.spend)
+        #expect(end.ending == .succeeded)
     }
 
     /// #908: a backgrounded Agent reports neither figure at either end. The row still lands, and it
@@ -115,17 +110,17 @@ struct FeedDelegationEndTests {
     }
 
     @Test
-    func `a delegation that failed reads as failed`() {
+    func `a delegation that failed reads as failed`() throws {
         let events = [
             Self.handedOver("spec", naming: "Spec review"),
             .toolCallOutcome(FeedFixture.failed("spec", printing: "the subagent exited")),
         ]
 
-        let end = try? #require(endings(in: events).first)
+        let end = try #require(endings(in: events).first)
 
-        #expect(end?.ending == .failed)
-        #expect(end?.ink == .failure)
-        #expect(end?.spoken.contains("failed") == true)
+        #expect(end.ending == .failed)
+        #expect(end.ink == .failure)
+        #expect(end.spoken.contains("failed"))
     }
 
     /// The row opens nothing and stands for no call: what the Subagent produced is behind the

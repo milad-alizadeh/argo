@@ -1,4 +1,5 @@
 import ArgoEngine
+import ArgoFixtures
 @testable import ArgoUI
 
 // The rows the shape claim is made over — one per shape, and one per STATE inside a shape that
@@ -65,13 +66,8 @@ extension FeedShapeHeightTests {
             content: .delegationEnded(FeedDelegationEnd(
                 subject: .plain("Standards review"),
                 ending: .succeeded,
-                durationMs: 223_591,
-                spend: Usage(
-                    inputTokens: 3600,
-                    outputTokens: 40000,
-                    cacheReadTokens: 100_000,
-                    cacheCreationTokens: 0,
-                ),
+                durationMs: TranscriptFixtures.subagentDurationMs,
+                spend: TranscriptFixtures.subagentSpend,
             )),
         ),
     ]

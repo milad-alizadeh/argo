@@ -1,6 +1,19 @@
 import ArgoEngine
 
 package extension TranscriptFixtures {
+    /// What one landed Subagent reported spending — the whole child's subtree, priced, with the
+    /// tokens where a real one's mostly sit. Named once for the three places that draw the same
+    /// ending: this transcript, the row's own render, and the ruler's row list.
+    static let subagentSpend = Usage(
+        inputTokens: 3600,
+        outputTokens: 40000,
+        cacheReadTokens: 100_000,
+        cacheCreationTokens: 0,
+    )
+
+    /// And what it reported taking, beside it — the pair is one ending, so they travel together.
+    static let subagentDurationMs = 223_591
+
     /// A review fan-out from the handover to the last report — the transcript the ENDING of a
     /// delegation is judged against (#1281).
     ///
@@ -18,14 +31,9 @@ package extension TranscriptFixtures {
         .message(markdown: "Both review axes are running. Waiting for results."),
         .toolCallOutcome(spent(
             "standards",
-            Usage(
-                inputTokens: 3600,
-                outputTokens: 40000,
-                cacheReadTokens: 100_000,
-                cacheCreationTokens: 0,
-            ),
+            subagentSpend,
             subagent: "a-standards",
-            reportedMs: 223_591,
+            reportedMs: subagentDurationMs,
         )),
         .toolCallOutcome(ToolCallOutcome(
             id: "spec",

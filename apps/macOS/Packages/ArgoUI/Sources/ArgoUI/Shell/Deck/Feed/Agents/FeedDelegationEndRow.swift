@@ -31,8 +31,7 @@ struct FeedDelegationEndRow: View {
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(verdict ?? argo.color.text.tertiary)
             FeedCallSubject(subject: end.subject, tint: verdict, isOpen: false)
-            took
-            spend
+            figures
         }
         .lineLimit(1)
         .frame(height: ArgoFeedRow.lineHeight, alignment: .center)
@@ -50,24 +49,24 @@ struct FeedDelegationEndRow: View {
             .foregroundStyle(quiet)
     }
 
-    /// How long it ran, and nothing at all where the record reported no total. Monospaced digits at
-    /// the quietest rung: it is there to be CHECKED rather than read, exactly as the rail's own
-    /// meter sets it.
-    @ViewBuilder private var took: some View {
-        if let durationMs = end.durationMs {
-            Text(TurnClockPhrase.figure(seconds: durationMs / 1000))
-                .argoText(ArgoTypography.machineCaption)
-                .monospacedDigit()
-                .foregroundStyle(quiet)
-        }
+    /// The two figures the record can report, in the order the rail's own meter sets them: how long
+    /// it ran, and what it cost. Each absent where the record reported none, which is every
+    /// backgrounded Agent (#908) — and a row that reports neither draws its words alone.
+    ///
+    /// `FeedSpend.agentWords` carries why the spend is the fresh half and why it is labelled, and
+    /// the duration is the figure the chip in the rail draws, so a reader holding one against the
+    /// other finds one number.
+    @ViewBuilder private var figures: some View {
+        figure(end.durationMs.map { TurnClockPhrase.figure(seconds: $0 / 1000) })
+        figure(end.spend.map(FeedSpend.agentWords))
     }
 
-    /// What the whole Subagent cost. `FeedSpend.agentWords` carries why it is the fresh half alone
-    /// and why the figure is labelled — the same words the chip in the rail draws, so a reader
-    /// holding one against the other finds one number.
-    @ViewBuilder private var spend: some View {
-        if let spend = end.spend {
-            Text(FeedSpend.agentWords(spend))
+    /// One machine figure at the quietest rung on the row: it is there to be CHECKED rather than
+    /// read. Nothing at all where the record holds no such figure. One builder over both, so the
+    /// type they are set in cannot drift apart between them.
+    @ViewBuilder private func figure(_ words: String?) -> some View {
+        if let words {
+            Text(words)
                 .argoText(ArgoTypography.machineCaption)
                 .monospacedDigit()
                 .foregroundStyle(quiet)
@@ -89,9 +88,9 @@ struct FeedDelegationEndRow: View {
     }
 }
 
-// The pair, side by side: one that came back with both figures, and one that failed — so the words
-// staying the same across the two is visible, and the colour is the only thing that moved.
-#Preview("Delegation endings — returned and failed") {
+// The three shapes the row takes, one under another: both figures, neither, and the failure. The
+// words do not move across them — the colour and the figures are all that do, which is the claim.
+#Preview("Delegation endings — returned, unreported, and failed") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
         FeedDelegationEndRow(end: FeedDelegationEnd(
             subject: .plain("Standards review"),
@@ -103,6 +102,14 @@ struct FeedDelegationEndRow: View {
                 cacheReadTokens: 100_000,
                 cacheCreationTokens: 0,
             ),
+        ))
+        // A backgrounded Agent, which reports neither figure at either end (#908) — the state that
+        // proves no `0` is drawn in place of what the record does not hold.
+        FeedDelegationEndRow(end: FeedDelegationEnd(
+            subject: .plain("Sweep the stop reasons"),
+            ending: .succeeded,
+            durationMs: nil,
+            spend: nil,
         ))
         FeedDelegationEndRow(end: FeedDelegationEnd(
             subject: .plain("Spec review"),

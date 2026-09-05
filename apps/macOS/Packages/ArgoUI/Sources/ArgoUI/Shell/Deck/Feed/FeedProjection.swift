@@ -274,7 +274,7 @@ package enum FeedProjection {
         // the deck header's to state (#1248), and a queue note says how the prompt below it
         // arrived. An outcome that ANSWERED a delegation is the one exception, and it is answered
         // outside this switch — the row needs the call the outcome quotes, which one event at a
-        // time cannot reach (`delegationEnded(_:handedOver:within:)`).
+        // time cannot reach (`delegationEndings(in:within:)`).
         // The stance is one of these too, and pointedly: Mode is standing rather than something
         // that happened, so it belongs on the composer's footer and not as a row in the reading.
         // The seam of a bounded read, drawn where it happened: everything above it is older than
