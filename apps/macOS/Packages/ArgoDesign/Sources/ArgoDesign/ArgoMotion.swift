@@ -160,6 +160,11 @@ public extension ArgoMotion {
     /// The city lying down into the treemap, and standing back up. The longest single move on the
     /// map, because it is the only one that changes what the reader is looking at rather than
     /// where.
+    ///
+    /// Not `resettle`, which the flip borrowed until #1422: a list settling into a new order
+    /// rearranges rows the reader is still looking at, and eases OUT because it is already under
+    /// way when they notice it. The flip starts from a picture standing still, so it eases at both
+    /// ends — an abrupt start reads as the map being dropped rather than laid down.
     static let lieDown = ArgoMotion(duration: 0.45, curve: .easeInOut, reducedDuration: nil)
 
     /// The camera flying to a box the reader picked. Eased OUT alone: the flight starts the instant
@@ -225,7 +230,6 @@ public extension ArgoMotion {
         // The Atlas roles are decided (#1420) and the map does not read them yet: the motion is
         // ported per surface, and each of these is waiting on the surface that spends it.
         "rise": "the plan-to-city transition",
-        "lieDown": "the city/treemap flip",
         "snap": "the camera flight to a picked box",
         "reshuffle": "the domain re-arrangement",
         "layerFade": "the map's filter and search repaints",

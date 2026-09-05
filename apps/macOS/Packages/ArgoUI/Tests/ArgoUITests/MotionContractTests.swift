@@ -108,6 +108,14 @@ struct MotionContractTests {
         return first > second ? .orderedDescending : .orderedSame
     }
 
+    /// The flip is the first of the map's roles a surface actually spends (#1422): `AtlasSidebar`
+    /// wraps the city/treemap switch in it. The specimen draws an unwired role as unjudged, so a
+    /// note left behind would hide a role that ships.
+    @Test
+    func `the city lying down waits on no surface`() {
+        #expect(ArgoMotion.unwired["lieDown"] == nil)
+    }
+
     @Test
     func `the Reduce Motion variant never takes longer than the full one`() {
         for role in ArgoMotion.all {
