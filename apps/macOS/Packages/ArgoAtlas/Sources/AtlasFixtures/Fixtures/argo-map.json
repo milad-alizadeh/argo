@@ -1109,5 +1109,1162 @@
         ]
       }
     ]
-  }
+  },
+  "couplings": [
+    {
+      "first": 0,
+      "second": 1,
+      "strength": 1.0
+    },
+    {
+      "first": 0,
+      "second": 2,
+      "strength": 1.0
+    },
+    {
+      "first": 0,
+      "second": 3,
+      "strength": 1.0
+    },
+    {
+      "first": 1,
+      "second": 2,
+      "strength": 1.0
+    },
+    {
+      "first": 1,
+      "second": 3,
+      "strength": 1.0
+    },
+    {
+      "first": 2,
+      "second": 3,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 5,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 6,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 7,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 4,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 6,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 7,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 5,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 7,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 6,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 7,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 7,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 7,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 7,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 8,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 8,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 8,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 9,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 9,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 10,
+      "second": 20,
+      "strength": 0.5
+    },
+    {
+      "first": 10,
+      "second": 87,
+      "strength": 0.5
+    },
+    {
+      "first": 10,
+      "second": 88,
+      "strength": 0.5
+    },
+    {
+      "first": 21,
+      "second": 22,
+      "strength": 0.222
+    },
+    {
+      "first": 21,
+      "second": 23,
+      "strength": 0.231
+    },
+    {
+      "first": 21,
+      "second": 25,
+      "strength": 0.133
+    },
+    {
+      "first": 21,
+      "second": 26,
+      "strength": 0.455
+    },
+    {
+      "first": 21,
+      "second": 27,
+      "strength": 0.636
+    },
+    {
+      "first": 21,
+      "second": 28,
+      "strength": 0.2
+    },
+    {
+      "first": 21,
+      "second": 29,
+      "strength": 0.3
+    },
+    {
+      "first": 21,
+      "second": 30,
+      "strength": 0.091
+    },
+    {
+      "first": 21,
+      "second": 32,
+      "strength": 0.091
+    },
+    {
+      "first": 21,
+      "second": 33,
+      "strength": 0.333
+    },
+    {
+      "first": 21,
+      "second": 36,
+      "strength": 0.083
+    },
+    {
+      "first": 21,
+      "second": 45,
+      "strength": 0.333
+    },
+    {
+      "first": 21,
+      "second": 46,
+      "strength": 0.1
+    },
+    {
+      "first": 21,
+      "second": 47,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 48,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 49,
+      "strength": 0.4
+    },
+    {
+      "first": 21,
+      "second": 50,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 51,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 52,
+      "strength": 0.111
+    },
+    {
+      "first": 22,
+      "second": 23,
+      "strength": 0.125
+    },
+    {
+      "first": 22,
+      "second": 25,
+      "strength": 0.111
+    },
+    {
+      "first": 22,
+      "second": 26,
+      "strength": 0.286
+    },
+    {
+      "first": 22,
+      "second": 27,
+      "strength": 0.222
+    },
+    {
+      "first": 22,
+      "second": 28,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 29,
+      "strength": 0.5
+    },
+    {
+      "first": 22,
+      "second": 30,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 32,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 33,
+      "strength": 0.286
+    },
+    {
+      "first": 22,
+      "second": 36,
+      "strength": 0.2
+    },
+    {
+      "first": 22,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 46,
+      "strength": 0.333
+    },
+    {
+      "first": 23,
+      "second": 25,
+      "strength": 0.071
+    },
+    {
+      "first": 23,
+      "second": 26,
+      "strength": 0.273
+    },
+    {
+      "first": 23,
+      "second": 27,
+      "strength": 0.333
+    },
+    {
+      "first": 23,
+      "second": 28,
+      "strength": 0.429
+    },
+    {
+      "first": 23,
+      "second": 29,
+      "strength": 0.222
+    },
+    {
+      "first": 23,
+      "second": 30,
+      "strength": 0.25
+    },
+    {
+      "first": 23,
+      "second": 32,
+      "strength": 0.25
+    },
+    {
+      "first": 23,
+      "second": 33,
+      "strength": 0.4
+    },
+    {
+      "first": 23,
+      "second": 36,
+      "strength": 0.1
+    },
+    {
+      "first": 23,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 23,
+      "second": 46,
+      "strength": 0.125
+    },
+    {
+      "first": 23,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 24,
+      "second": 30,
+      "strength": 0.333
+    },
+    {
+      "first": 25,
+      "second": 26,
+      "strength": 0.154
+    },
+    {
+      "first": 25,
+      "second": 27,
+      "strength": 0.133
+    },
+    {
+      "first": 25,
+      "second": 28,
+      "strength": 0.1
+    },
+    {
+      "first": 25,
+      "second": 29,
+      "strength": 0.091
+    },
+    {
+      "first": 25,
+      "second": 30,
+      "strength": 0.1
+    },
+    {
+      "first": 25,
+      "second": 33,
+      "strength": 0.071
+    },
+    {
+      "first": 25,
+      "second": 34,
+      "strength": 0.111
+    },
+    {
+      "first": 25,
+      "second": 35,
+      "strength": 0.111
+    },
+    {
+      "first": 25,
+      "second": 36,
+      "strength": 0.333
+    },
+    {
+      "first": 25,
+      "second": 37,
+      "strength": 0.222
+    },
+    {
+      "first": 25,
+      "second": 38,
+      "strength": 0.125
+    },
+    {
+      "first": 25,
+      "second": 39,
+      "strength": 0.5
+    },
+    {
+      "first": 25,
+      "second": 40,
+      "strength": 0.375
+    },
+    {
+      "first": 25,
+      "second": 41,
+      "strength": 0.125
+    },
+    {
+      "first": 25,
+      "second": 43,
+      "strength": 0.375
+    },
+    {
+      "first": 25,
+      "second": 45,
+      "strength": 0.1
+    },
+    {
+      "first": 26,
+      "second": 27,
+      "strength": 0.778
+    },
+    {
+      "first": 26,
+      "second": 28,
+      "strength": 0.25
+    },
+    {
+      "first": 26,
+      "second": 29,
+      "strength": 0.375
+    },
+    {
+      "first": 26,
+      "second": 30,
+      "strength": 0.25
+    },
+    {
+      "first": 26,
+      "second": 32,
+      "strength": 0.429
+    },
+    {
+      "first": 26,
+      "second": 33,
+      "strength": 0.4
+    },
+    {
+      "first": 26,
+      "second": 36,
+      "strength": 0.1
+    },
+    {
+      "first": 26,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 26,
+      "second": 46,
+      "strength": 0.286
+    },
+    {
+      "first": 26,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 26,
+      "second": 52,
+      "strength": 0.143
+    },
+    {
+      "first": 27,
+      "second": 28,
+      "strength": 0.333
+    },
+    {
+      "first": 27,
+      "second": 29,
+      "strength": 0.3
+    },
+    {
+      "first": 27,
+      "second": 30,
+      "strength": 0.2
+    },
+    {
+      "first": 27,
+      "second": 32,
+      "strength": 0.333
+    },
+    {
+      "first": 27,
+      "second": 33,
+      "strength": 0.455
+    },
+    {
+      "first": 27,
+      "second": 36,
+      "strength": 0.083
+    },
+    {
+      "first": 27,
+      "second": 45,
+      "strength": 0.2
+    },
+    {
+      "first": 27,
+      "second": 46,
+      "strength": 0.222
+    },
+    {
+      "first": 27,
+      "second": 49,
+      "strength": 0.273
+    },
+    {
+      "first": 27,
+      "second": 50,
+      "strength": 0.111
+    },
+    {
+      "first": 27,
+      "second": 52,
+      "strength": 0.111
+    },
+    {
+      "first": 28,
+      "second": 29,
+      "strength": 0.167
+    },
+    {
+      "first": 28,
+      "second": 30,
+      "strength": 0.2
+    },
+    {
+      "first": 28,
+      "second": 32,
+      "strength": 0.2
+    },
+    {
+      "first": 28,
+      "second": 33,
+      "strength": 0.111
+    },
+    {
+      "first": 28,
+      "second": 36,
+      "strength": 0.167
+    },
+    {
+      "first": 28,
+      "second": 45,
+      "strength": 0.2
+    },
+    {
+      "first": 28,
+      "second": 49,
+      "strength": 0.143
+    },
+    {
+      "first": 29,
+      "second": 30,
+      "strength": 0.4
+    },
+    {
+      "first": 29,
+      "second": 32,
+      "strength": 0.4
+    },
+    {
+      "first": 29,
+      "second": 33,
+      "strength": 0.375
+    },
+    {
+      "first": 29,
+      "second": 36,
+      "strength": 0.143
+    },
+    {
+      "first": 29,
+      "second": 45,
+      "strength": 0.167
+    },
+    {
+      "first": 29,
+      "second": 46,
+      "strength": 0.5
+    },
+    {
+      "first": 29,
+      "second": 47,
+      "strength": 0.25
+    },
+    {
+      "first": 29,
+      "second": 48,
+      "strength": 0.25
+    },
+    {
+      "first": 29,
+      "second": 49,
+      "strength": 0.125
+    },
+    {
+      "first": 29,
+      "second": 51,
+      "strength": 0.25
+    },
+    {
+      "first": 30,
+      "second": 32,
+      "strength": 0.2
+    },
+    {
+      "first": 30,
+      "second": 33,
+      "strength": 0.25
+    },
+    {
+      "first": 30,
+      "second": 36,
+      "strength": 0.167
+    },
+    {
+      "first": 30,
+      "second": 45,
+      "strength": 0.2
+    },
+    {
+      "first": 30,
+      "second": 46,
+      "strength": 0.25
+    },
+    {
+      "first": 32,
+      "second": 33,
+      "strength": 0.25
+    },
+    {
+      "first": 32,
+      "second": 46,
+      "strength": 0.667
+    },
+    {
+      "first": 32,
+      "second": 49,
+      "strength": 0.143
+    },
+    {
+      "first": 33,
+      "second": 36,
+      "strength": 0.1
+    },
+    {
+      "first": 33,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 33,
+      "second": 46,
+      "strength": 0.286
+    },
+    {
+      "first": 33,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 33,
+      "second": 50,
+      "strength": 0.143
+    },
+    {
+      "first": 33,
+      "second": 52,
+      "strength": 0.143
+    },
+    {
+      "first": 34,
+      "second": 35,
+      "strength": 0.333
+    },
+    {
+      "first": 34,
+      "second": 36,
+      "strength": 0.5
+    },
+    {
+      "first": 34,
+      "second": 37,
+      "strength": 0.25
+    },
+    {
+      "first": 34,
+      "second": 38,
+      "strength": 0.5
+    },
+    {
+      "first": 34,
+      "second": 39,
+      "strength": 0.2
+    },
+    {
+      "first": 34,
+      "second": 41,
+      "strength": 0.5
+    },
+    {
+      "first": 34,
+      "second": 43,
+      "strength": 0.25
+    },
+    {
+      "first": 34,
+      "second": 44,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 36,
+      "strength": 0.2
+    },
+    {
+      "first": 35,
+      "second": 37,
+      "strength": 0.667
+    },
+    {
+      "first": 35,
+      "second": 38,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 39,
+      "strength": 0.2
+    },
+    {
+      "first": 35,
+      "second": 41,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 42,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 43,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 37,
+      "strength": 0.4
+    },
+    {
+      "first": 36,
+      "second": 38,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 39,
+      "strength": 0.143
+    },
+    {
+      "first": 36,
+      "second": 40,
+      "strength": 0.167
+    },
+    {
+      "first": 36,
+      "second": 41,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 43,
+      "strength": 0.4
+    },
+    {
+      "first": 36,
+      "second": 44,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 45,
+      "strength": 0.167
+    },
+    {
+      "first": 37,
+      "second": 38,
+      "strength": 0.333
+    },
+    {
+      "first": 37,
+      "second": 39,
+      "strength": 0.167
+    },
+    {
+      "first": 37,
+      "second": 40,
+      "strength": 0.2
+    },
+    {
+      "first": 37,
+      "second": 41,
+      "strength": 0.333
+    },
+    {
+      "first": 37,
+      "second": 42,
+      "strength": 0.333
+    },
+    {
+      "first": 37,
+      "second": 43,
+      "strength": 0.5
+    },
+    {
+      "first": 38,
+      "second": 39,
+      "strength": 0.25
+    },
+    {
+      "first": 38,
+      "second": 41,
+      "strength": 1.0
+    },
+    {
+      "first": 38,
+      "second": 43,
+      "strength": 0.333
+    },
+    {
+      "first": 39,
+      "second": 40,
+      "strength": 0.4
+    },
+    {
+      "first": 39,
+      "second": 41,
+      "strength": 0.25
+    },
+    {
+      "first": 39,
+      "second": 43,
+      "strength": 0.167
+    },
+    {
+      "first": 40,
+      "second": 43,
+      "strength": 0.2
+    },
+    {
+      "first": 41,
+      "second": 43,
+      "strength": 0.333
+    },
+    {
+      "first": 45,
+      "second": 49,
+      "strength": 0.333
+    },
+    {
+      "first": 45,
+      "second": 52,
+      "strength": 0.333
+    },
+    {
+      "first": 47,
+      "second": 48,
+      "strength": 1.0
+    },
+    {
+      "first": 47,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 47,
+      "second": 51,
+      "strength": 1.0
+    },
+    {
+      "first": 48,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 48,
+      "second": 51,
+      "strength": 1.0
+    },
+    {
+      "first": 49,
+      "second": 50,
+      "strength": 0.2
+    },
+    {
+      "first": 49,
+      "second": 51,
+      "strength": 0.2
+    },
+    {
+      "first": 49,
+      "second": 52,
+      "strength": 0.2
+    },
+    {
+      "first": 73,
+      "second": 76,
+      "strength": 0.5
+    },
+    {
+      "first": 73,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 74,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 76,
+      "second": 77,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 79,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 80,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 83,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 84,
+      "strength": 0.333
+    },
+    {
+      "first": 76,
+      "second": 85,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 86,
+      "strength": 0.5
+    },
+    {
+      "first": 77,
+      "second": 79,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 80,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 83,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 77,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 78,
+      "second": 81,
+      "strength": 0.333
+    },
+    {
+      "first": 78,
+      "second": 84,
+      "strength": 0.5
+    },
+    {
+      "first": 79,
+      "second": 80,
+      "strength": 1.0
+    },
+    {
+      "first": 79,
+      "second": 83,
+      "strength": 1.0
+    },
+    {
+      "first": 79,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 79,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 79,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 80,
+      "second": 83,
+      "strength": 1.0
+    },
+    {
+      "first": 80,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 80,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 80,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 81,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 83,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 83,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 83,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 84,
+      "second": 85,
+      "strength": 0.167
+    },
+    {
+      "first": 84,
+      "second": 86,
+      "strength": 0.167
+    },
+    {
+      "first": 85,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 87,
+      "second": 88,
+      "strength": 1.0
+    }
+  ]
 }
