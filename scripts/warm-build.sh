@@ -54,13 +54,35 @@ mkdir -p "$(dirname "$LOG")"
 # later, so the next lane to look reclaimed it as stale and built on top of the warm, and the
 # slot was never released either. A child shell has its own `$$` and runs its traps.
 if [ "${1:-}" = --worker ]; then
-  # One of the machine's build slots (#1377). Waiting here costs the caller nothing — it has had
-  # its prompt back since the parent exited — and a warm nobody is waiting for is exactly the
-  # work that should yield to a build somebody is.
-  build_lock_acquire
+  # One of the machine's build slots (#1377), but NOT for ever (#1450).
+  #
+  # This worker is orphaned to pid 1 a second after it starts — the parent exits at once, which
+  # is the whole point of warm — so nothing will ever reap it and nobody is waiting on it. Left
+  # unbounded it queues behind lanes that started hours after it did, and when it finally wins a
+  # slot it takes one from work somebody wants, to build a tree that has moved on. Thirty-three
+  # of these had accumulated on one machine, the oldest three hours old, two of them naming a
+  # worktree that had already been deleted; the queue they formed was most of why a gate could
+  # sit 23 minutes waiting for a slot.
+  #
+  # Fifteen minutes against a warm that takes about two and a half. A refusal is not a failure
+  # here: it means the machine is busy, which is exactly when the warm was never going to help.
+  ARGO_BUILD_LOCK_WAIT_LIMIT=${ARGO_WARM_WAIT_LIMIT:-900}
+  export ARGO_BUILD_LOCK_WAIT_LIMIT
+  BUILD_LOCK_WAIT_LIMIT=$ARGO_BUILD_LOCK_WAIT_LIMIT
+  if ! build_lock_acquire; then
+    echo "warm: gave up waiting for a build slot — the machine is busy, so this was moot"
+    exit 0
+  fi
 
   # shellcheck disable=SC2086 # ARGO_BUILD_PACKAGES is a word list, not one argument.
   for package in $ARGO_BUILD_PACKAGES; do
+    # The tree can be removed while this runs: a worktree is swept, or the session that asked
+    # for the warm finished and cleaned up behind itself. Building on into a directory that is
+    # gone spends a slot on nothing.
+    if [ ! -d "$APP_DIR/Packages/$package" ]; then
+      echo "warm: $APP_DIR is gone — stopping"
+      exit 0
+    fi
     echo "warm: $package"
     (cd "$APP_DIR/Packages/$package" && swift build --build-tests) || echo "warm: $package failed"
   done
