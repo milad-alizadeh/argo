@@ -17,24 +17,25 @@ extension FeedProjection {
     /// an ending it cannot see (#1076, #1090).
     static func delegationEndings(in events: [TranscriptEvent], within path: FeedPath)
         -> [Int: FeedRow.Content] {
-        let handedOver = delegations(in: events)
-        return events.enumerated().reduce(into: [:]) { endings, pair in
-            guard case let .toolCallOutcome(outcome) = pair.element,
-                  let call = handedOver[outcome.id],
-                  let end = FeedCallReading.call(call, outcome: outcome, within: path)
-                  .flatMap(FeedDelegationEnd.init)
-            else { return }
-            endings[pair.offset] = .delegationEnded(end)
+        var handedOver: [String: ToolCall] = [:]
+        var endings: [Int: FeedRow.Content] = [:]
+        // FORWARDS, gathering the handovers as it goes, so an outcome is only ever answered by a
+        // call the record wrote ABOVE it. A pre-pass over the whole stream would let a host that
+        // reuses a call id label an early ending with a later delegation's brief — which is the
+        // one thing the row exists to get right.
+        for (position, event) in events.enumerated() {
+            switch event {
+            case let .toolCall(call) where call.kind == .delegate:
+                handedOver[call.id] = call
+            case let .toolCallOutcome(outcome):
+                guard let call = handedOver[outcome.id],
+                      let end = FeedCallReading.call(call, outcome: outcome, within: path)
+                      .flatMap(FeedDelegationEnd.init)
+                else { continue }
+                endings[position] = .delegationEnded(end)
+            default: continue
+            }
         }
-    }
-
-    /// The delegating calls in the stream, by the id their result quotes. Gathered ahead of the
-    /// pass rather than beside it because nothing else needs them in order: the answer is asked by
-    /// id, and the record always writes an outcome after the call it answers.
-    private static func delegations(in events: [TranscriptEvent]) -> [String: ToolCall] {
-        events.reduce(into: [:]) { found, event in
-            guard case let .toolCall(call) = event, call.kind == .delegate else { return }
-            found[call.id] = call
-        }
+        return endings
     }
 }
