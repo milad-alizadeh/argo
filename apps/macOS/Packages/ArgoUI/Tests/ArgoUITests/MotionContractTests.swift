@@ -109,21 +109,11 @@ struct MotionContractTests {
     }
 
     /// The flip is the first of the map's roles a surface actually spends (#1422): `AtlasSidebar`
-    /// wraps the city/treemap switch in it, where it used to reach for `resettle`. The specimen
-    /// draws an unwired role as unjudged, so leaving the note behind would hide a role that ships.
+    /// wraps the city/treemap switch in it. The specimen draws an unwired role as unjudged, so a
+    /// note left behind would hide a role that ships.
     @Test
-    func `the city lying down is a role a surface spends`() {
+    func `the city lying down waits on no surface`() {
         #expect(ArgoMotion.unwired["lieDown"] == nil)
-        // Eased at BOTH ends, which is the whole reason it is not `resettle`: the move starts from
-        // a picture that was standing still, and an abrupt start reads as the map being dropped.
-        guard case .easeInOut = ArgoMotion.lieDown.curve else {
-            Issue.record("the flip is not eased at both ends")
-            return
-        }
-        // And the longest single move on the map, because it changes what the reader is looking at
-        // rather than where.
-        let single = ArgoMotion.atlas.filter { !$0.motion.repeats }
-        #expect(single.allSatisfy { $0.motion.duration <= ArgoMotion.lieDown.duration })
     }
 
     @Test

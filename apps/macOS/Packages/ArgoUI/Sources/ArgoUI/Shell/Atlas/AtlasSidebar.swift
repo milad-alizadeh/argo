@@ -90,14 +90,8 @@ package struct AtlasSidebar: View {
     /// `AtlasView` can tween `relief` through — plain assignment changes the value with nothing to
     /// interpolate between the old picture and the new one. Nil under Reduce Motion, which is
     /// `lieDown`'s own answer to it (#1152's "reduced motion is honoured: the transition becomes
-    /// instant").
-    ///
-    /// `lieDown` and not `resettle` (#1422). A list settling into a new order and a city lying down
-    /// into the treemap are not one move: the first rearranges rows the reader is still looking at,
-    /// and the second changes what they are looking at. So the flip is eased at BOTH ends rather
-    /// than out alone — it starts from a picture that was standing still, and `resettle`'s abrupt
-    /// start reads as the map being dropped rather than laid down — and it runs the longest of any
-    /// single move on the map. The numbers belong to the role, not to this call site.
+    /// instant"). The role rather than a general purpose one, and why, on `ArgoMotion.lieDown`
+    /// (#1422).
     private func laidDown(_ view: AtlasSwitch) -> Binding<Bool> {
         Binding(
             get: { view.isOn },

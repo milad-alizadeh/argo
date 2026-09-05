@@ -9,7 +9,8 @@ import Testing
 /// `AtlasCameraTests` holds the two ENDS — that the flat camera is the treemap byte for byte, and
 /// that the city fills the frame it is fitted into. What is asserted here is everything BETWEEN
 /// them, which is the half a picture of either end cannot show: that the framing is solved again at
-/// each step rather than held from the start, and that only an exact 0 is the treemap.
+/// each step rather than held from the start, that the heights and the camera run on one clock, and
+/// that the move settles on an exact 0 or an exact 1 rather than near one.
 @Suite("Atlas — the city lies down")
 struct AtlasLieDownTests {
     static let ground = CGSize(width: 800, height: 600)
@@ -48,10 +49,19 @@ struct AtlasLieDownTests {
 
     /// Where the picture reaches at one relief, in the view's own points — through the projection
     /// the room actually builds for that step.
-    static func drawn(_ plan: AtlasPlan, at relief: Double) -> [CGPoint] {
+    ///
+    /// The orientation is a parameter because `AtlasView` passes one: the reader may drive the
+    /// camera and flip from wherever they left it, and a refit proved at the opening angle alone
+    /// would be proved for the one turn nobody had touched.
+    static func drawn(
+        _ plan: AtlasPlan,
+        at relief: Double,
+        turned: AtlasOrientation = .opening,
+    )
+        -> [CGPoint] {
         let projection = AtlasProjection(
             of: plan,
-            through: AtlasCamera(relief: relief, over: plan.extent),
+            through: AtlasCamera(relief: relief, orientation: turned, over: plan.extent),
         )
         return corners(of: plan).map {
             projection.viewPoint(x: $0.x, y: $0.y, height: $0.height)
@@ -61,7 +71,12 @@ struct AtlasLieDownTests {
     /// The same reading through a framing solved for ANOTHER step: the stale fit the refit exists
     /// to avoid. No shipped path can produce it — `AtlasProjection` solves its own — which is why
     /// it is assembled by hand here, as the control the claim above is only a claim against.
-    static func drawn(_ plan: AtlasPlan, at relief: Double, through held: AtlasFit) -> [CGPoint] {
+    static func drawnStale(
+        _ plan: AtlasPlan,
+        at relief: Double,
+        through held: AtlasFit,
+    )
+        -> [CGPoint] {
         let camera = AtlasCamera(relief: relief, over: plan.extent)
         return corners(of: plan).map { corner in
             let clip = held.clip(camera.project(x: corner.x, y: corner.y, height: corner.height))
@@ -108,14 +123,18 @@ struct AtlasLieDownTests {
         }
     }
 
+    /// Both angles the reader can flip FROM: the one the room opens at, and one they drove it to.
+    static let turns: [AtlasOrientation] = [.opening, AtlasOrientation(yaw: 1.4, pitch: 1.0)]
+
     /// What that refit is FOR: the map fills its extent the whole way through the move rather than
     /// only at the two ends. A fit held from the start would frame every step by a picture only one
     /// of them has, which the control below measures.
-    @Test func `the map fills its extent at every step of the move`() throws {
+    @Test(arguments: turns)
+    func `the map fills its extent at every step of the move`(turned: AtlasOrientation) throws {
         let plan = try Self.plan()
 
         for relief in Self.steps {
-            let reach = Self.reach(Self.drawn(plan, at: relief), in: plan.extent)
+            let reach = Self.reach(Self.drawn(plan, at: relief, turned: turned), in: plan.extent)
             // Inside the ground it is drawn into: past 1 is a box clipped away mid-flip.
             #expect(reach <= 1.000_001, "the picture left its extent at relief \(relief)")
             // And touching it.
@@ -133,7 +152,7 @@ struct AtlasLieDownTests {
         let city = AtlasCamera.city(over: plan.extent)
         let held = AtlasFit(framing: plan, through: city, into: plan.extent)
 
-        let reach = Self.reach(Self.drawn(plan, at: 0.5, through: held), in: plan.extent)
+        let reach = Self.reach(Self.drawnStale(plan, at: 0.5, through: held), in: plan.extent)
         #expect(reach > 1.05, "the stale framing still framed the map, at \(reach) of its extent")
     }
 
@@ -174,6 +193,39 @@ struct AtlasLieDownTests {
             )
             #expect(abs(drawn.x - tile.rect.minX) < 0.000_001)
             #expect(abs(drawn.y - tile.rect.minY) < 0.000_001)
+        }
+    }
+
+    /// The other end the move settles on. There is no `isFlat` cliff here — nothing switches on at
+    /// 1 the way the plate names switch on at 0 — so what an exact 1 has to be is the city the rest
+    /// of the app names by its own constructor. A relief that landed at 1 and drew a camera
+    /// `AtlasCamera.city` does not would be two cities one number apart.
+    @Test func `an exact one settles on the city the rest of the app names`() throws {
+        let plan = try Self.plan()
+        #expect(
+            AtlasCamera(relief: 1, over: plan.extent) == AtlasCamera.city(over: plan.extent),
+        )
+    }
+
+    /// The prototype's own rule for the move: the heights collapse and the camera swings overhead
+    /// on ONE clock, so the two read as one move rather than two.
+    ///
+    /// Argued here from the arithmetic rather than from a frame count, because that is where it is
+    /// true: `relief` is a single number, and both readings are taken off the camera built from it.
+    /// A second parameter for either half is what this would catch.
+    @Test func `the heights and the camera move on one clock`() throws {
+        let plan = try Self.plan()
+        let tile = try #require(plan.tiles.first { $0.height > 0 })
+
+        for relief in [0.25, 0.5, 0.75] {
+            let camera = AtlasCamera(relief: relief, over: plan.extent)
+            let floor = camera.project(x: tile.rect.minX, y: tile.rect.minY, height: 0)
+            let roof = camera.project(x: tile.rect.minX, y: tile.rect.minY, height: tile.height)
+            // Still standing: the heights have not finished collapsing.
+            #expect(floor != roof, "the height had already collapsed at relief \(relief)")
+            // And still overhead: the camera has not finished swinging either. Both readings come
+            // off the one camera above, which is the claim.
+            #expect(!camera.isFlat, "the camera had already landed at relief \(relief)")
         }
     }
 }
