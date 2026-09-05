@@ -91,6 +91,9 @@ public enum ArgoSymbol {
     public static let skill = "wand.and.sparkles"
     public static let fetched = "globe"
     public static let delegated = "arrow.turn.down.right"
+    /// A delegation coming BACK (#1281). `delegated` turned around, so the handover and its ending
+    /// read as one pair down the mark column.
+    public static let returned = "arrow.turn.up.left"
     public static let mcpTool = "puzzlepiece.extension"
     /// A folded run of looking — reads and searches at once, so neither of their marks.
     public static let looked = "eye"

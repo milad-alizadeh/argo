@@ -32,6 +32,7 @@ struct FeedRowView: View {
         case let .ask(ask): FeedAskLine(ask: ask).id(ask.identity)
         case let .mark(mark): FeedMarkLine(mark: mark)
         case let .settledWait(settled): FeedWaitRow(settled: settled)
+        case let .delegationEnded(end): FeedDelegationEndRow(end: end)
         case let .unreadable(unreadable):
             FeedUnreadableLine(unreadable: unreadable, isExpanded: $isExpanded)
         }

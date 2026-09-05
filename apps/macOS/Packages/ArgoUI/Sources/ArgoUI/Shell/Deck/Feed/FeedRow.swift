@@ -26,6 +26,11 @@ package struct FeedRow: Identifiable, Equatable, Sendable {
         case skillLoaded(FeedSkillLoad)
         /// Something that happened to the reading rather than in it. See `FeedMark`.
         case mark(FeedMark)
+        /// A delegation the record answered, at the point it answered it. See
+        /// `FeedDelegationEnd`. A row of its own beside the `Delegated` line that opened it: the
+        /// handover and the ending are two moments, and one row for both loses the stretch
+        /// between them (#1281).
+        case delegationEnded(FeedDelegationEnd)
         /// A wait Argo was holding, over — see `FeedWaitRow`. A row rather than a mark, and drawn
         /// as a CALL is rather than as a rule: a wait that ended is a thing that happened, which is
         /// what the reading already spends a call's shape on.

@@ -158,6 +158,12 @@ extension FeedRow.Content {
         // A wait that ended is a thing that HAPPENED, so it is `isCall` for the reason a call
         // line is: the feed welds a run of them together with a call's tighter step, and the
         // settled start belongs against the work below it rather than a prose gap away from it.
+        // A delegation that ENDED is a thing that happened, so it is `isCall` for the settled
+        // wait's reason: the feed welds a run of them together with a call's tighter step, and an
+        // ending belongs against the work around it rather than a prose gap away from it. It opens
+        // nothing — what the Subagent produced is behind the `Delegated` row that handed the work
+        // over, and a second door onto the same evidence would be a second answer to one question.
+        case .delegationEnded: Kind(isCall: true)
         case .settledWait: Kind(isCall: true)
         case .unreadable: Kind(activation: .fold)
         }
@@ -171,7 +177,7 @@ extension FeedRow.Content {
         case let .survey(survey): survey.calls
         case let .work(work): work.calls
         case .prompt, .message, .thought, .gallery, .ask, .mark, .skillLoaded, .settledWait,
-             .unreadable: []
+             .delegationEnded, .unreadable: []
         }
     }
 
@@ -183,7 +189,8 @@ extension FeedRow.Content {
         case let .survey(survey): survey.opened
         case let .work(work): work.opened
         case let .skillLoaded(skill): skill.opened
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .settledWait, .unreadable: nil
+        case .prompt, .message, .thought, .gallery, .ask, .mark, .settledWait, .delegationEnded,
+             .unreadable: nil
         }
     }
 }

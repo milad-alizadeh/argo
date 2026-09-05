@@ -79,6 +79,12 @@ private extension FeedRow.Content {
                 parts: [.words(FeedWaitWords(settled.wait).settled, settled.laneInk)],
                 ink: settled.laneInk,
             )
+        // A delegation that ended, in the ink its row takes — so a failed one shows red in the
+        // lane too, for the reason the settled wait above it does.
+        case let .delegationEnded(end): .line(
+                parts: [.words(end.label, end.ink)],
+                ink: end.ink,
+            )
         }
     }
 }

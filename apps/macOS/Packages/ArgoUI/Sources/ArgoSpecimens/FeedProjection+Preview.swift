@@ -24,6 +24,10 @@ extension FeedProjection {
         isDriveable: true,
     )
 
+    /// The three shapes a delegation's ENDING takes, projected (#1281): one that came back priced
+    /// and timed, one that failed, and a backgrounded Agent that reported neither figure.
+    static let previewDelegationEndRows = rows(from: TranscriptFixtures.delegationsEnded)
+
     /// A session at the length a real one reaches, projected — what every claim about SCALE is
     /// checked against, including the measurement #427 asks for.
     static let longRows = rows(from: TranscriptFixtures.longTranscript)
