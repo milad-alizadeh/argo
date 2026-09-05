@@ -24,12 +24,12 @@ struct SubagentDots: View {
             // already spoken for by `.unresolved`, and two outlines under one dot would read as
             // two dots.
             Capsule()
-                .fill(argo.color.text.tertiary)
+                .fill(argo.color.text.disabled)
                 .frame(width: ArgoIconSize.subagentDot, height: ArgoStroke.border)
         case .unresolved:
             // An open delegation Argo cannot resolve (#1076): an outline pip, never a number.
             Circle()
-                .strokeBorder(argo.color.text.tertiary, lineWidth: ArgoStroke.hairline)
+                .strokeBorder(argo.color.text.disabled, lineWidth: ArgoStroke.hairline)
                 .frame(width: ArgoIconSize.subagentDot, height: ArgoIconSize.subagentDot)
         }
     }
@@ -38,7 +38,7 @@ struct SubagentDots: View {
         VStack(spacing: ArgoSpacing.subagentGap) {
             ForEach(0 ..< Self.drawnDots(for: count), id: \.self) { _ in
                 Circle()
-                    .fill(argo.color.text.tertiary)
+                    .fill(argo.color.state.running)
                     .frame(width: ArgoIconSize.subagentDot, height: ArgoIconSize.subagentDot)
             }
             if let overflow = Self.overflow(for: count) {
