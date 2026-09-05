@@ -158,8 +158,9 @@ struct CompanionChannelTests {
     }
 
     /// A spawned Session with a client on its channel, torn down after. A closure because `defer`
-    /// cannot be lifted into a helper that returns.
-    private static func withChannel(
+    /// cannot be lifted into a helper that returns. Not `private`: `CompanionReadyChannelTests`
+    /// shares this rather than pasting it a second time.
+    static func withChannel(
         _ body: (SpawnFixture, CompanionClient) async throws -> Void,
     ) async throws {
         let fixture = try SpawnFixture()
@@ -171,7 +172,7 @@ struct CompanionChannelTests {
     }
 
     /// One tool call, answered — the shape every report below takes.
-    private static func report(
+    static func report(
         _ client: CompanionClient,
         _ name: String,
         _ arguments: [String: Any],
@@ -180,7 +181,7 @@ struct CompanionChannelTests {
         _ = try await reply(to: client)
     }
 
-    private static func socketPath(
+    static func socketPath(
         _ fixture: SpawnFixture,
         _ claim: SessionOwnership.ClaimID,
     )
@@ -190,7 +191,7 @@ struct CompanionChannelTests {
 
     /// Let the server's run loop turn, then read its answer. The socket is served on the main
     /// actor, so a test that read without yielding would read before anything was written.
-    private static func reply(to client: CompanionClient) async throws -> JSONValue {
+    static func reply(to client: CompanionClient) async throws -> JSONValue {
         await Task.yield()
         var reply: JSONValue?
         await settle {

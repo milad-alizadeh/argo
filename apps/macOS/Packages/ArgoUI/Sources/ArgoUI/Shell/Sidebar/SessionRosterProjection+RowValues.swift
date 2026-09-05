@@ -57,9 +57,17 @@ extension SessionRosterProjection.Row {
         /// The state dot's own reading, in both its forms — the colour role `SessionState.role`
         /// settles and the word `SessionState.word` spends, read off the same status at the same
         /// time, which is what makes them one parameter rather than two.
+        ///
+        /// `readyToShip` rides along rather than starting a fourth group: it never draws the DOT,
+        /// only the word beside it, and only where `word` above is absent — `state.attention` and
+        /// `state.failure` outrank `Ready` in the one slot the two share (`cockpit-roster-row.md`,
+        /// the badge ink table). Already resolved against the branch's own pull request by the
+        /// time it reaches here (`CockpitPresentation.Session.readyToShip`), so this is a plain
+        /// fact and not a second staleness check.
         struct Dot {
             let state: ArgoOperationalState?
             let word: String?
+            let readyToShip: Bool
         }
 
         /// The one age slot in both its forms. They are read off the same moment at the same
@@ -83,6 +91,7 @@ extension SessionRosterProjection.Row {
 
         let state: ArgoOperationalState?
         let stateWord: String?
+        let readyToShip: Bool
         let clock: SessionRosterProjection.Clock?
         let spokenClock: String?
         /// `nil` on every row that is not a running Session with a call behind it — see
@@ -102,6 +111,7 @@ extension SessionRosterProjection.Row {
         ) {
             self.state = dot.state
             self.stateWord = dot.word
+            self.readyToShip = dot.readyToShip
             self.clock = age.clock
             self.spokenClock = age.spoken
             self.activity = doing.activity

@@ -27,6 +27,19 @@ struct CallVocabularyTests {
         #expect(try await calls()["call-skill"]?.target == "grill")
     }
 
+    /// The one MCP call whose input IS a claim (#1335) — read the same way `AskUserQuestion`'s
+    /// question is, off the qualified name the companion channel's own tool carries.
+    @Test
+    func `the companion's ready tool carries its reason, read off the qualified name`(
+    ) async throws {
+        #expect(try await calls()["call-ready"]?.kind == .mcp)
+        #expect(try await calls()["call-ready"]?.readyClaim == CompanionReady(
+            reason: "3 files, 2 commits",
+        ))
+        // Every other call in the fixture named something other than the companion's tool.
+        #expect(try await calls()["call-mcp"]?.readyClaim == nil)
+    }
+
     @Test
     func `a tool nothing recognises stays unclassified, never the nearest kind`() async throws {
         #expect(try await calls()["call-strange"]?.kind == .other)

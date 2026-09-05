@@ -193,13 +193,25 @@ package struct SessionRow: View {
     }
 
     /// Ahead of the clock, because the leading edge is where the eye lands and this is the slot
-    /// the reader scans to place the row (#745, #1072).
+    /// the reader scans to place the row (#745, #1072). `Ready` shares the slot with the state
+    /// word and never both at once: `state.attention` and `state.failure` outrank it, because a
+    /// row waiting on the reader or reporting a failure has more to say than that it is done
+    /// (`cockpit-roster-row.md`, the badge ink table).
     @ViewBuilder private var stateWord: some View {
-        if let word = row.stateWord {
+        if let word = row.badgeWord {
             ArgoStateLabel(word: word)
-                .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
+                .foregroundStyle(badgeInk)
                 .layoutPriority(1)
         }
+    }
+
+    /// `stateWord`'s own tint where the row drew one, else `delivery.open` for `Ready` — the one
+    /// ink the badge ever spends that is not an operational state's.
+    private var badgeInk: ArgoColor {
+        guard row.stateWord == nil else {
+            return row.state?.tint(in: argo.color) ?? argo.color.text.tertiary
+        }
+        return argo.color.delivery.open
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

@@ -12,6 +12,7 @@ package struct SessionTabLine: View {
     /// below the canopy is inset by it.
     let header: SessionHeaderProjection.Header?
     var handOff: () async -> Void = {}
+    var createPullRequest: () -> Void = {}
 
     /// Which pane the deck is reading. Held here rather than above, because the deck draws one
     /// pane: the day a second one ships (#269 is Delivery's) this rises to whoever holds the two.
@@ -23,7 +24,11 @@ package struct SessionTabLine: View {
             SessionCheckoutMark(checkout: header?.checkout)
             // The strip takes what the instruments leave, which is what holds the tabs leading.
             DeckTabs(selection: $tab)
-            TabLineInstruments(header: header, handOff: handOff)
+            TabLineInstruments(
+                header: header,
+                handOff: handOff,
+                createPullRequest: createPullRequest,
+            )
         }
         .padding(.horizontal, ArgoSpacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -33,9 +38,11 @@ package struct SessionTabLine: View {
     package init(
         header: SessionHeaderProjection.Header?,
         handOff: @escaping () async -> Void = {},
+        createPullRequest: @escaping () -> Void = {},
     ) {
         self.header = header
         self.handOff = handOff
+        self.createPullRequest = createPullRequest
     }
 }
 

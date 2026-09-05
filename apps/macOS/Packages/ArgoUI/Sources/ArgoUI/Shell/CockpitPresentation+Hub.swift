@@ -122,10 +122,14 @@ extension CockpitPresentation.Session {
     /// renamed: claimedAt <- ticket — the slot sits beside a title reading also about the ticket,
     /// and beside the reader's own pin, which is a second DIRECT number about it (#1092): the name
     /// has to say WHICH fact and WHEN it was taken (#881). `Issue.directNumber` ranks the two.
+    /// renamed: claim <- readyToShip — `Work.Delivery.reading(pullRequest:claim:)` (#1335) takes
+    /// the raw CONVENTION claim to resolve against the pull request beside it; the projected
+    /// `Session.readyToShip` is the already-resolved Bool this becomes.
     init(observed session: HubSession, readings: CockpitPresentation.Readings) {
         // Read once and handed to both: the Workspace draws the branch and the Ticket link joins
         // on it, and two readings of one fact would let the two disagree.
         let workspace = Workspace(observed: session)
+        let pullRequest = workspace?.branch.flatMap(readings.pullRequest(forBranch:))
         self.init(
             id: session.id,
             title: session.title,
@@ -147,7 +151,7 @@ extension CockpitPresentation.Session {
                     ),
                     isProviderBound: readings.isTicketProviderBound,
                 ),
-                pullRequest: workspace?.branch.flatMap(readings.pullRequest(forBranch:)),
+                delivery: .reading(pullRequest: pullRequest, claim: session.readyToShip),
             ),
             spend: Spend(
                 spentTokens: session.spentTokens, cachedTokens: session.cachedTokens,

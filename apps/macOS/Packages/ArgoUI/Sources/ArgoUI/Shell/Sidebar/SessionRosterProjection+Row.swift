@@ -59,6 +59,10 @@ extension SessionRosterProjection {
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning.
         let stateWord: String?
+        /// Whether the Session's ready-to-ship claim still draws (`cockpit-roster-row.md`,
+        /// decision 7) — `false` on a fold, which stands for several runs and so makes no single
+        /// one's claim.
+        let readyToShip: Bool
         /// Line 3's `PlanBar` — the same reading the Session's own plan pill shows. `nil` for a
         /// Session that has never written a Plan, and always `nil` on a fold (`foldRow`): four
         /// to-do lists do not add up to one.
@@ -103,6 +107,7 @@ extension SessionRosterProjection {
             self.spokenClock = activity.spokenClock
             self.state = activity.state
             self.stateWord = activity.stateWord
+            self.readyToShip = activity.readyToShip
             self.activity = activity.activity
             self.plan = activity.plan
             self.subagents = activity.subagents
@@ -127,12 +132,23 @@ extension SessionRosterProjection {
             return Date(epochMs: startedAtMs)
         }
 
-        /// What a screen reader hears: the same `stateWord` the row draws, plus the read-only
+        /// The word `cockpit-roster-row.md` spells for the claim — `ArgoStateLabel` upper-cases
+        /// it, so this stays sentence case like every other word the row spends.
+        static let readyWord = "Ready"
+
+        /// The word the badge slot draws — `stateWord` where there is one, else `Ready` where the
+        /// claim stands, else nothing. One authority for the view and for `announcement`, so the
+        /// two cannot draw the slot two different ways.
+        var badgeWord: String? {
+            stateWord ?? (readyToShip ? Self.readyWord : nil)
+        }
+
+        /// What a screen reader hears: the same word the row draws, plus the read-only
         /// fact, which the row spends on ink a screen reader has no way to hear.
         var announcement: String {
             [
                 title,
-                stateWord,
+                badgeWord,
                 fold.map { $0.isOpen ? "Expanded" : "Collapsed" },
                 isReadOnly ? readOnlyPhrase : nil,
                 secondaryFact,
@@ -172,8 +188,9 @@ extension SessionRosterProjection {
             ),
             activity: Row.Activity(
                 // No dot and no word: a fold stands for runs in several states at once, and one
-                // of them drawn for all of them is a claim about the others.
-                dot: Row.Activity.Dot(state: nil, word: nil),
+                // of them drawn for all of them is a claim about the others. No ready claim
+                // either, for the same reason (rule 9).
+                dot: Row.Activity.Dot(state: nil, word: nil, readyToShip: false),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
@@ -229,6 +246,7 @@ extension SessionRosterProjection {
                 dot: Row.Activity.Dot(
                     state: SessionState.role(for: session.status),
                     word: SessionState.word(for: session.status),
+                    readyToShip: session.readyToShip,
                 ),
                 age: Row.Activity.Age(
                     clock: clock, spoken: spokenClock(clock, nowMs: nowMs),

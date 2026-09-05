@@ -128,6 +128,8 @@ package enum SessionHeaderProjection {
         /// The remedy, when it is the right move and Argo is the one who can take it — see
         /// `handoff(from:)` for the two facts that decide it.
         package let handoff: Handoff?
+        /// Whether the **Create PR** control draws (#1335) — see `Telemetry.showsCreatePR`.
+        package let showsCreatePR: Bool
         /// The same facts as rows, for the ⓘ panel — the route to them that a keyboard and a
         /// screenshot both have, which `tooltip` above is not (#694).
         package let facts: [Fact]
@@ -151,6 +153,7 @@ package enum SessionHeaderProjection {
             self.context = telemetry.context
             self.spend = telemetry.spend
             self.handoff = telemetry.handoff
+            self.showsCreatePR = telemetry.showsCreatePR
             self.facts = facts
         }
 
@@ -230,6 +233,7 @@ package enum SessionHeaderProjection {
                 context: context(reading: session.context),
                 spend: spend(from: session, worked: worked),
                 handoff: handoff(from: session),
+                showsCreatePR: session.access == .managed,
             ),
             facts: facts(from: session, worked: worked),
         )

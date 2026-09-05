@@ -21,6 +21,9 @@ package struct SessionsDeck: View {
     /// Hand the shown Session's work to a fresh one. Inert by default so a specimen draws the
     /// button without spawning anything.
     var handOff: () async -> Void = {}
+    /// Send `/ship` to the shown Session (#1335). Inert by default, so a specimen draws the
+    /// button without typing anything.
+    var createPullRequest: () -> Void = {}
     /// The selected Session's plan — standing state rather than a row, so it arrives beside the
     /// rows and not among them.
     var showing = PlanShowing()
@@ -78,8 +81,11 @@ package struct SessionsDeck: View {
         // it, a reading vanishing mid-bar. Measured before the zones discard it, hence the reader.
         GeometryReader { window in
             ZStack(alignment: .top) {
-                DeckCanopy(header: header, reach: window.safeAreaInsets.top, handOff: handOff)
-                    .zIndex(1)
+                DeckCanopy(
+                    header: header, reach: window.safeAreaInsets.top, handOff: handOff,
+                    createPullRequest: createPullRequest,
+                )
+                .zIndex(1)
                 zones
                     .ignoresSafeArea(.container, edges: .top)
             }
@@ -139,6 +145,7 @@ package struct SessionsDeck: View {
         feed: [FeedRow],
         header: SessionHeaderProjection.Header? = nil,
         handOff: @escaping () async -> Void = {},
+        createPullRequest: @escaping () -> Void = {},
         showing: PlanShowing = PlanShowing(),
         open: Binding<FeedRow.ID?> = .constant(nil),
         step: Binding<Int?> = .constant(nil),
@@ -155,6 +162,7 @@ package struct SessionsDeck: View {
         self.feed = feed
         self.header = header
         self.handOff = handOff
+        self.createPullRequest = createPullRequest
         self.showing = showing
         self.open = open
         self.step = step

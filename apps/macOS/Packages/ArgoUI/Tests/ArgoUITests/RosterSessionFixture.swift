@@ -27,6 +27,7 @@ enum RosterSessionFixture {
         events: [TranscriptEvent] = [],
         ticket: CockpitPresentation.Session.TicketLinkReading = .unread,
         pullRequest: DeliveryPullRequest? = nil,
+        readyToShip: Bool = false,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -42,7 +43,7 @@ enum RosterSessionFixture {
                 location: workspaceLocation,
                 workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),
                 ticket: ticket,
-                pullRequest: pullRequest,
+                delivery: .init(pullRequest: pullRequest, readyToShip: readyToShip),
             ),
             annotations: .init(isArchived: isArchived, explicitName: explicitName),
             transcript: .init(events: events),

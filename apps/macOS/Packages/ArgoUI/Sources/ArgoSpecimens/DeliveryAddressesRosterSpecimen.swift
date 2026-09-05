@@ -55,7 +55,7 @@ struct DeliveryAddressesRosterSpecimen: View {
                 location: "/Users/milad/Developer/argo",
                 workspace: .init(kind: .main, branch: "argo/#\(id)"),
                 ticket: ticket.map { .linked(.init(number: $0)) } ?? .unread,
-                pullRequest: pullRequest,
+                delivery: .init(pullRequest: pullRequest),
             ),
         )
     }

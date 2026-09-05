@@ -6,6 +6,7 @@ import Testing
 struct CompanionReportTests {
     private let ask = CompanionAsk(id: "ask-1", question: "Which branch?", options: ["main"])
     private let outcome = CompanionOutcome(target: .code, reference: "abc123", summary: "landed")
+    private let ready = CompanionReady(reason: "3 files, 2 commits")
 
     @Test
     func `a status replaces the one before it, being a claim about now`() {
@@ -81,6 +82,35 @@ struct CompanionReportTests {
         #expect(read.questions.count == 1)
         #expect(read.questions.first?.text == "Which branch?")
         #expect(read.questions.first?.options.map(\.label) == ["main"])
+    }
+
+    @Test
+    func `a ready claim stands until something replaces it`() {
+        var report = CompanionReport()
+        report.apply(.ready(ready))
+
+        #expect(report.readyToShip == ready)
+    }
+
+    /// The claim is about NOW, exactly as `status` is: an agent that reports what it is doing
+    /// without repeating "ready" has moved past it.
+    @Test
+    func `a reported status retires a standing ready claim`() {
+        var report = CompanionReport()
+        report.apply(.ready(ready))
+        report.apply(.status(.running))
+
+        #expect(report.readyToShip == nil)
+    }
+
+    @Test
+    func `a closed channel takes the ready claim with it`() {
+        var report = CompanionReport()
+        report.apply(.ready(ready))
+
+        report.channelClosed()
+
+        #expect(report.readyToShip == nil)
     }
 
     /// A question with nothing to choose from is a free-form ask, which the feed already draws —

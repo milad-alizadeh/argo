@@ -62,6 +62,7 @@ extension CockpitView {
             feed: reading.feed,
             header: reading.header,
             handOff: handOff,
+            createPullRequest: createPullRequest,
             showing: reading.showing,
             open: $openEvidence,
             step: $evidenceStep,

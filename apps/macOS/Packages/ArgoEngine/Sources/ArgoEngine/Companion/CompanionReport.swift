@@ -14,11 +14,17 @@ public struct CompanionReport: Sendable, Equatable {
     public var pendingAsk: CompanionAsk?
     /// What this Session says it produced, in the order it said so.
     public var outcomes: [CompanionOutcome] = []
+    /// The standing claim that this Session's change is ready for a pull request (#1335), and
+    /// `nil` until the agent makes it. A claim about NOW, on `status` and `pendingAsk`'s own
+    /// terms and not `outcomes`': the next `report_status` retires it exactly as one retires
+    /// `pendingAsk`, because reporting what is happening now without repeating the claim is the
+    /// agent saying it no longer holds.
+    public var readyToShip: CompanionReady?
 
     public init() {}
 
     public var isEmpty: Bool {
-        status == nil && pendingAsk == nil && outcomes.isEmpty
+        status == nil && pendingAsk == nil && outcomes.isEmpty && readyToShip == nil
     }
 }
 
@@ -70,5 +76,28 @@ public struct CompanionOutcome: Sendable, Equatable {
         self.target = target
         self.reference = reference
         self.summary = summary
+    }
+}
+
+/// The claim that a Session's change is ready for a pull request (#1335), with the short reason
+/// the agent gave — a file count and a commit count, held verbatim. The feed draws the reason;
+/// the roster row draws neither it nor this type, only the fact that the claim stands
+/// (`cockpit-roster-row.md`, decision 6).
+public struct CompanionReady: Sendable, Equatable {
+    /// Absent where the agent gave none, gave an empty string, or the shape could not be read —
+    /// none of which drops the claim itself (`CompanionArguments.ready(from:)`).
+    public let reason: String?
+
+    public init(reason: String?) {
+        self.reason = reason
+    }
+
+    /// Reads `reason` off a call's raw input, blank or absent degrading to `nil` rather than an
+    /// empty string standing in for one — the one reading shared by the companion socket
+    /// (`CompanionArguments.ready(from:)`) and the transcript (`TranscriptReader+Assistant`), so
+    /// the two cannot read the same call two different ways.
+    public static func reading(_ input: JSONValue) -> CompanionReady {
+        let reason = input.stringField("reason")
+        return CompanionReady(reason: reason?.isEmpty == false ? reason : nil)
     }
 }

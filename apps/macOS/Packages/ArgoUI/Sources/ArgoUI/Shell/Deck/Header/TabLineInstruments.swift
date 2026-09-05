@@ -10,6 +10,9 @@ package struct TabLineInstruments: View {
     let header: SessionHeaderProjection.Header?
     /// `async` because `/handoff` is answered in minutes, so the control holds itself that long.
     var handOff: () async -> Void = {}
+    /// Send `/ship` to the shown Session (#1335). Sync, unlike `handOff`: the control asserts
+    /// nothing about how long shipping takes, it only types the one Turn.
+    var createPullRequest: () -> Void = {}
 
     package var body: some View {
         // The instrument is a bar with no baseline of its own.
@@ -22,6 +25,9 @@ package struct TabLineInstruments: View {
                 // instrument at all rather than a placeholder reading (#1249).
                 if let context = header.context {
                     SessionHeaderContext(context: context, facts: header.facts)
+                }
+                if header.showsCreatePR {
+                    CreatePRButton(run: createPullRequest)
                 }
                 // LAST: the design puts the remedy on the trailing edge, ahead of the instrument.
                 if let handoff = header.handoff {
@@ -44,8 +50,10 @@ package struct TabLineInstruments: View {
     package init(
         header: SessionHeaderProjection.Header?,
         handOff: @escaping () async -> Void = {},
+        createPullRequest: @escaping () -> Void = {},
     ) {
         self.header = header
         self.handOff = handOff
+        self.createPullRequest = createPullRequest
     }
 }

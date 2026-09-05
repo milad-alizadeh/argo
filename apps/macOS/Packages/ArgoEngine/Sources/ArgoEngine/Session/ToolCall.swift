@@ -49,6 +49,10 @@ public struct ToolCall: Sendable, Equatable {
     /// other call, and for an `AskUserQuestion` whose input carried no readable question — such a
     /// call is still a call, and no question is invented for it.
     public let ask: Ask?
+    /// The claim this call made, for the one companion tool whose input IS one (#1335). `nil` for
+    /// every other call — `report_ready`'s own reading never refuses on a shape it did not
+    /// expect, so this is present whenever the call is that tool, whatever its reason carries.
+    public let readyClaim: CompanionReady?
 
     public init(
         id: String,
@@ -58,6 +62,7 @@ public struct ToolCall: Sendable, Equatable {
         narration: String? = nil,
         atMs: Int?,
         ask: Ask? = nil,
+        readyClaim: CompanionReady? = nil,
     ) {
         self.id = id
         self.name = name
@@ -66,6 +71,7 @@ public struct ToolCall: Sendable, Equatable {
         self.narration = narration
         self.atMs = atMs
         self.ask = ask
+        self.readyClaim = readyClaim
     }
 
     /// The host's own name for the structured question. Matched verbatim, because the tool name IS
