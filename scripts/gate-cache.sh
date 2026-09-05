@@ -31,6 +31,12 @@
 
 # The one place either cache root is spelled. `swift-test.sh` and `build.sh` read
 # ARGO_SWIFT_CACHE_DIR from here rather than repeating the expression, so the two cannot drift.
+# Metrics are optional, and this file cannot source them: it is SOURCED, so `$0` is the
+# caller's path and the caller is the only one who knows where `scripts/` is from where it
+# stands. A script that wants rows sources `metrics.sh` as well; one that does not gets a
+# no-op and no error.
+command -v metric_append >/dev/null 2>&1 || metric_append() { :; }
+
 ARGO_CACHE_ROOT=${ARGO_CACHE_ROOT:-${XDG_CACHE_HOME:-$HOME/Library/Caches}}
 GATE_CACHE_DIR=${ARGO_GATE_CACHE_DIR:-$ARGO_CACHE_ROOT/argo-gate}
 ARGO_SWIFT_CACHE_DIR=${ARGO_SWIFT_CACHE_DIR:-$ARGO_CACHE_ROOT/argo-swift}
@@ -118,6 +124,40 @@ step_record() {
   # a directory that grows for the life of the machine.
   find "$GATE_CACHE_DIR" -type f -mtime +30 -delete 2>/dev/null || true
   return 0
+}
+
+# --- the two calls a step actually makes ------------------------------------------------------
+#
+# `step_key` / `step_cached` / `step_record` are the mechanism; these are the shape every caller
+# wants, so that a step costs four lines rather than fourteen and the three linters do not each
+# grow their own version of it.
+#
+#   if step_begin swiftformat apps/macOS scripts; then
+#     echo "swift-format: this tree was checked at $STEP_SINCE"
+#     exit 0
+#   fi
+#   … the work …
+#   step_end swiftformat apps/macOS scripts
+#
+# `step_begin` returns 0 when the step can be skipped, and sets STEP_KEY, STEP_SINCE and
+# STEP_STARTED. An unkeyable tree returns 1, which is the run-it answer.
+step_begin() {
+  STEP_LABEL=$1
+  shift
+  STEP_PATHS="$*"
+  STEP_KEY=$(step_key "$STEP_LABEL" "$@")
+  STEP_STARTED=$(date +%s)
+  step_cached "$STEP_KEY" || return 1
+  STEP_SINCE=$(step_recorded_at "$STEP_KEY")
+  metric_append step "$STEP_LABEL" hit 0 0
+  return 0
+}
+
+step_end() {
+  label=$1
+  shift
+  step_record "$STEP_KEY" "$label" "$@"
+  metric_append step "$label" run "$(($(date +%s) - STEP_STARTED))" 0
 }
 
 # --- the whole gate, which is one step with a scope ------------------------------------------

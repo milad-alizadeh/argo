@@ -82,7 +82,9 @@ export function treeDeclaring({ analyzerRules = true, runner = null, invocation 
   mkdirSync(path.join(root, 'apps/macOS'), { recursive: true })
   mkdirSync(path.join(root, '.github/workflows'), { recursive: true })
   mkdirSync(path.join(root, 'scripts'), { recursive: true })
-  for (const file of ['swift-lint.sh', 'swift-tool-guard.sh']) {
+  // `gate-cache.sh` and `metrics.sh` join the two the guard needs because swift-lint.sh sources
+  // them now (#1377), and a `.` of a file that is not there aborts before the config is read.
+  for (const file of ['swift-lint.sh', 'swift-tool-guard.sh', 'gate-cache.sh', 'metrics.sh']) {
     copyFileSync(path.join(REPO_ROOT, 'scripts', file), path.join(root, 'scripts', file))
   }
   const rules = analyzerRules ? 'analyzer_rules:\n  - unused_import\n' : ''
