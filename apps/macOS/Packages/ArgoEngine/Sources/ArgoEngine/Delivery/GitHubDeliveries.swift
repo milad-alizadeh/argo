@@ -29,7 +29,7 @@ public struct GitHubDeliveries: CodeHostPort {
     ) async throws
         -> Delivery? {
         let owner = scope.prefix { $0 != "/" }
-        let named = branch.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? branch
+        let named = branch.addingPercentEncoding(withAllowedCharacters: .branchInAQuery) ?? branch
         return try await deliveries(
             listedBy: "/repos/\(scope)/pulls?state=all&sort=updated&direction=desc"
                 + "&head=\(owner):\(named)",
@@ -75,4 +75,17 @@ public struct GitHubDeliveries: CodeHostPort {
             ),
         )
     }
+}
+
+private extension CharacterSet {
+    /// What may stand unencoded where a branch name is written into a query value.
+    ///
+    /// `urlQueryAllowed` minus the three that mean something TO a query rather than in it: `&` and
+    /// `=` would let a branch name add a parameter of its own, and `+` reads back as a space. Git
+    /// permits all three in a ref, so none of them is hypothetical. `#` is already out of
+    /// `urlQueryAllowed`, and it is the one every Argo branch carries.
+    ///
+    /// `/` stays: it delimits nothing inside a query VALUE, and every branch here has one.
+    static let branchInAQuery = urlQueryAllowed
+        .subtracting(CharacterSet(charactersIn: "&=+"))
 }

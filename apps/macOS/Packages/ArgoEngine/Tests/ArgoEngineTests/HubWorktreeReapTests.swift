@@ -127,9 +127,9 @@ struct HubWorktreeReapTests {
         branch: branch, pullRequest: .stub(number: 1398),
     )
 
-    private static let repository = "/tmp/argo-reap"
-    private static let worktree = "/tmp/argo-reap/.claude/worktrees/ticket-1398-archive"
-    private static let branch = "argo/#1398-archive"
+    private static let repository = reapRepository
+    private static let worktree = reapWorktree
+    private static let branch = reapBranch
 
     private static func hub(
         removing removeWorktree: @escaping WorktreeRemovalWrite = { _, _ in .removed },
@@ -165,20 +165,22 @@ private actor AskedOf {
     }
 }
 
-/// The one worktree the repository in this suite holds: Argo's own, clean and level with its
+/// The repository this suite's Hub is pointed at, the one worktree it holds, and the branch that
+/// worktree is on. At file scope because the reads below are handed to an `Engine`, and named once
+/// because the suite asserts against the same three.
+private let reapRepository = "/tmp/argo-reap"
+private let reapWorktree = reapRepository + "/.claude/worktrees/ticket-1398-archive"
+private let reapBranch = "argo/#1398-archive"
+
+/// That worktree as git lists it, and as git reads it: Argo's own, clean and level with its
 /// upstream, so every local check passes and only the landed question is left.
 private let landedWorktree = WorktreeEntry(
-    path: "/tmp/argo-reap/.claude/worktrees/ticket-1398-archive",
-    branch: "argo/#1398-archive",
-    headSha: "bbb",
-    kind: .worktree,
+    path: reapWorktree, branch: reapBranch, headSha: "bbb", kind: .worktree,
 )
 
 private let landedRead = WorkspaceProjection(
     kind: .worktree,
-    refs: WorkspaceProjection.Refs(
-        branch: "argo/#1398-archive", baseRef: "origin/main", headSha: "bbb",
-    ),
+    refs: WorkspaceProjection.Refs(branch: reapBranch, baseRef: "origin/main", headSha: "bbb"),
     drift: WorkspaceProjection.Drift(
         dirty: 0, divergence: UpstreamDivergence(ahead: 0, behind: 0),
     ),

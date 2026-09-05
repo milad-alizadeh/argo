@@ -2,11 +2,16 @@ import Foundation
 
 /// Whether one working tree may be removed, and why not where it may not (#1398).
 ///
-/// The rules are `scripts/worktree-gc.sh`'s, restated over the readings Argo already holds rather
-/// than over a second set of subprocesses: Argo's own linked worktree, nothing uncommitted,
+/// The rules follow `scripts/worktree-gc.sh`'s, restated over the readings Argo already holds
+/// rather than over a second set of subprocesses: Argo's own linked worktree, nothing uncommitted,
 /// nothing unpushed, nobody else standing in it, and the branch landed. Every one of them is a
 /// reason NOT to remove, so an unread fact holds the worktree — the destructive branch is not the
 /// one to take on unknown.
+///
+/// One of gc's checks has no equivalent and needs none: gc holds a worktree TOUCHED in the last
+/// half hour, because it sweeps unasked and a session may be mid-Turn in one. This runs on an
+/// explicit gesture on that very row, so the Agent count below is the question actually being
+/// asked — is anybody else in here.
 ///
 /// Read in two steps because they cost different things. `candidate(at:workspace:)` is free and
 /// answers off the sweep the cockpit already has; `Candidate.verdict(landed:)` takes the one fact
@@ -66,15 +71,24 @@ public enum WorktreeReaping {
     /// `workspace` is the reading for THIS worktree — the deepest one holding the Session's folder,
     /// which is what `WorldReadings.worktree(inCwd:)` answers with.
     public static func candidate(at path: String, workspace: WorkspaceProjection?) -> Verdict {
-        guard workspace?.kind == .worktree, path.contains(folder) else {
+        guard let workspace else { return .hold(.unread) }
+        guard workspace.kind == .worktree, path.contains(folder) else {
             return .hold(.notArgosOwn)
         }
-        guard let workspace, let branch = workspace.branch else { return .hold(.unread) }
+        guard let branch = workspace.branch else { return .hold(.unread) }
         guard workspace.dirty == 0 else { return .hold(.dirty(workspace.dirty)) }
-        // A branch with no upstream has no divergence at all, and that is the unpushed case at its
-        // worst: nothing anywhere else has the commits.
-        guard let ahead = workspace.divergence?.ahead else { return .hold(.unpushed(0)) }
-        guard ahead == 0 else { return .hold(.unpushed(ahead)) }
+        // A branch git CAN measure against an upstream has to be level with it. One it cannot is
+        // not held on that, and the direction matters: GitHub deletes a head branch as it
+        // squash-merges it, so a worktree in exactly the state this reaps has no upstream ref left
+        // to measure against and reads as no divergence at all. Held on absence, the check would
+        // refuse every landed worktree there is.
+        //
+        // What keeps that safe is the landed check below it, which a branch nobody ever pushed
+        // cannot pass — there is no pull request to have merged. `worktree-gc.sh` guards its own
+        // `rev-list` on the upstream existing, for this reason.
+        if let ahead = workspace.divergence?.ahead, ahead > 0 {
+            return .hold(.unpushed(ahead))
+        }
         // The archiving Session is itself a holder, and the count is one sweep old at most — so
         // one is the folder being emptied and two is somebody else still in it.
         guard workspace.held.count <= 1 else { return .hold(.held(workspace.held.count)) }

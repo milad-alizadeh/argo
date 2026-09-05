@@ -54,7 +54,8 @@ struct WorktreeReapingTests {
     func `a folder no Workspace was read for is held rather than reaped`() {
         let verdict = WorktreeReaping.candidate(at: Self.path, workspace: nil)
 
-        #expect(verdict == .hold(.notArgosOwn))
+        // An unread worktree is not a clean one, and it is not one of somebody else's either.
+        #expect(verdict == .hold(.unread))
     }
 
     @Test
@@ -85,13 +86,16 @@ struct WorktreeReapingTests {
         #expect(verdict == .hold(.unpushed(2)))
     }
 
+    /// The reporter's own case (#1398): GitHub deletes a head branch as it squash-merges it, so by
+    /// the time the sweep next prunes, the worktree git could measure yesterday has no upstream ref
+    /// left. Held on that absence, this check would refuse every landed worktree there is.
     @Test
-    func `a branch with no upstream at all is the unpushed case at its worst`() {
+    func `a branch whose upstream is gone is not held for it`() {
         let verdict = WorktreeReaping.candidate(
             at: Self.path, workspace: Self.landed(divergence: nil),
         )
 
-        #expect(verdict == .hold(.unpushed(0)))
+        #expect(verdict == .reap(.init(path: Self.path, branch: "argo/#1398-archive")))
     }
 
     @Test

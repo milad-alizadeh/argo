@@ -32,7 +32,7 @@ struct ArgoApp: App {
         // The row's fact is the Hub's, read at every panel rebuild rather than copied once.
         accounts.companionStanding = { ConnectCompanion(standing: cockpit.hub.companionStanding) }
         // And the other way: the reap an archive makes needs the Binding this half resolves.
-        cockpit.codeHost = { await accounts.binding(.codeHost) }
+        cockpit.codeHostBinding = { await accounts.binding(.codeHost) }
         _cockpit = State(initialValue: cockpit)
         _accounts = State(initialValue: accounts)
     }
