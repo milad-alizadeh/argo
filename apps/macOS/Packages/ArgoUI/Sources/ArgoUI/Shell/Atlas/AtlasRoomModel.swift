@@ -70,7 +70,7 @@ final class AtlasRoomModel {
         readProjectID = project.id
         hideTests = preferences.hideTests(for: project.id)
         reading = await read(project)
-        notes = await written(project)
+        notes = await written(project, of: reading)
         behind = commitsBehind(project)
         resolveChannels(for: project.id)
     }
@@ -87,7 +87,7 @@ final class AtlasRoomModel {
         // Re-read against the Map that was just measured, never carried over: a rebuild is where
         // a file a note was written about can have changed, which is the whole of what a stale
         // note reports (#1159).
-        notes = await notesStore.notes(of: record, in: map)
+        notes = await written(project, of: reading)
         behind = store.commitsBehind(of: map, project: record)
         // After the reading is written, never before: a regenerated Map can carry Measures the
         // stored choice no longer names, and this reads the channels off what was just measured.
@@ -132,7 +132,15 @@ final class AtlasRoomModel {
     /// What was written about the Project, fetched SEPARATELY and after the measurement: the map
     /// is drawn from the Map file alone, and a written layer that is missing, unreadable or from
     /// another tool costs the reader nothing but the sentence it would have carried (#1159).
-    private func written(_ project: CockpitPresentation.Project) async -> AtlasNotes {
+    ///
+    /// The reading is a PARAMETER rather than this container's own property, so both callers read
+    /// the same fact the same way: taken off `self`, only the one that had already written the
+    /// reading could use it, and the other would spell the fetch a second time.
+    private func written(
+        _ project: CockpitPresentation.Project,
+        of reading: AtlasReading,
+    ) async
+        -> AtlasNotes {
         guard case let .measured(map) = reading else { return .none }
         return await notesStore.notes(of: record(of: project), in: map)
     }

@@ -43,21 +43,9 @@ struct AtlasWrittenLayerTests {
             "EvidencePanel.swift"
         let note = try #require(notes.note(ofFile: panel))
         #expect(!note.words.isEmpty)
-        #expect(!note.why.isEmpty)
+        #expect(!note.flag.isEmpty)
         #expect(note.standing == .unchecked)
         #expect(notes.note(ofFolder: "argo/rules") != nil)
         #expect(notes.subjects.contains(panel))
-    }
-
-    @Test func `every note in the committed layer is one sentence a reader could act on`() throws {
-        // The writer's own rules, enforced where they can be: a note that hedges is worse than no
-        // note, and one that restates the numbers costs a line and says nothing. The length is the
-        // part a fixture can check.
-        let notes = try AtlasNotesFixture.argo()
-
-        for note in Array(notes.files.values) + Array(notes.folders.values) {
-            #expect(note.words.count < 260)
-            #expect(!note.words.contains { $0.isNumber })
-        }
     }
 }

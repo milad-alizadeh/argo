@@ -26,7 +26,17 @@ enum AtlasSubject {
         guard components.first == root, components.count > 1 else { return nil }
         let inside = components.dropFirst()
         guard !inside.contains("..") else { return nil }
-        return repositoryURL.appending(path: inside.joined(separator: "/"))
+        let fileURL = repositoryURL.appending(path: inside.joined(separator: "/"))
+        // Resolved and checked again, because `..` is not the only way out: a symlink inside the
+        // repository points wherever it likes, and the written layer is a file this process did
+        // not write.
+        let root = repositoryURL.resolvingSymlinksInPath().standardizedFileURL.path
+        guard fileURL.resolvingSymlinksInPath().standardizedFileURL.path
+            .hasPrefix(root.hasSuffix("/") ? root : root + "/")
+        else {
+            return nil
+        }
+        return fileURL
     }
 
     /// What the file holds now, digested the way the written layer records it — or nothing where
@@ -37,6 +47,6 @@ enum AtlasSubject {
             .map { String(format: "%02x", $0) }
             .joined()
             .prefix(digestLength)
-            .description
+            .lowercased()
     }
 }

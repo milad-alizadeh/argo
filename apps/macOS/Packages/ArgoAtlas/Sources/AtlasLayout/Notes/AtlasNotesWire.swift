@@ -23,6 +23,9 @@ struct AtlasNotesWire: Codable {
 
 /// One Note as the file spells it. `note` is the sentence and is the only required key: a subject
 /// nothing flagged carries no `why`, and a writer that recorded no digest carries no `subject`.
+///
+/// `why` is the FILE's word for what the domain calls the flag, kept because the file is written by
+/// something other than this reader and renaming a key here would only rename it on one side.
 struct AtlasNoteWire: Codable {
     let note: String
     let why: [String]?

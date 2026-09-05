@@ -37,7 +37,7 @@ public extension AtlasNotes {
     private static func read(_ wire: [String: AtlasNoteWire]?) -> [String: AtlasNote] {
         var notes: [String: AtlasNote] = [:]
         for (path, note) in wire ?? [:] where !note.note.isEmpty {
-            notes[path] = AtlasNote(words: note.note, why: note.why ?? [], subject: note.subject)
+            notes[path] = AtlasNote(words: note.note, flag: note.why ?? [], subject: note.subject)
         }
         return notes
     }

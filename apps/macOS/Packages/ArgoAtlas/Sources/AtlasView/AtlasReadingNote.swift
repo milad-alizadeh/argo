@@ -22,7 +22,7 @@ struct AtlasReadingNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             words
-            if !note.why.isEmpty {
+            if !note.flag.isEmpty {
                 flag
             }
             if note.standing == .stale {
@@ -47,9 +47,11 @@ struct AtlasReadingNote: View {
 
     /// The sentence itself, set as prose.
     ///
-    /// At the body rung rather than the design's callout: every interface role at that rung in the
-    /// contract carries a control's weight, and this is a paragraph. It is the rung the panel's
-    /// other sentence — the idle reading beside it — is already set at, so the two agree.
+    /// At the body rung rather than the design's callout, which is a deviation with a measurement
+    /// behind it: every interface role at the callout rung carries a control's weight, and this is
+    /// a paragraph. Measured against the approved render, the two set the same: 36px of line pitch
+    /// at 2x, because the design's 12px at its prose leading and this rung's own line box come to
+    /// one number. It is also the rung the panel's other sentence — the idle reading — is set at.
     private var words: some View {
         Text(note.words)
             .argoText(ArgoTypography.body)
@@ -61,7 +63,7 @@ struct AtlasReadingNote: View {
     /// every provenance line in the panel takes. It is kept beside the answer because a sentence
     /// about somebody's code with no question in front of it reads as an unprompted opinion.
     private var flag: some View {
-        Text(note.why.joined(separator: " "))
+        Text(note.flag.joined(separator: " "))
             .argoText(ArgoTypography.machineCaption)
             .foregroundStyle(argo.color.interaction.accentBright)
             .fixedSize(horizontal: false, vertical: true)
@@ -70,27 +72,24 @@ struct AtlasReadingNote: View {
 
     /// A Note whose subject has changed since it was written STAYS, and says so.
     ///
-    /// The mark is typographic rather than a status colour: the gauge under this draws the measure
-    /// ramp's own amber and red, and a state role here would put two unrelated readings of the
-    /// same colour in one field of view — which is the exemption #1142 took the ramp under, read
-    /// the other way round.
+    /// Appearance the approved design does not carry: it has no stale state, so this is new and is
+    /// drawn in the design's own vocabulary rather than invented beside it.
+    ///
+    /// The mark is typographic rather than a status colour, because the gauge under this draws the
+    /// measure ramp's own amber and red and a state role here would put two unrelated readings of
+    /// one colour in a single field of view. It is a marking rather than a third paragraph of the
+    /// note, so it takes the interface face at a control's weight and the loudest ink in the block:
+    /// a mark nobody notices is a note passing itself off as current.
     private var staleness: some View {
-        Text(AtlasNoteMeasure.stale)
-            .argoText(ArgoTypography.machineCaption)
-            // The loudest line in the block, which is what MARKED means: at the tertiary rung it
-            // read as a third paragraph of the note rather than as something said ABOUT it, and a
-            // mark nobody notices is a note quietly passing itself off as current.
+        Text(Self.stale)
+            .argoText(ArgoTypography.control)
             .foregroundStyle(argo.color.text.primary)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, ArgoSpacing.base)
     }
-}
 
-/// The note block's own words. Here rather than in the view for `AtlasUnmeasured`'s reason: a
-/// sentence the panel says on the reader's behalf is UI copy, and it is spelled in one place.
-enum AtlasNoteMeasure {
     /// How a stale Note says so. One sentence, about the FILE rather than about the note: what
-    /// changed is the subject, and a reader deciding whether to trust the sentence needs to know
+    /// changed is the subject, and a reader deciding whether to trust the sentence has to be told
     /// which of the two moved.
-    static let stale = "The file has changed since this was written."
+    private static let stale = "The file has changed since this was written."
 }

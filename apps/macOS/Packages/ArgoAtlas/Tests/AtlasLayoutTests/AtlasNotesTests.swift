@@ -27,7 +27,7 @@ struct AtlasNotesTests {
 
         let note = try #require(notes.note(ofFile: "argo/rules/house.md"))
         #expect(note.words == "What a model does not do unprompted, stated once.")
-        #expect(note.why == ["One of the largest files here."])
+        #expect(note.flag == ["One of the largest files here."])
         #expect(note.subject == "373c133d4049e869")
         #expect(notes.model == "sonnet")
     }

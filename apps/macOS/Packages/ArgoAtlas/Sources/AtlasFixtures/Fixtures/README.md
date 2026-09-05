@@ -63,15 +63,19 @@ own strength or a pair drawn twice is visible in a render rather than plausible.
 `argo-notes.json` is the same repository's Notes (#1159), and it is a **second file on purpose**:
 the map is drawn from `argo-map.json` alone, this is fetched separately, and anything that never
 asks for it draws exactly the same map. It is the one fixture here that was **written rather than
-measured** — four notes and three folder captions, written by hand into the shape the prototype's
-writer produces (`docs/designs/prototypes/atlas-notes-write.mjs`), down to the `model` the shape
-records; each note carries the flag the measurements raised that got it written, and a caption
-carries none.
+measured** — four notes and three folder captions, written by hand. Each note carries the flag the
+measurements raised that got it written, and a caption carries none.
+
+The shape is **this reader's, not the prototype's**. The prototype's writer
+(`docs/designs/prototypes/atlas-notes-write.mjs`) is the only thing that has ever produced a written
+layer, and it writes `{of, at, model, folders, files: {path: {hash, why, note}}, pairs, domains}` —
+no `version`, and the digest under `hash`. Nothing in Argo writes one of these yet, and when
+something does it writes the shape `AtlasNotesWire` reads.
 
 Three of the four record a `subject`: the first sixteen hex digits of the SHA-256 of what was read
-at the time of writing, taken from the checkout at commit `4478553` — real digests, so a check runs
-for real. Two of those three subjects have been edited since, and read **stale**; one has not, and
-reads **current**. The fourth records no digest at all and stays **unchecked**, which is not a claim
+at the time of writing, taken from the checkout at commit `4478553`. They are real digests of real
+files, so a check against this working tree runs for real. Two of those three subjects have been
+edited since and read **stale**; one has not, and reads **current**. The fourth records no digest at all and stays **unchecked**, which is not a claim
 either way.
 
 A folder caption records none either, because a folder holds no content of its own to digest, so a

@@ -124,7 +124,7 @@ private let unmeasuredReading = AtlasFileReading(
 private let wholeNote = AtlasNote(
     words: "The window's one presentation is assembled here, so every room below reads one truth "
         + "about which Project is active rather than three that can disagree.",
-    why: ["One of the most complex files here."],
+    flag: ["One of the most complex files here."],
     subject: "9f2c41a7b0e58d63",
 )
 

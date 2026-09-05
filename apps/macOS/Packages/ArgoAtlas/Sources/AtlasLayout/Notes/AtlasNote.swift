@@ -9,11 +9,12 @@ public struct AtlasNote: Equatable, Sendable {
     /// The sentence itself, exactly as it was written.
     public let words: String
 
-    /// The question the measurements asked that got this written — "One of the largest files
-    /// here." Kept beside the answer, because a sentence about somebody's code with no question in
-    /// front of it reads as an unprompted opinion. Empty for a subject nothing flagged, which is
-    /// every folder caption.
-    public let why: [String]
+    /// The FLAG, in the domain's own word for it: the question the measurements asked that got
+    /// this written — "One of the largest files here." Kept beside the answer, because a sentence
+    /// about somebody's code with no question in front of it reads as an unprompted opinion. One
+    /// entry per question, each a sentence of its own. Empty for a subject nothing flagged, which
+    /// is every folder caption.
+    public let flag: [String]
 
     /// What the subject held when the Note was written, digested. Absent where the writer recorded
     /// none, which is not the same as a subject that has not changed — see `AtlasNoteStanding`.
@@ -26,12 +27,12 @@ public struct AtlasNote: Equatable, Sendable {
 
     public init(
         words: String,
-        why: [String] = [],
+        flag: [String] = [],
         subject: String? = nil,
         standing: AtlasNoteStanding = .unchecked,
     ) {
         self.words = words
-        self.why = why
+        self.flag = flag
         self.subject = subject
         self.standing = standing
     }
@@ -46,7 +47,7 @@ public struct AtlasNote: Equatable, Sendable {
         guard let subject, let digest else { return self }
         return AtlasNote(
             words: words,
-            why: why,
+            flag: flag,
             subject: subject,
             standing: subject == digest ? .current : .stale,
         )

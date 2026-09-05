@@ -57,13 +57,13 @@ struct AtlasNoteStandingTests {
         // does not rewrite one.
         let written = AtlasNotes(
             writtenAt: Date(timeIntervalSince1970: 0), model: "sonnet",
-            files: ["argo/a.swift": AtlasNote(words: "A.", why: ["Large."], subject: "aaaa")],
+            files: ["argo/a.swift": AtlasNote(words: "A.", flag: ["Large."], subject: "aaaa")],
         )
 
         let read = written.checked(against: ["argo/a.swift": "zzzz"])
 
         #expect(read.model == "sonnet")
         #expect(read.writtenAt == written.writtenAt)
-        #expect(read.note(ofFile: "argo/a.swift")?.why == ["Large."])
+        #expect(read.note(ofFile: "argo/a.swift")?.flag == ["Large."])
     }
 }

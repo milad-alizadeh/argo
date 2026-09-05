@@ -87,7 +87,7 @@ struct AtlasNotesStoreTests {
         let note = try #require(notes.note(ofFile: path))
         #expect(note.standing == .stale)
         #expect(note.words == "Where the program starts.")
-        #expect(note.why == ["One of the largest files here."])
+        #expect(note.flag == ["One of the largest files here."])
     }
 
     /// A written layer taken before a rename names files the map has no Plot for. Nothing is
