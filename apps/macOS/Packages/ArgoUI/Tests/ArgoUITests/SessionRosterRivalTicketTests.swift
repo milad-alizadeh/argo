@@ -33,7 +33,7 @@ struct SessionRosterRivalTicketTests {
         ])
 
         // #745, unchanged: the rows a Ticket does name apart still spend it on the title.
-        #expect(try #require(rows.first { $0.id == "alone" }).title == "#741: Anchor the feed")
+        #expect(try #require(rows.first { $0.id == "alone" }).title == "Anchor the feed")
     }
 
     @Test
@@ -44,7 +44,7 @@ struct SessionRosterRivalTicketTests {
         ])
 
         // Only one row would have drawn the Ticket's words, so nothing was confusable.
-        #expect(rows.map(\.title) == ["Tonight", "#650: Rough atlas for Argo itself"])
+        #expect(rows.map(\.title) == ["Tonight", "Rough atlas for Argo itself"])
     }
 
     @Test

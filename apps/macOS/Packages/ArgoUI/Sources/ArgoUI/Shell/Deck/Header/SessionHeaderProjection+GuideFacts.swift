@@ -76,10 +76,14 @@ extension SessionHeaderProjection {
             + marks(for: session.workspace).map(\.detail)).joined(separator: " · ")
     }
 
-    /// `#476: Anchor the feed on its newest line`. The number is bare here, unlike the line's own
-    /// `Issue #476`, because the row's term has already said the word.
+    /// `Anchor the feed on its newest line` — the sentence alone, with no number and no separator
+    /// (#1347): the panel's term already says `Issue`, and the number itself now has its own
+    /// address on the roster's line 3, beside the pull request.
+    ///
+    /// The bare mark only where the provider has not named the Ticket yet: there is no sentence to
+    /// draw, and `link.label` ("Issue #476") would say the term's own word back to it.
     private static func issueReading(_ row: Header.IssueRow) -> String {
         guard let link = row.link else { return Header.unlinkedWord }
-        return IssueReading.words(number: link.number, title: link.detail)
+        return link.detail ?? IssueReading.mark(link.number)
     }
 }
