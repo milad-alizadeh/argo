@@ -19,7 +19,7 @@ struct SessionMarker: View {
                         .foregroundStyle(argo.color.text.tertiary)
                         .accessibilityHidden(true)
                 } else {
-                    SessionStateIndicator(state: row.state, turnStartedAt: row.turnStartedAt)
+                    SessionStateIndicator(state: row.state)
                 }
             }
             .padding(.top, Self.inset(for: markSize))

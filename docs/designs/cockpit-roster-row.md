@@ -83,7 +83,7 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
 | segment gap | `hair` = 2 | |
 | segment width | `(64 − 2 × (n−1)) / n`, floor 2 | derived from the count |
 | done | `interaction.accent` | |
-| in progress | `interaction.accentBright` | exactly one item is in progress at a time — the rule the list is written under. It draws brightest, because it is the only item anybody can act on |
+| in progress | `interaction.accentBright`, breathing between `BreathingGlow.resting` and full | exactly one item is in progress at a time — the rule the list is written under. It is the one segment that MOVES (rule 8), which is what marks it as the step anybody can act on; it is also the brightest thing on the bar at the top of every breath, and through the trough it passes under the completed steps beside it. Movement is the signal, brightness the confirmation — so with movement off it holds full ink rather than the floor, and a reader who loses the breath keeps the brightness |
 | pending | `edge.subtle` | |
 | a Plan that is not moving | `progress.still` | see the promotions |
 
@@ -115,12 +115,27 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
 7. **A ready claim with an open pull request never draws.** The claim is CONVENTION, arriving
    over the companion channel (#1335); the pull request is DERIVED from the code host. The pull
    request wins.
-8. **No mark on the row moves.** Not the Plan, not the addresses, not the Subagent dots — a list
-   where every row pulses out of phase is a list nobody can scan. The **state dot is the one
-   exception and predates this design** (#1291): a Turn is the operation D12 lets a live signal
-   repeat for, and it is the only fact on the row with an operation to report. Its halo *breathes*
-   — one rise and fall per pass of `ArgoMotion.working`, never below `restingGlow` of the rung.
-   It may not blink: a light that reaches zero says a Turn started and stopped.
+8. **No mark on the row moves, with two exceptions.** Not the addresses, not the Subagent dots,
+   not a step of the Plan that is done or pending — a list where every row pulses out of phase is
+   a list nobody can scan. The two that move are the **state dot** (#1291, which predates this
+   design) and the Plan's **in-progress segment** (#1403). Both report the same fact — a Turn is
+   running — and a Turn is the operation D12 lets a live signal repeat for. Both *breathe*: one
+   rise and fall per pass of `ArgoMotion.working`, never below `BreathingGlow.resting`. Neither
+   may blink: a light that reaches zero says a Turn started and stopped.
+
+   They breathe **off one pass**, published for the whole row by `SharedIonPass`. Two loops
+   started at two moments drift, and two live marks on one row that disagree read as two claims
+   rather than one. What differs is where each one's breath **ends**, because a halo is light
+   *around* a mark that keeps its ink while a segment *is* the mark:
+
+   | | dot's halo | Plan's segment |
+   |---|---|---|
+   | peak | the rung's own glow, dimming as the wait ages | full — ink that faded with the wait would say a long Turn had stopped being the step anybody can act on. The age reaches it through the *period* instead |
+   | trough | `BreathingGlow.resting` of that glow | `BreathingGlow.resting` of full, which passes under a completed step — see the table above on why movement, not brightness, is the signal |
+   | movement off | parks at the trough; the dot underneath keeps its ink | parks at **full**; parked at the trough it would be the dimmest thing on the bar |
+
+   The Plan has no third state to leak into: a Session that is not running has no in-progress
+   segment at all (rule 3), so a bar that moves and a Session that is live are one answer.
 9. **A fold sums or says nothing.** Its Subagent dots are summed across the runs it hides. It
    draws **no Plan**: four to-do lists do not add up to one.
 

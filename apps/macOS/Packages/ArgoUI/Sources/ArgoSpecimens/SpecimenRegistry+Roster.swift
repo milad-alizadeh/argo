@@ -63,6 +63,9 @@ extension SpecimenRegistry {
         // Every shape the roster's `PlanBar` comes in: mid-flight, complete, frozen and none
         // (#1345).
         SpecimenEntry("planBarRoster") { PlanBarRosterSpecimen() },
+        // The step in progress breathes (#1403), so the still with movement OFF is the only one
+        // that can be judged: with it on the segment is caught anywhere along the breath.
+        SpecimenEntry("planBarRosterStill") { PlanBarRosterSpecimen(isStill: true) },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
         // #1404: a roster longer than the window, which no other entry here carries — the state the
