@@ -50,6 +50,13 @@ public enum ArgoTypography {
         typeface: .interface, rung: .callout, weight: .medium,
     )
     public static let caption = ArgoTextStyle(typeface: .interface, rung: .caption1)
+    /// The half of a caption line that carries the fact — the Atlas name bar's file name, set
+    /// against the folder path it sits in (#1153). `caption`'s own rung, so the two halves share a
+    /// baseline and weight is the whole of what separates them; no tracking, which is what tells
+    /// it from `badge`, whose 0.6 is for an all-caps word rather than a file name.
+    public static let captionEmphasis = ArgoTextStyle(
+        typeface: .interface, rung: .caption1, weight: .semibold,
+    )
 
     /// The one machine string a person has to TRANSCRIBE: the device flow's user code, at the title
     /// rung because it is read off one screen and typed into another.
@@ -80,6 +87,7 @@ public enum ArgoTypography {
         ("body", body),
         ("control", control),
         ("caption", caption),
+        ("captionEmphasis", captionEmphasis),
         ("machineDisplay", machineDisplay),
         ("machineBody", machineBody),
         ("machine", machine),

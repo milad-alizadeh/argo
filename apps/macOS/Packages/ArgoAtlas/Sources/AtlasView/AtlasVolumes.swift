@@ -37,7 +37,13 @@ enum AtlasVolumes {
     /// A plate is TWO faces, rim then ground, so the border survives the nesting: a nested plate
     /// paints over its parent's ground, and without a rim of its own the seam between them is two
     /// tones that are equal once the contract's three have run out.
-    static func volumes(of plan: AtlasPlan, in pigments: AtlasPigments) -> [AtlasVolume] {
+    /// A file's id is its place in `roster` plus one, so 0 is left meaning NOTHING and every other
+    /// box on the map — plate, rim, shadow — keeps it (#1153).
+    static func city(of plan: AtlasPlan, in pigments: AtlasPigments) -> AtlasCity {
+        AtlasCity(volumes: volumes(of: plan, in: pigments), roster: plan.tiles.map(\.path))
+    }
+
+    private static func volumes(of plan: AtlasPlan, in pigments: AtlasPigments) -> [AtlasVolume] {
         let plates = plan.plates.flatMap { frame in
             [
                 AtlasVolume(frame.rect, pigment: pigments.rim(at: frame.depth)),
@@ -54,12 +60,18 @@ enum AtlasVolumes {
         let shadows = plan.tiles.compactMap {
             AtlasShadow.decal(of: $0, on: plan.plates, ceiling: ceiling, in: pigments)
         }
-        let tiles = plan.tiles.map {
+        // The id a file is picked by is its place in `plan.tiles` PLUS ONE, so that 0 is left
+        // meaning nothing and every other box on the map — plate, rim, shadow — keeps it (#1153).
+        // Assigned in the same expression that paints the file, because the id target and the
+        // screen are the same draw: an id handed out anywhere else would be a second walk of the
+        // tiles, and a second walk is what a pick can drift against.
+        let tiles = plan.tiles.enumerated().map { index, tile in
             AtlasVolume(
-                $0.rect.shrunk(by: gap),
-                roof: $0.height,
-                pigment: pigments.pigment(of: $0.band),
+                tile.rect.shrunk(by: gap),
+                roof: tile.height,
+                pigment: pigments.pigment(of: tile.band),
             )
+            .identified(as: UInt32(index + 1))
         }
         return plates + shadows + tiles
     }

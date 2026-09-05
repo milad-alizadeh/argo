@@ -37,6 +37,9 @@ struct AtlasVolume {
     /// A baked-in darkening, spent on top of the light model rather than instead of it: 1 for an
     /// ordinary face, below 1 for a cast shadow's decal (#1151).
     float shade;
+    /// Which file this box is: 0 for everything that is not one (#1153). It spends the four bytes
+    /// the `float3` below already pads out, which is why picking costs the instance buffer nothing.
+    uint id;
     float3 pigment;
 };
 
@@ -80,6 +83,20 @@ struct AtlasFragment {
     /// at the foot, and a gradient is the one thing here that has to interpolate. On the roof it
     /// is 1 at every corner, so interpolating it costs nothing there.
     float contact;
+    /// Which file this face belongs to, carried through untouched (#1153). Flat because an id is
+    /// not a quantity: interpolating between two of them would name a third file at every pixel
+    /// but the corners.
+    uint id [[flat]];
+};
+
+/// What one fragment writes: the picture, and which file it is. TWO attachments of ONE pass, not
+/// two passes — the id target cannot disagree with the screen because the same rasterisation, the
+/// same depth test and the same fragment write both (#1153). A second pass would be a second
+/// coverage rule, and every hit-test defect the prototype had was a second rule drifting from the
+/// first.
+struct AtlasWrite {
+    float4 colour [[color(0)]];
+    uint id [[color(1)]];
 };
 
 /// One point of the model, in clip space.
@@ -164,9 +181,42 @@ vertex AtlasFragment atlas_volume_vertex(
     out.light = mix(1.0, faceLight, eye.relief) * mix(1.0, volume.shade, eye.relief);
     float contact = mix(lighting.contactFoot, 1.0, along);
     out.contact = mix(1.0, contact, eye.relief);
+    out.id = volume.id;
     return out;
 }
 
-fragment float4 atlas_volume_fragment(AtlasFragment in [[stage_in]]) {
-    return float4(in.pigment * in.light * in.contact, 1);
+fragment AtlasWrite atlas_volume_fragment(AtlasFragment in [[stage_in]]) {
+    return AtlasWrite {
+        float4(in.pigment * in.light * in.contact, 1),
+        in.id
+    };
+}
+
+/// ONE SAMPLE OF THE ID TARGET, CHOSEN — never averaged (#1153, under #1400's multisampling).
+///
+/// Metal cannot resolve an integer attachment, and that restriction is the right one: a resolve
+/// AVERAGES, and the average of two file ids is a third file. So this picks instead of blending,
+/// and what it picks is the first sample carrying a box. Every sample at a pixel is a box the one
+/// rasterisation genuinely covered that pixel with, so at an edge the reader is told one of the
+/// boxes that are really there — which is the honest answer and the only one a pixel has room for.
+///
+/// A box beats no box, rather than sample 0 winning by position. A file one sample wide is a file
+/// on the screen, and the reader pointing at it is owed its name rather than the ground behind it.
+kernel void atlas_id_resolve(
+    texture2d_ms<uint, access::read> samples [[texture(0)]],
+    texture2d<uint, access::write> resolved [[texture(1)]],
+    uint2 at [[thread_position_in_grid]]
+) {
+    if (at.x >= resolved.get_width() || at.y >= resolved.get_height()) {
+        return;
+    }
+    uint id = 0;
+    for (uint sample = 0; sample < samples.get_num_samples(); ++sample) {
+        uint found = samples.read(at, sample).x;
+        if (found != 0) {
+            id = found;
+            break;
+        }
+    }
+    resolved.write(uint4(id, 0, 0, 0), at);
 }

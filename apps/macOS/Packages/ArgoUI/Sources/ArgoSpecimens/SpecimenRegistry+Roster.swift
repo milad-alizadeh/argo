@@ -32,6 +32,10 @@ extension SpecimenRegistry {
         SpecimenEntry("emptyAtlas") { AtlasMapSpecimen(map: nil) },
         // The same picture inside the ROOM: the strip that says what was measured, and the page a
         // Project with no atlas gets instead (#1148). The treemap above is the drawing on its own.
+        // The name bar a hover raises over the map (#1153), on the desktop it is read against. It
+        // cannot be rendered where it appears — the bar answers a pointer, and no screenshot drives
+        // one — so its three readings stand side by side instead.
+        SpecimenEntry("atlasHoverName") { AtlasHoverNameSpecimen() },
         SpecimenEntry("atlasRoom") { AtlasRoomSpecimen() },
         SpecimenEntry("atlasRoomUnmeasured") { AtlasRoomVacancySpecimen() },
         // The other two readings with no map to draw, and the one where an old map still draws

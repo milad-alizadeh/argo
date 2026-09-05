@@ -85,7 +85,7 @@ struct AtlasVolumesTests {
     /// every plate and before every file, so a file standing where its own shadow falls draws
     /// over it (#1151).
     @Test func `the plates are handed over before the files that stand on them`() {
-        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.city(of: Self.plan(), in: Self.pigments).volumes
 
         #expect(volumes.count == 8)
         #expect(volumes[0].pigment == Self.pigments.rim(at: 0).simd)
@@ -118,7 +118,7 @@ struct AtlasVolumesTests {
     /// out, which the fixture's nesting reaches. A rim under the ground rather than a stroke over
     /// it, so it costs the map no face nothing stands on.
     @Test func `a plate's ground sits inside its own rim`() {
-        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.city(of: Self.plan(), in: Self.pigments).volumes
         let border = Float(AtlasVolumes.border)
 
         #expect(volumes[0].size == SIMD2<Float>(100, 100))
@@ -131,7 +131,7 @@ struct AtlasVolumesTests {
     @Test func `a file keeps a gap around itself`() {
         let gap = Float(AtlasVolumes.gap)
 
-        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.city(of: Self.plan(), in: Self.pigments).volumes
 
         #expect(volumes[6].origin == SIMD2<Float>(2 + gap, 28 + gap))
         #expect(volumes[6].size == SIMD2<Float>(46 - gap * 2, 40 - gap * 2))
@@ -150,7 +150,7 @@ struct AtlasVolumesTests {
             )],
         )
 
-        let face = try #require(AtlasVolumes.volumes(of: plan, in: Self.pigments).first)
+        let face = try #require(AtlasVolumes.city(of: plan, in: Self.pigments).volumes.first)
 
         #expect(face.origin.x.isFinite)
         #expect(face.size == SIMD2<Float>(0, 0))
@@ -159,17 +159,43 @@ struct AtlasVolumesTests {
     /// A file stands as tall as the plan said it stands, and its foot is on the plate — the third
     /// channel, arriving at the GPU as the one number the shader raises the roof by.
     @Test func `a file's roof stands at the height the plan gave it`() {
-        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.city(of: Self.plan(), in: Self.pigments).volumes
 
         #expect(volumes[6].heights == SIMD2<Float>(0, 40))
         #expect(volumes[7].heights == SIMD2<Float>(0, 3))
+    }
+
+    /// The id a pick reads back names the file it was drawn for, and NOTHING is a real answer with
+    /// a number of its own: 0, which every plate, rim and shadow decal carries (#1153).
+    @Test func `only a file carries an id, and it names that file`() {
+        let plan = Self.plan()
+
+        let city = AtlasVolumes.city(of: plan, in: Self.pigments)
+
+        #expect(city.volumes.prefix(6).allSatisfy { $0.id == 0 })
+        #expect(city.volumes[6].id == 1)
+        #expect(city.volumes[7].id == 2)
+        #expect(city.file(at: 1) == "a/b/one")
+        #expect(city.file(at: 2) == "a/two")
+    }
+
+    /// A point on no box resolves to nothing rather than to the nearest — the claim spelled at the
+    /// one place it is decided. An id past the roster is a target drawn from an older map than the
+    /// one being asked; it too is nothing, because naming a file off a stale frame is exactly the
+    /// answer this whole mechanism exists to make impossible.
+    @Test func `an id that names no file resolves to nothing`() {
+        let city = AtlasVolumes.city(of: Self.plan(), in: Self.pigments)
+
+        #expect(city.file(at: 0) == nil)
+        #expect(city.file(at: 3) == nil)
+        #expect(city.file(at: .max) == nil)
     }
 
     /// A PLATE is foot and roof at one height. It is what makes the ground a flat face rather than
     /// a slab: its two walls come out degenerate and rasterise nothing, so a plate costs the same
     /// one quad it cost flat.
     @Test func `a plate is one flat face, foot and roof together`() {
-        let volumes = AtlasVolumes.volumes(of: Self.plan(), in: Self.pigments)
+        let volumes = AtlasVolumes.city(of: Self.plan(), in: Self.pigments).volumes
 
         #expect(volumes.prefix(4).allSatisfy { $0.heights.x == $0.heights.y })
     }

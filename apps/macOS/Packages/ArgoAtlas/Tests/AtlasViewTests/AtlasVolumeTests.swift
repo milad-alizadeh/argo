@@ -27,6 +27,10 @@ struct AtlasVolumeTests {
         // scalar put after `pigment` instead would leave Metal rounding the struct up somewhere
         // Swift's `MemoryLayout` does not follow it.
         #expect(MemoryLayout<AtlasVolume>.offset(of: \.shade) == 24)
+        // 28: the id spends the OTHER half of that same gap, which is why a whole channel of
+        // picking costs the instance buffer nothing (#1153). A field that pushed `pigment` off 32
+        // would leave every file on the map painted out of the next one's bytes.
+        #expect(MemoryLayout<AtlasVolume>.offset(of: \.id) == 28)
         #expect(MemoryLayout<AtlasVolume>.offset(of: \.pigment) == 32)
         // The stride, not the size: it is what the instance buffer is indexed by, and Metal's own
         // size for this struct is 48 — the number Swift only reaches by rounding up.

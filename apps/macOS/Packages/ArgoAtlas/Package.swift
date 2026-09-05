@@ -53,10 +53,13 @@ let package = Package(
             // not know the extension at all and drops it with an "unhandled file" warning.
             // Declaring it settles both: Xcode still compiles it into the target's
             // `default.metallib`, and `swift build` stops warning and starts generating
-            // `Bundle.module`, which is what `AtlasVolumeRenderer` loads the library from. A
-            // `swift test` binary therefore carries the source and no metallib, and the renderer
-            // answers that the way it answers a machine with no GPU: it returns nil and the map
-            // shows its floor.
+            // `Bundle.module`, which is what `AtlasVolumeRenderer` loads the library from.
+            //
+            // A `swift test` binary therefore carries the SOURCE and no metallib, and the renderer
+            // compiles it out of this bundle at runtime when the metallib is missing (#1153). It
+            // used to answer that the way it answers a machine with no GPU — nil, and the map shows
+            // its floor — and that left #1153's one claim assertable only by a suite that skipped
+            // itself, because nothing under `swift test` could draw a pixel to check.
             resources: [.process("AtlasVolume.metal")],
         ),
         .testTarget(
