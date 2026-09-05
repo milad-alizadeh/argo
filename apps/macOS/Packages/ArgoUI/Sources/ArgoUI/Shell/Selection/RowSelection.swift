@@ -28,6 +28,14 @@ package struct RowSelection<Row: Hashable & Sendable>: Equatable, Sendable {
         point(at: row)
     }
 
+    /// A range already made, for a render: the whole run selected, and the deck still on the row
+    /// the reader clicked FIRST — which is what a shift-click leaves behind.
+    package init(range rows: [Row]) {
+        self.rows = Set(rows)
+        self.anchor = rows.first
+        self.last = rows.first
+    }
+
     package func contains(_ row: Row) -> Bool {
         rows.contains(row)
     }
