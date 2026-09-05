@@ -34,24 +34,31 @@ echo parent-done
 // cleanup plainly silently threw away the caller's. `swift-test.sh` removes its xunit report
 // directory that way, set long before it asks for a slot — so every uncached `bun run test`
 // leaked a temp directory, on exactly the path this cap was added to cover and on no other.
-check("acquiring a slot keeps the caller's own EXIT trap", () => {
-  const dir = workspace()
-  const marker = path.join(dir, 'caller-cleanup-ran')
-  const out = withLock(
-    dir,
-    `
+//
+// Run under BOTH shells wherever dash is installed. `sh` is bash on macOS and dash on Linux, and
+// they disagree about `trap` inside a command substitution, so this case passed locally and
+// failed on CI for exactly one commit (#1431). macOS ships `/bin/dash`, so the disagreement is
+// reachable from a developer's machine and does not need a Linux job to find.
+for (const shell of ['sh', ...(existsSync('/bin/dash') ? ['/bin/dash'] : [])]) {
+  check(`acquiring a slot keeps the caller's own EXIT trap (${shell})`, () => {
+    const dir = workspace()
+    const marker = path.join(dir, 'caller-cleanup-ran')
+    const out = withLock(
+      dir,
+      `
 trap 'echo ran > "${marker}"' EXIT
 build_lock_acquire
 echo acquired
 `,
-    { slots: 1 },
-  )
-  assert.match(out, /acquired/)
-  assert.ok(existsSync(marker), "the caller's EXIT trap must still run after build_lock_acquire")
-  // And the lock's own cleanup still happened, so chaining did not cost the release.
-  assert.ok(!existsSync(path.join(dir, 'lock', 'slot-1')), 'the slot must still be released')
-  rmSync(dir, { recursive: true, force: true })
-})
+      { slots: 1, shell },
+    )
+    assert.match(out, /acquired/)
+    assert.ok(existsSync(marker), "the caller's EXIT trap must still run after build_lock_acquire")
+    // And the lock's own cleanup still happened, so chaining did not cost the release.
+    assert.ok(!existsSync(path.join(dir, 'lock', 'slot-1')), 'the slot must still be released')
+    rmSync(dir, { recursive: true, force: true })
+  })
+}
 
 // A descendant keeps the exported marker for ever — `build_lock_release` can only unset it in
 // its own shell. Trusting it on presence alone would let a process that outlived its acquirer

@@ -64,10 +64,20 @@ build_lock_release() {
 # `trap` with no arguments prints the handler it currently holds, one line per signal, in a form
 # this reads back. The caller's handler runs AFTER the slot is freed and BEFORE the exit, so a
 # slow cleanup never keeps the next lane waiting.
+#
+# REDIRECTED to a file, never `_bl_existing=$(trap | …)`. Command substitution forks a subshell
+# and POSIX resets trapped signals in one, so on dash — Linux's `/bin/sh` — that capture comes
+# back EMPTY, the chaining finds nothing to keep, and this clobbers the caller's trap: exactly
+# the bug it exists to prevent. bash special-cases `trap` there, so macOS `/bin/sh` answers
+# correctly and the push gate, being macOS, cannot see the difference (#1431). A redirection
+# forks nothing, and both shells then answer the same.
 _bl_install_release() {
   _bl_signal=$1
   _bl_exit_code=$2
-  _bl_existing=$(trap | sed -n "s/^trap -- '\(.*\)' $_bl_signal\$/\1/p")
+  _bl_traps=${TMPDIR:-/tmp}/argo-build-lock-traps.$$
+  trap > "$_bl_traps" 2>/dev/null
+  _bl_existing=$(sed -n "s/^trap -- '\(.*\)' $_bl_signal\$/\1/p" "$_bl_traps" 2>/dev/null)
+  rm -f "$_bl_traps"
   _bl_handler='build_lock_release'
   [ -n "$_bl_existing" ] && _bl_handler="$_bl_handler; $_bl_existing"
   [ -n "$_bl_exit_code" ] && _bl_handler="$_bl_handler; exit $_bl_exit_code"
