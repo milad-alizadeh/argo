@@ -46,6 +46,14 @@ check('the nudge carries the order rule', () =>
   assert.match(injected(run({ transcript_path: transcript(['{}']) })), /item 1 to item 3/),
 )
 
+// #1419: the tail is where the wall time is, so the nudge has to name the split and the PR. A
+// nudge that stops at the edits leaves one checkbox holding 40% of the session.
+check('the nudge carries the tail rule', () => {
+  const text = injected(run({ transcript_path: transcript(['{}']) }))
+  assert.match(text, /verification tail/)
+  assert.match(text, /open PR/)
+})
+
 check('a session that already wrote a list is left alone', () => {
   const file = transcript(['{"message":{"content":[{"type":"tool_use","name":"TaskCreate"}]}}'])
   assert.equal(run({ transcript_path: file }).trim(), '')

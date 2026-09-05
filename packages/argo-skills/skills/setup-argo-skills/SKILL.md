@@ -52,6 +52,10 @@ then `TaskUpdate` for each status change — both are deferred, so load them onc
   starting it. If the real order turns out to be different, reorder rather than skip an item.
 - One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
 - Keep single-step edits, lookups, and conversational turns off the list.
+- **Split the verification tail into one item each**: the gates, the test suite, the render, the
+  code review, the review fixes, the PR. Only the ones the change needs, never two folded
+  together — a subject that comma-lists what it covers is the shape to reject.
+- **The list runs to the open PR**, so the last item completes when the session does.
 ```
 
 **Issue writing style** is a section, not a skill, and only applies when `docs/agents/issue-tracker.md`

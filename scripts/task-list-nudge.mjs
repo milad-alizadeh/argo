@@ -34,8 +34,12 @@ const NUDGE =
   `for each status change. Codex: update_plan. Keep exactly one item in_progress, and mark an ` +
   `item completed the moment it is done. Work the items in the order the list gives them: mark ` +
   `an item in_progress before you start it, so the list never jumps from item 1 to item 3. If ` +
-  `the real order turns out to be different, reorder the list rather than skip an item. If the ` +
-  `request is a lookup, a single edit, or a conversation, write no list: a one-item list is noise.`
+  `the real order turns out to be different, reorder the list rather than skip an item. Split ` +
+  `the verification tail into one item each — the Swift gate, the full suite, the render, the ` +
+  `code review, the review fixes, the PR — and never fold two gates, suites or reviews into one ` +
+  `item: a subject that comma-lists what it covers is the shape to reject. Run the list to the ` +
+  `open PR, so the last item completes when the session does. If the request is a lookup, a ` +
+  `single edit, or a conversation, write no list: a one-item list is noise.`
 
 /**
  * Whether this prompt gets the nudge. Pure — the caller resolves both facts.
