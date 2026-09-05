@@ -139,6 +139,10 @@ public extension ArgoPalette {
                 // appearance that splits them has to say so out loud.
                 inferred: quietestVoice,
             ),
+            marks: MarkRoles(
+                // The approved render's own cord (`docs/designs/cockpit-atlas.html`, `filaments`).
+                cord: ArgoColor(hex: 0x7EE2FF),
+            ),
         ),
     )
 }

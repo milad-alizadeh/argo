@@ -66,6 +66,34 @@ struct AtlasMaterialTests {
         #expect(materials.hushed.relativeLuminance < materials.unassigned.relativeLuminance)
     }
 
+    /// The cord a co-change tie is drawn as crosses every ground on the map (#1160), so what it
+    /// owes is a distance from all of them — not from the states, which it never stands beside.
+    /// A cord that resolved near a plate would disappear over exactly the folders whose files
+    /// change together, which is the reading the switch exists for.
+    ///
+    /// It is also held off the measure ramp, and for a sharper reason: the colour on this map IS
+    /// the measure, and a tie is not a value banded onto a file. A cord the shade of a band would
+    /// be read as one.
+    @Test(arguments: palettes)
+    func `the cord is told from every ground it crosses and from every band`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let palette = appearance.palette
+        let cord = palette.atlas.marks.cord
+        for ground in palette.atlas.materials.grounds {
+            #expect(
+                cord.distance(to: ground.color) > 0.25,
+                "atlas.marks.cord resolves next door to atlas.\(ground.name)",
+            )
+        }
+        for band in palette.atlas.measure.all {
+            #expect(
+                cord.distance(to: band.color) > 0.25,
+                "atlas.marks.cord resolves next door to measure.\(band.name)",
+            )
+        }
+    }
+
     /// A domain is INFERRED, and the contract had no vocabulary for the third honesty tier. The
     /// ink is not a new colour: it IS the quietest voice, and this is the claim that holds the two
     /// together — a value drifting off `text.tertiary` would be a second grey nobody decided on.

@@ -12,8 +12,7 @@ import SwiftUI
 /// decide what the map draws belong in it, on the sidebar material the platform draws there, at
 /// the width the reader has already dragged the other two rooms to.
 ///
-/// The design's `AtlasControls` aside, minus the two rows other tickets own: Group by (#1158) and
-/// Strongest ties (#1160).
+/// The design's `AtlasControls` aside, minus the one row another ticket owns: Group by (#1158).
 ///
 /// Takes its value off the environment rather than as a parameter, for `AtlasRoomView`'s reason:
 /// `argoAtlasRoom` is injected above the split view, so both columns read the same room.
@@ -65,7 +64,10 @@ package struct AtlasSidebar: View {
                 ),
             )
             divider
-            AtlasFilters(hideTests: room.choice.hideTests.binding)
+            AtlasFilters(
+                hideTests: room.choice.filters.hideTests.binding,
+                showTies: room.choice.filters.showTies.binding,
+            )
             divider
             // Banded here rather than read off the plan: both ends come from the banding and none
             // of them from the rectangles, so the key costs a pass over the Measure and never a

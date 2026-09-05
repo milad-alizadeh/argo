@@ -66,32 +66,33 @@ package struct AtlasMapChoice {
     /// whatever this is set to wherever it is read, which is what makes a colour change a repaint
     /// and not a rebuild.
     package let setChannels: (AtlasChannels) -> Void
-    /// Whether test files are left off the map.
-    package let hideTests: AtlasSwitch
+    /// The design's Filters section, both switches. Grouped rather than spread over this value
+    /// for the reason this value is grouped out of `AtlasRoom` — and because the gate on the one
+    /// declaration shape SwiftLint cannot see is a cap of four (`swift-boundaries.sh` edge 6).
+    package let filters: AtlasFilterChoice
     /// Whether the map is drawn as the city or as the treemap.
     package let isCity: AtlasSwitch
 
     package init(
         channels: AtlasChannels,
         setChannels: @escaping (AtlasChannels) -> Void,
-        hideTests: AtlasSwitch,
+        filters: AtlasFilterChoice,
         isCity: AtlasSwitch,
     ) {
         self.channels = channels
         self.setChannels = setChannels
-        self.hideTests = hideTests
+        self.filters = filters
         self.isCity = isCity
     }
 
     /// The Map as it is DRAWN — the measured Map with the reader's filters applied.
     ///
     /// Both columns ask this rather than each spelling the filter out: a second spelling is a
-    /// second place to forget the next filter (#1160's Strongest ties lands in exactly this
-    /// shape), and the sidebar's own numbers would then be describing a map the stage is not
-    /// drawing. Hiding test files re-reads the repository without them (#1161), so everything said
-    /// about the map has to be said about the same one.
+    /// second place to forget the next filter, and the sidebar's own numbers would then be
+    /// describing a map the stage is not drawing. Hiding test files re-reads the repository
+    /// without them (#1161), so everything said about the map has to be said about the same one.
     package func drawn(_ map: AtlasMap) -> AtlasMap {
-        hideTests.isOn ? map.excludingTestFiles() : map
+        filters.hideTests.isOn ? map.excludingTestFiles() : map
     }
 
     /// The choice a window that has resolved no room draws: every channel unnamed, every switch
@@ -104,9 +105,33 @@ package struct AtlasMapChoice {
         AtlasMapChoice(
             channels: AtlasChannels(""),
             setChannels: { _ in },
-            hideTests: AtlasSwitch(isOn: false) { _ in },
+            filters: AtlasFilterChoice(
+                hideTests: AtlasSwitch(isOn: false) { _ in },
+                showTies: AtlasSwitch(isOn: false) { _ in },
+            ),
             isCity: AtlasSwitch(isOn: false) { _ in },
         )
+    }
+}
+
+/// What is left off the map, and what is drawn over it: the design's own Filters section as one
+/// value (#1161, #1160).
+///
+/// The two are not the same KIND of decision — hiding test files changes what the repository is
+/// for the purposes of the reading, and the ties are laid over a reading that is the same either
+/// way — but they are one section of one column, and the view that draws them takes both.
+@MainActor
+package struct AtlasFilterChoice {
+    /// Whether test files are left off the map.
+    package let hideTests: AtlasSwitch
+    /// Whether the strongest co-change ties are drawn across the whole map (#1160). A pinned
+    /// file's own are drawn however this is set: the reader pointed at a file and asked a question
+    /// the switch does not answer.
+    package let showTies: AtlasSwitch
+
+    package init(hideTests: AtlasSwitch, showTies: AtlasSwitch) {
+        self.hideTests = hideTests
+        self.showTies = showTies
     }
 }
 

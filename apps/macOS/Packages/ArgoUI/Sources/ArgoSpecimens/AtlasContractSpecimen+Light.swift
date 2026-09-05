@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoUI
+import AtlasView
 import SwiftUI
 
 /// The light model and the materials it lands on — the half of this sheet that is the PLACE rather
@@ -71,7 +72,35 @@ extension AtlasContractSpecimen {
         section("The place — the ground, three plates for three depths, and the floor's light") {
             VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
                 swatches(argo.color.atlas.materials.grounds)
+                cordLight
                 inferredInk
+            }
+        }
+    }
+
+    /// The one family here that is not a surface: a co-change tie is a line of light drawn OVER
+    /// the map (#1160). Shown crossing the three plates rather than as a chip, for the reason the
+    /// ink is shown as words — a swatch says nothing about whether a cord at a third of its own
+    /// opacity is still visible over the deepest plate, which is the only question about it.
+    private var cordLight: some View {
+        HStack(alignment: .center, spacing: ArgoSpacing.loose) {
+            label("cord")
+            HStack(spacing: ArgoSpacing.flush) {
+                ForEach(argo.color.atlas.materials.plates, id: \.name) { plate in
+                    Rectangle().fill(plate.color)
+                }
+            }
+            .frame(height: ArgoSpacing.section)
+            .overlay {
+                // Both weights the map draws, read off the weights THEMSELVES rather than typed:
+                // a sheet asking whether a cord is still visible over the deepest plate answers
+                // nothing if it draws a thinner line than any cord on the map (#1160).
+                VStack(spacing: ArgoSpacing.snug) {
+                    ForEach(AtlasCordWeight.allCases, id: \.self) { weight in
+                        AtlasCordStroke(weight: weight, ink: argo.color.atlas.marks.cord)
+                    }
+                }
+                .padding(.horizontal, ArgoSpacing.base)
             }
         }
     }
@@ -88,5 +117,21 @@ extension AtlasContractSpecimen {
                 .padding(ArgoSpacing.snug)
                 .background(argo.color.atlas.materials.plate2)
         }
+    }
+}
+
+/// One cord weight, drawn at the alpha and the width the map strokes it at (#1160).
+///
+/// A view of its own rather than a function returning one, which is the shape `rules/swift.md`
+/// asks for — and it takes the weight rather than two numbers, so the sheet cannot come to show a
+/// cord the map does not draw.
+private struct AtlasCordStroke: View {
+    let weight: AtlasCordWeight
+    let ink: ArgoColor
+
+    var body: some View {
+        Rectangle()
+            .fill(ink.color.opacity(weight.alpha))
+            .frame(height: weight.width)
     }
 }

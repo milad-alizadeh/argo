@@ -1,5 +1,5 @@
-/// What the Atlas draws a Project as: a place. Five families the rest of the contract has no use
-/// for, held together rather than spread across it, because they are one reading (#1142).
+/// What the Atlas draws a Project as: a place. Families the rest of the contract has no use for,
+/// held together rather than spread across it, because they are one reading (#1142).
 ///
 /// The map is the one surface in this app that is not a document — it has a ground, a light, lit
 /// plates and volumes standing on them, and a measure banded across the lot. None of that has a
@@ -15,11 +15,43 @@ public extension ArgoPalette {
         public let domain: DomainWheel
         /// The ground, the plates and the two greys a domain can resolve to.
         public let materials: MaterialRoles
+        /// What is drawn OVER the map rather than what the map is made of.
+        public let marks: MarkRoles
 
-        public init(measure: MeasureRoles, domain: DomainWheel, materials: MaterialRoles) {
+        public init(
+            measure: MeasureRoles,
+            domain: DomainWheel,
+            materials: MaterialRoles,
+            marks: MarkRoles,
+        ) {
             self.measure = measure
             self.domain = domain
             self.materials = materials
+            self.marks = marks
+        }
+    }
+
+    /// The marks laid OVER the map: relations between files rather than facts about one, and the
+    /// one family here that is not a surface (#1160).
+    ///
+    /// What a mark owes is a distance from everything it can CROSS, which is a different rule from
+    /// the one every material answers — a distance from the operational states — and
+    /// `AtlasMaterialTests` states both.
+    struct MarkRoles: Sendable {
+        /// The cord one co-change tie is drawn as (#1160).
+        ///
+        /// Cool, and the only saturated colour on the map that is neither a Measure nor a Domain:
+        /// a tie is not a value banded onto a file, and the measure ramp's own warm traffic light
+        /// is what keeps a cord from being read as one. Bright, because a cord is drawn at a
+        /// fraction of its own opacity — the strength of the tie is what spends the rest.
+        public let cord: ArgoColor
+
+        public init(cord: ArgoColor) {
+            self.cord = cord
+        }
+
+        public var all: [(name: String, color: ArgoColor)] {
+            [("cord", cord)]
         }
     }
 

@@ -21,6 +21,11 @@ final class AtlasRoomModel {
     private(set) var channels = AtlasChannels("")
     /// Whether test files are left off the map, re-reading the repository without them (#1161).
     private(set) var hideTests = false
+    /// Whether the strongest co-change ties are drawn across the whole map (#1160). Not kept past
+    /// a reopen, for `isCity`'s reason rather than `hideTests`': hiding test files changes what the
+    /// repository IS for the reading, and drawing the ties is a thing laid OVER a reading that is
+    /// the same either way.
+    private(set) var showTies = false
     /// Whether the map is drawn as the city or as the treemap (#1152). Held here rather than in
     /// the room's view because the control that sets it is in the SIDEBAR and the picture it
     /// changes is in the detail column — two views of one split, neither of which can hold state
@@ -95,6 +100,12 @@ final class AtlasRoomModel {
         self.hideTests = hideTests
         guard let readProjectID else { return }
         preferences.setHideTests(hideTests, for: readProjectID)
+    }
+
+    /// Draw the strongest ties across the whole map, or stop (#1160). Nothing is kept: it is a way
+    /// of looking at the map rather than a fact about it.
+    func setShowTies(_ showTies: Bool) {
+        self.showTies = showTies
     }
 
     /// Step between the city and the treemap (#1152). Nothing is kept: it is a way of looking at

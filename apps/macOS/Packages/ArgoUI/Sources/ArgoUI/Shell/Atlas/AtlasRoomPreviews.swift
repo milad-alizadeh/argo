@@ -37,6 +37,7 @@ private let previewProject = CockpitPresentation.Project(
 #Preview("Atlas room, a generated atlas") {
     @Previewable @State var channels = AtlasChannels.opening(for: previewMap)
     @Previewable @State var hideTests = false
+    @Previewable @State var showTies = false
     @Previewable @State var isCity = false
 
     AtlasRoomView()
@@ -48,7 +49,10 @@ private let previewProject = CockpitPresentation.Project(
                 choice: AtlasMapChoice(
                     channels: channels,
                     setChannels: { channels = $0 },
-                    hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
+                    filters: AtlasFilterChoice(
+                        hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
+                        showTies: AtlasSwitch(isOn: showTies) { showTies = $0 },
+                    ),
                     isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
                 ),
             ),
