@@ -3,11 +3,12 @@ import ArgoDesign
 import MermaidLayout
 import Testing
 
-/// What the cockpit claims about SHAPE rather than colour: measures and durations, fixed across
-/// every appearance. Do not split this suite along the token/measure line — three of its tests
+/// What the cockpit claims about SHAPE rather than colour: measures and depth, fixed across every
+/// appearance. Motion has its own suite, `MotionContractTests`. Do not split this one along the
+/// token/measure line — three of its tests
 /// bound a surface's measure by a token (`ArgoFeedRow.column` against `ArgoLayout`'s widths), and
 /// neither population can state those alone.
-@Suite("Rhythm, depth and motion — the contract and the surfaces that read it")
+@Suite("Rhythm and depth — the contract and the surfaces that read it")
 struct RhythmTests {
     // MARK: - The feed's rhythm
 
@@ -179,54 +180,6 @@ struct RhythmTests {
             #expect(rung.elevation.blur <= 28)
             guard rung.elevation.castsShadow else { continue }
             #expect(rung.elevation.opacity <= 0.45)
-        }
-    }
-
-    // MARK: - Motion
-
-    /// The ceiling asks how long a reader waits for a transition to finish, and a loop never
-    /// finishes — its period is a rhythm, not a wait. So it is the non-repeating roles the ceiling
-    /// is about.
-    @Test
-    func `no motion role outlasts feedback`() {
-        for role in ArgoMotion.all where !role.motion.repeats {
-            #expect(role.motion.duration <= ArgoMotion.durationCeiling)
-        }
-    }
-
-    /// Reduce Motion has no shorter answer for a loop, so a repeating role must stop rather than
-    /// hurry. A `reducedDuration` on one would repeat forever at a faster period.
-    @Test
-    func `a repeating role stops under Reduce Motion rather than shortening`() {
-        for role in ArgoMotion.all where role.motion.repeats {
-            #expect(role.motion.reducedDuration == nil)
-            #expect(role.motion.resolved(reduceMotion: true) == nil)
-        }
-    }
-
-    /// The one loop is a bound, not a door. D12 lets a live operational signal repeat for exactly
-    /// as long as its operation lasts; a second repeating role is a decision, not a detail.
-    @Test
-    func `exactly one role loops`() {
-        #expect(ArgoMotion.all.filter(\.motion.repeats).map(\.name) == ["working"])
-    }
-
-    @Test
-    func `the Reduce Motion variant never takes longer than the full one`() {
-        for role in ArgoMotion.all {
-            guard let reduced = role.motion.reducedDuration else { continue }
-            #expect(reduced <= role.motion.duration)
-        }
-    }
-
-    @Test
-    func `every role resolves under Reduce Motion without a call site deciding`() {
-        for role in ArgoMotion.all {
-            let full = role.motion.resolved(reduceMotion: false)
-            #expect(full != nil)
-            // A nil reduced animation is a decision, not a gap: the change lands instantly.
-            #expect(role.motion.resolved(reduceMotion: true) == nil || role.motion
-                .reducedDuration != nil)
         }
     }
 }

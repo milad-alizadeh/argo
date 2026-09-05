@@ -111,37 +111,13 @@ struct ContractSpecimen: View, SpecimenSheet {
 
     private var motion: some View {
         section("Motion — every role, its duration, and its Reduce Motion answer") {
-            VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
-                ForEach(ArgoMotion.all, id: \.name) { role in
-                    HStack(spacing: ArgoSpacing.loose) {
-                        Text(role.name)
-                            .argoText(ArgoTypography.machineCaption)
-                            .frame(width: 132, alignment: .leading)
-                        Text(duration(role.motion))
-                            .argoText(ArgoTypography.machineCaption)
-                        unwired(ArgoMotion.unwired[role.name])
-                    }
-                    .foregroundStyle(argo.color.text.secondary)
-                }
-            }
+            MotionRoles()
         }
     }
 
     /// The words the roster actually spends, so the legibility specimen proves the ink on the text
     /// it is drawn under.
     private let stateWords = ["running", "idle", "Needs input", "Stopped"]
-
-    /// A loop is read differently from a transition, so it is said differently: its number is a
-    /// period rather than a wait, it cools as the wait it reports ages, and Reduce Motion stops it
-    /// rather than shortening it.
-    private func duration(_ motion: ArgoMotion) -> String {
-        let reduced = motion.reducedDuration.map { "\(Int($0 * 1000))ms fade" } ?? "instant"
-        let pass = "\(Int(motion.duration * 1000))ms"
-        let coldest = Int(ArgoWaitAge.coldest.period * 1000)
-        return motion.repeats
-            ? "\(pass) per pass, cooling to \(coldest)ms · reduce motion: stopped"
-            : "\(pass) · reduce motion: \(reduced)"
-    }
 }
 
 #Preview("Contract roles") {

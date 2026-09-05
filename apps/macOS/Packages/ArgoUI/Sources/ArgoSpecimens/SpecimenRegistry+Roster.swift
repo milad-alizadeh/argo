@@ -15,6 +15,9 @@ extension SpecimenRegistry {
         // The map's own five families (#1142), on the desktop rather than the deck — the ground
         // they are really read against, and one no other room has.
         SpecimenEntry("atlasContract") { AtlasContractSpecimen() },
+        // Every motion role on a sheet of its own, for the same reason: the Atlas doubled the
+        // roster (#1420), and the section that lists it sits near the foot of the sheet above.
+        SpecimenEntry("motion") { MotionSpecimen() },
         // The contract's icon buttons, on a sheet of their own: the sheet above is longer than any
         // window, and a section nobody can render is not the drift check #1243 asked for.
         SpecimenEntry("iconButtons") { IconButtonSpecimen() },
