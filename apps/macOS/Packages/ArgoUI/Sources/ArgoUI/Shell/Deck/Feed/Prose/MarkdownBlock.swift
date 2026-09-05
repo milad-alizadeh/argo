@@ -24,6 +24,12 @@ enum MarkdownBlock: Equatable {
     /// A pipe table. Found when a paragraph closes rather than line by line, because the row of
     /// dashes on the SECOND line is what says the first one was a header.
     case table(MarkdownTable)
+    /// `![alt](source)` on a line of ITS OWN — the shape a tracker writes a screenshot in, and the
+    /// only one a block can be: an image with words beside it leaves them nowhere to wrap.
+    ///
+    /// The alt text is kept, because it is what stands in for the picture while the bytes are on
+    /// their way and where they turn out not to be readable (#1412).
+    case picture(alt: String, source: URL)
 
     static func blocks(in text: String) -> [MarkdownBlock] {
         var scan = MarkdownScan()
@@ -112,7 +118,37 @@ private extension MarkdownBlock {
         if let item = listItem(line) {
             return item
         }
-        return nil
+        return picture(line)
+    }
+
+    /// `![alt](source)`, whole line and nothing else, at a source something can actually fetch.
+    ///
+    /// A web address and nothing else. `URL(string:)` alone answers yes to very nearly anything —
+    /// it percent-encodes a phrase with spaces in it and calls that a URL — so the scheme is what
+    /// decides here: a relative source has no base to resolve against and a `file:` one is somebody
+    /// else's disk. Both stay prose, which draws the characters the agent wrote. It is also the
+    /// guarantee `MarkdownPictures` fetches on.
+    static func picture(_ line: String) -> MarkdownBlock? {
+        guard line.hasPrefix("!["), line.hasSuffix(")") else { return nil }
+        let rest = line.dropFirst(2)
+        // The LAST `](` before the end, so alt text holding a bracket of its own still parses.
+        guard let split = rest.range(of: "](", options: .backwards) else { return nil }
+        let alt = String(rest[rest.startIndex ..< split.lowerBound])
+        let inside = rest[split.upperBound ..< rest.index(before: rest.endIndex)]
+        guard let source = URL(string: sourceOf(inside)),
+              ["http", "https"].contains(source.scheme?.lowercased() ?? "")
+        else { return nil }
+        return .picture(alt: alt, source: source)
+    }
+
+    /// The source out of `(...)`, with the title markdown lets it carry taken off — nothing draws
+    /// that title, and folded into the source it would be part of what is fetched.
+    private static func sourceOf(_ inside: some StringProtocol) -> String {
+        let trimmed = inside.trimmingCharacters(in: .whitespaces)
+        guard let quote = trimmed.firstIndex(where: { $0 == "\"" || $0 == "'" }) else {
+            return trimmed
+        }
+        return String(trimmed[trimmed.startIndex ..< quote]).trimmingCharacters(in: .whitespaces)
     }
 
     package static func heading(_ line: String) -> MarkdownBlock? {

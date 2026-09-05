@@ -20,6 +20,10 @@ enum MinimapProseBlock: Equatable, Sendable {
     /// A drawn diagram, whole, for the same reason: the lane lays it out through the one cached
     /// plan the renderer draws, so its silhouette and its height are the diagram's own.
     case diagram(MermaidDiagram)
+    /// A picture the record only NAMES, drawn at the gallery's own fixed height whatever arrives at
+    /// the far end of the source. The lane needs no more of it than that: a block whose height
+    /// cannot move is a block the lane and the feed cannot disagree about (#1412).
+    case picture
 }
 
 /// A run of wrapping words and the two things that decide where they start.
@@ -66,6 +70,8 @@ extension MinimapProseBlock {
                 .table(table)
             case let .diagram(diagram):
                 .diagram(diagram)
+            case .picture:
+                .picture
             }
         }
     }

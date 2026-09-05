@@ -27,6 +27,11 @@ extension FeedProseFrame {
             table.laid(across: measure).height
         case let .diagram(diagram):
             diagram.mapped(across: measure).height
+        // The gallery's own height, whatever the far end of the source turns out to hold. A block
+        // measured off bytes that have not arrived is a row that moves under the reader when they
+        // do, so the picture is fitted INSIDE this rather than the other way round (#1412).
+        case .picture:
+            ArgoFeedRow.shotHeight
         // Words, which the caller answered for off the run it built. No formula here could be
         // anything but a second model of the same wrap.
         case .prose:

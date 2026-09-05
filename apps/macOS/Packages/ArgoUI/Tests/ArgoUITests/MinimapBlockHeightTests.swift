@@ -83,8 +83,9 @@ struct MinimapBlockHeightTests {
                 ProseFace(rung: ArgoTypography.sectionLabel.rung)
                     .snapping(ofLines: hasInfo ? 1 : 0)
                     + ProseFace.machine.snapping(ofLines: lines)
-            // A table and a diagram both size themselves, so neither pays for a snapped baseline.
-            case .table, .diagram:
+            // A table and a diagram both size themselves, and a picture stands at a fixed box —
+            // none of the three pays for a snapped baseline.
+            case .table, .diagram, .picture:
                 0
             }
         }

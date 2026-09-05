@@ -1,4 +1,5 @@
 @testable import ArgoUI
+import Foundation
 @testable import MermaidLayout
 import Testing
 
@@ -106,5 +107,57 @@ struct MarkdownBlockTests {
             .bullet("two of them"),
             .fenced(code: "let a = 1", info: "swift"),
         ])
+    }
+
+    /// The one source every picture case below is written against.
+    private static let source = "https://example.com/a.png"
+
+    /// A tracker writes a screenshot on a line of its own, and that is the one shape the feed can
+    /// draw as a picture — words beside one would have nowhere to wrap.
+    @Test
+    func `a line that is only an image is a picture`() throws {
+        let source = try #require(URL(string: Self.source))
+
+        #expect(MarkdownBlock.blocks(in: "![Atlas shading](\(Self.source))") == [
+            .picture(alt: "Atlas shading", source: source),
+        ])
+    }
+
+    /// The alt text is kept because it is what stands in for the picture: while the bytes are on
+    /// their way, and where they turn out not to be readable.
+    @Test
+    func `an image with no alt text is still a picture`() throws {
+        let source = try #require(URL(string: Self.source))
+
+        #expect(MarkdownBlock.blocks(in: "![](\(Self.source))") == [
+            .picture(alt: "", source: source),
+        ])
+    }
+
+    /// Markdown's optional title, which nothing here draws. Taken off rather than folded into the
+    /// source, or the fetch asks for a URL with a quoted phrase on the end of it.
+    @Test
+    func `an image drops the title markdown lets it carry`() throws {
+        let source = try #require(URL(string: Self.source))
+
+        #expect(MarkdownBlock.blocks(in: "![a](\(Self.source) \"The city\")") == [
+            .picture(alt: "a", source: source),
+        ])
+    }
+
+    /// Words share the line, so there is no block here — prose that happens to hold a mark.
+    @Test
+    func `an image inside a sentence stays prose`() {
+        #expect(MarkdownBlock.blocks(in: "see ![a](https://example.com/a.png) here") == [
+            .paragraph("see ![a](https://example.com/a.png) here"),
+        ])
+    }
+
+    /// Degrade-down: nothing to fetch is nothing to draw, and the characters the agent wrote are
+    /// the honest thing to leave standing. `URL(string:)` alone would not settle this — it
+    /// percent-encodes the phrase and calls it a URL — so the SCHEME is what decides.
+    @Test(arguments: ["![a](not a url)", "![a](/docs/a.png)", "![a](file:///tmp/a.png)"])
+    func `an image whose source is no web address stays prose`(line: String) {
+        #expect(MarkdownBlock.blocks(in: line) == [.paragraph(line)])
     }
 }

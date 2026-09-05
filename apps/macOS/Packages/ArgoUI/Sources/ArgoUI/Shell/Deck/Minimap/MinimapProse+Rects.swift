@@ -42,7 +42,20 @@ extension MinimapProseBlock {
             table.laid(across: measure)
         case let .diagram(diagram):
             diagram.mapped(across: measure)
+        case .picture:
+            Self.picture(across: measure)
         }
+    }
+
+    /// A picture: one frame at the gallery's own height, in the ink the lane marks pictures with,
+    /// so a body holding a screenshot reads as one from the lane (#1412).
+    @MainActor private static func picture(across measure: CGFloat)
+        -> (rects: [MinimapRowRect], height: CGFloat) {
+        let height = ArgoFeedRow.shotHeight
+        return (
+            [MinimapRowRect(y: 0, height: height, from: 0, to: measure, ink: .media)],
+            height,
+        )
     }
 
     /// A fence: one slab where the paragraphs around it are ragged lines, which is what the feed
