@@ -48,6 +48,11 @@ export const ALLOW = 'scripts/design-tokens-swift-allow.txt'
 const SCRIPTS = {
   'scripts/swift-boundaries.sh': null,
   'scripts/check-design-tokens-swift.sh': null,
+  // Sourced by the gate since #1377, for the verdict it reads before scanning. Copied for the
+  // same reason as the two above: a `.` of a file that is not there aborts under `set -e`, and
+  // the failure would read as a boundary breach rather than a missing file.
+  'scripts/gate-cache.sh': null,
+  'scripts/metrics.sh': null,
 }
 for (const name of Object.keys(SCRIPTS)) {
   SCRIPTS[name] = readFileSync(path.join(REPO_ROOT, name), 'utf8')
