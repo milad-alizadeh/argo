@@ -22,6 +22,13 @@ extension GitHubTickets: TicketWriting {
         return try await apply(.setParent(parent), to: filed.number, through: binding)
     }
 
+    /// GitHub deletes on the GraphQL API alone, so this one write is spelled beside the rest
+    /// rather than among them: `GitHubTickets+Delete`.
+    public func delete(_ number: Int, through binding: ResolvedBinding) async throws {
+        guard surface.offers(.delete) else { throw TicketWriteError.unavailable(.delete) }
+        try await deleteIssue(number, through: binding)
+    }
+
     public func apply(
         _ intent: TicketIntent, to number: Int, through binding: ResolvedBinding,
     ) async throws

@@ -56,6 +56,9 @@ public struct CockpitActions {
             /// Apply one intent to a ticket that already exists — closing it or reopening it
             /// (#1333).
             public var applyIntent: (TicketIntent, Int) async -> TicketWriteError? = { _, _ in nil }
+            /// Remove one ticket outright (#1247). Its own slot rather than an intent, because a
+            /// delete leaves no ticket for `applyIntent` to answer with.
+            public var deleteTicket: (Int) async -> TicketWriteError? = { _ in nil }
         }
     }
 

@@ -85,6 +85,13 @@ public actor TicketLedger {
         listings[projectID] = listing
     }
 
+    /// One ticket the provider has said is GONE (#1247). Out of the listing and out of what a
+    /// link followed, because after a delete there is nothing behind that number to read.
+    public func forget(_ number: Int, for projectID: String) {
+        listings[projectID]?.removeAll { $0.number == number }
+        followed[projectID]?[number] = nil
+    }
+
     /// One ticket the provider answered about by number, because a link named it and the listing
     /// does not hold it. The value came back from the PROVIDER, never from the click.
     func follow(_ item: Ticket, for projectID: String) {

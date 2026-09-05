@@ -54,7 +54,12 @@ extension CockpitView {
                     more: { Task { await actions.tickets.read(.moreClosedTickets) } },
                 ),
             ),
-            held: TicketsRoom.Held(query: $navigation.ticketsQuery),
+            held: TicketsRoom.Held(
+                query: $navigation.ticketsQuery,
+                selection: $navigation.ticketSelection,
+                opened: { navigation.paneOpened(at: $0) },
+                acts: backlogActs,
+            ),
         )
     }
 

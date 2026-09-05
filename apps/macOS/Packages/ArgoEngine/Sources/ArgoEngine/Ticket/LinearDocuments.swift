@@ -131,6 +131,13 @@ enum LinearDocuments {
     }
     """
 
+    /// Deleting an issue outright (#1247), which Linear addresses by its own id.
+    static let issueDelete = """
+    mutation IssueDelete($id: String!) {
+      result: issueDelete(id: $id) { success }
+    }
+    """
+
     static let relationDelete = """
     mutation RelationDelete($id: String!) {
       result: issueRelationDelete(id: $id) { success }

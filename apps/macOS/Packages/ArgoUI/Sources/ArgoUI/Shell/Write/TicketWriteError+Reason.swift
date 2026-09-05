@@ -40,7 +40,7 @@ private extension ProviderFetchError {
 }
 
 private extension TicketWrite {
-    /// What each of the eight is called in a sentence, rather than in Swift.
+    /// What each of the nine is called in a sentence, rather than in Swift.
     var readableName: String {
         switch self {
         case .create: "creating tickets"
@@ -51,6 +51,7 @@ private extension TicketWrite {
         case .labels: "labels"
         case .priority: "priority"
         case .closure: "closing tickets"
+        case .delete: "deleting tickets"
         }
     }
 }

@@ -13,7 +13,29 @@ public final class CockpitNavigationModel {
 
     /// The ticket the Tickets room is open on. Beside the Session and not inside it: a room keeps
     /// where it was pointing while the reader is in another one.
-    package var ticket: Int?
+    package var ticket: Int? {
+        get { openTicketNumber }
+        set {
+            openTicketNumber = newValue
+            // Everything that writes this opens the pane from outside the backlog — a link, the
+            // detail pane's own child rows, a restore — and that is one click's worth of
+            // selection, never an addition to the range the reader built (#1247).
+            ticketSelection.point(at: newValue)
+        }
+    }
+
+    /// The backlog's whole selection, which the open ticket above is the last click out of
+    /// (#1247). Beside the open ticket rather than derived from it, for the roster's own reason.
+    var ticketSelection = RowSelection<Int>()
+
+    private var openTicketNumber: Int?
+
+    /// The pane opened by a click the backlog has ALREADY settled the selection for. The setter
+    /// above cannot serve that: it would collapse the range the same click just made.
+    func paneOpened(at number: Int?) {
+        openTicketNumber = number
+    }
+
     /// Which of the backlog's views is open. Here rather than in the sidebar, because it decides
     /// what the DECK draws — held inside the sidebar it filtered nothing.
     var ticketsView = TicketsView.allOpen

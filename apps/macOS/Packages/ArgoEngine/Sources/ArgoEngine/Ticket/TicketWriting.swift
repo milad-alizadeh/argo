@@ -17,4 +17,9 @@ public protocol TicketWriting: Sendable {
         _ intent: TicketIntent, to number: Int, through binding: ResolvedBinding,
     ) async throws
         -> Ticket
+
+    /// Remove one ticket outright (#1247). It answers with nothing rather than with a Ticket,
+    /// because afterwards there is no ticket on the provider to answer with — which is what
+    /// separates it from `close`, and why it is a write of its own rather than an intent.
+    func delete(_ number: Int, through binding: ResolvedBinding) async throws
 }

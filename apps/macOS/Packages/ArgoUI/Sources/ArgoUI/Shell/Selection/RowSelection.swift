@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Every range is taken over the rows the list is DRAWING, handed in rather than held, so a row
 /// behind a shut fold is not in the array and cannot be pulled into a selection nobody can see.
-package struct RowSelection<Row: Hashable>: Equatable {
+package struct RowSelection<Row: Hashable & Sendable>: Equatable, Sendable {
     /// Everything selected. What the menu acts on, and what the ground is drawn under.
     package private(set) var rows: Set<Row> = []
     /// The end a shift-click grows FROM. It moves on a click and on a cmd-click, never on a
@@ -19,7 +19,7 @@ package struct RowSelection<Row: Hashable>: Equatable {
     private(set) var anchor: Row?
     /// The one row a click named, which is what the deck draws. A selection of many rows draws no
     /// deck change beyond the click that started it.
-    private(set) var last: Row?
+    package private(set) var last: Row?
 
     package init() {}
 

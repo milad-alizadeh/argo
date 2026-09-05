@@ -46,6 +46,19 @@ public actor TicketWriter {
         }
     }
 
+    /// Remove one ticket, and take it out of the listing the room draws from once the provider
+    /// has said it is gone (#1247). Nothing is dropped on the press: a row taken off the list
+    /// before the provider answered is a false DIRECT about somebody else's record.
+    public func delete(_ number: Int, on target: PortReadTarget) async throws {
+        do {
+            try await port.delete(number, through: target.binding)
+            await items.forget(number, for: target.projectID)
+            await health.succeeded(target.projectBinding, in: target.projectID, at: now())
+        } catch {
+            throw await recorded(error, on: target)
+        }
+    }
+
     /// The provider's answer becomes the listing's, and the connection behind it is recorded.
     ///
     /// A refusal records nothing about health: a provider that answered "no" is a provider that
@@ -61,15 +74,21 @@ public actor TicketWriter {
             await health.succeeded(target.projectBinding, in: target.projectID, at: now())
             return written
         } catch {
-            // Every error, not only the port's own vocabulary: a second adapter has nothing
-            // forcing it to convert, and one that threw past this would leave the chip claiming a
-            // connection nobody has checked since.
-            let refusal = error as? TicketWriteError
-                ?? .unreachable(error as? ProviderFetchError ?? .unreachable)
-            if let failure = refusal.fetchFailure {
-                await health.record(failure, of: target)
-            }
-            throw refusal
+            throw await recorded(error, on: target)
         }
+    }
+
+    /// A failure in the port's own vocabulary, with the connection behind it recorded.
+    ///
+    /// Every error is converted, not only the port's own vocabulary: a second adapter has nothing
+    /// forcing it to convert, and one that threw past this would leave the chip claiming a
+    /// connection nobody has checked since.
+    private func recorded(_ error: Error, on target: PortReadTarget) async -> TicketWriteError {
+        let refusal = error as? TicketWriteError
+            ?? .unreachable(error as? ProviderFetchError ?? .unreachable)
+        if let failure = refusal.fetchFailure {
+            await health.record(failure, of: target)
+        }
+        return refusal
     }
 }

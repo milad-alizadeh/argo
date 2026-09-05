@@ -54,6 +54,26 @@ public struct TicketCreator: Sendable {
         }
     }
 
+    /// Remove one ticket outright (#1247), on the same terms as the two above: the refusal, and
+    /// `nil` where it went. `TicketWriter` is what takes it out of the listing, and only once the
+    /// provider has said it is gone.
+    public func remove(_ number: Int, forProject projectID: String?) async -> TicketWriteError? {
+        guard let projectID,
+              case let .ready(binding) = await bindings.resolve(port: .ticket, for: projectID)
+        else { return .unreachable(.unreachable) }
+        let writer = writes.writer(for: binding, items: items, health: health)
+        do {
+            try await writer.delete(
+                number, on: PortReadTarget(binding: binding, projectID: projectID),
+            )
+            return nil
+        } catch let refusal as TicketWriteError {
+            return refusal
+        } catch {
+            return .unreachable(.unreachable)
+        }
+    }
+
     /// The refusal, and `nil` where the write landed — on the same terms as `create` above, for a
     /// ticket that already exists.
     public func apply(

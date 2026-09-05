@@ -21,6 +21,7 @@ enum WriteAdapter: String, CaseIterable, Sendable {
                 "/issues/12": IssueJSON(number: 12, title: "Port the Tickets room").json,
                 "/issues/9": IssueJSON(number: 9).json,
                 "/issues/3": IssueJSON(number: 3).json,
+                "/graphql": RecordedGitHub.deleted,
             ]))
         case .linear:
             LinearTickets(transport: LinearFixture.holding([
@@ -72,13 +73,16 @@ struct TicketWriteConformanceTests {
         let port = adapter.port()
         // An adapter with no gap has nothing for the claim to bite on, and that is itself worth
         // asserting: what the declaration exists to prevent is a gap found by a failed write.
-        guard let missing = TicketWrite.allCases.first(where: { !port.surface.offers($0) })
+        // `delete` has no intent to be asked for, so it is checked through its own method.
+        let gaps = TicketWrite.allCases.filter { !port.surface.offers($0) }
+        guard let missing = gaps.first(where: { $0.intent != nil }),
+              let intent = missing.intent
         else {
             return #expect(port.surface.writes == Set(TicketWrite.allCases))
         }
 
         await #expect(throws: TicketWriteError.unavailable(missing)) {
-            try await port.apply(missing.intent, to: 12, through: .stub())
+            try await port.apply(intent, to: 12, through: .stub())
         }
     }
 
@@ -105,8 +109,11 @@ struct TicketWriteConformanceTests {
         // A declaration is only worth reading if it is complete both ways: a control drawn off it
         // must not then be refused by the very adapter that offered it.
         let port = adapter.port()
-        for write in port.surface.writes where write != .create {
-            let landed = try await port.apply(write.intent, to: 12, through: .stub())
+        for write in port.surface.writes {
+            // `create` files a ticket rather than applying to one, and `delete` leaves none to
+            // answer with — both are exercised by tests of their own.
+            guard let intent = write.intent else { continue }
+            let landed = try await port.apply(intent, to: 12, through: .stub())
             #expect(landed.number == 12, "\(write) is declared but not taken")
         }
     }
@@ -138,14 +145,29 @@ struct TicketWriteConformanceTests {
     }
 }
 
+extension TicketWriteConformanceTests {
+    /// A declared delete is TAKEN, and it answers with nothing: after this there is no ticket on
+    /// the provider left to answer with, which is what separates it from a close (#1247).
+    @Test(arguments: WriteAdapter.allCases)
+    func `a declared delete is taken and answers with nothing`(
+        _ adapter: WriteAdapter,
+    ) async throws {
+        let port = adapter.port()
+        #expect(port.surface.offers(.delete))
+
+        try await port.delete(12, through: .stub())
+    }
+}
+
 extension TicketWrite {
     /// The simplest intent that asks for this write, so a suite can walk a declaration without
     /// naming eleven payloads.
-    var intent: TicketIntent {
+    var intent: TicketIntent? {
         switch self {
-        // `create` is not an intent — it has no ticket to be applied to — and every caller here
-        // filters it out before asking.
-        case .create, .updateFields: .updateFields(TicketFields(title: "Retitled"))
+        // Neither `create` nor `delete` is an intent: one has no ticket to be applied to, and the
+        // other leaves none. Every caller here filters them out before asking.
+        case .create, .delete: nil
+        case .updateFields: .updateFields(TicketFields(title: "Retitled"))
         case .transition: .transitionTo(.todo)
         case .blockedBy: .addBlockedBy(9)
         case .parent: .setParent(3)
