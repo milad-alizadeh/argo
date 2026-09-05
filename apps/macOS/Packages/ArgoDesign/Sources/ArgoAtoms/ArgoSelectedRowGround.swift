@@ -8,8 +8,6 @@ public extension View {
     /// is switched off at the table by the probe this carries (`ListSelectionFill`, #1137): the
     /// platform paints the pressed row on mouse-down, and the binding this ground follows moves on
     /// mouse-up.
-    ///
-    /// What it paints, and the shape it paints in, is `SelectedRowGround` (#1443).
     func argoSelectedRowGround(isSelected: Bool) -> some View {
         modifier(SelectedRowGroundModifier(isSelected: isSelected))
     }
@@ -23,11 +21,11 @@ private struct SelectedRowGroundModifier: ViewModifier {
     let isSelected: Bool
 
     func body(content: Content) -> some View {
-        let ground = SelectedRowGround(isSelected: isSelected, palette: argo.color)
-        return content
+        content
             // Under the content, where the walk up to the table stays inside the cell. It hit-tests
             // nothing and draws nothing, so the row is exactly what it was.
             .background { ListSelectionFillProbe() }
-            .listRowBackground(ground.fill(ground.paint.color))
+            .listRowBackground(SelectedRowGround(isSelected: isSelected, palette: argo.color)
+                .filled)
     }
 }
