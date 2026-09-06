@@ -133,7 +133,7 @@ fi
 # catches the ordinary case of a capture taken mid-paint.
 settle=${ARGO_SETTLE_SECONDS:-0.5}
 sleep "$settle"
-settled_path=$(mktemp -t argo-settle)
+settled_path=$(mktemp)
 attempt=0
 while [ "$attempt" -lt "$SETTLE_TRIES" ]; do
   screencapture -o -x -l"$window_id" "$OUT"
