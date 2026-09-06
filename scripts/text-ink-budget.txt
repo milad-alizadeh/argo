@@ -8,4 +8,11 @@
 # Converting a call site to its kind lowers the count, and the gate then fails until this number
 # is lowered with it: a budget left above the tree authorises the next call site written to the
 # shape that was just removed, which is how a ratchet stops.
-247
+#
+# This number was raised ONCE, from 247 to 253 (#1511). 247 was written six below the tree it
+# landed on, so it described no tree and refused every Swift commit in every worktree; 253 is the
+# count the script reports. That is the one exception and not a precedent: the ratchet still only
+# falls, and a raise is a correction only where the old number never described a tree at all.
+#
+# `scripts/ratchet-thresholds.test.mjs` holds it to the tree from the Linux CI job.
+253

@@ -13,9 +13,14 @@
 #   - the same ARGO_REQUIRE_SWIFT_TOOLS=1, so a missing binary FAILS instead of skipping
 #     green. A runner that checked nothing and said Success is the way a gate rots, and it
 #     rots the same way on a laptop;
-#   - the same scope. The pathspec below is the one ci.yml's `changes` job used, character
-#     for character, so a markdown-only push skips the Swift work here exactly as it did
-#     there. Change one and change the other.
+#   - the same scope. The pathspec below is the one ci.yml's `changes` job used, so a
+#     markdown-only push skips the Swift work here exactly as it did there. ci.yml no longer
+#     spells it — the job retired with the runner — so this is now its only definition, and
+#     `swift-gate.test.mjs` holds it against ci.yml only for as long as one is written there.
+#
+#     Plus the four paths that carry the boundary gate's own thresholds. `'scripts/swift-*.sh'`
+#     matches none of them, so a push that moved only the ink budget answered "nothing in the
+#     Swift scope changed" and ran nothing over the tree that number governs (#1511).
 #
 # Called by .husky/pre-push. Run it by hand any time: `sh scripts/swift-gate.sh`.
 set -e
@@ -42,7 +47,10 @@ else
   # A git pathspec glob spans '/', so ':(exclude)*.md' drops nested markdown too.
   # Kept identical to ci.yml's `changes` job.
   CHANGED=$(git diff --name-only "$BASE...HEAD" -- \
-       apps/macOS 'scripts/swift-*.sh' package.json turbo.json \
+       apps/macOS 'scripts/swift-*.sh' \
+       scripts/check-text-ink-swift.sh scripts/text-ink-budget.txt \
+       scripts/check-design-tokens-swift.sh scripts/design-tokens-swift-allow.txt \
+       package.json turbo.json \
        .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md')
   if [ -z "$CHANGED" ]; then
     echo "swift-gate: nothing in the Swift scope changed — skipping"
