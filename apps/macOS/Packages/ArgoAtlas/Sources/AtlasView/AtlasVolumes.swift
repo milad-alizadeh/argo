@@ -89,7 +89,7 @@ enum AtlasVolumes {
             AtlasVolume(
                 tile.rect.shrunk(by: gap),
                 roof: tile.height,
-                pigment: pigments.pigment(of: tile.band),
+                pigment: pigments.pigment(of: tile),
             )
             .identified(as: UInt32(plan.plates.count + index + 1))
         }

@@ -70,29 +70,67 @@ package struct AtlasMapChoice {
     /// parameter list (`apps/macOS/.swiftlint.yml`), read onto the one declaration shape SwiftLint
     /// cannot see.
     package let filters: AtlasFilterChoice
-    /// Whether the map is drawn as the city or as the treemap.
-    package let isCity: AtlasSwitch
+    /// The design's Arrangement section, both rows: what the regions of the map ARE, and which of
+    /// the two readings of them is drawn (#1158, #1152).
+    package let arrangement: AtlasArrangementChoice
 
     package init(
         channels: AtlasChannels,
         setChannels: @escaping (AtlasChannels) -> Void,
         filters: AtlasFilterChoice,
-        isCity: AtlasSwitch,
+        arrangement: AtlasArrangementChoice,
     ) {
         self.channels = channels
         self.setChannels = setChannels
         self.filters = filters
-        self.isCity = isCity
+        self.arrangement = arrangement
     }
 
-    /// The Map as it is DRAWN — the measured Map with the reader's filters applied.
+    /// The Map as it is DRAWN — the measured Map with the reader's filters applied, and re-rooted
+    /// on its Domains where they asked for that (#1158).
     ///
     /// Both columns ask this rather than each spelling the filter out: a second spelling is a
     /// second place to forget the next filter, and the sidebar's own numbers would then be
     /// describing a map the stage is not drawing. Hiding test files re-reads the repository
     /// without them (#1161), so everything said about the map has to be said about the same one.
+    ///
+    /// The filter runs FIRST and the regroup second: hiding the tests changes which files there
+    /// are, and a region is the files it holds — regrouping first would tile regions round files
+    /// the map is not drawing and leave empty ones behind.
     package func drawn(_ map: AtlasMap) -> AtlasMap {
+        arranged(filtered(map))
+    }
+
+    /// One already-filtered Map, arranged the way the reader asked — re-rooted on its Domains, or
+    /// left as it is.
+    ///
+    /// Apart from `filtered(_:)` so a caller that needs both readings pays for the filter once:
+    /// hiding the tests rebuilds the whole tree, and the sidebar reads the filtered Map for what
+    /// it can be grouped by and the arranged one for everything else.
+    package func arranged(_ filtered: AtlasMap) -> AtlasMap {
+        guard grouping(of: filtered) == .domains else { return filtered }
+        return filtered.regrouped() ?? filtered
+    }
+
+    /// The measured Map with the reader's filters applied and NOTHING else — the repository as
+    /// they left it, before anything decided how to arrange it.
+    ///
+    /// Its own step because the inference travels with the Plots: hiding the tests narrows the
+    /// Domains too, so whether this Map can be grouped by domain at all is a question about this
+    /// value rather than about the one that was measured.
+    package func filtered(_ map: AtlasMap) -> AtlasMap {
         filters.hideTests.isOn ? map.excludingTestFiles() : map
+    }
+
+    /// How a Map is really grouped: the reader's choice held against what that Map can answer —
+    /// `.folders` for a Map with no partition, whatever the choice says.
+    ///
+    /// The same seam `AtlasChannels.held(over:)` is spent at, for the same reason: a choice made
+    /// over one Map meets another when the filter changes or the Project is measured again, and a
+    /// map told to draw a partition it has none of would draw one grey region that the reader
+    /// would read as a finding.
+    package func grouping(of map: AtlasMap) -> AtlasGrouping {
+        map.canRegroup ? arrangement.grouping : .folders
     }
 
     /// The choice a window that has resolved no room draws: every channel unnamed, every switch
@@ -109,8 +147,43 @@ package struct AtlasMapChoice {
                 hideTests: AtlasSwitch(isOn: false) { _ in },
                 showTies: AtlasSwitch(isOn: false) { _ in },
             ),
-            isCity: AtlasSwitch(isOn: false) { _ in },
+            arrangement: AtlasArrangementChoice(
+                grouping: .folders,
+                setGrouping: { _ in },
+                isCity: AtlasSwitch(isOn: false) { _ in },
+            ),
         )
+    }
+}
+
+/// What the map's regions are, and which of the two readings of them is drawn: the design's own
+/// Arrangement section as one value (#1158, #1152).
+///
+/// The two are one section and one view draws them, but they are not the same KIND of decision —
+/// Group by changes what the map is a picture OF, and View changes the camera over the picture.
+/// They are together for `AtlasFilterChoice`'s reason: one section, one column, one view.
+@MainActor
+package struct AtlasArrangementChoice {
+    /// Folders, or the subjects the inference guessed at. What the reader ASKED for — `held`
+    /// against what the Map can answer by `AtlasMapChoice.grouping(of:)`, which is the value
+    /// anything drawing the map reads.
+    package let grouping: AtlasGrouping
+
+    /// Re-tile the map. Nothing is kept past this window closing: how a reader is looking at a
+    /// repository is not a fact about it, which is `isCity`'s rule and this one's.
+    package let setGrouping: (AtlasGrouping) -> Void
+
+    /// Whether the map is drawn as the city or as the treemap.
+    package let isCity: AtlasSwitch
+
+    package init(
+        grouping: AtlasGrouping,
+        setGrouping: @escaping (AtlasGrouping) -> Void,
+        isCity: AtlasSwitch,
+    ) {
+        self.grouping = grouping
+        self.setGrouping = setGrouping
+        self.isCity = isCity
     }
 }
 

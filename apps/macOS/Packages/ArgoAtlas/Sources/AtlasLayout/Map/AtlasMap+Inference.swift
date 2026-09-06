@@ -13,14 +13,19 @@ extension AtlasMap {
         guard let wire else { return nil }
         let missing = AtlasMapError.domainAtNoPlot
         var domains: [AtlasDomain] = []
-        for domain in wire.domains {
+        // The rank is the POSITION in the file, assigned once here. The file spells the order by
+        // writing them in it, and a Domain that keeps its rank through every later narrowing is
+        // what keeps a region the colour the legend gave it (#1158).
+        for (rank, domain) in wire.domains.enumerated() {
             guard !domain.members.isEmpty else { throw .emptyDomain(domain.name) }
             var members: [AtlasDomainMember] = []
             for member in domain.members {
                 let path = try plotPath(at: member.plot, among: plots, missing: missing)
                 members.append(AtlasDomainMember(path: path, confidence: member.confidence))
             }
-            domains.append(AtlasDomain(name: domain.name, tokens: domain.tokens, members: members))
+            domains.append(AtlasDomain(
+                name: domain.name, tokens: domain.tokens, members: members, rank: rank,
+            ))
         }
         return AtlasInference(
             domains: domains,

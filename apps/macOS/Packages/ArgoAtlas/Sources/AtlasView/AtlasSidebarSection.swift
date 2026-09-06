@@ -57,11 +57,14 @@ public struct AtlasSidebarRow<Control: View>: View {
         }
         // A FLOOR, not a frame: the row has to grow with the reader's own text size, the way
         // `ArgoTicketsSidebar.viewRowHeight` does.
-        .frame(minHeight: Self.rowHeight)
+        .frame(minHeight: AtlasSidebarMeasure.rowHeight)
     }
+}
 
+/// The sidebar's own measures. Outside `AtlasSidebarRow` because that type is generic over the
+/// control it holds, and a number every control in the column is sized against cannot be reached
+/// through a generic parameter nobody has one of.
+enum AtlasSidebarMeasure {
     /// What a row stands at with nothing stretching it — the design's own `.srow` minimum.
-    static var rowHeight: CGFloat {
-        26
-    }
+    static let rowHeight: CGFloat = 26
 }
