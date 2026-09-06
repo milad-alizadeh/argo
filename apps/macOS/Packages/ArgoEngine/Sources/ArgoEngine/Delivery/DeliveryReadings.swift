@@ -58,7 +58,13 @@ public final class DeliveryReadings {
 
     /// Take what the ledger holds for the Project the loop is pointed at. A Project nothing has
     /// derived for reads EMPTY rather than keeping the last one's Deliveries.
+    ///
+    /// Published only when publishing would change the answer. `deliveries` is observed and the
+    /// `Scene` body reads it, so an unconditional write rebuilds the whole shell on every tick with
+    /// nothing on screen moving — which is #858, one poll over.
     private func read() async {
-        deliveries = await ledger.deliveries(of: projectID)
+        let landed = await ledger.deliveries(of: projectID)
+        guard landed != deliveries else { return }
+        deliveries = landed
     }
 }

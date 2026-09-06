@@ -16,7 +16,17 @@ struct DeliveryPollTests {
         let ledger: DeliveryLedger
         let wait: PollWait
 
-        init(_ host: ScriptedCodeHost, workspaces: [WorkspaceProjection] = []) {
+        /// `between` is how long the fake sleeper waits AFTER announcing the tick. A case that
+        /// wants
+        /// more ticks keeps it short; a case asserting an EXACT read count passes `.held`, because
+        /// otherwise it has that long to stop the poll before a second tick starts and a loaded
+        /// machine loses the race. `stop()` cancels the sleep either way, so a held poll ends at
+        /// once rather than waiting the interval out.
+        init(
+            _ host: ScriptedCodeHost,
+            workspaces: [WorkspaceProjection] = [],
+            between ticks: Duration = .milliseconds(1),
+        ) {
             let ledger = DeliveryLedger()
             let wait = PollWait()
             self.host = host
@@ -27,7 +37,7 @@ struct DeliveryPollTests {
                     port: host, health: ConnectionHealthLedger(), deliveries: ledger,
                 ),
                 locally: { DeliveryDerivation.Locally(workspaces: workspaces) },
-                sleep: { _ in await wait.reach(); try await Task.sleep(for: .milliseconds(1)) },
+                sleep: { _ in await wait.reach(); try await Task.sleep(for: ticks) },
             )
         }
 
@@ -68,7 +78,7 @@ struct DeliveryPollTests {
 
     @Test
     func `a Project that closed leaves no loop behind it`() async {
-        let polling = Polling(ScriptedCodeHost([.success([delivery])]))
+        let polling = Polling(ScriptedCodeHost([.success([delivery])]), between: .held)
 
         await polling.poll.point(.ready(target.binding), at: "P1")
         await polling.wait.untilTick()

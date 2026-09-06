@@ -98,6 +98,13 @@ actor PollWait {
     }
 }
 
+extension Duration {
+    /// A wait no test ever means to elapse. A fake sleeper given this one parks until the poll is
+    /// stopped, which cancels it — so a case asserting an exact read count is not racing a real
+    /// clock for the window in which to stop the loop.
+    static let held = Duration.seconds(3600)
+}
+
 extension AccountGrant {
     /// The grant every Ticket read in these suites carries, so what a request presents is one
     /// fact in one place.
