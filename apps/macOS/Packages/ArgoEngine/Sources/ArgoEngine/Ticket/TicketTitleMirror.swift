@@ -20,3 +20,17 @@ public struct TicketTitleMirror: Sendable {
     /// Not spelled `none`, which a call site reads as `Optional.none`.
     public static let silent = TicketTitleMirror { _, _ in false }
 }
+
+@MainActor
+public extension TicketTitleMirror {
+    /// The mirror that types at whichever Session this Hub holds (#1494).
+    ///
+    /// Built here and not at the window: the Hub's driver is the whole of what a settled title
+    /// needs, so a window assembling this by hand would be holding engine wiring in the app target
+    /// where no suite can reach it (ADR-0022).
+    static func typing(through hub: Hub) -> TicketTitleMirror {
+        TicketTitleMirror { title, sessionID in
+            await hub.mirrorTitle(title, to: sessionID)
+        }
+    }
+}

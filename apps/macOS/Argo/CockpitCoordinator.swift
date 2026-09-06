@@ -88,9 +88,7 @@ final class CockpitCoordinator {
         // reference into a window it does not otherwise know about.
         self.ticketTitles = TicketTitleResolver(
             annotations: annotationStore,
-            mirror: TicketTitleMirror { [hub] title, sessionID in
-                await CockpitCoordinator.mirrorTitle(title, to: sessionID, through: hub)
-            },
+            mirror: .typing(through: hub),
         )
     }
 
@@ -186,10 +184,7 @@ final class CockpitCoordinator {
     /// roster draws, and it must not wait on a keystroke that may never be allowed to go.
     func setName(_ name: String?, sessionID: String) async {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
-        // The store's own normalising, asked here too, so a name of nothing but spaces mirrors
-        // exactly what it stored: nothing.
-        guard let named = SessionAnnotations.name(from: name) else { return }
-        _ = await Self.mirrorTitle(named, to: sessionID, through: hub)
+        await hub.mirrorName(name, to: sessionID)
     }
 
     /// Attach a Session to a Ticket by hand, or drop the attachment (#1092). Only ever the tab
