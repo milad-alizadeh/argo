@@ -121,7 +121,7 @@ function_parameter_count:
   # INIT: GitHubIssue.swift 14 — one issue as GitHub's REST API serves it, parsed at the boundary
   # INIT: SessionComposerProjection.swift 13 — Composer, the composer's whole reading, one fact per
   # INIT: FeedRowKind.swift 12 — Kind, what a row IS, one flag per question the feed asks of it
-  # INIT: FrameProbeSummary.swift 12 — one measurement window reduced to the figures a frame budget
+  # INIT: FrameProbeSummary.swift 11 — one measurement window reduced to the figures a frame budget
   # INIT: LinearIssue.swift 11 — one issue as Linear's GraphQL API serves it, edges included
   # INIT: TicketsRoom.swift 12 — the room's view, widened for `session` (#1092), the whole
   # INIT: TicketsRoomProjection+Detail.swift 12 — Detail, widened for `claimants` (#1092), off
