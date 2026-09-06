@@ -83,6 +83,12 @@ final class TranscriptWatch {
         return join.sessions
     }
 
+    /// Every folder the working set names — see `HubJoin.folders`, which is what a caller running
+    /// after every batch asks instead of `sessions`.
+    var folders: [String] {
+        join.folders
+    }
+
     /// "Connected" is a claim about a live source, and a Project with no tail running has none.
     var connection: HubConnection {
         if let failureMessage {

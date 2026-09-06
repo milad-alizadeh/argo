@@ -102,21 +102,6 @@ func hubObserveToEnd(
     await hubTailEnded(hub, transcriptID: observation.id, at: location)
 }
 
-/// Wait until a transcript's tail is over, read off the Hub's own projection rather than a handle
-/// into its task table.
-@MainActor
-func hubTailEnded(
-    _ hub: Hub,
-    transcriptID: String,
-    at location: SourceLocation = #_sourceLocation,
-) async {
-    await settle(
-        until: { hub.observations.contains { $0.id == transcriptID && $0.state == .stopped } },
-        message: "the tail on \(transcriptID) never ended",
-        at: location,
-    )
-}
-
 /// An observation whose stream stays open until the test closes it, which is the shape a live
 /// transcript has: the finite helper above can only ever test a session that is already over.
 ///

@@ -87,12 +87,13 @@ extension Hub {
     /// over these same readings, and asking it here would rebuild it on every batch. A spawned row
     /// is in neither: `spawnSession` spells its folder itself, for the same reason and at the one
     /// moment it is known.
+    ///
+    /// Off the join's TRANSCRIPTS and not its Sessions, which is the same rule one layer down: the
+    /// join folds its roster on read, so asking for the rows here would refold it per batch — which
+    /// is the cost #1556 took off the fill.
     func didApply() async {
         reconcileSpawns()
-        await readings.spell(
-            theProjectRootAnd: watch.sessions.compactMap(\.cwd),
-            settling: .foldersNotYetSpelled,
-        )
+        await readings.spell(theProjectRootAnd: watch.folders, settling: .foldersNotYetSpelled)
     }
 
     /// One Session as the roster publishes it: what its transcript said, plus what Argo established
