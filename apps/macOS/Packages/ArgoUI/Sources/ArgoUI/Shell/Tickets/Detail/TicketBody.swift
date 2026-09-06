@@ -29,9 +29,10 @@ package struct TicketBody: View {
     @ViewBuilder private var deliveries: some View {
         GroupLabel("Deliveries")
         if ticket.deliveries.isEmpty {
+            // An empty state is QUIET, not dead: it sat on `disabled` until #1250, which is a
+            // rung with no contrast floor under a line the room is telling the reader.
             Text("No Delivery yet")
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
         } else {
             // Stacked, never wrapped: at 480 a chip sets on one line.
             VStack(alignment: .leading, spacing: ArgoTicketDetail.chipGap) {
@@ -45,8 +46,8 @@ package struct TicketBody: View {
     @ViewBuilder private var prose: some View {
         if let body = ticket.body {
             FeedMarkdown(text: body)
-                .foregroundStyle(argo.color.text.secondary)
-                .environment(\.proseVoice, argo.color.text.secondary)
+                .foregroundStyle(argo.color.text.ink(.body))
+                .environment(\.proseVoice, argo.color.text.ink(.body))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -58,8 +59,7 @@ package struct TicketBody: View {
             heading("Children · \(children.closed) of \(children.total) closed")
             if children.open.isEmpty {
                 Text("Every child is closed.")
-                    .argoText(ArgoTypography.rowMeta)
-                    .foregroundStyle(argo.color.text.disabled)
+                    .argoLine(ArgoTypography.rowMeta, .metadata)
             } else {
                 TicketLinkList(links: children.open, open: open)
             }
@@ -77,7 +77,7 @@ package struct TicketBody: View {
     /// A section's own heading.
     private func heading(_ words: String) -> some View {
         Text(words)
-            .argoText(ArgoTypography.bodyHeading)
+            .argoLine(ArgoTypography.bodyHeading, .title)
             .padding(.top, ArgoTicketDetail.sectionLift)
     }
 

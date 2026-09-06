@@ -42,8 +42,8 @@ struct BacklogSelectionGroundTests {
     /// The ticket's own criterion, absolute and not relative: every voice a backlog row is set in
     /// clears the ramp's floor on the ground that row is read on. Both grounds, one loop — which is
     /// the whole point of the reversal, since #1071 needed a ground-dependent ink and this does
-    /// not. The caption is exempt on BOTH: `text.disabled` is an absence rather than a voice, which
-    /// is the reading `SelectionGroundTests` already holds on the deck.
+    /// not. The caption is in the loop as of #1250: it came off `text.disabled`, which is an
+    /// absence rather than a voice and carries no floor at all, onto a rung that has one.
     @Test(arguments: palettes)
     func `every voice a backlog row is set in clears the floor on both of its grounds`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -53,7 +53,7 @@ struct BacklogSelectionGroundTests {
                 let ink = BacklogRowInk(
                     isSelected: isSelected, isRail: isRail, palette: appearance.palette,
                 )
-                for voice in [ink.title, ink.machine] {
+                for voice in [ink.title, ink.machine, ink.caption] {
                     #expect(voice.contrastRatio(on: ink.readOn) >= Self.floor)
                 }
             }
@@ -77,9 +77,11 @@ struct BacklogSelectionGroundTests {
             #expect(selected.caption == unselected.caption)
         }
         let ink = BacklogRowInk(isSelected: true, isRail: false, palette: palette)
-        #expect(ink.title == palette.text.secondary)
-        #expect(ink.machine == palette.text.tertiary)
-        #expect(ink.caption == palette.text.disabled)
+        // The rungs the KINDS pair to, asked for by kind — `BacklogRowInk` reads the pairing and
+        // this reads it back, so a retune moves both together (#1250).
+        #expect(ink.title == palette.text.ink(.title))
+        #expect(ink.machine == palette.text.ink(.machineFact))
+        #expect(ink.caption == palette.text.ink(.metadata))
     }
 
     /// A rail is on screen for a descendant's sake rather than for its own match, so its title
@@ -92,7 +94,8 @@ struct BacklogSelectionGroundTests {
     ) {
         let palette = appearance.palette
         let rail = BacklogRowInk(isSelected: true, isRail: true, palette: palette)
-        #expect(rail.title == palette.text.tertiary)
+        #expect(rail.title == palette.text.ink(.metadata))
+        #expect(rail.title != palette.text.ink(.title))
     }
 
     /// What the row's marks are, and what makes them legible: they carry the Route's own inks, and

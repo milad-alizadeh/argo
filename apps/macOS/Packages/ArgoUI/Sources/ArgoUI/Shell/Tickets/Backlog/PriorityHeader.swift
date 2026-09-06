@@ -9,8 +9,6 @@ import SwiftUI
 /// stand over one visible row and read as a lie; the parent's own `n/m` roll-up already says how
 /// many children it has (`cockpit-work-room.md`).
 package struct PriorityHeader: View {
-    @Environment(\.argo) private var argo
-
     let band: TicketsRoomProjection.Band
     /// The length of the array the list drew for this band — passed rather than derived, so the
     /// header and the rows under it cannot be counting two different things.
@@ -21,8 +19,7 @@ package struct PriorityHeader: View {
             GroupLabel(band.label)
             Spacer(minLength: ArgoSpacing.snug)
             Text(String(count))
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
         }
         .padding(.horizontal, ArgoBacklogList.gutter)
         .padding(.top, ArgoSpacing.comfortable)

@@ -13,8 +13,6 @@ import SwiftUI
 /// The placeholder is drawn HERE rather than by the control: `placeholderString` belongs to
 /// `NSTextField`, and a text view has none.
 struct ComposerField: View {
-    @Environment(\.argo) private var argo
-
     @Binding var text: String
     let placeholder: String
     /// Whether the draft's head, if it names a `/` command, is one the CLI will actually run —
@@ -53,9 +51,10 @@ struct ComposerField: View {
     /// the placeholder stood.
     @ViewBuilder private var prompt: some View {
         if text.isEmpty {
+            // A placeholder is live guidance, not a disabled control: it came off the `disabled`
+            // rung in #1250, which carries no contrast floor.
             Text(placeholder)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.body, .metadata)
                 .frame(height: ArgoComposerVessel.fieldLineHeight)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)

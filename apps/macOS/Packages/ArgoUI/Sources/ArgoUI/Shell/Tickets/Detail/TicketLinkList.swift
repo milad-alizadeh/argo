@@ -27,16 +27,13 @@ package struct TicketLinkList: View {
 
 /// One row of that list: `dot · id · title`, and the trailing fact where there is one.
 private struct TicketLinkRow: View {
-    @Environment(\.argo) private var argo
-
     let link: TicketsRoomProjection.Link
 
     var body: some View {
         HStack(spacing: ArgoTicketDetail.linkFieldGap) {
             DeliveryDot(reading: link.delivery)
             Text(IssueReading.mark(link.id))
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
             title
             Spacer(minLength: ArgoTicketDetail.linkFieldGap)
             trailing
@@ -50,8 +47,7 @@ private struct TicketLinkRow: View {
     @ViewBuilder private var title: some View {
         if let title = link.title {
             Text(title)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 // The design's own lesson about narrow columns: the fix for a clipped title is
@@ -63,8 +59,7 @@ private struct TicketLinkRow: View {
     @ViewBuilder private var trailing: some View {
         if let fact = link.trailing {
             Text(fact)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
         }
     }
 

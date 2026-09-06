@@ -186,12 +186,9 @@ private struct EvidenceStep: View {
 /// A row whose evidence went missing between the marker and the panel. Unreachable by
 /// construction — a row with nothing behind it does not open — and drawn anyway.
 private struct EvidenceAbsent: View {
-    @Environment(\.argo) private var argo
-
     var body: some View {
         Text("Nothing was kept of this call")
-            .argoText(ArgoTypography.body)
-            .foregroundStyle(argo.color.text.disabled)
+            .argoLine(ArgoTypography.body, .body)
             .padding(ArgoSpacing.comfortable)
     }
 }

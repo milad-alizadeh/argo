@@ -74,9 +74,8 @@ struct FeedWaitPlinth: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let elapsed = seconds(at: context.date)
             Text(TurnClockPhrase.figure(seconds: elapsed))
-                .argoText(ArgoTypography.machineCaption)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
                 .monospacedDigit()
-                .foregroundStyle(argo.color.text.disabled)
                 .lineLimit(1)
                 // Spoken in words, because `6m 41s` read out is a string of characters. It is the
                 // one part of this surface that says "still going" with movement off, so a reader

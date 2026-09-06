@@ -94,7 +94,7 @@ package struct SessionRow: View {
             nameField
         } else {
             Text(row.title)
-                .argoText(ArgoTypography.rowTitle)
+                .argoLine(ArgoTypography.rowTitle, .title)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 // Only while the row is at rest: the field keeps its own clicks, or the caret
@@ -108,7 +108,8 @@ package struct SessionRow: View {
     private var nameField: some View {
         TextField(SessionRenameProjection.prompt, text: $typed)
             .textFieldStyle(.plain)
-            .argoText(ArgoTypography.rowTitle)
+            // The name is edited where it is READ, so the field is set in the title's own voice.
+            .argoLine(ArgoTypography.rowTitle, .title)
             .focused($isFieldFocused)
             .lineLimit(1)
             .onSubmit(commitRenaming)
@@ -162,10 +163,9 @@ package struct SessionRow: View {
     @ViewBuilder private var activityLine: some View {
         if let fact = row.secondaryFact {
             Text(fact)
-                .argoText(ArgoTypography.rowMeta)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
@@ -188,7 +188,7 @@ package struct SessionRow: View {
                 DeliveryAddresses(ticketNumber: row.ticketNumber, pullRequest: row.pullRequest)
             }
             .padding(.top, ArgoSpacing.hair)
-            .foregroundStyle(argo.color.text.tertiary)
+            .foregroundStyle(argo.color.text.ink(.machineFact))
         }
     }
 

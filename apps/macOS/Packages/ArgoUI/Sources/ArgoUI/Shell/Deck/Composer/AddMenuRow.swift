@@ -28,8 +28,7 @@ struct AddMenuRow: View {
                 .fixedSize()
             Spacer(minLength: ArgoSpacing.base)
             Text(String(row.key))
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
         }
         .padding(.horizontal, ArgoSpacing.base)
         .frame(height: ArgoComposerVessel.commandRowHeight)

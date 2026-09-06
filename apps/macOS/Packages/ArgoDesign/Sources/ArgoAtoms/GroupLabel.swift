@@ -6,8 +6,6 @@ import SwiftUI
 /// A `Section("…")` header takes the platform's sidebar style instead, which is title-case at the
 /// body rung; `sectionLabel` is uppercase at `subheadline` with tracking, and the two do not meet.
 public struct GroupLabel: View {
-    @Environment(\.argo) private var argo
-
     private let text: String
 
     public init(_ text: String) {
@@ -16,8 +14,7 @@ public struct GroupLabel: View {
 
     public var body: some View {
         Text(text.uppercased())
-            .argoText(ArgoTypography.sectionLabel)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.sectionLabel, .sectionHeader)
     }
 }
 

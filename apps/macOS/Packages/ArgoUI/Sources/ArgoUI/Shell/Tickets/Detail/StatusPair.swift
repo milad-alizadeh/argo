@@ -17,13 +17,12 @@ package struct StatusPair: View {
     package var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(word)
-                .argoText(ArgoTypography.rowMeta)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
             if let filing = filingWorthDrawing {
                 ArgoRule(ink: argo.color.edge.subtle)
                     .frame(height: ArgoTicketDetail.statusDividerHeight)
                 Text(filing)
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.disabled)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
             }
         }
         .accessibilityElement(children: .ignore)

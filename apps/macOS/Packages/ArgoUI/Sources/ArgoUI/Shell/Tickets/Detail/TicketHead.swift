@@ -18,7 +18,7 @@ package struct TicketHead: View {
         VStack(alignment: .leading, spacing: ArgoTicketDetail.headStep) {
             TicketNumberLink(number: ticket.id)
             Text(ticket.title)
-                .argoText(ArgoTypography.sessionTitle)
+                .argoLine(ArgoTypography.sessionTitle, .title)
                 .fixedSize(horizontal: false, vertical: true)
             StatusPair(word: ticket.status, bucket: ticket.bucket)
             TicketClaimantLine(claimants: ticket.claimants, openSession: openSession)

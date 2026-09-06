@@ -31,11 +31,11 @@ struct FeedAskAnswerRow: View {
         TextField(
             placeholder,
             text: $text,
-            prompt: Text(placeholder).foregroundStyle(argo.color.text.disabled.color),
+            prompt: Text(placeholder).foregroundStyle(argo.color.text.ink(.metadata).color),
         )
         .textFieldStyle(.plain)
         .argoText(ArgoFeedRow.proseRung)
-        .foregroundStyle(argo.color.text.primary)
+        .foregroundStyle(argo.color.text.ink(.body))
         .focused($isFocused)
         .onSubmit(submit)
         .padding(.horizontal, ArgoSpacing.comfortable)

@@ -74,8 +74,7 @@ package struct FeedShotView: View {
     /// with what the decode found would be geometry the lane and the ruler cannot see.
     private var absence: some View {
         Text(showing.provenance.instead)
-            .argoText(ArgoTypography.caption)
-            .foregroundStyle(argo.color.text.disabled)
+            .argoLine(ArgoTypography.caption, .metadata)
             .multilineTextAlignment(.leading)
             .padding(ArgoSpacing.base)
             .frame(width: shot.drawnWidth, height: ArgoFeedRow.shotHeight)

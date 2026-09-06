@@ -25,17 +25,16 @@ struct ViewRow: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             ArgoGlyph(symbol, .inline)
-                .foregroundStyle((ink ?? argo.color.text.tertiary).color)
+                .foregroundStyle((ink ?? argo.color.text.ink(.machineFact)).color)
                 .frame(width: ArgoTicketsSidebar.glyphWidth)
             Text(name)
-                .argoText(ArgoTypography.rowMeta)
+                .argoLine(ArgoTypography.rowMeta, .title)
                 .lineLimit(1)
             Spacer(minLength: ArgoSpacing.base)
             shortfall
             if let count {
                 Text("\(count, format: .machine)")
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
             }
         }
         // NO leading padding: the row already stands on `railInset`, which the sidebar `List`
@@ -59,8 +58,7 @@ struct ViewRow: View {
             // rail's row ground — a 3/255 step, findable only at 3× — and there is no rung between
             // the two. Subordination is carried by position and by being words beside a numeral.
             Text("\(unplaced, format: .machine) unplaced")
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
                 .fixedSize()
                 .help(Self.help(unplaced))
         }

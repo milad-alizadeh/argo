@@ -87,8 +87,7 @@ struct FeedPicturePlate: View {
     private var absence: some View {
         band {
             Text(alt.isEmpty ? source.absoluteString : alt)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.caption, .metadata)
                 .multilineTextAlignment(.leading)
                 .padding(ArgoSpacing.base)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
