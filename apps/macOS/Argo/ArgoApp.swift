@@ -33,6 +33,8 @@ struct ArgoApp: App {
         accounts.companionStanding = { ConnectCompanion(standing: cockpit.hub.companionStanding) }
         // And the other way: the reap an archive makes needs the Binding this half resolves.
         cockpit.codeHostBinding = { await accounts.binding(.codeHost) }
+        // And the Delivery derivation needs the branches, which are the Hub's git read (#1480).
+        accounts.deliveryReadings.workspaces = { cockpit.hub.readWorkspaces }
         _cockpit = State(initialValue: cockpit)
         _accounts = State(initialValue: accounts)
     }
@@ -45,7 +47,13 @@ struct ArgoApp: App {
         //
         // The Ticket Binding folded in is the Accounts coordinator's, so no surface below can build
         // a second projection that answers differently.
-        let presentation = cockpit.presentation(accounts.connections)
+        let shell = ShellReadings(
+            health: accounts.connections,
+            tickets: accounts.tickets,
+            ticketAddress: accounts.ticketAddress,
+            deliveries: accounts.deliveryReadings.deliveries,
+        )
+        let presentation = cockpit.presentation(shell)
         // A rename is the whole of what holds it, and that is not an oversight: no suite can reach
         // this fold. It is a `Scene` body in the app target, which has no unit-test bundle, and it
         // cannot move into ArgoUI — what it folds reads live Hub state, which exactly one file in
@@ -65,11 +73,7 @@ struct ArgoApp: App {
                         presentation: presentation,
                         actions: actions,
                         connect: connectSurface,
-                        readings: ShellReadings(
-                            health: accounts.connections,
-                            tickets: accounts.tickets,
-                            ticketAddress: accounts.ticketAddress,
-                        ),
+                        readings: shell,
                     )
                     .environment(navigation)
                     .task {
@@ -200,10 +204,10 @@ struct ArgoApp: App {
         actions.sessions.handOff = { await cockpit.handOff(sessionID: $0, issue: $1) }
         actions.composer.skills = { await cockpit.builtins.catalog(forProjectAt: projectURL) }
         actions.composer.workspaceFiles = { await gitWorkspaceFileRead(URL(fileURLWithPath: $0)) }
-        actions.tickets.writes.createTicket = { await accounts.createTicket($0) }
+        actions.tickets.writes.createTicket = { await accounts.writeTicket(.create($0)) }
         actions.tickets.startSession = { await cockpit.spawnSession(on: $0, mode: $1, opening: $2) }
-        actions.tickets.writes.applyIntent = { await accounts.applyTicket($0, to: $1) }
-        actions.tickets.writes.deleteTicket = { await accounts.deleteTicket($0) }
+        actions.tickets.writes.applyIntent = { await accounts.writeTicket(.apply($0, to: $1)) }
+        actions.tickets.writes.deleteTicket = { await accounts.writeTicket(.remove($0)) }
         actions.tickets.designedScreens = DesignedScreens(projectURL: projectURL).screens
         actions.tickets.read = { await accounts.read($0) }
         return actions

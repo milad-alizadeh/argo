@@ -191,7 +191,7 @@ final class CockpitCoordinator {
         guard case let .ready(binding) = resolution else { return }
         // The Binding is immaterial to this one read: an unbound provider turns `unlinked` into
         // `unread`, and neither of those carries a number, so the links are the same either way.
-        let links = presentation(.quiet).ticketLinks
+        let links = presentation(.none).ticketLinks
         guard !links.isEmpty else { return }
         annotations = await ticketTitles.resolve(links: links, through: binding)
     }

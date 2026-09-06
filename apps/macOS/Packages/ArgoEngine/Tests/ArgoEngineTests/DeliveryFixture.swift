@@ -8,13 +8,21 @@ actor ScriptedCodeHost: CodeHostPort {
     /// What the host holds for a branch nothing in flight covers, keyed by branch. A branch with no
     /// entry is one the host holds nothing for.
     private let byBranch: [String: Delivery]
+    private var reads = 0
 
     init(_ script: [Result<[Delivery], ProviderFetchError>], byBranch: [String: Delivery] = [:]) {
         self.script = script
         self.byBranch = byBranch
     }
 
+    /// How many listings the host has answered, which is one per derivation — what a suite about
+    /// the LOOP counts, rather than what any one of them landed.
+    func readCount() -> Int {
+        reads
+    }
+
     func inFlight(in _: String, grant _: AccountGrant) async throws -> [Delivery] {
+        reads += 1
         guard let answer = script.count > 1 ? script.removeFirst() : script.first else { return [] }
         return try answer.get()
     }
@@ -57,6 +65,42 @@ extension DeliveryPullRequest {
     /// The same, landed — a Delivery's terminal state.
     static func merged(number: Int) -> DeliveryPullRequest {
         PullRequestJSON(number: number, state: "closed", mergedAt: "2026-08-01T00:00:00Z").read
+    }
+}
+
+/// A fake sleeper's own record of what happened to it: how many waits it began, and how many were
+/// CANCELLED. The second one is what a case about a loop ending asserts on — a read count alone is
+/// satisfied by a loop that is merely still waiting, so it would pass with `stop()` gutted.
+actor PollSleeps {
+    private let wait: PollWait
+    private let held: Duration
+    private var cancelled = 0
+
+    init(_ wait: PollWait, held: Duration) {
+        self.wait = wait
+        self.held = held
+    }
+
+    /// Announce the tick, then wait — rethrowing the cancellation after recording it, because the
+    /// loop reads the throw as its own exit.
+    nonisolated var sleep: PortPollLoop.Sleeper {
+        { _ in
+            await self.wait.reach()
+            try await self.hold()
+        }
+    }
+
+    func cancels() -> Int {
+        cancelled
+    }
+
+    private func hold() async throws {
+        do {
+            try await Task.sleep(for: held)
+        } catch {
+            cancelled += 1
+            throw error
+        }
     }
 }
 

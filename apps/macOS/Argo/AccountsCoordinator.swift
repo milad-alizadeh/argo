@@ -43,6 +43,9 @@ final class AccountsCoordinator {
     /// because the poll reads through a Binding and files its failures on `health` — both of which
     /// are this half's, and neither of which the Hub has ever heard of.
     let ticketLedger = TicketLedger()
+    /// The Deliveries half, whole (#1480): the ledger, the loop that fills it, and the value the
+    /// roster row draws. Its `workspaces` are the Hub's, wired at the app layer.
+    @ObservationIgnored lazy var deliveryReadings = DeliveryReadings(health: health)
     /// The write half (#872, #1333) — filing a ticket and applying an intent to one that already
     /// exists. Computed rather than held: it has no state of its own, and its transport is
     /// `URLSession.shared`.
@@ -194,6 +197,7 @@ final class AccountsCoordinator {
         // raises the landing itself — so this one call both settles the read and refreshes it.
         await poll.report(to: { [weak self] in await self?.readListing() })
         await poll.point(resolution, at: project?.id)
+        await deliveryReadings.point(binding(.codeHost), at: project?.id)
         guard isOpen else { return }
         await show(ports: ports)
     }
