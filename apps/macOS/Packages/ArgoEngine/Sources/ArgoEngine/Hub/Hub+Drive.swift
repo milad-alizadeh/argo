@@ -26,6 +26,44 @@ public extension Hub {
             ),
         )
     }
+
+    /// Type one title at the Session's own prompt, and answer whether it went (#1494).
+    ///
+    /// Mirroring the name Argo holds onto the CLI's own Session title, so the same Session reads
+    /// the same in Argo's roster, Claude mobile, Claude desktop and the web app.
+    ///
+    /// Every refusal is swallowed: a `codex` Session, a Session Argo owns no terminal for, a Turn
+    /// in flight, a Permission or a question holding the keyboard. None of them is a failed rename
+    /// — the Argo-side name is written already and is what the roster draws.
+    ///
+    /// The answer is for the caller that can try again. `TicketTitleResolver` retries a title that
+    /// did not go on its next sweep, which is the difference between one busy moment costing a
+    /// Session its name for the launch and costing it a few seconds.
+    ///
+    /// Beside `driver` rather than in the app target: it reads nothing the app owns, and a
+    /// derivation there is one no test can reach (ADR-0022).
+    func mirrorTitle(_ title: String, to sessionID: String) async -> Bool {
+        do {
+            try await driver.setTitle(title, for: sessionID)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Mirror the name a reader gave a Session onto the CLI's own title (#1494).
+    ///
+    /// The store's own normalising, asked here too, so a name of nothing but spaces mirrors
+    /// exactly what it stored: nothing. Clearing mirrors NOTHING either — what comes back is a
+    /// derived title Argo assembles, and typing one at the prompt would replace a generated name
+    /// with a copy of Argo's own rendering. The CLI keeps whatever it holds.
+    ///
+    /// Beside the mirror it types through rather than at the window: the normalising is the
+    /// annotation store's rule, and both are the engine's to know (ADR-0022).
+    func mirrorName(_ name: String?, to sessionID: String) async {
+        guard let named = SessionAnnotations.name(from: name) else { return }
+        _ = await mirrorTitle(named, to: sessionID)
+    }
 }
 
 extension Hub {

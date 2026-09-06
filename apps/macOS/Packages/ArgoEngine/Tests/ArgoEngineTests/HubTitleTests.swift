@@ -88,4 +88,20 @@ struct HubTitleTests {
 
         #expect(hub.sessions[0].title == "Host-authored title")
     }
+
+    /// The mirror answers rather than throws, so one refusal never costs a rename (#1494).
+    ///
+    /// A test Hub owns no terminal for this Session, which is exactly the refusal the shipped
+    /// path meets when a Turn, a Permission or a question holds the keyboard. `false` is the
+    /// caller's cue to try again on the next sweep, and `TicketTitleResolver` is what does.
+    ///
+    /// It lives here rather than in the app target because nothing it reads is the app's
+    /// (ADR-0022): a derivation in `Argo` is one no suite can reach.
+    @Test
+    @MainActor
+    func `a title the Session will not take is answered, not thrown`() async {
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
+
+        #expect(await hub.mirrorTitle("Rename the Session", to: "no-such-session") == false)
+    }
 }
