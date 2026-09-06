@@ -4,8 +4,8 @@ import ArgoEngine
 /// `Session.init` (ADR-0027, amended by #755).
 ///
 /// They group the parameter list and are NOT what a Session stores; nothing reads through one.
-/// Each field keeps the engine's own name for its fact, which is what `swift-boundaries.sh`
-/// edge 5 compares the init's slots against.
+/// Each field keeps the engine's own name for its fact, so the init's slots read against the
+/// engine's own surface one for one (ADR-0027).
 public extension CockpitPresentation.Session {
     /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, what it handed to, and
     /// whether Argo's own channel to it is up — a property of the process this link runs in, which
@@ -140,7 +140,8 @@ public extension CockpitPresentation.Session {
         public let readyToShip: Bool
 
         /// The two facts a branch's own pull request settles together — grouped so `Work`'s own
-        /// init stays at its cap (rules/house.md, edge 6) rather than growing a fifth parameter.
+        /// init stays at the four-parameter cap (`apps/macOS/.swiftlint.yml`) rather than growing
+        /// a fifth parameter.
         public struct Delivery: Equatable, Sendable {
             public let pullRequest: DeliveryPullRequest?
             public let readyToShip: Bool

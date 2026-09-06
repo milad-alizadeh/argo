@@ -73,7 +73,7 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// (`SubagentWriting.unwatched`) and the one a chip's ending may not be read against (#1392).
     ///
     /// One value rather than two parameters, because they are one reading — and because the cap
-    /// this init is held to counts parameters, never readings (`swift-boundaries` edge 6).
+    /// this init is held to counts parameters, never readings (`apps/macOS/.swiftlint.yml`).
     ///
     /// `ended` names the delegations the reader has ended, by CALL id (#1267) — the other set the
     /// rail's dots are read from, and the reason a specimen can draw the state a lost report leaves

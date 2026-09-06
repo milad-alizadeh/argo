@@ -78,10 +78,10 @@ function_parameter_count:
   # reading, the way CockpitPresentation.Session does.
   error: 4
   warning: 4
-  # The initializers that were over the cap above when the gate was removed. Nothing reads this
-  # list any more — it ratcheted only while edge 6 existed — so it is a record of where the width
-  # is known to be, not a check. Each line says why that width is the shape of the thing; regroup
-  # one and delete its line. #992 found these passing silently under a cap that could not see them.
+  # Below: the initializers known to be over the cap above, and why each one's width is the shape
+  # of the thing it takes. A record, not a check — nothing reads these lines, and adding one holds
+  # nobody to anything. Regroup an initializer and delete its line. #992 is where the widths were
+  # first counted, under a cap that could not see an `init`.
   #
   # INIT: Ticket.swift 12 — a provider's whole ticket record, field for field
   # INIT: Ticket+Copy.swift 10 — Ticket's memberwise copy, one slot per field it carries

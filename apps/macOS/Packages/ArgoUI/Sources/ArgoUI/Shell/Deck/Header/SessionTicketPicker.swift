@@ -99,4 +99,4 @@ package struct SessionTicketPicker: View {
 }
 
 // The states this draws are rendered by `TicketPickerSpecimen`, which is where the sample backlog
-// they need lives (`docs/agents/module-boundaries.md`, edge 8).
+// they need lives.
