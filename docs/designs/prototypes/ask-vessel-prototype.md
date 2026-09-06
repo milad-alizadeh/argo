@@ -5,13 +5,12 @@
 rather than argued about. It was written under prototype constraints — no tests, no
 abstractions, one file — and the decision it settles will live in the spec, not here.
 
-## Run it
+## The page is gone
 
-```sh
-open docs/designs/prototypes/ask-vessel-prototype.html
-```
-
-No build, no server, no dependencies.
+`ask-vessel-prototype.html` was deleted from `main` by #1526, along with every other explorable there: a live page on
+`main` has an owner, and this one had already answered its question. This file is the record of
+what it answered. History keeps the markup — the commit that removed it is what
+`--diff-filter=D` over `docs/designs/` finds.
 
 ## The answer
 

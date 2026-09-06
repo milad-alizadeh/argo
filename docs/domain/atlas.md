@@ -81,5 +81,5 @@ Coupling is counted; a Domain is guessed. It is labelled that way wherever it ap
 appearance of that label is settled by #650.
 
 **Drawn forms are not domain entities.** Volume, band, legend, city and treemap are appearance,
-settled by #650 and `docs/designs/cockpit-atlas.html`. A Plot is the file; the volume is one way
+settled by #650 and `docs/designs/cockpit-atlas.md`. A Plot is the file; the volume is one way
 of drawing it.

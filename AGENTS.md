@@ -151,6 +151,13 @@ it with a render, `design-to-code` builds it per ticket, `pixel-review` judges t
 is a **repo rule, not a skill description**: which tickets take the design route depends on what
 is in `docs/designs/`, which no portable skill can know.
 
+**The design `.md` is on `main`; its explorable `.html` never is** (#1526). The page lives on the
+branch the `.md`'s front matter names — `explorable: design/<screen>` — and is read without a
+checkout with `git show design/<screen>:docs/designs/<screen>.html`. `explorable: gone` means the
+screen shipped and the branch was deleted, and the `.md` plus its state renders are then the whole
+spec; `bun run worktrees:gc` does the deleting once the screen's epic closes. So a `docs/designs/`
+listing showing no page is the rule working, not a design that is missing.
+
 ## Visual verification
 
 Nothing renders a view on CI, so **rendering is a thing YOU do**: run `/pixel-review` and look at

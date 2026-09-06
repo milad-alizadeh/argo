@@ -68,6 +68,23 @@ sources. When a later explicit decision changes the direction, update this bundl
 affected child ticket in the same change, so a fresh session never needs the original
 conversation.
 
+## No design page lives here
+
+A design's explorable `.html` is **never on `main`** (#1526). It lives on the branch
+`design/<screen>` for as long as the screen is being built, and it goes when the screen is done.
+What `main` carries is the durable record: the design `.md` with its measurements and frozen
+component names, the state renders in `<screen>/`, and the build inventory beside it.
+
+The front-matter keys, how a reader gets at the page and when the branch dies are all one
+rule, stated in AGENTS.md → *Design work*. What it means here: a `.md` names its page with
+`explorable: design/<screen>`, and `explorable: gone` means the screen shipped and the branch was
+deleted. The measurements therefore belong in the `.md`, because it outlives the page.
+
+**A shipped screen keeps no page**, and nothing is kept just in case: a `stale` design is
+re-based by screenshotting the shipped app, which reads more than an old page would have.
+Every explorable that was on `main` when the rule landed was deleted with it — history keeps them,
+and `git log --diff-filter=D -- docs/designs/` finds the commit that removed one.
+
 ## The specs
 
 > **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) remains the source of
@@ -105,14 +122,15 @@ under `docs/adr/`.
 | `cockpit-feed-working.inventory.md` | In-flight build inventory | What each ticket's build actually extracted from that design, one row per component, appended per ticket — #615 (a call in flight) and #616 (thinking) so far, plus the contract values each promoted |
 | `cockpit-session-header.md` + `header/` | **Approved two-row header design** (#696) | The deck's chrome cut from three rows to two: the title in the titlebar's centre, the instruments on the tab line's trailing edge, the identity band deleted. Six renders in `header/` are the spec; the doc carries the measurements and the three places the shipped components supersede the prototype |
 | `cockpit-session-header.inventory.md` | Two-row header build inventory | What each ticket's build actually extracted from that design — `TabLineInstruments` for #693 so far, plus what stayed inline and what was only reseated |
-| `cockpit-roster-row.md` + `.html` + `roster-row/` | **Approved Sessions roster row** (#1310) | The row read as three questions in the order a person asks them: which run this is, what it is doing, and how it is going. Line 3 carries the clock, the **Plan's own progress** as one segment per to-do item, and the two addresses this run answers to — the **Ticket number leaves the title** and sits beside the pull request, each with its own mark, which is what stops one row printing two hash numbers. Subagents are dots under the state dot, five then `+n`. Ten state renders in `roster-row/` are the spec; the `.html` is the same row explorable by `?state=`; the doc carries the measurements, the five frozen names, the nine rules the shape keeps, and the three promoted roles — `delivery.open`, `delivery.merged` and `progress.still`. It also settles that `PlanRing` takes the accent rather than the running teal, and retires the em dash in `IssueReading.words` |
+| `cockpit-roster-row.md` + `roster-row/` | **Approved Sessions roster row** (#1310) | The row read as three questions in the order a person asks them: which run this is, what it is doing, and how it is going. Line 3 carries the clock, the **Plan's own progress** as one segment per to-do item, and the two addresses this run answers to — the **Ticket number leaves the title** and sits beside the pull request, each with its own mark, which is what stops one row printing two hash numbers. Subagents are dots under the state dot, five then `+n`. Ten state renders in `roster-row/` are the spec; the explorable is gone (#1526); the doc carries the measurements, the five frozen names, the nine rules the shape keeps, and the three promoted roles — `delivery.open`, `delivery.merged` and `progress.still`. It also settles that `PlanRing` takes the accent rather than the running teal, and retires the em dash in `IssueReading.words` |
 | `cockpit-roster-row.inventory.md` | Roster row build inventory | What each ticket's build actually extracted from that design, one section per ticket in ticket order — #1343 (`SessionMarker`, the leading column that takes the whole row so no caller can hand it both a state and a fold), #1344 (`SubagentDots` and the `SubagentReading` value it draws, off the same reading the Agents rail counts from, plus the two tokens it promoted), #1345 (`PlanBar` and the `PlanBarFill` reading that makes rule 3 arithmetic rather than drawing, and the `PlanRing` recolour rule 2 asks of the pill as well), #1346 (`DeliveryAddresses`, its two custom pull-request marks, and the app-level wiring #389 still owes before a production row draws a real pull request), #1347 (nothing — the ticket takes the number and the em dash out of the title rather than adding a shape), and #1348 (the `Ready` badge, which extracted nothing — `ArgoStateLabel` already was the slot — and corrected a ship glyph the explorable was never drawing), #1349 (the epic, which extracted nothing and judged the row as one shape: the Subagent stack was drawn in one grey where the explorable draws the running pips in `state.running` and the dash in `text.disabled`, and all three inks are now in the measurements table where the build would have read them) |
 | `cockpit-roster-turn-clock.md` + `roster-clock/` | **Approved Turn-clock design** (#618) | How long a Turn has been running, read in the roster row's age slot: a live `4m 12s` in `state.running` for a managed Session, `output 12s ago` for an observed one, the seen reading otherwise. The header and feed stay silent. Three renders in `roster-clock/` are the spec |
 | `cockpit-roster-turn-clock.inventory.md` | Turn-clock build inventory | What #678's build actually extracted from that design — `RosterTurnClock` and the phrase it shares with the projection — and the splits that stayed inline |
 | `cockpit-feed-ask.md` + `feed-ask/` | **Built ask design** (#712) | How a Session's question gets answered: in the feed row where it was asked, options pressable, one click the whole answer. **There is no vessel** — the composer's slot is not involved and `DeckVessel.resolve` gains no case, which reverses #712's own first proposal. Six renders in `feed-ask/` are the spec; built in `8188bad7`, so the code and its specimens are now truth for what shipped |
-| `cockpit-work-room.md` + `.html` + `work-room/` | **Built Tickets-room design** (#609, under #607; re-based on the shipped room by #1304) | The room #376's shell had a tab for and nothing behind. The sidebar is NOT the backlog: it holds five views at 280 plus the Next-up hero, and the backlog moves into the deck as a 520pt disclosure tree with priority over its roots, the ticket beside it. **Each pane draws its own header** on one band in the window's title strip (#1242) — there is no window row — the query with its rails and its stated empty (#873), the `Closed` view flat and by last touched (#1075), one Liquid Glass material on every vessel, `Start` as one pill whose command segment is the skill picker (#899, #1242), the four room-level vacancies, and the Route re-skinned onto graphite/Ion with #334's geometry untouched. Fourteen state renders in `work-room/` are the spec, **each corrected against its own specimen** and named beside it in the doc; the `.html` is the same room explorable by `?state=`; the doc carries the measurements, the frozen names and the one proposed role |
+| `cockpit-work-room.md` + `work-room/` | **Built Tickets-room design** (#609, under #607; re-based on the shipped room by #1304) | The room #376's shell had a tab for and nothing behind. The sidebar is NOT the backlog: it holds five views at 280 plus the Next-up hero, and the backlog moves into the deck as a 520pt disclosure tree with priority over its roots, the ticket beside it. **Each pane draws its own header** on one band in the window's title strip (#1242) — there is no window row — the query with its rails and its stated empty (#873), the `Closed` view flat and by last touched (#1075), one Liquid Glass material on every vessel, `Start` as one pill whose command segment is the skill picker (#899, #1242), the four room-level vacancies, and the Route re-skinned onto graphite/Ion with #334's geometry untouched. Fourteen state renders in `work-room/` are the spec, **each corrected against its own specimen** and named beside it in the doc; the explorable is gone (#1526); the doc carries the measurements, the frozen names and the one proposed role |
 | `cockpit-work-room.inventory.md` | Tickets-room build inventory | What each ticket's build actually extracted from that design, one row per component — #812 (the views sidebar, the flat backlog and the ticket), #815 (the fact strip, the Delivery chips and the one link list) and #817 (the Next-up hero), plus what stayed inline, the `sessionTitle` role it promoted, the three places the design's own names and counts do not match the contract, the six honesty calls #815 had to make where the explorable knew more than Swift can, and the three claims the hero refuses to make |
 | `cockpit-feed-ask.inventory.md` | Ask build inventory | What #712's build actually extracted from that design — the four frozen names, the held-answer value the settle rule forced out, and the keycap a second caller promoted — plus what stayed inline |
+| `cockpit-atlas.md` | **Approved Atlas design** (#650, under map #643) | The repository as a place: every file one volume, its ground one measure, its height a second and its light a third. The renderer is Metal — instanced boxes in an `MTKView`, picked with an id buffer. Two views on one camera, City and Treemap, and five promoted token families. **The one screen still being built**, so it is the one design whose explorable is live: `design/atlas`, which also carries the four variants it was chosen from and the data they read |
 | `selection-accent.md` | **Where Ion Blue is spent** | The five placements and their two weights, the opaque selection ground (#922), the one weight every selected row wears (#1165) and why the asset is the only route to the loud half |
 | `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
@@ -131,15 +149,32 @@ cd apps/macOS && sh scripts/specimens.sh <dir> [name …]
 
 Studies written to answer one design question by being *looked at*. They are **not** part of the
 design set: no tests, no abstractions, one file each, and every value transcribed from the Swift
-contract rather than invented. A prototype belongs on a throwaway branch once the design it fed
-is approved — it is a primary source to re-explore from, never a thing to build from.
+contract rather than invented. A prototype belongs on a throwaway branch — it is a primary source
+to re-explore from, never a thing to build from.
 
-| File | Question it answered |
-|---|---|
-| `roster-header-prototype.html` | What should the Sessions roster row and the Session deck header show? (#502) |
-| `ask-vessel-prototype.html` + `.md` | How does a Session's question get answered? (#712) — settled by `cockpit-feed-ask.md` |
-| `roster-row-signals-prototype.html` + `.md` | What does a roster row say about the machinery under a Session and the product coming out of it? (#1310) — nine variants, settled by `cockpit-roster-row.md` by variant **G**; the eight rejected rows stay switchable on the branch (`?variant=A|B|C|D|E|F|H|I`) |
-| `work-room-prototype.html` + `.md` | What does the Tickets room look like in the Liquid Glass shell? (#609) — settled by `cockpit-work-room.md`; the four rejected rooms stay switchable on the branch (`?variant=A|B|C|E`) |
+**Only the notes are here.** #1526 took every prototype page off `main`, with the data, the
+servers and the vendored libraries they read: what stays is one `.md` per study, which is the
+record of what the study answered. The Atlas set is the exception, because Atlas is still being
+built — its pages are on `design/atlas`.
+
+A page listed as gone is gone from everywhere this repo controls; history keeps it. A page
+listed on an `argo/…` branch is on a **worktree branch, not a design branch**: nothing sweeps
+those, and equally nothing promises they survive — only `design/…` is keyed to an epic.
+
+| Note | Question it answered | Its page |
+|---|---|---|
+| `README.md` (this study's note is the prototypes README itself) | What should the Sessions roster row and the Session deck header show? (#502) | gone |
+| `ask-vessel-prototype.md` | How does a Session's question get answered? (#712) — settled by `cockpit-feed-ask.md` | gone |
+| `settled-ask-fold-prototype.md` | What does an answered ask settle into? (#1207) — settled by `cockpit-feed-ask.md` | gone |
+| `backlog-question-prototype.md` | What does the search field do when it holds a question? (#1293) — settled by `cockpit-backlog-question.md` | gone |
+| `roster-row-signals-prototype.md` | What does a roster row say about the machinery under a Session and the product coming out of it? (#1310) — nine variants, settled by `cockpit-roster-row.md` by variant **G** | `argo/#1310-roster-agent-count` |
+| `ticket-verbs-prototype.md` | Does every pane carry its own header? (#1242) — settled by `cockpit-work-room.md` | gone |
+| `start-picker-hero-prototype.md` | Does the Next-up hero get the skill picker? (#1244) — settled by `cockpit-work-room.md` | gone |
+| `turn-lane-prototype.md` | How do you get around a 400-Turn session? — thirteen variants | gone |
+| `atlas-holo.md`, `atlas-class.md`, `atlas-shell.md` | What does the Atlas look like, and how is it read? (#650) — settled by `cockpit-atlas.md` | `design/atlas` |
+
+`atlas-snap-zoom.md` and `atlas-labels-prior-art.md` are reading, not studies: they have no page
+of their own and answer to the Atlas notes above.
 
 ## What left, and where it went
 

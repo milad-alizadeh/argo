@@ -1,9 +1,11 @@
 # Atlas prototype — what we chose
 
 > **Approved.** This exploration is closed. The design that came out of it is
-> `docs/designs/cockpit-atlas.html`, with a render per state under `docs/designs/renders/`,
-> and that is what `design-to-code` builds against. Edit the design, not this file — the
-> prototype is kept as the evidence behind the choice.
+> [`../cockpit-atlas.md`](../cockpit-atlas.md), whose explorable is
+> `docs/designs/cockpit-atlas.html` on the branch `design/atlas` (#1526) — that is what
+> `design-to-code` builds against. Edit the design, not this file — the prototype is kept as
+> the evidence behind the choice. The pages this note names live on that same branch, along
+> with the data and the server they read; `main` carries the notes and nothing else.
 
 Throwaway prototype for #650, part of map #643. This records the decisions so the next
 session does not re-litigate them. The prototype itself is `atlas-holo.html`.
