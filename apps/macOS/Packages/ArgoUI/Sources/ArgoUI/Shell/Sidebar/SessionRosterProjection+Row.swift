@@ -245,8 +245,9 @@ extension SessionRosterProjection {
     )
         -> Row {
         // Handed out ONCE and walked twice: the clock and the activity both read the tail of the
-        // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`).
-        let events = session.events
+        // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`). The open row
+        // is handed the array the telling was walked off, which is that same one reach (#1513).
+        let events = pass.focus.walked(session.id) ?? session.events
         let clock = clock(for: session, in: events, nowMs: pass.nowMs)
         return Row(
             identity: Row.Identity(

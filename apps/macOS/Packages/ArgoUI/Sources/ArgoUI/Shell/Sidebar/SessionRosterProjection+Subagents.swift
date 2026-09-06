@@ -72,9 +72,12 @@ extension SessionRosterProjection {
     /// Off the STREAM and not the feed's rows (#1394). The roster needs the delegate calls, and no
     /// fold in `FeedProjection` can reach one — so building a whole reading to find them was about
     /// thirty times the work, once per row, on every pass.
-    static func delegations(of session: CockpitPresentation.Session) -> [FeedAgent] {
+    static func delegations(
+        of session: CockpitPresentation.Session, in events: [TranscriptEvent],
+    )
+        -> [FeedAgent] {
         delegatedAgents(
-            in: session.events,
+            in: events,
             of: DelegatingSession.of(session.status),
             within: FeedPath(cwd: session.workspaceLocation),
         )

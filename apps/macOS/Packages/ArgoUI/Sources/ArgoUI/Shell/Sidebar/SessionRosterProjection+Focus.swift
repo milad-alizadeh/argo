@@ -27,16 +27,34 @@ package extension SessionRosterProjection {
         /// Reached only through `told(of:)`, so no caller can read a telling without the id that
         /// says whose it is.
         private let telling: [FeedAgent]?
+        /// The stream the telling was walked off, so the pass HANDS IT OUT ONCE.
+        ///
+        /// `CockpitPresentation.Session.events` is the one accessor that reaches a Session's
+        /// record and every reach is counted (`HeldEvents`, `PerfBudgets.selectionPassReads`) —
+        /// so a telling taken here and a row walking for itself would put a second reach on the
+        /// click pass, whatever either of them then does with it. The row reads this instead.
+        private let stream: [TranscriptEvent]?
 
-        package init(sessionID: String? = nil, told: [FeedAgent]? = nil) {
+        package init(
+            sessionID: String? = nil,
+            told: [FeedAgent]? = nil,
+            walked stream: [TranscriptEvent]? = nil,
+        ) {
             self.sessionID = sessionID
             self.telling = told
+            self.stream = stream
         }
 
         /// The telling for THIS Session, or `nil` for every other row — the gate that keeps the
         /// fourth fact on the one row it is a fact about.
         func told(of sessionID: String) -> [FeedAgent]? {
             self.sessionID == sessionID ? telling : nil
+        }
+
+        /// The stream already in hand for THIS Session, under the same gate and for the same
+        /// reason: a row given somebody else's record would draw somebody else's Session.
+        func walked(_ sessionID: String) -> [TranscriptEvent]? {
+            self.sessionID == sessionID ? stream : nil
         }
     }
 
@@ -61,9 +79,13 @@ package extension SessionRosterProjection {
               let session = sessions.first(where: { $0.id == sessionID }),
               SessionState.role(for: session.status) != nil
         else { return Focus(sessionID: sessionID) }
+        // ONE reach for the whole pass — the telling below and the row's own three readings both
+        // come off this array.
+        let events = session.events
         return Focus(
             sessionID: sessionID,
-            told: reader.dated(delegations(of: session), at: nowMs),
+            told: reader.dated(delegations(of: session, in: events), at: nowMs),
+            walked: events,
         )
     }
 }
