@@ -50,9 +50,25 @@ PROJECTED_FILE="CockpitPresentation+Session.swift"
 PROJECTED="$UI_SOURCES/ArgoUI/Shell/$PROJECTED_FILE"
 # The grouped values the projected init takes, one per reading. A group whose OWN init unpacks
 # facts onto slots is a third hand, and a fact dropped on the wrong slot there reaches the two
-# files above already swapped — so this one is read for the slot check too (#1051).
+# files above already swapped — so these are read for the slot check too (#1051).
+#
+# A GLOB, not a list of names. The groups outgrew one file the day one of them wanted its own, and
+# an edge that reads a hand-listed three goes on passing every swap made in the fourth without
+# saying it never looked (#1502). A group that takes a new file joins this edge by existing.
+#
+# The first file is still named, and checked for on its own. A glob that matched nothing but the
+# files BESIDE the first would read the outgrowths and quietly stop reading the group they grew
+# out of — which is the same fail-open one file further along.
+VALUES_GLOB="CockpitPresentation+SessionValues*.swift"
 VALUES_FILE="CockpitPresentation+SessionValues.swift"
-VALUES="$UI_SOURCES/ArgoUI/Shell/$VALUES_FILE"
+VALUES_ANCHOR="$UI_SOURCES/ArgoUI/Shell/$VALUES_FILE"
+VALUES=""
+# shellcheck disable=SC2086 # $VALUES_GLOB is a pattern, and must stay unquoted to expand
+for values_match in "$UI_SOURCES"/ArgoUI/Shell/$VALUES_GLOB; do
+  # An unmatched pattern comes back as itself under POSIX sh, and is no file.
+  [ -f "$values_match" ] || continue
+  VALUES="${VALUES:+$VALUES }$values_match"
+done
 HUB_SESSION="$ENGINE_SOURCES/Hub/HubSession.swift"
 SWIFTLINT_CONFIG="$APP_DIR/.swiftlint.yml"
 
@@ -235,10 +251,10 @@ mapped() {
 }
 
 if [ ! -f "$HUB_SESSION" ] || [ ! -f "$PROJECTION" ] || [ ! -f "$PROJECTED" ] ||
-  [ ! -f "$VALUES" ]; then
+  [ ! -f "$VALUES_ANCHOR" ]; then
   report "edge 5 cannot see its own subjects — HubSession.swift, $PROJECTION_FILE, $PROJECTED_FILE or $VALUES_FILE has moved" \
-    "Point HUB_SESSION, PROJECTION, PROJECTED and VALUES at their new homes. An edge whose input" \
-    "is missing checks nothing, and nothing else in this repo would notice."
+    "Point HUB_SESSION, PROJECTION, PROJECTED and VALUES_GLOB at their new homes. An edge whose" \
+    "input is missing checks nothing, and nothing else in this repo would notice."
 else
   facts=$(hub_facts)
   dropped=$(not_projected)
@@ -276,10 +292,12 @@ else
   # 5b. And a fact handed straight through lands on the slot of its OWN name. Totality proves a
   #     fact was mentioned, never that it reached the right field, so `spentTokens:
   #     session.cachedTokens` is a swap both halves above call accounted for (#755). A fact crosses
-  #     three hands — named into the init, unpacked out of a value in its body, and unpacked again
-  #     inside a group whose own init takes sub-groups — and any hand can drop it on the wrong slot,
-  #     so all three files are read (#1051). Only the verbatim slots are checked:
+  #     three KINDS of hand — named into the init, unpacked out of a value in its body, and unpacked
+  #     again inside a group whose own init takes sub-groups — and any hand can drop it on the wrong
+  #     slot, so every file holding one is read (#1051). The last kind is a SET of files rather than
+  #     one, which is why $VALUES is a glob (#1502). Only the verbatim slots are checked:
   #     an argument that is a whole expression is a derivation, and its name is the projection's.
+  # shellcheck disable=SC2086 # $VALUES is a list of paths, and holds no spaces
   verbatim_pairs=$(
     awk "$AWK_READER"'
       { line = code($0)
@@ -305,12 +323,13 @@ else
           if (slot != fact) print slot " <- " fact
         }
       }
-    ' "$PROJECTION" "$PROJECTED" "$VALUES" | sort -u
+    ' "$PROJECTION" "$PROJECTED" $VALUES | sort -u
   )
   # The first two names on a marker line; whatever follows is prose.
+  # shellcheck disable=SC2086 # $VALUES is a list of paths, and holds no spaces
   declared_renames=$(
     sed -nE 's/^.*renamed:[[:space:]]*([A-Za-z0-9_]+)[[:space:]]*<-[[:space:]]*([A-Za-z0-9_]+).*/\1 <- \2/p' \
-      "$PROJECTION" "$PROJECTED" "$VALUES" | sort -u
+      "$PROJECTION" "$PROJECTED" $VALUES | sort -u
   )
 
   hits=$(printf '%s\n' "$verbatim_pairs" | grep -v '^$' | grep -vxF "$declared_renames" || true)
@@ -319,7 +338,7 @@ else
       "$hits" \
       "A fact passed straight through takes the slot of its own name, or the projection says why" \
       "not: add a \`renamed: <slot> <- <fact> — <why>\` line beside it, in $PROJECTION_FILE," \
-      "$PROJECTED_FILE or $VALUES_FILE. This is the check that catches two same-typed facts" \
+      "$PROJECTED_FILE or any $VALUES_GLOB. This is the check that catches two same-typed facts" \
       "swapped, which no type and no totality check can."
   fi
 
