@@ -89,8 +89,8 @@ extension CockpitPresentation.Session {
 extension CockpitPresentation.Session {
     /// The engine facts this projection deliberately drops — the reason the cockpit restates
     /// `HubSession` instead of holding one (ADR-0027). Every other public fact on `HubSession`
-    /// must appear as `session.<name>` below, and `swift-boundaries.sh` edge 5 fails the build
-    /// when a new one appears in neither place.
+    /// must appear as `session.<name>` below; one that appears in neither place is a fact the
+    /// cockpit has silently dropped, and review is what catches it.
     ///
     /// Most of them are the raw INPUTS to a derivation the cockpit takes the result of. Handing a
     /// view the inputs invites a second reading of a fact the Hub has already read.
@@ -115,8 +115,8 @@ extension CockpitPresentation.Session {
     ///   withheld by the engine itself (`HubSession+Spend`), which is degrade-down at the source
     ///   rather than a flag each surface would have to remember to ask about.
     ///
-    /// Edge 5 also requires each fact below to land on the slot of its own name, unless a
-    /// `renamed:` line here says otherwise (ADR-0027, amended by #755).
+    /// Each fact below also lands on the slot of its own name, unless a `renamed:` line here says
+    /// otherwise (ADR-0027, amended by #755).
     ///
     /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/house.md).
     /// renamed: submittedTurn <- unansweredTurn — the engine names the WINDOW, because what it
@@ -184,8 +184,9 @@ extension CockpitPresentation.Session {
             ),
             transcript: Transcript(observed: session),
         )
-        // After the init, on the slot's own reasoning: the list above is at its grandfathered
-        // count (`swift-boundaries` edge 6) and this fact does not authorise growing it.
+        // After the init, on the slot's own reasoning: the list above is already past the
+        // four-parameter cap (`apps/macOS/.swiftlint.yml`) and this fact does not authorise
+        // growing it.
         absorbedIDs = session.absorbedIDs
     }
 }

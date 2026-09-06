@@ -3,9 +3,10 @@ import ArgoEngine
 // One value per control on the composer's footer row — the `+`, the Mode picker, the run-facts
 // line and Send (#558).
 //
-// Grouped rather than spelled flat on `ComposerFooter`, on edge 6's own rule: each of these is
-// what ONE control needs, read off one place and passed to one view, so the footer's parameter
-// list is the row itself rather than a list of everything on it. What each control SAYS is a
+// Grouped rather than spelled flat on `ComposerFooter`, on the parameter cap's own rule: each of
+// these is what ONE control needs, read off one place and passed to one view, so the footer's
+// parameter list is the row itself rather than a list of everything on it. What each control SAYS
+// is a
 // reading, and what it DOES is a closure; both live here because a control needs both to draw.
 //
 // Every act is inert by default and every capability `false`, so a specimen renders the whole row
@@ -39,8 +40,8 @@ struct ModePickerControl {
 }
 
 /// A Model or an Effort rung picked while a Turn was running, waiting on the boundary to be
-/// walked (#1329) — one reading, grouped the way edge 6 asks: `RunFactsControl` takes this ONE
-/// value rather than the two it groups, which is what keeps its own init under the parameter cap.
+/// walked (#1329) — one reading, grouped the way the parameter cap asks: `RunFactsControl` takes
+/// this ONE value rather than the two it groups, which is what keeps its own init under the cap.
 struct RunFactsHeld: Equatable {
     var model: String?
     var effort: SessionEffort?

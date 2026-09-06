@@ -10,7 +10,6 @@ import PackageDescription
 ///
 /// Two targets, for the reason ADR-0022 splits `ArgoEngine` off: `MermaidLayout` answers geometry
 /// and imports no UI framework, so it runs under `swift test`; `MermaidView` draws what it decided.
-/// Edge 2 of `scripts/swift-boundaries.sh` holds the first half.
 let package = Package(
     name: "ArgoMermaid",
     platforms: [.macOS("26.0")],

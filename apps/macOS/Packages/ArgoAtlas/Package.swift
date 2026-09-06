@@ -8,9 +8,9 @@ import PackageDescription
 /// a plot under a cursor, and none of that needs a window.
 ///
 /// Two targets draw the split, mirroring `ArgoMermaid`: `AtlasLayout` answers geometry and imports
-/// no UI framework, so it runs under `swift test`; `AtlasView` draws what it decided. Edge 2 of
-/// `scripts/swift-boundaries.sh` holds the first half. `AtlasFixtures` is a third and is data
-/// only — the one committed measurement, read by the suite and by the specimen harness alike.
+/// no UI framework, so it runs under `swift test`; `AtlasView` draws what it decided.
+/// `AtlasFixtures` is a third and is data only — the one committed measurement, read by the suite
+/// and by the specimen harness alike.
 ///
 /// `ArgoDesign` hangs off the drawing half alone, because the layout half decides sizes and the
 /// contract it will one day read — the measure ramp of #1142 — is spent on a pixel, not on a plot.
