@@ -5,14 +5,14 @@ import Testing
 /// What naming a roster COSTS the surfaces that draw off it, in whole-roster passes (ADR-0028 Rule
 /// 8): a count and never the milliseconds, because a count is exactly the same idle and loaded.
 ///
-/// #1557: the deck header asked for one Session's title, and answering it named every Session on
-/// the roster — two listings, every fold folded, a rival set over the whole list — and then kept
-/// one element. The sidebar paid the identical fold again in its own body. Three whole-roster
-/// passes per window pass, for two surfaces, growing with the roster rather than staying flat.
+/// The claim is ONE pass per roster, shared, and none at all on a pass the roster did not move in
+/// (#1557). The last case is the other half and the one that matters more: a pass shared is a pass
+/// that must still be retaken the moment a title's answer could differ.
 ///
-/// The claim is ONE pass per roster, shared, and none at all on a pass the roster did not move in.
-/// The last case is the other half and the one that matters more: a pass shared is a pass that must
-/// still be retaken the moment a title's answer could differ.
+/// The counter is one `@MainActor` global, and other suites reach the same memo. Every body below
+/// is SYNCHRONOUS, which is what makes a count safe: a synchronous body on the main actor runs from
+/// its `forget()` to its `#expect` without a suspension point, so nothing else can bump the tally
+/// in between.
 @Suite("Session roster naming cost", .serialized)
 @MainActor
 struct SessionRosterNamingCostTests {
@@ -47,16 +47,23 @@ struct SessionRosterNamingCostTests {
     /// The key is answered by the roster's own storage while the shell hands the same published
     /// array every pass — which it does. A caller that started rebuilding the array would make
     /// every pass an element-by-element walk of the whole roster, and this is what sees that
-    /// rather than letting it pass quietly.
+    /// rather than letting it pass quietly — so the charge is asserted BOTH ways: the second half
+    /// is what says the counter is wired to anything at all.
     @Test
-    func `a repeat pass walks no Session to answer the key`() {
+    func `a repeat pass walks no Session to answer the key, and a rebuilt roster walks them all`() {
         SessionRosterNamingMemo.forget()
         let sessions = Self.roster
 
         _ = RosterListing().reading(of: sessions)
         _ = RosterListing().reading(of: sessions)
-
         #expect(SessionRosterNamingMemo.cost.compared == 0)
+
+        // The same Sessions in a buffer of their own: equal, so the pass is still shared, and paid
+        // for by a walk of every row.
+        _ = RosterListing().reading(of: sessions.map(\.self))
+
+        #expect(SessionRosterNamingMemo.cost.compared == sessions.count)
+        #expect(SessionRosterNamingMemo.cost.passes == 1)
     }
 
     /// The half a shared pass may not break: a roster that MOVED is named again. Two rows on one

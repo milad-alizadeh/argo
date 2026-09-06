@@ -3,23 +3,18 @@ import ArgoEngine
 /// The roster's naming pass, remembered, so the sidebar and the deck header share ONE of them
 /// (#1557, ADR-0028 Rule 1).
 ///
-/// Both surfaces ask on every pass and neither can see the other: the sidebar names the roster in
-/// `ShellSidebar.navigator`, and the header names it again in `SessionsRoomReading.init` to
-/// subscript one title out. Nothing above them holds the answer — `CockpitView.body` re-runs on
-/// any of its own state changes as well as on every presentation the Hub publishes, so a value
-/// assembled there would pay the pass for a keystroke in the composer. Remembering it here is what
-/// makes the shared answer free rather than merely singular.
+/// Both surfaces ask every pass and neither can see the other, and nothing above them holds the
+/// answer: `CockpitView.body` re-runs on any of its own state changes as well as on every
+/// presentation the Hub publishes, so a value assembled there would pay the pass for a keystroke in
+/// the composer.
 ///
-/// Keyed by the SESSIONS THEMSELVES, and that is the point: a naming pass reads the workspace, the
-/// entry, the access, the explicit name, the linked Ticket and the derived title, and a stamp
-/// listing those is a stamp a later input falls quietly out of. Value equality over the whole
-/// roster cannot drift — `TicketsRoomMemo` is keyed the same way and for the same reason — with the
-/// comparison answered by the array's storage first, and CHARGED where it is not.
+/// Keyed by the SESSIONS THEMSELVES, and that is the point: naming reads the workspace, the entry,
+/// the access, the explicit name, the linked Ticket and the derived title, and a stamp listing
+/// those is one a later input falls quietly out of. `TicketsRoomMemo` is keyed the same way.
 ///
-/// ONE entry. Argo's cockpit is a `Window` and not a `WindowGroup`, so the shell draws one roster
-/// at a time, and a second roster arriving simply replaces the one before it. Replacing rather than
-/// pooling is also what bounds what is RETAINED: an entry holds a whole published roster, events
-/// and all, and a pool of them would hold that many generations of it (ADR-0028 Rule 4).
+/// ONE entry. The cockpit is a `Window` and not a `WindowGroup`, so the shell draws one roster at a
+/// time. Replacing rather than pooling is also what bounds what is RETAINED: an entry holds a whole
+/// published roster, events and all (ADR-0028 Rule 4).
 @MainActor
 enum SessionRosterNamingMemo {
     private struct Entry {
@@ -31,7 +26,7 @@ enum SessionRosterNamingMemo {
 
     /// The naming pass over this roster, taken only where nothing holds one.
     static func namings(across sessions: [CockpitPresentation.Session]) -> SessionRosterNamings {
-        if let held, held.sessions.matches(sessions) {
+        if let held, matches(held.sessions, sessions) {
             return held.namings
         }
         counted(\.passes)
@@ -54,9 +49,36 @@ enum SessionRosterNamingMemo {
         static var cost = SessionRosterNamingCost()
     #endif
 
-    private static func counted(_ derivation: WritableKeyPath<SessionRosterNamingCost, Int>) {
+    /// Whether the roster held is the one being asked about — answered by the array's own STORAGE
+    /// first, and charged where it is not. This memo retains its own reference, so nothing can
+    /// write into a matched buffer in place: a write to a shared array copies it first (ADR-0028
+    /// #1070). A caller that started rebuilding the roster every pass would make this key a walk of
+    /// the whole list, which is this type's own defect wearing another hat, and charging it is what
+    /// lets the cost suite see that rather than let it pass quietly.
+    private static func matches(
+        _ held: [CockpitPresentation.Session], _ asked: [CockpitPresentation.Session],
+    )
+        -> Bool {
+        if !holdsTheSameStorage(held, asked) {
+            counted(\.compared, by: held.count)
+        }
+        return held == asked
+    }
+
+    private static func holdsTheSameStorage(
+        _ held: [CockpitPresentation.Session], _ asked: [CockpitPresentation.Session],
+    )
+        -> Bool {
+        held.count == asked.count && held.withUnsafeBufferPointer { mine in
+            asked.withUnsafeBufferPointer { theirs in mine.baseAddress == theirs.baseAddress }
+        }
+    }
+
+    private static func counted(
+        _ derivation: WritableKeyPath<SessionRosterNamingCost, Int>, by amount: Int = 1,
+    ) {
         #if DEBUG
-            cost[keyPath: derivation] += 1
+            cost[keyPath: derivation] += amount
         #endif
     }
 }
@@ -66,25 +88,7 @@ struct SessionRosterNamingCost {
     /// One per `SessionRosterNamings(across:)` — which is two `SessionTitle` passes, the roster's
     /// list and the archive's, counted as the one thing they are built as.
     var passes = 0
-    /// How many Sessions the key had to walk, charged whenever the roster's own storage could not
-    /// answer the comparison. Zero while the shell hands the same published array every pass, which
-    /// it does.
+    /// How many Sessions the key had to walk. Zero while the shell hands the same published array
+    /// every pass, which it does.
     var compared = 0
-}
-
-private extension [CockpitPresentation.Session] {
-    /// Whether this roster is the one `other` names — answered by the array's own storage first
-    /// (`holdsTheStorageOf`), and CHARGED where it is not: a caller that started rebuilding the
-    /// roster every pass would make this key a walk of the whole list, which is this type's own
-    /// defect wearing another hat, and charging it is what lets the cost suite see that rather than
-    /// let it pass quietly.
-    @MainActor
-    func matches(_ other: [CockpitPresentation.Session]) -> Bool {
-        if !holdsTheStorageOf(other) {
-            #if DEBUG
-                SessionRosterNamingMemo.cost.compared += count
-            #endif
-        }
-        return self == other
-    }
 }

@@ -18,10 +18,8 @@ extension SessionRosterProjection {
     /// route to the SAME answer rather than a second one taken over a different set of rows
     /// (#1391, #1251). `nil` where `id` is not in `sessions`.
     ///
-    /// It reads the pass the sidebar already took, and takes one only where nothing has (#1557):
-    /// asked as a lookup, this used to name the WHOLE roster and keep one element of the answer, on
-    /// every header pass. The shared answer is what the rule above wanted in the first place — one
-    /// title on both surfaces is cheaper than two, not a second full pass to index into.
+    /// It reads the pass the sidebar already took, and takes one only where nothing has: one title
+    /// on both surfaces is cheaper than two, not a second full pass to index into (#1557).
     @MainActor
     package static func namedTitle(
         for id: CockpitPresentation.Session.ID, among sessions: [CockpitPresentation.Session],

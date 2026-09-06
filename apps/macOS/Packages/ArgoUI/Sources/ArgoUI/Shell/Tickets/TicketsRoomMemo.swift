@@ -108,3 +108,14 @@ enum TicketsRoomMemo {
         }
     }
 }
+
+private extension [Ticket] {
+    /// Whether these two hold the same STORAGE, which for a listing means the same tickets: the
+    /// memo retains its own reference, so nothing can write into that buffer in place — a write to
+    /// a shared array copies it first (`reallocated`, ADR-0028 #1070).
+    func holdsTheStorageOf(_ other: [Ticket]) -> Bool {
+        count == other.count && withUnsafeBufferPointer { mine in
+            other.withUnsafeBufferPointer { theirs in mine.baseAddress == theirs.baseAddress }
+        }
+    }
+}
