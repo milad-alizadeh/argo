@@ -63,6 +63,12 @@ package struct SessionNavigator: View {
         drawnRows.filter(\.takesSelection).map(\.id)
     }
 
+    /// Every row this list HAS, the foot's shut or open — what `RowSelectionReactions` cuts the
+    /// selection by, beside the drawn rows.
+    var heldRows: [CockpitPresentation.Session.ID] {
+        (rows + archived).filter(\.takesSelection).map(\.id)
+    }
+
     /// Every row the list is drawing, in its order — the kept rows, and what is behind the foot
     /// only while the foot is open. Read here rather than by the body, because a scroll may only
     /// name a row the list actually has.
@@ -70,19 +76,8 @@ package struct SessionNavigator: View {
         rows + (isArchiveOpen ? archived : [])
     }
 
-    /// The `List`'s own selection, which is the held set and nothing beside it. Written back
-    /// through `absorb`, so a click the platform answered — anywhere but the title, and every
-    /// keyboard move — reaches the anchor and the deck by the same route a click on the title
-    /// does.
-    private var listSelection: Binding<Set<CockpitPresentation.Session.ID>> {
-        Binding(
-            get: { held.selection.rows },
-            set: { held.selection.absorb($0, over: selectableRows) },
-        )
-    }
-
     private var list: some View {
-        List(selection: listSelection) {
+        List(selection: held.listSelection(over: selectableRows)) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
             } else {
@@ -116,7 +111,7 @@ package struct SessionNavigator: View {
         .onChange(of: archived.isEmpty) { _, isEmpty in
             isArchiveShowing = isArchiveShowing && !isEmpty
         }
-        .modifier(RowSelectionReactions(held: held, drawn: selectableRows))
+        .modifier(RowSelectionReactions(held: held, drawn: selectableRows, membership: heldRows))
     }
 
     /// The archived Sessions, behind a count and shut by default. Absent entirely when nothing

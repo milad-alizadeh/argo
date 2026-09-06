@@ -84,14 +84,10 @@ package struct BacklogList: View {
         }
     }
 
-    /// The `List`'s own selection, which is the held set and nothing beside it. Written back
-    /// through `absorb`, so the platform's shift-click and cmd-click reach the anchor and the
-    /// open ticket by the one route.
-    private var listSelection: Binding<Set<Int>> {
-        Binding(
-            get: { held.picking.selection.rows },
-            set: { held.picking.selection.absorb($0, over: drawnRows) },
-        )
+    /// Every row this list HAS, whatever is shut — what `RowSelectionReactions` cuts the selection
+    /// by, beside the drawn rows.
+    private var heldRows: [Int] {
+        TicketsRoomProjection.drawn(rows, shut: []).map(\.id)
     }
 
     /// Every row a range may reach: what the list is drawing now, folds resolved. A row behind a
@@ -112,7 +108,7 @@ package struct BacklogList: View {
     }
 
     private var list: some View {
-        List(selection: listSelection) {
+        List(selection: held.picking.listSelection(over: drawnRows)) {
             if header.structure.groups {
                 banded
             } else {
@@ -128,7 +124,7 @@ package struct BacklogList: View {
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
         .accessibilityLabel("Backlog")
-        .modifier(RowSelectionReactions(held: held.picking, drawn: drawnRows))
+        .modifier(RowSelectionReactions(held: held.picking, drawn: drawnRows, membership: heldRows))
     }
 
     /// The list `Closed` draws: one run of rows in the order the projection put them, and no

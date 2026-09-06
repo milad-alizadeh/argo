@@ -22,6 +22,51 @@ package struct RowSelectionHold<Row: Hashable & Sendable> {
     /// nothing on the way, which is every list most of the time and the backlog always.
     var awaited: Row?
 
+    /// Where the surface beside the list goes when the row the selection DRAWS moves.
+    ///
+    /// A `nil` there names no row, so it is never the reader pointing at one: it is the list's own
+    /// arithmetic — a fold shutting, a `confine` over rows its order has not caught up with, a row
+    /// re-keyed under the selection (#361). `CockpitNavigationModel.reconcile` is what clears a
+    /// selection for real, and moving on a `nil` here left it a `nil` to repoint from rather than
+    /// an id it could have followed (#1493).
+    @MainActor
+    package func follow(drawnRow row: Row?) {
+        guard let row, row != pointed else { return }
+        pick(row)
+    }
+
+    /// The selection cut back to the rows this list is DRAWING, which is what stops a menu
+    /// offering to act on what a shut fold is over (#1247).
+    ///
+    /// `membership` is every row this list HAS, drawn or withheld. The difference is what decides
+    /// the second exemption: a row the list is withholding — behind a shut fold, behind the
+    /// archive foot — is one the reader put away, and the cut is the whole point of it. A row the
+    /// list has no entry for at all is a row its order has not admitted yet, which is what a
+    /// Session re-keyed the moment its transcript appears looks like from here (#361), and cutting
+    /// the drawn row there leaves the roster grounding nothing (#1493). The awaited row is exempt
+    /// for the same reason and ends the same way: the list gains an entry for it.
+    package func confineToDrawn(_ visible: [Row], of membership: [Row]) {
+        let lagging = pointed.flatMap { membership.contains($0) ? nil : $0 }
+        selection.confine(to: visible + [awaited, lagging].compactMap(\.self))
+    }
+
+    /// The `List`'s own selection: the held set, and the one route the platform's answer comes
+    /// back by. Every list bound to a hold takes it from here, so the rule below is not a thing a
+    /// call site can be written without.
+    ///
+    /// A `List` can only name rows it is DRAWING, so while a row is awaited an empty write-back
+    /// is the platform reconciling to a row it has not been given — indistinguishable from the
+    /// reader clearing the selection by hand, and refused as the commoner of the two (#1493).
+    package func listSelection(over visible: [Row]) -> Binding<Set<Row>> {
+        Binding(
+            get: { selection.rows },
+            set: { selected in
+                guard !(selected.isEmpty && awaited != nil) else { return }
+                selection.absorb(selected, over: visible)
+            },
+        )
+    }
+
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         selection: Binding<RowSelection<Row>>,
