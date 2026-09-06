@@ -78,6 +78,13 @@ struct AtlasMapSpecimen: View {
         AtlasView(plan: plan, viewpoint: AtlasViewpoint(standing: standing), marks: marks)
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
+            // The map's own moves are stopped, for the reason `standing` is a parameter rather
+            // than a clock: a screenshot of a moving thing taken on a clock is a different picture
+            // every run. The mark draws itself on and the cord layer fades in (#1425), and either
+            // caught part way is a specimen that drifts against itself between two runs on one
+            // tree. Every one of the map's roles cuts here rather than shortening, so what this
+            // forces is exactly the settled frame.
+            .environment(\.argoStillsMotion, true)
     }
 
     /// No map is the GROUND and no city on it, not `AtlasPlan.empty` — that one has a zero extent,

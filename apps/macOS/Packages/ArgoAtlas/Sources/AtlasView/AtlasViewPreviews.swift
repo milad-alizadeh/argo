@@ -110,6 +110,9 @@ private let previewPlan = AtlasPlan(
 // The file a reader has open, traced (#1154). The claim to look at: the marked volume is the same
 // colour it was before it was marked — the band IS the measure, and a mark that repainted it would
 // destroy the fact the reader opened it to read.
+//
+// The mark draws itself on over `ArgoMotion.pin` (#1425), so this preview is the SETTLED end of
+// that: a still cannot show a clock, and the whole mark is what the clock stops at.
 #Preview("Atlas — a file open, traced on the city") {
     AtlasPreview(plan: previewPlan, marks: AtlasPreview.opened("argo/rules/house.md"))
 }
@@ -139,6 +142,9 @@ private let previewTies = AtlasTies(
 
 // The strongest ties across the whole map, in the city: bowed UP off the ground they would
 // otherwise run along, so a cord reads as a thing over the map rather than as a seam of it.
+//
+// The still is the cords ALONE. The light that passes along them runs only while the pointer is on
+// the map (#1425), and nothing is pointing at a preview.
 #Preview("Atlas — the strongest ties, on the city") {
     AtlasPreview(plan: previewPlan, marks: AtlasMarks(ties: previewTies))
 }
@@ -153,6 +159,10 @@ private let previewTies = AtlasTies(
 // A pinned file's own ties, with the switch OFF: the reader pointed at a file and asked what it
 // changes with, which is a question the switch does not answer. The two cords leave the traced
 // volume and nothing else on the map is drawn.
+//
+// The claim #1425 adds to it: the switch's own layer fades, and these do not. They answer a
+// question the reader just asked by clicking, and a question answered on a fade is a click that
+// did not land.
 #Preview("Atlas — a pinned file's own ties") {
     AtlasPreview(
         plan: previewPlan,

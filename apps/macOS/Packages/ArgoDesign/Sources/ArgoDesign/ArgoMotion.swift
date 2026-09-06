@@ -208,7 +208,9 @@ public extension ArgoMotion {
     /// a move pops after the box it belongs to has already settled.
     static let naming = ArgoMotion(duration: 0.10, curve: .easeOut, reducedDuration: nil)
 
-    /// The rim closing around the box the reader pointed at.
+    /// The mark closing around the box the reader OPENED, drawn on edge by edge and then held. Not
+    /// the hover rim, which appears at once: a hover is provisional and follows a pointer that
+    /// moves constantly, and anything drawn on at that rate reads as lag.
     static let pin = ArgoMotion(duration: 0.19, curve: .easeInOut, reducedDuration: nil)
 
     /// The second loop: one lap of a travel cord, the map's report that a dependency is live. A
@@ -255,13 +257,11 @@ public extension ArgoMotion {
     static let unwired: [String: String] = [
         // The Atlas roles are decided (#1420) and the map reads them one surface at a time: the
         // motion is ported per surface, and each of these is waiting on the surface that spends
-        // it. `rise` left this list at #1421, where the city first stood up out of its plates.
+        // it. `rise` left this list at #1421, where the city first stood up out of its plates, and
+        // `layerFade`, `naming`, `pin` and `travel` at #1425, where the cord layer, the name strip
+        // and the open file's mark each got their clock.
         "snap": "the camera flight to a picked box",
         "reshuffle": "the domain re-arrangement",
-        "layerFade": "the map's filter and search repaints",
-        "naming": "the plate name strip",
-        "pin": "the pointer's rim mark",
-        "travel": "the dependency cords",
     ]
 
     /// Spent by `MotionContractTests`, never by a surface: a ceiling a call site reached for
