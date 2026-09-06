@@ -201,7 +201,8 @@ Three things do:
    `TicketsChromeProjection` builds `n results` from `narrowing.matches`, and a question must not
    reach that path.
 3. **The foot names the Account and the elapsed time.** The plain field answers in a frame and
-   says nothing. An answer that took 2.4 seconds and cost a model says so.
+   says nothing. An answer that took seconds and cost a model says so. The measured figure is
+   about 4.4 s, not the `2.4s` this file draws — see **The wait, measured**.
 
 ### A wrong answer, checked
 
@@ -227,6 +228,34 @@ and watches their tickets vanish has lost what they were looking at to an answer
 arrived.
 
 The wait has a **Stop**. Anything past a frame that cannot be stopped is a hang.
+
+### The wait, measured (#1315, ADR-0031)
+
+**The wait is about 4.4 seconds at its floor, not 2.4.** Measured over `codex exec` on a
+nine-ticket fixture, four question shapes, three runs: least 4403–4457 ms, median 4717–5033 ms,
+most 5186–6602 ms. Over a 40-ticket listing of this repo's real open issues: 5.2 s least, about
+6 s typical, 11.4 s at worst — so a real project's backlog is slower than the fixture, not faster.
+
+Two things this settles for the surface:
+
+- **The `2.4s` drawn in the elapsed line is a placeholder and reads low.** Renderings of the foot
+  should draw a measured figure, and `4.4s` is the honest one for a small backlog.
+- **The wait is reopened, and this file does not settle it.** `BacklogAskWait` was drawn against
+  2.4 s and is now a four-to-eleven second wait, which is long enough that a reader spends most of
+  the interaction looking at it. Whether one sentence and a pulse still carry that, and what the
+  **Stop** has to be at that length, is a design question the measurement raises and #1315 has no
+  standing to answer. The transport does make the Stop real: cancelling terminates the child
+  rather than leaving it running, and comes back at once.
+
+**And the foot does not name an Account.** `AccountProvider` is `github | linear` — grants Argo
+issued and holds in the keychain — and Codex's sign-in is the CLI's own, read out of
+`CODEX_HOME/auth.json` and never vouched for by Argo. `BacklogAnswerAttribution` therefore draws a
+DERIVED identity (an address, and a plan word where the token carries one), at the lower honesty
+tier, and goes quiet on the plan rather than inventing a tier.
+
+The answers themselves hold up: all four fixture questions named the right ticket, three of them
+by a route no substring could take, and the one the listing could not support was declined rather
+than guessed (ADR-0031, **What was measured**). The listing is enough to cite from.
 
 ### The query survives, except once
 
@@ -303,7 +332,8 @@ contract does not change.**
   screenshot.
 - **The prose is written, not generated.** It is there to show how long an answer is and how it
   reads. It does not promise what a model would say.
-- **Latency is drawn at one value.** `2.4s` is plausible, not measured. What the design fixes is
+- **Latency is drawn at one value, and that value was wrong.** `2.4s` was plausible rather than
+  measured. #1315 measured it: see **The wait, measured** below. What the design fixes is still
   that the elapsed time is *stated*, not what it is.
 
 ## What #1242 changed, and what survived it
