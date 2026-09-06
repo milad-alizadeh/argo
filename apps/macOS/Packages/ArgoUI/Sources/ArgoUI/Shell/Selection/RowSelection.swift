@@ -100,6 +100,17 @@ package struct RowSelection<Row: Hashable & Sendable>: Equatable, Sendable {
         last = last.flatMap { rows.contains($0) ? $0 : nil }
     }
 
+    /// Rows the list re-keyed under the selection: each key is a row it may still be holding, and
+    /// each value the row that took that one over. Nothing is added and nothing is dropped — a
+    /// range of four stays a range of four — so a row changing the id it is published under leaves
+    /// the selection the reader built exactly as wide as they made it (#1247, #1481).
+    mutating func follow(_ succession: [Row: Row]) {
+        guard !succession.isEmpty else { return }
+        rows = Set(rows.map { succession[$0] ?? $0 })
+        anchor = anchor.map { succession[$0] ?? $0 }
+        last = last.map { succession[$0] ?? $0 }
+    }
+
     /// The window pointed at a row by something that is not a click on this list — a link, a
     /// reveal, reconciliation. One click's worth of selection, never an addition to what the
     /// reader had built.

@@ -210,6 +210,7 @@ extension CockpitPresentation.Session.Chain {
                 handoffFailures: session.handoffFailures,
             ),
             companionChannel: session.companionChannel,
+            absorbedIDs: session.absorbedIDs,
         )
     }
 }

@@ -72,7 +72,7 @@ struct RosterSelectionFromTicketsTests {
 
         room(navigation).openSession("alpha")
         let rekeyed = sessions("alpha-cli", "beta")
-        navigation.reconcile(against: rekeyed.map(\.id))
+        navigation.reconcile(against: rekeyed.map(\.identity))
 
         expectMarked("alpha-cli", in: rekeyed, for: navigation)
     }
@@ -91,7 +91,7 @@ struct RosterSelectionFromTicketsTests {
 
         room(navigation).openSession("beta")
         let rekeyed = sessions("alpha", "beta-cli")
-        navigation.reconcile(against: rekeyed.map(\.id))
+        navigation.reconcile(against: rekeyed.map(\.identity))
 
         expectMarked("alpha", in: rekeyed, for: navigation)
     }
@@ -140,7 +140,7 @@ struct RosterSelectionFromTicketsTests {
     )
         -> CockpitNavigationModel {
         let navigation = CockpitNavigationModel()
-        navigation.reconcile(against: sessions.map(\.id))
+        navigation.reconcile(against: sessions.map(\.identity))
         navigation.room = .tickets
         return navigation
     }

@@ -64,6 +64,11 @@ public extension CockpitPresentation {
         }
 
         public let id: String
+        /// The ids this row's OTHER chain links were published under, oldest first, and empty for
+        /// a chain of one (#1481). Beside `id` because it is the same kind of fact: a window
+        /// pointing at one of these is pointing at THIS Session, under an id it stood on before
+        /// the sweep that found its origin absorbed it (`HubSession.absorbedIDs`).
+        public let absorbedIDs: [String]
         public let title: String
         public let model: String?
         /// The CLI's own word for the effort level, verbatim and unread (#558) — `ClaudeEffort`
@@ -219,6 +224,7 @@ public extension CockpitPresentation {
             transcript: Transcript = .init(),
         ) {
             self.id = id
+            self.absorbedIDs = chain.absorbedIDs
             self.title = title
             self.access = access
             self.status = status

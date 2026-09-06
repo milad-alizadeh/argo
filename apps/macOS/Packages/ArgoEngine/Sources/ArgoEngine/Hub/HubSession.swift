@@ -8,6 +8,12 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The file of the chain's LATEST link. `sourceURL` is the root's and stays the root's, because
     /// the id everything links against must not move when the chain grows.
     private(set) var chainTipURL: URL?
+    /// The ids the links folded into this row were published under, oldest first, and empty for a
+    /// chain of one. A continuation read before its origin stands as a Session of its own
+    /// (`HubJoinPublishable`), and the sweep that finds the origin absorbs it: one row, under an
+    /// id the reader was never pointed at. Kept so a surface holding the absorbed id can follow it
+    /// to the row that took it, rather than read the Session as gone (#1481).
+    public private(set) var absorbedIDs: [String] = []
     /// Set by the Hub off the ownership registry, never asserted here: a transcript file says
     /// nothing about who spawned the CLI that wrote it.
     public internal(set) var provenance: SessionProvenance = .external
@@ -334,6 +340,10 @@ extension HubSession {
 /// Joining the later link of a resume-chain onto the reading its root left.
 extension HubSession {
     mutating func mergeContinuation(_ continuation: HubSession) {
+        // The absorbed link's own id, and every id it had already absorbed: a chain of three is
+        // walked root-first, so the middle link has to carry its own continuation's id across too.
+        absorbedIDs.append(continuation.id)
+        absorbedIDs.append(contentsOf: continuation.absorbedIDs)
         name.merge(continuation.name)
         // A resume file opened and not yet answered does not un-run the reading it continues.
         hasAgentActivity = hasAgentActivity || continuation.hasAgentActivity
