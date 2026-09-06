@@ -25,8 +25,8 @@ struct HubSpawnPairTests {
         #expect(Set(fixture.hub.sessions.map(\.id)) == [first.value, second.value])
         #expect(fixture.hub.sessions.count == 2)
         // Both owned, both waiting on their own PTY: neither claim has taken the other's row.
-        #expect(fixture.hub.sessions.map(\.provenance) == [.managed, .managed])
-        #expect(fixture.hub.sessions.map(\.status) == [.starting, .starting])
+        #expect(fixture.hub.sessions.allSatisfy { $0.provenance == .managed })
+        #expect(fixture.hub.sessions.allSatisfy { $0.status == .starting })
         // And each was told to write a file of its own, which is what makes them two Sessions
         // rather than one name handed out twice.
         #expect(fixture.host.launches.count == 2)
@@ -42,11 +42,11 @@ struct HubSpawnPairTests {
         let second = try await fixture.hub.spawnSession()
 
         await hubObserveToEnd(fixture.hub, fixture.observedSpawn(
-            uuid: spawnedChainID,
+            chainID: spawnedChainID,
             prompt: "Take the roster apart",
         ))
         await hubObserveToEnd(fixture.hub, fixture.observedSpawn(
-            uuid: secondSpawnedChainID,
+            chainID: secondSpawnedChainID,
             prompt: "Read the second ticket",
         ))
 
@@ -76,10 +76,8 @@ struct HubSpawnPairTests {
         #expect(fixture.hub.session(id: first.value)?.status == .starting)
     }
 
-    /// The defect itself (#1479). The second Session picks up a `remote_session_change` partway
-    /// through its run, and every record after it carries a `session_id` naming the FIRST Session.
-    /// Read as an origin, that folded the two into one row: the second lost its title to the first
-    /// and nothing was ever published under the id the panel was holding.
+    /// The second Session picks up a `remote_session_change` partway through its run, and every
+    /// record after it carries a `session_id` naming the FIRST Session (#1479).
     @Test
     func `a second fresh Session is not chained under the first`() async throws {
         let fixture = try SpawnFixture(transcriptIDs: .perSpawn)
@@ -98,10 +96,8 @@ struct HubSpawnPairTests {
     }
 }
 
-/// The two files the pair of CLIs above wrote, named after the transcripts they were told to
-/// write. Keyed by PATH, the way the engine keys a real record.
-private let firstFreshURL = URL(fileURLWithPath: "/tmp/\(spawnedChainID).jsonl")
-private let secondFreshURL = URL(fileURLWithPath: "/tmp/\(secondSpawnedChainID).jsonl")
+/// The file the second of those CLIs wrote. Keyed by PATH, the way the engine keys a real record.
+private let secondFreshURL = transcriptURL(ofChain: secondSpawnedChainID)
 
 @MainActor
 private extension SpawnFixture {
@@ -109,7 +105,7 @@ private extension SpawnFixture {
     /// FIELD, and a hand-built event list would assert nothing about how it is read.
     func observeFreshPair() async throws {
         for (name, url) in [
-            ("freshSessionFirst", firstFreshURL),
+            ("freshSessionFirst", spawnedTranscriptURL),
             ("freshSessionSecond", secondFreshURL),
         ] {
             try await hubObserveToEnd(hub, hubFixtureObservation(name, at: url))

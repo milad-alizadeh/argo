@@ -12,13 +12,13 @@ extension SpawnFixture {
     /// The transcript and the prompt are named so a suite driving TWO fresh spawns can give each
     /// its own file and its own title, which is the pair #1479 is about.
     func observedSpawn(
-        uuid: String = spawnedChainID,
+        chainID: String = spawnedChainID,
         prompt: String = "First prompt",
         cwd: String? = nil,
     )
         -> TranscriptObservation {
         hubTestObservation(
-            id: uuid,
+            id: chainID,
             events: [
                 .cwd(cwd ?? projectURL.path),
                 .prompt(text: prompt, images: [], atMs: Date().epochMs),

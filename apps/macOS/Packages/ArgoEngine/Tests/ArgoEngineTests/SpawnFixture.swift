@@ -107,12 +107,10 @@ struct SpawnFixture {
 
     /// What this fixture answers when a fresh spawn asks which transcript to write (#742).
     enum TranscriptIDs {
-        /// One name for every spawn, so a suite driving a SINGLE spawn can write a stand-in record
-        /// under the name that spawn's claim is waiting for.
+        /// `spawnedChainID`, however many spawns ask.
         case single
-        /// A name per spawn — `spawnedChainID` first, `secondSpawnedChainID` after it. What a
-        /// suite driving TWO fresh spawns through one Hub needs: under `single` the second names
-        /// the uuid the first already bound, so the pair could not be told apart (#1479).
+        /// `spawnedChainID` for the first spawn, `secondSpawnedChainID` for the second, and so on
+        /// (#1479).
         case perSpawn
     }
 
@@ -238,8 +236,10 @@ struct SpawnFixture {
         var spawned = 0
         return {
             spawned += 1
-            guard case .perSpawn = ids, spawned > 1 else { return spawnedChainID }
-            return "\(spawnedChainID)-\(spawned)"
+            switch ids {
+            case .single: return spawnedChainID
+            case .perSpawn: return spawned > 1 ? "\(spawnedChainID)-\(spawned)" : spawnedChainID
+            }
         }
     }
 

@@ -63,15 +63,20 @@ func handedOffSessionObservation(of fixture: SpawnFixture) -> TranscriptObservat
 
 /// The record the fixture's spawned CLI wrote. Both ids a Session is known by come out of this one
 /// URL: the roster and the ownership ledger key it by `path`, `--resume` takes the file name.
-let spawnedTranscriptURL = URL(fileURLWithPath: "/tmp/session-from-cli.jsonl")
+let spawnedTranscriptURL = transcriptURL(ofChain: spawnedChainID)
 /// What the roster carries the fixture's spawned Session as.
 let spawnedSessionID = spawnedTranscriptURL.path
 /// What `--resume` is given to continue it.
 let spawnedChainID = "session-from-cli"
 /// The transcript the SECOND fresh spawn of a fixture is told to write, under
-/// `SpawnFixture.TranscriptIDs.perSpawn`. Two fresh Sessions in one window are two files, and a
-/// suite driving both needs the second name to be as predictable as the first (#1479).
+/// `SpawnFixture.TranscriptIDs.perSpawn` (#1479).
 let secondSpawnedChainID = "\(spawnedChainID)-2"
+
+/// Where a chain's file is, so the one place the two ids are joined is here rather than at each
+/// suite that needs both.
+func transcriptURL(ofChain chainID: String) -> URL {
+    URL(fileURLWithPath: "/tmp/\(chainID).jsonl")
+}
 
 @MainActor
 func spawnedSessionObservation(of fixture: SpawnFixture) -> TranscriptObservation {
