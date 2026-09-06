@@ -63,6 +63,53 @@ branch, runs the gate, force-pushes with a lease, and squash-merges. Anything th
 cleanly is reported and left: a branch that conflicts, one that fails the gate on the new base,
 one that moved while it was being landed. Nothing is merged that was not just gated green.
 
+## What a green suite cannot tell you
+
+A branch cut before a fix landed carries the pre-fix file. When its rebase resolves the conflict
+by taking its own side whole, the fix goes and the test that guarded it goes with it — and every
+suite is green afterwards, because the case that would have failed is no longer in one. #1543's
+connection fix reached `main` and left it again this way inside four hours (#1558).
+
+There is no content rule that separates that from an honest deletion: the rebase rewrites the
+branch's commits, so afterwards the removal is authored by the branch either way. So the removal
+declares itself. Between the rebase and the gate, `land.sh` asks two scripts what the merged
+tree takes AWAY from the base, and anything they report leaves the branch for its lane unless one
+of its own commits names it in a trailer.
+
+| script | what it reads | trailer |
+| --- | --- | --- |
+| `kept-the-tests.sh` | a test name on the base that the merged tree does not have | `Removes-test: <name>` |
+| `undoes-the-base.sh` | a file on the base the merged tree deletes | `Removes-file: <path>` |
+| `undoes-the-base.sh` | a file whose content is a state the base has moved past | `Reverts-file: <path>` |
+
+```
+Removes-test: a tail running inside the connect window reads as connected
+Reverts-file: *
+```
+
+One line, in the commit that does it. `*` in place of a path declares the whole change, which is
+what a repair of a bad merge is; it stays in the log for ever.
+
+Both run before the gate rather than after it, so a refusal costs a `git diff` instead of
+fourteen minutes of Swift.
+
+### What they do not read
+
+Run them by hand with `sh scripts/kept-the-tests.sh . origin/main HEAD`, **from a tree already
+rebased onto `origin/main`** — the comparison is tree against tree, so an un-rebased branch
+reports everything `main` has gained since the cut.
+
+- A test whose name survives while its assertions are weakened, and a name the tree holds twice.
+- Any change that reaches `main` other than through `land.sh`.
+- **The revert rule cannot fire on a clean rebase.** If the branch's diff for a file is empty
+  the rebase leaves the base's own content; if it is not empty and touches what the base touched,
+  the rebase conflicts and `land.sh` already refuses it. The shape it reads arrives by
+  squash-merge from a stale base, or from a lane's own force-pushed conflict resolution. Against
+  #1550 the deletion rule is what fires; the modified files it carried would need the check to
+  run on the merge result, which is work this does not do.
+
+They close the removal nobody noticed, not the one somebody meant.
+
 ## Knowing whether it worked
 
 Every gate run and every step appends a row to `~/Library/Caches/argo-gate/metrics.tsv`, and

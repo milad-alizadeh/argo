@@ -74,6 +74,53 @@ check('a branch that fails the gate on the new base is not merged', () => {
   s.cleanup()
 })
 
+// A gate that reads only what a branch ADDS cannot see a case that is no longer there (#1558).
+check('a branch that removes a test the base has is not merged', () => {
+  const s = scenario({ removesTest: 'silently' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 0, 'a branch that dropped a test must not reach the gate')
+  assert.doesNotMatch(s.gh(), /pr merge/)
+  assert.match(result.output, /removes tests that are on main/)
+  assert.match(result.output, /the case the base is holding/)
+  assert.match(result.output, /0 landed, 1 left/)
+  s.cleanup()
+})
+
+// The other half: the check must cost a deliberate deletion one line, not a lane's whole
+// afternoon. A refusal nobody can clear is a refusal that gets worked around.
+check('a removal the branch declares still lands', () => {
+  const s = scenario({ removesTest: 'declared' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 1, 'a declared removal must reach the gate')
+  assert.match(s.gh(), /pr merge 1 --squash/, `no merge in: ${s.gh()}`)
+  assert.match(result.output, /1 landed, 0 left/)
+  s.cleanup()
+})
+
+// The same question about files rather than cases. 31 of the 154 files #1550 undid were plain
+// deletions, which no test-name check can see (#1558).
+check('a branch that deletes a file the base has is not merged', () => {
+  const s = scenario({ deletesFile: 'silently' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 0, 'a branch that dropped a file must not reach the gate')
+  assert.doesNotMatch(s.gh(), /pr merge/)
+  assert.match(result.output, /undoes main/)
+  assert.match(result.output, /deleted kept\.txt/)
+  s.cleanup()
+})
+
+check('a deletion the branch declares still lands', () => {
+  const s = scenario({ deletesFile: 'declared' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 1, 'a declared deletion must reach the gate')
+  assert.match(s.gh(), /pr merge 1 --squash/, `no merge in: ${s.gh()}`)
+  s.cleanup()
+})
+
 check('--dry-run gates but merges nothing', () => {
   const s = scenario()
   const result = s.run(['1', '--dry-run'])
