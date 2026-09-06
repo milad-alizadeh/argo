@@ -30,6 +30,15 @@ final class TranscriptWatch {
     /// that has awaited a batch has awaited everything that follows from it.
     @ObservationIgnored var onApplied: @MainActor () async -> Void = {}
 
+    /// What must run once a change has reached the roster — which is a PUBLISH and not a batch.
+    ///
+    /// Reconciliation reads the rows, and the join folds its roster on read (`HubJoin`), so a
+    /// consequence hung off every batch would put that fold back under every write — which is the
+    /// cost #1556 took off the opening fill. A publish is the moment the rows are worth reading,
+    /// and it happens at a bounded rate (`+Publishing.swift`), so this costs one fold per window
+    /// however many batches landed inside it.
+    @ObservationIgnored var onPublished: @MainActor () -> Void = {}
+
     /// What must run once a sweep has moved the tails onto a new working set. A batch is not the
     /// only thing that changes
     /// which Session a row is: dropping the path a moved transcript left re-keys its row, and no
@@ -81,12 +90,6 @@ final class TranscriptWatch {
     var sessions: [HubSession] {
         registerOnTheJoin()
         return join.sessions
-    }
-
-    /// Every folder the working set names — see `HubJoin.folders`, which is what a caller running
-    /// after every batch asks instead of `sessions`.
-    var folders: [String] {
-        join.folders
     }
 
     /// "Connected" is a claim about a live source, and a Project with no tail running has none.

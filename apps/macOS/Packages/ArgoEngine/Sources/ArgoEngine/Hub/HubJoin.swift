@@ -14,6 +14,10 @@ struct HubJoin {
     /// quadratic in the size of the set, on the main actor, and a 95-row tree opened at 7 fps for
     /// fifteen seconds (#1556). Nothing downstream can observe the flag: the one read of the roster
     /// takes the fold first.
+    ///
+    /// What makes deferring safe is that `chainKeys` below is retaken by the fold alone: every fact
+    /// that can move the graph is in `HubJoinFacts`, which `apply` compares itself, so a stale
+    /// `chainKeys` is only ever read on a write that already has a fold pending.
     private var needsFold = false
     /// Whether the roster is still in the order a fold left it in. A batch written in place moves
     /// its row's sort key without moving the row, so the order is restored on READ instead — the
@@ -78,10 +82,9 @@ struct HubJoin {
     /// Every folder the set's transcripts name, published or not.
     ///
     /// The one thing a PER-BATCH caller may ask this join for, because it needs no fold: `sessions`
-    /// above folds on read, and a caller running after every batch that asked for it would put the
-    /// fold back on the write path #1556 took it off. A transcript still being read names its
-    /// folder already, so this is a superset of the rows' — which is what the spelling wants
-    /// anyway, and idempotent besides (`WorldReadings.spell`).
+    /// above folds on read. A transcript still being read names its folder already, so this is a
+    /// superset of the rows' — which is what the spelling wants anyway, and idempotent besides
+    /// (`WorldReadings.spell`).
     var folders: [String] {
         transcripts.compactMap(\.session.cwd)
     }

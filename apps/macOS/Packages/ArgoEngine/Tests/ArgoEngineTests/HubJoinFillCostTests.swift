@@ -46,6 +46,21 @@ struct HubJoinFillCostTests {
         #expect(join.rebuilds == PerfBudgets.fillFolds + 2)
     }
 
+    /// The other caller's half: what runs after every batch asks the join for the FOLDERS the
+    /// batch named, and that answer is off the transcripts. Reading it folds nothing, so hanging it
+    /// on every batch cannot put the fold back under the writes.
+    @Test
+    func `the folders a batch named are read without a fold`() {
+        var join = Self.fill(of: 4)
+
+        #expect(join.folders == (0 ..< 4).map { "/tmp/row-\($0)" })
+        #expect(join.rebuilds == 0)
+        // And the fold is still there to be taken, so the zero above is a read that needs none
+        // rather than a join nothing ever marked.
+        #expect(join.sessions.count == 4)
+        #expect(join.rebuilds == PerfBudgets.fillFolds)
+    }
+
     /// Enough of a reading behind each row that a fold has something to copy: the cost is a new
     /// chain graph over every transcript, and a set of empty Sessions hides that.
     private static let backfill = 30
@@ -64,7 +79,7 @@ struct HubJoinFillCostTests {
     }
 
     private static func read(from index: Int) -> [TranscriptEvent] {
-        (0 ..< backfill).flatMap { record in
+        [TranscriptEvent.cwd("/tmp/row-\(index)")] + (0 ..< backfill).flatMap { record in
             [
                 TranscriptEvent.recordIdentity(uuid: "row-\(index)-record-\(record)"),
                 .message(markdown: "record \(record) of row \(index)"),

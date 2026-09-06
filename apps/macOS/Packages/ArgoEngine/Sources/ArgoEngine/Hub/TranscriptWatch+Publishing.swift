@@ -54,5 +54,6 @@ extension TranscriptWatch {
         stopPublishing()
         stampTheJoin()
         publishedAt = Date().timeIntervalSince1970
+        onPublished()
     }
 }
