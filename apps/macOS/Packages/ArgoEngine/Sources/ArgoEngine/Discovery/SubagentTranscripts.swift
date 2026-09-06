@@ -22,7 +22,7 @@ public struct SubagentTranscript: Sendable, Equatable {
 /// two a microsecond apart are both seen. `tool-results/` is absent by construction: the walk never
 /// enters it, so nothing written there is a change this stamp can notice — which is the point,
 /// since the walk keeps nothing from in there either.
-public struct SubagentTreeStamp: Sendable, Equatable {
+struct SubagentTreeStamp: Sendable, Equatable {
     var directoryDates: [String: Date]
 
     /// Whether the tree still looks exactly as this stamp recorded it.
@@ -42,20 +42,28 @@ public struct SubagentTreeStamp: Sendable, Equatable {
 
 /// What one walk of a Session's Subagent tree found, and the stamp that says the next one can be
 /// skipped.
-public struct SubagentWalk: Sendable, Equatable {
-    public let transcripts: [SubagentTranscript]
+struct SubagentWalk: Sendable, Equatable {
+    let transcripts: [SubagentTranscript]
     let stamp: SubagentTreeStamp
 }
 
 /// One tree to walk: whose transcript it sits beside, and what the last walk of it left.
 ///
 /// A sweep asks for the whole working set at once rather than a tree at a time, so the walk costs
-/// ONE hop off the main actor and one back rather than a pair per Session. The sweep's main-actor
-/// half then runs as one block again, the way it did when the walk was made inline.
-public struct SubagentWalkRequest: Sendable {
-    public let transcriptID: String
-    public let parentURL: URL
-    let stamp: SubagentTreeStamp?
+/// ONE hop off the main actor and one back rather than a pair per Session. That leaves the sweep's
+/// main-actor half a single block, as it was when the walk was made inline — and one window in
+/// which a stop can overtake it rather than one per Session (`SubagentTails.refresh`).
+struct SubagentWalkRequest: Sendable {
+    let transcriptID: String
+    let parentURL: URL
+    /// Filled in by `SubagentTails`, which is the only holder of what the last walk left. Absent
+    /// is a tree to walk from scratch.
+    var stamp: SubagentTreeStamp?
+
+    init(transcriptID: String, parentURL: URL) {
+        self.transcriptID = transcriptID
+        self.parentURL = parentURL
+    }
 }
 
 /// The Subagent transcripts beside one Session's own record.
@@ -70,14 +78,14 @@ public struct SubagentWalkRequest: Sendable {
 /// the record ROOT, so a CLI writing under any other Project wakes this one. It is bounded twice
 /// over for that: `tool-results/` is never entered, and a tree whose `SubagentTreeStamp` still
 /// holds is not entered at all (#1498).
-public enum SubagentTranscripts {
+enum SubagentTranscripts {
     /// Ordered by `agentID`, which is arbitrary but stable — a directory walk has no order of its
     /// own, and the order the work was handed over in is a fact about the parent's calls rather
     /// than about the files.
     ///
     /// `nil` where `stamp` still holds: the tree has not moved, so the answer is the one the caller
     /// already has rather than an empty one.
-    public static func beside(
+    static func beside(
         _ parentURL: URL,
         unchangedSince stamp: SubagentTreeStamp?,
     )
@@ -91,6 +99,16 @@ public enum SubagentTranscripts {
     private static func walk(_ rootURL: URL) -> SubagentWalk {
         var transcripts: [SubagentTranscript] = []
         var directoryDates: [String: Date] = [:]
+        // BEFORE the enumerator, which reads the root's contents at its first step. A date taken
+        // after the walk would cover a file created into the root DURING it: not returned below,
+        // yet stamped as seen, so no later sweep would look again and the fan-out would be lost
+        // until some other directory in the tree happened to move.
+        //
+        // The rule the whole stamp rests on: a directory's recorded date must be read no later
+        // than its contents were. Older is safe — it mismatches the truth and costs one re-walk.
+        // Newer is the bug. Each directory below is stamped as it is yielded, which is at or
+        // before the enumerator descends into it, so they satisfy the same rule.
+        let rootDate = modificationDate(of: rootURL)
         if let entries = FileManager.default.enumerator(
             at: rootURL,
             includingPropertiesForKeys: walkedKeys,
@@ -113,25 +131,32 @@ public enum SubagentTranscripts {
         }
         return SubagentWalk(
             transcripts: transcripts.sorted { $0.agentID < $1.agentID },
-            stamp: stamp(of: rootURL, under: directoryDates),
+            stamp: stamp(of: rootURL, at: rootDate, under: directoryDates),
         )
     }
 
-    /// The root's own date, and the tree's under it. Stamped by hand because an enumerator yields
-    /// what is UNDER the directory it was given and never that directory — and a fan-out's FIRST
-    /// file moves the root and nothing else.
+    /// The root's own date, and the tree's under it. The root is carried by hand because an
+    /// enumerator yields what is UNDER the directory it was given and never that directory — and a
+    /// fan-out's FIRST file moves the root and nothing else.
     ///
     /// A root with no date is a `subagents/` directory that is not there. That stamps as nothing at
     /// all, which is the one stamp that is never still true: a stamp of an absent tree cannot say
     /// whether the tree has since been created, and a Session that delegated nothing must still
     /// notice its first delegation.
-    private static func stamp(of rootURL: URL, under dates: [String: Date]) -> SubagentTreeStamp {
-        guard let rootDate = try? rootURL
-            .resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
-        else { return SubagentTreeStamp(directoryDates: [:]) }
+    private static func stamp(
+        of rootURL: URL,
+        at rootDate: Date?,
+        under dates: [String: Date],
+    )
+        -> SubagentTreeStamp {
+        guard let rootDate else { return SubagentTreeStamp(directoryDates: [:]) }
         var directoryDates = dates
         directoryDates[rootURL.path] = rootDate
         return SubagentTreeStamp(directoryDates: directoryDates)
+    }
+
+    private static func modificationDate(of url: URL) -> Date? {
+        try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
     /// A directory's own modification date, or `nil` for anything that is not a directory. One stat

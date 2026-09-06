@@ -75,11 +75,7 @@ func writeSubagent(
 /// spelling the batch out at every assertion.
 extension Engine {
     func walked(beside parentURL: URL) async -> [SubagentTranscript] {
-        let request = SubagentWalkRequest(
-            transcriptID: parentURL.path,
-            parentURL: parentURL,
-            stamp: nil,
-        )
+        let request = SubagentWalkRequest(transcriptID: parentURL.path, parentURL: parentURL)
         return await subagents(beside: [request])[parentURL.path]?.transcripts ?? []
     }
 }

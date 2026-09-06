@@ -48,12 +48,14 @@ public struct Engine: Sendable {
     /// Kept apart from the observation below for the reason discovery's is: observing a file OPENS
     /// it, and this is asked on every sweep about files that are already being tailed.
     ///
-    /// `async` and NONISOLATED, which together are the whole point: a nonisolated async function
-    /// runs on the generic executor rather than on its caller's actor, so the recursive walks this
-    /// makes happen off the main actor even though every caller is on it. What crosses back is
-    /// `Sendable` values. The WHOLE working set in one call, so a sweep suspends once rather than
-    /// once per Session (#1498).
-    public func subagents(
+    /// `@concurrent` is the whole point, and is spelled rather than inherited: it puts the walks on
+    /// the generic executor, so they run off the main actor though every caller is on it. A bare
+    /// `nonisolated async` reads the same way today and stops doing so under
+    /// `NonisolatedNonsendingByDefault` — which would put the recursive walk back on the caller's
+    /// actor with no compile error and no failing test, the exact regression this exists to
+    /// prevent (#1498). What crosses back is `Sendable` values.
+    @concurrent
+    func subagents(
         beside requests: [SubagentWalkRequest],
     ) async
         -> [String: SubagentWalk] {

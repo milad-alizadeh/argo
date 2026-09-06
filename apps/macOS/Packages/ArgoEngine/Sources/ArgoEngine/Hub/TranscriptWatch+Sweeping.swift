@@ -39,14 +39,10 @@ extension TranscriptWatch {
         // Every sweep, not only the ones that moved a tail: a fan-out's files appear beside a
         // transcript that is already in the working set, so nothing above would notice them.
         //
-        // The whole set in ONE call, which is one suspension of the main actor rather than one per
-        // Session: the walk runs off the actor now, and a sweep that came back to it between every
-        // transcript would be a sweep other main-actor work interleaves with at each of those
-        // points (#1498).
         await subagents.refresh(
             beside: join.transcripts
                 .filter { isObserving(transcriptID: $0.id) }
-                .map { (transcriptID: $0.id, parentURL: $0.sourceURL) },
+                .map { SubagentWalkRequest(transcriptID: $0.id, parentURL: $0.sourceURL) },
         )
         // Last, so what it reads is the working set this sweep settled on rather than the one it
         // started from. A row re-keyed by the drop above reaches the claim that owns it here, and
