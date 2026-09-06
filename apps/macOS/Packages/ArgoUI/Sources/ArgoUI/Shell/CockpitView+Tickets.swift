@@ -142,6 +142,9 @@ extension CockpitView {
     /// takes its gap, so every room paid for the rooms listed above it: the strip opened at 60pt
     /// in Sessions and 68pt in Tickets, and the Atlas is third. `.flush` is the difference, and
     /// both numbers are `roster` and `ticketsRoom` rendered and measured either side of it.
+    ///
+    /// Three sidebars for four rooms: Code takes `ShellSidebar`, because the two named gates leave
+    /// it there. `RoomSidebarPlacementTests` is what notices if that stops being true.
     @ViewBuilder func sidebar(tickets: TicketsRoom) -> some View {
         @Bindable var navigation = navigation
         let isTickets = navigation.room == .tickets

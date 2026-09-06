@@ -27,8 +27,10 @@ package struct AtlasSidebar: View {
 
     package var body: some View {
         // The strip sits above the scroll and not in it, because it switches the window rather
-        // than belonging to this room's own content — and on the same vertical as the other two
-        // rooms', which is `RoomSidebar`'s whole job (#816).
+        // than belonging to this room's own content — and on the same vertical as the other rooms',
+        // which is `RoomSidebar`'s whole job (#816). It was a `safeAreaInset` here and is now the
+        // stack's first child, so this rail's sections no longer scroll under the strip. That is
+        // the trade for one placement: the other rooms never did.
         RoomSidebar(room: $cockpitRoom) {
             ScrollView(.vertical) {
                 VStack(spacing: ArgoSpacing.flush) {
