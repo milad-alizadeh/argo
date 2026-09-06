@@ -11,7 +11,10 @@ import SwiftUI
 struct AtlasPlateNames: View {
     @Environment(\.argo) private var argo
 
-    let plates: [AtlasPlateFrame]
+    /// The plan, the camera and the fit — one value, and the reason the name lands on the plate it
+    /// names: a descent seats the camera on one plate now (#1490), so a strip read in PLAN points
+    /// would stay where that folder used to be while the picture moved past it.
+    let projection: AtlasProjection
 
     /// What the name keeps between itself and the plate's own edge, on both sides.
     ///
@@ -21,9 +24,9 @@ struct AtlasPlateNames: View {
     private static let sideRoom = ArgoSpacing.tight
 
     var body: some View {
-        ForEach(plates, id: \.path) { plate in
-            let strip = Self.room(in: plate.nameStrip)
-            if plate.carriesName {
+        ForEach(projection.plan.plates, id: \.path) { plate in
+            if let band = projection.nameBand(of: plate) {
+                let strip = Self.room(in: band)
                 Text(plate.name)
                     // The interface face, not the machine one: a plate's name is a folder as the
                     // reader thinks of it, and the approved render sets it in the proportional

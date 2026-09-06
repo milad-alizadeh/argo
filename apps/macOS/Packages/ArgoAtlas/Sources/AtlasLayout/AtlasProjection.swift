@@ -45,6 +45,43 @@ package struct AtlasProjection: Equatable, Sendable {
         plan.extent
     }
 
+    /// The band a plate's name is drawn in, in the view's own points, or nothing where the plate
+    /// is too small ON SCREEN to hold a line of type (#1490).
+    ///
+    /// Asked here rather than off the plate, because the plate carries its strip in PLAN points
+    /// and the seat means the two are no longer the same thing: standing in a folder magnifies it,
+    /// and a name laid out in plan points would stay where the folder used to be. The band keeps
+    /// the type's own height at the top of the strip rather than growing with it — a caption is
+    /// set at one size however close the camera stands.
+    ///
+    /// Flat only, which is the one place a name is drawn at all: the mapping below is a rect
+    /// because the projection is affine there, and turned it would be a quadrilateral.
+    package func nameBand(of plate: AtlasPlateFrame) -> CGRect? {
+        let strip = viewRect(of: plate.nameStrip)
+        // The tiler's own answer FIRST, in plan points. The camera at the fit is the identity, and
+        // every strip the tiler cut is exactly `plateHeader` tall — so a height read back through
+        // the projection decides those on a rounding bit, and the map loses half its names to
+        // arithmetic. A seat can only ever add names, so the screen is asked only about the plates
+        // the plan says are too small to carry one.
+        guard plate.carriesName || strip.height >= AtlasFraming.plateHeader else { return nil }
+        return CGRect(
+            x: strip.minX, y: strip.minY, width: strip.width, height: AtlasFraming.plateHeader,
+        )
+    }
+
+    /// One rect of the plan, on the ground, in the view's own points. Flat only, for `nameBand`'s
+    /// reason.
+    package func viewRect(of rect: CGRect) -> CGRect {
+        let near = viewPoint(x: rect.minX, y: rect.minY, height: 0)
+        let far = viewPoint(x: rect.maxX, y: rect.maxY, height: 0)
+        return CGRect(
+            x: min(near.x, far.x),
+            y: min(near.y, far.y),
+            width: abs(far.x - near.x),
+            height: abs(far.y - near.y),
+        )
+    }
+
     /// One point of the model, in the view's own points: x right and y DOWN, which is where
     /// SwiftUI draws.
     ///

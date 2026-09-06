@@ -142,12 +142,17 @@ public struct AtlasView: View {
                 }
             }
             .overlay {
-                // The names are laid out in PLAN coordinates, which is the map seen straight down.
-                // Turned, every one of them would sit where its folder used to be — a caption over
-                // a building it does not name is worse than no caption. The city gets its names
-                // when something can place them in the picture rather than in the plan.
+                // Only flat. A name is laid out on the ground, and turned, every one of them would
+                // sit where its folder used to be — a caption over a building it does not name is
+                // worse than no caption. The city gets its names when something can place them in
+                // the picture rather than on the ground.
+                //
+                // CLIPPED, because a descent seats the camera on one plate (#1490) and the plates
+                // outside it run off the stage: the shader stops at the drawable's edge and words
+                // drawn over it do not, so a folder nobody can see would caption the rail.
                 if projection.camera.isFlat {
-                    AtlasPlateNames(plates: plan.plates)
+                    AtlasPlateNames(projection: projection)
+                        .clipped()
                 }
             }
             .frame(width: plan.extent.width, height: plan.extent.height)

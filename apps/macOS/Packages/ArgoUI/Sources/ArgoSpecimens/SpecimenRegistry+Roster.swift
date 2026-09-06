@@ -83,8 +83,13 @@ extension SpecimenRegistry {
         // level down it is the root, a chevron and where you are, and three levels down it carries
         // the crumbs between them that make every step of it a control. Neither is reachable
         // without a click on a plate.
+        //
+        // A third frame joined them at #1490: the same repository seen whole. The three are one
+        // set — the claim is that they hold the same rectangles at three scales, which is what one
+        // tiling and a camera over it means and what re-tiling per level could not do.
         SpecimenEntry("atlasDescent") { AtlasDescentSpecimen() },
         SpecimenEntry("atlasDescentShallow") { AtlasDescentShallowSpecimen() },
+        SpecimenEntry("atlasDescentRoot") { AtlasDescentRootSpecimen() },
         // The same mark on the CITY, where a volume's whole silhouette is traced rather than one
         // rectangle. The room ships flat, so this is the only frame that shows the five strokes —
         // and the claim to look at is that the traced tower is the colour it was before.

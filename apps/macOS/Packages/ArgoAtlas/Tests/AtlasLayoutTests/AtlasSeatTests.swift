@@ -132,12 +132,19 @@ struct AtlasSeatTests {
             extent: extent,
             plates: [
                 .init(path: "a", rect: CGRect(origin: .zero, size: extent), depth: 0),
-                .init(path: "a/sliver", rect: CGRect(x: 10, y: 10, width: 0.4, height: 0.3),
-                      depth: 1),
+                .init(
+                    path: "a/sliver",
+                    rect: CGRect(x: 10, y: 10, width: 0.4, height: 0.3),
+                    depth: 1,
+                ),
             ],
             tiles: [
-                .init(path: "a/one", rect: CGRect(x: 0, y: 0, width: 800, height: 600),
-                      band: .hot, height: 4),
+                .init(
+                    path: "a/one",
+                    rect: CGRect(x: 0, y: 0, width: 800, height: 600),
+                    band: .hot,
+                    height: 4,
+                ),
             ],
         )
         let camera = AtlasCamera.flat(over: extent)
@@ -160,6 +167,39 @@ struct AtlasSeatTests {
         for folder in folded.covers {
             #expect(plan.plate(standingIn: folder)?.rect == folded.rect)
         }
+    }
+
+    /// A plate's name follows the picture, because the seat moved the picture out from under the
+    /// plan: a name placed in plan points would caption where the folder used to be.
+    @Test func `a plate's name band moves with the seat`() throws {
+        let plan = try Self.plan()
+        let camera = AtlasCamera.flat(over: plan.extent)
+        let plate = try #require(plan.plate(standingIn: Self.shallow))
+
+        let top = AtlasProjection(of: plan, through: camera)
+        let inside = AtlasProjection(of: plan, through: camera, standingIn: Self.shallow)
+
+        let there = try #require(top.nameBand(of: plate))
+        let here = try #require(inside.nameBand(of: plate))
+        #expect(here != there)
+        // Seated, the folder's own name starts at the left edge of the stage, because the plate it
+        // names is what the stage is now framing.
+        #expect(here.minX < there.minX)
+    }
+
+    /// **At the fit, every name the tiler placed is still drawn.** Read back through the
+    /// projection, a strip cut to exactly the header's height lands a rounding bit under it, and
+    /// the map loses half its captions to arithmetic nobody can see in a screenshot.
+    @Test func `the names at the fit are exactly the ones the tiler cut`() throws {
+        let plan = try Self.plan()
+        let projection = AtlasProjection(
+            of: plan, through: AtlasCamera.flat(over: plan.extent),
+        )
+
+        let named = plan.plates.filter { projection.nameBand(of: $0) != nil }
+
+        #expect(named.map(\.path) == plan.plates.filter(\.carriesName).map(\.path))
+        #expect(!named.isEmpty)
     }
 
     /// **The city is not seated.** Its camera is the reader's — they drive its turn and tilt — and
