@@ -100,13 +100,36 @@ read afterwards:
 ```
 Removes-file: apps/macOS/.../FrameProbePass.swift
 Reverts-file: apps/macOS/.../TranscriptWatch.swift
+Removes-file: docs/designs/tickets-room/
 ```
 
-One exact path per trailer, on any commit the branch adds, read over `origin/main..HEAD` after the
-rebase. Never a glob: a pattern that matched more than its author meant is the same silence the
-guard exists to break. A refactor that moves twenty files declares twenty paths — measured against
-the last twenty-five landings, four would have needed a trailer at all, and #1550 would have
-needed thirty-one it did not have.
+An exact path, or a directory written with its trailing slash, on any commit the branch adds, read
+over `origin/main..HEAD` after the rebase. Never a glob: a pattern that matched more than its
+author meant is the same silence the guard exists to break. Measured against the last twenty-five
+landings, four carry deletions that need a trailer at all — 42, 18, 2 and 1 paths — and the
+directory form is what keeps the 42 from being forty-two lines. #1550 would have needed
+thirty-one it did not have.
+
+### Why the deletion check does not ask where the branch was cut
+
+The obvious narrowing is to refuse a deletion only for a file `main` has touched **since the
+branch was cut**, and leave long-settled files alone. It was measured and rejected: it would have
+caught none of #1550.
+
+For a rebase to apply a deletion **cleanly**, the branch's preimage of that file has to match what
+the base holds — otherwise git raises a delete/modify conflict and `land.sh` skips the branch
+before any of this. So a cleanly-deleted file is one whose base-side work the branch already
+contained, which puts the merge-base at or after the commit that did it. The window a cut-based
+rule looks in is empty by construction in exactly the case that matters. The same reasoning is why
+the restore check reads `main`'s history rather than the merge-base: once a lane has merged the
+base in and resolved by taking its own side, the merge-base has stopped describing where the
+branch's content came from.
+
+What the deletions in #1550 do look like, and what the narrowing was reaching for, is recency:
+all thirty-one were of files `main` had touched within its last nine commits, while the legitimate
+refactors in the same window mostly delete files untouched for 100–380. That is a real signal and
+not a safe rule — two of those refactors also delete files six commits old — so it is not the one
+in force.
 
 ## Knowing whether it worked
 

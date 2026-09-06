@@ -123,11 +123,33 @@ tree_blob() {
 #
 #   Removes-file: <path>     a file this branch deletes on the base
 #   Reverts-file: <path>     a file this branch puts back over a change the base made
+#   Removes-file: <dir>/     every path under this directory, trailing slash required
 #
-# One exact path per trailer, never a glob: a pattern that matched more than its author meant is
-# the same silence this guard exists to break.
+# An exact path, or a directory ending in `/`. Never a glob — a pattern that matched more than
+# its author meant is the same silence this guard exists to break — but a refactor that moves a
+# whole folder should not have to list forty paths to say one thing, and a directory a reader can
+# see the bounds of is not the shape that lost #1550. The slash must be written: `docs/designs`
+# is a file, `docs/designs/` is the folder.
 land_declared() {
-  printf '%s\n' "$DECLARED" | grep -Fxq -- "$1"
+  file=$1
+  printf '%s\n' "$DECLARED" |
+    while IFS= read -r declared; do
+      [ -n "$declared" ] || continue
+      if [ "$declared" = "$file" ]; then
+        echo covered
+        break
+      fi
+      case "$declared" in
+        */)
+          case "$file" in
+            "$declared"*)
+              echo covered
+              break
+              ;;
+          esac
+          ;;
+      esac
+    done | grep -q covered
 }
 
 # What landing this branch would take BACKWARDS on the base, one path per line, or nothing.

@@ -74,6 +74,10 @@ function seed(clone, git, { conflicting, reverting, declares }) {
   writeFileSync(path.join(clone, 'shared.txt'), 'base\n')
   // The file `main` still has and the branch will remove: the shape of the 31 deletions in #1570.
   writeFileSync(path.join(clone, 'kept.txt'), 'kept\n')
+  // And a folder of them, for the declaration that names a directory rather than forty paths.
+  mkdirSync(path.join(clone, 'kept'), { recursive: true })
+  writeFileSync(path.join(clone, 'kept/one.txt'), 'one\n')
+  writeFileSync(path.join(clone, 'kept/two.txt'), 'two\n')
   git(clone, 'add', '-A')
   git(clone, 'commit', '-qm', 'seed')
   git(clone, 'push', '-q', 'origin', 'main')
@@ -81,11 +85,14 @@ function seed(clone, git, { conflicting, reverting, declares }) {
   git(clone, 'checkout', '-qb', 'feature')
   if (reverting === 'delete') {
     rmSync(path.join(clone, 'kept.txt'))
+    rmSync(path.join(clone, 'kept'), { recursive: true })
   } else {
     writeFileSync(path.join(clone, conflicting ? 'shared.txt' : 'feature.txt'), 'branch\n')
   }
   git(clone, 'add', '-A')
-  git(clone, 'commit', '-qm', declares ? 'the work\n\nRemoves-file: kept.txt\n' : 'the work')
+  // One exact path and one directory: `kept/one.txt` and `kept/two.txt` are never named.
+  const removals = 'the work\n\nRemoves-file: kept.txt\nRemoves-file: kept/\n'
+  git(clone, 'commit', '-qm', declares ? removals : 'the work')
   git(clone, 'push', '-q', '-u', 'origin', 'feature')
 
   // main moves on, as it does about ninety times a day.

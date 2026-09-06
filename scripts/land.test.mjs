@@ -159,7 +159,18 @@ check('a refused branch is not gated, and is refused under --dry-run too', () =>
   s.cleanup()
 })
 
-check('a deletion the branch declares lands', () => {
+check('every file of a removal is refused, not just the one at the top', () => {
+  const s = scenario({ reverting: 'delete' })
+  const result = s.run(['1'])
+  for (const file of ['kept\\.txt', 'kept/one\\.txt', 'kept/two\\.txt']) {
+    assert.match(result.output, new RegExp(`deletes ${file}`), `${file} was not named`)
+  }
+  s.cleanup()
+})
+
+check('a deletion the branch declares lands, by path or by directory', () => {
+  // `kept/one.txt` and `kept/two.txt` are covered by `Removes-file: kept/` and never named: a
+  // refactor that moves a folder says one thing, not forty.
   const s = scenario({ reverting: 'delete', declares: true })
   const result = s.run(['1'])
   assert.equal(result.status, 0, result.output)
