@@ -84,6 +84,12 @@ package struct BacklogList: View {
         }
     }
 
+    /// Every row this list HAS, whatever is shut — what `RowSelectionReactions` cuts the selection
+    /// by, beside the drawn rows.
+    private var heldRows: [Int] {
+        TicketsRoomProjection.drawn(rows, shut: []).map(\.id)
+    }
+
     /// Every row a range may reach: what the list is drawing now, folds resolved. A row behind a
     /// shut parent is not in here, which is what keeps a range off rows nobody can see (#1247).
     private var drawnRows: [Int] {
@@ -118,7 +124,7 @@ package struct BacklogList: View {
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
         .accessibilityLabel("Backlog")
-        .modifier(RowSelectionReactions(held: held.picking, drawn: drawnRows))
+        .modifier(RowSelectionReactions(held: held.picking, drawn: drawnRows, membership: heldRows))
     }
 
     /// The list `Closed` draws: one run of rows in the order the projection put them, and no

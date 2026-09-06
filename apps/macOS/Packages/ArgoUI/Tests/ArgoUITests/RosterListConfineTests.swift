@@ -28,8 +28,8 @@ struct RosterListConfineTests {
         // The list is still drawing the rows it had before the re-key, which is where the new id
         // is not.
         let held = Start.hold(navigation)
-        held.confineToDrawn(Start.provisional.map(\.id))
-        held.followClick(to: navigation.sessionSelection.last)
+        held.confineToDrawn(Start.provisional.map(\.id), of: Start.provisional.map(\.id))
+        held.follow(drawnRow: navigation.sessionSelection.last)
 
         #expect(
             navigation.session == Start.cli,
@@ -45,13 +45,35 @@ struct RosterListConfineTests {
         )
     }
 
-    /// And a click still moves it, because a click always names a row.
+    /// And the exemption ends where the list HAS the row and is withholding it. A row the reader
+    /// put away behind a shut fold or the archive foot is cut, which is the whole of #1247: a menu
+    /// opened on a visible row may not act on one nobody can see. Without this the deck's row
+    /// stayed selected for as long as the fold stayed shut, since reconciliation keeps an id the
+    /// roster still publishes.
+    @Test
+    func `cuts the drawn row the list is withholding behind a fold`() async {
+        let navigation = Start.navigation()
+
+        await Start.start().run(on: 899, in: navigation)
+        navigation.reconcile(against: Start.provisional.map(\.identity))
+        // The fresh row is the list's, and the list has put it away.
+        Start.hold(navigation).confineToDrawn(
+            ["alpha", "beta"], of: Start.provisional.map(\.id),
+        )
+
+        #expect(
+            !navigation.sessionSelection.contains(Start.claim),
+            "A row the reader folded away is still in what the menu acts on (#1247).",
+        )
+    }
+
+    /// And a row the reader points at still moves it, because that names a row.
     @Test
     func `still follows a row the reader clicks`() async {
         let navigation = Start.navigation()
 
         await Start.start().run(on: 899, in: navigation)
-        Start.hold(navigation).followClick(to: "beta")
+        Start.hold(navigation).follow(drawnRow: "beta")
 
         #expect(navigation.session == "beta")
     }
