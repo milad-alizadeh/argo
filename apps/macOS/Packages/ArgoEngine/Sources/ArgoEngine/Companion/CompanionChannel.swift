@@ -55,16 +55,16 @@ public final class CompanionChannel {
         self.onLiveness = onLiveness
     }
 
-    /// Open this claim's channel and write the plugin that reaches it. `gatedBy` names the
-    /// permission gate's socket, when one was opened, so the bundle installs the hook that dials
-    /// it — the channel only carries the path; the gate itself is `PermissionChannel`'s.
+    /// Open this claim's channel and write the plugin that reaches it. `gatedBy` is the permission
+    /// gate's grant, when one was opened, so the bundle installs the hook that dials it — the
+    /// channel only carries the grant; the gate itself is `PermissionChannel`'s.
     func invite(
         _ claim: SessionOwnership.ClaimID,
-        gatedBy permissionSocketPath: String? = nil,
+        gatedBy grant: PermissionGrant? = nil,
     ) throws
         -> CompanionInvitation {
         do {
-            let invitation = try open(claim, gatedBy: permissionSocketPath)
+            let invitation = try open(claim, gatedBy: grant)
             lastRefusal = nil
             return invitation
         } catch {
@@ -75,7 +75,7 @@ public final class CompanionChannel {
 
     private func open(
         _ claim: SessionOwnership.ClaimID,
-        gatedBy permissionSocketPath: String?,
+        gatedBy grant: PermissionGrant?,
     ) throws
         -> CompanionInvitation {
         try scope.createDirectory()
@@ -84,7 +84,7 @@ public final class CompanionChannel {
             forClaim: claim,
             under: scope.root,
             socketPath: socketPath,
-            gatedBy: permissionSocketPath,
+            gatedBy: grant,
         )
         let endpoint = CompanionEndpoint { [weak self] fact in self?.onFact(claim, fact) }
         let socket = CompanionSocket(

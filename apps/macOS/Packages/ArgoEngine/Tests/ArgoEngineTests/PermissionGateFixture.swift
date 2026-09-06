@@ -52,12 +52,17 @@ enum PermissionGate {
     }
 
     /// The hook's decision object, unwrapped from the reply's envelope.
+    ///
+    /// The notice the gate sends ahead of a decision it does not have yet is skipped, exactly as
+    /// the shipped hook skips it (#1553): a call that becomes a prompt is acknowledged first and
+    /// answered later, so the first line back is not always the answer.
     @MainActor
     static func decision(read client: CompanionClient) async throws -> JSONValue {
         await Task.yield()
         var reply: JSONValue?
         await settle {
-            reply = client.receive()
+            guard let line = client.receiveLine(), line != GateNotice.held else { return false }
+            reply = JSONValue.record(fromLine: line)
             return reply != nil
         }
         return try #require(reply?["hookSpecificOutput"])

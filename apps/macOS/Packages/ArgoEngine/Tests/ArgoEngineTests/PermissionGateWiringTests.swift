@@ -35,6 +35,13 @@ struct PermissionGateWiringTests {
         #expect(hooks.contains("\"timeout\": \(PermissionPatience.hookTimeoutSeconds)"))
         #expect(hook.contains("\(claim.value).gate.sock"))
         #expect(!hook.contains("__ARGO_PERMISSION_SOCKET__"))
+        // The handshake's own two substitutions (#1553): a placeholder left standing would give
+        // the hook a clock of no seconds or a word no gate ever says, and either one denies every
+        // call the moment it is asked about.
+        #expect(hook.contains(GateNotice.held))
+        #expect(hook.contains("\(PermissionPatience.default.acknowledgementSeconds)"))
+        #expect(!hook.contains("__ARGO_GATE_HELD__"))
+        #expect(!hook.contains("__ARGO_GATE_ACK_SECONDS__"))
     }
 
     @Test

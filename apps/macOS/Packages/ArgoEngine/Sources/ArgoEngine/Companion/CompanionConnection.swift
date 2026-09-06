@@ -111,6 +111,15 @@ final class CompanionConnection {
         }
     }
 
+    /// One line that is NOT the reply: the connection stays open and nothing is owed by it. What
+    /// `endsAfterReply` closes on is the answer, and a notice sent before one is still a wait
+    /// (#1553).
+    func notify(_ line: String) {
+        guard descriptor >= 0 else { return }
+        outbox += Array((line + "\n").utf8)
+        flush()
+    }
+
     private func send(_ reply: String) {
         outbox += Array((reply + "\n").utf8)
         closeWhenDrained = endsAfterReply

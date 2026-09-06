@@ -46,6 +46,8 @@ final class CompanionClient {
 
     /// Readable so a test can name the number this client holds; `-1` once it has been released.
     private(set) var descriptor: Int32
+    /// Bytes read off the socket that have not been framed into a line yet — see `receiveLine`.
+    private var pending: [UInt8] = []
 
     /// A dial that waits for the listener rather than assuming one attempt is enough (#915).
     ///
@@ -145,14 +147,33 @@ final class CompanionClient {
     /// One line back, or nothing yet. The caller polls this while yielding, so "nothing yet" and
     /// "never" are told apart by the caller's own bound rather than by a socket timeout.
     func receive() -> JSONValue? {
+        receiveLine().flatMap { JSONValue.record(fromLine: $0) }
+    }
+
+    /// The same, unparsed — what a caller reading a line the gate sends that is NOT a reply object
+    /// needs (`GateNotice`, #1553).
+    ///
+    /// Framed, and holding what it has not framed yet. A read can land two lines at once, and the
+    /// gate now sends two on one connection: the notice that it is holding a request, and the
+    /// decision after it. Taking the first and dropping the rest lost the decision, and the caller
+    /// then polled a socket with nothing left to say until its own bound ran out.
+    func receiveLine() -> String? {
+        if let line = framed() {
+            return line
+        }
         var buffer = [UInt8](repeating: 0, count: 8192)
         let count = read(descriptor, &buffer, buffer.count)
-        guard count > 0, let text = String(bytes: buffer[0 ..< count], encoding: .utf8) else {
-            return nil
-        }
-        return text.split(whereSeparator: \.isNewline).first.flatMap {
-            JSONValue.record(fromLine: String($0))
-        }
+        guard count > 0 else { return nil }
+        pending += buffer[0 ..< count]
+        return framed()
+    }
+
+    /// The next whole line out of what has already arrived; nothing where none has.
+    private func framed() -> String? {
+        guard let end = pending.firstIndex(of: UInt8(ascii: "\n")) else { return nil }
+        let line = String(bytes: pending[..<end], encoding: .utf8)
+        pending = Array(pending[pending.index(after: end)...])
+        return line
     }
 
     /// Release the descriptor, once. Idempotent, because a second `close` of a number the kernel

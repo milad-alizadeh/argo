@@ -19,12 +19,38 @@ public struct PermissionPatience: Sendable {
     /// clock — a substitute that cannot be cancelled leaves a `Task` against a torn-down gate.
     let elapse: @Sendable () async -> Void
 
-    public init(seconds: Int) {
-        self.init(seconds: seconds, elapse: { try? await Task.sleep(for: .seconds(seconds)) })
+    /// How long the HOOK waits to be told the gate is holding its request (#1553), before it gives
+    /// up and denies on its own account.
+    ///
+    /// A different kind of number from `seconds` above, and that is the point: `seconds` is how
+    /// long a PERSON may take, which is a day, and this is how long the round trip to a live gate
+    /// may take, which is a moment. The wait a person owns only ever begins once the gate has said
+    /// it is holding the question — so a request lost before it became a prompt anybody can see is
+    /// refused in seconds instead of held for a day nobody was watching.
+    public let acknowledgementSeconds: Int
+
+    /// What that round trip is allowed to be, in one place: both inits default to it, and a number
+    /// pasted into the second would quietly stop answering for the first.
+    public static let defaultAcknowledgementSeconds = 10
+
+    public init(
+        seconds: Int,
+        acknowledgementSeconds: Int = defaultAcknowledgementSeconds,
+    ) {
+        self.init(
+            seconds: seconds,
+            acknowledgementSeconds: acknowledgementSeconds,
+            elapse: { try? await Task.sleep(for: .seconds(seconds)) },
+        )
     }
 
-    init(seconds: Int, elapse: @escaping @Sendable () async -> Void) {
+    init(
+        seconds: Int,
+        acknowledgementSeconds: Int = defaultAcknowledgementSeconds,
+        elapse: @escaping @Sendable () async -> Void,
+    ) {
         self.seconds = seconds
+        self.acknowledgementSeconds = acknowledgementSeconds
         self.elapse = elapse
     }
 
