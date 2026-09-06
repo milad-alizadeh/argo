@@ -2,7 +2,7 @@
      approved-at: 3ed1c522
      reopened-at: #1316
      prototype: worktree-ticket-1293-backlog-question
-     explorable: gone (#1526) -->
+     explorable: gone -->
 
 > **Reopened by #1316 — the glyph does not hold still.** The ticket that was meant to test
 > "ends in `?`, or six words and up" against a realistic corpus (`BacklogQueryIntentCorpus`, 106

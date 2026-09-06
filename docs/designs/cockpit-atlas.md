@@ -26,12 +26,17 @@ open /tmp/cockpit-atlas.html
 States are reachable by `?state=<key>` — `map`, `inspect`, `treemap`, `domains`, `empty`,
 `loading`, `error` — and `?render=1` strips the chrome for a PNG. The atlas prototypes and the
 data they read (`prototypes/atlas-*.html`, `atlas-*.json`, `atlas-*.mjs`, `vendor/`) are on the
-same branch.
+same branch. **Only the Atlas set is**: the branch was cut from `main` and its first commit
+removes every other explorable, because the rest were deleted outright rather than archived.
 
 **The measurements are still only in that page.** This design was approved before the rule that
 a `.md` carries the numbers, and nothing has distilled them out of the HTML yet — so the page is
 the spec, not a companion to one. The first `design-to-code` ticket against this screen writes
 the measurements table here; until then, read the branch.
+
+That makes the branch load-bearing in a way no other design branch is, and the sweep does not
+know it: `worktrees:gc` deletes `design/atlas` the moment #643 closes, distilled or not.
+**#643 must not close before the measurements are in this file.**
 
 ## What the page settles
 

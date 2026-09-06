@@ -2,7 +2,7 @@
      approved-at: 94120322
      built-at: f76d2c30
      prototype: argo/#1310-roster-agent-count
-     explorable: gone (#1526) -->
+     explorable: gone -->
 
 # The Sessions roster row
 

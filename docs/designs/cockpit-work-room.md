@@ -2,7 +2,7 @@
      approved-at: c0e24739
      re-based-at: #1304
      prototype: worktree-prototype-609-work-room
-     explorable: gone (#1526) -->
+     explorable: gone -->
 
 # The Tickets room
 

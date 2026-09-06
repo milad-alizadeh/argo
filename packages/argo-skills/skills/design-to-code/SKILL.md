@@ -91,16 +91,17 @@ re-judged or rejected with a cited rule.
 ## 6. Mark the design, and drop the branch
 
 When this ticket was the last one against the design, set the `.md`'s front matter to
-`status: built` and record the commit. In the same change set `explorable: gone` and delete the
-page's branch, which has now stopped being an input to anything:
+`status: built` and record the commit. The page's branch has now stopped being an input to
+anything, so delete it:
 
 ```sh
 git push origin --delete design/<screen>
 ```
 
-`bun run worktrees:gc` deletes it anyway once the screen's epic closes, so a forgotten branch is
-swept rather than kept — but the ticket that finishes the screen is the moment it is known to be
-finished, and that is the cheapest place to say so.
+**Write `explorable: gone` only after that delete succeeds.** The sweep finds a branch by the
+`explorable:` key that names it, so a `gone` written ahead of the delete strands the branch where
+`bun run worktrees:gc` can no longer see it — the exact case the sweep is there to catch. If the
+delete fails, leave the key naming the branch and let the sweep take it when the epic closes.
 
 A shipped screen keeps no page. Re-opening the design re-bases it against the shipped app
 (`prototype-to-design`, step 4), which screenshots what actually ships — so a stale explorable

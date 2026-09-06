@@ -75,17 +75,10 @@ A design's explorable `.html` is **never on `main`** (#1526). It lives on the br
 What `main` carries is the durable record: the design `.md` with its measurements and frozen
 component names, the state renders in `<screen>/`, and the build inventory beside it.
 
-A `.md`'s front matter names its page — `explorable: design/<screen>` — so `design-to-code` and
-`pixel-review` find it without a checkout:
-
-```sh
-git fetch origin design/<screen>
-git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
-```
-
-`explorable: gone` means the screen shipped and the branch was deleted; the `.md` and its renders
-are then the whole spec, which is why the measurements belong in the `.md`. `bun run
-worktrees:gc` deletes a design branch once the screen's epic closes, so nobody has to remember to.
+The front-matter keys, how a reader gets at the page and when the branch dies are all one
+rule, stated in AGENTS.md → *Design work*. What it means here: a `.md` names its page with
+`explorable: design/<screen>`, and `explorable: gone` means the screen shipped and the branch was
+deleted. The measurements therefore belong in the `.md`, because it outlives the page.
 
 **A shipped screen keeps no page**, and nothing is kept just in case: a `stale` design is
 re-based by screenshotting the shipped app, which reads more than an old page would have.
@@ -164,9 +157,13 @@ servers and the vendored libraries they read: what stays is one `.md` per study,
 record of what the study answered. The Atlas set is the exception, because Atlas is still being
 built — its pages are on `design/atlas`.
 
+A page listed as gone is gone from everywhere this repo controls; history keeps it. A page
+listed on an `argo/…` branch is on a **worktree branch, not a design branch**: nothing sweeps
+those, and equally nothing promises they survive — only `design/…` is keyed to an epic.
+
 | Note | Question it answered | Its page |
 |---|---|---|
-| `README.md` | What should the Sessions roster row and the Session deck header show? (#502) | gone |
+| `README.md` (this study's note is the prototypes README itself) | What should the Sessions roster row and the Session deck header show? (#502) | gone |
 | `ask-vessel-prototype.md` | How does a Session's question get answered? (#712) — settled by `cockpit-feed-ask.md` | gone |
 | `settled-ask-fold-prototype.md` | What does an answered ask settle into? (#1207) — settled by `cockpit-feed-ask.md` | gone |
 | `backlog-question-prototype.md` | What does the search field do when it holds a question? (#1293) — settled by `cockpit-backlog-question.md` | gone |

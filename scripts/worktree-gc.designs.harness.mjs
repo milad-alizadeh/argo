@@ -1,4 +1,4 @@
-// The fixture behind `worktree-gc.test.mjs`: a repository whose `origin` is a real bare repo
+// The fixture behind `worktree-gc.designs.test.mjs`: a repository whose `origin` is a real bare repo
 // on disk, seeded with design `.md` files and `design/<screen>` branches, with `gh` stubbed on
 // PATH.
 //

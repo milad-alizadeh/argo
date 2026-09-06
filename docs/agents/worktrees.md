@@ -153,13 +153,12 @@ tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is r
 alone. `--dry-run` reports without removing.
 
 The same run sweeps two things that are not worktrees: the visual-review refs
-(`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, and the **design branches**
-that carry a screen's explorable page (#1526). A design branch is keyed on its screen's epic
-rather than on a pull request, because a design outlives every pull request built against it. The
-join runs from the design `.md` on `main`, which is the only place that knows both halves —
-`explorable:` names the branch, `epic:` names the issue — so a `design/` branch nothing on `main`
-claims is never touched, and a missing key, an unreadable file or a failed `gh` query all mean
-keep. `scripts/worktree-gc.test.mjs` is where each of those refusals is a case.
+(`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, and the `design/<screen>`
+branches that carry a screen's explorable page (AGENTS.md → *Design work*). A design branch is
+keyed on its screen's **epic**, not on a pull request, because a design outlives every pull
+request built against it. Every refusal is a case in `scripts/worktree-gc.designs.test.mjs`: a
+`design/` branch no `.md` on `main` claims, a `.md` naming no epic, an unreadable file and a
+failed `gh` query all mean keep.
 
 `sh scripts/worktree-gc.sh --artifacts` is the other sweep and reaps no worktree at all. It
 deletes the build output inside every worktree — `apps/macOS/build` and `Packages/*/.build` —

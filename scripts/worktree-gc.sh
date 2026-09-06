@@ -20,12 +20,9 @@
 #
 # Anything failing a check is reported, never removed. --dry-run reports only.
 #
-# It also sweeps two kinds of remote branch/ref that exist only for the life of something
-# else: the visual-review refs at the bottom of this file, and the DESIGN BRANCHES that
-# carry a screen's explorable page (#1526). A design's `.html` never lands on the default
-# branch; it lives on `design/<screen>` for as long as the screen is being built, and the
-# design `.md` on the default branch is what names it. When that `.md`'s epic closes, the
-# page has no reader left, so the branch goes.
+# It also sweeps two kinds of remote ref that exist only for the life of something else: the
+# visual-review refs at the bottom of this file, and the `design/<screen>` branches that carry
+# a screen's explorable page (#1526), keyed on the epic named in the design `.md`.
 #
 # --artifacts is the other sweep, and it reaps no worktree at all. It deletes the BUILD
 # OUTPUT inside every worktree — `apps/macOS/build` and `Packages/*/.build` — which is
@@ -249,6 +246,20 @@ done < "$list"
 # Reap them on the same provably-safe footing as worktrees — but only with gh to say which
 # PRs are still open. Without it, or if the query fails, never delete: incomplete info is
 # not a reason to reap.
+# Delete one ref or branch on the remote, honouring --dry-run. $1 is the full ref or branch
+# name, $2 the reason to print. A refused delete is reported, never silent: the worktree loop
+# above says "git worktree remove refused" for the same reason, and a sweep that prints nothing
+# reads as a sweep that found nothing.
+reap_remote() {
+  if [ "$DRY_RUN" = 1 ]; then
+    echo "  reap $1 — $2 (dry run)"
+  elif git -C "$repo_root" push --quiet origin --delete "$1" 2>/dev/null; then
+    echo "  reaped $1"
+  else
+    echo "  keep $1 — the remote refused the delete"
+  fi
+}
+
 if [ "$has_gh" = 1 ]; then
   # Check each gh query's own exit status, not a pipeline's (a trailing `tr` would mask a
   # failed gh), and prune only when BOTH succeeded — otherwise open_slugs/open_numbers may
@@ -266,43 +277,54 @@ if [ "$has_gh" = 1 ]; then
     prune_refs=0
   fi
 
-  # The design branches. Keyed on the screen's EPIC rather than on a pull request: a design
-  # outlives every pull request built against it, and it is the epic closing that says the
-  # screen is done. The join runs from the design `.md` on the default branch, which is the
-  # only place that knows both halves — `explorable:` names the branch, `epic:` names the
-  # issue — so a branch nothing on the default branch claims is never touched.
+  # The design branches, keyed on the screen's epic (#1526). The join runs from the design
+  # `.md` on the default branch, which is the only place holding both halves: `explorable:`
+  # names the branch, `epic:` names the issue. A branch no `.md` claims is never touched.
   #
-  # Both keys must be present and the issue must be provably CLOSED. A missing key, an
-  # unreadable file or a failed `gh` query all mean keep: the branch may be the only copy of
-  # a page somebody is still building against.
+  # A missing key, an unreadable file or a failed `gh` query all mean keep: the branch may be
+  # the only copy of a page a screen is still being built against.
+  #
+  # One `ls-remote` for the whole namespace rather than one per design: this runs on a
+  # session-end hook, and a round trip per `.md` is a round trip per design that has no
+  # branch at all.
+  design_heads=$(git -C "$repo_root" ls-remote --heads origin 'refs/heads/design/*' 2>/dev/null \
+    | sed 's|.*refs/heads/||')
+
   designs=$(git -C "$repo_root" ls-tree -r --name-only \
     "origin/$default_branch" -- docs/designs 2>/dev/null | grep '\.md$')
+
+  # A path is not a word: split on newlines alone and turn globbing off, or a design whose
+  # name holds a space becomes two names that match nothing, and one holding `[` is expanded
+  # against the working directory. `read -d ''` would be the tidier form and is a bashism;
+  # this file is /bin/sh.
+  saved_ifs=$IFS
+  IFS='
+'
+  set -f
   for design in $designs; do
-    # The front matter is an HTML comment at the top of the file; 20 lines is well past it,
-    # and stopping there keeps a body mention of `epic:` out of the reading.
-    front=$(git -C "$repo_root" show "origin/$default_branch:$design" 2>/dev/null | head -20)
-    branch=$(printf '%s\n' "$front" | sed -n 's/.*explorable:[[:space:]]*\(design\/[A-Za-z0-9._-]*\).*/\1/p' | head -1)
-    [ -n "$branch" ] || continue
-    git -C "$repo_root" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1 || continue
+      # The front matter is an HTML comment at the top of the file; 20 lines is past it, and
+      # stopping there keeps a body mention of `epic:` out of the reading.
+      front=$(git -C "$repo_root" show "origin/$default_branch:$design" 2>/dev/null | head -20)
+      branch=$(printf '%s\n' "$front" | sed -n 's/.*explorable:[[:space:]]*\(design\/[A-Za-z0-9._-]*\).*/\1/p' | head -1)
+      [ -n "$branch" ] || continue
+      printf '%s\n' "$design_heads" | grep -qxF "$branch" || continue
 
-    epic=$(printf '%s\n' "$front" | sed -n 's/.*epic:[[:space:]]*#\{0,1\}\([0-9][0-9]*\).*/\1/p' | head -1)
-    if [ -z "$epic" ]; then
-      echo "  keep branch $branch — $design names no epic"
-      continue
-    fi
+      epic=$(printf '%s\n' "$front" | sed -n 's/.*epic:[[:space:]]*#\{0,1\}\([0-9][0-9]*\).*/\1/p' | head -1)
+      if [ -z "$epic" ]; then
+        echo "  keep $branch — $design names no epic"
+        continue
+      fi
 
-    state=$(cd "$repo_root" && gh issue view "$epic" --json state --jq .state 2>/dev/null) || state=""
-    if [ "$state" != "CLOSED" ]; then
-      echo "  keep branch $branch — epic #$epic is ${state:-unreadable}"
-      continue
-    fi
+      state=$(cd "$repo_root" && gh issue view "$epic" --json state --jq .state 2>/dev/null) || state=""
+      if [ "$state" != "CLOSED" ]; then
+        echo "  keep $branch — epic #$epic is ${state:-unreadable}"
+        continue
+      fi
 
-    if [ "$DRY_RUN" = 1 ]; then
-      echo "  reap branch $branch — epic #$epic closed (dry run)"
-    elif git -C "$repo_root" push --quiet origin --delete "$branch" 2>/dev/null; then
-      echo "  reaped branch $branch — epic #$epic closed"
-    fi
+      reap_remote "$branch" "epic #$epic closed"
   done
+  set +f
+  IFS=$saved_ifs
 
   if [ "$prune_refs" = 1 ]; then
     git -C "$repo_root" ls-remote origin 'refs/pr-screenshots/*' 2>/dev/null \
@@ -310,22 +332,14 @@ if [ "$has_gh" = 1 ]; then
         [ -n "$ref" ] || continue
         slug=${ref#refs/pr-screenshots/}
         printf '%s\n' "$open_slugs" | grep -qxF "$slug" && continue
-        if [ "$DRY_RUN" = 1 ]; then
-          echo "  reap ref $ref — no open PR (dry run)"
-        elif git -C "$repo_root" push --quiet origin --delete "$ref" 2>/dev/null; then
-          echo "  reaped ref $ref"
-        fi
+        reap_remote "$ref" "no open PR"
       done
     git -C "$repo_root" ls-remote origin 'refs/visual-baselines/*' 2>/dev/null \
     | while IFS='	' read -r _sha ref; do
         [ -n "$ref" ] || continue
         n=${ref##*/pr-}
         printf '%s\n' "$open_numbers" | grep -qxF "$n" && continue
-        if [ "$DRY_RUN" = 1 ]; then
-          echo "  reap ref $ref — PR #$n not open (dry run)"
-        elif git -C "$repo_root" push --quiet origin --delete "$ref" 2>/dev/null; then
-          echo "  reaped ref $ref"
-        fi
+        reap_remote "$ref" "PR #$n not open"
       done
   fi
 fi

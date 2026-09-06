@@ -17,9 +17,10 @@ not involved: the composer talks to the Session, it does not answer it.
 **The renders in [`feed-ask/`](feed-ask/) are the spec.** The measurements below are the numbers
 a ticket must carry.
 
-The study lives at
-[`prototypes/ask-vessel-prototype.html`](prototypes/ask-vessel-prototype.html), where every
-state is reachable by URL. It is there to be re-explored, not built from.
+The study was `prototypes/ask-vessel-prototype.html`, and **it is gone** (#1526): the design is
+built, so the page stopped being an input and was deleted rather than maintained.
+[`prototypes/ask-vessel-prototype.md`](prototypes/ask-vessel-prototype.md) is what it settled,
+and the renders in `feed-ask/` are the spec.
 
 ## What won, and what lost
 
