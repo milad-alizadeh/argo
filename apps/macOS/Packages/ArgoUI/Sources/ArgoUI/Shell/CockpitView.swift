@@ -233,8 +233,11 @@ public struct CockpitView: View {
             archive: { $0.forEach { actions.sessions.setArchived($0, true) } },
         ))
         .focusedValue(\.sessionCommands, sessionCommands)
-        .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
-            navigation.reconcile(against: sessionIDs)
+        // Keyed on the whole identity rather than the id alone: a row absorbing another's id is a
+        // membership change the reader's selection has to be told about, and on ids it reads as
+        // nothing at all (#1481).
+        .onChange(of: presentation.sessions.map(\.identity), initial: true) { _, roster in
+            navigation.reconcile(against: roster)
         }
         .onChange(of: navigation.chosenSession) { _, pick in
             resumeIfSelectionIsDead(pick)

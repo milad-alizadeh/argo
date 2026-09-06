@@ -63,37 +63,36 @@ struct RosterSelectionFromTicketsTests {
 
     /// The Session re-keyed to the CLI's own id when its first record lands (#1176). One id goes
     /// and another arrives, and the roster's ground and the `List`'s own selection are the same
-    /// state through it: `reconcile` repoints once and both halves read what it wrote.
+    /// state through it: `reconcile` follows the re-key once and both halves read what it wrote.
     ///
-    /// The re-key here takes the head, which is where `reconcile` lands.
+    /// The re-key here takes the head of the roster.
     @Test
     func `keeps the mark and the selection one state across a re-key`() {
         let navigation = navigation(over: sessions("alpha", "beta"))
 
         room(navigation).openSession("alpha")
-        let rekeyed = sessions("alpha-cli", "beta")
-        navigation.reconcile(against: rekeyed.map(\.id))
+        let rekeyed = [
+            rekeyed("alpha-cli", from: "alpha"),
+            RosterSessionFixture.session(id: "beta"),
+        ]
+        navigation.reconcile(against: rekeyed.map(\.identity))
 
         expectMarked("alpha-cli", in: rekeyed, for: navigation)
     }
 
-    /// The re-key that does NOT take the head, which is the honest limit of this change. Nothing
-    /// in the presentation says `beta-cli` is the Session that was `beta` — the trail is the Hub's
-    /// (`SessionOwnership.rowID(ofClaim:)`), and `CockpitNavigationModel.reconcile` sees only an
-    /// id that stopped being published. So it falls back to the first row, and the claim this
-    /// suite can make is the one #1273 asks for: the roster marks whatever the deck is drawing,
-    /// and never a row the deck is not.
-    ///
-    /// Following the re-key itself is `reconcile`'s subject and #1176's, not the ground's.
+    /// The re-key that does NOT take the head, which used to be the honest limit here: nothing in
+    /// the presentation said `beta-cli` was the Session that was `beta`, so `reconcile` read an id
+    /// that stopped being published and fell back to the first row. The row now carries the id it
+    /// retired (#1481), so the mark follows the Session rather than the position.
     @Test
     func `hands the mark on with the deck when a re-key drops the id`() {
         let navigation = navigation(over: sessions("alpha", "beta"))
 
         room(navigation).openSession("beta")
-        let rekeyed = sessions("alpha", "beta-cli")
-        navigation.reconcile(against: rekeyed.map(\.id))
+        let rekeyed = [RosterSessionFixture.session(id: "alpha"), rekeyed("beta-cli", from: "beta")]
+        navigation.reconcile(against: rekeyed.map(\.identity))
 
-        expectMarked("alpha", in: rekeyed, for: navigation)
+        expectMarked("beta-cli", in: rekeyed, for: navigation)
     }
 
     // MARK: - The claim
@@ -140,12 +139,20 @@ struct RosterSelectionFromTicketsTests {
     )
         -> CockpitNavigationModel {
         let navigation = CockpitNavigationModel()
-        navigation.reconcile(against: sessions.map(\.id))
+        navigation.reconcile(against: sessions.map(\.identity))
         navigation.room = .tickets
         return navigation
     }
 
     private func sessions(_ ids: String...) -> [CockpitPresentation.Session] {
         ids.map { RosterSessionFixture.session(id: $0) }
+    }
+
+    /// A row published under the id its CLI picked, still standing for the claim id it was drawn
+    /// under before the record landed — what `Hub.published` now carries (#361, #1481).
+    private func rekeyed(_ id: String, from former: String) -> CockpitPresentation.Session {
+        var session = RosterSessionFixture.session(id: id)
+        session.absorbedIDs = [former]
+        return session
     }
 }

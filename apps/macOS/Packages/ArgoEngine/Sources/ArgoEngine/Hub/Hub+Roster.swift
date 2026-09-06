@@ -161,6 +161,13 @@ extension Hub {
             published.startup = SessionStartup(spawn)
             published.resuming = true
         }
+        // The claim id this row stood under before its CLI wrote a record and it was re-keyed to
+        // the id the CLI picked (#361). Retired on the same terms as a chain link's, and for the
+        // same reason: a window pointing at it is pointing at THIS Session (#1481). Guarded on the
+        // row's own id, because a spawn that has not been re-keyed IS its claim.
+        if let claim = ownership.boundClaim(ofSessionID: session.id), claim.value != session.id {
+            published.absorbedIDs.append(claim.value)
+        }
         return published
     }
 

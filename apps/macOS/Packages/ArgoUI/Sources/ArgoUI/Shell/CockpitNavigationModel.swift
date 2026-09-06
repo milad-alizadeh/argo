@@ -115,17 +115,82 @@ public final class CockpitNavigationModel {
         room = .tickets
     }
 
-    /// Repoints a selection that no longer names a live Session, falling back to the first.
-    /// An empty roster leaves it `nil` — there is nothing honest to point at.
-    func reconcile(against sessionIDs: [CockpitPresentation.Session.ID]) {
+    /// Repoints a selection that no longer names a live Session. An empty roster leaves it `nil` —
+    /// there is nothing honest to point at.
+    ///
+    /// Three answers, in this order. A pointed id still on the roster stands. One a row has
+    /// ABSORBED has not left — the reader is on the same Session under the id it is published as
+    /// now (#1481) — so the selection follows it there, which is no more a repoint than the row
+    /// redrawing and is not treated as one.
+    ///
+    /// Only an id no row accounts for has genuinely gone, and then the selection lands on the row
+    /// nearest where it was: the first below it still on the roster, and the one above only where
+    /// nothing below it is. Never the first row — the roster is ordered newest-activity first
+    /// (#1402), so its first row is whichever Session last did something, and landing there is how
+    /// a reader ends up reading the Session that has just appeared.
+    func reconcile(against roster: [RosterIdentity]) {
+        defer { lastRoster = roster }
+        follow(Self.succession(of: roster))
+        let sessionIDs = roster.map(\.id)
         // Whatever happens to the deck's row, a Session that has left cannot stay selected: the
         // menu would be offering to archive rows nobody can see (#1247).
         sessionSelection.confine(to: sessionIDs)
         if let pointedSession, sessionIDs.contains(pointedSession) {
             return
         }
-        pointedSession = sessionIDs.first
-        sessionSelection.point(at: sessionIDs.first)
+        let landing = Self.neighbour(of: pointedSession, in: lastRoster, among: roster)
+            ?? roster.first { !$0.isArchived }?.id
+        pointedSession = landing
+        sessionSelection.point(at: landing)
         chosenSession = Pick(session: nil, ordinal: chosenSession.ordinal + 1)
     }
+
+    /// The whole selection onto the rows that took its ids over. `chosenSession` is deliberately
+    /// left alone: it records the act of PICKING, the reader performed none here, and writing it
+    /// would fire `resumeIfSelectionIsDead` — a resume nobody asked for (#10).
+    private func follow(_ succession: [RowID: RowID]) {
+        sessionSelection.follow(succession)
+        if let pointed = pointedSession, let heir = succession[pointed] {
+            pointedSession = heir
+        }
+    }
+
+    /// Which row took each retired id over.
+    private static func succession(of roster: [RosterIdentity]) -> [RowID: RowID] {
+        roster.reduce(into: [:]) { heirs, row in
+            for absorbed in row.absorbedIDs {
+                heirs[absorbed] = row.id
+            }
+        }
+    }
+
+    /// The row nearest where the departed one stood, over the order the roster last had. Archived
+    /// rows are passed over: they are on the roster and may still be SELECTED, but they sit behind
+    /// a disclosure, and repointing the reader at a row they cannot see is the bug this rule is
+    /// about wearing a different coat. A roster this model never saw the previous shape of answers
+    /// `nil`, which is a launch.
+    ///
+    /// Folds are the sidebar's own state (`ShellSidebar.openFolds`) and out of reach here, so a
+    /// folded row can still be landed on. It is a row of a Session the reader CAN reach, unlike an
+    /// archived one — see the PR for #1481.
+    private static func neighbour(
+        of departed: RowID?,
+        in lastRoster: [RosterIdentity],
+        among live: [RosterIdentity],
+    )
+        -> RowID? {
+        guard let departed, let row = lastRoster.firstIndex(where: { $0.id == departed })
+        else { return nil }
+        let landable = Set(live.lazy.filter { !$0.isArchived }.map(\.id))
+        return lastRoster[lastRoster.index(after: row)...].first { landable.contains($0.id) }?.id
+            ?? lastRoster[..<row].last { landable.contains($0.id) }?.id
+    }
+
+    /// The roster's own key, spelled once: the generic pair below reads as noise otherwise.
+    private typealias RowID = CockpitPresentation.Session.ID
+
+    /// The roster as it stood when it was last reconciled, which is the only thing that can say
+    /// what a departed row's neighbour WAS. Unobserved because nothing renders it: it is this
+    /// model's own memory of the last pass.
+    @ObservationIgnored private var lastRoster: [RosterIdentity] = []
 }

@@ -100,6 +100,19 @@ package struct RowSelection<Row: Hashable & Sendable>: Equatable, Sendable {
         last = last.flatMap { rows.contains($0) ? $0 : nil }
     }
 
+    /// Rows the list re-keyed under the selection: each key is a row it may still be holding, and
+    /// each value the row that took that one over. Nothing is added, so a row changing the id it is
+    /// published under never widens the range the reader built (#1247, #1481).
+    ///
+    /// It can NARROW it, by exactly the case that should narrow it: a selection holding both a row
+    /// and the row that absorbs it held two rows of one Session, and now holds one.
+    mutating func follow(_ succession: [Row: Row]) {
+        guard !succession.isEmpty else { return }
+        rows = Set(rows.map { succession[$0] ?? $0 })
+        anchor = anchor.map { succession[$0] ?? $0 }
+        last = last.map { succession[$0] ?? $0 }
+    }
+
     /// The window pointed at a row by something that is not a click on this list — a link, a
     /// reveal, reconciliation. One click's worth of selection, never an addition to what the
     /// reader had built.

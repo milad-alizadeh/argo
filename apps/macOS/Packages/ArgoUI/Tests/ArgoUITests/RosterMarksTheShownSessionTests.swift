@@ -33,7 +33,7 @@ struct RosterMarksTheShownSessionTests {
         navigation.session = "beta"
         sessions[1] = RosterSessionFixture.session(id: "beta", status: .ended)
         let ended = presentation(sessions)
-        navigation.reconcile(against: ended.sessions.map(\.id))
+        navigation.reconcile(against: ended.sessions.map(\.identity))
 
         expectAgreement(ended, navigation, marks: "beta")
     }
@@ -46,7 +46,7 @@ struct RosterMarksTheShownSessionTests {
 
         navigation.session = "beta"
         let shrunk = presentation(ids: "alpha")
-        navigation.reconcile(against: shrunk.sessions.map(\.id))
+        navigation.reconcile(against: shrunk.sessions.map(\.identity))
 
         expectAgreement(shrunk, navigation, marks: "alpha")
     }
@@ -63,7 +63,7 @@ struct RosterMarksTheShownSessionTests {
         navigation.session = "beta"
         sessions[1] = RosterSessionFixture.session(id: "beta", isArchived: true)
         let archived = presentation(sessions)
-        navigation.reconcile(against: archived.sessions.map(\.id))
+        navigation.reconcile(against: archived.sessions.map(\.identity))
 
         expectAgreement(archived, navigation, marks: "beta")
     }
@@ -151,7 +151,7 @@ struct RosterMarksTheShownSessionTests {
     /// points a fresh window at the first row.
     private func navigation(over presentation: CockpitPresentation) -> CockpitNavigationModel {
         let navigation = CockpitNavigationModel()
-        navigation.reconcile(against: presentation.sessions.map(\.id))
+        navigation.reconcile(against: presentation.sessions.map(\.identity))
         return navigation
     }
 
