@@ -102,7 +102,10 @@ final class CockpitCoordinator {
     /// overrides the active Project, which is only knowable once the file has been read.
     func start() async {
         let registry = await store.load()
-        annotations = await annotationStore.load()
+        // Read by DROPPING what a previous launch left keyed by a claim id (#1563). A claim id
+        // names a row only inside the process that issued it, so an entry under one is either
+        // inert or — before the ids were salted — an answer about a stranger.
+        annotations = await annotationStore.dropProvisional()
         let resolved = await configuration.resolvingRoots(through: store)
         // Started with the window rather than with the first `/`, so the picker never waits on a
         // hidden `claude` spawning. Its own folder, because that is the one the CLI is trusted in.
@@ -193,8 +196,19 @@ final class CockpitCoordinator {
     /// The title behind the number is not read here. Pinning makes the link untitled, and the
     /// window already asks for a resolve the moment an untitled number appears (`ArgoApp`) — one
     /// trigger, so a pinned link and a derived one are named the same way.
-    func setPinnedTicket(_ number: Int?, sessionID: String) async {
+    func pinTicket(_ number: Int?, sessionID: String) async {
         annotations = await annotationStore.setPinnedTicket(number, sessionID: sessionID)
+    }
+
+    /// Carry what a reader said about a row published under a claim id onto the id its CLI picked
+    /// (#1563). Argo's own write and never a gesture: the decision was already made, and this is
+    /// only the moment its subject stopped being provisional.
+    ///
+    /// Which rows re-keyed is the projection's (`provisionalRowKeys`), on `nameTickets` above's
+    /// ground. Nothing is written where nothing moved, so the sweep costs a read per re-key and no
+    /// write at all for the rows nobody annotated — which is nearly all of them.
+    func carryAnnotations(off provisionalKeys: [String: String]) async {
+        annotations = await annotationStore.carrying(off: provisionalKeys)
     }
 
     /// Name each Session's ticket through the Project's Ticket port (#745). What is resolved and

@@ -53,6 +53,31 @@ public actor SessionAnnotationStore {
         persist(load().pinning(number, sessionID: sessionID))
     }
 
+    /// Carry each row's annotations off the claim id it stood under and onto the id its CLI picked
+    /// (#1563). Argo's own write and never a gesture: the reader already made their decision, and
+    /// this is only the moment its subject stopped being provisional.
+    ///
+    /// A whole roster's worth at once, keyed provisional-to-durable, because the caller offers
+    /// every re-keyed row it can see rather than one — and the file is left alone where none of
+    /// them moved, which is nearly every call.
+    @discardableResult
+    public func carrying(off provisionalKeys: [String: String]) -> SessionAnnotations {
+        let held = load()
+        let carried = provisionalKeys.reduce(held) { $0.carrying(from: $1.key, to: $1.value) }
+        guard carried != held else { return held }
+        return persist(carried)
+    }
+
+    /// Drop every entry a previous launch left keyed by a claim id (#1563). Once at start and not
+    /// on the read behind a write, which would take this launch's own provisional keys with it.
+    @discardableResult
+    public func dropProvisional() -> SessionAnnotations {
+        let held = load()
+        let kept = held.droppingProvisional()
+        guard kept != held else { return held }
+        return persist(kept)
+    }
+
     /// A file that cannot be written still holds for this launch and is forgotten by the next
     /// one. Refusing the gesture is a worse answer to a full disk than losing the memory of it.
     private func persist(_ annotations: SessionAnnotations) -> SessionAnnotations {

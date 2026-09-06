@@ -101,6 +101,13 @@ struct ArgoApp: App {
                     .onChange(of: presentation.untitledTicketNumbers, initial: true) { _, _ in
                         Task { await cockpit.nameTickets(through: accounts.binding(.ticket)) }
                     }
+                    // A spawned row re-keying off its claim id to the one its CLI picked is the
+                    // one event an annotation filed against the claim has to survive (#1563).
+                    // Keyed on the re-keyed set for the reason above: a turn ending on a row that
+                    // bound long ago carries nothing.
+                    .onChange(of: presentation.provisionalRowKeys, initial: true) { _, keys in
+                        Task { await cockpit.carryAnnotations(off: keys) }
+                    }
                     // Every PTY this window owns dies with the window, and the observer above ends
                     // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
                     // outlived Argo would be a process nobody is left to steer or stop.
@@ -190,15 +197,9 @@ struct ArgoApp: App {
         actions.sessions.spawn = { await cockpit.spawnSession() }
         actions.sessions.resume = { id in await cockpit.resumeSession(sessionID: id) }
         actions.sessions.spawnBeside = { id in await cockpit.spawnSession(beside: id) }
-        actions.sessions.setArchived = { id, archived in
-            Task { await cockpit.setArchived(archived, sessionID: id) }
-        }
-        actions.sessions.setName = { id, name in
-            Task { await cockpit.setName(name, sessionID: id) }
-        }
-        actions.sessions.setTicketLink = { id, ticket in
-            Task { await cockpit.setPinnedTicket(ticket, sessionID: id) }
-        }
+        actions.sessions.setArchived = { Task { await cockpit.setArchived($1, sessionID: $0) } }
+        actions.sessions.setName = { Task { await cockpit.setName($1, sessionID: $0) } }
+        actions.sessions.setTicketLink = { Task { await cockpit.pinTicket($1, sessionID: $0) } }
         actions.sessions.clearLostTurn = { id in cockpit.hub.clearLostTurn(for: id) }
         actions.sessions.endDelegation = { cockpit.hub.endDelegation(callID: $1, for: $0) }
         actions.sessions.handOff = { await cockpit.handOff(sessionID: $0, issue: $1) }

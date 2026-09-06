@@ -131,4 +131,30 @@ struct SessionOwnershipTests {
         // by the claim is looked up under.
         #expect(ownership.rowID(ofClaim: claim.value) == movedSessionID)
     }
+
+    /// The whole of #1563 in one assertion. `claim-\(issued)` off a counter rebuilt at launch gave
+    /// the third spawn of EVERY Argo the same name, and the annotation file is keyed by whatever a
+    /// row's id is at the moment of the write — so a decision taken about one Session opened the
+    /// next launch's third spawn archived. Two registries are two launches.
+    @Test
+    func `two launches never issue the same claim id`() {
+        let (first, _) = registry()
+        let (second, _) = registry()
+
+        let mine = (1 ... 3).map { _ in first.claim().value }
+        let theirs = (1 ... 3).map { _ in second.claim().value }
+
+        #expect(Set(mine).isDisjoint(with: theirs))
+        #expect(Set(mine).count == 3)
+    }
+
+    /// A claim id says so, so anything that has to tell a provisional row from a Session can ask
+    /// rather than guess — the annotation file's key is the caller that has to (#1563).
+    @Test
+    func `a claim id is recognisable and a Session's id is not`() {
+        let (ownership, _) = registry()
+
+        #expect(SessionOwnership.ClaimID.names(ownership.claim().value))
+        #expect(SessionOwnership.ClaimID.names(sessionID) == false)
+    }
 }

@@ -166,6 +166,42 @@ public struct SessionAnnotations: Equatable, Sendable {
         setting(annotation(for: sessionID).pinned(number), for: sessionID)
     }
 
+    /// Carry what a reader said about a row published under a claim id onto the id its CLI picked
+    /// (#1563). The row is the same row: a fresh spawn stands under its claim until its transcript
+    /// appears, and re-keys to the id in that file (#361). Without this the archive taken in that
+    /// window is silently undone by the re-key, and left behind to annotate a stranger.
+    ///
+    /// The destination is a transcript that has only just been observed, so there is nothing under
+    /// it to lose. Where something is there anyway, THAT decision stands: the durable key is the
+    /// subject, and the claim id was only ever standing in for it.
+    func carrying(from provisionalID: String, to sessionID: String) -> SessionAnnotations {
+        guard let held = bySessionID[provisionalID], bySessionID[sessionID] == nil else {
+            return dropping(provisionalID)
+        }
+        var next = bySessionID
+        next.removeValue(forKey: provisionalID)
+        next[sessionID] = held
+        return SessionAnnotations(bySessionID: next)
+    }
+
+    /// Every entry still keyed by a claim id, gone. A claim id names a row only inside the process
+    /// that issued it, so one that outlived that process annotates nothing — and before #1563 it
+    /// annotated the WRONG Session, because the counter behind it restarted with the app. Run once
+    /// at launch, never on the read behind a write: this launch's own provisional keys are live.
+    func droppingProvisional() -> SessionAnnotations {
+        SessionAnnotations(
+            bySessionID: bySessionID.filter { !SessionOwnership.ClaimID.names($0.key) },
+        )
+    }
+
+    /// One key gone, whatever it held.
+    private func dropping(_ sessionID: String) -> SessionAnnotations {
+        guard bySessionID[sessionID] != nil else { return self }
+        var next = bySessionID
+        next.removeValue(forKey: sessionID)
+        return SessionAnnotations(bySessionID: next)
+    }
+
     /// The one write path, so an annotation that has fallen back to asserting nothing is dropped
     /// rather than left behind as a record of a decision that was undone.
     private func setting(_ annotation: Annotation, for sessionID: String) -> SessionAnnotations {

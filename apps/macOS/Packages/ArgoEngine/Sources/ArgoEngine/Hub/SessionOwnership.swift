@@ -17,6 +17,17 @@ public final class SessionOwnership {
     /// published at spawn — until the transcript appears it is the only shared handle.
     public struct ClaimID: Hashable, Sendable {
         public let value: String
+
+        /// Every claim id starts here, and no id from anywhere else does: a Session is keyed by its
+        /// transcript's path and a transcript is never called this. The one place the shape is
+        /// spelled, so a reader that has to tell the two kinds apart asks rather than matches.
+        nonisolated static let prefix = "claim-"
+
+        /// Whether an id a row was published under is a CLAIM's rather than a Session's — which is
+        /// to say, whether it means anything outside the process that issued it (#1563).
+        nonisolated public static func names(_ id: String) -> Bool {
+            id.hasPrefix(prefix)
+        }
     }
 
     struct Claim {
@@ -64,6 +75,12 @@ public final class SessionOwnership {
     }
 
     private var issued = 0
+    /// What makes a claim id THIS launch's. `issued` alone is a counter on a store rebuilt at every
+    /// launch, so the third spawn of every Argo that ever ran was `claim-3` — one name for an
+    /// unbounded number of Sessions, and anything keyed by it read a decision taken about a
+    /// stranger (#1563). A claim id is meaningful only inside the process that issued it, and this
+    /// is what makes it say so.
+    private let launch = UUID().uuidString.prefix(8).lowercased()
     /// Bumped by every write to the four stored facts above, through their own observers rather
     /// than by hand — so a claim opened, bound, released or written down cannot reach the ledger
     /// without reaching the roster's memo too (`HubRosterMemo`).
@@ -147,7 +164,7 @@ public final class SessionOwnership {
 
     private func open(sessionID: String?, namedUUID: String?) -> ClaimID {
         issued += 1
-        let id = ClaimID(value: "claim-\(issued)")
+        let id = ClaimID(value: "\(ClaimID.prefix)\(launch)-\(issued)")
         claims[id] = Claim(fromMs: now(), toMs: nil, sessionID: sessionID, namedUUID: namedUUID)
         issuedOrder.append(id)
         // Reachable under its own id from birth: the roster carries a row for this agent before its
