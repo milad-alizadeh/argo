@@ -1,10 +1,13 @@
+import ArgoDesign
 import ArgoEngine
 @testable import ArgoUI
 import Testing
 
 /// Whether the header offers **Create PR** (#1335) — a managed Session only
 /// (`cockpit-roster-row.md`, decision 6): an external or orphaned one has no terminal to type
-/// `/ship` into.
+/// `/ship` into — and the ink it is offered in (#1575), which is the other half of the rule:
+/// presence is the whole of what the control reports, so the ink may not report anything on top
+/// of it.
 @Suite("Session header Create PR")
 struct SessionHeaderCreatePullRequestTests {
     @Test
@@ -16,6 +19,17 @@ struct SessionHeaderCreatePullRequestTests {
     func `an external or orphaned Session is offered nothing`() {
         #expect(!header(access: .external).showsCreatePullRequest)
         #expect(!header(access: .orphaned).showsCreatePullRequest)
+    }
+
+    /// The control is drawn from the moment a managed Session opens, so an accent on it is a
+    /// permanent call to action on a Session asserting nothing. The verdict is the roster's
+    /// `Ready` badge, gated three ways this control is not; the control takes the tab line's
+    /// ordinary ink instead.
+    @Test
+    func `the control takes the ordinary control ink, never the accent`() {
+        let palette = ArgoPalette.graphite
+        #expect(CreatePullRequestButton.ink(in: palette) == palette.availableControl)
+        #expect(CreatePullRequestButton.ink(in: palette) != palette.interaction.accent)
     }
 
     private func header(

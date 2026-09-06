@@ -50,7 +50,8 @@ trailing edge takes the group named `TabLineInstruments`, in this order:
 |---|---|---|
 | 1 | the state word — `Needs input`, `Stopped` | `permission`, `asking`, `stopped` only |
 | 2 | the context instrument, 200pt, with ⓘ inside it | once a spend has been reported, `unknown` included |
-| 3 | Hand off | past 150k **and** managed |
+| 3 | Create PR | managed — always; see below |
+| 4 | Hand off | past 150k **and** managed |
 
 **Hand off takes the trailing edge, so the instrument slides inward when it appears.** That is
 the prototype's order and what the renders show. It costs a reading that moves at the moment the
@@ -148,6 +149,7 @@ and the line is intrinsically sized.
 | `This Session` reading | `ArgoTypography.machineCaption` in `text.primary`, wrapping | a branch or an issue title is what the reader opened the panel to read whole |
 | `This Session` row gap | `ArgoSpacing.snug` 6 | the legend's own |
 | State word | `ArgoTypography.rowMeta` in the state's tone, else `text.tertiary` | unchanged from the band |
+| Create PR | `CreatePullRequestButton`, the same outlined capsule, in `availableControl` | the ordinary control ink — see the amendment below |
 | Hand off | `SessionHandoffButton` exactly as shipped | see below |
 | Chrome material | one `argoChromeBar()` from the window's top edge to the tab line's hairline | the material is what makes two rows read as one bar |
 
@@ -155,6 +157,35 @@ and the line is intrinsically sized.
 on the word and on a 1pt rim, `surface.overlay` as the ground, `ArgoTypography.caption`, padded
 `snug` × `hair`. #692 landed that skin after the prototype was drawn, and the renders here are
 corrected to it. A tier's colour is spent on a word and a rim, never on a ground.
+
+### Amended #1575: Create PR is unconditional, and it is not accent
+
+`cockpit-roster-row.md` decision 6 PLACES this control — the row carries none, and **Create PR**
+lives here, where the Session is already open. It never said when the header draws it or what ink
+it takes. The presence rule arrived with #1335 keyed to `access` and was never designed. It is
+settled here.
+
+**Presence: every managed Session, from the moment it opens, unconditionally.** Nothing about the
+branch, the commits, the Turn in flight or the companion's claim gates it. An external or orphaned
+Session is offered nothing, because there is no terminal to type `/ship` into. Gating it on
+readiness was considered and rejected: `/ship` is a legitimate thing for a reader to ask for at any
+point in a Session, so gating or disabling would remove a real action to fix a reading problem.
+
+**So the control reports one fact — this Session has a terminal — and never that the work is
+ready.** The readiness verdict is the roster's `Ready` badge, and it is gated three ways this
+control is not: the agent must claim it over the companion channel, an open pull request outranks
+the claim (`cockpit-roster-row.md`, decision 7), and the state word outranks it in the slot they
+share. A Session on step 1 of 10 of a Plan draws this control and no badge, and both surfaces are
+right.
+
+**Ink: `ArgoPalette.availableControl`, the ordinary control ink — `text.secondary`'s rung, named
+for the kind of control rather than picked at the call site.** Never `interaction.accent`. The
+accent is a call to action, and a permanent one on a control asserting nothing is read as the
+verdict the badge is withholding — which is how #1575 was reported. Accent on this line belongs to
+the ticket link, which is a route the reader can take now; the tier's tint belongs to Hand off,
+which only exists past a line. This control always exists, so it is set in the ink of a thing that
+is simply available. The capsule is otherwise unchanged: the ink on the word and on the 1pt rim,
+`surface.overlay` as the ground.
 
 ## An unreadable context reads `unknown` over an empty track
 

@@ -115,7 +115,10 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
 6. **The row carries no control.** The roster has exactly one click and it selects the Session.
    `Ready` is a **state**, drawn where the states the row derives are drawn; the **Create PR**
    control that runs `/ship` lives in the deck header, where the Session is already open. A
-   second click target on a row is a row a reader has to aim at.
+   second click target on a row is a row a reader has to aim at. This decision places the control
+   and stops there; when the header draws it and in what ink is settled in
+   `cockpit-session-header.md` (amended #1575) — unconditional on a managed Session, in the
+   ordinary control ink, because it reports a terminal and never a verdict.
 7. **A ready claim with an open pull request never draws.** The claim is CONVENTION, arriving
    over the companion channel (#1335); the pull request is DERIVED from the code host. The pull
    request wins.
