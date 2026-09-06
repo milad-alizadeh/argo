@@ -127,16 +127,21 @@ extension CockpitView {
     /// settled order and its open folds, and a switch into Tickets used to tear that down the same
     /// way the deck's `switch` tore down the feed.
     ///
-    /// `Group`, not `ZStack`: a bare `ZStack` here cost the split view coordinator a second pass
-    /// over `ShellSidebar.body` on every click, doubling the roster's read of the roster
-    /// (`SessionSelectionCostTests`, ADR-0028 Rule 1), and put up no window at all when it was
-    /// tried again for #1404. `InstrumentDeckShell`'s own `ZStack` does not pay this, because a
-    /// `NavigationSplitView` detail pane is not a `NavigationSplitView` sidebar.
+    /// A vertical stack, and NOT a `ZStack`: a bare `ZStack` here cost the split view coordinator
+    /// a second pass over `ShellSidebar.body` on every click, doubling the roster's read of the
+    /// roster (`SessionSelectionCostTests`, ADR-0028 Rule 1), and put up no window at all when it
+    /// was tried again for #1404. `InstrumentDeckShell`'s own `ZStack` does not pay this, because
+    /// a `NavigationSplitView` detail pane is not a `NavigationSplitView` sidebar.
     ///
-    /// What a `Group` here does NOT do is overlay its children the way a `ZStack` would. It
-    /// STACKS them and divides the column's height between the two, which is #1404: the roster
-    /// drew eight rows in half a pane and the rest was the hidden Tickets sidebar's ground.
+    /// So the rooms STACK, and the column's height divides between them — #1404: the roster drew
+    /// eight rows in half a pane and the rest was the hidden Tickets sidebar's ground.
     /// `RoomStage.room(isActive:)` is where the room that is off screen gives its half back.
+    ///
+    /// The spacing is SPELLED, and that is the whole of the strip's vertical. This was a `Group`,
+    /// whose implicit stack spaces its children 8pt apart, and a room clamped to no height still
+    /// takes its gap, so every room paid for the rooms listed above it: the strip opened at 60pt
+    /// in Sessions and 68pt in Tickets, and the Atlas is third. `.flush` is the difference, and
+    /// both numbers are `roster` and `ticketsRoom` rendered and measured either side of it.
     @ViewBuilder func sidebar(tickets: TicketsRoom) -> some View {
         @Bindable var navigation = navigation
         let isTickets = navigation.room == .tickets
@@ -144,24 +149,25 @@ extension CockpitView {
         // the map itself (#1161), which is the same trade Tickets makes with its views.
         let isAtlas = navigation.room == .atlas
 
-        Group {
+        VStack(spacing: ArgoSpacing.flush) {
             ShellSidebar(
-                presentation: presentation,
-                held: RowSelectionHold(
-                    selection: $navigation.sessionSelection,
-                    pointed: navigation.session,
-                    // Not `navigation.session =`: the selection is already settled by the click
-                    // that caused this, and the setter would collapse the range it just made.
-                    pick: { navigation.deckPointed(at: $0) },
-                ),
-                room: $navigation.room,
-                // The shell's intent and not the action itself: an archive that would end live work
-                // is asked about first, and the row's swipe raises the same prompt the menu item
-                // does (#1290).
-                archive: { archive(sessionIDs: $0, isArchived: $1) },
-                rename: actions.sessions.setName,
-                renamingSessionID: $renamingSessionID,
-            )
+                    presentation: presentation,
+                    held: RowSelectionHold(
+                        selection: $navigation.sessionSelection,
+                        pointed: navigation.session,
+                        // Not `navigation.session =`: the selection is already settled by the
+                        // click that caused this, and the setter would collapse the range it just
+                        // made.
+                        pick: { navigation.deckPointed(at: $0) },
+                    ),
+                    room: $navigation.room,
+                    // The shell's intent and not the action itself: an archive that would end live
+                    // work is asked about first, and the row's swipe raises the same prompt the
+                    // menu item does (#1290).
+                    archive: { archive(sessionIDs: $0, isArchived: $1) },
+                    rename: actions.sessions.setName,
+                    renamingSessionID: $renamingSessionID,
+                )
             .room(isActive: !isTickets && !isAtlas)
 
             tickets.sidebar

@@ -49,8 +49,7 @@ package struct ShellSidebar: View {
     private let disengagement = RosterDisengagement()
 
     package var body: some View {
-        VStack(spacing: ArgoSpacing.flush) {
-            RoomStrip(selection: $room)
+        RoomSidebar(room: $room) {
             navigator
         }
     }

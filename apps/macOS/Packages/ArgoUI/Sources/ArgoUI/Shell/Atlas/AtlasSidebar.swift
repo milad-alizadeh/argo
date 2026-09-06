@@ -26,17 +26,16 @@ package struct AtlasSidebar: View {
     @Binding var cockpitRoom: CockpitRoom
 
     package var body: some View {
-        ScrollView(.vertical) {
-            VStack(spacing: ArgoSpacing.flush) {
-                sections
+        // The strip sits above the scroll and not in it, because it switches the window rather
+        // than belonging to this room's own content — and on the same vertical as the other two
+        // rooms', which is `RoomSidebar`'s whole job (#816).
+        RoomSidebar(room: $cockpitRoom) {
+            ScrollView(.vertical) {
+                VStack(spacing: ArgoSpacing.flush) {
+                    sections
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .safeAreaInset(edge: .top, spacing: ArgoSpacing.flush) {
-            // On the same vertical as the other two rooms' strips: a picker that lands a few
-            // points apart between rooms reads as two controls (#816). Pinned above the scroll,
-            // because it switches the window rather than belonging to this room's own content.
-            RoomStrip(selection: $cockpitRoom)
         }
     }
 
