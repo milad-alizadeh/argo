@@ -1,7 +1,8 @@
 # Atlas · where each piece of information lives
 
-`atlas-shell.html` — a **throwaway layout prototype**, not the map. Open it and switch with the
-bar at the bottom, or `?shell=a|b|c`. The isometric field underneath is a cheap stand-in with
+`atlas-shell.html` — a **throwaway layout prototype**, not the map. It lives on the branch
+`design/atlas`, not on `main` (#1526); open it from there and switch with the bar at the bottom,
+or `?shell=a|b|c`. The isometric field underneath is a cheap stand-in with
 real domain names and real clicking, because a grey rectangle makes a layout impossible to judge.
 
 ## The question
