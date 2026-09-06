@@ -1,16 +1,10 @@
 #!/usr/bin/env node
-// What `hang-sample.sh` owes a machine running more than one Argo (#1560).
+// What `hang-sample.sh` owes a machine running more than one Argo (#1560): every line that names
+// a pid names its executable, and an ambiguous target refuses rather than resolves.
 //
-// Every worktree builds its own `Release/Argo.app`, and all of them carry the process name
-// `Argo`. The script used to take `pgrep -x Argo | head -1` and never say which copy that was,
-// so a sample from the wrong build read as a fact about the build being measured. Two things
-// are held here: the target is NAMED on the line that names the pid, and more than one match
-// refuses instead of picking.
-//
-// `ps` is shimmed onto PATH rather than two Argos started for real: processes sharing a name and
-// differing only in path cannot be staged portably — a copied platform binary is SIGKILLed by the
-// macOS signature check, and `ps -o comm=` prints no path at all on the Linux job. The shim makes
-// the candidate table the input it logically is.
+// `ps` is shimmed onto PATH rather than two Argos started for real, because processes sharing a
+// name and differing only in path cannot be staged portably: a copied platform binary is SIGKILLed
+// by the macOS signature check, and `ps -o comm=` prints no path at all on the Linux job.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -31,7 +25,7 @@ process.on('exit', () => rmSync(SCRATCH, { recursive: true, force: true }))
 // A candidate table as `{ pid: executablePath }`, behind the two `ps` invocations the script
 // resolves a target through: `-Ao pid=,comm=` lists the machine, and `-o comm= -p <pid>` answers
 // for one. The second exits 1 saying nothing for a pid the table does not hold, which is how a
-// real `ps` reports a process that is gone — the case a caller-passed `--pid` has to survive.
+// real `ps` reports a process that is gone.
 function stageProcesses(table) {
   const listing = Object.entries(table)
     .map(([pid, exe]) => `echo '${pid} ${exe}'`)
@@ -70,7 +64,11 @@ const runHangSample = (args, timeout) =>
     },
   })
 
-// THE BUG. Two builds, and the old script sampled whichever the kernel listed first.
+// The whole acceptance criterion in one assertion: a pid and the executable behind it, on ONE
+// line — `[^\n]*` and not `.*`, or a candidate list would satisfy it by naming them on two.
+const namesTarget = (said, pid, exe) =>
+  assert.match(said, new RegExp(`${pid}[^\\n]*${exe.replaceAll('.', '\\.')}`), said)
+
 check('more than one match refuses instead of choosing', () => {
   stageProcesses({ 4242: ONE, 5353: TWO })
   const result = runHangSample(['--once'], 20000)
@@ -78,27 +76,20 @@ check('more than one match refuses instead of choosing', () => {
   assert.match(result.stderr, /more than one/)
 })
 
-// A refusal a caller cannot act on is only half the fix: both paths have to be on the page, or
-// there is no way to tell which pid is the build being measured.
+// A refusal a caller cannot act on is only half the fix.
 check('the refusal lists every candidate with its path', () => {
   stageProcesses({ 4242: ONE, 5353: TWO })
   const said = runHangSample(['--once'], 20000).stderr
-  for (const [pid, exe] of [
-    ['4242', ONE],
-    ['5353', TWO],
-  ]) {
-    assert.match(said, new RegExp(`${pid}\\s+${exe.replaceAll('/', '\\/')}`), said)
-  }
+  namesTarget(said, 4242, ONE)
+  namesTarget(said, 5353, TWO)
   assert.match(said, /--pid/, 'the refusal never says how to choose')
 })
 
-// A named pid settles the ambiguity the check above refuses on, and the announcement is what
-// proves it took the copy that was named rather than the one `head -1` used to hand it. The
-// exit status is not read: `sample` is real here, and no real process wears these pids.
+// The exit status is not read here: `sample` is real, and no live process wears these pids.
 check('--pid takes the copy the caller names', () => {
   stageProcesses({ 4242: ONE, 5353: TWO })
   const said = runHangSample(['--pid', '5353', '--once'], 20000).stdout
-  assert.match(said, new RegExp(`5353.*${TWO.replaceAll('/', '\\/')}`), said)
+  namesTarget(said, 5353, TWO)
   assert.doesNotMatch(said, /4242/, said)
 })
 
@@ -109,19 +100,30 @@ check('--pid refuses a process that is not there', () => {
   assert.match(result.stderr, /9999 is not running/)
 })
 
-// THE OTHER HALF. One match is no longer allowed to be silent about which one it was.
 check('--once names the executable beside the pid', () => {
   stageProcesses({ 4242: ONE })
-  const said = runHangSample(['--once'], 20000).stdout
-  assert.match(said, new RegExp(`4242.*${ONE.replaceAll('/', '\\/')}`), said)
+  namesTarget(runHangSample(['--once'], 20000).stdout, 4242, ONE)
 })
 
-// Watch mode never returns, so it is read off its opening lines and then killed. The banner is
-// where a watch says what it is watching, and it carried a bare pid.
+// A sample that cannot be taken used to exit silently under `set -e`.
+check('a sample that fails says which target it failed on', () => {
+  stageProcesses({ 4242: ONE })
+  const result = runHangSample(['--once'], 20000)
+  assert.equal(result.status, 1, result.stdout)
+  namesTarget(result.stderr, 4242, ONE)
+})
+
+// Watch mode never returns on a live target, so it is read off its opening lines and killed.
 check('watch mode names the executable beside the pid', () => {
   stageProcesses({ 4242: ONE })
+  namesTarget(runHangSample([], 4000).stdout, 4242, ONE)
+})
+
+check('a watch whose target goes away names it on the way out', () => {
+  stageProcesses({ 4242: ONE })
   const said = runHangSample([], 4000).stdout
-  assert.match(said, new RegExp(`4242.*${ONE.replaceAll('/', '\\/')}`), said)
+  assert.match(said, /has gone/, said)
+  namesTarget(said.slice(said.indexOf('has gone') - 200), 4242, ONE)
 })
 
 check('no process at all is still a refusal that names what it looked for', () => {
@@ -131,17 +133,15 @@ check('no process at all is still a refusal that names what it looked for', () =
   assert.match(result.stderr, /no process named Argo/)
 })
 
-// The listing is the whole machine, so the name filter is the only thing keeping a hundred other
-// processes out of the candidate list — and an Argo on its way out is listed as `(Argo)`, which
-// would refuse a run as ambiguous while being the one thing that cannot be sampled.
+// The listing is the whole machine, so the name filter is all that keeps a hundred other processes
+// out — and an Argo on its way out reads `(Argo)`, which would refuse a run as ambiguous.
 check('another process, and an exiting Argo, are not candidates', () => {
   stageProcesses({
     4242: ONE,
     707: '/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder',
     16376: '(Argo)',
   })
-  const said = runHangSample(['--once'], 20000).stdout
-  assert.match(said, new RegExp(`4242.*${ONE.replaceAll('/', '\\/')}`), said)
+  namesTarget(runHangSample(['--once'], 20000).stdout, 4242, ONE)
 })
 
 check('an unknown argument is refused rather than ignored', () => {

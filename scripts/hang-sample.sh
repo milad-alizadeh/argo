@@ -13,10 +13,8 @@
 #
 # `sample` needs no permission for a process of your own user, and it does not stop the app.
 #
-# Every worktree builds its own `Release/Argo.app` and they all carry the process name `Argo`, so
-# the NAME does not identify a build and `ARGO_HANG_APP` cannot separate two of them. The path
-# can, and it is the only thing that can — which is why nothing below resolves a target silently
-# and no line names a pid without naming the executable behind it (#1560).
+# A target is identified by its executable path, never by `$APP`: every worktree builds its own
+# `Release/Argo.app` and they all carry the name (#1560).
 set -eu
 
 APP=${ARGO_HANG_APP:-Argo}
@@ -30,21 +28,11 @@ BUSY_BEFORE_DUMP=3
 
 mkdir -p "$OUT_DIR"
 
-# The executable behind a pid, empty when the process is gone. `run-release.sh` decides which
-# copy it may end off exactly this, and the two tools have to mean the same thing by a target.
-executable_of() {
-  ps -o comm= -p "$1" 2>/dev/null || true
-}
-
 # Every live process whose executable is named `$APP`, as `pid<TAB>path`.
 #
-# `ps`, not `pgrep -x "$APP"`, which is what this used and which does not answer here at all: with
-# two Argos running, `ps -Ao ucomm=` names both and `pgrep -x Argo` exits 1 on the pair. A finder
-# that silently finds nothing is the same class of bug as one that silently picks wrong, so the
-# candidate list comes from the command that also carries the path — one answer, not two.
-#
-# A process that is exiting is listed by `ps` as `(Argo)`, parentheses and all, so it does not
-# match the name and drops out here. Nothing can be sampled off one anyway.
+# `pgrep -x Argo` exits 1 here while two Argos are running, though `ps` names both and
+# `pgrep -x Finder` answers on the same shell (#1568). An exiting process reads `(Argo)`,
+# parentheses and all, so it does not match the name and drops out.
 candidates() {
   ps -Ao pid=,comm= | awk -v app="$APP" '
     {
@@ -106,12 +94,11 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-# A caller who names a pid gets that pid, and nothing else is consulted — the point of the flag is
-# to settle an ambiguity this script cannot settle for them. It is still resolved to a path,
-# because a target nobody can name is the bug either way.
+# A named pid is consulted against nothing else, but is still resolved to a path so the run can
+# say what it attached to.
 if [ -n "$chosen" ]; then
   pid=$chosen
-  exe=$(executable_of "$pid")
+  exe=$(ps -o comm= -p "$pid" 2>/dev/null || true)
   if [ -z "$exe" ]; then
     echo "hang-sample: pid $chosen is not running" >&2
     exit 1
@@ -123,8 +110,6 @@ else
     echo "hang-sample: no process named $APP is running" >&2
     exit 1
   fi
-  # Whichever the kernel happens to list first is not an answer. `head -1` here reported on one
-  # worktree's build while the caller read it as another's, twice in one afternoon (#1560).
   if [ "$count" -gt 1 ]; then
     echo "hang-sample: more than one process named $APP is running:" >&2
     printf '%s\n' "$found" | while IFS="$(printf '\t')" read -r one path; do
@@ -141,7 +126,7 @@ if [ "$once" -eq 1 ]; then
   echo "hang-sample: sampling pid $pid at $exe"
   out=$OUT_DIR/sample-$(date +%Y%m%d-%H%M%S).txt
   if ! /usr/bin/sample "$pid" "$SAMPLE_SECONDS" -file "$out" >/dev/null 2>&1; then
-    echo "hang-sample: sample could not read pid $pid" >&2
+    echo "hang-sample: sample could not read pid $pid at $exe" >&2
     exit 1
   fi
   echo "hang-sample: main thread parked $(idle_percent "$out")% of the sample"
@@ -154,10 +139,10 @@ echo "hang-sample: stop with Ctrl-C"
 
 busy=0
 while :; do
-  # The watch follows the process it named, not the name it was given: re-resolving by name would
-  # let a second build take the watch over mid-run and say nothing about the swap.
+  # Follows the pid, not the name: re-resolving would let a second build take the watch over
+  # mid-run (#1560).
   if ! kill -0 "$pid" 2>/dev/null; then
-    echo "hang-sample: pid $pid has gone"
+    echo "hang-sample: pid $pid at $exe has gone"
     exit 0
   fi
   probe=$OUT_DIR/probe.txt
