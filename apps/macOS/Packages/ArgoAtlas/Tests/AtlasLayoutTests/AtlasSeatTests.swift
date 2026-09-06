@@ -1,78 +1,24 @@
-import AtlasFixtures
 @testable import AtlasLayout
 import CoreGraphics
 import Testing
 
-/// One tiling, and a descent that is nothing but the camera (#1490).
+/// The camera over the one tiling: where a descent puts it, and the bounds it may not leave
+/// (#1490).
 ///
-/// The claim is invisible to a screenshot taken one level at a time: a folder re-tiled into the
-/// whole stage and a folder seated in a fixed tiling both fill the frame, and only a number says
-/// the rectangles are the same ones. So the rectangles are what this asks about.
-@Suite("Atlas — one tiling, and a camera over it")
+/// `AtlasStandpointTests` holds the other half — that the tiling itself does not move — and the
+/// two together are what makes a descent something #1423 can fly rather than a cut between two
+/// pictures with nothing in common.
+@Suite("Atlas — the camera a descent moves")
 struct AtlasSeatTests {
-    static let ground = CGSize(width: 900, height: 640)
-
-    static func plan() throws -> AtlasPlan {
-        try AtlasStandpoint(on: AtlasMapFixture.argo())
-            .plan(by: AtlasChannels("lines"), into: ground)
-    }
-
-    /// Two folders of the committed measurement, one shallow and one deep, so the claims below are
-    /// made about a real repository's nesting rather than about two tidy fixtures.
-    static let shallow = "argo/docs"
-    static let deep = "argo/apps/macOS/Packages"
-
-    /// **THE claim.** The plan a reader standing at the root is looking at and the plan they are
-    /// looking at three levels down are the same rectangles, file for file — which is what leaves
-    /// a camera something to move between.
-    @Test(arguments: [shallow, deep])
-    func `the tiling is the same wherever the reader stands`(folder: String) throws {
-        let map = try AtlasMapFixture.argo()
-        let channels = AtlasChannels("lines")
-
-        let root = AtlasStandpoint(on: map).plan(by: channels, into: Self.ground)
-        let inside = AtlasStandpoint(on: map, standingIn: folder)
-            .plan(by: channels, into: Self.ground)
-
-        #expect(root.tiles == inside.tiles)
-        #expect(root.plates == inside.plates)
-        // And the folder is really in there, so the equality above is not two empty maps agreeing.
-        #expect(inside.tiles.contains { $0.path.hasPrefix(folder + "/") })
-    }
-
-    /// The words are still of the folder, which is the half of the descent that did NOT move: the
-    /// index, the reading and the trail read this Map while the picture reads the whole one.
-    @Test func `the reader's scope is still the folder they are in`() throws {
-        let map = try AtlasMapFixture.argo()
-        let standpoint = AtlasStandpoint(on: map, standingIn: Self.deep)
-
-        #expect(!standpoint.inside.plots.isEmpty)
-        #expect(standpoint.inside.plots.count < map.plots.count)
-        #expect(standpoint.trail.count == 4)
-        #expect(standpoint.here == Self.deep)
-    }
-
-    /// A folder the Map no longer carries puts the reader at the top, in both answers at once —
-    /// degrade-down, and the same answer `descending(to:)` and `trail(to:)` give.
-    @Test func `a folder that went out from under the reader is the whole repository`() throws {
-        let map = try AtlasMapFixture.argo()
-        let standpoint = AtlasStandpoint(on: map, standingIn: "argo/nothing/stands/here")
-
-        #expect(standpoint.inside.plots.count == map.plots.count)
-        #expect(standpoint.trail.count == 1)
-    }
-
     /// The camera seats onto the folder's own plate: the plate fills the stage on one axis and is
     /// centred on the other, which is the design's `seatCam` at `SEAT` of 1.
-    @Test(arguments: [shallow, deep])
+    @Test(arguments: [AtlasSeatFixture.shallow, AtlasSeatFixture.deep])
     func `standing in a folder seats the camera on its plate`(folder: String) throws {
-        let plan = try Self.plan()
+        let plan = try AtlasSeatFixture.plan()
         let camera = AtlasCamera.flat(over: plan.extent)
         let plate = try #require(plan.plate(standingIn: folder))
 
-        let fit = AtlasFit(
-            framing: plan, through: camera, into: plan.extent, standingIn: folder,
-        )
+        let fit = AtlasFit(framing: plan, through: camera, into: plan.extent, standingIn: folder)
         let corners = [
             CGPoint(x: plate.rect.minX, y: plate.rect.minY),
             CGPoint(x: plate.rect.maxX, y: plate.rect.maxY),
@@ -91,11 +37,11 @@ struct AtlasSeatTests {
     /// function of where the reader stands and nothing else, so there is no drift to accumulate —
     /// which is the property #1423's flight will retarget against.
     @Test func `going down a level and up again is the camera it started at`() throws {
-        let plan = try Self.plan()
+        let plan = try AtlasSeatFixture.plan()
         let camera = AtlasCamera.flat(over: plan.extent)
 
         let top = AtlasProjection(of: plan, through: camera, standingIn: nil)
-        let down = AtlasProjection(of: plan, through: camera, standingIn: Self.deep)
+        let down = AtlasProjection(of: plan, through: camera, standingIn: AtlasSeatFixture.deep)
         let back = AtlasProjection(of: plan, through: camera, standingIn: nil)
 
         #expect(down.fit != top.fit)
@@ -107,11 +53,11 @@ struct AtlasSeatTests {
     /// all. Walked down one trail rather than compared between two, because depth alone says
     /// nothing — a folder three levels down can hold more of the repository than one at the top.
     @Test func `going further down a trail only ever magnifies`() throws {
-        let map = try AtlasMapFixture.argo()
-        let plan = try Self.plan()
+        let map = try AtlasSeatFixture.map()
+        let plan = try AtlasSeatFixture.plan()
         let camera = AtlasCamera.flat(over: plan.extent)
 
-        let seats = AtlasStandpoint(on: map, standingIn: Self.deep).trail.map { step in
+        let seats = AtlasStandpoint(on: map, standingIn: AtlasSeatFixture.deep).trail.map { step in
             AtlasFit(
                 framing: plan, through: camera, into: plan.extent, standingIn: step.path,
             ).scale.x
@@ -127,92 +73,82 @@ struct AtlasSeatTests {
     /// The bound, asked of a plate small enough to want more magnification than the design allows:
     /// a sliver a thousandth of the plan across would seat at hundreds of times the fit.
     @Test func `the seat is bounded off the zoom that frames the whole plan`() {
-        let extent = CGSize(width: 800, height: 600)
-        let plan = AtlasPlan(
-            extent: extent,
-            plates: [
-                .init(path: "a", rect: CGRect(origin: .zero, size: extent), depth: 0),
-                .init(
-                    path: "a/sliver",
-                    rect: CGRect(x: 10, y: 10, width: 0.4, height: 0.3),
-                    depth: 1,
-                ),
-            ],
-            tiles: [
-                .init(
-                    path: "a/one",
-                    rect: CGRect(x: 0, y: 0, width: 800, height: 600),
-                    band: .hot,
-                    height: 4,
-                ),
-            ],
-        )
-        let camera = AtlasCamera.flat(over: extent)
+        let plan = Self.plan(under: CGRect(x: 10, y: 10, width: 0.4, height: 0.3))
+        let camera = AtlasCamera.flat(over: plan.extent)
 
-        let top = AtlasFit(framing: plan, through: camera, into: extent)
+        let top = AtlasFit(framing: plan, through: camera, into: plan.extent)
         let seated = AtlasFit(
-            framing: plan, through: camera, into: extent, standingIn: "a/sliver",
+            framing: plan, through: camera, into: plan.extent, standingIn: "a/small",
         )
 
         #expect(seated.scale.x <= top.scale.x * AtlasFit.nearest * 1.000_001)
         #expect(seated.scale.x >= top.scale.x * AtlasFit.nearest * 0.999_999)
     }
 
-    /// A folded run — a folder holding one folder and nothing else — has no plate of its own, and
-    /// every folder of it seats on the plate the tiler drew for the run.
-    @Test func `every folder of a folded run seats on the run's own plate`() throws {
-        let plan = try Self.plan()
-        let folded = try #require(plan.plates.first { $0.covers.count > 1 })
-
-        for folder in folded.covers {
-            #expect(plan.plate(standingIn: folder)?.rect == folded.rect)
-        }
-    }
-
-    /// A plate's name follows the picture, because the seat moved the picture out from under the
-    /// plan: a name placed in plan points would caption where the folder used to be.
-    @Test func `a plate's name band moves with the seat`() throws {
-        let plan = try Self.plan()
+    /// A plate with no ground under it is no seat. The clamp would otherwise frame a point at half
+    /// the fit — a worse answer than the one a folder no plate stands under already gets.
+    @Test func `a plate with no area is framed as the whole plan`() {
+        let plan = Self.plan(under: CGRect(x: 40, y: 40, width: 0, height: 0))
         let camera = AtlasCamera.flat(over: plan.extent)
-        let plate = try #require(plan.plate(standingIn: Self.shallow))
 
-        let top = AtlasProjection(of: plan, through: camera)
-        let inside = AtlasProjection(of: plan, through: camera, standingIn: Self.shallow)
-
-        let there = try #require(top.nameBand(of: plate))
-        let here = try #require(inside.nameBand(of: plate))
-        #expect(here != there)
-        // Seated, the folder's own name starts at the left edge of the stage, because the plate it
-        // names is what the stage is now framing.
-        #expect(here.minX < there.minX)
-    }
-
-    /// **At the fit, every name the tiler placed is still drawn.** Read back through the
-    /// projection, a strip cut to exactly the header's height lands a rounding bit under it, and
-    /// the map loses half its captions to arithmetic nobody can see in a screenshot.
-    @Test func `the names at the fit are exactly the ones the tiler cut`() throws {
-        let plan = try Self.plan()
-        let projection = AtlasProjection(
-            of: plan, through: AtlasCamera.flat(over: plan.extent),
+        let top = AtlasFit(framing: plan, through: camera, into: plan.extent)
+        let seated = AtlasFit(
+            framing: plan, through: camera, into: plan.extent, standingIn: "a/small",
         )
 
-        let named = plan.plates.filter { projection.nameBand(of: $0) != nil }
+        #expect(seated == top)
+    }
 
-        #expect(named.map(\.path) == plan.plates.filter(\.carriesName).map(\.path))
-        #expect(!named.isEmpty)
+    /// **The seat lands with the turn, it does not arrive early.** `isFlat` is a threshold, and a
+    /// camera one part in fifty short of the plan would take a jump of up to ninety times the fit
+    /// there — 98% of the way through the turn between the two views.
+    @Test(arguments: [0.5, 0.1, 0.019])
+    func `a camera part way to the plan frames the whole plan`(relief: Double) throws {
+        let plan = try AtlasSeatFixture.plan()
+        let turning = AtlasCamera(relief: relief, over: plan.extent)
+
+        let top = AtlasFit(framing: plan, through: turning, into: plan.extent)
+        let inside = AtlasFit(
+            framing: plan, through: turning, into: plan.extent,
+            standingIn: AtlasSeatFixture.deep,
+        )
+
+        #expect(inside == top)
     }
 
     /// **The city is not seated.** Its camera is the reader's — they drive its turn and tilt — and
     /// a descent that moved it would take the view away from whoever was looking through it.
     @Test func `the city camera is the reader's, not the descent's`() throws {
-        let plan = try Self.plan()
+        let plan = try AtlasSeatFixture.plan()
         let city = AtlasCamera.city(over: plan.extent)
 
         let top = AtlasFit(framing: plan, through: city, into: plan.extent)
         let inside = AtlasFit(
-            framing: plan, through: city, into: plan.extent, standingIn: Self.deep,
+            framing: plan, through: city, into: plan.extent, standingIn: AtlasSeatFixture.deep,
         )
 
         #expect(inside == top)
+    }
+
+    /// A plan holding one plate of a given shape, for the two claims about the bound. Built rather
+    /// than measured: a repository with a plate a thousandth of the plan across is not something a
+    /// fixture can be relied on to hold, and the bound has to be asked about anyway.
+    private static func plan(under rect: CGRect) -> AtlasPlan {
+        let extent = CGSize(width: 800, height: 600)
+        return AtlasPlan(
+            extent: extent,
+            plates: [
+                .init(path: "a", rect: CGRect(origin: .zero, size: extent), depth: 0),
+                .init(path: "a/small", rect: rect, depth: 1),
+            ],
+            tiles: [
+                .init(
+                    path: "a/one",
+                    rect: CGRect(origin: .zero, size: extent),
+                    band: .hot,
+                    height: 4,
+                ),
+            ],
+        )
     }
 }

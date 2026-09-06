@@ -46,6 +46,12 @@ package struct AtlasFit: Equatable, Sendable {
     /// The design says the same twice: `goTo` refuses to fly there, and the turn back to the plan
     /// re-seats only once it has landed (line 2820).
     ///
+    /// **Landed, not nearly** — `isFlat` is the wrong question here, and asking it was a bug. It is
+    /// a threshold, because a wall one part in a thousand tall is a seam of noise along a roof; a
+    /// seat is not a seam but a jump of up to ninety times, and at that threshold the turn would
+    /// take it 98% of the way through. The turn frames the whole plan for every frame of its
+    /// travel, exactly as the design refits every frame of its own, and seats when it arrives.
+    ///
     /// A folder no plate stands under is the whole plan, which is `descending(to:)`'s own
     /// degrade-down: a reader whose folder went out from under them is at the top rather than
     /// somewhere the picture cannot frame.
@@ -57,7 +63,7 @@ package struct AtlasFit: Equatable, Sendable {
     ) {
         let whole = AtlasFit.box(framing: plan, through: camera)
         let fitted = AtlasFit.zoom(framing: whole, into: viewport)
-        guard camera.isFlat, let folder, let plate = plan.plate(standingIn: folder) else {
+        guard camera.relief == 0, let folder, let plate = plan.plate(standingIn: folder) else {
             self.init(framing: whole, into: viewport, at: fitted)
             return
         }
@@ -67,12 +73,19 @@ package struct AtlasFit: Equatable, Sendable {
         for corner in AtlasFit.corners(of: plate.rect) {
             seat.take(camera.project(x: corner.x, y: corner.y, height: 0))
         }
+        // A plate with no area is no seat: framing a point would put the whole map at whatever the
+        // clamp below allowed, centred on nothing. The whole plan, which is where a folder the
+        // picture cannot frame already sends the reader.
+        let seated = AtlasFit.zoom(framing: seat, into: viewport)
+        guard seated > 0 else {
+            self.init(framing: whole, into: viewport, at: fitted)
+            return
+        }
         // Bounded off the FITTED zoom rather than off itself, so however deep the descent runs the
         // camera cannot arrive somewhere nothing could fly it to (`cockpit-atlas.html` line 1486).
         // Both ends are slack on any repository measured so far — the deepest plate seats at a
         // couple of times the fit — and a bound that holds only for the data you happened to
         // measure is a bound that will be wrong silently.
-        let seated = AtlasFit.zoom(framing: seat, into: viewport)
         self.init(
             framing: seat,
             into: viewport,

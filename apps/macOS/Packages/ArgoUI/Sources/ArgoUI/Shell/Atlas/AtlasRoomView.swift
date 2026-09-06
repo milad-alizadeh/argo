@@ -131,8 +131,14 @@ struct AtlasRoomView: View {
                 descent: descent,
                 entries: entries,
                 open: openFile,
+                // Looked up in the Map the PICTURE draws, not the folder's (#1490). The two were
+                // one Map while a descent re-rooted the tiling; they are not now, and a file
+                // outside the folder is still on screen and still clickable — at the city end,
+                // where nothing seats, and flat wherever the seat's bound leaves siblings in
+                // frame. Asked of the folder, every one of those picks marked a file on the map
+                // and put an empty panel beside it.
                 reading: openFile.flatMap {
-                    AtlasFileReading(of: $0, in: standpoint.inside, by: room.choice.channels)
+                    AtlasFileReading(of: $0, in: standpoint.map, by: room.choice.channels)
                 },
                 // Looked up on the same path the reading is, and handed over separately: a file
                 // nobody wrote about carries none, which is every file of a Project with no

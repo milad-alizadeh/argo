@@ -64,9 +64,16 @@ package struct AtlasProjection: Equatable, Sendable {
         // arithmetic. A seat can only ever add names, so the screen is asked only about the plates
         // the plan says are too small to carry one.
         guard plate.carriesName || strip.height >= AtlasFraming.plateHeader else { return nil }
-        return CGRect(
+        let band = CGRect(
             x: strip.minX, y: strip.minY, width: strip.width, height: AtlasFraming.plateHeader,
         )
+        // Off the stage is no band. A seat can magnify by up to ninety, and at that zoom nearly
+        // every plate in the plan clears the header — so a caller that built one `Text` per band
+        // and clipped afterwards would lay out hundreds of names nobody can see, once per frame of
+        // whatever is moving. The clip stays as well: it is what stops a band straddling the edge
+        // from writing over the rail.
+        guard band.intersects(CGRect(origin: .zero, size: viewport)) else { return nil }
+        return band
     }
 
     /// One rect of the plan, on the ground, in the view's own points. Flat only, for `nameBand`'s
