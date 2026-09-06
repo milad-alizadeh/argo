@@ -14,7 +14,10 @@ struct RosterIdentity: Equatable, ExpressibleByStringLiteral {
     /// Oldest first, in the roster's own key — see `HubSession.absorbedIDs`.
     let absorbedIDs: [CockpitPresentation.Session.ID]
 
-    init(_ id: CockpitPresentation.Session.ID, absorbing absorbedIDs: [CockpitPresentation.Session.ID] = []) {
+    init(
+        _ id: CockpitPresentation.Session.ID,
+        absorbing absorbedIDs: [CockpitPresentation.Session.ID] = [],
+    ) {
         self.id = id
         self.absorbedIDs = absorbedIDs
     }

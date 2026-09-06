@@ -67,6 +67,20 @@ struct RosterIdentityTests {
         #expect(hub.sessions.map(\.absorbedIDs) == [["middle", "last"]])
     }
 
+    /// The other id a row retires: a spawn stands under its CLAIM until the CLI writes a record,
+    /// and then under the id the CLI picked (#361). One agent, one row, two ids — and a window
+    /// pointed at the provisional one has to follow it (#1176).
+    @Test
+    func `a row re-keyed to its CLI's own id carries the claim it stood under`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        await hubObserveToEnd(fixture.hub, fixture.observedSpawn())
+
+        #expect(fixture.hub.sessions.map(\.absorbedIDs) == [[claim.value]])
+    }
+
     /// The control. A roster with no chain in it retires nothing, so nothing downstream may read a
     /// Session as having been absorbed when it simply ended.
     @Test

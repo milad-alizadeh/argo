@@ -184,6 +184,9 @@ extension CockpitPresentation.Session {
             ),
             transcript: Transcript(observed: session),
         )
+        // After the init, on the slot's own reasoning: the list above is at its grandfathered
+        // count (`swift-boundaries` edge 6) and this fact does not authorise growing it.
+        absorbedIDs = session.absorbedIDs
     }
 }
 
@@ -210,7 +213,6 @@ extension CockpitPresentation.Session.Chain {
                 handoffFailures: session.handoffFailures,
             ),
             companionChannel: session.companionChannel,
-            absorbedIDs: session.absorbedIDs,
         )
     }
 }

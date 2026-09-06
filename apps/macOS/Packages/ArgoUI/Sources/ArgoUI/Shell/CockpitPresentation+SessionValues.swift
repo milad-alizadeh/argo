@@ -97,17 +97,12 @@ public extension CockpitPresentation.Session {
         /// Whether this link is continuing a chain rather than opening one (#1328) — beside the
         /// moments above for the same reason: a property of the process, not of the record.
         public let resuming: Bool
-        /// The ids the other links of this chain were published under, oldest first (#1481) — see
-        /// `HubSession.absorbedIDs`. Ungrouped, because it is the one fact here about the WHOLE
-        /// chain rather than about the link running now.
-        public let absorbedIDs: [String]
 
         public init(
             program: Program = .init(),
             span: Span = .init(),
             handoff: Handoff = .init(),
             companionChannel: CompanionLiveness = .notApplicable,
-            absorbedIDs: [String] = [],
         ) {
             self.cli = program.cli
             self.model = program.model
@@ -122,7 +117,6 @@ public extension CockpitPresentation.Session {
             self.startedQuietlyAtMs = span.startup.quietAtMs
             self.settledWaits = span.settledWaits
             self.resuming = span.startup.resuming
-            self.absorbedIDs = absorbedIDs
         }
     }
 

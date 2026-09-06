@@ -150,7 +150,8 @@ public final class CockpitNavigationModel {
     /// left alone: it records the act of PICKING, the reader performed none here, and writing it
     /// would fire `resumeIfSelectionIsDead` — a resume nobody asked for, which is the one thing a
     /// repoint must never start (#10).
-    private func follow(_ succession: [CockpitPresentation.Session.ID: CockpitPresentation.Session.ID]) {
+    private func follow(_ succession: [CockpitPresentation.Session.ID: CockpitPresentation.Session
+            .ID]) {
         sessionSelection.follow(succession)
         pointedSession = pointedSession.flatMap { succession[$0] } ?? pointedSession
     }
