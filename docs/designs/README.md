@@ -34,8 +34,9 @@ dresses the same roles onto a real `NavigationSplitView` — the judgement of wh
 holds up *in a shell*. It looks like the cockpit because it is one; that is not a bug.
 
 A surface that needs a value the contract lacks marks it a **proposal**; promoting one is a
-contract change, and `scripts/check-design-tokens-swift.sh` is the gate that stops a raw
-constant from quietly becoming a value nobody chose.
+contract change. Nothing checks this any more — the scan that did was removed with the
+boundary gate — so it is on review to stop a raw constant quietly becoming a value nobody
+chose.
 
 ## The approved visual target
 

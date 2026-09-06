@@ -1,7 +1,7 @@
 // The fixture behind `linter-cache.test.mjs`, built on the repository `step-cache.harness.mjs`
 // makes.
 //
-// Two of the three Swift linters also run from lint-staged over the STAGED paths, so this has
+// Both Swift linters also run from lint-staged over the STAGED paths, so this has
 // to be able to ask them both ways: whole tree, and named files. `swift-lint.sh` refuses a tree
 // with no `.swiftlint.yml` before it reaches anything else, so the configs are part of the
 // fixture rather than of a case.
