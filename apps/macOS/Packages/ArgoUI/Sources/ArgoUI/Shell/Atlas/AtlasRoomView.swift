@@ -14,7 +14,7 @@ struct AtlasRoomView: View {
     @Environment(\.argo) private var argo
     /// Injected from above the deck rather than taken as a parameter — `argoAtlasRoom` says why.
     @Environment(\.argoAtlasRoom) private var resolved
-    @Environment(\.argoReduceMotion) private var reduceMotion
+    @Environment(\.argoReduceMotion) var reduceMotion
     /// What was written about this Project's files, or nothing said (#1159). Its own seam, read
     /// here and never mixed into the reading: the map, the tiling and every number beside it are
     /// the same whether this arrives or not.
@@ -35,23 +35,35 @@ struct AtlasRoomView: View {
     /// orientation and for the same reason: nothing in the sidebar opens a file, and what is open
     /// is a way of looking at the map rather than a fact about it — so it is not persisted and a
     /// reopened room opens on the whole shape.
-    @State private var openFile: String?
+    @State var openFile: String?
 
     /// What the reader has typed into the rail's find field (#1155). This column's own for
     /// `openFile`'s reason, and not persisted for the same one: a question is a way of looking at
     /// the map rather than a fact about it, and a reopened room opens on the whole repository.
-    @State private var query = ""
+    @State var query = ""
 
     /// The folder the reader has descended into, or none for the whole repository (#1156). This
     /// column's own, like `openFile`, and not persisted for the same reason: where you are in a map
     /// is a way of looking at it rather than a fact about the Project, and a reopened room opens on
     /// the whole shape.
-    @State private var folder: String?
+    @State var folder: String?
 
     /// How far the city has climbed out of its plates, 0 to 1 (#1421). This column's own, like the
     /// orientation: the rise is what the map DOES when it arrives, not a fact about the Project,
     /// and nothing in the sidebar starts one.
-    @State private var rise: Double = 0
+    @State var rise: Double = 0
+
+    /// Where the camera actually is, while it is somewhere `folder` does not name (#1423). Nothing
+    /// at rest, when the folder names the seat and there is no flight in the air.
+    ///
+    /// This column's own, like the orientation: a flight is what the map DOES about a descent, not
+    /// a fact about the Project, and nothing in the sidebar starts one.
+    @State var seat: AtlasSeat?
+
+    /// The ground the map is tiled into, read off the stage. Kept here because a flight has to know
+    /// the seat it is flying to, and a seat is measured on a plan — which needs a size only the
+    /// stage has.
+    @State var ground = CGSize.zero
 
     /// What the room STARTS with — a file open, a question asked, a folder descended into. Nothing
     /// in the app ever passes any of them: a reading is opened by a click, a question is asked at a
@@ -67,7 +79,7 @@ struct AtlasRoomView: View {
     }
 
     /// The room, or the one a window that has resolved none draws: a Project it has none of.
-    private var room: AtlasRoom {
+    var room: AtlasRoom {
         resolved ?? AtlasRoom(
             reading: .noProject, project: nil, currency: AtlasCurrency {}, choice: .inert,
         )
@@ -98,10 +110,17 @@ struct AtlasRoomView: View {
         // Nothing survives a change of Project. A map is scoped to the window's Project
         // (ADR-0015), and a reading left standing would be one repository's file read beside
         // another repository's map.
+        // A seat is measured against a PLAN, so anything that lays out a new one leaves it aimed
+        // at where a plate used to be. The ground is watched where it is measured; these are the
+        // reader's own two ways of re-tiling — a channel decides the footprint every rect is
+        // sized by, and hiding test files re-reads the repository without them (#1161).
+        .onChange(of: room.choice.channels) { seat = nil }
+        .onChange(of: room.choice.filters.hideTests.isOn) { seat = nil }
         .onChange(of: room.project?.id) {
             openFile = nil
             query = ""
             folder = nil
+            seat = nil
         }
     }
 
@@ -182,16 +201,13 @@ struct AtlasRoomView: View {
         GeometryReader { proxy in
             AtlasView(
                 plan: standpoint.plan(
-                    by: room.choice.channels,
-                    into: CGSize(
-                        width: proxy.size.width - ArgoSpacing.loose * 2,
-                        height: proxy.size.height - ArgoSpacing.loose * 2,
-                    ),
+                    by: room.choice.channels, into: Self.stage(of: proxy.size),
                 ),
                 viewpoint: AtlasViewpoint(
                     standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
                     orientation: orientation,
                     standingIn: standpoint.folder,
+                    seat: seat,
                 ),
                 marks: AtlasMarks(
                     focus: AtlasFocus(open: openFile) {
@@ -209,122 +225,22 @@ struct AtlasRoomView: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        // Measured where the map is TILED rather than where the stage is padded, and through the
+        // one function the tiling above reads: a flight seated against a ground half a point wider
+        // than the plan was laid out in is a camera aimed slightly wrong.
+        .onGeometryChange(for: CGSize.self) { Self.stage(of: $0.size) } action: {
+            ground = $0
+            // A landed seat was measured on the ground it landed on, so a resize makes it a camera
+            // aimed at where a plate USED to be. Dropped rather than re-solved: nil is the seat the
+            // folder names, which is the same picture and cannot go stale.
+            seat = nil
+        }
         .padding(ArgoSpacing.loose)
         // A Map arriving, and the reader turning the city on: the two moments there is a city to
         // stand up. Keyed on WHEN the Map was measured rather than on the plan, so a channel
         // change repaints and a filter re-tiles without the city reassembling — a model that
         // rebuilds every time the reader touches a menu is a loading screen.
         .task(id: arrival) { await stand() }
-    }
-
-    /// What a rise is spent on: a Map, and whether there is a city to spend it on. Two facts
-    /// rather than one, because the room OPENS at the flat end of the camera — a rise run there
-    /// climbs heights a straight-down camera does not project, and the reader who then turns the
-    /// city on gets it fully built, which is the sentence #1421 opens by complaining about.
-    private var arrival: AtlasArrival {
-        AtlasArrival(measuredAt: measuredAt, isCity: room.choice.isCity.isOn)
-    }
-
-    /// When the drawn Map was measured, or nothing where none is drawn.
-    private var measuredAt: Date? {
-        guard case let .measured(map) = room.reading else { return nil }
-        return map.measuredAt
-    }
-
-    /// The city stands up out of its plates (#1421). Every box starts flat and climbs to its
-    /// measured height, staggered outwards from the middle of the plan — but none of that is here:
-    /// this drives ONE scalar over the role's whole span, and the shader works each box's own
-    /// phase out of it against where the box stands.
-    ///
-    /// `@MainActor` for `FeedIonLoop.run`'s reason: every line writes view state, and `.task`
-    /// alone does not keep an `async` method on the main actor.
-    @MainActor private func stand() async {
-        // Two ways the map is simply THERE, and both answered before the reset rather than by a
-        // nil animation: the reset and the tick after it would otherwise put a flat map on screen
-        // for a frame, which is the one thing either reader asked not to see.
-        //
-        // The treemap draws no heights, so `docs/designs/cockpit-atlas.html`'s own `rise()`
-        // refuses to spend the role there — and Reduce Motion cuts, which is what
-        // `ArgoMotion.rise` carrying no reduced duration means, read off the role rather than
-        // decided here.
-        guard room.choice.isCity.isOn,
-              let sweep = ArgoMotion.risen.sweep.resolved(reduceMotion: reduceMotion)
-        else {
-            rise = 1
-            return
-        }
-        var cut = Transaction()
-        cut.disablesAnimations = true
-        withTransaction(cut) { rise = 0 }
-        // A tick between the two, for `FeedIonLoop`'s reason: SwiftUI folds every change in one
-        // tick into the last value, so a reset in the same tick as the climb leaves nothing to
-        // animate — and a rebuild would then show no rise at all.
-        try? await Task.sleep(for: .seconds(ArgoMotion.passReentry))
-        withAnimation(sweep) { rise = 1 }
-    }
-}
-
-/// What the reader's three ways of moving around the map resolve to. Kept in an extension
-/// because they are the room's WRITES: the body above draws, and each of these is the state
-/// change one gesture means. The decision behind them is `AtlasPickRule`'s (#1156).
-extension AtlasRoomView {
-    /// What a pick on the map means (#1153, #1154, #1155, #1156). The decision is
-    /// `AtlasPickRule`'s, so it can be asked about without a window; what is left here is the
-    /// three writes it resolves to.
-    private func pick(_ picked: AtlasTarget?, among entries: [AtlasIndexEntry], in map: AtlasMap) {
-        switch AtlasPickRule.outcome(of: picked, standingIn: folder ?? map.root.path) {
-        case let .enter(path):
-            descend(to: path, in: map)
-        case let .read(path):
-            open(path, among: entries)
-        case .close:
-            openFile = nil
-        }
-    }
-
-    /// **A pick the question excludes puts the question away.** The list has to select the row of
-    /// the file the map just marked, and it cannot select a row it is not drawing — so the
-    /// narrower of the two facts gives. Clearing the reader's words is the visible answer; leaving
-    /// them is a marked map beside a list denying the file exists, which is the one state #1155
-    /// rules out.
-    ///
-    /// Picking the open file again closes it: what is open is open because the reader opened it,
-    /// so the same gesture puts it away.
-    private func open(_ path: String, among entries: [AtlasIndexEntry]) {
-        guard path != openFile else {
-            openFile = nil
-            return
-        }
-        openFile = path
-        if !entries.contains(where: { $0.path == path }) {
-            query = ""
-        }
-    }
-
-    /// Go to a folder: the one verb behind a click on a plate, a crumb of the trail and the control
-    /// back up (#1156). Three gestures, one move, so none of them can come to mean something
-    /// slightly different from the others.
-    ///
-    /// **The camera is the whole of it now** (#1490). Nothing re-tiles: the picture is laid out
-    /// from the repository's root once, and this line moves where the reader is standing on it, so
-    /// two consecutive frames of a descent are the same rectangles at two scales. It still CUTS —
-    /// the flight between the two is #1423's, and this is the fixed layout that flight needs to
-    /// have something to interpolate.
-    private func descend(to path: String, in map: AtlasMap) {
-        // The top of the trail is NO descent rather than a descent to the root: two spellings of
-        // one place would leave the room with a state the trail and the picture read differently.
-        folder = path == map.root.path ? nil : path
-        let inside = AtlasStandpoint(on: map, standingIn: folder).inside
-        if !AtlasPickRule.stays(openFile, on: inside) {
-            openFile = nil
-        }
-        // The question goes with the level it was asked of, for the reason `open(_:among:)` clears
-        // it: a question asked of the repository can leave a folder's list saying nothing here
-        // matches, beside a map visibly full of that folder's files. The reader asked to be
-        // SOMEWHERE
-        // rather than to be shown fewer things, and the newer of the two answers is the one they
-        // just gave.
-        query = ""
     }
 }
 
@@ -336,7 +252,7 @@ extension AtlasRoomView {
 ///
 /// The treemap-to-city turn is `ArgoMotion.lieDown`'s when that lands, and the two will have to be
 /// reconciled there: a flip that also rises is one move too many.
-private struct AtlasArrival: Equatable {
+struct AtlasArrival: Equatable {
     let measuredAt: Date?
     let isCity: Bool
 }
