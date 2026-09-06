@@ -98,8 +98,8 @@ public extension View {
 /// The kind's ink, resolved against whatever appearance the line is drawn under.
 ///
 /// A `ShapeStyle` rather than a `ViewModifier`, because the contract holds tokens and declares no
-/// view: edge 7b of `scripts/swift-boundaries.sh` is what says so, and a style that resolves
-/// itself is how a token reaches the environment without one.
+/// view of its own, and a style that resolves itself is how a token reaches the environment
+/// without one.
 private struct ArgoLineInk: ShapeStyle {
     let kind: ArgoLineKind
 

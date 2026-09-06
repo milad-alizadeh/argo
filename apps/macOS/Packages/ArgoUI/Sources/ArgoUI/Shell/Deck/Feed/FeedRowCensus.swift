@@ -6,8 +6,7 @@ import ArgoEngine
 /// synthetic that projects differently from its source, and the suite that holds the checked-in
 /// synthetic to what was written. Two spellings of it would let those answers disagree for a
 /// reason that is about neither file, and this is the only module both can see: `ArgoFixtures`
-/// may not import a view (`swift-boundaries.sh` edge 8), and a test helper is not visible to an
-/// executable.
+/// may not import a view, and a test helper is not visible to an executable.
 package enum FeedRowCensus {
     /// The counts, by the name each row shape carries — `rows` for the total, `rows.<shape>` for
     /// each kind, so a caller folds them straight into whatever else it counts.

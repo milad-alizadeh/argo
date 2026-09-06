@@ -27,20 +27,9 @@ const WORKFLOW = path.join(ROOT, '.github/workflows/ci.yml')
 // The pathspec both sides must spell, as a list of operands. Whitespace and line breaks
 // differ between a YAML `run:` block and a shell script, so both sides are reduced to this
 // sequence of tokens before being compared.
-// The paths carrying the boundary gate's own thresholds: they decide the verdict over Swift
-// nobody touched, so a push that moves one is a push whose Swift verdict has changed (#1511).
-// Named once — the scope below holds them, and the cases at the foot iterate this.
-const THRESHOLDS = [
-  'scripts/check-text-ink-swift.sh',
-  'scripts/text-ink-budget.txt',
-  'scripts/check-design-tokens-swift.sh',
-  'scripts/design-tokens-swift-allow.txt',
-]
-
 const SCOPE = [
   'apps/macOS',
   "'scripts/swift-*.sh'",
-  ...THRESHOLDS,
   'package.json',
   'turbo.json',
   '.github/workflows/ci.yml',
@@ -147,24 +136,6 @@ check('a markdown-only change skips, exactly as the CI job did', () => {
     s.cleanup()
   }
 })
-
-// Under `'scripts/swift-*.sh'` alone none of the threshold paths was in scope, so a push
-// carrying nothing else reported "nothing in the Swift scope changed" and ran no gate at all.
-for (const file of THRESHOLDS) {
-  check(`a change to ${file} alone runs the gate`, () => {
-    const s = scenario({ [file]: '1\n' })
-    try {
-      const result = s.run()
-      assert.equal(result.status, 0, result.output)
-      assert.ok(
-        s.ran().includes('run quality:swift'),
-        `moving a threshold skipped the gate that reads it: ${result.output}`,
-      )
-    } finally {
-      s.cleanup()
-    }
-  })
-}
 
 check('a change outside the Swift scope skips', () => {
   const s = scenario({ 'docs/agents/whatever.txt': 'x\n' })

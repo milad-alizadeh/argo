@@ -11,8 +11,8 @@ Two costs stacked, and both were measured on 2026-09-04 rather than guessed at.
 **The machine was saturated.** Load average 178 on 12 cores. 87 `claude` processes and 25
 concurrent `swift-frontend` and `xcodebuild` processes. Swap at 17.2 GB of 18.4 GB. Free disk at
 9.1 GB of 926 GB, of which 104 GB was regenerable build output under `.claude/worktrees`:
-80 GB of SPM `.build` and 24 GB of Xcode `build`. `sh scripts/swift-boundaries.sh` took 43 s of
-wall-clock for 29 s of CPU — a third of its life waiting for a core.
+80 GB of SPM `.build` and 24 GB of Xcode `build`. The module-boundaries gate, since removed,
+took 43 s of wall-clock for 29 s of CPU — a third of its life waiting for a core.
 
 **The gate cost was lanes multiplied by merges.** The gate is keyed to the push, and `ship`
 rebased onto `origin/main` before every push. `main` took 91 commits that day, 45 two days

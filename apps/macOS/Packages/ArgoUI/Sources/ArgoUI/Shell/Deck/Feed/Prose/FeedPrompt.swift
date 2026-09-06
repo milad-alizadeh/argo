@@ -18,9 +18,9 @@ package enum FeedPromptTier: Equatable, Sendable {
 /// stand on.
 ///
 /// One value rather than three parameters, because they are one reading — and because a fifth
-/// parameter would put `FeedPrompt`'s initializer past the arity cap the boundary gate holds
-/// (`.swiftlint.yml`, #755): it stood exactly at four before the tier arrived. Grouping by the
-/// reading is what that gate asks for.
+/// parameter would put `FeedPrompt`'s initializer past the four-parameter cap
+/// (`apps/macOS/.swiftlint.yml`, #755): it stood exactly at four before the tier arrived. Grouping
+/// by the reading is what the cap asks for.
 package struct FeedPromptReading: Equatable, Sendable {
     let text: String
     /// What was pasted in with the words. Always empty for a `submitted` reading: nothing is drawn

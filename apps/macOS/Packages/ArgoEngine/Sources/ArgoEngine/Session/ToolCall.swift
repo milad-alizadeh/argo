@@ -70,7 +70,8 @@ public struct ToolCall: Sendable, Equatable {
     }
 
     /// Read THROUGH `input` rather than stored beside it, so the two facts above stay one
-    /// parameter while every call site goes on reading `call.ask` (rules/house.md, edge 6).
+    /// parameter while every call site goes on reading `call.ask`
+    /// (`apps/macOS/.swiftlint.yml`, the four-parameter cap).
     public var ask: Ask? {
         input.ask
     }

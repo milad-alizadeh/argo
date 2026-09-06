@@ -34,9 +34,8 @@ package struct AtlasRoom {
 }
 
 /// How far the drawn Map is behind the repository it measured, and the gesture that closes the gap
-/// — grouped for the reason `AtlasMapChoice` is (`swift-boundaries.sh` edge 6), and because they
-/// are one thought: #1162 says a map is stale, and #1140's rebuild is the whole of what a reader
-/// does about it.
+/// — grouped for the reason `AtlasMapChoice` is, and because they are one thought: #1162 says a
+/// map is stale, and #1140's rebuild is the whole of what a reader does about it.
 @MainActor
 package struct AtlasCurrency {
     /// How many commits the repository has taken since the drawn Map was measured. `nil` where the
@@ -54,7 +53,7 @@ package struct AtlasCurrency {
 
 /// Everything the reader has decided about the map, and the write back for each — grouped rather
 /// than spread over `AtlasRoom` itself, the way `CockpitPresentation.Session` groups a reading
-/// apart from the room's other facts (`swift-boundaries.sh` edge 6).
+/// apart from the room's other facts.
 ///
 /// The sidebar and the stage both read this. They are two columns of one split view, so a choice
 /// held by either would be a choice the other could not see.
@@ -67,8 +66,9 @@ package struct AtlasMapChoice {
     /// and not a rebuild.
     package let setChannels: (AtlasChannels) -> Void
     /// The design's Filters section, both switches. Grouped rather than spread over this value
-    /// for the reason this value is grouped out of `AtlasRoom` — and because the gate on the one
-    /// declaration shape SwiftLint cannot see is a cap of four (`swift-boundaries.sh` edge 6).
+    /// for the reason this value is grouped out of `AtlasRoom` — and because four is the cap on a
+    /// parameter list (`apps/macOS/.swiftlint.yml`), read onto the one declaration shape SwiftLint
+    /// cannot see.
     package let filters: AtlasFilterChoice
     /// Whether the map is drawn as the city or as the treemap.
     package let isCity: AtlasSwitch
