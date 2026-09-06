@@ -137,66 +137,6 @@ struct AtlasRoomView: View {
         }
     }
 
-    /// What a pick on the map means (#1153, #1154, #1155, #1156). The decision is
-    /// `AtlasPickRule`'s, so it can be asked about without a window; what is left here is the
-    /// three writes it resolves to.
-    private func pick(_ picked: AtlasTarget?, among entries: [AtlasIndexEntry], in map: AtlasMap) {
-        switch AtlasPickRule.outcome(of: picked, standingIn: folder ?? map.root.path) {
-        case let .enter(path):
-            descend(to: path, in: map)
-        case let .read(path):
-            open(path, among: entries)
-        case .close:
-            openFile = nil
-        }
-    }
-
-    /// **A pick the question excludes puts the question away.** The list has to select the row of
-    /// the file the map just marked, and it cannot select a row it is not drawing — so the
-    /// narrower of the two facts gives. Clearing the reader's words is the visible answer; leaving
-    /// them is a marked map beside a list denying the file exists, which is the one state #1155
-    /// rules out.
-    ///
-    /// Picking the open file again closes it: what is open is open because the reader opened it,
-    /// so the same gesture puts it away.
-    private func open(_ path: String, among entries: [AtlasIndexEntry]) {
-        guard path != openFile else {
-            openFile = nil
-            return
-        }
-        openFile = path
-        if !entries.contains(where: { $0.path == path }) {
-            query = ""
-        }
-    }
-
-    /// Go to a folder: the one verb behind a click on a plate, a crumb of the trail and the control
-    /// back up (#1156). Three gestures, one move, so none of them can come to mean something
-    /// slightly different from the others.
-    ///
-    /// The camera is not touched, and that is the point of the criterion it answers: the map
-    /// re-tiles into the same ground at the same turn and tilt, so the reader arrives looking at
-    /// the folder from where they were looking at what held it. A descent that also moved the
-    /// camera would answer the question "where am I" with "somewhere else again". The approved
-    /// design flies between levels instead (`cockpit-atlas.html`, `goCrumb`); that is a move to
-    /// make with the animation it needs, not a half of one.
-    private func descend(to path: String, in map: AtlasMap) {
-        // The top of the trail is NO descent rather than a descent to the root: two spellings of
-        // one place would leave the room with a state the trail and the picture read differently.
-        folder = path == map.root.path ? nil : path
-        let inside = folder.flatMap { map.descending(to: $0) } ?? map
-        if !AtlasPickRule.stays(openFile, on: inside) {
-            openFile = nil
-        }
-        // The question goes with the level it was asked of, for the reason `open(_:among:)` clears
-        // it: a question asked of the repository can leave a folder's list saying nothing here
-        // matches, beside a map visibly full of that folder's files. The reader asked to be
-        // SOMEWHERE
-        // rather than to be shown fewer things, and the newer of the two answers is the one they
-        // just gave.
-        query = ""
-    }
-
     /// `whole` is the Map before the descent, and the one a pick is answered against: a plate names
     /// a folder by its whole path, and where the reader is going is a place in the REPOSITORY
     /// rather than a place in the picture currently drawn.
@@ -300,6 +240,71 @@ struct AtlasRoomView: View {
         // animate — and a rebuild would then show no rise at all.
         try? await Task.sleep(for: .seconds(ArgoMotion.passReentry))
         withAnimation(sweep) { rise = 1 }
+    }
+}
+
+/// What the reader's three ways of moving around the map resolve to. Kept in an extension
+/// because they are the room's WRITES: the body above draws, and each of these is the state
+/// change one gesture means. The decision behind them is `AtlasPickRule`'s (#1156).
+extension AtlasRoomView {
+    /// What a pick on the map means (#1153, #1154, #1155, #1156). The decision is
+    /// `AtlasPickRule`'s, so it can be asked about without a window; what is left here is the
+    /// three writes it resolves to.
+    private func pick(_ picked: AtlasTarget?, among entries: [AtlasIndexEntry], in map: AtlasMap) {
+        switch AtlasPickRule.outcome(of: picked, standingIn: folder ?? map.root.path) {
+        case let .enter(path):
+            descend(to: path, in: map)
+        case let .read(path):
+            open(path, among: entries)
+        case .close:
+            openFile = nil
+        }
+    }
+
+    /// **A pick the question excludes puts the question away.** The list has to select the row of
+    /// the file the map just marked, and it cannot select a row it is not drawing — so the
+    /// narrower of the two facts gives. Clearing the reader's words is the visible answer; leaving
+    /// them is a marked map beside a list denying the file exists, which is the one state #1155
+    /// rules out.
+    ///
+    /// Picking the open file again closes it: what is open is open because the reader opened it,
+    /// so the same gesture puts it away.
+    private func open(_ path: String, among entries: [AtlasIndexEntry]) {
+        guard path != openFile else {
+            openFile = nil
+            return
+        }
+        openFile = path
+        if !entries.contains(where: { $0.path == path }) {
+            query = ""
+        }
+    }
+
+    /// Go to a folder: the one verb behind a click on a plate, a crumb of the trail and the control
+    /// back up (#1156). Three gestures, one move, so none of them can come to mean something
+    /// slightly different from the others.
+    ///
+    /// The camera is not touched, and that is the point of the criterion it answers: the map
+    /// re-tiles into the same ground at the same turn and tilt, so the reader arrives looking at
+    /// the folder from where they were looking at what held it. A descent that also moved the
+    /// camera would answer the question "where am I" with "somewhere else again". The approved
+    /// design flies between levels instead (`cockpit-atlas.html`, `goCrumb`); that is a move to
+    /// make with the animation it needs, not a half of one.
+    private func descend(to path: String, in map: AtlasMap) {
+        // The top of the trail is NO descent rather than a descent to the root: two spellings of
+        // one place would leave the room with a state the trail and the picture read differently.
+        folder = path == map.root.path ? nil : path
+        let inside = folder.flatMap { map.descending(to: $0) } ?? map
+        if !AtlasPickRule.stays(openFile, on: inside) {
+            openFile = nil
+        }
+        // The question goes with the level it was asked of, for the reason `open(_:among:)` clears
+        // it: a question asked of the repository can leave a folder's list saying nothing here
+        // matches, beside a map visibly full of that folder's files. The reader asked to be
+        // SOMEWHERE
+        // rather than to be shown fewer things, and the newer of the two answers is the one they
+        // just gave.
+        query = ""
     }
 }
 
