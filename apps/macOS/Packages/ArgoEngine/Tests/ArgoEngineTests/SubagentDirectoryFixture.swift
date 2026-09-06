@@ -25,6 +25,19 @@ struct SubagentDirectoryFixture {
         try writeSubagent(beside: parentURL, agent: agentID, lines: lines, workflow: workflow)
     }
 
+    /// What the host writes beside the Subagent transcripts and this walk keeps none of: one tool
+    /// result, under `tool-results/` in the same tree.
+    @discardableResult
+    func writeToolResult(named name: String) throws -> URL {
+        let directoryURL = parentURL.deletingPathExtension()
+            .appending(path: "subagents", directoryHint: .isDirectory)
+            .appending(path: "tool-results", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let url = directoryURL.appending(path: "\(name).json")
+        try Data().write(to: url)
+        return url
+    }
+
     func remove() {
         try? FileManager.default.removeItem(at: rootURL)
     }

@@ -6,12 +6,13 @@ import Testing
 @Suite("Subagent observation")
 struct SubagentObservationTests {
     @Test
-    func `a Subagent is observed under the id its delegation names`() throws {
+    func `a Subagent is observed under the id its delegation names`() async throws {
         let fixture = try SubagentDirectoryFixture()
         defer { fixture.remove() }
         try fixture.write(agent: subagentID, lines: Fixture.lines("subagentOwn"))
 
-        #expect(Engine().subagents(beside: fixture.parentURL).map(\.agentID) == [subagentID])
+        #expect(await Engine().subagents(beside: fixture.parentURL, unchangedSince: nil)?
+            .transcripts.map(\.agentID) == [subagentID])
     }
 
     /// The whole point of reading the child's file at all: what the parent's own reading disowns.
@@ -29,18 +30,21 @@ struct SubagentObservationTests {
     /// The ordinary case: most Sessions delegate nothing, so the directory the walk is pointed at
     /// is not there — which is no Subagents rather than a failure.
     @Test
-    func `a Session that delegated nothing is observed as no Subagents`() throws {
+    func `a Session that delegated nothing is observed as no Subagents`() async throws {
         let fixture = try SubagentDirectoryFixture()
         defer { fixture.remove() }
 
-        #expect(Engine().subagents(beside: fixture.parentURL).isEmpty)
+        #expect(await Engine().subagents(beside: fixture.parentURL, unchangedSince: nil)?
+            .transcripts.isEmpty == true)
     }
 
     /// Everything the file already held, which is the first batch a tail yields. The stream stays
     /// open after it — a Subagent's file goes on growing — so the read stops at that batch.
     private func backfill(of fixture: SubagentDirectoryFixture) async throws -> [TranscriptEvent] {
         let engine = Engine()
-        let found = try #require(engine.subagents(beside: fixture.parentURL).first)
+        let found = try #require(
+            await engine.subagents(beside: fixture.parentURL, unchangedSince: nil)?.transcripts
+                .first)
         for await batch in engine.observeSubagent(found).events {
             return batch
         }

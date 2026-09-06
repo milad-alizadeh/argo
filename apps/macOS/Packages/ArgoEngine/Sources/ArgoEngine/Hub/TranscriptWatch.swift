@@ -227,7 +227,7 @@ final class TranscriptWatch {
         }
         // Whatever the fan-out has written SO FAR. The rest arrives with the sweep, which is what
         // sees the file for a delegation handed over after this moment.
-        subagents.refresh(of: observation.id, beside: observation.sourceURL)
+        await subagents.refresh(of: observation.id, beside: observation.sourceURL)
     }
 
     /// The ONE write to the join. In place, so a batch costs no copy of the transcripts it lands

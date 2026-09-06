@@ -41,12 +41,21 @@ public struct Engine: Sendable {
         return sourceURLs.map { observation(at: $0, reading: .whole) }
     }
 
-    /// Which Subagents were written beside one Session's record.
+    /// Which Subagents were written beside one Session's record, or `nil` where the tree has not
+    /// moved since the walk that produced `stamp`.
     ///
     /// Kept apart from the observation below for the reason discovery's is: observing a file OPENS
     /// it, and this is asked on every sweep about files that are already being tailed.
-    public func subagents(beside parentURL: URL) -> [SubagentTranscript] {
-        SubagentTranscripts.beside(parentURL.standardizedFileURL)
+    ///
+    /// `async` and NONISOLATED, which together are the whole point: a nonisolated async function
+    /// runs on the generic executor rather than on its caller's actor, so the recursive walk this
+    /// makes happens off the main actor even though every caller is on it. What crosses back is
+    /// `Sendable` values (#1498).
+    public func subagents(
+        beside parentURL: URL,
+        unchangedSince stamp: SubagentTreeStamp?,
+    ) async -> SubagentWalk? {
+        SubagentTranscripts.beside(parentURL.standardizedFileURL, unchangedSince: stamp)
     }
 
     /// One Subagent's record, read as the subject of its own file rather than as the parent's
