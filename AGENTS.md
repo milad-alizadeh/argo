@@ -85,6 +85,11 @@ branch, gated and merged, one at a time. Rebasing per lane made the gate cost la
 merges, and `main` takes about ninety commits a day (#1377). The exception is a PR GitHub reports
 `CONFLICTING`, which only that branch's own session can resolve.
 
+**A test that leaves the base has to say so.** `land.sh` refuses a branch whose rebased tree is
+missing a test the base has, unless one of the branch's commits carries a
+`Removes-test: <name>` trailer. A rebase that takes the pre-fix side of a file deletes the test
+that guarded the fix, and every suite is green afterwards (#1558).
+
 Two lanes never own the same file, whatever the vocabulary split says. The arithmetic, the
 measurements and what the gate now does before its first command: `docs/agents/landing.md`.
 

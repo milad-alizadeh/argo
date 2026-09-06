@@ -18,6 +18,8 @@
 #     machine-wide, so a second invocation waits rather than racing the first onto `main`.
 #   - touch a lane's worktree or the shared checkout. It works in `.claude/worktrees/landing`,
 #     its own tree, created on first use and left in place afterwards.
+#   - merge a branch that removes a test the base has without saying it meant to. A green
+#     suite proves nothing about a case that is no longer in it (#1558).
 #   - merge anything it did not just gate green, or resolve a conflict. A conflict is a
 #     decision, and this script has no way to make one: it reports the PR and moves on.
 #   - merge at all under --dry-run, which stops after the gate and reports what it would do.
@@ -136,6 +138,22 @@ for pr in $QUEUE; do
     # A conflict is a decision about what the code should now do, and this script cannot make
     # one. It goes back to the branch's own session, which has the context to resolve it.
     echo "land: #$pr conflicts on $BASE — left for its lane: $conflicted" >&2
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  # After the rebase, before the gate: the gate cannot read a case that is no longer in the
+  # suite (#1558). From SCRIPT_DIR rather than from the branch, because a branch that dropped
+  # the check along with the test would otherwise answer for itself.
+  lost=$(sh "$SCRIPT_DIR/kept-the-tests.sh" "$LANDING" "origin/$BASE" HEAD) && answer=0 || answer=$?
+  if [ "$answer" = 1 ]; then
+    echo "land: #$pr removes tests that are on $BASE without saying so — left for its lane:" >&2
+    echo "$lost" | sed 's/^/land:   /' >&2
+    echo "land:   (a deletion that was meant takes a Removes-test: <name> trailer)" >&2
+    skipped=$((skipped + 1))
+    continue
+  elif [ "$answer" != 0 ]; then
+    echo "land: #$pr — the removed-test check could not answer (exit $answer) — left for its lane" >&2
     skipped=$((skipped + 1))
     continue
   fi

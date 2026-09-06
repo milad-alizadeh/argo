@@ -7,6 +7,9 @@
 //
 // `conflicting: true` makes the branch and `main` touch the same file, so the rebase fails the
 // way a real one does rather than by being told to.
+//
+// `removesTest` deletes a suite the base holds: `'silently'` in a commit that says nothing,
+// `'declared'` in one carrying the `Removes-test:` trailer.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -52,24 +55,39 @@ esac
 exit 0
 `
 
-function seed(clone, git, conflicting) {
+// A test on the base, in the shape `kept-the-tests.sh` reads. The branch below deletes it, which
+// is what a rebase that took the pre-fix side of a file leaves behind (#1558).
+const GUARDED_SUITE = `import { check } from './check-harness.mjs'
+check('the case the base is holding', () => {})
+`
+
+function seed(clone, git, { conflicting, removesTest }) {
   mkdirSync(path.join(clone, 'scripts'), { recursive: true })
   writeFileSync(path.join(clone, 'scripts/swift-gate.sh'), GATE_STUB)
-  for (const script of ['land.sh', 'build-lock.sh']) {
+  for (const script of ['land.sh', 'build-lock.sh', 'kept-the-tests.sh']) {
     writeFileSync(
       path.join(clone, 'scripts', script),
       readFileSync(path.join(ROOT, 'scripts', script), 'utf8'),
     )
   }
   writeFileSync(path.join(clone, 'shared.txt'), 'base\n')
+  writeFileSync(path.join(clone, 'guarded.test.mjs'), GUARDED_SUITE)
   git(clone, 'add', '-A')
   git(clone, 'commit', '-qm', 'seed')
   git(clone, 'push', '-q', 'origin', 'main')
 
   git(clone, 'checkout', '-qb', 'feature')
   writeFileSync(path.join(clone, conflicting ? 'shared.txt' : 'feature.txt'), 'branch\n')
+  if (removesTest) rmSync(path.join(clone, 'guarded.test.mjs'))
   git(clone, 'add', '-A')
-  git(clone, 'commit', '-qm', 'the work')
+  git(
+    clone,
+    'commit',
+    '-qm',
+    removesTest === 'declared'
+      ? 'the work\n\nRemoves-test: the case the base is holding'
+      : 'the work',
+  )
   git(clone, 'push', '-q', '-u', 'origin', 'feature')
 
   // main moves on, as it does about ninety times a day.
@@ -80,7 +98,7 @@ function seed(clone, git, conflicting) {
   git(clone, 'push', '-q', 'origin', 'main')
 }
 
-export function landScenario({ conflicting = false } = {}) {
+export function landScenario({ conflicting = false, removesTest = false } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), 'land-'))
   const origin = path.join(dir, 'origin.git')
   const clone = path.join(dir, 'clone')
@@ -92,7 +110,7 @@ export function landScenario({ conflicting = false } = {}) {
   execFileSync('git', ['clone', '-q', origin, clone], { stdio: 'pipe' })
   git(clone, 'config', 'user.email', 'test@example.com')
   git(clone, 'config', 'user.name', 'test')
-  seed(clone, git, conflicting)
+  seed(clone, git, { conflicting, removesTest })
 
   const bin = path.join(dir, 'bin')
   mkdirSync(bin, { recursive: true })

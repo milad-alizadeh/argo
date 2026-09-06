@@ -63,6 +63,31 @@ branch, runs the gate, force-pushes with a lease, and squash-merges. Anything th
 cleanly is reported and left: a branch that conflicts, one that fails the gate on the new base,
 one that moved while it was being landed. Nothing is merged that was not just gated green.
 
+## What a green suite cannot tell you
+
+A branch cut before a fix landed carries the pre-fix file. When its rebase resolves the conflict
+by taking its own side whole, the fix goes and the test that guarded it goes with it — and every
+suite is green afterwards, because the case that would have failed is no longer in one. #1543's
+connection fix reached `main` and left it again this way inside four hours (#1558).
+
+There is no content rule that separates that from an honest deletion: the rebase rewrites the
+branch's commits, so afterwards the removal is authored by the branch either way. So the removal
+declares itself. Between the rebase and the gate, `scripts/kept-the-tests.sh` compares the test
+names on the base with the names on the rebased tree, and any that are gone leave the branch for
+its lane unless one of the branch's own commits names it:
+
+```
+Removes-test: a tail running inside the connect window reads as connected
+```
+
+One line, in the commit that does it.
+
+Run it by hand with `sh scripts/kept-the-tests.sh . origin/main HEAD`, **from a tree already
+rebased onto `origin/main`** — the comparison is tree against tree, so an un-rebased branch
+reports every test `main` has gained since the cut. What it does not read: a test whose name
+survives while its assertions are weakened, a name the tree holds twice, and any deletion
+outside `land.sh`. It closes the deletion nobody noticed, not the one somebody meant.
+
 ## Knowing whether it worked
 
 Every gate run and every step appends a row to `~/Library/Caches/argo-gate/metrics.tsv`, and
