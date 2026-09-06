@@ -34,7 +34,9 @@ public enum ArgoLineKind: String, Sendable, CaseIterable {
 
     /// Whether a line of this kind is text somebody can still read and act on. Every kind but
     /// `disabled` is, and each of those is held to `TextRoles.contrastFloor`.
-    public var isLive: Bool { self != .disabled }
+    public var isLive: Bool {
+        self != .disabled
+    }
 }
 
 public extension ArgoPalette.TextRoles {
@@ -62,21 +64,19 @@ public extension View {
     /// The palette comes from the environment rather than a parameter, so a light appearance
     /// arrives without touching a call site.
     func argoLine(_ style: ArgoTextStyle, _ kind: ArgoLineKind) -> some View {
-        modifier(ArgoLineInk(style: style, kind: kind))
+        argoText(style).foregroundStyle(ArgoLineInk(kind: kind))
     }
 }
 
-/// Reads the appearance for `argoLine`. A modifier rather than an inline `@Environment` read,
-/// which a `View` extension has no place to put.
-private struct ArgoLineInk: ViewModifier {
-    @Environment(\.argo) private var argo
-
-    let style: ArgoTextStyle
+/// The kind's ink, resolved against whatever appearance the line is drawn under.
+///
+/// A `ShapeStyle` rather than a `ViewModifier`, because the contract holds tokens and declares no
+/// view: edge 7b of `scripts/swift-boundaries.sh` is what says so, and a style that resolves
+/// itself is how a token reaches the environment without one.
+private struct ArgoLineInk: ShapeStyle {
     let kind: ArgoLineKind
 
-    func body(content: Content) -> some View {
-        content
-            .argoText(style)
-            .foregroundStyle(argo.color.text.ink(kind))
+    func resolve(in environment: EnvironmentValues) -> some ShapeStyle {
+        environment.argo.color.text.ink(kind).color
     }
 }
