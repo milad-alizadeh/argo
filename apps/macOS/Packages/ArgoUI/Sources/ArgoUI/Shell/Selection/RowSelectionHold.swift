@@ -22,6 +22,34 @@ package struct RowSelectionHold<Row: Hashable & Sendable> {
     /// nothing on the way, which is every list most of the time and the backlog always.
     var awaited: Row?
 
+    /// Where the surface beside the list goes when the selection's drawn row moves.
+    ///
+    /// `nil` is never a click: a click always names a row, so an emptied `last` is the list's own
+    /// arithmetic — a fold shutting, a `confine` over rows it has not caught up with, a row
+    /// re-keyed under the selection (#361) — and none of those is the reader letting a Session go.
+    /// Following one there took the deck off a Session seconds after it was started, and
+    /// reconciliation, which is what clears a selection for real, was then left a `nil` to repoint
+    /// from rather than the id it could have followed (#1493).
+    @MainActor
+    package func followClick(to row: Row?) {
+        guard let row, row != pointed else { return }
+        pick(row)
+    }
+
+    /// The selection cut back to the rows this list is DRAWING, which is what stops a menu
+    /// offering to act on what a shut fold is over (#1247).
+    ///
+    /// Two rows are exempt, for one reason: neither is off the list because the reader let it go.
+    /// The awaited row has not been published yet, and the drawn row is the one the deck is open
+    /// on — a row re-keyed under the selection (#361) is off this list for the pass its order
+    /// takes to admit it, and cutting it there emptied the roster's ground under a Session that
+    /// was seconds old (#1493). Neither exemption paints anything: the ground is drawn per DRAWN
+    /// row (`SessionRosterProjection.Selection.isSelected`), so a row not in `visible` grounds
+    /// nothing either way.
+    package func confineToDrawn(_ visible: [Row]) {
+        selection.confine(to: visible + [awaited, pointed].compactMap(\.self))
+    }
+
     /// The `List`'s own selection: the held set, and the one route the platform's answer comes
     /// back by. Every list bound to a hold takes it from here, so the rule below is not a thing a
     /// call site can be written without.
