@@ -12,12 +12,16 @@ public struct AtlasFocus {
     /// The file the reader has open, or none.
     public let open: String?
 
-    /// What the reader clicked, or nothing where they clicked the ground — which is an answer of
-    /// its own, and one the caller is owed: clicking the ground is one of the three ways out of a
-    /// reading.
-    public let clicked: (String?) -> Void
+    /// What the reader clicked — a file to read, a folder to go into (#1156) — or nothing where
+    /// they clicked the ground, which is an answer of its own and one the caller is owed: clicking
+    /// the ground is one of the three ways out of a reading.
+    ///
+    /// ONE closure for the two, rather than a click and a descent apart: a pixel of the map
+    /// answers once, and a map that reported the two separately would leave a caller to decide
+    /// which of them a click on a folder's plate was.
+    public let clicked: (AtlasTarget?) -> Void
 
-    public init(open: String?, clicked: @escaping (String?) -> Void) {
+    public init(open: String?, clicked: @escaping (AtlasTarget?) -> Void) {
         self.open = open
         self.clicked = clicked
     }

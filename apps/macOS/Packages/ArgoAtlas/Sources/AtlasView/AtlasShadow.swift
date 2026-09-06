@@ -20,10 +20,22 @@ enum AtlasShadow {
         return min(1, max(0, (share - floor) / span))
     }
 
-    /// The deepest plate a point sits on — the one whose files it really belongs to, since a
-    /// nested plate's rect sits wholly inside the one it folds into.
-    private static func depth(at point: CGPoint, on plates: [AtlasPlateFrame]) -> Int {
-        plates.filter { $0.rect.contains(point) }.map(\.depth).max() ?? 0
+    /// Which plate a rectangle lies on: the deepest frame its middle sits in, since a nested
+    /// plate's rect sits wholly inside the one it folds into. Its PLACE in the plan's own list,
+    /// because that is what names the folder — a decal is painted in this plate's tone and is
+    /// picked as this plate's folder, and both have to be the same one (#1156).
+    ///
+    /// Asked of the DECAL's own rect rather than the file's, which is what makes that sentence
+    /// true: a shadow thrown across a plate boundary lands on the neighbour's ground, and it is
+    /// the neighbour's ground it is drawn as.
+    ///
+    /// Nothing where no plate is under it at all, which is a tiling with no folders in it: the
+    /// decal then lies on the desktop and names nothing, the same as the desktop does.
+    static func plate(under rect: CGRect, on plates: [AtlasPlateFrame]) -> Int? {
+        let middle = CGPoint(x: rect.midX, y: rect.midY)
+        return plates.indices
+            .filter { plates[$0].rect.contains(middle) }
+            .max { plates[$0].depth < plates[$1].depth }
     }
 
     /// The decal, or nothing when the file is too short to bother. Pushed across the plan away
@@ -50,7 +62,7 @@ enum AtlasShadow {
         )
         let rect = tile.rect.offsetBy(dx: offset.x, dy: offset.y)
 
-        let depth = depth(at: CGPoint(x: tile.rect.midX, y: tile.rect.midY), on: plates)
+        let depth = plate(under: rect, on: plates).map { plates[$0].depth } ?? 0
         let darkened = 1 - (1 - ArgoLight.shadowDepth) * weight
         return AtlasVolume(rect, shade: darkened, pigment: pigments.plate(at: depth))
     }

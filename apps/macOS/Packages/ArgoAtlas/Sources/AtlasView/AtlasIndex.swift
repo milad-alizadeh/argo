@@ -2,8 +2,13 @@ import ArgoDesign
 import AtlasLayout
 import SwiftUI
 
-/// THE INDEX. Every file the map is drawing, in one list, and the search that narrows it (#1155,
-/// the approved design's `AtlasIndex`).
+/// THE INDEX. Every file the map is drawing, in one list (#1155, the approved design's
+/// `AtlasIndex`).
+///
+/// The field that narrows it and the trail that says which folder it is of both stand ABOVE it,
+/// in the rail: this list is rebuilt whenever what it holds changes, and a control inside it would
+/// be rebuilt with it — which is what would take a reader's focus, and their half-typed word, out
+/// of the field between one keystroke and the next.
 ///
 /// **A mark on a roof tells you where to look; this tells you what there is to look at.** Both are
 /// needed, which is why the list is a permanent region of the rail rather than something a search
@@ -15,18 +20,21 @@ import SwiftUI
 public struct AtlasIndex: View {
     @Environment(\.argo) private var argo
 
-    @Binding private var query: String
+    /// What the reader asked, read rather than written: the field itself stands above this list —
+    /// and above the trail between them — so what is left here is the two lines whose WORDING
+    /// depends on whether a question was asked at all.
+    private let query: String
     private let entries: [AtlasIndexEntry]
     private let open: String?
     private let select: (String) -> Void
 
     public init(
-        query: Binding<String>,
+        query: String,
         entries: [AtlasIndexEntry],
         open: String?,
         select: @escaping (String) -> Void,
     ) {
-        _query = query
+        self.query = query
         self.entries = entries
         self.open = open
         self.select = select
@@ -34,9 +42,6 @@ public struct AtlasIndex: View {
 
     public var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            AtlasFind(query: $query)
-                .padding(.horizontal, ArgoSpacing.loose)
-                .padding(.top, ArgoSpacing.comfortable)
             head
             // The list's own box, which both the rows and the sentence that stands in for them
             // are inset from — the design's `#rows`. Each of them then takes its own inset inside
@@ -163,12 +168,12 @@ private let previewEntries = [
 private struct AtlasIndexPreview: View {
     @Environment(\.argo) private var argo
 
-    @Binding var query: String
+    var query = ""
     var entries = previewEntries
     var open: String?
 
     var body: some View {
-        AtlasIndex(query: $query, entries: entries, open: open) { _ in }
+        AtlasIndex(query: query, entries: entries, open: open) { _ in }
             .frame(width: 356, height: 420)
             // The rail's own ground, which the index is drawn on and never carries itself: the
             // list is a region of a column, not a card.
@@ -177,25 +182,17 @@ private struct AtlasIndexPreview: View {
 }
 
 #Preview("Atlas index — the whole repository") {
-    @Previewable @State var query = ""
-
-    AtlasIndexPreview(query: $query).argoAppearance()
+    AtlasIndexPreview().argoAppearance()
 }
 
 #Preview("Atlas index — a file open") {
-    @Previewable @State var query = ""
-
-    AtlasIndexPreview(query: $query, open: "argo/README.md").argoAppearance()
+    AtlasIndexPreview(open: "argo/README.md").argoAppearance()
 }
 
 #Preview("Atlas index — a question with answers") {
-    @Previewable @State var query = "atlas swift"
-
-    AtlasIndexPreview(query: $query, entries: [previewEntries[1]]).argoAppearance()
+    AtlasIndexPreview(query: "atlas swift", entries: [previewEntries[1]]).argoAppearance()
 }
 
 #Preview("Atlas index — a question nothing answers") {
-    @Previewable @State var query = "kubernetes"
-
-    AtlasIndexPreview(query: $query, entries: []).argoAppearance()
+    AtlasIndexPreview(query: "kubernetes", entries: []).argoAppearance()
 }

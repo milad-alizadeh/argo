@@ -17,10 +17,11 @@ struct AtlasSurface: NSViewRepresentable {
     /// over none (#1153). A closure rather than a binding, because the answer is read off a frame
     /// the GPU has already drawn: it arrives on a mouse event, not on a view update.
     var resolve: (String?) -> Void = { _ in }
-    /// The file the reader CLICKED, or none where they clicked the ground (#1154). Read off the
-    /// same id target and answered against the same frame as the hover, so the file that opens is
-    /// the one drawn under the cursor rather than the one nearest it.
-    var pick: (String?) -> Void = { _ in }
+    /// What the reader CLICKED — a file to read, a folder to go into, or none where they clicked
+    /// the ground (#1154, #1156). Read off the same id target and answered against the same frame
+    /// as the hover, so what opens is what was drawn under the cursor rather than what was nearest
+    /// it.
+    var pick: (AtlasTarget?) -> Void = { _ in }
 
     func makeCoordinator() -> AtlasPointer {
         AtlasPointer(renderer: AtlasVolumeRenderer(pixelFormat: .bgra8Unorm))

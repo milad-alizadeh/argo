@@ -23,9 +23,10 @@ struct AtlasVolume {
     /// already names between `heights` and `pigment` — a scalar put after `pigment` instead would
     /// leave Metal rounding the struct up somewhere Swift's `MemoryLayout` does not follow it.
     var shade: Float = 1
-    /// Which file this box is, as the id target writes it (#1153). 0 is NOTHING — a plate, a rim,
-    /// a shadow decal — and a file is its place in the roster the same call built, plus one, so
-    /// the pixel a reader points at either names a file or names none.
+    /// What this box IS, as the id target writes it (#1153, folders too since #1156): its place in
+    /// the roster the same call built, plus one. 0 is NOTHING, which on a drawn map is the desktop
+    /// alone — a plate, its rim and the shadow lying on it all name the folder whose ground they
+    /// are, so the pixel a reader points at names a file, a folder, or nowhere.
     ///
     /// It sits in the four bytes `shade` left of the eight both languages pad out before the
     /// `float3`, so a whole channel of picking costs the instance buffer nothing.
@@ -49,12 +50,22 @@ struct AtlasVolume {
         self.pigment = pigment.simd
     }
 
-    /// The same box, told which file it is (#1153).
+    /// Where the box stands on the plan, read back off what it was built from. The plan's own
+    /// units, which is what everything that asks — which plate a shadow lies on (#1156) — is in.
+    var rect: CGRect {
+        CGRect(
+            x: CGFloat(origin.x),
+            y: CGFloat(origin.y),
+            width: CGFloat(size.x),
+            height: CGFloat(size.y),
+        )
+    }
+
+    /// The same box, told what it is (#1153).
     ///
     /// Chained rather than a fifth initialiser parameter, and it reads better for it: an id is not
-    /// a property of the SHAPE the way its rect, its roof and its paint are — every box carries one
-    /// and only a file's is anything but zero, so the boxes that are not files say nothing about it
-    /// at all.
+    /// a property of the SHAPE the way its rect, its roof and its paint are — it is what the box
+    /// stands for, decided by the walk that built the roster rather than by the box.
     func identified(as id: UInt32) -> AtlasVolume {
         var volume = self
         volume.id = id

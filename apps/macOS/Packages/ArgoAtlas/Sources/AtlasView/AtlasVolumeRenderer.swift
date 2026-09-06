@@ -155,10 +155,11 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         )
     }
 
-    /// The file drawn at one pixel of the drawable, or NO file, or no answer yet (#1153).
+    /// What is drawn at one pixel of the drawable — a file, a folder — or NOTHING, or no answer
+    /// yet (#1153, #1156).
     ///
-    /// No file is an answer, not a failure: the desktop, a plate, a folder's rim and a cast shadow
-    /// all read as no file, because none of them IS one. Nothing here searches for a near miss —
+    /// Nothing is an answer, not a failure: the desktop and a cast shadow read as nothing, because
+    /// neither IS a place on the map. Nothing here searches for a near miss —
     /// "rather than to the nearest" is the acceptance criterion, and the only way to keep it is to
     /// read the one pixel that was asked about.
     ///
@@ -166,7 +167,7 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// against a map the picture is not of.
     func pick(atPixel pixel: AtlasPixel) -> AtlasPick? {
         guard let id = ids.id(at: pixel) else { return nil }
-        return AtlasPick(file: city.file(at: id))
+        return AtlasPick(target: city.target(at: id))
     }
 
     /// What to call once a frame's ids can be read. One caller, `AtlasPointer`, and it is the only

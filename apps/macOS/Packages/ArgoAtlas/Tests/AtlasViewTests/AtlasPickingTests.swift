@@ -142,8 +142,43 @@ struct AtlasPickingTests {
 
         // The top left of the frame: the city is fitted inside its own bounding box, so a corner of
         // a turned map is ground the map cannot reach.
-        #expect(harness.pick(at: AtlasPixel(x: 0, y: 0))?.file == nil)
+        // The whole TARGET, not just its file: since #1156 a folder is an answer too, and a claim
+        // about files alone would pass on a corner that picked one.
+        #expect(harness.pick(at: AtlasPixel(x: 0, y: 0))?.target == nil)
         #expect(frame.band(atPixel: 0) == nil)
+    }
+
+    /// A folder is picked where its PLATE is drawn, and nowhere else (#1156). The margin the tiler
+    /// leaves round a folder's contents is the only part of it no file stands on, and it is what a
+    /// reader aims at to go in.
+    ///
+    /// Two claims in one sweep, because half of it is worthless alone: that some pixel names the
+    /// folder — a plate that never reached the id target would name none, and a test asking only
+    /// the second question would pass on a map with no folders in it at all — and that no pixel
+    /// naming the folder is drawn as a file, which is the drift the whole mechanism guards.
+    @Test func `a folder is picked where its plate is drawn`() async throws {
+        let harness = try #require(AtlasPickHarness(), Self.unrenderable)
+        let plan = Self.plan()
+        let frame = try #require(await harness.frame(
+            of: AtlasVolumes.city(of: plan, in: Self.pigments),
+            plan: plan,
+            through: AtlasCamera(relief: 0, orientation: .opening, over: plan.extent),
+        ))
+
+        var folders = 0
+        for y in Swift.stride(from: 0, to: AtlasPickHarness.size.height, by: Self.step) {
+            for x in Swift.stride(from: 0, to: AtlasPickHarness.size.width, by: Self.step) {
+                guard case let .folder(path) = harness.pick(at: AtlasPixel(x: x, y: y))?.target
+                else { continue }
+                #expect(path == "argo/plate")
+                #expect(
+                    frame.band(atPixel: y * AtlasPickHarness.size.width + x) == nil,
+                    "(\(x),\(y)) picked the folder where a file is drawn",
+                )
+                folders += 1
+            }
+        }
+        #expect(folders > 0, "the plate drew no pickable ground at all")
     }
 
     /// Every pixel where the id and the picture do not say the same thing, named by where it is and
