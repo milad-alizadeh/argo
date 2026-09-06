@@ -66,9 +66,24 @@ package extension TranscriptFixtures {
         .turnEnded(.endTurn),
     ]
 
+    /// A fan-out in flight: one BACKGROUNDED delegation per child, each answered by the launch
+    /// receipt that names it and resolves nothing (#908).
+    ///
+    /// The receipt is what makes this the shape the fourth fact can be asked about at all — a
+    /// delegation the record never named has no Subagent ID, so no file to read (#1513). The
+    /// record settles none of them, which is what leaves the reading to the children's own files.
+    static func inFlight(_ children: [String]) -> [TranscriptEvent] {
+        children.flatMap { child -> [TranscriptEvent] in
+            [
+                delegated("away-\(child)", to: "Verify: \(child)", secondsAgo: 60),
+                .toolCallOutcome(launched("away-\(child)", subagent: child)),
+            ]
+        }
+    }
+
     /// One handover, named the way a real one is: the brief is both the target and the agent's own
     /// account of it, which is what the feed draws.
-    private static func delegated(
+    static func delegated(
         _ id: String,
         to brief: String,
         secondsAgo: Int,
