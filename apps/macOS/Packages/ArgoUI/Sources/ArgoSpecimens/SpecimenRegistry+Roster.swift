@@ -166,6 +166,8 @@ extension SpecimenRegistry {
         },
         // The one entry whose point is the CLICK: driven, so New Session must land a row.
         SpecimenEntry("spawningRoster") { SpawningRosterSpecimen() },
+        // Two spawns, back to back: one row still waiting on its PTY, one past its first record.
+        SpecimenEntry("freshSessionPair") { FreshSessionPairSpecimen() },
         SpecimenEntry("renamedRoster") { RenamedRosterSpecimen() },
         SpecimenEntry("ticketRoster") { TicketRosterSpecimen() },
         // The same rows where the shared title cuts, which is the only render that answers whether

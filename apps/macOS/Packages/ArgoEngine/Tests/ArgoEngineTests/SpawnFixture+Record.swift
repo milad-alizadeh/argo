@@ -8,12 +8,20 @@ extension SpawnFixture {
     ///
     /// On the fixture because both halves of the spawn's story need it: `HubSpawnTests` to watch
     /// the row replaced, `HubSpawnProcessTests` for a live Session to lose the PTY under.
-    func observedSpawn(cwd: String? = nil) -> TranscriptObservation {
+    ///
+    /// The transcript and the prompt are named so a suite driving TWO fresh spawns can give each
+    /// its own file and its own title, which is the pair #1479 is about.
+    func observedSpawn(
+        chainID: String = spawnedChainID,
+        prompt: String = "First prompt",
+        cwd: String? = nil,
+    )
+        -> TranscriptObservation {
         hubTestObservation(
-            id: "session-from-cli",
+            id: chainID,
             events: [
                 .cwd(cwd ?? projectURL.path),
-                .prompt(text: "First prompt", images: [], atMs: Date().epochMs),
+                .prompt(text: prompt, images: [], atMs: Date().epochMs),
                 .turnEnded(.endTurn),
             ],
         )

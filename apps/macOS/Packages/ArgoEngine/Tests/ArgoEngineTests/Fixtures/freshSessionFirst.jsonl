@@ -1,0 +1,2 @@
+{"type":"user","sessionId":"session-from-cli","session_id":"session-from-cli","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-09-05T10:00:01.000Z","uuid":"f1-user-1","parentUuid":null,"message":{"role":"user","content":"Take the roster apart"}}
+{"type":"assistant","sessionId":"session-from-cli","session_id":"session-from-cli","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-09-05T10:00:05.000Z","uuid":"f1-asst-1","parentUuid":"f1-user-1","message":{"role":"assistant","content":[{"type":"text","text":"Reading the roster"}],"stop_reason":"end_turn"}}

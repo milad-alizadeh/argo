@@ -21,7 +21,7 @@ enum PermissionGate {
         patience: PermissionPatience = .default,
         _ body: (SpawnFixture, SessionOwnership.ClaimID, CompanionClient) async throws -> Void,
     ) async throws {
-        let fixture = try SpawnFixture(permissionPatience: patience)
+        let fixture = try SpawnFixture(patience: .init(permission: patience))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: mode))
         let client = try await CompanionClient.dialled(path(fixture, claim))

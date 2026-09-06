@@ -110,7 +110,7 @@ extension SessionDriverConformanceTests {
             patience: PermissionPatience = .default,
             _ body: (SpawnFixture, DrivenSession) async throws -> Void,
         ) async throws {
-            let fixture = try SpawnFixture(permissionPatience: patience)
+            let fixture = try SpawnFixture(patience: .init(permission: patience))
             defer { fixture.remove() }
             let session = try await fixture.drive(cli)
             defer { session.gate.close() }

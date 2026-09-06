@@ -2,8 +2,8 @@
 ///
 /// Every record repeats them, and a stream that re-announced the cwd two hundred times would bury
 /// the events anyone is watching for. The cwd, the branch and the model keep their LATEST reading;
-/// only the origin session id and the entrypoint keep their first, because those two are fixed at
-/// the moment the file was opened.
+/// the entrypoint keeps its first, because it is fixed at the moment the file was opened. The
+/// origin session id is read off the FIRST record and never after (#1479).
 ///
 /// A cursor of its own rather than three fields on the reader: "have I said this already" is the
 /// whole of its state, and it is the one part of the reader's memory that has nothing to do with
@@ -13,8 +13,9 @@ struct TranscriptContextCursor {
     private var lastModel: String?
     private var lastEffort: String?
     private var lastBranch: String?
-    private var lastOriginSessionID: String?
     private var lastEntrypoint: String?
+    /// Whether the origin has had its ONE chance to be stated — see `events(for:)`.
+    private var originSettled = false
 
     /// Forget everything said so far, so the NEXT record announces whatever it carries in full.
     ///
@@ -25,8 +26,12 @@ struct TranscriptContextCursor {
     /// scalars still held it: a stream and a header disagreeing permanently.
     ///
     /// Re-stating costs one repeated event per fact at a fork, which is 19 places in 474 files.
+    ///
+    /// The origin is not re-stated: the record after a fork is not the file's first (#1479).
     mutating func restate() {
-        self = TranscriptContextCursor()
+        var restated = TranscriptContextCursor()
+        restated.originSettled = originSettled
+        self = restated
     }
 
     /// The model a `/model` command NAMED (`CommandedModel`), through the same cursor the reported
@@ -50,9 +55,14 @@ struct TranscriptContextCursor {
             lastCwd = cwd
             events.append(.cwd(cwd))
         }
-        if let originSessionID = message.originSessionID, lastOriginSessionID == nil {
-            lastOriginSessionID = originSessionID
-            events.append(.originSession(id: originSessionID))
+        // Off the FIRST record only, and never again — whether that record carried one or not. A
+        // `remote_session_change` writes `session_id` mid-run, and every record after it repeats
+        // that value, so an origin taken later names whatever the process picked up (#1479).
+        if !originSettled {
+            originSettled = true
+            if let originSessionID = message.originSessionID {
+                events.append(.originSession(id: originSessionID))
+            }
         }
         if let entrypoint = message.entrypoint, lastEntrypoint == nil {
             lastEntrypoint = entrypoint
