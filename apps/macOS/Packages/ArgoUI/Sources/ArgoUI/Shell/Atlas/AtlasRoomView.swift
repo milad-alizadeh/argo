@@ -109,32 +109,30 @@ struct AtlasRoomView: View {
     /// was measured and what it is drawn by are the sidebar's sections now, and the design puts no
     /// bar over the picture (`docs/designs/cockpit-atlas.html`, `#stage`).
     private func measured(_ map: AtlasMap) -> some View {
-        // The Map as the reader's filters leave it — the same call the sidebar makes, so the
-        // tiling and every number said about it cannot disagree about what was measured.
-        let filtered = room.choice.drawn(map)
-        // And then as their DESCENT leaves it: a Map of the folder they are in (#1156). One value
-        // for the picture, the trail, the list and the reading, so all four are of one folder —
-        // and the whole repository where the descent has gone out from under the reader, which is
-        // what `descending(to:)` answering nothing means and where `trail(to:)` puts them too.
-        let drawn = folder.flatMap { filtered.descending(to: $0) } ?? filtered
-        let descent = AtlasDescent(trail: filtered.trail(to: folder)) {
-            descend(to: $0, in: filtered)
+        // The Map as the reader's filters leave it, and where their descent leaves them standing
+        // on it (#1490). ONE value, and the one place that says the tiling comes from the Map and
+        // never from the folder — the same call the sidebar makes, so the tiling and every number
+        // said about it cannot disagree about what was measured.
+        let standpoint = AtlasStandpoint(on: room.choice.drawn(map), standingIn: folder)
+        let descent = AtlasDescent(trail: standpoint.trail) {
+            descend(to: $0, in: standpoint.map)
         }
-        // The list is read off the SAME Map the picture is tiled from, by the same filters, and
-        // ONCE — both columns are handed this one answer, so the two can never disagree about
-        // what is in the repository.
-        let entries = drawn.index(matching: query, by: room.choice.channels)
+        // The list is of the folder the reader is IN, read once and handed to both columns, so the
+        // two can never disagree about what is in it. The picture is of the whole repository and
+        // seated on that folder, which is what leaves them agreeing about where the reader is
+        // without the map having re-tiled to say so.
+        let entries = standpoint.inside.index(matching: query, by: room.choice.channels)
         // The stage keeps the room it had: the rail takes its width off the end rather than
         // shrinking the map to nothing, and the map is what the reader clicked on.
         return HStack(spacing: ArgoSpacing.flush) {
-            stage(drawn, among: entries, of: filtered)
+            stage(standpoint, among: entries)
             AtlasRoomRail(
                 query: $query,
                 descent: descent,
                 entries: entries,
                 open: openFile,
                 reading: openFile.flatMap {
-                    AtlasFileReading(of: $0, in: drawn, by: room.choice.channels)
+                    AtlasFileReading(of: $0, in: standpoint.inside, by: room.choice.channels)
                 },
                 // Looked up on the same path the reading is, and handed over separately: a file
                 // nobody wrote about carries none, which is every file of a Project with no
@@ -145,14 +143,14 @@ struct AtlasRoomView: View {
         }
     }
 
-    /// `whole` is the Map before the descent, and the one a pick is answered against: a plate names
-    /// a folder by its whole path, and where the reader is going is a place in the REPOSITORY
-    /// rather than a place in the picture currently drawn.
+    /// A pick is answered against the standpoint's whole Map: a plate names a folder by its whole
+    /// path, and where the reader is going is a place in the REPOSITORY rather than a place in the
+    /// picture currently drawn.
     private func stage(
-        _ drawn: AtlasMap, among entries: [AtlasIndexEntry], of whole: AtlasMap,
+        _ standpoint: AtlasStandpoint, among entries: [AtlasIndexEntry],
     )
         -> some View {
-        ground(drawn, among: entries, of: whole)
+        ground(standpoint, among: entries)
             .overlay(alignment: .topTrailing) {
                 // The design's own `#orbit`, floating over the stage rather than docked in a bar,
                 // and inset from the corner by what the design insets it by.
@@ -161,7 +159,9 @@ struct AtlasRoomView: View {
             }
     }
 
-    /// The map, tiled into the room's own ground.
+    /// The map, tiled into the room's own ground — from the repository's root, at every depth
+    /// (#1490). Where the reader is standing goes to the view as the folder it is, and moves the
+    /// camera there rather than the tiling.
     ///
     /// Tiled in the BODY rather than inside the view, because a plan is recomputed when the size
     /// moves and a body is not a frame (ADR-0028 rule 3).
@@ -170,13 +170,12 @@ struct AtlasRoomView: View {
     /// name is laid out in plan coordinates — turned, every caption would sit over a building it
     /// does not name, which is why the city draws with none.
     private func ground(
-        _ map: AtlasMap, among entries: [AtlasIndexEntry], of whole: AtlasMap,
+        _ standpoint: AtlasStandpoint, among entries: [AtlasIndexEntry],
     )
         -> some View {
         GeometryReader { proxy in
             AtlasView(
-                plan: AtlasPlan(
-                    tiling: map,
+                plan: standpoint.plan(
                     by: room.choice.channels,
                     into: CGSize(
                         width: proxy.size.width - ArgoSpacing.loose * 2,
@@ -184,13 +183,19 @@ struct AtlasRoomView: View {
                     ),
                 ),
                 standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
+                standingIn: standpoint.folder,
                 orientation: orientation,
                 marks: AtlasMarks(
-                    focus: AtlasFocus(open: openFile) { pick($0, among: entries, in: whole) },
-                    // The DRAWN Map's own ties, so hiding test files takes their cords with it:
-                    // a cord to a file the map is not drawing has no box to end on (#1160).
+                    focus: AtlasFocus(open: openFile) {
+                        pick($0, among: entries, in: standpoint.map)
+                    },
+                    // The FILTERED Map's own ties, so hiding test files takes their cords with it:
+                    // a cord to a file the map is not drawing has no box to end on (#1160). Not
+                    // the folder's — the picture is of the whole repository now, and a cord that
+                    // left the folder used to end nowhere.
                     ties: AtlasTies(
-                        couplings: map.couplings, isOn: room.choice.filters.showTies.isOn,
+                        couplings: standpoint.map.couplings,
+                        isOn: room.choice.filters.showTies.isOn,
                     ),
                 ),
             )
@@ -292,17 +297,16 @@ extension AtlasRoomView {
     /// back up (#1156). Three gestures, one move, so none of them can come to mean something
     /// slightly different from the others.
     ///
-    /// The camera is not touched, and that is the point of the criterion it answers: the map
-    /// re-tiles into the same ground at the same turn and tilt, so the reader arrives looking at
-    /// the folder from where they were looking at what held it. A descent that also moved the
-    /// camera would answer the question "where am I" with "somewhere else again". The approved
-    /// design flies between levels instead (`cockpit-atlas.html`, `goCrumb`); that is a move to
-    /// make with the animation it needs, not a half of one.
+    /// **The camera is the whole of it now** (#1490). Nothing re-tiles: the picture is laid out
+    /// from the repository's root once, and this line moves where the reader is standing on it, so
+    /// two consecutive frames of a descent are the same rectangles at two scales. It still CUTS —
+    /// the flight between the two is #1423's, and this is the fixed layout that flight needs to
+    /// have something to interpolate.
     private func descend(to path: String, in map: AtlasMap) {
         // The top of the trail is NO descent rather than a descent to the root: two spellings of
         // one place would leave the room with a state the trail and the picture read differently.
         folder = path == map.root.path ? nil : path
-        let inside = folder.flatMap { map.descending(to: $0) } ?? map
+        let inside = AtlasStandpoint(on: map, standingIn: folder).inside
         if !AtlasPickRule.stays(openFile, on: inside) {
             openFile = nil
         }

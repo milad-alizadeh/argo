@@ -11,6 +11,11 @@ import CoreGraphics
 /// EXACTLY when the viewport is the shape the plan was tiled into — an invariant `AtlasSurface`
 /// keeps by framing into `plan.extent`, and `AtlasCameraTests` is what holds it.
 package struct AtlasFit: Equatable, Sendable {
+    /// How close a seated camera may come, and how far back it may stand, as multiples of the zoom
+    /// that frames the whole plan (`docs/designs/cockpit-atlas.html` line 1486).
+    static let nearest = 90.0
+    static let furthest = 0.5
+
     /// Eye-plane units to clip units, per axis. The two differ only by the viewport's own aspect:
     /// the zoom behind them is one number.
     package let scale: CGPoint
@@ -23,9 +28,75 @@ package struct AtlasFit: Equatable, Sendable {
         self.offset = offset
     }
 
-    /// The fit that frames one plan, seen through one camera, in one viewport.
+    /// The fit that frames one plan, seen through one camera, in one viewport — the whole of it,
+    /// which is where a reader who has descended into nothing stands.
     package init(framing plan: AtlasPlan, through camera: AtlasCamera, into viewport: CGSize) {
-        var box = AtlasFit.Box()
+        self.init(framing: plan, through: camera, into: viewport, standingIn: nil)
+    }
+
+    /// The same fit, seated on the plate the reader is standing on (#1490).
+    ///
+    /// **The seat is the whole of a descent.** There is ONE tiling, laid out from the repository's
+    /// root and never rebuilt, so going into a folder is the same picture larger rather than a
+    /// second picture — only this number moves (`docs/designs/cockpit-atlas.html`, "WHY NOTHING
+    /// RE-TILES ANY MORE", and `seatCam`, which this is).
+    ///
+    /// Only at the FLAT end. The city's camera is the reader's — they drive its turn and tilt, and
+    /// a descent that seated it too would take the view away from whoever was looking through it.
+    /// The design says the same twice: `goTo` refuses to fly there, and the turn back to the plan
+    /// re-seats only once it has landed (line 2820).
+    ///
+    /// A folder no plate stands under is the whole plan, which is `descending(to:)`'s own
+    /// degrade-down: a reader whose folder went out from under them is at the top rather than
+    /// somewhere the picture cannot frame.
+    package init(
+        framing plan: AtlasPlan,
+        through camera: AtlasCamera,
+        into viewport: CGSize,
+        standingIn folder: String?,
+    ) {
+        let whole = AtlasFit.box(framing: plan, through: camera)
+        let fitted = AtlasFit.zoom(framing: whole, into: viewport)
+        guard camera.isFlat, let folder, let plate = plan.plate(standingIn: folder) else {
+            self.init(framing: whole, into: viewport, at: fitted)
+            return
+        }
+        // The plate's own ground, at no height: what stands on it is inside it, and at the flat
+        // camera a height moves nothing at all (`AtlasCameraTests`).
+        var seat = AtlasFit.Box()
+        for corner in AtlasFit.corners(of: plate.rect) {
+            seat.take(camera.project(x: corner.x, y: corner.y, height: 0))
+        }
+        // Bounded off the FITTED zoom rather than off itself, so however deep the descent runs the
+        // camera cannot arrive somewhere nothing could fly it to (`cockpit-atlas.html` line 1486).
+        // Both ends are slack on any repository measured so far — the deepest plate seats at a
+        // couple of times the fit — and a bound that holds only for the data you happened to
+        // measure is a bound that will be wrong silently.
+        let seated = AtlasFit.zoom(framing: seat, into: viewport)
+        self.init(
+            framing: seat,
+            into: viewport,
+            at: min(fitted * AtlasFit.nearest, max(fitted * AtlasFit.furthest, seated)),
+        )
+    }
+
+    private init(framing box: Box, into viewport: CGSize, at zoom: CGFloat) {
+        guard zoom > 0, viewport.width > 0, viewport.height > 0 else {
+            // Nothing to frame, and nothing drawn: a zoom of zero rather than a division by one of
+            // them, which reaches the shader as a NaN and takes the picture with it.
+            self.init(scale: .zero, offset: .zero)
+            return
+        }
+        let scale = CGPoint(x: zoom / (viewport.width / 2), y: zoom / (viewport.height / 2))
+        self.init(
+            scale: scale,
+            offset: CGPoint(x: -box.middle.x * scale.x, y: -box.middle.y * scale.y),
+        )
+    }
+
+    /// Everything one camera draws of one plan, on the eye's own plane.
+    private static func box(framing plan: AtlasPlan, through camera: AtlasCamera) -> Box {
+        var box = Box()
         // The whole ground, which covers every face at zero height: the projection of a plane is
         // convex, so a rect inside the extent lands inside the extent's own projected quad.
         for corner in AtlasFit.corners(of: CGRect(origin: .zero, size: plan.extent)) {
@@ -37,24 +108,16 @@ package struct AtlasFit: Equatable, Sendable {
                 box.take(camera.project(x: corner.x, y: corner.y, height: tile.height))
             }
         }
-        self.init(framing: box, into: viewport)
+        return box
     }
 
-    private init(framing box: Box, into viewport: CGSize) {
-        let width = box.width
-        let height = box.height
-        guard width > 0, height > 0, viewport.width > 0, viewport.height > 0 else {
-            // Nothing to frame, and nothing drawn: a zoom of zero rather than a division by one of
-            // them, which reaches the shader as a NaN and takes the picture with it.
-            self.init(scale: .zero, offset: .zero)
-            return
+    /// The zoom that frames one box in one viewport, one number for both axes. Zero where there is
+    /// nothing to frame or nowhere to frame it into.
+    private static func zoom(framing box: Box, into viewport: CGSize) -> CGFloat {
+        guard box.width > 0, box.height > 0, viewport.width > 0, viewport.height > 0 else {
+            return 0
         }
-        let zoom = min(viewport.width / width, viewport.height / height)
-        let scale = CGPoint(x: zoom / (viewport.width / 2), y: zoom / (viewport.height / 2))
-        self.init(
-            scale: scale,
-            offset: CGPoint(x: -box.middle.x * scale.x, y: -box.middle.y * scale.y),
-        )
+        return min(viewport.width / box.width, viewport.height / box.height)
     }
 
     /// One projected point, in clip space.

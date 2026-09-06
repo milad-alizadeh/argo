@@ -23,10 +23,20 @@ package struct AtlasProjection: Equatable, Sendable {
     /// defect as a fit solved against a second camera.
     package let rise: Double
 
-    package init(of plan: AtlasPlan, through camera: AtlasCamera, rising rise: Double = 1) {
+    /// `folder` is where the reader is STANDING, and the only thing a descent changes (#1490): the
+    /// tiling is laid out from the repository's root once and the fit seats onto the plate. Nothing
+    /// where they have descended into nothing, which frames the whole plan.
+    package init(
+        of plan: AtlasPlan,
+        through camera: AtlasCamera,
+        rising rise: Double = 1,
+        standingIn folder: String? = nil,
+    ) {
         self.plan = plan
         self.camera = camera
-        self.fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
+        self.fit = AtlasFit(
+            framing: plan, through: camera, into: plan.extent, standingIn: folder,
+        )
         self.rise = min(1, max(0, rise))
     }
 
