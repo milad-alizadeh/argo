@@ -60,6 +60,24 @@ struct HubConnectionTests {
         await hub.disconnect()
     }
 
+    /// The other half of that window: the first sweep starts every tail and fills the join before
+    /// `connect` returns, so a roster is drawn while the connecting claim is still held. A chip
+    /// reading `Connecting` over rows the user can already read says the opposite of the window
+    /// (#1535). The claim covers the gap with no tail, and a live tail is not that gap.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a tail running inside the connect window reads as connected`() async {
+        let hub = testHub(projectURL: Self.projectURL)
+
+        await hub.watch.whileConnecting {
+            #expect(hub.connection == .connecting)
+            await hub.startObserving(hubTestObservation(id: "swept", events: [.title("Swept")]))
+            #expect(hub.connection == .connected)
+        }
+
+        await hub.disconnect()
+    }
+
     /// A failed connection is a claim about what could not be read, so a tail that then reads
     /// something answers it. Left standing, the chip would offer a retry over a live roster.
     @Test(.timeLimit(.minutes(1)))

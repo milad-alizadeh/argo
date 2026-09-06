@@ -79,14 +79,20 @@ final class TranscriptWatch {
     }
 
     /// "Connected" is a claim about a live source, and a Project with no tail running has none.
+    ///
+    /// A live tail is read BEFORE the connecting claim, and that ordering is the whole of what the
+    /// claim covers: the gap a re-point passes through has no tail in it, so a tail that is running
+    /// is not that gap. The first sweep starts every tail and fills the join before `connect`
+    /// returns, and reading the claim first said `Connecting` over a roster the user could already
+    /// read (#1535).
     var connection: HubConnection {
         if let failureMessage {
             return .failed(message: failureMessage)
         }
-        if isConnecting {
-            return .connecting
+        if !tails.isEmpty {
+            return .connected
         }
-        return tails.isEmpty ? .idle : .connected
+        return isConnecting ? .connecting : .idle
     }
 
     func isObserving(transcriptID: String) -> Bool {
