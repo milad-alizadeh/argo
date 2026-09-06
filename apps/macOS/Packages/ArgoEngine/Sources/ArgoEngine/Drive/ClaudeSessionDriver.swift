@@ -117,10 +117,31 @@ struct ClaudeSessionDriver: SessionDriver {
         try await run(ClaudeRunFacts.effortLine(effort), on: sessionID)
     }
 
+    /// `/rename <title>` at the prompt (#1494) — the same one line typed the same one way, so the
+    /// guard that refuses a line while a Turn or a dialog owns the keyboard covers this too, and
+    /// there is no second route into the input machinery to keep in step with the first.
+    ///
+    /// Refused for a title that folds down to nothing: `/rename` with no argument opens the CLI's
+    /// own dialog, which is a keyboard nobody would come back to close.
+    func setTitle(_ title: String, for sessionID: String) async throws {
+        guard let line = ClaudeRunFacts.renameLine(title) else {
+            throw SessionDriveError.nothingToSend
+        }
+        try await run(line, on: sessionID, busy: .titleBusy)
+    }
+
     /// One slash command typed at the prompt, the way a Turn is typed. It does NOT go through
     /// `send`: `send` opens a Turn watch (#682) and clears the composer's draft on the CLI hearing
     /// it, and neither belongs to a line that sets a knob rather than asking for work.
-    private func run(_ line: String, on sessionID: String) async throws {
+    ///
+    /// `busy` is the refusal that stands for the prompt not being the CLI's own. The guard is one
+    /// rule and reads one fact; only the sentence differs, because a knob the reader moved and a
+    /// title Argo mirrored are not the same news (#1494).
+    private func run(
+        _ line: String,
+        on sessionID: String,
+        busy: SessionDriveError = .runFactsBusy,
+    ) async throws {
         guard let claim = ownership.ownerOf(sessionID: sessionID) else {
             throw SessionDriveError.notDrivable
         }
@@ -130,7 +151,7 @@ struct ClaudeSessionDriver: SessionDriver {
         // And on the same guard, a Session blocked on a Permission or a question (#1217): there
         // the keyboard belongs to a DIALOG, so the line is eaten by it and the Return behind the
         // line answers whatever it had highlighted — see `SessionStatus.takesTypedLine`.
-        guard stance(sessionID).takesTypedLine else { throw SessionDriveError.runFactsBusy }
+        guard stance(sessionID).takesTypedLine else { throw busy }
         guard terminals.write(ClaudeTurn.keystrokes(for: line), to: claim) else {
             throw SessionDriveError.notDrivable
         }

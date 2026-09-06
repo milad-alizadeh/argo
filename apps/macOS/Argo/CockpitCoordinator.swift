@@ -45,7 +45,6 @@ final class CockpitCoordinator {
         self.configuration = configuration
         self.store = store
         self.annotationStore = annotationStore
-        self.ticketTitles = TicketTitleResolver(annotations: annotationStore)
         self.pointing = CockpitPointing(
             registry: .empty,
             launch: .unregistered(configuration.projectURL),
@@ -82,6 +81,16 @@ final class CockpitCoordinator {
         self.builtins = BuiltinCommandReader(
             host: SwiftTermProcessHost(),
             screen: SwiftTermScreen(),
+        )
+        // After the Hub and not before it, because the mirror types at a Session that Hub holds
+        // (#1494). The Hub is captured rather than `self`: this window's own driver is the whole of
+        // what a settled title needs, and a resolver holding the coordinator would be the second
+        // reference into a window it does not otherwise know about.
+        self.ticketTitles = TicketTitleResolver(
+            annotations: annotationStore,
+            mirror: TicketTitleMirror { [hub] title, sessionID in
+                await CockpitCoordinator.mirrorTitle(title, to: sessionID, through: hub)
+            },
         )
     }
 
@@ -167,8 +176,20 @@ final class CockpitCoordinator {
 
     /// Name a Session, or drop the name. Only ever the rename dialog: nothing observed names a
     /// Session (#502, story 18).
+    ///
+    /// The name is mirrored onto the CLI's own title after it is written (#1494), so the Session
+    /// reads the same in Claude's mobile, desktop and web apps. Clearing mirrors NOTHING: what
+    /// comes back is a derived title Argo assembles, and typing one at the prompt would replace a
+    /// generated name with a copy of Argo's rendering. The CLI keeps whatever it holds.
+    ///
+    /// Written first and mirrored second, on `setArchived`'s reasoning: the annotation is what the
+    /// roster draws, and it must not wait on a keystroke that may never be allowed to go.
     func setName(_ name: String?, sessionID: String) async {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
+        // The store's own normalising, asked here too, so a name of nothing but spaces mirrors
+        // exactly what it stored: nothing.
+        guard let named = SessionAnnotations.name(from: name) else { return }
+        _ = await Self.mirrorTitle(named, to: sessionID, through: hub)
     }
 
     /// Attach a Session to a Ticket by hand, or drop the attachment (#1092). Only ever the tab

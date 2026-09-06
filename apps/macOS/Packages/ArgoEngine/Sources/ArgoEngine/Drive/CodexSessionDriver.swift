@@ -89,6 +89,15 @@ struct CodexSessionDriver: SessionDriver {
         throw SessionDriveError.runFactsUnsupported
     }
 
+    /// No title of its own to mirror (#1494). `codex` has no `/rename`, and its `/` is parsed in a
+    /// TUI composer Argo never touches — the same fact `surface(of:)` states as `runsCommands:
+    /// false` — so the line would arrive at the model as prose asking it to rename something.
+    /// Refused rather than sent, on `setModel`'s reasoning above.
+    func setTitle(_: String, for sessionID: String) async throws {
+        guard thread(for: sessionID) != nil else { throw SessionDriveError.notDrivable }
+        throw SessionDriveError.titleUnsupported
+    }
+
     /// A JSON-RPC response to the request the server is blocked on (#549) — the whole of how an
     /// approval is decided on this surface. Keyed by request like `claude`'s, and for the same
     /// reason: a Session can have more than one call waiting, so answering "whatever is pending"

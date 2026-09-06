@@ -57,6 +57,10 @@ struct SessionAdapters: SessionDriver {
         try await adapter(for: sessionID).setEffort(effort, for: sessionID)
     }
 
+    func setTitle(_ title: String, for sessionID: String) async throws {
+        try await adapter(for: sessionID).setTitle(title, for: sessionID)
+    }
+
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         try adapter(for: sessionID).revokeStandingAllow(toolName, for: sessionID)
     }
