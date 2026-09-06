@@ -23,7 +23,7 @@ struct RosterSelectionFromTicketsTests {
 
         room(navigation).openSession("gamma")
 
-        expectMarked("gamma", in: sessions("alpha", "beta", "gamma"), for: navigation)
+        RosterMark.expect("gamma", in: sessions("alpha", "beta", "gamma"), for: navigation)
     }
 
     /// The second half of the report, over the route it happens on. `openSession` writes the
@@ -72,48 +72,36 @@ struct RosterSelectionFromTicketsTests {
 
         room(navigation).openSession("alpha")
         let rekeyed = [
-            rekeyed("alpha-cli", from: "alpha"),
+            RosterSessionFixture.rekeyed("alpha-cli", from: "alpha"),
             RosterSessionFixture.session(id: "beta"),
         ]
         navigation.reconcile(against: rekeyed.map(\.identity))
 
-        expectMarked("alpha-cli", in: rekeyed, for: navigation)
+        RosterMark.expect("alpha-cli", in: rekeyed, for: navigation)
     }
 
     /// The re-key that does NOT take the head, which used to be the honest limit here: nothing in
     /// the presentation said `beta-cli` was the Session that was `beta`, so `reconcile` read an id
     /// that stopped being published and fell back to the first row. The row now carries the id it
     /// retired (#1481), so the mark follows the Session rather than the position.
+    ///
+    /// This route's re-key is INCIDENTAL — `openSession` writes a row id, and a Session already
+    /// carrying a transcript is never re-keyed again. The certain case is `Start` on a ticket,
+    /// which writes a claim id the Hub retires the moment the CLI writes its first record: see
+    /// `RosterSelectionFromTicketStartTests` (#1493). One rule serves both, and each route holds
+    /// it over its own act.
     @Test
     func `hands the mark on with the deck when a re-key drops the id`() {
         let navigation = navigation(over: sessions("alpha", "beta"))
 
         room(navigation).openSession("beta")
-        let rekeyed = [RosterSessionFixture.session(id: "alpha"), rekeyed("beta-cli", from: "beta")]
+        let rekeyed = [
+            RosterSessionFixture.session(id: "alpha"),
+            RosterSessionFixture.rekeyed("beta-cli", from: "beta"),
+        ]
         navigation.reconcile(against: rekeyed.map(\.identity))
 
-        expectMarked("beta-cli", in: rekeyed, for: navigation)
-    }
-
-    // MARK: - The claim
-
-    /// The roster's ONE selected state, read the way the sidebar reads it: the rows the list is
-    /// drawing, and the ground under exactly one of them. The expected id is NAMED, so a roster
-    /// grounding the wrong row still fails.
-    private func expectMarked(
-        _ expected: String,
-        in sessions: [CockpitPresentation.Session],
-        for navigation: CockpitNavigationModel,
-    ) {
-        let reading = RosterListing().reading(of: sessions, selection: navigation.session)
-        let selection = SessionRosterProjection.Selection(named: navigation.session)
-        let grounded = reading.rows.filter { selection.isSelected($0) }
-
-        #expect(grounded.map(\.id) == [expected], "The roster grounds no row, or two.")
-        #expect(
-            navigation.session == grounded.first?.id,
-            "The `List`'s own selection and the ground name two different rows.",
-        )
+        RosterMark.expect("beta-cli", in: rekeyed, for: navigation)
     }
 
     // MARK: - The shell's own wiring
@@ -146,13 +134,5 @@ struct RosterSelectionFromTicketsTests {
 
     private func sessions(_ ids: String...) -> [CockpitPresentation.Session] {
         ids.map { RosterSessionFixture.session(id: $0) }
-    }
-
-    /// A row published under the id its CLI picked, still standing for the claim id it was drawn
-    /// under before the record landed — what `Hub.published` now carries (#361, #1481).
-    private func rekeyed(_ id: String, from former: String) -> CockpitPresentation.Session {
-        var session = RosterSessionFixture.session(id: id)
-        session.absorbedIDs = [former]
-        return session
     }
 }

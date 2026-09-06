@@ -51,4 +51,14 @@ enum RosterSessionFixture {
             transcript: .init(events: events),
         )
     }
+
+    /// A row published under the id its CLI picked, still standing for the id it was drawn under
+    /// before the record landed — what `Hub.published` carries (#361, #1481). That former id is a
+    /// claim's own where Argo spawned the Session and a retired chain link's where it observed
+    /// one; the row cannot tell those apart and does not have to.
+    static func rekeyed(_ id: String, from former: String) -> CockpitPresentation.Session {
+        var session = session(id: id)
+        session.absorbedIDs = [former]
+        return session
+    }
 }
