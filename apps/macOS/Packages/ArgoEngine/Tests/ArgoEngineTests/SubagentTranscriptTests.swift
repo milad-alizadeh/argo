@@ -70,7 +70,10 @@ struct SubagentTranscriptTests {
         defer { fixture.remove() }
         try fixture.write(agent: "a1")
 
-        let walked = try #require(SubagentTranscripts.beside(fixture.parentURL, unchangedSince: nil))
+        let walked = try #require(SubagentTranscripts.beside(
+            fixture.parentURL,
+            unchangedSince: nil,
+        ))
 
         #expect(SubagentTranscripts.beside(fixture.parentURL, unchangedSince: walked.stamp) == nil)
     }
@@ -83,7 +86,10 @@ struct SubagentTranscriptTests {
         let fixture = try SubagentDirectoryFixture()
         defer { fixture.remove() }
         try fixture.write(agent: "first", workflow: "wf_1")
-        let walked = try #require(SubagentTranscripts.beside(fixture.parentURL, unchangedSince: nil))
+        let walked = try #require(SubagentTranscripts.beside(
+            fixture.parentURL,
+            unchangedSince: nil,
+        ))
 
         try fixture.write(agent: "second", workflow: "wf_1")
 
@@ -100,7 +106,10 @@ struct SubagentTranscriptTests {
         defer { fixture.remove() }
         try fixture.write(agent: "a1")
         try fixture.writeToolResult(named: "first")
-        let walked = try #require(SubagentTranscripts.beside(fixture.parentURL, unchangedSince: nil))
+        let walked = try #require(SubagentTranscripts.beside(
+            fixture.parentURL,
+            unchangedSince: nil,
+        ))
 
         try fixture.writeToolResult(named: "second")
 

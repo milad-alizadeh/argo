@@ -11,8 +11,7 @@ struct SubagentObservationTests {
         defer { fixture.remove() }
         try fixture.write(agent: subagentID, lines: Fixture.lines("subagentOwn"))
 
-        #expect(await Engine().subagents(beside: fixture.parentURL, unchangedSince: nil)?
-            .transcripts.map(\.agentID) == [subagentID])
+        #expect(await Engine().walked(beside: fixture.parentURL).map(\.agentID) == [subagentID])
     }
 
     /// The whole point of reading the child's file at all: what the parent's own reading disowns.
@@ -34,17 +33,14 @@ struct SubagentObservationTests {
         let fixture = try SubagentDirectoryFixture()
         defer { fixture.remove() }
 
-        #expect(await Engine().subagents(beside: fixture.parentURL, unchangedSince: nil)?
-            .transcripts.isEmpty == true)
+        #expect(await Engine().walked(beside: fixture.parentURL).isEmpty)
     }
 
     /// Everything the file already held, which is the first batch a tail yields. The stream stays
     /// open after it — a Subagent's file goes on growing — so the read stops at that batch.
     private func backfill(of fixture: SubagentDirectoryFixture) async throws -> [TranscriptEvent] {
         let engine = Engine()
-        let found = try #require(
-            await engine.subagents(beside: fixture.parentURL, unchangedSince: nil)?.transcripts
-                .first)
+        let found = try #require(await engine.walked(beside: fixture.parentURL).first)
         for await batch in engine.observeSubagent(found).events {
             return batch
         }

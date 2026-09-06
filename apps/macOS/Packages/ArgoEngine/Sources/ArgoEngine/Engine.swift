@@ -41,21 +41,28 @@ public struct Engine: Sendable {
         return sourceURLs.map { observation(at: $0, reading: .whole) }
     }
 
-    /// Which Subagents were written beside one Session's record, or `nil` where the tree has not
-    /// moved since the walk that produced `stamp`.
+    /// Which Subagents were written beside each of these Sessions' records, keyed by transcript. A
+    /// tree that has not moved since the walk its request carries the stamp of is absent from the
+    /// answer rather than empty in it.
     ///
     /// Kept apart from the observation below for the reason discovery's is: observing a file OPENS
     /// it, and this is asked on every sweep about files that are already being tailed.
     ///
     /// `async` and NONISOLATED, which together are the whole point: a nonisolated async function
-    /// runs on the generic executor rather than on its caller's actor, so the recursive walk this
-    /// makes happens off the main actor even though every caller is on it. What crosses back is
-    /// `Sendable` values (#1498).
+    /// runs on the generic executor rather than on its caller's actor, so the recursive walks this
+    /// makes happen off the main actor even though every caller is on it. What crosses back is
+    /// `Sendable` values. The WHOLE working set in one call, so a sweep suspends once rather than
+    /// once per Session (#1498).
     public func subagents(
-        beside parentURL: URL,
-        unchangedSince stamp: SubagentTreeStamp?,
-    ) async -> SubagentWalk? {
-        SubagentTranscripts.beside(parentURL.standardizedFileURL, unchangedSince: stamp)
+        beside requests: [SubagentWalkRequest],
+    ) async
+        -> [String: SubagentWalk] {
+        requests.reduce(into: [:]) { walks, request in
+            walks[request.transcriptID] = SubagentTranscripts.beside(
+                request.parentURL.standardizedFileURL,
+                unchangedSince: request.stamp,
+            )
+        }
     }
 
     /// One Subagent's record, read as the subject of its own file rather than as the parent's

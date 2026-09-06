@@ -70,6 +70,20 @@ func writeSubagent(
     return url
 }
 
+/// One tree walked from scratch. The shipped call takes the whole working set and its stamps,
+/// because a sweep asks about all of it at once; a test about ONE tree says so here rather than
+/// spelling the batch out at every assertion.
+extension Engine {
+    func walked(beside parentURL: URL) async -> [SubagentTranscript] {
+        let request = SubagentWalkRequest(
+            transcriptID: parentURL.path,
+            parentURL: parentURL,
+            stamp: nil,
+        )
+        return await subagents(beside: [request])[parentURL.path]?.transcripts ?? []
+    }
+}
+
 /// One Session on the roster, read from a real record directory — the shape every test here
 /// starts from, because a Subagent is found from its parent's own URL.
 @MainActor

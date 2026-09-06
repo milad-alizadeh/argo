@@ -47,6 +47,17 @@ public struct SubagentWalk: Sendable, Equatable {
     let stamp: SubagentTreeStamp
 }
 
+/// One tree to walk: whose transcript it sits beside, and what the last walk of it left.
+///
+/// A sweep asks for the whole working set at once rather than a tree at a time, so the walk costs
+/// ONE hop off the main actor and one back rather than a pair per Session. The sweep's main-actor
+/// half then runs as one block again, the way it did when the walk was made inline.
+public struct SubagentWalkRequest: Sendable {
+    public let transcriptID: String
+    public let parentURL: URL
+    let stamp: SubagentTreeStamp?
+}
+
 /// The Subagent transcripts beside one Session's own record.
 ///
 /// Claude Code writes each Subagent to a file of its own under a directory named for the parent,
@@ -69,7 +80,8 @@ public enum SubagentTranscripts {
     public static func beside(
         _ parentURL: URL,
         unchangedSince stamp: SubagentTreeStamp?,
-    ) -> SubagentWalk? {
+    )
+        -> SubagentWalk? {
         guard stamp?.isStillTrue != true else { return nil }
         let rootURL = parentURL.deletingPathExtension()
             .appending(path: subagentsDirectory, directoryHint: .isDirectory)
@@ -85,7 +97,9 @@ public enum SubagentTranscripts {
         ) {
             for case let url as URL in entries {
                 guard let date = directoryDate(of: url) else {
-                    if let found = transcript(at: url) { transcripts.append(found) }
+                    if let found = transcript(at: url) {
+                        transcripts.append(found)
+                    }
                     continue
                 }
                 // Enumerated and then discarded before, and it is most of the file count: the host

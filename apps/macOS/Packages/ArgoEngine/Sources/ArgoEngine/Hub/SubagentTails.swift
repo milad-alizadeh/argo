@@ -47,15 +47,32 @@ final class SubagentTails {
     /// A tree that has not moved since the last walk is not walked at all — the tails below are
     /// exactly the ones it would find again.
     func refresh(of transcriptID: String, beside parentURL: URL) async {
-        guard let walk = await engine.subagents(
-            beside: parentURL,
-            unchangedSince: stamps[transcriptID],
-        ) else { return }
-        stamps[transcriptID] = walk.stamp
-        for found in walk.transcripts {
-            let tail = SubagentTail(transcriptID: transcriptID, path: found.url.path)
+        await refresh(beside: [(transcriptID, parentURL)])
+    }
+
+    /// The whole working set's trees in ONE await. Not a convenience over the single-transcript
+    /// call: each await gives the main actor up, so a sweep that took one per Session was a sweep
+    /// interleaved with everything else on the actor at every Session boundary. One await keeps
+    /// the sweep's main-actor half a single block, as it was before the walk left the actor.
+    func refresh(beside parents: [(transcriptID: String, parentURL: URL)]) async {
+        let requests = parents.map {
+            SubagentWalkRequest(
+                transcriptID: $0.transcriptID,
+                parentURL: $0.parentURL,
+                stamp: stamps[$0.transcriptID],
+            )
+        }
+        for (transcriptID, walk) in await engine.subagents(beside: requests) {
+            stamps[transcriptID] = walk.stamp
+            tail(walk.transcripts, of: transcriptID)
+        }
+    }
+
+    private func tail(_ found: [SubagentTranscript], of transcriptID: String) {
+        for transcript in found {
+            let tail = SubagentTail(transcriptID: transcriptID, path: transcript.url.path)
             guard tails[tail] == nil else { continue }
-            let observation = engine.observeSubagent(found)
+            let observation = engine.observeSubagent(transcript)
             agentsByTail[tail] = observation.agentID
             readings.beginReading(of: observation.agentID, from: tail.path)
             tails[tail] = Task { [weak self] in
