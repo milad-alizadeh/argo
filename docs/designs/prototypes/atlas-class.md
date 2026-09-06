@@ -5,15 +5,8 @@ about what a thing *is* or what it needs. This prototype asks: **what notation l
 how the types in a repository relate to each other**, and at what scale does each notation stop
 working?
 
-Run it from the design branch — #1526 took every explorable off `main`, and the Atlas set is on
-`design/atlas`:
-
-```sh
-git worktree add /tmp/design-atlas design/atlas
-node /tmp/design-atlas/docs/designs/prototypes/atlas-serve.mjs
-```
-
-then open `http://localhost:8731/atlas-class.html`. Switch readings with the bar at the bottom, keys
+Run: `node docs/designs/prototypes/atlas-serve.mjs` then open
+`http://localhost:8731/atlas-class.html`. Switch readings with the bar at the bottom, keys
 `1 2 3`, or `?v=plate|wheel|ledger&t=TypeName`.
 
 ## The data

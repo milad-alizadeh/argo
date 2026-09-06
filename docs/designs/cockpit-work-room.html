@@ -1,0 +1,1637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Tickets room — built design (#609)</title>
+<!--
+  The BUILT Tickets room (#609, under #607) — the study that produced it explored five rooms
+  and this is the one that was chosen. Every state is reachable from the selector
+  at the top, or by ?state=<key>; ?render=1 strips the chrome for the PNGs.
+
+  RE-BASED ON THE SHIPPED ROOM (#1304). Every state below was corrected against
+  `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh`, one specimen per state, so this file draws
+  what the app draws rather than what #609 proposed. Where a state names its specimen in a
+  comment, that render is the source. The room is BUILT: a disagreement between this file and
+  the app is a bug in one of them, not a design still to be reached.
+
+  Every colour, radius, spacing step and type role below is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoRadius.swift, ArgoSpacing.swift, ArgoLayout.swift, ArgoStroke.swift, ArgoTypeScale.swift.
+  Nothing here is invented. Type is San Francisco throughout — SF Pro and SF Mono; the
+  contract has no serif.
+
+  THE ROOM. The sidebar is NOT the backlog. At 320 a rail spends its width on a twist, a dot,
+  an id and a roll-up and leaves the title ~190pt — nine of twelve real titles truncated, while
+  the deck beside them sat empty. So the sidebar holds VIEWS, whose names are short because a
+  view name is written rather than inherited, and the backlog moves into the deck at 520 where
+  a title reads whole at depth three. The sidebar takes `sidebarMinimumWidth` 280, not the 320
+  ideal: at 320 the list drops to 480 and three of twelve titles truncate again.
+
+  THERE IS NO WINDOW ROW (#1242). Each pane draws its OWN header, and the three sit on one band
+  at the height the window already spends on its title strip: the sidebar's holds nothing but the
+  traffic lights' zone, the list's holds New ticket leading and the search field trailing, and the
+  ticket's holds the Start pill and the closure verb. The band paints nothing — the window's
+  chrome is one sheet ending in a single hairline, and a ground per pane drew that sheet three
+  times. The heading and its count sit UNDER the band, inside the list pane.
+
+  The Route (#334) is a RE-SKIN here, not a re-decision: the progress axis, the NOW line, the
+  remaining-depth column rule and the fog are #334's and are drawn unchanged. Only its colour
+  and material move onto graphite/Ion.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — surface */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --control:    rgba(255,255,255,.06);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+    --scrim:      rgba(11,12,14,.90);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #929AA1;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edge */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    /* interaction + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --accent-deep: #1E6FD4;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+    --added:     #A9D18E;
+    --removed:   #D98C93;
+
+    /* ArgoRadius.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoSpacing.swift */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+    /* ArgoStroke.swift */
+    --st-hairline: 0.5px; --st-border: 1px; --st-indicator: 2px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10; color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- the window ---------- */
+  .window {
+    position: fixed; inset: 60px var(--s-section) 76px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 960px;
+    display: flex; flex-direction: column;
+  }
+
+  /* The sidebar runs the full window height and the titlebar paints no ground over it —
+     the split view's own geometry on macOS (#376). */
+  .panes { display: grid; height: 100%; min-height: 0; }
+  .panes.rail-0   { grid-template-columns: 1fr; }
+
+  /* ---------- titlebar (#376, shipped — not under evaluation) ---------- */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
+    display: grid; pointer-events: none;
+  }
+  .titlebar.rail-0   { grid-template-columns: 1fr; }
+  .titlebar > * { pointer-events: auto; }
+  .tb-lead { display: flex; align-items: center; gap: var(--s-base); padding-left: var(--s-base); }
+  .lights { display: flex; gap: var(--s-base); padding: 0 var(--s-tight); }
+  .grow { flex: 1; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  /* The Project scope capsule is NOT drawn here (#1304). It is the WINDOW's scope, a
+     `.navigation` toolbar item over the sidebar, and this room contributes nothing to
+     `.toolbar` at all — so a copy of it in this file would be a second answer about a control
+     the room does not own. */
+
+  /* The connection chip is #275's business, not this study's: a graphite transient. */
+  .conn { display: inline-flex; align-items: center; gap: var(--s-snug); flex: none;
+          white-space: nowrap; font-size: 11px; color: var(--text-3); }
+  .conn i { width: 6px; height: 6px; border-radius: 50%; background: var(--running); display: block; }
+
+  /* ---------- the sidebar ---------- */
+  .rail {
+    display: flex; flex-direction: column; min-height: 0;
+    border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+  }
+  .rail-head { height: 46px; flex: none; display: flex; align-items: center;
+               padding: 0 var(--s-base) 0 var(--s-comfortable); gap: var(--s-snug); }
+  .rail-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--s-comfortable); }
+
+  .cap {
+    font: 600 10px/1 var(--sans); letter-spacing: .7px; text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  /* BACKLOG · BY PRIORITY — the counters that were once in the brow live here (#272). */
+  .backlog-cap {
+    display: flex; align-items: baseline; gap: var(--s-snug);
+    padding: var(--s-comfortable) var(--s-comfortable) var(--s-snug);
+  }
+
+  /* A priority header. Variant A only — B and C separate by air and a rule instead. */
+  .pri-head {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; gap: var(--s-snug);
+    padding: var(--s-comfortable) var(--s-comfortable) var(--s-tight);
+    background: linear-gradient(180deg, rgba(30,32,36,.92), rgba(30,32,36,.72));
+    backdrop-filter: blur(12px);
+  }
+  .pri-head .n { font: 10px var(--mono); color: var(--text-off); margin-left: auto; }
+
+  /* The row. dot · id · title · priority — lean, no PR chips (#272). */
+  .row {
+    display: flex; align-items: center; gap: var(--s-base);
+    height: 30px; padding: 0 var(--s-comfortable); cursor: pointer;
+    /* The selected row is carried by its ground alone — no leading accent rule. */
+  }
+  .row:hover { background: var(--hover); }
+  .row.on { background: var(--selected); }
+  .row .id { font: 11px var(--mono); color: var(--text-3); flex: none; }
+  .row.on .id { color: var(--text-2); }
+  .row .t { font-size: 13px; color: var(--text-2); overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .row.on .t { color: var(--text-1); }
+  .row .rollup { font: 10px var(--mono); color: var(--text-off); flex: none; }
+  .row .pri { font: 10px var(--mono); color: var(--text-off); flex: none; letter-spacing: .3px; }
+  /* A RAIL: a non-matching parent kept so a matching child can be reached. It takes the demotion
+     the row's own #id already carries, so it is not read as a match (#873). */
+  .row.via .t { color: var(--text-3); }
+  .row.via .id { color: var(--text-off); }
+
+  /* THE TRAILING REGION — at most three marks, in this order: the claim mark, the blockage mark,
+     then the caption. All three are rigid, and none of them displaces the title.
+
+     Both marks are ONE GLYPH and nothing else (#1074). The count that used to lead the blockage
+     mark is the PANE's, where `Blocked by · 6` states it against the blockers it can name; on the
+     row it was a number a reader could not act on. Each glyph is the one the sidebar's own view
+     draws, in that view's own ink, so the rail's mark and the row counting into it are one
+     concept said once (#939, #1074). */
+  .row .mark { width: 16px; height: 16px; flex: none; display: grid; place-items: center; }
+  .row .mark svg { width: 12px; height: 12px; display: block; }
+  .row .mark.claim { color: var(--running); }
+  .row .mark.block { color: var(--failure); }
+  /* Stranded is `text.disabled`, not a second red: a stranded edge can never satisfy itself, so
+     the row is not waiting for anything. Value rather than hue, which survives a reader who
+     cannot separate the two reds. */
+  .row .mark.stranded { color: var(--text-off); }
+
+  /* At most two label chips and then a `+n`, and only where the pane has width for them
+     (`labelsAppearAt` 440): the chips are rigid, so under that they would take the title's
+     characters rather than give up their own. The ink is the provider's own label colour. */
+  .row .labels { display: inline-flex; gap: var(--s-tight); flex: none; }
+  .row .lchip { font: 10px var(--mono); border-radius: var(--r-marker); padding: 1px var(--s-snug);
+                white-space: nowrap; color: var(--text-2); background: var(--control); }
+  .row .lchip.tint-a { color: #C99BF0; background: rgba(180,120,235,.18); }
+  .row .lchip.tint-b { color: #6FB6FF; background: rgba(62,155,255,.18); }
+  .row .lchip.tint-c { color: #F2858B; background: rgba(242,85,92,.18); }
+
+  /* A closed row states its own closure — a WORD and not a glyph, because the third case has to
+     be able to claim neither `resolved` nor `ruled out` (#1075). */
+  .row .closure { font: 10px var(--mono); color: var(--text-3); flex: none; }
+  .more-row { display: flex; align-items: center; justify-content: center; height: 30px;
+              cursor: pointer; font: 11px var(--sans); color: var(--text-3); }
+  .more-row:hover { background: var(--hover); color: var(--text-1); }
+  /* The disclosure twist, Mail-style: it sits OUTSIDE the row's own leading edge, and a leaf
+     keeps the slot so every dot in the rail lands on one column. */
+  .row .twist { width: 12px; flex: none; display: grid; place-items: center;
+                color: var(--text-off); border-radius: var(--r-marker); }
+  .row .twist:hover { color: var(--text-2); background: rgba(255,255,255,.07); }
+  .row .twist svg { width: 8px; height: 8px; display: block;
+                    transition: transform 120ms cubic-bezier(.2,.8,.2,1); }
+  .row.shut .twist svg { transform: rotate(-90deg); }
+  .row .twist.leaf { visibility: hidden; pointer-events: none; }
+  /* One step per level. A child's dot lands under its parent's id, which is what makes the
+     nesting readable without a connecting rule. */
+  .row.d1 { padding-left: 28px; }
+  .row.d2 { padding-left: 44px; }
+
+  /* The delivery signal, carried by the dot alone. */
+  .dot { display: block; width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.none    { background: none; box-shadow: inset 0 0 0 1px var(--text-off); }
+  .dot.draft   { background: var(--idle); }
+  .dot.open    { background: var(--accent); }
+  .dot.checks  { background: var(--failure); }
+  .dot.merged  { background: var(--running); }
+
+  /* ---------- the Next-up hero ---------- */
+  /* A — a card inside the rail. It is inset from the rail's own edges and carries a border,
+     so it reads as an object sitting on the rail rather than as the rail's first row. */
+  .hero-card {
+    margin: var(--s-base) var(--s-base) var(--s-comfortable);
+    padding: var(--s-comfortable);
+    background: var(--raised); border: 1px solid var(--subtle);
+    border-radius: var(--r-control);
+  }
+  /* WHERE THE CARD NAMES A TICKET IT IS A CONTROL, AND IT SAYS SO (#898). Pressing it opens
+     that ticket in the pane beside it, so the head carries a disclosure chevron — the mark this
+     app spends on "there is somewhere to go" — and the whole card answers the pointer. An empty
+     tier draws no chevron: there is nothing to open. */
+  .hero-card .head { display: flex; align-items: center; margin-bottom: var(--s-base); }
+  .hero-card .head .cap { display: block; }
+  .hero-card .head .go { margin-left: auto; color: var(--text-off); display: grid;
+                         place-items: center; }
+  .hero-card .head .go svg { width: 9px; height: 9px; display: block; transform: rotate(-90deg); }
+  .hero-card.pressable { cursor: pointer; }
+  .hero-card.pressable:hover { border-color: var(--strong); }
+  .hero-card .hid { font: 11px var(--mono); color: var(--text-3); }
+  .hero-card .ht { font: 500 13px var(--sans); color: var(--text-1); margin: var(--s-tight) 0 var(--s-base); }
+  /* THE CARD'S SECOND CONTROL, AT ITS FOOT (#899). The hero is the room's answer to "what should
+     I pick up", and the press that acts on that answer belongs on it — one card opening a ticket
+     and starting it are two acts, so they are two targets rather than one press nobody can aim
+     (#1182). It names the command it will send, exactly as the ticket pane's pill does. */
+  .hero-foot { display: flex; justify-content: flex-end; margin-top: var(--s-comfortable); }
+  .hero-start { display: inline-flex; align-items: center; gap: var(--s-snug);
+                border: 1px solid var(--hairline); background: var(--control);
+                border-radius: var(--r-control); padding: var(--s-tight) var(--s-base);
+                cursor: pointer; color: var(--text-1); font: 500 11px var(--sans); }
+  .hero-start:hover { background: rgba(255,255,255,.1); }
+  .hero-start svg { width: 10px; height: 10px; flex: none; }
+  .hero-start .cmd { font: 10px var(--mono); color: var(--text-off); }
+
+
+
+  /* At most two earned chips, and never a score (#273). */
+  .chips { display: flex; gap: var(--s-snug); flex-wrap: wrap; }
+  .chip {
+    font: 10px var(--sans); color: var(--text-2);
+    background: var(--control); border: 1px solid var(--hairline);
+    border-radius: var(--r-marker); padding: 2px var(--s-snug); white-space: nowrap;
+  }
+  .chip.pri { color: var(--attention); border-color: rgba(232,178,74,.28); }
+
+  .start {
+    flex: none; border: 1px solid var(--hairline); background: var(--control);
+    color: var(--text-1); font: 500 11px var(--sans); cursor: pointer;
+    border-radius: var(--r-control); padding: var(--s-snug) var(--s-comfortable);
+  }
+  .start:hover { background: rgba(255,255,255,.1); }
+  .start.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+  /* An empty pool degrades in tiers — an honest sentence, not a blank card. */
+  .hero-empty { color: var(--text-3); font-size: 12px; }
+  .hero-empty b { color: var(--text-2); font-weight: 500; }
+
+  /* ---------- the deck ---------- */
+  .deck { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--base); }
+  .deck-head { flex: none; height: 46px; }         /* the titlebar's own strip */
+
+  .detail { flex: 1; min-height: 0; min-width: 0; display: grid; }
+
+  .col { min-width: 0; overflow-y: auto; padding: 0 var(--s-section) var(--s-region); }
+  /* ArgoFeedRow.column — cap the content, then centre the cap. One rule, two lines. */
+  .col > .measure { max-width: 720px; margin: 0 auto; }
+
+  .t-head { padding: var(--s-base) 0 var(--s-comfortable); }
+  /* THE ID IS THE LINK, AND IT IS DRAWN AS ONE (#1242). The two unlabelled link verbs that used
+     to sit beside Start — open on host, copy link — said what the ticket's own number already
+     says. The number takes `interaction.accent`, the ink this app spends on every other route,
+     and copy is the browser's own gesture on a link rather than a second mark beside it. */
+  .t-head .tid { font: 11px var(--mono); color: var(--accent); cursor: pointer; }
+  .t-head .tid:hover { text-decoration: underline; }
+  .t-head h1 { font: 600 17px/1.3 var(--sans); color: var(--text-1); margin: var(--s-snug) 0 var(--s-base); }
+
+  /* The provider's own word, verbatim, beside Argo's canonical bucket. The bucket is set as
+     chrome — smaller, tertiary, in the mono — so the two read as a label and its filing, not
+     as two competing claims. */
+  .status { display: inline-flex; align-items: center; gap: var(--s-snug); }
+  .status .word { font: 11px var(--sans); color: var(--text-2); }
+  /* Lowercase, in the machine caption: uppercase machine at 11 reads as loud as the word it is
+     filing. The pair degrades to the WORD ALONE where the bucket only repeats it (#893), and
+     `open` never earns the second slot at all (#1074) — it is what every unclosed ticket is,
+     so restating it beside the provider's own word says nothing. */
+  .status .bucket { font: 11px var(--mono); color: var(--text-off); }
+  .status .sep { width: 1px; height: 10px; background: var(--subtle); }
+
+  .body p { color: var(--text-2); font-size: 13px; margin-bottom: var(--s-comfortable); }
+  .body h2 { font: 600 13px var(--sans); color: var(--text-1);
+             margin: var(--s-section) 0 var(--s-base); }
+
+  /* Deliveries — first-class chips, deep-linking. Never a list: two on one ticket read as two
+     objects side by side, each carrying its own signal. */
+  .deliveries { display: flex; flex-wrap: wrap; gap: var(--s-base); }
+  .dchip {
+    display: inline-flex; align-items: center; gap: var(--s-base);
+    background: var(--raised); border: 1px solid var(--subtle); border-radius: var(--r-control);
+    padding: var(--s-snug) var(--s-comfortable); cursor: pointer; min-width: 0;
+  }
+  .dchip:hover { border-color: var(--strong); }
+  .dchip .num { font: 11px var(--mono); color: var(--text-1); }
+  .dchip .br { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
+               text-overflow: ellipsis; white-space: nowrap; }
+  .dchip .diff { font: 11px var(--mono); }
+  .dchip .add { color: var(--added); } .dchip .rem { color: var(--removed); }
+  .dchip .checks { font: 10px var(--sans); }
+  .dchip .ok { color: var(--running); } .dchip .bad { color: var(--failure); }
+  .dchip.stack { flex-direction: column; align-items: flex-start; gap: var(--s-tight); }
+
+  /* The sticky sidebar (A) */
+  .side {
+    border-left: 1px solid var(--hairline); background: var(--sunken);
+    overflow-y: auto; padding: var(--s-base) var(--s-loose) var(--s-region);
+  }
+  .side section { padding: var(--s-comfortable) 0; border-bottom: 1px solid var(--hairline); }
+  .side section:last-child { border-bottom: none; }
+  .side .cap { display: block; margin-bottom: var(--s-base); }
+
+  /* A provider label, verbatim and in the provider's OWN colour — the one place this room draws
+     a hue it did not choose. The pane carries the whole set; the row carries two and a `+n`. */
+  .labels { display: flex; flex-wrap: wrap; gap: var(--s-tight); }
+  .label {
+    font: 10px var(--mono); color: var(--text-2); background: var(--control);
+    border-radius: var(--r-marker); padding: 1px var(--s-snug);
+  }
+  .label.tint-a { color: #C99BF0; background: rgba(180,120,235,.18); }
+  .label.tint-b { color: #6FB6FF; background: rgba(62,155,255,.18); }
+  .label.tint-c { color: #F2858B; background: rgba(242,85,92,.18); }
+  .label.tint-d { color: #A9D18E; background: rgba(169,209,142,.18); }
+
+  /* blockedBy — one blocker and six blockers are the same shape; the six just run on. */
+  .blockers { display: flex; flex-direction: column; gap: var(--s-tight); }
+  .blk { display: flex; align-items: center; gap: var(--s-snug); cursor: pointer; min-width: 0; }
+  .blk .id { font: 11px var(--mono); color: var(--text-2); flex: none; }
+  .blk .t { font-size: 11px; color: var(--text-3); overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; }
+  .blk-count { font: 10px var(--mono); color: var(--text-off); margin-left: auto;
+               flex: none; white-space: nowrap; padding-left: var(--s-base); }
+
+
+  .blockband {
+    display: flex; align-items: flex-start; gap: var(--s-comfortable);
+    background: var(--raised); border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-comfortable); margin-bottom: var(--s-loose);
+  }
+  .blockband .cap { flex: none; padding-top: 2px; width: 84px; }
+
+  /* The tree is drawn INSIDE the title cell, so the columns beside it stay a table. */
+  .ledger .cell-tree { display: flex; align-items: center; gap: var(--s-base); min-width: 0; }
+
+  /* ---------- room-level states ---------- */
+  .vacant { flex: 1; display: grid; place-items: center; padding: var(--s-region); }
+  .vacant .panel { max-width: 460px; text-align: center; }
+  .vacant h2 { font: 600 15px var(--sans); color: var(--text-1); margin-bottom: var(--s-base); }
+  .vacant p { font-size: 13px; color: var(--text-3); margin-bottom: var(--s-loose); }
+  .rail-empty { padding: var(--s-section) var(--s-comfortable); font-size: 12px; color: var(--text-off); }
+
+  /* ---------- the Route (#334, re-skinned only) ---------- */
+  .route { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  .route-head { flex: none; display: flex; align-items: center; gap: var(--s-comfortable);
+                padding: var(--s-base) var(--s-section) var(--s-comfortable); }
+  .route-head .crumb { font: 11px var(--mono); color: var(--text-3); }
+  .route-head h1 { font: 600 15px var(--sans); color: var(--text-1); }
+  .present { display: inline-flex; gap: 2px; background: var(--control);
+             border: 1px solid var(--hairline); border-radius: 999px; padding: 2px; margin-left: auto; }
+  .present button { border: none; background: none; cursor: pointer; color: var(--text-3);
+             font: 500 11px var(--sans); padding: 0 var(--s-comfortable); height: 22px; border-radius: 999px; }
+  .present button.on { background: var(--overlay); color: var(--text-1); }
+  .route-canvas { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 0 var(--s-section) var(--s-loose); }
+  .legend { flex: none; display: flex; gap: var(--s-section); padding: var(--s-comfortable) var(--s-section);
+            border-top: 1px solid var(--hairline); font-size: 11px; color: var(--text-3); }
+  .legend b { color: var(--text-2); font-weight: 500; }
+
+  /* ---------- prototype chrome (NOT part of the design under evaluation) ---------- */
+  .banner {
+    position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 60;
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-section); background: #f6f7f8; color: #14161a;
+    font: 12px var(--sans);
+  }
+  .banner b { font-weight: 600; }
+  .banner select { font: 12px var(--sans); padding: 3px var(--s-snug); border-radius: var(--r-control);
+                   border: 1px solid rgba(0,0,0,.2); background: #fff; color: #14161a; }
+  .banner .q { color: rgba(20,22,26,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+
+  /* ?render=1 — the window alone, edge to edge, for the design's committed PNGs. */
+  body.render .banner, body.render .switch { display: none; }
+  body.render .window { inset: 0; border: none; border-radius: 0; box-shadow: none; }
+
+  /* ==========================================================================
+     D and E — the sidebar stops being the backlog.
+
+     A's rail loses the argument on arithmetic: at 320 the title slot is ~190pt at a root and
+     ~158 at depth two, so nine of twelve real titles truncate while the deck sits empty. Both
+     rooms below keep the sidebar (the split view is unconditional, and #805 would put the room
+     strip in its head) and give it what fits in 200pt: view names, written short on purpose.
+     ========================================================================= */
+  .panes.rail-work { grid-template-columns: 280px 1fr; }
+  .titlebar.rail-work { grid-template-columns: 280px 1fr; }
+
+  .nav-group { padding: var(--s-comfortable) 0 var(--s-tight); }
+  .nav-group > .cap { display: block; padding: 0 var(--s-comfortable) var(--s-snug); }
+  .nav-row {
+    display: flex; align-items: center; gap: var(--s-base);
+    height: 26px; padding: 0 var(--s-comfortable); cursor: pointer; color: var(--text-2);
+    font-size: 13px;
+  }
+  .nav-row:hover { background: var(--hover); }
+  .nav-row.on { background: var(--selected); color: var(--text-1); }
+  .nav-row .n { margin-left: auto; font: 10px var(--mono); color: var(--text-off); }
+  .nav-row .gl { width: 14px; flex: none; display: grid; place-items: center; color: var(--text-3); }
+  .nav-row .gl svg { width: 11px; height: 11px; display: block; }
+  /* A VIEW'S GLYPH AND THE ROW MARK COUNTING INTO IT ARE ONE INK (#1074) — the same rule #939
+     fixed for the shape, for the same reason: agreeing on shape while disagreeing on hue is two
+     concepts again. A view that marks nothing takes no colour, because colour on the rail means
+     "there is a mark like this in the list". */
+  .nav-row .gl.running { color: var(--running); }
+  .nav-row .gl.failure { color: var(--failure); }
+  /* A count may state what it is SHORT by, inboard of itself, so the numbers keep the trailing
+     edge they are read down (#1074). It is WORDED and not a mark: two numerals on one row read
+     as two counts, and no glyph says "the number beside me is short". */
+  .nav-row .short { font: 10px var(--mono); color: var(--text-3); margin-left: auto; }
+  .nav-row .short + .n { margin-left: var(--s-snug); }
+  .nav-foot { flex: none; padding: var(--s-base) var(--s-comfortable);
+              border-top: 1px solid var(--hairline); }
+  .nav-rule { height: 1px; background: var(--hairline); margin: var(--s-base) var(--s-comfortable); }
+
+  /* The room strip, Xcode-style, at the top of the sidebar's scroll and UNDER the titlebar
+     rather than in it (#805): a control belongs over the thing it changes, and the room changes
+     both panes but STARTS in this one.
+
+     It is AppKit's `NSSegmentedControl` since #857 — for `segmentDistribution`, and for a mark
+     beside a word — and its selected segment is bezelled to a NEUTRAL (#944), not glass and not
+     accent. Four rooms: Atlas joined the three #805 named. */
+  .rooms-strip { display: flex; gap: 2px; width: 100%;
+                 border-radius: var(--r-control); padding: 2px; }
+  .rooms-strip button { flex: 1; border: none; background: none; cursor: pointer;
+                 color: var(--text-2); font: 500 11px var(--sans); height: 24px;
+                 border-radius: var(--r-marker);
+                 display: inline-flex; align-items: center; justify-content: center;
+                 gap: var(--s-snug); white-space: nowrap; }
+  .rooms-strip button svg { width: 11px; height: 11px; flex: none; }
+  .rooms-strip button.on { background: var(--overlay); color: var(--text-1);
+                 box-shadow: inset 0 0 0 1px var(--hairline); }
+
+  /* ---------- the backlog as the deck's leading pane ---------- */
+  /* 520 is where the list RESTS, not a width it is held at (#844): the seam between the panes is
+     the reader's, travelling from 342 to 760. Each pane is its own column from the window's top
+     edge down, because each carries its own header IN the title strip. */
+  .work { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 520px 1fr; }
+  .list-pane, .ticket-pane { display: flex; flex-direction: column;
+                             min-width: 0; min-height: 0; }
+  .list-pane { border-right: 1px solid var(--hairline); }
+  .work-list { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; }
+  .work-list .row { height: 30px; }
+  .ticket-pane > .col { flex: 1; }
+  /* NO RULE UNDER THE BAND, AND THIS WAS MEASURED (#1304). The band paints nothing — but the
+     first re-base drew the chrome sheet's terminating hairline across the deck instead, on the
+     reasoning that the sheet has to stop somewhere. It does not stop here: scanning the
+     `ticketsRoom` render down the deck finds `surface.base` unbroken from the window's own
+     border to the first glyph, while `ticketsChrome` — the PANES with no window around them —
+     draws one at white .08 under its whole header block, which is the specimen wrapper's
+     `argoChromeBar()` and not this room's.
+     Where the window's chrome sheet terminates is `ArgoChromeBar`'s business and the shell's.
+     A copy of that rule here would be this room answering for a surface it does not own, which
+     is the same mistake as drawing the Project scope capsule. */
+  .deck { position: relative; }
+
+  /* D's detail has no 240pt facts column — there is no room for one beside a 520pt list at
+     1280. The facts move into a strip under the head, which is the cost D pays. */
+  .fact-strip { display: flex; flex-wrap: wrap; align-items: center;
+                column-gap: var(--s-section); row-gap: var(--s-base);
+                padding: var(--s-base) 0 var(--s-comfortable);
+                border-bottom: 1px solid var(--hairline); margin-bottom: var(--s-comfortable); }
+  .fact-strip .kv { display: inline-flex; align-items: baseline; gap: var(--s-snug); }
+  .fact-strip .k { font: 600 10px var(--sans); letter-spacing: .7px; text-transform: uppercase;
+                   color: var(--text-3); }
+  .fact-strip .v { font-size: 12px; color: var(--text-2); }
+  .fact-strip .v.mono { font: 11px var(--mono); }
+
+
+
+  /* ==========================================================================
+     The pane headers (#1242) — each pane's own band, and no window row.
+
+     A control sits at the leading edge of the pane it acts on, and a field at the trailing edge
+     of the pane it searches. That is the whole rule, and it is readable off the screen because
+     there is nothing else on a pane's band to confuse it with: the list's band holds one mark
+     and a field, the ticket's holds one pill and the closure verb, and the sidebar's holds
+     nothing but the traffic lights' zone.
+
+     The band is drawn IN the window's title strip, not under it — the deck climbs past the safe
+     area, so the strip is spent once and no pane loses a line. #836's bands were drawn BELOW the
+     strip and cost each pane 44pt, which is the whole difference between the two shapes.
+
+     IT PAINTS NOTHING. The window's chrome is one sheet from the top edge to the single hairline
+     where it stops; a band per pane wearing that same ground drew the sheet three times, with a
+     hairline under every header and the one bar broken at each column seam.
+     ========================================================================= */
+  .pane-head { position: relative; flex: none; height: 46px; display: flex;
+               align-items: center; gap: var(--s-base); z-index: 10; }
+  .pane-head.list   { padding: 0 var(--s-comfortable); }
+  /* `comfortable` 12 and not the band's own `base` 8: the pill and the closure verb are two
+     controls, not two segments of one, and the app spaces them at 12 inside `TicketPaneHeader`. */
+  .pane-head.ticket { padding: 0 var(--s-section); gap: var(--s-comfortable); }
+  .pane-head .grow { flex: 1; }
+
+  /* Every container on the band is ONE height — `ArgoControlBox.vessel` 36. The compose circle,
+     the Start pill and the search field are the same object at three widths, so nothing here
+     names a height of its own. */
+  .icap { display: inline-flex; align-items: center; gap: 2px; height: 36px;
+          border-radius: 999px; padding: 5px; }
+  .ibtn { width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer;
+          border: none; background: none; color: var(--text-3); border-radius: 999px; }
+  .ibtn:hover { background: var(--hover); color: var(--text-1); }
+  .ibtn svg { width: 13px; height: 13px; display: block; }
+
+  /* `Start` is ONE pill with two segments at `vesselGap`, and no rule between them: a rule parts
+     two acts that happen to share a vessel, and these are one act said in two halves. Neither
+     segment draws a ground of its own — the capsule IS the ground — so each answers the pointer
+     on the neutral control ground instead. The command segment is the SKILL picker. */
+  .pill .seg { display: inline-flex; align-items: center; gap: var(--s-snug);
+               height: 26px; padding: 0 var(--s-base); border: none; background: none;
+               cursor: pointer; border-radius: 999px; color: var(--text-2);
+               font: 500 12px var(--sans); }
+  .pill .seg:hover { background: var(--control); color: var(--text-1); }
+  .pill .seg.verb { color: var(--text-1); }
+  .pill .seg.verb svg { width: 11px; height: 11px; }
+  .pill .seg.cmd { font: 11px var(--mono); color: var(--text-off); }
+  .pill .seg.cmd svg { width: 9px; height: 9px; }
+
+  /* Search is a real field, not an icon that becomes one, and it sits at the trailing edge of
+     the LIST — the pane it searches. It was over the ticket only because the row it was in ran
+     the window's width (#1242). */
+  .search { display: flex; align-items: center; gap: var(--s-snug);
+            height: 36px; width: 210px; flex: none; padding: 0 var(--s-comfortable);
+            border-radius: 999px; color: var(--text-off); font-size: 13px; }
+  .search svg { width: 12px; height: 12px; flex: none; }
+  .search .typed { color: var(--text-1); }
+
+  /* The heading, UNDER the band and inside the list pane. It is not a control: it says what the
+     list is and how many, and words about a column belong over that column. Two lines, because
+     a title without its count can lie about what you are filtered to. */
+  .list-head { flex: none; min-height: 44px; padding: var(--s-snug) var(--s-comfortable)
+               var(--s-base); }
+  .list-head .h { font: 600 13px var(--sans); color: var(--text-1); display: block; }
+  .list-head .sub { font: 11px var(--sans); color: var(--text-3); display: block;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ==========================================================================
+     Liquid Glass, one class, every bounded vessel.
+
+     `ArgoFloatingGlass` is `glassEffect(.regular.tint(surface.glassTint))` and `argoShadow(.vessel)`
+     — and `ArgoElevation.vessel` is ZERO on all three axes, because the specular rim IS the depth
+     cue. So a glass vessel takes no drop shadow and no hairline border; a border here would stack a
+     second edge on the one the material already draws. The inset highlight below stands in for the
+     rim that SwiftUI draws for real.
+     ========================================================================= */
+  .glass {
+    background: var(--glass-tint);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16),
+                inset 0 0 0 1px rgba(255,255,255,.05),
+                inset 0 -1px 0 rgba(0,0,0,.16);
+  }
+
+  /* A menu is the one rung that genuinely floats — ArgoElevation.popover, which does draw. */
+  .menu {
+    position: absolute; top: 40px; z-index: 40; min-width: 208px;
+    padding: var(--s-snug); border-radius: var(--r-popover);
+    background: var(--overlay); border: 1px solid var(--hairline);
+    box-shadow: 0 8px 18px rgba(0,0,0,.34);
+  }
+  .menu .cap { display: block; padding: var(--s-snug) var(--s-base) var(--s-tight); }
+  .menu-row { display: flex; align-items: center; gap: var(--s-base);
+              height: 26px; padding: 0 var(--s-base); border-radius: var(--r-marker);
+              color: var(--text-2); font-size: 13px; cursor: pointer; }
+  .menu-row:hover { background: var(--hover); color: var(--text-1); }
+  .menu-row.on { background: var(--selected); color: var(--text-1); }
+  .menu-row .tick { width: 12px; flex: none; color: var(--accent); }
+  .menu-rule { height: 1px; background: var(--hairline); margin: var(--s-snug) var(--s-base); }
+
+  /* The skill picker's menu names WHY each default matched, so the guess is inspectable rather
+     than magic, and it ends with Fresh Session — the composer with no command in it. */
+  .menu .why { margin-left: auto; font: 10px var(--mono); color: var(--text-off);
+               padding-left: var(--s-comfortable); }
+  .menu .foot { display: block; padding: var(--s-snug) var(--s-base) var(--s-tight);
+                font-size: 11px; color: var(--text-3); }
+
+  /* The query matched nothing: a stated empty INSIDE the list pane, never one of the room's
+     vacancies. The vacancy pages are facts about the provider; this is a fact about the query,
+     and the band stays — a field that removes itself the moment it matches nothing is a field
+     nobody can clear. */
+  .no-match { padding: var(--s-region) var(--s-section); text-align: center;
+              font-size: 13px; color: var(--text-3); }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <b>BUILT · #609</b>
+  <span>State</span>
+  <select id="state-select" onchange="setState(this.value)"></select>
+  <span class="q" id="state-note"></span>
+</div>
+
+<!-- The one mask the blockage mark's notch is cut with, defined once so every instance of the
+     glyph shares an id rather than repeating one. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <mask id="slashcut" maskUnits="userSpaceOnUse" x="0" y="0" width="12" height="12">
+    <rect width="12" height="12" fill="white"/>
+    <path d="M3.2 8.8 8.8 3.2" stroke="black" stroke-width="1.4" stroke-linecap="round"/>
+  </mask>
+</svg>
+
+<div class="window">
+  <header class="titlebar" id="titlebar"></header>
+  <div class="panes" id="panes"></div>
+</div>
+
+
+<script>
+/* ============================================================================
+   The room's data. Real tickets off this repo, 2026-08-27. Every status word is
+   the provider's own; `bucket` is Argo's canonical filing of it and is never
+   shown in place of the word. `d` is the DELIVERY SIGNAL, which the rail carries
+   on the dot alone: null = no Delivery, then draft · open · checks · merged.
+   ========================================================================= */
+/* `parent` is the child edge. `kids` is the roll-up the tracker states — closed of total —
+   and it counts CLOSED children too, which is why it does not match the rows beneath it: the
+   backlog lists what is open. */
+/* `claimed` is a live Session on this ticket — the one bucket a provider can never supply,
+   `TicketState` being computed and GitHub carrying open/closed only. `age` is last touched,
+   relative all the way out and never an absolute date past a horizon. */
+const TICKETS = [
+  { id:'#607', t:'Wayfinder: the Tickets room, end to end', pri:'HIGH', type:'PRD',
+    word:'In Progress', bucket:'in progress', d:null, kids:[2,9], by:[], age:'3d' },
+  { id:'#609', t:'Prototype: what the Tickets room looks like in the Liquid Glass shell',
+    parent:'#607', pri:'HIGH', type:'design', word:'In Progress', bucket:'in progress',
+    d:'draft', by:[], claimed:true, age:'1d' },
+  { id:'#388', t:'Ticket read path: listing, status, labels, dependency edges',
+    parent:'#607', pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609'],
+    claimed:true, age:'5d' },
+  { id:'#272', t:'The generic node tree and ticket detail', parent:'#607',
+    pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609','#388'], age:'1w' },
+  // UNBLOCKED, and it has to be: the hero picks this one, and the pool it picks from is
+  // `open · leaf · todo · unblocked · session-less`. A hero asserting `unblocked` over a row the
+  // rail counts under `Blocked` is the one claim this card must never make.
+  { id:'#273', t:'The Next-up cold-start planner', parent:'#607',
+    pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:[], age:'2w' },
+  { id:'#334', t:'The Route — a progress-axis view of a ticket and its children',
+    parent:'#607', pri:'MEDIUM', type:'PRD', word:'Backlog', bucket:'todo', d:null,
+    kids:[0,2], by:['#272'], age:'2w' },
+  { id:'#335', t:'Placement: zones, columns and the cycle guard', parent:'#334',
+    pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#334'], age:'3w' },
+  { id:'#336', t:'The canvas: derived spacing and the edge rule', parent:'#334',
+    pri:'LOW', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#335'], age:'3w' },
+  { id:'#763', t:'Ticket transport and grant plumbing', pri:'MEDIUM', type:'task',
+    word:'In Review', bucket:'in progress', d:'open', by:[], claimed:true, age:'2d' },
+  // STRANDED: its one blocker is #256, which was ruled out and can therefore never close. The
+  // row is not waiting for anything, so the mark goes struck-out rather than louder — see
+  // `STRANDED` below.
+  { id:'#275', t:'The provider connection chip as a graphite transient', pri:'LOW',
+    type:'task', word:'Needs triage', bucket:'todo', d:'checks', by:['#256'], age:'1w' },
+  { id:'#160', t:'Ticket vocabulary: type is a property, not a ladder', pri:'LOW',
+    type:'decision', word:'Awaiting answer', bucket:'blocked', d:null, by:[], age:'1y' },
+  { id:'#185', t:'Tickets room interior: what a leaf carries', pri:'LOW', type:'decision',
+    word:'Awaiting answer', bucket:'blocked', d:null, by:[], age:'2mo' },
+];
+
+const PRIORITIES = ['HIGH','MEDIUM','LOW'];
+
+/* THE CLOSED LIST (#1075) — the fifth view, and the only one not defined over the open set.
+   It is FLAT and ordered by last touched, not banded by priority: a closed ticket's priority is
+   a fact about work nobody is picking up, and last week's finished work scattered across three
+   bands answers nothing. Every row states its own closure, and the third case has to be able to
+   claim neither `resolved` nor `ruled out`. */
+const CLOSED_ROWS = [
+  { id:'#1242', t:'Every pane carries its own header', closure:'resolved',   d:'merged', age:'2d' },
+  { id:'#1243', t:'The icon box leaves this room for ArgoAtoms', closure:'resolved', d:'merged', age:'4d' },
+  { id:'#900',  t:'The funnel draws a live mark and does nothing', closure:'resolved', d:'merged', age:'1w' },
+  { id:'#894',  t:'A claimed mark for the backlog row', closure:'ruled out', d:null, age:'2w' },
+  { id:'#256',  t:'Ticket provider port over OAuth (Electron)', closure:'ruled out', d:null, age:'5mo' },
+  { id:'#264',  t:'App shell: project strip, top bar, room tabs', closure:'closed', d:'merged', age:'7mo' },
+];
+
+const childrenOf = id => visibleTickets().filter(t => t.parent === id);
+const isParent = t => childrenOf(t.id).length > 0;
+
+/* Which parents are shut. A tree that opens shut hides the very thing it was added for, so
+   everything starts open and collapsing is the deliberate act. */
+let shut = new Set();
+function toggle(id) { shut.has(id) ? shut.delete(id) : shut.add(id); render(); }
+
+/* Two Deliveries on one ticket, and one on another. A Delivery is a chip, never a row in a
+   list: the lifecycle arc stays in the Session (#272). */
+const DELIVERIES = {
+  '#607': [
+    { num:'argo#812', br:'argo/#607-work-room-rail', add:412, rem:96, checks:'ok',  word:'Open' },
+    { num:'argo#829', br:'argo/#607-ticket-detail',  add:188, rem:12, checks:'bad', word:'Draft' },
+  ],
+  '#763': [
+    { num:'argo#791', br:'argo/#763-workitem-port', add:640, rem:210, checks:'ok', word:'Open' },
+  ],
+  '#609': [
+    { num:'argo#834', br:'worktree-prototype-609-work-room', add:1180, rem:0, checks:'ok', word:'Draft' },
+  ],
+};
+
+/* A provider label, verbatim, in the provider's own colour. `tint-*` stands in for the hue
+   GitHub or Linear serves per label — this room chooses none of them. */
+const LABELS = {
+  '#607':[['wayfinder','tint-a'],['work-room',''],['prd','tint-d']],
+  '#272':[['work-room',''],['ui','tint-b'],['blocked','tint-c']],
+  '#609':[['design','tint-a'],['work-room','']],
+};
+
+/* Six blockers on one ticket, to see the sidebar's worst honest case. */
+const SIX = ['#609','#388','#264','#256','#375','#376'];
+
+/* A STRANDED edge: a blocker that was ruled out, so it can never close and the row it holds can
+   never satisfy itself. `text.disabled` and not a second red — the palette holds ONE red and
+   `Blocked` spends it, which is the right way round: a stranded row is not waiting for anything,
+   and struck-out reads truer than a louder wait. The two states are then told apart by VALUE
+   rather than by hue, which survives a reader who cannot separate two reds. */
+const STRANDED = new Set(['#256']);
+const isStranded = t => t.by.some(b => STRANDED.has(b));
+
+/* Blockers that are already closed are not in the backlog, so the rail has no row for them.
+   The tracker still names them, and the view renders the tracker's name. */
+const CLOSED = {
+  '#264':'App shell: project strip, top bar, room tabs',
+  '#256':'Ticket provider port over OAuth (Electron)',
+  '#375':'The graphite/Ion visual foundation',
+  '#376':'The native Liquid Glass shell',
+};
+const titleOf = id => (TICKETS.find(x => x.id === id) || {}).t || CLOSED[id] || 'Closed elsewhere';
+
+/* ============================================================================
+   The states #609 names. Each one is a real configuration of the room, not a
+   screenshot of the same room with a note under it.
+   ========================================================================= */
+const STATES = {
+  'rest':        { n:'Rest — hero, rail and ticket detail in one frame',
+                   q:'Rail plus detail plus hero at the window’s real width. Specimen: ticketsRoom.' },
+  'deep':        { n:'A ticket with two Deliveries and six blockers',
+                   q:'How do two Deliveries render as first-class chips, and how does blockedBy read at six?',
+                   sel:'#607' },
+  'edgeless':    { n:'Provider exposes no dependency edges',
+                   q:'The blocked filter no-ops, blockedBy is absent rather than empty, and the unblocked chip is suppressed rather than asserted. Specimen: edgelessTicketsBacklog.' },
+  'one-chip':    { n:'Hero with only one earned chip',
+                   q:'What the hero looks like when only one reason is earned. Specimen: oneEarnedChip.' },
+  'pool-blocked':{ n:'Empty pool — nothing unblocked',
+                   q:'Every open leaf has an open blocker. Specimen: nothingUnblocked.' },
+  'pool-running':{ n:'Empty pool — all in progress',
+                   q:'Every candidate already has a Session. Specimen: everythingRunning.' },
+  'empty':       { n:'Empty backlog — the pool is clear',
+                   q:'The provider answered and the answer was nothing. A VACANCY, so it takes the whole deck: the pane headers go with the panes. Specimen: emptyTicketsBacklog.' },
+  'unbound':     { n:'No Ticket provider bound — the room hides whole',
+                   q:'What the user sees instead, and how it differs from an empty backlog (#272). Specimen: unboundTicketsRoom.' },
+  'unread':      { n:'Bound, and no answer back yet',
+                   q:'The third vacancy: connected, and the read has not landed. It says so in as many words, because all four pages are one glance apart — and the open counts stand, because those WERE read. Specimen: unreadClosedTickets.',
+                   view:'closed' },
+  'nothing-closed':{ n:'The Closed view, and nothing has ever been closed',
+                   q:'The fourth vacancy, and the opposite of the empty backlog: nothing has been FINISHED, rather than nothing being left to do (#1075).',
+                   view:'closed' },
+  'collapsed':   { n:'A parent shut — its roll-up standing in for its children',
+                   q:'What a shut parent says on its own, and where the n/m roll-up sits against the title. Specimen: collapsedTicketsBacklog.',
+                   sel:'#607', shut:['#334','#607'] },
+  'searching':   { n:'A query, with rails to the one match',
+                   q:'The heading reads Searching, a non-matching parent survives as a rail, and the twists stand down. Specimen: searchedTicketsBacklog.',
+                   query:'canvas' },
+  'unmatched':   { n:'A query that matched nothing',
+                   q:'A stated empty INSIDE the list pane, never one of the room’s vacancies — and the band stays. Specimen: unmatchedTicketsBacklog.',
+                   query:'kubernetes' },
+  'closed':      { n:'The Closed view — flat, by last touched',
+                   q:'The one place the room’s own structure changes: no priority bands, every row states its own closure, and a Load more row on the provider’s cursor. Specimen: closedTicketsMore.',
+                   view:'closed' },
+  'skill-menu':  { n:'The Start pill’s skill picker, open',
+                   q:'Which skill the Session opens on, why each default matched, and Fresh Session at the foot. Not #872’s Mode chevron.' },
+  'route':       { n:'The Route, re-skinned onto graphite/Ion — NOT BUILT',
+                   q:'#334’s geometry unchanged: progress axis, NOW line, remaining-depth columns, fog. The Route is #334 and no specimen renders it: this state is the only one here the app cannot answer.' },
+};
+
+
+
+let state = 'rest';
+let selected = '#272';
+
+/* ============================================================================
+   The Next-up projection. Ranking is priority desc → PRD sequence → age, and it
+   is reproducible by hand from the fields above. At most two chips, each earned,
+   and never a score (#273).
+   ========================================================================= */
+function nextUp() {
+  if (state === 'empty')        return { tier:'clear' };
+  if (state === 'pool-blocked') return { tier:'blocked' };
+  if (state === 'pool-running') return { tier:'running' };
+
+  // NEVER SOMETHING ALREADY CLAIMED: the hero answers "what should I pick up", and a ticket with
+  // a live Session on it has been picked up. The pool is the open set less the claimed.
+  const pick = TICKETS.find(x => x.id === '#273');
+  // AT MOST TWO CHIPS, EACH EARNED, AND NEVER A SCORE (#273). The order is fixed —
+  // `high priority` → `unblocked` → `next in <PRD>` → `low conflict` (#1384) — with
+  // `oldest untouched` as the honest fallback where none of the four was earned. Order IS the
+  // priority, so the cut to two drops the weakest claim rather than an arbitrary one.
+  const chips = [];
+  if (pick.pri === 'HIGH') chips.push({ t:'high priority', pri:true });
+  // SUPPRESSED, NEVER ASSERTED, where the provider exposes no dependency edges: Argo has not read
+  // that this ticket is unblocked, and saying so would be a claim it has no standing to make.
+  if (state !== 'edgeless') chips.push({ t:'unblocked' });
+  // `one-chip` is the state where only ONE reason is earned — the PRD sequence is what it loses.
+  if (state !== 'one-chip') chips.push({ t:`next in ${pick.parent}` });
+  if (!chips.length) chips.push({ t:'oldest untouched' });
+  return { tier:'pick', item:pick, chips: chips.slice(0, 2) };
+}
+
+const heroChips = h => h.chips.map(c =>
+  `<span class="chip${c.pri ? ' pri' : ''}">${c.t}</span>`).join('');
+
+const EMPTY_LINE = {
+  blocked: 'Nothing is unblocked. Every open leaf is waiting on something still open.',
+  running: 'Everything takeable already has a Session running.',
+  clear:   'The backlog is clear. Nothing is waiting to be picked up.',
+};
+
+/* ============================================================================
+   Pieces the room shares.
+   ========================================================================= */
+const dot = t => `<span class="dot ${t.d || 'none'}"></span>`;
+
+const CHEVRON = `<svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4"
+  stroke-linecap="round" stroke-linejoin="round"><path d="M1.4 2.6L4 5.4l2.6-2.8"/></svg>`;
+
+/* THE VIEW GLYPHS AND THE ROW MARKS ARE ONE SET (#939, #1074). The sidebar states a count beside
+   `slash` and the marked rows are the ones it counted, so two glyphs would be two concepts to a
+   reader who has to learn they are the same one. `slash.circle.fill` is FILLED like `All open`
+   and `In progress`; `nosign`, which it replaced, has no fill variant of its own. */
+const G = (b, fill) => `<svg viewBox="0 0 12 12" fill="${fill ? 'currentColor' : 'none'}"
+  stroke="currentColor" stroke-width="1.2" stroke-linecap="round">${b}</svg>`;
+const GLYPH = {
+  circleFill: G('<circle cx="6" cy="6" r="4"/>', true),
+  circle:     G('<circle cx="6" cy="6" r="4"/>'),
+  diamond:    G('<path d="M6 1.6 10.4 6 6 10.4 1.6 6z"/>', true),
+  // The notch is a genuine CUT-OUT, masked rather than overpainted in the deck's own ground:
+  // this mark lands on the selection ground and the hover ground too, and a slash painted in
+  // `surface.base` would be darker than the row under it in both. The mask itself is defined
+  // once, in `MASK_DEFS` below, so the many instances share one id.
+  slash: `<svg viewBox="0 0 12 12">
+    <circle cx="6" cy="6" r="4.4" fill="currentColor" mask="url(#slashcut)"/></svg>`,
+  clock:      G('<circle cx="6" cy="6" r="4.2"/><path d="M6 3.4V6l1.9 1.1"/>'),
+  play:       G('<path d="M3.4 2.2 9.6 6l-6.2 3.8z"/>', true),
+  sessions:   G('<rect x="1.4" y="2.4" width="9.2" height="7.2" rx="1.4"/><path d="M1.4 4.8h9.2"/>'),
+  tickets:    G('<circle cx="2.6" cy="3.6" r="1"/><circle cx="2.6" cy="8.4" r="1"/><path d="M5.2 3.6h5.4M5.2 8.4h5.4"/>'),
+  code:       G('<path d="M4.2 3.4 1.6 6l2.6 2.6M7.8 3.4 10.4 6 7.8 8.6"/>'),
+  atlas:      G('<path d="M1.6 3.2 4.4 2.2l3.2 1.4 2.8-1v6.2l-2.8 1-3.2-1.4-2.8 1z"/><path d="M4.4 2.2v6.2M7.6 3.6v6.2"/>'),
+};
+
+/* The twist is its own hit target: pressing it opens the parent without selecting it, which is
+   what lets you scan a tree without changing what the detail pane is showing. */
+const twist = t => isParent(t) && !query()
+  ? `<span class="twist" onclick="event.stopPropagation();toggle('${t.id}')">${CHEVRON}</span>`
+  : `<span class="twist leaf">${CHEVRON}</span>`;
+
+/* THE PAIR DEGRADES TO THE WORD ALONE where the bucket only repeats it (#893), and `open` never
+   earns the second slot at all (#1074): it is what every unclosed ticket is, so restating it
+   beside the provider's own word says nothing a reader did not already have. */
+const statusPair = t => {
+  const bucket = t.bucket === 'blocked' ? 'blocked' : 'open';
+  const repeats = bucket === 'open' || t.word.toLowerCase() === bucket;
+  return `
+  <span class="status">
+    <span class="word">${t.word}</span>
+    ${repeats ? '' : `<span class="sep"></span><span class="bucket">${bucket}</span>`}
+  </span>`;
+};
+
+function deliveryChips(id, stacked) {
+  const ds = DELIVERIES[id] || [];
+  if (!ds.length) return `<span style="font-size:12px;color:var(--text-off)">No Delivery yet</span>`;
+  return `<div class="deliveries">` + ds.map(d => `
+    <div class="dchip${stacked ? ' stack' : ''}">
+      <span class="num">${d.num}</span>
+      <span class="br">${d.br}</span>
+      <span class="diff"><span class="add">+${d.add}</span> <span class="rem">−${d.rem}</span></span>
+      <span class="checks ${d.checks}">${d.checks === 'ok' ? 'checks passing' : 'checks failing'}</span>
+    </div>`).join('') + `</div>`;
+}
+
+function blockersOf(id) {
+  if (state === 'edgeless') return null;              /* absent, not empty */
+  if (state === 'deep' && id === '#607') return SIX;
+  const t = TICKETS.find(x => x.id === id);
+  return t && t.by.length ? t.by : [];
+}
+
+/* A parent's open children, in the detail. The rail nests them; this names them where the
+   reader already is, so drilling in does not mean going back out to the rail. */
+const childList = id => {
+  const ks = childrenOf(id);
+  if (!ks.length) return `<p style="color:var(--text-off)">Every child is closed.</p>`;
+  return `<div class="blockers">` + ks.map(c => `
+    <div class="blk" onclick="select('${c.id}')">${dot(c)}<span class="id">${c.id}</span>
+      <span class="t">${c.t}</span>
+      <span class="blk-count">${c.word}</span></div>`).join('') + `</div>`;
+};
+
+const blockerList = ids => `<div class="blockers">` + ids.map(b => `
+  <div class="blk"><span class="dot none"></span><span class="id">${b}</span>
+    <span class="t">${titleOf(b)}</span></div>`).join('') + `</div>`;
+
+/* The open set, before any query — what the sidebar's counts are arithmetic over. */
+function openTickets() {
+  if (state === 'empty' || state === 'unbound') return [];
+  return TICKETS;
+}
+
+/* THE QUERY (#873). A substring of the ticket's TITLE or of its NUMBER, and nothing else —
+   case- and diacritic-insensitive, with a leading `#` optional. Not the body: a ticket's body is
+   read only for the ticket the deck is open on, so a body match would return a different set for
+   the same query depending on what the reader last clicked. Not labels, type or assignee: those
+   are the provider's own closed sets, and a query that matched them would exclude tickets on
+   words the reader never typed. A field holding only spaces is not a query. */
+const query = () => (STATES[state].query || '').trim();
+const matches = t => {
+  const q = query().toLowerCase().replace(/^#/, '');
+  if (!q) return true;
+  return t.t.toLowerCase().includes(q) || t.id.replace('#', '').includes(q);
+};
+
+/* A MATCHING CHILD UNDER A NON-MATCHING PARENT KEEPS ITS PARENTS, AS RAILS. A match that vanished
+   because its parent did not match would be a row the reader can see the count of and never
+   reach. A rail is not a match, and the row says so by taking the demotion the `#id` already
+   carries. */
+const ancestorsOf = id => {
+  const out = [];
+  let t = TICKETS.find(x => x.id === id);
+  while (t && t.parent) { out.push(t.parent); t = TICKETS.find(x => x.id === t.parent); }
+  return out;
+};
+const matchCount = () => openTickets().filter(matches).length;
+function visibleTickets() {
+  const open = openTickets();
+  if (!query()) return open;
+  const keep = new Set();
+  open.filter(matches).forEach(t => { keep.add(t.id); ancestorsOf(t.id).forEach(a => keep.add(a)); });
+  return open.filter(t => keep.has(t.id));
+}
+const isRail = t => Boolean(query()) && !matches(t);
+
+const drawnCount = id => shut.has(id)
+  ? 0
+  : childrenOf(id).reduce((a, c) => a + 1 + drawnCount(c.id), 0);
+
+/* THE ROW'S LABEL CHIPS — two, then a `+n`. The row DISTINGUISHES one ticket from the next; the
+   whole set is the ticket pane's. */
+const rowLabels = t => {
+  const ls = LABELS[t.id];
+  if (!ls) return '';
+  const shown = ls.slice(0, 2).map(([n, tint]) =>
+    `<span class="lchip ${tint}">${n}</span>`).join('');
+  const rest = ls.length - 2;
+  return `<span class="labels">${shown}${rest > 0 ? `<span class="lchip">+${rest}</span>` : ''}</span>`;
+};
+
+/* THE TRAILING REGION — the claim mark, the blockage mark, then the caption, in that order and
+   at most one caption. The claim mark sits INBOARD of the blockage mark, which keeps every
+   already-blocked row drawn exactly where it was; the caption keeps the trailing edge it has
+   always been right-aligned to, so adding either mark moves nothing on an unblocked row.
+
+   THE CAPTION HOLDS EXACTLY ONE FACT, first one present winning: the parent's `n/m` roll-up,
+   then the child's odd priority word, then the age. The age is LAST because nearly every row has
+   one — an age that outranked the other two would silently delete them from the only list that
+   states them.
+
+   ABSENCE DRAWS NOTHING AND SAYS NOTHING. A ticket whose blockers the provider never served
+   draws no mark, and that silence is deliberate: it is not a claim that the ticket is unblocked,
+   which is the claim Argo has no standing to make. A clear ticket and an unread one are drawn
+   identically, and only the sidebar's `Blocked` count, which can see the whole set, may tell
+   them apart. */
+function trailing(t, group) {
+  const claim = t.claimed ? `<span class="mark claim" title="A live Session is on this ticket">${GLYPH.diamond}</span>` : '';
+  const blocked = state !== 'edgeless' && (t.bucket === 'blocked' || t.by.length);
+  const stranded = blocked && isStranded(t);
+  const block = blocked
+    ? `<span class="mark ${stranded ? 'stranded' : 'block'}"
+         title="${stranded ? 'Blocked by #256, which was ruled out' : `Blocked by ${t.by.length || 1}`}"
+         >${GLYPH.slash}</span>`
+    : '';
+  const caption = t.kids ? `<span class="rollup">${t.kids[0]}/${t.kids[1]}</span>`
+    : t.pri !== group ? `<span class="pri">${t.pri.toLowerCase()}</span>`
+    : t.age ? `<span class="pri">${t.age}</span>` : '';
+  return claim + block + caption;
+}
+
+function subtreeA(t, depth, group) {
+  // A SEARCH DRAWS EVERYTHING OPEN, AND THE TWISTS STAND DOWN: a fold that hid the only match
+  // would leave the heading claiming results nobody can see. The reader's fold is not cleared —
+  // it comes back when the field clears.
+  const open = Boolean(query()) || !shut.has(t.id);
+  const row = `
+    <div class="row d${Math.min(depth, 2)}${t.id === selected ? ' on' : ''}${open ? '' : ' shut'}${isRail(t) ? ' via' : ''}"
+         onclick="select('${t.id}')">
+      ${twist(t)}
+      ${dot(t)}
+      <span class="id">${t.id}</span>
+      <span class="t">${t.t}</span>
+      ${rowLabels(t)}
+      ${trailing(t, group)}
+    </div>`;
+  if (!open) return row;
+  return row + childrenOf(t.id).map(c => subtreeA(c, depth + 1, group)).join('');
+}
+
+/* A CLOSED ROW is the same row with a different trailing region and no tree: no blockage mark
+   and no roll-up, because the closed read asks for NO EDGES where an edge costs a request. That
+   is the correct absence rather than a `0/N` nobody established. */
+const closedRow = c => `
+  <div class="row" onclick="event.preventDefault()">
+    <span class="twist leaf">${CHEVRON}</span>
+    <span class="dot none"></span>
+    <span class="id">${c.id}</span>
+    <span class="t">${c.t}</span>
+    <span class="closure">${c.closure}</span>
+    <span class="pri">${c.age}</span>
+  </div>`;
+/* ============================================================================
+   The room with no Ticket provider bound. #272 says the room hides whole
+   rather than rendering an empty backlog — so there is no rail, no ledger and
+   no hero, and the difference from an empty backlog is that nothing has been
+   read at all rather than read and found empty.
+   ========================================================================= */
+/* An empty backlog is a DIFFERENT state: the provider answered, and the answer was nothing.
+   The room is still here, its chrome is still here, and the sentence says who answered. */
+/* THE OTHER TWO VACANCIES. Four pages, ONE shape — the contrast IS the thing being built, and
+   four views of it would let the sentences drift apart. The two that have read nothing say so in
+   as many words, because all four are one glance apart and a reader must never be able to read
+   "empty backlog" off a room nobody asked. */
+const unread = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>Nothing has been read from GitHub yet</h2>
+      <p>Argo is connected to GitHub and has had no answer back for this Project. This is not an
+      empty backlog — the connection at the foot of the sidebar says how the read is going.</p>
+    </div>
+  </div>`;
+
+/* The opposite of the empty backlog, and it has to be: conflating them would let one page state
+   the exact reverse of the other (#1075). */
+const nothingClosed = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>Nothing closed in argo</h2>
+      <p>GitHub answered: nothing it exposes for this Project has been closed yet. Nothing has
+      been finished, rather than nothing being left to do.</p>
+    </div>
+  </div>`;
+
+const cleared = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>Nothing open in argo</h2>
+      <p>GitHub answered: every Ticket it exposes for this Project is closed. Nothing is
+      waiting to be picked up.</p>
+    </div>
+  </div>`;
+
+const unbound = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>No Ticket provider is connected to argo</h2>
+      <p>Argo reads tickets through a provider you connect per Project. Nothing here has been
+      read yet — this is not an empty backlog.</p>
+      <button class="start pri">Connect a provider…</button>
+    </div>
+  </div>`;
+
+/* ============================================================================
+   The Route (#334). GEOMETRY UNCHANGED — this only moves its colour and material
+   onto the graphite/Ion foundation. Waiting is a quiet neutral, the NOW line is
+   Ion Blue as current-position interaction (its gold clause is superseded), and
+   red is reserved for a ticket that can never unblock.
+   ========================================================================= */
+const NODES = [
+  { x:0, y:1, id:'#264', t:'App shell', w:'Closed',  z:'behind' },
+  { x:0, y:2, id:'#375', t:'Foundation', w:'Closed', z:'behind' },
+  { x:0, y:3, id:'#376', t:'Native shell', w:'Closed', z:'behind' },
+  { x:1, y:1, id:'#609', t:'This prototype', w:'In Progress', z:'now' },
+  { x:1, y:3, id:'#160', t:'Vocabulary', w:'Awaiting answer', z:'ahead-wait' },
+  { x:2, y:1, id:'#388', t:'Read path', w:'Todo', z:'ahead' },
+  { x:3, y:1, id:'#272', t:'Node tree', w:'Todo', z:'ahead' },
+  { x:4, y:0, id:'#273', t:'Next-up', w:'Backlog', z:'ahead' },
+  { x:4, y:2, id:'#334', t:'The Route', w:'Backlog', z:'ahead' },
+  { x:4, y:3, id:'#256', t:'Electron path', w:'Cancelled', z:'dead' },
+];
+const EDGES = [['#609','#388'],['#388','#272'],['#272','#273'],['#272','#334'],['#256','#334']];
+
+function routeView() {
+  const COLW = 166, ROWH = 62, PADX = 64, PADY = 44;
+  const px = n => PADX + n.x * COLW, py = n => PADY + n.y * ROWH;
+  const at = id => NODES.find(n => n.id === id);
+  const ink = z => z === 'behind' ? 'var(--text-off)'
+                 : z === 'now'    ? 'var(--text-1)'
+                 : z === 'dead'   ? 'var(--failure)'
+                 : 'var(--text-2)';
+  const fill = z => z === 'behind' ? 'var(--text-off)'
+                  : z === 'now'    ? 'var(--accent)'
+                  : z === 'dead'   ? 'var(--failure)'
+                  : 'var(--idle)';
+
+  const edges = EDGES.map(([a, b]) => {
+    const A = at(a), B = at(b);
+    /* An edge leaves its blocker after that blocker's label block and enters its dependent
+       before the dot, as a cubic with flat tangents — #334's rule, unchanged. */
+    const x1 = px(A) + 132, y1 = py(A), x2 = px(B) - 12, y2 = py(B), m = (x1 + x2) / 2;
+    const dead = A.z === 'dead';
+    return `<path d="M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}" fill="none"
+      stroke="${dead ? 'var(--failure)' : 'var(--subtle)'}" stroke-width="1"
+      ${dead ? 'stroke-dasharray="3 3"' : ''}/>`;
+  }).join('');
+
+  const nodes = NODES.map(n => `
+    <g>
+      <circle cx="${px(n)}" cy="${py(n)}" r="4" fill="${fill(n.z)}"/>
+      <text x="${px(n) + 12}" y="${py(n) - 1}" fill="${ink(n.z)}" font-size="12"
+            font-family="-apple-system, sans-serif">${n.t}</text>
+      <text x="${px(n) + 12}" y="${py(n) + 13}" fill="var(--text-off)" font-size="10"
+            font-family="ui-monospace, monospace">${n.id} · ${n.w}</text>
+    </g>`).join('');
+
+  const nowX = PADX + COLW - 44;
+  const fogX = PADX + 4 * COLW + 148;
+
+  return `
+  <div class="route">
+    <div class="route-head">
+      <span class="crumb">Tickets · #607</span>
+      <h1>Wayfinder: the Tickets room, end to end</h1>
+      <div class="present"><button>Tree</button><button class="on">Map</button></div>
+    </div>
+    <div class="route-canvas">
+      <svg width="${fogX + 168}" height="${PADY + 4 * ROWH + 20}">
+        <defs>
+          <linearGradient id="fog" x1="0" x2="1">
+            <stop offset="0" stop-color="#1E2024" stop-opacity="0"/>
+            <stop offset="1" stop-color="#1E2024" stop-opacity=".92"/>
+          </linearGradient>
+        </defs>
+        <!-- the NOW line: Ion Blue as current position, not gold -->
+        <line x1="${nowX}" y1="16" x2="${nowX}" y2="${PADY + 4 * ROWH}"
+              stroke="var(--accent)" stroke-width="2"/>
+        <text x="${nowX + 8}" y="26" fill="var(--accent-bright)" font-size="10"
+              font-family="ui-monospace, monospace" letter-spacing="1">NOW · 1 TAKEABLE</text>
+        <text x="${PADX - 40}" y="26" fill="var(--text-off)" font-size="10"
+              font-family="ui-monospace, monospace" letter-spacing="1">3 DONE</text>
+        <text x="${PADX + 2 * COLW + 30}" y="26" fill="var(--text-off)" font-size="10"
+              font-family="ui-monospace, monospace" letter-spacing="1">6 REMAINING</text>
+        ${edges}
+        ${nodes}
+        <rect x="${fogX - 120}" y="8" width="168" height="${PADY + 4 * ROWH}" fill="url(#fog)"/>
+        <circle cx="${fogX + 52}" cy="${PADY + 1.5 * ROWH}" r="5" fill="none"
+                stroke="var(--text-off)" stroke-width="1.5"/>
+        <text x="${fogX + 66}" y="${PADY + 1.5 * ROWH + 4}" fill="var(--text-off)" font-size="11"
+              font-family="-apple-system, sans-serif">Tickets room, shipped</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><b>Behind the line</b> closed, no edges</span>
+      <span><b>On the line</b> open with every blocker closed</span>
+      <span><b>Ahead</b> column = blockers still to close</span>
+      <span><b>Red</b> can never unblock</span>
+    </div>
+  </div>`;
+}
+
+
+/* ============================================================================
+   D and E — a views sidebar, shared.
+
+   Every label here is written to fit 200pt because it names a VIEW, not a ticket. That is the
+   whole claim: mailbox-shaped things belong in a sidebar, and a ticket title is not one.
+   ========================================================================= */
+/* ONE group, five views. `Unblocked` and `Blocked` PARTITION the open set, so the two always sum
+   to `All open`; `In progress` cuts across both and is not part of the split. `Closed` (#1075) is
+   the only one not defined over the open set at all, which is why it is a fifth rail rather than
+   a `Resolved` and a `Ruled out`: a ticket the port could not read the closure of belongs to
+   neither and would need a sixth.
+
+   ~~Charts~~ \u2014 one row per PRD-shaped parent, the entry point to the Route \u2014 was WITHDRAWN
+   (#844): the Route is #334 and is not built, so every row in the group answered no click under
+   a heading that read as a charting feature. The group comes back with the Route.
+
+   A view's glyph takes `TicketsView.ink`, which is the ink the row mark counting into it draws
+   (#1074). A view that MARKS NOTHING takes no colour: spending an ink on `All open` or
+   `Unblocked` would state something the list never says. */
+const VIEWS = [
+  { g:'Backlog', rows:[
+    { gl:'circleFill', n:'All open',    k:'all' },
+    { gl:'circle',     n:'Unblocked',   k:'unblocked' },
+    { gl:'diamond',    n:'In progress', k:'wip',     ink:'running' },
+    { gl:'slash',      n:'Blocked',     k:'blocked', ink:'failure' },
+    { gl:'clock',      n:'Closed',      k:'closed' },
+  ]},
+];
+
+/* `null` is ABSENT, not zero \u2014 the count is absent until the read has answered, on the rule
+   `Blocked` follows over unread edges (#820). Opening onto `0` is the number that tells a reader
+   they have finished nothing. */
+function viewCount(k) {
+  const t = openTickets();
+  if (k === 'all')       return t.length;
+  // WITH NO EDGES SERVED, NEITHER COUNT MAY BE ASSERTED OFF EDGES. `Unblocked` goes ABSENT — it
+  // is the claim Argo has no standing to make, and the row marks are already suppressed for the
+  // same reason — while `Blocked` falls back to the one thing the provider did say, the bucket.
+  // A rail that read `Blocked 9` in failure ink over a list with no blockage marks would state
+  // exactly what the ink is defined to mean and the list does not show.
+  if (state === 'edgeless') {
+    if (k === 'unblocked') return null;
+    if (k === 'blocked')   return t.filter(x => x.bucket === 'blocked').length;
+  }
+  // NOT just "no edges": #160 and #185 are decisions awaiting an answer, which holds them up
+  // with no dependency edge to show for it. On edges alone they counted as unblocked AND as
+  // blocked, and the rail read 6 + 8 over 12 (#812).
+  if (k === 'unblocked') return t.filter(x => !x.by.length && x.bucket !== 'blocked').length;
+  if (k === 'wip')       return t.filter(x => x.bucket === 'in progress').length;
+  if (k === 'blocked')   return t.filter(x => x.bucket === 'blocked' || x.by.length).length;
+  // The closed read is the VIEW's, not the poll's: nothing has read it until somebody opens it,
+  // and the count stays ABSENT until that read has answered. `nothing-closed` is the read
+  // answering with zero, which is a number and is drawn; `unread` is the read not having landed,
+  // which is not. Opening onto `0` where nothing was read tells a reader they have finished
+  // nothing (#820).
+  if (k === 'closed') {
+    if (state === 'nothing-closed') return 0;
+    return state === 'closed' ? CLOSED_ROWS.length : null;
+  }
+  return 0;
+}
+
+/* A count may state what it is SHORT by (#1074). `In progress` rests on the roster join, and a
+   live Session Argo cannot place blanks nothing \u2014 the row draws the count AND, inboard of it,
+   how many live Sessions named no ticket. Absent is kept for the case that is genuinely nothing:
+   no provider bound, so no join happened and there is no partial answer to state. */
+const viewShortfall = k => (k === 'wip' && openTickets().length ? '1 unplaced' : null);
+
+const ROOMS = [
+  { n:'Sessions', gl:'sessions' },
+  { n:'Tickets',  gl:'tickets', on:true },
+  { n:'Code',     gl:'code' },
+  { n:'Atlas',    gl:'atlas' },
+];
+
+function navSidebar() {
+  const groups = VIEWS.map(v => `
+    <div class="nav-group">
+      <span class="cap">${v.g}</span>
+      ${v.rows.map(r => {
+        const on = r.k === (STATES[state].view || 'all');
+        const n = viewCount(r.k);
+        const short = viewShortfall(r.k);
+        return `<div class="nav-row${on ? ' on' : ''}">
+        <span class="gl ${r.ink || ''}">${GLYPH[r.gl]}</span><span>${r.n}</span>
+        ${short ? `<span class="short">${short}</span>` : ''}
+        <span class="n">${n === null ? '' : n}</span></div>`;
+      }).join('')}
+    </div>`).join('<div class="nav-rule"></div>');
+
+  /* The Next-up hero keeps its card, and it fits: the hero states ONE ticket, so its title has
+     the sidebar's whole width and three lines to wrap into. A list of twelve does not.
+
+     Where it NAMES a ticket it is a control and it says so (#898) — a chevron in the head, and
+     the whole card answers the pointer. Its foot carries a second control, `Start` (#899): one
+     card opening a ticket and one starting it are two acts, so two targets rather than one press
+     nobody can aim (#1182). An empty tier is a sentence and neither control is drawn. */
+  const h = nextUp();
+  const hero = h.tier === 'pick' ? `
+    <div class="hero-card pressable">
+      <div class="head"><span class="cap">Next up</span><span class="go">${CHEVRON}</span></div>
+      <span class="hid">${h.item.id}</span>
+      <div class="ht">${h.item.t}</div>
+      <div class="chips">${heroChips(h)}</div>
+      <div class="hero-foot">
+        <button class="hero-start">${GLYPH.play}Start<span class="cmd">/implement</span></button>
+      </div>
+    </div>` : `
+    <div class="hero-card">
+      <div class="head"><span class="cap">Next up</span></div>
+      <div class="hero-empty">${EMPTY_LINE[h.tier]}</div>
+    </div>`;
+
+  return `
+  <aside class="rail">
+    <div class="rail-head"></div>
+    <div class="rail-scroll">
+      <div style="padding:0 var(--s-base) var(--s-base)">
+        <div class="rooms-strip">
+          ${ROOMS.map(r => `<button class="${r.on ? 'on' : ''}">${GLYPH[r.gl]}${r.n}</button>`).join('')}
+        </div>
+      </div>
+      ${groups}
+      <div class="nav-rule"></div>
+      ${hero}
+    </div>
+    <div class="nav-foot">${CONN}</div>
+  </aside>`;
+}
+
+/* ---------- the list pane ---------- */
+
+/* THE HEADING IS TWO LINES, and the middle term names the grouping IN FORCE — so it is absent
+   wherever the list does not have one. It reads `results` and not `tickets` under a query,
+   because the count is of MATCHES and the rows on screen can exceed it: the rails are drawn and
+   not counted. */
+function listHeading() {
+  // The heading's FIRST line stays `Backlog` — it names the list, and `Closed` is which cut of it
+  // is in force, which is the middle term's job. The middle term names the grouping the list
+  // actually has: a subtitle reading `by priority` over a list ordered by recency is the exact
+  // lie the second line exists to prevent.
+  if (STATES[state].view === 'closed') {
+    return { h:'Backlog', sub:`Closed · by last touched · ${CLOSED_ROWS.length} tickets` };
+  }
+  const n = openTickets().length;
+  if (query()) return { h:'Searching', sub:`All open · by priority · ${matchCount()} ${matchCount() === 1 ? 'result' : 'results'}` };
+  return { h:'Backlog', sub:`All open · by priority · ${n} tickets` };
+}
+
+function listPane() {
+  const head = listHeading();
+  return `<div class="list-pane">
+    ${backlogPaneHeader()}
+    <div class="list-head">
+      <span class="h">${head.h}</span><span class="sub">${head.sub}</span>
+    </div>
+    ${listD()}
+  </div>`;
+}
+
+function listD() {
+  // The closed list is FLAT and by last touched — the one place the room's own structure
+  // changes — with a `Load more` row drawn only where the provider served a cursor. A `Load
+  // more` that survived the end of the list is the control-that-does-nothing this room refuses.
+  if (STATES[state].view === 'closed') {
+    return `<div class="work-list">
+      ${CLOSED_ROWS.map(closedRow).join('')}
+      <div class="more-row">Load 50 more</div>
+    </div>`;
+  }
+
+  const items = visibleTickets();
+  // A HEADER COUNTS THE ROWS IT DRAWS. Folding a parent lowers it; a subtree count would stand
+  // over one visible row and read as a lie.
+  const groups = PRIORITIES.map(p => {
+    const roots = items.filter(t => !t.parent && t.pri === p);
+    if (!roots.length) return '';
+    const n = roots.reduce((a, r) => a + 1 + drawnCount(r.id), 0);
+    return `<div class="pri-head"><span class="cap">${p}</span><span class="n">${n}</span></div>`
+      + roots.map(r => subtreeA(r, 0, p)).join('');
+  }).join('');
+
+  if (!items.length && query()) {
+    return `<div class="work-list">
+      <div class="no-match">No ticket in All open matches “${query()}”.</div>
+    </div>`;
+  }
+  return `<div class="work-list">
+    ${items.length ? groups : `<div class="rail-empty">Nothing in the backlog.</div>`}
+  </div>`;
+}
+
+function detailD() {
+  const t = TICKETS.find(x => x.id === selected);
+  const blk = blockersOf(t.id);
+  const labels = LABELS[t.id] || [['work-room','']];
+  return `<div class="col">
+    <div class="measure">
+      <div class="t-head">
+        <span class="tid">${t.id}</span>
+        <h1>${t.t}</h1>
+        ${statusPair(t)}
+      </div>
+      <div class="fact-strip">
+        <span class="kv"><span class="k">Priority</span><span class="v">${t.pri.toLowerCase()}</span></span>
+        <span class="kv"><span class="k">Type</span><span class="v">${t.type}</span></span>
+        <span class="kv"><span class="k">Bucket</span><span class="v mono">${t.bucket === 'blocked' ? 'blocked' : 'open'}</span></span>
+        <span class="kv"><span class="k">Labels</span>
+          <span class="labels">${labels.map(([n, tint]) => `<span class="label ${tint}">${n}</span>`).join('')}</span></span>
+      </div>
+      <div class="body">
+        <span class="cap" style="display:block;margin-bottom:var(--s-snug)">Deliveries</span>
+        ${deliveryChips(t.id, false)}
+        <p>The backlog’s home, with the sidebar freed: views at 280, the backlog at 520 where
+        a title reads whole at depth three, and the ticket beside it.</p>
+        <h2>Acceptance criteria</h2>
+        <p>Any node — parent or leaf — opens in detail through the same view; type is a
+        property. Parents show a Children section and an <code>n/m</code> roll-up.</p>
+        ${t.kids ? `<h2>Children · ${t.kids[0]} of ${t.kids[1]} closed</h2>${childList(t.id)}` : ''}
+        ${blk === null ? '' : `<h2>Blocked by${blk.length ? ` · ${blk.length}` : ''}</h2>
+          ${blk.length ? blockerList(blk) : `<p>Nothing.</p>`}`}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================================
+   The pane headers. Icons are drawn rather than named, so this file says what shape it means.
+
+   THE MARKS, RE-CUT. A toolbar mark is not a place to be inventive: the band is chrome, and
+   chrome that has to be learned costs more than the space a familiar mark saves. `Start` is
+   `play.fill` and not a bolt — a bolt reads as speed or as power, and neither is the act.
+   New ticket is `square.and.pencil`, Mail's own compose mark, which is free here because #836
+   took New Session out of this room rather than sharing a row with it.
+
+   THREE MARKS ARE GONE AND CANNOT COME BACK WITHOUT SOMETHING TO PUT BEHIND THEM: the funnel
+   (#900) drew a live mark over an empty closure, the Group-by menu (#1242) opened onto one
+   stated row, and the two link verbs (#1242) said what the ticket's own number says.
+   ========================================================================= */
+const IC = {
+  compose: '<path d="M13 2.6 8 7.6l-.6 2 2-.6 5-5z"/><path d="M13.5 9.5v3.2a1 1 0 0 1-1 1H3.3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h3.2"/>',
+  search:  '<circle cx="6.6" cy="6.6" r="4.2"/><path d="M9.8 9.8 14 14"/>',
+  play:    '<path d="M4.6 3 12 8l-7.4 5z" fill="currentColor" stroke="none"/>',
+  chev:    '<path d="M4 6.5 8 10.5l4-4"/>',
+  close:   '<circle cx="8" cy="8" r="5.6"/><path d="M5.9 5.9 10.1 10.1M10.1 5.9 5.9 10.1"/>',
+  tick:    '<path d="M3 8.4 6.2 11.6 13 4.8"/>',
+};
+const svg = k => `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"
+  stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+const ibtn = (k, label) => `<button class="ibtn" title="${label}">${svg(k)}</button>`;
+
+const LIGHTS = `<div class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>`;
+const CONN = `<span class="conn" id="conn"><i></i>GitHub · milad-alizadeh</span>`;
+
+/* THE SKILL PICKER (#1242), and it is NOT #872's chevron coming back. #872 deleted a menu of
+   Mode RUNGS over a Session that did not exist yet: every open of it confirmed the value already
+   there, and the rung is honestly changeable one place downstream, over a live Session whose
+   rung that control reads back. This menu offers which SKILL the Session opens on, which has
+   more than one answer in practice, whose default is a guess off a label rather than a value the
+   reader set, and which nothing downstream can change — once the Session has opened on
+   `/implement` no control anywhere re-opens it on `/grill-me`.
+
+   IT NAMES WHY THE DEFAULT MATCHED, so the guess is inspectable rather than magic. */
+const SKILLS = [
+  { n:'/implement',     d:'nothing refuses it' },
+  { n:'/design-to-code', d:'the screen has a design' },
+  { n:'/grill-me',      d:'a decision, unanswered' },
+  { n:'/triage',        d:'no priority, no type' },
+  { n:'/prototype',     d:'a question, not a build' },
+  { n:'/wayfinder',     d:'a PRD-shaped parent' },
+];
+/* The popover hangs off the COMMAND segment — the thing you read is the thing you press to
+   change, which is the only arrangement in which a chevron beside a fact is not a second control
+   over the same fact. */
+const SKILL_MENU = `<div class="menu" style="left:82px">
+  ${SKILLS.map((s, i) => `<div class="menu-row${i === 0 ? ' on' : ''}">
+    <span class="tick">${i === 0 ? svg('tick') : ''}</span>
+    <span>${s.n}</span><span class="why">${s.d}</span></div>`).join('')}
+  <div class="menu-rule"></div>
+  <div class="menu-row"><span class="tick"></span><span>Fresh Session</span></div>
+  <span class="foot">Every Session started here carries this ticket.</span>
+</div>`;
+
+/* THE LIST PANE'S HEADER: New ticket at the pane's leading edge, search at its trailing one.
+   Both act on the list, which is why both are here rather than in a window-wide row — a control
+   placed off the window's trailing edge and a pane whose leading edge the reader can drag are
+   two independent numbers, and they coincided by luck (#1242).
+
+   New ticket SURVIVES a list with no rows where the field does not: the field goes with the list
+   it searches, and the one thing this window creates is exactly what you want when there is
+   nothing in it. Neither survives a VACANCY — that page replaces the deck, bands and all. */
+function backlogPaneHeader() {
+  const narrows = Boolean(visibleTickets().length) || Boolean(query());
+  return `<div class="pane-head list">
+    <div class="icap">${ibtn('compose', 'New ticket')}</div>
+    <span class="grow"></span>
+    ${narrows ? `<div class="search glass">${svg('search')}
+      ${query() ? `<span class="typed">${query()}</span>` : '<span>Search the backlog</span>'}
+    </div>` : ''}
+  </div>`;
+}
+
+/* THE TICKET PANE'S HEADER: the `Start` pill at the pane's leading edge, and the closure verb
+   beside it (#1333). It KEEPS ITS BAND with no ticket open — the pill goes, because a verb
+   addressing nobody must not be one press away from being drawn, but a band that collapsed would
+   move every pane beside it on the first click of the day. */
+function ticketPaneHeader() {
+  return `<div class="pane-head ticket">
+    <div class="icap pill">
+      <button class="seg verb" title="Start a Session on this ticket">${svg('play')}Start</button>
+      <button class="seg cmd" title="Which skill the Session opens on">/implement${svg('chev')}</button>
+    </div>
+    <div class="icap">${ibtn('close', 'Close this ticket')}</div>
+    ${state === 'skill-menu' ? SKILL_MENU : ''}
+  </div>`;
+}
+
+/* The sidebar's band holds NOTHING but the traffic lights' zone, kept clear. The Project scope
+   stays a `.navigation` toolbar item — the WINDOW's scope, not a pane's — so the room contributes
+   nothing to `.toolbar` at all.
+
+   OBSERVED, and not what this design draws: in the shipped room `.navigation` slides past the
+   cleared sidebar band and lands on the LIST pane's leading vertical, on top of New ticket, so
+   `ticketsRoom` renders the scope capsule there and no compose mark anywhere. `ticketsChrome`,
+   which is the panes without the window, draws the arrangement below. That disagreement is a
+   `/pixel-review` catch against the app, not a second answer to the column question. */
+function titlebarHTML() {
+  return `<div class="tb-lead">${LIGHTS}</div>`;
+}
+
+/* ============================================================================
+   Assembly.
+   ========================================================================= */
+function render() {
+  const panes = document.getElementById('panes');
+  const tb = document.getElementById('titlebar');
+  const railClass = state === 'unbound' ? 'rail-0' : 'rail-work';
+  panes.className = 'panes ' + railClass;
+  tb.className = 'titlebar ' + railClass;
+  tb.innerHTML = titlebarHTML();
+  const conn = document.getElementById('conn');
+  if (conn) conn.style.visibility = state === 'unbound' ? 'hidden' : 'visible';
+
+  // A VACANCY REPLACES THE WHOLE DECK — the pane headers go with the panes they belong to. The
+  // unbound page takes the sidebar too: the room hides whole rather than rendering an empty
+  // backlog beside views that read zero for a reason nobody stated (#272, #818).
+  if (state === 'unbound') {
+    panes.innerHTML = `<section class="deck"><div class="deck-head"></div>${unbound()}</section>`;
+    return;
+  }
+
+  // A VACANCY is any page that replaces the deck. `unread` and `nothing-closed` are two of the
+  // four, and they take the deck exactly as `cleared` does — headers and all.
+  const page = state === 'unread' ? unread()
+    : state === 'nothing-closed' ? nothingClosed()
+    : !openTickets().length ? cleared()
+    : null;
+  const vacant = page !== null;
+  const body = state === 'route' ? routeView() : page ?? '';
+
+  panes.innerHTML = navSidebar() + `<section class="deck">
+    ${state === 'route' || vacant
+      ? `<div class="deck-head"></div>${body}`
+      : `<div class="work">${listPane()}<div class="ticket-pane">${ticketPaneHeader()}${detailD()}</div></div>`}
+    </section>`;
+}
+
+function select(id) { selected = id; render(); }
+
+function setState(k) {
+  state = k;
+  shut = new Set(STATES[k].shut || []);
+  selected = STATES[k].sel || (state === 'deep' ? '#607' : '#272');
+  const u = new URLSearchParams(location.search);
+  u.set('state', state);
+  history.replaceState(null, '', '?' + u);
+  paintChrome();
+  render();
+}
+function paintChrome() {
+  document.getElementById('state-note').textContent = STATES[state].q;
+  const sel = document.getElementById('state-select');
+  sel.innerHTML = Object.entries(STATES)
+    .map(([k, v]) => `<option value="${k}"${k === state ? ' selected' : ''}>${v.n}</option>`).join('');
+}
+
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  const ks = Object.keys(STATES);
+  const i = ks.indexOf(state);
+  if (e.key === 'ArrowLeft')  setState(ks[(i - 1 + ks.length) % ks.length]);
+  if (e.key === 'ArrowRight') setState(ks[(i + 1) % ks.length]);
+});
+
+(function boot() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('render')) document.body.classList.add('render');
+  const s = q.get('state');
+  if (s && STATES[s]) state = s;
+  shut = new Set(STATES[state].shut || []);
+  selected = STATES[state].sel || (state === 'deep' ? '#607' : '#272');
+  paintChrome();
+  render();
+})();
+</script>
+</body>
+</html>

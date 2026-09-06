@@ -31,17 +31,6 @@ struct AtlasRoomRail: View {
     /// Every file the map is drawing, as the reader's question leaves it.
     let entries: [AtlasIndexEntry]
 
-    /// The regions of a domain map, as the same question leaves them (#1158).
-    let regions: [AtlasDomainEntry]
-
-    /// Whether the map the rail is beside HAS regions at all — which is what decides which of the
-    /// two lists stands here, and is not the same fact as `regions` being empty.
-    ///
-    /// A question that matches no region leaves `regions` empty on a map that is still tiled by
-    /// subject, and swapping to the file list there would answer a question nobody asked — and
-    /// leave the domain list with an empty state nothing could reach.
-    let indexesDomains: Bool
-
     /// The file open in both halves at once: the row it marks in the list is the volume it traces
     /// on the map, because it is one value and there is nowhere for a second to disagree from.
     let open: String?
@@ -56,9 +45,6 @@ struct AtlasRoomRail: View {
     let note: AtlasNote?
 
     let select: (String) -> Void
-
-    /// How many files the inference placed in no region at all, said over the list of regions.
-    let unassigned: Int
 
     /// What the rail takes of the room — the design's own 356. A fixed width rather than a share:
     /// the panel is read as prose at a measure, and a rail that grew with the window would set a
@@ -79,7 +65,7 @@ struct AtlasRoomRail: View {
                 .padding(.horizontal, ArgoSpacing.loose)
                 .padding(.top, ArgoSpacing.comfortable)
             AtlasTrail(descent: descent)
-            index
+            AtlasIndex(query: query, entries: entries, open: open, select: select)
             inspect
         }
         .frame(width: Self.width)
@@ -91,23 +77,6 @@ struct AtlasRoomRail: View {
             Rectangle()
                 .fill(argo.color.edge.subtle)
                 .frame(width: ArgoStroke.border)
-        }
-    }
-
-    /// What the list indexes: the subjects where the map is tiled by them and the reader is
-    /// standing over the lot, and the files everywhere else — including INSIDE one region, where
-    /// what there is to look at is that region's own files (#1156's own criterion, kept).
-    @ViewBuilder private var index: some View {
-        if !indexesDomains {
-            AtlasIndex(query: query, entries: entries, open: open, select: select)
-        } else {
-            AtlasDomainIndex(
-                listing: AtlasDomainListing(
-                    query: query, entries: regions, unassigned: unassigned,
-                ),
-                wheel: argo.color.atlas.domain,
-                enter: descent.enter,
-            )
         }
     }
 

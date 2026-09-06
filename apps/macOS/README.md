@@ -30,10 +30,9 @@ Packages/
 
 `ArgoFixtures` and `ArgoSpecimens` are targets in the ArgoUI **package**, beside `ArgoUI` rather
 than inside it: 7,300 lines of dev-tool code used to compile into the library that draws the
-product, and no gate could see the edge while they did. Splitting them out is what keeps the
-arrow pointed one way; nothing checks it now, so it is on review to notice. The app target
-links `ArgoSpecimens` because the harness is reached by launch argument on the real binary —
-that is what makes a specimen render evidence.
+product, and no gate could see the edge while they did. `swift-boundaries.sh` edge 8 keeps the
+arrow pointed one way. The app target links `ArgoSpecimens` because the harness is reached by
+launch argument on the real binary — that is what makes a specimen render evidence.
 
 `Argo/` is a **file-system-synchronized group**: the project file does not enumerate its
 contents, so adding a Swift file to that folder adds it to the target with no `.pbxproj`
@@ -99,26 +98,27 @@ The same bargain the TypeScript side has, in Swift's spelling. Everything below 
 pre-commit on staged `.swift` files; `bun run quality` runs the lot over the whole tree, and
 so does CI, with SwiftFormat in `--check` mode rather than rewriting.
 
-| Rule | What holds it | Config |
+| Gate | What holds it | Config |
 |---|---|---|
 | Formatting | SwiftFormat | `.swiftformat` |
 | The caps and the escape-hatch bans | SwiftLint, every rule an error | `.swiftlint.yml` (+ a nested one under `Packages/ArgoEngine/Tests`) |
-| Package layering | the SPM target graph, and review | each `Package.swift` |
-| Design tokens | review | `ArgoDesign` is the contract |
+| Package layering | `scripts/swift-boundaries.sh` | the edges below |
+| Design tokens | the same script, edge 7 | `scripts/check-design-tokens-swift.sh` and its allowlist |
 | Duplication | `jscpd`, Swift included | `.jscpd.json` |
 
 The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
 TypeScript. `rules/swift.md` is the prose half: how Swift spells `rules/house.md`, plus the views.
 
-Boundaries are readable off imports and declarations alone, so they held as gates for a while;
-the script that checked them is gone and they are conventions again: **ArgoEngine** never
-imports a UI framework, **ArgoDesign** imports nothing of Argo's at all, and the **app target**
-declares no `View` — everything with logic in it belongs in a package, where a test can reach it.
+Boundaries are checkable by imports and declarations alone, which is why they are gates rather
+than review notes: **ArgoEngine** never imports a UI framework, **ArgoDesign** imports nothing of
+Argo's at all, and the **app target** declares no `View` — everything with logic in it belongs in
+a package, where a test can reach it.
 
 Colours, type, spacing, radii, strokes, elevation and motion come from `ArgoDesign` (#375), and
-the rule is that every other file names a role instead of writing a value down. `ArgoDesign` is
-the exception because it IS the contract. This was a check until the boundary gate was removed;
-a value written down in a view is now something a reader has to catch.
+the guard's only job is to keep every other file naming a role instead of writing a value down.
+`ArgoDesign` is exempt because it IS the contract, and that exemption is a MODULE rather than a
+folder name as of #1088 — which is the whole reason the check can run on CI. What a specimen
+carries is debt on the allowlist, named and shrink-only, not a directory waved through.
 
 The contract holds **tokens and nothing else**, which took three cuts to get to. #772 took out the
 views: `ArgoBadge`, `ArgoGlyph`, `ArgoFloatingGlass` and the rest are `ArgoAtoms`, inside the

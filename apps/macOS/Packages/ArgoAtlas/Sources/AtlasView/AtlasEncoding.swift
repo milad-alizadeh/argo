@@ -15,23 +15,9 @@ public struct AtlasEncoding: View {
     private let measures: [String]
     @Binding private var channels: AtlasChannels
 
-    /// Whether the colour channel is read at all. FALSE where the map is grouped by domain
-    /// (#1158): the colour is the Domain there and the Measure named on this row drives nothing,
-    /// so the row goes quiet rather than naming a Measure nothing on screen was drawn from.
-    ///
-    /// The same treatment the design gives Height in the treemap, for the same reason — and the
-    /// row stays rather than vanishing, so a reader can see the choice is still theirs to get
-    /// back to.
-    private let isColourDrawn: Bool
-
-    public init(
-        measures: [String],
-        channels: Binding<AtlasChannels>,
-        isColourDrawn: Bool = true,
-    ) {
+    public init(measures: [String], channels: Binding<AtlasChannels>) {
         self.measures = measures
         _channels = channels
-        self.isColourDrawn = isColourDrawn
     }
 
     public var body: some View {
@@ -39,13 +25,8 @@ public struct AtlasEncoding: View {
             AtlasSidebarRow("Area") { picker("Area", selection: footprint) }
             AtlasSidebarRow("Height") { picker("Height", selection: height) }
             AtlasSidebarRow("Colour") { picker("Colour", selection: band) }
-                .disabled(!isColourDrawn)
-                .opacity(isColourDrawn ? 1 : Self.unread)
         }
     }
-
-    /// What a row nothing on the map is drawn from stands at — the design's own `.srow.off`.
-    private static let unread = 0.45
 
     private func picker(_ title: String, selection: Binding<String>) -> some View {
         Picker(title, selection: selection) {

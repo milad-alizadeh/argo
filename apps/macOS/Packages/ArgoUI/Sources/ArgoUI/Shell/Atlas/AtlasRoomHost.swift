@@ -28,9 +28,6 @@ package struct AtlasRoomHost: View {
     @State private var hideTests = false
     @State private var showTies = false
     @State private var isCity = false
-    /// Which reading of the regions the specimen opens on (#1158), so the harness can render the
-    /// map re-tiled by domain — a state no click a screenshot can drive would otherwise reach.
-    @State private var grouping: AtlasGrouping
 
     /// `.unmeasured` is the Project nobody has measured, which is the room's other reading. Only a
     /// `.measured` reading draws `behind` at all (#1162); a specimen handing it in with another
@@ -44,7 +41,6 @@ package struct AtlasRoomHost: View {
         self.behind = behind
         self.opening = opening
         _channels = State(initialValue: Self.channels(of: reading))
-        _grouping = State(initialValue: opening.grouped)
     }
 
     package var body: some View {
@@ -79,11 +75,7 @@ package struct AtlasRoomHost: View {
                     hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
                     showTies: AtlasSwitch(isOn: showTies) { showTies = $0 },
                 ),
-                arrangement: AtlasArrangementChoice(
-                    grouping: grouping,
-                    setGrouping: { grouping = $0 },
-                    isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
-                ),
+                isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
             ),
         )
     }

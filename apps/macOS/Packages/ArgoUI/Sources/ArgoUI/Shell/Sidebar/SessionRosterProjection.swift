@@ -12,13 +12,15 @@ package enum SessionRosterProjection {
     package static func rows(
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
-        focus: Focus = Focus(),
+        selection: String? = nil,
         now: Date = Date(),
     )
         -> [Row] {
-        rows(from: sessions, in: Pass(
-            isArchived: false, opened: opened, focus: focus, nowMs: now.epochMs,
-        ))
+        rows(
+            from: sessions,
+            in: Pass(isArchived: false, opened: opened, selection: selection),
+            now: now,
+        )
     }
 
     /// One pass over the roster: which of the two lists it is drawing, which folds the reader has
@@ -27,11 +29,7 @@ package enum SessionRosterProjection {
     struct Pass {
         let isArchived: Bool
         let opened: Set<String>
-        /// The row the deck has open, and its fourth fact (#1513).
-        let focus: Focus
-        /// The moment the whole pass is arithmetic against, so no two rows age off two clocks —
-        /// the open row's fourth fact included, which is why `Focus` is taken already dated.
-        let nowMs: Int
+        let selection: String?
     }
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
@@ -39,17 +37,22 @@ package enum SessionRosterProjection {
     package static func archivedRows(
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
-        focus: Focus = Focus(),
+        selection: String? = nil,
         now: Date = Date(),
     )
         -> [Row] {
-        rows(from: sessions, in: Pass(
-            isArchived: true, opened: opened, focus: focus, nowMs: now.epochMs,
-        ))
+        rows(
+            from: sessions,
+            in: Pass(isArchived: true, opened: opened, selection: selection),
+            now: now,
+        )
     }
 
-    private static func rows(from sessions: [CockpitPresentation.Session], in pass: Pass)
+    private static func rows(
+        from sessions: [CockpitPresentation.Session], in pass: Pass, now: Date,
+    )
         -> [Row] {
+        let nowMs = now.epochMs
         // Decided before the split and filtered after: a Session's workspace label is told apart
         // from every other Session's, whichever of the two lists each is drawn in.
         let kept = zip(sessions, decided(across: sessions, in: pass))
@@ -57,19 +60,16 @@ package enum SessionRosterProjection {
         // Once over the list this pass is drawing, never once per row (ADR-0028) — and over the
         // kept half, so a fold's count is what the reader can see rather than what is behind the
         // foot as well.
-        let folding = Folding(
-            of: kept.map { pair in pair.0 },
-            isArchived: pass.isArchived, opened: pass.opened, selecting: pass.focus.sessionID,
-        )
+        let folding = Folding(of: kept.map { pair in pair.0 }, in: pass)
         let byID = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
         return kept.flatMap { session, decided -> [Row] in
             [
                 folding.fold(opening: session).map { fold in
                     let runs = folding.runs(foldedWith: session).compactMap { byID[$0] }
-                    return foldRow(fold, at: session, of: runs, in: pass)
+                    return foldRow(fold, at: session, of: runs, nowMs: nowMs)
                 },
                 folding.drawsOwnRow(session)
-                    ? row(for: session, decided: decided, in: pass) : nil,
+                    ? row(for: session, decided: decided, nowMs: nowMs) : nil,
             ]
             .compactMap(\.self)
         }

@@ -38,11 +38,6 @@ final class AtlasRoomModel {
     /// the other reads. Not persisted: #1161 keeps the CHANNELS past a reopen, and the room ships
     /// flat every time so the first thing a reader meets is the reading that carries its names.
     private(set) var isCity = false
-    /// Whether the map is re-tiled by inferred domain instead of by folder (#1158). Not kept past
-    /// a reopen, for `isCity`'s reason: it is a way of looking at the repository rather than a
-    /// fact about it — and the room opens on the reading nobody guessed, so the first thing a
-    /// reader meets is where the repository really put its files.
-    private(set) var grouping = AtlasGrouping.folders
     private let store: AtlasMapStore
     private let notesStore: AtlasNotesStore
     private let preferences: AtlasChannelPreferences
@@ -73,10 +68,6 @@ final class AtlasRoomModel {
         }
         guard project.id != readProjectID else { return }
         readProjectID = project.id
-        // Back to folders on every change of Project (#1158). Grouping by subject is a reading of
-        // one repository, and carrying it across would open the next Project on a partition that
-        // was inferred over a different one — or on none, silently.
-        grouping = .folders
         hideTests = preferences.hideTests(for: project.id)
         reading = await read(project)
         notes = await written(project, of: reading)
@@ -136,13 +127,6 @@ final class AtlasRoomModel {
     /// the map rather than a fact about it.
     func setIsCity(_ isCity: Bool) {
         self.isCity = isCity
-    }
-
-    /// Re-tile the map by folder or by inferred domain (#1158). Nothing is kept, and nothing here
-    /// re-tiles: the drawn Map is a pure function of the measured one and this choice, resolved
-    /// wherever it is read, so setting the value is the whole of the work.
-    func setGrouping(_ grouping: AtlasGrouping) {
-        self.grouping = grouping
     }
 
     /// What was written about the Project, fetched SEPARATELY and after the measurement: the map

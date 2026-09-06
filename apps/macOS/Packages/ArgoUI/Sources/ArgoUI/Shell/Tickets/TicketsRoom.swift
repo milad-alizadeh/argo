@@ -76,35 +76,6 @@ package struct TicketsRoom {
     /// Mode chevron went (#872), and the search field is not the last thing this row will hold.
     var held = Held.unheld
 
-    package struct Held {
-        var query: Binding<String>
-        /// The backlog's selection (#1247). Beside the query and above the room, for the query's
-        /// own reason: the panes are rebuilt on every ticket, and a range owned any lower would
-        /// be lost by the first click that changed anything.
-        var selection: Binding<RowSelection<Int>> = .constant(RowSelection())
-        /// Open the ticket pane on a row the backlog has already settled the selection for.
-        var opened: @MainActor (Int?) -> Void = { _ in }
-        /// What a backlog row's right-click menu offers, and what pressing an item does (#1247).
-        /// Inert by default: a preview draws the menu without a provider behind it.
-        var acts = BacklogSelectionActs()
-
-        /// Nothing remembers it, for a `#Preview` and a specimen with no window above them.
-        package static let unheld = Held(query: .constant(""))
-
-        /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-        package init(
-            query: Binding<String>,
-            selection: Binding<RowSelection<Int>> = .constant(RowSelection()),
-            opened: @escaping @MainActor (Int?) -> Void = { _ in },
-            acts: BacklogSelectionActs = BacklogSelectionActs(),
-        ) {
-            self.query = query
-            self.selection = selection
-            self.opened = opened
-            self.acts = acts
-        }
-    }
-
     package var sidebar: some View {
         TicketsSidebar(room: room, cockpitRoom: $cockpitRoom, view: $view, intents: nextUpIntents)
     }
@@ -191,9 +162,13 @@ package struct TicketsRoom {
                 BacklogPaneHeader(
                     reach: reach,
                     creation: intents.creation,
-                    narrows: chrome.narrows,
-                    query: held.query,
+                    narrowing: chrome.narrows ? narrowing(in: seated) : nil,
                 )
+                // The band draws BEFORE the list and the ask's offer hangs off the field into the
+                // list's own area, so without this the rows paint over the thing that just
+                // appeared. Raised on the band and not the offer: an overlay cannot lift itself
+                // past its host's sibling.
+                .zIndex(1)
                 BacklogList(
                     rows: room.backlog,
                     held: BacklogList.Held(
@@ -227,6 +202,10 @@ package struct TicketsRoom {
                     open: { ticket = $0 },
                     openSession: openSession,
                 )
+                // On the DETAIL and not on the pane. The band above it holds the ticket's verbs
+                // (#1242), and a sheet drawn over the whole pane would take `Start` away in order
+                // to show a ticket you cannot start.
+                .overlay { answer }
             }
         }
     }

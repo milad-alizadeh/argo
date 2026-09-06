@@ -1,44 +1,25 @@
 import ArgoAtoms
 import ArgoDesign
-import AtlasLayout
 import SwiftUI
 
 /// How the map is laid out and which of its two views is drawn — the design's `AtlasArrangement`
-/// section of the sidebar: what the regions ARE (#1158), and which of the two readings of them is
-/// drawn (#1152).
+/// section of the sidebar. Scoped to the View row; Group by (Folders and Domains) is #1158's row
+/// of the same section.
 ///
-/// Both rows live here rather than over the map because neither is a camera: turning the city is a
-/// gesture on the picture, and choosing what the picture IS — folders or subjects, standing or
-/// flat — belongs beside the channels that decide the rest of it.
-///
-/// Group by comes FIRST, above View, because it is the larger question: it decides what the
-/// regions of the map are, and View decides how those regions are drawn.
+/// The view pair lives here rather than over the map because it is not a camera: turning the city
+/// is a gesture on the picture, and choosing between the city and the treemap is a choice about
+/// what the picture IS, beside the channels that decide the rest of it.
 public struct AtlasArrangement: View {
     @Environment(\.argo) private var argo
 
-    @Binding private var grouping: AtlasGrouping
     @Binding private var isCity: Bool
 
-    /// Whether the Map carries an inference to re-tile on (#1158).
-    private let canGroupByDomain: Bool
-
-    public init(
-        grouping: Binding<AtlasGrouping>,
-        canGroupByDomain: Bool,
-        isCity: Binding<Bool>,
-    ) {
-        _grouping = grouping
-        self.canGroupByDomain = canGroupByDomain
+    public init(isCity: Binding<Bool>) {
         _isCity = isCity
     }
 
     public var body: some View {
         AtlasSidebarSection("Arrangement") {
-            AtlasSidebarRow("Group by") {
-                AtlasGroupingControl(
-                    grouping: $grouping, canGroupByDomain: canGroupByDomain,
-                )
-            }
             AtlasSidebarRow("View") {
                 // Each view is a picture of itself, which two words in a menu are not.
                 ArgoIconButtonGroup {

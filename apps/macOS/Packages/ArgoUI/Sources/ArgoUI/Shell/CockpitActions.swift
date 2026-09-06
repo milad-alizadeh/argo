@@ -46,6 +46,11 @@ public struct CockpitActions {
         /// Make one of the reads a room raises — a link followed by number (#895), or a page of
         /// the closed listing (#1075). ONE slot for all of them, because none is on a cadence and
         /// each answers nothing: what lands in the ledger is the answer.
+        ///
+        /// A backlog QUESTION is deliberately not here (#1317). It reaches no panel, no Finder
+        /// and no registry — it is the engine's own port, on the terms `drive` is — so the room
+        /// calls `BacklogQuestion` directly rather than through a closure the app layer fills in
+        /// front of it.
         public var read: (TicketRead) async -> Void = { _ in }
 
         /// Both answered on the same terms: `nil` where the write landed, and the refusal

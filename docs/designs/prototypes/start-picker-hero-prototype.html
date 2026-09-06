@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en" data-v="F">
+<head>
+<meta charset="utf-8">
+<title>Does the Next-up hero get the skill picker? — throwaway prototype (#1244)</title>
+<style>
+/* ---------------------------------------------------------------------------
+   Tokens, transcribed from apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/.
+   Nothing here is chosen. If a number disagrees with the package, the package wins.
+   --------------------------------------------------------------------------- */
+:root {
+  /* GraphitePalette — surface */
+  --sunken:#191A1D; --base:#1E2024; --raised:#252729; --overlay:#2E3136;
+  --glassTint:rgba(255,255,255,.06);
+  --hover:rgba(255,255,255,.045);
+  --control:rgba(255,255,255,.06);
+  --selected:rgba(255,255,255,.058);
+  /* GraphitePalette — text */
+  --primary:#F2F4F6; --secondary:#A8AEB5; --tertiary:#929AA1; --disabled:#4E545A;
+  --onAccent:#05070A;
+  /* GraphitePalette — edge */
+  --hairline:rgba(255,255,255,.08); --subtle:rgba(255,255,255,.13);
+  --strong:rgba(255,255,255,.22); --glassRim:rgba(255,255,255,.30);
+  /* GraphitePalette — interaction / state */
+  --accent:#3E9BFF; --attention:#E8B24A; --running:#46D3A8;
+  /* ArgoSpacing */
+  --hairSp:2px; --tight:4px; --snug:6px; --baseSp:8px; --comfortable:12px;
+  --loose:16px; --section:24px; --region:32px;
+  /* ArgoRadius / ArgoStroke */
+  --rMarker:3px; --rControl:6px; --rPopover:12px;
+  --sHairline:.5px; --sBorder:1px;
+  /* ArgoControlBox */
+  --boxIcon:26px; --vesselInset:5px; --vessel:36px; --vesselGap:2px;
+  /* ArgoTicketsSidebar / ArgoLayout */
+  --railInset:16px; --heroPadding:12px; --heroTopInset:8px; --heroFootInset:12px;
+  --sidebarMin:280px;
+  /* The reader's text size. It multiplies the TYPE roles and nothing else — every spacing,
+     box and inset below is a point value the platform does not scale, which is how the app
+     behaves too. Scaling the whole rail instead widens the sidebar, which Dynamic Type never
+     does, and every width this study reports would then be measured against the wrong rail. */
+  --ts:1;
+  /* Faces */
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+
+/* ArgoTypography roles. Sizes are ArgoTypeScale's documented macOS values, used for
+   line-height arithmetic only — the app draws the semantic style, never a number. */
+.t-rowTitle      { font:500 calc(13px * var(--ts))/1.21 var(--ui); }
+.t-rowMeta       { font:400 calc(11px * var(--ts))/1.21 var(--ui); }
+.t-control       { font:500 calc(12px * var(--ts))/1.21 var(--ui); }
+.t-sectionLabel  { font:600 calc(11px * var(--ts))/1.21 var(--ui); letter-spacing:.6px; }
+.t-badge         { font:600 calc(10px * var(--ts))/1.21 var(--ui); letter-spacing:.6px; }
+.t-machineCaption{ font:400 calc(11px * var(--ts))/1.21 var(--mono); }
+.t-sessionTitle  { font:600 calc(17px * var(--ts))/1.21 var(--ui); }
+.t-caption       { font:400 calc(10px * var(--ts))/1.21 var(--ui); }
+
+* { box-sizing:border-box; }
+html,body { margin:0; height:100%; }
+body {
+  background:var(--sunken); color:var(--primary); font:400 13px/1.4 var(--ui);
+  -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column;
+}
+
+/* ---------------------------------------------------------------------------
+   The shell around the study. Corrected against the running app, not the docs:
+   full-height sidebar, transparent title strip, panes that run under it.
+   --------------------------------------------------------------------------- */
+#shell { flex:1; display:flex; min-height:0; }
+
+#rail {
+  width:var(--sidebarMin); flex:0 0 auto; background:var(--base);
+  /* The seam as an inset shadow, not a border: a border would eat half a point of the rail's
+     width and the probe below would report the card off its own inset by that much. */
+  box-shadow:inset calc(var(--sHairline) * -1) 0 0 var(--hairline);
+  display:flex; flex-direction:column; min-height:0;
+}
+#railHead { height:52px; flex:0 0 auto; display:flex; align-items:center;
+  padding:0 var(--railInset) 0 78px; }
+.scopeVessel {
+  height:var(--vessel); flex:1; border-radius:999px; background:var(--glassTint);
+  display:flex; align-items:center; gap:var(--snug); padding:0 var(--comfortable);
+  color:var(--secondary);
+}
+#views { flex:1; overflow:auto; padding-top:var(--baseSp); min-height:0; }
+.viewRow {
+  display:flex; align-items:center; gap:var(--baseSp);
+  padding:var(--snug) var(--railInset); color:var(--secondary);
+}
+.viewRow .count { margin-left:auto; color:var(--tertiary); }
+.viewRow.on { background:var(--selected); color:var(--primary); }
+.railRule { height:var(--sHairline); background:var(--hairline); margin:var(--baseSp) var(--railInset); }
+
+/* ---- The Next-up hero ---------------------------------------------------- */
+#heroSlot { flex:0 0 auto; padding:var(--heroTopInset) var(--railInset) var(--heroFootInset); }
+#hero {
+  position:relative; background:var(--raised);
+  /* Every rim on this page is an INSET shadow, never a `border`: SwiftUI's `strokeBorder`
+     draws inside the shape and costs the box nothing, and a CSS border grows it by a point on
+     each side. Modelled the wrong way, this page invents a 2pt height difference between two
+     controls that in the app are the same height. */
+  box-shadow:inset 0 0 0 var(--sBorder) var(--subtle); border-radius:var(--rControl);
+  padding:var(--heroPadding); cursor:pointer;
+}
+#hero:hover { background:color-mix(in srgb, #FFFFFF 4.5%, var(--raised)); }
+#hero .headRow { display:flex; align-items:center; gap:var(--baseSp); }
+#hero .headRow .label { color:var(--tertiary); }
+#hero .headRow .chevron { margin-left:auto; color:var(--tertiary); }
+#hero .stack { display:flex; flex-direction:column; gap:var(--baseSp); margin-top:var(--baseSp); }
+#hero .idLine { color:var(--tertiary); }
+#hero .titleLine { color:var(--primary); margin-top:var(--tight);
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+#hero .chips { display:flex; flex-wrap:wrap; gap:var(--snug); }
+.chip {
+  background:var(--control); box-shadow:inset 0 0 0 var(--sHairline) var(--hairline);
+  border-radius:var(--rMarker); padding:var(--hairSp) var(--snug); color:var(--secondary);
+  white-space:nowrap;
+}
+.chip.urgent { color:var(--attention);
+  box-shadow:inset 0 0 0 var(--sHairline) color-mix(in srgb, var(--attention) 40%, transparent); }
+
+/* The starter's own vessel — NextUpStarterStyle: surface.overlay with the wash OVER it. */
+.starterVessel {
+  display:inline-flex; align-items:center; gap:var(--snug);
+  background:var(--overlay); box-shadow:inset 0 0 0 var(--sBorder) var(--subtle);
+  border-radius:var(--rControl); padding:var(--tight) var(--baseSp);
+  color:var(--secondary); cursor:pointer; white-space:nowrap;
+}
+.starterVessel:hover { background:color-mix(in srgb, #FFFFFF 4.5%, var(--overlay)); }
+.starterVessel:active { background:color-mix(in srgb, #FFFFFF 5.8%, var(--overlay));
+  box-shadow:inset 0 0 0 var(--sBorder) var(--strong); }
+.footRow { display:flex; align-items:center; justify-content:flex-end; gap:var(--baseSp); }
+/* Variant E's own line — the card's leading edge, the same one the id and the chips start on. */
+.footLine { display:flex; align-items:center; margin-left:calc(var(--tight) * -1); }
+
+/* Variant F: the SAME pill, at the card's own scale rather than the toolbar band's.
+   It is the ticket pane's control with three numbers stepped down one rung each — the vessel's
+   inset, each segment's horizontal room, and the box the segments stand in, which becomes the
+   height the hero's starter already draws rather than `ArgoControlBox.icon`.
+
+   Every one of the three is a rung of `ArgoSpacing` or a height the card already spends, so
+   nothing here is a new measurement — but they are a SECOND set of numbers for one control, and
+   that is the trade this variant is asking to be judged on. */
+.pill.compact { --vesselInset:2px; max-width:100%; }
+.pill.compact .seg { padding:0 var(--snug); height:auto; min-width:0; }
+.pill.compact .seg > * { padding:var(--tight) 0; }
+/* `&trunc=1`: the command ellipsizes instead of pushing the pill past the card. `Start` never
+   shrinks — it is the verb the card exists for — so the whole give is in the token. */
+.pill.compact.trunc .seg:first-child { flex:0 0 auto; }
+.pill.compact.trunc .seg:last-child { flex:1 1 auto; overflow:hidden; }
+.pill.compact.trunc .cmdTok { overflow:hidden; text-overflow:ellipsis; }
+
+/* The pill — StartControl transplanted. ArgoIconButtonGroup's vessel. */
+.pill {
+  display:inline-flex; align-items:center; gap:var(--vesselGap);
+  padding:var(--vesselInset); border-radius:999px; background:var(--glassTint);
+}
+/* On the raised card the glass tint reads as nothing, so a transplanted pill has to take the
+   starter's own rim and ground to stay a target of its own — the reading `NextUpStarterStyle`
+   already had to learn. Drawn as `strokeBorder` does, it costs the 36pt box nothing. */
+.pill.rimmed { box-shadow:inset 0 0 0 var(--sBorder) var(--subtle); background:var(--overlay); }
+.seg {
+  display:inline-flex; align-items:center; gap:var(--snug); height:var(--boxIcon);
+  padding:0 var(--baseSp); border-radius:999px; color:var(--secondary);
+  cursor:pointer; white-space:nowrap; background:transparent; border:0;
+}
+.seg:hover { background:var(--control); }
+.cmdTok { color:var(--tertiary); }
+.disc { color:var(--tertiary); font-size:9px; }
+.glyph { display:inline-block; width:12px; text-align:center; }
+
+/* The picker, standing on its own — variant B. No vessel of its own. */
+.bareToken {
+  display:inline-flex; align-items:center; gap:var(--snug);
+  color:var(--tertiary); cursor:pointer; padding:var(--hairSp) var(--tight);
+  border-radius:var(--rMarker); background:transparent; border:0; white-space:nowrap;
+}
+.bareToken:hover { background:var(--control); }
+
+/* The command AS a chip — variant D. */
+.chip.cmd { color:var(--tertiary); cursor:pointer; display:inline-flex; align-items:center; gap:var(--tight);
+  font-family:var(--mono); letter-spacing:0; font-size:10px; }
+.chip.cmd:hover { background:color-mix(in srgb, #FFFFFF 7%, transparent); }
+
+/* Remembered-pick mark (memory=ticket) */
+.pinned { color:var(--accent); }
+
+/* ---- The deck's ticket pane, for the pill the toolbar already ships ------- */
+#deck { flex:1; min-width:0; display:flex; flex-direction:column; background:var(--base); }
+#deckHead {
+  height:52px; flex:0 0 auto; display:flex; align-items:center; gap:var(--baseSp);
+  padding:0 var(--loose);
+}
+#ticket { padding:var(--loose); overflow:auto; }
+#ticket .idLink { color:var(--accent); }
+#ticket h1 { margin:var(--tight) 0 var(--comfortable); }
+#ticket p { color:var(--secondary); max-width:60ch; }
+
+/* ---- The menu, AppKit's popover approximated ------------------------------ */
+.menuHost { position:relative; }
+/* A `max-width:100%` on the pill binds against its PARENT, and an inline `.menuHost` that sizes
+   to its content is no constraint at all — the token pushed straight through it and the truncation
+   below never fired. The host has to be a shrinkable flex child before anything inside it can give. */
+.footRow > .menuHost { display:flex; min-width:0; max-width:100%; }
+.menu {
+  position:absolute; z-index:40; min-width:250px;
+  background:#2A2C30; border:var(--sBorder) solid var(--subtle);
+  border-radius:var(--rPopover); padding:var(--tight); box-shadow:0 8px 28px rgba(0,0,0,.55);
+}
+.menu.below { top:calc(100% + var(--tight)); left:0; }
+/* Anchored on its own LEADING edge, not its trailing one: the hero's token sits at the card's
+   left edge inside a 280 rail, and a menu measured off its right ran off the window. */
+.menu.above { bottom:calc(100% + var(--tight)); left:0; }
+.menu .sectionHead { color:var(--tertiary); padding:var(--snug) var(--baseSp) var(--tight); }
+.menu .row {
+  display:flex; align-items:center; gap:var(--snug);
+  padding:var(--snug) var(--baseSp); border-radius:var(--rControl); color:var(--primary);
+  cursor:pointer; white-space:nowrap;
+}
+.menu .row:hover { background:var(--accent); color:var(--onAccent); }
+.menu .row .tick { width:12px; text-align:center; color:var(--accent); }
+.menu .row:hover .tick { color:var(--onAccent); }
+.menu .row .cmd { font-family:var(--mono); font-size:11px; }
+.menu .row .why { color:var(--tertiary); font-size:11px; }
+.menu .row:hover .why { color:var(--onAccent); opacity:.75; }
+.menu .rule { height:var(--sHairline); background:var(--hairline); margin:var(--tight) var(--snug); }
+.menu .foot { color:var(--tertiary); padding:var(--tight) var(--baseSp) var(--snug); max-width:250px;
+  white-space:normal; line-height:1.35; }
+
+/* ---- The floating bar. Deliberately unlike the design under it. ---------- */
+/* Bottom-RIGHT, clear of the rail. Centred, it lay across the hero card at the foot of the
+   sidebar — the one thing on the page every variant changes. */
+#bar {
+  position:fixed; right:14px; bottom:14px; z-index:100;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;
+  max-width:min(72vw,900px);
+  background:#F5F3EC; color:#111; border-radius:999px; padding:8px 14px;
+  box-shadow:0 6px 26px rgba(0,0,0,.6); font:500 12px/1 var(--ui);
+}
+#bar button, #bar select {
+  font:500 12px/1 var(--ui); border:1px solid #C9C4B4; background:#fff; color:#111;
+  border-radius:7px; padding:5px 8px; cursor:pointer;
+}
+#bar .arrow { width:26px; }
+#bar .name { min-width:250px; text-align:center; font-weight:700; }
+#bar label { display:inline-flex; align-items:center; gap:4px; color:#333; }
+#readout {
+  position:fixed; right:14px; bottom:104px; z-index:100; display:none;
+  background:#0F1013; border:1px solid var(--subtle); border-radius:8px;
+  padding:10px 12px; font:400 11px/1.5 var(--mono); color:#D8DCE0;
+  max-width:min(52vw,620px); max-height:44vh; overflow:auto; white-space:pre;
+}
+#readout.on { display:block; }
+/* Top-right, never bottom-left: at the foot of the rail it covered the card under study, and a
+   note that hides its subject is worse than no note. */
+#note {
+  position:fixed; right:14px; top:14px; z-index:99; max-width:330px;
+  background:#0F1013; border:1px solid var(--subtle); border-radius:8px;
+  padding:10px 12px; font:400 11px/1.45 var(--ui); color:var(--secondary);
+}
+#note b { color:var(--primary); font-weight:600; }
+</style>
+</head>
+<body>
+
+<!--
+  THROWAWAY PROTOTYPE — #1244. Not production, not a component structure, no tests.
+
+  The question: #1242 already settled and shipped the SPLIT over the command in the ticket
+  pane's header (StartControl = one pill, the command token IS the picker). Three things it
+  did not settle, which is all this study is for:
+    1. Does the Next-up hero's starter get the picker too, and in what shape at a 280 rail?
+    2. What does a reader's pick do after the press — this Session only, or remembered?
+    3. How is the resolved default marked inside the menu — the reason, a tick, or both?
+-->
+
+<div id="shell">
+  <aside id="rail">
+    <div id="railHead"><div class="scopeVessel t-control"><span class="glyph">◆</span>argo<span style="margin-left:auto" class="disc">▾</span></div></div>
+    <div id="views">
+      <div class="viewRow t-rowTitle on"><span class="glyph">◎</span>Ready<span class="count t-machineCaption">12</span></div>
+      <div class="viewRow t-rowTitle"><span class="glyph">◇</span>All open<span class="count t-machineCaption">148</span></div>
+      <div class="viewRow t-rowTitle"><span class="glyph">◈</span>Mine<span class="count t-machineCaption">7</span></div>
+      <div class="viewRow t-rowTitle"><span class="glyph">◉</span>In flight<span class="count t-machineCaption">4</span></div>
+      <div class="railRule"></div>
+      <div class="viewRow t-rowMeta" style="color:var(--tertiary)">Charts</div>
+      <div class="viewRow t-rowTitle"><span class="glyph">▤</span>The Work Room<span class="count t-machineCaption">9</span></div>
+      <div class="viewRow t-rowTitle"><span class="glyph">▤</span>Project Atlas<span class="count t-machineCaption">21</span></div>
+    </div>
+    <div id="heroSlot"><div id="hero"></div></div>
+  </aside>
+
+  <main id="deck">
+    <div id="deckHead"></div>
+    <div id="ticket">
+      <div class="t-machineCaption idLink">#1244</div>
+      <h1 class="t-sessionTitle">Start offers the other commands, with the ticket's own as the default</h1>
+      <p class="t-rowMeta">The pane header above is the control #1242 SHIPPED — one capsule, the word
+      and the command as its two segments, the token opening the picker. It is here as the thing the
+      hero is being compared against, not as a variant. Only the card in the rail changes.</p>
+    </div>
+  </main>
+</div>
+
+<div id="note"></div>
+<pre id="readout"></pre>
+
+<div id="bar">
+  <button class="arrow" id="prev" title="previous variant (←)">←</button>
+  <span class="name" id="vname"></span>
+  <button class="arrow" id="next" title="next variant (→)">→</button>
+  <label>cmd
+    <select id="cmd">
+      <option value="implement">/implement</option>
+      <option value="design-to-code">/design-to-code</option>
+      <option value="grill-me">/grill-me</option>
+      <option value="triage">/triage</option>
+      <option value="none">— none —</option>
+    </select>
+  </label>
+  <label>mark
+    <select id="mark">
+      <option value="reason">reason</option>
+      <option value="tick">tick</option>
+      <option value="both">both</option>
+    </select>
+  </label>
+  <label>memory
+    <select id="memory">
+      <option value="session">this Session</option>
+      <option value="ticket">remembered</option>
+    </select>
+  </label>
+  <label>w
+    <select id="w">
+      <option value="280">280</option>
+      <option value="320">320</option>
+      <option value="360">360</option>
+    </select>
+  </label>
+  <label>chips
+    <select id="chips"><option value="2">2</option><option value="1">1</option><option value="0">0</option></select>
+  </label>
+  <label>text
+    <select id="scale"><option value="1">100%</option><option value="1.15">115%</option><option value="1.35">135%</option></select>
+  </label>
+  <button id="menuBtn">menu</button>
+  <button id="checkBtn">check</button>
+</div>
+
+<script>
+"use strict";
+
+/* -------------------------------------------------------------------------
+   The data. Real: #1244's own row in this tracker, and the six commands
+   WorkCommand.offered lists in the order it lists them.
+   ------------------------------------------------------------------------- */
+const OFFERED = ["implement", "design-to-code", "grill-me", "triage", "prototype", "wayfinder"];
+const WHY = {
+  "implement": "nothing refuses it",
+  "design-to-code": "the screen has a design",
+  "grill-me": "labelled wayfinder:grilling",
+  "wayfinder": "labelled wayfinder:map",
+  "prototype": "labelled wayfinder:prototype",
+  "triage": null,               // no rule resolves it — WorkCommand.why returns nil
+};
+const PICK = {
+  number: 1244,
+  title: "Start offers the other commands, with the ticket's own as the default",
+  chips: [{ words: "high priority", urgent: true }, { words: "unblocked", urgent: false }],
+};
+
+const VARIANTS = {
+  A: { name: "A — the toolbar's pill, transplanted" },
+  B: { name: "B — the token stands outside the button" },
+  C: { name: "C — no picker on the hero (shipped today)" },
+  D: { name: "D — the command joins the chips" },
+  E: { name: "E — the command takes its own line" },
+  F: { name: "F — the ticket pane's pill, at the card's scale" },
+};
+const KEYS = Object.keys(VARIANTS);
+
+/* ---- URL state ---------------------------------------------------------- */
+const P = new URLSearchParams(location.search);
+const S = {
+  v:      (P.get("v") || "F").toUpperCase(),
+  cmd:     P.get("cmd") || "implement",
+  mark:    P.get("mark") || "reason",
+  memory:  P.get("memory") || "session",
+  w:       P.get("w") || "280",
+  chips:   P.get("chips") ?? "2",
+  scale:   P.get("scale") || "1",
+  /* WHICH menu is open, not whether one is: `open` on both at once put two popovers on the
+     frame and hid the surface under study behind the other one. `hero` | `head` | shut. */
+  menu:    P.get("menu") || "",
+  /* `&check=1` prints the probe on load, so a headless run can read it out of the DOM.
+     Nothing here is judged by eye. */
+  check:   P.get("check") === "1",
+  /* Variant F ellipsizes the command rather than pushing the pill out of the card, and that is
+     part of the shape rather than a setting — `&trunc=0` turns it off to show what it prevents.
+     `StartCommandWord` carries `.fixedSize()` today, which is exactly what makes the ink. */
+  trunc:   P.get("trunc") !== "0",
+};
+if (!KEYS.includes(S.v)) S.v = "F";
+
+function push() {
+  const q = new URLSearchParams();
+  q.set("v", S.v); q.set("cmd", S.cmd); q.set("mark", S.mark); q.set("memory", S.memory);
+  q.set("w", S.w); q.set("chips", S.chips); q.set("scale", S.scale);
+  if (S.menu) q.set("menu", S.menu);
+  if (S.check) q.set("check", "1");
+  if (!S.trunc) q.set("trunc", "0");
+  history.replaceState(null, "", location.pathname + "?" + q.toString());
+}
+
+const resolved = () => (S.cmd === "none" ? null : S.cmd);
+const typed = c => "/" + c;
+
+/* ---- Pieces ------------------------------------------------------------- */
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+/** The menu, identical in every variant that opens one — the rows are not the question here.
+ *  `place` is `below` for the pane header and `above` for the hero, whose card is at the foot
+ *  of the scroll and has no room under it. */
+function menuHTML(place) {
+  const c = resolved();
+  const rows = OFFERED.map(o => {
+    const isDefault = o === c;
+    const why = WHY[o];
+    const tick = (S.mark !== "reason" && isDefault) ? "✓" : "";
+    const reason = (S.mark !== "tick" && isDefault && why) ? `<span class="why">— ${esc(why)}</span>` : "";
+    return `<div class="row" data-pick="${o}">
+      <span class="tick">${tick}</span><span class="cmd">${esc(typed(o))}</span>${reason}
+    </div>`;
+  }).join("");
+  return `<div class="menu ${place}" data-menu>
+    <div class="sectionHead t-caption">START A SESSION ON THIS TICKET</div>
+    ${rows}
+    <div class="rule"></div>
+    <div class="row" data-pick=""><span class="tick"></span><span>Fresh Session</span></div>
+    <div class="foot t-caption">Whichever runs, the Session carries #1244 as its ticket.${
+      S.memory === "ticket" ? "<br>A pick here is remembered for this ticket." : ""}</div>
+  </div>`;
+}
+
+/** The token that IS the picker: the command, or the words for a ticket that resolves to none. */
+function tokenInner() {
+  const c = resolved();
+  const pin = (S.memory === "ticket" && picked !== undefined) ? ' <span class="pinned">●</span>' : "";
+  return c
+    ? `<span class="t-machineCaption cmdTok">${esc(typed(c))}</span>${pin}<span class="disc">▾</span>`
+    : `<span class="t-machineCaption cmdTok">pick a skill</span><span class="disc">▾</span>`;
+}
+
+/** The verb both surfaces spell — StartVerb. `says` is `word` where a picker sits beside it. */
+function verbInner(says) {
+  const c = resolved();
+  const cmd = (says === "whole" && c)
+    ? `<span class="t-machineCaption cmdTok">${esc(typed(c))}</span>` : "";
+  return `<span class="glyph">▶</span><span class="t-control">Start</span>${cmd}`;
+}
+
+/* What the reader last picked, when the study is asked to remember it. `undefined` = untouched. */
+let picked;
+
+/* ---- The pane header's pill — the shipped control, present in every variant ---- */
+function deckHead() {
+  return `<span class="menuHost">
+    <span class="pill">
+      <button class="seg" data-act="start">${verbInner("word")}</button>
+      <button class="seg" data-act="menu" data-place="below">${tokenInner()}</button>
+    </span>
+    ${S.menu === "head" ? menuHTML("below") : ""}
+  </span>
+  <span class="t-rowMeta" style="color:var(--tertiary);margin-left:var(--baseSp)">
+    the ticket pane's header — SHIPPED (#1242), not a variant</span>`;
+}
+
+/* ---- The hero, per variant ---------------------------------------------- */
+function chipsHTML(extra) {
+  const n = parseInt(S.chips, 10);
+  const own = PICK.chips.slice(0, n)
+    .map(c => `<span class="chip t-badge${c.urgent ? " urgent" : ""}">${esc(c.words)}</span>`).join("");
+  if (!own && !extra) return "";
+  return `<div class="chips">${own}${extra || ""}</div>`;
+}
+
+function heroFoot() {
+  const v = S.v;
+  if (v === "A") {
+    return `<div class="footRow"><span class="menuHost">
+      <span class="pill rimmed">
+        <button class="seg" data-act="start">${verbInner("word")}</button>
+        <button class="seg" data-act="menu" data-place="above">${tokenInner()}</button>
+      </span>
+      ${S.menu === "hero" ? menuHTML("above") : ""}
+    </span></div>`;
+  }
+  if (v === "B") {
+    return `<div class="footRow"><span class="menuHost">
+      <button class="bareToken" data-act="menu" data-place="above">${tokenInner()}</button>
+      ${S.menu === "hero" ? menuHTML("above") : ""}
+      </span>
+      <span class="starterVessel" data-act="start">${verbInner("word")}</span>
+    </div>`;
+  }
+  if (v === "D") {
+    return `<div class="footRow">
+      <span class="starterVessel" data-act="start">${verbInner("word")}</span>
+    </div>`;
+  }
+  if (v === "F") {
+    /* The ticket pane's own control, stepped down to the card's scale. Same two segments, same
+       token-is-the-picker gesture, same rim and ground the starter already draws — only smaller. */
+    return `<div class="footRow"><span class="menuHost">
+      <span class="pill rimmed compact${S.trunc ? " trunc" : ""}">
+        <button class="seg" data-act="start">${verbInner("word")}</button>
+        <button class="seg" data-act="menu" data-place="above">${tokenInner()}</button>
+      </span>
+      ${S.menu === "hero" ? menuHTML("above") : ""}
+    </span></div>`;
+  }
+  if (v === "E") {
+    /* The two facts stop competing for one line. The command sits on the card's LEADING edge, on
+       the line the id and the chips already start on; Start keeps the trailing corner and its own
+       single target. Neither has to shrink for the other at any text size. */
+    return `<div class="footLine"><span class="menuHost">
+        <button class="bareToken" data-act="menu" data-place="above">${tokenInner()}</button>
+        ${S.menu === "hero" ? menuHTML("above") : ""}
+      </span></div>
+      <div class="footRow">
+        <span class="starterVessel" data-act="start">${verbInner("word")}</span>
+      </div>`;
+  }
+  /* C — shipped: one target, the whole verb, no picker anywhere on the card. */
+  return `<div class="footRow">
+    <span class="starterVessel" data-act="start">${verbInner("whole")}</span>
+  </div>`;
+}
+
+function heroHTML() {
+  const c = resolved();
+  const cmdChip = S.v === "D"
+    ? `<span class="menuHost"><span class="chip cmd" data-act="menu" data-place="above">${
+        c ? esc(typed(c)) : "pick a skill"}<span class="disc">▾</span></span>${
+        S.menu === "hero" ? menuHTML("above") : ""}</span>`
+    : "";
+  return `
+    <div class="headRow">
+      <span class="label t-sectionLabel">NEXT UP</span>
+      <span class="chevron">›</span>
+    </div>
+    <div class="stack">
+      <div>
+        <div class="idLine t-machineCaption">#${PICK.number}</div>
+        <div class="titleLine t-rowTitle">${esc(PICK.title)}</div>
+      </div>
+      ${chipsHTML(cmdChip)}
+      ${heroFoot()}
+    </div>`;
+}
+
+/* ---- Render ------------------------------------------------------------- */
+function render() {
+  document.documentElement.dataset.v = S.v;
+  document.documentElement.style.setProperty("--sidebarMin", S.w + "px");
+  document.documentElement.style.setProperty("--ts", S.scale);
+  document.getElementById("hero").innerHTML = heroHTML();
+  document.getElementById("deckHead").innerHTML = deckHead();
+  document.getElementById("vname").textContent = VARIANTS[S.v].name;
+  for (const k of ["cmd", "mark", "memory", "w", "chips", "scale"]) document.getElementById(k).value = S[k];
+  note();
+  push();
+}
+
+function note() {
+  const c = resolved();
+  const lines = {
+    A: `<b>A</b> — the pane header's pill, moved onto the card. One control, two segments; the
+        token opens the picker. It buys the hero the same gesture as the header, and spends the
+        card's whole trailing width on it. Check the width at 280 with <code>/design-to-code</code>.`,
+    B: `<b>B</b> — the token stands OUTSIDE the starter's vessel, at the card's leading edge. The
+        starter keeps its own rim and one target; the command reads as a fact about the ticket
+        that happens to be pressable. Two targets on one line, neither inside the other.`,
+    C: `<b>C</b> — the null. The hero stays exactly as shipped: one press, the whole verb, no
+        picker. A reader who wants another command opens the ticket and uses the header's.
+        This is the variant to beat, not a straw man.`,
+    D: `<b>D</b> — the command joins the reason chips, as the one chip that is a control. It says
+        the command is a property of the TICKET rather than of the button. It also puts a control
+        in a row the design calls labels, and pushes the card past its two-chip rule.`,
+    E: `<b>E</b> — the two facts stop sharing a line. The command sits on the card's leading edge
+        on a line of its own; Start keeps the trailing corner and one target. It is the only shape
+        here that offers the picker and still fits at every text size, because nothing on the foot
+        has to shrink for anything else. It costs the rail a line.`,
+    F: `<b>F</b> — the ticket pane's pill, stepped down to the card's scale: the vessel's inset,
+        each segment's horizontal room and the box they stand in, one rung smaller each. Same
+        control, same gesture, one line. What it buys is the width the full-size pill spent on
+        chrome; what it costs is a second set of numbers for one control.`,
+  };
+  document.getElementById("note").innerHTML = lines[S.v] +
+    (c ? "" : `<br><br>The ticket resolves to <b>no command</b> — only the refusing labels do that
+       since #1182 (#1435). Start alone opens an empty composer.`) +
+    (picked !== undefined
+      ? `<br><br>Last pick: <b>${picked === null ? "Fresh Session" : typed(picked)}</b> — ${
+          S.memory === "ticket"
+            ? "remembered for #1244, so the card now draws it as the default."
+            : "spent on that one Session; the card still draws the resolver's answer."}`
+      : "");
+}
+
+/* ---- Acts --------------------------------------------------------------- */
+document.addEventListener("click", e => {
+  const row = e.target.closest("[data-pick]");
+  if (row) {
+    const val = row.dataset.pick;
+    picked = val === "" ? null : val;
+    if (S.memory === "ticket" && picked) S.cmd = picked;
+    S.menu = "";
+    render();
+    return;
+  }
+  const act = e.target.closest("[data-act]");
+  if (act && act.dataset.act === "menu") {
+    // Which surface asked. `below` is the pane header's; `above` is the hero's.
+    const which = act.dataset.place === "below" ? "head" : "hero";
+    S.menu = S.menu === which ? "" : which;
+    render(); e.stopPropagation(); return;
+  }
+  if (act && act.dataset.act === "start") {
+    picked = resolved();
+    S.menu = ""; render();
+    e.stopPropagation();
+    return;
+  }
+  if (S.menu) { S.menu = ""; render(); }
+});
+
+for (const k of ["cmd", "mark", "memory", "w", "chips", "scale"]) {
+  document.getElementById(k).addEventListener("change", e => { S[k] = e.target.value; render(); });
+}
+/* The bar opens the HERO's picker — the surface under study. Variant C draws none, and the
+   button says so rather than doing nothing, which is the fault #1208 is about. */
+document.getElementById("menuBtn").addEventListener("click", e => {
+  S.menu = S.menu === "hero" ? "" : "hero"; render(); e.stopPropagation();
+});
+document.getElementById("prev").addEventListener("click", () => cycle(-1));
+document.getElementById("next").addEventListener("click", () => cycle(1));
+function cycle(d) { S.v = KEYS[(KEYS.indexOf(S.v) + d + KEYS.length) % KEYS.length]; render(); }
+addEventListener("keydown", e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === "ArrowLeft") cycle(-1);
+  if (e.key === "ArrowRight") cycle(1);
+});
+
+/* ---- check: measure, never eyeball -------------------------------------- */
+/* The rule this page is judged by, stated so the probe can re-prove it:
+   the card's foot must start and stop on the card's own content box, and no
+   control on it may exceed that box at any width or text size the app allows. */
+document.getElementById("checkBtn").addEventListener("click", () => {
+  const out = document.getElementById("readout");
+  out.classList.toggle("on");
+  if (!out.classList.contains("on")) return;
+  out.textContent = measure();
+});
+
+function box(el) { return el ? el.getBoundingClientRect() : null; }
+function d(n) { return (Math.round(n * 10) / 10).toFixed(1); }
+
+function measure() {
+  const hero = document.getElementById("hero");
+  const cs = getComputedStyle(hero);
+  const padL = parseFloat(cs.paddingLeft), padR = parseFloat(cs.paddingRight);
+  const hb = box(hero);
+  const contentL = hb.left + padL, contentR = hb.right - padR;
+  const content = contentR - contentL;
+
+  const foot = hero.querySelector(".footRow");
+  const fb = box(foot);
+  const control = foot.querySelector(".pill, .starterVessel");
+  const cb = box(control);
+
+  const L = [];
+  L.push(`variant ${S.v}   rail ${S.w}   text ${Math.round(parseFloat(S.scale) * 100)}%   cmd ${S.cmd}`);
+  L.push("");
+  L.push(`card content box        ${d(content)}  (${d(contentL)} → ${d(contentR)})`);
+  L.push(`foot row                ${d(fb.width)}   Δleft ${d(fb.left - contentL)}  Δright ${d(contentR - fb.right)}`);
+  L.push(`starting control        ${d(cb.width)} x ${d(cb.height)}   Δright ${d(contentR - cb.right)}`);
+  L.push(`  slack in the card     ${d(content - cb.width)}`);
+  // What the control costs the RAIL, which is the scarce axis here: the card is at the foot of
+  // a scroll and every point it takes is a point the views above it do not get.
+  L.push(`card height             ${d(hb.height)}   rail spent ${d(box(document.getElementById("heroSlot")).height)}`);
+
+  // The foot row is a flex container and fills the card whatever is in it, so its own box says
+  // nothing. What the foot COSTS is the extent of its children — and in the variants that put two
+  // targets on the line, that extent is the number the card has to hold, not the button's width.
+  // Variant E splits the foot over two lines, so the number that matters is the WIDEST LINE, not
+  // the extent of everything the foot draws — across two lines that extent is the card's own
+  // width and says nothing. Measured per line, so a variant cannot look narrow by wrapping.
+  const lines = [...hero.querySelectorAll(".footLine, .footRow")].map(row => {
+    const kids = [...row.children].map(box);
+    return kids.length
+      ? { n: kids.length, w: Math.max(...kids.map(k => k.right)) - Math.min(...kids.map(k => k.left)) }
+      : { n: 0, w: 0 };
+  });
+  const widest = lines.reduce((a, b) => (b.w > a.w ? b : a), { n: 0, w: 0 });
+  L.push(`foot                    ${lines.length} line(s), ${lines.reduce((a, l) => a + l.n, 0)} target(s)`);
+  L.push(`  widest line           ${d(widest.w)}   slack ${d(content - widest.w)}`);
+  if (content - widest.w < 0) L.push(`  *** the FOOT overflows the card by ${d(widest.w - content)} ***`);
+
+  // The longest command the enum can resolve to, measured rather than assumed.
+  const longest = OFFERED.reduce((a, b) => (typed(b).length > typed(a).length ? b : a));
+  L.push("");
+  L.push(`longest offered command ${typed(longest)}`);
+  // Searched from the CARD, not from the foot row: variant E's token is on a line of its own and
+  // a foot-scoped lookup reported it absent — the probe would then say E draws no command at all.
+  const tok = hero.querySelector(".cmdTok") || hero.querySelector(".chip.cmd");
+  if (tok) {
+    const probe = document.createElement("span");
+    probe.className = tok.className; probe.style.position = "absolute";
+    probe.style.visibility = "hidden"; probe.style.whiteSpace = "pre";
+    probe.textContent = typed(longest);
+    document.body.appendChild(probe);
+    const grow = probe.getBoundingClientRect().width - box(tok).width;
+    probe.remove();
+    // The growth lands on whichever line the token is ON, which is not always the line Start is on.
+    const tokLine = [...hero.querySelectorAll(".footLine, .footRow, .chips")]
+      .find(r => r.contains(tok));
+    const kids2 = tokLine ? [...tokLine.children].map(box) : [];
+    const lineW = kids2.length
+      ? Math.max(...kids2.map(k => k.right)) - Math.min(...kids2.map(k => k.left)) : 0;
+    L.push(`  it would add          ${d(grow)}  → its line ${d(lineW + grow)}, slack ${d(content - lineW - grow)}`);
+    if (content - lineW - grow < 0) {
+      L.push(`  *** OVERFLOWS the card by ${d(lineW + grow - content)} on the longest command ***`);
+    }
+  } else {
+    L.push(`  no command token on this variant`);
+  }
+
+  // The header's pill, for the comparison the whole study is about.
+  const head = document.querySelector("#deckHead .pill");
+  L.push("");
+  L.push(`pane header pill        ${d(box(head).width)} x ${d(box(head).height)}`);
+  L.push(`hero control            ${d(cb.width)} x ${d(cb.height)}`);
+  L.push(`  height Δ              ${d(box(head).height - cb.height)}`);
+
+  // Does the hero's own card still clear the rail's inset?
+  const rail = box(document.getElementById("rail"));
+  L.push("");
+  L.push(`rail                    ${d(rail.width)}`);
+  L.push(`card                    Δleft ${d(hb.left - rail.left)}  Δright ${d(rail.right - hb.right)}  (railInset 16)`);
+
+  // Title clamp: did three lines survive this width?
+  const title = hero.querySelector(".titleLine");
+  L.push("");
+  L.push(`title block             ${d(box(title).height)}  (3 lines at 13/1.21 ≈ 47.2)`);
+  if (title.scrollHeight - title.clientHeight > 1) {
+    L.push(`  *** the title is CLIPPED — it wants ${d(title.scrollHeight)} ***`);
+  }
+  return L.join("\n");
+}
+
+render();
+if (S.check) {
+  const out = document.getElementById("readout");
+  out.classList.add("on");
+  out.textContent = measure();
+}
+</script>
+</body>
+</html>

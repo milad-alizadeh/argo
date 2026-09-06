@@ -140,8 +140,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     private(set) var spend = SessionSpend()
     /// Every moment this Session is placed in time by — see `SessionMoments`, which owns the fold
     /// each one takes. Two of the three are republished under their own names in
-    /// `HubSession+Readings.swift`, which is where a public fact has to sit for the cockpit's
-    /// projection to name it (ADR-0027).
+    /// `HubSession+Readings.swift`, which is where a public fact has to sit for ADR-0027's edge 5
+    /// to see it.
     private(set) var moments = SessionMoments()
     /// Whether an AGENT has ever spoken here — said something, thought, called a tool, ended a
     /// turn, or been priced. A prompt does not count: it is what was ASKED. DIRECT for a Session

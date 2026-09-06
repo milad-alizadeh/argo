@@ -197,10 +197,10 @@ extension SessionRosterProjection {
         _ fold: Fold,
         at newest: CockpitPresentation.Session,
         of runs: [CockpitPresentation.Session],
-        in pass: Pass,
+        nowMs: Int,
     )
         -> Row {
-        let clock = clock(for: newest, in: newest.events, nowMs: pass.nowMs)
+        let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
                 id: fold.id, title: "\(fold.count) runs", rename: nil, fold: fold,
@@ -217,7 +217,7 @@ extension SessionRosterProjection {
                 // either, for the same reason (rule 9).
                 dot: Row.Activity.Dot(state: nil, word: nil, readyToShip: false),
                 age: Row.Activity.Age(
-                    clock: clock, spoken: spokenClock(clock, nowMs: pass.nowMs),
+                    clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 doing: Row.Activity.Doing(
                     // A fold stands for several runs at once, so one run's call drawn for all of
@@ -230,7 +230,7 @@ extension SessionRosterProjection {
                 ),
                 // A fold sums or says nothing (rule 9): its dots are pooled across every run it
                 // hides, under the same ceiling, and never the other three readings.
-                subagents: foldedSubagents(of: runs, focused: pass.focus),
+                subagents: foldedSubagents(of: runs),
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -241,14 +241,13 @@ extension SessionRosterProjection {
     }
 
     static func row(
-        for session: CockpitPresentation.Session, decided: Decided, in pass: Pass,
+        for session: CockpitPresentation.Session, decided: Decided, nowMs: Int,
     )
         -> Row {
         // Handed out ONCE and walked twice: the clock and the activity both read the tail of the
-        // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`). The open row
-        // is handed the array the telling was walked off, which is that same one reach (#1513).
-        let events = pass.focus.walked(session.id) ?? session.events
-        let clock = clock(for: session, in: events, nowMs: pass.nowMs)
+        // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`).
+        let events = session.events
+        let clock = clock(for: session, in: events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
                 id: session.id,
@@ -275,7 +274,7 @@ extension SessionRosterProjection {
                     readyToShip: session.readyToShip,
                 ),
                 age: Row.Activity.Age(
-                    clock: clock, spoken: spokenClock(clock, nowMs: pass.nowMs),
+                    clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
                 ),
                 doing: Row.Activity.Doing(
                     activity: activity(of: session, in: events),
@@ -283,7 +282,7 @@ extension SessionRosterProjection {
                     // not a second `session.events` (`PerfBudgets`).
                     plan: PlanProjection.reading(from: events),
                 ),
-                subagents: subagents(of: session, in: events, focused: pass.focus),
+                subagents: subagents(of: session, in: events),
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

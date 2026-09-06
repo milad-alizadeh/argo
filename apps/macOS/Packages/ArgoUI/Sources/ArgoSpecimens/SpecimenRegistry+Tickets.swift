@@ -5,7 +5,7 @@ import SwiftUI
 /// ticket's own states, the hero's tiers, the marks it spends on a Delivery, and the toolbar row's
 /// three.
 extension SpecimenRegistry {
-    static let tickets: [SpecimenEntry] = [
+    static let tickets: [SpecimenEntry] = backlogQuestion + [
         SpecimenEntry("ticketsRoom") { TicketsRoomSpecimen() },
         // The backlog's own range (#1247): the grounds run continuously down the tree, and a row
         // behind a shut parent is not in the range at all.

@@ -79,7 +79,8 @@ struct FeedTypesetCostTests {
     }
 
     /// The same claim as a shape rather than as a length: thirteen times the rows is thirteen times
-    /// the heights, and neither length reaches SwiftUI, since there is no ruler left to count.
+    /// the heights, and neither length reaches SwiftUI — which edge 9 of `swift-boundaries.sh` now
+    /// holds for the whole target, since there is no ruler left to count.
     @Test
     func `a prose reading of any length is measured once a row`() {
         let short = Self.measured(Self.prose(300))

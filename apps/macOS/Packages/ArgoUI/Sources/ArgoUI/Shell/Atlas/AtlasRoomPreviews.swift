@@ -39,7 +39,6 @@ private let previewProject = CockpitPresentation.Project(
     @Previewable @State var hideTests = false
     @Previewable @State var showTies = false
     @Previewable @State var isCity = false
-    @Previewable @State var grouping = AtlasGrouping.folders
 
     AtlasRoomView()
         .environment(
@@ -54,11 +53,7 @@ private let previewProject = CockpitPresentation.Project(
                         hideTests: AtlasSwitch(isOn: hideTests) { hideTests = $0 },
                         showTies: AtlasSwitch(isOn: showTies) { showTies = $0 },
                     ),
-                    arrangement: AtlasArrangementChoice(
-                        grouping: grouping,
-                        setGrouping: { grouping = $0 },
-                        isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
-                    ),
+                    isCity: AtlasSwitch(isOn: isCity) { isCity = $0 },
                 ),
             ),
         )

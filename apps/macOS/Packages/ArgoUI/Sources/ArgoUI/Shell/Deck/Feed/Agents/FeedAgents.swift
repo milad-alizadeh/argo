@@ -161,33 +161,14 @@ package enum FeedAgents {
         at nowMs: Int = Date().epochMs,
     )
         -> [FeedAgent] {
-        dated(agents, by: evidence.dating, ended: ended, at: nowMs)
-            .map { measured($0, by: evidence) }
-    }
-
-    /// The same ruling with the FIGURES left off — every clocked fact the doc comment above states,
-    /// and none of the measuring (#1513).
-    ///
-    /// For a surface that draws dots and no meter: the roster's leading column reads its Session's
-    /// activity off this list and nothing else (`SessionRosterProjection.SubagentReading`), so a
-    /// measure taken for it would be a walk of every child's file to fill a slot nothing reads.
-    /// Same order, same evidence, same answer about who is running — which is the whole of rule 1,
-    /// that the roster's count and the rail's count are one reading.
-    static func dated(
-        _ agents: [FeedAgent],
-        by dating: SubagentDating,
-        ended: DelegationHold = .none,
-        at nowMs: Int = Date().epochMs,
-    )
-        -> [FeedAgent] {
-        agents.map { dated($0, by: dating, ended: ended, at: nowMs) }
+        agents.map { measured(dated($0, by: evidence, ended: ended, at: nowMs), by: evidence) }
     }
 
     /// One chip's activity, told by the clocked facts — the ruling the doc comment above states,
     /// and the whole of what `told` did before the figures joined it.
     private static func dated(
         _ agent: FeedAgent,
-        by dating: SubagentDating,
+        by evidence: SubagentEvidence,
         ended: DelegationHold,
         at nowMs: Int,
     )
@@ -198,9 +179,9 @@ package enum FeedAgents {
             told.activity = .finished
             return told
         }
-        switch agent.subagentID.map({ dating.writing($0) }) {
+        switch agent.subagentID.map({ evidence.writing($0) }) {
         case .writing: told.activity = .running
-        case .quiet where agent.subagentID.map { dating.ending($0) } == .stopped:
+        case .quiet where agent.subagentID.map { evidence.ending($0) } == .stopped:
             told.activity = .finished
         case .quiet, .unwatched, nil:
             if DelegationCeiling.passed(sinceMs: agent.startedAtMs, nowMs: nowMs) {

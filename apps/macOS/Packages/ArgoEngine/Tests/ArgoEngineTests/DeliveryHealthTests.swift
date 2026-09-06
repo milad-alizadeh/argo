@@ -45,23 +45,6 @@ struct DeliveryHealthTests {
     }
 
     @Test
-    func `a refused branch read is reported even though the listing landed`() async {
-        // The strip keeps what the listing established (#1546), and the dot beside it still says
-        // the host refused half the read — a partial derivation is not a healthy one.
-        let health = ConnectionHealthLedger()
-        let target = PortReadTarget.codeHost()
-        await DeliveryDerivation(
-            port: ScriptedCodeHost([.success([])], refusing: ["worktree-1503-stale"]),
-            health: health,
-            deliveries: DeliveryLedger(),
-        )
-        .derive(target, locally: .init(workspaces: [.on("worktree-1503-stale")]))
-
-        #expect(await health.health(of: target.projectBinding, in: "P1").state
-            == .stale(.rateLimited))
-    }
-
-    @Test
     func `a refused grant takes every Binding on that Account with it`() async {
         // Account-level, so it is recorded once and the blast radius is derived — the same rule the
         // Ticket port records under, because one GitHub grant feeds both ports and fails as one.

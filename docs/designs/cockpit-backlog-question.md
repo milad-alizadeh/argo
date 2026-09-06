@@ -1,20 +1,17 @@
-<!-- status: reopened
+<!-- status: approved
      approved-at: 3ed1c522
      reopened-at: #1316
-     prototype: worktree-ticket-1293-backlog-question
-     explorable: gone -->
+     re-approved-at: #1317
+     prototype: worktree-ticket-1293-backlog-question -->
 
-> **Reopened by #1316 — the glyph does not hold still.** The ticket that was meant to test
-> "ends in `?`, or six words and up" against a realistic corpus (`BacklogQueryIntentCorpus`, 106
-> queries in `apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/`) found both risks this file names
-> below. A long term reads as a question: `19/106` — roughly one term in six, every one a pasted
-> title or a long plain phrase — is misread. A short question reads as a term: `2/106` carry no
-> mark and fall under six words, and the rule misses them outright. The leading glyph also
-> changes its mind at least once on the way to being typed for `51/106` queries — three of those
-> (an embedded `?` inside a URL query string) flip it twice. `docs/designs/cockpit-backlog-
-> question.html?variant=B` — the wand at the field's edge, on `worktree-ticket-1293-backlog-
-> question` — is the drawn fallback this file names as the alternative to variant C. The evidence
-> is `BacklogQueryIntentProjectionTests.swift` in that same test target.
+> **Re-approved by #1317 — the rule changed, the variant did not.** #1316 failed the detection
+> rule this file proposed and named variant B as the fallback. What #1317 found is that the
+> failure was the RULE and not the variant: every number #1316 measured came from the six-word
+> floor, and a rule that never consults length scores `3/106` terms misread (from `19`), `1`
+> question missed (from `2`), and **no query at all whose glyph changes its mind more than
+> once** (from `51`, three of them twice). Variant C stands, on the rule under **How a question
+> is told from a term** below. The superseded rule is kept runnable as
+> `BacklogQueryIntentSupersededRule` so #1316's verdict stays checkable.
 
 # A question asked of the backlog
 
@@ -48,15 +45,14 @@ the app **ships today**, not to `cockpit-work-room.html`.
 The room's own vocabulary — views, the backlog, the ticket, rails, the stated empty — is that
 design's and is unchanged.
 
-## The explorable is gone
+## Run it
 
-`cockpit-backlog-question.html` was deleted from `main` by #1526 — a page on `main` has an owner
-and this one had stopped being an input to a build. The renders in `backlog-question/`, taken
-with `?render=1` from that page, are what stays; the measurements below are the numbers.
+```sh
+open docs/designs/cockpit-backlog-question.html
+```
 
-This design is `reopened`, so it will be explored again. That exploration puts its page on the
-throwaway branch `design/backlog-question` and never on `main`, and this file records the branch
-when it does.
+`?state=<key>` opens one state directly, `←`/`→` walk them, and `?render=1` strips the chrome
+for the PNGs in `backlog-question/`.
 
 ## The components
 
@@ -106,14 +102,47 @@ The field notices the text has stopped looking like a term and offers the ask un
 **Search keeps `⏎`.** The ask takes `⌘⏎`. The default never moves, so a reader who types a
 question and hits return gets the search they have always got — including its honest empty.
 
-**Detection must be conservative, and it is the one thing the prototype could not settle.** A
-short question reads as a term and a long term reads as a question; a leading glyph that
-flickers while somebody types is worse than either mode alone. The rule the design assumes is
-*ends in a question mark, or six words and up*, and it is written down here so the ticket that
-implements it knows it is a proposal to test, not a measurement.
+#### How a question is told from a term
 
-**The glyph changes once.** Magnifier to wand, at the moment the offer appears, and back only
-when the text stops being a question. It never animates and never flickers within a word.
+**Detection must be conservative, and the prototype could not settle it.** A short question
+reads as a term and a long term reads as a question; a leading glyph that flickers while
+somebody types is worse than either mode alone. This file first proposed *ends in a question
+mark, or six words and up* and said plainly it was a proposal to test. #1316 tested it and it
+FAILED, on every axis it was given.
+
+**Length was the whole of the failure.** A pasted ticket title is six words and up by
+definition, so the floor turned the corpus's largest group into questions, and it did so *while
+the reader typed* — the glyph fired the instant a sixth word landed. The rule that replaced it
+consults no length at all. A query is a question when either is true:
+
+- **it opens on an interrogative** — `what`, `which`, `who`, `why`, `when`, `where`, `how`, or a
+  yes/no auxiliary (`is`, `are`, `do`, `did`, `has`, `can`, `should`, …), counted only once that
+  first word is FINISHED. The completion test is not fussiness: read without it, `island` passes
+  through `is` and the wand fires and retracts inside one word;
+- **or a `?` in it terminates at least two words.** The two-word floor is what tells a question's
+  mark from a URL's — `tickets?state=open` puts its mark after one unbroken run, `still open?`
+  after two — and it is why the corpus's three double-flipping strings now flip not at all.
+
+Determiners are deliberately out. `any ticket for 1293?` is a question and its mark catches it;
+admitting `any` would cost every `any` in a title and buy nothing.
+
+**The glyph changes once, and that is now a theorem rather than a hope.** Both clauses are
+monotone over prefixes — an opener is fixed once its word is finished, a mark that has been
+typed stays typed — so the reading can go magnifier→wand and never back, for every string there
+is. It never animates and never flickers within a word.
+
+| Against `BacklogQueryIntentCorpus` (106) | proposed (#1316: FAIL) | shipped (#1317) |
+|---|---|---|
+| a term read as a question | 19 | **3** |
+| a question read as a term | 2 | **1** |
+| queries whose glyph flips at all | 51 | 33, each exactly once |
+| queries whose glyph flips twice | 3 | **0** |
+
+The three that remain are named in `BacklogQueryIntentProjectionTests`, and two of them are a
+line the corpus drew rather than a rule that misfired: `what happened here` and `is this ticket
+closed` open on real interrogatives and are labelled terms. Nothing in the text separates them
+from `why blocked`, which is labelled a question — so the rule pays two entries for a
+distinction that is not in the characters.
 
 ### The field widens, and only while it asks
 

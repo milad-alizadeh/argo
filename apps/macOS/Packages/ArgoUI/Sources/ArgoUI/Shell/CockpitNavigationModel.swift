@@ -45,6 +45,14 @@ public final class CockpitNavigationModel {
     /// What the backlog's search field is holding. Beside the view for its reason: the field sits
     /// over the ticket and narrows the LIST, so neither pane may own it (#816).
     var ticketsQuery = ""
+    /// Where a backlog question has got to (#1317). Beside the query for the query's own reason:
+    /// the room's two panes are rebuilt on every ticket, and an answer owned inside that subtree
+    /// would be lost by the first click that changed anything.
+    ///
+    /// **Not held across a Project switch or a room switch** — see `projectSwitched`. A question
+    /// is not the Project's, and an answer about one backlog left standing over another would be
+    /// the false DIRECT the tier rules exist to refuse.
+    var backlogAsk = BacklogAsk.State.unasked
     /// What the reader has dragged the Tickets room's seam to. A preference of the WINDOW, like the
     /// deck's own seams (`DeckSeams`) — the room's two panes are rebuilt on every ticket, and a
     /// width owned inside that subtree would lose the drag on every click.
@@ -131,8 +139,40 @@ public final class CockpitNavigationModel {
     /// What a Project switch takes with it: the query alone, because it is the one thing here that
     /// is a question about a particular Project's tickets (#873). The view, the fold and the seam
     /// are the reader's own settings and stand.
-    func projectSwitched() {
+    @MainActor func projectSwitched() {
         ticketsQuery = ""
+        // The answer goes with it, and the child running behind one goes first: a question about
+        // twelve tickets nobody is looking at any more is spend on a model for nothing.
+        stopAsking()
+    }
+
+    /// Put a question in flight, replacing whatever was on screen. The caller owns the work; this
+    /// owns the handle, so `stopAsking` has one thing to cancel and the surface has one place the
+    /// state comes from.
+    @MainActor func asking(
+        _ question: String,
+        over work: @escaping @MainActor () async -> BacklogQuestion.Reply?,
+    ) {
+        backlogAskWork?.cancel()
+        backlogAsk = .asking(question: question)
+        backlogAskWork = Task { @MainActor in
+            let reply = await work()
+            // A cancelled question has already been answered by `stopAsking` — writing here would
+            // put the sheet back up over the room the reader just cleared.
+            guard !Task.isCancelled else { return }
+            backlogAsk = reply.map {
+                .answered(question: question, prose: $0.prose, read: $0.wasRead)
+            } ?? .unasked
+        }
+    }
+
+    /// Stop a question in flight and put the room back exactly as it was, or dismiss an answer
+    /// that arrived — one method, because both end at the same state and leaving a cancelled task
+    /// behind an already-closed sheet is the bug the two would share.
+    @MainActor func stopAsking() {
+        backlogAskWork?.cancel()
+        backlogAskWork = nil
+        backlogAsk = .unasked
     }
 
     /// What the tab line's Issue link does (#1092) — point the window at the Ticket and switch
@@ -236,4 +276,9 @@ public final class CockpitNavigationModel {
     /// what a departed row's neighbour WAS. Unobserved because nothing renders it: it is this
     /// model's own memory of the last pass.
     @ObservationIgnored private var lastRoster: [RosterIdentity] = []
+
+    /// The question in flight, so `Stop` has something to cancel. Ignored by observation because
+    /// nothing draws the handle — `backlogAsk` is what the surface reads, and a task that also
+    /// published would redraw the room on every state it passes through.
+    @ObservationIgnored private var backlogAskWork: Task<Void, Never>?
 }

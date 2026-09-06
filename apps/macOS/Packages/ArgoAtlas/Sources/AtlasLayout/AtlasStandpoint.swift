@@ -27,19 +27,8 @@ public struct AtlasStandpoint: Equatable, Sendable {
 
     /// The tiling: of the whole Map, at every depth. The folder is not a parameter of it and cannot
     /// become one — which is what makes a descent a camera move rather than a reflow.
-    ///
-    /// `grouping` says what the Plates this Map arrives with ARE, and nothing here re-tiles by it
-    /// either: re-rooting a Map on its Domains is `AtlasMap.regrouped()`'s, done before the Map
-    /// reaches this value at all (#1158). What it settles is the third channel of a domain map —
-    /// which Domain a file was placed in, and how surely — because that is the one fact a
-    /// re-rooted Map no longer says by its shape alone.
-    public func plan(
-        by channels: AtlasChannels,
-        into extent: CGSize,
-        grouping: AtlasGrouping = .folders,
-    )
-        -> AtlasPlan {
-        AtlasPlan(tiling: map, by: channels, into: extent, grouping: grouping)
+    public func plan(by channels: AtlasChannels, into extent: CGSize) -> AtlasPlan {
+        AtlasPlan(tiling: map, by: channels, into: extent)
     }
 
     /// The Map of the folder they are standing in — what the index, the reading and every number

@@ -5,9 +5,8 @@
 # is written as though it owns it. Eight lanes doing that on a twelve-core Mac does not make
 # eight builds go at once; it makes all eight go about eight times slower and finishes none
 # of them sooner. Measured while #1377 was written: load average 178 on 12 cores, 25
-# concurrent `swift-frontend` and `xcodebuild` processes, and the module-boundaries gate
-# (since removed) taking 43 s of wall-clock for 29 s of CPU — a third of its life waiting
-# for a core.
+# concurrent `swift-frontend` and `xcodebuild` processes, and `swift-boundaries.sh` taking
+# 43 s of wall-clock for 29 s of CPU — a third of its life waiting for a core.
 #
 # The cap is a count of slots, not a single mutex, because one build does not saturate the
 # machine on its own and a strict mutex would idle cores between a lane's link and the next

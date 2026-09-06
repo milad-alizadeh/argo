@@ -10,15 +10,6 @@ struct AtlasPigments {
     private let measure: ArgoPalette.MeasureRoles
     private let materials: ArgoPalette.MaterialRoles
 
-    /// How a Domain gets its colour, as a RULE rather than a run of colours (#1158): the count
-    /// belongs to the repository, so no list the contract could hold would be long enough.
-    ///
-    /// Read off the contract here rather than spelled again, which is the whole reason the wheel
-    /// is a rule at all — the saturation it runs at is measured (0.282 clear of everything else on
-    /// the map at worst, over every count from 2 to 40), and a second copy of it here would be a
-    /// second number to lower.
-    private let domain: ArgoPalette.DomainWheel
-
     /// The edge one plate is told from the next by, as the contract spells it: a wash, carrying an
     /// opacity.
     ///
@@ -33,32 +24,7 @@ struct AtlasPigments {
     init(_ atlas: ArgoPalette.AtlasRoles, rim: ArgoColor) {
         self.measure = atlas.measure
         self.materials = atlas.materials
-        self.domain = atlas.domain
         self.edge = rim
-    }
-
-    /// What one tile is drawn in — the file's Domain where the map is tiled by domain, and its
-    /// measured band where it is tiled by folder (#1158).
-    ///
-    /// ONE question with one answer, asked of the tile rather than of two channels at the call
-    /// site: the tile carries a Domain exactly where the map was grouped by one, so there is
-    /// nowhere for a rectangle to be handed both readings and no flag here to fall out of step
-    /// with the tiling.
-    func pigment(of tile: AtlasTile) -> ArgoColor {
-        switch tile.domain {
-        // Confidence rides on SATURATION and never on hue: a Domain we are unsure of arrives
-        // washed out, in the same place on the wheel it would have arrived at sure. Moving it
-        // would make unsure look like a different subject rather than like a weaker claim.
-        case let .placed(rank, confidence):
-            domain.hue(rank, confidence: confidence)
-        // The one grey a Domain can resolve to. Not the wheel at zero confidence, which is still a
-        // hue and would read as a nineteenth domain — the file belongs to nothing, which is a
-        // different sentence from "barely belongs to this".
-        case .unassigned:
-            materials.unassigned
-        case nil:
-            pigment(of: tile.band)
-        }
     }
 
     /// What a file is drawn in: its band's own swatch, and nothing multiplied into it.
