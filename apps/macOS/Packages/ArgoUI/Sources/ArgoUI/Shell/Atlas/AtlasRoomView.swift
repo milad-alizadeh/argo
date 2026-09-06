@@ -116,6 +116,15 @@ struct AtlasRoomView: View {
         // sized by, and hiding test files re-reads the repository without them (#1161).
         .onChange(of: room.choice.channels) { seat = nil }
         .onChange(of: room.choice.filters.hideTests.isOn) { seat = nil }
+        // Re-tiling takes the descent AND the seat with it (#1158). Where the reader was standing
+        // was a folder of the OTHER reading, and the map they are now looking at holds no such
+        // place — a trail naming it would name a plate nothing on screen draws, and a seat aimed
+        // at it is a camera pointed where a plate used to be. The open file survives: it is the
+        // same file, still on the map, and it is what the reader was reading about.
+        .onChange(of: room.choice.arrangement.grouping) {
+            folder = nil
+            seat = nil
+        }
         .onChange(of: room.project?.id) {
             openFile = nil
             query = ""
@@ -128,10 +137,16 @@ struct AtlasRoomView: View {
     /// was measured and what it is drawn by are the sidebar's sections now, and the design puts no
     /// bar over the picture (`docs/designs/cockpit-atlas.html`, `#stage`).
     private func measured(_ map: AtlasMap) -> some View {
-        // The Map as the reader's filters leave it, and where their descent leaves them standing
-        // on it (#1490). ONE value, and the one place that says the tiling comes from the Map and
-        // never from the folder — the same call the sidebar makes, so the tiling and every number
-        // said about it cannot disagree about what was measured.
+        // The Map as the reader's filters leave it, ARRANGED the way they asked, and where their
+        // descent leaves them standing on it (#1490, #1158). ONE value, and the one place that
+        // says the tiling comes from the Map and never from the folder — the same call the sidebar
+        // makes, so the tiling and every number said about it cannot disagree about what was
+        // measured or about how it is arranged.
+        //
+        // A region of a domain map is a Plate like any other by the time it reaches here, which is
+        // what lets everything below go on working unchanged: standing in one, trailing back out
+        // of it and indexing what stands on it are the same three verbs, over a Map whose folders
+        // happen to have been guessed.
         let standpoint = AtlasStandpoint(on: room.choice.drawn(map), standingIn: folder)
         let descent = AtlasDescent(trail: standpoint.trail) {
             descend(to: $0, in: standpoint.map)
@@ -141,14 +156,28 @@ struct AtlasRoomView: View {
         // seated on that folder, which is what leaves them agreeing about where the reader is
         // without the map having re-tiled to say so.
         let entries = standpoint.inside.index(matching: query, by: room.choice.channels)
+        // And the regions of a domain map, off the same Map by the same question (#1158). Asked of
+        // where the reader IS: at the top of a domain map the list is of subjects, and inside one
+        // region it is of that region's files, which is what there is to look at.
+        //
+        // Whether it indexes subjects at ALL is asked without the question, because a question
+        // matching no region has not stopped the map being tiled by subject.
+        let regions = standpoint.inside.domainIndex(matching: query)
+        let indexesDomains = !standpoint.inside.regions.isEmpty
         // The stage keeps the room it had: the rail takes its width off the end rather than
         // shrinking the map to nothing, and the map is what the reader clicked on.
+        // What a pick on the map is answered against: the file rows, and whether the rail is
+        // showing them at all. The second half is what entitles a pick to touch the reader's
+        // question, which on a domain map it must not (#1158).
+        let picked = AtlasPickedList(files: entries, selectsFiles: !indexesDomains)
         return HStack(spacing: ArgoSpacing.flush) {
-            stage(standpoint, among: entries)
+            stage(standpoint, among: picked)
             AtlasRoomRail(
                 query: $query,
                 descent: descent,
                 entries: entries,
+                regions: regions,
+                indexesDomains: indexesDomains,
                 open: openFile,
                 // Looked up in the Map the PICTURE draws, not the folder's (#1490). The two were
                 // one Map while a descent re-rooted the tiling; they are not now, and a file
@@ -164,6 +193,7 @@ struct AtlasRoomView: View {
                 // written layer beside it.
                 note: openFile.flatMap { notes.note(ofFile: $0) },
                 select: { openFile = $0 },
+                unassigned: standpoint.inside.unassigned.count,
             )
         }
     }
@@ -172,15 +202,18 @@ struct AtlasRoomView: View {
     /// path, and where the reader is going is a place in the REPOSITORY rather than a place in the
     /// picture currently drawn.
     private func stage(
-        _ standpoint: AtlasStandpoint, among entries: [AtlasIndexEntry],
+        _ standpoint: AtlasStandpoint, among entries: AtlasPickedList,
     )
         -> some View {
         ground(standpoint, among: entries)
             .overlay(alignment: .topTrailing) {
                 // The design's own `#orbit`, floating over the stage rather than docked in a bar,
                 // and inset from the corner by what the design insets it by.
-                AtlasCameraControl(orientation: $orientation, isCity: room.choice.isCity.isOn)
-                    .padding(ArgoSpacing.comfortable)
+                AtlasCameraControl(
+                    orientation: $orientation,
+                    isCity: room.choice.arrangement.isCity.isOn,
+                )
+                .padding(ArgoSpacing.comfortable)
             }
     }
 
@@ -195,16 +228,25 @@ struct AtlasRoomView: View {
     /// name is laid out in plan coordinates — turned, every caption would sit over a building it
     /// does not name, which is why the city draws with none.
     private func ground(
-        _ standpoint: AtlasStandpoint, among entries: [AtlasIndexEntry],
+        _ standpoint: AtlasStandpoint, among entries: AtlasPickedList,
     )
         -> some View {
         GeometryReader { proxy in
             AtlasView(
                 plan: standpoint.plan(
-                    by: room.choice.channels, into: Self.stage(of: proxy.size),
+                    by: room.choice.channels,
+                    into: Self.stage(of: proxy.size),
+                    // What the regions ARE, so the tiler can put each file's Domain on its tile
+                    // and the map can be painted by it — the one fact a Map re-rooted on its
+                    // Domains no longer says by its shape alone (#1158). Held against what THIS
+                    // Map can answer, which is the same call every other column makes.
+                    grouping: room.choice.grouping(of: standpoint.map),
                 ),
                 viewpoint: AtlasViewpoint(
-                    standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
+                    standing: AtlasStanding(
+                        relief: room.choice.arrangement.isCity.isOn ? 1 : 0,
+                        rise: rise,
+                    ),
                     orientation: orientation,
                     standingIn: standpoint.folder,
                     seat: seat,

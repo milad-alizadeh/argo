@@ -58,6 +58,24 @@ which is the right shape for a fixture and the wrong one for a claim about the r
 is for is the drawing: enough ties, at enough different strengths, that a cord drawn without its
 own strength or a pair drawn twice is visible in a render rather than plausible.
 
+## The inferred domains
+
+`inference` was added later still, when the map learned to re-tile by subject (#1157, drawn at
+#1158). It is the one part of this file that is **neither measured nor written but GUESSED**, and
+it is the shipped clusterer's own guess: `AtlasDomains.inferred` run over these 89 paths and the
+231 couplings above, at the same weights the app runs at. `AtlasFixtureInferenceWriter` — the
+disabled suite in `ArgoEngineTests` — is what produced it, and is how to produce it again.
+
+**9 domains, 12 files in none.** The count is small for the reason the coupling count is: the
+fixture is a trim, so the clusterer sees a fraction of the names and almost none of the history
+that produced this repository's real seventeen. What it is for is the drawing — enough regions,
+at enough different confidences, and enough files belonging to nothing, that a map painted from
+the wheel and a legend counting what it painted are visible in a render rather than plausible.
+
+A refreshed measurement must re-run the inference, never carry this one over: a Domain's members
+are positions in the Plot order, and a Map whose two halves came from two walks is refused by the
+reader (`AtlasMapError.domainAtNoPlot`).
+
 ## The written layer
 
 `argo-notes.json` is the same repository's Notes (#1159), and it is a **second file on purpose**:

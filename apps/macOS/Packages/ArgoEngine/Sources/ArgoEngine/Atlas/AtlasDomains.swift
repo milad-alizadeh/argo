@@ -120,6 +120,9 @@ enum AtlasDomains {
                 members: held.map {
                     AtlasDomainMember(path: paths[$0], confidence: placed.confidence[$0])
                 },
+                // Its place in this list, which is what the file spells by writing them in it and
+                // what the map walks the colour wheel by (#1158).
+                rank: built.count,
             ))
         }
         return built

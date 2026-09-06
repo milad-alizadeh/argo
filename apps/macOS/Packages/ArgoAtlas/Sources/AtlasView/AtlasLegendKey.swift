@@ -24,8 +24,7 @@ public struct AtlasLegendKey: View {
     public var body: some View {
         AtlasSidebarSection("Legend") {
             Text("Colour · \(legend.measure)")
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.machineCaption, .sectionHeader)
                 .textCase(.uppercase)
             // The rail's width and not a measure of its own: the sidebar is dragged by the reader,
             // and a fixed ramp inside it would either truncate or leave a gutter at every width
@@ -66,9 +65,13 @@ public struct AtlasLegendKey: View {
     }
 }
 
-/// One end of the ramp: what a value is worth there, and what share of the repository stands on
+/// One end of the key: what a value is worth there, and what share of the repository stands on
 /// that side of the cut.
-private struct AtlasLegendEnd: View {
+///
+/// Shared with the domain key (`AtlasDomainKey`) since #1158, which prints counts where this
+/// prints values — the two keys say different things, and they say them in one voice because they
+/// stand in one column, one under the other, at different moments.
+struct AtlasLegendEnd: View {
     @Environment(\.argo) private var argo
 
     let value: String
@@ -80,13 +83,11 @@ private struct AtlasLegendEnd: View {
         // them makes the share read as a row of its own.
         VStack(alignment: aligned, spacing: ArgoSpacing.flush) {
             Text(value)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.machineCaption, .body)
             // The machine face here too, so the key is set in ONE voice: the approved render puts
             // the proportional face on the map and the machine face on everything beside it.
             Text(share)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.machineCaption, .metadata)
         }
     }
 }

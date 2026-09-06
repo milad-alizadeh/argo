@@ -46,12 +46,22 @@ private extension AtlasInference {
     /// Domain here is what it was, minus the files that left, and a Domain the narrowing emptied
     /// is gone. The two numbers stand as taken: they describe the partition the generator settled
     /// on, and restating them against a subset would be inventing a second inference.
+    ///
+    /// A survivor keeps its RANK, which is why the rank is carried rather than counted: this drops
+    /// the Domains that lost every member, so a rank read off the array afterwards would shift
+    /// every Domain past the gap — and the map would repaint itself the moment a reader hid the
+    /// test files (#1158).
     func keeping(_ paths: Set<String>) -> AtlasInference {
         AtlasInference(
             domains: domains.compactMap { domain in
                 let members = domain.members.filter { paths.contains($0.path) }
                 guard !members.isEmpty else { return nil }
-                return AtlasDomain(name: domain.name, tokens: domain.tokens, members: members)
+                return AtlasDomain(
+                    name: domain.name,
+                    tokens: domain.tokens,
+                    members: members,
+                    rank: domain.rank,
+                )
             },
             resolution: resolution,
             settled: settled,

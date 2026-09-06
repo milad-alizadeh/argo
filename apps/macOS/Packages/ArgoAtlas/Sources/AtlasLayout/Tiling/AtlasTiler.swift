@@ -23,15 +23,44 @@ struct AtlasTiler {
     /// share of it, and a volume's height is resolved in the same points its rect is.
     let extent: CGSize
 
+    /// Which Domain each file was placed in, on a map tiled by domain — and EMPTY on a map tiled
+    /// by folder, which is what leaves every tile there carrying its measured band alone (#1158).
+    ///
+    /// Read once for the whole map rather than searched per file: the inference holds its members
+    /// by Domain, and asking it which Domain a path is in walks every Domain's whole membership.
+    let domains: [String: AtlasTileDomain]
+
     private var plates: [AtlasPlateFrame] = []
     private var tiles: [AtlasTile] = []
 
-    init(channels: AtlasChannels, map: AtlasMap, extent: CGSize) {
+    init(channels: AtlasChannels, map: AtlasMap, extent: CGSize, grouping: AtlasGrouping) {
         self.channels = channels
         self.banding = AtlasBanding(of: channels.band, over: map)
         self.floor = map.values(of: channels.footprint).filter { $0 > 0 }.min() ?? 1
         self.tallest = map.values(of: channels.height).max() ?? 0
         self.extent = extent
+        self.domains = grouping == .domains ? AtlasTiler.domains(of: map) : [:]
+    }
+
+    /// Every Plot's Domain, by path: the rank its colour is taken at and the margin it held the
+    /// Domain by, and `unassigned` for every Plot the inference placed in nothing.
+    ///
+    /// Every Plot, not only the placed ones — a file with no entry here is a file on a map tiled
+    /// by FOLDER, and the two must not read the same.
+    private static func domains(of map: AtlasMap) -> [String: AtlasTileDomain] {
+        var placed: [String: AtlasTileDomain] = [:]
+        for plot in map.plots {
+            placed[plot.path] = .unassigned
+        }
+        // The Domain's OWN rank, never its place in this list: narrowing a Map drops the Domains
+        // that lost every member, so a rank counted here would shift every Domain past the gap and
+        // repaint the map the moment a reader hid the tests or went into a region (#1158).
+        for domain in map.inference?.domains ?? [] {
+            for member in domain.members {
+                placed[member.path] = .placed(rank: domain.rank, confidence: member.confidence)
+            }
+        }
+        return placed
     }
 
     /// The plan for one Map on one ground.
@@ -39,9 +68,12 @@ struct AtlasTiler {
         of map: AtlasMap,
         by channels: AtlasChannels,
         into extent: CGSize,
+        grouping: AtlasGrouping,
     )
         -> AtlasPlan {
-        var tiler = AtlasTiler(channels: channels, map: map, extent: extent)
+        var tiler = AtlasTiler(
+            channels: channels, map: map, extent: extent, grouping: grouping,
+        )
         tiler.place(.plate(map.root), in: CGRect(origin: .zero, size: extent), depth: 0)
         return AtlasPlan(
             extent: extent,
@@ -54,16 +86,22 @@ struct AtlasTiler {
     private mutating func place(_ node: AtlasNode, in rect: CGRect, depth: Int) {
         switch node {
         case let .plot(plot):
-            tiles.append(AtlasTile(
-                path: plot.path,
-                rect: rect,
-                band: banding.band(of: plot.value(of: channels.band)),
-                height: AtlasElevation.height(
-                    of: plot.value(of: channels.height),
-                    tallest: tallest,
-                    on: extent,
+            let height = AtlasElevation.height(
+                of: plot.value(of: channels.height), tallest: tallest, on: extent,
+            )
+            // One reading or the other, never both: on a domain map every Plot has an entry in
+            // `domains` — `unassigned` where the inference placed it nowhere — and on a folder map
+            // none of them does.
+            tiles.append(
+                domains[plot.path].map {
+                    AtlasTile(path: plot.path, rect: rect, domain: $0, height: height)
+                } ?? AtlasTile(
+                    path: plot.path,
+                    rect: rect,
+                    band: banding.band(of: plot.value(of: channels.band)),
+                    height: height,
                 ),
-            ))
+            )
         case let .plate(plate):
             let run = AtlasTiler.folding(from: plate)
             plates.append(AtlasPlateFrame(

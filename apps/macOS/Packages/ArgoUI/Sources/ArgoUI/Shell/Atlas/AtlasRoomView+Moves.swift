@@ -38,7 +38,7 @@ extension AtlasRoomView {
     /// at rest, and the frame the camera had reached mid-flight. A seeded origin would be the
     /// restart from the old origin the ticket rules out.
     func fly(to there: String?, in map: AtlasMap) {
-        guard !room.choice.isCity.isOn, ground.width > 0, ground.height > 0 else {
+        guard !room.choice.arrangement.isCity.isOn, ground.width > 0, ground.height > 0 else {
             seat = nil
             return
         }
@@ -58,7 +58,7 @@ extension AtlasRoomView {
     /// climbs heights a straight-down camera does not project, and the reader who then turns the
     /// city on gets it fully built, which is the sentence #1421 opens by complaining about.
     var arrival: AtlasArrival {
-        AtlasArrival(measuredAt: measuredAt, isCity: room.choice.isCity.isOn)
+        AtlasArrival(measuredAt: measuredAt, isCity: room.choice.arrangement.isCity.isOn)
     }
 
     /// When the drawn Map was measured, or nothing where none is drawn.
@@ -83,7 +83,7 @@ extension AtlasRoomView {
         // refuses to spend the role there — and Reduce Motion cuts, which is what
         // `ArgoMotion.rise` carrying no reduced duration means, read off the role rather than
         // decided here.
-        guard room.choice.isCity.isOn,
+        guard room.choice.arrangement.isCity.isOn,
               let sweep = ArgoMotion.risen.sweep.resolved(reduceMotion: reduceMotion)
         else {
             rise = 1
@@ -100,14 +100,31 @@ extension AtlasRoomView {
     }
 }
 
+/// What the list beside the map is holding when a pick lands: the file rows, and whether the list
+/// is showing them at all (#1155, #1158).
+///
+/// A pair rather than a bare array, because the one write that reads the array is only entitled to
+/// it while the list really is a list of files — on a domain map the rail indexes subjects, and an
+/// array of file rows there is a fact about a list nobody is looking at.
+struct AtlasPickedList {
+    let files: [AtlasIndexEntry]
+
+    /// False where the rail is indexing SUBJECTS, so no row in it names a file at all.
+    let selectsFiles: Bool
+}
+
 /// What the reader's three ways of moving around the map resolve to. Kept in an extension
 /// because they are the room's WRITES: the body above draws, and each of these is the state
 /// change one gesture means. The decision behind them is `AtlasPickRule`'s (#1156).
+///
+/// A region of a domain map is a Plate like any other by the time these see it, which is why none
+/// of them mentions one: standing in a subject and standing in a folder are the same move to the
+/// same kind of place (#1158).
 extension AtlasRoomView {
     /// What a pick on the map means (#1153, #1154, #1155, #1156). The decision is
     /// `AtlasPickRule`'s, so it can be asked about without a window; what is left here is the
     /// three writes it resolves to.
-    func pick(_ picked: AtlasTarget?, among entries: [AtlasIndexEntry], in map: AtlasMap) {
+    func pick(_ picked: AtlasTarget?, among entries: AtlasPickedList, in map: AtlasMap) {
         switch AtlasPickRule.outcome(of: picked, standingIn: folder ?? map.root.path) {
         case let .enter(path):
             descend(to: path, in: map)
@@ -126,13 +143,18 @@ extension AtlasRoomView {
     ///
     /// Picking the open file again closes it: what is open is open because the reader opened it,
     /// so the same gesture puts it away.
-    func open(_ path: String, among entries: [AtlasIndexEntry]) {
+    ///
+    /// **The question survives where the list is not a list of files.** On a domain map the rail
+    /// indexes SUBJECTS, so the sentence above has no purchase: there is no file row to select and
+    /// no file row being denied, and clearing the words there would silently widen the reader's
+    /// region filter for a reason that does not apply to it (#1158).
+    func open(_ path: String, among entries: AtlasPickedList) {
         guard path != openFile else {
             openFile = nil
             return
         }
         openFile = path
-        if !entries.contains(where: { $0.path == path }) {
+        if entries.selectsFiles, !entries.files.contains(where: { $0.path == path }) {
             query = ""
         }
     }
