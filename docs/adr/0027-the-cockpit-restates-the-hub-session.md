@@ -1,7 +1,12 @@
 # 0027 · The cockpit's Session restates HubSession, and the projection is total
 
 Status: accepted · 2026-08-12 · init shape and gate strength amended (#755) · 2026-08-26 ·
-reader carve-out amended (#858) · 2026-09-01
+reader carve-out amended (#858) · 2026-09-01 · gate removed · 2026-09-06
+
+> **2026-09-06 — the enforcement is gone.** `scripts/swift-boundaries.sh` was removed, with the
+> nine edges, the eleven suites behind them and the two ratchet scripts beside them. The decision
+> below still stands as the way this code is written; nothing checks it any more, so read it as
+> convention and hold it in review. The body is left as it was decided.
 
 Closes #639. Binding on `CockpitPresentation.Session` and on `CockpitPresentation+Hub.swift`. It
 narrows ADR-0022's "everything else takes a value" from a phrasing that could be read two ways to

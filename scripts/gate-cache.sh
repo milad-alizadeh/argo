@@ -13,7 +13,7 @@
 # What goes in the key, and why each is in it:
 #
 #   - the tree of `apps/macOS` — every Swift source, and the SwiftFormat and SwiftLint configs;
-#   - the tree of `scripts` — the three gate scripts, the boundary rules and the token allow-list;
+#   - the tree of `scripts` — the gate scripts and everything they read;
 #   - `package.json` and `turbo.json` — what the gate's own commands resolve to;
 #   - the toolchain version — a new Xcode compiles the same source differently, and a verdict
 #     from the old one says nothing about it;

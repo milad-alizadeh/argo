@@ -1,6 +1,12 @@
 # 0028 · Cost is a gate, not a review note
 
-Status: proposed · 2026-08-29
+Status: accepted · 2026-08-29 · boundary edges withdrawn · 2026-09-06
+
+> **2026-09-06 — the edges are withdrawn; the cost suites stand.** This ADR asked for two things.
+> The edges 7-11 it proposed adding to `scripts/swift-boundaries.sh` were never built, and that
+> gate has now been removed, so that half is closed for good. The other half WAS built and still
+> runs: the `*CostTests.swift` suites and the figures in `ArgoUITests/PerfBudgets.swift` are
+> live gates on every push. Read the reasoning below as current, minus the edges.
 
 Binding on `apps/macOS`. Extends `scripts/swift-boundaries.sh` with edges 7–11 and adds a cost
 suite to `bun run quality`. It completes [ADR-0022](./0022-swift-native-macos-runtime.md), whose
