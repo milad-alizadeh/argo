@@ -20,9 +20,9 @@ enum WorkspaceFileFixture {
     ]
 
     private static let rest = [
-        // Nothing under `ArgoEngine/Hub/` is named here on purpose: a view naming the Hub is a
-        // projection leak, and a path in a fixture reads like a declaration to anyone grepping
-        // for one.
+        // Nothing under `ArgoEngine/Hub/` is named here on purpose: `swift-boundaries.sh` reads a
+        // view naming the Hub as the projection leak it is, and cannot tell a path in a fixture
+        // from a declaration.
         "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/SessionAsk.swift",
         "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/PermissionRequest.swift",
         "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/WorkspaceProjection.swift",

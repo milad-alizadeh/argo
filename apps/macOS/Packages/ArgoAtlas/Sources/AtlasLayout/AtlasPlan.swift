@@ -65,17 +65,7 @@ public struct AtlasPlan: Equatable, Sendable {
     /// on the ring and name strip that make it readable as a folder, and that room comes off
     /// everything standing on it. Nesting is what the reader asked for by looking at folders at
     /// all, and the cost of it is stated here rather than hidden in a tolerance.
-    /// `grouping` says what the Plates the Map arrives with ARE, and nothing here re-tiles by it:
-    /// re-rooting a Map on its Domains is `AtlasMap.regrouped()`'s, done ahead of the tiler the way
-    /// every other narrowing of a Map is. What it settles is the third channel of a domain map —
-    /// which Domain a file was placed in, and how surely — because that is the one fact a
-    /// re-rooted Map no longer says by its shape alone.
-    public init(
-        tiling map: AtlasMap,
-        by channels: AtlasChannels,
-        into extent: CGSize,
-        grouping: AtlasGrouping = .folders,
-    ) {
-        self = AtlasTiler.plan(of: map, by: channels, into: extent, grouping: grouping)
+    public init(tiling map: AtlasMap, by channels: AtlasChannels, into extent: CGSize) {
+        self = AtlasTiler.plan(of: map, by: channels, into: extent)
     }
 }

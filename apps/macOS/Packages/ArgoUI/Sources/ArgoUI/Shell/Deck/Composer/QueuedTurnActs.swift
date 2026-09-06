@@ -2,9 +2,9 @@ import Foundation
 
 /// What a reader can do to a follow-up that has not gone yet: send it NOW, or take it back.
 ///
-/// One value rather than three parameters on both the stack and the chip, which is what the
-/// four-parameter cap asks for — and they ARE one reading: whether steering is possible at all is
-/// a fact about the Session, and it decides whether one of the two acts is drawn.
+/// One value rather than three parameters on both the stack and the chip, which is what
+/// `swift-boundaries` edge 6 asks for — and they ARE one reading: whether steering is possible at
+/// all is a fact about the Session, and it decides whether one of the two acts is drawn.
 ///
 /// Both are keyed by id even on the chip, which draws exactly one: the chip would otherwise take
 /// two closures already bound to its own turn, and the two spellings could drift into acting on

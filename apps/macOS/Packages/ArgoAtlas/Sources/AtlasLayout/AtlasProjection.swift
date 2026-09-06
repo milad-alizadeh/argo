@@ -32,40 +32,11 @@ package struct AtlasProjection: Equatable, Sendable {
         rising rise: Double = 1,
         standingIn folder: String? = nil,
     ) {
-        self.init(
-            of: plan,
-            through: camera,
-            rising: rise,
-            seatedAt: AtlasFit.seat(
-                framing: plan, through: camera, into: plan.extent, standingIn: folder,
-            ),
-        )
-    }
-
-    /// The same projection, at a seat the caller has rather than one a folder names (#1423).
-    ///
-    /// A second initializer rather than a fifth parameter, because they are two readings and never
-    /// both: a camera at rest is wherever the reader is STANDING, and a camera in flight is at a
-    /// seat between two of those that no folder names. A caller holding one has no use for the
-    /// other.
-    ///
-    /// **A turned camera is never seated**, on exactly the terms `AtlasFit.seat` refuses to solve
-    /// one: the city's camera is the reader's, and a seat's middle is a point on the eye's plane
-    /// solved at NO relief — spent on a standing city it magnifies the picture onto somewhere that
-    /// means nothing in it. The rule lives here as well as there because this is the seat's other
-    /// way in, and a rule enforced at one of two doors is not a rule. A reader reaches it by
-    /// descending into a folder and then turning the city on.
-    package init(
-        of plan: AtlasPlan,
-        through camera: AtlasCamera,
-        rising rise: Double = 1,
-        seatedAt seat: AtlasSeat,
-    ) {
         self.plan = plan
         self.camera = camera
-        self.fit = camera.relief == 0
-            ? AtlasFit(seatedAt: seat, into: plan.extent)
-            : AtlasFit(framing: plan, through: camera, into: plan.extent)
+        self.fit = AtlasFit(
+            framing: plan, through: camera, into: plan.extent, standingIn: folder,
+        )
         self.rise = min(1, max(0, rise))
     }
 

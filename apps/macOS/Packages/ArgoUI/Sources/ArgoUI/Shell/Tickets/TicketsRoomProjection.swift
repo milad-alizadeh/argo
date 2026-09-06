@@ -212,6 +212,22 @@ package enum TicketsRoomProjection {
     /// ticket a lookup rather than a second pass over the listing (ADR-0028 Rule 1). The detail is
     /// derived here on every pass, from the live `showing`, so a remembered room never draws a
     /// remembered ticket.
+    /// Every ticket the open view holds, by number, BEFORE any query narrows it — what a backlog
+    /// question is answered over (#1317).
+    ///
+    /// A function beside `room(from:in:matching:)` rather than a tenth field on `Room`, which is
+    /// at its grandfathered width (apps/macOS/.swiftlint.yml): nothing that draws the room needs
+    /// this, and a slot every surface carries for one that does is the widening the cap refuses.
+    ///
+    /// It reads the same `items(of:in:)` the room's own rows are built from, so the count the
+    /// answer sheet states and the set the question is asked over cannot be two answers. The
+    /// view's WHOLE set and not the narrowed tree: the ask reads all twelve, and that is the
+    /// reason to press its key.
+    @MainActor
+    package static func listing(of reading: TicketsReading, in view: TicketsView) -> [Int] {
+        items(of: Sets.of(reading), in: view).map(\.number)
+    }
+
     @MainActor
     package static func room(
         from reading: TicketsReading,

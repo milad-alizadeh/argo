@@ -1,4 +1,5 @@
 import ArgoDesign
+import ArgoEngine
 import SwiftUI
 
 /// The shell's room-awareness (#812, #818): which sidebar the split view's leading slot takes, how
@@ -55,11 +56,47 @@ extension CockpitView {
                 ),
             ),
             held: TicketsRoom.Held(
-                query: $navigation.ticketsQuery,
+                field: TicketsRoom.Held.Field(
+                    query: $navigation.ticketsQuery,
+                    asking: backlogAsk(over: reading),
+                    // The set the answer is about, off the SAME reading the rows were built
+                    // from — so the sheet's read line counts the list on screen (#1317).
+                    listing: TicketsRoomProjection.listing(of: reading, in: navigation.ticketsView),
+                ),
                 selection: $navigation.ticketSelection,
                 opened: { navigation.paneOpened(at: $0) },
                 acts: backlogActs,
             ),
+        )
+    }
+
+    /// The question the backlog's field can raise, and the two ways it ends (#1317).
+    ///
+    /// **`BacklogQuestion` is called here rather than through a `CockpitActions` slot**, on the
+    /// terms `actions.drive` is on: the ask reaches no panel, no Finder and no registry, so there
+    /// is nothing for the app layer to stand in front of. Which transport answers, and that it
+    /// must be one that stays on subscription-included tokens, is the engine's own (ADR-0031).
+    ///
+    /// **The numbers come from the ROOM**, handed back through the press rather than gathered
+    /// here: the answer must be about the listing on screen, and the sheet's read line states a
+    /// count only that listing is the authority on.
+    ///
+    /// `stop` and `close` are the same act — both put the room back exactly as it was, with the
+    /// query still in the field and the list still narrowed by it. They are two slots because they
+    /// are two words to the reader, not because they do two things.
+    func backlogAsk(over reading: TicketsReading) -> BacklogAsk {
+        BacklogAsk(
+            state: navigation.backlogAsk,
+            ask: { question, numbers in
+                let asked = Set(numbers)
+                navigation.asking(question) {
+                    await BacklogQuestion.answer(
+                        question, over: reading.items.filter { asked.contains($0.number) },
+                    )
+                }
+            },
+            stop: { navigation.stopAsking() },
+            close: { navigation.stopAsking() },
         )
     }
 

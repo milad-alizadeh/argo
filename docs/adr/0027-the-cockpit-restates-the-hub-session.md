@@ -1,13 +1,7 @@
 # 0027 · The cockpit's Session restates HubSession, and the projection is total
 
 Status: accepted · 2026-08-12 · init shape and gate strength amended (#755) · 2026-08-26 ·
-reader carve-out amended (#858) · 2026-09-01 · gate removed · 2026-09-06 · stored values
-amended (#1503) · 2026-09-06
-
-> **2026-09-06 — the enforcement is gone.** `scripts/swift-boundaries.sh` was removed, with the
-> nine edges, the eleven suites behind them and the two ratchet scripts beside them. The decision
-> below still stands as the way this code is written; nothing checks it any more, so read it as
-> convention and hold it in review. The body is left as it was decided.
+reader carve-out amended (#858) · 2026-09-01
 
 Closes #639. Binding on `CockpitPresentation.Session` and on `CockpitPresentation+Hub.swift`. It
 narrows ADR-0022's "everything else takes a value" from a phrasing that could be read two ways to
@@ -179,67 +173,3 @@ Edge 1 cannot check any of that — a closure has no imports to grep — so this
 check, and a reviewer is the mechanism. That is weaker than the other five edges by design: the
 alternative was a value that made the whole cockpit rebuild on a Subagent's bytes, and the honest
 record of the trade is worth more than a gate that would have to understand SwiftUI to be right.
-
-## Amendment · the six values are STORED, and the flat facts are derived (#1503) · 2026-09-06
-
-Written after the note at the top of this file: the enforcement is gone, so everything below is
-convention, and the reviewer is the mechanism.
-
-The restatement above is still the decision: the cockpit keeps its own flat `Session` surface, does
-not hold a `HubSession`, and the "19 verbatim fields" argument is still not a reason to re-propose
-the shrink. What this amends is the last bullet of the #755 amendment — *"Six values are a parameter
-object, not a projection of `HubSession`. They exist to shape one call. Making them stored would be
-the shrink this ADR declined, at 170 read sites."* Both halves of that sentence were wrong, in
-different ways.
-
-**A parameter object that takes parameter objects is a hand, and there were three of them.**
-`Handoff` declared `handedOffTo` and assigned it. `Chain` declared it again and assigned it again.
-`Session` declared it a third time and assigned it a third time. Measured before the change:
-`Session.init`'s body was 39 assignments, 35 of which moved a field from a group onto a field of
-the same name, and `Chain.init` did the same again with 13 more. None of the 48 computed anything.
-That is the state the #755 amendment's own Consequences predicted for a parameter object that grows
-sub-groups, and it arrived.
-
-**Storing the values costs no read sites.** The 170 was a count of reads of the FLAT facts, not of
-the values, and it assumed those reads would have to become `session.chain.program.model`. They do
-not: the flat facts are DERIVED off the stored values, one line each, in
-`CockpitPresentation+SessionFacts*.swift`. Every surface below the shell reads exactly what it read
-before, and the diff outside those files is empty. `Transcript` had been stored on this shape since
-it landed, with `events`, `lostTurn` and `submittedTurn` derived off it — the other five now match
-the one that was already right.
-
-**Every declaration stays in `ArgoUI`.** Nothing crossed a package: `Chain`, `Work`, `Spend`,
-`Autonomy`, `Annotations` and their sub-values are all nested in `CockpitPresentation.Session`,
-under `ArgoUI/Shell/`, and the derivations sit beside them in the same module. `ArgoEngine` is
-named only for the types the projection already named — `AgentCLI`, `SessionStatus`,
-`PermissionRequest` and the rest — exactly the nine this ADR's Context lists. The layering did not
-move, which is worth stating plainly now that no gate would say so.
-
-**The derivation is a fourth place a fact can be dropped on the wrong slot.**
-`var spentTokens: Int? { spend.cachedTokens }` is a swap that no type can see and no test asserts
-directly, and it is invisible in review unless a reader is looking for it. Until #1532 this was
-edge 5's job; that gate is gone, and the honest record is that nothing catches it now. What is left
-is the naming rule the edge enforced — a derivation takes the name of the fact it reads, or carries
-a `renamed: <slot> <- <fact> — <why>` line beside it — and two such lines exist:
-`workspaceLocation <- location` and `startedQuietlyAtMs <- quietAtMs`. Read them as the places a
-reviewer must look.
-
-- **Each fact is declared once, by the value that holds it.** A new engine fact still costs four
-  edits — `HubSession`, the group's field, the mapping, and the derivation a surface reads — but
-  none of them is a copy of another.
-- **`let` against `internal(set) var` still holds.** The stored values are `let`s of `let`s.
-- **The read paths inside the projection got longer**, `chain.span.startup.quietAtMs` being the
-  deepest, and the six values are public, so a view CAN write one instead of reading the flat fact.
-  Nothing gates that, and this bullet is the record of why rather than a claim that something does:
-  a grep cannot tell `session.spend` from the `agent.spend` and `end.spend` already in the feed, and
-  the properties cannot go internal because the test module reads `transcript.stream` through them.
-  What the depth costs is legibility, not honesty — a bypass reads the same fact off the same
-  value, so there is no slot for it to land on. Convention and review hold it, and the derivations
-  are the one place worth writing one.
-- **This changes nothing about how often a fact is recomputed.** The derivations are stored-property
-  reads behind a computed property; no memo, no cache and no equality was added or removed, and
-  `Session`'s synthesised `Equatable` still compares `Transcript` by its stamp (ADR-0028 Rule 1).
-  The idle-frame band #1539 measured is untouched by this change.
-- **Do not answer a future 150-line split by widening a grandfathered init.** The collapse fit
-  inside the parameter counts as they stood. A collapse that did not would belong to #1508, the cap
-  decision, and not here.

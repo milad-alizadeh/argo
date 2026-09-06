@@ -1,15 +1,9 @@
 # Prototype — roster row signals: Agents, pull request, ready to ship
 
-**Throwaway.** The page lives on `argo/#1310-roster-agent-count` and, since #1526, nowhere else
-— `main` carries this note and not the markup:
-
-```sh
-git show argo/#1310-roster-agent-count:docs/designs/prototypes/roster-row-signals-prototype.html > /tmp/roster-row-signals.html
-open /tmp/roster-row-signals.html
-```
-
-Switch with the floating bar, `←` / `→`, or `?variant=A|B|C|D|E|F|G|H|I`. **G is the default and
-the live direction**; A to F are the earlier passes, kept for comparison.
+**Throwaway.** Lives on `argo/#1310-roster-agent-count`, not on `main`.
+Open `roster-row-signals-prototype.html` beside it; switch with the floating bar, `←` / `→`,
+or `?variant=A|B|C|D|E|F|G|H|I`. **G is the default and the live direction**; A to F are the
+earlier passes, kept for comparison.
 
 ## The question
 

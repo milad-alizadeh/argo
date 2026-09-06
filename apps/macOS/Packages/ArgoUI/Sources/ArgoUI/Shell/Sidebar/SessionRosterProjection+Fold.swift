@@ -54,31 +54,26 @@ extension SessionRosterProjection {
         /// on both would otherwise have one id for two rows, and opening either would open both.
         private let list: String
 
-        init(
-            of sessions: [CockpitPresentation.Session],
-            isArchived: Bool,
-            opened: Set<String>,
-            selecting: String?,
-        ) {
+        init(of sessions: [CockpitPresentation.Session], in pass: SessionRosterProjection.Pass) {
             let groups = Self.groups(of: sessions)
             let members = Dictionary(
                 uniqueKeysWithValues: groups.flatMap { group in
                     group.runs.map { ($0, group.directory) }
                 },
             )
-            let list = isArchived ? "archived" : "roster"
+            let list = pass.isArchived ? "archived" : "roster"
             // A fold holding the selection is open whether or not the reader opened it, for the
             // reason the archive foot is (`isArchiveOpen`): the deck draws what the selection
             // names, and a fold shut over it would leave the roster drawing no row for the
             // Session the feed is drawing.
-            let selected = selecting.flatMap { members[$0] }
+            let selected = pass.selection.flatMap { members[$0] }
             self.list = list
             self.membership = members
             self.folds = Dictionary(uniqueKeysWithValues: groups.map { ($0.directory, $0.reading) })
             self.runsByDirectory = Dictionary(
                 uniqueKeysWithValues: groups.map { ($0.directory, $0.runs) },
             )
-            self.opened = opened
+            self.opened = pass.opened
                 .union(selected.map { [Self.identifier(of: $0, in: list)] } ?? [])
         }
 

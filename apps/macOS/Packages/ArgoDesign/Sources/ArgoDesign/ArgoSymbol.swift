@@ -55,6 +55,15 @@ public enum ArgoSymbol {
     /// Re-ordering the backlog. A MENU and not a mark of its own: Mail keeps sort and group inside
     /// the ellipsis beside its filter, and the banded-rows glyph that stood here was invented for
     public static let searchBacklog = "magnifyingglass"
+    /// The same field once it holds a QUESTION rather than a term (#1317) — the one mark the
+    /// asking surface adds, and it is a swap and not an addition: the band deliberately carries
+    /// one control, so a wand of its own would have been a second mark on it.
+    ///
+    /// Shares `skill`'s glyph, the way `newTicket` shares `newSession`'s. The two never appear in
+    /// one surface — a skill is named in a Session's feed and this is on the backlog's band — and
+    /// what they have in common is exactly what the wand says in both: a model was asked, rather
+    /// than a program run.
+    public static let askBacklog = skill
     /// Starting a Session on the open ticket — the verb the room is for. A play triangle rather
     /// than a bolt: the bolt was read as speed or as power, and neither is the act.
     public static let startSession = "play.fill"

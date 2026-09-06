@@ -5,14 +5,9 @@ description: Approve one prototype variant as the design, once per screen, befor
 
 # Prototype To Design
 
-`/prototype` explores. This approves one of what it explored and splits the result in two: an
-HTML design that speaks only the token contract, which **stays on the throwaway branch**, and
-the durable record — a design `.md` and a render per state — which lands on `main`.
-`design-to-code` then runs once per ticket against them.
-
-**The page never lands on `main`.** A page on `main` is a live file with an owner, and it goes on
-being edited long after the screen it describes has shipped. It is worth having only while the
-screen is being built, which is exactly as long as the branch lives.
+`/prototype` explores. This approves one of what it explored and leaves on `main` the two
+artifacts everything downstream needs: an HTML design that speaks only the token contract,
+and a render of it. `design-to-code` then runs once per ticket against them.
 
 A prototype settles one of two things. Unsettled *behaviour* ("does this state model work?")
 goes `/prototype` → `/handoff` → `/to-spec`, and never through here. Unsettled *appearance*
@@ -54,7 +49,7 @@ For each distinct value, exactly one of:
 Show the user the snap/promote table before proceeding; a promotion is a contract change and
 lands with its framework wiring in every theme variant.
 
-## 4. Write the design on its own branch
+## 4. Write the design
 
 Move the winner to `docs/designs/<screen>.html`, from the design template and token mirror
 `docs/designs/stack.md` names (`design-template.html` and `tokens.css` by default):
@@ -64,11 +59,7 @@ Move the winner to `docs/designs/<screen>.html`, from the design template and to
   they become component files and ticket titles;
 - repeated shapes call a named render function in `kit.js`.
 
-Commit it to the branch `design/<screen>` and push that branch. A real branch, not a ref outside
-the branch namespace: a branch shows in the code host's UI, it clones, and `git switch` reaches
-it, where a bare ref needs a hand-written fetch refspec before anyone can read the design.
-
-Add the front matter to the page:
+Add the front matter:
 
 ```html
 <!-- status: approved
@@ -76,45 +67,23 @@ Add the front matter to the page:
      prototype: <throwaway branch> -->
 ```
 
-Done when `design/<screen>` is pushed, the no-raw-values check passes on the file and every
-region has a `data-component`.
+Three values, in order: `approved` (agreed, not yet in the app), `built` (`design-to-code`
+finished the screen), `stale` (the app has since changed this screen without coming through
+here). A `stale` design is re-based before it is edited: screenshot the shipped screen,
+correct the design to match, then explore.
 
-## 5. Render it, and write the record on `main`
+Done when the no-raw-values check passes on the file and every region has a
+`data-component`.
 
-Screenshot the design via the render method in `stack.md`. What lands on `main` is the durable
-record, and only that: one PNG per state under `docs/designs/<screen>/`, and
-`docs/designs/<screen>.md` carrying the measurements, the frozen component names and this front
-matter:
+## 5. Render it
 
-```html
-<!-- status: approved
-     approved-at: <commit>
-     prototype: <throwaway branch>
-     explorable: design/<screen>
-     epic: #<the screen's epic> -->
-```
-
-`explorable` names the branch, so `design-to-code` and `pixel-review` can find the page without
-being told; `epic` is what `worktrees:gc` keys the branch's deletion on. Neither reader needs a
-checkout:
-
-```sh
-git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
-```
-
-`status` takes three values: `approved` (agreed, not yet in the app), `built` (`design-to-code`
-finished the screen — and the branch is now free to go), `stale` (the app has since changed this
-screen without coming through here). A `stale` design is re-based before it is edited: screenshot
-the shipped screen, correct the design to match, then explore. Once the branch is deleted,
-`explorable` reads `gone` and the `.md` and its renders are the whole record — which is why the
-measurements go in the `.md` and not only in the page.
-
-Done when `main` carries the `.md` and one PNG per state, and no `.html`.
+Screenshot the design via the render method in `stack.md` and commit one PNG per state
+beside the HTML. Tickets link the PNG and `pixel-review` judges against it.
 
 ## 6. Report
 
 - The snap/promote table, and any token that landed in the contract.
 - The measurements the tickets must carry: the numbers this screen settled.
 - What the prototype exposed that the render doesn't show.
-- Where the `.md` and its PNGs live on `main`, the branch the page is on, and the next step:
-  `/to-tickets`, then `design-to-code` per ticket.
+- Where the design and its PNG live, and the next step: `/to-tickets`, then
+  `design-to-code` per ticket.

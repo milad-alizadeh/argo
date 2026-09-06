@@ -1,13 +1,11 @@
 import ArgoEngine
 
 /// The readings a `Session` is assembled from — one value per reading, and the whole shape of
-/// `Session.init` (ADR-0027, amended by #755 and by #1503).
+/// `Session.init` (ADR-0027, amended by #755).
 ///
-/// A Session STORES them, and every fact below is declared here and nowhere else: the flat surface
-/// a view reads is derived off these, in `CockpitPresentation+SessionFacts.swift`, rather than
-/// copied onto a second set of fields. Each field keeps the engine's own name for its fact, so the
-/// init's slots read against the engine's own surface one for one (ADR-0027) — convention held in
-/// review since #1532 deleted the gate that checked it.
+/// They group the parameter list and are NOT what a Session stores; nothing reads through one.
+/// Each field keeps the engine's own name for its fact, which is what `swift-boundaries.sh`
+/// edge 5 compares the init's slots against.
 public extension CockpitPresentation.Session {
     /// The resume chain (`CONTEXT.md` L2): what runs it, when it ran, what it handed to, and
     /// whether Argo's own channel to it is up — a property of the process this link runs in, which
@@ -83,27 +81,42 @@ public extension CockpitPresentation.Session {
             }
         }
 
-        public let program: Program
-        public let span: Span
-        public let handoff: Handoff
-        /// Beside the three values rather than inside one: it is a property of Argo's own channel
-        /// to the process, and none of the three is about that. What the fact IS, and what draws
-        /// it, is on `Session.companionChannel`.
+        public let cli: AgentCLI?
+        public let model: String?
+        public let effort: String?
+        public let entry: SessionEntry
+        public let startedAtMs: Int?
+        public let lastSeenAtMs: Int?
+        public let handedOffTo: String?, handingOff: Bool, handoffFailures: [SessionWaitSettled]
         public let companionChannel: CompanionLiveness
+        public let startedQuietlyAtMs: Int?
+        /// The waits Argo held on this link that have ENDED (#1323), oldest first. A property of
+        /// the process rather than of the record, which is why it is here beside the moment above:
+        /// no CLI wrote a word about any of them. Empty for every Session Argo did not start.
+        public let settledWaits: [SessionWaitSettled]
+        /// Whether this link is continuing a chain rather than opening one (#1328) — beside the
+        /// moments above for the same reason: a property of the process, not of the record.
+        public let resuming: Bool
 
-        /// Four values and no unpacking (#1503). Every fact under them is declared by the value
-        /// that holds it and by nothing else; what a surface reads is `Session`'s own flat reading
-        /// of them, in `CockpitPresentation+SessionFacts.swift`.
         public init(
             program: Program = .init(),
             span: Span = .init(),
             handoff: Handoff = .init(),
             companionChannel: CompanionLiveness = .notApplicable,
         ) {
-            self.program = program
-            self.span = span
-            self.handoff = handoff
+            self.cli = program.cli
+            self.model = program.model
+            self.effort = program.effort
+            self.entry = program.entry
+            self.startedAtMs = span.startedAtMs
+            self.lastSeenAtMs = span.lastSeenAtMs
+            self.handedOffTo = handoff.handedOffTo
+            self.handingOff = handoff.handingOff
+            self.handoffFailures = handoff.handoffFailures
             self.companionChannel = companionChannel
+            self.startedQuietlyAtMs = span.startup.quietAtMs
+            self.settledWaits = span.settledWaits
+            self.resuming = span.startup.resuming
         }
     }
 
@@ -115,14 +128,19 @@ public extension CockpitPresentation.Session {
         public let location: String?
         public let workspace: Workspace?
         public let ticket: TicketLinkReading
-        /// What the branch's own pull request settles — see `Delivery` below, which resolves the
-        /// two against each other rather than letting a surface do it twice.
-        public let delivery: Delivery
+        /// The code host's pull request for this branch
+        /// (`CockpitPresentation.Readings.deliveries`),
+        /// and `nil` for a branch with none open — or one Argo has not read a Delivery for yet.
+        /// Never a placeholder: the roster row draws nothing rather than guess.
+        public let pullRequest: DeliveryPullRequest?
+        /// Whether the Session's companion claim to be ready for a pull request still draws
+        /// (#1335) — resolved against `pullRequest` HERE, once, so no surface downstream re-asks
+        /// the staleness question (`cockpit-roster-row.md`, decision 7: an open pull request
+        /// always wins over the claim).
+        public let readyToShip: Bool
 
         /// The two facts a branch's own pull request settles together — grouped so `Work`'s own
-        /// init stays at the four-parameter cap (`apps/macOS/.swiftlint.yml`) rather than growing
-        /// a fifth parameter. What each fact IS, and what draws it, is on `Session.pullRequest`
-        /// and `Session.readyToShip`; what is here is why the pair is resolved in one place.
+        /// init stays at its cap (rules/house.md, edge 6) rather than growing a fifth parameter.
         public struct Delivery: Equatable, Sendable {
             public let pullRequest: DeliveryPullRequest?
             public let readyToShip: Bool
@@ -153,7 +171,8 @@ public extension CockpitPresentation.Session {
             self.location = location
             self.workspace = workspace
             self.ticket = ticket
-            self.delivery = delivery
+            self.pullRequest = delivery.pullRequest
+            self.readyToShip = delivery.readyToShip
         }
     }
 
@@ -207,9 +226,9 @@ public extension CockpitPresentation.Session {
 
         public let mode: SessionModeReading
         public let modeDidNotTake: SessionMode?
-        /// What the Session is blocked on right now — see `Blocked`, which is where the three
-        /// channels are declared and the only place they are.
-        public let blocked: Blocked
+        public let permission: PermissionRequest?
+        public let ask: SessionAsk?
+        public let companionAsk: CompanionAsk?
         public let standingAllows: [StandingAllow]
         public let expiredPermissions: [PermissionExpiry]
 
@@ -222,7 +241,9 @@ public extension CockpitPresentation.Session {
         ) {
             self.mode = mode
             self.modeDidNotTake = modeDidNotTake
-            self.blocked = blocked
+            self.permission = blocked.permission
+            self.ask = blocked.ask
+            self.companionAsk = blocked.companionAsk
             self.standingAllows = standingAllows
             self.expiredPermissions = expiredPermissions
         }
@@ -249,7 +270,6 @@ public extension CockpitPresentation.Session {
         }
     }
 
-    // `Transcript` is the sixth, and lives in `CockpitPresentation+Transcript.swift` — it was the
-    // first of the six a Session stored, because it carries the stamp its equality rests on, and
-    // the shape the other five took in #1503.
+    // `Transcript` is the sixth, and lives in `CockpitPresentation+Transcript.swift` — it is the
+    // one of the six that a Session STORES, because it carries the stamp its equality rests on.
 }

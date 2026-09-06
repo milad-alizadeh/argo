@@ -1,13 +1,18 @@
 #!/usr/bin/env node
-// Tests for the per-step memory as the two Swift linters use it (#1377).
+// Tests for the per-step memory as the three Swift linters use it (#1377).
 //
-// They are a harder case than the suites, because both of them also run from lint-staged over
+// They are a harder case than the suites, because two of them also run from lint-staged over
 // the STAGED paths. A verdict about the whole tree must never answer a question about three
 // files, and a rewrite must never be skipped because a check passed. So the cases below are
 // mostly about which runs are ineligible.
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { check, report } from './check-harness.mjs'
 import { linterScenario } from './linter-scenario.harness.mjs'
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 check('a whole-tree format check is not taken twice', () => {
   const s = linterScenario()
@@ -78,6 +83,19 @@ check('a changed tree is linted again', () => {
   s.lint('swift-lint.sh')
   assert.equal(s.linted('swiftlint'), after + 1)
   s.cleanup()
+})
+
+// The boundary gate scans the whole tree and ignores its arguments, so it has no path-shaped
+// question to distinguish and no fixture worth building: what matters is that it asks and
+// records at all, and that the record comes after the last check rather than before the first.
+check('the boundary gate asks the cache, and records only at the end', () => {
+  const gate = readFileSync(path.join(ROOT, 'scripts/swift-boundaries.sh'), 'utf8')
+  assert.match(gate, /step_begin swift-boundaries/, 'it must ask')
+  assert.match(gate, /step_end swift-boundaries/, 'it must record')
+  assert.ok(
+    gate.indexOf('step_end swift-boundaries') > gate.lastIndexOf('failed=1'),
+    'a verdict recorded before the last edge would certify a tree that failed one',
+  )
 })
 
 report('linter cache')

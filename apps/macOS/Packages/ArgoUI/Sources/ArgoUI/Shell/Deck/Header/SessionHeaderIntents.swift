@@ -1,7 +1,6 @@
 /// What the deck's header offers to DO with the Session it is naming — the acts that reach it
 /// from the CHROME rather than from the composer, which is what makes them one value and not two
-/// parameters threaded side by side down five views (`apps/macOS/.swiftlint.yml`, the
-/// four-parameter cap).
+/// parameters threaded side by side down five views (rules/house.md, edge 6).
 ///
 /// Both are inert by default, so a specimen draws the controls with nothing behind them.
 package struct SessionHeaderIntents {

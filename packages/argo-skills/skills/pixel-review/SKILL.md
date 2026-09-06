@@ -16,17 +16,7 @@ Resolution order, first hit wins:
    verification" section in the project doc that spells out how to render states.
 2. **Storybook** (`.storybook/` exists): build it and screenshot each story of every
    component the diff touched.
-3. **Approved designs**: the `.md` in `docs/designs/` names its page's branch in front matter
-   as `explorable: design/<screen>`. Read it out without a checkout and screenshot the
-   `file://` URL:
-
-   ```sh
-   git fetch origin design/<screen>
-   git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
-   ```
-
-   When `explorable` reads `gone` the screen has shipped and there is no page to shoot — judge
-   against the state renders beside the `.md`, which are the spec, and move on.
+3. **Approved designs**: screenshot the design HTML in `docs/designs/` via `file://`.
 4. **Dev server**: a `dev`/`start` script; launch it and navigate to the screens the ticket
    names.
 5. **Nothing renderable found**: record "visual verification unavailable" in the PR body and

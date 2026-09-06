@@ -56,6 +56,19 @@ public extension ArgoPalette.TextRoles {
     }
 }
 
+public extension ArgoPalette {
+    /// The ink the asking surface's wand takes — lit where the surface is offering the ask, quiet
+    /// where it is only naming it (#1317).
+    ///
+    /// Here rather than at either call site because the field's own lead and the offer's two lines
+    /// draw the SAME mark, and a mark that meant the accent in one place and a text rung in the
+    /// other would be two marks. The quiet answer is a KIND and not a rung, so neither call site
+    /// hand-picks one (`check:text-ink`).
+    func askMark(lit: Bool) -> ArgoColor {
+        lit ? interaction.accentBright : text.ink(.metadata)
+    }
+}
+
 public extension View {
     /// A line's face and its ink in one call: the typography role says what it looks like, the
     /// kind says how loud it is. Preferred over `argoText` plus a hand-picked `foregroundStyle`,
@@ -71,8 +84,8 @@ public extension View {
 /// The kind's ink, resolved against whatever appearance the line is drawn under.
 ///
 /// A `ShapeStyle` rather than a `ViewModifier`, because the contract holds tokens and declares no
-/// view of its own, and a style that resolves itself is how a token reaches the environment
-/// without one.
+/// view: edge 7b of `scripts/swift-boundaries.sh` is what says so, and a style that resolves
+/// itself is how a token reaches the environment without one.
 private struct ArgoLineInk: ShapeStyle {
     let kind: ArgoLineKind
 

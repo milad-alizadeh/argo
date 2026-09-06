@@ -1,14 +1,14 @@
 # The default gate for every PR: biome, the duplication gate and the guardrail-hook tests, on
 # Linux. That is the whole of it.
 #
-# The Swift half — build, swift-testing, SwiftLint, SwiftFormat — used to be a `macos-26` job
-# here. It is now `.husky/pre-push`, which calls `scripts/swift-gate.sh` (#1340).
+# The Swift half — build, swift-testing, SwiftLint, SwiftFormat, module boundaries — used to be
+# a `macos-26` job here. It is now `.husky/pre-push`, which calls `scripts/swift-gate.sh` (#1340).
 # The reason is money, and the numbers were one-sided: GitHub bills a macOS runner at about ten
 # times a Linux one, and over one measured day that job took 228 minutes against 21 for
 # everything else on this workflow put together. It was about 99% of the bill, to repeat from a
 # cold cache what the author's own Mac had already built.
 #
-# The gate itself did not shrink. `scripts/swift-gate.sh` runs the same commands, in the
+# The gate itself did not shrink. `scripts/swift-gate.sh` runs the same three commands, in the
 # same order, under the same `ARGO_REQUIRE_SWIFT_TOOLS=1`, over the same pathspec this file's
 # `changes` job used to compute — and it BLOCKS THE PUSH, which is one step earlier than a red
 # CI run. `scripts/swift-gate.test.mjs` is the proof it fires, and it runs in the `check` job

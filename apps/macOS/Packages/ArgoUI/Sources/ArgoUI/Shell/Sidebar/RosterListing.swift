@@ -29,22 +29,19 @@ struct RosterListing {
     /// `opened` is the folds the reader has opened (#1073) — the sidebar's own state, passed
     /// through rather than held here: which folds are open is a fact about the window, and this
     /// value is rebuilt every pass.
-    ///
-    /// `focus` is the row the deck has open and the fourth fact for it alone (#1513). Taken by the
-    /// caller, because the reader it comes off lives on the main actor and this pipeline does not.
     func reading(
         of sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
-        focus: SessionRosterProjection.Focus = SessionRosterProjection.Focus(),
+        selection: String? = nil,
         now: Date = Date(),
     )
         -> Reading {
         Reading(
             rows: order.published(SessionRosterProjection.rows(
-                from: sessions, opened: opened, focus: focus, now: now,
+                from: sessions, opened: opened, selection: selection, now: now,
             )),
             archived: SessionRosterProjection.archivedRows(
-                from: sessions, opened: opened, focus: focus, now: now,
+                from: sessions, opened: opened, selection: selection, now: now,
             ),
         )
     }

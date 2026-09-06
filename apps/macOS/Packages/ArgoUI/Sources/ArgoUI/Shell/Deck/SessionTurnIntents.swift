@@ -6,7 +6,7 @@ import ArgoEngine
 /// One value rather than two closures on the deck, the way `SessionSettingIntents` is one for the
 /// three knobs: they are one reading of the Session, they go inert together (a Session with no
 /// Turn in flight has neither), and they begin with the same keystroke. Grouping them is also what
-/// the four-parameter cap asks of a list this long — one value per reading, never a wider init.
+/// `swift-boundaries` edge 6 asks of a list this long — one value per reading, never a wider init.
 package struct SessionTurnIntents {
     /// Stopping it (#541). A Session blocked on a Permission has nothing to stop.
     package var stop: () throws -> Void = {}

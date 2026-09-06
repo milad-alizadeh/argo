@@ -68,17 +68,25 @@ package enum ArgoBacklogList {
     }
 }
 
-extension EnvironmentValues {
+package extension EnvironmentValues {
     /// How wide the backlog pane is being drawn right now, seated inside its limits by the room.
     /// The rows inside a `List` cannot read it any other way: each is proposed its own width, not
     /// the pane's. Defaults to the width the pane opens at, so a `#Preview` with no room above it
     /// draws the shipping row.
-    @Entry var backlogPaneWidth: CGFloat = ArgoBacklogList.width
+    @Entry internal var backlogPaneWidth: CGFloat = ArgoBacklogList.width
+
+    /// Whether the backlog's field takes key focus as it appears (#1317). FALSE in the app, where
+    /// a band nobody pressed must not steal the keyboard, and true only in a RENDER — the field
+    /// draws from its head unfocused, and the design decides the TAIL is what stays visible.
+    ///
+    /// Beside `backlogNow` because it is the same kind of key: a property of the shot, set by
+    /// nothing the reader can reach.
+    @Entry var argoOpensSearchFocused: Bool = false
 
     /// The moment a row's age stamp is measured against (#897), and `nil` wherever nobody pinned
     /// one — the shipping app, which reads the wall clock as it draws. Only a RENDER sets it, and
     /// it has to: an age measured against the wall clock makes a shot that never matches itself
     /// twice. Optional rather than defaulted to `.now`, because an environment default resolves
     /// once and would freeze every age at whatever instant first read the key.
-    @Entry package var backlogNow: Date?
+    @Entry var backlogNow: Date?
 }

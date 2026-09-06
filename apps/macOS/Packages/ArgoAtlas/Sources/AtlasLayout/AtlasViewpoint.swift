@@ -20,29 +20,14 @@ public struct AtlasViewpoint: Equatable, Sendable {
     /// fit onto that folder's plate and changes no tiling.
     public let folder: String?
 
-    /// Where the camera ACTUALLY is, while it is somewhere `folder` does not name (#1423).
-    ///
-    /// `var` and the second thing `AtlasView.animatableData` moves. Nothing for a camera at rest,
-    /// which is every still and every caller that has not flown anywhere — then `folder` names the
-    /// seat and this stays out of the way.
-    ///
-    /// Two values for one camera looks like two truths and is not: `folder` is where the READER is
-    /// standing, which the rail and the trail beside the map also read, and this is where the
-    /// picture has got to on its way there. They differ for the length of one flight and agree
-    /// either side of it, which is the same distinction a descent already draws between a click
-    /// being answered in words and the same click being answered in pixels.
-    public var seat: AtlasSeat?
-
     public init(
         standing: AtlasStanding,
         orientation: AtlasOrientation = .opening,
         standingIn folder: String? = nil,
-        seat: AtlasSeat? = nil,
     ) {
         self.standing = standing
         self.orientation = orientation
         self.folder = folder
-        self.seat = seat
     }
 
     /// The settled city, from the opening view, over the whole repository. What every still, every

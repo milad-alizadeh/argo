@@ -56,12 +56,19 @@ struct TicketsPanesSpecimen: View {
     /// What the search field is holding. Seeded for the same reason the fold is: the harness
     /// cannot type, and every state #873 has to show is past a typed query.
     @State private var query: String
+    /// Seeded from `Seed.asking` and then owned here, so `Stop` and `Close` in a specimen really
+    /// put the room back — a render is a state somebody can drive out of, not a still.
+    @State private var asking: BacklogAsk.State
 
     /// What a specimen seeds, as one value — a struct because the parameter cap is three.
     struct Seed {
         var opening = TicketsView.allOpen
         var folded: Set<Int> = []
         var query = ""
+        /// Where a backlog question has got to (#1317). Seeded for the reason the query is: the
+        /// harness cannot type and cannot wait four seconds, and the wait and the answer are two
+        /// states nobody could otherwise shoot.
+        var asking = BacklogAsk.State.unasked
     }
 
     init(reading: TicketsReading, seed: Seed = Seed()) {
@@ -69,8 +76,44 @@ struct TicketsPanesSpecimen: View {
         _view = State(initialValue: seed.opening)
         _shut = State(initialValue: seed.folded)
         _query = State(initialValue: seed.query)
+        _asking = State(initialValue: seed.asking)
         _ticket = State(initialValue: reading.showing)
     }
+
+    /// What the room holds rather than reads.
+    ///
+    /// **The query reaches the FIELD here, not just the projection.** Without this the specimen
+    /// narrowed its list off a query the field drew as empty, which is a room no reader can be in
+    /// — and `found` could not be shot at all, since it is the field holding a question.
+    ///
+    /// The verbs are real: `⌘⏎` puts the wait up, and `Stop` and `Close` take it down. Nothing
+    /// reaches a model — a specimen answers from the fixture below, so a render never spends one.
+    private var held: TicketsRoom.Held {
+        TicketsRoom.Held(
+            field: TicketsRoom.Held.Field(
+                query: $query,
+                asking: BacklogAsk(
+                    state: asking,
+                    ask: { question, _ in
+                        asking = .answered(question: question, prose: Self.prose, read: true)
+                    },
+                    stop: { asking = .unasked },
+                    close: { asking = .unasked },
+                ),
+                listing: TicketsRoomProjection.listing(of: reading, in: view),
+            ),
+        )
+    }
+
+    /// The answer a specimen draws. Written rather than generated, exactly as the design's own
+    /// prose is: it is here to show how long an answer runs and how it reads, and it promises
+    /// nothing about what a model would say.
+    static let prose = """
+    The chart's spacing is #336, The canvas: derived spacing and the edge rule — low priority, \
+    Todo, and the only open ticket that names spacing at all. It never uses the word \
+    \u{201C}chart\u{201D}, \
+    which is why the field found nothing.
+    """
 
     var body: some View {
         let tickets = TicketsRoom(
@@ -81,6 +124,7 @@ struct TicketsPanesSpecimen: View {
             view: $view,
             backlogWidth: $backlogWidth,
             shut: $shut,
+            held: held,
         )
 
         HStack(spacing: ArgoSpacing.flush) {
@@ -97,6 +141,10 @@ struct TicketsPanesSpecimen: View {
         // Pinned, so a dated row is shootable at all: measured against the wall clock every shot
         // of one would read a different age from the last (#897).
         .environment(\.backlogNow, TicketsFixture.asOf)
+        // The field draws its TAIL only while it is focused, and the harness cannot click into it
+        // (#1317). A shot of the unfocused field is a shot of the head, which is the half the
+        // reader is not editing.
+        .environment(\.argoOpensSearchFocused, !query.isEmpty)
     }
 }
 

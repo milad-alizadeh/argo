@@ -90,16 +90,6 @@ extension SpecimenRegistry {
         SpecimenEntry("atlasDescent") { AtlasDescentSpecimen() },
         SpecimenEntry("atlasDescentShallow") { AtlasDescentShallowSpecimen() },
         SpecimenEntry("atlasDescentRoot") { AtlasDescentRootSpecimen() },
-        // The camera on its way there (#1423). The frame a cut does not have: the same rectangles
-        // as the two frames above, at a scale between their two. Not reachable without a click,
-        // and not survivable on a clock.
-        SpecimenEntry("atlasFlight") { AtlasFlightSpecimen() },
-        // The map re-tiled by inferred domain (#1158). Two frames: the whole partition, where the
-        // claim is that a subject spread over five folders is ONE region and that the column
-        // beside it says nobody confirmed any of it; and inside one region, where the claim is
-        // that a region is a place a reader can stand rather than a block of colour.
-        SpecimenEntry("atlasDomains") { AtlasDomainsSpecimen() },
-        SpecimenEntry("atlasDomainsInside") { AtlasDomainsInsideSpecimen() },
         // The same mark on the CITY, where a volume's whole silhouette is traced rather than one
         // rectangle. The room ships flat, so this is the only frame that shows the five strokes —
         // and the claim to look at is that the traced tower is the colour it was before.

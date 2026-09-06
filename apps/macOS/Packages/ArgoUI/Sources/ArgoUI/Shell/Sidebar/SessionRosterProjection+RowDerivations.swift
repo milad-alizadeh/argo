@@ -1,7 +1,7 @@
 import ArgoDesign
 import ArgoEngine
 
-/// The small per-Session derivations `row(for:decided:in:)` reads — split off
+/// The small per-Session derivations `row(for:decided:nowMs:)` reads — split off
 /// `SessionRosterProjection+Row.swift` so that file stays under the length gate.
 extension SessionRosterProjection {
     /// The first fact the title is not already saying, in the row's one leading meta slot.

@@ -103,6 +103,9 @@ struct CockpitNavigationModelTests {
 
     /// Carried across, it would silently narrow a list of tickets it was never typed against, and
     /// the heading's count would be counting a different Project's answer.
+    /// `@MainActor` since #1317: `projectSwitched` now stops a question in flight, and a
+    /// task handle is not something a nonisolated context may cancel.
+    @MainActor
     @Test
     func `the backlog's query does not survive a Project switch`() {
         let model = CockpitNavigationModel()
@@ -114,6 +117,9 @@ struct CockpitNavigationModelTests {
 
     /// The view, the fold and the seam are the reader's own settings rather than questions about
     /// one backlog, so a Project switch leaves them alone.
+    /// `@MainActor` since #1317: `projectSwitched` now stops a question in flight, and a
+    /// task handle is not something a nonisolated context may cancel.
+    @MainActor
     @Test
     func `a Project switch leaves the reader's own settings alone`() {
         let model = CockpitNavigationModel()

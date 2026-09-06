@@ -9,7 +9,7 @@ public extension CockpitPresentation.Session.Chain {
     /// lines and raises the number for no file (`rules/swift.md`).
     ///
     /// Each field keeps the engine's own name for its fact, on the same ground the rest of `Chain`
-    /// does (ADR-0027).
+    /// does (`swift-boundaries.sh` edge 5).
     struct Handoff: Equatable, Sendable {
         /// The Session this one's work is now carried by, once a handoff has landed.
         public let handedOffTo: String?

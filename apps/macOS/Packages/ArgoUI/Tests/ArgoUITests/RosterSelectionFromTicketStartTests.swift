@@ -174,19 +174,13 @@ struct RosterSelectionFromTicketStartTests {
 
         await start().run(on: 899, in: navigation)
 
-        let before = RosterListing().reading(
-            of: standing,
-            focus: .init(sessionID: navigation.session),
-        )
+        let before = RosterListing().reading(of: standing, selection: navigation.session)
         #expect(
             SessionRosterProjection.reveal(
                 of: navigation.session, among: before.rows, hasHeight: true,
             ) == .init(row: nil, owed: Self.claim),
         )
-        let after = RosterListing().reading(
-            of: provisional,
-            focus: .init(sessionID: navigation.session),
-        )
+        let after = RosterListing().reading(of: provisional, selection: navigation.session)
         #expect(
             SessionRosterProjection.reveal(
                 of: navigation.session, among: after.rows, hasHeight: true,

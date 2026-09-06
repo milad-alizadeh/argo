@@ -75,27 +75,15 @@ public struct AtlasView: View {
     /// beside it is a second camera to drift, which is the class of defect the id target exists to
     /// remove.
     private var projection: AtlasProjection {
-        let camera = AtlasCamera(
-            relief: viewpoint.standing.relief,
-            orientation: viewpoint.orientation,
-            over: plan.extent,
-        )
-        // The seat the caller is actually at wins over the one the folder names, and the two only
-        // ever differ while a flight is in the air (#1423).
-        // A turned camera is not seated at all — `AtlasProjection` refuses one, on the terms
-        // `AtlasFit.seat` refuses to solve one — so the flip's framing is re-solved from the whole
-        // picture at each relief rather than lerped between the two ends of it, which matters
-        // because `animatableData` writes a seat on every frame.
-        guard let seat = viewpoint.seat else {
-            return AtlasProjection(
-                of: plan,
-                through: camera,
-                rising: viewpoint.standing.rise,
-                standingIn: viewpoint.folder,
-            )
-        }
-        return AtlasProjection(
-            of: plan, through: camera, rising: viewpoint.standing.rise, seatedAt: seat,
+        AtlasProjection(
+            of: plan,
+            through: AtlasCamera(
+                relief: viewpoint.standing.relief,
+                orientation: viewpoint.orientation,
+                over: plan.extent,
+            ),
+            rising: viewpoint.standing.rise,
+            standingIn: viewpoint.folder,
         )
     }
 
@@ -203,55 +191,11 @@ extension AtlasView: @MainActor Animatable {
     ///
     /// A PAIR rather than two `Animatable` views, because they are one picture: the two run on
     /// their own clocks and a reader who flips the map mid-rise is owed one city doing both, not
-    /// a flip that cancels a climb. The camera's own seat runs on a third clock and joins them for
-    /// the same reason (#1423): a reader who descends mid-rise is owed one city doing both.
-    ///
-    /// The seat is carried as three scalars rather than as the value, because the value is
-    /// optional and `AnimatablePair` has no way to spell "not flying". A caller at rest passes
-    /// none, this reads the seat the folder names, and every frame it writes back is a real one —
-    /// so a `withAnimation` STARTS a flight from wherever the camera was, which is what makes a
-    /// second descent retarget rather than jump.
-    public var animatableData: AtlasMoving {
-        get {
-            AtlasMoving(
-                AnimatablePair(viewpoint.standing.relief, viewpoint.standing.rise),
-                AnimatablePair(
-                    AnimatablePair(seated.middle.x, seated.middle.y), seated.zoom,
-                ),
-            )
-        }
+    /// a flip that cancels a climb.
+    public var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(viewpoint.standing.relief, viewpoint.standing.rise) }
         set {
-            viewpoint.standing = AtlasStanding(
-                relief: newValue.first.first, rise: newValue.first.second,
-            )
-            viewpoint.seat = AtlasSeat(
-                middle: CGPoint(
-                    x: newValue.second.first.first, y: newValue.second.first.second,
-                ),
-                zoom: newValue.second.second,
-            )
+            viewpoint.standing = AtlasStanding(relief: newValue.first, rise: newValue.second)
         }
-    }
-
-    /// Where the camera is now: the seat it has been flown to, or the one the folder names for a
-    /// camera that has not been flown anywhere. Read through the projection rather than solved
-    /// again, so the number an animation starts from is the number the picture was drawn with.
-    private var seated: AtlasSeat {
-        viewpoint.seat ?? AtlasFit.seat(
-            framing: plan, through: projection.camera, into: plan.extent,
-            standingIn: viewpoint.folder,
-        )
     }
 }
-
-/// The five scalars one frame of the map is drawn from: how much of the third dimension is left,
-/// how far the boxes have climbed, and the three the camera's seat is made of.
-///
-/// A nest of `AnimatablePair` rather than a `VectorArithmetic` of our own, because `AtlasStanding`
-/// clamps its ends — and a type that clamps cannot honestly claim the additive identity a vector
-/// space is defined by. The clamp is what keeps a NaN out of the shader, so the nest is the
-/// cheaper of the two prices.
-public typealias AtlasMoving = AnimatablePair<
-    AnimatablePair<Double, Double>,
-    AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat>,
->

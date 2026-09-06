@@ -1,1384 +1,2270 @@
 {
-  "commit": "4478553597b9f54568ed277d3753aba87ab1d980",
-  "couplings": [
-    { "first": 0, "second": 1, "strength": 1 },
-    { "first": 0, "second": 2, "strength": 1 },
-    { "first": 0, "second": 3, "strength": 1 },
-    { "first": 1, "second": 2, "strength": 1 },
-    { "first": 1, "second": 3, "strength": 1 },
-    { "first": 2, "second": 3, "strength": 1 },
-    { "first": 4, "second": 5, "strength": 1 },
-    { "first": 4, "second": 6, "strength": 1 },
-    { "first": 4, "second": 7, "strength": 1 },
-    { "first": 4, "second": 8, "strength": 1 },
-    { "first": 4, "second": 9, "strength": 1 },
-    { "first": 4, "second": 10, "strength": 0.5 },
-    { "first": 4, "second": 20, "strength": 1 },
-    { "first": 5, "second": 6, "strength": 1 },
-    { "first": 5, "second": 7, "strength": 1 },
-    { "first": 5, "second": 8, "strength": 1 },
-    { "first": 5, "second": 9, "strength": 1 },
-    { "first": 5, "second": 10, "strength": 0.5 },
-    { "first": 5, "second": 20, "strength": 1 },
-    { "first": 6, "second": 7, "strength": 1 },
-    { "first": 6, "second": 8, "strength": 1 },
-    { "first": 6, "second": 9, "strength": 1 },
-    { "first": 6, "second": 10, "strength": 0.5 },
-    { "first": 6, "second": 20, "strength": 1 },
-    { "first": 7, "second": 8, "strength": 1 },
-    { "first": 7, "second": 9, "strength": 1 },
-    { "first": 7, "second": 10, "strength": 0.5 },
-    { "first": 7, "second": 20, "strength": 1 },
-    { "first": 8, "second": 9, "strength": 1 },
-    { "first": 8, "second": 10, "strength": 0.5 },
-    { "first": 8, "second": 20, "strength": 1 },
-    { "first": 9, "second": 10, "strength": 0.5 },
-    { "first": 9, "second": 20, "strength": 1 },
-    { "first": 10, "second": 20, "strength": 0.5 },
-    { "first": 10, "second": 87, "strength": 0.5 },
-    { "first": 10, "second": 88, "strength": 0.5 },
-    { "first": 21, "second": 22, "strength": 0.222 },
-    { "first": 21, "second": 23, "strength": 0.231 },
-    { "first": 21, "second": 25, "strength": 0.133 },
-    { "first": 21, "second": 26, "strength": 0.455 },
-    { "first": 21, "second": 27, "strength": 0.636 },
-    { "first": 21, "second": 28, "strength": 0.2 },
-    { "first": 21, "second": 29, "strength": 0.3 },
-    { "first": 21, "second": 30, "strength": 0.091 },
-    { "first": 21, "second": 32, "strength": 0.091 },
-    { "first": 21, "second": 33, "strength": 0.333 },
-    { "first": 21, "second": 36, "strength": 0.083 },
-    { "first": 21, "second": 45, "strength": 0.333 },
-    { "first": 21, "second": 46, "strength": 0.1 },
-    { "first": 21, "second": 47, "strength": 0.111 },
-    { "first": 21, "second": 48, "strength": 0.111 },
-    { "first": 21, "second": 49, "strength": 0.4 },
-    { "first": 21, "second": 50, "strength": 0.111 },
-    { "first": 21, "second": 51, "strength": 0.111 },
-    { "first": 21, "second": 52, "strength": 0.111 },
-    { "first": 22, "second": 23, "strength": 0.125 },
-    { "first": 22, "second": 25, "strength": 0.111 },
-    { "first": 22, "second": 26, "strength": 0.286 },
-    { "first": 22, "second": 27, "strength": 0.222 },
-    { "first": 22, "second": 28, "strength": 0.25 },
-    { "first": 22, "second": 29, "strength": 0.5 },
-    { "first": 22, "second": 30, "strength": 0.25 },
-    { "first": 22, "second": 32, "strength": 0.25 },
-    { "first": 22, "second": 33, "strength": 0.286 },
-    { "first": 22, "second": 36, "strength": 0.2 },
-    { "first": 22, "second": 45, "strength": 0.25 },
-    { "first": 22, "second": 46, "strength": 0.333 },
-    { "first": 23, "second": 25, "strength": 0.071 },
-    { "first": 23, "second": 26, "strength": 0.273 },
-    { "first": 23, "second": 27, "strength": 0.333 },
-    { "first": 23, "second": 28, "strength": 0.429 },
-    { "first": 23, "second": 29, "strength": 0.222 },
-    { "first": 23, "second": 30, "strength": 0.25 },
-    { "first": 23, "second": 32, "strength": 0.25 },
-    { "first": 23, "second": 33, "strength": 0.4 },
-    { "first": 23, "second": 36, "strength": 0.1 },
-    { "first": 23, "second": 45, "strength": 0.25 },
-    { "first": 23, "second": 46, "strength": 0.125 },
-    { "first": 23, "second": 49, "strength": 0.2 },
-    { "first": 24, "second": 30, "strength": 0.333 },
-    { "first": 25, "second": 26, "strength": 0.154 },
-    { "first": 25, "second": 27, "strength": 0.133 },
-    { "first": 25, "second": 28, "strength": 0.1 },
-    { "first": 25, "second": 29, "strength": 0.091 },
-    { "first": 25, "second": 30, "strength": 0.1 },
-    { "first": 25, "second": 33, "strength": 0.071 },
-    { "first": 25, "second": 34, "strength": 0.111 },
-    { "first": 25, "second": 35, "strength": 0.111 },
-    { "first": 25, "second": 36, "strength": 0.333 },
-    { "first": 25, "second": 37, "strength": 0.222 },
-    { "first": 25, "second": 38, "strength": 0.125 },
-    { "first": 25, "second": 39, "strength": 0.5 },
-    { "first": 25, "second": 40, "strength": 0.375 },
-    { "first": 25, "second": 41, "strength": 0.125 },
-    { "first": 25, "second": 43, "strength": 0.375 },
-    { "first": 25, "second": 45, "strength": 0.1 },
-    { "first": 26, "second": 27, "strength": 0.778 },
-    { "first": 26, "second": 28, "strength": 0.25 },
-    { "first": 26, "second": 29, "strength": 0.375 },
-    { "first": 26, "second": 30, "strength": 0.25 },
-    { "first": 26, "second": 32, "strength": 0.429 },
-    { "first": 26, "second": 33, "strength": 0.4 },
-    { "first": 26, "second": 36, "strength": 0.1 },
-    { "first": 26, "second": 45, "strength": 0.25 },
-    { "first": 26, "second": 46, "strength": 0.286 },
-    { "first": 26, "second": 49, "strength": 0.2 },
-    { "first": 26, "second": 52, "strength": 0.143 },
-    { "first": 27, "second": 28, "strength": 0.333 },
-    { "first": 27, "second": 29, "strength": 0.3 },
-    { "first": 27, "second": 30, "strength": 0.2 },
-    { "first": 27, "second": 32, "strength": 0.333 },
-    { "first": 27, "second": 33, "strength": 0.455 },
-    { "first": 27, "second": 36, "strength": 0.083 },
-    { "first": 27, "second": 45, "strength": 0.2 },
-    { "first": 27, "second": 46, "strength": 0.222 },
-    { "first": 27, "second": 49, "strength": 0.273 },
-    { "first": 27, "second": 50, "strength": 0.111 },
-    { "first": 27, "second": 52, "strength": 0.111 },
-    { "first": 28, "second": 29, "strength": 0.167 },
-    { "first": 28, "second": 30, "strength": 0.2 },
-    { "first": 28, "second": 32, "strength": 0.2 },
-    { "first": 28, "second": 33, "strength": 0.111 },
-    { "first": 28, "second": 36, "strength": 0.167 },
-    { "first": 28, "second": 45, "strength": 0.2 },
-    { "first": 28, "second": 49, "strength": 0.143 },
-    { "first": 29, "second": 30, "strength": 0.4 },
-    { "first": 29, "second": 32, "strength": 0.4 },
-    { "first": 29, "second": 33, "strength": 0.375 },
-    { "first": 29, "second": 36, "strength": 0.143 },
-    { "first": 29, "second": 45, "strength": 0.167 },
-    { "first": 29, "second": 46, "strength": 0.5 },
-    { "first": 29, "second": 47, "strength": 0.25 },
-    { "first": 29, "second": 48, "strength": 0.25 },
-    { "first": 29, "second": 49, "strength": 0.125 },
-    { "first": 29, "second": 51, "strength": 0.25 },
-    { "first": 30, "second": 32, "strength": 0.2 },
-    { "first": 30, "second": 33, "strength": 0.25 },
-    { "first": 30, "second": 36, "strength": 0.167 },
-    { "first": 30, "second": 45, "strength": 0.2 },
-    { "first": 30, "second": 46, "strength": 0.25 },
-    { "first": 32, "second": 33, "strength": 0.25 },
-    { "first": 32, "second": 46, "strength": 0.667 },
-    { "first": 32, "second": 49, "strength": 0.143 },
-    { "first": 33, "second": 36, "strength": 0.1 },
-    { "first": 33, "second": 45, "strength": 0.25 },
-    { "first": 33, "second": 46, "strength": 0.286 },
-    { "first": 33, "second": 49, "strength": 0.2 },
-    { "first": 33, "second": 50, "strength": 0.143 },
-    { "first": 33, "second": 52, "strength": 0.143 },
-    { "first": 34, "second": 35, "strength": 0.333 },
-    { "first": 34, "second": 36, "strength": 0.5 },
-    { "first": 34, "second": 37, "strength": 0.25 },
-    { "first": 34, "second": 38, "strength": 0.5 },
-    { "first": 34, "second": 39, "strength": 0.2 },
-    { "first": 34, "second": 41, "strength": 0.5 },
-    { "first": 34, "second": 43, "strength": 0.25 },
-    { "first": 34, "second": 44, "strength": 0.5 },
-    { "first": 35, "second": 36, "strength": 0.2 },
-    { "first": 35, "second": 37, "strength": 0.667 },
-    { "first": 35, "second": 38, "strength": 0.5 },
-    { "first": 35, "second": 39, "strength": 0.2 },
-    { "first": 35, "second": 41, "strength": 0.5 },
-    { "first": 35, "second": 42, "strength": 0.5 },
-    { "first": 35, "second": 43, "strength": 0.25 },
-    { "first": 36, "second": 37, "strength": 0.4 },
-    { "first": 36, "second": 38, "strength": 0.25 },
-    { "first": 36, "second": 39, "strength": 0.143 },
-    { "first": 36, "second": 40, "strength": 0.167 },
-    { "first": 36, "second": 41, "strength": 0.25 },
-    { "first": 36, "second": 43, "strength": 0.4 },
-    { "first": 36, "second": 44, "strength": 0.25 },
-    { "first": 36, "second": 45, "strength": 0.167 },
-    { "first": 37, "second": 38, "strength": 0.333 },
-    { "first": 37, "second": 39, "strength": 0.167 },
-    { "first": 37, "second": 40, "strength": 0.2 },
-    { "first": 37, "second": 41, "strength": 0.333 },
-    { "first": 37, "second": 42, "strength": 0.333 },
-    { "first": 37, "second": 43, "strength": 0.5 },
-    { "first": 38, "second": 39, "strength": 0.25 },
-    { "first": 38, "second": 41, "strength": 1 },
-    { "first": 38, "second": 43, "strength": 0.333 },
-    { "first": 39, "second": 40, "strength": 0.4 },
-    { "first": 39, "second": 41, "strength": 0.25 },
-    { "first": 39, "second": 43, "strength": 0.167 },
-    { "first": 40, "second": 43, "strength": 0.2 },
-    { "first": 41, "second": 43, "strength": 0.333 },
-    { "first": 45, "second": 49, "strength": 0.333 },
-    { "first": 45, "second": 52, "strength": 0.333 },
-    { "first": 47, "second": 48, "strength": 1 },
-    { "first": 47, "second": 49, "strength": 0.2 },
-    { "first": 47, "second": 51, "strength": 1 },
-    { "first": 48, "second": 49, "strength": 0.2 },
-    { "first": 48, "second": 51, "strength": 1 },
-    { "first": 49, "second": 50, "strength": 0.2 },
-    { "first": 49, "second": 51, "strength": 0.2 },
-    { "first": 49, "second": 52, "strength": 0.2 },
-    { "first": 73, "second": 76, "strength": 0.5 },
-    { "first": 73, "second": 84, "strength": 0.167 },
-    { "first": 74, "second": 84, "strength": 0.167 },
-    { "first": 76, "second": 77, "strength": 0.5 },
-    { "first": 76, "second": 79, "strength": 0.5 },
-    { "first": 76, "second": 80, "strength": 0.5 },
-    { "first": 76, "second": 83, "strength": 0.5 },
-    { "first": 76, "second": 84, "strength": 0.333 },
-    { "first": 76, "second": 85, "strength": 0.5 },
-    { "first": 76, "second": 86, "strength": 0.5 },
-    { "first": 77, "second": 79, "strength": 1 },
-    { "first": 77, "second": 80, "strength": 1 },
-    { "first": 77, "second": 83, "strength": 1 },
-    { "first": 77, "second": 84, "strength": 0.167 },
-    { "first": 77, "second": 85, "strength": 1 },
-    { "first": 77, "second": 86, "strength": 1 },
-    { "first": 78, "second": 81, "strength": 0.333 },
-    { "first": 78, "second": 84, "strength": 0.5 },
-    { "first": 79, "second": 80, "strength": 1 },
-    { "first": 79, "second": 83, "strength": 1 },
-    { "first": 79, "second": 84, "strength": 0.167 },
-    { "first": 79, "second": 85, "strength": 1 },
-    { "first": 79, "second": 86, "strength": 1 },
-    { "first": 80, "second": 83, "strength": 1 },
-    { "first": 80, "second": 84, "strength": 0.167 },
-    { "first": 80, "second": 85, "strength": 1 },
-    { "first": 80, "second": 86, "strength": 1 },
-    { "first": 81, "second": 84, "strength": 0.167 },
-    { "first": 83, "second": 84, "strength": 0.167 },
-    { "first": 83, "second": 85, "strength": 1 },
-    { "first": 83, "second": 86, "strength": 1 },
-    { "first": 84, "second": 85, "strength": 0.167 },
-    { "first": 84, "second": 86, "strength": 0.167 },
-    { "first": 85, "second": 86, "strength": 1 },
-    { "first": 87, "second": 88, "strength": 1 }
-  ],
-  "inference": {
-    "agreement": 0.992,
-    "domains": [
-      {
-        "members": [
-          { "confidence": 0.713, "plot": 21 },
-          { "confidence": 0.786, "plot": 22 },
-          { "confidence": 0.594, "plot": 23 },
-          { "confidence": 0.784, "plot": 24 },
-          { "confidence": 0.831, "plot": 26 },
-          { "confidence": 0.84, "plot": 27 },
-          { "confidence": 0.803, "plot": 28 },
-          { "confidence": 0.76, "plot": 29 },
-          { "confidence": 0.636, "plot": 30 },
-          { "confidence": 0.76, "plot": 31 },
-          { "confidence": 0.917, "plot": 32 },
-          { "confidence": 0.851, "plot": 33 },
-          { "confidence": 0.756, "plot": 45 },
-          { "confidence": 0.874, "plot": 46 }
-        ],
-        "name": "evidence",
-        "tokens": ["evidence", "feed", "reading", "diff"]
-      },
-      {
-        "members": [
-          { "confidence": 1, "plot": 34 },
-          { "confidence": 1, "plot": 35 },
-          { "confidence": 0.64, "plot": 36 },
-          { "confidence": 1, "plot": 37 },
-          { "confidence": 0.578, "plot": 38 },
-          { "confidence": 1, "plot": 39 },
-          { "confidence": 1, "plot": 40 },
-          { "confidence": 1, "plot": 41 },
-          { "confidence": 0.455, "plot": 42 },
-          { "confidence": 1, "plot": 43 },
-          { "confidence": 1, "plot": 44 }
-        ],
-        "name": "media",
-        "tokens": ["media", "bitmap", "box", "cache"]
-      },
-      {
-        "members": [
-          { "confidence": 1, "plot": 73 },
-          { "confidence": 1, "plot": 74 },
-          { "confidence": 1, "plot": 76 },
-          { "confidence": 1, "plot": 77 },
-          { "confidence": 1, "plot": 79 },
-          { "confidence": 1, "plot": 80 },
-          { "confidence": 0.332, "plot": 81 },
-          { "confidence": 1, "plot": 83 },
-          { "confidence": 0.572, "plot": 84 },
-          { "confidence": 1, "plot": 85 },
-          { "confidence": 0.883, "plot": 86 }
-        ],
-        "name": "entities",
-        "tokens": ["entities", "experience", "ports", "rationale"]
-      },
-      {
-        "members": [
-          { "confidence": 0.796, "plot": 4 },
-          { "confidence": 0.801, "plot": 5 },
-          { "confidence": 0.782, "plot": 6 },
-          { "confidence": 0.758, "plot": 7 },
-          { "confidence": 0.758, "plot": 8 },
-          { "confidence": 0.781, "plot": 9 },
-          { "confidence": 0.221, "plot": 10 },
-          { "confidence": 0.508, "plot": 78 },
-          { "confidence": 1, "plot": 87 },
-          { "confidence": 1, "plot": 88 }
-        ],
-        "name": "session",
-        "tokens": ["session", "synthetic", "settled", "house"]
-      },
-      {
-        "members": [
-          { "confidence": 0.868, "plot": 11 },
-          { "confidence": 0.868, "plot": 12 },
-          { "confidence": 0.868, "plot": 13 },
-          { "confidence": 0.868, "plot": 14 },
-          { "confidence": 0.868, "plot": 15 },
-          { "confidence": 0.868, "plot": 16 },
-          { "confidence": 0.868, "plot": 17 },
-          { "confidence": 0.868, "plot": 18 },
-          { "confidence": 0.868, "plot": 19 }
-        ],
-        "name": "fixtures",
-        "tokens": ["fixtures", "transcript", "commands", "prose"]
-      },
-      {
-        "members": [
-          { "confidence": 1, "plot": 53 },
-          { "confidence": 1, "plot": 65 },
-          { "confidence": 1, "plot": 66 },
-          { "confidence": 1, "plot": 67 },
-          { "confidence": 1, "plot": 68 },
-          { "confidence": 1, "plot": 69 },
-          { "confidence": 1, "plot": 70 },
-          { "confidence": 1, "plot": 71 },
-          { "confidence": 1, "plot": 72 }
-        ],
-        "name": "slash",
-        "tokens": ["slash", "filter", "args", "builtin"]
-      },
-      {
-        "members": [
-          { "confidence": 0.841, "plot": 47 },
-          { "confidence": 0.841, "plot": 48 },
-          { "confidence": 0.194, "plot": 49 },
-          { "confidence": 0.714, "plot": 50 },
-          { "confidence": 0.841, "plot": 51 },
-          { "confidence": 0.445, "plot": 52 }
-        ],
-        "name": "syntax",
-        "tokens": ["syntax", "coloured", "colouring", "highlight"]
-      },
-      {
-        "members": [
-          { "confidence": 1, "plot": 0 },
-          { "confidence": 1, "plot": 1 },
-          { "confidence": 1, "plot": 2 },
-          { "confidence": 1, "plot": 3 }
-        ],
-        "name": "atlas",
-        "tokens": ["atlas", "plan", "package", "view"]
-      },
-      {
-        "members": [
-          { "confidence": 1, "plot": 61 },
-          { "confidence": 1, "plot": 62 },
-          { "confidence": 0.159, "plot": 75 }
-        ],
-        "name": "plus",
-        "tokens": ["plus", "files", "editing", "shell"]
-      }
-    ],
-    "resolution": 1.2,
-    "settled": true
-  },
+  "version": 1,
   "measuredAt": "2026-09-04T00:37:17Z",
+  "commit": "4478553597b9f54568ed277d3753aba87ab1d980",
   "root": {
+    "name": "argo",
     "children": [
       {
+        "kind": "plate",
+        "name": "apps",
         "children": [
           {
+            "kind": "plate",
+            "name": "macOS",
             "children": [
               {
+                "kind": "plate",
+                "name": "Packages",
                 "children": [
                   {
+                    "kind": "plate",
+                    "name": "ArgoAtlas",
                     "children": [
                       {
                         "kind": "plot",
+                        "name": "Package.swift",
                         "measures": {
-                          "age_in_weeks": 0,
-                          "authors": 1,
                           "bytes": 1605,
+                          "lines": 39,
                           "commits": 1,
-                          "lines": 39
-                        },
-                        "name": "Package.swift"
+                          "authors": 1,
+                          "age_in_weeks": 0
+                        }
                       },
                       {
+                        "kind": "plate",
+                        "name": "Sources",
                         "children": [
                           {
+                            "kind": "plate",
+                            "name": "AtlasLayout",
                             "children": [
                               {
                                 "kind": "plot",
+                                "name": "AtlasPlan.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 1202,
+                                  "lines": 25,
                                   "commits": 1,
-                                  "lines": 25
-                                },
-                                "name": "AtlasPlan.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               }
-                            ],
-                            "kind": "plate",
-                            "name": "AtlasLayout"
+                            ]
                           },
                           {
+                            "kind": "plate",
+                            "name": "AtlasView",
                             "children": [
                               {
                                 "kind": "plot",
+                                "name": "AtlasView.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 1477,
+                                  "lines": 49,
                                   "commits": 1,
-                                  "lines": 49
-                                },
-                                "name": "AtlasView.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               }
-                            ],
-                            "kind": "plate",
-                            "name": "AtlasView"
+                            ]
                           }
-                        ],
-                        "kind": "plate",
-                        "name": "Sources"
+                        ]
                       },
                       {
+                        "kind": "plate",
+                        "name": "Tests",
                         "children": [
                           {
+                            "kind": "plate",
+                            "name": "AtlasLayoutTests",
                             "children": [
                               {
                                 "kind": "plot",
+                                "name": "AtlasPlanTests.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 760,
+                                  "lines": 19,
                                   "commits": 1,
-                                  "lines": 19
-                                },
-                                "name": "AtlasPlanTests.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               }
-                            ],
-                            "kind": "plate",
-                            "name": "AtlasLayoutTests"
+                            ]
                           }
-                        ],
-                        "kind": "plate",
-                        "name": "Tests"
+                        ]
                       }
-                    ],
-                    "kind": "plate",
-                    "name": "ArgoAtlas"
+                    ]
                   },
                   {
+                    "kind": "plate",
+                    "name": "ArgoUI",
                     "children": [
                       {
+                        "kind": "plate",
+                        "name": "Sources",
                         "children": [
                           {
+                            "kind": "plate",
+                            "name": "ArgoFixtures",
                             "children": [
                               {
+                                "kind": "plate",
+                                "name": "Fixtures",
                                 "children": [
                                   {
                                     "kind": "plot",
+                                    "name": "settled-session.jsonl",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 4799264,
+                                      "lines": 4800,
                                       "commits": 1,
-                                      "lines": 4800
-                                    },
-                                    "name": "settled-session.jsonl"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   },
                                   {
                                     "kind": "plot",
+                                    "name": "settled-session.shape.json",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 1566,
+                                      "lines": 48,
                                       "commits": 1,
-                                      "lines": 48
-                                    },
-                                    "name": "settled-session.shape.json"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   }
-                                ],
-                                "kind": "plate",
-                                "name": "Fixtures"
+                                ]
                               },
                               {
+                                "kind": "plate",
+                                "name": "Synthetic",
                                 "children": [
                                   {
                                     "kind": "plot",
+                                    "name": "SettledSessionFixture.swift",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 1909,
+                                      "lines": 37,
                                       "commits": 1,
-                                      "lines": 37
-                                    },
-                                    "name": "SettledSessionFixture.swift"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   },
                                   {
                                     "kind": "plot",
+                                    "name": "SyntheticIdentifiers.swift",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 2983,
+                                      "lines": 61,
                                       "commits": 1,
-                                      "lines": 61
-                                    },
-                                    "name": "SyntheticIdentifiers.swift"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   },
                                   {
                                     "kind": "plot",
+                                    "name": "SyntheticLorem.swift",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 3868,
+                                      "lines": 82,
                                       "commits": 1,
-                                      "lines": 82
-                                    },
-                                    "name": "SyntheticLorem.swift"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   },
                                   {
                                     "kind": "plot",
+                                    "name": "SyntheticShape.swift",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 4094,
+                                      "lines": 92,
                                       "commits": 1,
-                                      "lines": 92
-                                    },
-                                    "name": "SyntheticShape.swift"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   },
                                   {
                                     "kind": "plot",
+                                    "name": "SyntheticTranscript.swift",
                                     "measures": {
-                                      "age_in_weeks": 0,
-                                      "authors": 1,
                                       "bytes": 7762,
+                                      "lines": 147,
                                       "commits": 2,
-                                      "lines": 147
-                                    },
-                                    "name": "SyntheticTranscript.swift"
+                                      "authors": 1,
+                                      "age_in_weeks": 0
+                                    }
                                   }
-                                ],
-                                "kind": "plate",
-                                "name": "Synthetic"
+                                ]
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Commands.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 5223,
+                                  "lines": 110,
                                   "commits": 1,
-                                  "lines": 110
-                                },
-                                "name": "TranscriptFixtures+Commands.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Fanout.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 4477,
+                                  "lines": 94,
                                   "commits": 1,
-                                  "lines": 94
-                                },
-                                "name": "TranscriptFixtures+Fanout.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Fold.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 6174,
+                                  "lines": 131,
                                   "commits": 1,
-                                  "lines": 131
-                                },
-                                "name": "TranscriptFixtures+Fold.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Long.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 5827,
+                                  "lines": 143,
                                   "commits": 2,
-                                  "lines": 143
-                                },
-                                "name": "TranscriptFixtures+Long.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Looking.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 2697,
+                                  "lines": 56,
                                   "commits": 1,
-                                  "lines": 56
-                                },
-                                "name": "TranscriptFixtures+Looking.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Preview.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 4860,
+                                  "lines": 106,
                                   "commits": 1,
-                                  "lines": 106
-                                },
-                                "name": "TranscriptFixtures+Preview.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Prose.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 3138,
+                                  "lines": 52,
                                   "commits": 1,
-                                  "lines": 52
-                                },
-                                "name": "TranscriptFixtures+Prose.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Shots.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 7385,
+                                  "lines": 137,
                                   "commits": 1,
-                                  "lines": 137
-                                },
-                                "name": "TranscriptFixtures+Shots.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures+Work.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 9478,
+                                  "lines": 194,
                                   "commits": 1,
-                                  "lines": 194
-                                },
-                                "name": "TranscriptFixtures+Work.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               },
                               {
                                 "kind": "plot",
+                                "name": "TranscriptFixtures.swift",
                                 "measures": {
-                                  "age_in_weeks": 0,
-                                  "authors": 1,
                                   "bytes": 5134,
+                                  "lines": 114,
                                   "commits": 2,
-                                  "lines": 114
-                                },
-                                "name": "TranscriptFixtures.swift"
+                                  "authors": 1,
+                                  "age_in_weeks": 0
+                                }
                               }
-                            ],
-                            "kind": "plate",
-                            "name": "ArgoFixtures"
+                            ]
                           },
                           {
+                            "kind": "plate",
+                            "name": "ArgoUI",
                             "children": [
                               {
+                                "kind": "plate",
+                                "name": "Shell",
                                 "children": [
                                   {
+                                    "kind": "plate",
+                                    "name": "Deck",
                                     "children": [
                                       {
+                                        "kind": "plate",
+                                        "name": "Evidence",
                                         "children": [
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceDiff.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 6246,
+                                              "lines": 171,
                                               "commits": 12,
-                                              "lines": 171
-                                            },
-                                            "name": "EvidenceDiff.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceDocument.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 1034,
+                                              "lines": 31,
                                               "commits": 2,
-                                              "lines": 31
-                                            },
-                                            "name": "EvidenceDocument.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceHeader.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 4910,
+                                              "lines": 135,
                                               "commits": 9,
-                                              "lines": 135
-                                            },
-                                            "name": "EvidenceHeader.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceLength.swift",
                                             "measures": {
-                                              "age_in_weeks": 3,
-                                              "authors": 1,
                                               "bytes": 2752,
+                                              "lines": 65,
                                               "commits": 1,
-                                              "lines": 65
-                                            },
-                                            "name": "EvidenceLength.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 3
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceMedia.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 3758,
+                                              "lines": 85,
                                               "commits": 9,
-                                              "lines": 85
-                                            },
-                                            "name": "EvidenceMedia.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceOutput.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 4315,
+                                              "lines": 103,
                                               "commits": 9,
-                                              "lines": 103
-                                            },
-                                            "name": "EvidenceOutput.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidencePanel.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 4766,
+                                              "lines": 121,
                                               "commits": 13,
-                                              "lines": 121
-                                            },
-                                            "name": "EvidencePanel.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceReading.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 1219,
+                                              "lines": 33,
                                               "commits": 4,
-                                              "lines": 33
-                                            },
-                                            "name": "EvidenceReading.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceSource.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 2215,
+                                              "lines": 54,
                                               "commits": 5,
-                                              "lines": 54
-                                            },
-                                            "name": "EvidenceSource.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceStepHeader.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 4348,
+                                              "lines": 118,
                                               "commits": 5,
-                                              "lines": 118
-                                            },
-                                            "name": "EvidenceStepHeader.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "EvidenceToggling.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 2722,
+                                              "lines": 59,
                                               "commits": 3,
-                                              "lines": 59
-                                            },
-                                            "name": "EvidenceToggling.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "FeedEvidence+Reading.swift",
                                             "measures": {
-                                              "age_in_weeks": 1,
-                                              "authors": 1,
                                               "bytes": 2003,
+                                              "lines": 41,
                                               "commits": 4,
-                                              "lines": 41
-                                            },
-                                            "name": "FeedEvidence+Reading.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 1
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "FeedEvidence.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 7116,
+                                              "lines": 158,
                                               "commits": 11,
-                                              "lines": 158
-                                            },
-                                            "name": "FeedEvidence.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaBitmap.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 2468,
+                                              "lines": 55,
                                               "commits": 2,
-                                              "lines": 55
-                                            },
-                                            "name": "MediaBitmap.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaBox.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 2604,
+                                              "lines": 55,
                                               "commits": 2,
-                                              "lines": 55
-                                            },
-                                            "name": "MediaBox.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaCache.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 5520,
+                                              "lines": 102,
                                               "commits": 4,
-                                              "lines": 102
-                                            },
-                                            "name": "MediaCache.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaDecode.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 6742,
+                                              "lines": 123,
                                               "commits": 4,
-                                              "lines": 123
-                                            },
-                                            "name": "MediaDecode.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaHeader.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 2325,
+                                              "lines": 49,
                                               "commits": 1,
-                                              "lines": 49
-                                            },
-                                            "name": "MediaHeader.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaPicture.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 1920,
+                                              "lines": 44,
                                               "commits": 5,
-                                              "lines": 44
-                                            },
-                                            "name": "MediaPicture.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaProvenance.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 4032,
+                                              "lines": 90,
                                               "commits": 4,
-                                              "lines": 90
-                                            },
-                                            "name": "MediaProvenance.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaScale.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 1637,
+                                              "lines": 32,
                                               "commits": 1,
-                                              "lines": 32
-                                            },
-                                            "name": "MediaScale.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaShape.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 2422,
+                                              "lines": 48,
                                               "commits": 1,
-                                              "lines": 48
-                                            },
-                                            "name": "MediaShape.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaShowing.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 5472,
+                                              "lines": 110,
                                               "commits": 4,
-                                              "lines": 110
-                                            },
-                                            "name": "MediaShowing.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
                                             "kind": "plot",
+                                            "name": "MediaStore.swift",
                                             "measures": {
-                                              "age_in_weeks": 0,
-                                              "authors": 1,
                                               "bytes": 3477,
+                                              "lines": 78,
                                               "commits": 1,
-                                              "lines": 78
-                                            },
-                                            "name": "MediaStore.swift"
+                                              "authors": 1,
+                                              "age_in_weeks": 0
+                                            }
                                           },
                                           {
+                                            "kind": "plate",
+                                            "name": "Syntax",
                                             "children": [
                                               {
                                                 "kind": "plot",
+                                                "name": "EvidenceLanguage.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 0,
-                                                  "authors": 1,
                                                   "bytes": 2974,
+                                                  "lines": 81,
                                                   "commits": 5,
-                                                  "lines": 81
-                                                },
-                                                "name": "EvidenceLanguage.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 0
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "EvidenceListing.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 0,
-                                                  "authors": 1,
                                                   "bytes": 5340,
+                                                  "lines": 110,
                                                   "commits": 4,
-                                                  "lines": 110
-                                                },
-                                                "name": "EvidenceListing.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 0
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "SyntaxColoured.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 1,
-                                                  "authors": 1,
                                                   "bytes": 900,
+                                                  "lines": 26,
                                                   "commits": 1,
-                                                  "lines": 26
-                                                },
-                                                "name": "SyntaxColoured.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "SyntaxColouring.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 1,
-                                                  "authors": 1,
                                                   "bytes": 3046,
+                                                  "lines": 76,
                                                   "commits": 1,
-                                                  "lines": 76
-                                                },
-                                                "name": "SyntaxColouring.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "SyntaxHighlight.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 1,
-                                                  "authors": 1,
                                                   "bytes": 3924,
+                                                  "lines": 88,
                                                   "commits": 6,
-                                                  "lines": 88
-                                                },
-                                                "name": "SyntaxHighlight.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "SyntaxPatch.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 3,
-                                                  "authors": 1,
                                                   "bytes": 1936,
+                                                  "lines": 44,
                                                   "commits": 2,
-                                                  "lines": 44
-                                                },
-                                                "name": "SyntaxPatch.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 3
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "SyntaxRequest.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 1,
-                                                  "authors": 1,
                                                   "bytes": 1351,
+                                                  "lines": 22,
                                                   "commits": 1,
-                                                  "lines": 22
-                                                },
-                                                "name": "SyntaxRequest.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 1
+                                                }
                                               },
                                               {
                                                 "kind": "plot",
+                                                "name": "SyntaxTheme.swift",
                                                 "measures": {
-                                                  "age_in_weeks": 3,
-                                                  "authors": 1,
                                                   "bytes": 744,
+                                                  "lines": 14,
                                                   "commits": 1,
-                                                  "lines": 14
-                                                },
-                                                "name": "SyntaxTheme.swift"
+                                                  "authors": 1,
+                                                  "age_in_weeks": 3
+                                                }
                                               }
-                                            ],
-                                            "kind": "plate",
-                                            "name": "Syntax"
+                                            ]
                                           }
-                                        ],
-                                        "kind": "plate",
-                                        "name": "Evidence"
+                                        ]
                                       }
-                                    ],
-                                    "kind": "plate",
-                                    "name": "Deck"
+                                    ]
                                   }
-                                ],
-                                "kind": "plate",
-                                "name": "Shell"
+                                ]
                               }
-                            ],
-                            "kind": "plate",
-                            "name": "ArgoUI"
+                            ]
                           }
-                        ],
-                        "kind": "plate",
-                        "name": "Sources"
+                        ]
                       }
-                    ],
-                    "kind": "plate",
-                    "name": "ArgoUI"
+                    ]
                   }
-                ],
-                "kind": "plate",
-                "name": "Packages"
+                ]
               }
-            ],
-            "kind": "plate",
-            "name": "macOS"
+            ]
           }
-        ],
-        "kind": "plate",
-        "name": "apps"
+        ]
       },
       {
+        "kind": "plate",
+        "name": "docs",
         "children": [
           {
+            "kind": "plate",
+            "name": "designs",
             "children": [
               {
+                "kind": "plate",
+                "name": "composer-picker",
                 "children": [
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 325070, "commits": 1 },
-                    "name": "at-filter.png"
+                    "name": "at-filter.png",
+                    "measures": {
+                      "bytes": 325070,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 285728, "commits": 1 },
-                    "name": "at-inserted.png"
+                    "name": "at-inserted.png",
+                    "measures": {
+                      "bytes": 285728,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 445989, "commits": 1 },
-                    "name": "at.png"
+                    "name": "at.png",
+                    "measures": {
+                      "bytes": 445989,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 254864, "commits": 1 },
-                    "name": "codex.png"
+                    "name": "codex.png",
+                    "measures": {
+                      "bytes": 254864,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 222872, "commits": 1 },
-                    "name": "external.png"
+                    "name": "external.png",
+                    "measures": {
+                      "bytes": 222872,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 284069, "commits": 1 },
-                    "name": "loaded.png"
+                    "name": "loaded.png",
+                    "measures": {
+                      "bytes": 284069,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 237038, "commits": 1 },
-                    "name": "orphaned.png"
+                    "name": "orphaned.png",
+                    "measures": {
+                      "bytes": 237038,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 306405, "commits": 1 },
-                    "name": "perm.png"
+                    "name": "perm.png",
+                    "measures": {
+                      "bytes": 306405,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 448849, "commits": 1 },
-                    "name": "plus-files.png"
+                    "name": "plus-files.png",
+                    "measures": {
+                      "bytes": 448849,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 278460, "commits": 1 },
-                    "name": "plus.png"
+                    "name": "plus.png",
+                    "measures": {
+                      "bytes": 278460,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 317753, "commits": 1 },
-                    "name": "queued.png"
+                    "name": "queued.png",
+                    "measures": {
+                      "bytes": 317753,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 452269, "commits": 1 },
-                    "name": "running.png"
+                    "name": "running.png",
+                    "measures": {
+                      "bytes": 452269,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 247406, "commits": 1 },
-                    "name": "slash-args.png"
+                    "name": "slash-args.png",
+                    "measures": {
+                      "bytes": 247406,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 251955, "commits": 1 },
-                    "name": "slash-builtin.png"
+                    "name": "slash-builtin.png",
+                    "measures": {
+                      "bytes": 251955,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 301482, "commits": 1 },
-                    "name": "slash-edge.png"
+                    "name": "slash-edge.png",
+                    "measures": {
+                      "bytes": 301482,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 437714, "commits": 1 },
-                    "name": "slash-fail.png"
+                    "name": "slash-fail.png",
+                    "measures": {
+                      "bytes": 437714,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 296558, "commits": 1 },
-                    "name": "slash-filter.png"
+                    "name": "slash-filter.png",
+                    "measures": {
+                      "bytes": 296558,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 433100, "commits": 1 },
-                    "name": "slash-late.png"
+                    "name": "slash-late.png",
+                    "measures": {
+                      "bytes": 433100,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 269086, "commits": 1 },
-                    "name": "slash-zero.png"
+                    "name": "slash-zero.png",
+                    "measures": {
+                      "bytes": 269086,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   },
                   {
                     "kind": "plot",
-                    "measures": { "age_in_weeks": 3, "authors": 1, "bytes": 422348, "commits": 1 },
-                    "name": "slash.png"
+                    "name": "slash.png",
+                    "measures": {
+                      "bytes": 422348,
+                      "commits": 1,
+                      "authors": 1,
+                      "age_in_weeks": 3
+                    }
                   }
-                ],
-                "kind": "plate",
-                "name": "composer-picker"
+                ]
               }
-            ],
-            "kind": "plate",
-            "name": "designs"
+            ]
           },
           {
+            "kind": "plate",
+            "name": "domain",
             "children": [
               {
                 "kind": "plot",
+                "name": "autonomy-cluster.md",
                 "measures": {
-                  "age_in_weeks": 3,
-                  "authors": 1,
                   "bytes": 3526,
+                  "lines": 43,
                   "commits": 2,
-                  "lines": 43
-                },
-                "name": "autonomy-cluster.md"
+                  "authors": 1,
+                  "age_in_weeks": 3
+                }
               },
               {
                 "kind": "plot",
+                "name": "experience.md",
                 "measures": {
-                  "age_in_weeks": 1,
-                  "authors": 1,
                   "bytes": 1910,
+                  "lines": 23,
                   "commits": 2,
-                  "lines": 23
-                },
-                "name": "experience.md"
+                  "authors": 1,
+                  "age_in_weeks": 1
+                }
               },
               {
                 "kind": "plot",
+                "name": "files-editing-and-shell.md",
                 "measures": {
-                  "age_in_weeks": 3,
-                  "authors": 1,
                   "bytes": 876,
+                  "lines": 14,
                   "commits": 1,
-                  "lines": 14
-                },
-                "name": "files-editing-and-shell.md"
+                  "authors": 1,
+                  "age_in_weeks": 3
+                }
               },
               {
                 "kind": "plot",
+                "name": "honesty-tier.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 3167,
+                  "lines": 45,
                   "commits": 4,
-                  "lines": 45
-                },
-                "name": "honesty-tier.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "l1-organisation-entities.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 6740,
+                  "lines": 92,
                   "commits": 2,
-                  "lines": 92
-                },
-                "name": "l1-organisation-entities.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "l2-session.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 9639,
+                  "lines": 130,
                   "commits": 9,
-                  "lines": 130
-                },
-                "name": "l2-session.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "l3-runtime-tree.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 5557,
+                  "lines": 78,
                   "commits": 2,
-                  "lines": 78
-                },
-                "name": "l3-runtime-tree.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "l4-delivery-detail.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 2093,
+                  "lines": 31,
                   "commits": 2,
-                  "lines": 31
-                },
-                "name": "l4-delivery-detail.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "not-domain-entities.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 1155,
+                  "lines": 16,
                   "commits": 2,
-                  "lines": 16
-                },
-                "name": "not-domain-entities.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "observation-surface.md",
                 "measures": {
-                  "age_in_weeks": 3,
-                  "authors": 1,
                   "bytes": 359,
+                  "lines": 6,
                   "commits": 1,
-                  "lines": 6
-                },
-                "name": "observation-surface.md"
+                  "authors": 1,
+                  "age_in_weeks": 3
+                }
               },
               {
                 "kind": "plot",
+                "name": "ports.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 4210,
+                  "lines": 56,
                   "commits": 4,
-                  "lines": 56
-                },
-                "name": "ports.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "rationale.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 15547,
+                  "lines": 243,
                   "commits": 8,
-                  "lines": 243
-                },
-                "name": "rationale.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "relationships.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 2873,
+                  "lines": 37,
                   "commits": 2,
-                  "lines": 37
-                },
-                "name": "relationships.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               },
               {
                 "kind": "plot",
+                "name": "storage-and-ownership.md",
                 "measures": {
-                  "age_in_weeks": 0,
-                  "authors": 1,
                   "bytes": 851,
+                  "lines": 14,
                   "commits": 2,
-                  "lines": 14
-                },
-                "name": "storage-and-ownership.md"
+                  "authors": 1,
+                  "age_in_weeks": 0
+                }
               }
-            ],
-            "kind": "plate",
-            "name": "domain"
+            ]
           }
-        ],
-        "kind": "plate",
-        "name": "docs"
+        ]
       },
       {
+        "kind": "plate",
+        "name": "rules",
         "children": [
           {
             "kind": "plot",
+            "name": "house.md",
             "measures": {
-              "age_in_weeks": 0,
-              "authors": 1,
               "bytes": 2777,
+              "lines": 45,
               "commits": 1,
-              "lines": 45
-            },
-            "name": "house.md"
+              "authors": 1,
+              "age_in_weeks": 0
+            }
           },
           {
             "kind": "plot",
+            "name": "swift.md",
             "measures": {
-              "age_in_weeks": 0,
-              "authors": 1,
               "bytes": 4419,
+              "lines": 72,
               "commits": 1,
-              "lines": 72
-            },
-            "name": "swift.md"
+              "authors": 1,
+              "age_in_weeks": 0
+            }
           }
-        ],
-        "kind": "plate",
-        "name": "rules"
+        ]
       }
-    ],
-    "name": "argo"
+    ]
   },
-  "version": 1
+  "couplings": [
+    {
+      "first": 0,
+      "second": 1,
+      "strength": 1.0
+    },
+    {
+      "first": 0,
+      "second": 2,
+      "strength": 1.0
+    },
+    {
+      "first": 0,
+      "second": 3,
+      "strength": 1.0
+    },
+    {
+      "first": 1,
+      "second": 2,
+      "strength": 1.0
+    },
+    {
+      "first": 1,
+      "second": 3,
+      "strength": 1.0
+    },
+    {
+      "first": 2,
+      "second": 3,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 5,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 6,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 7,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 4,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 4,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 6,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 7,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 5,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 5,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 7,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 6,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 6,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 7,
+      "second": 8,
+      "strength": 1.0
+    },
+    {
+      "first": 7,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 7,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 7,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 8,
+      "second": 9,
+      "strength": 1.0
+    },
+    {
+      "first": 8,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 8,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 9,
+      "second": 10,
+      "strength": 0.5
+    },
+    {
+      "first": 9,
+      "second": 20,
+      "strength": 1.0
+    },
+    {
+      "first": 10,
+      "second": 20,
+      "strength": 0.5
+    },
+    {
+      "first": 10,
+      "second": 87,
+      "strength": 0.5
+    },
+    {
+      "first": 10,
+      "second": 88,
+      "strength": 0.5
+    },
+    {
+      "first": 21,
+      "second": 22,
+      "strength": 0.222
+    },
+    {
+      "first": 21,
+      "second": 23,
+      "strength": 0.231
+    },
+    {
+      "first": 21,
+      "second": 25,
+      "strength": 0.133
+    },
+    {
+      "first": 21,
+      "second": 26,
+      "strength": 0.455
+    },
+    {
+      "first": 21,
+      "second": 27,
+      "strength": 0.636
+    },
+    {
+      "first": 21,
+      "second": 28,
+      "strength": 0.2
+    },
+    {
+      "first": 21,
+      "second": 29,
+      "strength": 0.3
+    },
+    {
+      "first": 21,
+      "second": 30,
+      "strength": 0.091
+    },
+    {
+      "first": 21,
+      "second": 32,
+      "strength": 0.091
+    },
+    {
+      "first": 21,
+      "second": 33,
+      "strength": 0.333
+    },
+    {
+      "first": 21,
+      "second": 36,
+      "strength": 0.083
+    },
+    {
+      "first": 21,
+      "second": 45,
+      "strength": 0.333
+    },
+    {
+      "first": 21,
+      "second": 46,
+      "strength": 0.1
+    },
+    {
+      "first": 21,
+      "second": 47,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 48,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 49,
+      "strength": 0.4
+    },
+    {
+      "first": 21,
+      "second": 50,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 51,
+      "strength": 0.111
+    },
+    {
+      "first": 21,
+      "second": 52,
+      "strength": 0.111
+    },
+    {
+      "first": 22,
+      "second": 23,
+      "strength": 0.125
+    },
+    {
+      "first": 22,
+      "second": 25,
+      "strength": 0.111
+    },
+    {
+      "first": 22,
+      "second": 26,
+      "strength": 0.286
+    },
+    {
+      "first": 22,
+      "second": 27,
+      "strength": 0.222
+    },
+    {
+      "first": 22,
+      "second": 28,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 29,
+      "strength": 0.5
+    },
+    {
+      "first": 22,
+      "second": 30,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 32,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 33,
+      "strength": 0.286
+    },
+    {
+      "first": 22,
+      "second": 36,
+      "strength": 0.2
+    },
+    {
+      "first": 22,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 22,
+      "second": 46,
+      "strength": 0.333
+    },
+    {
+      "first": 23,
+      "second": 25,
+      "strength": 0.071
+    },
+    {
+      "first": 23,
+      "second": 26,
+      "strength": 0.273
+    },
+    {
+      "first": 23,
+      "second": 27,
+      "strength": 0.333
+    },
+    {
+      "first": 23,
+      "second": 28,
+      "strength": 0.429
+    },
+    {
+      "first": 23,
+      "second": 29,
+      "strength": 0.222
+    },
+    {
+      "first": 23,
+      "second": 30,
+      "strength": 0.25
+    },
+    {
+      "first": 23,
+      "second": 32,
+      "strength": 0.25
+    },
+    {
+      "first": 23,
+      "second": 33,
+      "strength": 0.4
+    },
+    {
+      "first": 23,
+      "second": 36,
+      "strength": 0.1
+    },
+    {
+      "first": 23,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 23,
+      "second": 46,
+      "strength": 0.125
+    },
+    {
+      "first": 23,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 24,
+      "second": 30,
+      "strength": 0.333
+    },
+    {
+      "first": 25,
+      "second": 26,
+      "strength": 0.154
+    },
+    {
+      "first": 25,
+      "second": 27,
+      "strength": 0.133
+    },
+    {
+      "first": 25,
+      "second": 28,
+      "strength": 0.1
+    },
+    {
+      "first": 25,
+      "second": 29,
+      "strength": 0.091
+    },
+    {
+      "first": 25,
+      "second": 30,
+      "strength": 0.1
+    },
+    {
+      "first": 25,
+      "second": 33,
+      "strength": 0.071
+    },
+    {
+      "first": 25,
+      "second": 34,
+      "strength": 0.111
+    },
+    {
+      "first": 25,
+      "second": 35,
+      "strength": 0.111
+    },
+    {
+      "first": 25,
+      "second": 36,
+      "strength": 0.333
+    },
+    {
+      "first": 25,
+      "second": 37,
+      "strength": 0.222
+    },
+    {
+      "first": 25,
+      "second": 38,
+      "strength": 0.125
+    },
+    {
+      "first": 25,
+      "second": 39,
+      "strength": 0.5
+    },
+    {
+      "first": 25,
+      "second": 40,
+      "strength": 0.375
+    },
+    {
+      "first": 25,
+      "second": 41,
+      "strength": 0.125
+    },
+    {
+      "first": 25,
+      "second": 43,
+      "strength": 0.375
+    },
+    {
+      "first": 25,
+      "second": 45,
+      "strength": 0.1
+    },
+    {
+      "first": 26,
+      "second": 27,
+      "strength": 0.778
+    },
+    {
+      "first": 26,
+      "second": 28,
+      "strength": 0.25
+    },
+    {
+      "first": 26,
+      "second": 29,
+      "strength": 0.375
+    },
+    {
+      "first": 26,
+      "second": 30,
+      "strength": 0.25
+    },
+    {
+      "first": 26,
+      "second": 32,
+      "strength": 0.429
+    },
+    {
+      "first": 26,
+      "second": 33,
+      "strength": 0.4
+    },
+    {
+      "first": 26,
+      "second": 36,
+      "strength": 0.1
+    },
+    {
+      "first": 26,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 26,
+      "second": 46,
+      "strength": 0.286
+    },
+    {
+      "first": 26,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 26,
+      "second": 52,
+      "strength": 0.143
+    },
+    {
+      "first": 27,
+      "second": 28,
+      "strength": 0.333
+    },
+    {
+      "first": 27,
+      "second": 29,
+      "strength": 0.3
+    },
+    {
+      "first": 27,
+      "second": 30,
+      "strength": 0.2
+    },
+    {
+      "first": 27,
+      "second": 32,
+      "strength": 0.333
+    },
+    {
+      "first": 27,
+      "second": 33,
+      "strength": 0.455
+    },
+    {
+      "first": 27,
+      "second": 36,
+      "strength": 0.083
+    },
+    {
+      "first": 27,
+      "second": 45,
+      "strength": 0.2
+    },
+    {
+      "first": 27,
+      "second": 46,
+      "strength": 0.222
+    },
+    {
+      "first": 27,
+      "second": 49,
+      "strength": 0.273
+    },
+    {
+      "first": 27,
+      "second": 50,
+      "strength": 0.111
+    },
+    {
+      "first": 27,
+      "second": 52,
+      "strength": 0.111
+    },
+    {
+      "first": 28,
+      "second": 29,
+      "strength": 0.167
+    },
+    {
+      "first": 28,
+      "second": 30,
+      "strength": 0.2
+    },
+    {
+      "first": 28,
+      "second": 32,
+      "strength": 0.2
+    },
+    {
+      "first": 28,
+      "second": 33,
+      "strength": 0.111
+    },
+    {
+      "first": 28,
+      "second": 36,
+      "strength": 0.167
+    },
+    {
+      "first": 28,
+      "second": 45,
+      "strength": 0.2
+    },
+    {
+      "first": 28,
+      "second": 49,
+      "strength": 0.143
+    },
+    {
+      "first": 29,
+      "second": 30,
+      "strength": 0.4
+    },
+    {
+      "first": 29,
+      "second": 32,
+      "strength": 0.4
+    },
+    {
+      "first": 29,
+      "second": 33,
+      "strength": 0.375
+    },
+    {
+      "first": 29,
+      "second": 36,
+      "strength": 0.143
+    },
+    {
+      "first": 29,
+      "second": 45,
+      "strength": 0.167
+    },
+    {
+      "first": 29,
+      "second": 46,
+      "strength": 0.5
+    },
+    {
+      "first": 29,
+      "second": 47,
+      "strength": 0.25
+    },
+    {
+      "first": 29,
+      "second": 48,
+      "strength": 0.25
+    },
+    {
+      "first": 29,
+      "second": 49,
+      "strength": 0.125
+    },
+    {
+      "first": 29,
+      "second": 51,
+      "strength": 0.25
+    },
+    {
+      "first": 30,
+      "second": 32,
+      "strength": 0.2
+    },
+    {
+      "first": 30,
+      "second": 33,
+      "strength": 0.25
+    },
+    {
+      "first": 30,
+      "second": 36,
+      "strength": 0.167
+    },
+    {
+      "first": 30,
+      "second": 45,
+      "strength": 0.2
+    },
+    {
+      "first": 30,
+      "second": 46,
+      "strength": 0.25
+    },
+    {
+      "first": 32,
+      "second": 33,
+      "strength": 0.25
+    },
+    {
+      "first": 32,
+      "second": 46,
+      "strength": 0.667
+    },
+    {
+      "first": 32,
+      "second": 49,
+      "strength": 0.143
+    },
+    {
+      "first": 33,
+      "second": 36,
+      "strength": 0.1
+    },
+    {
+      "first": 33,
+      "second": 45,
+      "strength": 0.25
+    },
+    {
+      "first": 33,
+      "second": 46,
+      "strength": 0.286
+    },
+    {
+      "first": 33,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 33,
+      "second": 50,
+      "strength": 0.143
+    },
+    {
+      "first": 33,
+      "second": 52,
+      "strength": 0.143
+    },
+    {
+      "first": 34,
+      "second": 35,
+      "strength": 0.333
+    },
+    {
+      "first": 34,
+      "second": 36,
+      "strength": 0.5
+    },
+    {
+      "first": 34,
+      "second": 37,
+      "strength": 0.25
+    },
+    {
+      "first": 34,
+      "second": 38,
+      "strength": 0.5
+    },
+    {
+      "first": 34,
+      "second": 39,
+      "strength": 0.2
+    },
+    {
+      "first": 34,
+      "second": 41,
+      "strength": 0.5
+    },
+    {
+      "first": 34,
+      "second": 43,
+      "strength": 0.25
+    },
+    {
+      "first": 34,
+      "second": 44,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 36,
+      "strength": 0.2
+    },
+    {
+      "first": 35,
+      "second": 37,
+      "strength": 0.667
+    },
+    {
+      "first": 35,
+      "second": 38,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 39,
+      "strength": 0.2
+    },
+    {
+      "first": 35,
+      "second": 41,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 42,
+      "strength": 0.5
+    },
+    {
+      "first": 35,
+      "second": 43,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 37,
+      "strength": 0.4
+    },
+    {
+      "first": 36,
+      "second": 38,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 39,
+      "strength": 0.143
+    },
+    {
+      "first": 36,
+      "second": 40,
+      "strength": 0.167
+    },
+    {
+      "first": 36,
+      "second": 41,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 43,
+      "strength": 0.4
+    },
+    {
+      "first": 36,
+      "second": 44,
+      "strength": 0.25
+    },
+    {
+      "first": 36,
+      "second": 45,
+      "strength": 0.167
+    },
+    {
+      "first": 37,
+      "second": 38,
+      "strength": 0.333
+    },
+    {
+      "first": 37,
+      "second": 39,
+      "strength": 0.167
+    },
+    {
+      "first": 37,
+      "second": 40,
+      "strength": 0.2
+    },
+    {
+      "first": 37,
+      "second": 41,
+      "strength": 0.333
+    },
+    {
+      "first": 37,
+      "second": 42,
+      "strength": 0.333
+    },
+    {
+      "first": 37,
+      "second": 43,
+      "strength": 0.5
+    },
+    {
+      "first": 38,
+      "second": 39,
+      "strength": 0.25
+    },
+    {
+      "first": 38,
+      "second": 41,
+      "strength": 1.0
+    },
+    {
+      "first": 38,
+      "second": 43,
+      "strength": 0.333
+    },
+    {
+      "first": 39,
+      "second": 40,
+      "strength": 0.4
+    },
+    {
+      "first": 39,
+      "second": 41,
+      "strength": 0.25
+    },
+    {
+      "first": 39,
+      "second": 43,
+      "strength": 0.167
+    },
+    {
+      "first": 40,
+      "second": 43,
+      "strength": 0.2
+    },
+    {
+      "first": 41,
+      "second": 43,
+      "strength": 0.333
+    },
+    {
+      "first": 45,
+      "second": 49,
+      "strength": 0.333
+    },
+    {
+      "first": 45,
+      "second": 52,
+      "strength": 0.333
+    },
+    {
+      "first": 47,
+      "second": 48,
+      "strength": 1.0
+    },
+    {
+      "first": 47,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 47,
+      "second": 51,
+      "strength": 1.0
+    },
+    {
+      "first": 48,
+      "second": 49,
+      "strength": 0.2
+    },
+    {
+      "first": 48,
+      "second": 51,
+      "strength": 1.0
+    },
+    {
+      "first": 49,
+      "second": 50,
+      "strength": 0.2
+    },
+    {
+      "first": 49,
+      "second": 51,
+      "strength": 0.2
+    },
+    {
+      "first": 49,
+      "second": 52,
+      "strength": 0.2
+    },
+    {
+      "first": 73,
+      "second": 76,
+      "strength": 0.5
+    },
+    {
+      "first": 73,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 74,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 76,
+      "second": 77,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 79,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 80,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 83,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 84,
+      "strength": 0.333
+    },
+    {
+      "first": 76,
+      "second": 85,
+      "strength": 0.5
+    },
+    {
+      "first": 76,
+      "second": 86,
+      "strength": 0.5
+    },
+    {
+      "first": 77,
+      "second": 79,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 80,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 83,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 77,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 77,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 78,
+      "second": 81,
+      "strength": 0.333
+    },
+    {
+      "first": 78,
+      "second": 84,
+      "strength": 0.5
+    },
+    {
+      "first": 79,
+      "second": 80,
+      "strength": 1.0
+    },
+    {
+      "first": 79,
+      "second": 83,
+      "strength": 1.0
+    },
+    {
+      "first": 79,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 79,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 79,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 80,
+      "second": 83,
+      "strength": 1.0
+    },
+    {
+      "first": 80,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 80,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 80,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 81,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 83,
+      "second": 84,
+      "strength": 0.167
+    },
+    {
+      "first": 83,
+      "second": 85,
+      "strength": 1.0
+    },
+    {
+      "first": 83,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 84,
+      "second": 85,
+      "strength": 0.167
+    },
+    {
+      "first": 84,
+      "second": 86,
+      "strength": 0.167
+    },
+    {
+      "first": 85,
+      "second": 86,
+      "strength": 1.0
+    },
+    {
+      "first": 87,
+      "second": 88,
+      "strength": 1.0
+    }
+  ]
 }

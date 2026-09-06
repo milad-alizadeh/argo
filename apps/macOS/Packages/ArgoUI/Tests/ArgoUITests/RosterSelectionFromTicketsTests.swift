@@ -37,10 +37,7 @@ struct RosterSelectionFromTicketsTests {
 
         room(navigation).openSession("gamma")
 
-        let reading = RosterListing().reading(
-            of: sessions,
-            focus: .init(sessionID: navigation.session),
-        )
+        let reading = RosterListing().reading(of: sessions, selection: navigation.session)
         #expect(
             SessionRosterProjection.reveal(
                 of: navigation.session, among: reading.rows, hasHeight: false,

@@ -1,22 +1,16 @@
 import ArgoDesign
 import ArgoEngine
-import ArgoFixtures
 import ArgoUI
 import Foundation
 import SwiftUI
 
 /// The leading column's four Subagent readings, and the ceiling, over the roster's own row
 /// (#1344, `cockpit-roster-row.md`) — never delegated, running under the ceiling, past it, all
-/// landed, unresolved, a fold summing what it hides, and the row the deck has OPEN.
-///
-/// The open row is the state #1513 was reported for: the same record as `unresolved` above it —
-/// a waiting parent, an open delegation the record cannot settle — beside a reader that has
-/// watched both children's files grow. Grey on one and green on the other is the bug; drawn
-/// together here, the two rows are what tells the fourth fact apart from the three.
+/// landed, unresolved, and a fold summing what it hides.
 struct SubagentDotsRosterSpecimen: View {
     var body: some View {
         List {
-            ForEach(rows) { row in
+            ForEach(Self.rows) { row in
                 SessionRow(row: row).previewSafeListRow()
             }
         }
@@ -24,25 +18,7 @@ struct SubagentDotsRosterSpecimen: View {
         .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 
-    /// Derived in the body's own isolation, not at file scope: the fourth fact is read through a
-    /// reader, and a reader answers on the main actor (`FeedAgentReader`).
-    private var rows: [SessionRosterProjection.Row] {
-        let now = Date()
-        return SessionRosterProjection.rows(
-            from: Self.sessions,
-            focus: SessionRosterProjection.focus(
-                on: "open", among: Self.sessions, asking: Self.watching, at: now.epochMs,
-            ),
-            now: now,
-        )
-    }
-
-    /// What the deck has open, stated: both of that Session's children are writing right now.
-    private static let watching = FeedAgentReader(
-        events: ["open-0": [], "open-1": []],
-        of: .undecided,
-        growth: StatedGrowth(writing: ["open-0", "open-1"]),
-    )
+    static let rows = SessionRosterProjection.rows(from: sessions)
 
     private static let checkout = "/Users/milad/Developer/argo"
 
@@ -81,15 +57,6 @@ struct SubagentDotsRosterSpecimen: View {
             chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: checkout),
             transcript: .init(events: openDelegations(1)),
-        ),
-        CockpitPresentation.Session(
-            id: "open",
-            title: "The row the deck has open — two children still writing",
-            access: .managed,
-            status: .idle,
-            chain: .init(program: .init(model: "claude-opus-5")),
-            work: .init(location: checkout),
-            transcript: .init(events: TranscriptFixtures.inFlight(["open-0", "open-1"])),
         ),
         CockpitPresentation.Session(
             id: "external",

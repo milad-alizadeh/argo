@@ -105,8 +105,8 @@ package enum SessionComposerProjection {
         /// answers a Turn's end with: a Turn that simply finished releases what was queued behind
         /// it, and a Turn that was stopped drops it.
         ///
-        /// Set after the init rather than through it, and deliberately: that list is already past
-        /// the four-parameter cap (`apps/macOS/.swiftlint.yml`), and one more would authorise the
+        /// Set after the init rather than through it, and deliberately: that list is at the count
+        /// it is grandfathered at (`swift-boundaries` edge 6), and one more would authorise the
         /// next one. A specimen that wants this state sets it the same way.
         var endedByInterrupt = false
         /// Whether a Turn is in flight, which is where the NEXT one goes: straight to the Session,
@@ -129,9 +129,9 @@ package enum SessionComposerProjection {
         /// Permission or a question has no Turn to queue behind, and its keyboard still belongs to
         /// a dialog. It is what the run-settings popover draws its two knobs inert under.
         ///
-        /// Set after the init for the reason `endedByInterrupt` above is: that list is already
-        /// past the four-parameter cap. The default is the FREE prompt, which is the state a
-        /// fixture that has said nothing about this is in.
+        /// Set after the init for the reason `endedByInterrupt` above is: that list is at the count
+        /// it is grandfathered at (`swift-boundaries` edge 6). The default is the FREE prompt,
+        /// which is the state a fixture that has said nothing about this is in.
         package var takesTypedLine = true
 
         /// Whether the only thing holding this Session's Turn open is a delegation the parent

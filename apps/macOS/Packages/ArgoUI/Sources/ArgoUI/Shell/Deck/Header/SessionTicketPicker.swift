@@ -43,7 +43,8 @@ package struct SessionTicketPicker: View {
     package var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             SearchFieldLine(
-                query: $query, prompt: Self.prompt, opensFocused: true, press: press,
+                query: $query, look: SearchFieldLine.Look(prompt: Self.prompt),
+                opensFocused: true, press: press,
             )
             Divider()
             SessionTicketPickerList(matches: matches, current: cursor.current, pick: link)
@@ -73,6 +74,10 @@ package struct SessionTicketPicker: View {
         case .up: cursor.up(over: numbers)
         case .down: cursor.down(over: numbers)
         case .commit: commit()
+        // The picker has one verb and `⌘⏎` is not it: the ask belongs to the backlog's field
+        // (#1317). Named rather than swallowed by a default arm, so this switch keeps failing to
+        // compile when a key is added.
+        case .ask: break
         case .dismiss: close()
         }
     }
@@ -99,4 +104,4 @@ package struct SessionTicketPicker: View {
 }
 
 // The states this draws are rendered by `TicketPickerSpecimen`, which is where the sample backlog
-// they need lives.
+// they need lives (`docs/agents/module-boundaries.md`, edge 8).

@@ -3,12 +3,13 @@
 **A primary source, not a starting point.** Written under prototype constraints — no tests, no
 abstractions, one file. The validated decision belongs in `cockpit-work-room.md`, not here.
 
-## The page is gone
+## Run it
 
-`ticket-verbs-prototype.html` was deleted from `main` by #1526, along with every other explorable there: a live page on
-`main` has an owner, and this one had already answered its question. This file is the record of
-what it answered. History keeps the markup — the commit that removed it is what
-`--diff-filter=D` over `docs/designs/` finds.
+```sh
+open docs/designs/prototypes/ticket-verbs-prototype.html
+```
+
+No build, no server, no dependencies.
 
 ## The question, and where it landed
 

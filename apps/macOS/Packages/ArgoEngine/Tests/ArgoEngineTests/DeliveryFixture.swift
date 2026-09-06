@@ -8,27 +8,11 @@ actor ScriptedCodeHost: CodeHostPort {
     /// What the host holds for a branch nothing in flight covers, keyed by branch. A branch with no
     /// entry is one the host holds nothing for.
     private let byBranch: [String: Delivery]
-    /// The branches this host REFUSES to answer about, told apart from the ones it holds nothing
-    /// for: a refusal is the throttled read a checkout with many worktrees runs into, and "nothing
-    /// there" is an answer.
-    private var refusing: Set<String>
     private var reads = 0
 
-    init(
-        _ script: [Result<[Delivery], ProviderFetchError>],
-        byBranch: [String: Delivery] = [:],
-        refusing: Set<String> = [],
-    ) {
+    init(_ script: [Result<[Delivery], ProviderFetchError>], byBranch: [String: Delivery] = [:]) {
         self.script = script
         self.byBranch = byBranch
-        self.refusing = refusing
-    }
-
-    /// Start refusing these branches, which is what a host does once a read has spent the last of
-    /// the hour's budget. Set after a derivation rather than at init, so a suite can land a clean
-    /// one first and refuse the read after it.
-    func refuse(_ branches: Set<String>) {
-        refusing = branches
     }
 
     /// How many listings the host has answered, which is one per derivation — what a suite about
@@ -47,8 +31,7 @@ actor ScriptedCodeHost: CodeHostPort {
         ofBranch branch: String, in _: String, grant _: AccountGrant,
     ) async throws
         -> Delivery? {
-        guard !refusing.contains(branch) else { throw ProviderFetchError.rateLimited }
-        return byBranch[branch]
+        byBranch[branch]
     }
 }
 

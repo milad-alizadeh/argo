@@ -140,19 +140,12 @@ struct MotionContractTests {
         }
     }
 
-    /// The camera flight is spent by the descent now (#1423): `AtlasRoomView` flies the seat to the
-    /// plate the reader picked rather than cutting to it.
-    @Test
-    func `the camera flight is wired`() {
-        #expect(ArgoMotion.unwired["snap"] == nil)
-    }
-
     /// What is LEFT waiting, said as a set rather than one name at a time: a role quietly added
     /// here is a role the specimen stops judging, and this is what makes that a failure rather
     /// than a silence.
     @Test
-    func `only the re-arrangement is still unwired`() {
-        #expect(Set(ArgoMotion.unwired.keys) == ["reshuffle"])
+    func `only the camera flight and the re-arrangement are still unwired`() {
+        #expect(Set(ArgoMotion.unwired.keys) == ["snap", "reshuffle"])
     }
 
     @Test

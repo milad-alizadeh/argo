@@ -10,15 +10,16 @@ underneath it: **how do you get around a 400-Turn session at all?** Nine of the 
 answer the first question; four answer the second, and those four are where the interesting
 results are.
 
-## The page is gone
+## Run it
 
-`turn-lane-prototype.html` was deleted from `main` by #1526, along with every other explorable there: a live page on
-`main` has an owner, and this one had already answered its question. This file is the record of
-what it answered. History keeps the markup — the commit that removed it is what
-`--diff-filter=D` over `docs/designs/` finds.
+```sh
+node docs/designs/prototypes/turn-lane-specimens.mjs   # only to re-read the transcripts
+python3 -m http.server 8974 -d docs/designs/prototypes
+open http://127.0.0.1:8974/turn-lane-prototype.html
+```
 
-Its transcript reader `turn-lane-specimens.mjs` and the specimen file it wrote went with it: both
-existed only to feed that page.
+A server rather than `file://` only because Chrome's automation refuses `file://`; the page has no
+build, no dependency and no network call, so `open …/turn-lane-prototype.html` works too.
 
 `←`/`→` or the letter keys switch variant, `1`/`2`/`3` switch specimen, `⌘K` opens the jump
 palette from anywhere. There is no **I** — it reads as a `1` beside the specimen keys.

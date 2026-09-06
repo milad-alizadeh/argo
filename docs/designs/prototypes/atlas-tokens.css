@@ -1,0 +1,52 @@
+  :root {
+    /* GraphitePalette.swift — surface */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --hover:      rgba(255,255,255,.045);
+    --control:    rgba(255,255,255,.06);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #929AA1;
+    --text-off: #4E545A;
+
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --selection-ground: #203146;
+    --attention: #E8B24A;
+
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+    --e-popover: 0 8px 18px rgba(0,0,0,.34);
+    --m-selection: 140ms; --m-state: 180ms; --m-reveal: 220ms; --m-resettle: 280ms;
+    --ease-out: cubic-bezier(.2,.7,.3,1);
+    --t-title2: 17px; --t-title3: 15px; --t-body: 13px; --t-callout: 12px;
+    --t-subheadline: 11px; --t-footnote: 10px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+    /* INVENTED — the contract names no canvas ground. */
+    --desktop: #0d0e10;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--desktop); color: var(--text-1);
+    font: var(--t-body)/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+

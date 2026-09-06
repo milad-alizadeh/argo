@@ -18,40 +18,15 @@ public struct AtlasDomain: Equatable, Sendable {
     /// placed in is not a Domain that was found, and is not written.
     public let members: [AtlasDomainMember]
 
-    /// Where the Domain stands in the inference, largest first and 0 at the front — the file's own
-    /// order, which is what the Map file spells by writing them in it.
-    ///
-    /// **Carried rather than counted at the point of use (#1158).** A Domain's colour is the wheel
-    /// walked by this number, and narrowing a Map drops Domains that lost every member: read off
-    /// an array position, the rank of every Domain past the one that emptied would shift, and the
-    /// whole map would repaint the moment a reader hid the tests or went into a region. It is
-    /// assigned once, where the inference is read or produced, and survives every narrowing.
-    public let rank: Int
-
-    public init(name: String, tokens: [String], members: [AtlasDomainMember], rank: Int = 0) {
+    public init(name: String, tokens: [String], members: [AtlasDomainMember]) {
         self.name = name
         self.tokens = tokens
         self.members = members
-        self.rank = rank
     }
 
     /// Where the members sit, in the Map's own Plot order.
     public var paths: [String] {
         members.map(\.path)
-    }
-
-    /// How surely the Domain holds its files ON AVERAGE, 0 to 1 — what a swatch standing for the
-    /// whole region is washed out by, in the legend and in the rail beside the map (#1158).
-    ///
-    /// DERIVED from the members and never stored, so it cannot come to disagree with them. A mean
-    /// rather than the least or the greatest: a region of forty files where one barely holds on is
-    /// not an unsure region, and a region where one file is certain is not a sure one.
-    ///
-    /// Never divides by nothing: a Domain nothing was placed in is not written (`members` is never
-    /// empty), and 0 here would read as "we are sure of nothing" rather than as "there is nothing".
-    public var confidence: Double {
-        guard !members.isEmpty else { return 0 }
-        return members.reduce(0) { $0 + $1.confidence } / Double(members.count)
     }
 }
 

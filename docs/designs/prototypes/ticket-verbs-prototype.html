@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Every pane carries its own header (#1242)</title>
+<!--
+  THROWAWAY. Where the open ticket's verbs go, once they leave the window's one toolbar row.
+
+  THE SHAPE THIS SETTLED ON — `H`. There is no window-wide toolbar row. Each pane draws its
+  OWN header, and the three sit on one band at the height the window already spends on its
+  title strip. So:
+
+    · the header belongs to its pane. Its ground, its own column inset, and a rule that runs
+      that pane's width. It does not float above the pane, and it is not one continuous strip
+      with the panes hidden behind it.
+    · controls sit at their pane's LEADING edge. Search sits at the trailing edge of the pane
+      it searches, which is the list.
+    · a control on the band is the band's own height. It takes the whole band on hover, which
+      is what makes it read as part of the header rather than an object resting on it.
+    · the ticket's verbs are in the ticket pane's header, so they are over the ticket at every
+      width BY CONSTRUCTION — not by arithmetic between the window's trailing edge and a seam
+      the reader can drag.
+    · it costs no pane a line. The strip is drawn either way. #836's band cost 44pt because it
+      was drawn UNDER the strip rather than in it.
+
+  What it costs instead: the row stops being `ToolbarItem`s. The panes already run under the
+  title strip — the sidebar's ground does today — so this is drawable, but the search field,
+  the menus and the drag region become the app's to place, and the traffic lights' zone has to
+  be kept clear in the sidebar. That is the trade to argue about, and it is a real one.
+
+  ONE alignment rule, and the bar's `check alignment` re-proves it after any edit: every
+  visible EDGE in a pane starts on that pane's leading inset and stops on its trailing one — a
+  rule, a filled ground, a header. Type sits on the same two lines. A glyph inside a ground is
+  inboard by that ground's own padding; that is the ground's business.
+
+  Not production code: no tests, no abstractions, one file. Every colour, radius, spacing step
+  and type rung is transcribed from apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --control:  rgba(255,255,255,.06);
+    --selected: rgba(255,255,255,.058);
+    --selection-ground: #203146;
+
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #929AA1;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    --hairline:  rgba(255,255,255,.08);
+    --subtle:    rgba(255,255,255,.13);
+    --strong:    rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running: #46D3A8;
+    --failure: #F2555C;
+    --added:   #A9D18E;
+    --removed: #D98C93;
+
+    /* ArgoSpacing.swift */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px; --s-region: 32px;
+
+    /* ArgoRadius.swift */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+
+    /* ArgoControlBox.swift — PR #1259 (#1243). ONE box for every icon button, and the vessel's
+       own inset round it, so a lone mark in a container stands exactly as tall as a capsule
+       holding three. `vessel` is DERIVED and nothing may set it by hand. */
+    --control-box: 26px;      /* the drawn box, a SQUARE */
+    --vessel-inset: 5px;      /* the vessel's padding — the VESSEL's, not the button's */
+    --vessel-gap: 2px;        /* ArgoSpacing.hair — segments of one control */
+    --vessel-rule-h: 15px;
+    --vessel: 36px;           /* = control-box + vessel-inset * 2 */
+    /* ArgoTicketsChrome.swift. The field is SHORTER than the vessels beside it: it holds one
+       line of type where they hold a mark plus the vessel's own inset. */
+    --search-w: 210px; --search-h: 28px;
+
+    /* ArgoLayout.swift + ArgoTicketDetail.inset + ArgoBacklogList */
+    --sidebar-w: 280px; --backlog-w: 520px; --prose-floor: 320px;
+    --pane-inset: 24px; --list-inset: 16px;
+
+    /* The band: the height the window already spends on its title strip, which is why no pane
+       loses a line to it — and the traffic-light zone the sidebar has to keep clear. */
+    --band-h: 52px;
+    --lights-w: 78px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0D0E10; color: var(--text-1);
+    font: 13px/1.45 var(--sans); -webkit-font-smoothing: antialiased;
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: var(--s-section) var(--s-section) 132px; overflow-y: auto;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: -2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------------- the window ---------------- */
+  .window {
+    width: 1280px; height: 800px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle); box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    display: grid; grid-template-columns: var(--sidebar-w) var(--backlog-w) 1fr;
+    isolation: isolate;
+    position: relative;
+  }
+  /* At 960 the list cannot keep its resting 520: `ArgoLayout.backlogLimits` clamps it so the
+     ticket pane keeps `proseColumnMinimumWidth`. The narrowest window IS the seam's floor. */
+  body[data-w="960"] .window { width: 960px; grid-template-columns: var(--sidebar-w) 1fr var(--prose-floor); }
+  body[data-seam="floor"] .window { grid-template-columns: var(--sidebar-w) 1fr var(--prose-floor); }
+
+  /* Only the traffic lights belong to the WINDOW. Everything else on this band is a pane's. */
+  .lights { position: absolute; top: 20px; left: var(--s-loose); z-index: 8;
+            display: flex; gap: var(--s-base); }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; background: #3A3D42; display: block; }
+
+  /* ---------------- a pane's header ---------------- */
+  /* No rule under it. These panes are liquid-glass containers, and a container's own edge is
+     what separates the band from what is under it — a hairline there would draw a second edge
+     inside the material's, which is the same mistake `ArgoElevation.vessel` already refuses. */
+  .paneheader {
+    height: var(--band-h); flex: none;
+    display: flex; align-items: center; gap: var(--s-base);
+  }
+  .paneheader .sp { flex: 1; }
+
+  /* A lone icon button carries its OWN container: `ArgoIconButtonGroup` round one mark, which
+     at one box plus the vessel's inset is a 36pt CIRCLE — the same height as the Start pill
+     beside it, and the whole point of PR #1259. */
+  .bandbtn {
+    width: var(--vessel); height: var(--vessel); padding: 0; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 0; cursor: pointer; color: var(--text-3);
+    background: var(--glass-tint); box-shadow: inset 0 0 0 1px var(--glass-rim);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  .bandbtn:hover { color: var(--text-1); }
+  .bandbtn svg { width: 15px; height: 15px; }
+
+  /* ---------------- sidebar ---------------- */
+  .sidebar { background: var(--sunken); box-shadow: inset -1px 0 0 var(--glass-rim);
+             backdrop-filter: blur(30px) saturate(140%);
+             display: flex; flex-direction: column; overflow: hidden; }
+  /* The sidebar's band is the traffic lights'. 280 less their clearance cannot hold the rooms
+     picker as well — it clipped `Code` — so the picker keeps the line under the band. */
+  .sidebar .paneheader { padding: 0 var(--s-loose); }
+  .roomstrip { display: flex; gap: var(--s-tight); font-size: 13px; color: var(--text-2);
+               padding: var(--s-comfortable) var(--s-loose) 0; }
+  .roomstrip span { padding: var(--s-snug) var(--s-comfortable); border-radius: var(--r-control); }
+  .roomstrip span.on { background: var(--control); color: var(--text-1); font-weight: 500; }
+  .caplabel { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3);
+              padding: var(--s-comfortable) var(--s-loose) var(--s-snug); }
+  .viewrow { display: flex; align-items: center; gap: var(--s-comfortable);
+             padding: var(--s-base) var(--s-loose); font-size: 13px; }
+  .viewrow.on { background: var(--selected); }
+  .viewrow .n { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+  .viewrow .g { width: 12px; text-align: center; font-size: 11px; }
+  .nextup { margin: var(--s-loose); padding: var(--s-comfortable);
+            background: var(--raised); border: 1px solid var(--hairline); border-radius: var(--r-control); }
+  .nextup .cap { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); }
+  .nextup .id { font-family: var(--mono); font-size: 11px; color: var(--text-3); margin-top: var(--s-base); }
+  .nextup .t { font-size: 13px; font-weight: 500; margin-top: var(--s-tight); }
+  .nextup .chips { display: flex; gap: var(--s-snug); margin-top: var(--s-comfortable); }
+  .nextup .chips i { font-style: normal; font-size: 11px; color: var(--text-2);
+                     background: var(--control); border-radius: var(--r-control); padding: 3px var(--s-snug); }
+  .foot { margin-top: auto; border-top: 1px solid var(--hairline);
+          padding: var(--s-comfortable) var(--s-loose); font-size: 11px; color: var(--text-3); }
+
+  /* ---------------- the list pane ---------------- */
+  .backlog { background: var(--glass-tint); box-shadow: inset -1px 0 0 var(--glass-rim);
+             backdrop-filter: blur(30px) saturate(140%);
+             overflow: hidden; min-width: 0; display: flex; flex-direction: column; }
+  /* The control carries its own container now, so the CONTAINER's edge lands on the list's
+     column — the rule the Start pill follows in the ticket pane. The glyph is inboard of it by
+     the vessel's own inset, which is the vessel's business. */
+  .backlog .paneheader { padding: 0 var(--list-inset); }
+  /* A capsule too. Every bounded control on this band is one, and a lone 6pt rect beside
+     three pills reads as a control from another screen. */
+  .search { width: var(--search-w); height: var(--search-h); flex: none; min-width: 0;
+            border-radius: 999px; background: var(--glass-tint);
+            box-shadow: inset 0 0 0 1px var(--glass-rim);
+            display: flex; align-items: center; gap: var(--s-snug);
+            padding: 0 var(--s-comfortable); color: var(--text-3); font-size: 12px; }
+  .bhead { padding: var(--s-loose) var(--list-inset) var(--s-comfortable); }
+  .bhead .t { font-size: 15px; font-weight: 600; }
+  .bhead .s { font-size: 12px; color: var(--text-3); margin-top: var(--s-tight); }
+  .sect { display: flex; padding: var(--s-base) var(--list-inset) var(--s-tight);
+          font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); }
+  .sect .n { margin-left: auto; font-family: var(--mono); font-weight: 400; }
+  .row { display: flex; align-items: center; gap: var(--s-base);
+         padding: var(--s-snug) var(--list-inset); min-width: 0; font-size: 13px; }
+  .row.sel { background: var(--selection-ground); }
+  .row .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px var(--text-off); }
+  .row .dot.fill { background: var(--accent); box-shadow: none; }
+  .row .dot.run  { background: var(--running); box-shadow: none; }
+  .row .id { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  .row .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .tail { margin-left: auto; display: flex; align-items: center; gap: var(--s-base); flex: none; }
+  .row .age { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+  .row .blk { color: var(--failure); font-size: 11px; }
+  .indent { padding-left: 44px; }
+
+  /* ---------------- the ticket pane ---------------- */
+  .pane { min-width: 0; display: flex; flex-direction: column; overflow: hidden;
+          backdrop-filter: blur(30px) saturate(140%); }
+  .pane .paneheader { padding: 0 var(--pane-inset); }
+  .scroll { overflow-y: auto; flex: 1; }
+  .column { padding: var(--pane-inset); display: flex; flex-direction: column; gap: var(--s-comfortable); }
+  .headgroup { display: flex; flex-direction: column; gap: var(--s-section); }
+  .head { display: flex; flex-direction: column; gap: var(--s-base); align-items: flex-start; }
+  /* The id line IS the address: `open on host` and `copy link` were two marks for what the
+     number already says. Copy is the browser's own gesture on a link. */
+  a.idlink { font-family: var(--mono); font-size: 11px; color: var(--accent); text-decoration: none; }
+  a.idlink:hover { color: var(--accent-bright); text-decoration: underline; }
+  .head .title { font-size: 17px; font-weight: 600; }
+  .head .status { font-size: 12px; color: var(--text-2); }
+
+  .strip { display: flex; flex-direction: column; gap: var(--s-base);
+           padding-bottom: var(--s-comfortable); border-bottom: 1px solid var(--hairline); }
+  .strip .line { display: flex; flex-wrap: wrap; gap: var(--s-section); align-items: center; }
+  .strip .pair { display: flex; gap: var(--s-snug); align-items: baseline; }
+  .strip .k { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); }
+  .strip .v { font-size: 12px; }
+  .lab { font-size: 11px; padding: 1px var(--s-snug); border-radius: var(--r-control); }
+  .lab.wf  { color: #D9A6FF; background: rgba(185,128,209,.16); box-shadow: inset 0 0 0 1px rgba(185,128,209,.38); }
+  .lab.wr  { color: var(--text-2); background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px var(--subtle); }
+  .lab.prd { color: #9BD8A0; background: rgba(76,148,79,.16); box-shadow: inset 0 0 0 1px rgba(76,148,79,.38); }
+
+  .body { display: flex; flex-direction: column; gap: var(--s-base); }
+  .body h2 { font-size: 15px; font-weight: 600; margin-top: var(--s-loose); }
+  .body h3 { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3); margin-top: var(--s-loose); }
+  .body p  { font-size: 13px; }
+  .delivery { display: flex; gap: var(--s-comfortable); align-items: baseline; flex-wrap: wrap;
+              padding: var(--s-snug) var(--s-comfortable);
+              background: var(--raised); border: 1px solid var(--hairline); border-radius: var(--r-control);
+              font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+  .delivery b { color: var(--text-1); font-weight: 600; }
+  .delivery .add { color: var(--added); } .delivery .rem { color: var(--removed); }
+  .delivery .ok  { color: var(--running); } .delivery .bad { color: var(--failure); }
+  .link { display: flex; gap: var(--s-snug); align-items: center; font-size: 13px; padding: 1px 0; }
+  .link .id { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+  .link .st { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+
+  /* ================= the verb cluster ================= */
+  .verbs { display: none; position: relative; align-items: center; }
+  .verbs.shown { display: flex; }
+
+  .as-line {
+    display: flex; align-items: center; gap: var(--vessel-gap); min-width: 0;
+    padding: var(--vessel-inset); border-radius: 999px;
+    background: var(--glass-tint); box-shadow: inset 0 0 0 1px var(--glass-rim);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  /* Inside the pill, Start draws no ground of its own — the capsule IS the ground, and a
+     second fill inside it would be an edge within an edge. It takes one on hover, like every
+     other segment of a vessel. */
+  .go { display: inline-flex; align-items: center; gap: var(--s-snug); flex: none;
+        height: var(--control-box); padding: 0 var(--s-comfortable);
+        border-radius: 999px; border: 0; font: inherit; cursor: pointer;
+        font-size: 12px; font-weight: 500; white-space: nowrap; }
+  body[data-ink="quiet"] .go { background: none; color: var(--text-1); }
+  body[data-ink="quiet"] .go:hover { background: var(--control); }
+  body[data-ink="primary"] .go { background: var(--accent); color: var(--on-accent); }
+  body[data-ink="primary"] .go:hover { background: var(--accent-bright); }
+  /* The command is a machine fact, so it stays in the machine face — and it IS the picker,
+     because the thing you read should be the thing you press to change. */
+  /* The other segment of the same pill: the command is a machine fact, and it IS the picker,
+     because the thing you read should be the thing you press to change. */
+  .pick { display: inline-flex; align-items: center; gap: var(--s-snug); flex: none;
+          height: var(--control-box); padding: 0 var(--s-base);
+          border-radius: 999px; border: 0; background: none; cursor: pointer;
+          font-family: var(--mono); font-size: 11px; color: var(--text-3); white-space: nowrap; }
+  .pick:hover { background: var(--control); color: var(--text-1); }
+  .tri { font-size: 10px; }
+  .chev { font-size: 9px; color: var(--text-3); }
+
+  /* the toolbar's glass capsule, kept only so what it costs stays visible */
+  .as-capsule { display: inline-flex; align-items: center; gap: var(--vessel-gap);
+                padding: var(--vessel-inset); border-radius: 999px;
+                background: var(--glass-tint); box-shadow: inset 0 0 0 1px var(--glass-rim);
+                backdrop-filter: blur(20px) saturate(140%); flex: none; }
+  .startverb { display: inline-flex; align-items: center; gap: var(--s-snug);
+               height: var(--control-box); padding: 0 var(--s-base); border-radius: 999px;
+               color: var(--text-2); white-space: nowrap;
+               background: none; border: 0; font: inherit; cursor: pointer; }
+  .startverb:hover { background: var(--control); color: var(--text-1); }
+  .startverb .word { font-size: 12px; font-weight: 500; }
+  .startverb .cmd  { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+  body[data-form="capsule"] .as-line { display: none; }
+  body[data-form="line"]    .as-capsule { display: none; }
+
+  /* --- the picker's menu --- */
+  .menu { position: absolute; top: calc(var(--vessel) + var(--s-base)); left: 0; z-index: 20;
+          min-width: 300px; padding: var(--s-snug);
+          background: var(--overlay); border: 1px solid var(--subtle);
+          border-radius: var(--r-popover); box-shadow: 0 18px 48px rgba(0,0,0,.6); display: none; }
+  body[data-menu="open"] .verbs.shown .menu { display: block; }
+  .menu .cap { font-size: 11px; font-weight: 600; letter-spacing: .6px; color: var(--text-3);
+               padding: var(--s-snug) var(--s-base) var(--s-tight); }
+  .menu .opt { display: flex; align-items: baseline; gap: var(--s-base);
+               padding: var(--s-snug) var(--s-base); border-radius: var(--r-control);
+               font-family: var(--mono); font-size: 11px; color: var(--text-1); }
+  .menu .opt:hover { background: var(--control); }
+  .menu .opt.on { background: var(--selection-ground); }
+  .menu .opt .why { margin-left: auto; font-family: var(--sans); font-size: 11px; color: var(--text-3); }
+  .menu .opt.fresh { font-family: var(--sans); font-size: 12px; }
+  .menu hr { border: 0; border-top: 1px solid var(--hairline); margin: var(--s-snug) var(--s-base); }
+  .menu .note { padding: var(--s-snug) var(--s-base) var(--s-tight);
+                font-size: 11px; color: var(--text-3); line-height: 1.4; }
+  .menu .note b { color: var(--text-2); font-weight: 500; font-family: var(--mono); }
+
+  /* ================= the anchors still worth comparing ================= */
+  body[data-v="E"] .anchor-E.shown { display: flex; padding-top: var(--s-comfortable); }
+  /* `0` — today: one window-wide row, every item in it, so a ticket-scoped mark lands over the
+     LIST. Drawn here as a strip ACROSS the panes, because that is what it is. */
+  body[data-v="0"] .oldrow { display: flex; }
+  body[data-v="0"] .paneheader { visibility: hidden; }
+  .oldrow { display: none; position: absolute; inset: 0 0 auto 0; height: var(--band-h); z-index: 7;
+            align-items: center; gap: var(--s-base);
+            padding-left: calc(var(--lights-w) + var(--s-base)); padding-right: var(--s-loose);
+            background: var(--sunken); border-bottom: 1px solid var(--hairline); }
+  .oldrow .sp { flex: 1; }
+
+  /* no ticket open — the pane's header keeps its band and loses its verbs */
+  body[data-empty="1"] .verbs { display: none !important; }
+  body[data-empty="1"] .scroll { display: none; }
+  .vacant { display: none; flex: 1; place-items: center; color: var(--text-3); font-size: 13px; }
+  body[data-empty="1"] .vacant { display: grid; }
+
+  /* ---------------- the switcher ---------------- */
+  .bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60;
+         display: grid; gap: var(--s-snug);
+         background: #101216; border: 1px solid var(--strong); border-radius: var(--r-popover);
+         padding: var(--s-base) var(--s-comfortable); box-shadow: 0 12px 40px rgba(0,0,0,.7);
+         font-size: 12px; }
+  .bar .line { display: flex; align-items: center; gap: var(--s-snug); }
+  .bar button { font: inherit; color: var(--text-1); background: var(--control);
+                border: 1px solid var(--subtle); border-radius: 999px;
+                padding: 3px 10px; cursor: pointer; }
+  .bar button.on { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+  .bar .name { min-width: 430px; color: var(--text-2); }
+  .bar .name b { color: var(--text-1); }
+  .bar .sep { width: 1px; height: 18px; background: var(--subtle); margin: 0 var(--s-tight); }
+  .bar .lbl { color: var(--text-3); }
+</style>
+</head>
+<body data-v="H" data-form="line" data-ink="quiet" data-menu="shut"
+      data-w="1280" data-seam="rest" data-empty="0">
+
+<div class="window">
+  <div class="lights"><i></i><i></i><i></i></div>
+
+  <!-- `0` only: the one window-wide row, drawn across the panes because that is what it is -->
+  <div class="oldrow">
+    <button class="bandbtn" title="How the list is ordered">⋯</button>
+    <button class="bandbtn" title="New ticket">✚</button>
+    <div class="verbs anchor-0"></div>
+    <div class="sp"></div>
+    <div class="search">⌕ Search the backlog</div>
+  </div>
+
+  <!-- sidebar -->
+  <div class="sidebar">
+    <div class="paneheader"></div>
+    <div class="roomstrip"><span>Sessions</span><span class="on">Tickets</span><span>Code</span></div>
+    <div class="caplabel">BACKLOG</div>
+    <div class="viewrow on"><span class="g" style="color:var(--text-2)">●</span>All open<span class="n">12</span></div>
+    <div class="viewrow"><span class="g" style="color:var(--text-3)">○</span>Unblocked<span class="n">4</span></div>
+    <div class="viewrow"><span class="g" style="color:var(--running)">◆</span>In progress<span class="n">3</span></div>
+    <div class="viewrow"><span class="g" style="color:var(--failure)">⊘</span>Blocked<span class="n">8</span></div>
+    <div class="viewrow"><span class="g" style="color:var(--text-3)">◷</span>Closed</div>
+    <div class="nextup">
+      <div class="cap">NEXT UP</div><div class="id">#273</div>
+      <div class="t">The Next-up cold-start planner</div>
+      <div class="chips"><i>unblocked</i><i>next in #607</i></div>
+    </div>
+    <div class="foot">● GitHub · milad-alizadeh</div>
+  </div>
+
+  <!-- the list pane: its own controls leading, the field that searches IT trailing -->
+  <div class="backlog">
+    <div class="paneheader">
+      <button class="bandbtn" title="New ticket" aria-label="New ticket">
+        <!-- ArgoSymbol.newTicket = newSession = `square.and.pencil`: the COMPOSE mark, which
+             Mail spends on the one thing its window creates. New Session is not in this room's
+             bar (#836), so the two marks are never in one bar. -->
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M13.2 8.4v4.1a1.4 1.4 0 0 1-1.4 1.4H3.5a1.4 1.4 0 0 1-1.4-1.4V4.2a1.4 1.4 0 0 1 1.4-1.4h4.1"/>
+          <path d="M11.4 2.2 13.8 4.6 8.6 9.8l-2.9.5.5-2.9z"/>
+        </svg>
+      </button>
+      <div class="sp"></div>
+      <div class="search">⌕ Search the backlog</div>
+    </div>
+    <div class="bhead"><div class="t">Backlog</div><div class="s">All open · by priority · 12 tickets</div></div>
+    <div class="sect">HIGH<span class="n">8</span></div>
+    <div class="row sel"><span class="dot"></span><span class="id">#607</span><span class="t">Wayfinder: the Tickets room, end to end</span><span class="tail"><span class="blk">⊘</span><span class="age">2/9</span></span></div>
+    <div class="row indent"><span class="dot run"></span><span class="id">#609</span><span class="t">Prototype: what the Tickets room looks like</span><span class="tail"><span class="age">1d</span></span></div>
+    <div class="row indent"><span class="dot fill"></span><span class="id">#388</span><span class="t">Ticket read path: listing, status, labels</span><span class="tail"><span class="age">5d</span></span></div>
+    <div class="row indent"><span class="dot"></span><span class="id">#334</span><span class="t">The Route — a progress-axis view of a ticket</span><span class="tail"><span class="blk">⊘</span><span class="age">0/2</span></span></div>
+    <div class="row indent" style="padding-left:64px"><span class="dot"></span><span class="id">#336</span><span class="t">The canvas: derived spacing and the edge rule</span><span class="tail"><span class="blk">⊘</span><span class="age">low</span></span></div>
+    <div class="row indent" style="padding-left:64px"><span class="dot"></span><span class="id">#335</span><span class="t">Placement: zones, columns and the cycle guard</span><span class="tail"><span class="blk">⊘</span><span class="age">medium</span></span></div>
+    <div class="row indent"><span class="dot"></span><span class="id">#273</span><span class="t">The Next-up cold-start planner</span><span class="tail"><span class="age">medium</span></span></div>
+    <div class="row indent"><span class="dot"></span><span class="id">#272</span><span class="t">The generic node tree and ticket detail</span><span class="tail"><span class="blk">⊘</span><span class="age">1w</span></span></div>
+    <div class="sect">MEDIUM<span class="n">1</span></div>
+    <div class="row indent"><span class="dot run"></span><span class="id">#763</span><span class="t">Ticket transport and grant plumbing</span></div>
+    <div class="sect">LOW<span class="n">3</span></div>
+    <div class="row indent"><span class="dot" style="background:var(--failure);box-shadow:none"></span><span class="id">#275</span><span class="t">The provider connection chip as a transient</span><span class="tail"><span class="blk">⊘</span><span class="age">1w</span></span></div>
+    <div class="row indent"><span class="dot"></span><span class="id">#185</span><span class="t">Tickets room interior: what a leaf carries</span><span class="tail"><span class="blk">⊘</span><span class="age">2mo</span></span></div>
+    <div class="row indent"><span class="dot"></span><span class="id">#160</span><span class="t">Ticket vocabulary: type is a property</span><span class="tail"><span class="blk">⊘</span><span class="age">1y</span></span></div>
+  </div>
+
+  <!-- the ticket pane: its header carries the ticket's verbs, at its own leading edge -->
+  <div class="pane">
+    <div class="paneheader">
+      <div class="verbs anchor-H"></div>
+    </div>
+
+    <div class="scroll">
+      <div class="column">
+        <div class="headgroup">
+          <div class="head">
+            <a class="idlink" href="#" title="Open #607 on GitHub">#607</a>
+            <div class="title">Wayfinder: the Tickets room, end to end</div>
+            <div class="status">Todo</div>
+          </div>
+          <div>
+            <div class="strip">
+              <div class="line">
+                <span class="pair"><span class="k">PRIORITY</span><span class="v">high</span></span>
+                <span class="pair"><span class="k">TYPE</span><span class="v">PRD</span></span>
+                <span class="pair"><span class="k">BUCKET</span><span class="v">open</span></span>
+              </div>
+              <div class="line" style="gap:var(--s-base)">
+                <span class="k" style="margin-right:var(--s-loose)">LABELS</span>
+                <span class="lab wf">wayfinder</span><span class="lab wr">work-room</span><span class="lab prd">prd</span>
+              </div>
+            </div>
+            <div class="verbs anchor-E"></div>
+          </div>
+        </div>
+
+        <div class="body">
+          <h3>DELIVERIES</h3>
+          <div class="delivery"><b>argo#812</b><span>argo/#607-work-room-rail</span><span class="add">+412</span><span class="rem">−96</span><span class="ok">checks passing</span></div>
+          <div class="delivery"><b>argo#829</b><span>argo/#607-ticket-detail</span><span class="add">+188</span><span class="rem">−12</span><span class="bad">checks failing</span></div>
+          <p style="margin-top:var(--s-comfortable)">The Tickets room, end to end: the views sidebar, the backlog in the deck, the ticket beside it, and the Route a parent opens onto.</p>
+          <h2>What carries it</h2>
+          <p>Nine children. Two are closed and two the poll has not reached, which is why the roll-up beside this ticket counts more than the rows nested under it.</p>
+          <h2>Children · 2 of 9 closed</h2>
+          <div class="link"><span class="id">#609</span><span>Prototype: what the Tickets room looks like</span><span class="st">In progress</span></div>
+          <div class="link"><span class="id">#388</span><span>Ticket read path: listing, status, labels</span><span class="st">In progress</span></div>
+          <div class="link"><span class="id">#272</span><span>The generic node tree and ticket detail</span><span class="st">Todo</span></div>
+          <h2>Blocked by · 6</h2>
+          <div class="link"><span class="id">#609</span><span>Prototype: what the Tickets room looks like</span></div>
+          <div class="link"><span class="id">#388</span><span>Ticket read path: listing, status, labels</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vacant">Select a ticket</div>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="line">
+    <button id="prev">←</button><span class="name" id="name"></span><button id="next">→</button>
+    <span class="sep"></span><span class="lbl">form</span>
+    <button data-form="line">line</button><button data-form="capsule">capsule</button>
+    <span class="sep"></span><span class="lbl">Start</span>
+    <button data-ink="primary">primary</button><button data-ink="quiet">quiet</button>
+    <span class="sep"></span><span class="lbl">picker</span>
+    <button data-menu="shut">shut</button><button data-menu="open">open</button>
+  </div>
+  <div class="line">
+    <span class="lbl">width</span><button data-w="1280">1280</button><button data-w="960">960</button>
+    <span class="sep"></span><span class="lbl">seam</span>
+    <button data-seam="rest">rest</button><button data-seam="floor">pane at 320</button>
+    <span class="sep"></span><span class="lbl">command</span>
+    <button data-cmd="/implement">/implement</button><button data-cmd="/design-to-code">/design-to-code</button><button data-cmd="">none</button>
+    <span class="sep"></span>
+    <button data-empty="0">a ticket open</button><button data-empty="1">none open</button>
+    <span class="sep"></span><button id="probe">check alignment</button>
+  </div>
+</div>
+
+<script>
+const VARIANTS = [
+  ['H', 'every pane carries its own header, on one band'],
+  ['E', 'in the ticket pane, on the fact strip’s own hairline'],
+  ['0', 'today — one window-wide row, so it lands over the LIST'],
+];
+const SKILLS = [
+  ['/implement',      'matched by label'],
+  ['/design-to-code', 'the screen has a design'],
+  ['/grill-me',       ''],
+  ['/triage',         ''],
+  ['/prototype',      ''],
+  ['/wayfinder',      ''],
+];
+const body = document.body;
+let cmd = '/implement';
+
+function cluster() {
+  const menu =
+    '<div class="menu">' +
+      '<div class="cap">START A SESSION ON #607</div>' +
+      SKILLS.map(([s, why]) => '<div class="opt' + (s === cmd ? ' on' : '') + '">' + s +
+        (why ? '<span class="why">' + why + '</span>' : '') + '</div>').join('') +
+      '<hr>' +
+      '<div class="opt fresh">Fresh Session<span class="why">no command</span></div>' +
+      '<div class="note">The Session carries <b>#607</b> as its ticket, so the agent has the ' +
+      'ticket in context whichever skill runs.</div>' +
+    '</div>';
+  const capsule =
+    '<div class="as-capsule">' +
+      '<button class="startverb"><span class="tri">▶</span><span class="word">Start</span>' +
+        (cmd ? '<span class="cmd">' + cmd + '</span>' : '') + '</button>' +
+      '<button class="startverb" style="padding:0 6px"><span class="chev">▼</span></button>' +
+    '</div>';
+  const line =
+    '<div class="as-line">' +
+      '<button class="go"><span class="tri">▶</span>Start</button>' +
+      '<button class="pick">' + (cmd || 'pick a skill') + '<span class="chev">▼</span></button>' +
+    '</div>';
+  return capsule + line + menu;
+}
+
+function render() {
+  const at = { 'H': '.anchor-H', 'E': '.anchor-E', '0': '.anchor-0' }[body.dataset.v];
+  document.querySelectorAll('.verbs').forEach(n => { n.classList.remove('shown'); n.innerHTML = ''; });
+  const host = document.querySelector(at);
+  host.innerHTML = cluster();
+  host.classList.add('shown');
+}
+
+function apply() {
+  render();
+  const i = VARIANTS.findIndex(x => x[0] === body.dataset.v);
+  document.getElementById('name').innerHTML = '<b>' + VARIANTS[i][0] + '</b> — ' + VARIANTS[i][1];
+  document.querySelectorAll('.bar button[data-form],.bar button[data-ink],.bar button[data-menu],.bar button[data-w],.bar button[data-seam],.bar button[data-empty]')
+    .forEach(b => { const k = Object.keys(b.dataset)[0]; b.classList.toggle('on', body.dataset[k] === b.dataset[k]); });
+  document.querySelectorAll('.bar button[data-cmd]').forEach(b => b.classList.toggle('on', cmd === b.dataset.cmd));
+  const q = new URLSearchParams();
+  ['v','form','ink','menu','w','seam','empty'].forEach(k => q.set(k, body.dataset[k]));
+  q.set('cmd', cmd);
+  history.replaceState(null, '', '?' + q);
+}
+
+function step(d) {
+  const i = VARIANTS.findIndex(x => x[0] === body.dataset.v);
+  body.dataset.v = VARIANTS[(i + d + VARIANTS.length) % VARIANTS.length][0];
+  apply();
+}
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+document.querySelectorAll('.bar button[data-form],.bar button[data-ink],.bar button[data-menu],.bar button[data-w],.bar button[data-seam],.bar button[data-empty]')
+  .forEach(b => b.onclick = () => { const k = Object.keys(b.dataset)[0]; body.dataset[k] = b.dataset[k]; apply(); });
+document.querySelectorAll('.bar button[data-cmd]').forEach(b => b.onclick = () => { cmd = b.dataset.cmd; apply(); });
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,[contenteditable]')) return;
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+
+/* The alignment check, in the page, so the next edit is proved rather than eyeballed. */
+window.probe = () => {
+  const col = document.querySelector('.column'), cr = col.getBoundingClientRect();
+  const pad = parseFloat(getComputedStyle(col).paddingLeft);
+  const L = cr.left + pad, R = cr.right - pad;
+  const d = (n, s) => { const e = document.querySelector(s); if (!e) return n.padEnd(15) + 'absent';
+    const r = e.getBoundingClientRect();
+    return n.padEnd(15) + 'Δleft ' + (r.left - L).toFixed(1).padStart(7) +
+           '   Δright ' + (r.right - R).toFixed(1).padStart(7); };
+  const list = document.querySelector('.backlog').getBoundingClientRect();
+  const li = parseFloat(getComputedStyle(document.querySelector('.bhead')).paddingLeft);
+  /* A control that carries its own CONTAINER is judged by the container's edge, so this is the
+     button's box. Ranging its glyph is what the mark-without-a-container case needed, and it
+     silently returns a stale rect over an SVG — measure the box. */
+  const lbox = document.querySelector('.backlog .bandbtn').getBoundingClientRect();
+  const sf = document.querySelector('.backlog .search').getBoundingClientRect();
+  const bp = document.querySelector('.backlog').getBoundingClientRect();
+  const hs = [...document.querySelectorAll('.paneheader')].map(e => +e.getBoundingClientRect().height.toFixed(1));
+  return [
+    'ticket column runs ' + L.toFixed(1) + ' → ' + R.toFixed(1),
+    d('title',        '.head .title'),
+    d('strip',        '.strip'),
+    d('#607',         'a.idlink'),
+    d('verbs',        '.verbs.shown'),
+    d('pane header',  '.pane .paneheader'),
+    'list control  Δleft ' + (lbox.left - (list.left + li)).toFixed(1).padStart(6) +
+      '   its container is ' + lbox.width.toFixed(1) + ' x ' + lbox.height.toFixed(1),
+    'list search   Δright ' + (sf.right - (bp.right - li)).toFixed(1).padStart(5),
+    'header heights ' + hs.join(', ') + (new Set(hs).size === 1 ? '  (agree)' : '  (DISAGREE)'),
+  ].join('\n');
+};
+document.getElementById('probe').onclick = () => { const t = window.probe(); console.clear(); console.log(t); alert(t); };
+
+const p = new URLSearchParams(location.search);
+['v','form','ink','menu','w','seam','empty'].forEach(k => { if (p.get(k)) body.dataset[k] = p.get(k); });
+if (p.get('cmd') !== null) cmd = p.get('cmd');
+apply();
+</script>
+</body>
+</html>

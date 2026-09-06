@@ -99,7 +99,7 @@ struct SessionComposerDelegationHoldTests {
     }
 
     /// The record's two Turn readings, stated. `delegationHold` is set after the init, as the
-    /// projection sets it.
+    /// projection sets it (`swift-boundaries` edge 6).
     private func transcript(
         held: Bool,
         hasUnansweredTurn: Bool,
