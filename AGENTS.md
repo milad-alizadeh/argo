@@ -157,8 +157,9 @@ Nothing renders a view on CI, so **rendering is a thing YOU do**: run `/pixel-re
 the affected states before calling a visual change done. A screenshot needs Screen Recording
 permission or the PNG is silently blank. **An e2e run holds the real keyboard and mouse for its
 whole length: say so and wait before starting one.** **Never hand-roll a load generator; use `sh
-scripts/load-burst.sh <workers> <seconds>`** and stop it with the `--reap <token>` it prints, never
-a bare `pkill`. Commands and the specimen harness: `docs/agents/visual-verification.md`.
+scripts/load-burst.sh <workers> <seconds>`**, which burns CPU cores and makes no Sessions, and stop
+it with the `--reap <token>` it prints, never a bare `pkill`. Commands and the specimen harness:
+`docs/agents/visual-verification.md`.
 
 ## Tooling (RTK)
 
