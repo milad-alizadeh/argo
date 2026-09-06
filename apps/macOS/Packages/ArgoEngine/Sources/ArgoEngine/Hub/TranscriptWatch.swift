@@ -42,11 +42,16 @@ final class TranscriptWatch {
     /// view reaches — `sessions` here and `observations` in `+Reading` — register on the revision
     /// instead, which is the fact a write actually moves.
     @ObservationIgnored private(set) var join = HubJoin()
-    /// Bumped by `mutate` and by nothing else — the roster's memo is keyed by it
-    /// (`HubRosterMemo`), so a batch that landed in the join without going through the one write
-    /// below would be a Session the cockpit never redraws. It is also the whole of what a reader
-    /// of the join observes, per the note above.
+    /// Moved by `publish` and by nothing else — the roster's memo is keyed by it
+    /// (`HubRosterMemo`), so a change that landed in the join without reaching that call would be
+    /// a Session the cockpit never redraws. It is also the whole of what a reader of the join
+    /// observes, per the note above.
     private(set) var joinRevision = 0
+    /// When the revision above last moved, and the publish waiting on the window since — the rate
+    /// limiter's whole state, driven from `+Publishing.swift`. Internal for the reason `join` is:
+    /// a half of this type is another file.
+    @ObservationIgnored var publishedAt: TimeInterval?
+    @ObservationIgnored var waitingPublish: Task<Void, Never>?
     /// The rosters of the Projects this watch has been pointed at, kept across a switch. The sweep
     /// still re-runs and the tails still re-read on re-entry.
     @ObservationIgnored private var retained = HubJoinCache()
@@ -185,6 +190,8 @@ final class TranscriptWatch {
     /// tearing down finds no transcript to apply against. Cancelling the whole set before awaiting
     /// any of it keeps a slow teardown from serialising behind the one in front of it.
     func stopAll() async {
+        // Before the join is emptied: the change it is holding is one of the transcripts going.
+        stopPublishing()
         await subagents.stopAll()
         readings.forgetAll()
         let stopped = Array(tails.values)
@@ -239,11 +246,16 @@ final class TranscriptWatch {
     /// A change that MOVED nothing publishes nothing (#858). Whether it moved is the change's own
     /// answer, because only the write knows — every mutating method on `HubJoin` reports it.
     ///
-    /// Internal rather than private for the reason the three stored properties above are: the
-    /// reading half of this watch is another file, and `private` in Swift is file-scoped. It is
-    /// still the only write there is.
+    /// Here rather than in `+Publishing.swift` because `join`'s setter is file-scoped, which is
+    /// what keeps this the only write there is. WHEN the change reaches a reader is that file's.
     func mutate(_ change: (inout HubJoin) -> Bool) {
         guard change(&join) else { return }
+        publishTheChange()
+    }
+
+    /// Stamp the join, which is what a reader of it observes. Only `+Publishing.swift` calls it,
+    /// so the rate a change reaches the cockpit at is settled in one place.
+    func stampTheJoin() {
         joinRevision += 1
     }
 
