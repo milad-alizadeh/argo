@@ -58,7 +58,13 @@ package struct ShellSidebar: View {
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
         let reading = roster.reading(
-            of: presentation.sessions, opened: openFolds, selection: held.pointed,
+            of: presentation.sessions,
+            opened: openFolds,
+            // The fourth fact, taken here and for the open row alone: this is where the reader
+            // and the main actor are, and where the deck's own row is named (#1513).
+            focus: SessionRosterProjection.focus(
+                on: held.pointed, among: presentation.sessions, asking: presentation.subagents,
+            ),
         )
 
         return SessionNavigator(

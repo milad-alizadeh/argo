@@ -216,34 +216,6 @@ public struct FeedAgentReader: Equatable, Sendable {
             ?? FeedAgents.all(in: feed, of: liveness)
     }
 
-    /// What the walk above cannot answer, answered off the children's own files (#1269).
-    ///
-    /// OUTSIDE the memo on purpose: the room's stamp does not move for a child's bytes (#858), so a
-    /// growth reading held inside it would freeze at whatever the child was doing when its parent
-    /// last wrote — the same staleness the rail was reported for, one level down. This is a
-    /// dictionary lookup per chip, so it is taken every pass.
-    ///
-    /// `nowMs` is read here rather than threaded: this is the one place the deck asks, and both
-    /// datings below want the same moment.
-    ///
-    /// `read` is the child's events as the engine already holds them, never `rows(of:)`: the ending
-    /// is the last few of them, and projecting a whole transcript to look at its tail is the cost
-    /// `hasReading(of:)` exists to avoid.
-    @MainActor private func told(_ agents: [FeedAgent]) -> [FeedAgent] {
-        let nowMs = Date().epochMs
-        let measured = measures(of: agents)
-        return FeedAgents.told(
-            agents,
-            by: SubagentEvidence(
-                writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
-                ending: { SubagentEnding.read(read($0)) },
-                measure: { measured[$0] ?? .unmeasured },
-            ),
-            ended: hold,
-            at: nowMs,
-        )
-    }
-
     /// What the children's own files say their runs took and cost (#1279) — absent for a child Argo
     /// has not read, which is what leaves that chip's meter honestly empty.
     ///
@@ -319,5 +291,70 @@ public struct FeedAgentReader: Equatable, Sendable {
         /// children writing are two different states, and a `#Preview` that swapped one for the
         /// other would otherwise fail SwiftUI's comparison and never redraw.
         case fixture([String: [TranscriptEvent]], writing: Set<String>, silent: Set<String>)
+    }
+}
+
+/// The TELLING: what the walk cannot answer, answered off the children's own files (#1269).
+///
+/// An extension rather than more of the struct above, because it is a second subject — the struct
+/// is what a reader IS and how two of them compare, and this is the one question it is for.
+extension FeedAgentReader {
+    /// What the walk above cannot answer, answered off the children's own files (#1269).
+    ///
+    /// OUTSIDE the memo on purpose: the room's stamp does not move for a child's bytes (#858), so a
+    /// growth reading held inside it would freeze at whatever the child was doing when its parent
+    /// last wrote — the same staleness the rail was reported for, one level down. This is a
+    /// dictionary lookup per chip, so it is taken every pass.
+    ///
+    /// `nowMs` is read here rather than threaded: this is the one place the deck asks, and both
+    /// datings below want the same moment.
+    ///
+    /// `read` is the child's events as the engine already holds them, never `rows(of:)`: the ending
+    /// is the last few of them, and projecting a whole transcript to look at its tail is the cost
+    /// `hasReading(of:)` exists to avoid.
+    @MainActor private func told(_ agents: [FeedAgent]) -> [FeedAgent] {
+        let nowMs = Date().epochMs
+        let measured = measures(of: agents)
+        let clocked = dating(at: nowMs)
+        return FeedAgents.told(
+            agents,
+            by: SubagentEvidence(
+                writing: clocked.writing,
+                ending: clocked.ending,
+                measure: { measured[$0] ?? .unmeasured },
+            ),
+            ended: hold,
+            at: nowMs,
+        )
+    }
+
+    /// The FOURTH fact alone, on a list of delegations somebody else walked (#1513).
+    ///
+    /// The roster's leading column builds its own list off the Session's STREAM — about thirty
+    /// times cheaper than a reading, which is why it walks separately
+    /// (`FeedAgents.all(in:of:within:)`, #1394) — and that walk can only ever reach the three facts
+    /// the record holds. This is the one the rail has and it does not: the child's own file,
+    /// growing. Handed the same evidence and the same hold the rail is told by, so two surfaces
+    /// drawing one Session in one second cannot give two answers.
+    ///
+    /// No measuring, and `SubagentDating` is what says so: a dot is not a meter, and filling one
+    /// would cost a walk of every child's file for a figure the roster never draws.
+    ///
+    /// Asking this for the OPEN Session is the caller's job. `grewAtMs` answers off
+    /// `Hub.subagentGrewAtMs`, which Argo keeps for whichever Session the deck has open, so asked
+    /// per row it would say "not writing" about every other row's children — the reading they
+    /// already have, arrived at more expensively.
+    @MainActor package func dated(_ agents: [FeedAgent]) -> [FeedAgent] {
+        let nowMs = Date().epochMs
+        return FeedAgents.dated(agents, by: dating(at: nowMs), ended: hold, at: nowMs)
+    }
+
+    /// The two clocked facts, read off the engine's own answers at ONE moment. Spelled once so the
+    /// rail's telling and the roster's dating cannot part company on either of them.
+    @MainActor private func dating(at nowMs: Int) -> SubagentDating {
+        SubagentDating(
+            writing: { SubagentWriting.read(lastGrewAtMs: grewAtMs($0), nowMs: nowMs) },
+            ending: { SubagentEnding.read(read($0)) },
+        )
     }
 }

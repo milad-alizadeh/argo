@@ -66,7 +66,7 @@ extension SessionRosterProjection {
             // reason the archive foot is (`isArchiveOpen`): the deck draws what the selection
             // names, and a fold shut over it would leave the roster drawing no row for the
             // Session the feed is drawing.
-            let selected = pass.selection.flatMap { members[$0] }
+            let selected = pass.focus.sessionID.flatMap { members[$0] }
             self.list = list
             self.membership = members
             self.folds = Dictionary(uniqueKeysWithValues: groups.map { ($0.directory, $0.reading) })

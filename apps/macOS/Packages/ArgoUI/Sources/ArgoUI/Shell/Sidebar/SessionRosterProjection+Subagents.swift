@@ -3,15 +3,17 @@ import ArgoEngine
 /// What the leading column draws under the state dot for what runs under a Session
 /// (`cockpit-roster-row.md`, `SubagentDots`). Four readings, and each is a different fact.
 ///
-/// THREE of the rail's four facts, never the fourth: this reads the Session's own record through
-/// `FeedAgents.all(in:of:within:)`, the same list `FeedAgentReader.agents(in:)` reads before its
-/// `told(_:)` step. It never calls `told`, because that step answers off a Subagent's OWN file,
-/// growing —
-/// and that reading exists only for whichever Session the deck has open (`Hub.subagentGrewAtMs`,
-/// behind `FeedAgentReader`), never for every row on the roster at once. A row not currently open
-/// can therefore lag the rail by exactly the gap #1269 was written to close: an open delegation
-/// past `DelegationCeiling` that its child is still visibly writing reads `.unresolved` here and
-/// `.running` on the rail, until the row is opened and the fourth fact reaches it too.
+/// THREE of the rail's four facts per row, and the fourth for ONE of them: this reads the Session's
+/// own record through `FeedAgents.all(in:of:within:)`, the same list `FeedAgentReader.agents(in:)`
+/// reads before its `told(_:)` step. That step answers off a Subagent's OWN file, growing, and the
+/// reading behind it exists for whichever Session the deck has open (`Hub.subagentGrewAtMs`, behind
+/// `FeedAgentReader`), never for every row on the roster at once.
+///
+/// So the open row is handed it already taken (`Focus`, #1513): the deck and the row beside it are
+/// one Session in one second, and they may not give two answers. Every other row reads the three
+/// facts in the record and can therefore still lag the rail by the gap #1269 was written to close —
+/// an open delegation past `DelegationCeiling` that its child is still visibly writing reads
+/// `.unresolved` here and `.running` on the rail, until the deck opens on it.
 extension SessionRosterProjection {
     enum SubagentReading: Hashable, Sendable {
         /// Delegated nothing at all.
@@ -28,12 +30,16 @@ extension SessionRosterProjection {
 
     /// One Session's reading, or `nil` where its own state is one Argo cannot place: a Session
     /// Argo cannot place cannot be claimed to be delegating either (rule 5).
+    ///
+    /// `told` is the open row's fourth fact and `nil` for every other row — see `Focus`.
     static func subagents(
-        of session: CockpitPresentation.Session, in events: [TranscriptEvent],
+        of session: CockpitPresentation.Session,
+        in events: [TranscriptEvent],
+        told: [FeedAgent]?,
     )
         -> SubagentReading? {
         guard SessionState.role(for: session.status) != nil else { return nil }
-        return reading(for: delegatedAgents(
+        return reading(for: told ?? delegatedAgents(
             in: events,
             of: DelegatingSession.of(session.status),
             within: FeedPath(cwd: session.workspaceLocation),
@@ -44,10 +50,17 @@ extension SessionRosterProjection {
     /// ceiling (rule 9). Never the other three readings — landed and unresolved are claims about
     /// ONE run, and pooling them into one mark would be a claim about the others a fold declines
     /// to make anywhere else.
-    static func foldedSubagents(of sessions: [CockpitPresentation.Session]) -> SubagentReading {
+    ///
+    /// The run it hides that the deck has open is pooled on the SAME rule as its own row would
+    /// draw it (#1513): a fold that summed a grey reading for the Session the deck is drawing
+    /// running would be the reported disagreement, one row further up.
+    static func foldedSubagents(
+        of sessions: [CockpitPresentation.Session], focused: Focus,
+    )
+        -> SubagentReading {
         let running = sessions.reduce(into: 0) { total, session in
             guard SessionState.role(for: session.status) != nil else { return }
-            total += FeedAgents.running(of: delegatedAgents(
+            total += FeedAgents.running(of: focused.told(of: session.id) ?? delegatedAgents(
                 in: session.events,
                 of: DelegatingSession.of(session.status),
                 within: FeedPath(cwd: session.workspaceLocation),
@@ -59,6 +72,14 @@ extension SessionRosterProjection {
     /// Off the STREAM and not the feed's rows (#1394). The roster needs the delegate calls, and no
     /// fold in `FeedProjection` can reach one — so building a whole reading to find them was about
     /// thirty times the work, once per row, on every pass.
+    static func delegations(of session: CockpitPresentation.Session) -> [FeedAgent] {
+        delegatedAgents(
+            in: session.events,
+            of: DelegatingSession.of(session.status),
+            within: FeedPath(cwd: session.workspaceLocation),
+        )
+    }
+
     private static func delegatedAgents(
         in events: [TranscriptEvent], of liveness: DelegatingSession, within path: FeedPath,
     )
