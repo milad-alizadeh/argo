@@ -12,7 +12,10 @@ looking at a surface you are building.
 **Render one state in isolation** — the right one. From `apps/macOS`:
 `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`, or `--specimen <case>`;
 `sh scripts/specimens.sh <dir> [name …]` for the set, and `ARGO_WINDOW_SIZE=<w>x<h>` when a
-width is part of the state. Entries live in `ArgoSpecimens/SpecimenRegistry+*.swift`, and
+width is part of the state. **`ARGO_SETTLE_SECONDS=<n>` for a specimen carrying a big
+reading** — the deck draws nothing at all until its measure lands (ADR-0030, Rule 3), a big
+prompt takes a couple of seconds to get there, and the capture cannot tell that blank window
+from a bug (#1287). Entries live in `ArgoSpecimens/SpecimenRegistry+*.swift`, and
 `Argo --list-specimens` prints every name.
 
 **Hold a click on one point** — `swift scripts/HoldClick.swift <pid> <x> <y> <out-prefix>`, against

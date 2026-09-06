@@ -41,9 +41,25 @@ fi
 
 mkdir -p "$OUT_DIR"
 
+# The deck draws nothing at all until its measure lands (ADR-0030, Rule 3), so a specimen whose
+# reading is big enough to take a while renders BLANK under the ordinary beat — and a blank PNG is
+# indistinguishable from the bug somebody is looking for (#1287). Named here rather than left to
+# whoever runs the batch: a still nobody set the beat for is a still that quietly lies.
+slow_to_settle() {
+  case $1 in
+    feedHugePrompt*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 for name in $NAMES; do
   echo "specimens: rendering $name"
-  ARGO_SPECIMEN="$name" sh "$SCRIPT_DIR/screenshot.sh" "$OUT_DIR/$name.png" >/dev/null
+  settle=${ARGO_SETTLE_SECONDS:-}
+  if [ -z "$settle" ] && slow_to_settle "$name"; then
+    settle=5
+  fi
+  ARGO_SPECIMEN="$name" ARGO_SETTLE_SECONDS="$settle" \
+    sh "$SCRIPT_DIR/screenshot.sh" "$OUT_DIR/$name.png" >/dev/null
 done
 
 echo "specimens: $OUT_DIR"

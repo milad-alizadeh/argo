@@ -7,6 +7,7 @@
 #   ARGO_SPECIMEN=feedEveryEventClass sh scripts/screenshot.sh out/feed.png
 #   ARGO_KEEP_RUNNING=1 sh scripts/screenshot.sh …  # leave the app up to drive it by hand
 #   ARGO_WINDOW_SIZE=680x600 sh scripts/screenshot.sh out/narrow.png
+#   ARGO_SETTLE_SECONDS=4 sh scripts/screenshot.sh …   # a specimen with a big reading in it
 #
 # `ARGO_SPECIMEN` names a `Specimen` case and renders that state instead of the cockpit — the
 # per-state harness AGENTS.md records as the gap. `sh scripts/specimens.sh <dir>` renders them all.
@@ -28,6 +29,11 @@
 # against another process's window. Nothing here can grant it — if the PNG comes out blank or
 # shows the desktop, that permission is why.
 set -eu
+
+# How many captures the settle loop will take, and the beat between them — three seconds of
+# window, which is well past any paint and short of any animation.
+SETTLE_TRIES=12
+SETTLE_BEAT=0.25
 
 OUT=${1:-out/argo.png}
 TRANSCRIPT=${2:-${ARGO_TRANSCRIPT_PATH:-}}
@@ -81,7 +87,7 @@ app_pid=$!
 # Nothing quits by name any more, so an instance leaked here is invisible and stays up forever.
 # Under `set -e` every step below can exit — the resize needs Accessibility permission, the
 # capture needs Screen Recording — and a specimen set is dozens of renders to interrupt.
-trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+trap 'kill "$app_pid" 2>/dev/null || true; rm -f "${settled_path:-}"' EXIT
 trap 'exit 130' INT TERM
 
 # The window is not on screen the instant the process starts, and the first frame it does put
@@ -116,8 +122,33 @@ if [ -n "${ARGO_WINDOW_SIZE:-}" ]; then
     to set size of front window to {$width, $height}"
 fi
 
-sleep 0.5
-screencapture -o -x -l"$window_id" "$OUT"
+# The settle beat, then a capture held until the window stops changing.
+#
+# The beat is a FLOOR and not the whole wait, because pixel stability cannot see the one state
+# that matters here: a reading whose rows are still being measured draws NOTHING (ADR-0030,
+# Rule 3), and a blank window is perfectly stable while it does. So a still of a big reading —
+# `feedHugePrompt*` takes about two seconds to settle — came out blank under the flat half-second
+# this replaced, and a blank PNG is indistinguishable from the bug somebody is looking for
+# (#1287). `ARGO_SETTLE_SECONDS` raises the floor for those; the stability loop on top of it
+# catches the ordinary case of a capture taken mid-paint.
+settle=${ARGO_SETTLE_SECONDS:-0.5}
+sleep "$settle"
+settled_path=$(mktemp)
+attempt=0
+while [ "$attempt" -lt "$SETTLE_TRIES" ]; do
+  screencapture -o -x -l"$window_id" "$OUT"
+  if [ "$attempt" -gt 0 ] && cmp -s "$OUT" "$settled_path"; then
+    break
+  fi
+  cp "$OUT" "$settled_path"
+  attempt=$((attempt + 1))
+  sleep "$SETTLE_BEAT"
+done
+# Said out loud, because this is the one failure a PNG cannot self-report: the capture is of a
+# window that was still moving when the tries ran out.
+if [ "$attempt" -ge "$SETTLE_TRIES" ]; then
+  echo "screenshot: $OUT captured while the window was still changing" >&2
+fi
 
 # The app is meant to outlive this script here, so the sweeper is disarmed rather than fired.
 if [ -n "${ARGO_KEEP_RUNNING:-}" ]; then

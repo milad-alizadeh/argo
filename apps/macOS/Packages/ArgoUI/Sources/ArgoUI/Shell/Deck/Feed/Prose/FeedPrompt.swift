@@ -112,8 +112,14 @@ package struct FeedPrompt: View {
         return text.isEmpty ? "\(opening): \(pictures)" : "\(opening): \(text), with \(pictures)"
     }
 
+    /// What the control says in each state. Named rather than left inline so a suite can hold the
+    /// claim that a bubble the reader has let out offers the way back (#1287).
+    package static func disclosureWords(isExpanded: Bool) -> String {
+        isExpanded ? "Show less" : "Show more"
+    }
+
     private var disclosure: some View {
-        Button(isExpanded ? "Show less" : "Show more") { isExpanded.toggle() }
+        Button(Self.disclosureWords(isExpanded: isExpanded)) { isExpanded.toggle() }
             .buttonStyle(.plain)
             .argoText(ArgoTypography.caption)
             .foregroundStyle(argo.color.text.tertiary)

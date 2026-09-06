@@ -8,6 +8,11 @@ import SwiftUI
 extension SpecimenRegistry {
     static let feed: [SpecimenEntry] = rows + asks + diagrams + evidence + shots + lane
 
+    /// The two readings the fold's stills are taken from — the moderate prompt #946 was filed at,
+    /// and one 120 times past it (#1287).
+    private static let long = FeedProjection.previewLongPromptRows
+    private static let huge = FeedProjection.previewHugePromptRows
+
     private static let rows: [SpecimenEntry] = [
         SpecimenEntry("feed") {
             SpecimenScene.sessions(
@@ -56,8 +61,14 @@ extension SpecimenRegistry {
         SpecimenEntry("feedSubmittedTurn") {
             SpecimenScene.sessions(FeedProjection.previewSubmittedTurnRows)
         },
-        SpecimenEntry("feedPromptFolded") { SpecimenScene.longPrompt(unfolded: false) },
-        SpecimenEntry("feedPromptUnfolded") { SpecimenScene.longPrompt(unfolded: true) },
+        SpecimenEntry("feedPromptFolded") { SpecimenScene.prompt(long, at: .folded) },
+        SpecimenEntry("feedPromptUnfolded") { SpecimenScene.prompt(long, at: .unfolded) },
+        // The same states for a prompt several times past the fold (#1287), plus the crossing
+        // between them. All three need `ARGO_SETTLE_SECONDS`: the deck draws nothing until its
+        // measure lands, and this reading takes about two seconds to get there.
+        SpecimenEntry("feedHugePromptFolded") { SpecimenScene.prompt(huge, at: .folded) },
+        SpecimenEntry("feedHugePromptUnfolded") { SpecimenScene.prompt(huge, at: .unfolded) },
+        SpecimenEntry("feedHugePromptPressed") { SpecimenScene.prompt(huge, at: .pressed) },
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },
         // A table whose cells are mostly backticked. Render narrow as well as wide
         // (`ARGO_WINDOW_SIZE`): what it settles is that a row is placed at the height the mono
@@ -191,59 +202,6 @@ extension SpecimenRegistry {
         reading.cursor = row
         return reading
     }
-
-    private static let evidence: [SpecimenEntry] = [
-        // Call rows, not the whole feed: against the full transcript this failure is below the
-        // fold.
-        SpecimenEntry("feedEvidence") {
-            SpecimenScene.sessions(
-                FeedProjection.previewCallRows,
-                open: FeedProjection.previewFailedCallID,
-            )
-        },
-        SpecimenEntry("feedRunEvidence") {
-            SpecimenScene.sessions(
-                FeedProjection.previewCallRows,
-                open: FeedProjection.previewRunCallID,
-            )
-        },
-        // One pane twice: at the top, and after a click on the THIRD name under the row.
-        SpecimenEntry("feedSurveyEvidence") { SpecimenScene.survey() },
-        SpecimenEntry("feedSurveyEvidenceStep") { SpecimenScene.survey(at: 2) },
-        // A markdown file the agent wrote: it opens as the DOCUMENT and not as the patch.
-        SpecimenEntry("feedDocumentEvidence") {
-            SpecimenScene.sessions(
-                FeedProjection.previewCallRows,
-                open: FeedProjection.previewDocumentCallID,
-            )
-        },
-        // The two readings of that body beside each other — the one pair a click is otherwise the
-        // only way to reach.
-        SpecimenEntry("evidenceSkillReadings") { EvidenceSkillSpecimen() },
-        // The marker's panel: the `SKILL.md` body as the document it is, under the path Argo read
-        // it from.
-        SpecimenEntry("feedSkillEvidence") {
-            SpecimenScene.sessions(
-                FeedProjection.previewSkillLoadRows,
-                open: FeedProjection.previewSkillLoadRowID,
-            )
-        },
-        // The failure the row's ink announces, said in full: which file, and that Argo could not
-        // read it. The marker is red either way, so the panel is not the only place it is stated.
-        SpecimenEntry("feedSkillUnreadableEvidence") {
-            SpecimenScene.sessions(
-                FeedProjection.previewSkillLoadRows,
-                open: FeedProjection.previewSkillUnreadableRowID,
-            )
-        },
-        // At the panel's floor: command and path cut at OPPOSITE ends, and a three-line header has
-        // not moved the close control.
-        SpecimenEntry("evidenceAddresses") { EvidenceSpecimen() },
-        // The narrowest deck met in practice: two columns sharing 680 points.
-        SpecimenEntry("feedAtScaleEvidence") {
-            SpecimenScene.sessions(FeedProjection.longRows, open: FeedProjection.longFailedCallID)
-        },
-    ]
 
     private static let shots: [SpecimenEntry] = [
         SpecimenEntry("feedGallery") {
