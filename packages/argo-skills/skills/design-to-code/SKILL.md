@@ -5,10 +5,23 @@ description: Build a screen from its approved design in docs/designs/, once per 
 
 # Design To Code
 
-Input: one approved design in `docs/designs/` (from `prototype-to-design`) and its render.
-Output: the screen assembled from existing primitives against a derived view-model, plus an
-inventory of the components extraction actually justified. The design is a disposable spec,
-not source: its decisions survive as tokens and inventory rows, its markup does not.
+Input: one approved design (from `prototype-to-design`) and its render. Output: the screen
+assembled from existing primitives against a derived view-model, plus an inventory of the
+components extraction actually justified. The design is a disposable spec, not source: its
+decisions survive as tokens and inventory rows, its markup does not.
+
+**Where the input is.** `docs/designs/<screen>.md` is on `main` and carries the measurements, the
+frozen component names and the state renders. The explorable page is **not** on `main`: the
+`.md`'s front matter names its branch as `explorable: design/<screen>`, and one command reads it
+without a checkout:
+
+```sh
+git fetch origin design/<screen>
+git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
+```
+
+If `explorable` reads `gone`, the branch was deleted when the screen finished and the `.md` plus
+its renders are the whole spec. That is not a missing input — build from them.
 
 ## 0. Read the stack
 
@@ -75,7 +88,20 @@ wrong, in the same change.
 Done when the gates are green, `pixel-review` has run, and every finding is fixed and
 re-judged or rejected with a cited rule.
 
-## 6. Mark the design
+## 6. Mark the design, and drop the branch
 
-When this ticket was the last one against the design, set its front matter to
-`status: built` and record the commit.
+When this ticket was the last one against the design, set the `.md`'s front matter to
+`status: built` and record the commit. In the same change set `explorable: gone` and delete the
+page's branch, which has now stopped being an input to anything:
+
+```sh
+git push origin --delete design/<screen>
+```
+
+`bun run worktrees:gc` deletes it anyway once the screen's epic closes, so a forgotten branch is
+swept rather than kept — but the ticket that finishes the screen is the moment it is known to be
+finished, and that is the cheapest place to say so.
+
+A shipped screen keeps no page. Re-opening the design re-bases it against the shipped app
+(`prototype-to-design`, step 4), which screenshots what actually ships — so a stale explorable
+would add nothing that re-base would not read for itself.

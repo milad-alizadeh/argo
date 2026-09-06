@@ -20,6 +20,13 @@
 #
 # Anything failing a check is reported, never removed. --dry-run reports only.
 #
+# It also sweeps two kinds of remote branch/ref that exist only for the life of something
+# else: the visual-review refs at the bottom of this file, and the DESIGN BRANCHES that
+# carry a screen's explorable page (#1526). A design's `.html` never lands on the default
+# branch; it lives on `design/<screen>` for as long as the screen is being built, and the
+# design `.md` on the default branch is what names it. When that `.md`'s epic closes, the
+# page has no reader left, so the branch goes.
+#
 # --artifacts is the other sweep, and it reaps no worktree at all. It deletes the BUILD
 # OUTPUT inside every worktree — `apps/macOS/build` and `Packages/*/.build` — which is
 # regenerable by definition and is where the disk actually goes: 104 GB of the 106 GB under
@@ -258,6 +265,44 @@ if [ "$has_gh" = 1 ]; then
   else
     prune_refs=0
   fi
+
+  # The design branches. Keyed on the screen's EPIC rather than on a pull request: a design
+  # outlives every pull request built against it, and it is the epic closing that says the
+  # screen is done. The join runs from the design `.md` on the default branch, which is the
+  # only place that knows both halves — `explorable:` names the branch, `epic:` names the
+  # issue — so a branch nothing on the default branch claims is never touched.
+  #
+  # Both keys must be present and the issue must be provably CLOSED. A missing key, an
+  # unreadable file or a failed `gh` query all mean keep: the branch may be the only copy of
+  # a page somebody is still building against.
+  designs=$(git -C "$repo_root" ls-tree -r --name-only \
+    "origin/$default_branch" -- docs/designs 2>/dev/null | grep '\.md$')
+  for design in $designs; do
+    # The front matter is an HTML comment at the top of the file; 20 lines is well past it,
+    # and stopping there keeps a body mention of `epic:` out of the reading.
+    front=$(git -C "$repo_root" show "origin/$default_branch:$design" 2>/dev/null | head -20)
+    branch=$(printf '%s\n' "$front" | sed -n 's/.*explorable:[[:space:]]*\(design\/[A-Za-z0-9._-]*\).*/\1/p' | head -1)
+    [ -n "$branch" ] || continue
+    git -C "$repo_root" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1 || continue
+
+    epic=$(printf '%s\n' "$front" | sed -n 's/.*epic:[[:space:]]*#\{0,1\}\([0-9][0-9]*\).*/\1/p' | head -1)
+    if [ -z "$epic" ]; then
+      echo "  keep branch $branch — $design names no epic"
+      continue
+    fi
+
+    state=$(cd "$repo_root" && gh issue view "$epic" --json state --jq .state 2>/dev/null) || state=""
+    if [ "$state" != "CLOSED" ]; then
+      echo "  keep branch $branch — epic #$epic is ${state:-unreadable}"
+      continue
+    fi
+
+    if [ "$DRY_RUN" = 1 ]; then
+      echo "  reap branch $branch — epic #$epic closed (dry run)"
+    elif git -C "$repo_root" push --quiet origin --delete "$branch" 2>/dev/null; then
+      echo "  reaped branch $branch — epic #$epic closed"
+    fi
+  done
 
   if [ "$prune_refs" = 1 ]; then
     git -C "$repo_root" ls-remote origin 'refs/pr-screenshots/*' 2>/dev/null \

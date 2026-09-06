@@ -1,7 +1,8 @@
 <!-- status: built
      approved-at: c0e24739
      re-based-at: #1304
-     prototype: worktree-prototype-609-work-room -->
+     prototype: worktree-prototype-609-work-room
+     explorable: gone (#1526) -->
 
 # The Tickets room
 
@@ -13,7 +14,7 @@
 > **Re-based on the shipped room · #1304.** This file had drifted on the toolbar, the query and
 > Next-up, and a `stale` design is worse than no design — `pixel-review` judges against it and
 > `design-to-code` extracts from it, and neither can tell a drift from a bug. Every state in
-> [`cockpit-work-room.html`](cockpit-work-room.html) was corrected against its own specimen
+> `cockpit-work-room.html` was corrected against its own specimen
 > render, and `work-room/` was re-shot from the corrected file. **The status is `built`**: a
 > disagreement between this file and the app is now a bug in one of them, not a design still to
 > be reached.
@@ -29,9 +30,11 @@ Route's re-skin. Before this, every design in `docs/designs/` was a Sessions sur
 `InstrumentDeckShell` drew `Color.clear` for `.work`, so a session sent at #272 would have
 invented the pixels.
 
-**The renders in [`work-room/`](work-room/) are the spec.** [`cockpit-work-room.html`](cockpit-work-room.html)
-is the same room, explorable: every state is a URL (`?state=<key>`), `?render=1` strips the
-harness chrome. The measurements below are the numbers a ticket must carry.
+**The renders in [`work-room/`](work-room/) are the spec**, and the measurements below are the
+numbers a ticket must carry. **The explorable is gone** (#1526): the room is built, so
+`cockpit-work-room.html` stopped being an input to a build and was deleted rather than
+maintained. Every `.html` this file cites below is read the same way — as the record of a
+decision, not as a file to open.
 
 **Every state names the specimen it was corrected against (#1304)**, so a reader can re-run the
 comparison rather than take this file's word for it: `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh

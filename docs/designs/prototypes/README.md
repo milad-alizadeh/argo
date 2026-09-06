@@ -13,13 +13,11 @@ abstractions, one file — and the validated decisions live in the spec, not her
 > when the runtime locked to Swift (ADR-0022). This is not a re-opening of that: it is a
 > throwaway on a throwaway branch, which is where the `prototype` skill puts them.
 
-## Run it
+## The page is gone
 
-Open `roster-header-prototype.html` in a browser. No build, no server, no dependencies.
-
-```sh
-open docs/designs/prototypes/roster-header-prototype.html
-```
+`roster-header-prototype.html` was deleted from `main` by #1526, along with every other
+explorable there. This file is the record of what it answered; history keeps the markup. What
+the URL table below describes is what that page did, not something to open.
 
 ## The question it answered
 
