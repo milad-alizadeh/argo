@@ -15,7 +15,9 @@ import SwiftUI
 /// The committed measurement, so the trail carries the path lengths a real monorepo has — the
 /// crumbs are a clipping and a wrapping problem, and a fixture of two tidy folders poses neither.
 struct AtlasDescentSpecimen: View {
-    var entered = AtlasDescentPaths.deep
+    /// Nothing is the repository seen whole — the frame the two descents below are judged
+    /// AGAINST (#1490), so all three are of one measurement and one tiling.
+    var entered: String? = AtlasDescentPaths.deep
 
     var body: some View {
         AtlasRoomHost(
@@ -49,6 +51,18 @@ enum AtlasDescentPaths {
 struct AtlasDescentShallowSpecimen: View {
     var body: some View {
         AtlasDescentSpecimen(entered: AtlasDescentPaths.shallow)
+    }
+}
+
+/// The repository seen whole — where the two descents above came FROM (#1490).
+///
+/// It is the third of one set rather than a state of its own: the claim the three frames make
+/// together is that they hold the same rectangles at three scales, which is what one tiling and a
+/// camera over it means and what a re-tiling per level cannot do. `atlasRoom` renders a room too,
+/// over a fixture of its own — a comparison across two measurements would prove nothing.
+struct AtlasDescentRootSpecimen: View {
+    var body: some View {
+        AtlasDescentSpecimen(entered: nil)
     }
 }
 

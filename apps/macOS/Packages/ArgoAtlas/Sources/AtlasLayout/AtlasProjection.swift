@@ -23,16 +23,70 @@ package struct AtlasProjection: Equatable, Sendable {
     /// defect as a fit solved against a second camera.
     package let rise: Double
 
-    package init(of plan: AtlasPlan, through camera: AtlasCamera, rising rise: Double = 1) {
+    /// `folder` is where the reader is STANDING, and the only thing a descent changes (#1490): the
+    /// tiling is laid out from the repository's root once and the fit seats onto the plate. Nothing
+    /// where they have descended into nothing, which frames the whole plan.
+    package init(
+        of plan: AtlasPlan,
+        through camera: AtlasCamera,
+        rising rise: Double = 1,
+        standingIn folder: String? = nil,
+    ) {
         self.plan = plan
         self.camera = camera
-        self.fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
+        self.fit = AtlasFit(
+            framing: plan, through: camera, into: plan.extent, standingIn: folder,
+        )
         self.rise = min(1, max(0, rise))
     }
 
     /// The ground the picture is framed into, which is what every caller sizes its view at.
     package var viewport: CGSize {
         plan.extent
+    }
+
+    /// The band a plate's name is drawn in, in the view's own points, or nothing where the plate
+    /// is too small ON SCREEN to hold a line of type (#1490).
+    ///
+    /// Asked here rather than off the plate, because the plate carries its strip in PLAN points
+    /// and the seat means the two are no longer the same thing: standing in a folder magnifies it,
+    /// and a name laid out in plan points would stay where the folder used to be. The band keeps
+    /// the type's own height at the top of the strip rather than growing with it — a caption is
+    /// set at one size however close the camera stands.
+    ///
+    /// Flat only, which is the one place a name is drawn at all: the mapping below is a rect
+    /// because the projection is affine there, and turned it would be a quadrilateral.
+    package func nameBand(of plate: AtlasPlateFrame) -> CGRect? {
+        let strip = viewRect(of: plate.nameStrip)
+        // The tiler's own answer FIRST, in plan points. The camera at the fit is the identity, and
+        // every strip the tiler cut is exactly `plateHeader` tall — so a height read back through
+        // the projection decides those on a rounding bit, and the map loses half its names to
+        // arithmetic. A seat can only ever add names, so the screen is asked only about the plates
+        // the plan says are too small to carry one.
+        guard plate.carriesName || strip.height >= AtlasFraming.plateHeader else { return nil }
+        let band = CGRect(
+            x: strip.minX, y: strip.minY, width: strip.width, height: AtlasFraming.plateHeader,
+        )
+        // Off the stage is no band. A seat can magnify by up to ninety, and at that zoom nearly
+        // every plate in the plan clears the header — so a caller that built one `Text` per band
+        // and clipped afterwards would lay out hundreds of names nobody can see, once per frame of
+        // whatever is moving. The clip stays as well: it is what stops a band straddling the edge
+        // from writing over the rail.
+        guard band.intersects(CGRect(origin: .zero, size: viewport)) else { return nil }
+        return band
+    }
+
+    /// One rect of the plan, on the ground, in the view's own points. Flat only, for `nameBand`'s
+    /// reason.
+    package func viewRect(of rect: CGRect) -> CGRect {
+        let near = viewPoint(x: rect.minX, y: rect.minY, height: 0)
+        let far = viewPoint(x: rect.maxX, y: rect.maxY, height: 0)
+        return CGRect(
+            x: min(near.x, far.x),
+            y: min(near.y, far.y),
+            width: abs(far.x - near.x),
+            height: abs(far.y - near.y),
+        )
     }
 
     /// One point of the model, in the view's own points: x right and y DOWN, which is where

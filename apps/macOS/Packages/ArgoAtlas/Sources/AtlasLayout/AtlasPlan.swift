@@ -43,6 +43,20 @@ public struct AtlasPlan: Equatable, Sendable {
     /// way it draws a full one.
     public static let empty = AtlasPlan(extent: .zero)
 
+    /// The plate a folder was drawn on, or nothing where the tiling drew none (#1490).
+    ///
+    /// Asked through `covers` rather than by matching the path, because a folder holding one
+    /// folder and nothing else is FOLDED into one plate (`AtlasTiler.folding(from:)`): every
+    /// folder of the run names the same ground, and a lookup that only matched the deepest of them
+    /// would answer nothing for every level above it.
+    ///
+    /// The innermost match wins. The plates are drawn outermost first, so the last one covering a
+    /// path is the smallest ground that folder stands on — which is the one a camera seating onto
+    /// it means.
+    func plate(standingIn folder: String) -> AtlasPlateFrame? {
+        plates.last { $0.covers.contains(folder) }
+    }
+
     /// Tiles a Map: a squarified treemap of every Plot, each sized by one Measure and banded by
     /// another against the repository's own distribution.
     ///
