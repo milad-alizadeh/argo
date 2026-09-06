@@ -29,8 +29,8 @@ package struct TicketBody: View {
     @ViewBuilder private var deliveries: some View {
         GroupLabel("Deliveries")
         if ticket.deliveries.isEmpty {
-            // An empty state is QUIET, not dead: it sat on `disabled` until #1250, which is a
-            // rung with no contrast floor under a line the room is telling the reader.
+            // An empty state is QUIET, not dead: it is a line the room is telling the reader, so
+            // it takes a rung with a contrast floor (#1250).
             Text("No Delivery yet")
                 .argoLine(ArgoTypography.rowMeta, .metadata)
         } else {

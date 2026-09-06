@@ -16,8 +16,7 @@ struct ProviderFoot: View {
             HStack(spacing: ArgoSpacing.snug) {
                 SessionStateIndicator(state: provider.state)
                 Text("\(provider.name) · \(provider.account)")
-                    .argoText(ArgoTypography.rowMeta)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.rowMeta, .metadata)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer(minLength: ArgoSpacing.flush)

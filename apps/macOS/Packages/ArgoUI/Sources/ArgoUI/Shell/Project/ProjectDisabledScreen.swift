@@ -22,8 +22,7 @@ package struct ProjectDisabledScreen: View {
         ContentUnavailableView {
             VStack(spacing: ArgoSpacing.tight) {
                 Text(reading.name)
-                    .argoText(ArgoTypography.identityHeading)
-                    .foregroundStyle(argo.color.text.primary)
+                    .argoLine(ArgoTypography.identityHeading, .title)
                 Text(reading.state)
                     .argoText(ArgoTypography.rowMeta)
                     .foregroundStyle(ArgoOperationalState.failure.tint(in: argo.color))
@@ -31,8 +30,7 @@ package struct ProjectDisabledScreen: View {
             .frame(maxWidth: ArgoProjectDisabled.readingWidth)
         } description: {
             Text(reading.detail)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.body, .body)
                 // On the Text: `ContentUnavailableView` sizes its description to a measure of its
                 // own, and a frame outside it never reaches the line breaks.
                 .frame(width: ArgoProjectDisabled.readingWidth)

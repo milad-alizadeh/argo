@@ -15,13 +15,11 @@ struct TicketsRoomVacancy: View {
     var body: some View {
         ContentUnavailableView {
             Text(title)
-                .argoText(ArgoTypography.identityHeading)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.identityHeading, .title)
                 .frame(maxWidth: ArgoTicketsRoomVacancy.panelWidth)
         } description: {
             Text(message)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.body, .metadata)
                 // On the Text: `ContentUnavailableView` sizes its description to a measure of its
                 // own, and a frame outside it never reaches the line breaks.
                 .frame(width: ArgoTicketsRoomVacancy.panelWidth)

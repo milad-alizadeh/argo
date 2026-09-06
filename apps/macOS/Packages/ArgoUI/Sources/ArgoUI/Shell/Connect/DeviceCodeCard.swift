@@ -20,8 +20,7 @@ package struct DeviceCodeCard: View {
     package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
             Text(DeviceCodeCopy.heading(for: challenge))
-                .argoText(ArgoTypography.rowTitle)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.rowTitle, .title)
             if case let .typed(userCode) = challenge.kind {
                 code(userCode)
             }
@@ -35,8 +34,7 @@ package struct DeviceCodeCard: View {
                     .buttonStyle(.quiet)
             }
             Text(DeviceCodeCopy.waiting)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.caption, .metadata)
         }
         // No ground of its own: it stands in a `Form` section, and the section IS the card.
         .accessibilityElement(children: .contain)

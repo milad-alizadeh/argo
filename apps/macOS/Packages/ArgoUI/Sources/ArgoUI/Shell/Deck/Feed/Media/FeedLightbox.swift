@@ -77,8 +77,7 @@ package struct FeedLightbox: View {
     @ViewBuilder private var caption: some View {
         if let words = showing.provenance.words {
             Text(words)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
         }
     }
 

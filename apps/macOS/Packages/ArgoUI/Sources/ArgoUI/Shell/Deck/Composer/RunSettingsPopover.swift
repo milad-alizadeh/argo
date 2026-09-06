@@ -85,8 +85,7 @@ struct RunSettingsPopover: View {
                 .argoText(ArgoTypography.body)
             Spacer(minLength: ArgoSpacing.base)
             Text(model.note)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.caption, .body)
         }
         // Or only the words take the click, and the gap between name and note does nothing.
         .contentShape(Rectangle())

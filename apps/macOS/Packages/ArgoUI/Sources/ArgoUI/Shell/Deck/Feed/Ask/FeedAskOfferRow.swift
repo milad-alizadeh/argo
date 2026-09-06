@@ -49,8 +49,7 @@ struct FeedAskOfferRow: View {
                 .fixedSize(horizontal: false, vertical: true)
             if let detail = offer.detail {
                 Text(detail)
-                    .argoText(ArgoTypography.rowMeta)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.rowMeta, .metadata)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

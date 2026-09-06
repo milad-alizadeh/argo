@@ -23,8 +23,7 @@ package struct TicketFactStrip: View {
             }
             pair("Bucket") {
                 Text(ticket.bucket.filing)
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.secondary)
+                    .argoLine(ArgoTypography.machineCaption, .body)
             }
             if !ticket.labels.isEmpty {
                 pair("Labels") {
@@ -54,8 +53,7 @@ package struct TicketFactStrip: View {
     /// A provider's word, at the pane's one value role.
     private func value(_ word: String) -> some View {
         Text(word)
-            .argoText(ArgoTypography.rowMeta)
-            .foregroundStyle(argo.color.text.secondary)
+            .argoLine(ArgoTypography.rowMeta, .body)
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

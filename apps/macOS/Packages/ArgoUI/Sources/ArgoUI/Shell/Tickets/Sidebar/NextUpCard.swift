@@ -104,11 +104,9 @@ package struct NextUpCard: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
                 Text(IssueReading.mark(pick.number))
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
                 Text(pick.title)
-                    .argoText(ArgoTypography.rowTitle)
-                    .foregroundStyle(argo.color.text.primary)
+                    .argoLine(ArgoTypography.rowTitle, .title)
                     // A `List` row gives its content one line's height without the `fixedSize`.
                     .lineLimit(Self.titleLines)
                     .fixedSize(horizontal: false, vertical: true)
@@ -135,8 +133,7 @@ package struct NextUpCard: View {
 
     private func sentence(_ words: String) -> some View {
         Text(words)
-            .argoText(ArgoTypography.rowMeta)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.rowMeta, .metadata)
             // A `List` row truncates its content to one line without both.
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)

@@ -53,8 +53,9 @@ struct ComposerField: View {
     /// the placeholder stood.
     @ViewBuilder private var prompt: some View {
         if text.isEmpty {
-            // A placeholder is live guidance, not a disabled control: it came off the `disabled`
-            // rung in #1250, which carries no contrast floor.
+            // A placeholder is live guidance, not a disabled control, so it clears the floor
+            // (#1250). Spelled as a pair rather than `argoLine`: the `argo` read is what seals
+            // this view's memberwise init under edge 6 of `scripts/swift-boundaries.sh`.
             Text(placeholder)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.ink(.metadata))

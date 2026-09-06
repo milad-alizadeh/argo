@@ -42,8 +42,7 @@ struct BacklogSelectionGroundTests {
     /// The ticket's own criterion, absolute and not relative: every voice a backlog row is set in
     /// clears the ramp's floor on the ground that row is read on. Both grounds, one loop — which is
     /// the whole point of the reversal, since #1071 needed a ground-dependent ink and this does
-    /// not. The caption is in the loop as of #1250: it came off `text.disabled`, which is an
-    /// absence rather than a voice and carries no floor at all, onto a rung that has one.
+    /// not. The caption is in the loop too: it is live text, so it is held to the floor (#1250).
     @Test(arguments: palettes)
     func `every voice a backlog row is set in clears the floor on both of its grounds`(
         _ appearance: (name: String, palette: ArgoPalette),

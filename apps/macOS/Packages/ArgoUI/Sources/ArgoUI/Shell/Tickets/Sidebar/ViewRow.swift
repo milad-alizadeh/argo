@@ -25,7 +25,7 @@ struct ViewRow: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             ArgoGlyph(symbol, .inline)
-                .foregroundStyle((ink ?? argo.color.text.ink(.machineFact)).color)
+                .foregroundStyle((ink ?? argo.color.text.tertiary).color)
                 .frame(width: ArgoTicketsSidebar.glyphWidth)
             Text(name)
                 .argoLine(ArgoTypography.rowMeta, .title)

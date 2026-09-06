@@ -28,8 +28,7 @@ package struct MainChip: View {
             Spacer()
                 .frame(width: ArgoIconSize.statusDot)
             Text(AgentsRailCopy.main)
-                .argoText(ArgoTypography.rowTitle)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.rowTitle, .title)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

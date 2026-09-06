@@ -51,8 +51,7 @@ package struct FeedAskLine: View {
                 .foregroundStyle(argo.color.text.tertiary)
                 .feedMarkerColumn()
             Text(Self.reportedWords)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

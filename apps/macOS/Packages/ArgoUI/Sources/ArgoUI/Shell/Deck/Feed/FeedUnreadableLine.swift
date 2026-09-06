@@ -36,8 +36,7 @@ struct FeedUnreadableLine: View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
             mark
             Text(unreadable.label)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.body, .metadata)
             ArgoDisclosure(.beside)
                 .foregroundStyle(
                     isExpanded ? argo.color.interaction.accent : argo.color.text.disabled,

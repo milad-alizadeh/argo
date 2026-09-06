@@ -24,13 +24,10 @@ package struct BacklogRowInk: Equatable {
         // which row is selected (#1165).
         //
         // A rail is on screen for a descendant's sake rather than for its own match, so its title
-        // takes the demotion the `#id` beside it already carries (#873). A row that IS the match
-        // takes the title rung, which is the loudest the ramp has: it was `secondary` until
-        // #1250, which left no line in the list at full strength.
+        // takes the demotion the `#id` beside it already carries (#873).
         self.title = palette.text.ink(isRail ? .metadata : .title)
         self.machine = palette.text.ink(.machineFact)
-        // Quiet, not dead. It sat on `disabled` until #1250 — a rung with no contrast floor,
-        // under live text nobody had disabled.
+        // Quiet, not dead: a caption is live text, so it takes a rung with a floor (#1250).
         self.caption = palette.text.ink(.metadata)
     }
 }

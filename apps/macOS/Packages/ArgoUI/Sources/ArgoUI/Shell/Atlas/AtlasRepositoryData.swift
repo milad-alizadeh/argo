@@ -26,8 +26,7 @@ struct AtlasRepositoryData: View {
             AtlasRebuildButton(title: "Rebuild map", rebuild: rebuild)
                 .help("Re-measure the repository. No model calls.")
             Text(provenance)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

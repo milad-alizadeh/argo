@@ -11,8 +11,7 @@ struct SessionTicketPickerZeroLine: View {
 
     var body: some View {
         Text(Self.words)
-            .argoText(ArgoTypography.rowMeta)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.rowMeta, .metadata)
             .lineLimit(1)
             // `SessionTicketPickerRow`'s inset, for its reason: this line stands where a row
             // would, so it starts where a row's characters start.

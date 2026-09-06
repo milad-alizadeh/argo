@@ -70,6 +70,20 @@ package struct SearchFieldLine: View {
             .onSubmit { press(.commit) }
             .onAppear { isFocused = opensFocused }
             .accessibilityLabel(prompt)
+            .overlay(alignment: .leading) { placeholder }
+    }
+
+    /// Drawn HERE rather than handed to the field, exactly as `ComposerField` draws its own: a
+    /// `prompt:` reaches AppKit as a string and comes back in the platform's placeholder colour,
+    /// which was the one ink on this line outside the palette (#1250). Measured on the render —
+    /// the `prompt:` overload was tried first and drew 143 where the rung is 153.
+    @ViewBuilder private var placeholder: some View {
+        if query.isEmpty {
+            Text(prompt)
+                .argoLine(ArgoTypography.body, .metadata)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     private func take(_ key: Key) -> KeyPress.Result {

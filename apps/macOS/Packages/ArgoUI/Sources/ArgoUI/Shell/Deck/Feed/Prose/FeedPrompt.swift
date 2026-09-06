@@ -115,8 +115,7 @@ package struct FeedPrompt: View {
     private var disclosure: some View {
         Button(isExpanded ? "Show less" : "Show more") { isExpanded.toggle() }
             .buttonStyle(.plain)
-            .argoText(ArgoTypography.caption)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.caption, .metadata)
             .fixedSize()
             // How the layout puts the control away where the prompt already stands whole: proposed
             // a box of nothing, it collapses to nothing and the clip leaves nothing drawn. Both

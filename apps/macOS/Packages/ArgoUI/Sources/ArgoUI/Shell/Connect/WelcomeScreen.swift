@@ -15,11 +15,9 @@ package struct WelcomeScreen: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             VStack(alignment: .leading, spacing: ArgoSpacing.base) {
                 Text(WelcomeCopy.heading)
-                    .argoText(ArgoTypography.identityHeading)
-                    .foregroundStyle(argo.color.text.primary)
+                    .argoLine(ArgoTypography.identityHeading, .title)
                 Text(WelcomeCopy.subheading)
-                    .argoText(ArgoTypography.body)
-                    .foregroundStyle(argo.color.text.secondary)
+                    .argoLine(ArgoTypography.body, .body)
             }
             // Not the Form the Connect half is: nothing here is settable, and a settings surface
             // whose rows do nothing when clicked is a promise the screen cannot keep.
@@ -27,11 +25,9 @@ package struct WelcomeScreen: View {
                 ForEach(WelcomeCopy.benefits) { benefit in
                     VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
                         Text(benefit.title)
-                            .argoText(ArgoTypography.rowTitle)
-                            .foregroundStyle(argo.color.text.primary)
+                            .argoLine(ArgoTypography.rowTitle, .title)
                         Text(benefit.detail)
-                            .argoText(ArgoTypography.rowMeta)
-                            .foregroundStyle(argo.color.text.secondary)
+                            .argoLine(ArgoTypography.rowMeta, .body)
                     }
                 }
             }

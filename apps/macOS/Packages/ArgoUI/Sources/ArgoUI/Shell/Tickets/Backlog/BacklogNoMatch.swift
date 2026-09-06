@@ -11,8 +11,7 @@ struct BacklogNoMatch: View {
 
     var body: some View {
         Text(stated)
-            .argoText(ArgoTypography.body)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.body, .metadata)
             .multilineTextAlignment(.center)
             .padding(.horizontal, ArgoSpacing.region)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
