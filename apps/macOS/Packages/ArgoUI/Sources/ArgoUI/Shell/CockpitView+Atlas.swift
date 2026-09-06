@@ -1,3 +1,4 @@
+import AtlasLayout
 import SwiftUI
 
 /// The Atlas room, assembled — the mirror of `CockpitView+Tickets`, and one seam narrower: the map
@@ -23,6 +24,13 @@ extension CockpitView {
                 isCity: AtlasSwitch(isOn: atlas.isCity) { atlas.setIsCity($0) },
             ),
         )
+    }
+
+    /// What was written about the Project's files (#1159), read off the container by name so the
+    /// shell's body can hold the ROOM under `atlas` — the local the two columns are handed, and the
+    /// container this comes from are two different values with one obvious name.
+    var atlasNotes: AtlasNotes {
+        atlas.notes
     }
 
     /// What re-reads the map: which room the window is in, and which Project it is scoped to. A

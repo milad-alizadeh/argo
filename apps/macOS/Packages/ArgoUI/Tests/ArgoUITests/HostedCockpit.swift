@@ -28,11 +28,16 @@ import SwiftUI
 
     /// The same shell over a roster the caller assembled, so a claim about SWITCHING between
     /// Sessions has two of them to switch between.
-    init(showing presentation: CockpitPresentation) {
+    ///
+    /// `atlas` is the room's container, and every suite but the Atlas one leaves it alone: the
+    /// default reads this machine's application support and nothing here opens it. A claim about
+    /// a MEASURED map hands in a container over a throwaway directory instead — see
+    /// `AtlasRoomFixture`.
+    init(showing presentation: CockpitPresentation, atlas: AtlasRoomModel = AtlasRoomModel()) {
         navigation.room = .sessions
         navigation.session = presentation.sessions.first?.id
         self.host = NSHostingView(rootView: AnyView(
-            CockpitView(presentation: presentation, actions: .inert)
+            CockpitView(presentation: presentation, actions: .inert, atlas: atlas)
                 .environment(navigation),
         ))
         host.frame = NSRect(x: 0, y: 0, width: 1200, height: 800)

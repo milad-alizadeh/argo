@@ -14,12 +14,24 @@ import SwiftUI
 ///
 /// The design's `AtlasControls` aside, minus the one row another ticket owns: Group by (#1158).
 ///
-/// Takes its value off the environment rather than as a parameter, for `AtlasRoomView`'s reason:
-/// `argoAtlasRoom` is injected above the split view, so both columns read the same room.
+/// Takes the room as a PARAMETER, unlike `AtlasRoomView`, which reads `argoAtlasRoom` (#1489).
+/// This is the one view whose caller has the room in hand: the rail is the shell's own leading
+/// column, assembled where `atlasRoom` is. Down the environment it was injected on the DETAIL
+/// column, which is this column's sibling and reaches nothing here — so the sidebar drew its strip
+/// and no section however much had been measured, and the compiler had nothing to say about it.
+///
+/// Injecting it above both columns instead answers that and costs the roster: the room is a fresh
+/// non-`Equatable` value on every pass, so an entry read across the split re-runs the leading
+/// column whole, and the roster's own reads go up with it (`SessionSelectionCostTests`, ADR-0028
+/// Rule 3). A parameter reaches this view and nothing beside it.
 package struct AtlasSidebar: View {
     @Environment(\.argo) private var argo
-    @Environment(\.argoAtlasRoom) private var resolved
     @Environment(\.argoReduceMotion) private var reduceMotion
+
+    /// The room this column's controls decide. `nil` is a window that has resolved NONE — a
+    /// preview, and every room but this one — which `AtlasRoomView` draws as the Project it has
+    /// none of.
+    let resolved: AtlasRoom?
 
     /// Which room the strip is on. A binding, because the strip switches the whole window and this
     /// sidebar is only the column it starts in.
@@ -45,8 +57,20 @@ package struct AtlasSidebar: View {
     /// a number the measurement produced, and a Map that was never generated carries none. Three
     /// empty menus would be a control the reader cannot use and cannot fix from here — the room's
     /// own vacancy is what says how to fix it.
+    ///
+    /// Nothing either where this is not the room on screen, which is `AtlasRoomView.isActive`'s
+    /// reason and now the sidebar's too (#1489): the column stays mounted through a room switch
+    /// (#1356), and the room it hands down is a fresh value on every pass of the shell — so a
+    /// filter over the whole Map would be re-run for a reader who is in Sessions and cannot see any
+    /// of it.
+    ///
+    /// What it costs is the scroll: the sections leave the scroll view rather than being hidden in
+    /// it, so a rail scrolled to Repository data opens at the top on the way back. Paid rather than
+    /// avoided, because the five sections stand in a column the window is taller than — there is
+    /// usually nothing to scroll — and the alternative is a pass over every file in the repository
+    /// on every line a Session in another room streams.
     @ViewBuilder private var sections: some View {
-        if let room = resolved, case let .measured(map) = room.reading {
+        if cockpitRoom == .atlas, let room = resolved, case let .measured(map) = room.reading {
             // The map as it is DRAWN, through the choice's own filter rather than this column's
             // spelling of it. Every section below reads the filtered set, so the legend's ends and
             // the file count move with the filter the way the tiles do (#1161).
@@ -111,7 +135,8 @@ package struct AtlasSidebar: View {
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
-    package init(cockpitRoom: Binding<CockpitRoom>) {
+    package init(room: AtlasRoom?, cockpitRoom: Binding<CockpitRoom>) {
+        self.resolved = room
         _cockpitRoom = cockpitRoom
     }
 }

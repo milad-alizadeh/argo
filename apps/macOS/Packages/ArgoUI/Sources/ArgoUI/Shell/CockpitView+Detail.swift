@@ -86,6 +86,8 @@ extension CockpitView {
             tickets: tickets,
         )
         // The Atlas room, injected from ABOVE the deck for the reason `argoAtlasRoom` states.
+        // On THIS column only: the sidebar is its sibling and takes the room as a parameter, which
+        // is where #1489 says why.
         .environment(\.argoAtlasRoom, atlas)
         // What the chain link at the foot of a handed-off reading does. Injected here because
         // this is the one view that holds the navigation.
