@@ -55,7 +55,38 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
 
     /// Keyed by the Session id the roster carries, never by a claim: a claim dies with the process
     /// that issued it, and this file is read by the next one.
-    var windows: [String: Window] = [:]
+    ///
+    /// Written through this type's own methods alone, because every write has to keep `keyByUUID`
+    /// beside it.
+    private(set) var windows: [String: Window] = [:]
+
+    /// The Session id holding each transcript uuid — the whole of how a moved transcript is found,
+    /// and the only thing that makes that lookup free.
+    ///
+    /// Derived from `windows`, so it is neither written to the file nor compared. Built once per
+    /// entry here and at each `open`; the scan it replaces split every key's path on every lookup,
+    /// which the roster asks for twice per Session per frame (#1495).
+    private(set) var keyByUUID: [String: String] = [:]
+
+    /// The file holds the windows and nothing else: the index is a reading of them, and a file that
+    /// carried one could disagree with the windows it was written beside.
+    private enum CodingKeys: String, CodingKey {
+        case windows
+    }
+
+    init() {}
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.windows = try container.decodeIfPresent([String: Window].self, forKey: .windows) ?? [:]
+        self.keyByUUID = Self.index(of: windows)
+    }
+
+    /// Two ledgers are the same when they hold the same windows. The index follows from those, so
+    /// comparing it would only be asking the same question twice.
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.windows == rhs.windows
+    }
 
     /// Whether Argo has ever held this Session's PTY — the whole of what grading asks.
     func hasOwned(sessionID: String) -> Bool {
@@ -78,15 +109,59 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         if let held = windows[sessionID] {
             return held
         }
-        let uuid = Self.uuid(of: sessionID)
-        return windows.first { Self.uuid(of: $0.key) == uuid }?.value
+        return keyByUUID[Self.uuid(of: sessionID)].flatMap { windows[$0] }
     }
 
     /// A transcript path's uuid, which is its file name without the extension.
-    private static func uuid(of path: String) -> Substring {
+    private static func uuid(of path: String) -> String {
         let name = path.split(separator: "/").last ?? Substring(path)
-        guard let dot = name.lastIndex(of: ".") else { return name }
-        return name[name.startIndex ..< dot]
+        guard let dot = name.lastIndex(of: ".") else { return String(name) }
+        return String(name[name.startIndex ..< dot])
+    }
+
+    /// Every window's key under its uuid, for a ledger that arrived whole — which is every ledger
+    /// read back from the file.
+    private static func index(of windows: [String: Window]) -> [String: String] {
+        var index: [String: String] = [:]
+        index.reserveCapacity(windows.count)
+        for key in windows.keys {
+            let uuid = uuid(of: key)
+            guard let held = index[uuid] else {
+                index[uuid] = key
+                continue
+            }
+            if answers(key, ratherThan: held, in: windows) {
+                index[uuid] = key
+            }
+        }
+        return index
+    }
+
+    /// Which of two Session ids sharing one uuid the lookup answers with: the window opened LATER,
+    /// which is the one written after the CLI moved the transcript. A rule rather than whichever
+    /// the dictionary held first, so two reads of one file cannot disagree.
+    private static func answers(
+        _ candidate: String,
+        ratherThan held: String,
+        in windows: [String: Window],
+    )
+        -> Bool {
+        let fromMs = windows[candidate]?.fromMs ?? 0
+        let heldFromMs = windows[held]?.fromMs ?? 0
+        return fromMs == heldFromMs ? candidate < held : fromMs > heldFromMs
+    }
+
+    /// This key into the index, once, at the one moment a key can arrive. Nothing else moves a
+    /// window's `fromMs`, so no other write can change which key a uuid answers with.
+    private mutating func index(_ sessionID: String) {
+        let uuid = Self.uuid(of: sessionID)
+        guard let held = keyByUUID[uuid], held != sessionID else {
+            keyByUUID[uuid] = sessionID
+            return
+        }
+        if Self.answers(sessionID, ratherThan: held, in: windows) {
+            keyByUUID[uuid] = sessionID
+        }
     }
 
     /// Whether a registry other than `mine` is holding this Session's PTY right now. An open window
@@ -112,6 +187,7 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         )
         guard windows[sessionID] != opened else { return false }
         windows[sessionID] = opened
+        index(sessionID)
         return true
     }
 
