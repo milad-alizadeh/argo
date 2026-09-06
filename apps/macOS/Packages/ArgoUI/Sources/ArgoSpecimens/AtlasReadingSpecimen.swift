@@ -64,13 +64,16 @@ struct AtlasReadingNoteSpecimen: View {
     }
 
     var body: some View {
-        AtlasRoomHost(reading: .measured(readingFixtureMap), opened: AtlasReadingSpecimen.opened)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .argoDeckSurface()
-            // Set OUTSIDE the host, which is the seam the written layer earns by being separate:
-            // the room reads it off the environment, so nothing in the host's own value has to
-            // grow a field for a fact that may never arrive.
-            .environment(\.argoAtlasNotes, writtenFixture.checked(against: held))
+        AtlasRoomHost(
+            reading: .measured(readingFixtureMap),
+            opening: AtlasRoomOpening(opened: AtlasReadingSpecimen.opened),
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .argoDeckSurface()
+        // Set OUTSIDE the host, which is the seam the written layer earns by being separate:
+        // the room reads it off the environment, so nothing in the host's own value has to
+        // grow a field for a fact that may never arrive.
+        .environment(\.argoAtlasNotes, writtenFixture.checked(against: held))
     }
 }
 
