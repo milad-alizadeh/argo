@@ -20,6 +20,11 @@
 #     its own tree, created on first use and left in place afterwards.
 #   - merge anything it did not just gate green, or resolve a conflict. A conflict is a
 #     decision, and this script has no way to make one: it reports the PR and moves on.
+#   - merge a rebase that takes the base BACKWARDS. A clean rebase can still delete a file `main`
+#     has or put one back over a change `main` made since the branch was cut, and the gate cannot
+#     see it: a fix and its guarding test removed together leave a green suite over a revert
+#     (#1573, the audit in #1570). `land_regression` below reads the rebased tree against the tip
+#     and refuses.
 #   - merge at all under --dry-run, which stops after the gate and reports what it would do.
 #
 # Usage:
@@ -105,6 +110,72 @@ if [ -z "$QUEUE" ]; then
   exit 0
 fi
 
+# The blob a path holds in a tree, or nothing where the tree has no such path. Absence is a
+# reading here, not an error: "both sides have no file" is how a deletion of something the base
+# only just gained compares equal, and `rev-parse` exits non-zero for it under `set -e`.
+tree_blob() {
+  git -C "$LANDING" rev-parse --quiet --verify "$1:$2" 2>/dev/null || true
+}
+
+# Whether the branch DECLARED this path, on one of its own commits. The declaration travels with
+# the commit rather than the command line on purpose: a deliberate deletion is a decision somebody
+# reviewed, and a flag typed at the landing lane is a decision nobody can see afterwards.
+#
+#   Removes-file: <path>     a file this branch deletes on the base
+#   Reverts-file: <path>     a file this branch puts back over a change the base made
+#
+# One exact path per trailer, never a glob: a pattern that matched more than its author meant is
+# the same silence this guard exists to break.
+land_declared() {
+  printf '%s\n' "$DECLARED" | grep -Fxq -- "$1"
+}
+
+# What landing this branch would take BACKWARDS on the base, one path per line, or nothing.
+#
+# Read off `origin/$BASE`..`HEAD` AFTER the rebase, where `origin/$BASE` is an ancestor of `HEAD`,
+# so that diff is not a derivation of what the merge will do — it IS what the merge will do.
+#
+# Two shapes, because #1550 had both and a check for either alone passes the other:
+#
+#   deletes   a path the base still has that the rebased tree does not. Thirty-one of them there.
+#   restores  a path whose rebased content is what the base held BEFORE its own most recent
+#             change to it. The branch has undone that change whole, which the deletion check
+#             cannot see because the file is still there.
+#
+# The second is read against the BASE's history and not against the branch's cut, deliberately.
+# A merge-base is not where a branch's content came from once its lane has merged the base in and
+# resolved by taking its own side — which is how #1550 arrived at the landing lane already
+# carrying the old files, and why its rebase here was clean. `origin/$BASE`'s own last commit to
+# the file is a fact no resolution on the branch can move.
+land_regression() {
+  # `--find-renames`, so a moved file is an R and not a D. Without it every rename on every
+  # branch reads as a deletion, and a guard that cries on ordinary work is one somebody turns off.
+  git -C "$LANDING" diff --name-only --find-renames --diff-filter=D "origin/$BASE" HEAD |
+    while IFS= read -r file; do
+      [ -n "$file" ] || continue
+      land_declared "$file" || echo "deletes $file"
+    done
+
+  git -C "$LANDING" diff --name-only "origin/$BASE" HEAD |
+    while IFS= read -r file; do
+      [ -n "$file" ] || continue
+      # Deletions are the loop above's, in the word that fits them.
+      now=$(tree_blob HEAD "$file")
+      [ -n "$now" ] || continue
+      # What the base held before it last touched this file. Nothing where the base only ever
+      # added it, and nothing at a root commit — in neither case is there a change to undo.
+      last=$(git -C "$LANDING" rev-list --max-count=1 "origin/$BASE" -- "$file")
+      [ -n "$last" ] || continue
+      before=$(tree_blob "$last^" "$file")
+      [ -n "$before" ] || continue
+      # Byte-identical to that state. A branch that changed the file to something NEW is doing
+      # work on it, however much of the base's it replaced; one that lands it exactly as it stood
+      # before the base's change is putting the clock back.
+      [ "$now" = "$before" ] || continue
+      land_declared "$file" || echo "restores $file"
+    done
+}
+
 landed=0
 skipped=0
 
@@ -136,6 +207,26 @@ for pr in $QUEUE; do
     # A conflict is a decision about what the code should now do, and this script cannot make
     # one. It goes back to the branch's own session, which has the context to resolve it.
     echo "land: #$pr conflicts on $BASE — left for its lane: $conflicted" >&2
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  # Before the gate, not after it: this is arithmetic on two trees and costs milliseconds, and a
+  # branch that must not land should not spend a build slot and several minutes proving it is
+  # green first. It reports under --dry-run for the same reason — the question "would this land"
+  # is answered wrong if the one thing that would stop it is not asked.
+  #
+  # The gate cannot stand in for it. The gate runs the tests that are THERE, so a branch that
+  # removes a fix and the test guarding it together is green by construction (#1570).
+
+  # The branch's own commits, which after the rebase are exactly `origin/$BASE..HEAD`.
+  DECLARED=$(git -C "$LANDING" log --format=%B "origin/$BASE..HEAD" |
+    sed -n 's/^[Rr]emoves-file:[[:space:]]*//p; s/^[Rr]everts-file:[[:space:]]*//p')
+  regression=$(land_regression)
+  if [ -n "$regression" ]; then
+    echo "land: #$pr would take $BASE backwards — not gated, not pushed, not merged" >&2
+    echo "$regression" | sed 's/^/land:   /' >&2
+    echo "land:   a deliberate one is declared in the branch: Removes-file: / Reverts-file:" >&2
     skipped=$((skipped + 1))
     continue
   fi

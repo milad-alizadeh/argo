@@ -63,6 +63,51 @@ branch, runs the gate, force-pushes with a lease, and squash-merges. Anything th
 cleanly is reported and left: a branch that conflicts, one that fails the gate on the new base,
 one that moved while it was being landed. Nothing is merged that was not just gated green.
 
+## The regression guard (#1573)
+
+A clean rebase is not a safe one. #1550 rebased without a conflict and gated green, and put 123
+files back and deleted 31 more on `main` — because each fix it undid had its guarding test deleted
+along with it, and the gate can only fail on tests that are there. A green suite covered a revert
+of eight merged pull requests (#1570).
+
+So between the rebase and the gate the lane reads the rebased tree against the tip it is about to
+be pushed onto. After the rebase `origin/main` is an ancestor of `HEAD`, so `git diff origin/main
+HEAD` is not a prediction of what the merge will do — it is what the merge will do. Two shapes are
+refused:
+
+| | what it is | how it is read |
+| --- | --- | --- |
+| **deletes** | a file `main` still has that the rebased tree does not | `--diff-filter=D`, renames detected so a move is not a removal |
+| **restores** | a file whose landed content is exactly what `main` held *before its own last change to it* | `git rev-list -1 main -- <file>`, then that commit's parent |
+
+The second is read against `main`'s history, not against the branch's merge-base. Once a lane has
+merged the base in and resolved by taking its own side — which is how #1550 arrived already
+carrying the old files, and why its rebase here was clean — the merge-base no longer says where
+the branch's content came from. `main`'s own last commit to the file is a fact no resolution on
+the branch can move.
+
+A refused branch is **not gated**: this is two tree reads and costs milliseconds, and a branch
+that cannot land should not spend a build slot proving it is green first. It reports under
+`--dry-run` too. Nothing is pushed and nothing is merged; the PR is counted as left, and goes back
+to its own lane like a conflict does.
+
+### Declaring a deliberate one
+
+A removal that is meant stays landable, declared **in the branch** so it travels with the commit
+and a reviewer sees it — never as a flag typed at the landing lane, which is a decision nobody can
+read afterwards:
+
+```
+Removes-file: apps/macOS/.../FrameProbePass.swift
+Reverts-file: apps/macOS/.../TranscriptWatch.swift
+```
+
+One exact path per trailer, on any commit the branch adds, read over `origin/main..HEAD` after the
+rebase. Never a glob: a pattern that matched more than its author meant is the same silence the
+guard exists to break. A refactor that moves twenty files declares twenty paths — measured against
+the last twenty-five landings, four would have needed a trailer at all, and #1550 would have
+needed thirty-one it did not have.
+
 ## Knowing whether it worked
 
 Every gate run and every step appends a row to `~/Library/Caches/argo-gate/metrics.tsv`, and

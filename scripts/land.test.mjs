@@ -122,4 +122,63 @@ check('only one landing runs at a time', () => {
   )
 })
 
+// #1573. A clean rebase is not a safe one. #1550 rebased without a conflict, gated green — every
+// test that would have failed was deleted along with the fix it guarded — and put 123 files back
+// and deleted 31 more on `main`. These four are the guard that stands between those two facts.
+check('a rebase that deletes a file the base still has is refused', () => {
+  const s = scenario({ reverting: 'delete' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.match(result.output, /would take main backwards/)
+  assert.match(result.output, /deletes kept\.txt/)
+  assert.doesNotMatch(s.gh(), /pr merge/, 'a branch that deletes the base must not be merged')
+  assert.match(result.output, /0 landed, 1 left/)
+  s.cleanup()
+})
+
+check('a rebase that puts a file back over the base’s own change is refused', () => {
+  const s = scenario({ reverting: 'restore' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  // The file is still THERE, so nothing about a deletion would have caught this one.
+  assert.match(result.output, /restores shared\.txt/)
+  assert.doesNotMatch(s.gh(), /pr merge/, 'a branch that reverts the base must not be merged')
+  s.cleanup()
+})
+
+check('a refused branch is not gated, and is refused under --dry-run too', () => {
+  const s = scenario({ reverting: 'delete' })
+  const result = s.run(['1', '--dry-run'])
+  assert.equal(result.status, 0, result.output)
+  // Milliseconds of git against several minutes of build: a branch that cannot land must not
+  // spend a slot proving it is green first.
+  assert.equal(s.gated(), 0, 'a branch that cannot land must not take a build slot')
+  // And --dry-run answers "would this land" with the one thing that would stop it.
+  assert.match(result.output, /would take main backwards/)
+  assert.doesNotMatch(result.output, /would be pushed and merged/)
+  s.cleanup()
+})
+
+check('a deletion the branch declares lands', () => {
+  const s = scenario({ reverting: 'delete', declares: true })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.doesNotMatch(result.output, /backwards/, 'a declared removal is not a regression')
+  assert.equal(s.gated(), 1)
+  assert.match(s.gh(), /pr merge 1 --squash/, `no merge in: ${s.gh()}`)
+  assert.match(result.output, /1 landed, 0 left/)
+  s.cleanup()
+})
+
+check('an ordinary branch still lands, deletions and restores aside', () => {
+  // The guard's own failure mode: one that fires on ordinary work gets turned off. The baseline
+  // scenario adds a file the base has never had, which must read as neither shape.
+  const s = scenario()
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.doesNotMatch(result.output, /backwards/)
+  assert.match(result.output, /1 landed, 0 left/)
+  s.cleanup()
+})
+
 report('land')

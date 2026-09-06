@@ -7,6 +7,16 @@
 //
 // `conflicting: true` makes the branch and `main` touch the same file, so the rebase fails the
 // way a real one does rather than by being told to.
+//
+// `reverting` builds the two shapes of #1570 the same way — by making them true of a real branch
+// that rebases CLEANLY, because a guard that only fires on a conflict would have caught nothing
+// there:
+//
+//   'delete'  the branch removes a file `main` still has
+//   'restore' the branch puts a file back to what it held when the branch was cut, over a change
+//             `main` made after the cut
+//
+// `declares: true` adds the trailer that says the removal was meant.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -52,7 +62,7 @@ esac
 exit 0
 `
 
-function seed(clone, git, conflicting) {
+function seed(clone, git, { conflicting, reverting, declares }) {
   mkdirSync(path.join(clone, 'scripts'), { recursive: true })
   writeFileSync(path.join(clone, 'scripts/swift-gate.sh'), GATE_STUB)
   for (const script of ['land.sh', 'build-lock.sh']) {
@@ -62,25 +72,49 @@ function seed(clone, git, conflicting) {
     )
   }
   writeFileSync(path.join(clone, 'shared.txt'), 'base\n')
+  // The file `main` still has and the branch will remove: the shape of the 31 deletions in #1570.
+  writeFileSync(path.join(clone, 'kept.txt'), 'kept\n')
   git(clone, 'add', '-A')
   git(clone, 'commit', '-qm', 'seed')
   git(clone, 'push', '-q', 'origin', 'main')
 
   git(clone, 'checkout', '-qb', 'feature')
-  writeFileSync(path.join(clone, conflicting ? 'shared.txt' : 'feature.txt'), 'branch\n')
+  if (reverting === 'delete') {
+    rmSync(path.join(clone, 'kept.txt'))
+  } else {
+    writeFileSync(path.join(clone, conflicting ? 'shared.txt' : 'feature.txt'), 'branch\n')
+  }
   git(clone, 'add', '-A')
-  git(clone, 'commit', '-qm', 'the work')
+  git(clone, 'commit', '-qm', declares ? 'the work\n\nRemoves-file: kept.txt\n' : 'the work')
   git(clone, 'push', '-q', '-u', 'origin', 'feature')
 
   // main moves on, as it does about ninety times a day.
   git(clone, 'checkout', '-q', 'main')
   writeFileSync(path.join(clone, conflicting ? 'shared.txt' : 'other.txt'), 'moved on\n')
+  if (reverting === 'restore') {
+    // The change the branch is about to undo. It has to be a change to a file that EXISTS on both
+    // sides, so the deletion check cannot be the one that catches it.
+    writeFileSync(path.join(clone, 'shared.txt'), 'fixed\n')
+  }
   git(clone, 'add', '-A')
   git(clone, 'commit', '-qm', 'somebody else landed')
   git(clone, 'push', '-q', 'origin', 'main')
+
+  if (reverting === 'restore') {
+    // How #1550 reached the lane already carrying the old file, and why its rebase was clean: the
+    // lane merged the base in and then resolved by taking its own side. The commit that lands is
+    // an honest patch from `fixed` back to `base`, and it applies without a conflict.
+    git(clone, 'checkout', '-q', 'feature')
+    git(clone, 'merge', '-q', '--no-edit', 'main')
+    writeFileSync(path.join(clone, 'shared.txt'), 'base\n')
+    git(clone, 'add', '-A')
+    git(clone, 'commit', '-qm', declares ? 'keep ours\n\nReverts-file: shared.txt\n' : 'keep ours')
+    git(clone, 'push', '-q', 'origin', 'feature')
+    git(clone, 'checkout', '-q', 'main')
+  }
 }
 
-export function landScenario({ conflicting = false } = {}) {
+export function landScenario({ conflicting = false, reverting = null, declares = false } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), 'land-'))
   const origin = path.join(dir, 'origin.git')
   const clone = path.join(dir, 'clone')
@@ -92,7 +126,7 @@ export function landScenario({ conflicting = false } = {}) {
   execFileSync('git', ['clone', '-q', origin, clone], { stdio: 'pipe' })
   git(clone, 'config', 'user.email', 'test@example.com')
   git(clone, 'config', 'user.name', 'test')
-  seed(clone, git, conflicting)
+  seed(clone, git, { conflicting, reverting, declares })
 
   const bin = path.join(dir, 'bin')
   mkdirSync(bin, { recursive: true })
