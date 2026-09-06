@@ -17,12 +17,17 @@ extension SessionRosterProjection {
     /// The title one Session draws, decided exactly as its roster row's is — the deck header's
     /// route to the SAME answer rather than a second one taken over a different set of rows
     /// (#1391, #1251). `nil` where `id` is not in `sessions`.
+    ///
+    /// It reads the pass the sidebar already took, and takes one only where nothing has (#1557):
+    /// asked as a lookup, this used to name the WHOLE roster and keep one element of the answer, on
+    /// every header pass. The shared answer is what the rule above wanted in the first place — one
+    /// title on both surfaces is cheaper than two, not a second full pass to index into.
+    @MainActor
     package static func namedTitle(
         for id: CockpitPresentation.Session.ID, among sessions: [CockpitPresentation.Session],
     )
         -> String? {
-        guard let row = sessions.firstIndex(where: { $0.id == id }) else { return nil }
-        return namings(across: sessions, isArchived: sessions[row].isArchived)[row].title
+        SessionRosterNamingMemo.namings(across: sessions).title(of: id)
     }
 
     /// The name each of these Sessions draws in one of the roster's two passes — the ONE place the

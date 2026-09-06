@@ -29,6 +29,11 @@ struct RosterListing {
     /// `opened` is the folds the reader has opened (#1073) — the sidebar's own state, passed
     /// through rather than held here: which folds are open is a fact about the window, and this
     /// value is rebuilt every pass.
+    ///
+    /// Both lists come off `SessionRosterProjection.lists`, which names the roster ONCE for the two
+    /// of them and leaves the answer where the deck header reads it too (#1557). `@MainActor` for
+    /// that memo, which is what makes this pipeline the one place a pass is taken.
+    @MainActor
     func reading(
         of sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
@@ -36,14 +41,10 @@ struct RosterListing {
         now: Date = Date(),
     )
         -> Reading {
-        Reading(
-            rows: order.published(SessionRosterProjection.rows(
-                from: sessions, opened: opened, selection: selection, now: now,
-            )),
-            archived: SessionRosterProjection.archivedRows(
-                from: sessions, opened: opened, selection: selection, now: now,
-            ),
+        let lists = SessionRosterProjection.lists(
+            from: sessions, opened: opened, selection: selection, now: now,
         )
+        return Reading(rows: order.published(lists.rows), archived: lists.archived)
     }
 
     /// Takes the freeze at the roster on screen now.

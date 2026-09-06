@@ -18,8 +18,44 @@ package enum SessionRosterProjection {
         -> [Row] {
         rows(
             from: sessions,
+            named: nil,
             in: Pass(isArchived: false, opened: opened, selection: selection),
             now: now,
+        )
+    }
+
+    /// Both of the roster's lists, off ONE naming pass — what the sidebar draws, and the only place
+    /// the two are projected together.
+    struct Lists {
+        let rows: [Row]
+        let archived: [Row]
+    }
+
+    /// The sidebar's whole projection, named once (#1557). `@MainActor` for the memo it reads, and
+    /// so the deck header — the other surface asking what the roster calls a Session — is answered
+    /// out of the same pass rather than taking a second one.
+    @MainActor
+    static func lists(
+        from sessions: [CockpitPresentation.Session],
+        opened: Set<String>,
+        selection: String?,
+        now: Date,
+    )
+        -> Lists {
+        let namings = SessionRosterNamingMemo.namings(across: sessions)
+        return Lists(
+            rows: rows(
+                from: sessions,
+                named: namings,
+                in: Pass(isArchived: false, opened: opened, selection: selection),
+                now: now,
+            ),
+            archived: rows(
+                from: sessions,
+                named: namings,
+                in: Pass(isArchived: true, opened: opened, selection: selection),
+                now: now,
+            ),
         )
     }
 
@@ -43,19 +79,26 @@ package enum SessionRosterProjection {
         -> [Row] {
         rows(
             from: sessions,
+            named: nil,
             in: Pass(isArchived: true, opened: opened, selection: selection),
             now: now,
         )
     }
 
+    /// One list of the roster. `named` is the pass a caller drawing BOTH lists already took, so the
+    /// two of them share it; `nil` takes one here, which is what a caller holding a single list —
+    /// a specimen, a fixture, a suite — wants.
     private static func rows(
-        from sessions: [CockpitPresentation.Session], in pass: Pass, now: Date,
+        from sessions: [CockpitPresentation.Session],
+        named namings: SessionRosterNamings?,
+        in pass: Pass,
+        now: Date,
     )
         -> [Row] {
         let nowMs = now.epochMs
         // Decided before the split and filtered after: a Session's workspace label is told apart
         // from every other Session's, whichever of the two lists each is drawn in.
-        let kept = zip(sessions, decided(across: sessions, in: pass))
+        let kept = zip(sessions, decided(across: sessions, named: namings, in: pass))
             .filter { session, _ in session.isArchived == pass.isArchived }
         // Once over the list this pass is drawing, never once per row (ADR-0028) — and over the
         // kept half, so a fold's count is what the reader can see rather than what is behind the
@@ -83,11 +126,14 @@ package enum SessionRosterProjection {
     }
 
     private static func decided(
-        across sessions: [CockpitPresentation.Session], in pass: Pass,
+        across sessions: [CockpitPresentation.Session],
+        named namings: SessionRosterNamings?,
+        in pass: Pass,
     )
         -> [Decided] {
-        let namings = namings(across: sessions, isArchived: pass.isArchived)
-        return zip(namings, worktrees(of: sessions)).map(Decided.init)
+        let named = namings?.namings(isArchived: pass.isArchived)
+            ?? self.namings(across: sessions, isArchived: pass.isArchived)
+        return zip(named, worktrees(of: sessions)).map(Decided.init)
     }
 
     /// The label each row spends on its workspace, decided across the WHOLE roster in one pass:
