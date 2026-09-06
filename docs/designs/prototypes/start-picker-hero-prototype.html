@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-v="E">
+<html lang="en" data-v="F">
 <head>
 <meta charset="utf-8">
 <title>Does the Next-up hero get the skill picker? — throwaway prototype (#1244)</title>
@@ -134,6 +134,23 @@ body {
 /* Variant E's own line — the card's leading edge, the same one the id and the chips start on. */
 .footLine { display:flex; align-items:center; margin-left:calc(var(--tight) * -1); }
 
+/* Variant F: the SAME pill, at the card's own scale rather than the toolbar band's.
+   It is the ticket pane's control with three numbers stepped down one rung each — the vessel's
+   inset, each segment's horizontal room, and the box the segments stand in, which becomes the
+   height the hero's starter already draws rather than `ArgoControlBox.icon`.
+
+   Every one of the three is a rung of `ArgoSpacing` or a height the card already spends, so
+   nothing here is a new measurement — but they are a SECOND set of numbers for one control, and
+   that is the trade this variant is asking to be judged on. */
+.pill.compact { --vesselInset:2px; max-width:100%; }
+.pill.compact .seg { padding:0 var(--snug); height:auto; min-width:0; }
+.pill.compact .seg > * { padding:var(--tight) 0; }
+/* `&trunc=1`: the command ellipsizes instead of pushing the pill past the card. `Start` never
+   shrinks — it is the verb the card exists for — so the whole give is in the token. */
+.pill.compact.trunc .seg:first-child { flex:0 0 auto; }
+.pill.compact.trunc .seg:last-child { flex:1 1 auto; overflow:hidden; }
+.pill.compact.trunc .cmdTok { overflow:hidden; text-overflow:ellipsis; }
+
 /* The pill — StartControl transplanted. ArgoIconButtonGroup's vessel. */
 .pill {
   display:inline-flex; align-items:center; gap:var(--vesselGap);
@@ -182,6 +199,10 @@ body {
 
 /* ---- The menu, AppKit's popover approximated ------------------------------ */
 .menuHost { position:relative; }
+/* A `max-width:100%` on the pill binds against its PARENT, and an inline `.menuHost` that sizes
+   to its content is no constraint at all — the token pushed straight through it and the truncation
+   below never fired. The host has to be a shrinkable flex child before anything inside it can give. */
+.footRow > .menuHost { display:flex; min-width:0; max-width:100%; }
 .menu {
   position:absolute; z-index:40; min-width:250px;
   background:#2A2C30; border:var(--sBorder) solid var(--subtle);
@@ -356,13 +377,14 @@ const VARIANTS = {
   C: { name: "C — no picker on the hero (shipped today)" },
   D: { name: "D — the command joins the chips" },
   E: { name: "E — the command takes its own line" },
+  F: { name: "F — the ticket pane's pill, at the card's scale" },
 };
 const KEYS = Object.keys(VARIANTS);
 
 /* ---- URL state ---------------------------------------------------------- */
 const P = new URLSearchParams(location.search);
 const S = {
-  v:      (P.get("v") || "E").toUpperCase(),
+  v:      (P.get("v") || "F").toUpperCase(),
   cmd:     P.get("cmd") || "implement",
   mark:    P.get("mark") || "reason",
   memory:  P.get("memory") || "session",
@@ -375,8 +397,12 @@ const S = {
   /* `&check=1` prints the probe on load, so a headless run can read it out of the DOM.
      Nothing here is judged by eye. */
   check:   P.get("check") === "1",
+  /* Variant F ellipsizes the command rather than pushing the pill out of the card, and that is
+     part of the shape rather than a setting — `&trunc=0` turns it off to show what it prevents.
+     `StartCommandWord` carries `.fixedSize()` today, which is exactly what makes the ink. */
+  trunc:   P.get("trunc") !== "0",
 };
-if (!KEYS.includes(S.v)) S.v = "E";
+if (!KEYS.includes(S.v)) S.v = "F";
 
 function push() {
   const q = new URLSearchParams();
@@ -384,6 +410,7 @@ function push() {
   q.set("w", S.w); q.set("chips", S.chips); q.set("scale", S.scale);
   if (S.menu) q.set("menu", S.menu);
   if (S.check) q.set("check", "1");
+  if (!S.trunc) q.set("trunc", "0");
   history.replaceState(null, "", location.pathname + "?" + q.toString());
 }
 
@@ -483,6 +510,17 @@ function heroFoot() {
       <span class="starterVessel" data-act="start">${verbInner("word")}</span>
     </div>`;
   }
+  if (v === "F") {
+    /* The ticket pane's own control, stepped down to the card's scale. Same two segments, same
+       token-is-the-picker gesture, same rim and ground the starter already draws — only smaller. */
+    return `<div class="footRow"><span class="menuHost">
+      <span class="pill rimmed compact${S.trunc ? " trunc" : ""}">
+        <button class="seg" data-act="start">${verbInner("word")}</button>
+        <button class="seg" data-act="menu" data-place="above">${tokenInner()}</button>
+      </span>
+      ${S.menu === "hero" ? menuHTML("above") : ""}
+    </span></div>`;
+  }
   if (v === "E") {
     /* The two facts stop competing for one line. The command sits on the card's LEADING edge, on
        the line the id and the chips already start on; Start keeps the trailing corner and its own
@@ -555,6 +593,10 @@ function note() {
         on a line of its own; Start keeps the trailing corner and one target. It is the only shape
         here that offers the picker and still fits at every text size, because nothing on the foot
         has to shrink for anything else. It costs the rail a line.`,
+    F: `<b>F</b> — the ticket pane's pill, stepped down to the card's scale: the vessel's inset,
+        each segment's horizontal room and the box they stand in, one rung smaller each. Same
+        control, same gesture, one line. What it buys is the width the full-size pill spent on
+        chrome; what it costs is a second set of numbers for one control.`,
   };
   document.getElementById("note").innerHTML = lines[S.v] +
     (c ? "" : `<br><br>The ticket resolves to <b>no command</b> — only the refusing labels do that

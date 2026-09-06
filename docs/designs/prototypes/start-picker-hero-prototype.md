@@ -37,9 +37,9 @@ Session that owns the fact. The command has six answers, its default is a guess 
 than a value the reader set, and **nothing downstream can change it**: the command is the first
 thing sent. Both readings survive this study unchanged, and nothing below reopens them.
 
-## The five variants
+## The six variants
 
-All five are the same card in the same 280 rail, with the shipped pane-header pill above them for
+All six are the same card in the same 280 rail, with the shipped pane-header pill above them for
 comparison. Only the card's foot changes.
 
 - **A — the toolbar's pill, transplanted.** One capsule, two segments, exactly as the pane header
@@ -51,12 +51,18 @@ comparison. Only the card's foot changes.
   property of the ticket rather than of the button.
 - **E — the command takes its own line.** The token on the card's leading edge, on the line the id
   and the chips already start on; `Start` alone in the trailing corner below it.
+- **F — the ticket pane's pill, at the card's scale.** The shipped control with three numbers
+  stepped down one rung each: the vessel's inset `hair` rather than `vesselInset`, each segment's
+  horizontal room `snug` rather than `base`, and the box they stand in the height the hero's
+  starter already draws rather than `ArgoControlBox.icon`. **The command ellipsizes**; `Start`
+  never shrinks.
 
 ## Reading the URL
 
 | Parameter | Effect |
 |---|---|
-| `?v=A\|B\|C\|D\|E` | which foot. **Opens on `E`**, the pick. Also `←`/`→`, or the bar at the bottom right |
+| `?v=A\|B\|C\|D\|E\|F` | which foot. **Opens on `F`**, the pick. Also `←`/`→`, or the bar at the bottom right |
+| `&trunc=0` | switch F's ellipsis off, to see the ink it prevents |
 | `&cmd=implement\|design-to-code\|grill-me\|triage\|none` | `/design-to-code` is the longest; `none` is the ticket whose labels refuse a command |
 | `&mark=reason\|tick\|both` | how the resolved command is marked inside the menu |
 | `&memory=session\|ticket` | whether a pick is spent on one Session or remembered for the ticket |
@@ -79,12 +85,20 @@ outside the card.**
 
 | | 100% | 115% | 135% | 150% | 175% | 200% |
 |---|---|---|---|---|---|---|
-| **A** pill | 19.6 | **0.7** | **−24.4** | | | |
+| **A** pill, full size | 19.6 | **0.7** | **−24.4** | −43.2 | −74.2 | −105.8 |
 | **B** token beside Start | 31.6 | 12.7 | **−12.4** | −31.2 | −62.2 | −93.8 |
 | **C** shipped | 53.4 | 34.5 | 9.3 | **−9.5** | −40.5 | −72.0 |
 | **E** token on its own line | 102.3 | 87.0 | 66.5 | 51.3 | 25.8 | **0.3** |
+| **F** pill at the card's scale | 33.6 | 14.7 | **0.0** | **0.0** | **0.0** | **0.0** |
+| F with `&trunc=0` | 33.6 | 14.7 | −10.4 | −29.2 | −60.2 | −91.8 |
 
 D keeps a 62.6pt foot at every size, because its command is not on the foot at all.
+
+**F's zeros are the point.** It fills the card's content box exactly and stops there: past 115%
+the command ellipsizes rather than pushing, so the foot cannot leave the card at any text size.
+The row under it is the same shape with the ellipsis switched off, which is what the truncation
+prevents — and is what the shipped `StartCommandWord` would do today, because it carries
+`.fixedSize()`.
 
 ### The four things this caught, all measured, none by eye
 
@@ -92,6 +106,8 @@ D keeps a 62.6pt foot at every size, because its command is not on the foot at a
 |---|---|
 | **A fits at 280 — and only at one text size.** The width objection everybody expects is not the fault | 19.6 slack at 100%, **0.7 at 115%**, over the edge by 24.4 at 135% |
 | **The pill costs 34pt of chrome the plain starter does not spend** — `vesselInset` twice plus each segment's own horizontal room — and the card at 280 has 53.4 to give | 204.4 against C's 170.6, same command, same rail |
+| **Stepping those three numbers down one rung recovers most of it**, and the picker then costs the card 1.8pt of height | F 190.4 x 28.0, card 159.0, against A's 204.4 x 36.0 / 167.0 and C's 170.6 x 26.2 / 157.2 |
+| **A `max-width` binds against the parent, and the parent was an inline span that sizes to content** — so the first truncating build measured identically to the non-truncating one | −10.4 at 135% before the host became a shrinkable flex child, 0.0 after |
 | **The shipped hero is itself within 9.3pt of the edge**, and goes over at 150% | C: 214.7 at 135%, 233.5 at 150%. This is true of the app today and owes nothing to this ticket |
 | **D's command chip does not fit the chip line and wraps**, costing the card 25pt and putting a control in a row the design calls labels | card 182.2 with two earned chips against C's 157.2; 160.1 with one chip or none |
 
@@ -110,27 +126,46 @@ been reported as findings if the numbers had been trusted on their first reading
 
 ## The answers
 
-### 5. Does the hero get the picker? Yes — and not as the pill.
+### 5. Does the hero get the picker? Yes — the ticket pane's own pill, at the card's scale.
 
-**The two surfaces should not agree by transplanting the control.** They are not the same
-surface: the pane header spends a whole window-wide band on one row of chrome, and the hero is a
-card at the foot of a 280 rail that already spends its width on a title, an id and two chips. The
-pill is the right shape in a band and the wrong shape on a card, and the number that says so is
-that it is 0.7pt inside the card one notch above the default text size.
+**`F` is the pick.** The hero draws the control the ticket pane already draws, stepped down to the
+card: same two segments, same token-is-the-picker gesture, same rim and ground the starter has
+today. One line, and the reader learns one control rather than two spellings of one act.
 
-**`E` is the pick.** The command on its own line, on the card's leading edge; `Start` alone below
-it, trailing. It is the only shape here that offers the picker and still fits at 200% text, and
-the reason is structural rather than lucky: **nothing on the foot has to shrink for anything
-else.** A and B both fail because two facts are competing for one 224pt line, and one of the two
-is a command that can be fifteen characters long.
+**Transplanting it at full size does not work, and the fault is not the one you expect.** `A`
+fits at 280 — the width objection everybody reaches for is wrong. It is **0.7pt inside the card
+one notch above the default text size**, because the full-size pill spends 34pt of chrome the
+plain starter does not: `vesselInset` twice, and `ArgoSpacing.base` on each of two segments.
+Stepping those three numbers down one rung each recovers 14pt of width and 8pt of height, and
+takes the card from `A`'s 167.0 to 159.0 — **1.8pt over the shipped starter's 157.2.** The
+picker becomes almost free.
 
-**It costs the rail a line** — the card grows from 157.2 to 184.5, about 27pt off the views above
-it. That is the trade, and it is the one to take: the alternative is a control that is correct at
-one text size.
+**What closes the gap at large text is the ellipsis, not the smaller numbers.** Even compact, the
+pill is 10.4pt outside the card at 135%. `StartCommandWord` carries `.fixedSize()` today —
+correct in the pane header, where the pill has a whole band — and on a 224pt card it is what
+turns a long command into ink outside the card. So on the hero **the command ellipsizes and
+`Start` never shrinks**: the verb is what the card exists for, and the token is the half that can
+give. `/design-to-c…` at 135% is still the command a reader can identify, and past that point
+every other line on the card is wrapping too.
 
-`E` also keeps the reading `StartVerb` already has. The hero's `Says.whole` becomes `Says.word`,
-exactly as the pane header's already is, and the command moves to a control of its own. Neither
-the verb nor the command is spelled a second way, which is the fault `StartVerb` exists to prevent.
+**The runner-up, on the record.** `E` puts the command on a line of its own and never truncates
+anything — 66.5pt of slack at 135%, still 0.3 at 200%. It loses on two counts: it costs the card
+27pt against `F`'s 1.8, and it puts the command somewhere the ticket pane does not, so the two
+surfaces stop agreeing on where the fact lives. `F` trades an ellipsis at large text for one
+control the whole app spells the same way. If the ellipsis is later judged dishonest, `E` is the
+shape to fall back to, and this study's numbers stand.
+
+Both `E` and `F` keep the reading `StartVerb` already has: the hero's `Says.whole` becomes
+`Says.word`, exactly as the pane header's already is, and the command moves to a control of its
+own. Neither the verb nor the command is spelled a second way, which is the fault `StartVerb`
+exists to prevent.
+
+**What `F` costs, said plainly.** A second set of numbers for one control. `StartControl` would
+draw at the band's scale in the pane header and the card's scale on the hero, and #1243 has just
+finished removing exactly that kind of per-surface box arithmetic. The three numbers are rungs
+that already exist rather than new measurements, but they are a second rung ladder for a control
+that had one, and the design has to name the surface that justifies it: **a card in a 280 rail
+is not a window-wide band, and that is the whole of the reason.**
 
 ### 4. A pick is spent on ONE Session. It is not remembered for the ticket.
 
@@ -192,6 +227,6 @@ It is not a component structure and nothing here should be ported line by line.
 
 ## The answer, in one line
 
-**`E`.** The hero gets the picker, on a line of its own rather than inside the starter's vessel;
-the pick is spent on one Session and never filed against the ticket; the menu marks its default
-with a tick and keeps the reason beside it.
+**`F`.** The hero gets the ticket pane's own pill, at the card's scale, with the command
+ellipsizing and `Start` fixed; the pick is spent on one Session and never filed against the
+ticket; the menu marks its default with a tick and keeps the reason beside it.
