@@ -32,6 +32,7 @@ public final class InMemorySessionDriver: SessionDriver {
     private var modes: [String: [SessionMode]] = [:]
     private var models: [String: [String]] = [:]
     private var efforts: [String: [SessionEffort]] = [:]
+    private var titles: [String: [String]] = [:]
 
     public init() {}
 
@@ -113,6 +114,16 @@ public final class InMemorySessionDriver: SessionDriver {
         efforts[sessionID, default: []].append(effort)
     }
 
+    /// Records the title as it was ASKED FOR, not as the line would spell it: the folding onto one
+    /// line is the `claude` adapter's own claim and is asserted with it (#1494). The standing
+    /// refusal is honoured, because the mirror that could not go is what its callers must survive.
+    public func setTitle(_ title: String, for sessionID: String) async throws {
+        if let refusal {
+            throw refusal
+        }
+        titles[sessionID, default: []].append(title)
+    }
+
     /// The declared capability first, then the standing refusal — in that order, so a test that
     /// takes a knob off this fake gets the adapter's own answer rather than whatever `refusal`
     /// happens to be set to.
@@ -181,5 +192,11 @@ public final class InMemorySessionDriver: SessionDriver {
     /// The effort rungs one Session was asked for, in order (#558).
     public func effortsAsked(for sessionID: String) -> [SessionEffort] {
         efforts[sessionID] ?? []
+    }
+
+    /// The titles one Session was mirrored, in order (#1494). Order and COUNT both: a mirror that
+    /// fired twice for one resolve is the thing a caller has to be able to catch.
+    public func titlesMirrored(for sessionID: String) -> [String] {
+        titles[sessionID] ?? []
     }
 }

@@ -6,6 +6,8 @@ public actor TicketTitleResolver {
     private let gitHub: GitHubTicketTitles
     private let linear: LinearTicketTitles
     private let annotations: SessionAnnotationStore
+    /// Where a Ticket's words go BESIDES the annotation file (#1494).
+    private let mirror: TicketTitleMirror
     /// What each number settled at this launch. Only a SETTLED answer lands here: a read that
     /// established nothing is left out, so one offline moment at launch does not cost that ticket
     /// its name until the next one.
@@ -17,10 +19,12 @@ public actor TicketTitleResolver {
     public init(
         titles: TicketTitleAdapters = TicketTitleAdapters(),
         annotations: SessionAnnotationStore,
+        mirror: TicketTitleMirror = .none,
     ) {
         self.gitHub = titles.gitHub
         self.linear = titles.linear
         self.annotations = annotations
+        self.mirror = mirror
     }
 
     /// Resolve the Ticket behind each Session, keyed by chain id, and answer the annotations the
@@ -41,9 +45,32 @@ public actor TicketTitleResolver {
         var latest = await annotations.load()
         for (sessionID, number) in links {
             guard let reading = settled[number] else { continue }
+            let before = latest.ticket(sessionID)
             latest = await annotations.setTicket(reading, sessionID: sessionID)
+            await carry(reading, was: before, to: sessionID, in: latest)
         }
         return latest
+    }
+
+    /// Type the Ticket's words at the Session's own prompt, so Claude's other surfaces show the
+    /// name Argo's roster shows (#1494).
+    ///
+    /// Three things stop it, and each is silence rather than a failure. A reading that says the
+    /// same as the one already stored, because this pass runs whenever an untitled number appears
+    /// and a mirror per pass would retype `/rename` at a Session that has been sitting on the
+    /// right name for hours. A reading with no words, because there is nothing to say. And a
+    /// Session the user has NAMED, because their name is what the roster draws — mirroring the
+    /// ticket over it is exactly the disagreement this ticket exists to end.
+    private func carry(
+        _ reading: TicketTitleReading,
+        was before: TicketTitleReading?,
+        to sessionID: String,
+        in latest: SessionAnnotations,
+    ) async {
+        guard reading != before, let title = reading.title,
+              latest.explicitName(sessionID) == nil
+        else { return }
+        await mirror.carry(title, sessionID)
     }
 
     /// Which provider's adapter answers, decided here and nowhere else. An exhaustive `switch`, so

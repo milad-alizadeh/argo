@@ -96,6 +96,13 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         remembers.run(.effort(effort))
     }
 
+    /// Passed straight through and remembered NOWHERE (#1494). The two above file a pick because
+    /// the next New Session opens on it; a title belongs to one Session, and where Argo stands on
+    /// it is the annotation store's answer already. A copy here would be the second one.
+    func setTitle(_ title: String, for sessionID: String) async throws {
+        try await base.setTitle(title, for: sessionID)
+    }
+
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         try base.revokeStandingAllow(toolName, for: sessionID)
     }

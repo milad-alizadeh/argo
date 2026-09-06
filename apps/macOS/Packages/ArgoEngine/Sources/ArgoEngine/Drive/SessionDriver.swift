@@ -72,6 +72,22 @@ public protocol SessionDriver {
     /// into it: they are two knobs, an adapter can expose one alone, and `surface(of:)` says which.
     func setEffort(_ effort: SessionEffort, for sessionID: String) async throws
 
+    /// Give the Session the title the CLI itself should carry (#1494), so Claude's own mobile,
+    /// desktop and web surfaces show the name Argo shows instead of a generated one.
+    ///
+    /// A one-way MIRROR and never a read: the annotation store stays the roster's only source of
+    /// truth, and nothing here ever comes back to feed it. Two titles that can disagree is the
+    /// state this exists to end, and one writer with a mirror ends it where two readers reconciling
+    /// would not.
+    ///
+    /// Every caller is best-effort. A refusal is the ordinary case — a Turn in flight, a pending
+    /// Permission or question, a Session Argo owns no terminal for, an adapter with no title of its
+    /// own — and none of them is a failed rename: the Argo-side name stands either way.
+    ///
+    /// `async` for `setModel`'s reason, and answering the same promise: a live surface took the
+    /// line, not that the CLI has run it.
+    func setTitle(_ title: String, for sessionID: String) async throws
+
     /// What the adapter behind this Session DECLARES about itself (#761) — the one member that
     /// states rather than acts, and the only place a new capability is added.
     ///
@@ -159,6 +175,15 @@ public enum SessionDriveError: Error, Equatable {
     /// keystroke at a time, so a second walk would count its distance from a stance the first has
     /// already left and interleave its keystrokes — landing the Session on a rung nobody picked.
     case modeWalking
+    /// A title was mirrored to an adapter whose CLI holds no title of its own (#1494) — `codex`,
+    /// which has no `/rename` and no `customTitle`. Its own case rather than `runFactsUnsupported`,
+    /// though nothing draws either: that one's sentence names Model and Effort, and a refusal that
+    /// says the wrong thing is only ever one surface away from being read out.
+    case titleUnsupported
+    /// A title was mirrored to a Session whose prompt was not free — the same two moments
+    /// `runFactsBusy` covers, and told apart from it because this one is never the reader's news:
+    /// a mirror that did not go leaves the Argo-side name exactly where it was.
+    case titleBusy
     /// An attachment could not be written down, so no path could be named. The message stays where
     /// it was typed and the chips stay where they were, for the reason a refused send does: what
     /// failed is Argo's own act, and nothing about the Turn has happened yet.
@@ -184,6 +209,13 @@ public enum SessionDriveError: Error, Equatable {
         // wait for an idle prompt can see when that has happened.
         case .runFactsBusy:
             "Model and Effort can only be changed at an idle prompt"
+        // Both title refusals say what did not happen and NOT that a rename failed, because none
+        // of it did: the name the reader typed is on the row either way, and the only thing this
+        // covers is the copy Claude's own apps would have shown.
+        case .titleUnsupported:
+            "This Session's CLI holds no title of its own — the name is Argo's alone"
+        case .titleBusy:
+            "The title can only be mirrored at an idle prompt — the name is unchanged"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "
                 + "silently dropped."
