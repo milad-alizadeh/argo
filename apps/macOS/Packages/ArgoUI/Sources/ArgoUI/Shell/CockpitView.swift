@@ -124,19 +124,6 @@ public struct CockpitView: View {
         presentation.subagents
     }
 
-    /// The sheet is up exactly while there is a reading. Dismissing it — Escape, or the system's
-    /// own gesture — runs the same intent the button does, so the panel has one way to close and
-    /// the app is never left holding a panel the window has already put away.
-    private var isConnecting: Binding<Bool> {
-        Binding(
-            get: { connect.reading != nil },
-            set: { isOpen in
-                guard !isOpen else { return }
-                connect.actions.finish()
-            },
-        )
-    }
-
     /// The window's chrome, over the rooms or over the one error state that replaces them — a
     /// Project whose folder is not at the recorded path is disabled WHOLE (failure spec §6), so the
     /// branch is above the split view rather than inside a room.
@@ -161,20 +148,6 @@ public struct CockpitView: View {
             minHeight: ArgoLayout.windowMinimumHeight,
         )
         .argoAppearance()
-    }
-
-    /// The error state, with the bar narrowed to the Project half — see `ProjectDisabledToolbar`.
-    private func disabled(_ reading: ProjectDisabledReading) -> some View {
-        ProjectDisabledScreen(
-            reading: reading,
-            repair: ProjectRepair(projectID: reading.projectID, actions: actions),
-        )
-        // The Project is still the window's scope, so it is still the window's name: a title that
-        // fell back to `Argo` here would read as the Project having gone rather than its folder.
-        .navigationTitle(reading.name)
-        .toolbar {
-            ProjectDisabledToolbar(presentation: presentation, actions: actions)
-        }
     }
 
     /// A `@ViewBuilder` property rather than a `View` of its own: what it draws reads six of this
@@ -281,6 +254,40 @@ public struct CockpitView: View {
                 forgetEvidence()
             }
             drawn.catchUp(to: pointed, in: navigation)
+        }
+    }
+}
+
+/// The two halves of the window the body chooses between: the binding that decides whether the
+/// connect sheet is up, and the one error state that replaces the rooms whole.
+///
+/// In an extension because the body above is the decision and these are what it resolves to;
+/// they stay in this file because the state they read is `private` to it.
+extension CockpitView {
+    /// The sheet is up exactly while there is a reading. Dismissing it — Escape, or the system's
+    /// own gesture — runs the same intent the button does, so the panel has one way to close and
+    /// the app is never left holding a panel the window has already put away.
+    private var isConnecting: Binding<Bool> {
+        Binding(
+            get: { connect.reading != nil },
+            set: { isOpen in
+                guard !isOpen else { return }
+                connect.actions.finish()
+            },
+        )
+    }
+
+    /// The error state, with the bar narrowed to the Project half — see `ProjectDisabledToolbar`.
+    private func disabled(_ reading: ProjectDisabledReading) -> some View {
+        ProjectDisabledScreen(
+            reading: reading,
+            repair: ProjectRepair(projectID: reading.projectID, actions: actions),
+        )
+        // The Project is still the window's scope, so it is still the window's name: a title that
+        // fell back to `Argo` here would read as the Project having gone rather than its folder.
+        .navigationTitle(reading.name)
+        .toolbar {
+            ProjectDisabledToolbar(presentation: presentation, actions: actions)
         }
     }
 }
