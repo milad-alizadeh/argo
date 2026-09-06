@@ -9,8 +9,7 @@ public enum HubConnection: Equatable, Sendable {
     /// Being pointed, with nothing yet tailing: the previous Project is torn down and the new one
     /// has established nothing. `connect` suspends twice in that window, so a view does render
     /// inside it — and `idle` there would say the Project being switched to has nothing on it, a
-    /// beat before it does. Once a tail is running the window is over, whatever the re-point is
-    /// still doing, and the reading is `connected` (#1535).
+    /// beat before it does (#1535).
     case connecting
 
     /// Pointed at a Project and reading nothing — nothing in its working set, or every tail it had

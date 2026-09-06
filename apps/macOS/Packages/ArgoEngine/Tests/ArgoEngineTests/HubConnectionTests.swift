@@ -61,9 +61,12 @@ struct HubConnectionTests {
     }
 
     /// The other half of that window: the first sweep starts every tail and fills the join before
-    /// `connect` returns, so a roster is drawn while the connecting claim is still held. A chip
-    /// reading `Connecting` over rows the user can already read says the opposite of the window
-    /// (#1535). The claim covers the gap with no tail, and a live tail is not that gap.
+    /// `connect` returns, so a roster is drawn while the claim is still held (#1535).
+    ///
+    /// Driven through `whileConnecting` rather than through a gated `connect`: what the sweep
+    /// awaits between registering its first tail and returning is inside the watch, so there is no
+    /// injected read a gate could hold it at. That `connect` holds the claim at all is the case
+    /// above.
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a tail running inside the connect window reads as connected`() async {
