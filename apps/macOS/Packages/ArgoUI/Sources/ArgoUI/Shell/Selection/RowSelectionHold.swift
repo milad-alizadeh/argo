@@ -22,6 +22,26 @@ package struct RowSelectionHold<Row: Hashable & Sendable> {
     /// nothing on the way, which is every list most of the time and the backlog always.
     var awaited: Row?
 
+    /// What the `List` itself wrote back, taken in on this hold's terms (#1493).
+    ///
+    /// The one route the platform's selection reaches the reader's by, so the rule about the
+    /// awaited row belongs here rather than in `RowSelection`: the value knows which rows are
+    /// selected, and only the hold knows which one has not been published yet.
+    /// A `List` can only name rows it is DRAWING, so while a row is awaited an EMPTY write-back
+    /// is the list's own arithmetic over a row it has not been given yet, never the reader letting
+    /// one go. Taking it in dropped `selection.last`, and `RowSelectionReactions` reads that to
+    /// repoint the deck — so the window left the Session a spawn had just started, with neither
+    /// reconciliation nor the reader having any say. It is the third narrowing seam on that route,
+    /// after `reconcile` and `confine`, and the last one open.
+    ///
+    /// A write-back that NAMES a row is the reader, including one that moves off the awaited
+    /// Session, so only the empty one is refused — and only while something is awaited, which is
+    /// the second or so between a spawn answering and its row arriving.
+    package func absorbFromList(_ selected: Set<Row>, over visible: [Row]) {
+        guard !(selected.isEmpty && awaited != nil) else { return }
+        selection.absorb(selected, over: visible)
+    }
+
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         selection: Binding<RowSelection<Row>>,

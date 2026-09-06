@@ -71,13 +71,14 @@ package struct SessionNavigator: View {
     }
 
     /// The `List`'s own selection, which is the held set and nothing beside it. Written back
-    /// through `absorb`, so a click the platform answered — anywhere but the title, and every
-    /// keyboard move — reaches the anchor and the deck by the same route a click on the title
-    /// does.
+    /// through `RowSelectionHold.absorbFromList`, so a click the platform answered — anywhere but
+    /// the title, and every keyboard move — reaches the anchor and the deck by the same route a
+    /// click on the title does, and an empty write-back over a row the list has not been given
+    /// yet is refused there rather than here (#1493).
     private var listSelection: Binding<Set<CockpitPresentation.Session.ID>> {
         Binding(
             get: { held.selection.rows },
-            set: { held.selection.absorb($0, over: selectableRows) },
+            set: { held.absorbFromList($0, over: selectableRows) },
         )
     }
 
