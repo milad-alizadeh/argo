@@ -23,15 +23,21 @@ struct RoomSidebarPlacementTests {
         let placing = try Self.shellSources.filter { url in
             try String(contentsOf: url, encoding: .utf8).contains("RoomStrip(selection:")
         }
-        #expect(placing.map(\.lastPathComponent).sorted() == ["RoomSidebar.swift", "RoomStrip.swift"])
+        #expect(placing.map(\.lastPathComponent).sorted() == [
+            "RoomSidebar.swift",
+            "RoomStrip.swift",
+        ])
     }
 
     /// All three rooms reach it, so the shared placement is what every room is actually drawn by
     /// rather than a view one room happens to use.
     @Test
     func `every room's sidebar is composed through it`() throws {
-        for room in ["Sidebar/ShellSidebar.swift", "Tickets/Sidebar/TicketsSidebar.swift",
-                     "Atlas/AtlasSidebar.swift"] {
+        for room in [
+            "Sidebar/ShellSidebar.swift",
+            "Tickets/Sidebar/TicketsSidebar.swift",
+            "Atlas/AtlasSidebar.swift",
+        ] {
             let source = try String(contentsOf: Self.shell.appending(path: room), encoding: .utf8)
             #expect(source.contains("RoomSidebar(room:"), "\(room) places its own strip")
         }
