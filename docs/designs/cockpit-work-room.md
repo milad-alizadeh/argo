@@ -46,6 +46,8 @@ out.png`, from `apps/macOS`.
 | `one-chip` | `oneEarnedChip` |
 | `pool-blocked` · `pool-running` · `empty` — the three empty-pool tiers | `nothingUnblocked` · `everythingRunning` · `emptyTicketsBacklog` |
 | `unbound` — no provider bound | `unboundTicketsRoom` |
+| `unread` — bound, and no answer back yet (**added #1304**) | `unreadClosedTickets` |
+| `nothing-closed` — the `Closed` view, and nothing was ever closed (**added #1304**) | — |
 | `searching` — a query, with rails to the match (**added #1304**) | `searchedTicketsBacklog` |
 | `unmatched` — a query that matched nothing (**added #1304**) | `unmatchedTicketsBacklog` |
 | `closed` — the fifth view, flat and by last touched (**added #1304**) | `closedTicketsMore` |
@@ -813,9 +815,17 @@ whole width and three lines to wrap into. It reads better at 280 than it did in 
 because in the rail it was competing with twelve other titles.
 
 **At most two chips, each earned, and never a score** (#273). The order is `high priority` →
-`unblocked` → `next in <PRD>`, with `oldest untouched` as the honest fallback. `high priority`
-takes `state.attention` ink; the rest are neutral. With one chip earned the card carries one —
-see `one-chip.png`.
+`unblocked` → `next in <PRD>` → **`low conflict` (added #1384, recorded here #1304)**, with
+`oldest untouched` as the honest fallback where none of the four was earned. **The order IS the
+priority**, so the cut to two drops the weakest claim rather than an arbitrary one.
+`high priority` takes `state.attention` ink; the rest are neutral. With one chip earned the card
+carries one — see `one-chip.png`.
+
+**`unblocked` is earned off THIS ticket's own edges, never inferred.** The pick's blockage has to
+have been read; a backlog that carries edges somewhere is not an answer about the ticket in the
+card, and asserting it would be the claim the `edgeless` state exists to refuse. **The pool the
+pick comes from is `open · leaf · todo · unblocked · session-less`**, so a hero that named a
+blocked ticket would be contradicted by the rail's own `Blocked` count in the same frame.
 
 **An empty pool degrades in tiers, each with its own sentence.** The card keeps its `NEXT UP`
 label and replaces the ticket with the reason: nothing unblocked, all in progress, or backlog
@@ -1001,9 +1011,23 @@ none, and the shape #1242 chose costs that. Re-opening it means giving the vacan
 own, which is a control over a page rather than over a pane — the exact placement rule #1242 was
 about. It is left as it ships.
 
-**A query that matches nothing is a fourth state, and it is not one of these** (#873). It is a fact
-about the query rather than about the provider, so it stays inside the list pane and the room's row
-of controls stands — see **the two narrowings** above.
+**A query that matches nothing is a fifth state, and it is not one of these** (#873). It is a fact
+about the query rather than about the provider, so it stays inside the list pane and the pane's own
+header stands — see **the two narrowings** above.
+
+**All four vacancies are drawn now (#1304).** Two of them — `unread` and `nothing closed` — had
+been argued for here and rendered nowhere, which meant a `pixel-review` of either had nothing to
+judge against and the four sentences could drift apart with nothing to catch it. `unread` is
+`unreadClosedTickets`; `nothing closed` has no specimen of its own and is drawn from the
+explorable, which the state table says.
+
+**The rail cannot count what the provider did not serve, either (#1304).** With no dependency
+edges the row marks are already suppressed — that is what `edgeless` is for — but the sidebar was
+still asserting `Blocked` and `Unblocked` off the same edges it had not read. `Blocked` in
+`state.failure` beside a list carrying no marks states exactly what that ink is defined to mean
+and the list does not show. So under no edges **`Unblocked` goes absent** — it is the claim Argo
+has no standing to make — and **`Blocked` falls back to the bucket**, which is the one thing the
+provider did say. Suppression and the count are one rule, not two.
 
 ## The Route, re-skinned
 
@@ -1144,7 +1168,7 @@ for; anything not listed is stock used directly.
 | `DeliveryChip` | molecule | `Button(.plain)` opening a URL | deep-links; two on one ticket are two of these |
 | `LabelChip` | atom | `Text` in a rounded rect | a provider label, verbatim |
 | `TicketLinkList` | molecule | a `VStack` of `Button(.plain)` | ONE component; `blockedBy` and Children are two callers with different trailing facts |
-| `TicketsRoomVacancy` | molecule | `ContentUnavailableView` | the room-level states. **Corrected #1304**: there are FOUR, not two — `unbound`, `unread`, `nothingOpen` and `nothingClosed`, the last added with the `Closed` view (#1075). ONE view for all of them, because the contrast IS the thing being built and four views would let the sentences drift apart |
+| `TicketsRoomVacancy` | molecule | `ContentUnavailableView` | the room-level states. **Corrected #1304**: there are FOUR, not two — `unbound`, `unread`, `nothingOpen` and `nothingClosed`, the last added with the `Closed` view (#1075). ONE view for all of them, because the contrast IS the thing being built and four views would let the sentences drift apart. All four are now states in the explorable and renders in `work-room/`: two of them had been declared here and drawn nowhere, which left `pixel-review` nothing to judge them against |
 | `BacklogNoMatch` | atom | a centred `Text` in the list pane | **Added #873**: the query matched nothing. Deliberately NOT a `TicketsRoomVacancy` case — that one replaces the whole deck, and this is a fact about the query rather than about the provider |
 | `RoomPresentation` | atom | `Picker(.segmented)` | `Present as: Tree \| Map`, map-scoped not room-scoped (#334) |
 

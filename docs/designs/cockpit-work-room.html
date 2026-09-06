@@ -506,14 +506,17 @@
   .work-list { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; }
   .work-list .row { height: 30px; }
   .ticket-pane > .col { flex: 1; }
-  /* THE ONE HAIRLINE. The window's chrome is a single sheet from the top edge to the one rule
-     where it stops — so it is drawn ACROSS the deck here, once, and never per band. Worn per
-     pane it put a hairline under every header and broke the bar at each column seam. */
+  /* NO RULE UNDER THE BAND, AND THIS WAS MEASURED (#1304). The band paints nothing — but the
+     first re-base drew the chrome sheet's terminating hairline across the deck instead, on the
+     reasoning that the sheet has to stop somewhere. It does not stop here: scanning the
+     `ticketsRoom` render down the deck finds `surface.base` unbroken from the window's own
+     border to the first glyph, while `ticketsChrome` — the PANES with no window around them —
+     draws one at white .08 under its whole header block, which is the specimen wrapper's
+     `argoChromeBar()` and not this room's.
+     Where the window's chrome sheet terminates is `ArgoChromeBar`'s business and the shell's.
+     A copy of that rule here would be this room answering for a surface it does not own, which
+     is the same mistake as drawing the Project scope capsule. */
   .deck { position: relative; }
-  .deck:has(> .work)::before {
-    content: ''; position: absolute; top: 46px; left: 0; right: 0; height: 1px;
-    background: var(--hairline); z-index: 5; pointer-events: none;
-  }
 
   /* D's detail has no 240pt facts column — there is no room for one beside a 520pt list at
      1280. The facts move into a strip under the head, which is the cost D pays. */
@@ -549,7 +552,9 @@
   .pane-head { position: relative; flex: none; height: 46px; display: flex;
                align-items: center; gap: var(--s-base); z-index: 10; }
   .pane-head.list   { padding: 0 var(--s-comfortable); }
-  .pane-head.ticket { padding: 0 var(--s-section); }
+  /* `comfortable` 12 and not the band's own `base` 8: the pill and the closure verb are two
+     controls, not two segments of one, and the app spaces them at 12 inside `TicketPaneHeader`. */
+  .pane-head.ticket { padding: 0 var(--s-section); gap: var(--s-comfortable); }
   .pane-head .grow { flex: 1; }
 
   /* Every container on the band is ONE height — `ArgoControlBox.vessel` 36. The compose circle,
@@ -653,6 +658,15 @@
   <span class="q" id="state-note"></span>
 </div>
 
+<!-- The one mask the blockage mark's notch is cut with, defined once so every instance of the
+     glyph shares an id rather than repeating one. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <mask id="slashcut" maskUnits="userSpaceOnUse" x="0" y="0" width="12" height="12">
+    <rect width="12" height="12" fill="white"/>
+    <path d="M3.2 8.8 8.8 3.2" stroke="black" stroke-width="1.4" stroke-linecap="round"/>
+  </mask>
+</svg>
+
 <div class="window">
   <header class="titlebar" id="titlebar"></header>
   <div class="panes" id="panes"></div>
@@ -683,8 +697,11 @@ const TICKETS = [
     claimed:true, age:'5d' },
   { id:'#272', t:'The generic node tree and ticket detail', parent:'#607',
     pri:'HIGH', type:'task', word:'Todo', bucket:'todo', d:null, by:['#609','#388'], age:'1w' },
+  // UNBLOCKED, and it has to be: the hero picks this one, and the pool it picks from is
+  // `open · leaf · todo · unblocked · session-less`. A hero asserting `unblocked` over a row the
+  // rail counts under `Blocked` is the one claim this card must never make.
   { id:'#273', t:'The Next-up cold-start planner', parent:'#607',
-    pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#272'], age:'2w' },
+    pri:'MEDIUM', type:'task', word:'Backlog', bucket:'todo', d:null, by:[], age:'2w' },
   { id:'#334', t:'The Route — a progress-axis view of a ticket and its children',
     parent:'#607', pri:'MEDIUM', type:'PRD', word:'Backlog', bucket:'todo', d:null,
     kids:[0,2], by:['#272'], age:'2w' },
@@ -693,9 +710,12 @@ const TICKETS = [
   { id:'#336', t:'The canvas: derived spacing and the edge rule', parent:'#334',
     pri:'LOW', type:'task', word:'Backlog', bucket:'todo', d:null, by:['#335'], age:'3w' },
   { id:'#763', t:'Ticket transport and grant plumbing', pri:'MEDIUM', type:'task',
-    word:'In Review', bucket:'in progress', d:'open', by:[], claimed:true },
+    word:'In Review', bucket:'in progress', d:'open', by:[], claimed:true, age:'2d' },
+  // STRANDED: its one blocker is #256, which was ruled out and can therefore never close. The
+  // row is not waiting for anything, so the mark goes struck-out rather than louder — see
+  // `STRANDED` below.
   { id:'#275', t:'The provider connection chip as a graphite transient', pri:'LOW',
-    type:'task', word:'Needs triage', bucket:'todo', d:'checks', by:['#376'], age:'1w' },
+    type:'task', word:'Needs triage', bucket:'todo', d:'checks', by:['#256'], age:'1w' },
   { id:'#160', t:'Ticket vocabulary: type is a property, not a ladder', pri:'LOW',
     type:'decision', word:'Awaiting answer', bucket:'blocked', d:null, by:[], age:'1y' },
   { id:'#185', t:'Tickets room interior: what a leaf carries', pri:'LOW', type:'decision',
@@ -752,6 +772,14 @@ const LABELS = {
 /* Six blockers on one ticket, to see the sidebar's worst honest case. */
 const SIX = ['#609','#388','#264','#256','#375','#376'];
 
+/* A STRANDED edge: a blocker that was ruled out, so it can never close and the row it holds can
+   never satisfy itself. `text.disabled` and not a second red — the palette holds ONE red and
+   `Blocked` spends it, which is the right way round: a stranded row is not waiting for anything,
+   and struck-out reads truer than a louder wait. The two states are then told apart by VALUE
+   rather than by hue, which survives a reader who cannot separate two reds. */
+const STRANDED = new Set(['#256']);
+const isStranded = t => t.by.some(b => STRANDED.has(b));
+
 /* Blockers that are already closed are not in the backlog, so the rail has no row for them.
    The tracker still names them, and the view renders the tracker's name. */
 const CLOSED = {
@@ -784,6 +812,12 @@ const STATES = {
                    q:'The provider answered and the answer was nothing. A VACANCY, so it takes the whole deck: the pane headers go with the panes. Specimen: emptyTicketsBacklog.' },
   'unbound':     { n:'No Ticket provider bound — the room hides whole',
                    q:'What the user sees instead, and how it differs from an empty backlog (#272). Specimen: unboundTicketsRoom.' },
+  'unread':      { n:'Bound, and no answer back yet',
+                   q:'The third vacancy: connected, and the read has not landed. It says so in as many words, because all four pages are one glance apart — and the open counts stand, because those WERE read. Specimen: unreadClosedTickets.',
+                   view:'closed' },
+  'nothing-closed':{ n:'The Closed view, and nothing has ever been closed',
+                   q:'The fourth vacancy, and the opposite of the empty backlog: nothing has been FINISHED, rather than nothing being left to do (#1075).',
+                   view:'closed' },
   'collapsed':   { n:'A parent shut — its roll-up standing in for its children',
                    q:'What a shut parent says on its own, and where the n/m roll-up sits against the title. Specimen: collapsedTicketsBacklog.',
                    sel:'#607', shut:['#334','#607'] },
@@ -821,8 +855,9 @@ function nextUp() {
   // a live Session on it has been picked up. The pool is the open set less the claimed.
   const pick = TICKETS.find(x => x.id === '#273');
   // AT MOST TWO CHIPS, EACH EARNED, AND NEVER A SCORE (#273). The order is fixed —
-  // `high priority` → `unblocked` → `next in <PRD>` — with `oldest untouched` as the honest
-  // fallback where none of the three is earned.
+  // `high priority` → `unblocked` → `next in <PRD>` → `low conflict` (#1384) — with
+  // `oldest untouched` as the honest fallback where none of the four was earned. Order IS the
+  // priority, so the cut to two drops the weakest claim rather than an arbitrary one.
   const chips = [];
   if (pick.pri === 'HIGH') chips.push({ t:'high priority', pri:true });
   // SUPPRESSED, NEVER ASSERTED, where the provider exposes no dependency edges: Argo has not read
@@ -851,8 +886,8 @@ const dot = t => `<span class="dot ${t.d || 'none'}"></span>`;
 const CHEVRON = `<svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4"
   stroke-linecap="round" stroke-linejoin="round"><path d="M1.4 2.6L4 5.4l2.6-2.8"/></svg>`;
 
-/* THE VIEW GLYPHS AND THE ROW MARKS ARE ONE SET (#939, #1074). The sidebar says "8 blocked"
-   beside `slash` and the rows are the 8 it counted, so two glyphs would be two concepts to a
+/* THE VIEW GLYPHS AND THE ROW MARKS ARE ONE SET (#939, #1074). The sidebar states a count beside
+   `slash` and the marked rows are the ones it counted, so two glyphs would be two concepts to a
    reader who has to learn they are the same one. `slash.circle.fill` is FILLED like `All open`
    and `In progress`; `nosign`, which it replaced, has no fill variant of its own. */
 const G = (b, fill) => `<svg viewBox="0 0 12 12" fill="${fill ? 'currentColor' : 'none'}"
@@ -861,7 +896,12 @@ const GLYPH = {
   circleFill: G('<circle cx="6" cy="6" r="4"/>', true),
   circle:     G('<circle cx="6" cy="6" r="4"/>'),
   diamond:    G('<path d="M6 1.6 10.4 6 6 10.4 1.6 6z"/>', true),
-  slash:      G('<circle cx="6" cy="6" r="4.4"/><path d="M3.2 8.8 8.8 3.2" stroke="#1E2024" stroke-width="1.4"/>', true),
+  // The notch is a genuine CUT-OUT, masked rather than overpainted in the deck's own ground:
+  // this mark lands on the selection ground and the hover ground too, and a slash painted in
+  // `surface.base` would be darker than the row under it in both. The mask itself is defined
+  // once, in `MASK_DEFS` below, so the many instances share one id.
+  slash: `<svg viewBox="0 0 12 12">
+    <circle cx="6" cy="6" r="4.4" fill="currentColor" mask="url(#slashcut)"/></svg>`,
   clock:      G('<circle cx="6" cy="6" r="4.2"/><path d="M6 3.4V6l1.9 1.1"/>'),
   play:       G('<path d="M3.4 2.2 9.6 6l-6.2 3.8z"/>', true),
   sessions:   G('<rect x="1.4" y="2.4" width="9.2" height="7.2" rx="1.4"/><path d="M1.4 4.8h9.2"/>'),
@@ -995,8 +1035,11 @@ const rowLabels = t => {
 function trailing(t, group) {
   const claim = t.claimed ? `<span class="mark claim" title="A live Session is on this ticket">${GLYPH.diamond}</span>` : '';
   const blocked = state !== 'edgeless' && (t.bucket === 'blocked' || t.by.length);
+  const stranded = blocked && isStranded(t);
   const block = blocked
-    ? `<span class="mark block" title="Blocked by ${t.by.length || 1}">${GLYPH.slash}</span>`
+    ? `<span class="mark ${stranded ? 'stranded' : 'block'}"
+         title="${stranded ? 'Blocked by #256, which was ruled out' : `Blocked by ${t.by.length || 1}`}"
+         >${GLYPH.slash}</span>`
     : '';
   const caption = t.kids ? `<span class="rollup">${t.kids[0]}/${t.kids[1]}</span>`
     : t.pri !== group ? `<span class="pri">${t.pri.toLowerCase()}</span>`
@@ -1043,6 +1086,30 @@ const closedRow = c => `
    ========================================================================= */
 /* An empty backlog is a DIFFERENT state: the provider answered, and the answer was nothing.
    The room is still here, its chrome is still here, and the sentence says who answered. */
+/* THE OTHER TWO VACANCIES. Four pages, ONE shape — the contrast IS the thing being built, and
+   four views of it would let the sentences drift apart. The two that have read nothing say so in
+   as many words, because all four are one glance apart and a reader must never be able to read
+   "empty backlog" off a room nobody asked. */
+const unread = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>Nothing has been read from GitHub yet</h2>
+      <p>Argo is connected to GitHub and has had no answer back for this Project. This is not an
+      empty backlog — the connection at the foot of the sidebar says how the read is going.</p>
+    </div>
+  </div>`;
+
+/* The opposite of the empty backlog, and it has to be: conflating them would let one page state
+   the exact reverse of the other (#1075). */
+const nothingClosed = () => `
+  <div class="vacant">
+    <div class="panel">
+      <h2>Nothing closed in argo</h2>
+      <p>GitHub answered: nothing it exposes for this Project has been closed yet. Nothing has
+      been finished, rather than nothing being left to do.</p>
+    </div>
+  </div>`;
+
 const cleared = () => `
   <div class="vacant">
     <div class="panel">
@@ -1196,14 +1263,30 @@ const VIEWS = [
 function viewCount(k) {
   const t = openTickets();
   if (k === 'all')       return t.length;
+  // WITH NO EDGES SERVED, NEITHER COUNT MAY BE ASSERTED OFF EDGES. `Unblocked` goes ABSENT — it
+  // is the claim Argo has no standing to make, and the row marks are already suppressed for the
+  // same reason — while `Blocked` falls back to the one thing the provider did say, the bucket.
+  // A rail that read `Blocked 9` in failure ink over a list with no blockage marks would state
+  // exactly what the ink is defined to mean and the list does not show.
+  if (state === 'edgeless') {
+    if (k === 'unblocked') return null;
+    if (k === 'blocked')   return t.filter(x => x.bucket === 'blocked').length;
+  }
   // NOT just "no edges": #160 and #185 are decisions awaiting an answer, which holds them up
   // with no dependency edge to show for it. On edges alone they counted as unblocked AND as
   // blocked, and the rail read 6 + 8 over 12 (#812).
   if (k === 'unblocked') return t.filter(x => !x.by.length && x.bucket !== 'blocked').length;
   if (k === 'wip')       return t.filter(x => x.bucket === 'in progress').length;
   if (k === 'blocked')   return t.filter(x => x.bucket === 'blocked' || x.by.length).length;
-  // The closed read is the VIEW's, not the poll's: nothing has read it until somebody opens it.
-  if (k === 'closed')    return state === 'closed' ? CLOSED_ROWS.length : null;
+  // The closed read is the VIEW's, not the poll's: nothing has read it until somebody opens it,
+  // and the count stays ABSENT until that read has answered. `nothing-closed` is the read
+  // answering with zero, which is a number and is drawn; `unread` is the read not having landed,
+  // which is not. Opening onto `0` where nothing was read tells a reader they have finished
+  // nothing (#820).
+  if (k === 'closed') {
+    if (state === 'nothing-closed') return 0;
+    return state === 'closed' ? CLOSED_ROWS.length : null;
+  }
   return 0;
 }
 
@@ -1496,8 +1579,14 @@ function render() {
     return;
   }
 
-  const vacant = !openTickets().length;
-  const body = state === 'route' ? routeView() : vacant ? cleared() : '';
+  // A VACANCY is any page that replaces the deck. `unread` and `nothing-closed` are two of the
+  // four, and they take the deck exactly as `cleared` does — headers and all.
+  const page = state === 'unread' ? unread()
+    : state === 'nothing-closed' ? nothingClosed()
+    : !openTickets().length ? cleared()
+    : null;
+  const vacant = page !== null;
+  const body = state === 'route' ? routeView() : page ?? '';
 
   panes.innerHTML = navSidebar() + `<section class="deck">
     ${state === 'route' || vacant
