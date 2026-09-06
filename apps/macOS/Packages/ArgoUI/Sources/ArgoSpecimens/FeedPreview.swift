@@ -35,6 +35,11 @@ struct FeedPreview: View {
     /// for the reason `naming` is: it is a state only a still needs.
     var opensUnfolded: Set<FeedRow.ID> = []
 
+    /// Which prompt the reading unfolds AFTER its opening landing, through the binding a press
+    /// writes. `opensUnfolded` opens a reading on the far side of the fold without ever measuring
+    /// it folded, so a still built on it never crosses (#1287).
+    var unfoldsAfterLanding: FeedRow.ID?
+
     /// Which row the reading opens with the keyboard cursor on. Set after building, for the reason
     /// `naming` is: the cursor arrives with an arrow key and a still cannot press one, so this is
     /// the only way to look at the ring #533 asked for.
@@ -100,16 +105,31 @@ struct FeedPreview: View {
         // the keyboard back to a row. Both halves of the state have to be stated — the reader
         // arrived by KEY, which is what the cursor is gated on, and a still cannot press one.
         .task { await seedCursor() }
+        .task { await pressShowMore() }
+    }
+
+    /// The fold let out after the landing, so the crossing lands on a reading the table has
+    /// already measured folded. `deck.folds` and not `opensUnfolded`: that is the binding
+    /// `FeedTableModel.fold(of:)` writes, so this is the press's own path and not a likeness of it.
+    private func pressShowMore() async {
+        guard let prompt = unfoldsAfterLanding else { return }
+        await afterLanding()
+        deck.folds = [prompt]
     }
 
     /// After the reading's opening landing, never before it: that scroll would otherwise overwrite
-    /// the cursor's own and the still would come out at whatever row the feed opens on. Bounded
-    /// rather than a spin, so a reading that never settles yields a wrong still and not a hang.
+    /// the cursor's own and the still would come out at whatever row the feed opens on.
     private func seedCursor() async {
         guard let cursor else { return }
+        await afterLanding()
+        table.focus(onto: cursor, byKey: true)
+    }
+
+    /// Waits out the reading's opening scroll. Bounded rather than a spin, so a reading that never
+    /// settles yields a wrong still and not a hang.
+    private func afterLanding() async {
         for _ in 0 ..< Self.landingTries where table.isOpeningOwed {
             try? await Task.sleep(for: Self.landingBeat)
         }
-        table.focus(onto: cursor, byKey: true)
     }
 }

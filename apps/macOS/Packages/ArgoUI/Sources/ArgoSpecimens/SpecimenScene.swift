@@ -37,13 +37,21 @@ enum SpecimenScene {
         return preview
     }
 
-    /// A prompt long enough to fold, in one of its two states — the render #946 is judged from.
-    /// `FeedPreview` and not the deck shell: the fold is the reading's own state, and nothing above
-    /// the reading seeds one.
-    static func longPrompt(unfolded: Bool) -> some View {
-        var preview = FeedPreview(rows: FeedProjection.previewLongPromptRows)
-        if unfolded, let prompt = FeedProjection.previewLongPromptID {
-            preview.opensUnfolded = [prompt]
+    /// How much of a prompt a still shows, and how it got there. `pressed` is not `unfolded`: a
+    /// reading opened unfolded was never measured folded, so only `pressed` crosses the fold.
+    enum PromptFold {
+        case folded, unfolded, pressed
+    }
+
+    /// A prompt longer than the fold shows, in one of its three states. `FeedPreview` and not the
+    /// deck shell: the fold is the reading's own state, and nothing above the reading seeds one.
+    static func prompt(_ rows: [FeedRow], at fold: PromptFold) -> some View {
+        var preview = FeedPreview(rows: rows)
+        let prompt = rows.first { $0.kind.isPrompt }?.id
+        switch fold {
+        case .folded: break
+        case .unfolded: preview.opensUnfolded = prompt.map { [$0] } ?? []
+        case .pressed: preview.unfoldsAfterLanding = prompt
         }
         return preview
     }

@@ -8,6 +8,11 @@ import SwiftUI
 extension SpecimenRegistry {
     static let feed: [SpecimenEntry] = rows + asks + diagrams + evidence + shots + lane
 
+    /// The two readings the fold's stills are taken from — the moderate prompt #946 was filed at,
+    /// and one 120 times past it (#1287).
+    private static let long = FeedProjection.previewLongPromptRows
+    private static let huge = FeedProjection.previewHugePromptRows
+
     private static let rows: [SpecimenEntry] = [
         SpecimenEntry("feed") {
             SpecimenScene.sessions(
@@ -56,8 +61,14 @@ extension SpecimenRegistry {
         SpecimenEntry("feedSubmittedTurn") {
             SpecimenScene.sessions(FeedProjection.previewSubmittedTurnRows)
         },
-        SpecimenEntry("feedPromptFolded") { SpecimenScene.longPrompt(unfolded: false) },
-        SpecimenEntry("feedPromptUnfolded") { SpecimenScene.longPrompt(unfolded: true) },
+        SpecimenEntry("feedPromptFolded") { SpecimenScene.prompt(long, at: .folded) },
+        SpecimenEntry("feedPromptUnfolded") { SpecimenScene.prompt(long, at: .unfolded) },
+        // The same states for a prompt several times past the fold (#1287), plus the crossing
+        // between them. All three need `ARGO_SETTLE_SECONDS`: the deck draws nothing until its
+        // measure lands, and this reading takes about two seconds to get there.
+        SpecimenEntry("feedHugePromptFolded") { SpecimenScene.prompt(huge, at: .folded) },
+        SpecimenEntry("feedHugePromptUnfolded") { SpecimenScene.prompt(huge, at: .unfolded) },
+        SpecimenEntry("feedHugePromptPressed") { SpecimenScene.prompt(huge, at: .pressed) },
         SpecimenEntry("feedMarkdown") { MarkdownSpecimen() },
         // A table whose cells are mostly backticked. Render narrow as well as wide
         // (`ARGO_WINDOW_SIZE`): what it settles is that a row is placed at the height the mono

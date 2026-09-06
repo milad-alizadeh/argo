@@ -25,7 +25,11 @@ import AppKit
 
     /// Which prompts the reader has let out in this reading, or `nil` while they have folded
     /// nothing — which is what lets `FeedView.opensUnfolded` stand from the first frame.
-    var folds: Set<FeedRow.ID>?
+    ///
+    /// `package` so a still can cross the fold the way a press does. `opensUnfolded` opens a
+    /// reading on the far side of the fold without ever measuring it folded, so a still built on
+    /// it says nothing about the crossing — which is the state #1287 is about.
+    package var folds: Set<FeedRow.ID>?
 
     /// Whether this deck has been evicted. Read by `FeedDeckStack`, which takes the scroller out of
     /// the view tree on its next update — an eviction is decided inside a SwiftUI pass, and the
