@@ -17,7 +17,7 @@ struct CockpitNavigationModelTests {
     @Test
     func `no selection takes the first session the roster offers`() {
         let model = CockpitNavigationModel()
-        model.reconcile(against: ["a", "b"])
+        model.reconcile(against: roster("a", "b"))
         #expect(model.session == "a")
     }
 
@@ -42,7 +42,7 @@ struct CockpitNavigationModelTests {
     func `a selection reconciliation landed on was chosen by nobody`() {
         let model = CockpitNavigationModel()
         model.session = "b"
-        model.reconcile(against: ["a", "c"])
+        model.reconcile(against: roster("a", "c"))
         #expect(model.session == "a")
         #expect(model.chosenSession.session == nil)
     }
@@ -52,7 +52,7 @@ struct CockpitNavigationModelTests {
     func `a live selection survives reconciliation as a chosen one`() {
         let model = CockpitNavigationModel()
         model.session = "b"
-        model.reconcile(against: ["a", "b"])
+        model.reconcile(against: roster("a", "b"))
         #expect(model.chosenSession.session == "b")
     }
 
@@ -96,7 +96,7 @@ struct CockpitNavigationModelTests {
         let model = CockpitNavigationModel()
         model.ticketsQuery = "canvas"
         model.session = "b"
-        model.reconcile(against: ["a", "c"])
+        model.reconcile(against: roster("a", "c"))
 
         #expect(model.ticketsQuery == "canvas")
     }

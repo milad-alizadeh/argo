@@ -10,9 +10,9 @@ import Testing
 /// window admits an origin whose continuation is already published, and the fold absorbs it. That
 /// is the right reading — one Session, one row — but it retires an id the window may be pointing
 /// at, and the row has to say so or every surface holding that id reads the Session as ended.
-@Suite("Roster identity")
+@Suite("Retired Session ids")
 @MainActor
-struct RosterIdentityTests {
+struct HubSessionRetiredIDsTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-roster-identity")
 
     /// The reported shape: the reader is on a resume file that stood alone, and the sweep that

@@ -231,8 +231,7 @@ extension HubSession {
         case let .cwd(observedCwd): cwd = observedCwd
         // The CLI's own two knobs, both verbatim and latest-wins (#558). One line each: they are
         // the two shortest arms in this switch, and spreading them costs the body its ceiling —
-        // which is also what `.cwd` above and `.mode` and `.usage` below are packed for, spent on
-        // the retired-id fact this file's header now carries (#1481).
+        // which `.cwd` above and `.mode` and `.usage` below are packed for too (#1481).
         case let .model(reported): observed.model = reported
         case let .effort(reported): observed.effort = reported
         case let .branch(observedBranch):
