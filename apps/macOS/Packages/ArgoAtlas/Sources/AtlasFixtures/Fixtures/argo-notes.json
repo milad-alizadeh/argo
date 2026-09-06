@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "writtenAt": "2026-09-02T00:00:00Z",
+  "model": "sonnet",
+  "folders": {
+    "argo/apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence": {
+      "note": "Where what a tool call produced is read: diffs, output, documents and pictures, each drawn beside the feed row that named it."
+    },
+    "argo/rules": {
+      "note": "The house engineering rules a linter cannot check, kept apart from the ones it can so nothing here restates a gate."
+    },
+    "argo/docs/domain": {
+      "note": "One file per section of the domain model, so a session reads the words it needs rather than the whole vocabulary."
+    }
+  },
+  "files": {
+    "argo/apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Evidence/EvidencePanel.swift": {
+      "note": "Everything a call left behind meets one presentation here, so the deck decides which row is open and this decides nothing but how its evidence reads. Its size follows from holding every kind of evidence at once.",
+      "why": ["One of the most complex files here.", "Denser than its size explains."],
+      "subject": "3b09a39f526e6397"
+    },
+    "argo/apps/macOS/Packages/ArgoAtlas/Sources/AtlasLayout/AtlasPlan.swift": {
+      "note": "The one value the whole Atlas is drawn from: rectangles, volumes and bands decided without a window, so what the map shows can be asserted on without drawing a pixel.",
+      "why": ["One of the largest files here."],
+      "subject": "fe0463957daf7e4c"
+    },
+    "argo/rules/house.md": {
+      "note": "What no linter checks and a model does not do unprompted, stated once so that every rule elsewhere can point at it instead of repeating it.",
+      "why": ["Changed more often than almost anything else."],
+      "subject": "66037e9ed398c290"
+    },
+    "argo/docs/domain/l2-session.md": {
+      "note": "A Session and everything it can be caught doing, named where both the app and the agents reading this repository can find one spelling of it.",
+      "why": ["Touched by more people than almost anything else."]
+    }
+  }
+}

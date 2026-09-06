@@ -18,9 +18,17 @@ public struct AtlasReadingPanel: View {
     @Environment(\.argo) private var argo
 
     private let reading: AtlasFileReading
+    /// What somebody wrote about this file, where anybody has (#1159).
+    ///
+    /// A second value rather than a field on the reading, because the two are different kinds of
+    /// fact and are fetched from different files: the reading is measured out of the repository,
+    /// and this is read beside it. Nothing here counts it, and a panel handed none draws exactly
+    /// the panel it drew before the written layer existed.
+    private let note: AtlasNote?
 
-    public init(reading: AtlasFileReading) {
+    public init(reading: AtlasFileReading, note: AtlasNote? = nil) {
         self.reading = reading
+        self.note = note
     }
 
     public var body: some View {
@@ -29,6 +37,14 @@ public struct AtlasReadingPanel: View {
                 heading
                 AtlasReadingFacts(facts: reading.facts)
                     .padding(.top, ArgoSpacing.comfortable)
+                // Between the plain facts and the gauge, which is where the design puts it: after
+                // what a reader already understands and before the one Measure that has to be
+                // read against a range. A file nobody wrote about draws NO BLOCK at all rather
+                // than an empty one, so nothing on screen says a sentence went missing.
+                if let note {
+                    AtlasReadingNote(note: note)
+                        .padding(.top, ArgoSpacing.loose)
+                }
                 AtlasReadingGauge(gauge: reading.gauge)
                     .padding(.top, ArgoSpacing.loose)
                 AtlasReadingTable(rows: reading.rows)
@@ -102,11 +118,22 @@ private let unmeasuredReading = AtlasFileReading(
     rows: [.init(measure: "bytes", value: 18402, isDrawn: true)],
 )
 
+/// What was written about the file above, with the question that got it written. The stale
+/// reading is the same Note read against a subject that has since changed — the state #1159 asks
+/// to be MARKED rather than dropped.
+private let wholeNote = AtlasNote(
+    words: "The window's one presentation is assembled here, so every room below reads one truth "
+        + "about which Project is active rather than three that can disagree.",
+    flag: ["One of the most complex files here."],
+    subject: "9f2c41a7b0e58d63",
+)
+
 private struct AtlasReadingPreview: View {
     let reading: AtlasFileReading
+    var note: AtlasNote?
 
     var body: some View {
-        AtlasReadingPanel(reading: reading)
+        AtlasReadingPanel(reading: reading, note: note)
             .frame(width: 360, height: 520)
             .argoAppearance()
     }
@@ -118,4 +145,12 @@ private struct AtlasReadingPreview: View {
 
 #Preview("Atlas reading — a file the repository measured nothing for") {
     AtlasReadingPreview(reading: unmeasuredReading)
+}
+
+#Preview("Atlas reading — a file somebody wrote about") {
+    AtlasReadingPreview(reading: wholeReading, note: wholeNote.checked(against: "9f2c41a7b0e58d63"))
+}
+
+#Preview("Atlas reading — a note that has gone stale against its file") {
+    AtlasReadingPreview(reading: wholeReading, note: wholeNote.checked(against: "0000000000000000"))
 }

@@ -177,4 +177,14 @@ package extension EnvironmentValues {
     /// `nil` is a window that has resolved no room — a preview, a specimen, and every room but
     /// this one. The view draws that as the Project it has none of.
     @Entry var argoAtlasRoom: AtlasRoom?
+
+    /// What was written about the Project's files (#1159). Its OWN entry rather than a field on
+    /// `AtlasRoom`, which is the written layer's own rule kept where a reviewer can see it: the
+    /// map is drawn from the measurement alone, this arrives from a second file that is fetched
+    /// separately and may never arrive at all, and the room a window resolved none of draws
+    /// exactly the room it drew before.
+    ///
+    /// `.none` rather than an optional, because a Project nobody has written about and a written
+    /// layer nobody has fetched are the same instruction to the panel: say nothing extra.
+    @Entry var argoAtlasNotes: AtlasNotes = .none
 }

@@ -15,6 +15,10 @@ struct AtlasRoomView: View {
     /// Injected from above the deck rather than taken as a parameter — `argoAtlasRoom` says why.
     @Environment(\.argoAtlasRoom) private var resolved
     @Environment(\.argoReduceMotion) private var reduceMotion
+    /// What was written about this Project's files, or nothing said (#1159). Its own seam, read
+    /// here and never mixed into the reading: the map, the tiling and every number beside it are
+    /// the same whether this arrives or not.
+    @Environment(\.argoAtlasNotes) private var notes
 
     /// Whether this is the room on screen. `InstrumentDeckShell` keeps every room mounted so a
     /// switch destroys nothing (#1356), which makes this the one thing that still tells the map's
@@ -132,6 +136,10 @@ struct AtlasRoomView: View {
                 reading: openFile.flatMap {
                     AtlasFileReading(of: $0, in: drawn, by: room.choice.channels)
                 },
+                // Looked up on the same path the reading is, and handed over separately: a file
+                // nobody wrote about carries none, which is every file of a Project with no
+                // written layer beside it.
+                note: openFile.flatMap { notes.note(ofFile: $0) },
                 select: { openFile = $0 },
             )
         }
@@ -306,31 +314,6 @@ extension AtlasRoomView {
         // just gave.
         query = ""
     }
-}
-
-/// The state a room is SEEDED with, which is the state no screenshot can reach by itself: a file
-/// open, a question asked, a folder descended into.
-///
-/// One value rather than three parameters, because they are one thought — where the reader already
-/// was when the picture was taken — and because the room's host would otherwise be a fourth
-/// parameter wider on every state a later ticket adds.
-package struct AtlasRoomOpening {
-    /// The file the room starts with open (#1154).
-    package var opened: String?
-    /// The question the room starts with asked (#1155).
-    package var typed: String
-    /// The folder the room starts INSIDE (#1156).
-    package var entered: String?
-
-    package init(opened: String? = nil, typed: String = "", entered: String? = nil) {
-        self.opened = opened
-        self.typed = typed
-        self.entered = entered
-    }
-
-    /// The room as the app itself always opens it: the whole repository, nothing read, nothing
-    /// asked.
-    package static let none = AtlasRoomOpening()
 }
 
 /// The two facts that decide whether a city has just arrived: which measurement is drawn, and

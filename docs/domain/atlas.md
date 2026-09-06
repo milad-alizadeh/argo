@@ -3,8 +3,9 @@
 The Atlas draws the active Project as a place (#1140). The domain had no word for a file as a
 unit of analysis, none for a folder, none for a measure and none for the record itself — the only
 **File** it defines is a live editable path in a Workspace, which cannot carry a measure. These
-are those words. Everything here is DERIVED: the repository is the only source (#655), nothing is
-authored, and the Session record is not an input.
+are those words. Everything MEASURED here is DERIVED: the repository is the only source (#655),
+nothing is authored, and the Session record is not an input. The one exception is the written
+layer below, which is read beside the numbers and never counted (#1159).
 
 - **Map** — one repository, measured. Argo-owned, per-machine app data under `userData`, **never
   committed and never watched**: generated whole on first Atlas open, read on every open after,
@@ -56,6 +57,24 @@ authored, and the Session record is not an input.
   stated as one), and the **agreement** between the blended reading and a reading of the filenames
   alone. With no answer key, how often two independent signals agree is the only accuracy number
   there is; it is reported, never acted on.
+
+- **Note** — one written sentence about a Plot or a Plate: what it is for, which is the one thing
+  no Measure can say. A Note is **read, never counted**: nothing bands by it, nothing tiles by it,
+  and no Measure is derived from it. It carries the **flag** — the question the measurements asked
+  that got it written, kept beside it so a Note can never read as an unprompted opinion — and the
+  **subject digest**, the content of the thing it was written about at the time of writing.
+
+- **Written layer** — the Notes of one Project, held in a file of their own beside the Map and
+  **fetched separately**. Optional by construction: **a repository with no written layer draws
+  exactly the same map**, its absence is not an error, and nothing waits for it. That separation
+  is what lets the Atlas work on any repository with no prior setup, and it holds when it is
+  inconvenient.
+
+- **stale** — a Note whose subject has changed since it was written, decided by comparing the
+  recorded subject digest with the subject's digest now. A stale Note **stays and is marked**: it
+  was true of a version of the file the reader may still be reading, and a sentence that vanished
+  would take that with it. A Note nothing could be compared against is **unchecked**, which is not
+  a claim either way and is marked as neither.
 
 **A Domain is INFERRED, which is a third kind of fact.** Every Measure is measured and every
 Coupling is counted; a Domain is guessed. It is labelled that way wherever it appears, and the
