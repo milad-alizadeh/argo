@@ -371,7 +371,7 @@ claiming `ArgoBacklogList.width` 520 at that region's leading edge, on the premi
 so `ShellToolbar`'s sidebar toggle, New Session and the scope vessel were drawn first and ate about
 270pt before the block started. Measured off `ARGO_SPECIMEN=ticketsRoom` at the 1280 window:
 
-| | design (`menu.png`) | #816 |
+| | design (`menu.png`, **deleted #1304**) | #816 |
 |---|---|---|
 | `Backlog` heading | ~306, just past the sidebar | ~700, onto the ticket column |
 | filter / group-by | trailing edge of the 520 block | pushed to the window's trailing edge |
@@ -500,9 +500,16 @@ the placement, not before.
 ## Not reproduced from `menu.png`
 
 `ModeMenu` is a native `Menu`. AppKit owns the open popover, so it cannot be put on screen by a
-specimen and the open state has no headless render — `menu.png` stays the study's drawing of it.
+specimen and the open state has no headless render — `menu.png` stayed the study's drawing of it.
 The chrome it hangs from is `ticketsChrome`, and the two vacancies are `emptyTicketsChrome` and
 `unboundTicketsChrome` (renamed with the row's contents in #836).
+
+> **`menu.png` no longer exists (#1304).** `ModeMenu` was deleted by #872 and the render was the
+> only thing still drawing it, so the re-base removed it rather than keep a picture of a control
+> nothing can reach. The rows above stay as the record of what #816 measured; what stands in the
+> explorable now is `skill-menu.png`, which draws `StartSkillMenu` (#1242) and is a different
+> menu offering a different fact. AppKit still owns that popover, so it too is drawn rather than
+> shot from a specimen.
 
 # #819 — priority groups the backlog roots
 

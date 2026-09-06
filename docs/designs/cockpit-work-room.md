@@ -1,5 +1,6 @@
-<!-- status: approved
+<!-- status: built
      approved-at: c0e24739
+     re-based-at: #1304
      prototype: worktree-prototype-609-work-room -->
 
 # The Tickets room
@@ -9,19 +10,20 @@
 > `work-room/` renders keep their names, because six other docs and the design's own provenance
 > cite them by path.
 
-> **Stale on the toolbar and the query · 2026-09-04.** The app has moved past this file in the
-> region #1293 touches: the two-line heading is in the list pane, not the window's row (#836);
-> the Filter button is gone (#900) and so is Start's Mode chevron (#1232); Next-up is in the
-> sidebar; and the field now takes a query, with a `Searching` heading, rails and a stated empty
-> that this file never drew (#873). Re-basing it is #1304. Until that lands, read the
-> toolbar and the query here as history.
+> **Re-based on the shipped room · #1304.** This file had drifted on the toolbar, the query and
+> Next-up, and a `stale` design is worse than no design — `pixel-review` judges against it and
+> `design-to-code` extracts from it, and neither can tell a drift from a bug. Every state in
+> [`cockpit-work-room.html`](cockpit-work-room.html) was corrected against its own specimen
+> render, and `work-room/` was re-shot from the corrected file. **The status is `built`**: a
+> disagreement between this file and the app is now a bug in one of them, not a design still to
+> be reached.
 >
 > **The asking surface has its own design.** A natural-language question about the backlog is
 > [`cockpit-backlog-question.md`](cockpit-backlog-question.md) (#1293) — the field when it holds
 > a question, and the sheet the answer draws on. This file's **the two narrowings, decided** is
 > unchanged and is what that design is an addition to.
 
-The approved design for the **Tickets room** (#609) — the views sidebar, the backlog list, the
+The built design for the **Tickets room** (#609) — the views sidebar, the backlog list, the
 ticket detail, the Next-up hero, the panes' headers, its empty and degraded states, and the
 Route's re-skin. Before this, every design in `docs/designs/` was a Sessions surface and
 `InstrumentDeckShell` drew `Color.clear` for `.work`, so a session sent at #272 would have
@@ -31,10 +33,32 @@ invented the pixels.
 is the same room, explorable: every state is a URL (`?state=<key>`), `?render=1` strips the
 harness chrome. The measurements below are the numbers a ticket must carry.
 
-Eleven states: `rest`, `deep` (two Deliveries, nine children, six blockers), `collapsed` (a
-parent folded), `edgeless` (a provider with no dependency edges), `one-chip`, the three
-empty-pool tiers `pool-blocked` · `pool-running` · `empty`, `unbound` (no provider bound),
-`menu` (the Start verb's Mode menu — **superseded #872**, see `Start` below), and `route`.
+**Every state names the specimen it was corrected against (#1304)**, so a reader can re-run the
+comparison rather than take this file's word for it: `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh
+out.png`, from `apps/macOS`.
+
+| State | The specimen it was checked against |
+|---|---|
+| `rest` | `ticketsRoom` |
+| `deep` — two Deliveries, nine children, six blockers | `deepTicketsRoom` |
+| `collapsed` — a parent folded | `collapsedTicketsBacklog` |
+| `edgeless` — a provider with no dependency edges | `edgelessTicketsBacklog` |
+| `one-chip` | `oneEarnedChip` |
+| `pool-blocked` · `pool-running` · `empty` — the three empty-pool tiers | `nothingUnblocked` · `everythingRunning` · `emptyTicketsBacklog` |
+| `unbound` — no provider bound | `unboundTicketsRoom` |
+| `unread` — bound, and no answer back yet (**added #1304**) | `unreadClosedTickets` |
+| `nothing-closed` — the `Closed` view, and nothing was ever closed (**added #1304**) | — |
+| `searching` — a query, with rails to the match (**added #1304**) | `searchedTicketsBacklog` |
+| `unmatched` — a query that matched nothing (**added #1304**) | `unmatchedTicketsBacklog` |
+| `closed` — the fifth view, flat and by last touched (**added #1304**) | `closedTicketsMore` |
+| `skill-menu` — the Start pill's skill picker (**replaces `menu`, #1304**) | — |
+| `route` — the Route, re-skinned | **none: not built** |
+
+**Two states changed identity in the re-base.** `menu` drew the Start verb's Mode menu, which
+#872 deleted; the one menu this room still opens is the skill picker (#1242), so that is what the
+state draws now. `route` is the only state left that no specimen can answer — the Route is #334
+and is not built — and it is marked so in the file rather than read as a state somebody forgot to
+render.
 
 ## What won, and what lost
 
@@ -382,7 +406,7 @@ this one is legible because there is nothing else on a pane's band to confuse it
 | leading the list pane's header | **New ticket**, one mark in a circular container of its own | the call-to-action — the one thing this window creates | the list pane |
 | trailing the list pane's header | search | a real field at 210, not an icon that becomes one | the list pane |
 | under the header, in the list | `Backlog` and, under it, `All open · by priority · 12 tickets` | says what you are looking at, and how many | the list pane |
-| leading the ticket pane's header | `▶ Start` and the command it will send, in ONE pill | the ticket's own verbs | the ticket pane |
+| leading the ticket pane's header | `▶ Start` and the command it will send, in ONE pill, then the closure verb beside it (**amended #1304**, recording #1333) | the ticket's own verbs | the ticket pane |
 | on the ticket's id line | `#607`, as a link | the ticket's address | the ticket pane |
 
 **The Project scope stays a `.navigation` toolbar item.** It is the WINDOW's scope, not a pane's,
@@ -396,10 +420,18 @@ was no second thing to group by. A menu whose only content is a sentence is a se
 click. It returns the day a port reads a second grouping, which is #388 — and `ArgoSymbol.backlogMenu`
 goes with it, so nothing can draw the mark again without first naming what it offers.
 
-**Every render in `work-room/` and `cockpit-work-room.html` predates this and draws the window
-row** — as with the Mode menu #872 cut and the funnel #900 cut, they are superseded on the row's
-placement and remain the spec for everything else in the frame. The primary source for this shape
-is `prototypes/ticket-verbs-prototype.html`, which measures itself.
+**~~Every render in `work-room/` and `cockpit-work-room.html` predates this and draws the window
+row.~~ No longer true (#1304)** — the explorable and every render in `work-room/` draw the three
+pane headers, checked against `ticketsChrome`. The primary source for the shape is
+`prototypes/ticket-verbs-prototype.html`, which measures itself.
+
+**One thing the re-base found that this section does not settle.** In the shipped full room the
+window's Project scope — a `.navigation` toolbar item, which is the WINDOW's scope and correctly
+not a pane's — slides past the cleared sidebar band and lands on the LIST pane's leading vertical,
+where New ticket is. `ticketsRoom` therefore renders the scope capsule there and no compose mark
+anywhere; `ticketsChrome`, which is the panes without the window, draws the arrangement this
+section specifies. The design draws `ticketsChrome`'s arrangement, and the disagreement is a
+`/pixel-review` catch against the app rather than a fifth answer to the column question.
 
 **The two link verbs are deleted too (#1242).** `open on host` and `copy link` were two unlabelled
 marks saying what the ticket's own number already says. The number becomes the link — `#607` in
@@ -511,8 +543,10 @@ the window's width; a field that narrows one column while standing over another 
 mis-placement the verbs had, and it goes for the same reason.
 
 **The band paints nothing, and every container on it is one height.** `pane-headers.png` is the
-arrangement as built, from `prototypes/ticket-verbs-prototype.html` variant H. Two things the
-first build got wrong and the render caught:
+arrangement as built — **re-shot from the `ticketsChrome` specimen in #1304**, where it was the
+`ticket-verbs-prototype.html` variant H that the build was measured against. The prototype is a
+primary source to re-explore from; the specimen is what actually ships, and once the room is built
+that is what the render has to be. Two things the first build got wrong and the render caught:
 
 - **No ground and no rule.** The window's chrome is one sheet from the top edge to the single
   hairline where it stops. A band per pane wearing that same modifier drew the sheet three times —
@@ -573,10 +607,10 @@ demotion the row's `#id` already carries, so it is not read as a match.
 leave the heading claiming results nobody can see. The reader's fold is not cleared — it comes back
 when the field clears.
 
-**No matches is a stated empty INSIDE the list pane, never one of the room's vacancies.** The three
-vacancy pages are facts about the provider; this is a fact about the query. It also has to keep the
-row of controls: a search field that removes itself the moment it matches nothing is a field nobody
-can clear.
+**No matches is a stated empty INSIDE the list pane, never one of the room's vacancies.** The
+vacancy pages — four of them since #1075, and **corrected from three in #1304** — are facts about
+the provider; this is a fact about the query. It also has to keep the pane's own header: a search
+field that removes itself the moment it matches nothing is a field nobody can clear.
 
 **The query is the Project's.** It survives selecting a ticket and switching room — both leave the
 backlog it was typed against standing. It does not survive a Project switch: carried across, it
@@ -605,10 +639,10 @@ narrows nothing at all makes a larger one, and the honest repair for an unbuilt 
 drawing it. `ArgoSymbol.filterBacklog` is deleted with it, so nothing can draw the glyph again
 without first naming what it filters by, here.
 
-**What the room keeps is the two narrowings above**, which do compose and are both live. **The
-renders in `work-room/` and `cockpit-work-room.html` predate this and still draw the funnel** — as
-with the Mode menu #872 cut, they are superseded on this one mark and remain the spec for
-everything else in the frame.
+**What the room keeps is the two narrowings above**, which do compose and are both live. **~~The
+renders in `work-room/` and `cockpit-work-room.html` predate this and still draw the funnel.~~
+No longer true (#1304)** — the funnel is gone from the explorable and from every render, and the
+query it left behind is drawn in `searching` and `unmatched`.
 
 **Its neighbour was made a stated row in the same pass.** `Group by priority` was a `Button` over a
 closure the shell never assigned — the funnel's fault one level down, inside the menu rather than
@@ -622,7 +656,10 @@ opens**, so it is gone.
 
 **#816 replaced it with a split control, and that was wrong too.** The button started a Session and
 a chevron beside it opened the **Mode** it would start in — `Read Only · Plan · Code · Auto`, one
-row per rung. See `menu.png`, which is the state that render captured.
+row per rung. **~~See `menu.png`.~~ Gone (#1304)** — that render captured a control the app has not
+drawn since #872, and a render nothing can reach is the drift this file was re-based to remove.
+`skill-menu.png` stands in its place, and it draws a different menu for the reasons under
+**the picker offers SKILLS** below.
 
 **Amended #872: the chevron is deleted and `Start` spawns in `Code`, always.** The menu asked a
 question with one answer. Starting a Session on a ticket is starting work on it, and `Code` is the
@@ -778,9 +815,17 @@ whole width and three lines to wrap into. It reads better at 280 than it did in 
 because in the rail it was competing with twelve other titles.
 
 **At most two chips, each earned, and never a score** (#273). The order is `high priority` →
-`unblocked` → `next in <PRD>`, with `oldest untouched` as the honest fallback. `high priority`
-takes `state.attention` ink; the rest are neutral. With one chip earned the card carries one —
-see `one-chip.png`.
+`unblocked` → `next in <PRD>` → **`low conflict` (added #1384, recorded here #1304)**, with
+`oldest untouched` as the honest fallback where none of the four was earned. **The order IS the
+priority**, so the cut to two drops the weakest claim rather than an arbitrary one.
+`high priority` takes `state.attention` ink; the rest are neutral. With one chip earned the card
+carries one — see `one-chip.png`.
+
+**`unblocked` is earned off THIS ticket's own edges, never inferred.** The pick's blockage has to
+have been read; a backlog that carries edges somewhere is not an answer about the ticket in the
+card, and asserting it would be the claim the `edgeless` state exists to refuse. **The pool the
+pick comes from is `open · leaf · todo · unblocked · session-less`**, so a hero that named a
+blocked ticket would be contradicted by the rail's own `Blocked` count in the same frame.
 
 **An empty pool degrades in tiers, each with its own sentence.** The card keeps its `NEXT UP`
 label and replaces the ticket with the reason: nothing unblocked, all in progress, or backlog
@@ -799,7 +844,10 @@ At rest it carries a **trailing chevron beside the `NEXT UP` label**, which is t
 pressable before a pointer arrives; under the pointer the card's ground goes `surface.hover`, and
 under the click `surface.selected`. The three degraded tiers name no ticket and carry **neither the
 chevron nor the wash** — a card that lit up to open nothing is worse than one that never moves.
-The gallery is `next-up-pressable.png`, shot from the `nextUpPointer` specimen.
+The gallery is `next-up-start.png`, shot from the `nextUpPointer` specimen. **Corrected #1304**: it
+was cited here as `next-up-pressable.png`, a second copy of the same gallery under a second name —
+two files nothing can tell apart is the drift this file was re-based to remove, so the copy is
+deleted and both readers cite the one render.
 
 **Amended #899: the card carries a second control at its foot — `Start`.** The hero is the room's
 answer to "what should I pick up", and opening the ticket was only half an answer to it; the other
@@ -946,12 +994,40 @@ backlog would let one page state the exact reverse of the other. Before that rea
 view is `unread` instead, which is the same page the poll's own silence draws and for the same
 reason.
 
-**The empty backlog keeps New ticket.** It is the moment you most want it. The list's ordering menu
-goes, and so does search — there is no list to order and nothing to search.
+**~~The empty backlog keeps New ticket.~~ Corrected #1304, and this is the drift the re-base found
+that nothing else in this file caught.** The reasoning was right and the placement made it false:
+once each pane draws its OWN header (#1242), a vacancy that replaces the whole deck takes both
+bands with it, and `emptyTicketsBacklog` renders no compose mark anywhere.
 
-**A query that matches nothing is a fourth state, and it is not one of these** (#873). It is a fact
-about the query rather than about the provider, so it stays inside the list pane and the room's row
-of controls stands — see **the two narrowings** above.
+**So the rule the room actually keeps is narrower, and it is the honest one.** New ticket survives
+a list with no ROWS — a query that matched nothing — where the field beside it does not, because
+the field goes with the list it searches. It does not survive a VACANCY, because a vacancy is not
+a list with nothing in it: it is the deck saying who answered and what they said, and there is no
+pane left to hang a header on.
+
+**Whether that is the right trade is a question this file does not settle**, and it is worth
+naming rather than burying: the moment you most want to create a ticket is the moment there are
+none, and the shape #1242 chose costs that. Re-opening it means giving the vacancy a band of its
+own, which is a control over a page rather than over a pane — the exact placement rule #1242 was
+about. It is left as it ships.
+
+**A query that matches nothing is a fifth state, and it is not one of these** (#873). It is a fact
+about the query rather than about the provider, so it stays inside the list pane and the pane's own
+header stands — see **the two narrowings** above.
+
+**All four vacancies are drawn now (#1304).** Two of them — `unread` and `nothing closed` — had
+been argued for here and rendered nowhere, which meant a `pixel-review` of either had nothing to
+judge against and the four sentences could drift apart with nothing to catch it. `unread` is
+`unreadClosedTickets`; `nothing closed` has no specimen of its own and is drawn from the
+explorable, which the state table says.
+
+**The rail cannot count what the provider did not serve, either (#1304).** With no dependency
+edges the row marks are already suppressed — that is what `edgeless` is for — but the sidebar was
+still asserting `Blocked` and `Unblocked` off the same edges it had not read. `Blocked` in
+`state.failure` beside a list carrying no marks states exactly what that ink is defined to mean
+and the list does not show. So under no edges **`Unblocked` goes absent** — it is the claim Argo
+has no standing to make — and **`Blocked` falls back to the bucket**, which is the one thing the
+provider did say. Suppression and the count are one rule, not two.
 
 ## The Route, re-skinned
 
@@ -1054,7 +1130,7 @@ for; anything not listed is stock used directly.
 |---|---|---|---|
 | `TicketsRoom` | organism | the shell's existing `NavigationSplitView` slots | supplies sidebar and detail; it does not own a split of its own |
 | `TicketsSidebar` | organism | `List(selection:)` with two `Section`s | views, not tickets |
-| `RoomStrip` | atom | `NSSegmentedControl`, via `RoomSegments` | `Sessions \| Tickets \| Code`, at the head of EVERY room's sidebar (#805). AppKit's control since #857, for `segmentDistribution` and for a mark beside a word; its selected segment is bezelled to a neutral (#944). #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Tickets/` |
+| `RoomStrip` | atom | `NSSegmentedControl`, via `RoomSegments` | `Sessions \| Tickets \| Code \| Atlas` (**a fourth room since #650; corrected here #1304**, this row and the explorable both read three), at the head of EVERY room's sidebar (#805). AppKit's control since #857, for `segmentDistribution` and for a mark beside a word; its selected segment is bezelled to a neutral (#944), never glass and never accent. #816 deleted the titlebar's `RoomsVessel`, so this is the window's only rooms picker and it lives in `Shell/Sidebar/` rather than under `Tickets/` |
 | `ViewRow` | molecule | an `HStack` in a `List` row | glyph · name · shortfall · count, at `viewRowHeight` as a floor. **Amended #1074**: a count may state what it is short by, inboard of itself, so the numbers keep the trailing edge they are read down; and the glyph takes `TicketsView.ink` rather than a flat `text.tertiary`, so the rail's mark matches the row's |
 | `ProviderFoot` | atom | an `HStack` above a `Divider` | the bound provider, at the sidebar's foot |
 | `NextUpCard` | molecule | a `VStack` on `surface.raised` | the hero; carries the ticket or an empty-tier sentence |
@@ -1072,14 +1148,15 @@ for; anything not listed is stock used directly.
 | ~~`TicketsToolbar`~~ | — | **gone (#1242)** | the window row, and every control the room had. Three answers: #816 claimed the column boundary from one region, #836 split it into bands under the panes, then it was reassembled as one row. The fourth answer gives each pane its own header, so this room contributes nothing to `.toolbar` at all — see the column question |
 | `TicketsPaneHeader` | atom | an `HStack` in the pane, reaching into the title strip | **Added #1242.** The band itself: the window's own strip height via `reach`, the pane's own column inset, a leading slot and a trailing one. **It paints nothing** — no ground and no rule. The window's chrome is ONE sheet ending in a single hairline (`ArgoChromeBar`), and this sits inside it; worn per pane it drew that sheet three times, putting a hairline under every header and breaking the bar across the column seams |
 | `BacklogPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** New ticket leading, search trailing. It is the LIST's, so both act on the list |
-| `TicketPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** The `StartControl` pill, leading, and nothing else. Empty of controls with no ticket open — it keeps its band, because a band that collapsed would move every pane beside it |
+| `TicketPaneHeader` | molecule | a `TicketsPaneHeader` | **Added #1242.** The `StartControl` pill, leading. Empty of controls with no ticket open — it keeps its band, because a band that collapsed would move every pane beside it. **Amended #1304**: `CloseControl` sits beside the pill, so the slot holds two controls and not one |
+| `CloseControl` | atom | an `ArgoIconButton`, its `close` case a `Menu` | **Added #1333, recorded here #1304** — that build landed without a row on this sheet, which is the drift class this file was re-based to remove. The open ticket's closure verb, beside `StartControl` at the ticket pane's leading edge: the room could file a ticket and start it and never close it. **ONE glyph carries both directions** and `current` decides which — an open ticket draws `close`'s two reasons behind a menu, a closed one draws `reopen` in their place, never both, because nothing here can address a ticket that is simultaneously open and closed. **Absent, not inert, where the Binding declares no closure** (#872's rule): a control offering a write the port refuses before the wire would take a press and do nothing |
 | ~~`BacklogControls`~~ | — | **gone (#1242)** | it wrapped `BacklogMenu` alone, and the menu is gone with it |
 | `BacklogHeader` | molecule | an `HStack` at the head of the list pane | the heading and its count, and nothing else. **Renamed #836** from `BacklogToolbarLabel`; the controls left it when the row was reassembled. **Amended #1242**: it sits UNDER the pane's header now, which is where words about a list belong relative to the controls on it |
 | ~~`TicketBand`~~ | — | **gone** | added by #836 to carry New ticket and the ticket's verbs over their column, then deleted when both became toolbar items. `TicketPaneHeader` is not it coming back: #836's band was drawn UNDER the title strip and cost the pane 44pt, and this one is drawn IN it |
 | ~~`BacklogMenu`~~ | — | **gone (#1242)** | how the list is ordered. It opened onto one stated row after #900, and a menu whose only content is a sentence is a sentence behind a click. It returns with a second grouping (#388) |
 | ~~`ToolbarVessel`~~ | atom | **lifted to `ArgoIconButtonGroup` (#1243)** | it grouped icon buttons in a capsule with no border and no shadow, and it did it well — but it was `internal` to this room, so every other header hand-rolled the same stack at its own size. Same shape, in `ArgoAtoms`, where the shell row and the composer can reach it |
 | ~~`ToolbarIcon`~~ | atom | **lifted to `ArgoIconButton` (#1243)** | one glyph in the settled box, with the press, the tooltip and the spoken label |
-| `NewTicketButton` | atom | an `ArgoIconButton` in its own `ArgoIconButtonGroup` | the call-to-action; survives the empty backlog. **Amended #1242**: one mark in a container of its own is a 36pt CIRCLE, exactly as tall as the Start pill in the pane beside it |
+| `NewTicketButton` | atom | an `ArgoIconButton` in its own `ArgoIconButtonGroup` | the call-to-action. **Amended #1242**: one mark in a container of its own is a 36pt CIRCLE, exactly as tall as the Start pill in the pane beside it. **Corrected #1304**: it survives a list with no ROWS, where the field beside it does not — but not a VACANCY, which replaces the whole deck and takes both bands with it. See **the room's own states** |
 | `StartControl` | molecule | ONE `Capsule` with two segments | the verb and the command it will send, spawning in `Auto` (**amended #941**). **Amended #872**: it was `Button` + a Mode chevron, and that chevron is gone. **Amended #1242**: the two link icons and their rule are deleted, and the word and the command are segments of one pill rather than a button with a label — the command segment is the skill picker |
 | `StartSkillMenu` | atom | `Menu` on the command segment | **Added #1242.** Which skill the Session opens on, and a Fresh Session with none. Not #872's chevron: that offered a Mode with one honest answer and a downstream control that owns it; this offers a command with six, and nothing downstream can change it |
 | ~~`ModeMenu`~~ | — | **gone (#872)** | the four Mode rungs. The rung is the composer's, over a live Session (#608) |
@@ -1091,7 +1168,7 @@ for; anything not listed is stock used directly.
 | `DeliveryChip` | molecule | `Button(.plain)` opening a URL | deep-links; two on one ticket are two of these |
 | `LabelChip` | atom | `Text` in a rounded rect | a provider label, verbatim |
 | `TicketLinkList` | molecule | a `VStack` of `Button(.plain)` | ONE component; `blockedBy` and Children are two callers with different trailing facts |
-| `TicketsRoomVacancy` | molecule | `ContentUnavailableView` | both room-level states — unbound, and answered-with-nothing |
+| `TicketsRoomVacancy` | molecule | `ContentUnavailableView` | the room-level states. **Corrected #1304**: there are FOUR, not two — `unbound`, `unread`, `nothingOpen` and `nothingClosed`, the last added with the `Closed` view (#1075). ONE view for all of them, because the contrast IS the thing being built and four views would let the sentences drift apart. All four are now states in the explorable and renders in `work-room/`: two of them had been declared here and drawn nowhere, which left `pixel-review` nothing to judge them against |
 | `BacklogNoMatch` | atom | a centred `Text` in the list pane | **Added #873**: the query matched nothing. Deliberately NOT a `TicketsRoomVacancy` case — that one replaces the whole deck, and this is a fact about the query rather than about the provider |
 | `RoomPresentation` | atom | `Picker(.segmented)` | `Present as: Tree \| Map`, map-scoped not room-scoped (#334) |
 
