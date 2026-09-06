@@ -20,11 +20,10 @@ package struct TicketsSidebar: View {
     var intents = NextUpIntents.inert
 
     package var body: some View {
-        VStack(spacing: ArgoSpacing.flush) {
-            // Above the `List` and not a row inside it, so the strip lands on the same vertical as
-            // the Sessions room's — a picker that scrolls in one room and not the other reads as
-            // two controls (#816).
-            RoomStrip(selection: $cockpitRoom)
+        // `RoomSidebar` puts the strip above the `List` rather than inside it, so the strip lands
+        // on the same vertical as the Sessions room's — a picker that scrolls in one room and not
+        // the other reads as two controls (#816).
+        RoomSidebar(room: $cockpitRoom) {
             List(selection: $view) {
                 backlogGroup
                 hero
