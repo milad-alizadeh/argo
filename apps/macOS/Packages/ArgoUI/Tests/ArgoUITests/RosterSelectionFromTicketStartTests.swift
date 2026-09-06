@@ -91,8 +91,12 @@ struct RosterSelectionFromTicketStartTests {
     /// answers, which can be before the provisional row has reached the rows this list has. A
     /// selection naming no drawn row used to owe nothing at all, so the row could be grounded and
     /// still scrolled out of sight — which reads to the reader exactly like a lost focus.
+    ///
+    /// One test over both halves, because the claim of this route is the pair: the debt is taken
+    /// before the row exists and settled when it arrives, with the selection unchanged in between.
+    /// The change that pays it is the ROSTER's, not the reader's.
     @Test
-    func `owes the scroll for a row the list is not drawing yet`() async {
+    func `owes the scroll until the roster publishes the row it started`() async {
         let navigation = navigation()
 
         await start().run(on: 899, in: navigation)
@@ -103,17 +107,7 @@ struct RosterSelectionFromTicketStartTests {
                 of: navigation.session, among: before.rows, hasHeight: true,
             ) == .init(row: nil, owed: Self.claim),
         )
-    }
-
-    /// And pays it when the row arrives, without the selection having changed in between — the
-    /// change that pays this debt is the ROSTER's, not the reader's.
-    @Test
-    func `pays that scroll when the row is published`() async {
-        let navigation = navigation()
-
-        await start().run(on: 899, in: navigation)
         let after = RosterListing().reading(of: provisional, selection: navigation.session)
-
         #expect(
             SessionRosterProjection.reveal(
                 of: navigation.session, among: after.rows, hasHeight: true,

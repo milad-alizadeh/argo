@@ -27,6 +27,11 @@ extension SessionRosterProjection {
     /// reads to the reader exactly like a lost focus. The debt is the selection's own id, and it is
     /// paid by asking again once the rows change.
     ///
+    /// It does not expire, and the case that shows why is the shut foot: a selection behind it is
+    /// owed a look that is paid when the reader opens it, which is the moment the row exists to be
+    /// looked at. A selection whose Session has genuinely gone does not linger either — the window
+    /// is repointed (`CockpitNavigationModel.reconcile`), and the new selection asks afresh.
+    ///
     /// `hasHeight` is the thing this could not be a pure question of the rows about. A room that is
     /// off screen is still MOUNTED, at `maxHeight: 0` (`RoomStage`), and the Tickets room's
     /// claimant line writes the selection before it switches rooms

@@ -18,11 +18,9 @@ struct TicketStart {
     /// A closure and not the set: reading it walks a directory, and this value is assembled on
     /// every pass of the room's body while a Start is drawn on only some of them.
     let designs: () -> Set<String>
-    /// The spawn itself, answering with the fresh Session's id and `nil` where none started.
-    ///
-    /// That id is the CLAIM the provisional row stands under, which the Hub retires the moment the
-    /// CLI writes its first record (#361). Written here all the same: the row carries the claim it
-    /// retired, so reconciliation follows it rather than reading it as a Session that went (#1493).
+    /// The spawn itself, answering with the fresh Session's id and `nil` where none started. That
+    /// id is a CLAIM and is re-keyed under the window — see `CockpitCoordinator.spawnSession`
+    /// (#1493).
     let spawn: (Int, SessionMode, String?) async -> String?
 
     /// Which command Start will send, so a control can say it before it is pressed (`StartVerb`).
