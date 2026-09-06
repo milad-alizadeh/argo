@@ -27,7 +27,7 @@ package struct CockpitSpawn {
     /// passing the button that is disabled.
     func run() async {
         guard offer.isLaunchable, let fresh = await actions.sessions.spawn() else { return }
-        navigation.session = fresh
+        navigation.pointAtStarting(fresh)
     }
 
     /// The handoff's half of the same act (#513, #1229). The app runs `/handoff`, waits for the
@@ -39,7 +39,7 @@ package struct CockpitSpawn {
     /// the row away from the news.
     func run(handingOff sessionID: String, issue: Int?) async {
         guard let fresh = await actions.sessions.handOff(sessionID, issue) else { return }
-        navigation.session = fresh
+        navigation.pointAtStarting(fresh)
     }
 
     /// The same act in another Session's folder — what the line on an undriveable Session offers
@@ -47,6 +47,6 @@ package struct CockpitSpawn {
     /// Project folder to run in, and this one brings its own.
     func run(beside sessionID: String) async {
         guard let fresh = await actions.sessions.spawnBeside(sessionID) else { return }
-        navigation.session = fresh
+        navigation.pointAtStarting(fresh)
     }
 }

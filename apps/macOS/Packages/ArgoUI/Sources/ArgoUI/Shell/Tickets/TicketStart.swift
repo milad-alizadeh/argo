@@ -55,7 +55,7 @@ struct TicketStart {
             command?.opening(on: ticket),
         )
         else { return }
-        navigation.session = fresh
+        navigation.pointAtStarting(fresh)
         navigation.room = .sessions
     }
 }

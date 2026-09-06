@@ -34,6 +34,79 @@ struct RosterSelectionFromTicketStartTests {
         RosterMark.expect(Self.claim, in: provisional, for: navigation)
     }
 
+    /// The report, at the pass the running app actually fails on, and the half no test had.
+    ///
+    /// The spawn answers its claim and the window is pointed at it, but the roster reconciles at
+    /// least once BEFORE the provisional row reaches the shell — the Hub publishes it and the
+    /// presentation is rebuilt on its own beat. That pass sees an id no row accounts for and, on
+    /// ids alone, cannot tell it from a Session that ended, so the deck and the ground left for
+    /// another row before the fresh Session ever had one. Nothing downstream could recover from
+    /// that: by the time the row arrives the window is pointed somewhere else entirely.
+    ///
+    /// Verified in the running app before it was written: pressing Start put `/implement 1502` on
+    /// the roster and left the deck on the Session that was selected before the press.
+    @Test
+    func `holds the window on a Session whose row the roster has not published yet`() async {
+        let navigation = navigation()
+
+        await start().run(on: 899, in: navigation)
+        navigation.reconcile(against: standing.map(\.identity))
+
+        #expect(
+            navigation.session == Self.claim,
+            "The window left the Session it started before its row was ever published.",
+        )
+        navigation.reconcile(against: provisional.map(\.identity))
+        RosterMark.expect(Self.claim, in: provisional, for: navigation)
+    }
+
+    /// And the whole route in one pass: pointed before the row exists, published, then re-keyed.
+    @Test
+    func `holds it from the press through the publish to the re-key`() async {
+        let navigation = navigation()
+
+        await start().run(on: 899, in: navigation)
+        navigation.reconcile(against: standing.map(\.identity))
+        navigation.reconcile(against: provisional.map(\.identity))
+        navigation.reconcile(against: rekeyed.map(\.identity))
+
+        RosterMark.expect(Self.cli, in: rekeyed, for: navigation)
+    }
+
+    /// The other seam that moves the deck, and the one that actually beat the fix in the running
+    /// app: the roster confines its selection to the rows the list is DRAWING
+    /// (`RowSelectionReactions`), and an unpublished row is not drawn. Confining dropped the
+    /// selection a spawn had just made, which moved `selection.last`, which repointed the deck —
+    /// all without reconciliation having any say. So the awaited row is named here, and the list
+    /// keeps it.
+    @Test
+    func `names the row the roster must not confine away`() async {
+        let navigation = navigation()
+
+        await start().run(on: 899, in: navigation)
+
+        #expect(navigation.awaitedSession == Self.claim)
+        var selection = navigation.sessionSelection
+        selection.confine(to: standing.map(\.id) + [Self.claim])
+
+        #expect(
+            selection.rows == [Self.claim],
+            "The list confined away the row the window is waiting for.",
+        )
+    }
+
+    /// And it stops being awaited the moment its row is on the roster, so an id that has genuinely
+    /// gone from there on is treated as gone.
+    @Test
+    func `stops awaiting the row once the roster publishes it`() async {
+        let navigation = navigation()
+
+        await start().run(on: 899, in: navigation)
+        navigation.reconcile(against: provisional.map(\.identity))
+
+        #expect(navigation.awaitedSession == nil)
+    }
+
     @Test
     func `leaves the window in the Sessions room`() async {
         let navigation = navigation()

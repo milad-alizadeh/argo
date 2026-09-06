@@ -162,6 +162,9 @@ extension CockpitView {
                     // click that caused this, and the setter would collapse the range it just
                     // made.
                     pick: { navigation.deckPointed(at: $0) },
+                    // The row a spawn has just been pointed at and the roster has not published
+                    // yet, which the list must not confine away (#1493).
+                    awaited: navigation.awaitedSession,
                 ),
                 room: $navigation.room,
                 // The shell's intent and not the action itself: an archive that would end live
