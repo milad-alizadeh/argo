@@ -19,8 +19,7 @@ package struct SessionContextGuide: View {
                 }
             }
             Text(SessionHeaderProjection.Context.remedy)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.caption, .body)
                 .fixedSize(horizontal: false, vertical: true)
             DeckSeparator()
             // The heading goes with its rows: a Session nothing could be read off has no block
@@ -61,8 +60,7 @@ package struct SessionContextGuide: View {
                 .foregroundStyle(line.tier.tint(in: argo.color))
                 .frame(width: ArgoContextBar.guideThresholdWidth, alignment: .leading)
             Text(line.meaning)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.caption, .body)
         }
     }
 
@@ -71,8 +69,7 @@ package struct SessionContextGuide: View {
     private func row(_ fact: SessionHeaderProjection.Fact) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.base) {
             Text(fact.term)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.caption, .metadata)
                 .frame(width: ArgoContextBar.guideTermWidth, alignment: .leading)
             Text(fact.value)
                 .argoText(ArgoTypography.machineCaption)

@@ -25,8 +25,7 @@ package struct NewTicketComposer: View {
     package var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             Text("New ticket")
-                .argoText(ArgoTypography.identityHeading)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.identityHeading, .title)
             fields
             call
         }

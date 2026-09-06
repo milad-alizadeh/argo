@@ -26,8 +26,7 @@ package struct DeliveryChip: View {
                 .argoText(ArgoTypography.machineEmphasis)
                 .foregroundStyle(argo.color.text.primary)
             Text(delivery.branch)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
                 .lineLimit(1)
                 .truncationMode(.middle)
             diff

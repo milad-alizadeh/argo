@@ -172,8 +172,7 @@ private struct PlanCounter: View {
                 Text(counter.shown)
                     // The step text's own size. A rung below it, the counter read as a footnote to
                     // a sentence when it is the half of the line that moves.
-                    .argoText(ArgoTypography.machineBody)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineBody, .machineFact)
                     .fixedSize()
             }
             .accessibilityHidden(true)

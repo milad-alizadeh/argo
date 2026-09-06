@@ -22,16 +22,14 @@ package struct AttachmentChip: View {
         HStack(spacing: ArgoSpacing.tight) {
             mark
             Text(attachment.name)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.rowMeta, .body)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: ArgoComposerVessel.chipNameCeiling, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             if let size = AttachmentProjection.size(attachment) {
                 Text(size)
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
             }
             dismiss
         }

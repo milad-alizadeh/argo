@@ -21,8 +21,7 @@ struct ConnectRow<Trailing: View>: View {
             trailing
         } label: {
             Text(row.title)
-                .argoText(ArgoTypography.rowTitle)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.rowTitle, .title)
             detail
         }
         .accessibilityElement(children: .contain)

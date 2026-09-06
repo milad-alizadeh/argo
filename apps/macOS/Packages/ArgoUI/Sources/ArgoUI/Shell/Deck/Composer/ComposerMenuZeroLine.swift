@@ -17,8 +17,7 @@ struct ComposerMenuZeroLine: View {
 
     var body: some View {
         Text("\(sigil.nothingMatched)\(typed)\(Self.tail)")
-            .argoText(ArgoTypography.rowMeta)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.rowMeta, .metadata)
             .lineLimit(1)
             .truncationMode(.middle)
             .padding(.horizontal, ArgoSpacing.base)

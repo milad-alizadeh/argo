@@ -22,7 +22,6 @@ import SwiftUI
 /// take up to three seconds to measure (ADR-0030, Rule 3), and a word alone held that long reads as
 /// a hang rather than as work.
 package struct FeedSilence: View {
-    @Environment(\.argo) private var argo
     @Environment(\.argoFeedVacancy) private var vacancy
 
     /// Seeded overdue by a specimen, and `nil` everywhere else so the surface runs its own clock.
@@ -43,8 +42,7 @@ package struct FeedSilence: View {
         // enough under the words to read as their underline.
         VStack(spacing: ArgoSpacing.base) {
             Text(vacancy.words(overdue: isPast))
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.body, .body)
             if vacancy.isWorking(overdue: isPast) {
                 FeedReadingIon()
             }

@@ -40,8 +40,7 @@ struct EvidenceHeader: View {
     @ViewBuilder private var count: some View {
         if let label = evidence.label {
             Text(label)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.body, .metadata)
         }
     }
 

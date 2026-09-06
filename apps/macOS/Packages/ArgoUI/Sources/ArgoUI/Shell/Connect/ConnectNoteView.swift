@@ -41,11 +41,9 @@ struct ConnectNoteView: View {
     private var lines: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             Text(note.what)
-                .argoText(ArgoTypography.rowTitle)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.rowTitle, .title)
             Text(note.why)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.rowMeta, .body)
             Text(note.fix)
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(argo.color.text.primary)

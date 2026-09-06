@@ -75,8 +75,7 @@ package struct AgentsRail: View {
         Button { control.isCollapsed = true } label: {
             HStack(spacing: ArgoSpacing.snug) {
                 Text(AgentsRailCopy.header(running: listing.running))
-                    .argoText(ArgoTypography.sectionLabel)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.sectionLabel, .sectionHeader)
                     .lineLimit(1)
                 Spacer(minLength: ArgoSpacing.flush)
                 ArgoDisclosure(.beside)

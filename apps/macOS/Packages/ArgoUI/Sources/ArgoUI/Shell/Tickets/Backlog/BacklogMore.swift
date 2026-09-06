@@ -16,8 +16,7 @@ struct BacklogMore: View {
     var body: some View {
         Button(action: read) {
             Text("Load \(ClosedTicketPage.size, format: .machine) more")
-                .argoText(ArgoTypography.control)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.control, .body)
                 .frame(maxWidth: .infinity, minHeight: ArgoBacklogList.rowHeight)
                 .contentShape(Rectangle())
         }

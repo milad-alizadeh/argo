@@ -31,11 +31,9 @@ package struct BacklogHeader: View {
     private var lines: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             Text(reading.heading)
-                .argoText(ArgoTypography.windowTitle)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.windowTitle, .title)
             Text(reading.subtitle)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }

@@ -50,8 +50,7 @@ package struct TitlebarTitle: View {
     /// gating, so a cut there would be the wrong economy.
     private func title(_ header: SessionHeaderProjection.Header) -> some View {
         Text(header.title)
-            .argoText(ArgoTypography.windowTitle)
-            .foregroundStyle(argo.color.text.primary)
+            .argoLine(ArgoTypography.windowTitle, .title)
             .lineLimit(1)
             .truncationMode(.tail)
     }

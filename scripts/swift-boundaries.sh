@@ -29,6 +29,9 @@ fi
 # Edge 7's own script, which owns the patterns a design constant is recognised by. Called rather
 # than copied: two greps for one rule are two rules the day one of them is edited.
 TOKENS="$(dirname "$0")/check-design-tokens-swift.sh"
+# Edge 7c's own script, and for the same reason: it owns the shape a hand-picked text rung is
+# recognised by, and the budget the tree stands at.
+INK="$(dirname "$0")/check-text-ink-swift.sh"
 # The module that owns the contract, and the one edge 7 exempts from the check above.
 DESIGN_SOURCES="$APP_DIR/Packages/ArgoDesign/Sources/ArgoDesign"
 UI_SOURCES="$APP_DIR/Packages/ArgoUI/Sources"
@@ -609,6 +612,20 @@ if [ ! -f "$TOKENS" ]; then
 else
   tokens_output=$(sh "$TOKENS" 2>&1) || report "a design constant is declared outside ArgoDesign (#1088)" \
     "$tokens_output"
+fi
+
+# 7c. The ramp's own pairing. A rung is a loudness and a KIND of line is what picks it
+#     (`ArgoLineKind`), so a call site that names a rung has made that pairing again by hand —
+#     which is how the shell ended up written in its quiet voices (#1250). A budget rather than a
+#     ban, because a glyph, a stroke and a ghosting comparison all take a rung and none of them is
+#     a line of text; the budget may fall and may never rise.
+if [ ! -f "$INK" ]; then
+  report "edge 7c cannot find its own script — $INK has moved" \
+    "It carries the budget the tree stands at. An edge that cannot run checks nothing, and the" \
+    "ratchet turns back the moment nobody is counting."
+else
+  ink_output=$(sh "$INK" 2>&1) || report "the text ramp's kind/rung pairing is being made at call sites (#1250)" \
+    "$ink_output"
 fi
 
 # 7b. And the exemption is worth having only while the exempt module stays what it says it is.

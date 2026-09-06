@@ -41,6 +41,8 @@ export const MERMAID_VIEW = 'apps/macOS/Packages/ArgoMermaid/Sources/MermaidView
 export const ATLAS = 'apps/macOS/Packages/ArgoAtlas/Sources/AtlasLayout'
 export const ATLAS_VIEW = 'apps/macOS/Packages/ArgoAtlas/Sources/AtlasView'
 export const ALLOW = 'scripts/design-tokens-swift-allow.txt'
+// Edge 7c's budget: the count of hand-picked text rungs the tree is allowed to stand at (#1250).
+export const INK_BUDGET = 'scripts/text-ink-budget.txt'
 
 // Edge 7 calls a script of its own, and that script reads its allowlist from beside itself. Both
 // are copied into the tree so a case can state the allowlist the way it states a source file —
@@ -48,6 +50,10 @@ export const ALLOW = 'scripts/design-tokens-swift-allow.txt'
 const SCRIPTS = {
   'scripts/swift-boundaries.sh': null,
   'scripts/check-design-tokens-swift.sh': null,
+  // Edge 7c's. Its budget is NOT copied: it is written below at zero, for edge 7's own reason —
+  // a case states the budget for its own tree, so none passes or fails on the count the real tree
+  // happens to hold today.
+  'scripts/check-text-ink-swift.sh': null,
   // Sourced by the gate since #1377, for the verdict it reads before scanning. Copied for the
   // same reason as the two above: a `.` of a file that is not there aborts under `set -e`, and
   // the failure would read as a boundary breach rather than a missing file.
@@ -135,6 +141,8 @@ export function tree(files = {}) {
     [`${ATLAS}/AtlasPlan.swift`]: 'public struct AtlasPlan { public init() {} }\n',
     [`${ATLAS_VIEW}/AtlasView.swift`]: 'import SwiftUI\n',
     [ALLOW]: '# Nothing carried in the synthetic tree.\n',
+    // A synthetic tree names no rung until a case writes one, so the ratchet stands at zero.
+    [INK_BUDGET]: '# Nothing carried in the synthetic tree.\n0\n',
     ...SCRIPTS,
     [`${SPECIMENS}/SpecimenRegistry.swift`]: 'import ArgoUI\n\nenum SpecimenRegistry {}\n',
     [`${FIXTURES}/TranscriptFixtures.swift`]: 'import ArgoEngine\n\nenum TranscriptFixtures {}\n',

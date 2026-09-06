@@ -62,8 +62,7 @@ package struct AgentChip: View {
             SessionStateIndicator(state: agent.activity.dot)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
                 Text(agent.label)
-                    .argoText(ArgoTypography.rowTitle)
-                    .foregroundStyle(argo.color.text.primary)
+                    .argoLine(ArgoTypography.rowTitle, .title)
                     .lineLimit(2)
                 AgentMeter(agent: agent)
             }

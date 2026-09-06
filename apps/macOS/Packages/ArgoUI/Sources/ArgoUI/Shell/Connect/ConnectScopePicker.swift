@@ -57,8 +57,7 @@ struct ConnectScopePicker: View {
             // The noun labels the CONTROL, so it appears only where there is one. Beside a failure
             // it reads as part of the sentence — "Repository GitHub could not be reached".
             Text(picker.scopeNoun)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.rowMeta, .body)
             menu(scopes)
             // No count: the ceiling is on what was FETCHED, and this list is what survived the
             // port's own filter, so any number here would name the wrong thing.
@@ -103,8 +102,7 @@ struct ConnectScopePicker: View {
     /// right edge without a `Spacer` in every branch.
     private func caption(_ text: String) -> some View {
         Text(text)
-            .argoText(ArgoTypography.rowMeta)
-            .foregroundStyle(argo.color.text.secondary)
+            .argoLine(ArgoTypography.rowMeta, .body)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -19,14 +19,15 @@ package struct BacklogRowInk: Equatable {
 
     package init(isSelected: Bool, isRail: Bool, palette: ArgoPalette) {
         self.readOn = isSelected ? palette.interaction.selectionGround : palette.surface.base
-        // The neutral ramp on BOTH grounds, unchanged by selection: `secondary` reads 5.91:1 on
-        // the selection ground and `tertiary` 4.63:1, so the ground alone says which row is
-        // selected (#1165).
+        // The neutral ramp on BOTH grounds, unchanged by selection: every rung a row is set in
+        // clears AA on the selection ground as well as on the deck, so the ground alone says
+        // which row is selected (#1165).
         //
         // A rail is on screen for a descendant's sake rather than for its own match, so its title
         // takes the demotion the `#id` beside it already carries (#873).
-        self.title = isRail ? palette.text.tertiary : palette.text.secondary
-        self.machine = palette.text.tertiary
-        self.caption = palette.text.disabled
+        self.title = palette.text.ink(isRail ? .metadata : .title)
+        self.machine = palette.text.ink(.machineFact)
+        // Quiet, not dead: a caption is live text, so it takes a rung with a floor (#1250).
+        self.caption = palette.text.ink(.metadata)
     }
 }

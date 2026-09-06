@@ -19,8 +19,7 @@ struct FeedMarkdownFence: View {
             VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
                 if let info {
                     Text(info)
-                        .argoText(ArgoTypography.sectionLabel)
-                        .foregroundStyle(argo.color.text.tertiary)
+                        .argoLine(ArgoTypography.sectionLabel, .sectionHeader)
                 }
                 // A fence's lines are the record's, so they break where the writer broke them. Left
                 // to wrap they fold at whatever the pane is left, which turns an aligned block —

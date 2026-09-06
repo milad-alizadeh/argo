@@ -58,8 +58,7 @@ struct EvidenceMedia: View {
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
         } else {
             Text(showing.provenance.instead)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.disabled)
+                .argoLine(ArgoTypography.body, .metadata)
         }
     }
 
@@ -72,8 +71,7 @@ struct EvidenceMedia: View {
                 Text(words)
             }
         }
-        .argoText(ArgoTypography.machineCaption)
-        .foregroundStyle(argo.color.text.disabled)
+        .argoLine(ArgoTypography.machineCaption, .machineFact)
     }
 }
 

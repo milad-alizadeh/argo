@@ -25,8 +25,7 @@ public struct ConnectPanel: View {
             // A sheet has no title bar to hang `navigationTitle` on, so the heading is a line of
             // its own, set at the identity rung and inset to the Form's own gutter.
             Text(panel.heading)
-                .argoText(ArgoTypography.identityHeading)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.identityHeading, .title)
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.top, ArgoSpacing.section)
             Form {

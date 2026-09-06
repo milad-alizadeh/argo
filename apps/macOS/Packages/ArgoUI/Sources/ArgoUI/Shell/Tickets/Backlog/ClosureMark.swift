@@ -20,8 +20,7 @@ struct ClosureMark: View {
 
     var body: some View {
         Text(Self.word(of: closure))
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.machineCaption, .machineFact)
             // Rigid for the `#id`'s reason: `ruled out` is one fact, not a column of two.
             .fixedSize()
             // The row speaks it as part of one sentence — see `BacklogRow.announcement`.

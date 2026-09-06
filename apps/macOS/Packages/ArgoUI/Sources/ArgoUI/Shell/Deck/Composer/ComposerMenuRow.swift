@@ -103,7 +103,7 @@ struct ComposerMenuRow: View {
     /// because a sentence in caps reads as a label nobody has to act on.
     private func look(of tone: ComposerMenu.Badge.Tone) -> (casing: Text.Case?, ink: ArgoColor) {
         switch tone {
-        case .quiet: (.uppercase, argo.color.text.disabled)
+        case .quiet: (.uppercase, argo.color.text.ink(.machineFact))
         case .attention: (nil, argo.color.state.attention)
         }
     }

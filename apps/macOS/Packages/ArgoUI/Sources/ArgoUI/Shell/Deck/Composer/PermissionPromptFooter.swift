@@ -31,8 +31,7 @@ private struct StandingAllowOffer: View {
     var body: some View {
         Button(action: stand) {
             Text(StandingAllowProjection.offer(toolName))
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(StandingAllowProjection.offer(toolName))

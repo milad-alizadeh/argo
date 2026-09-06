@@ -57,7 +57,7 @@ package struct HeaderCapsuleButton: View {
 
     /// The caller's ink at full strength, dropping to the inert rung while it is out of reach.
     private var ink: ArgoColor {
-        label.isEnabled ? label.ink : argo.color.text.disabled
+        label.isEnabled ? label.ink : argo.color.text.ink(.disabled)
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

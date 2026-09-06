@@ -23,8 +23,7 @@ struct AgentsRailFinished: View {
         Button(action: toggle) {
             HStack(spacing: ArgoSpacing.snug) {
                 Text(AgentsRailCopy.finished(count))
-                    .argoText(ArgoTypography.sectionLabel)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.sectionLabel, .sectionHeader)
                     .lineLimit(1)
                 Spacer(minLength: ArgoSpacing.flush)
                 // The atom's own two rungs and no rotation of its own: the angle reports the state.

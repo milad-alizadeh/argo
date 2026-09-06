@@ -1,0 +1,11 @@
+# How many hand-picked text rungs the tree stands at (#1250). One number, and it may only fall.
+#
+# A call site that names a rung — `argo.color.text.tertiary` — has made the kind/rung pairing
+# again by hand, which is what `ArgoLineKind` and `TextRoles.ink(_:)` exist to stop. It cannot be
+# banned outright: a glyph, a stroke, a dot and a ghosting comparison all take a rung legitimately
+# and none of them is a line of text. So it is a budget.
+#
+# Converting a call site to its kind lowers the count, and the gate then fails until this number
+# is lowered with it: a budget left above the tree authorises the next call site written to the
+# shape that was just removed, which is how a ratchet stops.
+247

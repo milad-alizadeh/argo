@@ -28,8 +28,7 @@ package struct PermissionPrompt: View {
             PermissionPromptTarget(target: prompt.target)
             if let caption = prompt.caption {
                 Text(caption)
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
             }
             PermissionPromptFooter(toolName: prompt.toolName, decide: decide)
         }
@@ -53,8 +52,7 @@ package struct PermissionPrompt: View {
                 .argoText(ArgoTypography.control)
                 .foregroundStyle(argo.color.text.primary)
             Text(prompt.subject)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.caption, .body)
         }
     }
 

@@ -71,6 +71,16 @@ edge holds `ArgoDesign` to being a **leaf** that declares **no view**: without b
 view could be moved into" is just "the module a view could be moved into", and the escape hatch
 survives the extraction one level up.
 
+The same edge carries one more claim about the ramp it declares, on a ratchet rather than a ban
+(#1250). `ArgoLineKind` names the kinds of line the interface writes and `TextRoles.ink(_:)` pairs
+each with a rung, so **a call site asks for a kind and is handed an ink**; one that names a rung
+instead has made that pairing again by hand, which is how 139 of the shell's readings ended up on
+the two quietest rungs against 56 on the loudest. It cannot be a ban, because a glyph, a stroke, a
+dot and a ghosting comparison all take a rung and none of them is a line of text — so
+`scripts/check-text-ink-swift.sh` counts the hand-picked rungs against a budget the tree stands at,
+and the budget may fall and may never rise. A fall that is not recorded fails too: a budget left
+above the tree authorises the next call site written to the shape that was just removed.
+
 The eighth is the direction between `ArgoUI` and the two dev-tool targets beside it (#1085):
 `ArgoSpecimens` holds the specimen harness, `ArgoFixtures` the sample transcripts and Tickets, and
 **no file under `Sources/ArgoUI` may import either** — in any spelling — nor may `ArgoFixtures`

@@ -93,10 +93,9 @@ extension SessionNavigator {
     var emptyState: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             Text("No Sessions yet")
-                .argoText(ArgoTypography.rowTitle)
+                .argoLine(ArgoTypography.rowTitle, .title)
             Text("Observed Sessions appear here.")
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
         }
         .padding(.vertical, ArgoSpacing.tight)
         .listRowSeparator(.hidden)

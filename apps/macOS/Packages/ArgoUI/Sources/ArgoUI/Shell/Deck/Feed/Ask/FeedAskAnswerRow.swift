@@ -31,7 +31,7 @@ struct FeedAskAnswerRow: View {
         TextField(
             placeholder,
             text: $text,
-            prompt: Text(placeholder).foregroundStyle(argo.color.text.disabled.color),
+            prompt: Text(placeholder).foregroundStyle(argo.color.text.ink(.metadata).color),
         )
         .textFieldStyle(.plain)
         .argoText(ArgoFeedRow.proseRung)
@@ -54,7 +54,7 @@ struct FeedAskAnswerRow: View {
                 DeckKeycap(key: "⏎")
             }
             .argoText(ArgoTypography.control)
-            .foregroundStyle(canSend ? argo.color.text.onAccent : argo.color.text.disabled)
+            .foregroundStyle(canSend ? argo.color.text.onAccent : argo.color.text.ink(.disabled))
             .padding(.horizontal, ArgoSpacing.comfortable)
             .frame(
                 minWidth: ArgoComposerVessel.decisionMinimumWidth,

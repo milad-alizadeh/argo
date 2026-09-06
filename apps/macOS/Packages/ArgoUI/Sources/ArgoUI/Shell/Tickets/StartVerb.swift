@@ -63,8 +63,7 @@ struct StartCommandWord: View {
 
     var body: some View {
         Text(command.typed)
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.machineCaption, .machineFact)
             .lineLimit(1)
             // The longest command is `/design-to-code`, and at the pane's 320 floor it wrapped to
             // two lines and took the chevron beside it off the baseline. A token is one word.

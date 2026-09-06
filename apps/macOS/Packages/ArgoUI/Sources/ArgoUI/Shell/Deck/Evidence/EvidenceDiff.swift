@@ -129,11 +129,10 @@ private struct EvidenceUnreadablePatch: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             Text("No patch was recorded for this change")
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.body, .body)
             Text(diff.change.rawValue)
                 .argoMono(.body)
-                .foregroundStyle(argo.color.text.disabled)
+                .foregroundStyle(argo.color.text.ink(.machineFact))
         }
         .padding(ArgoSpacing.comfortable)
     }

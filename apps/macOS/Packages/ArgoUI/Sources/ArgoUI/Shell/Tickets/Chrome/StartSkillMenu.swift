@@ -69,8 +69,7 @@ struct StartSkillMenu: View {
                 // rather than leaving an empty segment nobody can aim — and `Start` beside it opens
                 // empty composer, which is the honest answer to a ticket that asks for nothing.
                 Text("pick a skill")
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
                     .fixedSize()
             }
             ArgoDisclosure(.below)

@@ -22,10 +22,10 @@ struct ComposerMenuSection: View {
         HStack(spacing: ArgoSpacing.base) {
             Text(label)
                 .textCase(.uppercase)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(argo.color.text.ink(.sectionHeader))
             if let detail {
                 Text(detail)
-                    .foregroundStyle(argo.color.text.disabled)
+                    .foregroundStyle(argo.color.text.ink(.machineFact))
                     .lineLimit(1)
             }
         }

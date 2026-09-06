@@ -48,8 +48,7 @@ struct SubagentDots: View {
                 // truncating to fit. The column itself does not grow: it is still 6pt to every
                 // sibling that measures it.
                 Text("+\(overflow)")
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoLine(ArgoTypography.machineCaption, .machineFact)
                     .lineLimit(1)
                     .fixedSize()
                     .frame(width: ArgoIconSize.statusDot)

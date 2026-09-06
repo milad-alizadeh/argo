@@ -37,8 +37,7 @@ struct FeedWaitPlinth: View {
         HStack(spacing: ArgoSpacing.comfortable) {
             mark
             Text(words.running)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.body, .body)
                 .lineLimit(1)
                 // The mark folds in here rather than speaking for itself: it is the same claim as
                 // the words, drawn. TWO elements on this surface and not one, because the elapsed
@@ -74,9 +73,8 @@ struct FeedWaitPlinth: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let elapsed = seconds(at: context.date)
             Text(TurnClockPhrase.figure(seconds: elapsed))
-                .argoText(ArgoTypography.machineCaption)
+                .argoLine(ArgoTypography.machineCaption, .machineFact)
                 .monospacedDigit()
-                .foregroundStyle(argo.color.text.disabled)
                 .lineLimit(1)
                 // Spoken in words, because `6m 41s` read out is a string of characters. It is the
                 // one part of this surface that says "still going" with movement off, so a reader

@@ -20,8 +20,7 @@ struct StandingAllowTray: View {
     var body: some View {
         WrapFlow(gap: ArgoSpacing.tight) {
             Text(StandingAllowProjection.trayLabel)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
+                .argoLine(ArgoTypography.rowMeta, .metadata)
                 // The label rides the chips' own height, so a line holding both sits on one
                 // baseline rather than seating the text at the top of the tallest chip.
                 .frame(height: ArgoComposerVessel.chipHeight)
@@ -46,8 +45,7 @@ private struct StandingAllowChip: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.tight) {
             Text(toolName)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.secondary)
+                .argoLine(ArgoTypography.machineCaption, .body)
                 // Truncated in the MIDDLE, and only here: an MCP tool is named
                 // `mcp__server__the_actual_verb`, so a tail ellipsis leaves a row of chips that
                 // all read `mcp__claude-in-…`. The two informative ends survive, and the `help`
