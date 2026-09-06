@@ -292,9 +292,10 @@ else
   # 5b. And a fact handed straight through lands on the slot of its OWN name. Totality proves a
   #     fact was mentioned, never that it reached the right field, so `spentTokens:
   #     session.cachedTokens` is a swap both halves above call accounted for (#755). A fact crosses
-  #     three hands — named into the init, unpacked out of a value in its body, and unpacked again
-  #     inside a group whose own init takes sub-groups — and any hand can drop it on the wrong slot,
-  #     so all three files are read (#1051). Only the verbatim slots are checked:
+  #     three KINDS of hand — named into the init, unpacked out of a value in its body, and unpacked
+  #     again inside a group whose own init takes sub-groups — and any hand can drop it on the wrong
+  #     slot, so every file holding one is read (#1051). The last kind is a SET of files rather than
+  #     one, which is why $VALUES is a glob (#1502). Only the verbatim slots are checked:
   #     an argument that is a whole expression is a derivation, and its name is the projection's.
   # shellcheck disable=SC2086 # $VALUES is a list of paths, and holds no spaces
   verbatim_pairs=$(
