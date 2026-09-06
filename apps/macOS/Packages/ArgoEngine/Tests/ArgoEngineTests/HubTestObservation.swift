@@ -68,6 +68,10 @@ let spawnedTranscriptURL = URL(fileURLWithPath: "/tmp/session-from-cli.jsonl")
 let spawnedSessionID = spawnedTranscriptURL.path
 /// What `--resume` is given to continue it.
 let spawnedChainID = "session-from-cli"
+/// The transcript the SECOND fresh spawn of a fixture is told to write, under
+/// `SpawnFixture.TranscriptIDs.perSpawn`. Two fresh Sessions in one window are two files, and a
+/// suite driving both needs the second name to be as predictable as the first (#1479).
+let secondSpawnedChainID = "\(spawnedChainID)-2"
 
 @MainActor
 func spawnedSessionObservation(of fixture: SpawnFixture) -> TranscriptObservation {

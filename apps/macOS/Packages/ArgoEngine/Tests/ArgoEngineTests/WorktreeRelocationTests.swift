@@ -39,6 +39,23 @@ struct WorktreeRelocationTests {
         #expect(relocated.contains(.originSession(id: "worktreeOrigin")))
     }
 
+    /// The other half of that rule, and the whole of #1479: a relocation is named by the file's
+    /// FIRST record, so a `session_id` that only turns up once the Session has spoken names no
+    /// origin. A `remote_session_change` writes exactly that mid-run, into every fresh Session a
+    /// cockpit window starts.
+    @Test
+    func `a session_id that turns up mid-run names no origin`() async throws {
+        let second = try await Fixture.events("freshSessionSecond")
+
+        #expect(!second.contains {
+            if case .originSession = $0 {
+                true
+            } else {
+                false
+            }
+        })
+    }
+
     @Test
     @MainActor
     func `a worktree relocation leaves one roster row`() async throws {

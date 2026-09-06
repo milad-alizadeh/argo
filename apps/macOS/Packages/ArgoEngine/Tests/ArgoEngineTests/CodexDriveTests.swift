@@ -158,7 +158,7 @@ struct CodexDriveTests {
     /// an approval nobody answers would otherwise hold the Turn open for ever.
     @Test
     func `a Session survives the Permission its own clock refused`() async throws {
-        let fixture = try SpawnFixture(permissionPatience: .immediate)
+        let fixture = try SpawnFixture(patience: .init(permission: .immediate))
         defer { fixture.remove() }
         let session = try await fixture.openCodexSession()
         session.server.askCommand(1, command: "touch denied.txt")

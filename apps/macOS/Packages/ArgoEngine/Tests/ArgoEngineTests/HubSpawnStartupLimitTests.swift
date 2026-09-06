@@ -12,7 +12,7 @@ import Testing
 struct HubSpawnStartupLimitTests {
     @Test
     func `a process still up at the limit stops reading starting`() async throws {
-        let fixture = try SpawnFixture(startupPatience: .immediate)
+        let fixture = try SpawnFixture(patience: .init(startup: .immediate))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
@@ -33,7 +33,7 @@ struct HubSpawnStartupLimitTests {
         // Held rather than immediate: the child has to be GONE before the limit fires, and a wait
         // of zero seconds is armed at the spawn and races the line below (`StartupGate`).
         let gate = StartupGate()
-        let fixture = try SpawnFixture(startupPatience: .held(by: gate))
+        let fixture = try SpawnFixture(patience: .init(startup: .held(by: gate)))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         try #require(fixture.host.started.last).vanish()
@@ -55,7 +55,7 @@ struct HubSpawnStartupLimitTests {
         // Held for the same reason, and here it is what makes the test its own name: with a wait
         // of zero seconds the bytes might land after the limit, which is the NEXT test's claim.
         let gate = StartupGate()
-        let fixture = try SpawnFixture(startupPatience: .held(by: gate))
+        let fixture = try SpawnFixture(patience: .init(startup: .held(by: gate)))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         try #require(fixture.host.started.last).emit("\u{1B}[?1049h")
@@ -71,7 +71,7 @@ struct HubSpawnStartupLimitTests {
     /// by the bytes it was waiting for.
     @Test
     func `bytes after the limit take the quiet reading back`() async throws {
-        let fixture = try SpawnFixture(startupPatience: .immediate)
+        let fixture = try SpawnFixture(patience: .init(startup: .immediate))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         await fixture.hub.awaitStartupWait(claim)
@@ -88,7 +88,7 @@ struct HubSpawnStartupLimitTests {
     /// `running` at DIRECT: that tier is owed to a PTY that has spoken, and this one has not.
     @Test
     func `a Turn typed after the limit is not reported running`() async throws {
-        let fixture = try SpawnFixture(startupPatience: .immediate)
+        let fixture = try SpawnFixture(patience: .init(startup: .immediate))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         await fixture.hub.awaitStartupWait(claim)
@@ -103,7 +103,7 @@ struct HubSpawnStartupLimitTests {
     /// asserts throughout: the bytes are what the DIRECT tier was ever owed to.
     @Test
     func `a Turn typed after the CLI finally speaks reads running again`() async throws {
-        let fixture = try SpawnFixture(startupPatience: .immediate)
+        let fixture = try SpawnFixture(patience: .init(startup: .immediate))
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         await fixture.hub.awaitStartupWait(claim)

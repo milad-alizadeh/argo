@@ -105,11 +105,24 @@ struct SpawnFixture {
     /// hand the second Hub the first one's cache of what it had already read.
     private let store: TranscriptRecordStore
 
+    /// What this fixture answers when a fresh spawn asks which transcript to write (#742).
+    enum TranscriptIDs {
+        /// One name for every spawn, so a suite driving a SINGLE spawn can write a stand-in record
+        /// under the name that spawn's claim is waiting for.
+        case single
+        /// A name per spawn — `spawnedChainID` first, `secondSpawnedChainID` after it. What a
+        /// suite driving TWO fresh spawns through one Hub needs: under `single` the second names
+        /// the uuid the first already bound, so the pair could not be told apart (#1479).
+        case perSpawn
+    }
+
+    /// The two waits, in the one value the engine already groups them into — a suite naming either
+    /// says `patience: .init(startup: .immediate)`.
     init(
         liveness: @escaping LivenessRead = noLiveProcesses,
-        permissionPatience: PermissionPatience = .default,
-        startupPatience: StartupPatience = .default,
+        patience: SpawnServices.Patience = SpawnServices.Patience(),
         store: TranscriptRecordStore = .claudeCode,
+        transcriptIDs: TranscriptIDs = .single,
     ) throws {
         self.store = store
         let token = String(UUID().uuidString.prefix(8))
@@ -154,14 +167,12 @@ struct SpawnFixture {
                 modeFileURL: modeFileURL,
                 runFileURL: runFileURL,
             ),
-            patience: SpawnServices.Patience(
-                permission: permissionPatience,
-                startup: startupPatience,
-            ),
-            // Every spawn in these suites is told to write THIS transcript, which is the one
-            // `spawnedSessionObservation` stands in for (#742). A random uuid would leave the
-            // fixture's record answering to a name no claim is waiting for.
-            mintTranscriptID: { spawnedChainID },
+            patience: patience,
+            // The transcript each spawn in these suites is told to write — the one
+            // `spawnedSessionObservation` stands in for (#742). Named rather than random, because
+            // a random uuid would leave the fixture's record answering to a name no claim is
+            // waiting for.
+            mintTranscriptID: Self.minting(transcriptIDs),
         )
         self.hub = Self.makeHub(
             projectURL: projectURL,
@@ -219,6 +230,17 @@ struct SpawnFixture {
     func remove() {
         try? FileManager.default.removeItem(at: root)
         try? FileManager.default.removeItem(at: companionRoot)
+    }
+
+    /// The minting a fixture hands its spawn services — see `TranscriptIDs`. The count is the
+    /// closure's own, so two fixtures in one suite number their spawns apart.
+    private static func minting(_ ids: TranscriptIDs) -> @MainActor () -> String {
+        var spawned = 0
+        return {
+            spawned += 1
+            guard case .perSpawn = ids, spawned > 1 else { return spawnedChainID }
+            return "\(spawnedChainID)-\(spawned)"
+        }
     }
 
     private static func installExecutable(named name: String, in directory: URL) throws {
