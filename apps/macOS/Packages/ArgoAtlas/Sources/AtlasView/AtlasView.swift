@@ -22,6 +22,7 @@ import SwiftUI
 /// app can honestly show, and a blank hole is not.
 public struct AtlasView: View {
     @Environment(\.argo) private var argo
+    @Environment(\.argoReduceMotion) private var reduceMotion
 
     private let plan: AtlasPlan
 
@@ -44,6 +45,14 @@ public struct AtlasView: View {
     /// rather than a parameter: it is a fact about a picture only this view has drawn, and a
     /// caller cannot hold what it has not seen.
     @State private var hovered: String?
+
+    /// Whether the pointer is over the map at all (#1425). What the travel along the cords runs
+    /// on: a loop is the one thing on this surface that keeps a view unpaused with nobody looking,
+    /// and a map in a window the reader has left alone should cost what a still costs.
+    ///
+    /// Not `hovered`: that is nil over the desktop between two boxes, and light that stopped every
+    /// time the pointer crossed a gap would report the dependency being live as flicker.
+    @State private var pointing = false
 
     /// What is marked on the map: the file the reader has open — marked without being repainted —
     /// and the ties drawn over the picture (#1154, #1160).
@@ -93,7 +102,16 @@ public struct AtlasView: View {
                 AtlasSurface(
                     projection: projection,
                     pigments: AtlasPigments(argo.color.atlas, rim: argo.color.edge.hairline),
-                    resolve: { hovered = $0 },
+                    // The strip arrives and leaves on the naming role's own clock (#1425), driven
+                    // from HERE rather than from a modifier over the overlay: what the transition
+                    // needs is an animation in scope at the moment the value changes, and the
+                    // moment is this closure. Reduce Motion resolves to no animation, which is the
+                    // cut the role asks for rather than a branch this view holds.
+                    resolve: { path in
+                        withAnimation(ArgoMotion.naming.resolved(reduceMotion: reduceMotion)) {
+                            hovered = path
+                        }
+                    },
                     pick: marks.focus.clicked,
                 )
             }
@@ -101,7 +119,10 @@ public struct AtlasView: View {
             // trace does, and the trace is the nearer of the two to what the reader opened.
             .overlay {
                 AtlasTieCords(
-                    projection: projection, ties: marks.ties, open: marks.focus.open,
+                    projection: projection,
+                    ties: marks.ties,
+                    open: marks.focus.open,
+                    travelling: pointing,
                 )
             }
             // Over the cords and under the words: the mark belongs to the picture, and a name
@@ -118,10 +139,17 @@ public struct AtlasView: View {
                 // carry its own name — and nothing here has to test for that, because no box on
                 // this map carries one. `AtlasPlateNames` names FOLDERS, and only flat; a file is
                 // never captioned where it stands, so the bar is the only answer there is.
+                //
+                // It fades rather than cutting (#1425). A name is the shortest role on the map for
+                // the reason it is here at all: the pointer moves constantly, and a strip that
+                // took as long to arrive as the box under it takes to move would read as lag.
+                // Moving from one box to another rewrites the strip in place — the fade is the
+                // strip arriving and leaving, not the name changing.
                 if let hovered {
                     AtlasHoverName(path: hovered)
                         .frame(maxWidth: AtlasHoverName.width(over: plan.extent.width))
                         .padding(.top, ArgoSpacing.base)
+                        .transition(.opacity)
                 }
             }
             .overlay {
@@ -139,6 +167,16 @@ public struct AtlasView: View {
                 }
             }
             .frame(width: plan.extent.width, height: plan.extent.height)
+            // Whether anybody is looking at the map, which is what the cords' travel runs on
+            // (#1425). Over the whole stage rather than over the cords, which are a layer with no
+            // area of their own to be entered — and a pointer resting on a box between two cords
+            // is a reader looking at the map.
+            //
+            // CONTINUOUS rather than `onHover`, which fires on crossing the edge alone: a map that
+            // appears under a pointer already sitting still — a tab switched back to, a filter
+            // that rebuilt the view, a window opened under the cursor — never crossed one, and the
+            // cords would stay dark until the reader thought to move the mouse.
+            .onContinuousHover { pointing = $0 != .ended }
     }
 }
 

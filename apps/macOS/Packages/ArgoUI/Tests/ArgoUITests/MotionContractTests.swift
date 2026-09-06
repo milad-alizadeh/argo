@@ -128,6 +128,26 @@ struct MotionContractTests {
         #expect(ArgoMotion.unwired["lieDown"] == nil)
     }
 
+    /// The map's smaller moves, each spent by the surface it was decided for (#1425): the cord
+    /// layer arrives and leaves on `layerFade`, the name strip on `naming`, the open file's mark
+    /// draws itself on over `pin`, and light travels the cords on `travel`. Same claim as the flip
+    /// above, and for the same reason — the specimen draws an unwired role as unjudged, so a note
+    /// left behind hides a role that ships.
+    @Test
+    func `the map's smaller moves wait on no surface`() {
+        for role in ["layerFade", "naming", "pin", "travel"] {
+            #expect(ArgoMotion.unwired[role] == nil, "\(role) is still marked as waiting")
+        }
+    }
+
+    /// What is LEFT waiting, said as a set rather than one name at a time: a role quietly added
+    /// here is a role the specimen stops judging, and this is what makes that a failure rather
+    /// than a silence.
+    @Test
+    func `only the camera flight and the re-arrangement are still unwired`() {
+        #expect(Set(ArgoMotion.unwired.keys) == ["snap", "reshuffle"])
+    }
+
     @Test
     func `the Reduce Motion variant never takes longer than the full one`() {
         for role in ArgoMotion.all {
