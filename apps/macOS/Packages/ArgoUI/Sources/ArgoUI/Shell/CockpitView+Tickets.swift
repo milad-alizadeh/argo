@@ -145,7 +145,7 @@ extension CockpitView {
     ///
     /// Three sidebars for four rooms: Code takes `ShellSidebar`, because the two named gates leave
     /// it there. `RoomSidebarPlacementTests` is what notices if that stops being true.
-    @ViewBuilder func sidebar(tickets: TicketsRoom) -> some View {
+    @ViewBuilder func sidebar(tickets: TicketsRoom, atlas: AtlasRoom) -> some View {
         @Bindable var navigation = navigation
         let isTickets = navigation.room == .tickets
         // The Atlas room owns its rail too: what the map measures is chosen there rather than over
@@ -179,7 +179,7 @@ extension CockpitView {
             tickets.sidebar
                 .room(isActive: isTickets)
 
-            AtlasSidebar(cockpitRoom: $navigation.room)
+            AtlasSidebar(room: atlas, cockpitRoom: $navigation.room)
                 .room(isActive: isAtlas)
         }
     }

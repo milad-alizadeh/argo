@@ -5,11 +5,12 @@ import SwiftUI
 /// The Atlas room and the rail beside it, over a reading handed to them — the shape the specimen
 /// harness needs.
 ///
-/// Both halves take their value off the environment (`argoAtlasRoom`), which a specimen has no way
-/// to reach from outside the module. This puts one there, above the split view rather than on
-/// either column, so the sidebar and the room read the same room the way the shell hands it to
-/// them — and the rail draws on the platform's own sidebar material, which is the whole reason the
-/// controls live there (#1161).
+/// The room half takes its value off the environment (`argoAtlasRoom`), which a specimen has no
+/// way to reach from outside the module, so this puts one there; the rail half is HANDED its room,
+/// the way the shell hands one to its own leading column (#1489). Both are built from the same
+/// state below, so the two halves say the same thing about what was measured — and the rail draws
+/// on the platform's own sidebar material, which is the whole reason the controls live there
+/// (#1161).
 package struct AtlasRoomHost: View {
     private let reading: AtlasReading
     private let behind: Int?
@@ -44,7 +45,7 @@ package struct AtlasRoomHost: View {
 
     package var body: some View {
         NavigationSplitView {
-            AtlasSidebar(cockpitRoom: $cockpitRoom)
+            AtlasSidebar(room: room, cockpitRoom: $cockpitRoom)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,
                     ideal: ArgoLayout.sidebarIdealWidth,

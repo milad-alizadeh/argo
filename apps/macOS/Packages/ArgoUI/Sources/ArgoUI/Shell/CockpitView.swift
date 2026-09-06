@@ -87,7 +87,7 @@ public struct CockpitView: View {
     /// The Atlas room's container: it holds the Map store and the reading off it. A container
     /// rather than a projection because the map is a file on this machine that nothing pushes —
     /// see `AtlasRoomModel`.
-    @State var atlas = AtlasRoomModel()
+    @State var atlas: AtlasRoomModel
     @State private var drawn = DrawnSession()
 
     public init(
@@ -100,6 +100,24 @@ public struct CockpitView: View {
         self.actions = actions
         self.connect = connect
         self.readings = readings
+        _atlas = State(wrappedValue: AtlasRoomModel())
+    }
+
+    /// The same shell over an Atlas container the caller made — `AtlasRoomView.opening`'s kind of
+    /// parameter, and nothing in the app passes one. A container of its own is the only way a
+    /// suite reaches a MEASURED map through the shell: the default one reads and writes this
+    /// machine's own application support, and a suite that generated a Map there would leave it
+    /// beside a developer's real Projects (`AtlasRoomFixture`).
+    ///
+    /// It takes neither of the two above, so the cap on an initializer's parameters is kept
+    /// (`swift-boundaries.sh` edge 6): the Atlas room draws no sheet and no Ticket, so a claim
+    /// about it has nothing to say about either.
+    init(presentation: CockpitPresentation, actions: CockpitActions, atlas: AtlasRoomModel) {
+        self.presentation = presentation
+        self.actions = actions
+        self.connect = .closed
+        self.readings = .none
+        _atlas = State(wrappedValue: atlas)
     }
 
     /// The three read by name below and in the extensions, so grouping them at the seam did not
@@ -169,9 +187,13 @@ public struct CockpitView: View {
         // in Sessions rather than in tickets or a transcript, and small enough that no cost gate
         // watches it the way `SessionSelectionCostTests` watches the feed's reads.
         let tickets = ticketsRoom
+        // Assembled once and handed to both columns, the way the backlog above it is: the room
+        // carries six closures, and the two columns drawing one value is what makes the sentence
+        // on `AtlasSidebar` true rather than nearly true.
+        let atlas = atlasRoom
 
         NavigationSplitView(columnVisibility: sidebarColumn(for: tickets, in: navigation.room)) {
-            sidebar(tickets: tickets)
+            sidebar(tickets: tickets, atlas: atlas)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,
                     ideal: sidebarIdealWidth,
@@ -180,7 +202,7 @@ public struct CockpitView: View {
         } detail: {
             detail(
                 tickets: tickets,
-                atlas: atlasRoom,
+                atlas: atlas,
                 // The pass's ONE reading, handed on rather than asked for again (#957) — and only
                 // where the shell has caught up with the row that was clicked. See `DrawnSession`.
                 reading: isDrawn
@@ -193,7 +215,7 @@ public struct CockpitView: View {
         // Set HERE rather than passed into `detail` for the reason it is a separate entry at all:
         // the written layer is fetched separately, may never arrive, and nothing about the room is
         // different when it does not.
-        .environment(\.argoAtlasNotes, atlas.notes)
+        .environment(\.argoAtlasNotes, atlasNotes)
         // The Binding's address, put where the ticket's number can read it (#1242). Set on the
         // split view rather than inside the room: it is a fact about the PROJECT, and the room is
         // rebuilt on every ticket.
