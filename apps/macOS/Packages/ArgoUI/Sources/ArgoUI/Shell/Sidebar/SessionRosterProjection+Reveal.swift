@@ -4,7 +4,8 @@ extension SessionRosterProjection {
     struct Reveal: Equatable {
         /// The row to scroll to in this pass, or `nil` to leave the offset where it is.
         let row: String?
-        /// The row still owed, because the list had no height to scroll in. `nil` once it is paid.
+        /// What the list still owes the reader a look at: a row it has no height to scroll in, or
+        /// a selection it is not drawing a row for yet. `nil` once the debt is paid.
         let owed: String?
     }
 
@@ -19,6 +20,18 @@ extension SessionRosterProjection {
     /// `Selection.isSelected` rather than by repeating its rule, so the row the list is pointed at
     /// is by construction the row the ground is under.
     ///
+    /// A selection naming no drawn row is OWED rather than dropped (#1493). Two things are written
+    /// before the row for them exists: a spawn's claim id, the instant the spawn answers and before
+    /// the provisional row has reached this list, and a restored id whose Session the first sweep
+    /// has not read yet. Dropping those left the row grounded and scrolled out of sight, which
+    /// reads to the reader exactly like a lost focus. The debt is the selection's own id, and it is
+    /// paid by asking again once the rows change.
+    ///
+    /// It does not expire, and the case that shows why is the shut foot: a selection behind it is
+    /// owed a look that is paid when the reader opens it, which is the moment the row exists to be
+    /// looked at. A selection whose Session has genuinely gone does not linger either — the window
+    /// is repointed (`CockpitNavigationModel.reconcile`), and the new selection asks afresh.
+    ///
     /// `hasHeight` is the thing this could not be a pure question of the rows about. A room that is
     /// off screen is still MOUNTED, at `maxHeight: 0` (`RoomStage`), and the Tickets room's
     /// claimant line writes the selection before it switches rooms
@@ -30,7 +43,11 @@ extension SessionRosterProjection {
         -> Reveal {
         let ground = Selection(named: selection)
         guard let row = drawn.first(where: ground.isSelected)?.id else {
-            return Reveal(row: nil, owed: nil)
+            // A row drawn under this id that carries no ground is a fold, and a fold is the one
+            // thing here that will never become a row to scroll to however long it is waited for.
+            guard let selection, !drawn.contains(where: { $0.id == selection })
+            else { return Reveal(row: nil, owed: nil) }
+            return Reveal(row: nil, owed: selection)
         }
         return hasHeight ? Reveal(row: row, owed: nil) : Reveal(row: nil, owed: row)
     }

@@ -27,21 +27,35 @@ struct RosterRevealTests {
         #expect(reveal == .init(row: nil, owed: nil))
     }
 
-    /// A selection no drawn row carries — a Session behind a shut foot, or one the Hub stopped
-    /// publishing before the shell reconciled. Asking the list for a row it is not drawing moves
-    /// the offset for a mark that is not there.
+    /// A selection no drawn row carries — a Session behind a shut foot, a fresh spawn whose
+    /// provisional row has not reached this list, or one the shell was handed before it
+    /// reconciled. The list cannot scroll to a row it does not have, so it OWES the look rather
+    /// than dropping it (#1493): dropping it left the row grounded and out of sight, which reads
+    /// exactly like a lost focus.
     @Test
-    func `a selection no row draws reveals nothing`() {
+    func `a selection no row draws yet is owed rather than dropped`() {
         let reveal = SessionRosterProjection.reveal(
             of: "gamma", among: rows("alpha"), hasHeight: true,
         )
 
-        #expect(reveal == .init(row: nil, owed: nil))
+        #expect(reveal == .init(row: nil, owed: "gamma"))
+    }
+
+    /// And paid the moment that row is published, with the selection unchanged — the change that
+    /// settles this debt is the ROSTER's, not the reader's (`RosterReveal`).
+    @Test
+    func `the owed row is revealed once the roster publishes it`() {
+        let reveal = SessionRosterProjection.reveal(
+            of: "gamma", among: rows("alpha", "gamma"), hasHeight: true,
+        )
+
+        #expect(reveal == .init(row: "gamma", owed: nil))
     }
 
     /// A fold is OPENED, never selected (`CONTEXT.md` "Surfaces, not entities" · Fold), so it
     /// carries no ground — and a scroll to a row with no mark on it is the list moving to show the
-    /// reader nothing.
+    /// reader nothing. It is also the one id that owes nothing while being undrawn-as-a-ground: a
+    /// fold is already on screen, so there is no row coming that would settle a debt for it.
     @Test
     func `a fold row is never revealed`() throws {
         let drawn = SessionRosterProjection.rows(
@@ -67,15 +81,16 @@ struct RosterRevealTests {
         #expect(reveal == .init(row: nil, owed: "beta"))
     }
 
-    /// And a debt is only owed for a row there is one for: a room off screen does not bank a
-    /// scroll to a Session the roster is not drawing.
+    /// Both debts at once — no height AND no row — which is the shape `Start` on a ticket makes:
+    /// the claim id is written while the Tickets room still has the column and before the
+    /// provisional row is published. One debt, recorded under the id that is owed.
     @Test
-    func `a roster with no height owes nothing for a row it does not draw`() {
+    func `a roster with neither height nor a row owes the selection itself`() {
         let reveal = SessionRosterProjection.reveal(
             of: "gamma", among: rows("alpha"), hasHeight: false,
         )
 
-        #expect(reveal == .init(row: nil, owed: nil))
+        #expect(reveal == .init(row: nil, owed: "gamma"))
     }
 
     private func rows(_ ids: String...) -> [SessionRosterProjection.Row] {

@@ -21,10 +21,11 @@ struct RowSelectionReactions<Row: Hashable & Sendable>: ViewModifier {
                 held.pick(row)
             }
             // An EMPTY list is skipped: it draws empty for a moment between a Project switch and
-            // the first reading, and reconciliation is what clears a selection for real.
+            // the first reading, and reconciliation is what clears a selection for real. So is the
+            // row on its way but not published yet — see `RowSelectionHold.awaited` (#1493).
             .onChange(of: drawn) { _, rows in
                 guard !rows.isEmpty else { return }
-                held.selection.confine(to: rows)
+                held.selection.confine(to: rows + [held.awaited].compactMap(\.self))
             }
     }
 }

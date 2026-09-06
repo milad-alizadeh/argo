@@ -9,6 +9,11 @@ extension CockpitCoordinator {
     /// Returns the id the roster publishes the provisional row under — the claim's own, until the
     /// CLI names a Session — so the shell can point at what it just started, and `nil` where
     /// nothing started at all.
+    ///
+    /// The claim and not the row id it will be re-keyed to (#361), which the shell would have to
+    /// wait for: the row carries the claim it retired (`HubSession.absorbedIDs`), so a window
+    /// pointed here follows the re-key rather than losing it (`CockpitNavigationModel.reconcile`,
+    /// #1481/#1493). That keeps `CockpitNavigationModel` holding ids only, which is its contract.
     func spawnSession() async -> String? {
         await spawn(.unseeded)
     }

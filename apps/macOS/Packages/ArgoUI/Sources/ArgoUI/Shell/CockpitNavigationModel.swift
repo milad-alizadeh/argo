@@ -77,10 +77,39 @@ public final class CockpitNavigationModel {
         pick(id)
     }
 
+    /// Point the window at a Session Argo has just STARTED, whose row the roster has not published
+    /// yet (#1493).
+    ///
+    /// Every spawn answers with a `SessionOwnership.ClaimID`, and the shell is handed it the
+    /// instant the process is up — which is before the provisional row has reached the
+    /// presentation, and well before the CLI's first record re-keys that row (#361). At least one
+    /// reconciliation runs in between, and on ids alone that pass cannot tell a Session that is
+    /// COMING from one that has gone: both are ids no row accounts for. Falling back there took
+    /// the deck and the ground off the fresh Session before it ever had a row, which is the state
+    /// the report describes.
+    ///
+    /// So the act says which it is. Nothing else can: the answer is about what the caller just
+    /// did, not about anything either the roster or the id can be asked.
+    func pointAtStarting(_ id: CockpitPresentation.Session.ID) {
+        session = id
+        awaitedSession = id
+    }
+
     private func pick(_ id: CockpitPresentation.Session.ID?) {
         pointedSession = id
+        // Any other write is the reader pointing at a Session that already exists, so a wait left
+        // over from a spawn they have since moved off is over.
+        awaitedSession = nil
         chosenSession = Pick(session: id, ordinal: chosenSession.ordinal + 1)
     }
+
+    /// The pointed id whose first row is still on its way, and `nil` the rest of the time.
+    ///
+    /// Read by the roster as well as by reconciliation: the list confines its selection to the
+    /// rows it is DRAWING (`RowSelectionReactions`), and a row that has not been published yet is
+    /// not drawn — so without this the list drops the selection a spawn just made and drags the
+    /// deck along with it, whatever reconciliation decides (#1493).
+    private(set) var awaitedSession: CockpitPresentation.Session.ID?
 
     /// One act of picking a row. The ordinal is what makes picking the SAME row twice two events:
     /// a resume that was refused is retried by clicking again (#10), and on the id alone the second
@@ -118,12 +147,16 @@ public final class CockpitNavigationModel {
     /// Repoints a selection that no longer names a live Session. An empty roster leaves it `nil` —
     /// there is nothing honest to point at.
     ///
-    /// Three answers, in this order. A pointed id still on the roster stands. One a row has
+    /// Four answers, in this order. A pointed id still on the roster stands. One a row has
     /// ABSORBED has not left — the reader is on the same Session under the id it is published as
     /// now (#1481) — so the selection follows it there, which is no more a repoint than the row
     /// redrawing and is not treated as one.
     ///
-    /// Only an id no row accounts for has genuinely gone, and then the selection lands on the row
+    /// An id whose Session Argo has just STARTED has not arrived yet rather than left, and is held
+    /// where it is until its row is published (`pointAtStarting`, #1493).
+    ///
+    /// Only an id no row accounts for and none is coming for has genuinely gone, and then the
+    /// selection lands on the row
     /// nearest where it was: the first below it still on the roster, and the one above only where
     /// nothing below it is. Never the first row — the roster is ordered newest-activity first
     /// (#1402), so its first row is whichever Session last did something, and landing there is how
@@ -132,12 +165,22 @@ public final class CockpitNavigationModel {
         defer { lastRoster = roster }
         follow(Self.succession(of: roster))
         let sessionIDs = roster.map(\.id)
+        if let pointedSession, sessionIDs.contains(pointedSession) {
+            // The row it was waiting for. From here it is an ordinary published id, and the next
+            // pass that cannot find it is a Session that genuinely went.
+            awaitedSession = nil
+            sessionSelection.confine(to: sessionIDs)
+            return
+        }
+        // A Session Argo has started and the roster has not published yet is not a Session that
+        // left (#1493) — see `pointAtStarting`. Nothing is confined either: the selection holds an
+        // id that is about to be published, and confining would drop it.
+        if awaitedSession != nil {
+            return
+        }
         // Whatever happens to the deck's row, a Session that has left cannot stay selected: the
         // menu would be offering to archive rows nobody can see (#1247).
         sessionSelection.confine(to: sessionIDs)
-        if let pointedSession, sessionIDs.contains(pointedSession) {
-            return
-        }
         let landing = Self.neighbour(of: pointedSession, in: lastRoster, among: roster)
             ?? roster.first { !$0.isArchived }?.id
         pointedSession = landing

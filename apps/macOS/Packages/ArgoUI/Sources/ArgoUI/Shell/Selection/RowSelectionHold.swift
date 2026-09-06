@@ -14,15 +14,24 @@ package struct RowSelectionHold<Row: Hashable & Sendable> {
     /// Point it somewhere else. Inert by default, so a preview draws every gesture without a
     /// window under it.
     var pick: @MainActor (Row?) -> Void
+    /// A row this list is about to be given and is not drawing yet — a Session Argo has just
+    /// started, whose provisional row has not been published
+    /// (`CockpitNavigationModel.awaitedSession`,
+    /// #1493). It is exempt from the confining below: a list that drops it takes the deck off the
+    /// Session the reader just started, a beat before its row arrives. `nil` for a list with
+    /// nothing on the way, which is every list most of the time and the backlog always.
+    var awaited: Row?
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
     package init(
         selection: Binding<RowSelection<Row>>,
         pointed: Row? = nil,
         pick: @escaping @MainActor (Row?) -> Void = { _ in },
+        awaited: Row? = nil,
     ) {
         _selection = selection
         self.pointed = pointed
         self.pick = pick
+        self.awaited = awaited
     }
 }
