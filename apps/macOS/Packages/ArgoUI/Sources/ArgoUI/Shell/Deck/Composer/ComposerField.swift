@@ -54,7 +54,8 @@ struct ComposerField: View {
     @ViewBuilder private var prompt: some View {
         if text.isEmpty {
             // A placeholder is live guidance, not a disabled control, so it clears the floor
-            // (#1250).
+            // (#1250). Spelled as a pair rather than `argoLine`: the `argo` read is a stored
+            // property, and it is what seals this view's synthesized memberwise init.
             Text(placeholder)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.ink(.metadata))

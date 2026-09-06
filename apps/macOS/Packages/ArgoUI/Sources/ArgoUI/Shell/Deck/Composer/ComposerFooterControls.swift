@@ -6,8 +6,7 @@ import ArgoEngine
 // Grouped rather than spelled flat on `ComposerFooter`, on the parameter cap's own rule: each of
 // these is what ONE control needs, read off one place and passed to one view, so the footer's
 // parameter list is the row itself rather than a list of everything on it. What each control SAYS
-// is a
-// reading, and what it DOES is a closure; both live here because a control needs both to draw.
+// is a reading, and what it DOES is a closure; both live here because a control needs both to draw.
 //
 // Every act is inert by default and every capability `false`, so a specimen renders the whole row
 // with no Session behind it.

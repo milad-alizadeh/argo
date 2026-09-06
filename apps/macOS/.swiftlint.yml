@@ -80,8 +80,7 @@ function_parameter_count:
   warning: 4
   # Below: the initializers known to be over the cap above, and why each one's width is the shape
   # of the thing it takes. A record, not a check — nothing reads these lines, and adding one holds
-  # nobody to anything. They are here because the reasons took work to write and outlive whatever
-  # was reading them; regroup an initializer and delete its line. #992 is where the widths were
+  # nobody to anything. Regroup an initializer and delete its line. #992 is where the widths were
   # first counted, under a cap that could not see an `init`.
   #
   # INIT: Ticket.swift 12 — a provider's whole ticket record, field for field

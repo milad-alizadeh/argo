@@ -9,9 +9,9 @@ import Testing
 /// `MinimapReshapeTests` holds the decision — one derivation for a burst, none for a report
 /// carrying no reshape. This suite holds the registration, which #955 left alone and #971 moved:
 /// the two decisions are still two, and a `NotificationCenter` observer is registered for them
-/// once rather than twice. A second `addObserver(_:selector:name:object:)` selector is a second
-/// call graph walked on every notification, which is a cost nobody asked for, and this is what
-/// keeps it at one.
+/// once rather than twice. ADR-0028 holds every `addObserver(_:selector:name:object:)` selector to
+/// deciding rather than computing, and a second selector is a second call graph to hold there.
+/// This is what keeps it at one.
 ///
 /// Counts rather than seconds, because a registration is countable exactly (ADR-0028 Rule 8).
 @Suite("Minimap reshape route")
