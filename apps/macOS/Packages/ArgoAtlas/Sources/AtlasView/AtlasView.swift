@@ -24,32 +24,21 @@ public struct AtlasView: View {
     @Environment(\.argo) private var argo
 
     private let plan: AtlasPlan
-    /// How much of the map is standing up: `relief` at 1 the city and at 0 the treemap (#1152),
-    /// and `rise` how far the boxes have come out of their plates over `ArgoMotion.risen.sweep`
-    /// (#1421). It has no default — `relief` is the one thing that decides which of the two
-    /// readings reaches the screen.
-    ///
-    /// `var` rather than `let`: this is the whole of `animatableData` below, which is what lets a
-    /// caller drive both through `withAnimation` and have every frame in between drawn as its own
-    /// city, rather than a jump from one end to the other.
-    ///
-    /// The rise is ONE number for the whole map. The stagger that opens the city from its centre
-    /// is not in here at all — each box works its own phase out of it against where it stands, in
-    /// `AtlasVolume.metal`, which is the only place that can do it per box without the CPU walking
-    /// the plan once a frame.
-    private var standing: AtlasStanding
-    /// The city's own turn and tilt (#1152). Not animated here — a drag or a key press moves this
-    /// live, one frame at a time, and a caller re-rendering this view on every one of those frames
-    /// is a rate `Animatable` has no reason to also own.
-    private let orientation: AtlasOrientation
 
-    /// The folder the reader has descended into, or nothing for the whole repository (#1490).
+    /// Where the reader is looking at the plan from: how much of the map is standing up, which way
+    /// it is turned, and the folder the camera is seated onto (#1152, #1421, #1490). It has no
+    /// default — `relief` inside it is the one thing that decides which of the two readings reaches
+    /// the screen.
     ///
-    /// It moves the CAMERA and nothing else: the plan above is tiled from the repository's root at
-    /// every depth, and a descent seats the fit onto that folder's plate. A parameter rather than
-    /// state for `marks`' reason — where the reader is standing is read in the rail and in the
-    /// trail beside this view, and the three have to be naming one folder.
-    private let folder: String?
+    /// `var` rather than `let`: `viewpoint.standing` is the whole of `animatableData` below, which
+    /// is what lets a caller drive relief and rise through `withAnimation` and have every frame in
+    /// between drawn as its own city, rather than a jump from one end to the other. The rise is ONE
+    /// number for the whole map — the stagger that opens the city from its centre is not in it at
+    /// all, and each box works its own phase out against where it stands, in `AtlasVolume.metal`.
+    ///
+    /// A parameter rather than state for `marks`' reason: where the reader is standing is read in
+    /// the rail and in the trail beside this view, and the three have to be naming one folder.
+    private var viewpoint: AtlasViewpoint
 
     /// The file under the pointer, read off the id target the frame was drawn into (#1153). State
     /// rather than a parameter: it is a fact about a picture only this view has drawn, and a
@@ -64,22 +53,14 @@ public struct AtlasView: View {
     /// that draws the ties is in the sidebar, which is a column this one cannot hold state for.
     private let marks: AtlasMarks
 
-    public init(
-        plan: AtlasPlan,
-        standing: AtlasStanding,
-        standingIn folder: String? = nil,
-        orientation: AtlasOrientation = .opening,
-        marks: AtlasMarks = .none,
-    ) {
+    public init(plan: AtlasPlan, viewpoint: AtlasViewpoint, marks: AtlasMarks = .none) {
         self.plan = plan
-        self.standing = standing
-        self.folder = folder
-        self.orientation = orientation
+        self.viewpoint = viewpoint
         self.marks = marks
     }
 
-    /// Solved fresh from `standing` and `orientation` on every draw rather than stored, because
-    /// `standing` changes under `Animatable` between the values a caller ever set it to.
+    /// Solved fresh from the viewpoint on every draw rather than stored, because `standing` inside
+    /// it changes under `Animatable` between the values a caller ever set it to.
     ///
     /// ONE projection, handed to the shader and to everything drawn over it. A second solved
     /// beside it is a second camera to drift, which is the class of defect the id target exists to
@@ -88,10 +69,12 @@ public struct AtlasView: View {
         AtlasProjection(
             of: plan,
             through: AtlasCamera(
-                relief: standing.relief, orientation: orientation, over: plan.extent,
+                relief: viewpoint.standing.relief,
+                orientation: viewpoint.orientation,
+                over: plan.extent,
             ),
-            rising: standing.rise,
-            standingIn: folder,
+            rising: viewpoint.standing.rise,
+            standingIn: viewpoint.folder,
         )
     }
 
@@ -172,7 +155,9 @@ extension AtlasView: @MainActor Animatable {
     /// their own clocks and a reader who flips the map mid-rise is owed one city doing both, not
     /// a flip that cancels a climb.
     public var animatableData: AnimatablePair<Double, Double> {
-        get { AnimatablePair(standing.relief, standing.rise) }
-        set { standing = AtlasStanding(relief: newValue.first, rise: newValue.second) }
+        get { AnimatablePair(viewpoint.standing.relief, viewpoint.standing.rise) }
+        set {
+            viewpoint.standing = AtlasStanding(relief: newValue.first, rise: newValue.second)
+        }
     }
 }

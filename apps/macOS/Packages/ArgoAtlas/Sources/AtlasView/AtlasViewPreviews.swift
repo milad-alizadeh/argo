@@ -13,9 +13,9 @@ import SwiftUI
 /// looked at the tiled one beside it.
 private struct AtlasPreview: View {
     let plan: AtlasPlan
-    var standing: AtlasStanding = .city
-    var folder: String?
-    var orientation: AtlasOrientation = .opening
+    /// The camera, as one value. Edge 6 reads a synthesized memberwise init the same way it reads
+    /// a written one, so a property here counts against the cap (#1516).
+    var viewpoint: AtlasViewpoint = .city
     var marks: AtlasMarks = .none
 
     /// One file open and nothing to close it with — what every preview of a marked map takes. A
@@ -26,16 +26,10 @@ private struct AtlasPreview: View {
     }
 
     var body: some View {
-        AtlasView(
-            plan: plan,
-            standing: standing,
-            standingIn: folder,
-            orientation: orientation,
-            marks: marks,
-        )
-        .padding(ArgoSpacing.section)
-        .argoDeckSurface()
-        .argoAppearance()
+        AtlasView(plan: plan, viewpoint: viewpoint, marks: marks)
+            .padding(ArgoSpacing.section)
+            .argoDeckSurface()
+            .argoAppearance()
     }
 }
 
@@ -77,14 +71,16 @@ private let previewPlan = AtlasPlan(
 // The other end of the one camera, and the picture the identity is about: the same plan, drawn
 // straight down.
 #Preview("Atlas — the map tiled flat") {
-    AtlasPreview(plan: previewPlan, standing: .flat)
+    AtlasPreview(plan: previewPlan, viewpoint: .flat)
 }
 
 // A reader standing inside a folder (#1490). The claim to look at against the treemap preview
 // above: it is the SAME tiling, and `argo/rules` is the same two rectangles in the same proportions
 // — only larger, because the camera seated onto that plate rather than the map re-tiling into it.
 #Preview("Atlas — standing inside a folder") {
-    AtlasPreview(plan: previewPlan, standing: .flat, folder: "argo/rules")
+    AtlasPreview(
+        plan: previewPlan, viewpoint: AtlasViewpoint(standing: .flat, standingIn: "argo/rules"),
+    )
 }
 
 #Preview("Atlas — the empty map") {
@@ -95,12 +91,20 @@ private let previewPlan = AtlasPlan(
 // keeping: the middle of the plan is up, the edges are still flat, and the wave between them is
 // what says the city opened from its centre rather than lifting all at once.
 #Preview("Atlas — the city half risen") {
-    AtlasPreview(plan: previewPlan, standing: AtlasStanding(relief: 1, rise: 0.5))
+    AtlasPreview(
+        plan: previewPlan,
+        viewpoint: AtlasViewpoint(standing: AtlasStanding(relief: 1, rise: 0.5)),
+    )
 }
 
 // A turn and a tilt away from the opening view — the reader having driven the camera (#1152).
 #Preview("Atlas — the city, turned") {
-    AtlasPreview(plan: previewPlan, orientation: AtlasOrientation(yaw: 2.1, pitch: 1.1))
+    AtlasPreview(
+        plan: previewPlan,
+        viewpoint: AtlasViewpoint(
+            standing: .city, orientation: AtlasOrientation(yaw: 2.1, pitch: 1.1),
+        ),
+    )
 }
 
 // The file a reader has open, traced (#1154). The claim to look at: the marked volume is the same
@@ -115,7 +119,7 @@ private let previewPlan = AtlasPlan(
 #Preview("Atlas — a file open, traced on the treemap") {
     AtlasPreview(
         plan: previewPlan,
-        standing: .flat,
+        viewpoint: .flat,
         marks: AtlasPreview.opened("argo/rules/house.md"),
     )
 }
@@ -143,7 +147,7 @@ private let previewTies = AtlasTies(
 // the plane — always to the same side of its own chord, which is what fans a bundle out instead of
 // laying every cord in it on one shape.
 #Preview("Atlas — the strongest ties, on the treemap") {
-    AtlasPreview(plan: previewPlan, standing: .flat, marks: AtlasMarks(ties: previewTies))
+    AtlasPreview(plan: previewPlan, viewpoint: .flat, marks: AtlasMarks(ties: previewTies))
 }
 
 // A pinned file's own ties, with the switch OFF: the reader pointed at a file and asked what it

@@ -188,9 +188,11 @@ struct AtlasRoomView: View {
                         height: proxy.size.height - ArgoSpacing.loose * 2,
                     ),
                 ),
-                standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
-                standingIn: standpoint.folder,
-                orientation: orientation,
+                viewpoint: AtlasViewpoint(
+                    standing: AtlasStanding(relief: room.choice.isCity.isOn ? 1 : 0, rise: rise),
+                    orientation: orientation,
+                    standingIn: standpoint.folder,
+                ),
                 marks: AtlasMarks(
                     focus: AtlasFocus(open: openFile) {
                         pick($0, among: entries, in: standpoint.map)
