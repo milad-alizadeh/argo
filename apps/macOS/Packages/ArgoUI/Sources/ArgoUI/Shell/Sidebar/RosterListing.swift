@@ -30,6 +30,10 @@ struct RosterListing {
     /// through rather than held here: which folds are open is a fact about the window, and this
     /// value is rebuilt every pass.
     ///
+    /// `focus` is the row the deck has open and the fourth fact for it alone (#1513). Taken by the
+    /// caller, because the reader it comes off answers for one Session and this pass draws every
+    /// row.
+    ///
     /// Both lists come off `SessionRosterProjection.lists`, which names the roster ONCE for the two
     /// of them and leaves the answer where the deck header reads it too (#1557). `@MainActor` for
     /// that memo, which is what makes this pipeline the one place a pass is taken.
@@ -37,12 +41,12 @@ struct RosterListing {
     func reading(
         of sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
-        selection: String? = nil,
+        focus: SessionRosterProjection.Focus = SessionRosterProjection.Focus(),
         now: Date = Date(),
     )
         -> Reading {
         let lists = SessionRosterProjection.lists(
-            from: sessions, opened: opened, selection: selection, now: now,
+            from: sessions, opened: opened, focus: focus, now: now,
         )
         return Reading(rows: order.published(lists.rows), archived: lists.archived)
     }

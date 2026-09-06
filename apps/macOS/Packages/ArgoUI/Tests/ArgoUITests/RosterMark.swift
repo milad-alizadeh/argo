@@ -17,7 +17,10 @@ enum RosterMark {
         for navigation: CockpitNavigationModel,
         sourceLocation: SourceLocation = #_sourceLocation,
     ) {
-        let reading = RosterListing().reading(of: sessions, selection: navigation.session)
+        let reading = RosterListing().reading(
+            of: sessions,
+            focus: .init(sessionID: navigation.session),
+        )
         let selection = SessionRosterProjection.Selection(named: navigation.session)
         let grounded = reading.rows.filter { selection.isSelected($0) }
 
