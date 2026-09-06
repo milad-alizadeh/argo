@@ -60,30 +60,30 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
     /// beside it.
     private(set) var windows: [String: Window] = [:]
 
-    /// The Session id holding each transcript uuid — the whole of how a moved transcript is found,
-    /// and the only thing that makes that lookup free.
+    /// The Session id holding each transcript uuid — the whole of how a moved transcript is found.
     ///
     /// Derived from `windows`, so it is neither written to the file nor compared. Built once per
-    /// entry here and at each `open`; the scan it replaces split every key's path on every lookup,
-    /// which the roster asks for twice per Session per frame (#1495).
+    /// entry at decode and at each `open`. The scan it replaces split every key's path on every
+    /// lookup, which the roster asks for twice per Session per frame (#1495).
     private(set) var keyByUUID: [String: String] = [:]
 
-    /// The file holds the windows and nothing else: the index is a reading of them, and a file that
-    /// carried one could disagree with the windows it was written beside.
+    /// The file holds the windows and nothing else. The index is a reading of them.
     private enum CodingKeys: String, CodingKey {
         case windows
     }
 
     init() {}
 
+    /// Hand-written only to build the index; `windows` stays required, as the synthesized decode
+    /// this replaces required it. A file this type did not write is `SessionOwnershipLedgerStore`'s
+    /// question, and it already answers it: a ledger that cannot be read is an empty one.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.windows = try container.decodeIfPresent([String: Window].self, forKey: .windows) ?? [:]
+        self.windows = try container.decode([String: Window].self, forKey: .windows)
         self.keyByUUID = Self.index(of: windows)
     }
 
-    /// Two ledgers are the same when they hold the same windows. The index follows from those, so
-    /// comparing it would only be asking the same question twice.
+    /// Two ledgers are the same when they hold the same windows; the index follows from those.
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.windows == rhs.windows
     }
@@ -119,47 +119,44 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         return String(name[name.startIndex ..< dot])
     }
 
+    /// One key held under its uuid.
+    private typealias Entry = (key: String, fromMs: Int)
+
     /// Every window's key under its uuid, for a ledger that arrived whole — which is every ledger
     /// read back from the file.
     private static func index(of windows: [String: Window]) -> [String: String] {
-        var index: [String: String] = [:]
-        index.reserveCapacity(windows.count)
-        for key in windows.keys {
+        var latest: [String: Entry] = [:]
+        latest.reserveCapacity(windows.count)
+        for (key, window) in windows {
+            let entry = Entry(key: key, fromMs: window.fromMs)
             let uuid = uuid(of: key)
-            guard let held = index[uuid] else {
-                index[uuid] = key
+            if let held = latest[uuid], !answers(entry, ratherThan: held) {
                 continue
             }
-            if answers(key, ratherThan: held, in: windows) {
-                index[uuid] = key
-            }
+            latest[uuid] = entry
         }
-        return index
+        return latest.mapValues(\.key)
     }
 
     /// Which of two Session ids sharing one uuid the lookup answers with: the window opened LATER,
-    /// which is the one written after the CLI moved the transcript. A rule rather than whichever
-    /// the dictionary held first, so two reads of one file cannot disagree.
-    private static func answers(
-        _ candidate: String,
-        ratherThan held: String,
-        in windows: [String: Window],
-    )
-        -> Bool {
-        let fromMs = windows[candidate]?.fromMs ?? 0
-        let heldFromMs = windows[held]?.fromMs ?? 0
-        return fromMs == heldFromMs ? candidate < held : fromMs > heldFromMs
+    /// which is the one written after the CLI moved the transcript. The lower id breaks a tie, so
+    /// two reads of one file agree.
+    private static func answers(_ candidate: Entry, ratherThan held: Entry) -> Bool {
+        candidate.fromMs == held.fromMs
+            ? candidate.key < held.key
+            : candidate.fromMs > held.fromMs
     }
 
-    /// This key into the index, once, at the one moment a key can arrive. Nothing else moves a
-    /// window's `fromMs`, so no other write can change which key a uuid answers with.
-    private mutating func index(_ sessionID: String) {
+    /// This key into the index, at the one moment a key can arrive. Nothing else moves a window's
+    /// `fromMs`, so no other write can change which key a uuid answers with.
+    private mutating func index(key sessionID: String, openedAt fromMs: Int) {
         let uuid = Self.uuid(of: sessionID)
-        guard let held = keyByUUID[uuid], held != sessionID else {
+        guard let held = keyByUUID[uuid], held != sessionID, let window = windows[held] else {
             keyByUUID[uuid] = sessionID
             return
         }
-        if Self.answers(sessionID, ratherThan: held, in: windows) {
+        let entry = Entry(key: sessionID, fromMs: fromMs)
+        if Self.answers(entry, ratherThan: Entry(key: held, fromMs: window.fromMs)) {
             keyByUUID[uuid] = sessionID
         }
     }
@@ -187,7 +184,7 @@ struct SessionOwnershipLedger: Codable, Equatable, Sendable {
         )
         guard windows[sessionID] != opened else { return false }
         windows[sessionID] = opened
-        index(sessionID)
+        index(key: sessionID, openedAt: opened.fromMs)
         return true
     }
 

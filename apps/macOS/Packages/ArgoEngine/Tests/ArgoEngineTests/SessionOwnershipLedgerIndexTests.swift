@@ -18,7 +18,7 @@ struct SessionOwnershipLedgerIndexTests {
     private let owner = SessionOwnershipLedger.Owner(pid: 1, registry: "one-registry")
 
     @Test
-    func `a Session whose transcript moved is found without reading every window`() {
+    func `every window is in the index, so a moved transcript is one read away`() {
         var ledger = SessionOwnershipLedger()
         for entry in 0 ..< 400 {
             _ = ledger.open(
