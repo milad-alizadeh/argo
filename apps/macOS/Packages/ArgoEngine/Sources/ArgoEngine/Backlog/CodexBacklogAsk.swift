@@ -1,36 +1,35 @@
 import Foundation
 
-/// The backlog-question port, over `codex exec`.
+/// The backlog-question port, over `codex exec` (ADR-0031).
 ///
-/// **The transport is `codex exec` because of the billing, not the ergonomics** (ADR-0031).
-/// `claude -p` and the Agent SDK meter every token; Codex's ChatGPT sign-in covers `codex exec` as
-/// it covers the TUI, and Codex splits its billing on the credential rather than the surface
-/// (ADR-0024). Nothing on this path can reach a metered endpoint: the sign-in is checked to be a
-/// ChatGPT one before the process starts, `OPENAI_API_KEY` is scrubbed out of its environment, and
-/// `--ignore-user-config` keeps a local `config.toml` from naming another provider.
+/// Nothing on this path can reach a metered endpoint: an `auth.json` holding an API key is refused
+/// before the process starts, `OPENAI_API_KEY` is scrubbed out of the child's environment with
+/// ADR-0024's own list, and `--ignore-user-config` keeps a local `config.toml` from naming another
+/// provider.
 ///
-/// Measured over a 40-ticket fixture on 2026-09-05: 5.2s at best of six, ~6s typical, 11.4s at
-/// worst — not the 2.4s the design drew.
-public struct CodexBacklogAsk: BacklogAskPort {
-    /// How long a reader is made to wait before the wait itself becomes the answer. Four times the
-    /// typical measured 6s, so ordinary variance never trips it and a hung CLI does.
-    public static let patience = Duration.seconds(25)
+/// Measured over the nine-ticket fixture on 2026-09-05, three runs: least 4403–4457 ms, median
+/// 4717–5033 ms. Over 40 of this repo's real open issues: 5.2 s least, 11.4 s worst.
+struct CodexBacklogAsk: BacklogAskPort {
+    /// How long a reader waits before the wait itself becomes the answer. Five times the measured
+    /// floor, so a slow network never trips it and a hung CLI does.
+    static let patience = Duration.seconds(25)
 
     private let home: URL
     private let searchPath: String
 
-    /// The one this machine has: the CLI's own `CODEX_HOME`, on the `PATH` the user's shell gives.
-    public init() {
-        self.init(home: CodexSignInReader.home(), searchPath: LoginShellPath.resolved())
+    /// The sign-in this machine has, on the `PATH` the user's shell gives.
+    init() {
+        self.init(signedInAt: CodexSignInReader.home())
     }
 
-    /// Both named, for a suite that points at a sign-in and a `PATH` it wrote itself.
-    init(home: URL, searchPath: String) {
+    /// Which sign-in answers. A `CODEX_HOME` rather than an Account, because Codex's identity is
+    /// the CLI's own and Argo only reads it — `CodexSignIn` says why.
+    init(signedInAt home: URL, searchPath: String = LoginShellPath.resolved()) {
         self.home = home
         self.searchPath = searchPath
     }
 
-    public func answer(_ question: String, over tickets: [Ticket]) async -> Result<
+    func answer(_ question: String, over tickets: [Ticket]) async -> Result<
         BacklogAnswer, BacklogAskRefusal,
     > {
         do {
@@ -40,13 +39,16 @@ public struct CodexBacklogAsk: BacklogAskPort {
             }
             let prompt = BacklogAskPrompt.text(question: question, tickets: tickets)
             let clock = ContinuousClock()
-            var took = Duration.zero
-            let prose = try await clock.measure(&took) {
-                try await run(executable, prompt: prompt)
-            }
-            return .success(BacklogAnswer(prose: prose, answeredBy: signIn, took: took))
+            let started = clock.now
+            let prose = try await run(executable, prompt: prompt)
+            let answer = BacklogAnswer(
+                prose: prose, answeredBy: signIn, took: clock.now - started,
+            )
+            return .success(answer)
         } catch let refusal as BacklogAskRefusal {
             return .failure(refusal)
+        } catch is CancellationError {
+            return .failure(.refused(detail: "The question was stopped"))
         } catch {
             return .failure(.refused(detail: "Codex could not be asked: \(error)"))
         }
@@ -62,15 +64,5 @@ public struct CodexBacklogAsk: BacklogAskPort {
             searchPath: searchPath,
         ).wait(Self.patience)
         return try run.result(exitCode: exitCode).get()
-    }
-}
-
-private extension ContinuousClock {
-    /// The block's value and how long it took, since `measure` itself hands back only the duration.
-    func measure<T>(_ took: inout Duration, _ work: () async throws -> T) async rethrows -> T {
-        let started = now
-        let value = try await work()
-        took = now - started
-        return value
     }
 }

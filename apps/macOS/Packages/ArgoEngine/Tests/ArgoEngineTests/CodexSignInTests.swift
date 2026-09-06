@@ -38,6 +38,37 @@ struct CodexSignInTests {
         #expect(refusal?.sentence.contains("API key") == true)
     }
 
+    /// The ambiguous file, which the tokens check alone would have passed. Which credential Codex
+    /// would spend is its choice, so the only answer that cannot be wrong is to refuse.
+    @Test
+    func `a file holding both a key and tokens is refused`() throws {
+        let signedIn = TemporaryCodexHome.chatGPT
+        let both = signedIn.replacingOccurrences(
+            of: "{\"tokens\"", with: "{\"OPENAI_API_KEY\": \"sk-live\", \"tokens\"",
+        )
+        let home = try TemporaryCodexHome(auth: both)
+        defer { home.remove() }
+
+        let refusal = refusal(reading: home)
+
+        #expect(refusal?.sentence.contains("billed per token") == true)
+    }
+
+    /// The null the CLI actually writes beside a ChatGPT sign-in is not a key, and a check reading
+    /// it as one would refuse every signed-in Mac.
+    @Test
+    func `a null key beside a sign-in is not treated as a key`() throws {
+        let withNull = TemporaryCodexHome.chatGPT.replacingOccurrences(
+            of: "{\"tokens\"", with: "{\"OPENAI_API_KEY\": null, \"tokens\"",
+        )
+        let home = try TemporaryCodexHome(auth: withNull)
+        defer { home.remove() }
+
+        let signIn = try CodexSignInReader.read(in: home.url)
+
+        #expect(signIn.email == "reader@example.com")
+    }
+
     /// A ChatGPT sign-in whose token names no plan still pays on included tokens — the credential
     /// is the fact, and the plan is an attribution that goes quiet.
     @Test

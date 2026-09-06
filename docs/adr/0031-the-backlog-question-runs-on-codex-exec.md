@@ -42,10 +42,12 @@ to prefer the ChatGPT sign-in but a later version preferring the key would meter
 
 Four things follow, and each is a line of code rather than a note:
 
-1. **The sign-in is checked before the process starts.** `auth.json` must hold `tokens`; a file
-   holding `OPENAI_API_KEY` instead is refused as "not a ChatGPT sign-in" rather than asked. The
-   credential is the fact this rests on — the `chatgpt_plan_type` claim is drawn beside the answer
-   and decides nothing, because a token can carry the sign-in and omit the claim.
+1. **The sign-in is checked before the process starts.** `auth.json` must hold `tokens` and must
+   not hold an `OPENAI_API_KEY` — **a file holding both is refused too.** Which of the two Codex
+   would spend is its choice and not Argo's: 0.147.0 prefers the sign-in, and a version preferring
+   the key would meter without saying so, so the ambiguous file is refused rather than gambled on.
+   The credential is the fact this rests on — the `chatgpt_plan_type` claim is drawn beside the
+   answer and decides nothing, because a token can carry the sign-in and omit the claim.
 2. **The environment is scrubbed with ADR-0024's own list.** `CodexExecRun.environment` reads
    `AgentCLI.codex.scrubbedFromEnvironment`, so a name added there covers this path the day it is
    added, and there is no second rule to drift from the first.
@@ -60,6 +62,12 @@ labels and the `blockedBy` edges. Never a ticket body, never a comment. A `Ticke
 filled for whichever tickets a reader happened to open, so an answer written from bodies changes
 between two readers of the same view; repeatable is the property that lets anybody check the
 answer. `BacklogListingTests` asserts it against a fixture whose bodies contradict its titles.
+
+**Cancelling stops the child, not just the wait.** The design gives the wait a Stop, and a reader
+who presses it while a model runs for the rest of the patience has stopped nothing. The port is
+cancellation-aware end to end: the wait is wrapped in a cancellation handler, the child is
+terminated and reaped, and the refusal comes back at once — measured at 0.375 s against a real
+`codex exec` that would otherwise have run for seconds.
 
 **Every failure is a stated refusal.** `BacklogAskRefusal` has four cases — no sign-in, no CLI, a
 timeout, and a non-zero or empty exit — and each carries a sentence. An exit of 0 that wrote
@@ -107,6 +115,9 @@ what a ChatGPT sign-in covers — which is the one change that would reopen this
 - Argo now depends on the `codex` CLI for a feature that is not a Session. A reader with `claude`
   and no `codex` gets the `noCLI` refusal, which is a real gap in the cockpit's story and belongs
   in the asking surface's own vacancy state (`BacklogAskVacancy`).
+- **Nothing in `ArgoEngine` is `public` yet.** No surface calls the port, and `rules/swift.md` puts
+  `public` only on what another target calls; the ticket that builds `BacklogAnswerSheet` widens
+  what it needs.
 - The answering identity is **DERIVED, not an Account.** `AccountProvider` is `github | linear`,
   and those are grants Argo issued and holds in the keychain. Codex's sign-in is the CLI's, and
   Argo only reads it — so `CodexSignIn` is its own value and the attribution renders as the lower

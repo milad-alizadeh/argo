@@ -240,11 +240,12 @@ Two things this settles for the surface:
 
 - **The `2.4s` drawn in the elapsed line is a placeholder and reads low.** Renderings of the foot
   should draw a measured figure, and `4.4s` is the honest one for a small backlog.
-- **The sheet is the right shape and the wait is not.** A four-to-eleven second wait is long
-  enough that `BacklogAskWait` carries the design, not the sheet: the pulse and its sentence are
-  what a reader looks at for most of the interaction, and the **Stop** stops being a courtesy.
-  Whether the wait wants a staged sentence rather than one is a question this measurement opens
-  and #1315 does not answer.
+- **The wait is reopened, and this file does not settle it.** `BacklogAskWait` was drawn against
+  2.4 s and is now a four-to-eleven second wait, which is long enough that a reader spends most of
+  the interaction looking at it. Whether one sentence and a pulse still carry that, and what the
+  **Stop** has to be at that length, is a design question the measurement raises and #1315 has no
+  standing to answer. The transport does make the Stop real: cancelling terminates the child
+  rather than leaving it running, and comes back at once.
 
 **And the foot does not name an Account.** `AccountProvider` is `github | linear` — grants Argo
 issued and holds in the keychain — and Codex's sign-in is the CLI's own, read out of

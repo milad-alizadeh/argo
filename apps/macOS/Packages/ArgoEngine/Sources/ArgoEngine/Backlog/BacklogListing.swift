@@ -6,9 +6,9 @@ import Foundation
 /// tickets a reader happened to open, so an answer written from bodies changes between two readers
 /// of the same view. Everything below is served by the listing poll for every ticket at once, which
 /// is what makes the same question over the same backlog give the same answer twice (#1315).
-public enum BacklogListing {
+enum BacklogListing {
     /// The listing rendered for a prompt, newest-first in the order the room gives it.
-    public static func lines(_ tickets: [Ticket]) -> String {
+    static func lines(_ tickets: [Ticket]) -> String {
         tickets.map(line).joined(separator: "\n")
     }
 

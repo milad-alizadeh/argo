@@ -36,17 +36,10 @@ struct CodexExecRun {
         directory.appending(path: "log.txt")
     }
 
-    /// The invocation. Each flag is here for a reason the next reader would otherwise remove:
-    ///
-    /// - `--ephemeral` writes no session file, so asking a question does not add a Session to the
-    ///   roster and nothing accumulates in `CODEX_HOME` per question.
-    /// - `--ignore-user-config` keeps the answer independent of a `config.toml` this machine
-    ///   happens to hold — including one naming a provider that would be metered. Auth still comes
-    ///   from `CODEX_HOME`, so the sign-in survives it.
-    /// - `-s read-only` and `--skip-git-repo-check` are what let it run in an empty directory that
-    ///   is not a checkout, with no way to write in it.
-    /// - `-` reads the prompt from stdin rather than argv, because a backlog on a command line is
-    ///   an argument list long enough to be refused by the kernel.
+    /// The invocation (ADR-0031). Two flags a reader would otherwise remove as noise:
+    /// `--ignore-user-config` is what stops a local `config.toml` naming a metered provider, and
+    /// auth still comes from `CODEX_HOME` without it; `-` reads the prompt from stdin because a
+    /// backlog on argv is an argument list long enough for the kernel to refuse.
     ///
     /// Verified against `codex-cli` 0.147.0 on 2026-09-05.
     var arguments: [String] {
@@ -62,8 +55,14 @@ struct CodexExecRun {
     /// `AgentCLI.codex.scrubbedFromEnvironment` is the same list a spawned Codex Session is cleaned
     /// with (ADR-0024) — one rule, read from where it already lives, so a key added there covers
     /// this path the day it is added.
-    static func environment(path: String) -> [String: String] {
-        var environment = ProcessInfo.processInfo.environment
+    /// `inherited` is a parameter so the scrub can be asserted against an environment a test wrote
+    /// — a guard whose only proof is the machine it happened to run on is a guard nobody checked.
+    static func environment(
+        path: String,
+        inheriting inherited: [String: String] = ProcessInfo.processInfo.environment,
+    )
+        -> [String: String] {
+        var environment = inherited
         for name in AgentCLI.codex.scrubbedFromEnvironment {
             environment.removeValue(forKey: name)
         }

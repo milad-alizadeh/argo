@@ -12,7 +12,7 @@ struct BacklogAskRefusalTests {
     func `no sign-in refuses instead of asking`() async throws {
         let home = try TemporaryCodexHome(auth: nil)
         defer { home.remove() }
-        let port = CodexBacklogAsk(home: home.url, searchPath: "/usr/bin:/bin")
+        let port = CodexBacklogAsk(signedInAt: home.url, searchPath: "/usr/bin:/bin")
 
         let outcome = await port.answer("anything?", over: BacklogAskFixture.tickets)
 
@@ -25,7 +25,7 @@ struct BacklogAskRefusalTests {
         defer { home.remove() }
         let empty = try TemporaryCodexHome(auth: nil)
         defer { empty.remove() }
-        let port = CodexBacklogAsk(home: home.url, searchPath: empty.url.path)
+        let port = CodexBacklogAsk(signedInAt: home.url, searchPath: empty.url.path)
 
         let outcome = await port.answer("anything?", over: BacklogAskFixture.tickets)
 
@@ -38,7 +38,7 @@ struct BacklogAskRefusalTests {
     func `a machine with neither reports the sign-in`() async throws {
         let home = try TemporaryCodexHome(auth: nil)
         defer { home.remove() }
-        let port = CodexBacklogAsk(home: home.url, searchPath: "/nowhere")
+        let port = CodexBacklogAsk(signedInAt: home.url, searchPath: "/nowhere")
 
         let outcome = await port.answer("anything?", over: BacklogAskFixture.tickets)
 

@@ -27,7 +27,9 @@ struct BacklogAskLiveTests {
         let answer = try await ask("Which tickets are bugs?")
 
         #expect(answer.answeredBy.email.contains("@"))
-        #expect(answer.answeredBy.plan?.isEmpty == false)
+        // Never `plan != nil`: the type documents a sign-in whose token names no plan as valid, and
+        // an assertion contradicting that fails on a real machine rather than on a defect.
+        #expect(answer.answeredBy.plan.map { !$0.isEmpty } ?? true)
         #expect(answer.took > .zero)
         #expect(answer.took < CodexBacklogAsk.patience)
     }
@@ -41,13 +43,39 @@ struct BacklogAskLiveTests {
         #expect(!answer.prose.lowercased().contains("espresso"))
     }
 
-    /// A question the listing cannot support is refused in prose rather than answered from what the
-    /// model remembers of some other backlog.
+    /// A question the listing cannot support is declined rather than answered from what the model
+    /// remembers of some other backlog.
+    ///
+    /// The claim is checked as **no citation**, not as a form of words: the fixture holds nothing
+    /// about Stripe, so any `#N` here is a ticket invented to satisfy the question, which is the
+    /// failure the design calls the worst one it can draw.
     @Test
-    func `a question the listing cannot answer is declined in the prose`() async throws {
+    func `a question the listing cannot answer cites no ticket`() async throws {
         let answer = try await ask("Which ticket covers the billing export to Stripe?")
 
         #expect(!answer.prose.isEmpty)
+        #expect(!answer.prose.contains("#"))
+    }
+
+    /// The design's Stop, run rather than asserted (`cockpit-backlog-question.md`, **The wait**).
+    /// Cancelling must come back long before the 25 s patience, or the wait cannot be stopped at
+    /// all — which is the shape this suite exists to catch on the real CLI.
+    @Test
+    func `a stopped question comes back at once, not at the patience`() async throws {
+        let clock = ContinuousClock()
+        let started = clock.now
+        let asking = Task {
+            await CodexBacklogAsk().answer(
+                "Which tickets are bugs?",
+                over: BacklogAskFixture.tickets,
+            )
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        asking.cancel()
+        let outcome = await asking.value
+
+        #expect(clock.now - started < .seconds(10))
+        #expect(throws: BacklogAskRefusal.self) { try outcome.get() }
     }
 
     private func ask(_ question: String) async throws -> BacklogAnswer {
