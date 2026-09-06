@@ -67,37 +67,21 @@ function_parameter_count:
   # The fourth positional parameter is forbidden; pass a struct.
   #
   # This rule visits FUNCTION declarations only — an initializer is invisible to it, which is how
-  # a 27-parameter init sat under a cap of 4 for as long as it did (#755). `swift-boundaries.sh`
-  # edge 6 applies THIS number to `init`, so the cap is stated once and no second figure can drift
-  # above it: the 18 that used to sit here as a ratchet was a gate nothing anyone writes could
-  # fail (#992).
-  #
-  # Edge 6 also counts the memberwise init Swift SYNTHESIZES for a struct (#1060) — a parameter
-  # list too, and the one a regroup produces. What is in that list was checked against swiftc: an
-  # initialised `let` is out, a defaulted `var` and a `lazy var` are in, and a `private` or
-  # `fileprivate` STORED property makes the whole init private (a private COMPUTED property does
-  # not — it is not in the list at all).
+  # a 27-parameter init sat under a cap of 4 for as long as it did (#755). The gate that used to
+  # apply THIS number to `init`, and to the memberwise init Swift synthesizes for a struct
+  # (#1060), was removed with `swift-boundaries.sh`, so an initializer of any width now passes
+  # every linter in this repo.
   #
   # The cap is on the DECLARATION, not the call site: a defaulted slot counts where nothing passes
-  # it, and the list below — never a narrower reading of the cap — is where a width that is the
-  # shape of the thing gets to say so.
-  #
-  # What edge 6 still does not see, said out loud rather than left to be discovered: a written
-  # `init` whose `(` is on the next line, and the second branch of a conditional nested two deep.
-  # Both were checked; neither occurs here. A shape not on this list is a bug, not a licence.
-  #
-  # A struct whose memberwise init Swift made private is SKIPPED, because no other file can call it
-  # and no width can cross into it. That is most of ArgoUI, where a view holds `@State private
-  # var`, and its real seam is a written init or its own file. What seals it is a private property
-  # that is IN the list — `private let x = 0` is settled and seals nothing, and `private lazy var`
-  # does. The skip is an exemption no line here records, so the script counts it out loud instead.
+  # it. Applied to an `init` by reading rather than by exit code, it means the same thing it
+  # always did — group the parameters by the reading each comes from and pass one value per
+  # reading, the way CockpitPresentation.Session does.
   error: 4
   warning: 4
-  # RATCHET initializer-parameter-count — the LIST is the ratchet, not a wider number. Edge 6 fails
-  # any init over the cap above that is not named here, and fails a name that is not over the cap
-  # any more, so the list can only shrink. Group the parameters by the reading each comes from and
-  # pass one value per reading, the way CockpitPresentation.Session does, then delete the line.
-  # Matched by file and width, so no line number churns; #992 found these 34 all passing silently.
+  # Below: the initializers known to be over the cap above, and why each one's width is the shape
+  # of the thing it takes. A record, not a check — nothing reads these lines, and adding one holds
+  # nobody to anything. Regroup an initializer and delete its line. #992 is where the widths were
+  # first counted, under a cap that could not see an `init`.
   #
   # INIT: Ticket.swift 12 — a provider's whole ticket record, field for field
   # INIT: Ticket+Copy.swift 10 — Ticket's memberwise copy, one slot per field it carries

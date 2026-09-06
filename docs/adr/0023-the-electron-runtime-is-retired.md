@@ -2,6 +2,11 @@
 
 **Status:** Accepted — completes [ADR-0022 (swift-native-macos-runtime)](./0022-swift-native-macos-runtime.md)
 
+> **2026-09-06 — the enforcement is gone.** `scripts/swift-boundaries.sh` was removed, with the
+> nine edges, the eleven suites behind them and the two ratchet scripts beside them. The decision
+> below still stands as the way this code is written; nothing checks it any more, so read it as
+> convention and hold it in review. The body is left as it was decided.
+
 ## Context
 
 ADR-0022 chose a pure Swift macOS app and specified the migration as

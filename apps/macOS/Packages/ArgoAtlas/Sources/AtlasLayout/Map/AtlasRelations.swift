@@ -3,9 +3,8 @@
 /// One value rather than two fields, because it is one reading of one repository: the Domains are
 /// inferred partly FROM the Couplings, so a Map holding one without the other would be a Map whose
 /// two halves were read off a repository committed to in between. Grouping by the reading each
-/// fact comes from is what `docs/agents/module-boundaries.md` asks for at the parameter cap; the
-/// cap is not the reason, because width moved into a value type is width hidden rather than
-/// removed.
+/// fact comes from is what the four-parameter cap asks for (`apps/macOS/.swiftlint.yml`); the cap
+/// is not the reason, because width moved into a value type is width hidden rather than removed.
 public struct AtlasRelations: Equatable, Sendable {
     /// Which files keep changing together, counted from git alone (#1149). Empty for a repository
     /// whose history cannot pair anything — one commit, or none.

@@ -58,8 +58,9 @@ struct ComposerMenus {
     var workspaceFiles: WorkspaceTree?
     /// Stays `private`, unlike its neighbours below: `addMenuPick(on:)` reads the cursor through
     /// `current` instead, which is what keeps ONE stored property sealing this struct's
-    /// synthesized memberwise init — edge 6 skips a sealed one rather than counting it, and every
-    /// other field here had to stop being `private` for `ComposerMenus+Add.swift` to reach it.
+    /// synthesized memberwise init — Swift makes none an outside caller can see while a stored
+    /// property is `private`, and every other field here had to stop being `private` for
+    /// `ComposerMenus+Add.swift` to reach it.
     private var cursor = MenuCursor<String>()
     /// How many skills reads have been asked for. The count IS the token: a read asked for before
     /// the last one is answering a question nobody has any more. Not `private`, for the reason

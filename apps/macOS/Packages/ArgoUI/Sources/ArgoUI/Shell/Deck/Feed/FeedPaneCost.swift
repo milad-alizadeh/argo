@@ -25,7 +25,7 @@ struct FeedPaneCost {
 ///
 /// Its own reading rather than a fifth field on `FeedPaneCost`: that one is what ONE clip-view
 /// notification costs, and this is what a landing and an adopt cost — different paths, different
-/// occasions, and four is the cap on a list a memberwise init takes (#755, edge 6).
+/// occasions, and four is the cap on a list a memberwise init takes (#755).
 struct FeedConvergeCost {
     /// How many times the walk has run, and how many rows it walked over all of them.
     ///

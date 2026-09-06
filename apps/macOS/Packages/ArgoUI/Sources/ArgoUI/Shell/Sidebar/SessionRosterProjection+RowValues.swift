@@ -33,8 +33,9 @@ extension SessionRosterProjection.Row {
         let pullRequest: DeliveryPullRequest?
 
         /// What the row says beyond its own branch: the meta line's fallback and the two
-        /// addresses — one parameter rather than three, since the cap (`rules/house.md`, edge 6)
-        /// never bends for a fourth reading arriving after the first three were already at it.
+        /// addresses — one parameter rather than three, since the four-parameter cap
+        /// (`apps/macOS/.swiftlint.yml`) never bends for a fourth reading arriving after the first
+        /// three were already at it.
         struct Meta {
             let toldApart: String?
             let ticketNumber: Int?
