@@ -12,6 +12,8 @@
 import assert from 'node:assert/strict'
 import { check, report } from './check-harness.mjs'
 import {
+  HANDOFF_VALUES,
+  handoffValues,
   PROJECTED,
   PROJECTION,
   projected,
@@ -108,6 +110,41 @@ check('edge 5 fails when the grouped values have moved', () => {
   const result = run(tree(values(null)))
   assert.equal(result.status, 1, `a missing subject passed: ${result.output}`)
   assert.match(result.output, /cannot see its own subjects/)
+})
+
+// The groups outgrew one file, so the third hand is a SET of files rather than a name. An edge
+// that reads a hand-listed three goes on passing every swap made in the fourth, and says nothing
+// about not having looked (#1502).
+check('edge 5 fails on a swap in a grouped value that took its own file', () => {
+  const swapped = HANDOFF_VALUES.replace(
+    'self.landed = attempt.landed',
+    'self.landed = attempt.won',
+  )
+  const result = run(tree(handoffValues(swapped)))
+  assert.equal(result.status, 1, `a swap in a second values file passed: ${result.output}`)
+  assert.match(result.output, /land on a slot of another name/)
+  assert.match(result.output, /landed <- won/)
+})
+
+check('edge 5 accepts a rename a grouped value in its own file declares', () => {
+  const renamed = HANDOFF_VALUES.replace(
+    '        public init(',
+    '        /// renamed: landed <- won — won alone would not say what was.\n        public init(',
+  ).replace('self.landed = attempt.landed', 'self.landed = attempt.won')
+  const result = run(tree(handoffValues(renamed)))
+  assert.equal(result.status, 0, result.output)
+})
+
+// And the reverse, in the same file: a marker for a rename that is not made would go on excusing a
+// future one, wherever the marker sits.
+check('edge 5 fails on a stale rename marker in a grouped value file of its own', () => {
+  const stale = HANDOFF_VALUES.replace(
+    '        public init(',
+    '        /// renamed: landed <- won — a rename that is not made.\n        public init(',
+  )
+  const result = run(tree(handoffValues(stale)))
+  assert.equal(result.status, 1, `a stale marker passed: ${result.output}`)
+  assert.match(result.output, /no longer makes/)
 })
 
 report('swift boundaries: the slot check')

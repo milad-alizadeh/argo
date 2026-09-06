@@ -112,6 +112,18 @@ export const VALUES = `public extension CockpitPresentation.Session {
     }
 }
 `
+// A SECOND grouped-value file, beside the first for the reason the real one has one: the house
+// caps a file at 175 lines, so a group that grows takes a file of its own. Edge 5 reads the set
+// those files form rather than three names, so a swap made here is caught the same as a swap made
+// in the file above (#1502).
+export const HANDOFF_VALUES = `public extension CockpitPresentation.Session.Chain {
+    struct Handoff {
+        public init(attempt: Attempt) {
+            self.landed = attempt.landed
+        }
+    }
+}
+`
 // Edge 6 reads its cap off the SwiftLint config, so the config is one of its subjects. It reads the
 // rule's OWN `error:`, and grandfathers only what a `# INIT:` line beside it names.
 export const SWIFTLINT = `function_parameter_count:
@@ -131,6 +143,7 @@ export function tree(files = {}) {
     [`${SHELL}/CockpitPresentation+Hub.swift`]: PROJECTION,
     [`${SHELL}/CockpitPresentation+Session.swift`]: PROJECTED,
     [`${SHELL}/CockpitPresentation+SessionValues.swift`]: VALUES,
+    [`${SHELL}/CockpitPresentation+SessionValues+Handoff.swift`]: HANDOFF_VALUES,
     'apps/macOS/.swiftlint.yml': SWIFTLINT,
     'apps/macOS/Argo/ArgoApp.swift': '@main struct ArgoApp {}\n',
     [`${CONTRACT}/ArgoColor.swift`]: CONTRACT_FILE,
@@ -173,4 +186,7 @@ export const projected = (contents) => ({
 })
 export const values = (contents) => ({
   [`${SHELL}/CockpitPresentation+SessionValues.swift`]: contents,
+})
+export const handoffValues = (contents) => ({
+  [`${SHELL}/CockpitPresentation+SessionValues+Handoff.swift`]: contents,
 })
