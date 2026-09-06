@@ -75,7 +75,7 @@ struct AtlasMapSpecimen: View {
     }
 
     var body: some View {
-        AtlasView(plan: plan, standing: standing, marks: marks)
+        AtlasView(plan: plan, viewpoint: AtlasViewpoint(standing: standing), marks: marks)
             .padding(ArgoSpacing.section)
             .argoDeckSurface()
     }
