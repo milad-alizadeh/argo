@@ -40,9 +40,21 @@ fi
 # the script would report success and leave you looking at the build you were replacing. Only a
 # copy of this very bundle is ended: an Argo installed somewhere else is somebody's session, and
 # this script does not get to close it.
-running=$(pgrep -x Argo 2>/dev/null || true)
-for pid in $running; do
-  path=$(ps -o comm= -p "$pid" 2>/dev/null || true)
+#
+# `pgrep -x Argo` answers nothing on this machine while Argo is running (#1568), so the copies are
+# read out of `ps`, which reports the pid and the executable path in one command. A process on its
+# way out reads `(Argo)` there and is dropped, because that is not the name.
+argo_processes() {
+  ps -Ao pid=,comm= | awk -v app=Argo '{
+    pid = $1
+    sub(/^ *[0-9]+ +/, "")
+    name = $0
+    sub(/^.*\//, "", name)
+    if (name == app) printf "%s\t%s\n", pid, $0
+  }'
+}
+
+argo_processes | while IFS="$(printf '\t')" read -r pid path; do
   case $path in
     "$BINARY")
       echo "run-release: ending the previous run of this build (pid $pid)"
@@ -56,8 +68,10 @@ for pid in $running; do
 done
 
 # Give a killed copy the moment it needs to let go of its window before the new one claims one.
+# Only copies of this build are waited on: an Argo left alone above is never going to go, and
+# waiting for it would spend the whole two seconds every time.
 for _ in 1 2 3 4 5 6 7 8 9 10; do
-  pgrep -x Argo >/dev/null 2>&1 || break
+  argo_processes | cut -f2 | grep -qxF "$BINARY" || break
   sleep 0.2
 done
 
