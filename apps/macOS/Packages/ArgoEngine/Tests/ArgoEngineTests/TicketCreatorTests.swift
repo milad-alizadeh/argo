@@ -103,6 +103,31 @@ struct TicketCreatorTests {
         #expect(await items.items(of: projectID).map(\.number) == [872])
     }
 
+    /// The dispatch a room raises a write through (#1480): each named write is the act it names,
+    /// seen in the listing each one leaves behind — a create that lands the ticket, a close that
+    /// keeps it in hand, and a remove that takes it out.
+    @Test func `each named write performs the act it names`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let projectID = try await fixture.project("argo")
+        try await fixture.accountStore().authorizeGitHub(id: "1")
+        try await fixture.bindings().bind(.gitHub(), to: projectID)
+        let items = TicketLedger()
+        let api = StubProviderAPI(body: IssueJSON(number: 872, title: "Wire the verbs").json)
+        let creator = Self.creator(fixture, api: api, items: items)
+
+        #expect(await creator.perform(.create(Self.draft), forProject: projectID) == nil)
+        #expect(await items.items(of: projectID).map(\.number) == [872])
+
+        #expect(await creator.perform(
+            .apply(.close(.resolved), to: 872), forProject: projectID,
+        ) == nil)
+        #expect(await items.items(of: projectID).map(\.number) == [872])
+
+        #expect(await creator.perform(.remove(872), forProject: projectID) == nil)
+        #expect(await items.items(of: projectID).isEmpty)
+    }
+
     @Test func `a window on no Project has nowhere to file either`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }

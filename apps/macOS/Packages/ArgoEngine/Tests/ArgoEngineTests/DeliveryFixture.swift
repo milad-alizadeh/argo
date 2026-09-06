@@ -8,13 +8,21 @@ actor ScriptedCodeHost: CodeHostPort {
     /// What the host holds for a branch nothing in flight covers, keyed by branch. A branch with no
     /// entry is one the host holds nothing for.
     private let byBranch: [String: Delivery]
+    private var reads = 0
 
     init(_ script: [Result<[Delivery], ProviderFetchError>], byBranch: [String: Delivery] = [:]) {
         self.script = script
         self.byBranch = byBranch
     }
 
+    /// How many listings the host has answered, which is one per derivation — what a suite about
+    /// the LOOP counts, rather than what any one of them landed.
+    func readCount() -> Int {
+        reads
+    }
+
     func inFlight(in _: String, grant _: AccountGrant) async throws -> [Delivery] {
+        reads += 1
         guard let answer = script.count > 1 ? script.removeFirst() : script.first else { return [] }
         return try answer.get()
     }

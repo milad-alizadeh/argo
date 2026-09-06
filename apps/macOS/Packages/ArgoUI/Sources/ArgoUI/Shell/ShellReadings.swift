@@ -20,6 +20,9 @@ public struct ShellReadings: Equatable, Sendable {
     /// Where this Project's Tickets can be READ, on the provider's own site (#872). `nil` where the
     /// port is bound to nothing, which disables the row's two link verbs.
     public let ticketAddress: TicketAddress?
+    /// What this Project's code host last answered for each of its branches (#1480). The roster
+    /// row's pull request is joined out of this, on the branch the Ticket link already reads.
+    public let deliveries: [Delivery]
     /// A window bound to nothing and listing nothing — the honest default for a preview, a
     /// specimen and a test.
     public static let none = ShellReadings()
@@ -28,9 +31,11 @@ public struct ShellReadings: Equatable, Sendable {
         health: ConnectionHealthReading = .quiet,
         tickets: TicketLedger.Reading = .nothing,
         ticketAddress: TicketAddress? = nil,
+        deliveries: [Delivery] = [],
     ) {
         self.health = health
         self.tickets = tickets
         self.ticketAddress = ticketAddress
+        self.deliveries = deliveries
     }
 }
