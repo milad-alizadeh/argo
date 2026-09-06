@@ -27,20 +27,66 @@ final class SubagentTails {
     /// transcript keeps its readings, and a table emptied here would leave the drop that follows
     /// with nothing to name — readings nobody could reach and nobody would free.
     private var agentsByTail: [SubagentTail: String] = [:]
+    /// The shape each transcript's Subagent tree had when it was last walked. Held HERE rather than
+    /// in the walk, because what makes a stamp safe to trust is that this table's tails are still
+    /// standing: the stamp says the tree gained no file, not that the file it holds is being read.
+    /// So it is dropped wherever a transcript's tails are (`stop(of:)`, `stopAll`).
+    private var stamps: [String: SubagentTreeStamp] = [:]
+    /// How many times each transcript's tails have been dropped, and how many times ALL of them
+    /// have. A walk in flight carries the pair it started under and applies nothing under a pair
+    /// that has moved — see `refresh(beside:)`. Two counters rather than one, because `stopAll`
+    /// must also invalidate a transcript this table has never named.
+    private var drops: [String: Int] = [:]
+    private var dropsOfAll = 0
 
     init(engine: Engine, readings: SubagentReadings) {
         self.engine = engine
         self.readings = readings
     }
 
-    /// A tail for every Subagent file beside one transcript. Re-entrant: a file already tailed is
-    /// left alone, which is what makes this safe to run on every sweep — re-tailing would re-read
-    /// the file from the top and apply everything in it a second time.
-    func refresh(of transcriptID: String, beside parentURL: URL) {
-        for found in engine.subagents(beside: parentURL) {
-            let tail = SubagentTail(transcriptID: transcriptID, path: found.url.path)
+    /// A tail for every Subagent file beside each of these transcripts. Re-entrant: a file already
+    /// tailed is left alone, which is what makes this safe to run on every sweep — re-tailing would
+    /// re-read the file from the top and apply everything in it a second time.
+    ///
+    /// A tree whose stamp still holds is not walked, and its absence from the answer is what says
+    /// so: the tails standing here are exactly the ones a walk would have found again.
+    func refresh(beside trees: [SubagentWalkRequest]) async {
+        let requests = trees.map {
+            var request = $0
+            request.stamp = stamps[$0.transcriptID]
+            return request
+        }
+        let taken = trees.reduce(into: [String: Generation]()) { taken, tree in
+            taken[tree.transcriptID] = generation(of: tree.transcriptID)
+        }
+        for (transcriptID, walk) in await engine.subagents(beside: requests) {
+            // The await above gives the main actor up, so a `stop` for this transcript can land
+            // between the request and this line. Without the guard the loop puts the tails it just
+            // cancelled straight back — two descriptors held for a Session nobody is reading, and a
+            // stamp saying the tree is known — which is the shape `TranscriptWatch.tail` guards
+            // with `admissions` for the same reason.
+            guard generation(of: transcriptID) == taken[transcriptID] else { continue }
+            stamps[transcriptID] = walk.stamp
+            tail(walk.transcripts, of: transcriptID)
+        }
+    }
+
+    /// How many times this transcript's tails have been dropped, either by name or with everyone
+    /// else's. Equality is the whole use: a pair that still matches means no drop landed.
+    private struct Generation: Equatable {
+        let ofTranscript: Int
+        let ofAll: Int
+    }
+
+    private func generation(of transcriptID: String) -> Generation {
+        Generation(ofTranscript: drops[transcriptID] ?? 0, ofAll: dropsOfAll)
+    }
+
+    private func tail(_ found: [SubagentTranscript], of transcriptID: String) {
+        for transcript in found {
+            let tail = SubagentTail(transcriptID: transcriptID, path: transcript.url.path)
             guard tails[tail] == nil else { continue }
-            let observation = engine.observeSubagent(found)
+            let observation = engine.observeSubagent(transcript)
             agentsByTail[tail] = observation.agentID
             readings.beginReading(of: observation.agentID, from: tail.path)
             tails[tail] = Task { [weak self] in
@@ -55,6 +101,11 @@ final class SubagentTails {
     /// The rows stay, for the reason a paused transcript's row stays — it is the descriptors that
     /// are bounded, not the reading.
     func stop(of transcriptID: String) async {
+        // With the tails goes what let the next walk be skipped: the skip stands on these tails
+        // being live, so a transcript whose tails are gone must walk its tree again to get them
+        // back.
+        stamps.removeValue(forKey: transcriptID)
+        drops[transcriptID, default: 0] += 1
         await stop { $0.transcriptID == transcriptID }
     }
 
@@ -74,6 +125,8 @@ final class SubagentTails {
 
     func stopAll() async {
         agentsByTail = [:]
+        stamps = [:]
+        dropsOfAll += 1
         await stop { _ in true }
     }
 

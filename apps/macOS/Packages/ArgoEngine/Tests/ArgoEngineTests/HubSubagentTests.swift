@@ -42,6 +42,58 @@ struct HubSubagentTests {
         await hub.disconnect()
     }
 
+    /// The case the walk's skip is answerable for. The tree was already walked once and stamped,
+    /// so this is a real fan-out arriving at a tree the sweep has every reason to think it knows.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a second Subagent beside a Session already tailing one is picked up`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let hub = try await connectedSubagentHub(fixture)
+        let parent = try #require(hub.sessions.first?.sourceURL)
+        try writeSubagent(beside: parent, agent: subagentID, lines: Fixture.lines("subagentOwn"))
+        await hub.refreshWorkingSet()
+        await hubSettle { hub.subagentReading(of: subagentID) != nil }
+
+        try writeSubagent(beside: parent, agent: "second", lines: Fixture.lines("subagentOwn"))
+        await hub.refreshWorkingSet()
+
+        await hubSettle { hub.subagentReading(of: "second") != nil }
+        #expect(hub.subagentReading(of: subagentID) != nil)
+        await hub.disconnect()
+    }
+
+    /// The deep half of the same case: an Agent handed to a workflow that has already run one lands
+    /// in a directory that already existed, so the tree's ROOT does not move. A skip keyed on the
+    /// root alone would lose this file and nothing would ever look again.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a second Agent under a workflow that already ran is picked up`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let hub = try await connectedSubagentHub(fixture)
+        let parent = try #require(hub.sessions.first?.sourceURL)
+        try writeSubagent(
+            beside: parent,
+            agent: subagentID,
+            lines: Fixture.lines("subagentOwn"),
+            workflow: "wf_1",
+        )
+        await hub.refreshWorkingSet()
+        await hubSettle { hub.subagentReading(of: subagentID) != nil }
+
+        try writeSubagent(
+            beside: parent,
+            agent: "deeper",
+            lines: Fixture.lines("subagentOwn"),
+            workflow: "wf_1",
+        )
+        await hub.refreshWorkingSet()
+
+        await hubSettle { hub.subagentReading(of: "deeper") != nil }
+        await hub.disconnect()
+    }
+
     /// The ordinary case, and the one the rail draws nothing for: the Session delegated nothing, so
     /// there is no directory beside its record at all.
     @Test(.timeLimit(.minutes(1)))

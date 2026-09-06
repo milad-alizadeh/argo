@@ -25,6 +25,19 @@ struct SubagentDirectoryFixture {
         try writeSubagent(beside: parentURL, agent: agentID, lines: lines, workflow: workflow)
     }
 
+    /// What the host writes beside the Subagent transcripts and this walk keeps none of: one tool
+    /// result, under `tool-results/` in the same tree.
+    @discardableResult
+    func writeToolResult(named name: String) throws -> URL {
+        let directoryURL = parentURL.deletingPathExtension()
+            .appending(path: "subagents", directoryHint: .isDirectory)
+            .appending(path: "tool-results", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let url = directoryURL.appending(path: "\(name).json")
+        try Data().write(to: url)
+        return url
+    }
+
     func remove() {
         try? FileManager.default.removeItem(at: rootURL)
     }
@@ -55,6 +68,16 @@ func writeSubagent(
     let url = directoryURL.appending(path: "agent-\(agentID).jsonl")
     try Data(lines.joined(separator: "\n").utf8).write(to: url)
     return url
+}
+
+/// One tree walked from scratch. The shipped call takes the whole working set and its stamps,
+/// because a sweep asks about all of it at once; a test about ONE tree says so here rather than
+/// spelling the batch out at every assertion.
+extension Engine {
+    func walked(beside parentURL: URL) async -> [SubagentTranscript] {
+        let request = SubagentWalkRequest(transcriptID: parentURL.path, parentURL: parentURL)
+        return await subagents(beside: [request])[parentURL.path]?.transcripts ?? []
+    }
 }
 
 /// One Session on the roster, read from a real record directory — the shape every test here
