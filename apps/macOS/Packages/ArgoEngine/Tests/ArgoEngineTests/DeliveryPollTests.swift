@@ -4,7 +4,10 @@ import Testing
 /// The repeating derivation, and what pointing it at a Binding does — the loop only. What one
 /// derivation LANDS is `DeliveryDerivationTests`', and the health it files is
 /// `DeliveryHealthTests`'.
-@Suite("Delivery poll")
+///
+/// Bounded, because every wait in here is for a tick the loop is meant to raise: a regression that
+/// stops it repeating would otherwise hang the Swift gate rather than refuse the push.
+@Suite("Delivery poll", .timeLimit(.minutes(1)))
 struct DeliveryPollTests {
     private let target = PortReadTarget.codeHost()
     private let delivery = Delivery(branch: "ticket-1480", pullRequest: .stub(number: 7))
@@ -15,13 +18,13 @@ struct DeliveryPollTests {
         let host: ScriptedCodeHost
         let ledger: DeliveryLedger
         let wait: PollWait
+        let sleeps: PollSleeps
 
-        /// `between` is how long the fake sleeper waits AFTER announcing the tick. A case that
-        /// wants
+        /// `between` is how long the fake sleeper waits AFTER announcing the tick. A case wanting
         /// more ticks keeps it short; a case asserting an EXACT read count passes `.held`, because
         /// otherwise it has that long to stop the poll before a second tick starts and a loaded
         /// machine loses the race. `stop()` cancels the sleep either way, so a held poll ends at
-        /// once rather than waiting the interval out.
+        /// once rather than waiting the interval out — and `sleeps` is what says it was cancelled.
         init(
             _ host: ScriptedCodeHost,
             workspaces: [WorkspaceProjection] = [],
@@ -29,15 +32,17 @@ struct DeliveryPollTests {
         ) {
             let ledger = DeliveryLedger()
             let wait = PollWait()
+            let sleeps = PollSleeps(wait, held: ticks)
             self.host = host
             self.ledger = ledger
             self.wait = wait
+            self.sleeps = sleeps
             self.poll = DeliveryPoll(
                 derivation: DeliveryDerivation(
                     port: host, health: ConnectionHealthLedger(), deliveries: ledger,
                 ),
                 locally: { DeliveryDerivation.Locally(workspaces: workspaces) },
-                sleep: { _ in await wait.reach(); try await Task.sleep(for: ticks) },
+                sleep: sleeps.sleep,
             )
         }
 
@@ -83,13 +88,18 @@ struct DeliveryPollTests {
         await polling.poll.point(.ready(target.binding), at: "P1")
         await polling.wait.untilTick()
         await polling.poll.point(.unbound, at: nil)
-        for _ in 1 ... 20 {
+        // Yielded until the cancelled sleep has resumed and recorded itself, bounded so a loop that
+        // never ends fails here rather than hanging the suite.
+        for _ in 1 ... 200 where await polling.sleeps.cancels() == 0 {
             await Task.yield()
         }
 
-        // One read, and nothing left running to make a second. The Deliveries it landed stay where
-        // they are: a Project closing is not the host saying the pull request went away.
+        // One read, and the wait it was sitting in was CANCELLED rather than left to time out —
+        // which is the claim, and a read count alone would be satisfied by a loop still waiting.
         #expect(await polling.host.readCount() == 1)
+        #expect(await polling.sleeps.cancels() == 1)
+        // The Deliveries it landed stay where they are: a Project closing is not the host saying
+        // the pull request went away.
         #expect(await polling.ledger.deliveries(of: "P1") == [delivery])
     }
 

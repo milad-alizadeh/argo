@@ -23,6 +23,8 @@ public final class DeliveryReadings {
     @ObservationIgnored private let derivation: DeliveryDerivation
     @ObservationIgnored private let sleep: PortPollLoop.Sleeper
     @ObservationIgnored private var projectID: String?
+    /// How many reads have been raised, so the newest one is the only one that publishes.
+    @ObservationIgnored private var reads = 0
     /// Lazy because its local half reads this object, which does not exist while `init` runs.
     @ObservationIgnored private lazy var poll = DeliveryPoll(
         derivation: derivation,
@@ -62,9 +64,16 @@ public final class DeliveryReadings {
     /// Published only when publishing would change the answer. `deliveries` is observed and the
     /// `Scene` body reads it, so an unconditional write rebuilds the whole shell on every tick with
     /// nothing on screen moving — which is #858, one poll over.
+    ///
+    /// And only by the NEWEST read, because two are live on any rebind: the landing a tick raised
+    /// and the one `point` raises itself. Both suspend on the ledger, and the older one resuming
+    /// last would publish what the ledger held before the tick recorded anything — a row losing its
+    /// pull request until a later tick happened to derive an unequal set.
     private func read() async {
+        reads += 1
+        let read = reads
         let landed = await ledger.deliveries(of: projectID)
-        guard landed != deliveries else { return }
+        guard read == reads, landed != deliveries else { return }
         deliveries = landed
     }
 }

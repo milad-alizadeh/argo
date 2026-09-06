@@ -30,7 +30,13 @@ public actor PortPollLoop {
 
     /// Read now, then every `interval` until stopped. Starting again replaces the loop rather than
     /// adding one, so a Project rebound mid-run reads through its new Binding and not both.
+    ///
+    /// It forgets what `point` last pointed at, because a caller that starts a target directly has
+    /// moved what the loop reads without going through the comparison — and a `pointedAt` left
+    /// behind would then match a `point` at the OLD Binding and refuse to restart, leaving the loop
+    /// reading a scope nobody asked for.
     public func start(_ target: PortReadTarget, every interval: Duration) {
+        pointedAt = nil
         loop?.cancel()
         loop = Task { [weak self] in
             while !Task.isCancelled {
@@ -69,8 +75,9 @@ public actor PortPollLoop {
         guard let projectID, case let .ready(binding) = resolution else { return stop() }
         let target = Pointing(binding: binding, projectID: projectID)
         guard target != pointedAt else { return }
-        pointedAt = target
+        // Recorded AFTER the start, which forgets whatever it was pointed at before.
         start(PortReadTarget(binding: binding, projectID: projectID), every: interval)
+        pointedAt = target
     }
 
     /// What the loop is currently reading, by the parts of it that can be compared.

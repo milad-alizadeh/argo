@@ -68,6 +68,42 @@ extension DeliveryPullRequest {
     }
 }
 
+/// A fake sleeper's own record of what happened to it: how many waits it began, and how many were
+/// CANCELLED. The second one is what a case about a loop ending asserts on — a read count alone is
+/// satisfied by a loop that is merely still waiting, so it would pass with `stop()` gutted.
+actor PollSleeps {
+    private let wait: PollWait
+    private let held: Duration
+    private var cancelled = 0
+
+    init(_ wait: PollWait, held: Duration) {
+        self.wait = wait
+        self.held = held
+    }
+
+    /// Announce the tick, then wait — rethrowing the cancellation after recording it, because the
+    /// loop reads the throw as its own exit.
+    nonisolated var sleep: PortPollLoop.Sleeper {
+        { _ in
+            await self.wait.reach()
+            try await self.hold()
+        }
+    }
+
+    func cancels() -> Int {
+        cancelled
+    }
+
+    private func hold() async throws {
+        do {
+            try await Task.sleep(for: held)
+        } catch {
+            cancelled += 1
+            throw error
+        }
+    }
+}
+
 /// How many times a derivation said it had finished. Counted rather than flagged, so a test can
 /// tell "raised once per read" from "raised at all".
 actor DeliveryLandings {
