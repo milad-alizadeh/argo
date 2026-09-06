@@ -29,13 +29,9 @@ package enum SessionRosterProjection {
         let opened: Set<String>
         /// The row the deck has open, and its fourth fact (#1513).
         let focus: Focus
-        /// The moment the whole pass is arithmetic against, so no two rows age off two clocks.
+        /// The moment the whole pass is arithmetic against, so no two rows age off two clocks —
+        /// the open row's fourth fact included, which is why `Focus` is taken already dated.
         let nowMs: Int
-
-        /// This Session's delegations already told, or `nil` for every row but the open one.
-        func told(of session: CockpitPresentation.Session) -> [FeedAgent]? {
-            focus.told(of: session.id)
-        }
     }
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
@@ -61,7 +57,10 @@ package enum SessionRosterProjection {
         // Once over the list this pass is drawing, never once per row (ADR-0028) — and over the
         // kept half, so a fold's count is what the reader can see rather than what is behind the
         // foot as well.
-        let folding = Folding(of: kept.map { pair in pair.0 }, in: pass)
+        let folding = Folding(
+            of: kept.map { pair in pair.0 },
+            isArchived: pass.isArchived, opened: pass.opened, selecting: pass.focus.sessionID,
+        )
         let byID = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
         return kept.flatMap { session, decided -> [Row] in
             [

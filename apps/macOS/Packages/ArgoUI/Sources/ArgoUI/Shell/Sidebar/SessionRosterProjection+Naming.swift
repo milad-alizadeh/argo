@@ -64,8 +64,7 @@ extension SessionRosterProjection {
         -> Listing {
         let kept = sessions.filter { $0.isArchived == isArchived }
         let folding = Folding(
-            of: kept,
-            in: Pass(isArchived: isArchived, opened: [], focus: Focus(), nowMs: 0),
+            of: kept, isArchived: isArchived, opened: [], selecting: nil,
         )
         let byID = Dictionary(kept.map { ($0.id, $0) }) { first, _ in first }
         // Keyed off the run that OPENS each fold, so a fold's runs are gathered once rather than

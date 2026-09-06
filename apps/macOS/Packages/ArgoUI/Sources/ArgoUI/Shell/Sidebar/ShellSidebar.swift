@@ -57,14 +57,19 @@ package struct ShellSidebar: View {
     /// Split out from `body` so the strip above it stays one line: the roster is the sidebar's
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
+        // ONE moment for the pass, the open row's ceiling arithmetic included: the roster ages
+        // every row against this, and a second clock would be one row aging against another second.
+        let now = Date()
         let reading = roster.reading(
             of: presentation.sessions,
             opened: openFolds,
             // The fourth fact, taken here and for the open row alone: this is where the reader
             // and the main actor are, and where the deck's own row is named (#1513).
             focus: SessionRosterProjection.focus(
-                on: held.pointed, among: presentation.sessions, asking: presentation.subagents,
+                on: held.pointed, among: presentation.sessions,
+                asking: presentation.subagents, at: now.epochMs,
             ),
+            now: now,
         )
 
         return SessionNavigator(

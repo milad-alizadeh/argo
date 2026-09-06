@@ -11,6 +11,9 @@ package extension SessionRosterProjection {
     /// Both facts in one value because they are one fact: which row is open is exactly what says
     /// whose fourth fact this is, and a pair of parameters would let a caller state the telling of
     /// one Session against the id of another.
+    ///
+    /// Not `Selection`, which is the SET of rows the `List` paints its ground under. One row is
+    /// open in the deck; several can be selected at once (#1247).
     struct Focus: Sendable, Equatable {
         /// The Session the deck is drawing, or `nil` where the window is drawing none. What opens
         /// a fold whatever the reader did (`Folding`).
@@ -20,17 +23,20 @@ package extension SessionRosterProjection {
         /// `nil` where nobody took the fourth fact: a specimen, a `#Preview`, a suite, or a window
         /// whose reader has nothing to ask. That leaves the row on the three facts it walks, which
         /// is the honest reading and not a degraded one.
-        let told: [FeedAgent]?
+        ///
+        /// Reached only through `told(of:)`, so no caller can read a telling without the id that
+        /// says whose it is.
+        private let telling: [FeedAgent]?
 
         package init(sessionID: String? = nil, told: [FeedAgent]? = nil) {
             self.sessionID = sessionID
-            self.told = told
+            self.telling = told
         }
 
         /// The telling for THIS Session, or `nil` for every other row — the gate that keeps the
         /// fourth fact on the one row it is a fact about.
         func told(of sessionID: String) -> [FeedAgent]? {
-            self.sessionID == sessionID ? told : nil
+            self.sessionID == sessionID ? telling : nil
         }
     }
 
@@ -48,12 +54,16 @@ package extension SessionRosterProjection {
         on sessionID: String?,
         among sessions: [CockpitPresentation.Session],
         asking reader: FeedAgentReader,
+        at nowMs: Int,
     )
         -> Focus {
         guard let sessionID,
               let session = sessions.first(where: { $0.id == sessionID }),
               SessionState.role(for: session.status) != nil
         else { return Focus(sessionID: sessionID) }
-        return Focus(sessionID: sessionID, told: reader.dated(delegations(of: session)))
+        return Focus(
+            sessionID: sessionID,
+            told: reader.dated(delegations(of: session), at: nowMs),
+        )
     }
 }

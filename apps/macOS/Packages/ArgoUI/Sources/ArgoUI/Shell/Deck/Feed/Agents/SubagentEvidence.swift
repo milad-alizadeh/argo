@@ -17,16 +17,6 @@ struct SubagentEvidence {
     let dating: SubagentDating
     let measure: (String) -> SubagentMeasure
 
-    /// Forwarded so the two clocked facts read the same at every call site, whichever value is in
-    /// hand — the split below this is about who may be handed WHAT, never about spelling.
-    var writing: (String) -> SubagentWriting {
-        dating.writing
-    }
-
-    var ending: (String) -> SubagentEnding {
-        dating.ending
-    }
-
     init(
         writing: @escaping (String) -> SubagentWriting,
         ending: @escaping (String) -> SubagentEnding,

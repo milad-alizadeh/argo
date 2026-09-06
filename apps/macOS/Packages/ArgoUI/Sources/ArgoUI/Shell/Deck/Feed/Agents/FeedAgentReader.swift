@@ -294,10 +294,8 @@ public struct FeedAgentReader: Equatable, Sendable {
     }
 }
 
-/// The TELLING: what the walk cannot answer, answered off the children's own files (#1269).
-///
-/// An extension rather than more of the struct above, because it is a second subject — the struct
-/// is what a reader IS and how two of them compare, and this is the one question it is for.
+/// The TELLING: what the reader answers off the children's own files, and the figures it fills
+/// from them.
 extension FeedAgentReader {
     /// What the walk above cannot answer, answered off the children's own files (#1269).
     ///
@@ -344,9 +342,12 @@ extension FeedAgentReader {
     /// `Hub.subagentGrewAtMs`, which Argo keeps for whichever Session the deck has open, so asked
     /// per row it would say "not writing" about every other row's children — the reading they
     /// already have, arrived at more expensively.
-    @MainActor package func dated(_ agents: [FeedAgent]) -> [FeedAgent] {
-        let nowMs = Date().epochMs
-        return FeedAgents.dated(agents, by: dating(at: nowMs), ended: hold, at: nowMs)
+    ///
+    /// `nowMs` is the caller's, unlike `told(_:)`'s: the roster ages a whole pass against one
+    /// moment, and a ceiling read off a second clock would be the one row in that pass aging
+    /// against a different second.
+    @MainActor package func dated(_ agents: [FeedAgent], at nowMs: Int) -> [FeedAgent] {
+        FeedAgents.dated(agents, by: dating(at: nowMs), ended: hold, at: nowMs)
     }
 
     /// The two clocked facts, read off the engine's own answers at ONE moment. Spelled once so the

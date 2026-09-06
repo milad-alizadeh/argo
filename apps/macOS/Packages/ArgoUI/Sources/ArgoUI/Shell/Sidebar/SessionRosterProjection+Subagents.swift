@@ -31,15 +31,15 @@ extension SessionRosterProjection {
     /// One Session's reading, or `nil` where its own state is one Argo cannot place: a Session
     /// Argo cannot place cannot be claimed to be delegating either (rule 5).
     ///
-    /// `told` is the open row's fourth fact and `nil` for every other row — see `Focus`.
+    /// The open row is handed its fourth fact and every other row is not — see `Focus`.
     static func subagents(
         of session: CockpitPresentation.Session,
         in events: [TranscriptEvent],
-        told: [FeedAgent]?,
+        focused: Focus,
     )
         -> SubagentReading? {
         guard SessionState.role(for: session.status) != nil else { return nil }
-        return reading(for: told ?? delegatedAgents(
+        return reading(for: focused.told(of: session.id) ?? delegatedAgents(
             in: events,
             of: DelegatingSession.of(session.status),
             within: FeedPath(cwd: session.workspaceLocation),

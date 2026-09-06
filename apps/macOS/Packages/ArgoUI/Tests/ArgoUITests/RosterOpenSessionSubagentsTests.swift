@@ -1,6 +1,7 @@
 import ArgoEngine
 import ArgoFixtures
 @testable import ArgoUI
+import Foundation
 import Testing
 
 /// Rule 1 for the row the DECK HAS OPEN: two surfaces, one second, one answer (#1513).
@@ -64,7 +65,7 @@ struct RosterOpenSessionSubagentsTests {
             RosterSessionFixture.session(
                 id: "run-\(position)", workspaceLocation: "/tmp/folded", kind: nil, branch: nil,
                 access: .external, entry: .headless, status: .idle,
-                events: Self.delegations(["\(position)-a", "\(position)-b"]),
+                events: TranscriptFixtures.inFlight(["\(position)-a", "\(position)-b"]),
             )
         }
         let reader = FeedAgentReader(
@@ -72,11 +73,13 @@ struct RosterOpenSessionSubagentsTests {
             of: .undecided,
             growth: StatedGrowth(writing: ["1-a", "1-b"]),
         )
+        let now = Date()
         let rows = SessionRosterProjection.rows(
             from: sessions,
             focus: SessionRosterProjection.focus(
-                on: "run-1", among: sessions, asking: reader,
+                on: "run-1", among: sessions, asking: reader, at: now.epochMs,
             ),
+            now: now,
         )
 
         #expect(rows.first { $0.fold != nil }?.subagents == .running(2))
@@ -84,20 +87,9 @@ struct RosterOpenSessionSubagentsTests {
 
     /// A Session whose fan-out is away and whose own Turn has closed — the reported state.
     private static func waiting(delegating children: [String]) -> CockpitPresentation.Session {
-        RosterSessionFixture.session(id: "open", status: .idle, events: delegations(children))
-    }
-
-    /// One backgrounded delegation per child, each answered by the launch receipt that names it
-    /// and resolves nothing (#908) — which is what gives the row a Subagent ID to ask about.
-    private static func delegations(_ children: [String]) -> [TranscriptEvent] {
-        children.flatMap { child -> [TranscriptEvent] in
-            [
-                .toolCall(FeedFixture.call(
-                    "away-\(child)", tool: "Task", kind: .delegate, naming: "verify",
-                )),
-                .toolCallOutcome(TranscriptFixtures.launched("away-\(child)", subagent: child)),
-            ]
-        }
+        RosterSessionFixture.session(
+            id: "open", status: .idle, events: TranscriptFixtures.inFlight(children),
+        )
     }
 
     private static func reader(writing children: [String]) -> FeedAgentReader {
@@ -118,11 +110,13 @@ struct RosterOpenSessionSubagentsTests {
         of session: CockpitPresentation.Session, opened: String, asking reader: FeedAgentReader,
     )
         -> SessionRosterProjection.Row? {
-        SessionRosterProjection.rows(
+        let now = Date()
+        return SessionRosterProjection.rows(
             from: [session],
             focus: SessionRosterProjection.focus(
-                on: opened, among: [session], asking: reader,
+                on: opened, among: [session], asking: reader, at: now.epochMs,
             ),
+            now: now,
         ).first
     }
 }

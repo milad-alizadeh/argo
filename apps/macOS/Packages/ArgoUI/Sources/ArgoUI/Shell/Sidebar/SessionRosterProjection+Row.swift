@@ -282,7 +282,7 @@ extension SessionRosterProjection {
                     // not a second `session.events` (`PerfBudgets`).
                     plan: PlanProjection.reading(from: events),
                 ),
-                subagents: subagents(of: session, in: events, told: pass.told(of: session)),
+                subagents: subagents(of: session, in: events, focused: pass.focus),
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

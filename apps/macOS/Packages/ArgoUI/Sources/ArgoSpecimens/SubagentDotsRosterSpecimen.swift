@@ -1,5 +1,6 @@
 import ArgoDesign
 import ArgoEngine
+import ArgoFixtures
 import ArgoUI
 import Foundation
 import SwiftUI
@@ -26,11 +27,13 @@ struct SubagentDotsRosterSpecimen: View {
     /// Derived in the body's own isolation, not at file scope: the fourth fact is read through a
     /// reader, and a reader answers on the main actor (`FeedAgentReader`).
     private var rows: [SessionRosterProjection.Row] {
-        SessionRosterProjection.rows(
+        let now = Date()
+        return SessionRosterProjection.rows(
             from: Self.sessions,
             focus: SessionRosterProjection.focus(
-                on: "open", among: Self.sessions, asking: Self.watching,
+                on: "open", among: Self.sessions, asking: Self.watching, at: now.epochMs,
             ),
+            now: now,
         )
     }
 
@@ -86,7 +89,7 @@ struct SubagentDotsRosterSpecimen: View {
             status: .idle,
             chain: .init(program: .init(model: "claude-opus-5")),
             work: .init(location: checkout),
-            transcript: .init(events: backgroundDelegations(["open-0", "open-1"])),
+            transcript: .init(events: TranscriptFixtures.inFlight(["open-0", "open-1"])),
         ),
         CockpitPresentation.Session(
             id: "external",
@@ -124,26 +127,6 @@ struct SubagentDotsRosterSpecimen: View {
             .toolCall(ToolCall(
                 id: "away-\($0)", name: "Task", kind: .delegate, target: "work", atMs: nil,
             ))
-        }
-    }
-
-    /// One BACKGROUNDED delegation per child, each answered by the launch receipt that names it
-    /// and resolves nothing (#908) — which is what gives the row a Subagent to ask the reader
-    /// about at all.
-    private static func backgroundDelegations(_ children: [String]) -> [TranscriptEvent] {
-        children.flatMap { child -> [TranscriptEvent] in
-            [
-                .toolCall(ToolCall(
-                    id: "away-\(child)", name: "Task", kind: .delegate, target: "work", atMs: nil,
-                )),
-                .toolCallOutcome(ToolCallOutcome(
-                    id: "away-\(child)",
-                    resolution: ToolCallOutcome.Resolution(
-                        status: .inProgress, result: nil, endedAtMs: nil,
-                    ),
-                    delegated: ToolCallOutcome.Delegated(usage: nil, subagentID: child),
-                )),
-            ]
         }
     }
 
