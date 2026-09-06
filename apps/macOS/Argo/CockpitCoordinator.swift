@@ -189,7 +189,7 @@ final class CockpitCoordinator {
         // The store's own normalising, asked here too, so a name of nothing but spaces mirrors
         // exactly what it stored: nothing.
         guard let named = SessionAnnotations.name(from: name) else { return }
-        await Self.mirrorTitle(named, to: sessionID, through: hub)
+        _ = await Self.mirrorTitle(named, to: sessionID, through: hub)
     }
 
     /// Attach a Session to a Ticket by hand, or drop the attachment (#1092). Only ever the tab

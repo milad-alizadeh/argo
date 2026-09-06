@@ -109,8 +109,8 @@ public protocol SessionDriver {
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws
 }
 
-/// Whether there is a Turn in the text at all — the one rule `nothingToSend` is raised by, shared
-/// so the control that disables send and the driver that refuses cannot disagree.
+/// Whether there is a Turn in the text at all — the rule a `send` raises `nothingToSend` by,
+/// shared so the control that disables send and the driver that refuses cannot disagree.
 public enum SessionTurn {
     public static func isSendable(_ text: String) -> Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -138,7 +138,9 @@ public enum SessionDriveError: Error, Equatable {
     /// No PTY this Argo owns answers to that Session: an external one, or a managed one whose
     /// process has gone.
     case notDrivable
-    /// The field held nothing but whitespace.
+    /// The field held nothing but whitespace — or, on `setTitle`, a title that folded down to
+    /// nothing (#1494). One case for the two, because the sentence is true of both and neither is
+    /// a state a caller can act on differently: there was nothing to say.
     case nothingToSend
     /// An answer arrived after the thing it answered was gone — a Permission or a question (#712),
     /// expired on the hook's own clock, or cancelled with its turn.
