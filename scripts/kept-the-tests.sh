@@ -62,7 +62,7 @@ comm -23 "$work/base" "$work/branch" >"$work/lost"
 # Only the commits the branch adds to the base are read, so a trailer that arrived with the base
 # cannot excuse a later deletion.
 git -C "$DIR" log --format=%B "$BASE..$BRANCH" |
-  sed -n -E 's/^[[:space:]]*Removes-test:[[:space:]]*(.+[^[:space:]])[[:space:]]*$/\1/p' |
+  sed -n -E 's/^[[:space:]]*Removes-test:[[:space:]]*(.*[^[:space:]])[[:space:]]*$/\1/p' |
   sort -u >"$work/declared"
 
 comm -23 "$work/lost" "$work/declared" >"$work/silent"

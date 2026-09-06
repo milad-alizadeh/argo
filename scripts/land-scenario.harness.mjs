@@ -8,8 +8,8 @@
 // `conflicting: true` makes the branch and `main` touch the same file, so the rebase fails the
 // way a real one does rather than by being told to.
 //
-// `removesTest` deletes a suite the base holds: `'silently'` in a commit that says nothing,
-// `'declared'` in one carrying the `Removes-test:` trailer.
+// `removesTest` deletes a suite the base holds and `deletesFile` deletes a plain file it holds:
+// `'silently'` in a commit that says nothing, `'declared'` in one carrying the trailers.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -61,10 +61,20 @@ const GUARDED_SUITE = `import { check } from './check-harness.mjs'
 check('the case the base is holding', () => {})
 `
 
-function seed(clone, git, { conflicting, removesTest }) {
+// The branch's commit message, carrying whichever trailers the scenario declares.
+function message({ removesTest, deletesFile }) {
+  const trailers = []
+  if (removesTest === 'declared') {
+    trailers.push('Removes-test: the case the base is holding', 'Removes-file: guarded.test.mjs')
+  }
+  if (deletesFile === 'declared') trailers.push('Removes-file: kept.txt')
+  return trailers.length ? `the work\n\n${trailers.join('\n')}` : 'the work'
+}
+
+function seed(clone, git, { conflicting, removesTest, deletesFile }) {
   mkdirSync(path.join(clone, 'scripts'), { recursive: true })
   writeFileSync(path.join(clone, 'scripts/swift-gate.sh'), GATE_STUB)
-  for (const script of ['land.sh', 'build-lock.sh', 'kept-the-tests.sh']) {
+  for (const script of ['land.sh', 'build-lock.sh', 'kept-the-tests.sh', 'undoes-the-base.sh']) {
     writeFileSync(
       path.join(clone, 'scripts', script),
       readFileSync(path.join(ROOT, 'scripts', script), 'utf8'),
@@ -72,22 +82,19 @@ function seed(clone, git, { conflicting, removesTest }) {
   }
   writeFileSync(path.join(clone, 'shared.txt'), 'base\n')
   writeFileSync(path.join(clone, 'guarded.test.mjs'), GUARDED_SUITE)
+  writeFileSync(path.join(clone, 'kept.txt'), 'the base has this\n')
   git(clone, 'add', '-A')
   git(clone, 'commit', '-qm', 'seed')
   git(clone, 'push', '-q', 'origin', 'main')
 
   git(clone, 'checkout', '-qb', 'feature')
   writeFileSync(path.join(clone, conflicting ? 'shared.txt' : 'feature.txt'), 'branch\n')
+  // A deleted suite is a deleted FILE as well, so a declared removal has to clear both rules —
+  // which is the shape a real one has too.
   if (removesTest) rmSync(path.join(clone, 'guarded.test.mjs'))
+  if (deletesFile) rmSync(path.join(clone, 'kept.txt'))
   git(clone, 'add', '-A')
-  git(
-    clone,
-    'commit',
-    '-qm',
-    removesTest === 'declared'
-      ? 'the work\n\nRemoves-test: the case the base is holding'
-      : 'the work',
-  )
+  git(clone, 'commit', '-qm', message({ removesTest, deletesFile }))
   git(clone, 'push', '-q', '-u', 'origin', 'feature')
 
   // main moves on, as it does about ninety times a day.
@@ -98,7 +105,11 @@ function seed(clone, git, { conflicting, removesTest }) {
   git(clone, 'push', '-q', 'origin', 'main')
 }
 
-export function landScenario({ conflicting = false, removesTest = false } = {}) {
+export function landScenario({
+  conflicting = false,
+  removesTest = false,
+  deletesFile = false,
+} = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), 'land-'))
   const origin = path.join(dir, 'origin.git')
   const clone = path.join(dir, 'clone')
@@ -110,7 +121,7 @@ export function landScenario({ conflicting = false, removesTest = false } = {}) 
   execFileSync('git', ['clone', '-q', origin, clone], { stdio: 'pipe' })
   git(clone, 'config', 'user.email', 'test@example.com')
   git(clone, 'config', 'user.name', 'test')
-  seed(clone, git, { conflicting, removesTest })
+  seed(clone, git, { conflicting, removesTest, deletesFile })
 
   const bin = path.join(dir, 'bin')
   mkdirSync(bin, { recursive: true })

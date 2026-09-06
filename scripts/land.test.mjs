@@ -99,6 +99,28 @@ check('a removal the branch declares still lands', () => {
   s.cleanup()
 })
 
+// The same question about files rather than cases. 31 of the 154 files #1550 undid were plain
+// deletions, which no test-name check can see (#1558).
+check('a branch that deletes a file the base has is not merged', () => {
+  const s = scenario({ deletesFile: 'silently' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 0, 'a branch that dropped a file must not reach the gate')
+  assert.doesNotMatch(s.gh(), /pr merge/)
+  assert.match(result.output, /undoes main/)
+  assert.match(result.output, /deleted kept\.txt/)
+  s.cleanup()
+})
+
+check('a deletion the branch declares still lands', () => {
+  const s = scenario({ deletesFile: 'declared' })
+  const result = s.run(['1'])
+  assert.equal(result.status, 0, result.output)
+  assert.equal(s.gated(), 1, 'a declared deletion must reach the gate')
+  assert.match(s.gh(), /pr merge 1 --squash/, `no merge in: ${s.gh()}`)
+  s.cleanup()
+})
+
 check('--dry-run gates but merges nothing', () => {
   const s = scenario()
   const result = s.run(['1', '--dry-run'])

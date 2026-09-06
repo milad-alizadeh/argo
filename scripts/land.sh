@@ -18,8 +18,9 @@
 #     machine-wide, so a second invocation waits rather than racing the first onto `main`.
 #   - touch a lane's worktree or the shared checkout. It works in `.claude/worktrees/landing`,
 #     its own tree, created on first use and left in place afterwards.
-#   - merge a branch that removes a test the base has without saying it meant to. A green
-#     suite proves nothing about a case that is no longer in it (#1558).
+#   - merge a branch that takes something away from the base without saying it meant to: a
+#     test case, a file, or a file's content the base has since moved past. A green suite
+#     proves nothing about a case that is no longer in it (#1558).
 #   - merge anything it did not just gate green, or resolve a conflict. A conflict is a
 #     decision, and this script has no way to make one: it reports the PR and moves on.
 #   - merge at all under --dry-run, which stops after the gate and reports what it would do.
@@ -132,6 +133,10 @@ for pr in $QUEUE; do
   git -C "$LANDING" checkout --quiet -B "landing/$head" "origin/$head"
   git -C "$LANDING" reset --hard --quiet "origin/$head"
 
+  # Where this branch was cut. Taken BEFORE the rebase, because afterwards it is the base
+  # itself: the states the base has moved past are what the check below reads (#1558).
+  cut=$(git -C "$LANDING" merge-base "origin/$head" "origin/$BASE")
+
   if ! git -C "$LANDING" rebase --quiet "origin/$BASE" >/dev/null 2>&1; then
     conflicted=$(git -C "$LANDING" diff --name-only --diff-filter=U 2>/dev/null | tr '\n' ' ')
     git -C "$LANDING" rebase --abort >/dev/null 2>&1 || true
@@ -154,6 +159,22 @@ for pr in $QUEUE; do
     continue
   elif [ "$answer" != 0 ]; then
     echo "land: #$pr — the removed-test check could not answer (exit $answer) — left for its lane" >&2
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  # The same question about files rather than test cases: what the merged tree takes away from
+  # the base. Before the gate rather than after it, so a refusal costs a `git diff` instead of
+  # fourteen minutes of Swift.
+  undone=$(sh "$SCRIPT_DIR/undoes-the-base.sh" "$LANDING" "origin/$BASE" "$cut" HEAD) && answer=0 || answer=$?
+  if [ "$answer" = 1 ]; then
+    echo "land: #$pr undoes $BASE without saying so — left for its lane:" >&2
+    echo "$undone" | sed 's/^/land:   /' >&2
+    echo "land:   (declare it with Removes-file: or Reverts-file: <path>, or * for the lot)" >&2
+    skipped=$((skipped + 1))
+    continue
+  elif [ "$answer" != 0 ]; then
+    echo "land: #$pr — the undone-file check could not answer (exit $answer) — left for its lane" >&2
     skipped=$((skipped + 1))
     continue
   fi
