@@ -84,16 +84,6 @@ package struct BacklogList: View {
         }
     }
 
-    /// The `List`'s own selection, which is the held set and nothing beside it. Written back
-    /// through `absorb`, so the platform's shift-click and cmd-click reach the anchor and the
-    /// open ticket by the one route.
-    private var listSelection: Binding<Set<Int>> {
-        Binding(
-            get: { held.picking.selection.rows },
-            set: { held.picking.selection.absorb($0, over: drawnRows) },
-        )
-    }
-
     /// Every row a range may reach: what the list is drawing now, folds resolved. A row behind a
     /// shut parent is not in here, which is what keeps a range off rows nobody can see (#1247).
     private var drawnRows: [Int] {
@@ -112,7 +102,7 @@ package struct BacklogList: View {
     }
 
     private var list: some View {
-        List(selection: listSelection) {
+        List(selection: held.picking.listSelection(over: drawnRows)) {
             if header.structure.groups {
                 banded
             } else {

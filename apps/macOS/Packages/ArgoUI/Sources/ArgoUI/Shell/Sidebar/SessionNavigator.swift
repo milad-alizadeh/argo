@@ -70,20 +70,8 @@ package struct SessionNavigator: View {
         rows + (isArchiveOpen ? archived : [])
     }
 
-    /// The `List`'s own selection, which is the held set and nothing beside it. Written back
-    /// through `RowSelectionHold.absorbFromList`, so a click the platform answered — anywhere but
-    /// the title, and every keyboard move — reaches the anchor and the deck by the same route a
-    /// click on the title does, and an empty write-back over a row the list has not been given
-    /// yet is refused there rather than here (#1493).
-    private var listSelection: Binding<Set<CockpitPresentation.Session.ID>> {
-        Binding(
-            get: { held.selection.rows },
-            set: { held.absorbFromList($0, over: selectableRows) },
-        )
-    }
-
     private var list: some View {
-        List(selection: listSelection) {
+        List(selection: held.listSelection(over: selectableRows)) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
             } else {
