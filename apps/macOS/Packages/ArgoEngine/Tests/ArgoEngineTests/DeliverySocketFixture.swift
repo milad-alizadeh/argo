@@ -7,6 +7,9 @@ enum ScriptedSocket: Sendable {
     case refused
     /// A socket that opened, carried this many moves, and then dropped.
     case carrying(Int)
+    /// A dial that never answers either way, so a case can cancel it mid-flight rather than wait
+    /// for an outcome that would otherwise arrive first (#1643).
+    case hangs
 }
 
 /// A code host watch that opens from a script, for the suites about the socket rather than about
@@ -43,6 +46,11 @@ actor ScriptedCodeHostWatch: CodeHostWatch {
         opens += 1
         asked = (scope, grant.accessToken)
         let next = script.count > 1 ? script.removeFirst() : script.first
+        if case .hangs = next {
+            // Never returns on its own: `Task.sleep` throws `CancellationError` the instant the
+            // caller's Task is cancelled, which is the only way this ever resolves.
+            try await Task.sleep(for: .seconds(3600))
+        }
         guard case let .carrying(moves) = next else { throw ProviderFetchError.unreachable }
         let watch = ScriptedDeliveryWatch(moves: moves)
         opened = watch

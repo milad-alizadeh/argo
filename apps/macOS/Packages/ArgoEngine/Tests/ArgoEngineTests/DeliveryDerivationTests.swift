@@ -164,7 +164,7 @@ struct DeliveryDerivationTests {
         )
         await derivation.report(to: landings.raise)
 
-        await derivation.dialFailed(.codeHost())
+        await derivation.dialFailed(.codeHost(), error: ProviderFetchError.unreachable)
 
         #expect(await landings.raised() == 1)
     }

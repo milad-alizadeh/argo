@@ -85,6 +85,24 @@ struct DeliverySocketTests {
     }
 
     @Test
+    func `stopping a socket mid-dial reports nothing, because nothing refused it`() async {
+        // #1643: `stop()` cancelling the very dial it interrupted is not a reading — the run
+        // underneath it just ended, and nothing about the host said no.
+        let watching = Watching([.hangs])
+
+        await watching.socket.point(.ready(target.binding), at: "P1")
+        for _ in 1 ... 200 where await watching.watch.openCount() == 0 {
+            await Task.yield()
+        }
+        await watching.socket.stop()
+        for _ in 1 ... 200 {
+            await Task.yield()
+        }
+
+        #expect(await watching.failures.count() == 0)
+    }
+
+    @Test
     func `a dial that keeps being refused backs off as far as the poll's own interval`() async {
         // The ceiling is the point: a socket that never opens costs nothing over the poll already
         // running, so the last thing it should do is keep asking faster than the read it beats.

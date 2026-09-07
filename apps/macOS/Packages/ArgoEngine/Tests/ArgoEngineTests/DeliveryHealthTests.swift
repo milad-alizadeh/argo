@@ -92,9 +92,27 @@ struct DeliveryHealthTests {
             deliveries: DeliveryLedger(),
         )
 
-        await derivation.dialFailed(target)
+        await derivation.dialFailed(target, error: ProviderFetchError.unreachable)
 
         #expect(await health.health(of: target.projectBinding, in: "P1")
             .state == .stale(.unreachable))
+    }
+
+    /// A dial refused for the grant's own reason is the Account failing, not the Binding — the same
+    /// rule `record` already applies to a polled read (#1643).
+    @Test
+    func `a dial the grant itself refused reads as needing reconnect, not merely unreachable`(
+    ) async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget.codeHost()
+        let derivation = DeliveryDerivation(
+            port: ScriptedCodeHost([.success([])]),
+            health: health,
+            deliveries: DeliveryLedger(),
+        )
+
+        await derivation.dialFailed(target, error: ProviderFetchError.grantRefused)
+
+        #expect(await health.health(of: target.projectBinding, in: "P1").state == .needsReconnect)
     }
 }

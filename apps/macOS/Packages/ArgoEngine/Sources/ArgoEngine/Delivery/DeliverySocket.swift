@@ -81,6 +81,10 @@ actor DeliverySocket {
         let opened: any DeliveryWatch
         do {
             opened = try await watch.open(target.scope, grant: target.binding.grant)
+        } catch is CancellationError {
+            // `stop()` cancelling this very dial is not a failure to report: nothing refused it,
+            // the run underneath it just ended.
+            return false
         } catch {
             await reportDialFailure(target, error)
             return false

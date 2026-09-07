@@ -43,8 +43,8 @@ public final class DeliveryReadings {
             derive: { [weak self] target in await self?.poll.derive(target) },
             // The reading #1643 asked for: a dial that never opens is otherwise indistinguishable,
             // from inside this box, from one that is working.
-            reportDialFailure: { [weak self] target, _ in
-                await self?.derivation.dialFailed(target)
+            reportDialFailure: { [weak self] target, error in
+                await self?.derivation.dialFailed(target, error: error)
             },
             sleep: sleep,
         )
