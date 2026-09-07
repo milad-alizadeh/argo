@@ -9,13 +9,16 @@ struct FeedRowView: View {
     let row: FeedRow
     @Binding var isExpanded: Bool
     let selection: FeedRowSelection
+    /// Whether the accent wash stands on this row — see `FeedPrompt.isWashed`. Carried down rather
+    /// than drawn by the cell, because it reaches the bubble and not the row (#1569).
+    var isWashed = false
 
     var body: some View {
         switch row.content {
         case let .prompt(text, shots):
             FeedPrompt(
                 prompt: FeedPromptReading(text: text, shots: shots),
-                open: selection.light, isExpanded: $isExpanded,
+                open: selection.light, isExpanded: $isExpanded, isWashed: isWashed,
             )
         case let .submitted(text):
             FeedPrompt(

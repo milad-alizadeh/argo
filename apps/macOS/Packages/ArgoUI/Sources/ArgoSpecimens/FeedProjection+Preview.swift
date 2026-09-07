@@ -63,13 +63,14 @@ extension FeedProjection {
     /// A `!` command the reader typed, running (#1595) — the state the feed used to draw nothing
     /// at all in. `working: true` because the two are one fact: the command is running, and the
     /// Turn its asking record opened is what says so.
-    static let previewAskedShellRows = rows(
-        from: TranscriptFixtures.askedShellCommand,
-        working: true,
-    )
+    static let previewAskedShellRows = rows(FeedInput(
+        events: TranscriptFixtures.askedShellCommand,
+        beside: .just(FeedTurnDriven.inFlight),
+    ))
 
     /// The same exchange once the command printed, which is the only record the CLI writes after.
-    static let previewPrintedShellRows = rows(from: TranscriptFixtures.printedShellCommand)
+    static let previewPrintedShellRows =
+        rows(.justTheStream(TranscriptFixtures.printedShellCommand))
 
     /// A turn that looked around through a shell and then changed something, projected. Its own
     /// fixture: it is a render of the boundary between a folded stretch and the loud rows either

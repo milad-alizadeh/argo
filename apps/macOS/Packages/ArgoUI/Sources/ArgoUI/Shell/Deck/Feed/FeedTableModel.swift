@@ -37,24 +37,25 @@ import SwiftUI
     /// nothing — the cursor is an overlay and adds no height.
     func content(at index: Int, hasCursor: Bool = false) -> AnyView {
         let row = rows[index]
-        let dressed = FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
-            // Inside the step below, so the chip stands under the row's own words rather than in
-            // the gap above the next one (#767). Which row draws one is a fact about the whole
-            // Turn, so it is asked here, where the reading is in hand.
-            .argoFeedProseCopy(FeedCopy.chipOffer(of: rows, at: index), isLit: hasCursor)
-            .argoFeedCursor(hasCursor)
-            .padding(.top, FeedRow.step(to: row, from: index > 0 ? rows[index - 1] : nil))
-            .background {
-                if washed == row.id {
-                    RoundedRectangle(cornerRadius: ArgoRadius.control)
-                        .fill(environment.theme.color.state
-                            .muted(environment.theme.color.interaction.accent))
-                }
-            }
-            .argoAnimation(.bloom, value: washed == row.id)
-            // The way text leaves the feed (#734). Here rather than inside the row view, because
-            // the Turn it offers is a stretch of the WHOLE reading and a row cannot see one.
-            .argoFeedCopyMenu(rows: rows, index: index)
+        let dressed = FeedRowView(
+            row: row,
+            isExpanded: unfolding(row.id),
+            selection: selection,
+            isWashed: washed == row.id,
+        )
+        // Inside the step below, so the chip stands under the row's own words rather than in
+        // the gap above the next one (#767). Which row draws one is a fact about the whole
+        // Turn, so it is asked here, where the reading is in hand.
+        .argoFeedProseCopy(FeedCopy.chipOffer(of: rows, at: index), isLit: hasCursor)
+        .argoFeedCursor(hasCursor)
+        .padding(.top, FeedRow.step(to: row, from: index > 0 ? rows[index - 1] : nil))
+        // The wash itself is drawn INSIDE the row, on the prompt bubble (`FeedPrompt.ground`).
+        // The bloom stays here, over the whole dressed cell, because the row is what the table
+        // re-draws when `washed` moves.
+        .argoAnimation(.bloom, value: washed == row.id)
+        // The way text leaves the feed (#734). Here rather than inside the row view, because
+        // the Turn it offers is a stretch of the WHOLE reading and a row cannot see one.
+        .argoFeedCopyMenu(rows: rows, index: index)
         guard !row.kind.isWorkingThread else {
             return AnyView(dressed.argoFeedCell(environment))
         }

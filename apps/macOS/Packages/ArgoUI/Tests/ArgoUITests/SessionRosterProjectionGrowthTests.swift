@@ -34,7 +34,7 @@ struct SessionRosterProjectionGrowthTests {
 
         // The rail's four-fact reading of the same record, off the same `told` step.
         let rail = FeedAgents.running(of: growth.told(
-            FeedAgents.all(in: FeedProjection.rows(from: events), of: .undecided),
+            FeedAgents.all(in: FeedProjection.rows(.justTheStream(events)), of: .undecided),
             at: nowMs,
         ))
 

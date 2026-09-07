@@ -69,6 +69,9 @@ extension SpecimenRegistry {
         SpecimenEntry("feedSubmittedTurn") {
             SpecimenScene.sessions(FeedProjection.previewSubmittedTurnRows)
         },
+        // The wash on the prompt a send just landed on (#1569). Judged on the SHAPE: the accent
+        // belongs to the bubble, which is the one row narrower than the measure.
+        SpecimenEntry("feedWash") { SpecimenScene.washed(FeedProjection.previewWashRows) },
         SpecimenEntry("feedPromptFolded") { SpecimenScene.prompt(long, at: .folded) },
         SpecimenEntry("feedPromptUnfolded") { SpecimenScene.prompt(long, at: .unfolded) },
         // The same states for a prompt several times past the fold (#1287), plus the crossing

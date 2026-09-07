@@ -2,7 +2,8 @@ import ArgoEngine
 import ArgoFixtures
 import ArgoUI
 
-// A Turn Argo has typed that no record has answered yet (#1278), projected. Its own file for
+// A Turn Argo has typed that no record has answered yet (#1278), projected, and the reading the
+// same words leave behind once the record answers them (#1569). Its own file for
 // `FeedProjection+PreviewWaits.swift`'s reason: the words are not the record's, so these are built
 // from something other than a transcript alone.
 
@@ -44,4 +45,17 @@ extension FeedProjection {
             submitted: "Fix the caption on the roster row, not the sort order behind it.",
         )),
     ))
+
+    /// The reading the accent wash is judged on: one prompt the record has answered, and nothing
+    /// else. Short on purpose — the wash marks the prompt a send just landed on, and a still cannot
+    /// scroll to a bubble a long reading has carried off the top of the screen.
+    static let previewWashRows = rows(FeedInput.justTheStream([
+        .prompt(
+            text: "Fix the caption on the roster row, not the sort order behind it.",
+            images: [],
+            atMs: 1_733_000_000_000,
+        ),
+        .message(markdown: "The caption is the roster's own line, so it changes there alone."),
+        .turnEnded(.endTurn),
+    ]))
 }

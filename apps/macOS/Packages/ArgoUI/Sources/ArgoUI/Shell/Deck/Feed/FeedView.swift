@@ -10,6 +10,9 @@ import SwiftUI
 package struct FeedView: View {
     @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Whether a render is asking for the still — read for the accent wash alone, which otherwise
+    /// leaves 1.4 seconds after it lands. See `washExpired`.
+    @Environment(\.argoStillsMotion) var stillsMotion
     /// Why the deck has nothing to read, where the reading really is empty — see the overlay.
     @Environment(\.argoFeedVacancy) private var vacancy
     /// Whether a deck seam is being dragged — the table degrades its re-measure to the visible rows
@@ -67,6 +70,8 @@ package struct FeedView: View {
 
     /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
+    /// The words this window sent that no row answers yet — see `washSettled`.
+    @State var awaitingEcho: String?
 
     package var body: some View {
         FeedTable(
@@ -87,11 +92,19 @@ package struct FeedView: View {
             guard case let .row(id) = focus else { return }
             table.focus(onto: id)
         }
-        // Keyed on the reading as well as the count: another Session's rows arriving is not an
-        // arrival, and washing whatever prompt is last in them says the reader sent it.
-        .onChange(of: FeedFact(reading: reading, value: rows.count)) { was, now in
+        // Keyed on the Turn THIS window typed rather than on the row count, and on the reading
+        // with it: rows arriving is not an arrival — opening a Session brings a great many and
+        // the reader sent none of them (#1569). A submission LEAVING is the send's acceptance,
+        // and it happens once per send.
+        .onChange(of: FeedFact(
+            reading: reading,
+            value: Self.submittedWords(in: rows),
+        )) { was, now in
             washArrived(between: was, and: now)
         }
+        // The count after all, but only while words this window sent are waiting on their echo:
+        // `washSettled` does nothing at any other time, so opening a Session still brings none.
+        .onChange(of: rows.count) { _, _ in washSettled() }
         // Cancellation IS the reset: a second send while the first wash stands re-keys
         // the task, and the fresh one times the fresh row.
         .task(id: washed) { await washExpired() }

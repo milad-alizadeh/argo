@@ -142,19 +142,23 @@ struct FeedReadingSwitchTests {
 
     /// The wash means *what you just sent landed*. A Session with more rows in it than the last is
     /// not an arrival, and washing its newest prompt would credit the reader with words the agent
-    /// was handed before they ever opened it.
+    /// was handed before they ever opened it. Which prompt earns one is `FeedWashTests`; that it
+    /// leaves with the reading it was made in is this suite's.
     @Test
     func `another reading's rows are not an arrival`() {
-        let rows = FeedSwitchFixture.alphaRows
+        let rows = FeedSwitchFixture.alphaRows +
+            [FeedRow(id: FeedSwitchFixture.alphaRows.count, content: .prompt(
+                text: "ship it", shots: [],
+            ))]
 
         let arrived = FeedView.wash(
-            from: FeedFact(reading: FeedSwitchFixture.alpha, value: rows.count - 1),
-            to: FeedFact(reading: FeedSwitchFixture.alpha, value: rows.count),
+            from: FeedFact(reading: FeedSwitchFixture.alpha, value: nil),
+            to: FeedFact(reading: FeedSwitchFixture.alpha, value: nil),
             in: rows,
         )
         let switched = FeedView.wash(
-            from: FeedFact(reading: FeedSwitchFixture.bravo, value: 2),
-            to: FeedFact(reading: FeedSwitchFixture.alpha, value: rows.count),
+            from: FeedFact(reading: FeedSwitchFixture.bravo, value: "ship it"),
+            to: FeedFact(reading: FeedSwitchFixture.alpha, value: nil),
             in: rows,
         )
 

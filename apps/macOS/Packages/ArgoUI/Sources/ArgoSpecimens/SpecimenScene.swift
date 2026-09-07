@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 import ArgoUI
 import SwiftUI
@@ -54,6 +55,18 @@ enum SpecimenScene {
         case .pressed: preview.unfoldsAfterLanding = prompt
         }
         return preview
+    }
+
+    /// The accent wash on the prompt the record has just answered — the 1.4 seconds after a send
+    /// lands (#383, #1569). What it settles is the SHAPE: a still where the accent runs the full
+    /// measure rather than the bubble on the trailing edge is the bug, not the state.
+    ///
+    /// `argoStillsMotion` is what makes it renderable at all — the wash leaves 1.4 seconds after it
+    /// lands, and a capture timed against that window comes out empty as often as not.
+    static func washed(_ rows: [FeedRow]) -> some View {
+        var preview = FeedPreview(rows: rows)
+        preview.washed = rows.last { $0.kind.isPrompt }?.id
+        return preview.environment(\.argoStillsMotion, true)
     }
 
     /// The New Session verb mid-spawn. Alone rather than on the bar, because the bar is
