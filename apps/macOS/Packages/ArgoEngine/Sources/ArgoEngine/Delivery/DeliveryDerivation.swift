@@ -16,6 +16,10 @@ public actor DeliveryDerivation {
     private let deliveries: DeliveryLedger
     private let now: @Sendable () -> Date
     private var landed: Landing = {}
+    /// Held here rather than on `Delivery`, which is what a surface draws: this is the fan-out's
+    /// own
+    /// bookkeeping and no row renders it.
+    private var unhosted = UnhostedBranches()
 
     public init(
         port: CodeHostPort,
@@ -97,9 +101,9 @@ public actor DeliveryDerivation {
     /// read, not that branch — the answer is a rate limit or an outage, and the requests after it
     /// would buy nothing but more of the limit that caused it.
     ///
-    /// It also skips every branch whose Delivery is already settled, which is what stops the
-    /// fan-out
-    /// growing without bound as a checkout collects worktrees (#1588).
+    /// It also skips every branch whose Delivery is already settled, and every branch the host
+    /// already said it holds nothing for at this same commit — which together are what stop the
+    /// fan-out growing without bound as a checkout collects worktrees (#1588, #1619).
     private func union(
         _ target: PortReadTarget, locally: Locally,
     ) async throws
@@ -107,15 +111,26 @@ public actor DeliveryDerivation {
         let hosted = try await port.inFlight(in: target.scope, grant: target.binding.grant)
         var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
-        // Read once, not per branch: this is the loop whose cost the ticket is about.
+        // Both read once, not per branch: this is the loop whose cost the ticket is about.
         let settled = await settled(of: target)
-        for branch in Self.branches(of: locally.workspaces) where !inFlight.contains(branch) {
-            if let already = settled[branch] {
+        let heads = Self.heads(of: locally.workspaces)
+        unhosted.prune(to: Set(heads.map(\.branch)), in: target.projectID)
+        for head in heads where !inFlight.contains(head.branch) {
+            if let already = settled[head.branch] {
                 union.deliveries.append(already)
                 continue
             }
+            if unhosted.holds(head.branch, at: head.headSha, in: target.projectID) {
+                union.deliveries.append(Delivery(branch: head.branch, pullRequest: nil))
+                continue
+            }
             do {
-                try await union.deliveries.append(named(branch, of: target))
+                let derived = try await named(head.branch, of: target)
+                unhosted.record(
+                    derived.pullRequest, ofBranch: head.branch, at: head.headSha,
+                    in: target.projectID,
+                )
+                union.deliveries.append(derived)
             } catch {
                 union.refusal = .refusal(error)
                 let carried = await carried(past: union.deliveries, of: target)
@@ -168,12 +183,23 @@ public actor DeliveryDerivation {
             ?? Delivery(branch: branch, pullRequest: nil)
     }
 
-    /// The branches the local Workspaces are on, each once and in the order they were read.
+    /// One local branch and the commit it is on — the pair the fan-out asks about and prunes by.
+    struct Head: Equatable, Sendable {
+        let branch: String
+        let headSha: String?
+    }
+
+    /// The branches the local Workspaces are on, each once and in the order they were read, with
+    /// the commit each one is at.
     ///
     /// A Workspace with no branch contributes none — a detached HEAD, and a Session with no branch
     /// at all, have no Delivery (`CONTEXT.md` L1 · Delivery).
-    static func branches(of workspaces: [WorkspaceProjection]) -> [String] {
+    static func heads(of workspaces: [WorkspaceProjection]) -> [Head] {
         var seen: Set<String> = []
-        return workspaces.compactMap(\.branch).filter { seen.insert($0).inserted }
+        return workspaces
+            .compactMap { workspace in
+                workspace.branch.map { Head(branch: $0, headSha: workspace.headSha) }
+            }
+            .filter { seen.insert($0.branch).inserted }
     }
 }

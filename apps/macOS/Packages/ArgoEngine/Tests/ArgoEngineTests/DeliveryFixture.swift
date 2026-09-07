@@ -148,12 +148,13 @@ actor DeliveryLandings {
 }
 
 extension WorkspaceProjection {
-    /// A Workspace on one branch. `nil` is the folder git would not name a branch in, which is a
-    /// detached HEAD and a Session with no Delivery.
-    static func on(_ branch: String?) -> WorkspaceProjection {
+    /// A Workspace on one branch, at one commit. `nil` for the branch is the folder git would not
+    /// name a branch in, which is a detached HEAD and a Session with no Delivery; `nil` for the
+    /// commit is a folder the worktree listing named no head for.
+    static func on(_ branch: String?, at headSha: String? = nil) -> WorkspaceProjection {
         WorkspaceProjection(
             kind: .worktree,
-            refs: WorkspaceProjection.Refs(branch: branch),
+            refs: WorkspaceProjection.Refs(branch: branch, headSha: headSha),
             drift: WorkspaceProjection.Drift(
                 dirty: 0,
                 divergence: UpstreamDivergence(ahead: 0, behind: 0),

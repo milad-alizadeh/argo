@@ -44,24 +44,28 @@ public actor DeliveryPoll {
     /// pull request the tick touches costs TWO more, one for its check runs and one for its
     /// reviews.
     ///
-    /// Counted rather than reasoned about, against this repository's own checkout — 63 worktree
-    /// branches, 15 of them with a finished pull request and one open (#1588):
+    /// Counted rather than reasoned about, through `GitHubDeliveries` and its own paging rather
+    /// than a fake port — `DeliveryTickCostTests`. The checkout is this repository's as #1619
+    /// measured it: 80 worktree branches, 15 of them with a finished pull request and one open.
     ///
     /// | tick | requests | an hour |
     /// | --- | --- | --- |
-    /// | before | 96 | 5,760 |
-    /// | the first after, still filling the ledger | 64 | — |
-    /// | every one after that | 50 | 3,000 |
+    /// | before #1588, at 63 branches | 96 | 5,760 |
+    /// | after #1604, at 63 branches | 50 | 3,000 |
+    /// | the first tick of #1619, filling the ledger | 82 | — |
+    /// | every tick after it | 3 | 180 |
     ///
-    /// Two changes buy the difference: a finished pull request costs no check runs and no reviews,
-    /// and a branch already holding a finished Delivery is answered from the ledger rather than
-    /// asked about again. Both are bounded by what the host says is terminal, so neither can leave
-    /// a branch on an answer that could still have moved.
+    /// Three changes buy the difference. A finished pull request costs no check runs and no
+    /// reviews; a branch already holding a finished Delivery is answered from the ledger; and a
+    /// branch the host said it holds NOTHING for keeps that answer until its commit moves
+    /// (`UnhostedBranches`). Only the third stops the number growing with the checkout — the other
+    /// two left ~46 of 50 requests buying the same empty answer every minute, one more per worktree
+    /// the checkout collected. What is left is the open listing plus two per open pull request, and
+    /// neither of those counts worktrees.
     ///
-    /// The Tickets poll spends a measured 30 a tick on the same grant, so the pair now cost 4,800
-    /// against the host's 5,000 — clearing it, and not clearing it comfortably. The levers left are
-    /// conditional requests and a listing that covers more than what is open, both out of scope
-    /// here.
+    /// The Tickets poll spends a measured 30 a tick on the same grant, so the pair now cost 33 a
+    /// tick against the host's hourly 5,000. Conditional requests are the lever left, and out of
+    /// scope here.
     public static let interval = Duration.seconds(60)
 
     /// Point at whatever a Project reads its code host through, or stop. What each resolution
