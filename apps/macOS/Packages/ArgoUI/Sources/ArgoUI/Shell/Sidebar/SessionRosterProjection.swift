@@ -13,13 +13,16 @@ package enum SessionRosterProjection {
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
         selection: String? = nil,
+        watching growth: SubagentGrowth = .unwatched,
         now: Date = Date(),
     )
         -> [Row] {
         rows(
             from: sessions,
             named: nil,
-            in: Pass(isArchived: false, opened: opened, selection: selection),
+            in: Pass(
+                isArchived: false, opened: opened, selection: selection, growth: growth,
+            ),
             now: now,
         )
     }
@@ -39,6 +42,7 @@ package enum SessionRosterProjection {
         from sessions: [CockpitPresentation.Session],
         opened: Set<String>,
         selection: String?,
+        watching growth: SubagentGrowth = .unwatched,
         now: Date,
     )
         -> Lists {
@@ -47,13 +51,17 @@ package enum SessionRosterProjection {
             rows: rows(
                 from: sessions,
                 named: namings,
-                in: Pass(isArchived: false, opened: opened, selection: selection),
+                in: Pass(
+                    isArchived: false, opened: opened, selection: selection, growth: growth,
+                ),
                 now: now,
             ),
             archived: rows(
                 from: sessions,
                 named: namings,
-                in: Pass(isArchived: true, opened: opened, selection: selection),
+                in: Pass(
+                    isArchived: true, opened: opened, selection: selection, growth: growth,
+                ),
                 now: now,
             ),
         )
@@ -66,6 +74,17 @@ package enum SessionRosterProjection {
         let isArchived: Bool
         let opened: Set<String>
         let selection: String?
+        /// What Argo has watched each Subagent's own file do, taken ONCE for the whole pass — the
+        /// fourth fact a row's Subagent dots are drawn from (`SubagentGrowth`, #1572).
+        let growth: SubagentGrowth
+    }
+
+    /// The two facts a row is read AGAINST rather than out of: the moment every age and every
+    /// window is measured from, and what Argo had watched each Subagent's own file do by it
+    /// (#1572). Taken together, once per pass, never per row.
+    struct Watch {
+        let growth: SubagentGrowth
+        let nowMs: Int
     }
 
     /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
@@ -74,13 +93,16 @@ package enum SessionRosterProjection {
         from sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
         selection: String? = nil,
+        watching growth: SubagentGrowth = .unwatched,
         now: Date = Date(),
     )
         -> [Row] {
         rows(
             from: sessions,
             named: nil,
-            in: Pass(isArchived: true, opened: opened, selection: selection),
+            in: Pass(
+                isArchived: true, opened: opened, selection: selection, growth: growth,
+            ),
             now: now,
         )
     }
@@ -95,7 +117,7 @@ package enum SessionRosterProjection {
         now: Date,
     )
         -> [Row] {
-        let nowMs = now.epochMs
+        let watch = Watch(growth: pass.growth, nowMs: now.epochMs)
         // Decided before the split and filtered after: a Session's workspace label is told apart
         // from every other Session's, whichever of the two lists each is drawn in.
         let kept = zip(sessions, decided(across: sessions, named: namings, in: pass))
@@ -109,10 +131,10 @@ package enum SessionRosterProjection {
             [
                 folding.fold(opening: session).map { fold in
                     let runs = folding.runs(foldedWith: session).compactMap { byID[$0] }
-                    return foldRow(fold, at: session, of: runs, nowMs: nowMs)
+                    return foldRow(fold, at: session, of: runs, against: watch)
                 },
                 folding.drawsOwnRow(session)
-                    ? row(for: session, decided: decided, nowMs: nowMs) : nil,
+                    ? row(for: session, decided: decided, against: watch) : nil,
             ]
             .compactMap(\.self)
         }

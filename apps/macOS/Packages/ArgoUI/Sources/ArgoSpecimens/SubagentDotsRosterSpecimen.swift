@@ -6,7 +6,8 @@ import SwiftUI
 
 /// The leading column's four Subagent readings, and the ceiling, over the roster's own row
 /// (#1344, `cockpit-roster-row.md`) — never delegated, running under the ceiling, past it, all
-/// landed, unresolved, and a fold summing what it hides.
+/// landed, unresolved, a quiet parent whose children Argo has watched writing (#1572), and a fold
+/// summing what it hides.
 struct SubagentDotsRosterSpecimen: View {
     var body: some View {
         List {
@@ -18,7 +19,7 @@ struct SubagentDotsRosterSpecimen: View {
         .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 
-    static let rows = SessionRosterProjection.rows(from: sessions)
+    static let rows = SessionRosterProjection.rows(from: sessions, watching: growth)
 
     private static let checkout = "/Users/milad/Developer/argo"
 
@@ -58,6 +59,17 @@ struct SubagentDotsRosterSpecimen: View {
             work: .init(location: checkout),
             transcript: .init(events: openDelegations(1)),
         ),
+        // The reported bug, fixed: the record cannot tell this row from the one above it, and
+        // the growth below is the only thing that can (#1572).
+        CockpitPresentation.Session(
+            id: "watched",
+            title: "Quiet, and two children Argo has watched writing",
+            access: .managed,
+            status: .idle,
+            chain: .init(program: .init(model: "claude-opus-5")),
+            work: .init(location: checkout),
+            transcript: .init(events: backgroundedDelegations(2)),
+        ),
         CockpitPresentation.Session(
             id: "external",
             title: "A Session Argo cannot place draws no mark",
@@ -86,6 +98,31 @@ struct SubagentDotsRosterSpecimen: View {
             transcript: .init(events: openDelegations(3)),
         ),
     ]
+
+    /// Both of the `watched` row's children, seen writing a moment ago — the fourth fact, in the
+    /// shape the sidebar hands the projection (#1572).
+    private static let growth = SubagentGrowth(lastGrewAtMs: Dictionary(
+        uniqueKeysWithValues: (0 ..< 2).map { ("child-\($0)", Date().epochMs) },
+    ))
+
+    /// `count` BACKGROUNDED delegations: each answered by the launch receipt that resolves nothing
+    /// and names the child (#908), which is what lets the growth above reach them.
+    private static func backgroundedDelegations(_ count: Int) -> [TranscriptEvent] {
+        (0 ..< count).flatMap { index -> [TranscriptEvent] in
+            [
+                .toolCall(ToolCall(
+                    id: "away-\(index)", name: "Task", kind: .delegate, target: "work", atMs: nil,
+                )),
+                .toolCallOutcome(ToolCallOutcome(
+                    id: "away-\(index)",
+                    resolution: ToolCallOutcome.Resolution(
+                        status: .inProgress, result: nil, endedAtMs: nil,
+                    ),
+                    delegated: ToolCallOutcome.Delegated(usage: nil, subagentID: "child-\(index)"),
+                )),
+            ]
+        }
+    }
 
     /// `count` delegate calls, none of them answered — a Subagent still working, whatever the
     /// Session's own status settles it into (`DelegatingSession`).

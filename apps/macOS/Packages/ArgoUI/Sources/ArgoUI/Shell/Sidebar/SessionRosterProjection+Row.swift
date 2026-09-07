@@ -197,10 +197,10 @@ extension SessionRosterProjection {
         _ fold: Fold,
         at newest: CockpitPresentation.Session,
         of runs: [CockpitPresentation.Session],
-        nowMs: Int,
+        against watch: Watch,
     )
         -> Row {
-        let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
+        let clock = clock(for: newest, in: newest.events, nowMs: watch.nowMs)
         return Row(
             identity: Row.Identity(
                 id: fold.id, title: "\(fold.count) runs", rename: nil, fold: fold,
@@ -217,7 +217,7 @@ extension SessionRosterProjection {
                 // either, for the same reason (rule 9).
                 dot: Row.Activity.Dot(state: nil, word: nil, readyToShip: false),
                 age: Row.Activity.Age(
-                    clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
+                    clock: clock, spoken: spokenClock(clock, nowMs: watch.nowMs),
                 ),
                 doing: Row.Activity.Doing(
                     // A fold stands for several runs at once, so one run's call drawn for all of
@@ -230,7 +230,7 @@ extension SessionRosterProjection {
                 ),
                 // A fold sums or says nothing (rule 9): its dots are pooled across every run it
                 // hides, under the same ceiling, and never the other three readings.
-                subagents: foldedSubagents(of: runs),
+                subagents: foldedSubagents(of: runs, against: watch),
             ),
             availability: Row.Availability(
                 // Nothing under a fold can be typed at, and the padlock says exactly that.
@@ -241,13 +241,13 @@ extension SessionRosterProjection {
     }
 
     static func row(
-        for session: CockpitPresentation.Session, decided: Decided, nowMs: Int,
+        for session: CockpitPresentation.Session, decided: Decided, against watch: Watch,
     )
         -> Row {
         // Handed out ONCE and walked twice: the clock and the activity both read the tail of the
         // same stream, and the selection pass is gated on hand-outs (`PerfBudgets`).
         let events = session.events
-        let clock = clock(for: session, in: events, nowMs: nowMs)
+        let clock = clock(for: session, in: events, nowMs: watch.nowMs)
         return Row(
             identity: Row.Identity(
                 id: session.id,
@@ -274,7 +274,7 @@ extension SessionRosterProjection {
                     readyToShip: session.readyToShip,
                 ),
                 age: Row.Activity.Age(
-                    clock: clock, spoken: spokenClock(clock, nowMs: nowMs),
+                    clock: clock, spoken: spokenClock(clock, nowMs: watch.nowMs),
                 ),
                 doing: Row.Activity.Doing(
                     activity: activity(of: session, in: events),
@@ -282,7 +282,7 @@ extension SessionRosterProjection {
                     // not a second `session.events` (`PerfBudgets`).
                     plan: PlanProjection.reading(from: events),
                 ),
-                subagents: subagents(of: session, in: events),
+                subagents: subagents(of: session, in: events, against: watch),
             ),
             availability: Row.Availability(
                 isReadOnly: isReadOnly(session.access),

@@ -73,6 +73,21 @@ final class SubagentReadings {
         return grewAtMsByFile[path]
     }
 
+    /// EVERY Agent's growth stamp in one table, under the same one-file rule as the two lookups
+    /// above.
+    ///
+    /// The roster asks for the table rather than per id, because it cannot ask per id: the ids come
+    /// out of its own walk of each Session's record, and the walk is what the answer is needed
+    /// inside (#1572). One dictionary the size of the tailed files, taken once per pass.
+    func growth() -> [String: Int] {
+        filesByAgent.reduce(into: [:]) { growth, entry in
+            guard entry.value.count == 1, let path = entry.value.first,
+                  let grewAtMs = grewAtMsByFile[path]
+            else { return }
+            growth[entry.key] = grewAtMs
+        }
+    }
+
     /// A fresh read of one file starts here, and drops whatever the last read of it left. A tail
     /// re-reads from the first byte, so a transcript that aged out of the working set and came back
     /// appended its Subagents' rows a second time.
