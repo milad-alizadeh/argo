@@ -94,8 +94,11 @@ struct RosterSelectionFromTicketStartTests {
         )
     }
 
-    /// And it stops being awaited the moment its row is on the roster, so an id that has genuinely
-    /// gone from there on is treated as gone.
+    /// And it stops being awaited the moment its row is on the roster. The exemption
+    /// `awaitedSession` buys is from the list's cut over rows it has no ENTRY for; a row the list
+    /// has and is withholding behind a shut fold must still be cut (#1247,
+    /// `RosterListConfineTests`). The hold that outlives this one is reconciliation's, and it is
+    /// not this field (#1602).
     @Test
     func `stops awaiting the row once the roster publishes it`() async {
         let navigation = Start.navigation()
@@ -104,6 +107,72 @@ struct RosterSelectionFromTicketStartTests {
         navigation.reconcile(against: Start.provisional.map(\.identity))
 
         #expect(navigation.awaitedSession == nil)
+    }
+
+    /// The pass the report is made of, and the one shape none of #1547's three fixes covers.
+    ///
+    /// The CLI's row is published before the claim is absorbed by anything, so the claim id is on
+    /// no roster and in no succession map for one pass. Every guard but the wait misses there:
+    /// succession has no edge to follow, and the claim is not among the ids. Reconciliation then
+    /// reads a Session that LEFT and lands on its neighbour in the previous order — `beta`, the row
+    /// under the claim's — which is the "different Session" the reader is left reading.
+    @Test
+    func `holds the window when the re-key lands before the claim is absorbed`() async {
+        let navigation = await Start.pressed()
+
+        navigation.reconcile(against: Start.provisional.map(\.identity))
+        navigation.reconcile(against: Start.rekeyedBeforeSuccession.map(\.identity))
+
+        #expect(
+            navigation.session == Start.claim,
+            "The window left the Session it started at the re-key.",
+        )
+    }
+
+    /// A fresh Session reaches NEITHER repointing rule, at any pass of the route (#1602).
+    ///
+    /// Stated over the whole sequence rather than at its end, because the two rules catch it at
+    /// different passes and each looks like the other from the outside: `roster.first { ... }` is
+    /// the last resort and stays one, and the neighbour rule is right for a Session that genuinely
+    /// left (#1481). Neither may fire for a spawn that is only between its two id retirements, and
+    /// the only id this window may be on throughout is the one it started, under whichever key that
+    /// Session is published as.
+    ///
+    /// The last pass is also where a hold that never LET GO would show: the claim is absorbed
+    /// there, so an id held past its re-key grounds no row at all.
+    @Test
+    func `is the only Session the window is on at any pass of the route`() async {
+        let navigation = await Start.pressed()
+
+        for roster in [
+            Start.standing, Start.provisional, Start.rekeyedBeforeSuccession, Start.rekeyed,
+        ] {
+            navigation.reconcile(against: roster.map(\.identity))
+            #expect(
+                navigation.session == Start.claim || navigation.session == Start.cli,
+                "The window was repointed at another Session mid-start.",
+            )
+        }
+        RosterMark.expect(Start.cli, in: Start.rekeyed, for: navigation)
+    }
+
+    /// A recycled claim id may not carry the pointer to a Session that was never this spawn
+    /// (#1563). The counter behind `claim-<launch>-<n>` restarts with the process, so an older
+    /// Session's own `absorbedIDs` can hold the exact string this spawn was just issued.
+    ///
+    /// The row Argo is waiting for cannot be one the reader was already looking at, so an heir that
+    /// was standing on the previous roster under its own id is not this spawn's — and the pointer
+    /// stays put rather than following the forged edge.
+    @Test
+    func `refuses a recycled claim's edge to a Session that was never this spawn`() async {
+        let navigation = await Start.pressed()
+
+        navigation.reconcile(against: Start.recycledClaim.map(\.identity))
+
+        #expect(
+            navigation.session == Start.claim,
+            "A recycled claim id handed the window an unrelated Session.",
+        )
     }
 
     @Test
@@ -156,6 +225,27 @@ struct RosterSelectionFromTicketStartTests {
 
         #expect(navigation.chosenSession == picked, "The re-key was read as a repoint.")
         #expect(navigation.chosenSession.session != nil, "The pick was cleared.")
+    }
+
+    /// And the bound on that hold, which is deliberate: only a spawn Argo ITSELF started gets it.
+    ///
+    /// A provisional row the reader merely clicked is a claim id too, and a spawn that dies before
+    /// writing any record leaves it on no roster for good. Holding the pointer there would leave
+    /// the roster grounding nothing until the reader clicked again, so that case still falls to the
+    /// neighbour rule — the pointer moves, which is the honest reading of an id nothing is coming
+    /// for.
+    @Test
+    func `still lets go of a claim row the reader only clicked`() {
+        let navigation = Start.navigation()
+        navigation.reconcile(against: Start.provisional.map(\.identity))
+        navigation.deckPointed(at: Start.claim)
+
+        navigation.reconcile(against: Start.standing.map(\.identity))
+
+        #expect(
+            navigation.session != Start.claim,
+            "A claim nothing is coming for held the window against an empty roster row.",
+        )
     }
 
     /// The reveal this route owes, and why it is a different debt from #1273's. `openSession`

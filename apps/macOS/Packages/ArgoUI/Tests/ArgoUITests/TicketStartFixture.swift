@@ -11,8 +11,13 @@ import SwiftUI
 @MainActor
 enum TicketStartFixture {
     /// The claim the spawn answers with, and the id the CLI picks a moment later.
+    ///
+    /// The claim carries `SessionOwnership.ClaimID`'s own prefix and the CLI's id carries no
+    /// prefix at all, which is the real shape and a load-bearing one: a claim id means nothing
+    /// outside the process that issued it and is retired, and a Session id is a transcript's key
+    /// and is not (#1602).
     static let claim = "claim-7"
-    static let cli = "claim-7-cli"
+    static let cli = "session-7"
 
     /// Three rows before the press, which is the report's own setup: enough that the first row is
     /// not the fresh one by accident.
@@ -42,6 +47,37 @@ enum TicketStartFixture {
         ]
     }
 
+    /// The same re-key one pass EARLIER, before the row carries the claim it retired.
+    ///
+    /// The Hub appends the claim to `absorbedIDs` off the binding it holds at the moment the row is
+    /// published (`Hub.published`, #361), and the binding is made by the sweep that matches the
+    /// CLI's first record. A presentation rebuilt between the record landing and that sweep
+    /// publishes the CLI's row with the claim absorbed by nothing at all: the claim id is on no
+    /// roster and in no succession map. This is the shape that has no guard in it — see
+    /// `RosterSelectionFromTicketStartTests`.
+    static var rekeyedBeforeSuccession: [CockpitPresentation.Session] {
+        [
+            RosterSessionFixture.session(id: "alpha"),
+            RosterSessionFixture.session(id: cli),
+            RosterSessionFixture.session(id: "beta"),
+            RosterSessionFixture.session(id: "gamma"),
+        ]
+    }
+
+    /// A roster in which the claim id is absorbed by a Session that was never this spawn.
+    ///
+    /// Claim ids are `claim-<launch>-<n>` and the counter restarts with the process, so the same
+    /// string names a different agent in a later launch (#1563). A succession map built off
+    /// `absorbedIDs` cannot tell the two apart, and this is the map that points a fresh spawn's
+    /// pointer at somebody else's Session.
+    static var recycledClaim: [CockpitPresentation.Session] {
+        [
+            RosterSessionFixture.session(id: "alpha"),
+            RosterSessionFixture.rekeyed("beta", from: claim),
+            RosterSessionFixture.session(id: "gamma"),
+        ]
+    }
+
     /// The act as `CockpitView.ticketStart` assembles it, with the spawn answering what the real
     /// one answers: the claim id the provisional row is published under.
     static func start() -> TicketStart {
@@ -64,6 +100,14 @@ enum TicketStartFixture {
             pick: { navigation.deckPointed(at: $0) },
             awaited: navigation.awaitedSession,
         )
+    }
+
+    /// A window with the press already made, driven through the real `TicketStart.run` — the
+    /// opening every test on this route shares, spelled once rather than per test.
+    static func pressed() async -> CockpitNavigationModel {
+        let model = navigation()
+        await start().run(on: 899, in: model)
+        return model
     }
 
     /// A window as `CockpitView.body` leaves it on first draw: reconciled once over the roster
