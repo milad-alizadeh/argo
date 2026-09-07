@@ -51,14 +51,23 @@ check('the nudge carries the order rule', () =>
 check('the nudge carries the tail rule', () => {
   const text = injected(run({ transcript_path: transcript(['{}']) }))
   assert.match(text, /verification tail/)
-  assert.match(text, /open PR/)
+  assert.match(text, /reviewed diff/)
 })
 
 check('AGENTS.md states the tail rule too', () => {
   const rule = readFileSync(path.resolve('AGENTS.md'), 'utf8')
   const section = rule.slice(rule.indexOf('## Task tracking'), rule.indexOf('## Rules'))
   assert.match(section, /verification tail/)
-  assert.match(section, /open PR/)
+  assert.match(section, /reviewed diff/)
+})
+
+// The tail ends at the review and `/ship` opens the PR (#1648). Both halves are asserted the same
+// way the tail rule is, because the same edit that drops one drops the other.
+check('both halves hand the PR to /ship', () => {
+  const text = injected(run({ transcript_path: transcript(['{}']) }))
+  const rule = readFileSync(path.resolve('AGENTS.md'), 'utf8')
+  const section = rule.slice(rule.indexOf('## Task tracking'), rule.indexOf('## Rules'))
+  for (const half of [text, section]) assert.match(half, /\/ship/)
 })
 
 check('a session that already wrote a list is left alone', () => {

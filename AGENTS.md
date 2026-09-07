@@ -37,13 +37,19 @@ the task; a session that waits until it wants the list writes no list at all.
 - Keep single-step edits, lookups, and conversational turns off the list — a one-item list is
   noise, and a list nobody needed teaches the next session to ignore lists.
 - **Split the verification tail into one item each**: the Swift gate, the full suite, the render,
-  the code review, the review fixes, the PR. Only the ones the change actually needs, but never
-  two of them folded together.
+  the code review, the review fixes. Only the ones the change actually needs, but never two of
+  them folded together.
 - **No item holds more than one gate, suite or review.** A subject that comma-lists what it covers
   — "Verify: gates, render, pixel-review, code-review", "Full suites, quality gates, review,
   commit" — is the shape to reject (#1419).
-- **The list runs to the open PR**, so the last item completes when the session does. A full bar
-  is otherwise not a finished session (#1419).
+- **The list runs to the reviewed diff**, so the last item completes when the work is proved, not
+  when it is committed. A full bar is otherwise not a finished session (#1419).
+- **The push and the PR are `/ship`'s, and never an item you write yourself** (#1648). `/ship` is
+  a separate invocation the caller makes, and it carries the close-out nothing else runs: the
+  gate on the base the branch was cut from, the sweep for `.only` and debug prints, the
+  screenshots, and the review findings written into the PR body. It carries what it cannot tick
+  rather than stopping, an unreviewed diff included — so a list that opens its own PR does not
+  route around a refusal, it just opens one having done none of that.
 
 ## Rules
 
@@ -157,7 +163,10 @@ that is indistinguishable from one that never ran, so count them before theorisi
 
 ## Code review
 
-An implement run reviews its diff before the PR opens. The review only works in a **fresh
+An implement run reviews its own diff, and the review is the last thing it does. `/ship` does not
+run one and does not refuse a diff that never had one — it writes "unreviewed" in the PR body and
+ships anyway, so the review is the caller's step or it does not happen. The review only works in a
+**fresh
 context that never saw the author's reasoning**. Claude Code: `code-review` fans out parallel
 axis sub-agents via the `Agent` tool. Other harnesses: run the review from a separate fresh
 session over the diff.
