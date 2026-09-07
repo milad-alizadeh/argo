@@ -192,6 +192,18 @@ extension SpecimenRegistry {
         SpecimenEntry("foldedRoster") { FoldedRosterSpecimen() },
         SpecimenEntry("openFoldedRoster") { FoldedRosterSpecimen(isOpened: true) },
         SpecimenEntry("editingRow") { EditingRowSpecimen() },
+        // The prompt the archive gesture raises, in the three readings it has (#1596). AppKit
+        // draws the chrome, so what these are evidence about is the words: the end Argo can
+        // perform, the end it cannot, and the batch that is both.
+        SpecimenEntry("archivePromptEnding") {
+            ArchivePromptSpecimen(.ending)
+        },
+        SpecimenEntry("archivePromptOutliving") {
+            ArchivePromptSpecimen(.outliving)
+        },
+        SpecimenEntry("archivePromptMixed") {
+            ArchivePromptSpecimen(.mixed)
+        },
         // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION otherwise
         // carries across.
         SpecimenEntry("twoReadings") { RosterSpecimen(presentation: .twoReadings) },

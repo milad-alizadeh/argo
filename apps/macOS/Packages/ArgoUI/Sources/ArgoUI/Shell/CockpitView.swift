@@ -247,8 +247,8 @@ public struct CockpitView: View {
                 create: createTicket,
             )
         }
-        // Both prompts the window raises, in one place: the archive that would end live work
-        // (#1290), and the backlog batch a provider took only part of (#1247). See `ShellPrompts`.
+        // Both prompts the window raises, in one place: the archive over live work (#1290), and
+        // the backlog batch a provider took only part of (#1247). See `ShellPrompts`.
         .modifier(ShellPrompts(
             archiving: $archiveConfirmation,
             report: $backlogWriteReport,
