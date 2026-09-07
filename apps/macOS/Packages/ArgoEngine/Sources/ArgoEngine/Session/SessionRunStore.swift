@@ -44,10 +44,32 @@ public final class SessionRunStore {
         case let .model(model):
             // A placeholder is not a pick, so it is never written (#1223).
             guard let model = ModelID.named(in: model) else { return }
-            file.write(Remembered(model: model, effort: picked.effort.rawValue))
+            file.write(Remembered(
+                model: model,
+                effort: picked.effort.rawValue,
+                harness: lastHarness().rawValue,
+            ))
         case let .effort(effort):
-            file.write(Remembered(model: picked.model, effort: effort.rawValue))
+            file.write(Remembered(
+                model: picked.model,
+                effort: effort.rawValue,
+                harness: lastHarness().rawValue,
+            ))
         }
+    }
+
+    func lastHarness() -> AgentCLI {
+        let remembered = file.load(orEmpty: Remembered(model: "", effort: ""))
+        return remembered.harness.flatMap(AgentCLI.init(rawValue:)) ?? .claude
+    }
+
+    func rememberHarness(_ harness: AgentCLI) {
+        let picked = lastPicked()
+        file.write(Remembered(
+            model: picked.model,
+            effort: picked.effort.rawValue,
+            harness: harness.rawValue,
+        ))
     }
 
     /// The file's shape, owned here so the format is pinned in one place. Both halves are spelled
@@ -56,5 +78,6 @@ public final class SessionRunStore {
     private struct Remembered: Codable, Sendable {
         let model: String
         let effort: String
+        var harness: String?
     }
 }

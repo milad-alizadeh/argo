@@ -187,6 +187,32 @@ anything.
 > never work, and a greyed control there would give no reason. This one works again when the Turn
 > ends, and naming that moment is the whole affordance.
 
+## Harness, Model and Effort (#1692)
+
+The composer trigger reads `Claude Code · Opus 5 · Medium`, or the selected harness and its
+own Model and Effort. The run-settings popover gains a **Harness** section above Model and
+Effort. It uses a native, small segmented picker with **Claude Code** and **Codex**.
+
+Before the Session process starts, choosing a harness changes the Model list and Effort scale
+to that harness's supported choices. The last harness is remembered app-wide across restarts.
+Model and Effort selections belong to their harness; changing harness must not send a Claude
+model name to Codex or a Codex model name to Claude Code.
+
+After the process starts, Harness shows that Session's CLI and is disabled. Its tooltip reads
+`you can't change harness during a session create a new session`. Model, Effort and Mode remain
+editable during the Session, subject to the adapter's supported operations. A change must not
+claim to have altered a running request when the harness applies it to the next request.
+
+Project settings no longer shows the Agent row. Its Companion plugin row remains absent.
+
+The existing popover width, native Form sections and type roles remain the contract. Harness
+adds one section; it does not open another modal. Required rendered states include editable
+Claude Code, editable Codex, and a started Session with the Harness segments disabled.
+
+Mode may move during a Turn when every rung on the forward cycle is no wider than the wider
+endpoint. Auto to Code, Auto to Read only, and Code to Auto are allowed. Read only to Code
+remains held because the path crosses Auto, and the existing seam sentence explains that hold.
+
 ## Controls are stock, not bespoke
 
 | In the study | In the app |
