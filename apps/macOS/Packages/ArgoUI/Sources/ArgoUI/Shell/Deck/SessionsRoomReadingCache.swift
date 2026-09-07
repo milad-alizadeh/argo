@@ -41,15 +41,17 @@ enum SessionsRoomReadingCache {
         /// Everything the feed projection reads that is NOT the record's, as the one value that
         /// names them (#1504). By VALUE, every one of them, and `FeedBeside` is where each says
         /// why: none is append-only, so a stamp stopping at the events would draw a reading whose
-        /// beside facts have moved. Derived from the Session once, in `init` below.
+        /// beside facts have moved. Derived from the Session once — see `FeedBeside+Session.swift`.
         let beside: FeedBeside
         /// The Session's own status, stored as the STATUS rather than as either reading taken of
         /// it: the feed's live row wants a Turn in progress (`FeedWorking`, which is what
-        /// `beside.working` holds) and the rail's dots want a Session that can still be driving
+        /// `beside.turn.working` holds) and the rail's dots want a Session that can still be
+        /// driving
         /// work (`DelegatingSession`, #1076), and those two boundaries are no longer the same. One
         /// fact here, each reading named where it is taken.
         let status: SessionStatus?
-        /// The Turn Argo itself submitted, held RAW beside the one `beside.submitted` carries: a
+        /// The Turn Argo itself submitted, held RAW beside the one `beside.turn.submitted` carries:
+        /// a
         /// Session being handed off draws no prompt row (#1229) but still has an unanswered Turn,
         /// so the gate below cannot be read off the row's own words.
         let submittedTurn: String?

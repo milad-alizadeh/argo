@@ -34,11 +34,7 @@ struct FeedPermissionExpiryTests {
     func `the row sits under the work the record holds`() {
         let rows = FeedProjection.rows(FeedInput(
             events: Self.transcript,
-            beside: .just(FeedGateHolds(
-                asking: .none,
-                reported: nil,
-                expired: [Self.expiry],
-            )),
+            beside: .just(FeedGateHolds(asking: .none, reported: nil, expired: [Self.expiry])),
         ))
 
         #expect(rows.last?.content == .mark(.permissionExpired(Self.expiry)))

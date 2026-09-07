@@ -10,11 +10,7 @@ extension FeedProjection {
     /// what the attention state is rendered from.
     static let previewRows = rows(FeedInput(
         events: TranscriptFixtures.previewTranscript,
-        beside: .just(FeedGateHolds(
-            asking: previewTranscriptAsking,
-            reported: nil,
-            expired: [],
-        )),
+        beside: .just(FeedGateHolds.holding(previewTranscriptAsking)),
     ))
 
     /// The question left waiting in that transcript, as the gate would hold it.
@@ -177,9 +173,7 @@ extension FeedProjection {
 
     /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
     /// the shipping preview transcript carries no stopped Turn (#541).
-    static let previewMarkRows = numbered(
-        (previewMarks + [.interrupted]).map(FeedRow.Content.mark),
-    )
+    static let previewMarkRows = numbered((previewMarks + [.interrupted]).map(FeedRow.Content.mark))
 
     /// A reading whose one message carries every markdown block Argo draws — the table above all —
     /// between two prompts. What the overview lane is judged on: a table has to read as its cells,

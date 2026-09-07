@@ -34,11 +34,8 @@ struct FeedAskProjectionTests {
     func `the live question is the one the matching row draws`() throws {
         let rows = FeedProjection.rows(FeedInput(
             events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -53,11 +50,8 @@ struct FeedAskProjectionTests {
         let other = Ask.Question(text: "Something else?", options: [])
         let rows = FeedProjection.rows(FeedInput(
             events: [.toolCall(FeedFixture.asking(other))],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -73,11 +67,8 @@ struct FeedAskProjectionTests {
                 .toolCall(FeedFixture.asking(FeedFixture.askedQuestion)),
                 .toolCallOutcome(TranscriptFixtures.printed("ask", "#712")),
             ],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -97,11 +88,8 @@ struct FeedAskProjectionTests {
                     input: .init(ask: Ask(questions: [FeedFixture.askedQuestion])),
                 )),
             ],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
 
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [false, true])
@@ -113,12 +101,8 @@ struct FeedAskProjectionTests {
     func `a question nobody here can answer is drawn as the reading it is`() throws {
         let rows = FeedProjection.rows(FeedInput(
             events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection
-                    .asking(for: FeedFixture.askingSession(access: .orphaned)),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds.holding(FeedAskProjection
+                    .asking(for: FeedFixture.askingSession(access: .orphaned)))),
         ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -135,11 +119,8 @@ struct FeedAskProjectionTests {
     func `a driveable Session whose gate holds no question is still waiting`() throws {
         let rows = FeedProjection.rows(FeedInput(
             events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession(ask: nil)),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession(ask: nil)))),
         ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 

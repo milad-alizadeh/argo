@@ -19,11 +19,8 @@ struct FeedAskStandingTests {
     func `a question no row in the reading draws is still put to the reader`() throws {
         let rows = FeedProjection.rows(FeedInput(
             events: [.prompt(text: "/implement 1182", images: [], atMs: nil)],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
@@ -38,11 +35,8 @@ struct FeedAskStandingTests {
     func `a question the reading already draws is not put a second time`() {
         let rows = FeedProjection.rows(FeedInput(
             events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
 
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [true])
@@ -60,11 +54,8 @@ struct FeedAskStandingTests {
                 .toolCall(FeedFixture.asking(FeedFixture.askedQuestion)),
                 .toolCallOutcome(TranscriptFixtures.printed("ask", "#712")),
             ],
-            beside: .just(FeedGateHolds(
-                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-                reported: nil,
-                expired: [],
-            )),
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
         ))
 
         #expect(FeedFixture.asks(in: rows).map(\.isPending) == [false, true])

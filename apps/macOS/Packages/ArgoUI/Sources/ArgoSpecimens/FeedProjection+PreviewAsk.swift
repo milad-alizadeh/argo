@@ -52,11 +52,10 @@ package extension FeedProjection {
     /// agent, so nothing is waiting on the user. The reason takes the deck's foot instead.
     static let previewAskUnavailable = rows(FeedInput(
         events: askTranscript(previewAskDecision),
-        beside: .just(FeedGateHolds(
-            asking: FeedAskProjection.Asking(live: nil, isDriveable: false),
-            reported: nil,
-            expired: [],
-        )),
+        beside: .just(FeedGateHolds.holding(FeedAskProjection.Asking(
+            live: nil,
+            isDriveable: false,
+        ))),
     ))
 
     /// A DRIVEABLE Session whose gate has not raised this question — Argo restarted under a CLI
@@ -73,14 +72,14 @@ package extension FeedProjection {
     /// came from.
     static let previewAskStanding = rows(FeedInput(
         events: Array(askTranscript(previewAskDecision).dropLast()),
-        beside: .just(FeedGateHolds(asking: FeedAskProjection.Asking(
+        beside: .just(FeedGateHolds.holding(FeedAskProjection.Asking(
             live: FeedAskProjection.Live(
                 sessionID: "session-preview",
                 askID: previewAskID,
                 ask: Ask(questions: previewAskDecision),
             ),
             isDriveable: true,
-        ), reported: nil, expired: [])),
+        ))),
     ))
 
     /// A question the agent raised over the COMPANION PLUGIN rather than at Argo's gate (#1205).
@@ -186,14 +185,14 @@ package extension FeedProjection {
     private static func askRows(_ questions: [Ask.Question]) -> [FeedRow] {
         rows(FeedInput(
             events: askTranscript(questions),
-            beside: .just(FeedGateHolds(asking: FeedAskProjection.Asking(
+            beside: .just(FeedGateHolds.holding(FeedAskProjection.Asking(
                 live: FeedAskProjection.Live(
                     sessionID: "session-preview",
                     askID: previewAskID,
                     ask: Ask(questions: questions),
                 ),
                 isDriveable: true,
-            ), reported: nil, expired: [])),
+            ))),
         ))
     }
 

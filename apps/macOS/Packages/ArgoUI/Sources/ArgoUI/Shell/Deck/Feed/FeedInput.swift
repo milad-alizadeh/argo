@@ -171,6 +171,13 @@ package struct FeedGateHolds: Equatable, Sendable {
     /// `FeedAskProjection.Asking.none` is not reachable from the specimens.
     package static let nothing = FeedGateHolds(asking: .none, reported: nil, expired: [])
 
+    /// The gate holding a question and nothing else — the state every reading of a waiting Session
+    /// is taken in. Named beside `nothing` so a field added here is answered in one place rather
+    /// than pasted at each call.
+    package static func holding(_ asking: FeedAskProjection.Asking) -> FeedGateHolds {
+        FeedGateHolds(asking: asking, reported: nil, expired: [])
+    }
+
     package init(asking: FeedAskProjection.Asking, reported: Ask?, expired: [PermissionExpiry]) {
         self.asking = asking
         self.reported = reported
