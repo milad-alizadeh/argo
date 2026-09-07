@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Holds AGENTS.md, "Pushing and pull requests" (#1669) as a failing check rather than prose:
-// `/ship` is the only skill that may open a pull request, and only three other files may push
-// anything at all. The first case is the rule over the real bundle; the rest inject the violation
-// so the check is known to fire, because a grep-shaped gate over a tree it cannot find passes.
+// AGENTS.md, "Pushing and pull requests" (#1669), as a failing check.
+//
+// The first case is the rule over the real bundle; the rest inject the violation, because a
+// grep-shaped gate over a tree it cannot find passes while looking at nothing.
 import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -46,6 +46,13 @@ check('a skill outside the allowlist that pushes is named too', () => {
   const root = fixture({ 'tdd/SKILL.md': '# TDD\n\nFinish with `git push -u origin HEAD`.\n' })
   const { violations } = auditSkills(root)
   assert.deepEqual(violations, [{ command: 'git push', file: 'tdd/SKILL.md', line: 3 }])
+  rmSync(root, { recursive: true, force: true })
+})
+
+check('extra whitespace inside the command is still the command', () => {
+  const root = fixture({ 'tdd/SKILL.md': '# TDD\n\nThen `gh  pr\tcreate`.\n' })
+  const { violations } = auditSkills(root)
+  assert.deepEqual(violations, [{ command: 'gh pr create', file: 'tdd/SKILL.md', line: 3 }])
   rmSync(root, { recursive: true, force: true })
 })
 

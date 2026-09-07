@@ -103,7 +103,9 @@ must read it again to learn what you already knew.
 **Screenshot evidence** is a section too, under the same condition: only when
 `docs/agents/issue-tracker.md` exists. Append it verbatim, replacing any existing
 `## Screenshots` section in place. The block is GitHub. If the code host is not GitHub, append
-the two bullets only and stop; the rest of the block is the GitHub publish method.
+the two bullets only and stop; the rest of the block is the GitHub publish method. The push
+inside it is Argo's own allowlisted one (AGENTS.md, **Pushing and pull requests**): it writes a
+commit that sits on no branch, and no work branch or pull request is involved.
 
 ````markdown
 ## Screenshots

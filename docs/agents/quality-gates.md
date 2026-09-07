@@ -16,9 +16,10 @@ The hook asks `gh` whether the pushed branch has an open pull request, and gates
 does (#1577). A branch with none is work in progress that nobody is reading; the gate costs
 3m32s plus a build-slot wait whose worst case over 110 branches was 30m40s, and paying that on a
 scratch push buys nothing. The push that OPENS a PR is the gap that rule leaves, and `ship`
-fills it by running the gate itself before `gh pr create` — which `ship` is the only caller of,
-because nothing else opens a PR at all (AGENTS.md, **Pushing and pull requests**). A `gh` that is missing, unauthorised
-or offline gates rather than skips: a failed question is not an answer of "no PR". It was a `macos-26` CI job until #1340, where it was measured at about 99% of this
+fills it by running the gate itself before `gh pr create` — of which `ship` is the only caller,
+because nothing else opens a PR at all (AGENTS.md, **Pushing and pull requests**). A `gh` that
+is missing, unauthorised or offline gates rather than skips: a failed question is not an answer
+of "no PR". It was a `macos-26` CI job until #1340, where it was measured at about 99% of this
 repo's Actions bill for repeating, from a cold cache, what the author's Mac had already built.
 
 Two things follow from where it now runs, and both are load-bearing:

@@ -1,7 +1,6 @@
 # Publishing screenshots without committing them
 
-This is one of the two pushes AGENTS.md, **Pushing and pull requests**, exempts. The commit it
-pushes sits on no branch, so it is not a work-branch push and it never merges.
+An allowlisted push — AGENTS.md, **Pushing and pull requests**.
 
 From the directory holding the PNGs (`$SHOTS`), write them to a commit that no branch
 carries, and push it to a ref:
