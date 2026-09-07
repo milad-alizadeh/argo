@@ -30,6 +30,13 @@ load-bearing twice over: `/ship`, which is the only thing that opens the PR, par
 `Closes #<N>`, and the Argo cockpit parses it to name the Session's row after the ticket (#745).
 A branch without it breaks the PR→ticket link and leaves the row reading `/implement <N>`.
 
+The `ticket-` prefix is not optional, and a bare `<N>-<slug>` directory is refused. Nothing
+downstream parses the prefix — `worktree-gc.sh` walks `.claude/worktrees/*/` and reads git, and
+the edit guard asks only whether a path sits under that directory — but one accepted spelling is
+what lets the resume check below be a `grep` on `<N>` alone. Accepting two would fork every
+reader of a directory name, and no session is pushed towards the bare form now that
+`EnterWorktree` creates no trees (#1683).
+
 For work with no ticket, keep the shape but drop the number: worktree `ticket-<slug>`, branch
 `argo/<slug>`. Work with no ticket may start — refusing it would push spikes back into the
 shared main checkout, which is the worse failure. What may not start is an *undeclared* one:
@@ -79,7 +86,9 @@ refuses:
 - `git branch -m`, `git switch -c` or `git checkout -b` inside a worktree, onto a branch that is
   not `argo/#<N>-<slug>`.
 
-Every refusal states the correct shape, so the fix is in the message rather than a lookup.
+Every refusal states the correct shape, so the fix is in the message rather than a lookup. A
+refusal from `git worktree add` names the **entry** step after it as well, because that session
+has no tree to be inside yet; a rename refusal, which fires within one, does not.
 
 It fires **only at creation**, the one moment a name is still free. Editing inside an existing
 tree is not guarded here, and neither is `git worktree add <path> <branch>` (the recovery below),

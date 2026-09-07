@@ -33,6 +33,8 @@ const REFUSED = [
   // argo/#<N>-<slug> — and no name at all lands it on a generated one (#1684).
   ['an EnterWorktree name that conforms', () => enter({ name: 'ticket-901-naming' })],
   ['an EnterWorktree with no name at all', () => enter({})],
+  // The name a session reaches for when it names the tree after the ticket alone (#1683).
+  ['an EnterWorktree name carrying the ticket number', () => enter({ name: '1681-window' })],
   // A numberless name starting with a number is a dropped `#`, not a statement of no ticket.
   [
     'a numberless name that starts with a number',
@@ -124,6 +126,19 @@ check('the refusal spells out both names and cites the doc', () => {
   assert.match(reason, /argo\/#<N>-<slug>/)
   assert.match(reason, /ticket-<slug>/) // the numberless shape, not a dead end
   assert.match(reason, /docs\/agents\/worktrees\.md/)
+})
+
+// A refusal at creation is the one that fires with no tree to be inside, so it carries both
+// halves of the two-step: fixing only the name leaves the session guessing at the entry.
+check('the creation refusal names the enter step that follows', () => {
+  const { reason } = bash(`git worktree add ${WT}/parallel-workitem-edges`)
+  assert.match(reason, /EnterWorktree \{ path:/)
+})
+
+// The same tail inside a worktree is noise: that session has a tree and is standing in it.
+check('a rename refusal inside a worktree does not name the enter step', () => {
+  const { reason } = bash('git branch -M worktree-901-naming', IN_WT)
+  assert.doesNotMatch(reason, /EnterWorktree \{ path:/)
 })
 
 // Refusing the only tool that creates a tree costs nothing if the refusal names the road that
