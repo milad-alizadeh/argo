@@ -199,7 +199,7 @@ extension CockpitView {
                       archiving: isArchived,
                   )
             else {
-                actions.sessions.setArchived(sessionID, isArchived)
+                Task { await actions.sessions.setArchived(sessionID, isArchived) }
                 return nil
             }
             return ArchiveConfirmation.Session(id: session.id, name: session.title)

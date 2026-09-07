@@ -208,7 +208,7 @@ extension CockpitView {
                 // work is asked about first, and the row's swipe raises the same prompt the
                 // menu item does (#1290).
                 archive: { archive(sessionIDs: $0, isArchived: $1) },
-                rename: actions.sessions.setName,
+                rename: { id, name in Task { await actions.sessions.setName(id, name) } },
                 renamingSessionID: $renamingSessionID,
             )
             .room(isActive: !isTickets && !isAtlas)

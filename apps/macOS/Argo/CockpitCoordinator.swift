@@ -102,7 +102,8 @@ final class CockpitCoordinator {
     /// overrides the active Project, which is only knowable once the file has been read.
     func start() async {
         let registry = await store.load()
-        annotations = await annotationStore.load()
+        // Read by dropping the recycled claim keys a build before #1563 left behind.
+        annotations = await annotationStore.dropRecycledKeys()
         let resolved = await configuration.resolvingRoots(through: store)
         // Started with the window rather than with the first `/`, so the picker never waits on a
         // hidden `claude` spawning. Its own folder, because that is the one the CLI is trusted in.
@@ -195,6 +196,12 @@ final class CockpitCoordinator {
     /// trigger, so a pinned link and a derived one are named the same way.
     func setPinnedTicket(_ number: Int?, sessionID: String) async {
         annotations = await annotationStore.setPinnedTicket(number, sessionID: sessionID)
+    }
+
+    /// Move a row's annotations off the claim id it stood under (#1563). Which rows re-keyed is
+    /// the projection's (`provisionalRowKeys`), on `nameTickets` below's ground.
+    func rekeyAnnotations(_ rowKeys: [String: String]) async {
+        annotations = await annotationStore.rekeying(rowKeys)
     }
 
     /// Name each Session's ticket through the Project's Ticket port (#745). What is resolved and

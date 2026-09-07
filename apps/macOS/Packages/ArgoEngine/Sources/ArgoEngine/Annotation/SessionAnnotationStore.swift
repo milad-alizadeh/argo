@@ -53,6 +53,29 @@ public actor SessionAnnotationStore {
         persist(load().pinning(number, sessionID: sessionID))
     }
 
+    /// Argo's own write and never a gesture: `rekeying` says what it does to a decision and why.
+    ///
+    /// A whole roster's worth at once, keyed provisional-to-durable, because the caller offers
+    /// every re-keyed row it can see rather than one — and the file is left alone where none of
+    /// them moved, which is nearly every call.
+    @discardableResult
+    public func rekeying(_ rowKeys: [String: String]) -> SessionAnnotations {
+        let held = load()
+        let moved = rowKeys.reduce(held) { $0.rekeying(from: $1.key, to: $1.value) }
+        guard moved != held else { return held }
+        return persist(moved)
+    }
+
+    /// Once at start, never on the read behind a write: `droppingRecycledKeys` says which keys and
+    /// why those.
+    @discardableResult
+    public func dropRecycledKeys() -> SessionAnnotations {
+        let held = load()
+        let kept = held.droppingRecycledKeys()
+        guard kept != held else { return held }
+        return persist(kept)
+    }
+
     /// A file that cannot be written still holds for this launch and is forgotten by the next
     /// one. Refusing the gesture is a worse answer to a full disk than losing the memory of it.
     private func persist(_ annotations: SessionAnnotations) -> SessionAnnotations {
