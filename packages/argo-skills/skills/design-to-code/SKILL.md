@@ -92,7 +92,8 @@ re-judged or rejected with a cited rule.
 
 When this ticket was the last one against the design, set the `.md`'s front matter to
 `status: built` and record the commit. The page's branch has now stopped being an input to
-anything, so delete it:
+anything, so delete it. This is one of the two pushes AGENTS.md, **Pushing and pull requests**,
+exempts: it drops a design branch, and never touches the work branch or the PR.
 
 ```sh
 git push origin --delete design/<screen>

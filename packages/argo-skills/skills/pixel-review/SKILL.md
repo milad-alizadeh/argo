@@ -29,8 +29,8 @@ Resolution order, first hit wins:
    against the state renders beside the `.md`, which are the spec, and move on.
 4. **Dev server**: a `dev`/`start` script; launch it and navigate to the screens the ticket
    names.
-5. **Nothing renderable found**: record "visual verification unavailable" in the PR body and
-   stop.
+5. **Nothing renderable found**: report "visual verification unavailable" to the caller, for
+   `/ship` to carry into the PR body, and stop.
 
 Use `scripts/screenshot-states.mjs` if the project has it; otherwise drive headless Chromium
 inline with a fixed viewport and animations disabled.
@@ -57,12 +57,15 @@ own stage.
 ## 3. Fix loop
 
 Findings go back to implementation: fix, re-render, re-judge, at most two rounds. Still
-failing after that: proceed, list the unresolved findings in the PR body, and open the PR as
-draft if the miss is fundamental (wrong layout, missing states).
+failing after that: stop, and hand the unresolved findings back to the caller. Say which of them
+is a fundamental miss (wrong layout, missing states). That is an input to how the PR opens, and
+this skill runs before there is a PR: the call is the caller's, taken when they run `/ship`.
 
-## 4. Evidence in the PR
+## 4. Hand the evidence to `/ship`
 
-Pass or fail, the final screenshots go in the PR so the human reviews pixels. Publish them
-under a throwaway ref so they never merge, following `PR-EVIDENCE.md` beside this file.
+Pass or fail, the final screenshots belong in the PR body so the human reviews pixels — and
+this skill runs before any PR exists. Publish them under a throwaway ref so they never merge,
+following `PR-EVIDENCE.md` beside this file, and hand the caller the pinned URLs with the
+findings. `/ship` is what writes them into the body.
 
-Done when every final PNG is embedded in the PR body by a URL pinned to that commit.
+Done when every final PNG has a URL pinned to that commit, and the caller has the list.

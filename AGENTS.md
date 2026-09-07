@@ -44,12 +44,29 @@ the task; a session that waits until it wants the list writes no list at all.
   commit" — is the shape to reject (#1419).
 - **The list runs to the reviewed diff**, so the last item completes when the work is proved, not
   when it is committed. A full bar is otherwise not a finished session (#1419).
-- **The push and the PR are `/ship`'s, and never an item you write yourself** (#1648). `/ship` is
-  a separate invocation the caller makes, and it carries the close-out nothing else runs: the
-  gate on the base the branch was cut from, the sweep for `.only` and debug prints, the
-  screenshots, and the review findings written into the PR body. It carries what it cannot tick
-  rather than stopping, an unreviewed diff included — so a list that opens its own PR does not
-  route around a refusal, it just opens one having done none of that.
+- **The push and the PR are `/ship`'s, and never an item you write yourself** (#1648) — the rule
+  is **Pushing and pull requests** below, and it binds a run that writes no list just the same.
+
+## Pushing and pull requests
+
+**No session pushes a work branch or opens a pull request. `/ship` does both, and `/ship` is a
+separate invocation the caller makes** (#1648, #1669). A run ends at the reviewed diff, committed
+on its branch; what becomes of that branch is the human's next keystroke, not the run's last step.
+`/ship` carries the close-out nothing else runs — the gate on the base the branch was cut from,
+the sweep for `.only` and debug prints, the screenshots, the review findings written into the body
+— and it carries what it cannot tick rather than stopping, an unreviewed diff included. So a run
+that opens its own PR does not route around a refusal; it opens one having done none of that.
+
+Two pushes are not work-branch pushes, and they are the only exceptions:
+
+- **The evidence ref**, which publishes screenshots for a body `gh` cannot attach a file to. The
+  commit it pushes sits on no branch, so it never merges: `pixel-review/PR-EVIDENCE.md`, and the
+  same recipe that `setup-argo-skills` appends to a consumer's doc.
+- **The design-branch delete** in `design-to-code` step 6, which drops `design/<screen>` once the
+  screen has shipped.
+
+`scripts/pr-ownership.test.mjs` holds that allowlist, and fails when any other skill names the
+PR-opening or branch-pushing commands.
 
 ## Rules
 
