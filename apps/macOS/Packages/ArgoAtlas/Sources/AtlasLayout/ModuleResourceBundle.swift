@@ -13,6 +13,14 @@ import Foundation
 /// nothing at all, so an edge from above it costs a caller nothing. Written out per package
 /// instead, it was the largest clone in the tree and it put the duplication gate over its
 /// threshold.
+///
+/// One assumption is worth stating, because sharing the walk across a package boundary is what
+/// leans on it: `Anchor` resolves in whichever image `AtlasLayout` was linked into, not the
+/// caller's. Every product in this package and in `ArgoEngine` is a plain `.library`, so SwiftPM
+/// and Xcode both link them statically into the one executable and `Bundle(for:)` collapses to
+/// `Bundle.main`. Declare any of them `.dynamic`, or embed this target as its own framework, and
+/// the two `Anchor` candidates point at the wrong directory — a caller's bundle is then found by
+/// the two `Bundle.main` candidates alone.
 public enum ModuleResourceBundle {
     private final class Anchor {}
 
