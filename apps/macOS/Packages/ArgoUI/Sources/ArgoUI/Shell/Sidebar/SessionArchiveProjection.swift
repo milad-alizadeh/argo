@@ -44,9 +44,20 @@ enum SessionArchiveProjection {
     /// has since quit — where the claim that held the handle is gone and the archive reaches only
     /// the row. A reader given one number for the two cannot tell which agents survive the
     /// gesture, and that is precisely the state the roster was lying about.
+    ///
+    /// A batch with one survivor says "the other one" rather than "the other 1": the count is a
+    /// number in the same sentence as the pronouns that follow it, and a plural pronoun over a
+    /// singular count reads as a second agent nobody has.
     static func confirmMessage(ending: Int, staying: Int) -> String {
         guard staying > 0 else { return ends(count: ending) }
         guard ending > 0 else { return outlives(count: staying) }
+        guard staying > 1 else {
+            return """
+            These agents are working. Archiving ends \(ending) of them and takes every Session \
+            off the roster. Argo cannot end the other one, because this window did not start it, \
+            so it keeps running. Putting a Session back keeps its history.
+            """
+        }
         return """
         These agents are working. Archiving ends \(ending) of them and takes every Session off \
         the roster. Argo cannot end the other \(staying), because this window did not start \

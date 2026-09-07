@@ -1,5 +1,6 @@
-/// The archive waiting to be confirmed — every Session it would end, held while the prompt is up
-/// (#1290, #1247).
+/// The archive waiting to be confirmed — every Session with live work in it, held while the prompt
+/// is up (#1290, #1247). Not every one of them is ENDED by it: `endsAgent` below is which, and
+/// #1596 is what it cost to assume the two sets were the same.
 ///
 /// Both halves of each row are captured when the gesture is made rather than read back when the
 /// button is pressed. The Sessions are mid-turn, so their rows are moving: a title read a second

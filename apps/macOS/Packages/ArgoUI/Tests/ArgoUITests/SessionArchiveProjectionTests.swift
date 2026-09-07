@@ -124,6 +124,18 @@ struct SessionArchiveProjectionTests {
         #expect(mixed.contains("keep running"))
     }
 
+    /// Caught in the render, not in a value: "the other 1 … did not start them, so they keep
+    /// running" reads as a second agent nobody has, and the count is in the same sentence as the
+    /// pronouns that answer to it.
+    @Test
+    func `a batch with one survivor speaks of that one in the singular`() {
+        let one = SessionArchiveProjection.confirmMessage(ending: 2, staying: 1)
+        #expect(one.contains("the other one"))
+        #expect(one.contains("it keeps running"))
+        #expect(!one.contains("they"))
+        #expect(!one.contains("the other 1"))
+    }
+
     /// The verb turns around with the message. "Archive and End" over a batch nothing will end is
     /// the button lying about what pressing it does; over a mixed one, some do end, so it stands.
     @Test
