@@ -27,13 +27,6 @@ extension SessionOwnership {
         return id
     }
 
-    /// Whether this Argo has issued a claim at all — the cheapest thing that can be true before
-    /// `bind` above can answer anything. Both of its arms read `issuedOrder`, so a registry that
-    /// has issued nothing binds nothing, whatever the roster holds.
-    var hasIssuedAClaim: Bool {
-        !issuedOrder.isEmpty
-    }
-
     /// The claim whose named transcript is already bound under a DIFFERENT path: the CLI moves the
     /// file into the worktree's own record directory when a Session enters one, and a Session is
     /// keyed by that path (#770, #942).
