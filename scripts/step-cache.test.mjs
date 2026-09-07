@@ -126,6 +126,42 @@ check('a verdict with no app on disk builds again', () => {
   s.cleanup()
 })
 
+// The step memory is the MACHINE's — one directory behind every worktree, which is what keying
+// on content is for — and the product is one checkout's. So a verdict recorded by the lane that
+// built this tree must not let a different lane skip its own build and keep an app compiled from
+// the tree it happened to build last. `bun run build` printed "up to date" over a two-day-old
+// binary, and the screenshot taken next was of that binary.
+check('a verdict earned on another tree does not stand in for this app', () => {
+  const s = buildScenario()
+  s.build()
+  s.commit('apps/macOS/Packages/ArgoUI/source.swift', 'let a = 2\n')
+  s.build()
+  assert.equal(s.builds(), 2, 'a changed tree builds')
+  // Back to the first tree, whose verdict is still in the machine's cache — but the app on disk
+  // is the second tree's, as it would be in a worktree that never built the first. The content
+  // is committed back rather than reset to, because a reset would take the untracked record of
+  // what ran with it and the case would then prove nothing.
+  s.commit('apps/macOS/Packages/ArgoUI/source.swift', 'let a = 1\n')
+  const third = s.build()
+  assert.equal(third.status, 0, third.stdout + third.stderr)
+  assert.equal(s.builds(), 3, "a verdict is not this worktree's app")
+  s.cleanup()
+})
+
+// The same hole from the other side: a run that could not be keyed still REPLACES the product,
+// so it must not leave the previous label on it.
+check('an unkeyable build leaves no stamp for an older verdict to match', () => {
+  const s = buildScenario()
+  s.build()
+  s.commit('apps/macOS/Packages/ArgoUI/source.swift', 'let a = 2\n')
+  s.build({ ARGO_GATE_CACHE: 'off' })
+  assert.equal(s.builds(), 2)
+  s.commit('apps/macOS/Packages/ArgoUI/source.swift', 'let a = 1\n')
+  assert.equal(s.build().status, 0)
+  assert.equal(s.builds(), 3, "the app is the uncached build's, whatever the verdict says")
+  s.cleanup()
+})
+
 check('a build that wrote no app fails, whatever xcodebuild exited', () => {
   const s = buildScenario()
   // An `xcodebuild` that exits 0 having written nothing. Believing it would record a verdict
