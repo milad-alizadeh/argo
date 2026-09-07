@@ -175,7 +175,9 @@ extension SpecimenRegistry {
         // seen against, and what `OutlineCount.swift` polls. Not a picture: a hundred rows run
         // past the window's foot, and the point of this entry is the tree an accessibility client
         // reads while a row lands, not the pixels.
-        SpecimenEntry("crowdedSpawningRoster") { SpawningRosterSpecimen(seeded: 100) },
+        SpecimenEntry("crowdedSpawningRoster") {
+            SpawningRosterSpecimen(seeded: SpawningRosterSpecimen.crowd)
+        },
         // Two spawns, back to back: one row still waiting on its PTY, one past its first record.
         SpecimenEntry("freshSessionPair") { FreshSessionPairSpecimen() },
         SpecimenEntry("renamedRoster") { RenamedRosterSpecimen() },

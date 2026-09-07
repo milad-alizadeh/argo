@@ -137,16 +137,19 @@ through `kAXPressAction`, so like the walk above it takes neither the pointer no
 What it measured, against `crowdedSpawningRoster` (a roster seeded with exactly 100 rows) and
 against a real cockpit, is the thing to know before quoting such a count at all: **the number an
 accessibility client reads is the row population AppKit has materialised at that instant, not the
-number of rows the roster has.** Polled once a second for two minutes, one unchanging real roster
-answered 421, then 71, then 421, then 16, then 71 — plateaus of tens of seconds, not a settling
-sequence. At the 16 plateau `AXVisibleRows` was 14 and every row had a height: the outline was
-publishing the visible slice alone. At 421 it published all 420 rows with 32 of them realised and
-the other 388 at zero height and silent.
+number of rows the roster has.** Polled for two minutes — 282 readings, each one a
+tree walk — one unchanging real roster answered 421, then 71, then 421, then 16, then 71:
+plateaus of tens of seconds, not a settling sequence. A second run caught the 16 plateau with
+`AXVisibleRows` at 14 and every row carrying a height, so the outline was publishing the visible
+slice alone. At 421 it published all 420 rows with 32 realised and the other 388 at zero height
+and silent.
 
 So a reading four times another reading of the same roster is two different populations, not a
 tree caught mid-rebuild (#1562). A spawn does not disturb the count: 100 seeded rows polled every
-25 ms across four `kAXPressAction` presses went 101 → 105, one row per press, with no reading
-above the settled value in 173 samples.
+25 ms across four `kAXPressAction` presses went 101 → 105, one row per press, and the whole run
+held a spread of 101 to 105 across 173 samples. That press publishes a row and starts no process,
+so it clears the roster's own republish, not the real toolbar's spawn with #1559's layout cost
+behind it.
 
 Two consequences. A count taken this way can only ever be a lower bound on the roster, so never
 read a change in one as a change in the roster. And a VoiceOver reader meets the same three

@@ -14,32 +14,23 @@ struct SpawningRosterSpecimen: View {
     /// so a rename there shows up here as a failing walk.
     static let provisionalTitle = "New session"
 
-    /// How many Sessions the roster already holds when the first press lands. Zero for the click
-    /// walk, which only needs a row to appear. A crowded roster is what #1562 was seen against:
-    /// its claim is a count about four times the roster's, and a roster of one cannot tell a
-    /// quadrupled tree from an ordinary one.
-    var seeded = 0
+    /// The roster `crowdedSpawningRoster` starts from. A hundred, because #1562's reading is
+    /// about four times its roster and a handful of rows cannot tell a quadrupled tree from an
+    /// ordinary one. Named so the entry and `SessionRosterSpecimenTests` mean the same rows.
+    static let crowd = (0 ..< 100).map { settled(at: $0) }
 
     @State private var presentation: CockpitPresentation
     @State private var navigation = CockpitNavigationModel()
     @State private var started = 0
 
-    init(seeded: Int = 0) {
-        self.seeded = seeded
+    init(seeded: [CockpitPresentation.Session] = []) {
         let empty = CockpitPresentation.emptyPreview
         _presentation = State(initialValue: CockpitPresentation(
             projects: empty.projects,
             activeProjectID: empty.activeProjectID,
-            sessions: Self.seededSessions(seeded),
+            sessions: seeded,
             connection: empty.connection,
         ))
-    }
-
-    /// The Sessions the roster is already holding. Named rather than inlined so a test can assert
-    /// the crowd is really there: a seed that silently fell to zero would have `OutlineCount.swift`
-    /// report "no spike" off a roster of one, which is the one wrong answer this repro can give.
-    static func seededSessions(_ count: Int) -> [CockpitPresentation.Session] {
-        (0 ..< count).map(settled(at:))
     }
 
     /// One of the Sessions the roster is already holding. Titles differ per row so the naming pass

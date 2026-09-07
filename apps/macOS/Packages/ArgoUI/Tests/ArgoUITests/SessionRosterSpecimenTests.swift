@@ -114,18 +114,16 @@ struct SessionRosterSpecimenTests {
         #expect(rows.contains { $0.isReadOnly && $0.state == .running })
     }
 
-    /// `crowdedSpawningRoster` is the repro `OutlineCount.swift` polls for #1562, and its whole
-    /// claim rests on the roster being crowded: a count about four times the roster's cannot be
-    /// told from an ordinary one when the roster holds a handful. A seed that fell back to zero
-    /// would have the probe report "no spike" and close a bug that was never looked at.
+    /// `crowdedSpawningRoster` is the roster `OutlineCount.swift` polls for #1562, and its whole
+    /// claim rests on the roster DRAWING a hundred rows. Rows sharing a title fold into one
+    /// (#1073), so a crowd that folded would have the probe report "no spike" off a roster of a
+    /// handful — the one wrong answer this repro can give.
+    @MainActor
     @Test
-    func `the crowded spawning roster seeds a roster a spike could be seen against`() {
-        let seeded = SpawningRosterSpecimen.seededSessions(100)
+    func `the crowded spawning roster draws a roster a spike could be seen against`() {
+        let drawn = SessionRosterProjection.rows(from: SpawningRosterSpecimen.crowd, opened: [])
 
-        #expect(seeded.count == 100)
-        // Distinct titles, because rows sharing one fold into a single row (#1073) and a folded
-        // roster is not the tree that was counted.
-        #expect(Set(seeded.map(\.title)).count == seeded.count)
-        #expect(Set(seeded.map(\.id)).count == seeded.count)
+        #expect(drawn.count == 100)
+        #expect(drawn.filter(\.takesSelection).count == drawn.count)
     }
 }
