@@ -44,16 +44,33 @@ else
   signing="CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM="
 fi
 
-# Has this exact tree already been built? (#1377)
+# Has this exact tree already been built, HERE? (#1377)
 #
 # The same duplicate `swift-test.sh` closes: an agent builds the app to look at it, and then
 # the pre-push gate builds it again. Unlike a suite, though, a build has a PRODUCT, and a
 # verdict says nothing about whether that product is still on disk — `worktree-gc --artifacts`
 # may have swept it since. So the recorded pass is believed only when the app is there to
 # point at, and the two conditions are checked together.
+#
+# Two conditions were one too few. The step memory is the MACHINE's — one cache directory
+# behind seventy-five worktrees, which is the whole point of keying on content — while the
+# product is this checkout's alone. So a lane that built a tree left a verdict every other
+# lane could read, and any of them standing on that same tree skipped its build and kept an
+# app compiled from whatever it happened to have built last. `bun run build` said "up to date"
+# over a two-day-old binary, which is worse than a slow build: the run that goes on to screenshot
+# it, or to look at the fix, is reading a product no longer of this source.
+#
+# What closes it is a STAMP: the product is labelled with the key that produced it, next to
+# the app rather than inside it, where the bundle's signature does not cover it. A verdict is
+# then believed only when this worktree's own app carries the same key — the memory says the
+# tree is built, the stamp says it is built here. The stamp is removed before `xcodebuild`
+# runs and written after it succeeds, so a build interrupted in the middle leaves a product
+# no key claims, which is the honest answer for a bundle half-replaced.
 BUILD_KEY=$(step_key "xcodebuild:$configuration" apps/macOS)
 PRODUCT="build/Build/Products/$configuration/Argo.app"
-if step_cached "$BUILD_KEY" && [ -d "$PRODUCT" ]; then
+STAMP="build/Build/Products/$configuration/.argo-build-key"
+if step_cached "$BUILD_KEY" && [ -d "$PRODUCT" ] &&
+  [ "$(cat "$STAMP" 2>/dev/null)" = "$BUILD_KEY" ]; then
   echo "build: $configuration is up to date for this tree ($(step_recorded_at "$BUILD_KEY"))"
   metric_append step "xcodebuild:$configuration" hit 0 0
   exit 0
@@ -65,6 +82,7 @@ fi
 build_lock_acquire
 
 BUILD_STARTED=$(metric_now)
+rm -f "$STAMP"
 # shellcheck disable=SC2086 # $signing is a deliberate argument list, empty when signing stays on.
 xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" \
   -derivedDataPath build "MODULE_CACHE_DIR=$ARGO_SWIFT_CACHE_DIR/modules" build $signing
@@ -75,6 +93,11 @@ xcodebuild -project Argo.xcodeproj -scheme Argo -configuration "$configuration" 
   echo "build: xcodebuild exited 0 but wrote no $PRODUCT" >&2
   exit 1
 }
+# The stamp is written whatever the key is, empty included. An unkeyable run — the cache off,
+# or a dirty tree — still replaces the product, and leaving the previous label on it would let
+# a later run over that older tree read a verdict against an app that is no longer the one it
+# describes. An empty stamp matches no key, because `step_cached` never hits on one.
+printf '%s\n' "$BUILD_KEY" > "$STAMP"
 step_record "$BUILD_KEY" "xcodebuild:$configuration" apps/macOS
 metric_append step "xcodebuild:$configuration" run \
   "$(($(metric_now) - BUILD_STARTED))" "$BUILD_LOCK_WAITED"

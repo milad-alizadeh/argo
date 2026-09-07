@@ -76,9 +76,15 @@ per gate: whichever runs first records the verdict, and the other reads it.
 - `swift-test.sh` keys each package's suite on the content of `apps/macOS`, the configuration
   and the toolchain. A **filtered** run is never cached in either direction: it proves less than
   a full one, and it is asked for precisely when somebody wants that suite run again.
-- `build.sh` keys the app build the same way, and believes a recorded pass **only when the app
-  is still on disk** — `worktree-gc --artifacts` deletes products, and a verdict is not a
-  product. An `xcodebuild` that exits 0 having written no app is a failure, not a pass.
+- `build.sh` keys the app build the same way, and believes a recorded pass **only when this
+  worktree's own app carries that key**. Two things have to hold, because the memory is the
+  machine's and the product is one checkout's. The app must still be there — `worktree-gc
+  --artifacts` deletes products, and a verdict is not a product — and it must be STAMPED with
+  the key, in `.argo-build-key` beside the bundle. Without the stamp, the lane that built a
+  tree left a verdict every other lane read as its own, and `bun run build` said "up to date"
+  over a binary days older than the source. The stamp is removed before `xcodebuild` and
+  written after it, so an interrupted build leaves a product no key claims. An `xcodebuild`
+  that exits 0 having written no app is a failure, not a pass.
 
 So the shape of a push after an agent has already run the suites is: the linters run, the build
 and the four suites do not, and the whole thing is under a minute.

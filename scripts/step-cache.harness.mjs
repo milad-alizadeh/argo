@@ -50,6 +50,12 @@ function seed(dir) {
     mkdirSync(path.join(dir, 'apps/macOS/Packages', pkg), { recursive: true })
     writeFileSync(path.join(dir, 'apps/macOS/Packages', pkg, 'source.swift'), 'let a = 1\n')
   }
+  // The repository ignores its build products, and so must the fixture: the key refuses a DIRTY
+  // tree, so a real file written under `apps/macOS/build` — the stamp `build.sh` labels the app
+  // with — would make every tree here unkeyable and quietly turn the cases below into cases
+  // about nothing. It went unnoticed while the fake product was an empty directory, which git
+  // does not track and so never reported.
+  writeFileSync(path.join(dir, '.gitignore'), 'apps/macOS/build/\n')
 }
 
 export function scenario() {
