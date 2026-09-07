@@ -11,22 +11,25 @@ extension FeedProjection {
     /// into the reading when the wait ends. Against real work rather than alone, because a settled
     /// row is judged by whether it reads as one more thing that happened; and against a SHORT
     /// reading, because a still cannot scroll to the head of a long one.
-    static let previewSettledWaitRows = rows(
-        from: TranscriptFixtures.surveyed,
-        settledWaits: [SessionWaitSettled(wait: .starting, tookMs: 3200)],
-    )
+    static let previewSettledWaitRows = rows(FeedInput(
+        events: TranscriptFixtures.surveyed,
+        beside: .just(FeedWaitsHeld(
+            startedQuietly: false,
+            settled: [SessionWaitSettled(wait: .starting, tookMs: 3200)],
+        )),
+    ))
 
     /// A start that FAILED, over a run of commands one of which failed too — on purpose: a failure
     /// judged on a clean screen is not judged, and the whole claim of this row is that it is told
     /// apart from a failed call by nothing but its words.
-    static let previewFailedWaitRows = rows(
-        from: TranscriptFixtures.ranCommands,
-        settledWaits: [
+    static let previewFailedWaitRows = rows(FeedInput(
+        events: TranscriptFixtures.ranCommands,
+        beside: .just(FeedWaitsHeld(startedQuietly: false, settled: [
             SessionWaitSettled(
                 wait: .starting,
                 tookMs: 6200,
                 failure: "the process exited with code 1",
             ),
-        ],
-    )
+        ])),
+    ))
 }

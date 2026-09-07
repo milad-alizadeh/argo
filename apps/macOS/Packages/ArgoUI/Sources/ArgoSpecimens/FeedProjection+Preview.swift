@@ -8,10 +8,14 @@ extension FeedProjection {
     /// The preview transcript, already projected — with its unanswered question handed in as the
     /// live one, because a waiting ask nobody can answer draws quiet now (#712) and this fixture is
     /// what the attention state is rendered from.
-    static let previewRows = rows(
-        from: TranscriptFixtures.previewTranscript,
-        asking: previewTranscriptAsking,
-    )
+    static let previewRows = rows(FeedInput(
+        events: TranscriptFixtures.previewTranscript,
+        beside: .just(FeedGateHolds(
+            asking: previewTranscriptAsking,
+            reported: nil,
+            expired: [],
+        )),
+    ))
 
     /// The question left waiting in that transcript, as the gate would hold it.
     private static let previewTranscriptAsking = FeedAskProjection.Asking(
@@ -26,11 +30,11 @@ extension FeedProjection {
 
     /// The three shapes a delegation's ENDING takes, projected (#1281): one that came back priced
     /// and timed, one that failed, and a backgrounded Agent that reported neither figure.
-    static let previewDelegationEndRows = rows(from: TranscriptFixtures.delegationsEnded)
+    static let previewDelegationEndRows = rows(.justTheStream(TranscriptFixtures.delegationsEnded))
 
     /// A session at the length a real one reaches, projected — what every claim about SCALE is
     /// checked against, including the measurement #427 asks for.
-    static let longRows = rows(from: TranscriptFixtures.longTranscript)
+    static let longRows = rows(.justTheStream(TranscriptFixtures.longTranscript))
 
     /// The LAST failed call in that long feed: one opened above the fold renders a pane beside
     /// reading nobody can see.
@@ -38,12 +42,12 @@ extension FeedProjection {
 
     /// Prompts somebody pasted a picture into, projected — the thumbnail row inside a bubble, and
     /// the wordless prompt that is nothing but one (#733).
-    static let previewPastedRows = rows(from: TranscriptFixtures.pasted)
+    static let previewPastedRows = rows(.justTheStream(TranscriptFixtures.pasted))
 
     /// Six pictures pasted one after another, folded into the one grid they are (#1252). Its own
     /// fixture rather than a filter: the claim is about a RUN of rows, and no filter over another
     /// feed holds one.
-    static let previewPastedRunRows = rows(from: TranscriptFixtures.pastedRun)
+    static let previewPastedRunRows = rows(.justTheStream(TranscriptFixtures.pastedRun))
 
     /// The same feed with the prose taken out. A filter over the shipping rows, never a second set.
     static let previewCallRows = previewRows.filter(\.kind.isCall)
@@ -58,12 +62,12 @@ extension FeedProjection {
     /// A Codex Session's commands, projected — the feed a CLI that narrates nothing produces. Not
     /// a filter over the preview rows: those are a Claude Code record, whose commands arrive
     /// narrated.
-    static let previewCommandRows = rows(from: TranscriptFixtures.ranCommands)
+    static let previewCommandRows = rows(.justTheStream(TranscriptFixtures.ranCommands))
 
     /// A turn that looked around through a shell and then changed something, projected. Its own
     /// fixture: it is a render of the boundary between a folded stretch and the loud rows either
     /// side of it, which no filter over another feed has.
-    static let previewFoldRows = rows(from: TranscriptFixtures.foldedLooking)
+    static let previewFoldRows = rows(.justTheStream(TranscriptFixtures.foldedLooking))
 
     /// The same feed with the work taken out — what the agent SAID, at the shape it said it in.
     static let previewProseRows = previewRows.filter(\.kind.isProse)
@@ -82,26 +86,26 @@ extension FeedProjection {
 
     /// The same reading, handed over. The whole feed and not a filter: the render has to settle
     /// the row's place, last under the Session's whole transcript and its spend.
-    static let previewHandedOffRows = rows(
-        from: TranscriptFixtures.previewTranscript,
-        handedOff: previewHandoff,
-    )
+    static let previewHandedOffRows = rows(FeedInput(
+        events: TranscriptFixtures.previewTranscript,
+        beside: .just(FeedHandoffs(landed: previewHandoff, failed: [])),
+    ))
 
     /// A reading with the Session still working under it — the whole feed, so the render settles
     /// the row's place. The commands rather than the shipping transcript: the full reading renders
     /// as an empty column today (the lazy-height estimates of #473 and #476).
-    static let previewWorkingRows = rows(
-        from: TranscriptFixtures.ranCommands,
-        working: true,
-    )
+    static let previewWorkingRows = rows(FeedInput(
+        events: TranscriptFixtures.ranCommands,
+        beside: .just(FeedTurnDriven.inFlight),
+    ))
 
     /// The same reading with its last command still in flight. `working: true` because the two are
     /// one fact: a call is pending only while the Turn that made it is running. The failed row sits
     /// four above it on purpose — the ion and the one outcome with a colour are judged together.
-    static let previewPendingCallRows = rows(
-        from: TranscriptFixtures.runningCommand,
-        working: true,
-    )
+    static let previewPendingCallRows = rows(FeedInput(
+        events: TranscriptFixtures.runningCommand,
+        beside: .just(FeedTurnDriven.inFlight),
+    ))
 
     /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, so a
     /// refusal nobody made can be compared against the marks around it on one screen.
@@ -147,7 +151,7 @@ extension FeedProjection {
     /// The state the design's own render draws: the command the user typed, their line verbatim,
     /// and the marker under it. Projected from events rather than assembled from rows, so what the
     /// still shows is what the shipping projection produces.
-    static let previewSkillLoadedTurn = rows(from: [
+    static let previewSkillLoadedTurn = rows(.justTheStream([
         .prompt(
             text: "/implement 688 — the feed says a Session loaded a skill",
             images: [],
@@ -155,7 +159,7 @@ extension FeedProjection {
         ),
         .skillLoaded(TranscriptFixtures.previewSkillLoad),
         .message(markdown: "Reading the ticket and the design it points at."),
-    ])
+    ]))
 
     /// The one whose panel holds the body Argo read, and the one whose panel states a read failure.
     /// Both found by the state itself rather than by position, so a fourth marker added above them

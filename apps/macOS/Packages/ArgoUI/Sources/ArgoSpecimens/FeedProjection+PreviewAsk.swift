@@ -50,15 +50,19 @@ package extension FeedProjection {
     /// The same question on a Session Argo cannot drive (#546). The row is a READING and says so
     /// twice over: no cards, no field, and no attention either — nothing done here reaches the
     /// agent, so nothing is waiting on the user. The reason takes the deck's foot instead.
-    static let previewAskUnavailable = rows(
-        from: askTranscript(previewAskDecision),
-        asking: FeedAskProjection.Asking(live: nil, isDriveable: false),
-    )
+    static let previewAskUnavailable = rows(FeedInput(
+        events: askTranscript(previewAskDecision),
+        beside: .just(FeedGateHolds(
+            asking: FeedAskProjection.Asking(live: nil, isDriveable: false),
+            reported: nil,
+            expired: [],
+        )),
+    ))
 
     /// A DRIVEABLE Session whose gate has not raised this question — Argo restarted under a CLI
     /// still holding it. It keeps the attention ground because it is genuinely still waiting, and
     /// draws no cards because there is nothing to answer through.
-    static let previewAskUnreached = rows(from: askTranscript(previewAskDecision))
+    static let previewAskUnreached = rows(.justTheStream(askTranscript(previewAskDecision)))
 
     /// The question Argo's gate is holding that the record does not carry (#1190) — the work
     /// stops mid-column and the row arrives beside the stream rather than out of it.
@@ -67,17 +71,17 @@ package extension FeedProjection {
     /// itself, which is the whole specimen. What it settles is that the standing row draws exactly
     /// as `previewAskOneOf` does — what the row IS does not depend on which side of the join it
     /// came from.
-    static let previewAskStanding = rows(
-        from: Array(askTranscript(previewAskDecision).dropLast()),
-        asking: FeedAskProjection.Asking(
+    static let previewAskStanding = rows(FeedInput(
+        events: Array(askTranscript(previewAskDecision).dropLast()),
+        beside: .just(FeedGateHolds(asking: FeedAskProjection.Asking(
             live: FeedAskProjection.Live(
                 sessionID: "session-preview",
                 askID: previewAskID,
                 ask: Ask(questions: previewAskDecision),
             ),
             isDriveable: true,
-        ),
-    )
+        ), reported: nil, expired: [])),
+    ))
 
     /// A question the agent raised over the COMPANION PLUGIN rather than at Argo's gate (#1205).
     ///
@@ -89,9 +93,9 @@ package extension FeedProjection {
     /// The channel carries one flat question and bare labels, so the render is the shape the
     /// plugin can actually produce — no detail lines under the options, because it has no field
     /// for them.
-    static let previewAskReported = rows(
-        from: Array(askTranscript(previewAskDecision).dropLast()),
-        reported: CompanionAsk(
+    static let previewAskReported = rows(FeedInput(
+        events: Array(askTranscript(previewAskDecision).dropLast()),
+        beside: .just(FeedGateHolds(asking: .none, reported: CompanionAsk(
             id: "call-preview",
             question: "Issue #721 doesn't exist. Which ticket should I implement?",
             options: [
@@ -99,8 +103,8 @@ package extension FeedProjection {
                 "#713 — PlanPill shows the system focus ring on a click",
                 "#711 — Read a Session's subagent transcripts",
             ],
-        ).ask,
-    )
+        ).ask, expired: [])),
+    ))
 
     /// The same one-of question once the record has settled it — the FOLD (#1207). The offer goes
     /// and one row under the question carries the way it went, so a settled ask stops costing the
@@ -129,7 +133,7 @@ package extension FeedProjection {
     /// The question under the work that led to it, with what came back — the settled reading, built
     /// through the SHIPPING projection so a render here is the row the cockpit draws.
     private static func answeredRows(_ questions: [Ask.Question], _ answer: String) -> [FeedRow] {
-        rows(from: askTranscript(questions) + [
+        rows(.justTheStream(askTranscript(questions) + [
             .toolCallOutcome(ToolCallOutcome(
                 id: previewAskID,
                 resolution: ToolCallOutcome.Resolution(
@@ -138,7 +142,7 @@ package extension FeedProjection {
                     endedAtMs: nil,
                 ),
             )),
-        ])
+        ]))
     }
 
     /// The Session those renders are drawn for, blocked on the one-of question.
@@ -180,17 +184,17 @@ package extension FeedProjection {
     /// The question waiting, under the work that led to it — the reading a render has to be judged
     /// in, since the row's whole promise is that it interrupts a column rather than replacing one.
     private static func askRows(_ questions: [Ask.Question]) -> [FeedRow] {
-        rows(
-            from: askTranscript(questions),
-            asking: FeedAskProjection.Asking(
+        rows(FeedInput(
+            events: askTranscript(questions),
+            beside: .just(FeedGateHolds(asking: FeedAskProjection.Asking(
                 live: FeedAskProjection.Live(
                     sessionID: "session-preview",
                     askID: previewAskID,
                     ask: Ask(questions: questions),
                 ),
                 isDriveable: true,
-            ),
-        )
+            ), reported: nil, expired: [])),
+        ))
     }
 
     private static func askTranscript(_ questions: [Ask.Question]) -> [TranscriptEvent] {

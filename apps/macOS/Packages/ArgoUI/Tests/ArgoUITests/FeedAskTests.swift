@@ -19,7 +19,7 @@ struct FeedAskTests {
         if let answer {
             events.append(.toolCallOutcome(TranscriptFixtures.printed("ask", answer)))
         }
-        return FeedFixture.asks(in: FeedProjection.rows(from: events)).first
+        return FeedFixture.asks(in: FeedProjection.rows(.justTheStream(events))).first
     }
 
     @Test
@@ -66,10 +66,10 @@ struct FeedAskTests {
     /// still stops the row asking for attention.
     @Test
     func `a question answered with nothing readable has still stopped waiting`() throws {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(FeedFixture.asking(Self.question)),
             .toolCallOutcome(TranscriptFixtures.finished("ask", nil)),
-        ])
+        ]))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(!ask.isPending)
@@ -121,10 +121,10 @@ struct FeedAskTests {
 
     @Test
     func `a question stays where it was asked, never pinned or promoted`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(FeedFixture.asking(Self.question)),
             .message(markdown: "Waiting on you."),
-        ])
+        ]))
 
         #expect(rows.count == 2)
         #expect(rows.last?.content == .message("Waiting on you."))
@@ -134,7 +134,7 @@ struct FeedAskTests {
     /// happened; what it asked is what the record did not say.
     @Test
     func `a question with no words in it stays an ordinary call line`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(ToolCall(
                 id: "ask",
                 name: ToolCall.askUserQuestion,
@@ -142,7 +142,7 @@ struct FeedAskTests {
                 target: nil,
                 atMs: nil,
             )),
-        ])
+        ]))
 
         #expect(FeedFixture.asks(in: rows).isEmpty)
         #expect(rows.count == 1)

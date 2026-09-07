@@ -23,7 +23,8 @@ struct FeedScaleTests {
     /// name looks at all of them at every address, a hundred times as many.
     ///
     /// **Narrower than the quotient it replaces, and ADR-0028's #1066 amendment says so.** The old
-    /// assertion ran `FeedProjection.rows(from:)` on both arms, so the projection stage, the four
+    /// assertion ran `FeedProjection.rows(.justTheStream())` on both arms, so the projection stage,
+    /// the four
     /// folds and `offering` were held against superlinear growth as a side effect of it. This one
     /// measures the labelling pass alone — the only one of them the claim above ever named, and
     /// the only one that could ask every path about every other one. It is also that pass's own

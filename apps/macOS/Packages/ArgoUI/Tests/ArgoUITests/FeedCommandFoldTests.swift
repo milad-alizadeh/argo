@@ -10,7 +10,7 @@ import Testing
 struct FeedCommandFoldTests {
     @Test
     func `a run of recognised read-only commands folds into one counted line`() throws {
-        let rows = FeedProjection.rows(from: ran("ls apps", "cat FeedCall.swift", "git status"))
+        let rows = FeedFixture.rows(of: ran("ls apps", "cat FeedCall.swift", "git status"))
         let survey = try #require(FeedFixture.surveys(in: rows).first)
 
         #expect(rows.count == 1)
@@ -20,9 +20,7 @@ struct FeedCommandFoldTests {
     @Test
     func `the folded line counts the commands beside the files`() throws {
         let mixed = ran("git status") + opened("a.swift") + ran("rtk cat a.swift")
-        let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: mixed)).first,
-        )
+        let survey = try #require(FeedFixture.surveys(in: FeedFixture.rows(of: mixed)).first)
 
         #expect(survey.label == "Ran 2 Commands · Read 1 File")
     }
@@ -31,7 +29,7 @@ struct FeedCommandFoldTests {
     /// It joins the Turn's own card instead, which counts work rather than looking (#1172).
     @Test
     func `an unrecognised command never joins a run of looking`() {
-        let rows = FeedProjection.rows(from: ran("ls apps", "swift build", "git status"))
+        let rows = FeedFixture.rows(of: ran("ls apps", "swift build", "git status"))
 
         #expect(FeedFixture.surveys(in: rows).isEmpty)
         #expect(FeedFixture.work(in: rows).map(\.label) == ["Ran 3 Commands"])
@@ -40,9 +38,11 @@ struct FeedCommandFoldTests {
     /// A chain is unrecognised by construction: the judgement never works out which half ran.
     @Test
     func `a chained line never folds, however read-only its first half looks`() {
-        let rows = FeedProjection.rows(
-            from: ran("git status && git commit -m x", "ls apps", "cat a.swift"),
-        )
+        let rows = FeedFixture.rows(of: ran(
+            "git status && git commit -m x",
+            "ls apps",
+            "cat a.swift",
+        ))
 
         #expect(rows.count == 2)
         #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2 Commands"])
@@ -56,7 +56,7 @@ struct FeedCommandFoldTests {
         "cat log > pushed.txt", "find . -name '*.swift' -fprint pushed.txt",
     ])
     func `a mutation is never counted as looking`(_ mutation: String) {
-        let rows = FeedProjection.rows(from: ran("ls apps", mutation, "cat a.swift"))
+        let rows = FeedFixture.rows(of: ran("ls apps", mutation, "cat a.swift"))
 
         #expect(FeedFixture.surveys(in: rows).isEmpty)
         #expect(FeedFixture.work(in: rows).flatMap(\.calls).map(\.subject.captioned)
@@ -73,19 +73,19 @@ struct FeedCommandFoldTests {
             .toolCallOutcome(FeedFixture.failed("bad", printing: "No such file")),
         ] + ran("git status")
 
-        #expect(FeedFixture.surveys(in: FeedProjection.rows(from: broken)).isEmpty)
+        #expect(FeedFixture.surveys(in: FeedFixture.rows(of: broken)).isEmpty)
     }
 
     @Test
     func `a mutation breaks a run of commands into two surveys`() {
-        let rows = FeedProjection.rows(from: interrupted)
+        let rows = FeedFixture.rows(of: interrupted)
 
         #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2 Commands", "Ran 2 Commands"])
     }
 
     @Test
     func `the mutation that broke the run is a row between the two surveys`() {
-        #expect(FeedProjection.rows(from: interrupted).count == 3)
+        #expect(FeedFixture.rows(of: interrupted).count == 3)
     }
 
     /// The folded line no longer says which command printed what, so each step has to.
@@ -93,7 +93,7 @@ struct FeedCommandFoldTests {
     func `every folded command's result is in the panel, captioned by the call that produced it`()
         throws {
         let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: ran("ls apps", "git status"))).first,
+            FeedFixture.surveys(in: FeedFixture.rows(of: ran("ls apps", "git status"))).first,
         )
 
         #expect(survey.disclosure == .available)
@@ -118,9 +118,7 @@ struct FeedCommandFoldTests {
                 .toolCallOutcome(TranscriptFixtures.printed(command, "…")),
             ]
         }
-        let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: narrated)).first,
-        )
+        let survey = try #require(FeedFixture.surveys(in: FeedFixture.rows(of: narrated)).first)
 
         #expect(survey.opened.steps.map(\.address.text) == [
             "Read the call vocabulary", "Check the working tree",
@@ -132,7 +130,7 @@ struct FeedCommandFoldTests {
     @Test
     func `the fold works on a session with no narrations at all`() throws {
         let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: ran("rg Feed", "wc -l a.swift")))
+            FeedFixture.surveys(in: FeedFixture.rows(of: ran("rg Feed", "wc -l a.swift")))
                 .first,
         )
 
@@ -144,7 +142,7 @@ struct FeedCommandFoldTests {
         let alone = ran("git status")
         let call = try #require(FeedFixture.calls(in: alone).first)
 
-        #expect(FeedFixture.surveys(in: FeedProjection.rows(from: alone)).isEmpty)
+        #expect(FeedFixture.surveys(in: FeedFixture.rows(of: alone)).isEmpty)
         #expect(call.subject.captioned == "git status")
     }
 

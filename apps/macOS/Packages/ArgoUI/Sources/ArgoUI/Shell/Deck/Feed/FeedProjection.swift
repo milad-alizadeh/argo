@@ -7,27 +7,15 @@ import ArgoEngine
 package enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
-    /// `working`, `handedOff`, `handoffFailures`, `expired`, the question `asking` is holding and
-    /// the one `reported` carries are the inputs that are not the record's — a Turn in progress
-    /// (`FeedWorking`), a handoff and the ones that failed (`CONTEXT.md` L2, #1327), a Permission
-    /// Argo's own gate refused (#573), a question it is still holding (#1190), one the agent raised
-    /// over the companion plugin (#1205), and a wait Argo held that has ended (#1323). No CLI wrote
-    /// a word about any of them, so they arrive beside the stream rather than being looked for
-    /// inside it.
-    package static func rows(
-        from events: [TranscriptEvent],
-        working: Bool = false,
-        startedQuietly: Bool = false,
-        settledWaits: [SessionWaitSettled] = [],
-        handoffFailures: [SessionWaitSettled] = [],
-        handedOff: FeedHandoff? = nil,
-        expired: [PermissionExpiry] = [],
-        asking: FeedAskProjection.Asking = .none,
-        reported: Ask? = nil,
-        submitted: String? = nil,
-    )
-        -> [FeedRow] {
-        let read = contents(of: events)
+    ///
+    /// ONE input value with no defaults in it — see `FeedInput`, which is also where the inputs
+    /// that are not the record's are named and reasoned about (`FeedBeside`).
+    package static func rows(_ input: FeedInput) -> [FeedRow] {
+        let beside = input.beside
+        // Named once: three passes below read it, and the value is the whole reason the question
+        // the gate holds can be told from the one a row draws.
+        let asking = beside.gate.asking
+        let read = contents(of: input.events)
         // In this order, and the order is load-bearing. Collapse a run of one call first, so the
         // survey counts the work rather than the lines left over from it; tell same-named files
         // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
@@ -47,10 +35,13 @@ package enum FeedProjection {
         // The gate's question first, and the reported one read against the work AND it: the two
         // channels share no id, so the only thing that can tell one question from two is the words.
         let held = standing(asking, over: work)
-        let foot = wentQuiet(startedQuietly) + inFlight(working, over: work) +
-            unanswered(expired) + handoffEndings(handoffFailures) + chained(handedOff)
-        let contents = opening(settledWaits) + work + submittedRow(submitted) + held +
-            self.reported(reported, asking, over: work + held) + foot
+        let waits = beside.waits
+        let handoffs = beside.handoffs
+        let foot = wentQuiet(waits.startedQuietly) + inFlight(beside.turn.working, over: work) +
+            unanswered(beside.gate.expired) + handoffEndings(handoffs.failed) +
+            chained(handoffs.landed)
+        let contents = opening(waits.settled) + work + submittedRow(beside.turn.submitted) +
+            held + reported(beside.gate.reported, asking, over: work + held) + foot
         return contents.enumerated().map { position, content in
             FeedRow(id: position, content: content)
         }

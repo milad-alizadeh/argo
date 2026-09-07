@@ -32,7 +32,14 @@ struct FeedPermissionExpiryTests {
     /// feed.
     @Test
     func `the row sits under the work the record holds`() {
-        let rows = FeedProjection.rows(from: Self.transcript, expired: [Self.expiry])
+        let rows = FeedProjection.rows(FeedInput(
+            events: Self.transcript,
+            beside: .just(FeedGateHolds(
+                asking: .none,
+                reported: nil,
+                expired: [Self.expiry],
+            )),
+        ))
 
         #expect(rows.last?.content == .mark(.permissionExpired(Self.expiry)))
         #expect(rows.dropLast().last?.content == .mark(.turnEnded))
@@ -43,7 +50,14 @@ struct FeedPermissionExpiryTests {
     @Test
     func `two calls that expired are two rows, oldest first`() {
         let second = PermissionExpiry(id: "permission-2", toolName: "Write")
-        let rows = FeedProjection.rows(from: Self.transcript, expired: [Self.expiry, second])
+        let rows = FeedProjection.rows(FeedInput(
+            events: Self.transcript,
+            beside: .just(FeedGateHolds(
+                asking: .none,
+                reported: nil,
+                expired: [Self.expiry, second],
+            )),
+        ))
 
         #expect(rows.compactMap(\.content.expiry) == [Self.expiry, second])
     }
@@ -52,7 +66,7 @@ struct FeedPermissionExpiryTests {
     /// somebody walked away from a running agent for one.
     @Test
     func `a Session that lost no call reads exactly as it did before`() {
-        let rows = FeedProjection.rows(from: Self.transcript)
+        let rows = FeedProjection.rows(.justTheStream(Self.transcript))
 
         #expect(rows.last?.content == .mark(.turnEnded))
         #expect(rows.allSatisfy { $0.content.expiry == nil })

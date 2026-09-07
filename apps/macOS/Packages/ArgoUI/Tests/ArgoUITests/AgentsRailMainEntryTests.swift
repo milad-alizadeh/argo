@@ -63,7 +63,7 @@ struct AgentsRailMainEntryTests {
     @Test
     func `a chip with no reading behind it is still not a control`() throws {
         let unread = FeedAgents.all(
-            in: FeedProjection.rows(from: FeedFixture.handedOver()),
+            in: FeedProjection.rows(.justTheStream(FeedFixture.handedOver())),
             of: .running,
         )
         let agent = try #require(unread.first)
@@ -79,7 +79,7 @@ struct AgentsRailMainEntryTests {
 
     private var agents: [FeedAgent] {
         FeedAgents.all(
-            in: FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read)),
+            in: FeedProjection.rows(.justTheStream(FeedFixture.handedOver(subagent: Self.read))),
             of: .running,
         )
     }

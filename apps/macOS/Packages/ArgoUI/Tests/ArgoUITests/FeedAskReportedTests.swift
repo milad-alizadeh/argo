@@ -25,11 +25,14 @@ struct FeedAskReportedTests {
         driveable: Bool = true,
     )
         -> [FeedAsk] {
-        FeedFixture.asks(in: FeedProjection.rows(
-            from: [.prompt(text: "/implement 1205", images: [], atMs: nil)],
-            asking: FeedAskProjection.Asking(live: nil, isDriveable: driveable),
-            reported: reported,
-        ))
+        FeedFixture.asks(in: FeedProjection.rows(FeedInput(
+            events: [.prompt(text: "/implement 1205", images: [], atMs: nil)],
+            beside: .just(FeedGateHolds(
+                asking: FeedAskProjection.Asking(live: nil, isDriveable: driveable),
+                reported: reported,
+                expired: [],
+            )),
+        )))
     }
 
     @Test
@@ -84,11 +87,14 @@ struct FeedAskReportedTests {
     /// pressable, the plugin's is a reading. Collapsing them would drop one question on the floor.
     @Test
     func `a reported question stands beside the one Argo's own gate is holding`() {
-        let rows = FeedProjection.rows(
-            from: [.prompt(text: "/implement 1205", images: [], atMs: nil)],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-            reported: reported,
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.prompt(text: "/implement 1205", images: [], atMs: nil)],
+            beside: .just(FeedGateHolds(
+                asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
+                reported: reported,
+                expired: [],
+            )),
+        ))
 
         #expect(FeedFixture.asks(in: rows).map(\.tier) == [.direct, .convention])
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [true, false])

@@ -10,7 +10,7 @@ import Testing
 struct FeedUnreadableTests {
     @Test
     func `a line the reader could not parse gets a row of its own`() throws {
-        let rows = FeedProjection.rows(from: [.unreadableLine(raw: "{\"role\":")])
+        let rows = FeedProjection.rows(.justTheStream([.unreadableLine(raw: "{\"role\":")]))
         let unreadable = try #require(FeedFixture.unreadable(in: rows).first)
 
         #expect(rows.count == 1)
@@ -22,7 +22,7 @@ struct FeedUnreadableTests {
     @Test
     func `the row carries the raw text the engine could not read`() throws {
         let raw = "{\"type\":\"assistant\",\"message\":"
-        let rows = FeedProjection.rows(from: [.unreadableLine(raw: raw)])
+        let rows = FeedProjection.rows(.justTheStream([.unreadableLine(raw: raw)]))
         let unreadable = try #require(FeedFixture.unreadable(in: rows).first)
 
         #expect(unreadable.lines == [raw])
@@ -32,11 +32,11 @@ struct FeedUnreadableTests {
     /// into a screenful of identical rows.
     @Test
     func `a run of unreadable lines is one row with a count`() throws {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .unreadableLine(raw: "{"),
             .unreadableLine(raw: "["),
             .unreadableLine(raw: "\"\""),
-        ])
+        ]))
         let unreadable = try #require(FeedFixture.unreadable(in: rows).first)
 
         #expect(rows.count == 1)
@@ -47,11 +47,11 @@ struct FeedUnreadableTests {
     /// The run is consecutive, exactly as every other run in this feed is.
     @Test
     func `a readable record between two unreadable lines keeps them apart`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .unreadableLine(raw: "{"),
             .message(markdown: "Carrying on."),
             .unreadableLine(raw: "["),
-        ])
+        ]))
 
         #expect(FeedFixture.unreadable(in: rows).map(\.count) == [1, 1])
     }
@@ -60,10 +60,9 @@ struct FeedUnreadableTests {
     /// claim about the whole stretch.
     @Test
     func `an unreadable line breaks a run of looking`() {
-        let rows = FeedProjection.rows(from:
-            looking(at: ["a.swift", "b.swift"])
+        let rows = FeedProjection.rows(.justTheStream(looking(at: ["a.swift", "b.swift"])
                 + [.unreadableLine(raw: "{")]
-                + looking(at: ["c.swift", "d.swift"]))
+                + looking(at: ["c.swift", "d.swift"])))
 
         #expect(FeedFixture.surveys(in: rows).count == 2)
     }
@@ -72,7 +71,7 @@ struct FeedUnreadableTests {
     /// panel.
     @Test
     func `an unreadable line is not a piece of work the feed can open`() throws {
-        let rows = FeedProjection.rows(from: [.unreadableLine(raw: "{")])
+        let rows = FeedProjection.rows(.justTheStream([.unreadableLine(raw: "{")]))
         let row = try #require(rows.first)
 
         #expect(!row.kind.isCall)
@@ -81,10 +80,10 @@ struct FeedUnreadableTests {
     /// A row spoken as "unreadable" alone reads as one incident, so the count has to be spoken too.
     @Test
     func `the run speaks how many lines it stands for`() throws {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .unreadableLine(raw: "{"),
             .unreadableLine(raw: "["),
-        ])
+        ]))
         let unreadable = try #require(FeedFixture.unreadable(in: rows).first)
 
         #expect(unreadable.label.contains("2"))

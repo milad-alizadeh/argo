@@ -9,7 +9,7 @@ import Testing
 @Suite("Prompt pictures in the feed")
 struct FeedPromptImageTests {
     private static func rows(_ text: String, _ images: [MediaEvidence]) -> [FeedRow] {
-        FeedProjection.rows(from: [.prompt(text: text, images: images, atMs: nil)])
+        FeedProjection.rows(.justTheStream([.prompt(text: text, images: images, atMs: nil)]))
     }
 
     @Test

@@ -18,9 +18,8 @@ struct FeedWorkExpansionCostTests {
 
     /// The dense Turn eight times over, so the card the case expands sits well down the document —
     /// a card at the head of a short reading would pass this with everything re-measured.
-    private static let rows = FeedProjection.rows(
-        from: (0 ..< 8).flatMap { _ in TranscriptFixtures.denseTurn },
-    )
+    private static let rows = FeedProjection
+        .rows(.justTheStream((0 ..< 8).flatMap { _ in TranscriptFixtures.denseTurn }))
 
     @Test
     func `expanding a card measures that row and no other`() async throws {

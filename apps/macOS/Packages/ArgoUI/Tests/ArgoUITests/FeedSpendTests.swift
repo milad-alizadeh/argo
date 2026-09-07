@@ -13,14 +13,14 @@ struct FeedSpendTests {
     /// reading, one scroll under the header saying the same two numbers.
     @Test
     func `no reading states the session's spend at its foot`() {
-        let rows = FeedProjection.rows(from: delegations() + [
+        let rows = FeedProjection.rows(.justTheStream(delegations() + [
             .usage(Usage(
                 inputTokens: 1000,
                 outputTokens: 30,
                 cacheReadTokens: 0,
                 cacheCreationTokens: 0,
             )),
-        ])
+        ]))
 
         #expect(FeedFixture.marks(in: rows).isEmpty)
     }

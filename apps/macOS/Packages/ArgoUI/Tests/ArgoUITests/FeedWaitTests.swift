@@ -29,10 +29,7 @@ struct FeedWaitTests {
             status: status,
             chain: .init(
                 program: .init(cli: .claude),
-                span: .init(
-                    startup: .init(resuming: resuming),
-                    settledWaits: settledWaits,
-                ),
+                span: .init(startup: .init(resuming: resuming), settledWaits: settledWaits),
             ),
             transcript: .init(events: events, submittedTurn: submittedTurn),
         )
@@ -106,7 +103,8 @@ struct FeedWaitTests {
     /// draws the wordless thread's answer only if something puts one there, and nothing does.
     @Test
     func `the rows never say starting`() {
-        let thinking = FeedProjection.rows(from: [.message(markdown: "Done.")], working: true)
+        let done: [TranscriptEvent] = [.message(markdown: "Done.")]
+        let thinking = FeedFixture.rows(of: done, beside: .just(FeedTurnDriven.inFlight))
 
         #expect(FeedWait.showing(in: thinking) == .thinking)
         #expect(FeedWait.showing(in: []) == nil)
@@ -118,8 +116,10 @@ struct FeedWaitTests {
     @Test
     func `a wait that ended lands one settled row and edits nothing`() {
         let said: [TranscriptEvent] = [.message(markdown: "Done."), .turnEnded(.endTurn)]
-        let before = FeedProjection.rows(from: said).map(\.content)
-        let after = FeedProjection.rows(from: said, settledWaits: [Self.started]).map(\.content)
+        let before = FeedFixture.rows(of: said).map(\.content)
+        let after = FeedFixture.rows(of: said, beside: .just(FeedWaitsHeld(
+            startedQuietly: false, settled: [Self.started],
+        ))).map(\.content)
 
         #expect(after.count == before.count + 1)
         #expect(after.count(where: \.isSettledWait) == 1)

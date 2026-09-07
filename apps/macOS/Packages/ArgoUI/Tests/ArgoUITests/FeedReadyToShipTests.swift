@@ -44,11 +44,11 @@ struct FeedReadyToShipTests {
             atMs: 1000,
             input: .init(readyClaim: claim),
         )
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .prompt(text: "Ship it", images: [], atMs: 1000),
             .toolCall(call),
             .turnEnded(.endTurn),
-        ])
+        ]))
 
         #expect(rows.contains { $0.content == .mark(.readyToShip(claim)) })
         #expect(!rows.contains {

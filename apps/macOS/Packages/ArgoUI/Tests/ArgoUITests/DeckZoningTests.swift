@@ -142,14 +142,14 @@ struct DeckZoningTests {
 
     /// A handover the record has not answered, which is a subagent still running, plus a call
     /// carrying something for the panel.
-    private let working = FeedProjection.rows(from: [
+    private let working = FeedProjection.rows(.justTheStream([
         .toolCall(FeedFixture.call("hand", tool: "Task", kind: .delegate, naming: "review")),
         .toolCall(FeedFixture.call("look", tool: "Read", kind: .read, naming: "a.swift")),
         .toolCallOutcome(TranscriptFixtures.printed("look", "ok")),
-    ])
+    ]))
 
     /// The same reading with nothing delegated.
-    private let quiet = FeedProjection.rows(from: [
+    private let quiet = FeedProjection.rows(.justTheStream([
         .message(markdown: "Nothing handed over."),
-    ])
+    ]))
 }

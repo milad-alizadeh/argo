@@ -45,7 +45,8 @@ struct EvidenceStepTests {
     /// across the calls in the run, because one call can produce more than one result.
     @Test
     func `a folded run numbers its steps by their place down the pane`() throws {
-        let survey = try #require(FeedFixture.surveys(in: FeedProjection.rows(from: Self.looking))
+        let survey = try #require(FeedFixture
+            .surveys(in: FeedProjection.rows(.justTheStream(Self.looking)))
             .first)
 
         #expect(survey.opened.steps.map(\.id) == [0, 1, 2])
@@ -71,7 +72,8 @@ struct EvidenceStepTests {
                 }
                 return events
             }
-        let survey = try #require(FeedFixture.surveys(in: FeedProjection.rows(from: unanswered))
+        let survey = try #require(FeedFixture
+            .surveys(in: FeedProjection.rows(.justTheStream(unanswered)))
             .first)
 
         #expect(survey.steps.map(\.goesTo) == [nil, 0])

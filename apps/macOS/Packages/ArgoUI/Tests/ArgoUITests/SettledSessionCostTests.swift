@@ -83,6 +83,6 @@ struct SettledSessionCostTests {
     /// The fixture as the feed reads it.
     private static func rows() async throws -> [FeedRow] {
         let lines = try SettledSessionReading.lines(of: SettledSessionFixture.synthetic)
-        return await FeedProjection.rows(from: TranscriptReader().read(lines: lines))
+        return await FeedProjection.rows(.justTheStream(TranscriptReader().read(lines: lines)))
     }
 }

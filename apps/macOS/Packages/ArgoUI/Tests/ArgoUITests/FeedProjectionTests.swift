@@ -10,12 +10,12 @@ import Testing
 struct FeedProjectionTests {
     @Test
     func `rows come out in the stream's own order, never sorted or promoted`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .message(markdown: "Second."),
             .prompt(text: "Third.", images: [], atMs: 9000),
             .thought(markdown: "Fourth."),
             .prompt(text: "First.", images: [], atMs: 1000),
-        ])
+        ]))
 
         // The prompts' timestamps sort nothing: the record's order IS the reading.
         #expect(rows.map(\.content) == [
@@ -30,11 +30,11 @@ struct FeedProjectionTests {
     func `prose arrives verbatim — no trimming, no unwrapping, no reflow`() {
         let markdown = "  ## Heading\n\n- one\n- two\n\nTrailing space.  "
 
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .message(markdown: markdown),
             .prompt(text: markdown, images: [], atMs: nil),
             .thought(markdown: markdown),
-        ])
+        ]))
 
         #expect(rows.map(\.content) == [
             .message(markdown), .prompt(text: markdown, shots: []), .thought(markdown),
@@ -43,10 +43,10 @@ struct FeedProjectionTests {
 
     @Test
     func `reasoning is a thought, never a message`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .thought(markdown: "Maybe the palette."),
             .message(markdown: "Maybe the palette."),
-        ])
+        ]))
 
         // Same words, two different provenance claims.
         #expect(rows.map(\.content) == [
@@ -69,16 +69,16 @@ struct FeedProjectionTests {
             .plan(Plan(entries: [PlanEntry(text: "Ship it", status: .pending)])),
         ]
 
-        #expect(FeedProjection.rows(from: unhandled).isEmpty)
+        #expect(FeedProjection.rows(.justTheStream(unhandled)).isEmpty)
     }
 
     @Test
     func `a row is addressed by its own place in the feed`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .message(markdown: "Same."),
             .title("A title"),
             .message(markdown: "Same."),
-        ])
+        ]))
 
         // Identity cannot be the text, and the ids stay dense over the ROWS.
         #expect(rows.map(\.id) == [0, 1])
@@ -86,10 +86,10 @@ struct FeedProjectionTests {
 
     @Test
     func `a call and the outcome that answered it are one row, not two`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(FeedFixture.call("one", tool: "Read", kind: .read, naming: "src/token.ts")),
             .toolCallOutcome(TranscriptFixtures.finished("one", nil)),
-        ])
+        ]))
 
         #expect(rows.count == 1)
     }
@@ -98,9 +98,9 @@ struct FeedProjectionTests {
     /// say the same thing twice, in the one place where the second saying is the weaker one.
     @Test
     func `the call that writes the plan is not news of its own`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(FeedFixture.call("plan", tool: "TodoWrite", kind: .plan)),
-        ])
+        ]))
 
         #expect(rows.isEmpty)
     }

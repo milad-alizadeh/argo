@@ -44,7 +44,10 @@ enum AgentsRailFixture {
     /// Its own reading rather than the preview transcript cut down. The rail's rhythm at one chip
     /// is the state a fan-out fixture cannot show, and a list of one is where the heading over it
     /// is most at risk of reading as ceremony.
-    static let soleAgentRows = FeedProjection.rows(from: soleAgent, working: true)
+    static let soleAgentRows = FeedProjection.rows(FeedInput(
+        events: soleAgent,
+        beside: .just(FeedTurnDriven.inFlight),
+    ))
 
     private static let soleAgent: [TranscriptEvent] = [
         .prompt(text: "Check the fold breaks at every mark.", images: [], atMs: 1_733_000_000_000),

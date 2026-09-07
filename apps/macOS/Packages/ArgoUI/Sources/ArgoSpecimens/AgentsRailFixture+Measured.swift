@@ -13,7 +13,7 @@ extension AgentsRailFixture {
     ///   total measured to here would freeze a live clock;
     /// - one Argo has no reading of at all, whose meter is EMPTY — degrade-down, where a `0` would
     ///   claim the work was instant and free.
-    static let measuredRows = FeedProjection.rows(from: measured)
+    static let measuredRows = FeedProjection.rows(.justTheStream(measured))
 
     /// Those records read as a WAITING parent's, with the two children Argo holds a file for and
     /// the third named by nothing. `of: .undecided` is what an `idle` parent projects to, so it

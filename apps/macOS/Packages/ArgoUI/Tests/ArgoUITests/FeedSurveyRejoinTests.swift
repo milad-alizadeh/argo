@@ -15,11 +15,11 @@ struct FeedSurveyRejoinTests {
     /// reader has to add up by hand.
     @Test
     func `runs of looking the card left adjacent are read as one`() {
-        let rows = FeedProjection.rows(from: ran("ls apps", "cat a.swift")
-            + ran("swift build", "swift test")
-            + ran("rg Feed", "wc -l a.swift")
-            + ran("swift build", "swift test")
-            + ran("git status", "git diff"))
+        let rows = FeedProjection.rows(.justTheStream(ran("ls apps", "cat a.swift")
+                + ran("swift build", "swift test")
+                + ran("rg Feed", "wc -l a.swift")
+                + ran("swift build", "swift test")
+                + ran("git status", "git diff")))
 
         #expect(FeedFixture.work(in: rows).map(\.label) == ["Ran 4 Commands"])
         #expect(FeedFixture.surveys(in: rows).map(\.label) == ["Ran 2 Commands", "Ran 4 Commands"])

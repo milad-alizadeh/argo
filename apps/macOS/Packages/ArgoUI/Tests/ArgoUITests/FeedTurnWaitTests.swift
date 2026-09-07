@@ -79,9 +79,10 @@ struct FeedTurnWaitTests {
     /// row at all, beside the wordless `.mark(.turnEnded)` rule that already stands there (#1248).
     @Test
     func `a Turn that answers appends nothing but the rule`() {
-        let rows = FeedProjection.rows(
-            from: [.message(markdown: "Done."), .turnEnded(.endTurn)],
-        ).map(\.content)
+        let rows = FeedProjection.rows(.justTheStream([
+            .message(markdown: "Done."),
+            .turnEnded(.endTurn),
+        ])).map(\.content)
 
         #expect(rows == [.message("Done."), .mark(.turnEnded)])
     }
@@ -96,7 +97,7 @@ struct FeedTurnWaitTests {
     func `a Turn that ends without answering lands one failed row`(
         outcome: (reason: StopReason, hostWord: String),
     ) {
-        let rows = FeedProjection.rows(from: [.turnEnded(outcome.reason)]).map(\.content)
+        let rows = FeedProjection.rows(.justTheStream([.turnEnded(outcome.reason)])).map(\.content)
 
         #expect(rows.count == 2)
         #expect(rows.first == .mark(.turnEnded))
@@ -114,7 +115,7 @@ struct FeedTurnWaitTests {
     /// vocabulary could not read is not evidence either way.
     @Test(arguments: [StopReason.endTurn, .cancelled, .unknown])
     func `an answered or interrupted Turn lands no failed row`(reason: StopReason) {
-        let rows = FeedProjection.rows(from: [.turnEnded(reason)]).map(\.content)
+        let rows = FeedProjection.rows(.justTheStream([.turnEnded(reason)])).map(\.content)
 
         #expect(!rows.contains { $0.isSettledWait })
     }
