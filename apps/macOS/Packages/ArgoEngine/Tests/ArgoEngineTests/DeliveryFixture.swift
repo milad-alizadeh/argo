@@ -60,6 +60,17 @@ actor ScriptedCodeHost: CodeHostPort {
     }
 }
 
+extension DeliveryDerivation {
+    /// One derivation over a scripted host, recording into a ledger the suite can read back. Every
+    /// Delivery suite needs the pair, and none of them varies the health ledger.
+    static func over(
+        _ port: ScriptedCodeHost, into deliveries: DeliveryLedger,
+    )
+        -> DeliveryDerivation {
+        DeliveryDerivation(port: port, health: ConnectionHealthLedger(), deliveries: deliveries)
+    }
+}
+
 extension PortReadTarget {
     /// A code host Binding resolved onto one GitHub identity, which is every input a derivation
     /// needs.

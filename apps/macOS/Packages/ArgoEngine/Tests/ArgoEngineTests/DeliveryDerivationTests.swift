@@ -54,7 +54,7 @@ struct DeliveryDerivationTests {
         let hosted = Delivery(branch: "teammate/fix", pullRequest: .stub(number: 4))
         let derived = await Self.derived(inFlight: [hosted], workspaces: [.on("spike/idea")])
 
-        #expect(derived.map(\.branch) == ["teammate/fix", "spike/idea"])
+        #expect(derived.map(\.branch) == ["spike/idea", "teammate/fix"])
     }
 
     @Test
