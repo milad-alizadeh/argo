@@ -23,6 +23,7 @@ extension SessionHeaderFixture {
         context: ContextReading = .held(216_764),
         handedOffTo: String? = nil,
         status: SessionStatus = .idle,
+        pullRequest: DeliveryPullRequest? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -40,9 +41,37 @@ extension SessionHeaderFixture {
                 // A link with no title read through it, which is every Session in this build: no
                 // provider is connected (#414), so nothing answers with one.
                 ticket: .linked(.init(number: 510)),
+                delivery: .init(pullRequest: pullRequest),
             ),
             spend: .init(context: context),
         )
+    }
+
+    /// One header per pull request reading the tab line's own link has to draw (#1592) — the
+    /// four inks `DeliveryPullRequest.ink(in:)` decides, plus the branch with none open, which
+    /// draws nothing at all.
+    static let pullRequests: [(name: String, header: SessionHeaderProjection.Header)] = [
+        ("pullRequestOpen", header(pullRequest: .fixture(number: 1589, state: "open"))),
+        (
+            "pullRequestDraft",
+            header(pullRequest: .fixture(number: 1589, state: "open", isDraft: true)),
+        ),
+        ("pullRequestClosed", header(pullRequest: .fixture(number: 1589, state: "closed"))),
+        (
+            "pullRequestMerged",
+            header(pullRequest: .fixture(number: 1589, state: "closed", isMerged: true)),
+        ),
+        ("pullRequestNone", header(pullRequest: nil)),
+    ]
+
+    private static func header(pullRequest: DeliveryPullRequest?)
+        -> SessionHeaderProjection.Header {
+        SessionHeaderProjection.header(from: session(
+            access: .managed,
+            title: "Ship the native Liquid Glass application shell",
+            branch: "argo/#511-header-context-fullness",
+            pullRequest: pullRequest,
+        ))
     }
 
     /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: what

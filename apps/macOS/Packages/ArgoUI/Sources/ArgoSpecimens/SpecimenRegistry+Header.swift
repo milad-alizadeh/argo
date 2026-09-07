@@ -16,7 +16,7 @@ import SwiftUI
 /// There is no spend entry: the telemetry is on the title's hover now, and a native tooltip never
 /// lands in a screenshot (`SessionHeaderTooltipTests` holds it instead).
 extension SpecimenRegistry {
-    static let header: [SpecimenEntry] = postures + contexts + handoffs + [
+    static let header: [SpecimenEntry] = postures + contexts + handoffs + pullRequests + [
         // A popover is its own window and never lands in a screenshot of this one.
         SpecimenEntry("contextGuide") { ContextGuideSpecimen(header: SessionHeaderFixture.guided) },
         // The same panel where almost nothing could be read: the block collapses to the rows Argo
@@ -100,6 +100,13 @@ extension SpecimenRegistry {
     private static let handoffs: [SpecimenEntry] = SessionHeaderFixture.handoffs.map { offer in
         SpecimenEntry(offer.name) { SessionHeaderSpecimen(header: offer.header) }
     }
+
+    /// The tab line's pull request link, across the four inks it reads and the branch with none
+    /// open (#1592).
+    private static let pullRequests: [SpecimenEntry] = SessionHeaderFixture.pullRequests
+        .map { reading in
+            SpecimenEntry(reading.name) { SessionHeaderSpecimen(header: reading.header) }
+        }
 
     private static func titlebar(
         _ access: CockpitPresentation.Session.Access,
