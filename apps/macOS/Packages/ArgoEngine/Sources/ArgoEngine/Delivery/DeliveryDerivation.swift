@@ -55,7 +55,8 @@ public actor DeliveryDerivation {
     ///
     /// A refusal PART WAY through the fan-out records what the read did establish and reports the
     /// refusal beside it. The whole assembly used to go, and with it the listing that already held
-    /// the row's own pull request (#1546).
+    /// the row's own pull request (#1546). Every branch the read never reached keeps its Delivery
+    /// where the ledger merges this in (`DeliveryLedger.record`).
     public func derive(_ target: PortReadTarget, locally: Locally) async {
         do {
             let union = try await union(target, locally: locally)
@@ -79,7 +80,8 @@ public actor DeliveryDerivation {
         var refusal: ProviderFetchError?
 
         /// The same answer with every Delivery's Ticket joined, `asserted` being the human's own
-        /// link. Taken at the end so a carried Delivery is linked by the assertions of THIS read.
+        /// link. Taken at the end, so every Delivery this read established is linked by the
+        /// assertions of THIS read.
         func linked(by assertions: DeliveryAssertions, in projectID: String) -> Assembled {
             Assembled(
                 deliveries: deliveries.map {
@@ -91,7 +93,8 @@ public actor DeliveryDerivation {
     }
 
     /// The union: every Delivery the host has in flight, then every local branch that listing held
-    /// nothing for, asked about by name.
+    /// nothing for, asked about by name. What neither half reached is not assembled here — the
+    /// ledger keeps it (`DeliveryLedger.record`).
     ///
     /// The fan-out stops at its first refusal. A host that refused one branch is refusing this
     /// read, not that branch — the answer is a rate limit or an outage, and the requests after it
@@ -114,6 +117,10 @@ public actor DeliveryDerivation {
         // means holding nothing open. An open pull request is not reproducible: its checks and its
         // reviews move without its own body moving, so the listing that carries it is asked
         // outright (`GitHubDeliveries.deliveries`).
+        //
+        // Since #1617 the ledger keeps a branch that has left the local half, so one stale open
+        // Delivery holds this at `false` for the life of the window. That costs the one request the
+        // listing is, and it errs toward asking — the direction a wrong guess has to err in.
         let listed = try await port.inFlight(
             in: target.scope, grant: target.binding.grant, revalidating: open.isEmpty,
         )
@@ -125,6 +132,16 @@ public actor DeliveryDerivation {
         var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
         for branch in Self.branches(of: locally.workspaces) where !inFlight.contains(branch) {
+            // A branch whose pull request the host has FINISHED with — merged, or closed without
+            // merging — is answered from the ledger and never asked about again. That answer cannot
+            // move, and it was 15 of the 63 branches in a tick at three requests each (#1588).
+            // Reopening one, or opening a second pull request on the same branch, arrives through
+            // the in-flight listing above, which runs first and takes the branch out of this loop
+            // entirely — so nothing here strands a branch on a stale terminal answer while its
+            // replacement is open. A branch name reused after its first pull request merged, whose
+            // second one opens AND closes between two ticks, is answered from the first for the
+            // life of the window: the ledger no longer forgets a branch that leaves the local half
+            // (#1617).
             if let already = held[branch], already.pullRequest?.isFinished == true {
                 union.deliveries.append(already)
                 continue
@@ -133,29 +150,10 @@ public actor DeliveryDerivation {
                 try await union.deliveries.append(named(branch, holding: held[branch], of: target))
             } catch {
                 union.refusal = .refusal(error)
-                let carried = await carried(past: union.deliveries, of: target)
-                union.deliveries.append(contentsOf: carried)
                 break
             }
         }
         return union.linked(by: locally.assertions, in: target.projectID)
-    }
-
-    /// What the LAST derivation established for the branches this one never reached — old, and
-    /// still accurately DERIVED, which is exactly what a wholly failed read leaves standing.
-    ///
-    /// Carried rather than dropped because the in-flight listing is bounded by what is OPEN: every
-    /// merged Delivery comes from the fan-out, and a refusal at the third branch of fifty-five
-    /// would otherwise empty a strip that was full (`DeliveryLedger`). The refused branch itself is
-    /// carried by the same rule, and is never derived at its commits — that reading is what a host
-    /// ANSWERING nothing means, and a refusal established nothing.
-    private func carried(
-        past established: [Delivery], of target: PortReadTarget,
-    ) async
-        -> [Delivery] {
-        let asked = Set(established.map(\.branch))
-        return await deliveries.deliveries(of: target.projectID)
-            .filter { !asked.contains($0.branch) }
     }
 
     /// One local branch's Delivery. A branch the host has never seen has no pull request and no
@@ -164,7 +162,7 @@ public actor DeliveryDerivation {
     /// Asked conditionally where what is held for the branch is a pull request the host does not
     /// have — which is the answer this read most often repeats, and the whole of it: there is
     /// nothing under a branch with no pull request for a `304` to be silent about. That is where
-    /// the saving is. On this repository's checkout it is 47 of the 63 branches, and each is one
+    /// the saving is. On this repository's checkout it is 56 of the 77 branches, and each is one
     /// request that a `304` now costs nothing against the primary limit (#1620).
     ///
     /// A branch holding a LIVE pull request is asked outright, because its checks and reviews move
@@ -177,11 +175,12 @@ public actor DeliveryDerivation {
         let none = Delivery(branch: branch, pullRequest: nil)
         // `held != nil` is half the condition and not a formality: `held?.pullRequest == nil` is
         // also true for a branch the ledger holds NOTHING for, and there a `304` has nothing to
-        // keep. The validator can outlive the entry — the ledger is replaced whole on every
-        // derivation, so a tick whose Workspaces came back empty drops a branch the transport is
-        // still holding an ETag for — and asked conditionally that branch would answer `304`,
-        // resolve to "no pull request", and then keep answering `304` forever, because the bare
-        // Delivery it just wrote satisfies this test too.
+        // keep. The two are separate lifetimes — the transport's ETags are per URL and outlive any
+        // one Project's ledger, which starts empty in a fresh window while the validators do not —
+        // and asked conditionally such a branch would answer `304`, resolve to "no pull request",
+        // and then keep answering `304`, because the bare Delivery it just wrote satisfies this
+        // test too. Since #1617 the ledger no longer forgets a branch, so the gap is the first read
+        // of a window rather than any tick whose local half came back short; it is still a gap.
         let read = try await port.delivery(
             ofBranch: branch, in: target.scope, grant: target.binding.grant,
             revalidating: held != nil && held?.pullRequest == nil,

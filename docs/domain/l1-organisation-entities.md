@@ -61,7 +61,9 @@
   creation** (chat/planning sessions have no branch → no Delivery). One live Delivery = the
   current life of a branch; merge/close is its terminal state. May have **zero sessions** (a
   teammate's PR). Deployment/Release are reserved **lifecycle nodes on its strip**, not sibling
-  entities (unwired).
+  entities (unwired). The branch stays the join key after the host deletes it on merge, and the
+  host is then asked by the branch's head commit rather than by the ref
+  ([ADR-0032](../adr/0032-the-host-is-asked-by-commit-not-by-ref.md)).
 
 - **Person** — a human actor, minimally **`me | other`**. Owns `Review.author` and the teammate
   distinction, and drives the "needs-**you**" attention signal. Not richer than this for v1.

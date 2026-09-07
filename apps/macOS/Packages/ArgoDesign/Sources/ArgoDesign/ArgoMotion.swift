@@ -259,8 +259,8 @@ public extension ArgoMotion {
         // motion is ported per surface, and each of these is waiting on the surface that spends
         // it. `rise` left this list at #1421, where the city first stood up out of its plates, and
         // `layerFade`, `naming`, `pin` and `travel` at #1425, where the cord layer, the name strip
-        // and the open file's mark each got their clock.
-        "snap": "the camera flight to a picked box",
+        // and the open file's mark each got their clock. `snap` left at #1423, where the camera
+        // first flew to the plate a reader descended into rather than cutting to it.
         "reshuffle": "the domain re-arrangement",
     ]
 

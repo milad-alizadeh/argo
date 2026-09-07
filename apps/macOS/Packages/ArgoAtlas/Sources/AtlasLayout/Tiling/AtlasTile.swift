@@ -25,11 +25,35 @@ public struct AtlasTile: Equatable, Sendable {
     /// honest there — a flat map is what the flat camera draws whatever is on this channel.
     public let height: CGFloat
 
+    /// Which Domain the file was placed in, on a map tiled by domain — and NOTHING on a map tiled
+    /// by folder (#1158).
+    ///
+    /// Two readings of one rectangle, and only ever one at a time: the band is what the file
+    /// measures and the Domain is what somebody guessed it is about, so a tile carrying both would
+    /// be a rectangle with two claims on its colour and nothing to say which won.
+    public let domain: AtlasTileDomain?
+
+    /// A file on a map tiled by FOLDER: painted by what it measures.
     public init(path: String, rect: CGRect, band: AtlasBand?, height: CGFloat = 0) {
         self.path = path
         self.rect = rect
         self.band = band
         self.height = height
+        self.domain = nil
+    }
+
+    /// A file on a map tiled by DOMAIN: painted by what somebody guessed it is about (#1158).
+    ///
+    /// A second initializer rather than a fifth parameter, and not only because the cap is four:
+    /// the two readings are exclusive, and two initializers is what makes that structural. A tile
+    /// carrying a band AND a domain would be a rectangle with two claims on its colour and nothing
+    /// to say which won, and no caller can build one.
+    public init(path: String, rect: CGRect, domain: AtlasTileDomain, height: CGFloat = 0) {
+        self.path = path
+        self.rect = rect
+        self.band = nil
+        self.height = height
+        self.domain = domain
     }
 
     /// What the file is called on disk.

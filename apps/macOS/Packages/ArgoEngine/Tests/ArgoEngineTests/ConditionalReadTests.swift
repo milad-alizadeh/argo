@@ -131,14 +131,18 @@ struct ConditionalReadTests {
     }
 
     @Test
-    func `an empty listing drops a pull request nothing local holds`() async {
-        // The same read ANSWERING nothing: the pull request closed and no branch here is on it.
+    func `an empty listing leaves a teammate's Delivery to the ledger`() async {
+        // Where the two outcomes are NOT told apart, and deliberately: since #1617 the ledger keeps
+        // every branch a derivation did not reach, so an empty listing and a `304` leave the same
+        // set behind. That is the ledger's rule and not this ticket's, and it is written down here
+        // so the difference is looked for where it exists — on the per-branch read above, which
+        // reaches its branch and so can overwrite it.
         let theirs = Delivery(branch: "them/#1601-roster", pullRequest: .stub(number: 9))
         let port = ScriptedCodeHost([.success([])])
 
         let derived = await Self.derived(port: port, holding: [theirs], workspaces: [])
 
-        #expect(derived.isEmpty)
+        #expect(derived.map(\.branch) == ["them/#1601-roster"])
     }
 
     @Test

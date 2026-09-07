@@ -1,13 +1,16 @@
 <!-- status: built
      approved-at: 94120322
      built-at: f76d2c30
-     prototype: argo/#1310-roster-agent-count -->
+     prototype: argo/#1310-roster-agent-count
+     explorable: gone -->
 
 # The Sessions roster row
 
-**Approved design** (#1310). The explorable is [`cockpit-roster-row.html`](cockpit-roster-row.html)
-— every state reachable by `?state=`, `?state=all` for the whole set. The renders in
-[`roster-row/`](roster-row/) are the spec, and `pixel-review` judges against them.
+**Approved design** (#1310). **The explorable is gone** (#1526): the screen is built, so its
+page stopped being an input to a build and was deleted rather than maintained. The renders in
+[`roster-row/`](roster-row/) are the spec, `pixel-review` judges against them, and the
+measurements below are the numbers. The commit that removed the page is what
+`--diff-filter=D` over `docs/designs/` finds, for anyone who needs to read the markup once.
 
 The variants this was chosen from are on the throwaway branch `argo/#1310-roster-agent-count`,
 in `docs/designs/prototypes/roster-row-signals-prototype.html`. Nine were explored; **G** won.

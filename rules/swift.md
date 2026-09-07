@@ -7,8 +7,9 @@ paths:
 
 How Swift spells `house.md`, plus the rules the cockpit's contract adds. The escape hatches
 (`!`, `try!`, `as!`, implicitly unwrapped optionals, `@unchecked Sendable`,
-`swiftlint:disable`) and the caps are SwiftLint errors; the package layering, the token gate
-and the row-height rule are `scripts/swift-boundaries.sh` (AGENTS.md, Module boundaries).
+`swiftlint:disable`) and the caps are SwiftLint errors. The package layering, the token
+contract and the row-height rule are conventions now: nothing but the compiler and review
+holds them (AGENTS.md, Module boundaries).
 
 ## Swift
 

@@ -71,12 +71,27 @@ package struct AtlasSidebar: View {
     /// on every line a Session in another room streams.
     @ViewBuilder private var sections: some View {
         if cockpitRoom == .atlas, let room = resolved, case let .measured(map) = room.reading {
-            // The map as it is DRAWN, through the choice's own filter rather than this column's
-            // spelling of it. Every section below reads the filtered set, so the legend's ends and
-            // the file count move with the filter the way the tiles do (#1161).
-            let drawn = room.choice.drawn(map)
+            // The repository as the filters leave it, before anything arranged it. ONCE: hiding
+            // the tests rebuilds the whole tree, and a second call here is a second rebuild on
+            // every re-evaluation of this column (#1161).
+            let filtered = room.choice.filtered(map)
+            // The map as it is DRAWN — the filtered Map arranged the way the reader asked. Every
+            // section below reads it, so the legend's ends and the file count move with the filter
+            // the way the tiles do.
+            let drawn = room.choice.arranged(filtered)
+            // And what it is REALLY grouped by: the reader's ask held against what THAT Map can
+            // answer (#1158). Read once and handed to every row below, so the control, the menu
+            // and the legend cannot disagree about which reading is on screen.
+            let grouping = room.choice.grouping(of: filtered)
 
-            AtlasArrangement(isCity: laidDown(room.choice.isCity))
+            AtlasArrangement(
+                // The RESOLVED grouping, not the raw ask: a Map with no partition draws folders,
+                // and a control still showing Domains selected over a folder map would be the one
+                // thing in this column disagreeing with the picture.
+                grouping: retiled(room.choice.arrangement, showing: grouping),
+                canGroupByDomain: filtered.canRegroup,
+                isCity: laidDown(room.choice.arrangement.isCity),
+            )
             divider
             AtlasEncoding(
                 // The UNFILTERED Map's Measures, unlike everything else in this column: a Measure
@@ -87,6 +102,9 @@ package struct AtlasSidebar: View {
                 channels: Binding(
                     get: { room.choice.channels }, set: room.choice.setChannels,
                 ),
+                // Nothing on a domain map is drawn from the colour Measure, so the row says so
+                // rather than naming one the picture never read.
+                isColourDrawn: grouping == .folders,
             )
             divider
             AtlasFilters(
@@ -94,16 +112,28 @@ package struct AtlasSidebar: View {
                 showTies: room.choice.filters.showTies.binding,
             )
             divider
-            // Banded here rather than read off the plan: both ends come from the banding and none
-            // of them from the rectangles, so the key costs a pass over the Measure and never a
-            // second tiling of the map.
-            AtlasLegendKey(
-                legend: AtlasLegend(
-                    measure: room.choice.channels.band,
-                    over: AtlasBanding(of: room.choice.channels.band, over: drawn),
-                ),
-                measure: argo.color.atlas.measure,
-            )
+            // Two keys, never both: the map is coloured by one thing at a time, and a column
+            // carrying a ramp the picture is not drawn from is a key the reader would believe
+            // (#1158).
+            if grouping == .domains {
+                AtlasDomainKey(
+                    domains: drawn.inference?.domains ?? [],
+                    unassigned: drawn.unassigned.count,
+                    wheel: argo.color.atlas.domain,
+                    materials: argo.color.atlas.materials,
+                )
+            } else {
+                // Banded here rather than read off the plan: both ends come from the banding and
+                // none of them from the rectangles, so the key costs a pass over the Measure and
+                // never a second tiling of the map.
+                AtlasLegendKey(
+                    legend: AtlasLegend(
+                        measure: room.choice.channels.band,
+                        over: AtlasBanding(of: room.choice.channels.band, over: drawn),
+                    ),
+                    measure: argo.color.atlas.measure,
+                )
+            }
             divider
             AtlasRepositoryData(
                 map: drawn,
@@ -128,6 +158,20 @@ package struct AtlasSidebar: View {
                 }
             },
         )
+    }
+
+    /// The Group by pair as one binding. Plain, with no animation round it, unlike `laidDown`:
+    /// re-tiling replaces every rectangle on the map rather than moving one parameter of the
+    /// camera, and there is nothing between the two pictures for SwiftUI to interpolate. The
+    /// design travels the boxes from one tiling to the other (`cockpit-atlas.html`, `reshuffle`);
+    /// that is a move to make with the animation it needs, the way hiding the tests still waits
+    /// for one.
+    private func retiled(
+        _ arrangement: AtlasArrangementChoice,
+        showing grouping: AtlasGrouping,
+    )
+        -> Binding<AtlasGrouping> {
+        Binding(get: { grouping }, set: arrangement.setGrouping)
     }
 
     private var divider: some View {

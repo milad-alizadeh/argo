@@ -61,14 +61,12 @@ struct AtlasFileRow: View {
         // and a gap between them reads as the second belonging to something else.
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             Text(entry.name)
-                .argoText(ArgoTypography.machine)
-                .foregroundStyle(argo.color.text.primary)
+                .argoLine(ArgoTypography.machine, .title)
                 .lineLimit(1)
                 .truncationMode(.tail)
             if !entry.folder.isEmpty {
                 Text(entry.folder)
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.disabled)
+                    .argoLine(ArgoTypography.machineCaption, .disabled)
                     .lineLimit(1)
                     // From the LEFT: the segment nearest the file is the one that says which
                     // `index.ts` this is.
@@ -82,8 +80,7 @@ struct AtlasFileRow: View {
     /// same number the box beside it is painted from.
     private var value: some View {
         Text(entry.value.map { $0.formatted(.measured) } ?? AtlasUnmeasured.compact)
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.tertiary)
+            .argoLine(ArgoTypography.machineCaption, .machineFact)
             .lineLimit(1)
             // On the name's baseline rather than the block's top: the two lines of the path are
             // one paragraph, and a number floating level with its cap reads as a superscript.

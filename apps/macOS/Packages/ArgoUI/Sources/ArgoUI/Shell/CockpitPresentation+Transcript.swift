@@ -31,8 +31,8 @@ public extension CockpitPresentation.Session {
         /// `none` by default, on `hasUnansweredTurn`'s reasoning: a fixture that says nothing about
         /// a delegation is not one claiming a Turn is held by one.
         ///
-        /// Set after the init rather than through it, and deliberately: that list is at the count
-        /// it is grandfathered at (`swift-boundaries` edge 6), and one more parameter would
+        /// Set after the init rather than through it, and deliberately: that list is already past
+        /// the four-parameter cap (`apps/macOS/.swiftlint.yml`), and one more parameter would
         /// authorise the next one. A fixture that wants this states it the same way.
         public var delegationHold = DelegationHold.none
 

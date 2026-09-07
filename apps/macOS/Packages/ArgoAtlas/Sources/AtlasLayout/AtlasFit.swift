@@ -61,11 +61,31 @@ package struct AtlasFit: Equatable, Sendable {
         into viewport: CGSize,
         standingIn folder: String?,
     ) {
+        self.init(
+            seatedAt: AtlasFit.seat(
+                framing: plan, through: camera, into: viewport, standingIn: folder,
+            ),
+            into: viewport,
+        )
+    }
+
+    /// The seat a folder names, as the three numbers it is made of (#1423).
+    ///
+    /// Lifted out of the initializer above and otherwise unchanged. It is a VALUE now because a
+    /// flight moves between two of them and every frame in between is a seat this arithmetic never
+    /// names — a folder cannot be interpolated, and the numbers it resolves to can.
+    package static func seat(
+        framing plan: AtlasPlan,
+        through camera: AtlasCamera,
+        into viewport: CGSize,
+        standingIn folder: String?,
+    )
+        -> AtlasSeat {
         let whole = AtlasFit.box(framing: plan, through: camera)
         let fitted = AtlasFit.zoom(framing: whole, into: viewport)
+        let unseated = AtlasSeat(middle: whole.middle, zoom: fitted)
         guard camera.relief == 0, let folder, let plate = plan.plate(standingIn: folder) else {
-            self.init(framing: whole, into: viewport, at: fitted)
-            return
+            return unseated
         }
         // The plate's own ground, at no height: what stands on it is inside it, and at the flat
         // camera a height moves nothing at all (`AtlasCameraTests`).
@@ -77,33 +97,32 @@ package struct AtlasFit: Equatable, Sendable {
         // clamp below allowed, centred on nothing. The whole plan, which is where a folder the
         // picture cannot frame already sends the reader.
         let seated = AtlasFit.zoom(framing: seat, into: viewport)
-        guard seated > 0 else {
-            self.init(framing: whole, into: viewport, at: fitted)
-            return
-        }
+        guard seated > 0 else { return unseated }
         // Bounded off the FITTED zoom rather than off itself, so however deep the descent runs the
         // camera cannot arrive somewhere nothing could fly it to (`cockpit-atlas.html` line 1486).
         // Both ends are slack on any repository measured so far — the deepest plate seats at a
         // couple of times the fit — and a bound that holds only for the data you happened to
         // measure is a bound that will be wrong silently.
-        self.init(
-            framing: seat,
-            into: viewport,
-            at: min(fitted * AtlasFit.nearest, max(fitted * AtlasFit.furthest, seated)),
+        return AtlasSeat(
+            middle: seat.middle,
+            zoom: min(fitted * AtlasFit.nearest, max(fitted * AtlasFit.furthest, seated)),
         )
     }
 
-    private init(framing box: Box, into viewport: CGSize, at zoom: CGFloat) {
-        guard zoom > 0, viewport.width > 0, viewport.height > 0 else {
+    /// The fit one seat draws through.
+    package init(seatedAt seat: AtlasSeat, into viewport: CGSize) {
+        guard seat.isDrawable, viewport.width > 0, viewport.height > 0 else {
             // Nothing to frame, and nothing drawn: a zoom of zero rather than a division by one of
             // them, which reaches the shader as a NaN and takes the picture with it.
             self.init(scale: .zero, offset: .zero)
             return
         }
-        let scale = CGPoint(x: zoom / (viewport.width / 2), y: zoom / (viewport.height / 2))
+        let scale = CGPoint(
+            x: seat.zoom / (viewport.width / 2), y: seat.zoom / (viewport.height / 2),
+        )
         self.init(
             scale: scale,
-            offset: CGPoint(x: -box.middle.x * scale.x, y: -box.middle.y * scale.y),
+            offset: CGPoint(x: -seat.middle.x * scale.x, y: -seat.middle.y * scale.y),
         )
     }
 

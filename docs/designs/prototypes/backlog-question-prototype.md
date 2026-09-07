@@ -11,13 +11,12 @@ design, not here.
 > throwaway on a throwaway branch, which is where the `prototype` skill puts them — the same
 > standing `roster-header-prototype.html` and `ask-vessel-prototype.html` have.
 
-## Run it
+## The page is gone
 
-One file, no build, no server, no dependencies.
-
-```sh
-open docs/designs/prototypes/backlog-question-prototype.html
-```
+`backlog-question-prototype.html` was deleted from `main` by #1526, along with every other explorable there: a live page on
+`main` has an owner, and this one had already answered its question. This file is the record of
+what it answered. History keeps the markup — the commit that removed it is what
+`--diff-filter=D` over `docs/designs/` finds.
 
 ## Reading the URL
 
