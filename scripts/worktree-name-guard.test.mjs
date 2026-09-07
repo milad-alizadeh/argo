@@ -28,6 +28,11 @@ const REFUSED = [
   ],
   ['a bare slug directory', () => bash(`git worktree add ${WT}/parallel-workitem-edges`)],
   ['an EnterWorktree name off-convention', () => enter({ name: 'parallel-workitem-edges' })],
+  // No value of `name` can be right: the tool prefixes the branch `worktree-` whatever you pass
+  // and the param forbids `#`, so a conforming directory name still lands the work off
+  // argo/#<N>-<slug> — and no name at all lands it on a generated one (#1684).
+  ['an EnterWorktree name that conforms', () => enter({ name: 'ticket-901-naming' })],
+  ['an EnterWorktree with no name at all', () => enter({})],
   // A numberless name starting with a number is a dropped `#`, not a statement of no ticket.
   [
     'a numberless name that starts with a number',
@@ -64,7 +69,8 @@ const PERMITTED = [
     'the documented numberless shape (work with no ticket)',
     () => bash(`git worktree add -b argo/verbs-pane ${WT}/ticket-verbs-pane`),
   ],
-  ['an EnterWorktree name that conforms', () => enter({ name: 'ticket-901-naming' })],
+  // `path` is the second half of the two-step, and the only shape this tool can get right.
+  ['re-entering a conforming tree by path', () => enter({ path: `${WT}/ticket-901-naming` })],
   // How a tree named before this guard, and the agent inside it, drain rather than break.
   ['re-entering an existing tree by path', () => enter({ path: `${WT}/parallel-workitem-edges` })],
   [
@@ -117,6 +123,15 @@ check('the refusal spells out both names and cites the doc', () => {
   assert.match(reason, /ticket-<N>-<slug>/)
   assert.match(reason, /argo\/#<N>-<slug>/)
   assert.match(reason, /ticket-<slug>/) // the numberless shape, not a dead end
+  assert.match(reason, /docs\/agents\/worktrees\.md/)
+})
+
+// Refusing the only tool that creates a tree costs nothing if the refusal names the road that
+// works; without it the session's next move is the same call again.
+check('the EnterWorktree refusal names the two-step that works', () => {
+  const { reason } = enter({ name: 'ticket-901-naming' })
+  assert.match(reason, /git worktree add -b argo\/#<N>-<slug>/)
+  assert.match(reason, /EnterWorktree \{ path:/)
   assert.match(reason, /docs\/agents\/worktrees\.md/)
 })
 

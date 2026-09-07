@@ -21,13 +21,14 @@ reconstruct them from `<N>` alone:
 | worktree directory | `ticket-<N>-<slug>` | `.claude/worktrees/ticket-30-session-screen` |
 | branch | `argo/#<N>-<slug>` | `argo/#30-session-screen` |
 
-The two share the same `<N>-<slug>` stem and differ only in prefix, because `EnterWorktree`'s
-`name` param forbids `#` and `/`: the branch namespaces the stem as `argo/#<N>-<slug>`, the
-directory uses a plain `ticket-<N>-<slug>`. Pick the `<slug>` once from the ticket title; keep it
-identical across both. The `#<N>` in the branch is load-bearing twice over: `/ship`, which is the
-only thing that opens the PR, parses it to write `Closes #<N>`, and the Argo cockpit parses it to
-name the Session's row after the ticket (#745). A branch without it breaks the PR→ticket link
-and leaves the row reading `/implement <N>`.
+The two share the same `<N>-<slug>` stem and differ only in prefix, and the prefixes differ
+because a directory name cannot hold the `/` that namespaces the branch under `argo/`. Neither
+carries the other's shape: the branch is `argo/#<N>-<slug>`, the directory a plain
+`ticket-<N>-<slug>`, and `DIR_RE` and `BRANCH_RE` in the guard are what say so. Pick the `<slug>`
+once from the ticket title; keep it identical across both. The `#<N>` in the branch is
+load-bearing twice over: `/ship`, which is the only thing that opens the PR, parses it to write
+`Closes #<N>`, and the Argo cockpit parses it to name the Session's row after the ticket (#745).
+A branch without it breaks the PR→ticket link and leaves the row reading `/implement <N>`.
 
 For work with no ticket, keep the shape but drop the number: worktree `ticket-<slug>`, branch
 `argo/<slug>`. Work with no ticket may start — refusing it would push spikes back into the
@@ -68,9 +69,11 @@ A consumer whose agents must still edit part of their main checkout narrows the 
 `scripts/worktree-name-guard.mjs` is a `PreToolUse` hook on `Bash` and `EnterWorktree`. It
 refuses:
 
-- a worktree directory that is not `.claude/worktrees/ticket-<N>-<slug>` — from `git worktree
-  add` or an `EnterWorktree` `name:`;
+- a worktree directory that is not `.claude/worktrees/ticket-<N>-<slug>`, from `git worktree add`;
 - an explicit `-b` branch that is not `argo/#<N>-<slug>`;
+- **every `EnterWorktree` that creates a tree** — any `name:`, and the random name the tool
+  generates when none is passed. No value can be correct: it names the branch `worktree-<name>`
+  and its `name` forbids `#`, so no tree it creates sits on `argo/#<N>-<slug>` (#1684);
 - a directory and branch that do not share one `<N>-<slug>` stem — each name can be well-formed
   alone and still not name the same work;
 - `git branch -m`, `git switch -c` or `git checkout -b` inside a worktree, onto a branch that is
@@ -86,17 +89,23 @@ therefore drains rather than breaks — renaming a branch under a running agent 
 misnaming. A path the hook cannot resolve (one still holding a `$`) is allowed for the same
 reason: guessing at an expansion would deny a name that may well be correct.
 
-What it cannot enforce is the `git branch -m` in **Entering** below actually happening. The
-directory carries the `<N>` either way, so the cockpit row survives; `Closes #<N>` does not.
+What it cannot enforce is anything after creation. Both names are read from the one command that
+makes them, so there is no follow-up step left to skip — which was the hole while `EnterWorktree`
+created trees and a `git branch -m` rename was the only thing that fixed their branch.
 
 ## Entering
 
-Enter a worktree first, unprompted, on the ticket branch:
+Enter a worktree first, unprompted, on the ticket branch. **One command creates it, in every
+harness** — `EnterWorktree` cannot, and is refused if it tries (above):
 
-- **Claude Code:** `EnterWorktree` with `name: "ticket-<N>-<slug>"`. It puts the worktree on a
-  branch named `worktree-<name>`, which carries no `#<N>`, so the rename is not optional:
-  `git branch -m argo/#<N>-<slug>`, in the new worktree, before the first commit.
-- **Other harnesses:** `git worktree add -b argo/#<N>-<slug> .claude/worktrees/ticket-<N>-<slug>`.
+```bash
+git worktree add -b 'argo/#<N>-<slug>' .claude/worktrees/ticket-<N>-<slug>
+```
+
+Then enter the tree it made: in **Claude Code**, `EnterWorktree` with
+`path: ".claude/worktrees/ticket-<N>-<slug>"`, which the tool documents as the way into a tree
+"you just created with `git worktree add`"; in **other harnesses**, `cd` into it. Both names are
+already right, so there is no rename to remember.
 
 Then **`rtk trust --yes`** in the new worktree. rtk trusts `.rtk/filters.toml` by path, so a
 fresh worktree is untrusted and its filters are inert — silently, with no warning of any kind
@@ -109,14 +118,15 @@ Because the names are a pure function of `<N>`, re-running `/implement #<N>` mus
 anchored on the number:
 
 ```bash
-git worktree list | grep "ticket-<N>-"                  # existing worktree (branch renamed or not)
-git branch --list "argo/#<N>-*" "ticket-<N>-*"          # worktree gone, branch survives
+git worktree list | grep "ticket-<N>-"                  # existing worktree, whatever its branch
+git branch --list "argo/#<N>-*" "*ticket-<N>-*"         # worktree gone, branch survives
 ```
 
 Match on `<N>`, not the full slug — a slug typed slightly differently must not fork a second
-tree. The branch check globs **both** prefixes on purpose: a worktree interrupted before the
-`git branch -m` rename (see **Entering**) still sits on `ticket-<N>-<slug>`, so matching only
-`argo/#<N>-*` would miss it. If a match exists, re-enter it (Claude Code: `EnterWorktree` with
+tree. The branch check globs **both** prefixes on purpose: a tree made through `EnterWorktree`
+before #1684, or interrupted before the rename that route needed, sits on
+`worktree-ticket-<N>-<slug>` or `ticket-<N>-<slug>`, so matching only `argo/#<N>-*` would miss it.
+If a match exists, re-enter it (Claude Code: `EnterWorktree` with
 `path:` to the existing directory; other harnesses: `cd` into it) and re-derive progress from
 durable state — the ticket, `git log` / `status` / `diff`, and a test run — not from the previous
 conversation. Only when no `#<N>` worktree or branch exists do you create a fresh one per

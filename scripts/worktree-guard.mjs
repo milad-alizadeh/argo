@@ -47,9 +47,10 @@ function refuse(what, roots) {
     block: true,
     reason:
       `${what} Changes must be made in a git worktree, not the shared main checkout. ` +
-      `Enter one first (Claude Code: the EnterWorktree tool; other harnesses: ` +
-      `git worktree add -b argo/<slug> .claude/worktrees/ticket-<slug>) and work on a ticket ` +
-      `branch there. ${scope}. Naming, resuming, and recovery: docs/agents/worktrees.md.`,
+      `Create one first — git worktree add -b argo/<slug> .claude/worktrees/ticket-<slug> — then ` +
+      `enter it by path (Claude Code: EnterWorktree { path: ".claude/worktrees/ticket-<slug>" }; ` +
+      `other harnesses: cd) and work on a ticket branch there. ${scope}. ` +
+      `Naming, resuming, and recovery: docs/agents/worktrees.md.`,
   }
 }
 

@@ -27,6 +27,13 @@ const HOW =
   `For work with no ticket, keep the shape and drop the number: ticket-<slug> / argo/<slug>. ` +
   `Full rules: docs/agents/worktrees.md.`
 
+// Only a session with no tree yet needs this, so it rides on that one refusal rather than on
+// HOW: a `git branch -m` refusal fires inside a worktree, and telling it to create one is noise.
+const TWO_STEP =
+  `Create the tree with git, then enter it by path: ` +
+  `git worktree add -b argo/#<N>-<slug> ${WORKTREES_DIR}/ticket-<N>-<slug>, then ` +
+  `EnterWorktree { path: "${WORKTREES_DIR}/ticket-<N>-<slug>" }.`
+
 const refuse = (what) => ({ block: true, reason: `${what} ${HOW}` })
 const ALLOW = { block: false }
 
@@ -170,10 +177,13 @@ function checkBash(command, cwd) {
 export function decide({ toolName, toolInput = {}, cwd, isAgent }) {
   if (!isAgent) return ALLOW // human workflow — never guarded
   if (toolName === 'EnterWorktree') {
-    // `path` re-enters an existing tree; only a `name` creates one, and only a name can still
-    // be chosen. This is how a tree named before this guard keeps working.
-    if (toolInput.path || !toolInput.name) return ALLOW
-    return checkDirectory(`${WORKTREES_DIR}/${toolInput.name}`)
+    // `path` re-enters an existing tree, which is also how a tree named before this guard keeps
+    // working. Every other shape creates one, and none of them can be right (#1684).
+    if (toolInput.path) return ALLOW
+    return refuse(
+      'EnterWorktree names the branch `worktree-<name>`, and its name cannot hold a `#`, so no ' +
+        `tree it creates can sit on argo/#<N>-<slug>. ${TWO_STEP}`,
+    )
   }
   if (toolName === 'Bash' && typeof toolInput.command === 'string') {
     return checkBash(toolInput.command, cwd)
