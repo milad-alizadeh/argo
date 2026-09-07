@@ -25,9 +25,8 @@ struct RosterSelectionFromTicketStartTests {
     /// the old fallback landed on by luck, and a test standing there would pass on a bug.
     @Test
     func `is the row the roster grounds`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.provisional.map(\.identity))
 
         RosterMark.expect(Start.claim, in: Start.provisional, for: navigation)
@@ -46,9 +45,8 @@ struct RosterSelectionFromTicketStartTests {
     /// the roster and left the deck on the Session that was selected before the press.
     @Test
     func `holds the window on a Session whose row the roster has not published yet`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.standing.map(\.identity))
 
         #expect(
@@ -62,9 +60,8 @@ struct RosterSelectionFromTicketStartTests {
     /// And the whole route in one pass: pointed before the row exists, published, then re-keyed.
     @Test
     func `holds it from the press through the publish to the re-key`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.standing.map(\.identity))
         navigation.reconcile(against: Start.provisional.map(\.identity))
         navigation.reconcile(against: Start.rekeyed.map(\.identity))
@@ -80,9 +77,7 @@ struct RosterSelectionFromTicketStartTests {
     /// keeps it.
     @Test
     func `names the row the roster must not confine away`() async {
-        let navigation = Start.navigation()
-
-        await Start.start().run(on: 899, in: navigation)
+        let navigation = await Start.pressed()
 
         #expect(navigation.awaitedSession == Start.claim)
         var selection = navigation.sessionSelection
@@ -101,9 +96,8 @@ struct RosterSelectionFromTicketStartTests {
     /// not this field (#1602).
     @Test
     func `stops awaiting the row once the roster publishes it`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.provisional.map(\.identity))
 
         #expect(navigation.awaitedSession == nil)
@@ -138,22 +132,24 @@ struct RosterSelectionFromTicketStartTests {
     /// the only id this window may be on throughout is the one it started, under whichever key that
     /// Session is published as.
     ///
-    /// The last pass is also where a hold that never LET GO would show: the claim is absorbed
-    /// there, so an id held past its re-key grounds no row at all.
+    /// The key it is under at each pass is known exactly, so each is named: the claim until the
+    /// re-key is absorbed, the CLI's id after.
     @Test
     func `is the only Session the window is on at any pass of the route`() async {
         let navigation = await Start.pressed()
 
-        for roster in [
-            Start.standing, Start.provisional, Start.rekeyedBeforeSuccession, Start.rekeyed,
+        for (roster, expected) in [
+            (Start.standing, Start.claim),
+            (Start.provisional, Start.claim),
+            (Start.rekeyedBeforeSuccession, Start.claim),
+            (Start.rekeyed, Start.cli),
         ] {
             navigation.reconcile(against: roster.map(\.identity))
             #expect(
-                navigation.session == Start.claim || navigation.session == Start.cli,
+                navigation.session == expected,
                 "The window was repointed at another Session mid-start.",
             )
         }
-        RosterMark.expect(Start.cli, in: Start.rekeyed, for: navigation)
     }
 
     /// And across the retirement that can follow those two: a continuation read after the re-key
@@ -171,30 +167,9 @@ struct RosterSelectionFromTicketStartTests {
         RosterMark.expect(Start.chain, in: Start.continued, for: navigation)
     }
 
-    /// A recycled claim id may not carry the pointer to a Session that was never this spawn
-    /// (#1563). The counter behind `claim-<launch>-<n>` restarts with the process, so an older
-    /// Session's own `absorbedIDs` can hold the exact string this spawn was just issued.
-    ///
-    /// The row Argo is waiting for cannot be one the reader was already looking at, so an heir that
-    /// was standing on the previous roster under its own id is not this spawn's — and the pointer
-    /// stays put rather than following the forged edge.
-    @Test
-    func `refuses a recycled claim's edge to a Session that was never this spawn`() async {
-        let navigation = await Start.pressed()
-
-        navigation.reconcile(against: Start.recycledClaim.map(\.identity))
-
-        #expect(
-            navigation.session == Start.claim,
-            "A recycled claim id handed the window an unrelated Session.",
-        )
-    }
-
     @Test
     func `leaves the window in the Sessions room`() async {
-        let navigation = Start.navigation()
-
-        await Start.start().run(on: 899, in: navigation)
+        let navigation = await Start.pressed()
 
         #expect(navigation.room == .sessions)
     }
@@ -204,9 +179,8 @@ struct RosterSelectionFromTicketStartTests {
     /// whatever the roster happens to list first.
     @Test
     func `holds the deck and the ground across the re-key of its claim`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.provisional.map(\.identity))
         navigation.reconcile(against: Start.rekeyed.map(\.identity))
 
@@ -218,9 +192,8 @@ struct RosterSelectionFromTicketStartTests {
     /// this model has never seen on a roster. It is still the Session the reader started.
     @Test
     func `holds them when the re-key lands before the provisional row is reconciled`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.rekeyed.map(\.identity))
 
         RosterMark.expect(Start.cli, in: Start.rekeyed, for: navigation)
@@ -231,36 +204,14 @@ struct RosterSelectionFromTicketStartTests {
     /// cleared it would start an agent nobody asked for (#10).
     @Test
     func `is not read as a Session that died when its claim is retired`() async {
-        let navigation = Start.navigation()
+        let navigation = await Start.pressed()
 
-        await Start.start().run(on: 899, in: navigation)
         navigation.reconcile(against: Start.provisional.map(\.identity))
         let picked = navigation.chosenSession
         navigation.reconcile(against: Start.rekeyed.map(\.identity))
 
         #expect(navigation.chosenSession == picked, "The re-key was read as a repoint.")
         #expect(navigation.chosenSession.session != nil, "The pick was cleared.")
-    }
-
-    /// And the bound on that hold, which is deliberate: only a spawn Argo ITSELF started gets it.
-    ///
-    /// A provisional row the reader merely clicked is a claim id too, and a spawn that dies before
-    /// writing any record leaves it on no roster for good. Holding the pointer there would leave
-    /// the roster grounding nothing until the reader clicked again, so that case still falls to the
-    /// neighbour rule — the pointer moves, which is the honest reading of an id nothing is coming
-    /// for.
-    @Test
-    func `still lets go of a claim row the reader only clicked`() {
-        let navigation = Start.navigation()
-        navigation.reconcile(against: Start.provisional.map(\.identity))
-        navigation.deckPointed(at: Start.claim)
-
-        navigation.reconcile(against: Start.standing.map(\.identity))
-
-        #expect(
-            navigation.session != Start.claim,
-            "A claim nothing is coming for held the window against an empty roster row.",
-        )
     }
 
     /// The reveal this route owes, and why it is a different debt from #1273's. `openSession`
@@ -274,9 +225,7 @@ struct RosterSelectionFromTicketStartTests {
     /// The change that pays it is the ROSTER's, not the reader's.
     @Test
     func `owes the scroll until the roster publishes the row it started`() async {
-        let navigation = Start.navigation()
-
-        await Start.start().run(on: 899, in: navigation)
+        let navigation = await Start.pressed()
 
         let before = RosterListing().reading(of: Start.standing, selection: navigation.session)
         #expect(

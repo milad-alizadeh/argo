@@ -100,19 +100,23 @@ public final class CockpitNavigationModel {
     /// did, not about anything either the roster or the id can be asked.
     func pointAtStarting(_ id: CockpitPresentation.Session.ID) {
         session = id
-        awaitedSession = id
-        // Written after the two above, because `session`'s setter runs `pick`, which clears both.
-        startedClaim = id
-        rosterBeforeStart = Set(lastRoster.map(\.id))
+        // After the write above and never before it: `session`'s setter runs `pick`, which lets
+        // every hold go.
+        hold(id)
+    }
+
+    /// The three fields a start holds, written together so no caller can set two of them.
+    private func hold(_ claim: CockpitPresentation.Session.ID?) {
+        awaitedSession = claim
+        startedClaim = claim
+        rosterBeforeStart = claim == nil ? [] : Set(lastRoster.map(\.id))
     }
 
     private func pick(_ id: CockpitPresentation.Session.ID?) {
         pointedSession = id
         // Any other write is the reader pointing at a Session that already exists, so a wait left
         // over from a spawn they have since moved off is over.
-        awaitedSession = nil
-        startedClaim = nil
-        rosterBeforeStart = []
+        hold(nil)
         chosenSession = Pick(session: id, ordinal: chosenSession.ordinal + 1)
     }
 
@@ -143,14 +147,13 @@ public final class CockpitNavigationModel {
     /// that issued it (`SessionOwnership.isClaimID`) and is guaranteed to be retired; the id the
     /// CLI picked is a transcript's own key and nothing retires it after.
     ///
-    /// Set by `pointAtStarting` alone, which is the bound on it. A claim row the READER merely
-    /// clicked gets no hold, so a foreign spawn that dies before writing a record still falls to
-    /// the neighbour rule rather than leaving the roster grounding nothing.
+    /// Set by `pointAtStarting` alone and bounded by `rowCanStillArrive`: a spawn that dies before
+    /// writing any record must not hold the window on an id no row will ever carry.
     @ObservationIgnored private var startedClaim: CockpitPresentation.Session.ID?
 
-    /// The ids already published when that spawn was started. A Session Argo has only just started
-    /// cannot be one of them, which is the one thing that tells a real re-key from the edge a
-    /// RECYCLED claim id forges — see `trusted`. Unobserved: nothing draws it.
+    /// The ids already published when that spawn was started, which is how `trusted` recognises
+    /// the forged edge worth refusing: the one whose heir the reader was already looking at.
+    /// Unobserved, because nothing draws it.
     @ObservationIgnored private var rosterBeforeStart: Set<CockpitPresentation.Session.ID> = []
 
     /// One act of picking a row. The ordinal is what makes picking the SAME row twice two events:
@@ -175,6 +178,10 @@ public final class CockpitNavigationModel {
     /// are the reader's own settings and stand.
     @MainActor func projectSwitched() {
         ticketsQuery = ""
+        // A spawn started in the Project the reader has left is not a row this Project's roster is
+        // ever going to publish, so its hold would refuse every landing on the new roster (#1602).
+        startedClaim = nil
+        rosterBeforeStart = []
         // The answer goes with it, and the child running behind one goes first: a question about
         // twelve tickets nobody is looking at any more is spend on a model for nothing.
         stopAsking()
@@ -238,7 +245,7 @@ public final class CockpitNavigationModel {
     /// a reader ends up reading the Session that has just appeared.
     func reconcile(against roster: [RosterIdentity]) {
         defer { lastRoster = roster }
-        follow(trusted(Self.succession(of: roster)))
+        follow(heirs(of: roster))
         let sessionIDs = roster.map(\.id)
         if let pointedSession, sessionIDs.contains(pointedSession) {
             // The row it was waiting for. From here it is an ordinary published id, and the next
@@ -255,11 +262,18 @@ public final class CockpitNavigationModel {
         }
         // A Session Argo has started is not a Session that left (#1493, #1602) — see
         // `pointAtStarting`, and `startedClaim` for why this outlasts the row's first publish.
-        // Nothing is confined either: the selection holds an id that is about to be published or
-        // re-keyed, and confining would drop it.
-        if startedClaim != nil {
+        if startedClaim != nil, rowCanStillArrive(among: sessionIDs) {
+            // Before the first row nothing is confined: the selection holds an id that is about to
+            // be published, and confining would drop it (#1493). After it, the row has gone
+            // missing between its two keys — the pointer waits, but a selection over rows nobody
+            // can see is the thing #1247 refuses, whatever the deck does.
+            if awaitedSession == nil {
+                sessionSelection.confine(to: sessionIDs)
+            }
             return
         }
+        // Nothing is coming for it after all, so it is read as any other departed id from here.
+        hold(nil)
         // Whatever happens to the deck's row, a Session that has left cannot stay selected: the
         // menu would be offering to archive rows nobody can see (#1247).
         sessionSelection.confine(to: sessionIDs)
@@ -280,34 +294,49 @@ public final class CockpitNavigationModel {
         }
     }
 
-    /// The same map with the one edge a RECYCLED claim id can forge taken out of it (#1563).
+    /// Whether the row a started claim is between keys for can still be on its way.
     ///
-    /// A claim is `claim-<launch>-<n>` and the counter restarts with the process, so an older
-    /// Session's `absorbedIDs` can hold the exact string a fresh spawn was just issued. Nothing in
-    /// the map itself can tell that edge from a real one — but the pointer can be asked what it is
-    /// waiting for. A row Argo started moments ago cannot be one that was already published when
-    /// the press happened, so an heir standing there was never this spawn, and the claim is left
-    /// where it is: holding the window rather than handing it to somebody else's Session (#1602).
+    /// It arrives under an id nothing was published under before — the one the CLI picked — so a
+    /// pass that brought no new id at all brought nothing this spawn could be. That is the bound
+    /// on the hold, and it has to have one: a spawn that dies before writing any record leaves an
+    /// id no row will ever carry, and a pointer held there grounds no row until the reader clicks
+    /// something.
     ///
-    /// Only the started claim's own edge is dropped. Every other succession is a continuation the
-    /// reader was genuinely pointed at, and its heir having stood on the roster already is the
-    /// normal case for one (#1481).
-    private func trusted(_ succession: [RowID: RowID]) -> [RowID: RowID] {
-        guard let claim = startedClaim, let heir = succession[claim],
-              rosterBeforeStart.contains(heir)
-        else { return succession }
-        var trusted = succession
-        trusted[claim] = nil
-        return trusted
+    /// A pass before the first row is exempt, because there IS no row to have gone missing yet —
+    /// that wait is `awaitedSession`'s and #1493 already bounds it by nothing at all.
+    private func rowCanStillArrive(among sessionIDs: [RowID]) -> Bool {
+        awaitedSession != nil || sessionIDs.contains { id in
+            !lastRoster.contains { $0.id == id }
+        }
     }
 
-    /// Which row took each retired id over.
-    private static func succession(of roster: [RosterIdentity]) -> [RowID: RowID] {
-        roster.reduce(into: [:]) { heirs, row in
+    /// Which row took each retired id over, without the forged edge a RECYCLED claim id can put
+    /// in it (#1563).
+    ///
+    /// A claim is `claim-<launch>-<n>` and the counter restarts with the process, so an older
+    /// Session's `absorbedIDs` can hold the exact string a fresh spawn was just issued. Nothing
+    /// here can tell that edge from a real one. What it catches is the one worth catching: a row
+    /// Argo started moments ago cannot be one that was ALREADY PUBLISHED when the press happened,
+    /// so an heir the reader could have been looking at then was never this spawn. Only the
+    /// started claim's own edge is dropped, because every other succession is a continuation the
+    /// reader was genuinely pointed at (#1481).
+    private func heirs(of roster: [RosterIdentity]) -> [RowID: RowID] {
+        var heirs: [RowID: RowID] = roster.reduce(into: [:]) { heirs, row in
             for absorbed in row.absorbedIDs {
                 heirs[absorbed] = row.id
             }
         }
+        guard let claim = startedClaim, let heir = heirs[claim] else { return heirs }
+        // The heir's own id is not enough to recognise a row that was already standing: a
+        // continuation republishes one under a chain id nothing was ever pointed at, carrying
+        // every id it folded in (`HubSession.merge`). So what it ABSORBS is read too.
+        let wasStanding = rosterBeforeStart.contains(heir) || roster
+            .first { $0.id == heir }?
+            .absorbedIDs.contains { rosterBeforeStart.contains($0) } == true
+        if wasStanding {
+            heirs.removeValue(forKey: claim)
+        }
+        return heirs
     }
 
     /// The row nearest where the departed one stood, over the order the roster last had. Archived

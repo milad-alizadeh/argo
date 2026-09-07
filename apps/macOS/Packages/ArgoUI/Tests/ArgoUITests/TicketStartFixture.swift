@@ -4,10 +4,11 @@ import SwiftUI
 
 /// The roster a `Start` on a ticket lands in, and the shell wiring that lands it there (#1493).
 ///
-/// Shared by the two suites that ask what survives that route — reconciliation
-/// (`RosterSelectionFromTicketStartTests`) and the roster list's own write-back
-/// (`RosterListWriteBackTests`). Two copies of this setup would be two rosters, and an assertion
-/// would then hold whichever one its own file happened to carry.
+/// Shared by the three suites that ask what survives that route — reconciliation
+/// (`RosterSelectionFromTicketStartTests`), the roster list's own write-back
+/// (`RosterListWriteBackTests`) and its narrowing (`RosterListConfineTests`). Two copies of this
+/// setup would be two rosters, and an assertion would then hold whichever one its own file
+/// happened to carry.
 @MainActor
 enum TicketStartFixture {
     /// The claim the spawn answers with, and the id the CLI picks a moment later.
@@ -25,26 +26,28 @@ enum TicketStartFixture {
         ["alpha", "beta", "gamma"].map { RosterSessionFixture.session(id: $0) }
     }
 
-    /// The provisional row the Hub publishes when the spawn returns, standing under the claim's
-    /// own id (#872), second in the published order.
-    static var provisional: [CockpitPresentation.Session] {
+    /// `standing` with the spawn's row second in the published order — deliberately not first,
+    /// which is the one place a repointing rule lands by luck. Each roster below states only its
+    /// own second row.
+    static func published(_ fresh: CockpitPresentation.Session) -> [CockpitPresentation.Session] {
         [
             RosterSessionFixture.session(id: "alpha"),
-            RosterSessionFixture.session(id: claim),
+            fresh,
             RosterSessionFixture.session(id: "beta"),
             RosterSessionFixture.session(id: "gamma"),
         ]
     }
 
+    /// The provisional row the Hub publishes when the spawn returns, standing under the claim's
+    /// own id (#872).
+    static var provisional: [CockpitPresentation.Session] {
+        published(RosterSessionFixture.session(id: claim))
+    }
+
     /// The same roster once the CLI has written its first record: the row is published under the
     /// id the CLI picked and carries the claim it retired.
     static var rekeyed: [CockpitPresentation.Session] {
-        [
-            RosterSessionFixture.session(id: "alpha"),
-            RosterSessionFixture.rekeyed(cli, from: claim),
-            RosterSessionFixture.session(id: "beta"),
-            RosterSessionFixture.session(id: "gamma"),
-        ]
+        published(RosterSessionFixture.rekeyed(cli, from: claim))
     }
 
     /// The same re-key one pass EARLIER, before the row carries the claim it retired.
@@ -56,24 +59,14 @@ enum TicketStartFixture {
     /// roster and in no succession map. This is the shape that has no guard in it — see
     /// `RosterSelectionFromTicketStartTests`.
     static var rekeyedBeforeSuccession: [CockpitPresentation.Session] {
-        [
-            RosterSessionFixture.session(id: "alpha"),
-            RosterSessionFixture.session(id: cli),
-            RosterSessionFixture.session(id: "beta"),
-            RosterSessionFixture.session(id: "gamma"),
-        ]
+        published(RosterSessionFixture.session(id: cli))
     }
 
     /// The roster after a continuation folds that row into a chain of its own (#1481), which is
     /// the retirement that can follow the two this route makes. Nothing about it is special once
     /// the id has settled, and this says so.
     static var continued: [CockpitPresentation.Session] {
-        [
-            RosterSessionFixture.session(id: "alpha"),
-            RosterSessionFixture.rekeyed(chain, from: cli),
-            RosterSessionFixture.session(id: "beta"),
-            RosterSessionFixture.session(id: "gamma"),
-        ]
+        published(RosterSessionFixture.rekeyed(chain, from: cli))
     }
 
     /// The id that row is published under once the continuation is folded in.
@@ -89,6 +82,23 @@ enum TicketStartFixture {
         [
             RosterSessionFixture.session(id: "alpha"),
             RosterSessionFixture.rekeyed("beta", from: claim),
+            RosterSessionFixture.session(id: "gamma"),
+        ]
+    }
+
+    /// The same forgery, carried into an id that did NOT exist when the press happened.
+    ///
+    /// `HubSession.merge` folds a continuation in by appending its id AND everything it had
+    /// already absorbed, so an older Session holding the recycled string is republished under a
+    /// chain id nothing was ever pointed at. The heir's own id is then no help at all: what gives
+    /// it away is that it absorbs `beta`, a row the reader could have been looking at when the
+    /// press happened.
+    static var recycledClaimFoldedIn: [CockpitPresentation.Session] {
+        var folded = RosterSessionFixture.session(id: "session-9-continued")
+        folded.absorbedIDs = ["beta", claim]
+        return [
+            RosterSessionFixture.session(id: "alpha"),
+            folded,
             RosterSessionFixture.session(id: "gamma"),
         ]
     }
