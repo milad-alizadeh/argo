@@ -40,10 +40,19 @@ public struct GitHubDeliveries: CodeHostPort {
             in: scope,
             grant: grant,
             revalidating: revalidating,
+            only: 1,
         ).map(\.first)
     }
 
-    /// The listing, and one assembled Delivery per pull request in it.
+    /// The listing, and one assembled Delivery per pull request in it — or, capped at `only`, per
+    /// the first that many.
+    ///
+    /// `only` is what `delivery(ofBranch:)` passes 1 to: sorted most-recently-updated first,
+    /// `head=` can still answer more than one pull request where a branch name was reused, and
+    /// every one past the first is thrown away by the `.first` that caller takes. Assembling them
+    /// anyway paid two requests apiece — the checks and the reviews — for a Delivery nothing ever
+    /// reads (#1571). `inFlight` passes `nil`: every pull request its own listing returns is
+    /// already open, and every one of them is what "in flight" means.
     ///
     /// Only the LISTING is conditional. The check runs and the reviews below are asked outright
     /// every time, because a `304` on the listing is silent about them: a check run finishing does
@@ -53,15 +62,20 @@ public struct GitHubDeliveries: CodeHostPort {
     /// into with `revalidating` is therefore narrow by construction: it holds nothing for this read
     /// whose parts can move on their own (#1620).
     private func deliveries(
-        listedBy path: String, in scope: String, grant: AccountGrant, revalidating: Bool,
+        listedBy path: String,
+        in scope: String,
+        grant: AccountGrant,
+        revalidating: Bool,
+        only limit: Int? = nil,
     ) async throws
         -> PortReading<[Delivery]> {
         let listed = try await reads.pages(
             [GitHubPullRequest].self, of: path, grant: grant, revalidating: revalidating,
         )
         guard let pulls = listed.answer else { return .unchanged }
+        let bounded = limit.map { Array(pulls.prefix($0)) } ?? pulls
         var deliveries: [Delivery] = []
-        for pull in pulls {
+        for pull in bounded {
             try await deliveries.append(delivery(pull, in: scope, grant: grant))
         }
         return .answered(deliveries)
