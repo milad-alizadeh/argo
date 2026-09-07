@@ -2,7 +2,8 @@
      approved-at: 3ed1c522
      reopened-at: #1316
      re-approved-at: #1317
-     prototype: worktree-ticket-1293-backlog-question -->
+     prototype: worktree-ticket-1293-backlog-question
+     explorable: gone -->
 
 > **Re-approved by #1317 — the rule changed, the variant did not.** #1316 failed the detection
 > rule this file proposed and named variant B as the fallback. What #1317 found is that the
@@ -45,14 +46,15 @@ the app **ships today**, not to `cockpit-work-room.html`.
 The room's own vocabulary — views, the backlog, the ticket, rails, the stated empty — is that
 design's and is unchanged.
 
-## Run it
+## The explorable is gone
 
-```sh
-open docs/designs/cockpit-backlog-question.html
-```
+`cockpit-backlog-question.html` was deleted from `main` by #1526 — a page on `main` has an owner
+and this one had stopped being an input to a build. The renders in `backlog-question/`, taken
+with `?render=1` from that page, are what stays; the measurements below are the numbers.
 
-`?state=<key>` opens one state directly, `←`/`→` walk them, and `?render=1` strips the chrome
-for the PNGs in `backlog-question/`.
+This design is `reopened`, so it will be explored again. That exploration puts its page on the
+throwaway branch `design/backlog-question` and never on `main`, and this file records the branch
+when it does.
 
 ## The components
 
