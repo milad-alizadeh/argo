@@ -14,7 +14,9 @@ struct TicketStartSpecimen: View {
     /// The picker's act is inert: this specimen is about what the pill SAYS for each resolved
     /// command, and a menu that spawned would take the render off the screen it is shooting.
     private static func verbs(sending command: WorkCommand?) -> TicketsChromeIntents.Verbs {
-        TicketsChromeIntents.Verbs(command: command)
+        // A number so the pill's label is the one the app says (#1682). It is not drawn — the
+        // ticket is named to a reader who cannot see the pill, not on it.
+        TicketsChromeIntents.Verbs(ticket: 899, command: command)
     }
 
     var body: some View {

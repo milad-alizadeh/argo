@@ -44,6 +44,10 @@ package struct TicketsChromeIntents {
 
     package struct Verbs {
         var start: () -> Void = {}
+        /// Which ticket these verbs act on, which `Start`'s label names (#1682). A FACT beside the
+        /// closures because the closures have the number captured and nothing can ask them for it.
+        /// `nil` is the room with no ticket open — `inert`, where the pill is not drawn.
+        var ticket: Int?
         /// Which command `Start` will send, drawn beside the word so the press can be aimed (#899),
         /// and `nil` where the ticket asks for none — an empty composer, said as `Start` alone.
         var command: WorkCommand?
@@ -66,11 +70,13 @@ package struct TicketsChromeIntents {
         /// `internal`, and the specimens build this from their own target (#1085).
         package init(
             start: @escaping () -> Void = {},
+            ticket: Int? = nil,
             command: WorkCommand? = nil,
             startOn: ((WorkCommand?) -> Void)? = nil,
             closure: Closure = Closure(),
         ) {
             self.start = start
+            self.ticket = ticket
             self.command = command
             self.startOn = startOn
             self.closure = closure
