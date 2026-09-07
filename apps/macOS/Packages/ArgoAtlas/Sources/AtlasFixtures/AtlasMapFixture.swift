@@ -17,11 +17,13 @@ public enum AtlasMapFixture {
     /// This repository, as measured at commit 4478553.
     public static func argo() throws -> AtlasMap {
         let name = "argo-map"
-        guard let url = Bundle.module.url(
-            forResource: name,
-            withExtension: "json",
-            subdirectory: "Fixtures",
-        ) else {
+        guard let bundle = FixturesBundle.resolved,
+              let url = bundle.url(
+                  forResource: name,
+                  withExtension: "json",
+                  subdirectory: "Fixtures",
+              )
+        else {
             throw Missing(name: name)
         }
         return try AtlasMap(decoding: Data(contentsOf: url))

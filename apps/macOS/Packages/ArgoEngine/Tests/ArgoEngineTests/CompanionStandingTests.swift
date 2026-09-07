@@ -10,8 +10,35 @@ struct CompanionStandingTests {
     func `this build ships the plugin, so the channel reads included with spawns`() {
         let channel = CompanionChannel(scope: CompanionScope(under: Self.root())) { _, _ in }
 
-        #expect(CompanionPlugin.shipsResources)
+        #expect(CompanionPlugin.shipsResources())
         #expect(channel.standing == .includedWithSpawns)
+    }
+
+    /// The other half of #1633: `Bundle.module`'s generated accessor traps when its bundle is not
+    /// on disk, which took the whole app down on a build swept or rebuilt under a running process.
+    /// A missing bundle is staged directly here, rather than through
+    /// `PACKAGE_RESOURCE_BUNDLE_PATH`, because `ModuleResourceBundle.resolved` is cached exactly
+    /// like `Bundle.module` itself — an env var set after another test has already resolved it
+    /// would do nothing.
+    @Test
+    func `a build with no bundle on disk reads missing, and a spawn is refused rather than trapping`(
+    ) throws {
+        #expect(!CompanionPlugin.shipsResources(in: nil))
+
+        let root = Self.root()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        #expect {
+            try CompanionPlugin.materialize(
+                forClaim: Self.claim(length: 4),
+                under: root,
+                socketPath: root.appending(path: "x.sock").path,
+                from: nil,
+            )
+        } throws: { error in
+            error as? AgentSpawnError
+                == .hostRefused(detail: "Companion plugin is missing from this build")
+        }
     }
 
     /// A build with nothing to write outranks any failure: there the failure is only a symptom.

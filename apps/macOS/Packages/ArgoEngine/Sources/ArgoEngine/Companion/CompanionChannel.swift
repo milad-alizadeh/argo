@@ -29,7 +29,7 @@ public final class CompanionChannel {
 
     /// What the companion row reads (#570): nothing to write outranks a remembered failure.
     var standing: CompanionStanding {
-        Self.standing(ships: CompanionPlugin.shipsResources, lastRefusal: lastRefusal)
+        Self.standing(ships: CompanionPlugin.shipsResources(), lastRefusal: lastRefusal)
     }
 
     /// Called when the Hub re-points: the failure was the old Project's spawn, not the new one's.
