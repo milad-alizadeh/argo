@@ -2,7 +2,7 @@
 # opinions the linter should own. Pinned so a newer SwiftFormat cannot silently reformat
 # the tree; raise it deliberately, in its own commit.
 --swiftversion 6.2
---minversion 0.62.0
+--minversion 0.63.0
 
 # 4-space indent and Swift's own brace style: the ecosystem's convention, not TypeScript's.
 # Line width matches biome's 100 so a file reads the same width in either language.
