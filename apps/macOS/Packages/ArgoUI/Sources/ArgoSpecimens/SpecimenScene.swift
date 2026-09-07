@@ -1,3 +1,4 @@
+import ArgoDesign
 import ArgoEngine
 import ArgoUI
 import SwiftUI
@@ -63,10 +64,12 @@ enum SpecimenScene {
     /// What it settles is the SHAPE. The wash marks what was sent, and what was sent is the bubble
     /// on the trailing edge — so a still where the accent runs the full measure is the bug, not the
     /// state.
+    /// `argoStillsMotion` is what makes it renderable at all: the wash leaves 1.4 seconds after it
+    /// lands, and a capture timed against that window comes out empty as often as not.
     static func washed(_ rows: [FeedRow]) -> some View {
         var preview = FeedPreview(rows: rows)
         preview.washed = rows.last { $0.kind.isPrompt }?.id
-        return preview
+        return preview.environment(\.argoStillsMotion, true)
     }
 
     /// The New Session verb mid-spawn. Alone rather than on the bar, because the bar is
