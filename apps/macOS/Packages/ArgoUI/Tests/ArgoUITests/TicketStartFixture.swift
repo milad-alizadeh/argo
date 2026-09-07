@@ -135,6 +135,22 @@ enum TicketStartFixture {
         return model
     }
 
+    /// The same press, made after the shell has ALREADY reconciled the provisional row (#1681).
+    ///
+    /// This is the real order rather than a variant of it. `Hub.spawnSession` publishes the row and
+    /// then SUSPENDS before it returns — `await readings.spell` — so the shell gets a pass over a
+    /// roster carrying the claim while `TicketStart` is still awaiting the spawn, and
+    /// `pointAtStarting` runs after it. Measured, not read: `HubSpawnPublishOrderTests`.
+    ///
+    /// What that costs is what the press records as already standing when it happens, which is the
+    /// set the recycled-claim guard reads (`heirs(of:)`, #1563).
+    static func pressedAfterItsRowIsPublished() async -> CockpitNavigationModel {
+        let model = navigation()
+        model.reconcile(against: provisional.map(\.identity))
+        await start().run(on: 899, in: model)
+        return model
+    }
+
     /// A window as `CockpitView.body` leaves it on first draw: reconciled once over the roster
     /// standing before the press, in the Tickets room, which is where the reader pressed Start.
     static func navigation() -> CockpitNavigationModel {
