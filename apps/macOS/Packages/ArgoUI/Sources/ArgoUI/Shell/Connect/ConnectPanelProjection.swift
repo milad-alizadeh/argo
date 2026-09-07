@@ -23,7 +23,7 @@ package enum ConnectPanelProjection {
         package let ports: [PortRow]
         let companion: Row
         /// Absent while creating: a Project that does not exist yet starts no Sessions.
-        let agent: Row?
+        let agent: AgentCLI?
         let challenge: ConnectChallenge?
         let note: ConnectNote?
         let call: String
@@ -99,10 +99,10 @@ package enum ConnectPanelProjection {
         }
     }
 
-    private static func agentRow(of mode: ConnectPanelMode) -> Row? {
+    private static func agentRow(of mode: ConnectPanelMode) -> AgentCLI? {
         switch mode {
         case .creating: nil
-        case let .settings(agent): row(title: "Agent", detail: agent.readableName)
+        case let .settings(agent): agent
         }
     }
 }

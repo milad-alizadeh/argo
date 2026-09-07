@@ -52,7 +52,7 @@ struct ConnectPanelProjectionTests {
         #expect(panel.heading == "Project settings")
         #expect(panel.call == "Done")
         #expect(panel.isCallEnabled)
-        #expect(panel.agent?.detail == "Claude Code")
+        #expect(panel.agent == .claude)
         #expect(panel.ports.map(\.id) == [.ticket, .codeHost])
     }
 

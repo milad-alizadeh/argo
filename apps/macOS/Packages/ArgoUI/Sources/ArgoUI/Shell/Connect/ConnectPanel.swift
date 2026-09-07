@@ -1,4 +1,5 @@
 import ArgoDesign
+import ArgoEngine
 import SwiftUI
 
 /// The panel that sets a Project up, and the panel Project Settings re-enters.
@@ -55,9 +56,15 @@ public struct ConnectPanel: View {
         ForEach(panel.ports) { port in
             ConnectPortRow(row: port, actions: actions)
         }
-        ConnectRow(row: panel.companion) { EmptyView() }
         if let agent = panel.agent {
-            ConnectRow(row: agent) { EmptyView() }
+            Picker("Agent", selection: Binding(get: { agent }, set: actions.chooseAgent)) {
+                ForEach(AgentCLI.allCases, id: \.self) { choice in
+                    Text(choice.readableName).tag(choice)
+                }
+            }
+            .argoText(ArgoTypography.control)
+        } else {
+            ConnectRow(row: panel.companion) { EmptyView() }
         }
     }
 

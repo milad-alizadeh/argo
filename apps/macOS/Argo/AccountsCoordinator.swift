@@ -62,7 +62,8 @@ final class AccountsCoordinator {
     /// rebuild, and a rebuild that decided for itself would re-open a panel the user just closed.
     private var isOpen = false
     var project: ProjectRecord?
-    private var mode: ConnectPanelMode = .creating
+    var mode: ConnectPanelMode = .creating
+    let projects: ProjectRegistryStore
     var challenge: ConnectChallenge?
     /// The one open scope picker, reached from `AccountsCoordinator+Scopes`.
     var scopes: ConnectScopes?
@@ -77,6 +78,7 @@ final class AccountsCoordinator {
     var companionStanding: @MainActor () -> ConnectCompanion = { .unknown }
 
     init(projects: ProjectRegistryStore) {
+        self.projects = projects
         let store = AccountRegistryStore(bindings: ProjectBindingIndex(projects: projects))
         self.accounts = store
         self.bindings = ProjectBindings(projects: projects, accounts: store)
@@ -90,11 +92,9 @@ final class AccountsCoordinator {
     /// Open the panel on a Project, or on none: onboarding IS creating a Project (ADR-0015), so
     /// the panel with no Project is not an error state — it is the state that produces one.
     ///
-    /// The Agent is `.claude` because that is the only one Argo can launch (`AgentCLI`), and
-    /// nothing stores a per-Project choice yet.
     func open(on project: ProjectRecord?, welcoming: Bool = false) async {
-        self.project = project
-        mode = project == nil ? .creating : .settings(agent: .claude)
+        self.project = await projects.load().project(id: project?.id)
+        mode = self.project.map { .settings(agent: $0.agent) } ?? .creating
         startsAtWelcome = welcoming
         note = nil
         isOpen = true

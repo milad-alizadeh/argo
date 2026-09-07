@@ -143,8 +143,9 @@ struct ConnectCopyTests {
     }
 
     private static func strings(of panel: ConnectPanelProjection.Panel) -> [String] {
-        let rows = [panel.folder, panel.companion] + [panel.agent].compactMap(\.self)
+        let rows = [panel.folder, panel.companion]
         return [panel.heading, panel.folderCall, panel.call]
+            + AgentCLI.allCases.map(\.readableName)
             + rows.flatMap { [$0.title, $0.detail, $0.spoken] }
             + panel.ports.flatMap { port in
                 [port.row.title, port.row.detail]
