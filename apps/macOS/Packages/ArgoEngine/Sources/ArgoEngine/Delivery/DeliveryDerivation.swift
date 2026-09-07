@@ -16,6 +16,20 @@ public actor DeliveryDerivation {
     private let deliveries: DeliveryLedger
     private let now: @Sendable () -> Date
     private var landed: Landing = {}
+    /// Where the round robin over each Project's local branches left off (#1571).
+    private var fallbackCursor: [String: Int] = [:]
+
+    /// How many local branches with no settled pull request one tick will ask about by name,
+    /// before deferring the rest to the next tick — the decided cap `DeliveryPoll.interval`
+    /// documents the cost of. Bounds a cold tick's local fan-out to a number a person chose rather
+    /// than to however many worktrees a checkout has collected (#1571).
+    ///
+    /// Every branch with an OPEN pull request is unaffected: it arrives through `inFlight` in
+    /// `union(_:locally:)`, which this budget never touches, so a Session with a pull request open
+    /// is drawn on every tick regardless of how many other branches are waiting their turn — #258's
+    /// "a branch is a Delivery whether or not a Session is on it" holds for the branches this
+    /// defers too, just not on every single tick.
+    static let localFallbackBudget = 20
 
     public init(
         port: CodeHostPort,
@@ -131,21 +145,29 @@ public actor DeliveryDerivation {
         let hosted = listed.answer ?? Array(open)
         var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
+        // A branch whose pull request the host has FINISHED with — merged, or closed without
+        // merging — is answered from the ledger and never asked about again. That answer cannot
+        // move, and it was 15 of the 63 branches in a tick at three requests each (#1588).
+        // Reopening one, or opening a second pull request on the same branch, arrives through
+        // the in-flight listing above, which runs first and takes the branch out of this loop
+        // entirely — so nothing here strands a branch on a stale terminal answer while its
+        // replacement is open. A branch name reused after its first pull request merged, whose
+        // second one opens AND closes between two ticks, is answered from the first for the
+        // life of the window: the ledger no longer forgets a branch that leaves the local half
+        // (#1617).
+        var unsettled: [String] = []
         for branch in Self.branches(of: locally.workspaces) where !inFlight.contains(branch) {
-            // A branch whose pull request the host has FINISHED with — merged, or closed without
-            // merging — is answered from the ledger and never asked about again. That answer cannot
-            // move, and it was 15 of the 63 branches in a tick at three requests each (#1588).
-            // Reopening one, or opening a second pull request on the same branch, arrives through
-            // the in-flight listing above, which runs first and takes the branch out of this loop
-            // entirely — so nothing here strands a branch on a stale terminal answer while its
-            // replacement is open. A branch name reused after its first pull request merged, whose
-            // second one opens AND closes between two ticks, is answered from the first for the
-            // life of the window: the ledger no longer forgets a branch that leaves the local half
-            // (#1617).
             if let already = held[branch], already.pullRequest?.isFinished == true {
                 union.deliveries.append(already)
-                continue
+            } else {
+                unsettled.append(branch)
             }
+        }
+        let scheduled = Self.scheduled(
+            from: unsettled, budget: Self.localFallbackBudget,
+            cursor: &fallbackCursor[target.projectID, default: 0],
+        )
+        for branch in scheduled {
             do {
                 try await union.deliveries.append(named(branch, holding: held[branch], of: target))
             } catch {
@@ -190,6 +212,21 @@ public actor DeliveryDerivation {
         // request would erase the pull request the last tick found.
         guard let answered = read.answer else { return held ?? none }
         return answered ?? none
+    }
+
+    /// The next `budget`-many of `branches`, starting where the last tick's `cursor` left off and
+    /// wrapping — round robin, so a checkout with more unsettled local branches than the budget
+    /// covers a different slice each tick instead of starving whichever branch sorts last (#1571).
+    /// `cursor` is left ready for the NEXT tick, whether or not this one's slice was asked in full:
+    /// a refusal partway through is the host's, not any one branch's, so nothing here would earn a
+    /// refused branch a second try before the branches after it get a first one.
+    static func scheduled(from branches: [String], budget: Int, cursor: inout Int) -> [String] {
+        guard !branches.isEmpty else { return [] }
+        let start = cursor % branches.count
+        let rotated = Array(branches[start...] + branches[..<start])
+        let slice = Array(rotated.prefix(budget))
+        cursor = (start + slice.count) % branches.count
+        return slice
     }
 
     /// The branches the local Workspaces are on, each once and in the order they were read.

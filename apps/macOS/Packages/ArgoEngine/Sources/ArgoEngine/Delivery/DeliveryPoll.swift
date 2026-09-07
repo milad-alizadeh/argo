@@ -68,6 +68,16 @@ public actor DeliveryPoll {
     /// The Tickets poll spends a measured 30 a tick on the same grant. With one pull request open
     /// the pair now cost 1,980 against the host's 5,000, where they cost 4,800 before; with none,
     /// 1,800. The lever left is a listing that covers more than what is open, out of scope here.
+    ///
+    /// **The decided cap (#1571):** a cold tick's own worst case is bounded, not just this
+    /// checkout's measured one. `DeliveryDerivation.localFallbackBudget` asks about at most 20 of
+    /// the local branches a listing held nothing for, round robin — so ANY tick costs at most
+    /// `1 + 3 × (open pull requests) + 20`, whatever the worktree count grows to, and a checkout
+    /// with more than 20 unsettled branches settles over the few ticks it takes to round-robin
+    /// through the rest, which the `304`s from #1620 make free once each has had its first read. On
+    /// this checkout's 61 worktrees that is 4 ticks to a first full pass, cold. A branch with an
+    /// open pull request is never subject to the cap — it arrives through the listing above,
+    /// uncapped, on every tick, which is what keeps a Session's own row current regardless.
     public static let interval = Duration.seconds(60)
 
     /// Point at whatever a Project reads its code host through, or stop. What each resolution

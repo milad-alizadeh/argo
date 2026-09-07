@@ -139,6 +139,23 @@ struct CodeHostListingTests {
     }
 
     @Test
+    func `a reused branch's older pull requests cost nothing`() async throws {
+        // `head=` can answer more than one pull request for a branch that was reused, sorted
+        // most-recently-updated first — and `delivery(ofBranch:)` keeps only the first. Assembling
+        // the rest anyway used to pay their checks and their reviews for a Delivery nothing ever
+        // reads (#1571).
+        let api = RecordedGitHub(replies: Self.replies(
+            pulls: [PullRequestJSON(number: 9), PullRequestJSON(number: 8)],
+        ))
+        _ = try await GitHubDeliveries(transport: api)
+            .delivered(ofBranch: "argo/#258-code-host", in: "acme/api", grant: .listing)
+        let asked = await api.urls()
+
+        #expect(asked.filter { $0.contains("check-runs") }.count == 1)
+        #expect(asked.filter { $0.contains("reviews") }.count == 1)
+    }
+
+    @Test
     func `a branch the host holds nothing for reads as no Delivery`() async throws {
         let found = try await GitHubDeliveries(transport: RecordedGitHub(replies: [:]))
             .delivered(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
