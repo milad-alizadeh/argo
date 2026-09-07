@@ -28,6 +28,14 @@ extension SpecimenRegistry {
         },
         // Render narrow as well as wide — a row's whole promise is that it stays one line.
         SpecimenEntry("feedCommands") { SpecimenScene.sessions(FeedProjection.previewCommandRows) },
+        // Both ends of a `!` command (#1595): the line as it paints when it is asked, and the pair
+        // once it prints two minutes later.
+        SpecimenEntry("feedShellAsked") {
+            SpecimenScene.sessions(FeedProjection.previewAskedShellRows)
+        },
+        SpecimenEntry("feedShellPrinted") {
+            SpecimenScene.sessions(FeedProjection.previewPrintedShellRows)
+        },
         SpecimenEntry("feedCommandFold") { SpecimenScene.sessions(FeedProjection.previewFoldRows) },
         // A Turn's work folded across its own narration (#1172): the two cards at rest, then the
         // card of commands opened onto the list its failure is tinted in.
