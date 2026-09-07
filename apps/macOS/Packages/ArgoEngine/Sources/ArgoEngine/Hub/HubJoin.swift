@@ -4,14 +4,32 @@ import Foundation
 /// transcript owns each record, and the Sessions those two facts stitch into. A value with no tasks
 /// in it, so dropping a whole Project's worth is `HubJoin()`.
 struct HubJoin {
-    /// Rebuilt on mutation rather than on read: only the write side knows when it changed.
+    /// The Sessions the transcripts stitch into, as the last fold left them.
     private var roster = HubRoster()
+    /// Whether a write moved something the fold reads since the last fold was taken — so the fold
+    /// is taken on the READ that needs it rather than under the write that asked for it.
+    ///
+    /// A sweep settles every transcript in the working set under its own batch, and each of those
+    /// batches moves a fact the fold reads. Folding under each of them made the opening fill
+    /// quadratic in the size of the set, on the main actor, and a 95-row tree opened at 7 fps for
+    /// fifteen seconds (#1556). Nothing downstream can observe the flag: the one read of the roster
+    /// takes the fold first.
+    ///
+    /// What makes deferring safe is that `chainKeys` below is retaken by the fold alone: every fact
+    /// that can move the graph is in `HubJoinFacts`, which `apply` compares itself, so a stale
+    /// `chainKeys` is only ever read on a write that already has a fold pending.
+    private var needsFold = false
     /// Whether the roster is still in the order a fold left it in. A batch written in place moves
     /// its row's sort key without moving the row, so the order is restored on READ instead — the
     /// same comparator, over the same rows, which is the same answer a refold would have given.
     private var isOrdered = true
+    /// `mutating` because the fold is taken here. That is the whole guarantee: a caller cannot read
+    /// a roster older than the writes it has made, because reading is what folds.
     var sessions: [HubSession] {
-        isOrdered ? roster.sessions : HubSessionChain.ordered(roster.sessions)
+        mutating get {
+            fold()
+            return isOrdered ? roster.sessions : HubSessionChain.ordered(roster.sessions)
+        }
     }
 
     /// In the order they joined the set, which is the order the observation projection renders and
@@ -59,6 +77,16 @@ struct HubJoin {
             into: &claimed,
         ))
         return transcripts.filter { chain.contains($0.sessionID) }.map(\.id)
+    }
+
+    /// Every folder the set's transcripts name, published or not.
+    ///
+    /// The one thing a PER-BATCH caller may ask this join for, because it needs no fold: `sessions`
+    /// above folds on read. A transcript still being read names its folder already, so this is a
+    /// superset of the rows' — which is what the spelling wants anyway, and idempotent besides
+    /// (`WorldReadings.spell`).
+    var folders: [String] {
+        transcripts.compactMap(\.session.cwd)
     }
 
     /// How many events each transcript's reading holds — what `WholeReadings` bounds itself by.
@@ -128,7 +156,7 @@ struct HubJoin {
         // Every position after the one dropped has moved, so the table is taken again whole.
         positions = Dictionary(transcripts.enumerated().map { ($1.id, $0) }) { first, _ in first }
         recordOwners = recordOwners.filter { $0.value != transcriptID }
-        rebuild()
+        needsFold = true
         return true
     }
 
@@ -190,8 +218,10 @@ struct HubJoin {
         // Written THROUGH for the same reason the Subagent path is, and under a stricter test: the
         // row must BE this transcript, so the whole Session replaces the row and no merge is
         // reproduced by hand. Anything else — a chain, a duplicated uuid, a held roster — refolds.
-        guard !moved, roster.replace(transcripts[index].session, from: transcriptID) else {
-            rebuild()
+        guard !needsFold, !moved,
+              roster.replace(transcripts[index].session, from: transcriptID)
+        else {
+            needsFold = true
             return true
         }
         isOrdered = false
@@ -239,14 +269,20 @@ struct HubJoin {
         #endif
     }
 
-    /// Folded over the transcripts that have been READ, which is the whole set once a sweep has
-    /// finished and a prefix of it while one is running (`HubJoinPublishable`). A row not folded
-    /// yet is missing; a row already folded keeps its place and its order, because the comparator
-    /// and the keys are the same ones that put it there.
+    /// Fold the transcripts that have been READ, which is the whole set once a sweep has finished
+    /// and a prefix of it while one is running (`HubJoinPublishable`). A row not folded yet is
+    /// missing; a row already folded keeps its place and its order, because the comparator and the
+    /// keys are the same ones that put it there.
+    ///
+    /// Taken once per READ and never once per write, which is what `needsFold` above is for: a
+    /// burst of writes — a sweep settling the whole working set, a slice landing behind a slice —
+    /// pays ONE of these however many of them there were, and a join nothing asks about pays none.
     ///
     /// While the fold is partial nothing may be written into the roster in place either — see
     /// `HubRoster.holdWrites`, whose every rejection is a fact about the whole set.
-    private mutating func rebuild() {
+    private mutating func fold() {
+        guard needsFold else { return }
+        needsFold = false
         #if DEBUG
             rebuilds += 1
         #endif

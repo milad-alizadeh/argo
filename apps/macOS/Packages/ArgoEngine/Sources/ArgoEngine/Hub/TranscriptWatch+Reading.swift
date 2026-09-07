@@ -20,6 +20,12 @@ extension TranscriptWatch {
         }
     }
 
+    /// Every folder the working set names — see `HubJoin.folders`. Beside `observations` above
+    /// rather than on the class body, which is capped.
+    var folders: [String] {
+        join.folders
+    }
+
     /// Read the chain under this row whole, and hold it.
     ///
     /// Idempotent, which is the whole claim: a Session already held costs nothing however many

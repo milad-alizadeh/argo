@@ -116,15 +116,17 @@ struct HubJoinRefoldTests {
         ]
     }
 
-    private func interrupts(in join: HubJoin) -> Int {
-        (join.sessions.first?.events ?? []).count { event in
+    private func interrupts(in join: consuming HubJoin) -> Int {
+        var folded = join
+        return (folded.sessions.first?.events ?? []).count { event in
             guard case .interrupted = event else { return false }
             return true
         }
     }
 
-    private func delegations(in join: HubJoin) -> [String] {
-        (join.sessions.first?.events ?? []).compactMap { event -> String? in
+    private func delegations(in join: consuming HubJoin) -> [String] {
+        var folded = join
+        return (folded.sessions.first?.events ?? []).compactMap { event -> String? in
             guard case let .toolCall(call) = event, call.kind == .delegate else { return nil }
             return call.target
         }

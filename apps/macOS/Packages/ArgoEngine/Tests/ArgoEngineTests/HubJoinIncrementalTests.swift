@@ -123,7 +123,9 @@ struct HubJoinIncrementalTests {
             whole[transcriptID, default: []] += batch
         }
 
-        #expect(subject.sessions == join(backfill: whole).sessions)
+        var reference = join(backfill: whole)
+
+        #expect(subject.sessions == reference.sessions)
     }
 
     /// Admitted in a settled key order, so the reference and the subject fold the same array.

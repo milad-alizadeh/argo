@@ -75,8 +75,8 @@ extension Hub {
         )
     }
 
-    /// What follows a batch landing in the join: the spawned rows it may retire, and the folders it
-    /// has just named.
+    /// What follows a batch landing in the join: the folders it has just named. The spawned rows a
+    /// batch may retire follow the PUBLISH instead — see `TranscriptWatch.onPublished`.
     ///
     /// Spelling them here is what keeps the readings' table from COSTING a Session its liveness.
     /// Before that table existed every read resolved the folder live, so a Session that appeared
@@ -87,12 +87,12 @@ extension Hub {
     /// over these same readings, and asking it here would rebuild it on every batch. A spawned row
     /// is in neither: `spawnSession` spells its folder itself, for the same reason and at the one
     /// moment it is known.
+    ///
+    /// Off the join's TRANSCRIPTS and not its Sessions, which is the same rule one layer down: the
+    /// join folds its roster on read, so asking for the rows here would refold it per batch — which
+    /// is the cost #1556 took off the fill.
     func didApply() async {
-        reconcileSpawns()
-        await readings.spell(
-            theProjectRootAnd: watch.sessions.compactMap(\.cwd),
-            settling: .foldersNotYetSpelled,
-        )
+        await readings.spell(theProjectRootAnd: watch.folders, settling: .foldersNotYetSpelled)
     }
 
     /// One Session as the roster publishes it: what its transcript said, plus what Argo established

@@ -35,6 +35,19 @@ enum PerfBudgets {
     /// still.
     static let batchRebuilds = 0
 
+    /// `HubJoinFillCostTests` — the opening fill may not fold the join once per batch, whatever the
+    /// working set holds.
+    ///
+    /// Recorded: 1 fold over a fill of 4 rows and of 200 · either · exact. Folding on the write
+    /// side
+    /// instead makes it one per settling batch at both — 200 at two hundred rows, which is the
+    /// quadratic #1556 measured as 6.8 fps at a p50 of 129 ms for the first thirty seconds.
+    ///
+    /// The one fold is the READ, not the fill: nothing folds until the roster is asked for. The
+    /// second case in that suite is what holds that distinction up, so this figure cannot be met by
+    /// a fold that stopped happening at all.
+    static let fillFolds = 1
+
     /// `TranscriptSliceCostTests` — no single write may take more of a read than one slice,
     /// whatever the file's length.
     ///

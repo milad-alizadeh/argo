@@ -21,10 +21,13 @@ struct HubJoinCostTests {
     func `a Session's own batch does not rebuild the join as the roster grows`() {
         var small = Self.settledRoster(of: 4)
         var large = Self.settledRoster(of: 200)
-        // Settling a roster DOES rebuild, once per row, so a zero below is a batch path that
-        // rebuilds nothing rather than a counter nothing ever bumped.
-        #expect(small.rebuilds == 4)
-        #expect(large.rebuilds == 200)
+        // Reading a settled roster DOES fold it, once for the whole fill (`HubJoinFillCostTests`),
+        // so a zero below is a batch path that folds nothing rather than a counter nothing ever
+        // bumped. The read is also what leaves the roster writable: a held one refolds.
+        #expect(small.sessions.count == 4)
+        #expect(large.sessions.count == 200)
+        #expect(small.rebuilds == PerfBudgets.fillFolds)
+        #expect(large.rebuilds == PerfBudgets.fillFolds)
 
         let overFourRows = Self.rebuildsOfBatches(against: &small)
         let overTwoHundredRows = Self.rebuildsOfBatches(against: &large)
