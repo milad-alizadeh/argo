@@ -2,11 +2,17 @@ import Foundation
 
 /// A bounded read of one transcript: its head, its tail, and nothing in between.
 ///
-/// What a roster row is made of — a title, the two times, a Turn's state, a chain link — is written
-/// either in a transcript's opening records or in its newest ones. The middle is the feed's, and
-/// the feed is only ever drawn for the Session on screen. So reading the middle at launch buys the
-/// roster nothing and costs it the bytes that made a week-wide working set unaffordable: over the
-/// week ADR-0008 was re-measured against — 137 transcripts, 458 MB — the two ends are 16 MB.
+/// Most of what a roster row is made of — a title, the two times, a Turn's state, a chain link —
+/// is written either in a transcript's opening records or in its newest ones. The middle is the
+/// feed's, and the feed is only ever drawn for the Session on screen. So reading the middle at
+/// launch buys the roster nothing and costs it the bytes that made a week-wide working set
+/// unaffordable: over the week ADR-0008 was re-measured against — 137 transcripts, 458 MB — the
+/// two ends are 16 MB.
+///
+/// The Plan is the exception, and arrives another way. It is written one entry at a time and is the
+/// fold of every write from the file's first, so no end-window holds it and no wider one would:
+/// `TranscriptPlanScan` reads the whole file for those records alone, and this excerpt never sees
+/// them (#1594).
 struct TranscriptExcerpt {
     /// How much of each end is read. Sized by measurement against that week, at three widths: 64,
     /// 128 and 256 KiB either side read 16, 32 and 61 MB and drew the SAME 105 rows — same titles,

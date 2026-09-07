@@ -88,4 +88,51 @@ struct TaskPlanReadingTests {
         #expect(try await calls()["list-read"]?.kind == .other)
         #expect(try await calls()["stop-background"]?.kind == .other)
     }
+
+    /// A file is read twice over — once for its plan writes alone (`TranscriptPlanScan`), then for
+    /// its two ends — so a record reaches the ledger twice. Folding the second copy would append a
+    /// second entry for the same create (#1594).
+    @Test
+    func `a create read twice writes one entry`() {
+        var ledger = PlanLedger()
+        let use = Self.creating("call-1", subject: "Read the record")
+        let first = ledger.written(by: use)
+
+        let second = ledger.written(by: use)
+
+        #expect(first?.entries.map(\.text) == ["Read the record"])
+        #expect(second == nil)
+    }
+
+    /// And the worse half of the same hazard: an update read again after a LATER one has landed
+    /// takes the entry's status back to what it said. A status that walked backwards is a Plan
+    /// nobody can read progress from.
+    @Test
+    func `an update read again after a later one moves nothing`() {
+        var ledger = PlanLedger()
+        _ = ledger.written(by: Self.creating("call-1", subject: "Read the record"))
+        ledger.identify(call: "call-1", from: Self.reportedID("7"))
+        let started = Self.updating("call-2", taskID: "7", status: "in_progress")
+        _ = ledger.written(by: started)
+        let finished = ledger.written(by: Self.updating("call-3", taskID: "7", status: "completed"))
+
+        #expect(ledger.written(by: started) == nil)
+        #expect(finished?.entries.map(\.status) == [.completed])
+    }
+
+    private static func creating(_ id: String, subject: String) -> ToolUseBlock {
+        ToolUseBlock(id: id, name: taskCreateTool, input: .object(["subject": .string(subject)]))
+    }
+
+    private static func updating(_ id: String, taskID: String, status: String) -> ToolUseBlock {
+        ToolUseBlock(
+            id: id,
+            name: taskUpdateTool,
+            input: .object(["taskId": .string(taskID), "status": .string(status)]),
+        )
+    }
+
+    private static func reportedID(_ id: String) -> JSONValue {
+        .object(["task": .object(["id": .string(id)])])
+    }
 }

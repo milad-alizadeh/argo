@@ -19,16 +19,28 @@ struct PlanLedger {
     }
 
     private var entries: [Entry] = []
+    /// The calls already folded. A file is read twice over — once for its plan writes alone
+    /// (`TranscriptPlanScan`), then for its two ends — and a record in both is ONE write seen
+    /// twice, not two. Folding it again would append a second entry for a create, and, worse, take
+    /// a status back to what an earlier update said (#1594).
+    private var folded: Set<String> = []
 
     /// One call → the whole list as it stands after it, or `nil` for a call that wrote nothing to
     /// it. A tool this does not name — `TaskStop`, which belongs to a background agent task and not
-    /// to this list — falls through to `nil` and stays whatever news it already was.
+    /// to this list — falls through to `nil` and stays whatever news it already was. So does a call
+    /// this ledger has already folded.
     mutating func written(by use: ToolUseBlock) -> Plan? {
         switch use.name {
-        case taskCreateTool: created(by: use)
-        case taskUpdateTool: updated(by: use)
+        case taskCreateTool: firstReading(of: use) ? created(by: use) : nil
+        case taskUpdateTool: firstReading(of: use) ? updated(by: use) : nil
         default: nil
         }
+    }
+
+    /// Whether this call is being folded for the first time. Only the two tools that write a list
+    /// are remembered: a Session makes thousands of other calls and none of them is this ledger's.
+    private mutating func firstReading(of use: ToolUseBlock) -> Bool {
+        folded.insert(use.id).inserted
     }
 
     /// The id a create's result reported, joined onto the entry that create made — the only place
