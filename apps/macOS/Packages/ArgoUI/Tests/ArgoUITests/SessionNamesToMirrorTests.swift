@@ -18,10 +18,8 @@ struct SessionNamesToMirrorTests {
         ]).namesToMirror
 
         #expect(draws["derived"]?.name == "Fix the roster titles")
-        #expect(draws["derived"]?.isReaderNamed == false)
         #expect(draws["derived"]?.drawsDerivedTitle == true)
         #expect(draws["renamed"]?.name == "Tonight's")
-        #expect(draws["renamed"]?.isReaderNamed == true)
         #expect(draws["renamed"]?.drawsDerivedTitle == false)
     }
 

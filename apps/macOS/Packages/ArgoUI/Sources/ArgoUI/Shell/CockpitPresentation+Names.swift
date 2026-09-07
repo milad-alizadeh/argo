@@ -31,7 +31,6 @@ public extension CockpitPresentation {
             else { return }
             draws[session.id] = SessionNameDraw(
                 name: naming.title,
-                isReaderNamed: session.explicitName != nil,
                 drawsDerivedTitle: naming.drawsDerivedTitle,
                 takesTypedLine: session.status.takesTypedLine,
             )

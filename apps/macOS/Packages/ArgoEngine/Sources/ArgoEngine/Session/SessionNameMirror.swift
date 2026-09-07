@@ -2,16 +2,17 @@
 ///
 /// The words rather than the standing they were won at: `SessionTitle` decides which of a Session's
 /// names a row wears, and by the time the mirror runs that contest is over. What it still has to
-/// know is WHO chose them — a person naming this Session in Argo is the one case where a name of
-/// Argo's outranks a title the CLI already holds, and a name Argo derived is the one case that has
-/// to clear a floor before it may be typed at all.
+/// know is where they CAME from — a name Argo derived is the one case that has to clear a floor
+/// before it may be typed at all.
+///
+/// It no longer asks whether the READER chose them (#1653). That fact existed to except a person's
+/// rename from a gate that yielded to any CLI title, and with the gate gone there is nothing for
+/// the exception to except: the roster's words are typed whoever wrote them.
 public struct SessionNameDraw: Sendable, Equatable, Hashable {
     /// The name on the row, spelled exactly as the roster spells it — Argo's own edits included,
     /// which is deliberate: the two surfaces agreeing is the whole point, and a phone showing the
     /// unedited words would disagree with the desk again (`ArgoUI.SessionTitle.spelled`).
     public let name: String
-    /// Whether the reader typed this name in the rename dialog.
-    public let isReaderNamed: Bool
     /// Whether the row fell all the way through the naming chain to its OWN summary — so these
     /// words are Argo's reading of the conversation rather than a Ticket's or a person's
     /// (`ArgoUI.SessionTitle.Naming.drawsDerivedTitle`). Only these are held to the floor:
@@ -24,12 +25,10 @@ public struct SessionNameDraw: Sendable, Equatable, Hashable {
 
     public init(
         name: String,
-        isReaderNamed: Bool,
         drawsDerivedTitle: Bool,
         takesTypedLine: Bool,
     ) {
         self.name = name
-        self.isReaderNamed = isReaderNamed
         self.drawsDerivedTitle = drawsDerivedTitle
         self.takesTypedLine = takesTypedLine
     }
@@ -57,16 +56,22 @@ public struct SessionNameStanding: Sendable, Equatable {
 ///
 /// #1494 typed a name on two triggers only — the rename dialog and a settled Ticket — so every row
 /// wearing a prompt-derived name stayed nameless on Claude's own surfaces. This runs for every row
-/// the roster draws a real name for, under one rule: Claude wins where Claude has a name, and Argo
-/// speaks where it does not.
+/// the roster draws a real name for, under one rule: **one typist, and it is Argo** (#1653).
+/// Whatever the roster draws is what the CLI is told, whether or not the CLI already holds a title
+/// of its own.
 ///
-/// Two exceptions to that rule, and each is a case it would otherwise get wrong. A name the READER
-/// typed is mirrored over a CLI title, because a person naming this Session is not a reading to be
-/// yielded to a summariser's sentence. And a name Argo DERIVED must first say something about the
-/// work: a transcript's UUID filename and a bare `/clear` are names only because a row must have
-/// one, and typing one would make the CLI write it as a `custom-title` — the top of the ladder,
-/// outranking every prompt and every summariser title that came after
-/// (`SessionTitle.namesTheWork`).
+/// One exception, and it is a floor rather than a preference. A name Argo DERIVED must first say
+/// something about the work: a transcript's UUID filename and a bare `/clear` are names only
+/// because a row must have one, and typing one would make the CLI write it as a `custom-title` —
+/// the top of the ladder, outranking every prompt and every summariser title that came after
+/// (`SessionTitle.namesTheWork`). Argo reads that record back, so a placeholder typed once pins the
+/// row at `.custom` on BOTH sides and poisons its own ladder. The floor is a TIMING rule: type
+/// nothing until there is a real word to type, and let the retype below carry the name once there
+/// is one.
+///
+/// The cost, stated plainly: Claude's summariser titles stop reaching rows Argo has words for.
+/// That is the intent and not a side effect — an `ai-title` that disagrees with the roster is the
+/// bug. Rows Argo cannot name are untouched and keep taking Claude's title.
 ///
 /// An actor and not a value on the window: what went is remembered here, and remembering is the
 /// difference between one busy moment costing a Session its name for the launch and costing it a
@@ -129,11 +134,24 @@ public actor SessionNameMirror {
         // A name of Argo's OWN making has to say something about the work first — see the type's
         // own note for why a placeholder typed once can never be taken back.
         guard !draw.drawsDerivedTitle || standing.namesTheWork else { return }
-        // Claude wins where Claude has a name (#1623, the open decision): a summariser title
-        // arriving after Argo's mirror is the CLI's own reading of the same conversation, and
-        // replacing it with Argo's derived sentence is what `Hub+Drive` refused to do. A name the
-        // reader TYPED is the exception, and it is the whole reason this is not one gate.
-        guard draw.isReaderNamed || standing.cliTitle == nil else { return }
+        // There is NO second gate here, and the one that stood in this place is why the two
+        // surfaces disagreed (#1653). It read `draw.isReaderNamed || standing.cliTitle == nil` —
+        // Claude wins where Claude has a name — and it yielded to a title Argo had usually
+        // written itself: the first mirror of a launch types `/implement 1665` as a
+        // `custom-title`, and every later sweep then found a non-nil `cliTitle` and refused the
+        // Ticket's real words for the life of the Session. Measured on #1665: five title records,
+        // all five the placeholder, while the row drew the Ticket's sentence.
+        //
+        // It yielded nothing worth keeping either. Where a row draws its DERIVED name,
+        // `SessionTitle`'s ladder already puts `summarised` and `custom` above `prompt`, so Argo
+        // is drawing the CLI's own title and the two agree with or without the gate. It only ever
+        // changed the answer on rows where Argo has BETTER words than Claude does — which is the
+        // bug, stated as a rule.
+        //
+        // So: one typist, and it is Argo. `cliTitle` is still read, three lines up, for the
+        // "already on these words" check that keeps a sweep from retyping once per pass; what is
+        // gone is its use as a veto.
+        //
         // Reserved BEFORE the keystroke, and taken back if the prompt refused it. A `codex`
         // Session refuses here through its own driver (`titleUnsupported`): it has no `/rename`
         // and no title of its own, so it keeps the name Argo derives and nothing stays filed. No
