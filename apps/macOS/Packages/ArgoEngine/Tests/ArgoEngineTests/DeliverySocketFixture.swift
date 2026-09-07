@@ -7,6 +7,9 @@ enum ScriptedSocket: Sendable {
     case refused
     /// A socket that opened, carried this many moves, and then dropped.
     case carrying(Int)
+    /// A dial that never answers either way, so a case can cancel it mid-flight rather than wait
+    /// for an outcome that would otherwise arrive first (#1643).
+    case hangs
 }
 
 /// A code host watch that opens from a script, for the suites about the socket rather than about
@@ -43,6 +46,11 @@ actor ScriptedCodeHostWatch: CodeHostWatch {
         opens += 1
         asked = (scope, grant.accessToken)
         let next = script.count > 1 ? script.removeFirst() : script.first
+        if case .hangs = next {
+            // Never returns on its own: `Task.sleep` throws `CancellationError` the instant the
+            // caller's Task is cancelled, which is the only way this ever resolves.
+            try await Task.sleep(for: .seconds(3600))
+        }
         guard case let .carrying(moves) = next else { throw ProviderFetchError.unreachable }
         let watch = ScriptedDeliveryWatch(moves: moves)
         opened = watch
@@ -104,6 +112,39 @@ actor SocketWaits {
         // Yielded because this sleeper does not actually wait: without it a run that only ever
         // dials and backs off would never let the case that is counting its waits proceed.
         await Task.yield()
+    }
+}
+
+/// Every dial failure the socket reported, and a wait for the next one — what a case about #1643's
+/// reading acts on, rather than a sleep it hopes has elapsed.
+actor SocketFailures {
+    private var reported: [(target: PortReadTarget, error: Error)] = []
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    nonisolated var reportDialFailure: DeliverySocket.ReportDialFailure {
+        { target, error in await self.record(target, error) }
+    }
+
+    func count() -> Int {
+        reported.count
+    }
+
+    func last() -> PortReadTarget? {
+        reported.last?.target
+    }
+
+    func untilReported(_ wanted: Int) async {
+        while reported.count < wanted {
+            await withCheckedContinuation { waiters.append($0) }
+        }
+    }
+
+    private func record(_ target: PortReadTarget, _ error: Error) {
+        reported.append((target, error))
+        for waiter in waiters {
+            waiter.resume()
+        }
+        waiters = []
     }
 }
 

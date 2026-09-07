@@ -81,10 +81,13 @@ struct DeliveryReadingsTests {
         #expect(box.deliveries == [delivery])
     }
 
-    /// A watch the host will not open is a Project reading at the poll's own pace, and nothing the
-    /// user has to clear: the health ledger the connection chip draws stays as it was.
+    /// A watch the host will not open is a Project reading at the poll's own pace, degrade-down
+    /// unchanged: the poll still lands the strip regardless of what the socket did. Whether the
+    /// reading `dialFailed` writes survives beside a poll succeeding at the same moment is a race
+    /// between two independent loops and not this test's to pin — `DeliverySocketTests` proves the
+    /// socket reports the failure, and `DeliveryHealthTests` proves what that reading reads as.
     @Test
-    func `a watch the host refuses leaves the connection healthy`() async {
+    func `a watch the host refuses still lands the strip at the poll's pace`() async {
         let health = ConnectionHealthLedger()
         let box = DeliveryReadings(
             health: health,
@@ -99,7 +102,6 @@ struct DeliveryReadingsTests {
         }
 
         #expect(box.deliveries == [delivery])
-        #expect(await health.health(of: target.projectBinding, in: "P1").state == .healthy)
     }
 
     /// One box over a scripted host, paced by a fake sleeper — the two seams the box exposes.

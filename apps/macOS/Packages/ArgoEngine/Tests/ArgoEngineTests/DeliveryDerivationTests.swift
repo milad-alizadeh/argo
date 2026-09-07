@@ -151,4 +151,21 @@ struct DeliveryDerivationTests {
 
         #expect(await landings.raised() == 1)
     }
+
+    /// #1643: a watch that cannot connect is `dialFailed`'s own reading rather than `derive`'s.
+    /// What it reads as is `DeliveryHealthTests`'.
+    @Test
+    func `a dial that never opened still says it has landed`() async {
+        let landings = DeliveryLandings()
+        let derivation = DeliveryDerivation(
+            port: ScriptedCodeHost([.success([])]),
+            health: ConnectionHealthLedger(),
+            deliveries: DeliveryLedger(),
+        )
+        await derivation.report(to: landings.raise)
+
+        await derivation.dialFailed(.codeHost(), error: ProviderFetchError.unreachable)
+
+        #expect(await landings.raised() == 1)
+    }
 }

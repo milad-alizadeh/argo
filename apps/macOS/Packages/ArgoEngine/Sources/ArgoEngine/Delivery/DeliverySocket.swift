@@ -3,8 +3,11 @@ import Foundation
 /// The fast path onto one Project's Deliveries: GitHub pushes a pull request down a socket in under
 /// a second, where the poll would take up to a minute to ask (#1579).
 ///
-/// `DeliveryPoll` keeps its own interval whatever this does, and nothing here records a failure:
-/// every way a watch can fail is a Project reading at the poll's pace, which is what it did before.
+/// `DeliveryPoll` keeps its own interval whatever this does: every way a watch can fail degrades a
+/// Project to reading at the poll's pace, which is what it did before. That degrade-down is silent
+/// on purpose — the roster does not need to know why the fast path is out — but a dial that never
+/// opens is reported through `reportDialFailure` all the same, so the failure is readable somewhere
+/// even while nothing downstream of it changes (#1643).
 ///
 /// An actor for `PortPollLoop`'s reason: no dial and no decode runs on the MainActor, and the whole
 /// run is one `Task` that `stop()` cancels.
@@ -12,9 +15,14 @@ actor DeliverySocket {
     /// One derivation, which is `DeliveryPoll.derive` — the same act a tick performs, so a fact
     /// that arrived over the socket is recorded exactly as a polled one is.
     typealias Derive = @Sendable (PortReadTarget) async -> Void
+    /// A dial that did not open, reported rather than merely swallowed — the reading #1643 asked
+    /// for, kept apart from `Derive` because a dial failure has no `PortReadTarget` derivation to
+    /// run: nothing was read, so nothing here decides what the roster shows.
+    typealias ReportDialFailure = @Sendable (PortReadTarget, Error) async -> Void
 
     private let watch: any CodeHostWatch
     private let derive: Derive
+    private let reportDialFailure: ReportDialFailure
     private let sleep: PortPollLoop.Sleeper
     private var run: Task<Void, Never>?
     private var pointedAt: PortPointing?
@@ -22,10 +30,12 @@ actor DeliverySocket {
     init(
         watch: any CodeHostWatch,
         derive: @escaping Derive,
+        reportDialFailure: @escaping ReportDialFailure = { _, _ in },
         sleep: @escaping PortPollLoop.Sleeper = { try await Task.sleep(for: $0) },
     ) {
         self.watch = watch
         self.derive = derive
+        self.reportDialFailure = reportDialFailure
         self.sleep = sleep
     }
 
@@ -68,8 +78,17 @@ actor DeliverySocket {
     /// costs a hook create plus a whole derivation. That is many times the request rate of the poll
     /// this is meant to spare (#1579).
     private func watched(_ target: PortReadTarget) async -> Bool {
-        guard let opened = try? await watch.open(target.scope, grant: target.binding.grant)
-        else { return false }
+        let opened: any DeliveryWatch
+        do {
+            opened = try await watch.open(target.scope, grant: target.binding.grant)
+        } catch is CancellationError {
+            // `stop()` cancelling this very dial is not a failure to report: nothing refused it,
+            // the run underneath it just ended.
+            return false
+        } catch {
+            await reportDialFailure(target, error)
+            return false
+        }
         // Derived BEFORE the first wait, on every connection and not just the first: a socket that
         // was down missed deliveries and the host never repeats them. Frames that land during this
         // derivation are queued by the channel rather than lost.
