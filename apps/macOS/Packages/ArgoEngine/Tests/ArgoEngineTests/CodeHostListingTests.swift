@@ -105,6 +105,39 @@ struct CodeHostListingTests {
         )])
     }
 
+    /// The two words the host ends a pull request's life with, and the open one they are told
+    /// apart from.
+    private static let finished = [
+        PullRequestJSON(number: 8, state: "closed", mergedAt: "2026-08-01T00:00:00Z"),
+        PullRequestJSON(number: 8, state: "closed"),
+    ]
+
+    @Test(arguments: finished)
+    func `a finished pull request costs no checks and no reviews`(
+        _ example: PullRequestJSON,
+    ) async throws {
+        // Two thirds of what a pull request costs a tick, spent on answers that cannot move again
+        // (#1588): a merged pull request's Checks are as finished as it is.
+        let api = RecordedGitHub(replies: Self.replies(pulls: [example]))
+        _ = try await GitHubDeliveries(transport: api)
+            .delivery(ofBranch: "argo/#99-done", in: "acme/api", grant: .listing)
+        let asked = await api.urls()
+
+        #expect(!asked.contains { $0.contains("check-runs") })
+        #expect(!asked.contains { $0.contains("reviews") })
+    }
+
+    @Test
+    func `an open pull request is still asked for its checks and its reviews`() async throws {
+        let api = RecordedGitHub(replies: Self.replies(pulls: [PullRequestJSON(number: 8)]))
+        _ = try await GitHubDeliveries(transport: api)
+            .delivery(ofBranch: "argo/#258-code-host", in: "acme/api", grant: .listing)
+        let asked = await api.urls()
+
+        #expect(asked.contains { $0.contains("check-runs") })
+        #expect(asked.contains { $0.contains("reviews") })
+    }
+
     @Test
     func `a branch the host holds nothing for reads as no Delivery`() async throws {
         let found = try await GitHubDeliveries(transport: RecordedGitHub(replies: [:]))
