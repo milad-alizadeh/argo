@@ -47,6 +47,10 @@ extension SpecimenRegistry {
         // The ordinary managed Session, which the two families above vary from. Its ticket is
         // `.linked` (#1092), so this is also the tab line's pressable Issue link at rest.
         SpecimenEntry("tabLineInstruments") { SessionHeaderSpecimen(access: .managed) },
+        // The header and the roster row in one frame (#1575): a Session part-way through a Plan
+        // carries the control and no `Ready` badge, and the pair is what the control's ink was
+        // being read against.
+        SpecimenEntry("midTurnCreatePullRequest") { MidTurnCreatePullRequestSpecimen() },
         // Only `permission`, `asking` and `stopped` spend a state word, and no family varies it.
         SpecimenEntry("tabLineStateWord") {
             SessionHeaderSpecimen(header: SessionHeaderFixture.needsInput)

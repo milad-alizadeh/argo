@@ -67,6 +67,15 @@ public extension ArgoPalette {
     func askMark(lit: Bool) -> ArgoColor {
         lit ? interaction.accentBright : text.ink(.metadata)
     }
+
+    /// The ink a control takes when its presence is the whole of what it reports: it is available,
+    /// and asserts nothing about the state of the thing it acts on (#1575).
+    ///
+    /// Not `text.ink(_:)`: a kind is what a LINE of text is, and a control's word is not one. Here
+    /// rather than at the call site so the rung is picked once (`check:text-ink`).
+    var availableControl: ArgoColor {
+        text.secondary
+    }
 }
 
 public extension View {

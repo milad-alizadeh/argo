@@ -19,13 +19,16 @@ package struct CreatePullRequestButton: View {
     static let detail = "Runs /ship in this Session to open a pull request."
 
     package var body: some View {
-        HeaderCapsuleButton(
-            label: HeaderCapsuleButton.Label(
-                word: Self.word,
-                ink: argo.color.interaction.accent,
-                detail: Self.detail,
-            ),
-            run: run,
+        HeaderCapsuleButton(label: Self.label(in: argo.color), run: run)
+    }
+
+    /// What the capsule draws, as a value: the ink is `availableControl` and never
+    /// `interaction.accent`, because presence is the whole of what this control reports (#1575).
+    static func label(in palette: ArgoPalette) -> HeaderCapsuleButton.Label {
+        HeaderCapsuleButton.Label(
+            word: word,
+            ink: palette.availableControl,
+            detail: detail,
         )
     }
 
