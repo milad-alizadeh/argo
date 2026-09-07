@@ -1,5 +1,7 @@
 # Publishing screenshots without committing them
 
+An allowlisted push — AGENTS.md, **Pushing and pull requests**.
+
 From the directory holding the PNGs (`$SHOTS`), write them to a commit that no branch
 carries, and push it to a ref:
 

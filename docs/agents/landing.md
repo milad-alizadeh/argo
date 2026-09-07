@@ -38,10 +38,12 @@ Lanes plus merges, rather than lanes times merges.
 
 ## The two habits
 
-**A lane does not rebase to open a PR.** It gates once, on the base it was cut from, pushes, and
-opens the PR there. Being behind the base is the normal state of a branch, not a defect in it.
-The exception is a PR GitHub reports as `CONFLICTING`, which is a decision only that branch's
-session has the context to make. The full rule is in the `ship` skill.
+**A lane does not rebase to open a PR.** `/ship` gates once, on the base the branch was cut from,
+then pushes and opens the PR there — the lane itself does neither, and `/ship` is a separate
+invocation the human makes (AGENTS.md, **Pushing and pull requests**). Being behind the base is the
+normal state of a branch, not a defect in it. The exception is a PR GitHub reports as
+`CONFLICTING`, which is a decision only that branch's session has the context to make. The full
+rule is in the `ship` skill.
 
 **Two lanes never own the same file.** Lanes are split by domain vocabulary, which is right for
 deciding what each lane is *for*, and useless for deciding what each lane may *touch*: the
