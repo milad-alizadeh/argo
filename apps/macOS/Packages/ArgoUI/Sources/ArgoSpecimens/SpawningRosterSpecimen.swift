@@ -2,7 +2,7 @@ import ArgoEngine
 import ArgoUI
 import SwiftUI
 
-/// The whole shell over a Project with nothing started in it, and a spawn that PUBLISHES.
+/// The whole shell over a Project, and a spawn that PUBLISHES.
 ///
 /// Every other specimen hands the shell `.inert` actions, which is useless for a click: pressing
 /// New Session against `.inert` would prove the control exists rather than that it starts anything.
@@ -14,9 +14,50 @@ struct SpawningRosterSpecimen: View {
     /// so a rename there shows up here as a failing walk.
     static let provisionalTitle = "New session"
 
-    @State private var presentation = CockpitPresentation.emptyPreview
+    /// How many Sessions the roster already holds when the first press lands. Zero for the click
+    /// walk, which only needs a row to appear. A crowded roster is what #1562 was seen against:
+    /// its claim is a count about four times the roster's, and a roster of one cannot tell a
+    /// quadrupled tree from an ordinary one.
+    var seeded = 0
+
+    @State private var presentation: CockpitPresentation
     @State private var navigation = CockpitNavigationModel()
     @State private var started = 0
+
+    init(seeded: Int = 0) {
+        self.seeded = seeded
+        let empty = CockpitPresentation.emptyPreview
+        _presentation = State(initialValue: CockpitPresentation(
+            projects: empty.projects,
+            activeProjectID: empty.activeProjectID,
+            sessions: Self.seededSessions(seeded),
+            connection: empty.connection,
+        ))
+    }
+
+    /// The Sessions the roster is already holding. Named rather than inlined so a test can assert
+    /// the crowd is really there: a seed that silently fell to zero would have `OutlineCount.swift`
+    /// report "no spike" off a roster of one, which is the one wrong answer this repro can give.
+    static func seededSessions(_ count: Int) -> [CockpitPresentation.Session] {
+        (0 ..< count).map(settled(at:))
+    }
+
+    /// One of the Sessions the roster is already holding. Titles differ per row so the naming pass
+    /// does the work it does on a real roster: a hundred rows sharing one title fold into one
+    /// (#1073), and a folded roster is not the tree that was counted.
+    private static func settled(at index: Int) -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: "settled-\(index)",
+            title: "/implement \(1000 + index)",
+            access: .managed,
+            status: .idle,
+            chain: .init(
+                program: .init(cli: .claude),
+                span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(index + 1)),
+            ),
+            work: .init(location: "/Users/milad/Developer/argo/.claude/worktrees/ticket-\(index)"),
+        )
+    }
 
     var body: some View {
         CockpitView(presentation: presentation, actions: actions)

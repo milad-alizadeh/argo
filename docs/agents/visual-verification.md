@@ -127,3 +127,28 @@ while somebody else is using the machine. It is not a substitute for the run, an
 learn where the line is: it cannot say whether Tab arrives, it drives AppKit's press rather than
 a click, and a key delivered by `postToPid` skips every layer between the keyboard and the
 process — so it proves a shortcut FIRES, never that the key reaches the app in the first place.
+
+### An outline's child count is not a row count
+
+`scripts/OutlineCount.swift <pid>` polls the roster outline's accessibility child count on a
+timer, and presses New Session on the same clock with `--presses`. It reads through AX and presses
+through `kAXPressAction`, so like the walk above it takes neither the pointer nor the keyboard.
+
+What it measured, against `crowdedSpawningRoster` (a roster seeded with exactly 100 rows) and
+against a real cockpit, is the thing to know before quoting such a count at all: **the number an
+accessibility client reads is the row population AppKit has materialised at that instant, not the
+number of rows the roster has.** Polled once a second for two minutes, one unchanging real roster
+answered 421, then 71, then 421, then 16, then 71 — plateaus of tens of seconds, not a settling
+sequence. At the 16 plateau `AXVisibleRows` was 14 and every row had a height: the outline was
+publishing the visible slice alone. At 421 it published all 420 rows with 32 of them realised and
+the other 388 at zero height and silent.
+
+So a reading four times another reading of the same roster is two different populations, not a
+tree caught mid-rebuild (#1562). A spawn does not disturb the count: 100 seeded rows polled every
+25 ms across four `kAXPressAction` presses went 101 → 105, one row per press, with no reading
+above the settled value in 173 samples.
+
+Two consequences. A count taken this way can only ever be a lower bound on the roster, so never
+read a change in one as a change in the roster. And a VoiceOver reader meets the same three
+populations, which is a real fact about the roster worth its own ticket — but it is a property of
+the platform's lazy rows, not something the roster's own code chose.
