@@ -252,7 +252,13 @@ public struct CockpitView: View {
         .modifier(ShellPrompts(
             archiving: $archiveConfirmation,
             report: $backlogWriteReport,
-            archive: { $0.forEach { actions.sessions.setArchived($0, true) } },
+            archive: { ids in
+                Task {
+                    for id in ids {
+                        await actions.sessions.setArchived(id, true)
+                    }
+                }
+            },
         ))
         .focusedValue(\.sessionCommands, sessionCommands)
         // Keyed on the whole identity rather than the id alone: a row absorbing another's id is a

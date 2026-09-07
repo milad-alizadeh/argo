@@ -197,9 +197,9 @@ struct ArgoApp: App {
         actions.sessions.spawn = { await cockpit.spawnSession() }
         actions.sessions.resume = { id in await cockpit.resumeSession(sessionID: id) }
         actions.sessions.spawnBeside = { id in await cockpit.spawnSession(beside: id) }
-        actions.sessions.setArchived = { Task { await cockpit.setArchived($1, sessionID: $0) } }
-        actions.sessions.setName = { Task { await cockpit.setName($1, sessionID: $0) } }
-        actions.sessions.setTicketLink = { Task { await cockpit.pinTicket($1, sessionID: $0) } }
+        actions.sessions.setArchived = { await cockpit.setArchived($1, sessionID: $0) }
+        actions.sessions.setName = { await cockpit.setName($1, sessionID: $0) }
+        actions.sessions.setTicketLink = { await cockpit.setPinnedTicket($1, sessionID: $0) }
         actions.sessions.clearLostTurn = { id in cockpit.hub.clearLostTurn(for: id) }
         actions.sessions.endDelegation = { cockpit.hub.endDelegation(callID: $1, for: $0) }
         actions.sessions.handOff = { await cockpit.handOff(sessionID: $0, issue: $1) }

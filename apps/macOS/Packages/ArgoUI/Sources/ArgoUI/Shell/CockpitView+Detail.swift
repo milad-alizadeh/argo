@@ -50,7 +50,9 @@ extension CockpitView {
         SessionTicketLinking.over(
             tickets: tickets,
             session: presentation.session(navigation.session),
-            link: actions.sessions.setTicketLink,
+            link: { id, number in
+                Task { await actions.sessions.setTicketLink(id, number) }
+            },
         )
     }
 

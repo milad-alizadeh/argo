@@ -5,9 +5,10 @@ import Testing
 /// Two Hubs over one companion root (#987): two Argo processes on the default root, and the
 /// `restarted` fixture these suites build.
 ///
-/// Claim ids are minted per Hub, so the first claim of each is `claim-1`. What keeps their channels
-/// apart is the corner of the root each Hub took, and this is what that corner buys: two gates
-/// reachable AT ONCE, and a withdraw that cannot reach the other Hub's plugin.
+/// Claim ids are minted per Hub and carry that Hub's own launch stamp (#1563), so the two never
+/// collide. What keeps their channels apart is not that, though: it is the corner of the root each
+/// Hub took, and this is what that corner buys — two gates reachable AT ONCE, and a withdraw that
+/// cannot reach the other Hub's plugin.
 @Suite("Two Hubs on one companion root", .serialized)
 @MainActor
 struct CompanionScopeTests {
@@ -18,11 +19,13 @@ struct CompanionScopeTests {
         let other = fixture.restarted()
         let mine = try await fixture.hub.spawnSession()
         let theirs = try await other.spawnSession()
-        #expect(mine.value == theirs.value, "both Hubs mint the same claim id")
+        // The id alone is no longer a way for two Hubs to collide (#1563) — and the paths are kept
+        // apart by the corner regardless, which is what this asserts and what the design relies on.
+        #expect(mine.value != theirs.value, "no two launches mint the same claim id")
 
         let myGate = PermissionGate.path(fixture, mine)
         let theirGate = PermissionGate.path(fixture, theirs, of: other)
-        #expect(myGate != theirGate, "so only the Hub's own corner keeps the paths apart")
+        #expect(myGate != theirGate, "and the Hub's own corner keeps the paths apart")
         let myHook = try await CompanionClient.dialled(myGate)
         defer { myHook.close() }
         let theirHook = try await CompanionClient.dialled(theirGate)

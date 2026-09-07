@@ -196,7 +196,7 @@ final class CockpitCoordinator {
     /// The title behind the number is not read here. Pinning makes the link untitled, and the
     /// window already asks for a resolve the moment an untitled number appears (`ArgoApp`) — one
     /// trigger, so a pinned link and a derived one are named the same way.
-    func pinTicket(_ number: Int?, sessionID: String) async {
+    func setPinnedTicket(_ number: Int?, sessionID: String) async {
         annotations = await annotationStore.setPinnedTicket(number, sessionID: sessionID)
     }
 
