@@ -13,6 +13,12 @@ import SwiftUI
 /// Words never reach here. A paragraph, a heading and a list item are `ProseSurface`'s own.
 struct FeedProseLaidBlock: View {
     let block: MarkdownBlock
+    /// The ink the words INSIDE a table's cells take (#1597).
+    ///
+    /// Handed in rather than inherited: this is hosted in its own view tree, so nothing the
+    /// surface's caller set reaches it, and a cell left to the platform's own label colour was
+    /// drawn at no rung of the ramp at all. The other three blocks ink their own words.
+    let prose: ArgoColor
 
     var body: some View {
         switch block {
@@ -22,6 +28,8 @@ struct FeedProseLaidBlock: View {
             MermaidView(diagram: diagram)
         case let .table(table):
             FeedMarkdownTable(table: table)
+                .foregroundStyle(prose.color)
+                .environment(\.proseTone, .one(prose))
         case let .picture(alt, source):
             FeedMarkdownPicture(alt: alt, source: source)
         // Words, which the surface inks. Reached only where the two readings of one string came

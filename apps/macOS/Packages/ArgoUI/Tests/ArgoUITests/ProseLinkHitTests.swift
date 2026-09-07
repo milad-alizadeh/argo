@@ -17,12 +17,7 @@ struct ProseLinkHitTests {
     private static func surface(_ text: String) -> ProseSurface {
         let surface = ProseSurface()
         surface.show(
-            ProseShowing(
-                text: text,
-                measure: measure,
-                ink: ink,
-                marker: ArgoPalette.graphite.text.tertiary,
-            ),
+            ProseShowing(text: text, measure: measure, ink: ink),
             theme: .graphite,
         )
         return surface
@@ -31,20 +26,7 @@ struct ProseLinkHitTests {
     /// The feed's own ink, through the contract's own names: a test that spelled the inset and the
     /// radius by hand would go on passing after a token moved and stop exercising what ships.
     private static var ink: ProseInk {
-        let palette = ArgoPalette.graphite
-        return ProseInk(
-            body: palette.text.primary,
-            link: palette.interaction.accent,
-            span: nil,
-            marked: ProseMarkedInk(
-                ground: palette.surface.marked,
-                inset: CGSize(
-                    width: ArgoFeedRow.markedSpanInsetX,
-                    height: ArgoFeedRow.markedSpanInsetY,
-                ),
-                radius: ArgoRadius.marker,
-            ),
-        )
+        ProseTone.one(ArgoPalette.graphite.text.ink(.title)).inked(.graphite)
     }
 
     @Test

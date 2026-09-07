@@ -21,6 +21,11 @@ public enum ArgoLineKind: String, Sendable, CaseIterable {
     case body
     /// The word naming a block of rows, set over it rather than in it. Chrome about the content,
     /// so it is quieter than anything under it.
+    ///
+    /// NOT the heading in a body of prose, which is `title` above (#1597): the design heads
+    /// Deliveries with a caption where it heads Children with a heading
+    /// (`cockpit-work-room.html`, `.cap` against `h2`), and every call site here is the uppercase
+    /// `ArgoTypography.sectionLabel`.
     case sectionHeader
     /// The quiet line beside or under a title, in the interface face — what a Session is doing,
     /// a ticket's status word.

@@ -15,4 +15,4 @@
 # falls, and a raise is a correction only where the old number never described a tree at all.
 #
 # `scripts/ratchet-thresholds.test.mjs` holds it to the tree from the Linux CI job.
-253
+251

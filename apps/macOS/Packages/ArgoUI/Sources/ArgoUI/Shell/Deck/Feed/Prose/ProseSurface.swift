@@ -11,10 +11,10 @@ import SwiftUI
 struct ProseShowing: Equatable {
     var text: String
     var measure: CGFloat
+    /// One voice per block kind, the list marker's own included. Held here rather than read off
+    /// the theme at draw time, so a palette that moved is a showing that differs and a repaint
+    /// that happens.
     var ink: ProseInk
-    /// A list marker's own quieter ink — `FeedMarker`'s. Held here rather than read off the theme
-    /// at draw time, so a palette that moved is a showing that differs and a repaint that happens.
-    var marker: ArgoColor
 }
 
 /// A prose row drawn by the Core Text frame that MEASURED it (ADR-0030, Rule 2).
@@ -113,10 +113,14 @@ final class ProseSurface: NSView {
         for block in laid {
             block.view.removeFromSuperview()
         }
+        // A hosted block's own words are prose, so they take the row's body voice. No showing
+        // means no blocks either — a frame is placed from one — so nothing is hosted without one
+        // rather than hosted at a rung nobody picked.
+        let prose = showing?.ink.voices.body.ink
         laid = placed.parts.compactMap { part in
-            guard case let .laid(block) = part.part else { return nil }
+            guard case let .laid(block) = part.part, let prose else { return nil }
             let view = NSHostingView(rootView: AnyView(
-                FeedProseLaidBlock(block: block).argoTheme(theme),
+                FeedProseLaidBlock(block: block, prose: prose).argoTheme(theme),
             ))
             view.sizingOptions = []
             view.frame = part.rect

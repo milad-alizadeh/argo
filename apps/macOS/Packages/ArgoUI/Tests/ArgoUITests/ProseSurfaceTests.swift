@@ -60,7 +60,7 @@ struct ProseSurfaceTests {
     @Test(arguments: prose)
     func `the lines a block inks stand no taller than the block`(text: String) {
         for part in ProseReading.frame(of: text, across: Self.measure).parts {
-            guard case let .words(run, _, _) = part.part else { continue }
+            guard case let .words(run, _, _, _) = part.part else { continue }
             #expect(
                 run.height <= part.rect.height + 0.01,
                 "run of \(run.lines.count) lines over its block in \(text.prefix(24))",
