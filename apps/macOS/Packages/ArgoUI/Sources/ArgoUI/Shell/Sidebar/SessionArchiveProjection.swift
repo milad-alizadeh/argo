@@ -4,27 +4,23 @@ import ArgoEngine
 /// Every word and mark the archive gesture is drawn with — `SessionRenameProjection`'s counterpart
 /// for the roster's other verb, reached from the menu bar and from the row's swipe action.
 enum SessionArchiveProjection {
-    /// Whether this archive has to be asked about first (#1290).
+    /// Whether this archive has to be asked about first (#1290, #1596).
     ///
-    /// Archiving a Session Argo owns ends its agent, so the one archive worth a prompt is the one
-    /// that ends live work. Three things have to be true together, and each rules out a prompt
-    /// nobody would understand:
+    /// The subject of the question is LIVE WORK, so only two things have to be true together:
     ///
     /// - it is an ARCHIVE. Putting a Session back starts nothing.
-    /// - Argo OWNS it. An `external` Session reads `running` off its own transcript and Argo has no
-    ///   channel to it; an `orphaned` one's process is already gone. Neither ends anything.
     /// - its agent is MID-TURN. Between Turns there is nothing in flight to lose, and a prompt on
     ///   every archive is a prompt that stops being read.
     ///
     /// `starting` counts as mid-turn. Argo launched that process and has not heard it yet, which
-    /// makes it the one status where ownership of live work is DIRECT rather than read.
-    static func confirms(
-        access: CockpitPresentation.Session.Access,
-        status: SessionStatus,
-        archiving: Bool,
-    )
-        -> Bool {
-        guard archiving, access == .managed else { return false }
+    /// makes it the one status where live work is DIRECT rather than read.
+    ///
+    /// Access is deliberately NOT asked about. It used to be, and the effect was that the rows
+    /// Argo cannot end were the same rows it never warned about: an unowned Session mid-turn was
+    /// archived with no prompt, and its agent went on working with no row left to say so (#1596).
+    /// What ownership decides is `confirmMessage`'s words, never whether the reader is asked.
+    static func confirms(status: SessionStatus, archiving: Bool) -> Bool {
+        guard archiving else { return false }
         return switch status {
         case .starting, .running, .permission, .asking: true
         case .idle, .stopped, .ended, .unknown: false
@@ -41,10 +37,27 @@ enum SessionArchiveProjection {
         return "Archive \u{201C}\(one)\u{201D}?"
     }
 
+    /// What this archive does to the agents behind it, split by whether Argo can end them (#1596).
+    ///
+    /// `ending` is the Sessions this window holds a claim on: archiving those closes their PTY.
+    /// `staying` is every other running one — started by somebody else, or by a run of Argo that
+    /// has since quit — where the claim that held the handle is gone and the archive reaches only
+    /// the row. A reader given one number for the two cannot tell which agents survive the
+    /// gesture, and that is precisely the state the roster was lying about.
+    static func confirmMessage(ending: Int, staying: Int) -> String {
+        guard staying > 0 else { return ends(count: ending) }
+        guard ending > 0 else { return outlives(count: staying) }
+        return """
+        These agents are working. Archiving ends \(ending) of them and takes every Session off \
+        the roster. Argo cannot end the other \(staying), because this window did not start \
+        them, so they keep running. Putting a Session back keeps its history.
+        """
+    }
+
     /// What is lost and what is not, in that order. The second sentence is the load-bearing one:
     /// ending the agent is not losing the work, and a reader who does not know that will keep a
     /// finished Session on the roster rather than risk it.
-    static func confirmMessage(count: Int) -> String {
+    private static func ends(count: Int) -> String {
         guard count == 1 else {
             return """
             Their agents are working. Archiving ends those agents and takes the Sessions off the \
@@ -57,9 +70,34 @@ enum SessionArchiveProjection {
         """
     }
 
+    /// The archive that reaches the row and not the agent. It says the refusal and its reason
+    /// before saying what archiving still does, because the refusal is the surprising half: the
+    /// reader pressed a gesture whose whole reputation is that it ends things.
+    private static func outlives(count: Int) -> String {
+        guard count == 1 else {
+            return """
+            Their agents are working, and Argo cannot end them: this window did not start those \
+            processes. Archiving takes the Sessions off the roster and the agents keep running. \
+            Putting them back keeps the history.
+            """
+        }
+        return """
+        Its agent is working, and Argo cannot end it: this window did not start that process. \
+        Archiving takes the Session off the roster and the agent keeps running. Putting it back \
+        keeps the history.
+        """
+    }
+
     /// The button says both halves of what it does. "Archive" alone would read as the gesture that
     /// only hid the row, which is the behaviour this prompt exists because of.
-    static let confirmVerb = "Archive and End"
+    ///
+    /// Where nothing will be ended it says so by saying LESS, not by promising an end that will
+    /// not happen. "Anyway" is the word carrying the message's refusal onto the button, so the
+    /// reader who skipped the paragraph still presses something honest.
+    static func confirmVerb(ending: Int) -> String {
+        ending > 0 ? "Archive and End" : "Archive Anyway"
+    }
+
     /// Title Case, as menu items are, and the noun spelled out: a menu carries no row, so the item
     /// has to say what it acts on (#800).
     static func menuTitle(isArchived: Bool) -> String {

@@ -65,8 +65,15 @@ public extension Hub {
     /// ONE Session Argo owns, ended: its PTY closed, its claim given up, and every channel it
     /// spoke over forgotten. What archiving a `managed` Session calls (#1290).
     ///
-    /// A Session with no live claim is `external` or `orphaned`, and there is no process here to
-    /// end. `ownerOf` answers both in one read — an unowned Session was never bound, and an
+    /// A Session with no live claim is `external` or `orphaned`, and this Hub has no HANDLE on it.
+    /// That is not the same as nothing running: an orphaned Session is very often a live agent an
+    /// earlier run of Argo started, and an external one an agent somebody started themselves
+    /// (#1596). The claim is what holds the PTY, so with none there is no route from here to that
+    /// process, and the honest answer is to end nothing rather than to signal something matched by
+    /// a folder. What the reader is told about it is the gesture's, before the row goes:
+    /// `SessionArchiveProjection.confirms` raises the prompt on STATUS for exactly this reason.
+    ///
+    /// `ownerOf` answers both cases in one read — an unowned Session was never bound, and an
     /// orphaned one's claim has stood down — so nothing switches on `SessionProvenance` a second
     /// way.
     func endSession(id sessionID: String) {

@@ -14,6 +14,11 @@ struct ArchiveConfirmation: Identifiable, Equatable {
         let id: String
         /// Its name as the roster is drawing it, for the prompt's own title.
         let name: String
+        /// Whether archiving this Session ends its agent — true exactly where this window holds
+        /// the claim (#1596). Captured with the name and the id, and for the same reason: a claim
+        /// can be given up while the prompt is up, and the reader must be held to what they were
+        /// actually told.
+        let endsAgent: Bool
     }
 
     let sessions: [Session]
@@ -30,5 +35,15 @@ struct ArchiveConfirmation: Identifiable, Equatable {
 
     var names: [String] {
         sessions.map(\.name)
+    }
+
+    /// How many of these agents this window will actually end.
+    var ending: Int {
+        sessions.count(where: \.endsAgent)
+    }
+
+    /// How many will keep working after the row has gone (#1596).
+    var staying: Int {
+        sessions.count - ending
     }
 }

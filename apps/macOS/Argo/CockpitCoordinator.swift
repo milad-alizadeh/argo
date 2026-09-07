@@ -157,8 +157,9 @@ final class CockpitCoordinator {
     /// silent in the worst way: the row was archived to tidy up and the agent kept working.
     ///
     /// Which way the gesture goes is the Hub's rule, not this method's: archiving a Session Argo
-    /// owns ends it, putting one back starts nothing, and a Session it does not own has no process
-    /// to end either way. This composes the two writes and decides neither.
+    /// owns ends it, putting one back starts nothing, and a Session it holds no claim on it cannot
+    /// reach — its agent may well still be working, and the reader was told so before pressing
+    /// (#1596, `SessionArchiveProjection`). This composes the two writes and decides neither.
     ///
     /// Ended BEFORE the annotation, so the two never disagree in the order that matters. A write
     /// that landed first would take the row off the roster while its agent was still being asked to
