@@ -39,13 +39,13 @@ extension TranscriptReader {
         message.content.flatMap { block -> [TranscriptEvent] in
             switch block {
             case let .text(text):
-                return said(text).map { [.message(markdown: $0)] } ?? []
+                said(text).map { [.message(markdown: $0)] } ?? []
             case let .thinking(text):
-                return said(text).map { [.thought(markdown: $0)] } ?? []
+                said(text).map { [.thought(markdown: $0)] } ?? []
             case let .toolUse(use):
-                return callEvents(use, in: message)
+                callEvents(use, in: message)
             case .toolResult, .image, .unreadable:
-                return []
+                []
             }
         }
     }
