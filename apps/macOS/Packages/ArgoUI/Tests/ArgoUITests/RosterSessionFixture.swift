@@ -22,6 +22,7 @@ enum RosterSessionFixture {
         entry: SessionEntry = .interactive,
         status: SessionStatus = .idle,
         lastSeenAtMs: Int? = nil,
+        startedAtMs: Int? = nil,
         isArchived: Bool = false,
         explicitName: String? = nil,
         events: [TranscriptEvent] = [],
@@ -39,7 +40,7 @@ enum RosterSessionFixture {
             status: status,
             chain: .init(
                 program: .init(model: "claude-opus-5", entry: entry),
-                span: .init(lastSeenAtMs: lastSeenAtMs),
+                span: .init(startedAtMs: startedAtMs, lastSeenAtMs: lastSeenAtMs),
             ),
             work: .init(
                 location: workspaceLocation,

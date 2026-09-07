@@ -143,8 +143,18 @@ because it changes subject. Row padding is `7 / base`, the row radius `ArgoRadiu
 
    The Plan has no third state to leak into: a Session that is not running has no in-progress
    segment at all (rule 3), so a bar that moves and a Session that is live are one answer.
-9. **A fold sums or says nothing.** Its Subagent dots are summed across the runs it hides. It
+9. **A fold sums or says nothing.** Its Subagent dots are summed across the Sessions it hides. It
    draws **no Plan**: four to-do lists do not add up to one.
+
+   Its **caption is a sum too** (#1567): `197 Sessions · 3 failed`, and **no failure clause where
+   none failed**. The count alone was the fact the reader did not need — 197 rows are visibly a
+   lot — while the one the fold exists for, whether any of them failed, was reachable only by
+   opening it and scanning 197 dots. The clause counts the same `failure` role the dot draws, so
+   the caption and the dots can never disagree.
+
+   The noun is **Sessions**. `docs/domain/` defines Session, Turn, Ticket and Workspace and
+   defines no `run`, and this is the one row a reader cannot open into a deck to find out what a
+   second noun for Session meant.
 
 ## The Ticket number leaves the title
 
@@ -254,7 +264,7 @@ Every one is reachable at `?state=<name>` and rendered in `roster-row/`.
 | `ready` | the Session says it is ready to ship and has no pull request — a full bar and no mark |
 | `unknown` | an external Session: ghosted, state an outline, no delegation mark |
 | `attention` | waiting on the reader |
-| `fold` | four headless runs behind one row |
+| `fold` | four headless Sessions behind one row, one of them failed |
 | `empty` | nothing under it and nothing out of it — line 3 carries the clock alone |
 
 ## Related
@@ -265,3 +275,4 @@ Every one is reachable at `?state=<name>` and rendered in `roster-row/`.
 - #1076 — the record alone cannot close a delegation.
 - #1199 — why line 2 carries the activity, and why the clock sits where it does.
 - #1072, #745 — how the title is decided, and what the meta slot used to carry.
+- #1567 — the fold's caption counted, and its rows all read alike.

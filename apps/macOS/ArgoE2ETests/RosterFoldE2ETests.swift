@@ -13,8 +13,11 @@ final class RosterFoldE2ETests: RosterE2ECase {
         "foldedRoster"
     }
 
-    private static let fold = "180 runs"
-    private static let run = "Write a caption for the prototype in folder 0"
+    /// The fold is addressed by its head, which is stable. A run is addressed by what is INSIDE
+    /// its announcement: its title now opens with the clock that tells it from its 179 twins
+    /// (#1567), and that clock is a different one every time this suite runs.
+    private static let fold = "180 Sessions"
+    private static let run = "You are naming one area of an unfamiliar codebase on"
 
     func testAClickOnAFoldSelectsNothing() {
         let fold = shutFold()
@@ -22,7 +25,7 @@ final class RosterFoldE2ETests: RosterE2ECase {
         labelArea(of: fold).click()
 
         XCTAssertTrue(
-            row(titled: Self.run).waitForExistence(timeout: 10),
+            row(containing: Self.run).waitForExistence(timeout: 10),
             "Clicking the fold did not open it.",
         )
         XCTAssertFalse(
@@ -47,7 +50,7 @@ final class RosterFoldE2ETests: RosterE2ECase {
     private func shutFold() -> XCUIElement {
         let fold = row(titled: Self.fold)
         XCTAssertTrue(fold.waitForExistence(timeout: 20), "The roster drew no fold.")
-        XCTAssertFalse(row(titled: Self.run).exists, "A run was on screen under a shut fold.")
+        XCTAssertFalse(row(containing: Self.run).exists, "A run was on screen under a shut fold.")
         XCTAssertFalse(cell(titled: Self.fold).isSelected, "The fold opened already selected.")
         return fold
     }
