@@ -152,7 +152,7 @@ struct FeedAgentsCeilingTests {
 
     /// The pair every fixture here is: the delegation, and whatever answered it.
     private static func read(atMs: Int?, answeredBy outcome: ToolCallOutcome) -> [FeedRow] {
-        FeedProjection.rows(from: [
+        FeedProjection.rows(.justTheStream([
             .toolCall(ToolCall(
                 id: call,
                 name: "Agent",
@@ -162,7 +162,7 @@ struct FeedAgentsCeilingTests {
                 atMs: atMs,
             )),
             .toolCallOutcome(outcome),
-        ])
+        ]))
     }
 
     private static let call = "away"

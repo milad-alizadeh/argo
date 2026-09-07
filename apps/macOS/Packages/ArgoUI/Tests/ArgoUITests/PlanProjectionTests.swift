@@ -128,6 +128,6 @@ struct PlanProjectionTests {
         let events = [plan(("Land the metrics", .inProgress)), .message(markdown: "Landed.")]
 
         #expect(PlanProjection.reading(from: events) != nil)
-        #expect(FeedProjection.rows(from: events).map(\.content) == [.message("Landed.")])
+        #expect(FeedProjection.rows(.justTheStream(events)).map(\.content) == [.message("Landed.")])
     }
 }

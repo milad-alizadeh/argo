@@ -15,7 +15,7 @@ extension AgentsRailFixture {
     ///
     /// What settles it in pixels is the column being EMPTY over its disclosure: `0 running`, and
     /// four chips filed behind the control at the foot.
-    static let endedRows = FeedProjection.rows(from: ended)
+    static let endedRows = FeedProjection.rows(.justTheStream(ended))
 
     /// Those records read as a RUNNING Session's, with every child's file watched and silent.
     ///

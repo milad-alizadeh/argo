@@ -135,6 +135,6 @@ struct FeedAgentsTurnTests {
     ]
 
     private static func rows(_ events: [TranscriptEvent]) -> [FeedRow] {
-        FeedProjection.rows(from: events)
+        FeedProjection.rows(.justTheStream(events))
     }
 }

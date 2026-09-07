@@ -10,7 +10,10 @@ struct FeedHandoffTests {
     /// The last row of all, under the record's own last row.
     @Test
     func `a handed-off reading ends with the link to the Session that took the work`() throws {
-        let rows = FeedProjection.rows(from: Self.transcript, handedOff: Self.handoff)
+        let rows = FeedProjection.rows(FeedInput(
+            events: Self.transcript,
+            beside: .just(FeedHandoffs(landed: Self.handoff, failed: [])),
+        ))
 
         let last = try #require(rows.last)
         #expect(last.content == .mark(.handedOff(Self.handoff)))
@@ -35,7 +38,7 @@ struct FeedHandoffTests {
     /// The row is not an empty slot at the foot of every reading in the app.
     @Test
     func `a Session that handed nothing over ends where its record does`() {
-        let rows = FeedProjection.rows(from: Self.transcript)
+        let rows = FeedProjection.rows(.justTheStream(Self.transcript))
 
         #expect(rows.last?.content == .mark(.turnEnded))
         #expect(!rows.contains { $0.content.isHandoff })
@@ -72,7 +75,10 @@ struct FeedHandoffTests {
             tookMs: 4000,
             failure: "the process exited with code 1",
         )
-        let rows = FeedProjection.rows(from: Self.transcript, handoffFailures: [failure])
+        let rows = FeedProjection.rows(FeedInput(
+            events: Self.transcript,
+            beside: .just(FeedHandoffs(landed: nil, failed: [failure])),
+        ))
 
         let last = try #require(rows.last)
         #expect(last.content == .settledWait(failure))
@@ -84,7 +90,10 @@ struct FeedHandoffTests {
     /// row about it, never two saying the same thing.
     @Test
     func `a landed handoff shows the link and nothing else about it`() {
-        let rows = FeedProjection.rows(from: Self.transcript, handedOff: Self.handoff)
+        let rows = FeedProjection.rows(FeedInput(
+            events: Self.transcript,
+            beside: .just(FeedHandoffs(landed: Self.handoff, failed: [])),
+        ))
 
         let handoffRelated = rows.filter {
             if case .mark(.handedOff) = $0.content {

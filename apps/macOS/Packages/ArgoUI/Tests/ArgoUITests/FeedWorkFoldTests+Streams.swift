@@ -14,7 +14,7 @@ extension FeedWorkFoldTests {
     /// as though it had lost two of them.
     @Test
     func `a collapsed run counts once in the list and its own repeats in the header`() throws {
-        let rows = FeedProjection.rows(from: Self.reworked(failing: false))
+        let rows = FeedProjection.rows(.justTheStream(Self.reworked(failing: false)))
         let card = try #require(FeedFixture.work(in: rows).first)
 
         #expect(card.label == "Edited 4 Files")
@@ -26,7 +26,7 @@ extension FeedWorkFoldTests {
     /// one ending, so the record no longer says which of its three broke.
     @Test
     func `a collapsed run that failed counts one failure, not its repeats`() throws {
-        let rows = FeedProjection.rows(from: Self.reworked(failing: true))
+        let rows = FeedProjection.rows(.justTheStream(Self.reworked(failing: true)))
         let card = try #require(FeedFixture.work(in: rows).first)
 
         #expect(card.failures == 1)
@@ -41,7 +41,8 @@ extension FeedWorkFoldTests {
             Made(id: "one", tool: "mcp__linear__list_issues", kind: .mcp, naming: "list"),
             Made(id: "two", tool: "SomeoneElsesTool", kind: .other, naming: "do a thing"),
         ])
-        let card = try #require(FeedFixture.work(in: FeedProjection.rows(from: mixed)).first)
+        let card = try #require(FeedFixture.work(in: FeedProjection.rows(.justTheStream(mixed)))
+            .first)
 
         #expect(card.label == "Called 2 Tools")
     }
@@ -55,7 +56,7 @@ extension FeedWorkFoldTests {
             Made(id: "two", tool: "Task", kind: .delegate, naming: "review the lane"),
         ])
 
-        #expect(FeedFixture.work(in: FeedProjection.rows(from: handedOver)).isEmpty)
+        #expect(FeedFixture.work(in: FeedProjection.rows(.justTheStream(handedOver))).isEmpty)
     }
 
     /// Looking is the survey's, whose adjacency rule ran first: a read the survey left behind
@@ -70,7 +71,7 @@ extension FeedWorkFoldTests {
                     .message(markdown: "That one is gone."),
                 ]
             }
-        let rows = FeedProjection.rows(from: broken)
+        let rows = FeedProjection.rows(.justTheStream(broken))
 
         #expect(FeedFixture.work(in: rows).isEmpty)
         #expect(FeedFixture.surveys(in: rows).isEmpty)
@@ -80,9 +81,9 @@ extension FeedWorkFoldTests {
     /// break — the one rule the overview lane and the feed's Copy turn read.
     @Test
     func `a card never reaches across a Turn boundary`() {
-        let cards = FeedFixture.work(in: FeedProjection.rows(
-            from: TranscriptFixtures.denseTurn + TranscriptFixtures.denseTurn,
-        ))
+        let cards = FeedFixture
+            .work(in: FeedProjection
+                .rows(.justTheStream(TranscriptFixtures.denseTurn + TranscriptFixtures.denseTurn)))
 
         #expect(cards.map(\.label) == [
             "Created 3 Files · Edited 3 Files · Deleted 1 File", "Ran 4 Commands",
@@ -98,7 +99,7 @@ extension FeedWorkFoldTests {
             Made(id: "two", tool: "Bash", kind: .execute, naming: "swift test"),
         ])
 
-        #expect(FeedFixture.work(in: FeedProjection.rows(from: unbounded))
+        #expect(FeedFixture.work(in: FeedProjection.rows(.justTheStream(unbounded)))
             .map(\.label) == ["Ran 2 Commands"])
     }
 

@@ -158,7 +158,7 @@ struct SubagentEndingTests {
     )
         -> [FeedAgent] {
         FeedAgents.told(
-            FeedAgents.all(in: FeedProjection.rows(from: launched), of: .undecided),
+            FeedAgents.all(in: FeedProjection.rows(.justTheStream(launched)), of: .undecided),
             by: SubagentEvidence(
                 writing: { _ in writing },
                 ending: { _ in SubagentEnding.read(reading) },

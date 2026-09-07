@@ -14,11 +14,13 @@ extension FeedProjection {
     /// `working` is true beside it, because that is what the shipping reading does: a Turn Argo
     /// typed reads `running` at DIRECT the moment it goes down the PTY
     /// (`HubSession.statusReading`), so the drawn row never stands over a still screen.
-    static let previewSubmittedTurnAloneRows = rows(
-        from: [],
-        working: true,
-        submitted: "Fix the caption on the roster row, not the sort order behind it.",
-    )
+    static let previewSubmittedTurnAloneRows = rows(FeedInput(
+        events: [],
+        beside: .just(FeedTurnDriven(
+            working: true,
+            submitted: "Fix the caption on the roster row, not the sort order behind it.",
+        )),
+    ))
 
     /// The same row under a Turn the record DID carry — the judgement the still above cannot make:
     /// whether the drawn Turn is told apart from a confirmed prompt on the same screen, and whether
@@ -27,8 +29,8 @@ extension FeedProjection {
     /// Short on purpose, and its own events rather than a shipping fixture: the claim is a
     /// comparison between two bubbles, and a still cannot scroll to a prompt that a long reading
     /// has carried off the top of the screen.
-    static let previewSubmittedTurnRows = rows(
-        from: [
+    static let previewSubmittedTurnRows = rows(FeedInput(
+        events: [
             .prompt(
                 text: "Name the two measurements the bubble is laid out from.",
                 images: [],
@@ -37,7 +39,9 @@ extension FeedProjection {
             .message(markdown: "The proposal's width and the words' own typeset height."),
             .turnEnded(.endTurn),
         ],
-        working: true,
-        submitted: "Fix the caption on the roster row, not the sort order behind it.",
-    )
+        beside: .just(FeedTurnDriven(
+            working: true,
+            submitted: "Fix the caption on the roster row, not the sort order behind it.",
+        )),
+    ))
 }

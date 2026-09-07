@@ -85,7 +85,7 @@ struct FeedAgentsHonestyTests {
     /// gets no rail, whatever its status.
     @Test
     func `a session that delegated nothing has no rail`() {
-        let quiet = FeedProjection.rows(from: [.message(markdown: "Done.")])
+        let quiet = FeedProjection.rows(.justTheStream([.message(markdown: "Done.")]))
 
         #expect(!Self.zoning(agents: FeedAgents.all(in: quiet, of: .running)).showsRail)
     }
@@ -104,7 +104,7 @@ struct FeedAgentsHonestyTests {
     /// scope would strand the reader in a feed with no chip to click.
     @Test
     func `a scope drops back to the session where the rail lists nothing`() {
-        let quiet = FeedProjection.rows(from: [.message(markdown: "Done.")])
+        let quiet = FeedProjection.rows(.justTheStream([.message(markdown: "Done.")]))
 
         #expect(Self.readings.rows(under: .subagent(0), of: [], otherwise: quiet) == quiet)
     }
@@ -144,7 +144,7 @@ struct FeedAgentsHonestyTests {
         .toolCallOutcome(TranscriptFixtures.launched("away", subagent: read)),
     ]
 
-    private static let rows = FeedProjection.rows(from: launched)
+    private static let rows = FeedProjection.rows(.justTheStream(launched))
 
     /// The rail's list as the shell derives it: through the reader, stamped with a reading of a
     /// Session at this status.

@@ -9,11 +9,11 @@ import Testing
 struct FeedPunctuationTests {
     @Test
     func `a compaction is a mark in the reading, at the place it happened`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .message(markdown: "Before."),
             .compaction(atMs: 1000),
             .message(markdown: "After."),
-        ])
+        ]))
 
         #expect(rows.map(\.content) == [
             .message("Before."), .mark(.compacted), .message("After."),
@@ -27,7 +27,7 @@ struct FeedPunctuationTests {
         StopReason.endTurn, .maxTokens, .maxTurnRequests, .refusal, .cancelled, .unknown,
     ])
     func `a turn's end is one mark, whatever reason ended it`(reason: StopReason) {
-        let rows = FeedProjection.rows(from: [.turnEnded(reason)])
+        let rows = FeedProjection.rows(.justTheStream([.turnEnded(reason)]))
 
         #expect(FeedFixture.marks(in: rows) == [.turnEnded])
     }
@@ -36,7 +36,8 @@ struct FeedPunctuationTests {
     /// readable ones are.
     @Test
     func `an unreadable stop reason draws the same rule as a readable one`() {
-        let rows = FeedProjection.rows(from: [.turnEnded(StopReason(reported: "wandered off"))])
+        let rows = FeedProjection
+            .rows(.justTheStream([.turnEnded(StopReason(reported: "wandered off"))]))
 
         #expect(FeedFixture.marks(in: rows) == [.turnEnded])
     }
@@ -57,11 +58,11 @@ struct FeedPunctuationTests {
     /// with nothing between them reads as one continuous conversation and is not one (#404 AC4).
     @Test
     func `a record read in two ends says where the middle is missing`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .message(markdown: "The oldest thing this reading has."),
             .excerpted,
             .message(markdown: "The newest."),
-        ])
+        ]))
 
         #expect(rows.map(\.content) == [
             .message("The oldest thing this reading has."),
@@ -82,13 +83,13 @@ struct FeedPunctuationTests {
     /// behind one count.
     @Test
     func `a mark breaks a run of looking`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(FeedFixture.call("a", tool: "Read", kind: .read, naming: "one.ts")),
             .toolCall(FeedFixture.call("b", tool: "Read", kind: .read, naming: "two.ts")),
             .turnEnded(.endTurn),
             .toolCall(FeedFixture.call("c", tool: "Read", kind: .read, naming: "three.ts")),
             .toolCall(FeedFixture.call("d", tool: "Read", kind: .read, naming: "four.ts")),
-        ])
+        ]))
 
         #expect(FeedFixture.surveys(in: rows).count == 2)
     }

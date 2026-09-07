@@ -42,7 +42,10 @@ package enum FeedAskProjection {
 
         /// What a feed with no Session behind it is told — a preview, a specimen, a render.
         /// Driveable, because those are readings of a live cockpit and not of a dead Session.
-        static let none = Asking(live: nil, isDriveable: true)
+        ///
+        /// `package` for the reason the initializer below is: the specimens name it now that the
+        /// projection's inputs carry no defaults (#1504), and they build from their own target.
+        package static let none = Asking(live: nil, isDriveable: true)
 
         /// Spelled out because Swift synthesises no memberwise initializer above
         /// `internal`, and the specimens build this from their own target (#1085).

@@ -11,7 +11,7 @@ struct FeedDelegationEndTests {
     private static let spend = TranscriptFixtures.subagentSpend
 
     private func rows(_ events: [TranscriptEvent]) -> [FeedRow] {
-        FeedProjection.rows(from: events)
+        FeedProjection.rows(.justTheStream(events))
     }
 
     private func endings(in events: [TranscriptEvent]) -> [FeedDelegationEnd] {

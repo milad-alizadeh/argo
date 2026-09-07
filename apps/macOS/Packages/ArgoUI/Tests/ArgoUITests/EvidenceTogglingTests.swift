@@ -74,14 +74,14 @@ struct EvidenceTogglingTests {
 
     /// Two calls the projection keeps APART: a run of looking folds into one row (D26), and this
     /// suite is about which of two rows the toggle picks.
-    private let twoCalls = FeedProjection.rows(from: [
+    private let twoCalls = FeedProjection.rows(.justTheStream([
         .toolCall(FeedFixture.call("first", tool: "Read", kind: .read, naming: "a.swift")),
         .toolCallOutcome(TranscriptFixtures.printed("first", "one")),
         .toolCall(FeedFixture.call("second", tool: "Bash", kind: .execute, naming: "swift test")),
         .toolCallOutcome(TranscriptFixtures.printed("second", "two")),
-    ])
+    ]))
 
-    private let saidNothing = FeedProjection.rows(from: [
+    private let saidNothing = FeedProjection.rows(.justTheStream([
         .message(markdown: "Nothing to show."),
-    ])
+    ]))
 }

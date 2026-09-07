@@ -29,11 +29,11 @@ struct FeedSkillLoadedTests {
 
     @Test
     func `a skill load is a row of its own, where the record put it`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .prompt(text: "/code-review since main", images: [], atMs: 1000),
             .skillLoaded(load()),
             .message(markdown: "Reviewing the diff on two axes."),
-        ])
+        ]))
 
         #expect(rows.map(\.content) == [
             .prompt(text: "/code-review since main", shots: []),
@@ -46,10 +46,10 @@ struct FeedSkillLoadedTests {
     /// verbatim. The expanded body is the marker's, and it appears nowhere as prose.
     @Test
     func `the user's own line is untouched by the load beside it`() {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .prompt(text: "/code-review since main", images: [], atMs: 1000),
             .skillLoaded(load()),
-        ])
+        ]))
 
         #expect(rows.first?.content == .prompt(text: "/code-review since main", shots: []))
         #expect(rows.count == 2)
@@ -126,14 +126,14 @@ struct FeedSkillLoadedTests {
     /// a panel opening on `/Users/…` beside call rows opening on `./` reads as a different machine.
     @Test
     func `the panel addresses the file the way every other row addresses one`() throws {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .cwd("/Users/x/argo"),
             .skillLoaded(SkillLoad(
                 name: "implement",
                 directory: "/Users/x/argo/.claude/skills/implement",
                 body: .read("One ticket at a time."),
             )),
-        ])
+        ]))
         let opened = try #require(rows.last?.content.opened)
 
         #expect(opened.steps.first?.address == .filed(".claude/skills/implement/SKILL.md"))
@@ -143,14 +143,14 @@ struct FeedSkillLoadedTests {
     /// A global skill lives outside the Project, and the panel's own marker is where that shows.
     @Test
     func `a skill outside the Session's tree is marked as outside it`() throws {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .cwd("/Users/x/argo"),
             .skillLoaded(SkillLoad(
                 name: "grilling",
                 directory: "/Users/x/.claude/skills/grilling",
                 body: .read("Interview me relentlessly."),
             )),
-        ])
+        ]))
         let opened = try #require(rows.last?.content.opened)
 
         #expect(opened.steps.first?.isExternal == true)

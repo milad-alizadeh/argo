@@ -36,7 +36,7 @@ struct AgentsRailScopeTests {
     /// the moment the dots went honest (#1076).
     @Test
     func `a scope on an agent whose work has landed still draws that agent's rows`() {
-        let landed = FeedProjection.rows(from: settled())
+        let landed = FeedProjection.rows(.justTheStream(settled()))
 
         #expect(readings.rows(
             under: .subagent(0),
@@ -49,7 +49,8 @@ struct AgentsRailScopeTests {
     /// and a scope names a delegation rather than holding one.
     @Test
     func `a scope naming an agent the rail no longer lists drops back to the session`() {
-        let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
+        let session = FeedProjection
+            .rows(.justTheStream(FeedFixture.handedOver(subagent: Self.read)))
 
         #expect(readings.rows(
             under: .subagent(99),
@@ -60,7 +61,8 @@ struct AgentsRailScopeTests {
 
     @Test
     func `a scope on a read agent draws that agent's rows over the session's`() {
-        let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
+        let session = FeedProjection
+            .rows(.justTheStream(FeedFixture.handedOver(subagent: Self.read)))
         let scoped = readings.rows(
             under: .subagent(1),
             of: FeedAgents.all(in: session, of: .running),
@@ -74,8 +76,9 @@ struct AgentsRailScopeTests {
     /// scoped feed it would empty itself the moment somebody used it.
     @Test
     func `the rail's agents are the session's, not the scoped reading's`() {
-        let session = FeedProjection.rows(from: FeedFixture.handedOver(subagent: Self.read))
-        let scoped = FeedProjection.rows(from: [.message(markdown: Self.said)])
+        let session = FeedProjection
+            .rows(.justTheStream(FeedFixture.handedOver(subagent: Self.read)))
+        let scoped = FeedProjection.rows(.justTheStream([.message(markdown: Self.said)]))
 
         #expect(zoning(feed: scoped, agents: FeedAgents.all(in: session, of: .running)).agents
             .count == 2)
@@ -120,7 +123,7 @@ struct AgentsRailScopeTests {
     )
 
     private func agents(in events: [TranscriptEvent]) -> [FeedAgent] {
-        FeedAgents.all(in: FeedProjection.rows(from: events), of: .running)
+        FeedAgents.all(in: FeedProjection.rows(.justTheStream(events)), of: .running)
     }
 
     /// One delegation, answered — a chip the rail still lists, with nothing running.
@@ -137,9 +140,9 @@ struct AgentsRailScopeTests {
 
     /// A handover the record has not answered, which is a subagent still running beside a Session
     /// that is.
-    private let working = FeedProjection.rows(from: [
+    private let working = FeedProjection.rows(.justTheStream([
         .toolCall(FeedFixture.call("hand", tool: "Task", kind: .delegate, naming: "review")),
-    ])
+    ]))
 
     /// Wide enough for every zone, narrow enough that the lane is still a share rather than sitting
     /// on its ceiling.

@@ -21,7 +21,7 @@ struct FeedShotReadingTests {
             reading.tier,
             bytes: reading.hasBytes ? FeedFixture.onePixelPNG : nil,
         )
-        let rows = FeedProjection.rows(from: FeedFixture.looked(at: "shot.png", result))
+        let rows = FeedProjection.rows(.justTheStream(FeedFixture.looked(at: "shot.png", result)))
         let shot = try #require(FeedFixture.galleries(in: rows).first?.shots.first)
 
         #expect(shot.provenance == reading.provenance)
@@ -88,7 +88,7 @@ struct FeedShotReadingTests {
 
     @Test
     func `every picture that has bytes opens`() throws {
-        let rows = FeedProjection.rows(from: FeedFixture.looked(at: ["a.png", "b.png"]))
+        let rows = FeedProjection.rows(.justTheStream(FeedFixture.looked(at: ["a.png", "b.png"])))
         let gallery = try #require(FeedFixture.galleries(in: rows).first)
 
         #expect(gallery.shots.map(\.isOpenable) == [true, true])
@@ -98,9 +98,10 @@ struct FeedShotReadingTests {
     /// the row standing over a gallery names no file at all.
     @Test
     func `a shot carries the filename it is captioned by and the path it opens onto`() throws {
-        let rows = FeedProjection.rows(
-            from: FeedFixture.looked(at: "docs/renders/at-rest.png", FeedFixture.shot(.direct)),
-        )
+        let rows = FeedProjection.rows(.justTheStream(FeedFixture.looked(
+            at: "docs/renders/at-rest.png",
+            FeedFixture.shot(.direct),
+        )))
         let shot = try #require(FeedFixture.galleries(in: rows).first?.shots.first)
 
         #expect(shot.name == "at-rest.png")
@@ -110,9 +111,10 @@ struct FeedShotReadingTests {
     /// One picture a call answered with, through the whole projection — which is where a shot's
     /// provenance is settled, and the only place the reading below is the one a reader sees.
     private func oneShot(of bytes: String?) throws -> FeedShot {
-        let rows = FeedProjection.rows(
-            from: FeedFixture.looked(at: "shot.png", FeedFixture.shot(.direct, bytes: bytes)),
-        )
+        let rows = FeedProjection.rows(.justTheStream(FeedFixture.looked(
+            at: "shot.png",
+            FeedFixture.shot(.direct, bytes: bytes),
+        )))
         return try #require(FeedFixture.galleries(in: rows).first?.shots.first)
     }
 }

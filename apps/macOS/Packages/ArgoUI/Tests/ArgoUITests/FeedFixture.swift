@@ -150,12 +150,23 @@ enum FeedFixture {
         paths.flatMap { looked(at: $0, shot(.direct)) }
     }
 
+    /// The rows a RECORD alone draws, with nothing beside the stream — the reading most cases
+    /// here are about, named once so a case reads as the events it is judging.
+    static func rows(of events: [TranscriptEvent]) -> [FeedRow] {
+        FeedProjection.rows(.justTheStream(events))
+    }
+
+    /// The rows a record draws with something of Argo's own beside the stream.
+    static func rows(of events: [TranscriptEvent], beside: FeedBeside) -> [FeedRow] {
+        FeedProjection.rows(FeedInput(events: events, beside: beside))
+    }
+
     /// Every call a stream produced, in order. Reaches INSIDE a folded run of looking; whether a
     /// call got a line of its own is `surveys(in:)`'s claim.
     static func calls(in events: [TranscriptEvent]) -> [FeedCall] {
         // A gallery keeps its pictures and drops the sentence that carried them; those are
         // asserted through `galleries(in:)`, `asks(in:)`, `marks(in:)` and `unreadable(in:)`.
-        FeedProjection.rows(from: events).flatMap(\.content.calls)
+        FeedProjection.rows(.justTheStream(events)).flatMap(\.content.calls)
     }
 
     /// Every card of a Turn's work a stream folded, in order.

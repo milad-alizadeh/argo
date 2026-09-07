@@ -13,7 +13,10 @@ struct FeedStartupWaitTests {
     /// from has written no record for anything to sit above.
     @Test
     func `a wait that ran out is the whole reading`() {
-        #expect(FeedProjection.rows(from: [], startedQuietly: true).map(\.content)
+        #expect(FeedProjection.rows(FeedInput(
+            events: [],
+            beside: .just(FeedWaitsHeld(startedQuietly: true, settled: [])),
+        )).map(\.content)
             == [.mark(.startedQuietly)])
     }
 

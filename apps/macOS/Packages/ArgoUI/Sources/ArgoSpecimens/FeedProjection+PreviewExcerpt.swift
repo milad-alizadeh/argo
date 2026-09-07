@@ -16,7 +16,7 @@ extension FeedProjection {
     /// A spend is reported on EACH end, so the reading carries the two figures a record read in two
     /// halves really does report. No feed row sums them: the deck header is the one surface that
     /// states a Session's spend (#1248).
-    static let previewExcerptedRows = rows(from: excerptedEvents)
+    static let previewExcerptedRows = rows(.justTheStream(excerptedEvents))
 
     private static let excerptedEvents: [TranscriptEvent] =
         TranscriptFixtures.longTranscript.prefix(excerptEndRows)
