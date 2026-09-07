@@ -1,12 +1,17 @@
 @testable import ArgoEngine
 import Foundation
+import Testing
 
 /// GitHub answered by URL and counted, so a claim about what a tick SPENDS is measured through the
 /// shipped adapter rather than through a fake port (#1619).
 ///
 /// It knows the four reads a Delivery derivation makes and nothing else: the open listing, one
-/// branch's `head=` listing, a commit's check runs, and a pull request's reviews. Anything else is
-/// a mistake in the test rather than a shape to guess at, and answers as an empty listing.
+/// branch's `head=` listing, a commit's check runs, and a pull request's reviews.
+///
+/// Beside `RecordedGitHub` rather than through it for two reasons: this counts per TICK, which a
+/// growing list of every URL sent cannot answer, and it reads the branch back out of a `head=`
+/// query rather than needing one pre-built reply key per branch — eighty of them, spelled in the
+/// adapter's own percent-encoding.
 actor CountingGitHub: HTTPTransport {
     /// What the host holds for each branch, keyed by branch. A branch with no entry is one the host
     /// holds nothing for — the row this ticket is about.
@@ -37,7 +42,16 @@ actor CountingGitHub: HTTPTransport {
         if let branch = Self.branch(askedBy: url) {
             return PullRequestJSON.list(byBranch[branch].map { [$0] } ?? [])
         }
-        return url.contains("/check-runs") ? #"{ "check_runs": [] }"# : "[]"
+        if url.contains("/check-runs") {
+            return #"{ "check_runs": [] }"#
+        }
+        guard url.contains("/reviews") else {
+            // Counted but unrecognised, which would otherwise read as a wrong measurement with no
+            // explanation attached to it.
+            Issue.record("\(url) is not one of the four reads a derivation makes")
+            return "[]"
+        }
+        return "[]"
     }
 
     /// The branch a `head=owner:branch` listing is asking about, decoded back out of the query the

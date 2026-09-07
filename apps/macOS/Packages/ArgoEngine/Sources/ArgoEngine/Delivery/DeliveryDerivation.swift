@@ -16,8 +16,6 @@ public actor DeliveryDerivation {
     private let deliveries: DeliveryLedger
     private let now: @Sendable () -> Date
     private var landed: Landing = {}
-    /// Held here rather than on `Delivery`, which is what a surface draws: this is the fan-out's
-    /// own bookkeeping, and no row renders it.
     private var unhosted = UnhostedBranches()
 
     public init(
@@ -103,6 +101,10 @@ public actor DeliveryDerivation {
     /// It also skips every branch whose Delivery is already settled, and every branch the host
     /// already said it holds nothing for at this same commit — which together are what stop the
     /// fan-out growing without bound as a checkout collects worktrees (#1588, #1619).
+    ///
+    /// The in-flight branches are the ones `UnhostedBranches` must forget rather than skip: an
+    /// answer from before the pull request existed would otherwise outlive it and strand the branch
+    /// the tick after it merges off the listing.
     private func union(
         _ target: PortReadTarget, locally: Locally,
     ) async throws
@@ -113,21 +115,25 @@ public actor DeliveryDerivation {
         // Both read once, not per branch: this is the loop whose cost the ticket is about.
         let settled = await settled(of: target)
         let heads = Self.heads(of: locally.workspaces)
-        unhosted.prune(to: Set(heads.map(\.branch)), in: target.projectID)
+        unhosted.keep(Set(heads.map(\.branch)).subtracting(inFlight), in: target.scope)
         for head in heads where !inFlight.contains(head.branch) {
             if let already = settled[head.branch] {
                 union.deliveries.append(already)
                 continue
             }
-            if unhosted.holds(head.branch, at: head.headSha, in: target.projectID) {
-                union.deliveries.append(Delivery(branch: head.branch, pullRequest: nil))
+            if unhosted.answeredNothing(
+                forBranch: head.branch, at: head.headSha, in: target.scope,
+            ) {
+                union.deliveries.append(.unhosted(branch: head.branch))
                 continue
             }
             do {
                 let derived = try await named(head.branch, of: target)
                 unhosted.record(
-                    derived.pullRequest, ofBranch: head.branch, at: head.headSha,
-                    in: target.projectID,
+                    derived.pullRequest,
+                    ofBranch: head.branch,
+                    at: head.headSha,
+                    in: target.scope,
                 )
                 union.deliveries.append(derived)
             } catch {
@@ -172,18 +178,19 @@ public actor DeliveryDerivation {
             .filter { !asked.contains($0.branch) }
     }
 
-    /// One local branch's Delivery. A branch the host has never seen has no pull request and no
-    /// Checks, which is "no CI yet" rather than a synthesized pass.
+    /// One local branch's Delivery.
     private func named(
         _ branch: String, of target: PortReadTarget,
     ) async throws
         -> Delivery {
         try await port.delivery(ofBranch: branch, in: target.scope, grant: target.binding.grant)
-            ?? Delivery(branch: branch, pullRequest: nil)
+            ?? .unhosted(branch: branch)
     }
 
     /// One local branch and the commit it is on — the pair the fan-out asks about and prunes by.
-    struct Head: Equatable, Sendable {
+    /// Named for the branch and not just `Head`, which `CheckoutProjection` uses for whether a
+    /// checkout is on one at all.
+    struct BranchHead: Sendable {
         let branch: String
         let headSha: String?
     }
@@ -193,11 +200,11 @@ public actor DeliveryDerivation {
     ///
     /// A Workspace with no branch contributes none — a detached HEAD, and a Session with no branch
     /// at all, have no Delivery (`CONTEXT.md` L1 · Delivery).
-    static func heads(of workspaces: [WorkspaceProjection]) -> [Head] {
+    private static func heads(of workspaces: [WorkspaceProjection]) -> [BranchHead] {
         var seen: Set<String> = []
         return workspaces
             .compactMap { workspace in
-                workspace.branch.map { Head(branch: $0, headSha: workspace.headSha) }
+                workspace.branch.map { BranchHead(branch: $0, headSha: workspace.headSha) }
             }
             .filter { seen.insert($0.branch).inserted }
     }

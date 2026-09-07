@@ -124,15 +124,34 @@ struct DeliveryTickTests {
     }
 
     @Test
-    func `a branch of another Project at the same commit is asked about on its own`() async {
-        // The commit is not a key on its own: two Projects share `main`, and one's empty answer
-        // says nothing at all about the other's.
+    func `a branch of another repository at the same commit is asked about on its own`() async {
+        // The commit is not a key on its own: two repositories both have `main`, and one's empty
+        // answer says nothing at all about the other's.
         let host = ScriptedCodeHost([.success([])])
         let derivation = Self.derivation(host, into: DeliveryLedger())
         let locally = DeliveryDerivation.Locally(workspaces: [.on("main", at: "c0ffee")])
-        await derivation.derive(.codeHost(projectID: "P1"), locally: locally)
-        await derivation.derive(.codeHost(projectID: "P2"), locally: locally)
+        await derivation.derive(.codeHost(scope: "acme/api"), locally: locally)
+        await derivation.derive(.codeHost(scope: "acme/web"), locally: locally)
 
         #expect(await host.branchesAsked() == ["main", "main"])
+    }
+
+    @Test
+    func `a branch answered empty is asked again once its pull request leaves the listing`() async {
+        // The sequence a stale answer must not survive: nothing, then open — skipped through the
+        // in-flight listing rather than by name — then off that listing again once it finishes.
+        // A branch never asked by name in the middle tick must not be read as "still nothing" in
+        // the third: that is a stale answer from before the pull request existed, not a fresh one.
+        let opened = Delivery(branch: Self.spike, pullRequest: .stub(number: 1620))
+        let host = ScriptedCodeHost([.success([]), .success([opened]), .success([])])
+        let derivation = Self.derivation(host, into: DeliveryLedger())
+        let locally = DeliveryDerivation.Locally(workspaces: [.on(Self.spike, at: "c0ffee")])
+        for _ in 1 ... 3 {
+            await derivation.derive(.codeHost(), locally: locally)
+        }
+
+        // Asked at tick 1 and tick 3; skipped at tick 2 because the in-flight listing already
+        // carried it.
+        #expect(await host.branchesAsked() == [Self.spike, Self.spike])
     }
 }

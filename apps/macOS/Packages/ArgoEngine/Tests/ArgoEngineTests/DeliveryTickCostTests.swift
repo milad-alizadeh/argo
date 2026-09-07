@@ -1,20 +1,21 @@
 @testable import ArgoEngine
 import Testing
 
-/// What a tick costs in REQUESTS, counted through `GitHubDeliveries` and the adapter's own paging
-/// rather than through a fake port (#1619).
+/// What a tick costs in REQUESTS, counted through `GitHubDeliveries` rather than through a fake
+/// port (#1619).
 ///
 /// Shaped like this repository's own checkout at the time of the measurement: one open pull
-/// request,
-/// fifteen branches whose Delivery is finished, and the rest branches the host holds no pull
-/// request
-/// for. That last row was ~46 of a tick's 50 requests, and it is the one that grew with every
-/// worktree the checkout collected.
+/// request, fifteen branches whose Delivery is finished, and the rest branches the host holds no
+/// pull request for. That last row is the one that grew with every worktree the checkout collected.
 @Suite("Delivery tick cost")
 struct DeliveryTickCostTests {
     /// The measured checkout: 80 worktrees, which is what this one held when #1619 was written.
     private static let worktrees = 80
     private static let finished = 15
+    private static let open = 1
+    /// What a tick costs once nothing is left to ask by name: the open listing, plus the check runs
+    /// and the reviews of each open pull request.
+    private static let steady = 1 + 2 * open
 
     /// One tick's cost per tick, in order, over ONE derivation — the second tick is the one the
     /// claim is about, and only a derivation that saw the first has anything to answer from.
@@ -37,20 +38,18 @@ struct DeliveryTickCostTests {
 
     @Test
     func `a tick after the first costs the open listing and nothing per branch`() async {
-        // 1 for the listing + 2 for the one open pull request's checks and reviews. Every other
-        // branch is answered from what the last tick established.
         let costs = await Self.spent(over: Self.worktrees, ticks: 3)
 
-        #expect(costs.dropFirst() == [3, 3])
+        #expect(costs.dropFirst() == [Self.steady, Self.steady])
     }
 
     @Test
     func `the first tick pays once per branch and no more`() async {
-        // 3 for the open pull request, then one `head=` listing for each of the other 79 branches:
-        // the finished ones buy their terminal answer, the rest buy "nothing here".
+        // The open pull request, then one `head=` listing for each remaining branch: the finished
+        // ones buy their terminal answer, the rest buy "nothing here".
         let costs = await Self.spent(over: Self.worktrees, ticks: 1)
 
-        #expect(costs == [3 + Self.worktrees - 1])
+        #expect(costs == [Self.steady + Self.worktrees - Self.open])
     }
 
     @Test
@@ -60,12 +59,12 @@ struct DeliveryTickCostTests {
         let doubled = await Self.spent(over: Self.worktrees * 2, ticks: 2)
         let measured = await Self.spent(over: Self.worktrees, ticks: 2)
 
-        #expect(doubled.last == measured.last)
+        #expect(doubled.last == Self.steady)
+        #expect(measured.last == Self.steady)
     }
 
     /// A checkout of `worktrees` branches: one with an open pull request, fifteen finished, the
-    /// rest
-    /// with none. Each branch sits at its own commit, as git's worktree listing answers them.
+    /// rest with none. Each branch sits at its own commit, as git's worktree listing answers them.
     private struct Checkout {
         let workspaces: [WorkspaceProjection]
         let open: [PullRequestJSON]

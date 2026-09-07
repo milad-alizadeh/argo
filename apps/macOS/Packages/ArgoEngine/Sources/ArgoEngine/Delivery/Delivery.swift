@@ -31,6 +31,13 @@ public struct Delivery: Equatable, Sendable, Identifiable {
         self.ticket = ticket
     }
 
+    /// A branch the host holds no pull request for: no Checks and no reviews, which is "no CI yet"
+    /// rather than a synthesized pass. Spelled once, because two callers derive it — the branch
+    /// asked about and answered nothing for, and the branch not asked at all (#1619).
+    static func unhosted(branch: String) -> Delivery {
+        Delivery(branch: branch, pullRequest: nil)
+    }
+
     /// What the host was observed to hold beyond the pull request itself.
     public struct Observed: Equatable, Sendable {
         public let checks: [DeliveryCheck]

@@ -63,14 +63,17 @@ actor ScriptedCodeHost: CodeHostPort {
 extension PortReadTarget {
     /// A code host Binding resolved onto one GitHub identity, which is every input a derivation
     /// needs.
-    static func codeHost(projectID: String = "P1") -> PortReadTarget {
+    static func codeHost(
+        projectID: String = "P1", scope: String = "acme/api",
+    )
+        -> PortReadTarget {
         let account = AccountRecord(
             provider: .github, providerAccountID: "1", displayName: "octocat",
         )
         return PortReadTarget(
             binding: ResolvedBinding(
                 binding: ProjectBinding(
-                    port: .codeHost, accountID: account.id, scope: "acme/api",
+                    port: .codeHost, accountID: account.id, scope: scope,
                 ),
                 account: account,
                 grant: .listing,
