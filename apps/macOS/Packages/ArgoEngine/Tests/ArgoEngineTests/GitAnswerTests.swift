@@ -60,4 +60,58 @@ struct GitAnswerTests {
         // own with a newline, and every caller is the thing that trims it.
         #expect(read.hasSuffix("/\(fixture.rootURL.lastPathComponent)/repo\n"))
     }
+
+    /// The other half of that claim: git printing NOTHING is an answer (#1680). `git status
+    /// --porcelain` in a tree with nothing uncommitted in it exits zero on an empty stdout.
+    ///
+    /// Against real git because a stub is what hid it: the reader's own suite hands it `""` for a
+    /// clean tree and has always passed, while nothing on this side of the seam could produce that
+    /// string.
+    @Test
+    func `a read git answered nothing to is empty rather than absent`() throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let repository = try fixture.folder("repo", git: true)
+
+        let read = gitCommand(["status", "--porcelain", "--untracked-files=all"], repository)
+
+        // `?.isEmpty == true` rather than `== ""`: `nil` is the reading this is about, and it
+        // answers `nil` here rather than `true` (`empty_string`, `apps/macOS/.swiftlint.yml`).
+        #expect(read?.isEmpty == true)
+    }
+
+    /// What that silence costs one layer up, and the reading #1680 was filed off: a clean worktree
+    /// is a Workspace, where before the whole projection was `nil` — no branch, and so no Delivery,
+    /// for the rest of the Session, because a clean tree stays clean.
+    ///
+    /// `dirty` is the assertion and the branch is not: the reader copies that off the entry it was
+    /// handed and never asks git for it (`WorkspaceReader`), so expecting it back would assert this
+    /// suite's own fixture.
+    @Test
+    func `a clean worktree is a Workspace, not a folder git could not read`() async throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let repository = try fixture.folder("repo", git: true)
+        let entry = WorktreeEntry(
+            path: repository.path, branch: "argo/#1680", headSha: nil, kind: .worktree,
+        )
+
+        let projection = await WorkspaceReader().read(entry)
+
+        #expect(projection?.dirty == 0)
+    }
+
+    /// The three causes `printedText` keeps apart, which is what lets the two tests above disagree
+    /// about `nil`. Folding them back together would read an undecodable answer as a clean tree —
+    /// defaulting an unknown, which `docs/domain/honesty-tier.md` forbids in exactly this
+    /// direction.
+    @Test
+    func `a pipe that printed nothing is empty, and one nobody could read is absent`() {
+        #expect(printedText(.success(nil))?.isEmpty == true)
+        #expect(printedText(.success(Data()))?.isEmpty == true)
+        #expect(printedText(.success(Data("porcelain\n".utf8))) == "porcelain\n")
+        // A lone continuation byte: UTF-8 has no character that starts this way.
+        #expect(printedText(.success(Data([0x80]))) == nil)
+        #expect(printedText(.failure(CocoaError(.fileReadUnknown))) == nil)
+    }
 }

@@ -13,8 +13,10 @@ public typealias CheckoutRead = @Sendable (URL) async -> CheckoutProjection
 /// non-zero status, and the stderr behind it is the point of this spelling.
 typealias GitInvocation = @Sendable ([String], URL) -> GitAnswer?
 
-/// One `git` invocation in a folder: its stdout verbatim, or `nil` where git answered nothing at
-/// all — no git, no such folder, a non-zero exit. What the output MEANS is the reader's, not this.
+/// One `git` invocation in a folder: its stdout verbatim, or `nil` where there is no answer to read
+/// — no git, no such folder, a non-zero exit, or bytes that could not be read. An answer git
+/// printed NOTHING on is `""`, which is a fact about the folder and not the absence of one (#1680).
+/// What the output MEANS is the reader's, not this.
 typealias GitCommand = @Sendable ([String], URL) -> String?
 
 /// The app's adapter: git, read through a subprocess. One reader for the process, so the blocking
@@ -30,8 +32,9 @@ private let gitCheckoutReader = CheckoutReader()
 /// The read is `readToEnd()` and not `readDataToEndOfFile()`, which is the same read with a
 /// different failure mode: the older one answers a descriptor that has gone bad underneath it by
 /// RAISING `NSFileHandleOperationException`, an Objective-C exception no Swift `catch` can see, so
-/// it takes the whole process down. The throwing spelling hands back an error, and a read that
-/// produced nothing is exactly the `nil` `GitAnswer.output` carries for "git answered nothing".
+/// it takes the whole process down. The throwing spelling hands back an error — which is why the
+/// read is kept as a `Result` here and read by `printedText` below, rather than through a `try?`
+/// that would answer a failed read and a silent one the same way.
 ///
 /// The stray closer it was hardened against was a test fixture's, never the app's (#936/#981).
 ///
@@ -46,18 +49,33 @@ let gitInvocation: GitInvocation = { arguments, directoryURL in
     process.standardError = errors
     guard (try? process.run()) != nil else { return nil }
     let printed = PipeDrain(draining: errors)
-    let data = try? output.fileHandleForReading.readToEnd()
+    let read = Result { try output.fileHandleForReading.readToEnd() }
     process.waitUntilExit()
     return GitAnswer(
-        output: data.flatMap { String(data: $0, encoding: .utf8) },
+        output: printedText(read),
         errorOutput: printed.text(),
         status: process.terminationStatus,
     )
 }
 
-/// The reads' own spelling of the same invocation: stdout where git answered, `nil` where it did
-/// not. The four read paths have no failure surface to put stderr on, so the discard is HERE — one
-/// line, rather than at the subprocess where a git write would inherit it.
+/// What one drained pipe SAID: `""` where the program printed nothing, and `nil` only where there
+/// was no reading to be had — the read itself failed, or the bytes were not UTF-8.
+///
+/// The three used to come out as one `nil`, and a status beside them cannot separate them: `git
+/// status --porcelain` in a tree with nothing uncommitted in it exits zero having printed nothing,
+/// so every clean worktree read as a folder git could not read (#1680). Folding them back together
+/// would default an unknown to a clean tree, which is the one direction
+/// `docs/domain/honesty-tier.md` forbids.
+func printedText(_ read: Result<Data?, any Error>) -> String? {
+    guard case let .success(data) = read else { return nil }
+    guard let data else { return "" }
+    return String(data: data, encoding: .utf8)
+}
+
+/// The reads' own spelling of the same invocation: stdout where there was an answer to read, `nil`
+/// where there was not — see `GitCommand`. The four read paths have no failure surface to put
+/// stderr on, so the discard is HERE — one line, rather than at the subprocess where a git write
+/// would inherit it.
 let gitCommand: GitCommand = { arguments, directoryURL in
     guard let answer = gitInvocation(arguments, directoryURL), answer.isSuccess else { return nil }
     return answer.output
