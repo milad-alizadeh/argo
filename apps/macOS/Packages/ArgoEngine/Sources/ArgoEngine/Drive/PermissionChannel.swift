@@ -35,6 +35,9 @@ final class PermissionChannel {
     /// The questions half of the same gate (#712), over the same socket. Its own table, because a
     /// Permission and a question are answered by different acts.
     private let asks: AskGate
+    /// Held, because the grant this gate hands each spawn carries the hook's own half of the
+    /// handshake (#1553): both of the hook's numbers come from the gate's patience.
+    private let patience: PermissionPatience
     private let table: PatienceTable<SessionOwnership.ClaimID, Pending>
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
@@ -49,6 +52,7 @@ final class PermissionChannel {
         self.scope = scope
         self.ledger = ledger
         self.rung = rung
+        self.patience = patience
         self.asks = AskGate(patience: patience, ledger: ledger)
         self.table = PatienceTable(patience: patience, prefix: "permission")
         table.changed = { claim, waiting in
@@ -70,8 +74,9 @@ final class PermissionChannel {
         asks.answer(answer, answering: askID, for: claim)
     }
 
-    /// Open this claim's gate and say where its hook should dial.
-    func grant(_ claim: SessionOwnership.ClaimID) throws -> String {
+    /// Open this claim's gate and say where its hook should dial, and how long it may wait to be
+    /// told that dial was heard.
+    func grant(_ claim: SessionOwnership.ClaimID) throws -> PermissionGrant {
         try scope.createDirectory()
         let path = scope.root.appending(path: "\(claim.value).gate.sock").path
         let socket = CompanionSocket(
@@ -86,7 +91,10 @@ final class PermissionChannel {
         )
         try socket.open()
         sockets[claim] = socket
-        return path
+        return PermissionGrant(
+            socketPath: path,
+            acknowledgementSeconds: patience.acknowledgementSeconds,
+        )
     }
 
     /// The PTY is gone: nothing can be waiting, nothing more can ask, no grant holds anything open.
@@ -157,7 +165,9 @@ final class PermissionChannel {
     ) {
         // A question goes to its own table, and never through the rung or the standing allows
         // below: neither of those answers a question, they only wave a boundary through.
-        guard !asks.raise(line, for: claim, peer: peer, reply: reply) else { return }
+        guard !asks.raise(line, for: claim, peer: peer, reply: reply) else {
+            return held(claim, peer: peer)
+        }
         guard let draft = PermissionRequest.Draft(line: line) else {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
@@ -175,6 +185,17 @@ final class PermissionChannel {
         table.raise(for: claim) {
             Pending(request: draft.minted(as: $0), reply: reply, patiencePeer: peer)
         }
+        held(claim, peer: peer)
+    }
+
+    /// Tell the hook its request is on a pile and published, so the wait it is now in is one a
+    /// person can end (#1553).
+    ///
+    /// Sent from the two places a request BECOMES a prompt and from nowhere else: every branch
+    /// above answers in the same breath, and a notice beside an answer would leave the hook
+    /// waiting for a second line that is never coming.
+    private func held(_ claim: SessionOwnership.ClaimID, peer: Int) {
+        sockets[claim]?.notify(peer: peer, GateNotice.held)
     }
 
     /// The hook went while Argo was still willing to wait, which means the turn it belonged to was

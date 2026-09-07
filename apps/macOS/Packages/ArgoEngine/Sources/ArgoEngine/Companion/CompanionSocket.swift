@@ -183,6 +183,12 @@ final class CompanionSocket {
         handlers.onPeersChanged(connections.count)
     }
 
+    /// Say something to one peer without answering it — see `GateNotice`. Nothing where that peer
+    /// has already gone, which is a hook that gave up between the dial and the notice.
+    func notify(peer key: Int, _ line: String) {
+        connections[key]?.notify(line)
+    }
+
     private func drop(_ key: Int) {
         guard let connection = connections.removeValue(forKey: key) else { return }
         connection.close()

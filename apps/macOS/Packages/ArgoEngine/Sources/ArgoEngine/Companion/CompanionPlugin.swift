@@ -23,14 +23,14 @@ enum CompanionPlugin {
     /// Throws rather than returning nothing: a spawn that proceeded without its plugin would be a
     /// managed Session that can never produce a CONVENTION fact.
     ///
-    /// `gatedBy` is the permission gate's socket; with one, the bundle also carries the
+    /// `gatedBy` is the permission gate's grant; with one, the bundle also carries the
     /// `PreToolUse` hook and the `hooks/hooks.json` that installs it, which is what makes a spawned
     /// Session's Permissions answerable in the cockpit rather than in a TUI nobody sees.
     static func materialize(
         forClaim claim: SessionOwnership.ClaimID,
         under root: URL,
         socketPath: String,
-        gatedBy permissionSocketPath: String? = nil,
+        gatedBy grant: PermissionGrant? = nil,
     ) throws
         -> CompanionInvitation {
         let pluginRoot = root.appending(path: claim.value, directoryHint: .isDirectory)
@@ -49,20 +49,27 @@ enum CompanionPlugin {
             socketPath: socketPath,
             pluginRoot: pluginRoot.path,
             mcpConfigPath: mcpConfig.path,
-            hooksPath: permissionSocketPath.map { try gate(in: pluginRoot, socket: $0) },
+            hooksPath: grant.map { try gate(in: pluginRoot, grantedBy: $0) },
         )
     }
 
     /// The hook and the plugin's own `hooks/hooks.json` that installs it. The hook's `timeout` is
     /// `PermissionPatience.hookTimeoutSeconds` — the gate's own patience with a margin on top, so
     /// Argo's answer always arrives before the hook's clock could kill it (#573).
-    private static func gate(in pluginRoot: URL, socket: String) throws -> String {
+    private static func gate(in pluginRoot: URL, grantedBy grant: PermissionGrant) throws
+        -> String {
         let hook = pluginRoot.appending(path: "permission-hook.sh")
         try write(
             resource: "permission-hook",
             extension: "sh",
             to: hook,
-            substituting: ["__ARGO_PERMISSION_SOCKET__": socket],
+            substituting: [
+                "__ARGO_PERMISSION_SOCKET__": grant.socketPath,
+                // The hook's own half of the handshake (#1553): how long it may wait to be told
+                // the gate is holding its request, and the word it is told that in.
+                "__ARGO_GATE_ACK_SECONDS__": String(grant.acknowledgementSeconds),
+                "__ARGO_GATE_HELD__": GateNotice.held,
+            ],
         )
         let hooksDirectory = pluginRoot.appending(path: "hooks", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(

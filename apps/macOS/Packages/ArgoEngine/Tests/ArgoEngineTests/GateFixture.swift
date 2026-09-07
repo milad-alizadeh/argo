@@ -36,7 +36,7 @@ final class GateFixture {
             ledger: ledger,
             rung: { _ in observed.rung },
         )
-        self.socketPath = try channel.grant(claim)
+        self.socketPath = try channel.grant(claim).socketPath
     }
 
     /// What this claim's gate has published — the same reading the roster folds into a Session.

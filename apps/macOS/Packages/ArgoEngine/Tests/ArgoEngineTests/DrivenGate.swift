@@ -41,8 +41,14 @@ final class ClaudeHook {
         try #require(client).sendLine(PermissionGate.bashCall)
     }
 
+    /// The notice the gate sends ahead of a decision it does not have yet is skipped, as the
+    /// shipped hook skips it (#1553): this peer stands in for that hook, so it reads the wire the
+    /// same way.
     func allowed() -> Bool? {
-        told = told ?? client?.receive()
+        while told == nil, let line = client?.receiveLine() {
+            guard line != GateNotice.held else { continue }
+            told = JSONValue.record(fromLine: line)
+        }
         return told?["hookSpecificOutput"]?
             .stringField("permissionDecision")
             .map { $0 == "allow" }
