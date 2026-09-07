@@ -11,10 +11,13 @@ enum CompanionPlugin {
     static let socketPlaceholder = "__ARGO_COMPANION_SOCKET__"
 
     /// Whether this build carries the two plugin resources every spawn writes out.
-    static var shipsResources: Bool {
-        ["plugin", "mcp"].allSatisfy {
-            Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "Plugin")
-                != nil
+    ///
+    /// `bundle` defaults to the real resolution and is only ever overridden by a test staging a
+    /// build with no bundle on disk (#1633) — production code never passes it.
+    static func shipsResources(in bundle: Bundle? = ModuleResourceBundle.resolved) -> Bool {
+        guard let bundle else { return false }
+        return ["plugin", "mcp"].allSatisfy {
+            bundle.url(forResource: $0, withExtension: "json", subdirectory: "Plugin") != nil
         }
     }
 
@@ -31,6 +34,7 @@ enum CompanionPlugin {
         under root: URL,
         socketPath: String,
         gatedBy grant: PermissionGrant? = nil,
+        from bundle: Bundle? = ModuleResourceBundle.resolved,
     ) throws
         -> CompanionInvitation {
         let pluginRoot = root.appending(path: claim.value, directoryHint: .isDirectory)
@@ -42,21 +46,28 @@ enum CompanionPlugin {
             at: manifestDirectory,
             withIntermediateDirectories: true,
         )
-        try write(resource: "plugin", to: manifestDirectory.appending(path: "plugin.json"))
+        try write(
+            resource: "plugin", to: manifestDirectory.appending(path: "plugin.json"), from: bundle,
+        )
         let mcpConfig = pluginRoot.appending(path: ".mcp.json")
-        try write(resource: "mcp", to: mcpConfig, substituting: [socketPlaceholder: socketPath])
+        try write(
+            resource: "mcp", to: mcpConfig, substituting: [socketPlaceholder: socketPath],
+            from: bundle,
+        )
         return try CompanionInvitation(
             socketPath: socketPath,
             pluginRoot: pluginRoot.path,
             mcpConfigPath: mcpConfig.path,
-            hooksPath: grant.map { try gate(in: pluginRoot, grantedBy: $0) },
+            hooksPath: grant.map { try gate(in: pluginRoot, grantedBy: $0, from: bundle) },
         )
     }
 
     /// The hook and the plugin's own `hooks/hooks.json` that installs it. The hook's `timeout` is
     /// `PermissionPatience.hookTimeoutSeconds` — the gate's own patience with a margin on top, so
     /// Argo's answer always arrives before the hook's clock could kill it (#573).
-    private static func gate(in pluginRoot: URL, grantedBy grant: PermissionGrant) throws
+    private static func gate(
+        in pluginRoot: URL, grantedBy grant: PermissionGrant, from bundle: Bundle?,
+    ) throws
         -> String {
         let hook = pluginRoot.appending(path: "permission-hook.sh")
         try write(
@@ -70,6 +81,7 @@ enum CompanionPlugin {
                 "__ARGO_GATE_ACK_SECONDS__": String(grant.acknowledgementSeconds),
                 "__ARGO_GATE_HELD__": GateNotice.held,
             ],
+            from: bundle,
         )
         let hooksDirectory = pluginRoot.appending(path: "hooks", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(
@@ -80,7 +92,7 @@ enum CompanionPlugin {
         try write(resource: "hooks", to: hooks, substituting: [
             "__ARGO_PERMISSION_HOOK__": hook.path,
             "__ARGO_PERMISSION_TIMEOUT__": String(PermissionPatience.hookTimeoutSeconds),
-        ])
+        ], from: bundle)
         return hooks.path
     }
 
@@ -95,13 +107,15 @@ enum CompanionPlugin {
         extension fileExtension: String = "json",
         to url: URL,
         substituting substitutions: [String: String] = [:],
+        from bundle: Bundle?,
     ) throws {
-        guard let source = Bundle.module.url(
-            forResource: resource,
-            withExtension: fileExtension,
-            subdirectory: "Plugin",
-        ),
-            let template = try? String(contentsOf: source, encoding: .utf8)
+        guard let bundle,
+              let source = bundle.url(
+                  forResource: resource,
+                  withExtension: fileExtension,
+                  subdirectory: "Plugin",
+              ),
+              let template = try? String(contentsOf: source, encoding: .utf8)
         else {
             throw AgentSpawnError.hostRefused(detail: "Companion plugin is missing from this build")
         }

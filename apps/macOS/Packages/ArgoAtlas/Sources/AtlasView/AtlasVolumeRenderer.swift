@@ -73,10 +73,11 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// app renders rather than a second drawing of it written in Swift; without it the one claim
     /// #1153 makes could only be asserted by a suite that skipped itself.
     nonisolated private static func library(on device: MTLDevice) -> MTLLibrary? {
-        if let compiled = try? device.makeDefaultLibrary(bundle: Bundle.module) {
+        guard let bundle = ModuleResourceBundle.resolved else { return nil }
+        if let compiled = try? device.makeDefaultLibrary(bundle: bundle) {
             return compiled
         }
-        guard let url = Bundle.module.url(forResource: "AtlasVolume", withExtension: "metal"),
+        guard let url = bundle.url(forResource: "AtlasVolume", withExtension: "metal"),
               let source = try? String(contentsOf: url, encoding: .utf8)
         else { return nil }
         return try? device.makeLibrary(source: source, options: nil)
