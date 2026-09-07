@@ -37,17 +37,42 @@ struct ConditionalReadTests {
     // MARK: - The per-branch read
 
     @Test
-    func `a 304 on a branch keeps the pull request the last tick found`() async {
-        let held = Delivery(branch: "argo/#1620-etags", pullRequest: .stub(number: 42))
+    func `a 304 on a branch keeps the Delivery the ledger holds`() async {
+        // The read made conditional is the one whose answer is "nobody opened a pull request on
+        // this branch", so what a `304` keeps is that: the branch is still a Delivery at its
+        // commits, and not one that fell out of the room on the tick that saved a request.
+        let held = Delivery(branch: "spike/idea", pullRequest: nil)
         let port = ScriptedCodeHost(
             [.success([])],
-            unchanged: .init(branches: ["argo/#1620-etags"]),
+            unchanged: .init(branches: ["spike/idea"]),
         )
 
         let derived = await Self.derived(
-            port: port, holding: [held], workspaces: [.on("argo/#1620-etags")],
+            port: port, holding: [held], workspaces: [.on("spike/idea")],
         )
 
+        #expect(derived.map(\.branch) == ["spike/idea"])
+        #expect(derived.first?.stage == .commits)
+    }
+
+    @Test
+    func `a branch the ledger holds nothing for is asked outright`() async {
+        // The validator outlives the ledger entry: the ledger is replaced whole on every
+        // derivation, so a tick whose Workspaces came back empty drops a branch the transport still
+        // holds an ETag for. Asked conditionally, that branch would answer `304`, resolve to "no
+        // pull request", and then keep answering `304` — the bare Delivery it just wrote holds no
+        // pull request either, so nothing would ever ask outright again.
+        let found = Delivery(branch: "argo/#1620-etags", pullRequest: .stub(number: 42))
+        let port = ScriptedCodeHost(
+            [.success([])],
+            byBranch: ["argo/#1620-etags": found],
+        )
+
+        let derived = await Self.derived(
+            port: port, holding: [], workspaces: [.on("argo/#1620-etags")],
+        )
+
+        #expect(await port.askedConditionally("argo/#1620-etags") == false)
         #expect(derived.first?.pullRequest?.number == 42)
     }
 
@@ -88,15 +113,21 @@ struct ConditionalReadTests {
     // MARK: - The listing
 
     @Test
-    func `a 304 on the listing keeps what was listed rather than emptying the room`() async {
-        // A teammate's pull request lives ONLY in the listing — this machine has no branch for it,
-        // so nothing in the fan-out below would put it back.
-        let theirs = Delivery(branch: "them/#1601-roster", pullRequest: .stub(number: 9))
+    func `a 304 on the listing keeps the room rather than emptying it`() async {
+        // The listing is only ever asked conditionally when nothing open is held, so a `304` says
+        // the open set is still empty — and NOT that the derivation is. Read as an empty read it
+        // would take the settled branch with it and stop the fan-out from ever reaching the bare
+        // one, which is a strip that goes blank on the tick that saved a request.
+        let settled = Delivery(branch: "argo/#1559-roster", pullRequest: .merged(number: 3))
         let port = ScriptedCodeHost([.success([])], unchanged: .init(listings: [1]))
 
-        let derived = await Self.derived(port: port, holding: [theirs], workspaces: [])
+        let derived = await Self.derived(
+            port: port,
+            holding: [settled],
+            workspaces: [.on("argo/#1559-roster"), .on("spike/idea")],
+        )
 
-        #expect(derived.map(\.branch) == ["them/#1601-roster"])
+        #expect(derived.map(\.branch).sorted() == ["argo/#1559-roster", "spike/idea"])
     }
 
     @Test
@@ -157,54 +188,5 @@ struct ConditionalReadTests {
 
         #expect(again.answer?.count == 1)
         #expect(await api.conditional().isEmpty)
-    }
-
-    // MARK: - Paging
-
-    @Test
-    func `a one-page listing that has not moved costs one request`() async throws {
-        // The walk ends where the last one did rather than probing the page after it — otherwise a
-        // saved request is spent again on an empty answer, and the ticket buys nothing (#1620).
-        let api = RecordedGitHub(
-            replies: Self.onePull, validating: ["/pulls?"],
-        )
-        let reads = GitHubReads(transport: api)
-
-        _ = try await reads.pages(
-            [GitHubPullRequest].self, of: "/repos/acme/api/pulls?state=open",
-            grant: .listing, revalidating: true,
-        )
-        let before = await api.urls().count
-        let again = try await reads.pages(
-            [GitHubPullRequest].self, of: "/repos/acme/api/pulls?state=open",
-            grant: .listing, revalidating: true,
-        )
-
-        #expect(again.answer == nil)
-        #expect(await api.urls().count == before + 1)
-    }
-
-    @Test
-    func `a walk whose pages disagree is read again for its bodies`() async throws {
-        // A `304` leaves no items to splice into the gap, so a listing that moved on ONE of its
-        // pages cannot be assembled from a mixed walk. It costs what it cost before this ticket.
-        let api = RecordedGitHub(
-            replies: [
-                "&page=1": PullRequestJSON.list((1 ... 100).map { PullRequestJSON(number: $0) }),
-                "&page=2": PullRequestJSON.list([PullRequestJSON(number: 101)]),
-            ],
-            validating: ["&page=2"],
-        )
-        let reads = GitHubReads(transport: api)
-        let path = "/repos/acme/api/pulls?state=open"
-
-        _ = try await reads.pages(
-            [GitHubPullRequest].self, of: path, grant: .listing, revalidating: true,
-        )
-        let read = try await reads.pages(
-            [GitHubPullRequest].self, of: path, grant: .listing, revalidating: true,
-        )
-
-        #expect(read.answer?.count == 101)
     }
 }

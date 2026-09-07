@@ -89,7 +89,10 @@ actor ScriptedCodeHost: CodeHostPort {
         -> PortReading<[Delivery]> {
         reads += 1
         conditionalListings.append(revalidating)
-        if unchangedListings.contains(reads) {
+        // Only ever to a request that carried a validator, as a host is: a fixture that answers
+        // `unchanged` to an outright ask lets a suite pass on a pairing the real adapter cannot
+        // produce.
+        if revalidating, unchangedListings.contains(reads) {
             return .unchanged
         }
         guard let answer = script.count > 1 ? script.removeFirst() : script.first else {
@@ -105,7 +108,7 @@ actor ScriptedCodeHost: CodeHostPort {
         asked.append(branch)
         conditional[branch] = revalidating
         guard !refusing.contains(branch) else { throw ProviderFetchError.rateLimited }
-        guard !unchangedBranches.contains(branch) else { return .unchanged }
+        guard !revalidating || !unchangedBranches.contains(branch) else { return .unchanged }
         return .answered(byBranch[branch])
     }
 }

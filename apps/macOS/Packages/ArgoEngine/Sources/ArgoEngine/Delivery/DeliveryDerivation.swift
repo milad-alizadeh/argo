@@ -110,15 +110,17 @@ public actor DeliveryDerivation {
                 held[delivery.branch] = delivery
             }
         let open = held.values.filter { $0.pullRequest?.isFinished == false }
-        // Conditional only where a `304` is reproducible from what is held. An open pull request is
-        // not: its checks and reviews move without its own body moving, so the listing that carries
-        // it is asked outright (`GitHubDeliveries.deliveries`).
+        // Conditional only where a `304` is reproducible from what is held, which for the listing
+        // means holding nothing open. An open pull request is not reproducible: its checks and its
+        // reviews move without its own body moving, so the listing that carries it is asked
+        // outright (`GitHubDeliveries.deliveries`).
         let listed = try await port.inFlight(
             in: target.scope, grant: target.binding.grant, revalidating: open.isEmpty,
         )
-        // An unchanged listing is the host's word that the open set has not moved, which for an
-        // empty one is the empty set — and NOT an empty derivation: every settled and every
-        // pull-request-less branch below is still to be assembled.
+        // An unchanged listing is the host's word that the open set has not moved, and it is only
+        // ever asked for when that set is empty — so it stays empty. What it is NOT is an empty
+        // derivation: every settled and every pull-request-less branch below is still to be
+        // assembled, and reading `unchanged` as "the room is gone" is the erasure this is about.
         let hosted = listed.answer ?? Array(open)
         var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
@@ -173,9 +175,16 @@ public actor DeliveryDerivation {
     ) async throws
         -> Delivery {
         let none = Delivery(branch: branch, pullRequest: nil)
+        // `held != nil` is half the condition and not a formality: `held?.pullRequest == nil` is
+        // also true for a branch the ledger holds NOTHING for, and there a `304` has nothing to
+        // keep. The validator can outlive the entry — the ledger is replaced whole on every
+        // derivation, so a tick whose Workspaces came back empty drops a branch the transport is
+        // still holding an ETag for — and asked conditionally that branch would answer `304`,
+        // resolve to "no pull request", and then keep answering `304` forever, because the bare
+        // Delivery it just wrote satisfies this test too.
         let read = try await port.delivery(
             ofBranch: branch, in: target.scope, grant: target.binding.grant,
-            revalidating: held?.pullRequest == nil,
+            revalidating: held != nil && held?.pullRequest == nil,
         )
         // `unchanged` keeps what the branch already had; only an ANSWER of `nil` is the host saying
         // nobody has opened a pull request on it. Read the two as one and every tick that saved a

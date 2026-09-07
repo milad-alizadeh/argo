@@ -72,7 +72,7 @@ struct HTTPTransportStatusTests {
     func `the ETag a read answered with comes back as If-None-Match`() async throws {
         let transport = URLSessionTransport(session: .stubbed)
         let url = StubHTTPProtocol.url(status: 200, headers: ["ETag": #"W/"cafe""#])
-        let asked = HTTPRequest(url: url, revalidating: true)
+        let asked = HTTPRequest(url: url).revalidated(true)
 
         _ = try await transport.fetch(asked)
         let second = try await transport.fetch(asked)
@@ -97,9 +97,9 @@ struct HTTPTransportStatusTests {
     func `a 304 is unchanged rather than an empty body`() async throws {
         let transport = URLSessionTransport(session: .stubbed)
         let url = Self.validated
-        _ = try await transport.fetch(HTTPRequest(url: url, revalidating: true))
+        _ = try await transport.fetch(HTTPRequest(url: url).revalidated(true))
 
-        let read = try await transport.fetch(HTTPRequest(url: url, revalidating: true))
+        let read = try await transport.fetch(HTTPRequest(url: url).revalidated(true))
 
         #expect(!read.isAnswered)
     }
@@ -109,7 +109,7 @@ struct HTTPTransportStatusTests {
         // A caller reading `Data` has no way to act on "unchanged", so it must never be offered
         // one: `send` strips the validator rather than trusting the request not to carry it.
         let transport = URLSessionTransport(session: .stubbed)
-        let asked = HTTPRequest(url: Self.validated, revalidating: true)
+        let asked = HTTPRequest(url: Self.validated).revalidated(true)
 
         _ = try await transport.send(asked)
         let second = try await transport.send(asked)

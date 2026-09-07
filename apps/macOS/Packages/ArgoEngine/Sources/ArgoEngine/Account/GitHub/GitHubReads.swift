@@ -83,11 +83,13 @@ struct GitHubReads: Sendable {
             let reply = try await call.fetch(url, grant: grant, revalidating: revalidating)
             guard case let .answered(data) = reply else {
                 unchanged += 1
-                if let span, page >= span {
-                    completed = true
-                    break
-                }
-                continue
+                // Without a span nothing here knows where this listing ends, and a `304` carries no
+                // item count to find out from. Walking on would spend the backstop's twenty
+                // requests to learn nothing, so the walk stops and is read again for its bodies
+                // below — the same cost this listing had before conditional requests.
+                guard let span, page >= span else { break }
+                completed = true
+                break
             }
             guard let read: Page = try decoded(data) else { throw ProviderFetchError.unreachable }
             items.append(contentsOf: read.items)
@@ -96,7 +98,9 @@ struct GitHubReads: Sendable {
                 break
             }
         }
-        if unchanged == asked {
+        // `completed` as well as the count: a walk the backstop cut off has not reached the end of
+        // the listing, so twenty pages of `304` say nothing about page twenty-one.
+        if unchanged == asked, completed {
             return .unchanged
         }
         // Some pages moved and some did not, and a `304` leaves no items to splice into the gap.
