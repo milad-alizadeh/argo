@@ -83,6 +83,11 @@ Nothing here is a reason to stop.
   per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
+- **The ticket is still open.** `gh issue view <N> --json state,stateReason` — one request, and
+  it belongs HERE rather than where the run first read the ticket, because the closure that
+  matters is the one that lands WHILE you work. #1619 was closed as already addressed by #1620
+  ninety minutes before the lane on it opened #1657, and that lane had read an open ticket at its
+  start: a check there would have caught nothing. What a closed ticket changes is below.
 - **Review findings.** Fix each in the diff, or carry it.
 
 ## Carry, never block
@@ -94,6 +99,18 @@ Each of these belongs in the PR body, and the ship continues past it.
 - **A finding you did not fix**, each with the reason.
 - **No ticket to close.** Derive `<N>` from the branch name or the ticket you built. If there
   genuinely is none, open the PR with no `Closes` line and say so in the body.
+- **A ticket that closed while you worked.** The work exists and may still be worth having.
+  Whether it is wanted now is the human's to decide, and a decision is not a question to hand
+  back, so the ship continues — with three things changed:
+  - **No `Closes #<N>` line.** GitHub credits an issue's closure to the PR that carries it, so
+    that one line replaced the triage verdict on #1619 with a PR nobody merged: anyone reading
+    the ticket saw it closed by the very work its closure had ruled unnecessary. Name it in prose
+    instead — `Answers #<N>, closed <date> as <stateReason>`.
+  - **The closure leads the body**, quoting the closing comment and naming whatever it cites.
+    The argument that this diff is moot is the first thing a reviewer needs, not a footnote under
+    the measurements.
+  - **Open it as a draft**, per step 5. A branch waiting on "is this still wanted" is not waiting
+    on review, and the ready queue is for branches that are.
 
 ## Then ship
 
@@ -118,7 +135,8 @@ Each of these belongs in the PR body, and the ship continues past it.
    a cache lookup when the tree has already passed it, which is the usual case for a branch
    that has been pushed before.
 5. Open exactly one PR with `gh pr create --base <base>`, ready for review, its body carrying
-   `Closes #<N>` and everything the section above told you to carry. Skip this step for a branch
-   that already had a PR open — the push updated it, and the hook gated it.
+   `Closes #<N>` and everything the section above told you to carry. A ticket that closed while
+   you worked takes `--draft` and no `Closes` line, for the reasons above. Skip this step for a
+   branch that already had a PR open — the push updated it, and the hook gated it.
 6. Report the PR URL. Merging is the human's, and nothing in this repo does it for them
    (#1577).
