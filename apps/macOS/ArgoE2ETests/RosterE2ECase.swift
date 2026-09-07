@@ -7,6 +7,12 @@ class RosterE2ECase: E2ECase {
         app.rosterRow(titled: title)
     }
 
+    /// A row addressed by something inside its announcement rather than its head — for a title
+    /// that opens with a clock this suite cannot predict (#1567).
+    func row(containing text: String) -> XCUIElement {
+        app.rosterRow(containing: text)
+    }
+
     /// The list cell AROUND that row, which is where selection is reported: the element the row's
     /// announcement labels is the content inside it, and content does not know it was picked.
     func cell(titled title: String) -> XCUIElement {

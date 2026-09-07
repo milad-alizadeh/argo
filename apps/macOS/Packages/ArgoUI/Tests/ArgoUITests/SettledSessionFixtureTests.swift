@@ -93,6 +93,7 @@ struct SettledSessionFixtureTests {
         #expect(SyntheticLorem.markers == [
             "task-notification", "result", "event", "summary", "status", "tool-use-id", "task-id",
             "command-name", "command-message", "command-args", "local-command-stdout",
+            "bash-input", "bash-stdout", "bash-stderr",
         ])
     }
 

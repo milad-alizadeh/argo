@@ -12,7 +12,11 @@ import Testing
 struct FeedGalleryTests {
     @Test
     func `consecutive pictures render as one gallery`() throws {
-        let rows = FeedProjection.rows(from: FeedFixture.looked(at: ["a.png", "b.png", "c.png"]))
+        let rows = FeedProjection.rows(.justTheStream(FeedFixture.looked(at: [
+            "a.png",
+            "b.png",
+            "c.png",
+        ])))
         let gallery = try #require(FeedFixture.galleries(in: rows).first)
 
         #expect(rows.count == 1)
@@ -24,7 +28,8 @@ struct FeedGalleryTests {
     func `a single picture gets the same treatment as a set`() throws {
         let gallery = try #require(
             FeedFixture
-                .galleries(in: FeedProjection.rows(from: FeedFixture.looked(at: ["only.png"])))
+                .galleries(in: FeedProjection
+                    .rows(.justTheStream(FeedFixture.looked(at: ["only.png"]))))
                 .first,
         )
 
@@ -37,7 +42,7 @@ struct FeedGalleryTests {
             + [.message(markdown: "That is the one.")]
             + FeedFixture.looked(at: ["b.png", "c.png"])
 
-        let rows = FeedProjection.rows(from: interrupted)
+        let rows = FeedProjection.rows(.justTheStream(interrupted))
 
         #expect(rows.count == 3)
         #expect(FeedFixture.galleries(in: rows).map(\.shots.count) == [1, 2])
@@ -59,7 +64,7 @@ struct FeedGalleryTests {
             )),
         ]
 
-        let rows = FeedProjection.rows(from: broken)
+        let rows = FeedProjection.rows(.justTheStream(broken))
 
         #expect(FeedFixture.galleries(in: rows).isEmpty)
         #expect(FeedFixture.calls(in: broken).map(\.subject.captioned) == ["half.png"])
@@ -84,7 +89,7 @@ struct FeedGalleryTests {
             ]
         }
         let gallery = try #require(
-            FeedFixture.galleries(in: FeedProjection.rows(from: repeated)).first,
+            FeedFixture.galleries(in: FeedProjection.rows(.justTheStream(repeated))).first,
         )
 
         #expect(gallery.shots.count == 3)
@@ -104,7 +109,7 @@ struct FeedGalleryTests {
 
         let call = try #require(FeedFixture.calls(in: mixed).first)
 
-        #expect(FeedFixture.galleries(in: FeedProjection.rows(from: mixed)).isEmpty)
+        #expect(FeedFixture.galleries(in: FeedProjection.rows(.justTheStream(mixed))).isEmpty)
         #expect(call.evidence.count == 2)
     }
 
@@ -125,7 +130,7 @@ struct FeedGalleryTests {
             ]
         }
 
-        let rows = FeedProjection.rows(from: mixed)
+        let rows = FeedProjection.rows(.justTheStream(mixed))
 
         #expect(FeedFixture.surveys(in: rows).isEmpty)
         #expect(FeedFixture.galleries(in: rows).isEmpty)

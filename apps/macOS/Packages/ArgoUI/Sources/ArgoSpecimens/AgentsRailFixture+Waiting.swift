@@ -14,7 +14,7 @@ extension AgentsRailFixture {
     /// records, and one drawn UNKNOWN — an outlined dot and no clock. The third is what keeps the
     /// render honest about the fix's shape: the evidence settles the chips it reaches, and the rail
     /// says so about the one it does not.
-    static let waitingRows = FeedProjection.rows(from: waiting)
+    static let waitingRows = FeedProjection.rows(.justTheStream(waiting))
 
     /// Those records read as a WAITING Session's: `of: .undecided` is what the parent's `idle`
     /// status projects to, and `writing` names the two children whose files Argo has watched grow.

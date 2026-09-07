@@ -10,29 +10,6 @@ import Foundation
 // Nothing here rewords a prompt: the reading stays verbatim, taken from the fields the CLI put the
 // words in rather than from the markup it wrapped them in.
 
-/// The first textual part of a record's content with anything in it. Blank parts are stepped over
-/// rather than answered with.
-private func firstText(_ content: [ContentBlock]) -> String? {
-    for block in content {
-        guard case let .text(text) = block,
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else { continue }
-        return text
-    }
-    return nil
-}
-
-/// The contents of one `<name>…</name>` tag.
-private func tag(_ text: String, _ name: String) -> String? {
-    // `[\s\S]` rather than `.`, which stops at a newline: a command's body routinely spans lines.
-    guard let match = text.range(
-        of: "<\(name)>[\\s\\S]*?</\(name)>",
-        options: [.regularExpression],
-    ) else { return nil }
-    let inner = text[match].dropFirst(name.count + 2).dropLast(name.count + 3)
-    return inner.trimmingCharacters(in: .whitespacesAndNewlines)
-}
-
 /// A background agent's report, filed as a user record because that is where the CLI puts it.
 ///
 /// Never a prompt. Where it names the call that DELEGATED the work it is that call's outcome
@@ -66,15 +43,16 @@ private let notificationPreamble = "<task-notification>"
 /// Matched at the head, the discipline `skillDirectory` uses: a prompt that merely QUOTES the word
 /// is a prompt, and reading it as machinery would swallow what the user asked.
 func taskNotification(_ content: [ContentBlock]) -> TaskNotification? {
-    guard let text = firstText(content), text.hasPrefix(notificationPreamble) else { return nil }
+    guard let text = RecordText.first(of: content),
+          text.hasPrefix(notificationPreamble) else { return nil }
     // `result` is where a finished agent puts its report and `event` where a monitor puts its
     // mid-run one. Both are the agent's own words; only the tag around them differs.
-    let report = tag(text, "result") ?? tag(text, "event")
+    let report = RecordText.tagged("result", in: text) ?? RecordText.tagged("event", in: text)
     return TaskNotification(
-        callID: nonEmpty(tag(text, "tool-use-id")),
-        subagentID: nonEmpty(tag(text, "task-id")),
-        summary: nonEmpty(tag(text, "summary")),
-        status: reportedStatus(tag(text, "status")),
+        callID: nonEmpty(RecordText.tagged("tool-use-id", in: text)),
+        subagentID: nonEmpty(RecordText.tagged("task-id", in: text)),
+        summary: nonEmpty(RecordText.tagged("summary", in: text)),
+        status: reportedStatus(RecordText.tagged("status", in: text)),
         text: nonEmpty(report),
     )
 }
@@ -100,16 +78,16 @@ private func nonEmpty(_ text: String?) -> String? {
 /// Read rather than discarded because it is the command's ANSWER: `/effort` opens a turn whose only
 /// content is this line, so a reader that drops it sees the question and never the reply.
 func localCommandOutput(_ content: [ContentBlock]) -> String? {
-    guard let text = firstText(content) else { return nil }
-    return tag(text, "local-command-stdout")
+    guard let text = RecordText.first(of: content) else { return nil }
+    return RecordText.tagged("local-command-stdout", in: text)
 }
 
 /// A slash command as the user typed it — `/implement 318 open storybook while you do it`. The CLI
 /// stores the invocation as three sibling tags in one record; the raw text would title the exchange
 /// `<command-message>implement</command-message>`, markup the user never saw.
 func commandPrompt(_ text: String) -> String? {
-    guard let name = tag(text, "command-name") else { return nil }
-    let args = tag(text, "command-args") ?? ""
+    guard let name = RecordText.tagged("command-name", in: text) else { return nil }
+    let args = RecordText.tagged("command-args", in: text) ?? ""
     return args.isEmpty ? name : "\(name) \(args)"
 }
 
@@ -117,8 +95,12 @@ func commandPrompt(_ text: String) -> String? {
 /// the feed draws what was typed; a reader that ACTS on one particular command needs to know which
 /// command it was and what it was handed.
 func commandInvocation(_ content: [ContentBlock]) -> (name: String, args: String)? {
-    guard let text = firstText(content), let name = tag(text, "command-name") else { return nil }
-    return (name, tag(text, "command-args") ?? "")
+    guard let text = RecordText.first(of: content), let name = RecordText.tagged(
+        "command-name",
+        in: text,
+    )
+    else { return nil }
+    return (name, RecordText.tagged("command-args", in: text) ?? "")
 }
 
 /// The line the CLI writes in front of a skill's body when it hands one over (#688).
@@ -129,19 +111,21 @@ private let skillPreamble = "Base directory for this skill: "
 /// caveat, the pasted-image preamble. Matched at the head, so a prompt QUOTING the sentence is a
 /// prompt.
 func skillDirectory(_ content: [ContentBlock]) -> String? {
-    guard let text = firstText(content), text.hasPrefix(skillPreamble) else { return nil }
+    guard let text = RecordText.first(of: content),
+          text.hasPrefix(skillPreamble) else { return nil }
     let named = text.dropFirst(skillPreamble.count).prefix { !$0.isNewline }
     let directory = named.trimmingCharacters(in: .whitespaces)
     return directory.isEmpty ? nil : directory
 }
 
 /// What a user record asks for, or `nil` where it asks for nothing. A slash command reads as the
-/// command, a local command's stdout reads as nothing, and anything else reads as itself —
-/// unclamped and untrimmed, the way a verbatim prompt must be.
+/// command, a shell command as the line it was typed as, either one's output as nothing, and
+/// anything else as itself — unclamped and untrimmed, the way a verbatim prompt must be.
 func userPrompt(_ content: [ContentBlock]) -> String? {
-    guard let text = firstText(content) else { return nil }
-    guard localCommandOutput(content) == nil else { return nil }
-    return commandPrompt(text) ?? text
+    guard let text = RecordText.first(of: content) else { return nil }
+    guard localCommandOutput(content) == nil, ShellTurn.printed(in: content) == nil
+    else { return nil }
+    return ShellTurn.asked(in: content) ?? commandPrompt(text) ?? text
 }
 
 /// The CLI's own placeholder for a picture it moved into a block of its own — `[Image #3]`, written
@@ -183,46 +167,22 @@ private func promptText(_ content: [ContentBlock], carrying images: Int) -> Stri
     return shorn(prompt, ofImages: images)
 }
 
-/// A prompt, or the local command whose output this record IS.
-///
-/// The output comes back as a Tool Call rather than as prose: a command ran and printed something,
-/// which is exactly what a Tool Call is.
-///
-/// And then the Turn is over (#1234). A local command is typed at the prompt like a Turn and the
-/// CLI writes a prompt record for it, but no agent ever answers one: the whole exchange is that
-/// record and this one. Nothing else in the file will ever close it, so a reader that leaves the
-/// Turn open leaves the Session `running` for good — and the Stop the reader then reaches for has
-/// no Turn to stop. The fault `.interrupted` was read for in #1189, and the same fix: the record
-/// that ENDS the exchange is read as the boundary it is.
+/// A prompt, or the output of a command the CLI ran itself — see `CommandOutput`, which is what
+/// both kinds of that record read as.
 func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
     -> [TranscriptEvent] {
+    // Each command the CLI ran ITSELF, before the prompt path below draws its markup. The shell
+    // one first: its answer is the same exchange one record later (#1595).
+    if let printed = ShellTurn.printed(in: message.content) {
+        return ShellTurn.events(printed: printed, in: message)
+    }
     if let printed = localCommandOutput(message.content) {
-        let id = message.uuid ?? "local-command"
-        return [
-            .toolCall(ToolCall(
-                id: id,
-                name: "local command",
-                kind: .execute,
-                target: nil,
-                atMs: message.timestampMs,
-            )),
-            .toolCallOutcome(ToolCallOutcome(
-                id: id,
-                resolution: ToolCallOutcome.Resolution(
-                    status: .completed,
-                    // `derived`: the text is read off an external record rather than owned by
-                    // Argo.
-                    result: .output(OutputEvidence(tier: .derived, text: printed)),
-                    // A local command prints and is over. There is no second record to learn its
-                    // end from, and the moment it printed is the moment it finished.
-                    endedAtMs: message.timestampMs,
-                ),
-            )),
-            // `endTurn` and not `cancelled`: nothing was stopped and no wall was hit. The command
-            // was asked for, it answered, and that is a Turn that simply finished — which is what
-            // the roster reads `idle` off and what releases the follow-ups queued behind it.
-            .turnEnded(.endTurn),
-        ]
+        return CommandOutput.events(
+            id: message.uuid ?? "local-command",
+            name: "local command",
+            printed: printed,
+            atMs: message.timestampMs,
+        )
     }
     let images = embeddedMedia(message.content, in: location)
     guard let text = promptText(message.content, carrying: images.count) else { return [] }

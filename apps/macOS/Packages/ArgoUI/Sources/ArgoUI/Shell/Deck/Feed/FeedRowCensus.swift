@@ -13,7 +13,7 @@ package enum FeedRowCensus {
     /// each kind, so a caller folds them straight into whatever else it counts.
     package static func counts(ofLines lines: [String]) async -> [String: Int] {
         let reader = TranscriptReader()
-        let rows = await FeedProjection.rows(from: reader.read(lines: lines))
+        let rows = await FeedProjection.rows(.justTheStream(reader.read(lines: lines)))
         return rows.reduce(into: ["rows": rows.count]) { counts, row in
             counts["rows.\(row.content.shape.rawValue)", default: 0] += 1
         }

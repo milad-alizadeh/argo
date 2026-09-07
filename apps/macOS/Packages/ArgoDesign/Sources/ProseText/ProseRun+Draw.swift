@@ -1,55 +1,6 @@
 import AppKit
 import ArgoDesign
 
-/// What a run of prose is inked in. A value rather than four arguments, so a surface and a
-/// specimen cannot pass them in different orders, and so the parameter cap holds.
-///
-/// Every colour here is the caller's claim. The module states no hue: it draws what it is handed
-/// (`ArgoDesign` is where a colour may be declared).
-public struct ProseInk {
-    /// The voice the block is set in. Applied to every glyph the record marked as nothing, so one
-    /// typeset answers for a message and for the quieter thought beside it.
-    public var body: ArgoColor
-    /// A `[label](url)`, underlined as well as inked — colour alone is not a link.
-    public var link: ArgoColor
-    /// A `code` span's glyphs, where inheriting the voice would fall under the contrast floor on
-    /// the span's own ground. `nil` inherits, which is the ordinary case.
-    public var span: ArgoColor?
-    /// The chip drawn under a `code` span — what marks the run, rather than a hue.
-    public var marked: ProseMarkedInk
-
-    public init(body: ArgoColor, link: ArgoColor, span: ArgoColor?, marked: ProseMarkedInk) {
-        self.body = body
-        self.link = link
-        self.span = span
-        self.marked = marked
-    }
-
-    /// The same ink in another voice — a list's marker is drawn quieter than the words beside it,
-    /// and everything else about how a run is marked stays as it was.
-    public func voiced(_ body: ArgoColor) -> ProseInk {
-        var voiced = self
-        voiced.body = body
-        return voiced
-    }
-}
-
-extension ProseInk: Equatable {}
-
-/// The chip a `code` span is drawn on: its ground, how far that ground is pushed past the glyphs,
-/// and how round its corner is. One reading, so it travels as one value.
-public struct ProseMarkedInk: Equatable {
-    public var ground: ArgoColor
-    public var inset: CGSize
-    public var radius: CGFloat
-
-    public init(ground: ArgoColor, inset: CGSize, radius: CGFloat) {
-        self.ground = ground
-        self.inset = inset
-        self.radius = radius
-    }
-}
-
 /// One inking in progress: where the run's top-left corner sits, what it is set in, and what it is
 /// drawn into. A value because the three travel together and the cap on a parameter list is real.
 private struct ProseInking {
@@ -114,7 +65,8 @@ public extension ProseRun {
         if url != nil {
             return ink.link
         }
-        return isCode ? ink.span ?? ink.body : ink.body
+        let voice = ink.voice
+        return isCode ? voice.span ?? voice.ink : voice.ink
     }
 
     /// The rule under a link's words, at the font's own underline position and thickness — drawn

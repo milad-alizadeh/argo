@@ -79,6 +79,23 @@ struct SessionRosterSpecimenTests {
         #expect(opened.count > shut.count)
     }
 
+    /// The same two PNGs are the only evidence #1567's readings have, so the fixture behind them
+    /// has to still reach both: a caption with a failure clause, and runs the reader can tell
+    /// apart once the fold is opened.
+    @Test
+    func `the folded roster the specimen renders says what its fold hid`() throws {
+        let shut = FoldedRosterSpecimen.rows(opened: [])
+        let opened = FoldedRosterSpecimen.rows(opened: FoldedRosterSpecimen.folds)
+
+        #expect(try #require(shut.first { $0.fold != nil }).title.contains("failed"))
+        // Distinct rows drawing what was one derived summary — the case the caption hid.
+        let runs = opened.filter { $0.fold == nil && $0.isReadOnly }
+        #expect(runs.count > 1)
+        #expect(Set(runs.map(\.title)).count == runs.count)
+        // And the failed ones are reachable under it, which is what the fold is for.
+        #expect(runs.contains { $0.state == .failure })
+    }
+
     @Test
     func `the specimen renders both badge words, so the two are judged side by side`() {
         #expect(
@@ -112,5 +129,18 @@ struct SessionRosterSpecimenTests {
         #expect(rows.contains { $0.isReadOnly && $0.secondaryFact == nil && $0.clock != nil })
         // Including the loudest ink the roster has: a live dot on a Session nobody can steer.
         #expect(rows.contains { $0.isReadOnly && $0.state == .running })
+    }
+
+    /// `crowdedSpawningRoster` is the roster `OutlineCount.swift` polls for #1562, and its whole
+    /// claim rests on the roster DRAWING a hundred rows. Rows sharing a title fold into one
+    /// (#1073), so a crowd that folded would have the probe report "no spike" off a roster of a
+    /// handful — the one wrong answer this repro can give.
+    @MainActor
+    @Test
+    func `the crowded spawning roster draws a roster a spike could be seen against`() {
+        let drawn = SessionRosterProjection.rows(from: SpawningRosterSpecimen.crowd, opened: [])
+
+        #expect(drawn.count == 100)
+        #expect(drawn.filter(\.takesSelection).count == drawn.count)
     }
 }

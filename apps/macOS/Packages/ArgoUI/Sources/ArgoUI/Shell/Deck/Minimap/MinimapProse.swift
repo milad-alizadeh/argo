@@ -33,6 +33,10 @@ struct MinimapProseWords: Equatable, Sendable {
     /// The marker a list item is drawn with, trailing-aligned in its own column. `nil` for
     /// everything that is not one.
     var marker: String?
+    /// What the block IS, which is what the feed's renderer picks its voice by (#1597). Beside
+    /// the face rather than derived from it: the face and the ink are two readings of one
+    /// decision, and a second reading of it is where they part.
+    var kind: ProseVoiceKind = .body
 
     /// How far the words themselves are held off the leading edge — a list item's marker column and
     /// the gap after it, which is what keeps a wrapped item inside its own words.
@@ -56,7 +60,9 @@ extension MinimapProseBlock {
             case let .paragraph(text):
                 .prose(MinimapProseWords(text: text))
             case let .heading(level, text):
-                .prose(MinimapProseWords(text: text, face: .heading(level: level)))
+                .prose(MinimapProseWords(
+                    text: text, face: .heading(level: level), kind: .heading,
+                ))
             case let .bullet(text):
                 .prose(MinimapProseWords(text: text, marker: "•"))
             case let .numbered(marker, text):

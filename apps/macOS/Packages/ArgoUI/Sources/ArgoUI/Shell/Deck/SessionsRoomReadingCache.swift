@@ -24,9 +24,10 @@ import ArgoEngine
 enum SessionsRoomReadingCache {
     /// The version of a Session's record a reading was taken at.
     ///
-    /// Everything `FeedProjection` and `PlanProjection` read is here: the stream by its STAMP, and
-    /// the six small facts by VALUE, since none of them is append-only. The header is deliberately
-    /// absent — see `SessionsRoomReading.init`.
+    /// Everything `FeedProjection` and `PlanProjection` read is here: the stream by its STAMP, the
+    /// projection's own beside facts as the ONE value that names them (`FeedBeside`, #1504), and
+    /// the handful the plinth needs by VALUE beside it. The header is deliberately absent — see
+    /// `SessionsRoomReading.init`.
     ///
     /// A Subagent's reading is absent too, and that is #858 rather than an omission: a child's
     /// bytes are in none of the three derivations below, so a stamp that moved for them would take
@@ -37,36 +38,22 @@ enum SessionsRoomReadingCache {
         /// Which version of the stream the reading was taken at. Moved by every write the engine
         /// makes, drops included — see the note above on why a length is not enough.
         let stream: TranscriptStamp
-        let asking: FeedAskProjection.Asking
-        let handedOff: FeedHandoff?
-        let expired: [PermissionExpiry]
-        /// The question the agent reported over the companion plugin (#1205), by VALUE like the
-        /// facts around it: it is a claim about NOW rather than something appended to the stream,
-        /// so a stamp that stopped at the events would go on drawing an answered question.
-        let reported: Ask?
+        /// Everything the feed projection reads that is NOT the record's, as the one value that
+        /// names them (#1504). By VALUE, every one of them, and `FeedBeside` is where each says
+        /// why: none is append-only, so a stamp stopping at the events would draw a reading whose
+        /// beside facts have moved. Derived from the Session once — see `FeedBeside+Session.swift`.
+        let beside: FeedBeside
         /// The Session's own status, stored as the STATUS rather than as either reading taken of
-        /// it: the feed's live row wants a Turn in progress (`FeedWorking`) and the rail's dots
-        /// want a Session that can still be driving work (`DelegatingSession`, #1076), and those
-        /// two boundaries are no longer the same. One fact here, each reading named where it is
-        /// taken — two stored Bools would be two places to answer a status added later.
+        /// it: the feed's live row wants a Turn in progress (`FeedWorking`, which is what
+        /// `beside.turn.working` holds) and the rail's dots want a Session that can still be
+        /// driving
+        /// work (`DelegatingSession`, #1076), and those two boundaries are no longer the same. One
+        /// fact here, each reading named where it is taken.
         let status: SessionStatus?
-        /// Whether the wait for the Session's first byte ran out with its process still up
-        /// (#1245). By VALUE beside the status, and not read OFF it: the row it draws stands over
-        /// a Session whose status has already fallen through to what the world readings say, so a
-        /// stamp stopping at the status would go on drawing `starting the agent` at a wait that
-        /// has ended.
-        let startedQuietly: Bool
-        /// The waits Argo held that have ended (#1323), by VALUE for the reason the flag above is:
-        /// each one appends a row to the reading and none of them is in the stream, so a stamp
-        /// stopping at the events would keep drawing the reading as it stood before the wait
-        /// settled.
-        let settledWaits: [SessionWaitSettled]
-        /// The Turn Argo itself submitted that no record has answered (#1179, #1278, #1323) —
-        /// the DIRECT gate the plinth's `.thinking` wait stands behind, and the row the feed draws
-        /// for it. By VALUE beside the status, and not read off it: two Sessions can both read
-        /// `running` while only one of them is a Turn Argo itself typed. The WORDS rather than a
-        /// flag, because the reading draws them: a stamp that stopped at "there is one" would go
-        /// on drawing the first sentence after a second Turn replaced it.
+        /// The Turn Argo itself submitted, held RAW beside the one `beside.turn.submitted` carries:
+        /// a
+        /// Session being handed off draws no prompt row (#1229) but still has an unanswered Turn,
+        /// so the gate below cannot be read off the row's own words.
         let submittedTurn: String?
 
         /// Whether there IS such a Turn — derived here rather than compared at each reader, so the
@@ -76,17 +63,13 @@ enum SessionsRoomReadingCache {
         }
 
         /// Whether the `starting` status this stamp carries is a resume rather than a fresh spawn
-        /// (#1328), by VALUE beside `startedQuietly` for the same reason: the plinth reads off this
+        /// (#1328), by VALUE for the reason the facts beside it are: the plinth reads off this
         /// stamp rather than off the Session directly.
         let resuming: Bool
         /// Whether Argo is running `/handoff` on this Session right now (#1327), by VALUE beside
         /// `resuming` for the same reason: the plinth reads off this stamp, and it is a claim about
         /// NOW rather than something appended to the stream.
         let handingOff: Bool
-        /// The handoffs Argo attempted here that did NOT land (#1327), by VALUE beside
-        /// `settledWaits` for the reason that one is: each appends a row to the reading and none of
-        /// them is in the stream.
-        let handoffFailures: [SessionWaitSettled]
         /// What a backgrounded delegation is holding open, and which of those the reader has ended
         /// (#1267) — see `DelegationHold`. By VALUE beside the status for the reason
         /// `hasUnansweredTurn` above is, and one of its own: ending a delegation appends nothing to
@@ -102,18 +85,12 @@ enum SessionsRoomReadingCache {
         ) {
             self.sessionID = session?.id
             self.stream = session?.transcript.stream.stamp ?? TranscriptStamp()
-            self.asking = asking
-            self.handedOff = handedOff
-            self.expired = session?.expiredPermissions ?? []
-            self.reported = session?.companionAsk?.ask
             self.status = session?.status
-            self.startedQuietly = session?.startedQuietlyAtMs != nil
-            self.settledWaits = session?.settledWaits ?? []
             self.submittedTurn = session?.submittedTurn
             self.resuming = session?.resuming ?? false
             self.handingOff = session?.handingOff ?? false
-            self.handoffFailures = session?.handoffFailures ?? []
             self.delegationHold = session?.delegationHold ?? .none
+            self.beside = FeedBeside(of: session, asking: asking, handedOff: handedOff)
         }
     }
 

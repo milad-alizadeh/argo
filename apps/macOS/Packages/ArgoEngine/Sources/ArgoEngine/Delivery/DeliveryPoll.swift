@@ -39,10 +39,29 @@ public actor DeliveryPoll {
         await derivation.report(to: landed)
     }
 
-    /// A minute, the cadence the Tickets room already reads on. One tick is one listing plus one
-    /// request per local branch the listing held nothing for, so a checkout with twenty stale
-    /// worktrees costs about 1,300 of the host's hourly 5,000 — which is what stops the number
-    /// being smaller.
+    /// A minute, the cadence the Tickets room already reads on. The host's hourly 5,000 is what
+    /// stops the number being smaller, and a tick costs more than one request per branch: every
+    /// pull request the tick touches costs TWO more, one for its check runs and one for its
+    /// reviews.
+    ///
+    /// Counted rather than reasoned about, against this repository's own checkout — 63 worktree
+    /// branches, 15 of them with a finished pull request and one open (#1588):
+    ///
+    /// | tick | requests | an hour |
+    /// | --- | --- | --- |
+    /// | before | 96 | 5,760 |
+    /// | the first after, still filling the ledger | 64 | — |
+    /// | every one after that | 50 | 3,000 |
+    ///
+    /// Two changes buy the difference: a finished pull request costs no check runs and no reviews,
+    /// and a branch already holding a finished Delivery is answered from the ledger rather than
+    /// asked about again. Both are bounded by what the host says is terminal, so neither can leave
+    /// a branch on an answer that could still have moved.
+    ///
+    /// The Tickets poll spends a measured 30 a tick on the same grant, so the pair now cost 4,800
+    /// against the host's 5,000 — clearing it, and not clearing it comfortably. The levers left are
+    /// conditional requests and a listing that covers more than what is open, both out of scope
+    /// here.
     public static let interval = Duration.seconds(60)
 
     /// Point at whatever a Project reads its code host through, or stop. What each resolution

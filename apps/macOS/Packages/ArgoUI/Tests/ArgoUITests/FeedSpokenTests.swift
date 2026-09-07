@@ -70,18 +70,19 @@ struct FeedSpokenTests {
     /// The folded line draws `Searched 1 · Read 5` and never the verb those counts stand for.
     @Test
     func `a folded run of looking says what the counts are counts of`() throws {
-        let rows = FeedProjection.rows(from: (0 ..< 3).flatMap { position -> [TranscriptEvent] in
-            let id = "read-\(position)"
-            return [
-                .toolCall(FeedFixture.call(
-                    id,
-                    tool: "Read",
-                    kind: .read,
-                    naming: "file\(position).swift",
-                )),
-                .toolCallOutcome(TranscriptFixtures.printed(id, "let token = 1")),
-            ]
-        })
+        let rows = FeedProjection
+            .rows(.justTheStream((0 ..< 3).flatMap { position -> [TranscriptEvent] in
+                let id = "read-\(position)"
+                return [
+                    .toolCall(FeedFixture.call(
+                        id,
+                        tool: "Read",
+                        kind: .read,
+                        naming: "file\(position).swift",
+                    )),
+                    .toolCallOutcome(TranscriptFixtures.printed(id, "let token = 1")),
+                ]
+            }))
         let survey = try #require(FeedFixture.surveys(in: rows).first)
 
         #expect(survey.spoken == "Looked at Read 3 Files")

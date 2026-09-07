@@ -49,35 +49,113 @@ public actor DeliveryDerivation {
     /// One derivation. Public because a Delivery strip's Refresh is the same act as a tick, and two
     /// paths to it would be two chances to record health differently.
     ///
-    /// A failed read leaves the previous derivation where it was, old and still accurately DERIVED.
-    /// The landing is raised on that path too: the strip did not move, but the health behind the
-    /// provider's own dot did.
+    /// A failed LISTING leaves the previous derivation where it was, old and still accurately
+    /// DERIVED. The landing is raised on that path too: the strip did not move, but the health
+    /// behind the provider's own dot did.
+    ///
+    /// A refusal PART WAY through the fan-out records what the read did establish and reports the
+    /// refusal beside it. The whole assembly used to go, and with it the listing that already held
+    /// the row's own pull request (#1546).
     public func derive(_ target: PortReadTarget, locally: Locally) async {
         do {
-            let assembled = try await assembled(target, locally: locally)
-            await deliveries.record(assembled, for: target.projectID)
-            await health.succeeded(target.projectBinding, in: target.projectID, at: now())
+            let union = try await union(target, locally: locally)
+            await deliveries.record(union.deliveries, for: target.projectID)
+            if let refusal = union.refusal {
+                await health.record(refusal, of: target)
+            } else {
+                await health.succeeded(target.projectBinding, in: target.projectID, at: now())
+            }
         } catch {
-            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
+            await health.record(.refusal(error), of: target)
         }
         await landed()
     }
 
+    /// One derivation's answer: the Deliveries it established, and the refusal that cut it short
+    /// where one did. Both, rather than one or the other, because a refusal half way through the
+    /// fan-out leaves a set that is honest as far as it goes and a host that is not healthy.
+    private struct Assembled {
+        var deliveries: [Delivery] = []
+        var refusal: ProviderFetchError?
+
+        /// The same answer with every Delivery's Ticket joined, `asserted` being the human's own
+        /// link. Taken at the end so a carried Delivery is linked by the assertions of THIS read.
+        func linked(by assertions: DeliveryAssertions, in projectID: String) -> Assembled {
+            Assembled(
+                deliveries: deliveries.map {
+                    $0.linking(to: assertions.number(ofBranch: $0.branch, in: projectID))
+                },
+                refusal: refusal,
+            )
+        }
+    }
+
     /// The union: every Delivery the host has in flight, then every local branch that listing held
     /// nothing for, asked about by name.
-    private func assembled(
+    ///
+    /// The fan-out stops at its first refusal. A host that refused one branch is refusing this
+    /// read, not that branch — the answer is a rate limit or an outage, and the requests after it
+    /// would buy nothing but more of the limit that caused it.
+    ///
+    /// It also skips every branch whose Delivery is already settled, which is what stops the
+    /// fan-out
+    /// growing without bound as a checkout collects worktrees (#1588).
+    private func union(
         _ target: PortReadTarget, locally: Locally,
     ) async throws
-        -> [Delivery] {
+        -> Assembled {
         let hosted = try await port.inFlight(in: target.scope, grant: target.binding.grant)
-        var assembled = hosted
+        var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
+        // Read once, not per branch: this is the loop whose cost the ticket is about.
+        let settled = await settled(of: target)
         for branch in Self.branches(of: locally.workspaces) where !inFlight.contains(branch) {
-            try await assembled.append(named(branch, of: target))
+            if let already = settled[branch] {
+                union.deliveries.append(already)
+                continue
+            }
+            do {
+                try await union.deliveries.append(named(branch, of: target))
+            } catch {
+                union.refusal = .refusal(error)
+                let carried = await carried(past: union.deliveries, of: target)
+                union.deliveries.append(contentsOf: carried)
+                break
+            }
         }
-        return assembled.map {
-            $0.linking(to: locally.assertions.number(ofBranch: $0.branch, in: target.projectID))
-        }
+        return union.linked(by: locally.assertions, in: target.projectID)
+    }
+
+    /// What the ledger already holds for every branch whose pull request the host has finished
+    /// with, keyed by branch — merged, or closed without merging, which is a Delivery's terminal
+    /// state (`DeliveryPullRequest.isFinished`).
+    ///
+    /// Asking about one of these again buys an answer that cannot have moved, and on this
+    /// repository's own checkout that was 15 of the 63 branches in a tick, costing three requests
+    /// each (#1588). Reopening one, or opening a second pull request on the same branch, arrives
+    /// through the in-flight listing above — which runs first and takes the branch out of the
+    /// fan-out entirely, so nothing here can strand a branch on a stale terminal answer.
+    private func settled(of target: PortReadTarget) async -> [String: Delivery] {
+        await deliveries.deliveries(of: target.projectID)
+            .filter { $0.pullRequest?.isFinished == true }
+            .reduce(into: [:]) { settled, delivery in settled[delivery.branch] = delivery }
+    }
+
+    /// What the LAST derivation established for the branches this one never reached — old, and
+    /// still accurately DERIVED, which is exactly what a wholly failed read leaves standing.
+    ///
+    /// Carried rather than dropped because the in-flight listing is bounded by what is OPEN: every
+    /// merged Delivery comes from the fan-out, and a refusal at the third branch of fifty-five
+    /// would otherwise empty a strip that was full (`DeliveryLedger`). The refused branch itself is
+    /// carried by the same rule, and is never derived at its commits — that reading is what a host
+    /// ANSWERING nothing means, and a refusal established nothing.
+    private func carried(
+        past established: [Delivery], of target: PortReadTarget,
+    ) async
+        -> [Delivery] {
+        let asked = Set(established.map(\.branch))
+        return await deliveries.deliveries(of: target.projectID)
+            .filter { !asked.contains($0.branch) }
     }
 
     /// One local branch's Delivery. A branch the host has never seen has no pull request and no

@@ -101,7 +101,7 @@ struct AgentsRailEndDelegationTests {
     /// under — asserted through the shipping walk rather than by building a `FeedAgent` by hand.
     @Test
     func `the rail reads the delegating call's id off the record`() throws {
-        let rows = FeedProjection.rows(from: [
+        let rows = FeedProjection.rows(.justTheStream([
             .toolCall(ToolCall(
                 id: Self.call,
                 name: "Agent",
@@ -111,7 +111,7 @@ struct AgentsRailEndDelegationTests {
                 atMs: 1000,
             )),
             .toolCallOutcome(TranscriptFixtures.launched(Self.call, subagent: "a-away")),
-        ])
+        ]))
 
         let chip = try #require(FeedAgents.all(in: rows, of: .running).first)
 

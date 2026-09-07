@@ -57,6 +57,10 @@ public extension CockpitPresentation {
         )
         // After the init and not through it — see the property.
         self.subagents = readings.subagents
+        // Straight off the Hub rather than through the readings: unlike the reader above, nothing
+        // outside this file supplies it, and the app target has never had to know it exists
+        // (#1572).
+        self.subagentGrowth = .reading(hub)
     }
 
     /// The live-session count is the Hub's roster, and the Hub observes ONE Project. Every other
@@ -277,5 +281,13 @@ public extension FeedAgentReader {
         FeedAgentReader(
             asking: hub, read: hub.subagentReading(of:), grewAtMs: hub.subagentGrewAtMs(of:),
         )
+    }
+}
+
+/// The roster's growth reader, assembled from the Hub — here for the reason the reader above is:
+/// this is the one file that may name the Hub (ADR-0005).
+public extension SubagentGrowthReader {
+    static func reading(_ hub: Hub) -> SubagentGrowthReader {
+        SubagentGrowthReader(asking: hub, growth: hub.subagentGrowth)
     }
 }

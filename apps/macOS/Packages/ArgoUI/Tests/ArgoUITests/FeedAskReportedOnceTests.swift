@@ -26,18 +26,21 @@ struct FeedAskReportedOnceTests {
     @Test
     func `one question raised down both channels is put to the reader once`() {
         let live = SessionAsk(id: "ask-1", ask: reported)
-        let asks = FeedFixture.asks(in: FeedProjection.rows(
-            from: [.prompt(text: "/implement 1205", images: [], atMs: nil)],
-            asking: FeedAskProjection.Asking(
-                live: FeedAskProjection.Live(
-                    sessionID: "one",
-                    askID: live.id,
-                    ask: live.ask,
+        let asks = FeedFixture.asks(in: FeedProjection.rows(FeedInput(
+            events: [.prompt(text: "/implement 1205", images: [], atMs: nil)],
+            beside: .just(FeedGateHolds(
+                asking: FeedAskProjection.Asking(
+                    live: FeedAskProjection.Live(
+                        sessionID: "one",
+                        askID: live.id,
+                        ask: live.ask,
+                    ),
+                    isDriveable: true,
                 ),
-                isDriveable: true,
-            ),
-            reported: reported,
-        ))
+                reported: reported,
+                expired: [],
+            )),
+        )))
 
         #expect(asks.count == 1)
         #expect(asks[0].live != nil)
@@ -51,10 +54,14 @@ struct FeedAskReportedOnceTests {
             text: "Which branch should I cut?",
             options: Ask.Option.labelled(["main", "the ticket branch"]),
         ))
-        let asks = FeedFixture.asks(in: FeedProjection.rows(
-            from: [.toolCall(asked)],
-            reported: reported,
-        ))
+        let asks = FeedFixture.asks(in: FeedProjection.rows(FeedInput(
+            events: [.toolCall(asked)],
+            beside: .just(FeedGateHolds(
+                asking: .none,
+                reported: reported,
+                expired: [],
+            )),
+        )))
 
         #expect(asks.count == 1)
     }
@@ -67,10 +74,14 @@ struct FeedAskReportedOnceTests {
             text: "Which branch should I cut?",
             options: Ask.Option.labelled(["main", "the ticket branch"]),
         ))
-        let asks = FeedFixture.asks(in: FeedProjection.rows(
-            from: [.toolCall(asked), .toolCallOutcome(TranscriptFixtures.printed("ask", "main"))],
-            reported: reported,
-        ))
+        let asks = FeedFixture.asks(in: FeedProjection.rows(FeedInput(
+            events: [.toolCall(asked), .toolCallOutcome(TranscriptFixtures.printed("ask", "main"))],
+            beside: .just(FeedGateHolds(
+                asking: .none,
+                reported: reported,
+                expired: [],
+            )),
+        )))
 
         #expect(asks.map(\.isPending) == [false, true])
     }

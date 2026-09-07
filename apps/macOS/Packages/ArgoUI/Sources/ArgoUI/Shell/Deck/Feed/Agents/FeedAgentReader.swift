@@ -151,7 +151,7 @@ public struct FeedAgentReader: Equatable, Sendable {
     /// control that empties the feed.
     @MainActor func rows(of agent: FeedAgent) -> [FeedRow]? {
         guard let id = agent.subagentID, let read = read(id) else { return nil }
-        return FeedProjection.rows(from: read)
+        return FeedProjection.rows(.justTheStream(read))
     }
 
     /// What the deck's one feed draws under a scope: the Subagent's rows, or the Session's.

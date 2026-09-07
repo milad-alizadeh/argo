@@ -56,7 +56,9 @@ struct FeedProse: View {
     /// hit-test. What a reader can still take away whole is the Turn, through its copy chip.
     private var prose: some View {
         FeedMarkdown(text: words, tickets: tickets)
-            .environment(\.proseVoice, ink)
+            // ONE tone for the whole reading, headings included: a thought whose headings
+            // brightened would stop reading as a thought (#1597).
+            .environment(\.proseTone, .one(ink))
     }
 
     private var ink: ArgoColor {
@@ -65,15 +67,6 @@ struct FeedProse: View {
         case .thought: argo.color.text.tertiary
         }
     }
-}
-
-public extension EnvironmentValues {
-    /// The ink the prose of the current block is set in.
-    ///
-    /// Only a marked `code` span reads it, and only to find out whether inheriting would put it
-    /// under the contrast floor on its own ground. `nil` means nobody claimed a voice: a span
-    /// there inherits and the floor never engages.
-    @Entry var proseVoice: ArgoColor?
 }
 
 #Preview("Feed prose — a message and the reasoning behind it") {

@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The window's two prompts, mounted together (#1290, #1247): the one asked BEFORE an archive ends
-/// a live agent, and the one that reports a backlog batch the provider took only part of.
+/// The window's two prompts, mounted together (#1290, #1247): the one asked BEFORE an archive
+/// takes live work off the roster, and the one that reports a backlog batch the provider took only
+/// part of.
 ///
 /// Both belong on the shell rather than in the surface that raises them — an archive comes from
 /// the menu bar as well as the roster row, and a batch report is raised from the backlog and shown

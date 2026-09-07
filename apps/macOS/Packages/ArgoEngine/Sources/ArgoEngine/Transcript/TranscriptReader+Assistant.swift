@@ -86,8 +86,8 @@ extension TranscriptReader {
     }
 
     /// The whole list after this call, whichever way the host writes one — `TodoWrite` hands it
-    /// over entire, and the `Task` tools write an entry at a time into the ledger. Either way what
-    /// leaves here is one whole list, so nothing downstream knows which host it was reading.
+    /// over entire, and the `Task` tools write an entry at a time. Both go through the ledger, so
+    /// what leaves here is one whole list and nothing downstream knows which host it was reading.
     ///
     /// A SIDECHAIN record writes nothing, the same guard `.usage` and the turn end already carry:
     /// the Plan is Session-scoped (ADR-0020), and a delegate's own to-do list folded into its
@@ -95,7 +95,6 @@ extension TranscriptReader {
     /// incremental list is never replaced whole by the next write.
     private func planWritten(by use: ToolUseBlock, in message: MessageRecord) -> Plan? {
         guard attributes(message) else { return nil }
-        guard use.name != planTool else { return plan(from: use.input) }
         return planLedger.written(by: use)
     }
 }

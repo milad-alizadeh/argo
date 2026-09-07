@@ -63,6 +63,9 @@ public struct CockpitPresentation: Equatable, Sendable {
     /// its own, and a private setter in Swift is file-scoped. Read-only outside the package, which
     /// is what every `let` beside it means here.
     public internal(set) var subagents = FeedAgentReader.unread
+    /// Where every Subagent's growth stamp is asked for at once — see `SubagentGrowthReader`. The
+    /// roster's shape of the reader above, set the same way and for the same reason (#1572).
+    public internal(set) var subagentGrowth = SubagentGrowthReader.unwatched
 
     public var activeProject: Project? {
         projects.first { $0.id == activeProjectID }

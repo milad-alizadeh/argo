@@ -67,7 +67,12 @@ extension SessionRosterProjection {
         -> Listing {
         let kept = sessions.filter { $0.isArchived == isArchived }
         let folding = Folding(
-            of: kept, in: Pass(isArchived: isArchived, opened: [], selection: nil),
+            of: kept,
+            // Nothing here draws a Subagent dot: this pass exists to settle TITLES, and the
+            // fold shapes it takes are the only part of a Row it reads.
+            in: Pass(
+                isArchived: isArchived, opened: [], selection: nil, growth: .unwatched,
+            ),
         )
         let byID = Dictionary(kept.map { ($0.id, $0) }) { first, _ in first }
         // Keyed off the run that OPENS each fold, so a fold's runs are gathered once rather than

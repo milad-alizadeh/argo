@@ -21,6 +21,7 @@ public final class DeliveryReadings {
 
     @ObservationIgnored private let ledger = DeliveryLedger()
     @ObservationIgnored private let derivation: DeliveryDerivation
+    @ObservationIgnored private let watch: (any CodeHostWatch)?
     @ObservationIgnored private let sleep: PortPollLoop.Sleeper
     @ObservationIgnored private var projectID: String?
     /// How many reads have been raised, so the newest one is the only one that publishes.
@@ -31,16 +32,33 @@ public final class DeliveryReadings {
         locally: { [weak self] in await self?.locally() ?? .init(workspaces: []) },
         sleep: sleep,
     )
+    /// The fast path, where the code host offers one. Lazy for the poll's reason, and absent rather
+    /// than idle where no watch was given: a build with no socket runs exactly the poll it always
+    /// did.
+    @ObservationIgnored private lazy var socket = watch.map { watch in
+        DeliverySocket(
+            watch: watch,
+            // The poll's own derivation, so a fact the socket heard about is recorded exactly as a
+            // polled one is — health and landing included.
+            derive: { [weak self] target in await self?.poll.derive(target) },
+            sleep: sleep,
+        )
+    }
 
     /// `health` is the ledger the connection chip already reads, so a failed derivation reports
-    /// itself where every other port's failure does. `port` and `sleep` are the two seams a suite
-    /// replaces; the app takes both defaults.
+    /// itself where every other port's failure does. `port`, `watch` and `sleep` are the seams a
+    /// suite replaces; the app takes all three defaults.
+    ///
+    /// A `nil` watch is the socket switched off, which is the shape every claim about the poll is
+    /// measured against — with one, the poll is unchanged and the socket only derives sooner.
     public init(
         health: ConnectionHealthLedger,
         port: CodeHostPort = GitHubDeliveries(),
+        watch: (any CodeHostWatch)? = GitHubDeliveryWatch(),
         sleep: @escaping PortPollLoop.Sleeper = { try await Task.sleep(for: $0) },
     ) {
         self.derivation = DeliveryDerivation(port: port, health: health, deliveries: ledger)
+        self.watch = watch
         self.sleep = sleep
     }
 
@@ -50,6 +68,7 @@ public final class DeliveryReadings {
         self.projectID = projectID
         await poll.report(to: { [weak self] in await self?.read() })
         await poll.point(resolution, at: projectID)
+        await socket?.point(resolution, at: projectID)
     }
 
     /// The local half of one derivation, asked for at the moment of the tick. No assertion is

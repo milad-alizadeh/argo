@@ -15,7 +15,7 @@ struct DelegationWalkTests {
     func `the stream and the feed's rows read the same Subagents`(of liveness: DelegatingSession) {
         let events = Self.record
 
-        let viaRows = FeedAgents.all(in: FeedProjection.rows(from: events), of: liveness)
+        let viaRows = FeedAgents.all(in: FeedProjection.rows(.justTheStream(events)), of: liveness)
         let viaStream = FeedAgents.all(in: events, of: liveness, within: Self.path)
 
         #expect(!viaRows.isEmpty)

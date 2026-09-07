@@ -38,6 +38,14 @@ public extension ProviderFetchError {
         }
     }
 
+    /// The same, for a throw that may ALREADY be in this vocabulary — which is every `catch` over a
+    /// port, whose adapters throw these and whose own failures throw everything else. `reading`
+    /// alone would flatten a port's own `rateLimited` to `unreachable`, and the cause words are the
+    /// half of the health reading a reader acts on.
+    static func refusal(_ error: Error) -> ProviderFetchError {
+        error as? ProviderFetchError ?? reading(error)
+    }
+
     /// The `URLError` codes that mean this Mac has no network.
     private static var offlineCodes: Set<URLError.Code> {
         [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed]

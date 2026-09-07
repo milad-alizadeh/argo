@@ -26,7 +26,10 @@ struct FeedSubmittedTurnTests {
     /// The whole of the report: a Turn is sent and the feed is not empty.
     @Test
     func `a Turn Argo typed is drawn before any record carries it`() {
-        let rows = FeedProjection.rows(from: [], submitted: Self.typed)
+        let rows = FeedProjection.rows(FeedInput(
+            events: [],
+            beside: .just(FeedTurnDriven(working: false, submitted: Self.typed)),
+        ))
 
         #expect(rows.map(\.content) == [.submitted(text: Self.typed)])
     }
@@ -35,7 +38,10 @@ struct FeedSubmittedTurnTests {
     /// own sentence, and a summary of it would not settle the question they are asking.
     @Test
     func `the drawn Turn carries the words verbatim`() {
-        let rows = FeedProjection.rows(from: [], submitted: Self.typed)
+        let rows = FeedProjection.rows(FeedInput(
+            events: [],
+            beside: .just(FeedTurnDriven(working: false, submitted: Self.typed)),
+        ))
 
         #expect(rows.first?.kind.words == Self.typed)
     }
@@ -45,15 +51,14 @@ struct FeedSubmittedTurnTests {
     /// the swap happens.
     @Test
     func `the drawn Turn stands under the work and above the working row`() throws {
-        let rows = FeedProjection.rows(
-            from: [
+        let rows = FeedProjection.rows(FeedInput(
+            events: [
                 .prompt(text: "First prompt", images: [], atMs: 1000),
                 .message(markdown: "Done."),
                 .turnEnded(.endTurn),
             ],
-            working: true,
-            submitted: Self.typed,
-        )
+            beside: .just(FeedTurnDriven(working: true, submitted: Self.typed)),
+        ))
 
         let kinds = rows.map(\.content)
         let drawn = try #require(kinds.firstIndex(of: .submitted(text: Self.typed)))
@@ -85,7 +90,7 @@ struct FeedSubmittedTurnTests {
     /// existing reading in the suite still has.
     @Test
     func `a Session with no submitted Turn draws no drawn row`() {
-        let rows = FeedProjection.rows(from: [.message(markdown: "Done.")])
+        let rows = FeedProjection.rows(.justTheStream([.message(markdown: "Done.")]))
 
         #expect(!rows.contains { $0.content.isSubmitted })
     }

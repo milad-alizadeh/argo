@@ -9,7 +9,7 @@ import Testing
 struct FeedSurveyTests {
     @Test
     func `a run of reads and searches folds into one line of counts`() throws {
-        let rows = FeedProjection.rows(from: looking(at: ["a.swift", "b.swift", "c.swift"]))
+        let rows = FeedFixture.rows(of: looking(at: ["a.swift", "b.swift", "c.swift"]))
         let survey = try #require(FeedFixture.surveys(in: rows).first)
 
         #expect(rows.count == 1)
@@ -35,7 +35,7 @@ struct FeedSurveyTests {
             ]
             + looking(at: ["c.swift", "d.swift"])
 
-        let rows = FeedProjection.rows(from: interrupted)
+        let rows = FeedFixture.rows(of: interrupted)
 
         #expect(rows.count == 3)
         #expect(FeedFixture.surveys(in: rows).map(\.label) == [
@@ -51,7 +51,7 @@ struct FeedSurveyTests {
             + [.message(markdown: "Found it.")]
             + looking(at: ["c.swift", "d.swift"])
 
-        #expect(FeedProjection.rows(from: interrupted).count == 3)
+        #expect(FeedFixture.rows(of: interrupted).count == 3)
     }
 
     /// A failed read is not quiet: a fold would bury it inside a count that says everything went
@@ -65,7 +65,7 @@ struct FeedSurveyTests {
             .toolCall(FeedFixture.call("b", tool: "Read", kind: .read, naming: "b.swift")),
         ]
 
-        let rows = FeedProjection.rows(from: broken)
+        let rows = FeedFixture.rows(of: broken)
 
         #expect(rows.count == 3)
         #expect(FeedFixture.surveys(in: rows).isEmpty)
@@ -79,7 +79,7 @@ struct FeedSurveyTests {
             + FeedFixture.looked(at: "render.png", FeedFixture.shot(.direct))
             + looking(at: ["c.swift", "d.swift"])
 
-        let rows = FeedProjection.rows(from: interrupted)
+        let rows = FeedFixture.rows(of: interrupted)
 
         #expect(rows.count == 3)
         #expect(FeedFixture.surveys(in: rows).map(\.label) == [
@@ -95,7 +95,7 @@ struct FeedSurveyTests {
             + FeedFixture.looked(at: "render.png", FeedFixture.shot(.direct))
             + looking(at: ["b.swift"])
 
-        let rows = FeedProjection.rows(from: interrupted)
+        let rows = FeedFixture.rows(of: interrupted)
         let gallery = try #require(FeedFixture.galleries(in: rows).first)
 
         #expect(gallery.shots.map(\.name) == ["render.png"])
@@ -110,7 +110,7 @@ struct FeedSurveyTests {
         ]
         let call = try #require(FeedFixture.calls(in: alone).first)
 
-        #expect(FeedFixture.surveys(in: FeedProjection.rows(from: alone)).isEmpty)
+        #expect(FeedFixture.surveys(in: FeedFixture.rows(of: alone)).isEmpty)
         #expect(call.subject.captioned == "Token.swift")
     }
 
@@ -127,7 +127,8 @@ struct FeedSurveyTests {
             ))
         } + [.toolCall(FeedFixture.call("other", tool: "Read", kind: .read, naming: "b.swift"))]
 
-        let survey = try #require(FeedFixture.surveys(in: FeedProjection.rows(from: repeated))
+        let survey = try #require(FeedFixture
+            .surveys(in: FeedFixture.rows(of: repeated))
             .first)
 
         #expect(survey.label == "Read 4 Files")
@@ -138,7 +139,7 @@ struct FeedSurveyTests {
     @Test
     func `the fold keeps every result, each addressed by the call that produced it`() throws {
         let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: looking(at: ["a.swift", "b.swift"])))
+            FeedFixture.surveys(in: FeedFixture.rows(of: looking(at: ["a.swift", "b.swift"])))
                 .first,
         )
 
@@ -151,7 +152,7 @@ struct FeedSurveyTests {
     @Test
     func `each step of a folded run carries its own language`() throws {
         let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: looking(at: ["a.swift", "b.md"])))
+            FeedFixture.surveys(in: FeedFixture.rows(of: looking(at: ["a.swift", "b.md"])))
                 .first,
         )
 
@@ -164,9 +165,7 @@ struct FeedSurveyTests {
         let unanswered: [TranscriptEvent] = ["a.swift", "b.swift"].enumerated().map { at, path in
             .toolCall(FeedFixture.call("read-\(at)", tool: "Read", kind: .read, naming: path))
         }
-        let survey = try #require(
-            FeedFixture.surveys(in: FeedProjection.rows(from: unanswered)).first,
-        )
+        let survey = try #require(FeedFixture.surveys(in: FeedFixture.rows(of: unanswered)).first)
 
         #expect(survey.disclosure == .none)
     }

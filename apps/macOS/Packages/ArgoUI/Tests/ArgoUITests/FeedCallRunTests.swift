@@ -19,7 +19,7 @@ struct FeedCallRunTests {
 
     @Test
     func `the feed collapses the run to one row and keeps every other row it had`() {
-        let rows = FeedProjection.rows(from: edits(3, to: "Feed.swift"))
+        let rows = FeedProjection.rows(.justTheStream(edits(3, to: "Feed.swift")))
 
         #expect(rows.count == 1)
         #expect(rows.map(\.id) == [0])

@@ -12,7 +12,7 @@ struct FeedPastedGalleryTests {
     /// and a column of thumbnails where the reader wanted one grid (#1252).
     @Test
     func `pasted pictures that arrive one after another become one gallery`() throws {
-        let rows = FeedProjection.rows(from: Self.pasted(6))
+        let rows = FeedProjection.rows(.justTheStream(Self.pasted(6)))
         let gallery = try #require(FeedFixture.galleries(in: rows).first)
 
         #expect(rows.count == 1)
@@ -30,7 +30,7 @@ struct FeedPastedGalleryTests {
             atMs: nil,
         )] + Self.pasted(2)
 
-        let rows = FeedProjection.rows(from: asked)
+        let rows = FeedProjection.rows(.justTheStream(asked))
 
         #expect(rows.count == 3)
         #expect(rows[1].kind.words == "the header sits too low")
@@ -41,9 +41,8 @@ struct FeedPastedGalleryTests {
     /// what keeps the Turn boundary where the prompt that opened it stood.
     @Test
     func `a produced run and a pasted run stay two galleries`() {
-        let rows = FeedProjection.rows(
-            from: FeedFixture.looked(at: ["shown.png"]) + Self.pasted(2),
-        )
+        let rows = FeedProjection
+            .rows(.justTheStream(FeedFixture.looked(at: ["shown.png"]) + Self.pasted(2)))
 
         let galleries = FeedFixture.galleries(in: rows)
         #expect(galleries.map(\.origin) == [.produced, .pasted])
@@ -55,7 +54,7 @@ struct FeedPastedGalleryTests {
     /// minimap's prompt band and the composer's echo.
     @Test
     func `a gallery of pasted pictures is still the prompt that opened the Turn`() throws {
-        let row = try #require(FeedProjection.rows(from: Self.pasted(2)).first)
+        let row = try #require(FeedProjection.rows(.justTheStream(Self.pasted(2))).first)
 
         #expect(row.kind.isPrompt)
         #expect(row.kind.isProse)
@@ -68,7 +67,7 @@ struct FeedPastedGalleryTests {
     @Test
     func `every folded shot keeps its own address`() throws {
         let gallery = try #require(
-            FeedFixture.galleries(in: FeedProjection.rows(from: Self.pasted(2))).first,
+            FeedFixture.galleries(in: FeedProjection.rows(.justTheStream(Self.pasted(2)))).first,
         )
 
         #expect(gallery.shots.map(\.address) == [FeedShot.pastedCaption, FeedShot.pastedCaption])
@@ -80,9 +79,9 @@ struct FeedPastedGalleryTests {
     /// for, stacked again.
     @Test(arguments: [" ", "\n", "  \n "])
     func `whitespace the token left behind is not words`(leftover: String) {
-        let rows = FeedProjection.rows(from: (0 ..< 3).map { _ in
+        let rows = FeedProjection.rows(.justTheStream((0 ..< 3).map { _ in
             .prompt(text: leftover, images: [FeedFixture.pasted()], atMs: nil)
-        })
+        }))
 
         #expect(FeedFixture.galleries(in: rows).map(\.shots.count) == [3])
     }
@@ -91,7 +90,7 @@ struct FeedPastedGalleryTests {
     /// pictures would take a row out of the reading and put an empty grid in its place.
     @Test
     func `a prompt holding neither words nor pictures keeps its own row`() {
-        let rows = FeedProjection.rows(from: [.prompt(text: "", images: [], atMs: nil)])
+        let rows = FeedProjection.rows(.justTheStream([.prompt(text: "", images: [], atMs: nil)]))
 
         #expect(FeedFixture.galleries(in: rows).isEmpty)
         #expect(rows.count == 1)

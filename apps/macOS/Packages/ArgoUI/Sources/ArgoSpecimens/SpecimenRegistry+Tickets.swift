@@ -168,6 +168,12 @@ extension SpecimenRegistry {
         SpecimenEntry("deepTicket") {
             TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 607))
         },
+        // Every block a tracker's body can hold, in one pane: two levels of heading, prose, a
+        // list, a table and a code span (#1597). The state the ink per block kind is judged in —
+        // a heading reads as one only against the block under it.
+        SpecimenEntry("ticketBodyBlocks") {
+            TicketDetailSpecimen(reading: TicketsFixture.reading(showing: 388))
+        },
         // `deep.png` is a WHOLE-room shot, so the pane above is not the whole of it: this opens
         // the room on the same parent.
         SpecimenEntry("deepTicketsRoom") {

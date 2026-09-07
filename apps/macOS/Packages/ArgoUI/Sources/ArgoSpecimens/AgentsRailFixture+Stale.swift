@@ -14,7 +14,10 @@ extension AgentsRailFixture {
     ///
     /// The one live handover among them is what keeps the render honest about the fix's shape: the
     /// ceiling takes the stale chips away and leaves the working one exactly where it was.
-    static let staleRows = FeedProjection.rows(from: stale, working: true)
+    static let staleRows = FeedProjection.rows(FeedInput(
+        events: stale,
+        beside: .just(FeedTurnDriven.inFlight),
+    ))
 
     private static let stale: [TranscriptEvent] = [
         .prompt(

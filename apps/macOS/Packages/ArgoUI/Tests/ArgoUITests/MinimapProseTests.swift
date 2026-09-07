@@ -37,7 +37,9 @@ struct MinimapProseTests {
     func `a heading keeps its own face and a paragraph the body's`() {
         let blocks = Self.blocks(of: "## What I found\n\nThe ramp had drifted.")
         #expect(blocks == [
-            .prose(MinimapProseWords(text: "What I found", face: .heading(level: 2))),
+            .prose(MinimapProseWords(
+                text: "What I found", face: .heading(level: 2), kind: .heading,
+            )),
             .prose(MinimapProseWords(text: "The ramp had drifted.")),
         ])
     }
@@ -47,7 +49,9 @@ struct MinimapProseTests {
         let hashes = String(repeating: "#", count: level)
         let blocks = Self.blocks(of: "\(hashes) Title")
         #expect(blocks == [
-            .prose(MinimapProseWords(text: "Title", face: .heading(level: level))),
+            .prose(MinimapProseWords(
+                text: "Title", face: .heading(level: level), kind: .heading,
+            )),
         ])
         #expect(ProseFace.heading(level: level).isBold)
     }

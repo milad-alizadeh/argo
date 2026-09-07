@@ -9,6 +9,10 @@ import SwiftUI
 ///
 /// The state this replaces is the measured one: 180 rows of near-identical titles, with the four
 /// drivable Sessions somewhere below the fold of the window.
+///
+/// It is also the evidence for what that one row SAYS (#1567). Three of the 180 failed, so the
+/// caption carries `· 3 failed`; and every run carries one derived summary, so the opened fold is
+/// where the clock that tells them apart has to be legible.
 struct FoldedRosterSpecimen: View {
     /// Opens the fold for the render harness, out-ranking the state so it cannot be shut under it
     /// — as `SessionNavigator.isArchiveRevealed` does, and for the same reason.
@@ -63,24 +67,34 @@ struct FoldedRosterSpecimen: View {
         )
     }
 
-    /// One `claude -p` run of the caption loop. The prompts differ after the first few words,
-    /// which is exactly why #1072's title pass could not tell them apart.
+    /// Which of the loop's runs failed. Three of 180, which is what a batch's failure rate
+    /// actually looks like — and the fact the fold exists to keep reachable (#1567), so the
+    /// caption's `· 3 failed` and the three dots under an opened fold are the same claim.
+    private static let failed: Set<Int> = [7, 96, 141]
+
+    /// One `claude -p` run of the caption loop. Every one of them carries the SAME title,
+    /// because the loop shells out once per folder with one prompt template and the CLI derives
+    /// one summary from it — the measured case #1567 was written on. What tells them apart on the
+    /// row is the clock each one opened at.
     private static func run(at index: Int) -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: "run-\(index)",
-            title: "Write a caption for the prototype in folder \(index)",
+            title: "You are naming one area of an unfamiliar codebase on",
             access: .external,
-            status: .idle,
+            status: failed.contains(index) ? .stopped : .idle,
             chain: .init(
                 program: .init(entry: .headless),
-                span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(34 + index)),
+                span: .init(
+                    startedAtMs: CockpitPresentation.minutesAgo(35 + index),
+                    lastSeenAtMs: CockpitPresentation.minutesAgo(34 + index),
+                ),
             ),
             work: .init(location: loop, workspace: .init(kind: .main, branch: "main")),
         )
     }
 }
 
-#Preview("Folded roster — 180 runs on one row") {
+#Preview("Folded roster — 180 Sessions on one row") {
     FoldedRosterSpecimen()
         .frame(height: 420)
         .argoAppearance()

@@ -24,7 +24,7 @@ struct FeedAgentsAsyncTests {
     )
 
     private func rows(_ events: [TranscriptEvent]) -> [FeedRow] {
-        FeedProjection.rows(from: events)
+        FeedProjection.rows(.justTheStream(events))
     }
 
     private var rows: [FeedRow] {

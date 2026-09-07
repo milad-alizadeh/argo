@@ -13,7 +13,7 @@ import SwiftUI
 /// already answered.
 package struct FeedMarkdown: View {
     @Environment(\.argo) private var argo
-    @Environment(\.proseVoice) private var voice
+    @Environment(\.proseTone) private var tone
     @Environment(\.openURL) private var open
     @Environment(\.argoOpenTicket) private var openTicket
 
@@ -49,37 +49,18 @@ package struct FeedMarkdown: View {
     /// handed a proposal, and the words wrap across whatever it is given.
     private var showing: (CGFloat) -> ProseShowing {
         { measure in
-            ProseShowing(
-                text: text, measure: measure, ink: ink, marker: argo.color.text.tertiary,
-            )
+            ProseShowing(text: text, measure: measure, ink: ink)
         }
     }
 
-    /// The ink the row is set in. `proseVoice` is the block's own claim; the rest is the
-    /// contract's.
+    /// The ink the row is set in, one voice per kind of block. The tone is the block's own
+    /// claim — which rung its prose takes and which its headings do — and the rest is the
+    /// contract's (`ProseTone.inked(_:)`).
+    ///
+    /// A caller that claims nothing is voiced as a message is: one tone, at the loudest rung. A
+    /// heading there is drawn no louder, because there is nothing louder to draw it in.
     private var ink: ProseInk {
-        let body = voice ?? argo.color.text.primary
-        return ProseInk(
-            body: body,
-            link: argo.color.interaction.accent,
-            span: span(under: body),
-            marked: ProseMarkedInk(
-                ground: argo.color.surface.marked,
-                inset: CGSize(
-                    width: ArgoFeedRow.markedSpanInsetX,
-                    height: ArgoFeedRow.markedSpanInsetY,
-                ),
-                radius: ArgoRadius.marker,
-            ),
-        )
-    }
-
-    /// What a `code` span is inked in: nothing at all, unless the voice around it would fall under
-    /// the contrast floor once the span's ground lifts the backdrop out from under it. The choice
-    /// itself is the palette's — see `TextRoles.marked(on:)`.
-    private func span(under voice: ArgoColor) -> ArgoColor? {
-        let floored = argo.color.text.marked(on: voice)
-        return floored == voice ? nil : floored
+        (tone ?? .one(argo.color.text.ink(.title))).inked(argo.color)
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

@@ -55,6 +55,53 @@ struct TranscriptReadCostTests {
         #expect(excerpt.bytesRead <= TranscriptExcerpt.sideByteLimit * 2)
     }
 
+    /// The Plan's own bound, and it is a different shape from the one above (#1594). A list written
+    /// one entry at a time cannot be found in either end of a file, so the scan that rebuilds it
+    /// LOOKS at every chunk — and then parses only the lines a marker matched. So what is gated is
+    /// the bytes it keeps, not the bytes it walks past: over the week ADR-0008 was re-measured
+    /// against — 165 transcripts, 223.5 MB — it parses 3.9 MB against the 19.1 MB the two ends do.
+    ///
+    /// A fraction rather than a constant, because the figure that must not creep is the RATIO: a
+    /// marker widened until it matches ordinary prose turns this scan back into the whole read it
+    /// exists to avoid, and a byte ceiling large enough for a big transcript would not notice.
+    @Test
+    func `a plan scan parses the plan records and walks past the rest`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let url = try fixture.write(
+            FixtureTranscript(cwd: fixture.path("checkout"), fillerRecords: 4000),
+            planSteps: 12,
+        )
+        let onDisk = try #require(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
+
+        let scan = await TranscriptPlanScan.scanning(url)
+
+        #expect(scan.plan?.entries.count == 12)
+        // One pass and never two: the bytes asked of the file system are the file's own length.
+        #expect(scan.bytesScanned == onDisk)
+        #expect(scan.bytesKept < onDisk / 100)
+    }
+
+    /// And the scan opens nothing whole: a Session's file is still drained on the click that
+    /// selects it and never before, so every count above is unmoved by the Plan arriving.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `reading the Plan at launch opens no transcript whole`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
+        try fixture.write(
+            FixtureTranscript(cwd: projectURL.path, fillerRecords: Self.longEnough),
+            planSteps: 12,
+        )
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))
+        await hubSettle { hub.sessions.count == 1 }
+
+        #expect(hub.watch.reads == TranscriptWatchReads(whole: 0, excerpt: 1))
+        await hub.disconnect()
+    }
+
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `selecting a Session opens its file once, however often it is clicked`() async throws {

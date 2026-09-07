@@ -57,7 +57,10 @@ struct UnclosedDelegationSpecimen: View {
         + delegation(calls.spec, brief: "Spec axis review", minutesAgo: 50)
         + delegation(calls.standards, brief: "Standards axis review", minutesAgo: 48)
 
-    private static let rows = FeedProjection.rows(from: handedOver, working: true)
+    private static let rows = FeedProjection.rows(FeedInput(
+        events: handedOver,
+        beside: .just(FeedTurnDriven.inFlight),
+    ))
 
     /// The Session as the cockpit reads it: `running`, because the record's Turn is open and
     /// nothing has closed it — which is exactly the reading the reader was stuck behind.

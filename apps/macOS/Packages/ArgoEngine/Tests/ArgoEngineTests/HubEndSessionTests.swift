@@ -50,8 +50,9 @@ struct HubEndSessionTests {
         #expect(fixture.hub.ownership.provenance(sessionID: claim.value) == .orphaned)
     }
 
-    /// A Session no claim of this Hub names is external: Argo has no channel to it, so there is no
-    /// process here to end.
+    /// A Session no claim of this Hub names is external: Argo has no channel to it, whatever its
+    /// agent is doing. Ending must touch nothing rather than reach for the nearest process (#1596)
+    /// — a folder match is many-to-one, and the wrong agent killed is not a recoverable mistake.
     @Test
     func `ending an external Session touches nothing`() async throws {
         let fixture = try SpawnFixture()

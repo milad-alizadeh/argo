@@ -22,4 +22,12 @@ public extension Hub {
     func subagentGrewAtMs(of agentID: String) -> Int? {
         subagents.lastGrewAtMs(of: agentID)
     }
+
+    /// The same evidence for EVERY Subagent Argo is tailing, in one table (#1572).
+    ///
+    /// A call, like the two above, and with the same consequence: a surface that asks is woken
+    /// whenever a fan-out writes (#858).
+    func subagentGrowth() -> [String: Int] {
+        subagents.growth()
+    }
 }

@@ -45,7 +45,7 @@ struct SettledSessionFigureRecording {
     @Test
     func `the real Session's own settle pass`() async throws {
         let lines = try SettledSessionReading.lines(of: SettledSessionFixture.real)
-        let rows = await FeedProjection.rows(from: TranscriptReader().read(lines: lines))
+        let rows = await FeedProjection.rows(.justTheStream(TranscriptReader().read(lines: lines)))
         let stamp = await FeedMeasureStamp(
             of: FeedTableFixture.model(showing: rows), atWidth: ArgoFeedRow.column,
         )

@@ -17,10 +17,11 @@ struct FeedAskStandingTests {
     /// answer (#712).
     @Test
     func `a question no row in the reading draws is still put to the reader`() throws {
-        let rows = FeedProjection.rows(
-            from: [.prompt(text: "/implement 1182", images: [], atMs: nil)],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.prompt(text: "/implement 1182", images: [], atMs: nil)],
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(ask.isWaiting)
@@ -32,10 +33,11 @@ struct FeedAskStandingTests {
     /// would put the same question to the reader twice.
     @Test
     func `a question the reading already draws is not put a second time`() {
-        let rows = FeedProjection.rows(
-            from: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
 
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [true])
     }
@@ -47,13 +49,14 @@ struct FeedAskStandingTests {
     /// The case a match on the WORDS would swallow, taking the whole of #1190 with it.
     @Test
     func `a settled row of the same question does not claim the live one`() {
-        let rows = FeedProjection.rows(
-            from: [
+        let rows = FeedProjection.rows(FeedInput(
+            events: [
                 .toolCall(FeedFixture.asking(FeedFixture.askedQuestion)),
                 .toolCallOutcome(TranscriptFixtures.printed("ask", "#712")),
             ],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
 
         #expect(FeedFixture.asks(in: rows).map(\.isPending) == [false, true])
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [false, true])

@@ -9,7 +9,7 @@ import Testing
 @Suite("Feed agents")
 struct FeedAgentsTests {
     private func agents(in events: [TranscriptEvent]) -> [FeedAgent] {
-        FeedAgents.all(in: FeedProjection.rows(from: events), of: .running)
+        FeedAgents.all(in: FeedProjection.rows(.justTheStream(events)), of: .running)
     }
 
     /// The parent writes the call when it hands the work over and the result when it comes back, so

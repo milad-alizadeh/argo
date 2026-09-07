@@ -76,7 +76,7 @@ struct FeedWorkingTests {
     /// the reading a spawn has written stays exactly as empty as it is.
     @Test
     func `a Session still starting writes no row at all`() {
-        #expect(FeedProjection.rows(from: []).isEmpty)
+        #expect(FeedProjection.rows(.justTheStream([])).isEmpty)
         #expect(FeedWait.showing(in: []) == nil)
     }
 
@@ -105,7 +105,7 @@ struct FeedWorkingTests {
     /// than as a footnote about it.
     @Test
     func `the row sits under the work the record holds`() {
-        let rows = FeedProjection.rows(from: Self.transcript, working: true)
+        let rows = Self.working(Self.transcript)
 
         #expect(rows.last?.content == .mark(.working))
         #expect(rows.dropLast().last?.content == .message("Running that now."))
@@ -114,7 +114,7 @@ struct FeedWorkingTests {
     /// The commonest case by far, and the one a slot at the foot of every reading would break.
     @Test
     func `a Session that is doing nothing reads exactly as it did before`() {
-        let rows = FeedProjection.rows(from: Self.transcript)
+        let rows = FeedProjection.rows(.justTheStream(Self.transcript))
 
         #expect(rows.last?.content == .message("Running that now."))
         #expect(rows.allSatisfy { $0.content != .mark(.working) })
@@ -128,7 +128,7 @@ struct FeedWorkingTests {
     func `a running Turn draws the thread or a lit call and never both`() {
         // Thinking, then a call in flight, then the answer, then the next call.
         for step in Self.turn {
-            let rows = FeedProjection.rows(from: Self.transcript + step, working: true)
+            let rows = Self.working(Self.transcript + step)
             let at = "\(step.count) event(s) into the Turn"
             #expect(rows.hasThread != rows.hasCallInFlight, "both or neither, \(at)")
         }
@@ -140,7 +140,7 @@ struct FeedWorkingTests {
     @Test
     func `every handover is a new wait to count from`() {
         let waits = Self.turn.map { step in
-            FeedWait.showing(in: FeedProjection.rows(from: Self.transcript + step, working: true))
+            FeedWait.showing(in: Self.working(Self.transcript + step))
         }
 
         #expect(waits[0] == .thinking)
@@ -157,11 +157,8 @@ struct FeedWorkingTests {
     /// think back to the first rung.
     @Test
     func `a row arriving mid-think does not restart the wait`() {
-        let before = FeedProjection.rows(from: Self.transcript, working: true)
-        let after = FeedProjection.rows(
-            from: Self.transcript + [.message(markdown: "Still going.")],
-            working: true,
-        )
+        let before = Self.working(Self.transcript)
+        let after = Self.working(Self.transcript + [.message(markdown: "Still going.")])
 
         #expect(before.count != after.count)
         #expect(FeedWait.showing(in: before) == FeedWait.showing(in: after))
@@ -171,7 +168,7 @@ struct FeedWorkingTests {
     /// clock at all — this is the state the timer cost is judged against.
     @Test
     func `a reading with nothing in flight shows no wait`() {
-        #expect(FeedWait.showing(in: FeedProjection.rows(from: Self.transcript)) == nil)
+        #expect(FeedWait.showing(in: FeedProjection.rows(.justTheStream(Self.transcript))) == nil)
     }
 
     /// A Turn that runs a command, gets its answer and runs another, one step at a time. Every
@@ -201,6 +198,15 @@ struct FeedWorkingTests {
         cacheReadTokens: 0,
         cacheCreationTokens: 0,
     )
+
+    /// The reading a Session draws while a Turn of Argo's is in flight, which is the one state
+    /// every case here is about. Named once so each case reads as the events it is about.
+    private static func working(_ events: [TranscriptEvent]) -> [FeedRow] {
+        FeedProjection.rows(FeedInput(
+            events: events,
+            beside: .just(FeedTurnDriven.inFlight),
+        ))
+    }
 
     private static let transcript: [TranscriptEvent] = [
         .prompt(text: "Clear the build folder", images: [], atMs: 1000),

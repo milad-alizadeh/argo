@@ -32,10 +32,11 @@ struct FeedAskProjectionTests {
 
     @Test
     func `the live question is the one the matching row draws`() throws {
-        let rows = FeedProjection.rows(
-            from: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(ask.isWaiting)
@@ -47,10 +48,11 @@ struct FeedAskProjectionTests {
     @Test
     func `a row drawing a different question stays a reading`() throws {
         let other = Ask.Question(text: "Something else?", options: [])
-        let rows = FeedProjection.rows(
-            from: [.toolCall(FeedFixture.asking(other))],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.toolCall(FeedFixture.asking(other))],
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(!ask.isWaiting)
@@ -60,13 +62,14 @@ struct FeedAskProjectionTests {
     /// The record has settled it, so nothing is waiting on anybody however the gate reads.
     @Test
     func `a question the record already answered is never pressable`() throws {
-        let rows = FeedProjection.rows(
-            from: [
+        let rows = FeedProjection.rows(FeedInput(
+            events: [
                 .toolCall(FeedFixture.asking(FeedFixture.askedQuestion)),
                 .toolCallOutcome(TranscriptFixtures.printed("ask", "#712")),
             ],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(!ask.isWaiting)
@@ -76,8 +79,8 @@ struct FeedAskProjectionTests {
     /// newest is the one still waiting, and the older stays the reading it became.
     @Test
     func `where one question was asked twice, the newest is the one you press`() {
-        let rows = FeedProjection.rows(
-            from: [
+        let rows = FeedProjection.rows(FeedInput(
+            events: [
                 .toolCall(FeedFixture.asking(FeedFixture.askedQuestion)),
                 .toolCall(ToolCall(
                     id: "ask-again", name: ToolCall.askUserQuestion, kind: .other,
@@ -85,8 +88,9 @@ struct FeedAskProjectionTests {
                     input: .init(ask: Ask(questions: [FeedFixture.askedQuestion])),
                 )),
             ],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession()),
-        )
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession()))),
+        ))
 
         #expect(FeedFixture.asks(in: rows).map(\.isWaiting) == [false, true])
     }
@@ -95,10 +99,11 @@ struct FeedAskProjectionTests {
     /// on an undriveable Session is a reading, ground and all.
     @Test
     func `a question nobody here can answer is drawn as the reading it is`() throws {
-        let rows = FeedProjection.rows(
-            from: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession(access: .orphaned)),
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
+            beside: .just(FeedGateHolds.holding(FeedAskProjection
+                    .asking(for: FeedFixture.askingSession(access: .orphaned)))),
+        ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(ask.isPending)
@@ -112,10 +117,11 @@ struct FeedAskProjectionTests {
     /// render a question nobody answered as one somebody did.
     @Test
     func `a driveable Session whose gate holds no question is still waiting`() throws {
-        let rows = FeedProjection.rows(
-            from: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
-            asking: FeedAskProjection.asking(for: FeedFixture.askingSession(ask: nil)),
-        )
+        let rows = FeedProjection.rows(FeedInput(
+            events: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))],
+            beside: .just(FeedGateHolds
+                .holding(FeedAskProjection.asking(for: FeedFixture.askingSession(ask: nil)))),
+        ))
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(!ask.isWaiting)
@@ -126,8 +132,7 @@ struct FeedAskProjectionTests {
     /// Driveable, because a render is a reading of a live cockpit and not of a dead Session.
     @Test
     func `a feed with no live question offers none, and is still waiting`() throws {
-        let rows = FeedProjection
-            .rows(from: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))])
+        let rows = FeedFixture.rows(of: [.toolCall(FeedFixture.asking(FeedFixture.askedQuestion))])
         let ask = try #require(FeedFixture.asks(in: rows).first)
 
         #expect(!ask.isWaiting)

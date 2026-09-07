@@ -184,6 +184,16 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
     name for the same Session, which is the one thing this rule exists to rule out. The header now
     reads #1072's own decision for this Session rather than taking one in isolation, so rail and
     header always match, on every row.
+  - **Amended by [#1567](https://github.com/milad-alizadeh/argo/issues/1567) — 2026-09-07:** the
+    conversation-derived name is contested the same way. A `-p` loop shells out once per folder
+    with one prompt template, so the CLI derives **one summary for every run in the batch** and
+    197 rows read alike. Where two or more rows would draw the same derived name, each takes its
+    own **time of day** — the honest disambiguator for a batch, whose runs differ by minutes and
+    by nothing else. It goes **in front of the summary**, which the render decided: the roster's
+    title is one line truncating at the tail, and a summary long enough to collide is long enough
+    to fill it, so a clock behind it is clipped on every row that needed one. Fixed-width, so the
+    sentences still start on one column. A run Argo read no start for keeps the bare summary
+    rather than take an invented moment.
 - **Meta line order: `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`** — the natural
   triage sweep. When the session is titled from its ticket the intent chip collapses to `#<n> ↗`
   so the link never echoes the title.
@@ -506,8 +516,11 @@ join it as observer families:
 
 - **Ticket provider** — GitHub Issues v1, Linear pluggable. **OAuth device flow, provider HTTP
   API, keychain-stored per-machine tokens** (ADR-0018) — *not* the `gh` CLI, which remains how
-  agents operate the repo. **Polled**: a desktop app receives no webhooks.
-- **Code host** — GitHub v1. One GitHub grant feeds both ports and fails as one.
+  agents operate the repo. **Polled.**
+- **Code host** — GitHub v1. One GitHub grant feeds both ports and fails as one. **Polled and
+  pushed**: GitHub's webhook forwarder needs no endpoint of Argo's, so a pull request lands in well
+  under a second (#1579). The poll stays as the floor — the socket is a fast path, never the only
+  one.
 
 The port interface is **capability-declared canonical intents**, not provider-shaped setters:
 `createTicket` · `updateFields` · `transitionTo(canonical)` (the adapter resolves the native

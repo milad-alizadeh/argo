@@ -38,11 +38,16 @@ struct RosterListing {
         of sessions: [CockpitPresentation.Session],
         opened: Set<String> = [],
         selection: String? = nil,
+        watching growth: SubagentGrowth = .unwatched,
         now: Date = Date(),
     )
         -> Reading {
         let lists = SessionRosterProjection.lists(
-            from: sessions, opened: opened, selection: selection, now: now,
+            from: sessions,
+            opened: opened,
+            selection: selection,
+            watching: growth,
+            now: now,
         )
         return Reading(rows: order.published(lists.rows), archived: lists.archived)
     }

@@ -22,7 +22,7 @@ struct TurnDeliveryBoundTests {
     func `a Turn Argo cannot read the composer for still ends the claim`() async {
         let watch = DeliveryRecorder(records: 1)
         watch.echo = .unreadable
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("what is @README.md about?", to: "session-a")
         #expect(await settle { watch.ended == 1 })
@@ -39,7 +39,7 @@ struct TurnDeliveryBoundTests {
     func `a Turn the CLI took but wrote no record for ends the claim`() async {
         let watch = DeliveryRecorder(records: 1)
         watch.echo = .heard
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("/clear", to: "session-a")
 
@@ -54,22 +54,14 @@ struct TurnDeliveryBoundTests {
     @Test
     func `a Turn that replaces another leaves the new claim standing`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("First.", to: "session-a")
         delivery.typed("Second.", to: "session-a")
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.submitted.map(\.text) == ["First.", "Second."])
         // One ending, from the SECOND watch running out — never a third from the cancelled first.
         #expect(watch.ended <= 1)
-    }
-
-    private static let patience = Duration.milliseconds(20)
-
-    /// Long enough that a watch which was going to do anything has done all of it — see
-    /// `TurnDeliveryTests`, whose reasoning and figures these are.
-    private static func pauseLongEnoughForTheWholeWatch() async {
-        try? await Task.sleep(for: patience * (TurnDelivery.attempts + 3))
     }
 }

@@ -1,8 +1,11 @@
 ## Ports
 
 Argo's two adapter ports — how **Argo itself** reads external truth. **Access is OAuth + the
-provider's HTTP API, not the `gh` CLI** (tokens in the OS keychain; polled, since a desktop app
-receives no webhooks). `gh` remains how *agents* operate the repo — a different layer.
+provider's HTTP API, not the `gh` CLI** (tokens in the OS keychain). Every port is **polled**, and
+the code host is **also pushed**: GitHub's webhook forwarder needs no endpoint of Argo's, so a
+pull request arrives in well under a second where the poll would take up to a minute (ADR-0018,
+#1579). The poll stays at its own interval and is the floor — the socket is a fast path, never the
+only one. `gh` remains how *agents* operate the repo — a different layer.
 
 A port names the *kind* of external truth; an **Account** is who Argo is when it reads, and a
 **Binding** is which Account one Project reads through. Authorizing is Account-level and done

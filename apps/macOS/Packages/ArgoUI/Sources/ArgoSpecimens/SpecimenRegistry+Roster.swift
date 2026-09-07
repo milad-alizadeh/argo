@@ -171,6 +171,13 @@ extension SpecimenRegistry {
         },
         // The one entry whose point is the CLICK: driven, so New Session must land a row.
         SpecimenEntry("spawningRoster") { SpawningRosterSpecimen() },
+        // The same spawn onto a roster that already holds a hundred rows — the shape #1562 was
+        // seen against, and what `OutlineCount.swift` polls. Not a picture: a hundred rows run
+        // past the window's foot, and the point of this entry is the tree an accessibility client
+        // reads while a row lands, not the pixels.
+        SpecimenEntry("crowdedSpawningRoster") {
+            SpawningRosterSpecimen(seeded: SpawningRosterSpecimen.crowd)
+        },
         // Two spawns, back to back: one row still waiting on its PTY, one past its first record.
         SpecimenEntry("freshSessionPair") { FreshSessionPairSpecimen() },
         SpecimenEntry("renamedRoster") { RenamedRosterSpecimen() },
@@ -185,6 +192,18 @@ extension SpecimenRegistry {
         SpecimenEntry("foldedRoster") { FoldedRosterSpecimen() },
         SpecimenEntry("openFoldedRoster") { FoldedRosterSpecimen(isOpened: true) },
         SpecimenEntry("editingRow") { EditingRowSpecimen() },
+        // The prompt the archive gesture raises, in the three readings it has (#1596). AppKit
+        // draws the chrome, so what these are evidence about is the words: the end Argo can
+        // perform, the end it cannot, and the batch that is both.
+        SpecimenEntry("archivePromptEnding") {
+            ArchivePromptSpecimen(.ending)
+        },
+        SpecimenEntry("archivePromptOutliving") {
+            ArchivePromptSpecimen(.outliving)
+        },
+        SpecimenEntry("archivePromptMixed") {
+            ArchivePromptSpecimen(.mixed)
+        },
         // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION otherwise
         // carries across.
         SpecimenEntry("twoReadings") { RosterSpecimen(presentation: .twoReadings) },

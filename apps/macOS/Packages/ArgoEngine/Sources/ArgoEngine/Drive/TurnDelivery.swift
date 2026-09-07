@@ -127,7 +127,7 @@ final class TurnDelivery {
         for _ in 0 ..< Self.attempts {
             switch await answer(to: text, at: id, since: before) {
             case .cancelled: return
-            case .answered: return over(id)
+            case .answered: return over(id, typed: text)
             case let .said(echo):
                 // No PTY left to type at, so waiting again would only delay the same answer.
                 guard watch.retype(id) else { return finish(text, to: id, saying: echo) }
@@ -135,7 +135,7 @@ final class TurnDelivery {
         }
         switch await answer(to: text, at: id, since: before) {
         case .cancelled: return
-        case .answered: over(id)
+        case .answered: over(id, typed: text)
         case let .said(echo): finish(text, to: id, saying: echo)
         }
     }
@@ -158,8 +158,15 @@ final class TurnDelivery {
     /// Not called on a cancelled watch, and that is the sharp edge: `typed` cancels the watch it is
     /// replacing, and a cancelled watch filing `nil` afterwards would end the claim the Turn that
     /// replaced it had just filed.
-    private func over(_ sessionID: String) {
+    ///
+    /// One Turn it does not end: a `!` shell command's record is written when the command EXITS,
+    /// so the `yet` above is real here in a way it is not for a local `/command` (#1595). Ended at
+    /// this bound, the claim goes while the record has not come, and the feed draws nothing at all
+    /// for the whole length of the command. `isAwaitingRecord` ends this one instead, and
+    /// `ClaimLedger.withdraw` still ends it where the channel itself goes.
+    private func over(_ sessionID: String, typed text: String) {
         watching.removeValue(forKey: sessionID)
+        guard !ShellTurn.isTyped(text) else { return }
         watch.submitted(nil, sessionID)
     }
 
@@ -209,7 +216,7 @@ final class TurnDelivery {
         // ends: saying nothing is #1266's rule about the WORDS, and it was never a licence to go
         // on claiming a Turn is running over a screen nobody could read (#1409).
         case .heard, .unreadable:
-            over(sessionID)
+            over(sessionID, typed: text)
         }
     }
 }

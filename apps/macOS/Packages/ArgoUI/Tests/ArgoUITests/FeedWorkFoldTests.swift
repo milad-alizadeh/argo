@@ -11,7 +11,7 @@ import Testing
 /// identically and a case written over it would pass with the per-Turn rule deleted.
 @Suite("Feed work fold")
 struct FeedWorkFoldTests {
-    private static let rows = FeedProjection.rows(from: TranscriptFixtures.denseTurn)
+    private static let rows = FeedProjection.rows(.justTheStream(TranscriptFixtures.denseTurn))
 
     /// The fixture's two Turns apart, split at the stop reason that closes the first.
     private static let dense = Array(rows.prefix { !$0.kind.endsTurn })

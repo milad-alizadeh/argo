@@ -14,7 +14,7 @@ struct SessionRosterProjectionSubagentsTests {
         let row = row(RosterSessionFixture.session(id: "s", status: .running, events: events))
 
         let rail = FeedAgents.running(of: FeedAgents.all(
-            in: FeedProjection.rows(from: events), of: .running,
+            in: FeedProjection.rows(.justTheStream(events)), of: .running,
         ))
 
         #expect(row?.subagents == .running(rail))

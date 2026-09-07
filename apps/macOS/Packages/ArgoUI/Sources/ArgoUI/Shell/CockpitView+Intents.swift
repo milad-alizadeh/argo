@@ -180,9 +180,11 @@ extension CockpitView {
     /// The archive gesture, wherever it is made: the menu bar's item and the roster row's swipe
     /// both come through here, so one prompt covers both (#1290).
     ///
-    /// Archiving a Session Argo owns ends its agent, so an archive that would end LIVE work raises
-    /// the prompt instead of performing; everything else performs at once. The decision and its
-    /// words are `SessionArchiveProjection`'s — this only asks.
+    /// An archive over LIVE work raises the prompt instead of performing; everything else performs
+    /// at once. The decision and its words are `SessionArchiveProjection`'s — this only asks.
+    ///
+    /// Whether the archive will END that work is a second question, and `endsAgent` answers it
+    /// from the same `access` the row is drawn from (#1596).
     ///
     /// A Session the presentation cannot name is archived without a prompt rather than dropped: it
     /// is a row that exists (the gesture came off one), and a gesture that silently did nothing is
@@ -194,7 +196,6 @@ extension CockpitView {
         let asked = sessionIDs.compactMap { sessionID -> ArchiveConfirmation.Session? in
             guard let session = presentation.session(sessionID),
                   SessionArchiveProjection.confirms(
-                      access: session.access,
                       status: session.status,
                       archiving: isArchived,
                   )
@@ -202,7 +203,11 @@ extension CockpitView {
                 Task { await actions.sessions.setArchived(sessionID, isArchived) }
                 return nil
             }
-            return ArchiveConfirmation.Session(id: session.id, name: session.title)
+            return ArchiveConfirmation.Session(
+                id: session.id,
+                name: session.title,
+                endsAgent: SessionArchiveProjection.endsAgent(access: session.access),
+            )
         }
         guard !asked.isEmpty else { return }
         archiveConfirmation = ArchiveConfirmation(sessions: asked)

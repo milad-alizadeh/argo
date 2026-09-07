@@ -86,7 +86,7 @@ struct SessionsRoomReading {
         )
         self.stamp = stamp
         let body = SessionsRoomReadingCache.body(at: stamp) {
-            Self.body(of: session, at: stamp, asking: asking, handedOff: handedOff)
+            Self.body(of: session, at: stamp)
         }
         self.feed = body.feed
         self.wait = body.wait
@@ -118,26 +118,13 @@ struct SessionsRoomReading {
     @MainActor private static func body(
         of session: CockpitPresentation.Session?,
         at stamp: SessionsRoomReadingCache.Stamp,
-        asking: FeedAskProjection.Asking,
-        handedOff: FeedHandoff?,
     )
         -> SessionsRoomReadingCache.Body {
         SessionsRoomReadingCache.Body(
+            // The stream, and the facts beside it exactly as the stamp derived them: the memo key
+            // and the projection read one list, so neither can fall behind the other (#1504).
             feed: FeedProjection.rows(
-                from: session?.events ?? [],
-                working: FeedWorking.isWorking(stamp.status),
-                startedQuietly: stamp.startedQuietly,
-                settledWaits: stamp.settledWaits,
-                handoffFailures: stamp.handoffFailures,
-                handedOff: handedOff,
-                expired: stamp.expired,
-                asking: asking,
-                reported: stamp.reported,
-                // Nothing while Argo is handing off (#1229): the Turn in flight is then the
-                // `/handoff` prompt Argo itself steered, and a prompt row would draw a line of
-                // Argo's own words — the brief's absolute path and all — as something the reader
-                // typed and is waiting on. The plinth over this same reading is what stands for it.
-                submitted: stamp.handingOff ? nil : stamp.submittedTurn,
+                FeedInput(events: session?.events ?? [], beside: stamp.beside),
             ),
             // Off the engine's own facts, which are DIRECT and managed-only, and never off an
             // empty reading: a Session observed from outside that has written nothing is a
