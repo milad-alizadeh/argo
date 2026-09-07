@@ -21,8 +21,8 @@ struct SessionNameMirrorTests {
         let mirrored = MirroredNames()
 
         await SessionNameMirror(mirror: mirrored.mirror).carry(
-            ["chain-a": Drawn.derived("Fix the roster titles")],
-            against: ["chain-a": Drawn.unnamed],
+            ["chain-a": SessionNameFixture.derived("Fix the roster titles")],
+            against: ["chain-a": SessionNameFixture.unnamed],
         )
 
         #expect(await mirrored.calls()
@@ -41,8 +41,8 @@ struct SessionNameMirrorTests {
         let mirrored = MirroredNames()
 
         await SessionNameMirror(mirror: mirrored.mirror).carry(
-            ["chain-a": Drawn.derived("Fix the roster titles")],
-            against: ["chain-a": Drawn.named("Roster titles and the mirror")],
+            ["chain-a": SessionNameFixture.derived("Fix the roster titles")],
+            against: ["chain-a": SessionNameFixture.named("Roster titles and the mirror")],
         )
 
         #expect(await mirrored.calls()
@@ -66,14 +66,14 @@ struct SessionNameMirrorTests {
         let mirror = SessionNameMirror(mirror: mirrored.mirror)
 
         await mirror.carry(
-            ["chain-a": Drawn.drawn("/implement 1665")],
-            against: ["chain-a": Drawn.unnamed],
+            ["chain-a": SessionNameFixture.drawn("/implement 1665")],
+            against: ["chain-a": SessionNameFixture.unnamed],
         )
         // What the next sweep reads back: the CLI now holds the placeholder BECAUSE the line above
         // went, which is exactly the standing the old gate mistook for Claude having named it.
         await mirror.carry(
-            ["chain-a": Drawn.drawn("The unknown stance has no test pinning it")],
-            against: ["chain-a": Drawn.named("/implement 1665")],
+            ["chain-a": SessionNameFixture.drawn("The unknown stance has no test pinning it")],
+            against: ["chain-a": SessionNameFixture.named("/implement 1665")],
         )
 
         #expect(await mirrored.calls().map(\.title) == [
@@ -90,8 +90,8 @@ struct SessionNameMirrorTests {
         let mirrored = MirroredNames()
 
         await SessionNameMirror(mirror: mirrored.mirror).carry(
-            ["chain-a": Drawn.readerNamed("Tonight's run")],
-            against: ["chain-a": Drawn.named("Roster titles and the mirror")],
+            ["chain-a": SessionNameFixture.readerNamed("Tonight's run")],
+            against: ["chain-a": SessionNameFixture.named("Roster titles and the mirror")],
         )
 
         #expect(await mirrored.calls()
@@ -104,12 +104,37 @@ struct SessionNameMirrorTests {
     func `a name that has not changed is typed once and never again`() async {
         let mirrored = MirroredNames()
         let mirror = SessionNameMirror(mirror: mirrored.mirror)
-        let draws = ["chain-a": Drawn.derived("Fix the roster titles")]
+        let draws = ["chain-a": SessionNameFixture.derived("Fix the roster titles")]
 
-        await mirror.carry(draws, against: ["chain-a": Drawn.unnamed])
-        await mirror.carry(draws, against: ["chain-a": Drawn.unnamed])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.unnamed])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.unnamed])
 
         #expect(await mirrored.calls().count == 1)
+    }
+
+    /// The other half of that rule: a row whose words MOVE after the CLI was told the earlier ones
+    /// has to be told again (#1656). The memory above is what a standing row is skipped on, so what
+    /// it must never read as "done" is "typed once".
+    @Test
+    func `a name that changed since it was typed is typed again`() async {
+        let mirrored = MirroredNames()
+        let mirror = SessionNameMirror(mirror: mirrored.mirror)
+
+        await mirror.carry(
+            ["chain-a": SessionNameFixture.derived("Read the ticket")],
+            against: ["chain-a": SessionNameFixture.unnamed],
+        )
+        // The standing a later sweep reads back: the CLI is holding the FIRST name, because the
+        // line above put it there.
+        await mirror.carry(
+            ["chain-a": SessionNameFixture.derived("Pin the retype the mirror has no test for")],
+            against: ["chain-a": SessionNameFixture.named("Read the ticket")],
+        )
+
+        #expect(await mirrored.calls().map(\.title) == [
+            "Read the ticket",
+            "Pin the retype the mirror has no test for",
+        ])
     }
 
     /// The refusal is the ordinary case — a Turn in flight, a pending Permission, a question — and
@@ -119,13 +144,13 @@ struct SessionNameMirrorTests {
     func `a name the prompt could not take is offered again on the next sweep`() async {
         let mirrored = MirroredNames(takes: false)
         let mirror = SessionNameMirror(mirror: mirrored.mirror)
-        let draws = ["chain-a": Drawn.readerNamed("Tonight's run")]
+        let draws = ["chain-a": SessionNameFixture.readerNamed("Tonight's run")]
 
-        await mirror.carry(draws, against: ["chain-a": Drawn.unnamed])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.unnamed])
         await mirrored.nowTakes(true)
-        await mirror.carry(draws, against: ["chain-a": Drawn.unnamed])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.unnamed])
         // And once it has landed, it stops being offered.
-        await mirror.carry(draws, against: ["chain-a": Drawn.unnamed])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.unnamed])
 
         #expect(await mirrored.calls().count == 2)
     }
@@ -137,10 +162,10 @@ struct SessionNameMirrorTests {
     func `a CLI already on these words is filed and never typed at`() async {
         let mirrored = MirroredNames()
         let mirror = SessionNameMirror(mirror: mirrored.mirror)
-        let draws = ["chain-a": Drawn.readerNamed("Tonight's run")]
+        let draws = ["chain-a": SessionNameFixture.readerNamed("Tonight's run")]
 
-        await mirror.carry(draws, against: ["chain-a": Drawn.named("Tonight's run")])
-        await mirror.carry(draws, against: ["chain-a": Drawn.unnamed])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.named("Tonight's run")])
+        await mirror.carry(draws, against: ["chain-a": SessionNameFixture.unnamed])
 
         #expect(await mirrored.calls().isEmpty)
     }
@@ -153,8 +178,8 @@ struct SessionNameMirrorTests {
         let mirrored = MirroredNames(takes: false)
 
         await SessionNameMirror(mirror: mirrored.mirror).carry(
-            ["codex-a": Drawn.derived("Fix the roster titles")],
-            against: ["codex-a": Drawn.unnamed],
+            ["codex-a": SessionNameFixture.derived("Fix the roster titles")],
+            against: ["codex-a": SessionNameFixture.unnamed],
         )
 
         #expect(await mirrored.calls().count == 1)
@@ -166,130 +191,19 @@ struct SessionNameMirrorTests {
 
         await SessionNameMirror(mirror: mirrored.mirror).carry(
             [
-                "chain-a": Drawn.derived("Fix the roster titles"),
-                "chain-b": Drawn.readerNamed("Tonight's run"),
+                "chain-a": SessionNameFixture.derived("Fix the roster titles"),
+                "chain-b": SessionNameFixture.readerNamed("Tonight's run"),
                 // Refused by the FLOOR, not by any title the CLI holds — that gate is gone
                 // (#1653), so a row still has to be refusable for this claim to say anything.
-                "chain-c": Drawn.derived("/clear"),
+                "chain-c": SessionNameFixture.derived("/clear"),
             ],
             against: [
-                "chain-a": Drawn.unnamed,
-                "chain-b": Drawn.unnamed,
-                "chain-c": Drawn.unworded,
+                "chain-a": SessionNameFixture.unnamed,
+                "chain-b": SessionNameFixture.unnamed,
+                "chain-c": SessionNameFixture.unworded,
             ],
         )
 
         #expect(await mirrored.calls().map(\.sessionID).sorted() == ["chain-a", "chain-b"])
-    }
-}
-
-/// The FLOOR under a name of Argo's own making, and the two readings that refuse a row outright
-/// (#1623). Apart from the rule above because it is the exception to it: the rule says every name
-/// the roster draws is typed, and these are the rows where nothing is.
-@Suite("Session name mirror floor")
-struct SessionNameMirrorFloorTests {
-    /// The floor under a name of Argo's OWN making, and it has to be a floor: typing
-    /// `/rename <uuid>` makes the CLI write a `custom-title`, which is the TOP of the ladder — so
-    /// the row would outrank every prompt and every summariser title that followed, and wear a
-    /// transcript filename on both surfaces for good. The bare `/clear` that opens a fresh
-    /// transcript is the same trap, and `SessionTitle` calls it takeable for exactly that reason.
-    @Test
-    func `a derived name that says nothing about the work is never typed`() async {
-        let mirrored = MirroredNames()
-
-        await SessionNameMirror(mirror: mirrored.mirror).carry(
-            [
-                "placeholder": Drawn.derived("6f3ab2c1-90d4-4e1a-8b77-2c5f0e9a1d33"),
-                "provisional": Drawn.derived("/clear"),
-            ],
-            against: ["placeholder": Drawn.unworded, "provisional": Drawn.unworded],
-        )
-
-        #expect(await mirrored.calls().isEmpty)
-    }
-
-    /// The floor is on the DERIVED name alone. A Ticket's sentence says what the work is whatever
-    /// the transcript has managed to say about it, so a row wearing one is typed even where the
-    /// Session's own name has not risen past its filename.
-    @Test
-    func `a name Argo did not derive clears the floor without it`() async {
-        let mirrored = MirroredNames()
-
-        await SessionNameMirror(mirror: mirrored.mirror).carry(
-            ["chain-a": Drawn.drawn("Derive the link")],
-            against: ["chain-a": Drawn.unworded],
-        )
-
-        #expect(await mirrored.calls()
-            == [MirroredNames.Call(title: "Derive the link", sessionID: "chain-a")])
-    }
-
-    /// A row the sweep was handed no standing for. Nothing should produce one — both maps are built
-    /// off the same roster pass — so the honest answer is the quieter one: say nothing rather than
-    /// type at a Session Argo cannot state a thing about (`CONTEXT.md` L2 · degrade-down).
-    @Test
-    func `a row with no standing to read is left alone`() async {
-        let mirrored = MirroredNames()
-
-        await SessionNameMirror(mirror: mirrored.mirror)
-            .carry(["chain-a": Drawn.derived("Fix the roster titles")], against: [:])
-
-        #expect(await mirrored.calls().isEmpty)
-    }
-
-    /// The window fires an unstructured `Task` per roster change and this actor suspends inside the
-    /// keystroke, so two sweeps interleave there. Filed BEFORE the await, or the second sweep finds
-    /// no memory for the row and types the same `/rename` again — the duplicate keystroke removed
-    /// from the rename dialog, back by another route.
-    @Test
-    func `two sweeps racing on one row type the name once`() async {
-        let mirrored = MirroredNames()
-        let mirror = SessionNameMirror(mirror: mirrored.mirror)
-        let draws = ["chain-a": Drawn.derived("Fix the roster titles")]
-        let standings = ["chain-a": Drawn.unnamed]
-
-        async let first: Void = mirror.carry(draws, against: standings)
-        async let second: Void = mirror.carry(draws, against: standings)
-        _ = await (first, second)
-
-        #expect(await mirrored.calls().count == 1)
-    }
-}
-
-/// The two draws and the three standings every claim above is built from, at file scope so both
-/// suites read the same fixtures — a floor claim written against a different `unworded` than the
-/// rule claims use would pass while disagreeing with them.
-private enum Drawn {
-    /// A Session whose CLI holds no title and whose own name says something about the work — the
-    /// ordinary row, and the one the reported bug was about.
-    static let unnamed = SessionNameStanding(cliTitle: nil, namesTheWork: true)
-
-    /// The same, before its first real prompt: a filename or a bare `/clear`, and nothing to say.
-    static let unworded = SessionNameStanding(cliTitle: nil, namesTheWork: false)
-
-    static func named(_ title: String) -> SessionNameStanding {
-        SessionNameStanding(cliTitle: title, namesTheWork: true)
-    }
-
-    static func derived(_ name: String) -> SessionNameDraw {
-        drawn(name, drawsDerivedTitle: true)
-    }
-
-    /// A name a person typed in the rename dialog. Since #1653 it travels by the same rule as
-    /// every other name the roster draws — the helper stays because the CASE is still worth
-    /// naming in a claim, not because the mirror can still tell it apart.
-    static func readerNamed(_ name: String) -> SessionNameDraw {
-        drawn(name)
-    }
-
-    static func drawn(
-        _ name: String, drawsDerivedTitle: Bool = false,
-    )
-        -> SessionNameDraw {
-        SessionNameDraw(
-            name: name,
-            drawsDerivedTitle: drawsDerivedTitle,
-            takesSlashCommand: true,
-        )
     }
 }
