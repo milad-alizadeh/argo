@@ -139,12 +139,22 @@ measurements and what the gate now does before its first command: `docs/agents/l
 ## Session isolation
 
 **Every** change runs in a worktree under `.claude/worktrees/`, never in the shared main
-checkout — a doc or config fix as much as a ticket build. From the repo root, enter one first
-(Claude Code: `EnterWorktree`, unprompted; other harnesses: `git worktree add`) and commit to a
-ticket branch there. Only read-only work (review, triage, Q&A) may stay in the main checkout,
-and only while it stays read-only. A write through `Bash` — `cat > file`, `sed -i`, `cp` —
-counts as a change; the guard reads those too. Naming, resuming, recovery, the sub-agent rule
-and `bun run worktrees:gc`: `docs/agents/worktrees.md`.
+checkout — a doc or config fix as much as a ticket build. From the repo root, unprompted, create
+the tree with git and then enter it by path:
+
+```bash
+git worktree add -b 'argo/#<N>-<slug>' .claude/worktrees/ticket-<N>-<slug>
+```
+
+then `EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }` in Claude Code, or `cd` into
+it in another harness. **`EnterWorktree` with a `name` is refused**, because it names the branch
+`worktree-<name>` and its `name` cannot hold a `#`: no tree it creates reaches `argo/#<N>-<slug>`,
+so `/ship` cannot write `Closes #<N>` off one (#1684).
+
+Only read-only work (review, triage, Q&A) may stay in the main checkout, and only while it stays
+read-only. A write through `Bash` — `cat > file`, `sed -i`, `cp` — counts as a change; the guard
+reads those too. Naming, resuming, recovery, the sub-agent rule and `bun run worktrees:gc`:
+`docs/agents/worktrees.md`.
 
 In a **new worktree that will touch Swift, run `bun run warm` first** — before reading the ticket,
 not before the tests. Each worktree gets its own `.build`, so the first `bun run test` in one pays

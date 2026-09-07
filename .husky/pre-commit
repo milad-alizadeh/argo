@@ -7,7 +7,7 @@
 if [ -n "$CLAUDECODE" ] && [ -z "$ARGO_MAIN_COMMIT" ] \
    && [ "$(git rev-parse --git-dir 2>/dev/null)" = "$(git rev-parse --git-common-dir 2>/dev/null)" ]; then
   echo "pre-commit: blocked — this is the shared main checkout; implement in a worktree" >&2
-  echo "  (git worktree add / EnterWorktree; override: ARGO_MAIN_COMMIT=1 git commit ...)" >&2
+  echo "  (git worktree add -b, then EnterWorktree by path; override: ARGO_MAIN_COMMIT=1 git commit ...)" >&2
   exit 1
 fi
 # --- end session isolation ---
