@@ -90,10 +90,14 @@ struct ClaudeSessionDriver: SessionDriver {
             throw SessionDriveError.notDrivable
         }
         let standing = stance(sessionID)
-        guard !standing.isRunning else { throw SessionDriveError.modeBusy }
         guard let observed = standing.mode.cliValue,
               let steps = ClaudePermissionMode.cycles(from: observed, to: mode)
         else { throw SessionDriveError.modeUnreachable }
+        guard !standing.isRunning || ClaudePermissionMode.canWalkDuringTurn(
+            from: observed,
+            to: mode,
+        )
+        else { throw SessionDriveError.modeBusy }
         // A second walk would count from a stance the first has already left, so it is refused for
         // the reason a mid-Turn change is: the rung it landed on would be nobody's choice.
         guard terminals.beginWalk(on: claim) else { throw SessionDriveError.modeWalking }

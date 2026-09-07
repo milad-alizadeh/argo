@@ -89,12 +89,12 @@ struct SpawnModeTests {
             id: "session-from-cli",
             events: [
                 .cwd(fixture.projectURL.path),
-                .mode(cli: "acceptEdits"),
+                .mode(cli: "plan"),
                 .prompt(text: "Off you go", images: [], atMs: Date().epochMs),
             ],
         ))
         await #expect(throws: SessionDriveError.modeBusy) {
-            try await fixture.hub.driver.setMode(.auto, for: "session-from-cli")
+            try await fixture.hub.driver.setMode(.code, for: "session-from-cli")
         }
 
         _ = try await fixture.hub.spawnSession()

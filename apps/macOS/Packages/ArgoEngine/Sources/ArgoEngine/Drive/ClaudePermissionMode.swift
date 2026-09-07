@@ -46,4 +46,22 @@ enum ClaudePermissionMode: AgentStanceVocabulary {
         else { return nil }
         return (end - start + ring.count) % ring.count
     }
+
+    static func canWalkDuringTurn(from observed: String, to target: SessionMode) -> Bool {
+        guard let start = ring.firstIndex(of: observed),
+              let steps = cycles(from: observed, to: target)
+        else { return false }
+        let ceiling = max(boundary(of: observed), boundary(of: value(for: target)))
+        return (0 ..< steps).allSatisfy { offset in
+            boundary(of: ring[(start + offset + 1) % ring.count]) <= ceiling
+        }
+    }
+
+    private static func boundary(of mode: String) -> Int {
+        switch mode {
+        case "auto": 2
+        case "acceptEdits": 1
+        default: 0
+        }
+    }
 }
