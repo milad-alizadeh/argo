@@ -34,8 +34,19 @@ for (const [tool, body] of [
 // The lock root is scoped to the scratch, not left to default. Without this the warm below takes
 // a slot under the MACHINE's `$TMPDIR/argo-build-lock` — the one real builds queue on — and a
 // suite that leaves a slot behind there throttles every lane on the box until someone finds it.
+//
+// The wait limit is part of the scoping, not a speed setting. Two cases below share this one
+// slot, so the second one's worker QUEUES — and this suite ends in a few seconds now, so
+// `rmSync(scratch)` takes the lock root out from under it while it is still going round
+// `mkdir "$root/slot-1"`, which cannot succeed again once the parent is gone. At the 900s
+// default that worker then spins for a quarter of an hour: 33 of them had piled up on this
+// machine from one afternoon's runs, which is precisely the leak #1450 exists to stop (#1552).
 const WARM_LOCK = path.join(scratch, 'lock')
-const LOCK_ENV = { ARGO_BUILD_LOCK_ROOT: WARM_LOCK, ARGO_BUILD_LOCK_SLOTS: '1' }
+const LOCK_ENV = {
+  ARGO_BUILD_LOCK_ROOT: WARM_LOCK,
+  ARGO_BUILD_LOCK_SLOTS: '1',
+  ARGO_WARM_WAIT_LIMIT: '5',
+}
 const WARMING = { pathValue: `${WARM_BIN}:/usr/bin:/bin`, env: LOCK_ENV }
 
 // A pause that forks nothing. `execFileSync('sh', ['-c', 'sleep 0.2'])` was the tick here, and it
@@ -50,12 +61,16 @@ const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
 // costs whatever this machine's fork costs meant "60 seconds" was really 67 here and something
 // else on the next box — a budget that moves with the load is one nobody can reason about, and
 // the cases below now bound things that should take no time at all rather than a build.
+// Asked once more after the deadline, before failing: the answer can arrive during the last
+// pause, and a case that reports a timeout for a condition holding as it says so is a case
+// nobody can act on.
 function waitFor(predicate, seconds, what) {
   const deadline = Date.now() + seconds * 1000
   do {
     if (predicate()) return true
     pause(25)
   } while (Date.now() < deadline)
+  if (predicate()) return true
   assert.fail(`${what} did not happen within ${seconds}s`)
 }
 
@@ -139,12 +154,17 @@ check('warm-build.sh holds a live build slot and releases it', () => {
 
   const slot = path.join(lock, 'slot-1')
   const pidFile = path.join(slot, 'pid')
-  waitFor(() => existsSync(pidFile), 30, 'the warm took a build slot')
+  // WRITTEN, not merely there. `build-lock.sh` creates this file with `echo $$ >`, so the shell
+  // opens it before the pid reaches it and there is a moment when it is empty — one the 25ms
+  // tick samples about nine times more often than the 225ms tick it replaced. Reading it then
+  // gives `Number('')`, and the case fails with "slot pid unreadable: 0" on a healthy warm.
+  const recordedPid = () => (existsSync(pidFile) ? readFileSync(pidFile, 'utf8').trim() : '')
+  waitFor(() => recordedPid() !== '', 30, 'the warm took a build slot')
 
   // The pid in the slot must be a process that is still RUNNING. Before the fix it was the
   // parent's, which has already returned to the caller by the time this line runs, so
   // `build-lock.sh` would reclaim the slot from under the build still using it.
-  const pid = Number(readFileSync(pidFile, 'utf8').trim())
+  const pid = Number(recordedPid())
   assert.ok(Number.isInteger(pid) && pid > 0, `slot pid unreadable: ${pid}`)
   let alive = true
   try {
