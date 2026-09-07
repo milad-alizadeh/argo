@@ -156,6 +156,21 @@ struct RosterSelectionFromTicketStartTests {
         RosterMark.expect(Start.cli, in: Start.rekeyed, for: navigation)
     }
 
+    /// And across the retirement that can follow those two: a continuation read after the re-key
+    /// folds this row into a chain and retires the CLI's id in its turn (#1481). The hold is over
+    /// by then — the id had settled — so this is succession's ordinary work, and the assertion is
+    /// that ending the hold did not cost it.
+    @Test
+    func `follows the row on into a continuation folded in after the re-key`() async {
+        let navigation = await Start.pressed()
+
+        navigation.reconcile(against: Start.provisional.map(\.identity))
+        navigation.reconcile(against: Start.rekeyed.map(\.identity))
+        navigation.reconcile(against: Start.continued.map(\.identity))
+
+        RosterMark.expect(Start.chain, in: Start.continued, for: navigation)
+    }
+
     /// A recycled claim id may not carry the pointer to a Session that was never this spawn
     /// (#1563). The counter behind `claim-<launch>-<n>` restarts with the process, so an older
     /// Session's own `absorbedIDs` can hold the exact string this spawn was just issued.

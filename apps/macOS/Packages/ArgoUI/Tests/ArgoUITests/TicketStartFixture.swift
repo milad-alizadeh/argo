@@ -64,6 +64,21 @@ enum TicketStartFixture {
         ]
     }
 
+    /// The roster after a continuation folds that row into a chain of its own (#1481), which is
+    /// the retirement that can follow the two this route makes. Nothing about it is special once
+    /// the id has settled, and this says so.
+    static var continued: [CockpitPresentation.Session] {
+        [
+            RosterSessionFixture.session(id: "alpha"),
+            RosterSessionFixture.rekeyed(chain, from: cli),
+            RosterSessionFixture.session(id: "beta"),
+            RosterSessionFixture.session(id: "gamma"),
+        ]
+    }
+
+    /// The id that row is published under once the continuation is folded in.
+    static let chain = "session-7-continued"
+
     /// A roster in which the claim id is absorbed by a Session that was never this spawn.
     ///
     /// Claim ids are `claim-<launch>-<n>` and the counter restarts with the process, so the same
