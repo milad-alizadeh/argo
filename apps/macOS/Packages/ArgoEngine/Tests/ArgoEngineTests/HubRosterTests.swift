@@ -19,7 +19,7 @@ struct HubRosterTests {
         // UUID and knows no model.
         #expect(hub.sessions.isEmpty)
 
-        continuation.yield([.title("Read whole"), .model("claude-opus-5")])
+        continuation.yield([.title("Read whole", .summarised), .model("claude-opus-5")])
         continuation.finish()
         await hubTailEnded(hub, transcriptID: "session")
 
@@ -43,7 +43,10 @@ struct HubRosterTests {
         await hubTailEnded(hub, transcriptID: "child")
         #expect(hub.sessions.isEmpty)
 
-        rootEvents.yield([.recordIdentity(uuid: "root-leaf"), .title("The whole session")])
+        rootEvents.yield([
+            .recordIdentity(uuid: "root-leaf"),
+            .title("The whole session", .summarised),
+        ])
         rootEvents.finish()
         await hubTailEnded(hub, transcriptID: "root")
 
@@ -58,7 +61,7 @@ struct HubRosterTests {
     func `a tail that ends without reading does not hold the roster back`() async {
         let hub = testHub(projectURL: Self.projectURL)
         let (silent, silentEvents) = hubLiveObservation(id: "silent")
-        let spoken = hubTestObservation(id: "spoken", events: [.title("Spoken")])
+        let spoken = hubTestObservation(id: "spoken", events: [.title("Spoken", .summarised)])
 
         await hub.startObserving(silent)
         silentEvents.finish()
@@ -95,12 +98,12 @@ struct HubRosterTests {
         let hub = testHub(projectURL: Self.projectURL)
         let stale = hubTestObservation(
             id: "stale",
-            events: [.title("Stale")],
+            events: [.title("Stale", .summarised)],
             modifiedAt: Date(timeIntervalSince1970: 10),
         )
         let fresh = hubTestObservation(
             id: "fresh",
-            events: [.title("Fresh")],
+            events: [.title("Fresh", .summarised)],
             modifiedAt: Date(timeIntervalSince1970: 20),
         )
 

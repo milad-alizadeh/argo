@@ -22,6 +22,18 @@ public extension Hub {
     var sessions: [HubSession] {
         roster.sessions(at: rosterStamp, folding: folded)
     }
+
+    /// Where each Session's name stands on both sides of the ladder, keyed by chain id
+    /// (`CONTEXT.md` L2 · CLI title, #1623) — the reading `SessionNameMirror` asks for before
+    /// typing anything at a prompt.
+    ///
+    /// Off the same roster the list above publishes, on `session(id:)`'s ground: a caller deciding
+    /// whether to mirror and a caller drawing the row cannot disagree about what the CLI holds.
+    var nameStandings: [String: SessionNameStanding] {
+        sessions.reduce(into: [:]) { standings, session in
+            standings[session.id] = session.nameStanding
+        }
+    }
 }
 
 @MainActor

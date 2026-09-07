@@ -39,7 +39,7 @@ struct CockpitPresentationTests {
     ) async throws {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
         await observe(hub, id: "observed", events: [
-            .title("Refactor the auth module"),
+            .title("Refactor the auth module", .summarised),
             .cwd("/Users/milad/Developer/argo"),
             .model("claude-opus-5"),
             .branch("main"),

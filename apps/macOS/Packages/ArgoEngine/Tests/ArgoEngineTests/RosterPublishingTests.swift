@@ -132,7 +132,7 @@ struct RosterPublishingTests {
         -> AsyncStream<[TranscriptEvent]>.Continuation {
         let (observation, records) = hubLiveObservation(id: transcriptID)
         await hub.startObserving(observation)
-        records.yield([.title("Reading")])
+        records.yield([.title("Reading", .summarised)])
         await hubSettle { !hub.sessions.isEmpty }
         await hub.didApply()
         return records
@@ -144,7 +144,7 @@ struct RosterPublishingTests {
         let hub = testHub(projectURL: projectURL)
         await hubObserveToEnd(hub, hubTestObservation(
             id: "root",
-            events: [.title("Reading"), .message(markdown: "the agent said")],
+            events: [.title("Reading", .summarised), .message(markdown: "the agent said")],
         ))
         return hub
     }

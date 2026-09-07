@@ -106,7 +106,8 @@ struct TranscriptPlanScan {
             plan = ledger.written(by: message) ?? plan
         case let .user(message):
             ledger.identify(from: message)
-        case .attachment, .aiTitle, .lastPrompt, .queueOperation, .permissionMode, .unknown:
+        case .attachment, .aiTitle, .customTitle, .lastPrompt, .queueOperation,
+             .permissionMode, .unknown:
             break
         }
     }

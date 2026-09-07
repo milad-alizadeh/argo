@@ -86,10 +86,7 @@ final class CockpitCoordinator {
         // (#1494). The Hub is captured rather than `self`: this window's own driver is the whole of
         // what a settled title needs, and a resolver holding the coordinator would be the second
         // reference into a window it does not otherwise know about.
-        self.ticketTitles = TicketTitleResolver(
-            annotations: annotationStore,
-            mirror: .typing(through: hub),
-        )
+        self.ticketTitles = TicketTitleResolver(annotations: annotationStore)
     }
 
     /// The active Project as a record; `nil` where the window points at an unregistered folder,
@@ -179,16 +176,16 @@ final class CockpitCoordinator {
     /// Name a Session, or drop the name. Only ever the rename dialog: nothing observed names a
     /// Session (#502, story 18).
     ///
-    /// The name is mirrored onto the CLI's own title after it is written (#1494), so the Session
-    /// reads the same in Claude's mobile, desktop and web apps. Clearing mirrors NOTHING: what
-    /// comes back is a derived title Argo assembles, and typing one at the prompt would replace a
-    /// generated name with a copy of Argo's rendering. The CLI keeps whatever it holds.
+    /// The annotation is the whole of the write. Mirroring it onto the CLI's own title is
+    /// `mirrorNames` below's (#1623): the name lands on the roster here, the roster's own map of
+    /// drawn names moves, and the sweep types it at the prompt — including on the next sweep, if
+    /// this one's prompt was busy. Mirroring HERE as well typed the same `/rename` twice, and the
+    /// keystroke that was refused was never retried at all (#1494).
     ///
-    /// Written first and mirrored second, on `setArchived`'s reasoning: the annotation is what the
-    /// roster draws, and it must not wait on a keystroke that may never be allowed to go.
+    /// Clearing a name is the same act: the row falls back to a derived title, and what the CLI is
+    /// told about that is the sweep's own rule to state.
     func setName(_ name: String?, sessionID: String) async {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
-        await hub.mirrorName(name, to: sessionID)
     }
 
     /// Attach a Session to a Ticket by hand, or drop the attachment (#1092). Only ever the tab
@@ -213,6 +210,10 @@ final class CockpitCoordinator {
     /// A port that is unbound or has come undone resolves nothing and leaves every stored title
     /// where it is: a roster that emptied its rows the moment a Binding lapsed would read as
     /// Sessions losing the work they are on.
+    ///
+    /// Both refusals return WITHOUT touching `annotations`, which is what keeps a rename safe: a
+    /// resolve that answered the file it had loaded would assign an older copy behind a `setName`
+    /// that wrote while it was in flight, and the row would lose the typed name on screen.
     func nameTickets(through resolution: BindingResolution) async {
         guard case let .ready(binding) = resolution else { return }
         // The Binding is immaterial to this one read: an unbound provider turns `unlinked` into

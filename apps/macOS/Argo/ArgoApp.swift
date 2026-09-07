@@ -101,6 +101,13 @@ struct ArgoApp: App {
                     .onChange(of: presentation.untitledTicketNumbers, initial: true) { _, _ in
                         Task { await cockpit.nameTickets(through: accounts.binding(.ticket)) }
                     }
+                    // A row whose drawn name the CLI has not been told is the one event worth a
+                    // keystroke at its prompt (#1623). Keyed on the drawn names rather than on the
+                    // roster, and each one carries whether its Session would take a typed line —
+                    // so a Turn ending is what brings a refused `/rename` back to be retried.
+                    .onChange(of: presentation.namesToMirror, initial: true) { _, draws in
+                        Task { await cockpit.hub.mirrorNames(draws) }
+                    }
                     // A spawned row re-keying off its claim id to the one its CLI picked is the
                     // one event an annotation filed against the claim has to survive (#1563).
                     // Keyed on the re-keyed set for the reason above: a turn ending on a row that

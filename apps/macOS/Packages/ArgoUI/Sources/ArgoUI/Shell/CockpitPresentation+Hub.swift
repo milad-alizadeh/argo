@@ -111,6 +111,12 @@ extension CockpitPresentation.Session {
     /// not-projected: sourceURL — where the record sits on disk. A path, not a fact about a
     ///   Session, and the feed reads events rather than files.
     /// not-projected: headLeafUUID — how the chain is stitched, which is the Hub's business.
+    /// not-projected: nameStanding — what the Session's own CLI calls it, and whether the name
+    ///   Argo holds says anything about the work (`CONTEXT.md` L2 · CLI title, #1623). Both halves
+    ///   are already spent upstream: the CLI title is the top two rungs of the `title` below, and
+    ///   the standing is the rung `title` was won at. The only other reader is the mirror, which
+    ///   asks the Hub directly — a surface drawing either beside `title` would draw the same words
+    ///   twice on every row that has one.
     /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
     ///   Session that fails it never reaches this projection at all.
     /// not-projected: isQueued — the other half of that same admission test.

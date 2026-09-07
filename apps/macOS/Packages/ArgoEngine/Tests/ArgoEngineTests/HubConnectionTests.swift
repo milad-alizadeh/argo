@@ -74,7 +74,10 @@ struct HubConnectionTests {
 
         await hub.watch.whileConnecting {
             #expect(hub.connection == .connecting)
-            await hub.startObserving(hubTestObservation(id: "swept", events: [.title("Swept")]))
+            await hub.startObserving(hubTestObservation(
+                id: "swept",
+                events: [.title("Swept", .summarised)],
+            ))
             #expect(hub.connection == .connected)
         }
 
@@ -93,7 +96,10 @@ struct HubConnectionTests {
         ))
         #expect(hub.connection == .failed(message: "Transcript unavailable"))
 
-        await hub.startObserving(hubTestObservation(id: "later", events: [.title("Later")]))
+        await hub.startObserving(hubTestObservation(
+            id: "later",
+            events: [.title("Later", .summarised)],
+        ))
 
         #expect(hub.connection == .connected)
         await hub.disconnect()

@@ -78,7 +78,7 @@ struct HubWorkspaceTests {
     }
 
     private static func observation(id: String) -> TranscriptObservation {
-        hubTestObservation(id: id, events: [.cwd(cwd), .title("Working")])
+        hubTestObservation(id: id, events: [.cwd(cwd), .title("Working", .summarised)])
     }
 }
 

@@ -43,6 +43,13 @@ struct SessionRosterNamings {
     /// What `SessionRosterProjection.namedTitle(for:among:)` answers with — see it for the rule.
     /// `nil` where `id` was not among the Sessions this was built across.
     func title(of id: CockpitPresentation.Session.ID) -> String? {
-        places[id].map { namings(isArchived: $0.isArchived)[$0.row].title }
+        naming(of: id)?.title
+    }
+
+    /// The WHOLE naming one row settled on, for a caller that needs more than the words: the
+    /// mirror asks whether the row fell through to its own summary, because only those names are
+    /// held to a floor before they may be typed at a prompt (#1623).
+    func naming(of id: CockpitPresentation.Session.ID) -> SessionTitle.Naming? {
+        places[id].map { namings(isArchived: $0.isArchived)[$0.row] }
     }
 }

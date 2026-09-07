@@ -61,7 +61,7 @@ struct HubJoinRefoldTests {
     func `a title renamed right after a duplicate stretch still lands`() {
         var join = joinOfOneFile()
 
-        join.apply(twoDelegations + [.title("Renamed")], to: transcriptID)
+        join.apply(twoDelegations + [.title("Renamed", .summarised)], to: transcriptID)
 
         #expect(join.sessions.first?.title == "Renamed")
     }

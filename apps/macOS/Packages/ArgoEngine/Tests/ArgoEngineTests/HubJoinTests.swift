@@ -18,7 +18,7 @@ struct HubJoinTests {
         var join = settledJoin()
         join.add(hubTestObservation(id: "swept", events: []))
 
-        join.apply([.title("Read again")], to: "session")
+        join.apply([.title("Read again", .summarised)], to: "session")
 
         #expect(join.sessions.map(\.id) == ["session"])
     }
@@ -30,7 +30,7 @@ struct HubJoinTests {
         var join = settledJoin()
         join.add(hubTestObservation(id: "swept", events: []))
 
-        join.apply([.title("Swept")], to: "swept")
+        join.apply([.title("Swept", .summarised)], to: "swept")
 
         #expect(join.sessions.map(\.id).sorted() == ["session", "swept"])
     }
@@ -44,7 +44,7 @@ struct HubJoinTests {
         join.add(hubTestObservation(id: "swept", events: []))
 
         join.apply([], to: "session")
-        join.apply([.title("Swept")], to: "swept")
+        join.apply([.title("Swept", .summarised)], to: "swept")
 
         #expect(join.sessions.map(\.id).sorted() == ["session", "swept"])
         #expect(join.sessions.compactMap(\.title).sorted() == ["Reading", "Swept"])
@@ -55,7 +55,7 @@ struct HubJoinTests {
     func `a batch against an unknown transcript changes nothing`() {
         var join = settledJoin()
 
-        join.apply([.title("Nobody")], to: "unknown")
+        join.apply([.title("Nobody", .summarised)], to: "unknown")
 
         #expect(join.sessions.map(\.title) == ["Reading"])
     }
@@ -82,7 +82,7 @@ struct HubJoinTests {
     func `a reread keeps the row published, stale, until the new reading settles`() {
         var join = settledJoin()
         join.add(hubTestObservation(id: "other", events: []))
-        join.apply([.title("Other")], to: "other")
+        join.apply([.title("Other", .summarised)], to: "other")
 
         join.reread(hubTestObservation(id: "session", events: []))
         join.apply([.message(markdown: "still writing")], to: "other")
@@ -100,7 +100,11 @@ struct HubJoinTests {
 
         join.reread(hubTestObservation(id: "session", events: []))
         join.apply(
-            [.title("Whole"), .message(markdown: "first"), .message(markdown: "second")],
+            [
+                .title("Whole", .summarised),
+                .message(markdown: "first"),
+                .message(markdown: "second"),
+            ],
             to: "session",
         )
 
@@ -131,7 +135,7 @@ struct HubJoinTests {
         var join = settledJoin()
         join.apply([.headLeaf(uuid: "outside-the-window")], to: "session")
         join.add(hubTestObservation(id: "other", events: []))
-        join.apply([.title("Other")], to: "other")
+        join.apply([.title("Other", .summarised)], to: "other")
         #expect(join.sessions.map(\.id).sorted() == ["other", "session"])
 
         join.add(hubTestObservation(id: "swept", events: []))
@@ -144,7 +148,7 @@ struct HubJoinTests {
     private func settledJoin() -> HubJoin {
         var join = HubJoin()
         join.add(hubTestObservation(id: "session", events: []))
-        join.apply([.title("Reading")], to: "session")
+        join.apply([.title("Reading", .summarised)], to: "session")
         return join
     }
 

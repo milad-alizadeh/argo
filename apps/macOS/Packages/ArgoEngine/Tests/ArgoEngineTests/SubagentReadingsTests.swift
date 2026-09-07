@@ -38,7 +38,7 @@ struct SubagentReadingsTests {
         let hub = testHub(projectURL: Self.projectURL)
         let (observation, records) = hubLiveObservation(id: "session")
         await hub.startObserving(observation)
-        records.yield([.title("Reading")])
+        records.yield([.title("Reading", .summarised)])
         await hubSettle { !hub.sessions.isEmpty }
         let roster = Tripwire.watching { _ = hub.sessions }
 
@@ -215,7 +215,10 @@ struct SubagentReadingsTests {
     /// standing rather than the emptiness a held-back tail gives.
     private func readingHub() async -> Hub {
         let hub = testHub(projectURL: Self.projectURL)
-        await hub.startObserving(hubTestObservation(id: "session", events: [.title("Reading")]))
+        await hub.startObserving(hubTestObservation(
+            id: "session",
+            events: [.title("Reading", .summarised)],
+        ))
         await hubSettle { !hub.sessions.isEmpty }
         return hub
     }
