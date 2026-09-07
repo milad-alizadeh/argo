@@ -15,15 +15,30 @@ enum SessionArchiveProjection {
     /// `starting` counts as mid-turn. Argo launched that process and has not heard it yet, which
     /// makes it the one status where live work is DIRECT rather than read.
     ///
-    /// Access is deliberately NOT asked about. It used to be, and the effect was that the rows
-    /// Argo cannot end were the same rows it never warned about: an unowned Session mid-turn was
-    /// archived with no prompt, and its agent went on working with no row left to say so (#1596).
-    /// What ownership decides is `confirmMessage`'s words, never whether the reader is asked.
+    /// Access is not asked about: ownership decides `confirmMessage`'s words, never whether the
+    /// reader is asked (#1596).
     static func confirms(status: SessionStatus, archiving: Bool) -> Bool {
         guard archiving else { return false }
         return switch status {
         case .starting, .running, .permission, .asking: true
         case .idle, .stopped, .ended, .unknown: false
+        }
+    }
+
+    /// Whether archiving this Session will actually end its agent (#1596).
+    ///
+    /// `managed` is exactly the set this window holds a live claim on, which is exactly the set
+    /// `Hub.endSession` reaches: `SessionOwnership.provenance` grades a Session `managed` on the
+    /// same bound-claim read `ownerOf` returns at. `external` was never Argo's, and `orphaned`
+    /// had a claim that has since stood down — from here the two are one case, because what the
+    /// end needs is a claim and neither has one.
+    ///
+    /// It lives beside the copy it selects rather than in the view that asks, so the join the
+    /// whole prompt rests on is a value a test can pin.
+    static func endsAgent(access: CockpitPresentation.Session.Access) -> Bool {
+        switch access {
+        case .managed: true
+        case .external, .orphaned: false
         }
     }
 
@@ -40,29 +55,35 @@ enum SessionArchiveProjection {
     /// What this archive does to the agents behind it, split by whether Argo can end them (#1596).
     ///
     /// `ending` is the Sessions this window holds a claim on: archiving those closes their PTY.
-    /// `staying` is every other running one — started by somebody else, or by a run of Argo that
-    /// has since quit — where the claim that held the handle is gone and the archive reaches only
-    /// the row. A reader given one number for the two cannot tell which agents survive the
-    /// gesture, and that is precisely the state the roster was lying about.
+    /// `staying` is every other running one, where the claim that held the handle is gone and the
+    /// archive reaches only the row. A reader given one number for the two cannot tell which
+    /// agents survive the gesture, and that is precisely the state the roster was lying about.
     ///
-    /// A batch with one survivor says "the other one" rather than "the other 1": the count is a
-    /// number in the same sentence as the pronouns that follow it, and a plural pronoun over a
-    /// singular count reads as a second agent nobody has.
+    /// The staying half is hedged and the ending half is not, because the two facts sit on
+    /// different tiers (`CONTEXT.md` · Honesty tier). A claim is DIRECT: Argo holds the PTY and
+    /// knows. Without one, liveness is DERIVED off the process table, so the prompt says what
+    /// Argo can see rather than what is so.
     static func confirmMessage(ending: Int, staying: Int) -> String {
         guard staying > 0 else { return ends(count: ending) }
         guard ending > 0 else { return outlives(count: staying) }
         guard staying > 1 else {
             return """
-            These agents are working. Archiving ends \(ending) of them and takes every Session \
-            off the roster. Argo cannot end the other one, because this window did not start it, \
-            so it keeps running. Putting a Session back keeps its history.
+            Archiving ends \(spelled(ending)) of these agents and takes every Session off the \
+            roster. This window is not holding the other process, so Argo cannot end it and, as \
+            far as Argo can see, it keeps running. Putting a Session back keeps its history.
             """
         }
         return """
-        These agents are working. Archiving ends \(ending) of them and takes every Session off \
-        the roster. Argo cannot end the other \(staying), because this window did not start \
-        them, so they keep running. Putting a Session back keeps its history.
+        Archiving ends \(spelled(ending)) of these agents and takes every Session off the roster. \
+        This window is not holding the other \(staying) processes, so Argo cannot end them and, \
+        as far as Argo can see, they keep running. Putting a Session back keeps its history.
         """
+    }
+
+    /// One written as a word. Every count here shares a sentence with the pronouns answering to
+    /// it, and "ends 1 of these agents … the other one" reads as two different kinds of number.
+    private static func spelled(_ count: Int) -> String {
+        count == 1 ? "one" : String(count)
     }
 
     /// What is lost and what is not, in that order. The second sentence is the load-bearing one:
@@ -84,18 +105,22 @@ enum SessionArchiveProjection {
     /// The archive that reaches the row and not the agent. It says the refusal and its reason
     /// before saying what archiving still does, because the refusal is the surprising half: the
     /// reader pressed a gesture whose whole reputation is that it ends things.
+    ///
+    /// The reason is the missing CLAIM, never who started the process. A Session an earlier run
+    /// of Argo spawned is `orphaned`, and telling that reader Argo did not start it is the
+    /// mislabelling ADR-0026 exists to stop.
     private static func outlives(count: Int) -> String {
         guard count == 1 else {
             return """
-            Their agents are working, and Argo cannot end them: this window did not start those \
-            processes. Archiving takes the Sessions off the roster and the agents keep running. \
-            Putting them back keeps the history.
+            This window is not holding those processes, so Argo cannot end those agents and, as \
+            far as Argo can see, they are still working. Archiving takes the Sessions off the \
+            roster and they keep running. Putting them back keeps the history.
             """
         }
         return """
-        Its agent is working, and Argo cannot end it: this window did not start that process. \
-        Archiving takes the Session off the roster and the agent keeps running. Putting it back \
-        keeps the history.
+        This window is not holding that process, so Argo cannot end the agent and, as far as \
+        Argo can see, it is still working. Archiving takes the Session off the roster and the \
+        agent keeps running. Putting it back keeps the history.
         """
     }
 

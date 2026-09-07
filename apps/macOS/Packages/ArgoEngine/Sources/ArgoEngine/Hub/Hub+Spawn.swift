@@ -65,13 +65,16 @@ public extension Hub {
     /// ONE Session Argo owns, ended: its PTY closed, its claim given up, and every channel it
     /// spoke over forgotten. What archiving a `managed` Session calls (#1290).
     ///
-    /// A Session with no live claim is `external` or `orphaned`, and this Hub has no HANDLE on it.
-    /// That is not the same as nothing running: an orphaned Session is very often a live agent an
-    /// earlier run of Argo started, and an external one an agent somebody started themselves
-    /// (#1596). The claim is what holds the PTY, so with none there is no route from here to that
-    /// process, and the honest answer is to end nothing rather than to signal something matched by
-    /// a folder. What the reader is told about it is the gesture's, before the row goes:
-    /// `SessionArchiveProjection.confirms` raises the prompt on STATUS for exactly this reason.
+    /// A Session with no live claim is `external` or `orphaned`, and the claim is what holds the
+    /// PTY, so this Hub has no route to that process. That is not the same as nothing running: an
+    /// orphaned Session is very often a live agent an earlier run of Argo started, and an external
+    /// one an agent somebody started themselves (#1596). Ending nothing is the honest answer only
+    /// as far as the alternative goes — a cwd match is many-to-one, and the wrong agent killed is
+    /// not recoverable. The reader is told before the row goes, by
+    /// `SessionArchiveProjection.confirms` raising the prompt on STATUS.
+    ///
+    /// Not settled, deferred: #1609 has the argv route that would reach an ORPHANED Session, whose
+    /// `--session-id` is a key unique to it in a way its folder is not.
     ///
     /// `ownerOf` answers both cases in one read — an unowned Session was never bound, and an
     /// orphaned one's claim has stood down — so nothing switches on `SessionProvenance` a second

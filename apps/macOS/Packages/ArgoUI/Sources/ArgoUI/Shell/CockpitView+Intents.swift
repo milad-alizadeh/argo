@@ -183,11 +183,8 @@ extension CockpitView {
     /// An archive over LIVE work raises the prompt instead of performing; everything else performs
     /// at once. The decision and its words are `SessionArchiveProjection`'s — this only asks.
     ///
-    /// Whether the archive will END that work is a second question, and it is answered here rather
-    /// than by the projection because `access` is the presentation's word for it: `managed` is
-    /// exactly the set this window holds a claim on, which is exactly the set `Hub.endSession`
-    /// reaches. Everything else is a Session whose agent the archive leaves running, and the
-    /// prompt has to say so (#1596).
+    /// Whether the archive will END that work is a second question, and `endsAgent` answers it
+    /// from the same `access` the row is drawn from (#1596).
     ///
     /// A Session the presentation cannot name is archived without a prompt rather than dropped: it
     /// is a row that exists (the gesture came off one), and a gesture that silently did nothing is
@@ -209,7 +206,7 @@ extension CockpitView {
             return ArchiveConfirmation.Session(
                 id: session.id,
                 name: session.title,
-                endsAgent: session.access == .managed,
+                endsAgent: SessionArchiveProjection.endsAgent(access: session.access),
             )
         }
         guard !asked.isEmpty else { return }

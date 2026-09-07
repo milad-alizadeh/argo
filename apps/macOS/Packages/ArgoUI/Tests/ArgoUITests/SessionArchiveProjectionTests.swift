@@ -98,10 +98,15 @@ struct SessionArchiveProjectionTests {
     @Test
     func `a prompt over an agent Argo cannot end says the agent keeps running`() {
         let outlives = SessionArchiveProjection.confirmMessage(ending: 0, staying: 1)
-        #expect(outlives.contains("cannot end"))
+        #expect(outlives.contains("cannot end the agent"))
         #expect(outlives.contains("keeps running"))
         // And the promise the owned copy makes must not be made here: nothing is ended.
         #expect(!outlives.contains("ends that agent"))
+        // The reason is the missing claim, never who started it: an orphaned Session's agent WAS
+        // started by Argo, and telling that reader otherwise is the ADR-0026 mislabelling.
+        #expect(!outlives.contains("did not start"))
+        // Liveness with no claim is DERIVED, so the prompt says what Argo can see, not what is so.
+        #expect(outlives.contains("as far as Argo can see"))
     }
 
     /// The plural of the same, asserted separately because they are two strings — and a rule that
@@ -109,8 +114,9 @@ struct SessionArchiveProjectionTests {
     @Test
     func `a batch Argo cannot end speaks of the agents in the plural`() {
         let outlives = SessionArchiveProjection.confirmMessage(ending: 0, staying: 3)
-        #expect(outlives.contains("cannot end"))
+        #expect(outlives.contains("cannot end those agents"))
         #expect(outlives.contains("keep running"))
+        #expect(!outlives.contains("did not start"))
     }
 
     /// A roster holds Sessions this window started beside ones an earlier run did, so a batch is
@@ -118,22 +124,52 @@ struct SessionArchiveProjectionTests {
     /// which agents survive the gesture.
     @Test
     func `a mixed batch says how many end and how many keep running`() {
+        // Each count is asserted WITH the words around it. Bare `contains("2")` cannot tell the
+        // ending half from the staying one, and the two interpolations swapped — a prompt naming
+        // the wrong agents as the doomed ones — is exactly the #1596 failure over again.
         let mixed = SessionArchiveProjection.confirmMessage(ending: 2, staying: 3)
-        #expect(mixed.contains("2"))
-        #expect(mixed.contains("3"))
+        #expect(mixed.contains("ends 2 of these agents"))
+        #expect(mixed.contains("the other 3 processes"))
         #expect(mixed.contains("keep running"))
     }
 
-    /// Caught in the render, not in a value: "the other 1 … did not start them, so they keep
-    /// running" reads as a second agent nobody has, and the count is in the same sentence as the
-    /// pronouns that answer to it.
+    /// Caught in the render, not in a value: "the other 1 … so they keep running" reads as a
+    /// second agent nobody has. Every count here shares a sentence with the pronouns answering to
+    /// it, so both halves spell one as a word.
     @Test
-    func `a batch with one survivor speaks of that one in the singular`() {
-        let one = SessionArchiveProjection.confirmMessage(ending: 2, staying: 1)
-        #expect(one.contains("the other one"))
+    func `a batch of one and one speaks of each in the singular`() {
+        let one = SessionArchiveProjection.confirmMessage(ending: 1, staying: 1)
+        #expect(one.contains("ends one of these agents"))
+        #expect(one.contains("the other process"))
         #expect(one.contains("it keeps running"))
         #expect(!one.contains("they"))
-        #expect(!one.contains("the other 1"))
+        #expect(!one.contains("1"))
+    }
+
+    /// The join the whole prompt rests on (#1596): `managed` is the set this window holds a live
+    /// claim on, and a claim is the only thing `Hub.endSession` can reach. Inverting this is the
+    /// bug the ticket is about, and every string test above stays green while it is inverted.
+    @Test
+    func `only a Session this window holds a claim on is ended by archiving it`() {
+        #expect(SessionArchiveProjection.endsAgent(access: .managed))
+        #expect(!SessionArchiveProjection.endsAgent(access: .external))
+        // Argo DID start an orphaned Session, in a run that has since quit. The claim that held
+        // its PTY went with that run, so from here it is as unreachable as an external one.
+        #expect(!SessionArchiveProjection.endsAgent(access: .orphaned))
+    }
+
+    /// The counts the message is drawn from, over a batch that is both. They are what the reader
+    /// is actually told, so a batch that miscounts either half tells them a plain untruth.
+    @Test
+    func `a batch counts the agents it ends apart from the ones it leaves`() {
+        let batch = ArchiveConfirmation(sessions: [
+            .init(id: "one", name: "one", endsAgent: true),
+            .init(id: "two", name: "two", endsAgent: true),
+            .init(id: "three", name: "three", endsAgent: false),
+        ])
+        #expect(batch.ending == 2)
+        #expect(batch.staying == 1)
+        #expect(batch.ids == ["one", "two", "three"])
     }
 
     /// The verb turns around with the message. "Archive and End" over a batch nothing will end is
