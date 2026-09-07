@@ -63,12 +63,33 @@ struct SessionNamesToMirrorTests {
     @Test
     func `a row that can take no line right now is still handed over, so the sweep retries it`() {
         let draws = Self.presentation(sessions: [
-            Self.session(id: "running", title: "Fix the roster titles", status: .running),
+            Self.session(id: "blocked", title: "Fix the roster titles", status: .permission),
         ]).namesToMirror
 
         // Handed over and marked busy: the mirror does not gate on this, and its CHANGE is what
-        // brings the sweep back when the Turn ends.
-        #expect(draws["running"]?.takesTypedLine == false)
+        // brings the sweep back once the dialog clears.
+        #expect(draws["blocked"]?.takesSlashCommand == false)
+    }
+
+    /// The one transition a blocked rename becomes possible on, and the map has to MOVE across it
+    /// or the sweep never runs again (#1662). Answering a Permission frees the keyboard the
+    /// `/rename` was refused by, so this is the retry — and while the draw carried
+    /// `takesTypedLine`, both sides of the transition read `false` and the map sat still while the
+    /// row kept its old name on Claude's surfaces.
+    @Test
+    func `answering a permission moves the map, so the refused rename is retried`() {
+        let blocked = Self.presentation(sessions: [
+            Self.session(id: "chain-a", title: "Fix the roster titles", status: .permission),
+        ]).namesToMirror
+        let answered = Self.presentation(sessions: [
+            Self.session(id: "chain-a", title: "Fix the roster titles", status: .running),
+        ]).namesToMirror
+
+        #expect(blocked != answered)
+        #expect(blocked["chain-a"]?.takesSlashCommand == false)
+        #expect(answered["chain-a"]?.takesSlashCommand == true)
+        // Same words on both sides: the trigger is the readiness moving, not the name.
+        #expect(blocked["chain-a"]?.name == answered["chain-a"]?.name)
     }
 
     private static let issue = CockpitPresentation.Session.Issue(
