@@ -13,6 +13,7 @@ actor ScriptedCodeHost: CodeHostPort {
     /// there" is an answer.
     private var refusing: Set<String>
     private var reads = 0
+    private var asked: [String] = []
 
     init(
         _ script: [Result<[Delivery], ProviderFetchError>],
@@ -31,6 +32,12 @@ actor ScriptedCodeHost: CodeHostPort {
         refusing = branches
     }
 
+    /// Which branches the host was asked about BY NAME, in order — what a suite about the tick's
+    /// cost counts, a branch asked about twice being the thing it asserts against.
+    func branchesAsked() -> [String] {
+        asked
+    }
+
     /// How many listings the host has answered, which is one per derivation — what a suite about
     /// the LOOP counts, rather than what any one of them landed.
     func readCount() -> Int {
@@ -47,6 +54,7 @@ actor ScriptedCodeHost: CodeHostPort {
         ofBranch branch: String, in _: String, grant _: AccountGrant,
     ) async throws
         -> Delivery? {
+        asked.append(branch)
         guard !refusing.contains(branch) else { throw ProviderFetchError.rateLimited }
         return byBranch[branch]
     }

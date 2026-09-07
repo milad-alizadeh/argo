@@ -96,6 +96,10 @@ public actor DeliveryDerivation {
     /// The fan-out stops at its first refusal. A host that refused one branch is refusing this
     /// read, not that branch — the answer is a rate limit or an outage, and the requests after it
     /// would buy nothing but more of the limit that caused it.
+    ///
+    /// It also skips every branch whose Delivery is already settled, which is what stops the
+    /// fan-out
+    /// growing without bound as a checkout collects worktrees (#1588).
     private func union(
         _ target: PortReadTarget, locally: Locally,
     ) async throws
@@ -103,7 +107,13 @@ public actor DeliveryDerivation {
         let hosted = try await port.inFlight(in: target.scope, grant: target.binding.grant)
         var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
+        // Read once, not per branch: this is the loop whose cost the ticket is about.
+        let settled = await settled(of: target)
         for branch in Self.branches(of: locally.workspaces) where !inFlight.contains(branch) {
+            if let already = settled[branch] {
+                union.deliveries.append(already)
+                continue
+            }
             do {
                 try await union.deliveries.append(named(branch, of: target))
             } catch {
@@ -114,6 +124,21 @@ public actor DeliveryDerivation {
             }
         }
         return union.linked(by: locally.assertions, in: target.projectID)
+    }
+
+    /// What the ledger already holds for every branch whose pull request the host has finished
+    /// with, keyed by branch — merged, or closed without merging, which is a Delivery's terminal
+    /// state (`DeliveryPullRequest.isFinished`).
+    ///
+    /// Asking about one of these again buys an answer that cannot have moved, and on this
+    /// repository's own checkout that was 15 of the 63 branches in a tick, costing three requests
+    /// each (#1588). Reopening one, or opening a second pull request on the same branch, arrives
+    /// through the in-flight listing above — which runs first and takes the branch out of the
+    /// fan-out entirely, so nothing here can strand a branch on a stale terminal answer.
+    private func settled(of target: PortReadTarget) async -> [String: Delivery] {
+        await deliveries.deliveries(of: target.projectID)
+            .filter { $0.pullRequest?.isFinished == true }
+            .reduce(into: [:]) { settled, delivery in settled[delivery.branch] = delivery }
     }
 
     /// What the LAST derivation established for the branches this one never reached — old, and
