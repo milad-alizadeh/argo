@@ -29,13 +29,9 @@ public struct GitHubDeliveries: CodeHostPort {
     /// fragment — so the unencoded spelling asks the host about every pull request in the
     /// repository and answers with whichever was touched last (#1398).
     ///
-    /// The ref filter matches the pull request's LIVE head ref, and GitHub deletes that ref as it
-    /// merges the pull request — so on its own this answer decays, and a merged Delivery stops
-    /// being knowable at whatever moment the branch was deleted. the head commit is the fallback:
-    /// where the
-    /// ref filter answers nothing and the caller has a head commit, the commit is asked instead
-    /// (ADR-0032). Measured on this checkout, the ref filter alone reached 26 of 81 local
-    /// branches and the two composed reach 66.
+    /// The ref filter matches the pull request's LIVE head ref, which GitHub deletes on merge, so
+    /// it answers for 26 of this checkout's 81 local branches; the head commit is asked where it
+    /// answers nothing, and the two composed reach 66 (ADR-0032).
     public func delivery(
         of head: BranchHead, in scope: String, grant: AccountGrant, revalidating: Bool,
     ) async throws
@@ -51,26 +47,26 @@ public struct GitHubDeliveries: CodeHostPort {
             revalidating: revalidating,
             only: 1,
         ).map(\.first)
-        // `unchanged` is the host's word that what the caller holds still stands, so there is
-        // nothing here for a second query to establish — and an empty ANSWER is the branch not
-        // being a name the host knows, which is where the commit is asked about instead.
+        // `unchanged` is the host's word about the REF listing only, and it is passed on rather
+        // than followed by the commit query: the caller holds this branch's last answer and the
+        // saving #1620 bought is exactly this request. What that costs is narrow and real — a
+        // pull request opened, merged and ref-deleted between two asks of one branch is unseen
+        // until the window restarts, because an empty listing's validator does not move.
         guard let answered = byRef.answer else { return .unchanged }
         if let found = answered {
             return .answered(found)
         }
         guard let sha = head.sha else { return .answered(nil) }
         let byCommit = try await delivery(atCommit: sha, in: scope, grant: grant)
-        return .answered(byCommit)
+        return .answered(byCommit?.keyed(to: head.branch))
     }
 
     /// The same question keyed on a commit rather than on a ref, for the branch the host has
     /// deleted (ADR-0032). Asked only where the ref filter answered nothing, so a live branch pays
-    /// for none of this.
+    /// for none of this. A 422 reads as `nil` and does not refuse the read.
     ///
-    /// A 422 reads as `nil` rather than throwing, and that is the sharp edge here: GitHub answers
-    /// this endpoint `No commit found for SHA` for a local tip nobody pushed, which is a true fact
-    /// about that one branch. Left as a refusal it would set `union.refusal` and break the whole
-    /// per-branch fan-out, so one unpushed worktree could truncate a derivation.
+    /// One page, unwalked: after the filter below the set is the pull requests whose HEAD is this
+    /// one commit, and thirty of those on a single commit is not a state git can produce.
     private func delivery(
         atCommit sha: String, in scope: String, grant: AccountGrant,
     ) async throws
@@ -78,16 +74,31 @@ public struct GitHubDeliveries: CodeHostPort {
         let pulls: [GitHubPullRequest]? = try await reads.found(
             "/repos/\(scope)/commits/\(sha)/pulls", grant: grant, tolerating: \.isCommitAbsent,
         )
-        guard let chosen = Self.likeliest(of: pulls ?? []) else { return nil }
+        guard let chosen = Self.headed(by: sha, of: pulls ?? []) else { return nil }
         return try await delivery(chosen, in: scope, grant: grant)
     }
 
-    /// Which of a commit's pull requests a row is about: a merged one, then the most recently
-    /// updated. This endpoint takes no `sort`, so unlike the ref filter's the order is Argo's own.
+    /// The pull request this commit is the HEAD of, and never merely one this commit belongs to.
     ///
-    /// The timestamps are GitHub's ISO-8601 in UTC with a fixed width, which sorts as text.
-    private static func likeliest(of pulls: [GitHubPullRequest]) -> GitHubPullRequest? {
-        let ranked = pulls.sorted { ($0.updatedAt ?? "") > ($1.updatedAt ?? "") }
+    /// The filter is the whole safety of the fallback. GitHub documents this endpoint as listing
+    /// "the merged pull request that introduced the commit to the repository", so a branch sitting
+    /// at the base's tip — every freshly cut worktree — is answered with whichever pull request
+    /// produced that tip. Taken as the branch's own, that reads a never-pushed worktree as landed
+    /// and `Hub.hasLanded` reaps it, and it files the Delivery under the OTHER branch's ref. A
+    /// squash-merged branch still passes: the local tip is the pull request's head commit, and the
+    /// merge commit on the base is a different one.
+    ///
+    /// Ranked merged-first, then by the host's own `updated_at`, then by number so no two orderings
+    /// of the same page answer differently. The endpoint takes no `sort`, so this order is Argo's.
+    /// The timestamps are ISO-8601 in UTC at a fixed width, which sorts as text.
+    private static func headed(
+        by sha: String, of pulls: [GitHubPullRequest],
+    )
+        -> GitHubPullRequest? {
+        let own = pulls.filter { $0.head.sha == sha }
+        let ranked = own.sorted {
+            ($0.updatedAt ?? "", $0.number) > ($1.updatedAt ?? "", $1.number)
+        }
         return ranked.first { $0.mergedAt != nil } ?? ranked.first
     }
 

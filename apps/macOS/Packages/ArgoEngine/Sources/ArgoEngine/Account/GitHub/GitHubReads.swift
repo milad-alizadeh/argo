@@ -127,11 +127,10 @@ struct GitHubReads: Sendable {
     ///
     /// Checked before the reply, not after it fails to parse: a 4xx GitHub hands back as a BODY
     /// passes through the transport like any other answer.
-    /// `tolerating` is a second refusal this one caller reads as `nil` too, and it is the
-    /// caller's because which of GitHub's 4xx are facts about the PATH is a per-endpoint question:
-    /// `/commits/<sha>/pulls` answers 422 for a commit the repository does not hold, which is a
-    /// true answer about that commit (ADR-0032). Every other reader tolerates nothing, so a
-    /// validation refusal stays a refusal everywhere else.
+    /// `tolerating` is one more of GitHub's refusals this caller reads as `nil`, and it is the
+    /// caller's because which 4xx are facts about the PATH is a per-endpoint question (ADR-0032).
+    /// It is matched on the host's own PROSE, the status code having been spent by the transport
+    /// — so a rewording on GitHub's side turns a tolerated answer back into a refusal.
     private func decoded<Reply: Decodable>(
         _ data: Data, tolerating refusal: (GitHubFailure) -> Bool = { _ in false },
     ) throws

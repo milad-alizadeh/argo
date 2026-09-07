@@ -13,7 +13,7 @@ struct WorktreeReapingTests {
     /// being archived. Each test spoils exactly the fact it is about.
     private static func landed(
         kind: WorkspaceProjection.Kind = .worktree,
-        branch: String? = branch,
+        branch: String? = Self.branch,
         dirty: Int = 0,
         divergence: UpstreamDivergence? = UpstreamDivergence(ahead: 0, behind: 0),
         holders: Int = 1,
@@ -128,16 +128,6 @@ struct WorktreeReapingTests {
             branch: Self.branch,
             headSha: Self.headSha,
         )))
-    }
-
-    /// The head commit travels with the candidate because the landed question outlives the ref it
-    /// is about — the host is asked by commit once the branch is gone (ADR-0032).
-    @Test
-    func `a candidate carries the head commit the landed question is asked by`() {
-        let verdict = WorktreeReaping.candidate(at: Self.path, workspace: Self.landed())
-
-        guard case let .reap(candidate) = verdict else { return #expect(Bool(false)) }
-        #expect(candidate.headSha == Self.headSha)
     }
 
     @Test

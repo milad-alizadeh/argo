@@ -57,11 +57,9 @@ public enum WorktreeReaping {
     public struct Candidate: Equatable, Sendable {
         public let path: String
         public let branch: String
-        /// The branch's head commit, and `nil` where git named none. Carried because the landed
-        /// question below outlives the branch it is about: GitHub deletes the head ref as it
-        /// merges, and a worktree in exactly the state this reaps is one whose ref is already gone
-        /// — so asked by branch alone the host answers nothing and the folder survives forever
-        /// (ADR-0032).
+        /// The branch's head commit, and `nil` where git named none. Carried because a worktree
+        /// in exactly the state this reaps is one whose ref the host has already deleted, so asked
+        /// by branch alone the landed question below answers `false` forever (ADR-0032).
         public let headSha: String?
 
         /// The two names the landed question is asked by, as the port takes them.

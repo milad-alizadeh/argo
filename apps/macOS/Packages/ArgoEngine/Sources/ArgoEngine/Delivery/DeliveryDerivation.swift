@@ -167,7 +167,7 @@ public actor DeliveryDerivation {
             from: unsettled, budget: Self.localFallbackBudget,
             cursor: &fallbackCursor[target.projectID, default: 0],
         )
-        let heads = Self.heads(of: locally.workspaces)
+        let heads = scheduled.isEmpty ? [:] : Self.heads(of: locally.workspaces)
         for branch in scheduled {
             do {
                 try await union.deliveries.append(
@@ -247,17 +247,17 @@ public actor DeliveryDerivation {
     /// it is read from the same `WorkspaceProjection` the branches are, so the two halves of one
     /// join key cannot come from two git reads that disagree.
     ///
-    /// First writer wins where two Workspaces are on one branch: git refuses a second worktree on
-    /// a checked-out branch, so the only way to reach that is a reading taken across a checkout
-    /// mid-move, and the earlier one is the one the branch list above kept.
+    /// First writer wins where two Workspaces are on one branch, matching the branch list above:
+    /// git refuses a second worktree on a checked-out branch, so the only way to reach that is a
+    /// reading taken across a checkout mid-move.
     static func heads(of workspaces: [WorkspaceProjection]) -> [String: String] {
-        var heads: [String: String] = [:]
-        for workspace in workspaces {
-            guard let branch = workspace.branch, let headSha = workspace.headSha else { continue }
-            if heads[branch] == nil {
-                heads[branch] = headSha
-            }
-        }
-        return heads
+        Dictionary(
+            workspaces.compactMap { workspace in
+                workspace.branch.flatMap { branch in
+                    workspace.headSha.map { (branch, $0) }
+                }
+            },
+            uniquingKeysWith: { first, _ in first },
+        )
     }
 }

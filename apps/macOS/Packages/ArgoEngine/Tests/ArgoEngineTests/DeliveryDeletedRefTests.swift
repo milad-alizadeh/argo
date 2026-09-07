@@ -38,12 +38,13 @@ struct DeliveryDeletedRefTests {
         return ledger
     }
 
-    /// The merged pull request the commit path answers with. `branch` is spelled because the
-    /// Delivery is keyed on the head ref the HOST reports, which outlives the ref itself — GitHub
-    /// keeps `head.ref` on a pull request whose branch it has deleted.
+    /// The merged pull request the commit path answers with. Both refs are spelled: the Delivery
+    /// is keyed on the head ref the HOST reports, which outlives the ref itself, and the head SHA
+    /// has to be the one asked about or the adapter refuses it as another branch's.
     private static let mergedPull = PullRequestJSON.list([
         PullRequestJSON(
             number: 1604, state: "closed", mergedAt: "2026-08-01T00:00:00Z", branch: merged,
+            headSHA: "bbb",
         ),
     ])
     private static let noCommit = #"{ "message": "No commit found for SHA: aaa" }"#
@@ -73,8 +74,8 @@ struct DeliveryDeletedRefTests {
 
     @Test
     func `a commit the host does not hold does not stop the branches after it`() async {
-        // The 422 is a fact about one branch — a local tip nobody pushed — so it may not truncate
-        // the fan-out. Left as a refusal, any one of this checkout's 15 unpushed branches would.
+        // The 422 is a fact about one branch, so it may not truncate the fan-out: left as a
+        // refusal, any one of this checkout's 15 unpushed branches would (ADR-0032).
         let ledger = await Self.derivedPast(Self.noCommit)
 
         #expect(await ledger.delivery(ofBranch: Self.merged, in: "P1")?.stage == .merge)

@@ -45,6 +45,33 @@ Half the checkout is invisible to the shipped lookup. The 15 that answer neither
 HTTP 422 `No commit found for SHA`: the local tip was never pushed, so the host does not have
 that commit. Ref alone reaches 26 of 81, SHA alone reaches 61, and the two composed reach 66.
 
+### Re-measured, with the head filter (#1618)
+
+The 40 above were counted before the head filter existed, and they do not survive it. 74 local
+worktree branches, each asked both ways:
+
+| lookup outcome | branches |
+| --- | --- |
+| ref filter answers, merged | 15 |
+| ref filter answers, not merged | 9 |
+| **commit answers a pull request headed by this tip, merged** | **1** |
+| commit answers, but no pull request is headed by this tip | 39 |
+| commit absent (422) | 10 |
+
+So the fallback recovers **one** branch on this checkout, not forty. The other 39 were the base's
+own merge pull request answering for a worktree sitting at the base's tip, and 4 of them were
+verified by hand to carry a head ref belonging to an unrelated branch. Two consequences the first
+measurement got backwards:
+
+- **`hasLanded` would have reaped live worktrees.** Unfiltered, `argo/#1582-background-shell-rail`
+  answers merged pull request #1650, whose head ref is `worktree-ticket-1633-bundle-module-trap`.
+  `WorktreeReaping` states the invariant this breaks in terms: "a branch nobody ever pushed cannot
+  pass — there is no pull request to have merged."
+- **Cost rises rather than falls.** Those 39 branches and the 10 that 422 still answer `nil`, are
+  still not `isFinished`, and are therefore still re-asked every tick — now at one extra request
+  each. Net is about +49 per tick on this checkout, not −25. #1619's premise stands: those really
+  are branches with no pull request of their own.
+
 ## Decision
 
 **The branch stays the Delivery's join key. The host stops being asked by the ref.**
@@ -57,7 +84,11 @@ else:
 1. Ask `head=<owner>:<branch>`. If it answers, take it. **A live branch's behaviour does not
    move.**
 2. On an empty answer, ask `/repos/<scope>/commits/<sha>/pulls`. That endpoint keys on a commit,
-   and a commit is not deleted on merge.
+   and a commit is not deleted on merge. **Only a pull request whose own HEAD is that commit is
+   taken**, and it is filed under the branch that was asked about rather than under the host's
+   `head.ref`. GitHub documents this path as listing the merged pull request that *introduced* the
+   commit, so a branch at the base's tip is otherwise answered with whichever pull request produced
+   that tip — measured below.
 3. **A 422 from step 2 reads as `nil`, and does not stop the fan-out.** Every other failure is a
    refusal and stops it, as before.
 4. Where a commit carries several pull requests, prefer a merged one, then the most recently
@@ -103,16 +134,16 @@ rowless Delivery should still be remembered.
 
 ## Consequences
 
-**Cost falls, and this is worth stating so the change is not read as a regression against
-#1588.** Today the 40 blind branches answer `nil`, are therefore not `isFinished`, are therefore
-excluded from the `settled` cache, and are re-asked **every tick, forever**. After this they
-answer merged once and the cache retires them. Against that, the 15 unpushed branches pay one
-extra request per tick. On this checkout the net is roughly −40/+15 requests per tick.
+**Cost rises, by about 49 requests a tick on this checkout.** The paragraph this replaces claimed
+the opposite off the 40-branch count, and the re-measurement above is why it does not hold: a
+branch the commit path answers nothing of its own for is still `nil`, still not `isFinished`, and
+still re-asked every tick — now with a second request on it. The saving is one branch's, and the
+reason to take this change is that a merged Delivery must stay knowable and a live worktree must
+not be reaped, not that it is cheaper.
 
-**#1619 rests on a premise this invalidates.** "A branch with no pull request is asked about
-every minute, forever" counts 40 branches that do have one — a merged one — and read as no-PR
-branches only because the lookup is blind. Anything that prunes those branches from the fan-out
-must land after this, or the merged marks never return.
+**#1619's premise stands.** "A branch with no pull request is asked about every minute, forever"
+was thought to be counting 40 branches that did have one; with the head filter, 39 of them have
+none. #1619 may prune them, and this ADR asks nothing of its ordering any more.
 
 **The 422 rule is the sharpest thing here and was not what the ticket asked about.** A throw from
 the per-branch fan-out sets `union.refusal` and `break`s the loop, deliberately, because a host
