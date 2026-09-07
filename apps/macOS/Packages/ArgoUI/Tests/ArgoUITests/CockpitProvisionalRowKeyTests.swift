@@ -3,7 +3,7 @@ import ArgoEngine
 import Testing
 
 /// Which rows have stopped standing under a claim id (#1563) — the reading that tells the window
-/// where a decision filed before a transcript existed has to be carried to. It came out of the app
+/// where a decision filed before a transcript existed has to be moved to. It came out of the app
 /// target so a test could reach it (ADR-0022), on `untitledTicketNumbers`' ground.
 @Suite("Roster provisional row keys")
 struct CockpitProvisionalRowKeyTests {

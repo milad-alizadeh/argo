@@ -53,27 +53,25 @@ public actor SessionAnnotationStore {
         persist(load().pinning(number, sessionID: sessionID))
     }
 
-    /// Carry each row's annotations off the claim id it stood under and onto the id its CLI picked
-    /// (#1563). Argo's own write and never a gesture: the reader already made their decision, and
-    /// this is only the moment its subject stopped being provisional.
+    /// Argo's own write and never a gesture: `rekeying` says what it does to a decision and why.
     ///
     /// A whole roster's worth at once, keyed provisional-to-durable, because the caller offers
     /// every re-keyed row it can see rather than one — and the file is left alone where none of
     /// them moved, which is nearly every call.
     @discardableResult
-    public func carrying(off provisionalKeys: [String: String]) -> SessionAnnotations {
+    public func rekeying(_ rowKeys: [String: String]) -> SessionAnnotations {
         let held = load()
-        let carried = provisionalKeys.reduce(held) { $0.carrying(from: $1.key, to: $1.value) }
-        guard carried != held else { return held }
-        return persist(carried)
+        let moved = rowKeys.reduce(held) { $0.rekeying(from: $1.key, to: $1.value) }
+        guard moved != held else { return held }
+        return persist(moved)
     }
 
-    /// Drop every entry a previous launch left keyed by a claim id (#1563). Once at start and not
-    /// on the read behind a write, which would take this launch's own provisional keys with it.
+    /// Once at start, never on the read behind a write: `droppingRecycledKeys` says which keys and
+    /// why those.
     @discardableResult
-    public func dropProvisional() -> SessionAnnotations {
+    public func dropRecycledKeys() -> SessionAnnotations {
         let held = load()
-        let kept = held.droppingProvisional()
+        let kept = held.droppingRecycledKeys()
         guard kept != held else { return held }
         return persist(kept)
     }

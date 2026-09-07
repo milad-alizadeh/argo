@@ -18,10 +18,26 @@ struct SessionAnnotationClaimKeyTests {
         let store = file.store()
         await store.setArchived(true, sessionID: claim)
 
-        await store.carrying(off: [claim: sessionID])
+        await store.rekeying([claim: sessionID])
 
         // The gesture the reader made, still in force on the row they made it on.
         #expect(await store.load().isArchived(sessionID))
+    }
+
+    /// The second symptom rides the same key: `setTicket` writes through the same door, so a title
+    /// read for one Session captioned the next launch's spawn under the same number.
+    @Test
+    func `a held ticket title moves with the row it was read for`() async {
+        let file = AnnotationFile()
+        defer { file.remove() }
+        let store = file.store()
+        await store.setTicket(.named("Something else entirely"), sessionID: claim)
+
+        await store.rekeying([claim: sessionID])
+
+        let annotations = await store.load()
+        #expect(annotations.ticket(sessionID) == .named("Something else entirely"))
+        #expect(annotations.ticket(claim) == nil)
     }
 
     @Test
@@ -31,7 +47,7 @@ struct SessionAnnotationClaimKeyTests {
         let store = file.store()
         await store.setArchived(true, sessionID: claim)
 
-        await store.carrying(off: [claim: sessionID])
+        await store.rekeying([claim: sessionID])
 
         #expect(try file.read().contains(claim) == false)
     }
@@ -46,7 +62,7 @@ struct SessionAnnotationClaimKeyTests {
         await store.setName("provisional", sessionID: claim)
         await store.setName("durable", sessionID: sessionID)
 
-        await store.carrying(off: [claim: sessionID])
+        await store.rekeying([claim: sessionID])
 
         let annotations = await store.load()
         #expect(annotations.explicitName(sessionID) == "durable")
@@ -54,44 +70,45 @@ struct SessionAnnotationClaimKeyTests {
     }
 
     @Test
-    func `a row that was never annotated carries nothing and writes nothing`() async {
+    func `a row that was never annotated moves nothing and writes nothing`() async {
         let file = AnnotationFile()
         defer { file.remove() }
         let store = file.store()
 
-        await store.carrying(off: [claim: sessionID])
+        await store.rekeying([claim: sessionID])
 
         // No file at all rather than an empty one: nothing moved, so nothing was written.
         #expect(FileManager.default.fileExists(atPath: file.url.path) == false)
     }
 
-    /// The 47 keys already on this machine's file. With claim ids no longer recycled they name
-    /// nothing, and a launch that swept them keeps the file honest as well as inert.
+    /// The 47 keys already on this machine's file, off the counter that restarted with the app.
     @Test
-    func `a launch drops the claim keys a previous launch left`() async {
-        let file = AnnotationFile()
-        defer { file.remove() }
-        let store = file.store()
-        await store.setArchived(true, sessionID: claim)
-        await store.setArchived(true, sessionID: sessionID)
-
-        await store.dropProvisional()
-
-        let annotations = await store.load()
-        #expect(annotations.isArchived(claim) == false)
-        #expect(annotations.isArchived(sessionID))
-    }
-
-    /// The counter's own spelling, which is what the 15 archived keys on disk are.
-    @Test
-    func `the sweep takes the ids a counter issued too`() async {
+    func `a launch drops the recycled claim keys a previous build left`() async {
         let file = AnnotationFile()
         defer { file.remove() }
         let store = file.store()
         await store.setArchived(true, sessionID: "claim-3")
+        await store.setArchived(true, sessionID: sessionID)
 
-        await store.dropProvisional()
+        await store.dropRecycledKeys()
 
-        #expect(await store.load().isArchived("claim-3") == false)
+        let annotations = await store.load()
+        #expect(annotations.isArchived("claim-3") == false)
+        #expect(annotations.isArchived(sessionID))
+    }
+
+    /// A salted key names ONE launch, and that launch may be a second Argo reading this file right
+    /// now — its provisional rows have not re-keyed yet. Sweeping those on every start would throw
+    /// away a live process's decisions before it could move them.
+    @Test
+    func `a launch leaves another launch's salted claim keys alone`() async {
+        let file = AnnotationFile()
+        defer { file.remove() }
+        let store = file.store()
+        await store.setArchived(true, sessionID: claim)
+
+        await store.dropRecycledKeys()
+
+        #expect(await store.load().isArchived(claim))
     }
 }

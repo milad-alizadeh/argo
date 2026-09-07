@@ -106,7 +106,7 @@ struct ArgoApp: App {
                     // Keyed on the re-keyed set for the reason above: a turn ending on a row that
                     // bound long ago carries nothing.
                     .onChange(of: presentation.provisionalRowKeys, initial: true) { _, keys in
-                        Task { await cockpit.carryAnnotations(off: keys) }
+                        Task { await cockpit.rekeyAnnotations(keys) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above ends
                     // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
