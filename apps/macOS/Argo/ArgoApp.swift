@@ -188,6 +188,7 @@ struct ArgoApp: App {
             unbindPort: { port in Task { await accounts.unbind(port) } },
             stopWaiting: { Task { await accounts.stopWaiting() } },
             finish: { accounts.close() },
+            chooseAgent: { agent in Task { await accounts.chooseAgent(agent) } },
         )
     }
 

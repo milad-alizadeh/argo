@@ -4,7 +4,7 @@
 /// Argo never draws, `codex` is `codex app-server` speaking JSON-RPC over pipes (ADR-0024). What is
 /// on argv differs with it — Claude takes its rung and its chain as flags, Codex takes both inside
 /// the protocol.
-public enum AgentCLI: String, Sendable, CaseIterable {
+public enum AgentCLI: String, Codable, Sendable, CaseIterable {
     case claude
     case codex
 

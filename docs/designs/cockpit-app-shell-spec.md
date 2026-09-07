@@ -198,12 +198,14 @@ later from Settings", with the entry points owned by this spec. It is not a new 
 
 - **Project Settings *is* #165's Connect panel opened on an existing project.** Onboarding =
   creating a Project (ADR-0015), so the setup surface and the settings surface are the same
-  three rows — Folder · Connections · Companion plugin — with the CTA reading `Done` instead of
-  `Create project`. Nothing is designed here that #165 has not already settled, including the
+  Folder and Connections rows, with the CTA reading `Done` instead of `Create project`.
+  Project Settings omits the Companion plugin row and its text (#1688); onboarding retains it.
+  Nothing changes about the existing connection controls, including the
   in-panel `Reconnect` that #165 chose over a separate connections screen.
 - **It holds exactly one thing #165 did not**: the **Agent/CLI** for this project (#186 — set
   per project because nobody runs two editors at once, and removed from spawn to keep `⌘N`
-  zero-config).
+  zero-config). The native Agent picker offers Claude Code and Codex, persists the choice for
+  the Project, and uses it for new Sessions (#1688).
 - **Entry points**: the project tab's context menu, and ⌘K (`Project settings`). Per project —
   it hangs off the Project entity that already owns adapter config (ADR-0015).
 - **There is no app-global Preferences surface.** #188 refused to create one for a single

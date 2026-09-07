@@ -10,6 +10,7 @@ public final class Hub {
     /// Which Project this Hub is on. The checkout read resolves it to the repository root, so a
     /// Hub pointed inside a repo settles on the repo.
     public private(set) var project: HubProject
+    public var agentForNewSession: (URL) async -> AgentCLI = { _ in .claude }
     public private(set) var checkout = CheckoutProjection.Head.unavailable
 
     /// The tails, the join they feed, the sweep that moves them, and the Subagent files read

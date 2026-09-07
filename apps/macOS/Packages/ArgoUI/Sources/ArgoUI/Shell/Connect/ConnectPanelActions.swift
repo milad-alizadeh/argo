@@ -25,6 +25,7 @@ public struct ConnectPanelActions {
     public let stopWaiting: () -> Void
     /// Close the panel: `Create project` on the way in, `Done` on the way back.
     public let finish: () -> Void
+    public let chooseAgent: (AgentCLI) -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be.
     @MainActor public static let inert = ConnectPanelActions(
@@ -47,6 +48,7 @@ public struct ConnectPanelActions {
         unbindPort: @escaping (AccountPort) -> Void,
         stopWaiting: @escaping () -> Void,
         finish: @escaping () -> Void,
+        chooseAgent: @escaping (AgentCLI) -> Void = { _ in },
     ) {
         self.chooseFolder = chooseFolder
         self.connectAccount = connectAccount
@@ -56,5 +58,6 @@ public struct ConnectPanelActions {
         self.unbindPort = unbindPort
         self.stopWaiting = stopWaiting
         self.finish = finish
+        self.chooseAgent = chooseAgent
     }
 }

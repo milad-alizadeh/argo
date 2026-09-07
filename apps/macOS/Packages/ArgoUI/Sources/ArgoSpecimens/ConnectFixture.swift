@@ -178,6 +178,7 @@ enum ConnectFixture {
 
     /// One panel per state it can be in, each carrying the name it renders under.
     static let states: [(name: String, reading: ConnectReading)] = [
+        ("connectCodexSettings", codexSettings),
         ("connectFresh", fresh),
         ("connectFolderOnly", folderOnly),
         ("connectPartly", partly),
