@@ -79,6 +79,23 @@ struct SessionRosterSpecimenTests {
         #expect(opened.count > shut.count)
     }
 
+    /// The same two PNGs are the only evidence #1567's readings have, so the fixture behind them
+    /// has to still reach both: a caption with a failure clause, and runs the reader can tell
+    /// apart once the fold is opened.
+    @Test
+    func `the folded roster the specimen renders says what its fold hid`() throws {
+        let shut = FoldedRosterSpecimen.rows(opened: [])
+        let opened = FoldedRosterSpecimen.rows(opened: FoldedRosterSpecimen.folds)
+
+        #expect(try #require(shut.first { $0.fold != nil }).title.contains("failed"))
+        // Distinct rows drawing what was one derived summary — the case the caption hid.
+        let runs = opened.filter { $0.fold == nil && $0.isReadOnly }
+        #expect(runs.count > 1)
+        #expect(Set(runs.map(\.title)).count == runs.count)
+        // And the failed ones are reachable under it, which is what the fold is for.
+        #expect(runs.contains { $0.state == .failure })
+    }
+
     @Test
     func `the specimen renders both badge words, so the two are judged side by side`() {
         #expect(

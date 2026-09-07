@@ -14,7 +14,7 @@ struct SessionRosterFoldedTicketTests {
         // The two loops fold into one row, so neither draws the Ticket's words — and a row that
         // draws none may not take them off the row that does.
         #expect(SessionRosterProjection.rows(from: Self.aFoldBesideOneRow()).map(\.title)
-            == ["Rough atlas for Argo itself", "2 runs"])
+            == ["Rough atlas for Argo itself", "2 Sessions"])
     }
 
     @Test
@@ -27,7 +27,7 @@ struct SessionRosterFoldedTicketTests {
         #expect(SessionRosterProjection.rows(from: sessions, opened: opened).map(\.title)
             == [
                 "Rough atlas for Argo itself",
-                "2 runs",
+                "2 Sessions",
                 "Write a caption",
                 "These two files change together",
             ])
@@ -44,7 +44,7 @@ struct SessionRosterFoldedTicketTests {
         // Nothing above them is on #650, but they are drawn beside EACH OTHER, so the rule #1072
         // wrote holds inside the fold too: two rows may not read one Ticket's words.
         #expect(SessionRosterProjection.rows(from: sessions, opened: opened).map(\.title)
-            == ["2 runs", "Write a caption", "These two files change together"])
+            == ["2 Sessions", "Write a caption", "These two files change together"])
     }
 
     @Test
@@ -61,7 +61,7 @@ struct SessionRosterFoldedTicketTests {
 
         // #745, unchanged inside a fold: each run its Ticket names apart still spends it.
         #expect(SessionRosterProjection.rows(from: sessions, opened: opened).map(\.title)
-            == ["2 runs", "Anchor the feed", "Rough atlas for Argo itself"])
+            == ["2 Sessions", "Anchor the feed", "Rough atlas for Argo itself"])
     }
 
     /// One row the reader can see, and beside it two headless loops in one folder — which fold

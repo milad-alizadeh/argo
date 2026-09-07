@@ -6,6 +6,9 @@
 /// so rail and header still always match. Which rows do the spending is the ROSTER's question —
 /// `SessionRosterProjection.namedTitle(for:among:)` is the one route to it (#1251).
 ///
+/// The derived summary is contested the same way, and for the same reason (#1567): a `-p` loop
+/// sends one prompt template, so one derived summary names every row it wrote.
+///
 /// It is also where the title is SPELLED: whichever link of the chain answers, no title the
 /// cockpit draws carries an em dash — see `spelled(_:)`.
 enum SessionTitle {
@@ -25,9 +28,7 @@ enum SessionTitle {
     /// `SessionRosterProjection.namedTitle(for:among:)` instead (#1391): a Session drawn against
     /// only itself always reads as if its Ticket names it alone.
     static func resolved(for session: CockpitPresentation.Session) -> String {
-        naming(
-            for: session, drawn: ticketsDrawn(across: [session]), contesting: [session.id],
-        ).title
+        namings(of: [session], against: [session])[0].title
     }
 
     /// The name each roster row draws, decided across the WHOLE roster in one pass — the way
@@ -51,9 +52,24 @@ enum SessionTitle {
         against rivals: [CockpitPresentation.Session],
     )
         -> [Naming] {
-        let drawn = ticketsDrawn(across: rivals)
+        let tickets = ticketsDrawn(across: rivals)
         let contesting = Set(rivals.map(\.id))
-        return sessions.map { naming(for: $0, drawn: drawn, contesting: contesting) }
+        let spend = Spend(
+            tickets: tickets,
+            derived: derivedTitlesDrawn(across: rivals, tickets: tickets, contesting: contesting),
+            contesting: contesting,
+        )
+        return sessions.map { naming(for: $0, spend: spend) }
+    }
+
+    /// What the rows the reader can SEE are already drawing — the Ticket words and the derived
+    /// summaries together, decided once for the pass and read per row. One value, because a row's
+    /// answer to the second question depends on its answer to the first: a row wearing its
+    /// Ticket's sentence is not drawing a summary anybody can collide with.
+    private struct Spend {
+        let tickets: [Int: Int]
+        let derived: [String: Int]
+        let contesting: Set<CockpitPresentation.Session.ID>
     }
 
     /// The linked Ticket's own sentence, and nothing else (#1347): the number that used to ride
@@ -81,14 +97,11 @@ enum SessionTitle {
     }
 
     private static func naming(
-        for session: CockpitPresentation.Session,
-        drawn: [Int: Int],
-        contesting: Set<CockpitPresentation.Session.ID>,
+        for session: CockpitPresentation.Session, spend: Spend,
     )
         -> Naming {
-        let names = namesOneRow(for: session, drawn: drawn, contesting: contesting)
-        let words = names ? ticket(for: session) : nil
-        let resetsTo = spelled(words ?? session.title)
+        let words = ticket(spentOn: session, spend: spend)
+        let resetsTo = words.map(spelled) ?? toldApart(session, spend: spend)
         return Naming(
             // Reset's words are spelled the same way, so the dialog can never offer a title the
             // row would then draw differently.
@@ -96,6 +109,70 @@ enum SessionTitle {
             drawsDerivedTitle: session.explicitName == nil && words == nil,
             resetsTo: resetsTo,
         )
+    }
+
+    /// The Ticket's sentence where it names one row, and `nil` where the row falls through to its
+    /// own summary — the chain's second link, asked once so nothing downstream re-decides it.
+    private static func ticket(
+        spentOn session: CockpitPresentation.Session, spend: Spend,
+    )
+        -> String? {
+        namesOneRow(for: session, drawn: spend.tickets, contesting: spend.contesting)
+            ? ticket(for: session)
+            : nil
+    }
+
+    /// The derived summary a row draws, plus the fact that tells it from a row drawing the SAME
+    /// one (#1567). Nothing contested the summary before, so a `-p` loop's 197 runs drew 197 rows
+    /// of seven identical words and the failed one among them was one 8pt dot.
+    ///
+    /// The time of day, because a batch's runs differ by minutes and by nothing else. A run Argo
+    /// read no start for keeps the bare summary rather than take an invented moment
+    /// (`CONTEXT.md` L2 · degrade-down).
+    ///
+    /// It goes FIRST, which the render decided: the roster's title is one line truncating at the
+    /// tail, and a summary long enough to collide is long enough to fill that line, so a clock
+    /// behind it is clipped on every row that needed it. Fixed-width, so the sentences that
+    /// follow it still start on one column.
+    private static func toldApart(
+        _ session: CockpitPresentation.Session, spend: Spend,
+    )
+        -> String {
+        let summary = spelled(session.title)
+        guard !namesOneRow(summary, for: session, spend: spend),
+              let clock = TimeOfDayPhrase.phrase(atMs: session.startedAtMs)
+        else { return summary }
+        return clock + clockJoiner + summary
+    }
+
+    /// A middot, which is how the roster's other pairs spell two facts standing beside each
+    /// other. The clock says nothing ABOUT the summary, so it takes no colon.
+    private static let clockJoiner = " · "
+
+    /// How many rows draw each derived summary as their title, counted the way `ticketsDrawn`
+    /// counts Tickets: only where the row actually DRAWS it, so neither a renamed row nor one
+    /// wearing its Ticket's sentence pushes a neighbour off its name.
+    private static func derivedTitlesDrawn(
+        across sessions: [CockpitPresentation.Session],
+        tickets: [Int: Int],
+        contesting: Set<CockpitPresentation.Session.ID>,
+    )
+        -> [String: Int] {
+        // The counting pass reads the Ticket half alone, which is the half already settled.
+        let spend = Spend(tickets: tickets, derived: [:], contesting: contesting)
+        return sessions.reduce(into: [:]) { counts, session in
+            guard drawsDerivedTitle(session, spend: spend) else { return }
+            counts[spelled(session.title), default: 0] += 1
+        }
+    }
+
+    /// Whether a row falls all the way through the chain to its own summary — the count above is
+    /// of these rows alone.
+    private static func drawsDerivedTitle(
+        _ session: CockpitPresentation.Session, spend: Spend,
+    )
+        -> Bool {
+        session.explicitName == nil && ticket(spentOn: session, spend: spend) == nil
     }
 
     /// No em dash in a title the cockpit draws. It arrives from all three links of the chain — a
@@ -119,12 +196,11 @@ enum SessionTitle {
 
     private static let emDash: Character = "—"
 
-    /// Whether this Session is the only row a Ticket's words would name. Its own draw comes out of
-    /// the count, so a renamed row — which draws no words now, and would draw them the moment
-    /// Reset takes its name off — is asked exactly the same question.
+    /// Whether this Session is the only row a Ticket's words would name.
     ///
-    /// Only where the count HELD its draw: a Session outside the contesting set was never added
-    /// to `drawn`, and taking one off there would hand it every Ticket a visible row is drawing.
+    /// `byThisRow` only where the count HELD this row's draw: a Session outside the contesting set
+    /// was never added to `drawn`, and taking one off there would hand it every Ticket a visible
+    /// row is drawing.
     private static func namesOneRow(
         for session: CockpitPresentation.Session,
         drawn: [Int: Int],
@@ -132,7 +208,33 @@ enum SessionTitle {
     )
         -> Bool {
         guard let number = session.ticket.link?.number else { return false }
-        let draws = contesting.contains(session.id) && session.explicitName == nil
-        return drawn[number, default: 0] - (draws ? 1 : 0) == 0
+        return drawnOnce(
+            number, in: drawn,
+            byThisRow: contesting.contains(session.id) && session.explicitName == nil,
+        )
+    }
+
+    /// The same question of a derived summary. What counts as a draw is the only thing that
+    /// differs: a Ticket is won at the chain's second link and a summary at its third.
+    private static func namesOneRow(
+        _ summary: String, for session: CockpitPresentation.Session, spend: Spend,
+    )
+        -> Bool {
+        drawnOnce(
+            summary, in: spend.derived,
+            byThisRow: spend.contesting.contains(session.id)
+                && drawsDerivedTitle(session, spend: spend),
+        )
+    }
+
+    /// The arithmetic both contests are: a key drawn by exactly one row, asked of a row that may
+    /// be drawing it itself. Its own draw comes out of the count, so a renamed row — which draws
+    /// nothing now, and would draw the moment Reset takes its name off — is asked exactly the
+    /// question Reset will make true.
+    private static func drawnOnce<Key: Hashable>(
+        _ key: Key, in drawn: [Key: Int], byThisRow: Bool,
+    )
+        -> Bool {
+        drawn[key, default: 0] - (byThisRow ? 1 : 0) == 0
     }
 }

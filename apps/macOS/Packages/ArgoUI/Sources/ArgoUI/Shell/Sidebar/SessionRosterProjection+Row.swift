@@ -187,7 +187,7 @@ extension SessionRosterProjection {
         /// A fold is read-only because nothing under it can be typed at, which is a different
         /// sentence from a Session Argo does not own the terminal of.
         private var readOnlyPhrase: String {
-            fold == nil ? "Read-only Session" : "Headless runs"
+            fold == nil ? "Read-only Session" : "Headless Sessions"
         }
     }
 
@@ -203,7 +203,7 @@ extension SessionRosterProjection {
         let clock = clock(for: newest, in: newest.events, nowMs: nowMs)
         return Row(
             identity: Row.Identity(
-                id: fold.id, title: "\(fold.count) runs", rename: nil, fold: fold,
+                id: fold.id, title: foldCaption(over: runs), rename: nil, fold: fold,
             ),
             work: Row.Work(
                 location: newest.workspaceLocation, worktree: nil, branch: nil,

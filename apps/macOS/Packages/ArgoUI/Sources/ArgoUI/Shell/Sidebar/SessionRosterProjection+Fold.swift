@@ -8,7 +8,7 @@ extension SessionRosterProjection {
     struct Fold: Equatable {
         /// The fold's own id, which names a directory and a list, and never a Session.
         let id: String
-        /// How many runs are under it. Never one — see `Folding.least`.
+        /// How many Sessions are under it. Never one — see `Folding.least`.
         let count: Int
         /// The shortest name for the directory that tells it from the other folds on the roster.
         let label: String

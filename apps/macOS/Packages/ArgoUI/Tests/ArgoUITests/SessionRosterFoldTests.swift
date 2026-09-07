@@ -26,7 +26,7 @@ struct SessionRosterFoldTests {
 
         let fold = try #require(rows.first)
         #expect(rows.count == 1)
-        #expect(fold.title == "180 runs")
+        #expect(fold.title == "180 Sessions")
         // The directory, in the slot the roster tells rows apart by — the label #1072's title
         // pass could not supply, because 180 near-identical prompts share their first words.
         #expect(fold.toldApart == "prototypes")
@@ -64,7 +64,7 @@ struct SessionRosterFoldTests {
             from: runs(4, at: loop) + runs(3, at: RosterFoldFixture.otherLoop, from: 100),
         )
 
-        #expect(rows.map(\.title) == ["4 runs", "3 runs"])
+        #expect(rows.map(\.title) == ["4 Sessions", "3 Sessions"])
         #expect(rows.map(\.toldApart) == ["prototypes", "captions"])
     }
 
@@ -112,13 +112,13 @@ struct SessionRosterFoldTests {
     }
 
     @Test
-    func `a fold says how many runs it stands for, and whether it is open`() throws {
+    func `a fold says how many Sessions it stands for, and whether it is open`() throws {
         let sessions = runs(2, at: loop)
         let shut = try #require(SessionRosterProjection.rows(from: sessions).first)
 
-        #expect(shut.announcement.contains("2 runs"))
+        #expect(shut.announcement.contains("2 Sessions"))
         #expect(shut.announcement.contains("Collapsed"))
-        #expect(shut.announcement.contains("Headless runs"))
+        #expect(shut.announcement.contains("Headless Sessions"))
 
         let open = try #require(
             SessionRosterProjection.rows(from: sessions, opened: [shut.id]).first,

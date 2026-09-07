@@ -9,15 +9,25 @@ import ArgoEngine
 enum RosterFoldFixture {
     static let loop = "\(RosterSessionFixture.checkout)/docs/designs/prototypes"
     static let otherLoop = "\(RosterSessionFixture.checkout)/docs/designs/captions"
+    private static let aMinute = 60000
+    private static let firstStartedAtMs = 8_000_000
 
     static func runs(
         _ count: Int,
         at directory: String?,
         entry: SessionEntry = .headless,
         from first: Int = 0,
+        status: SessionStatus = .idle,
     )
         -> [CockpitPresentation.Session] {
-        (first ..< first + count).map { run(at: directory, entry: entry, index: $0) }
+        (first ..< first + count).map {
+            run(
+                at: directory, entry: entry, index: $0, status: status,
+                // A minute apart, which is what a `-p` loop's runs actually are: the one fact
+                // that tells two of them apart when the prompt behind them is one template.
+                startedAtMs: Self.firstStartedAtMs + $0 * Self.aMinute,
+            )
+        }
     }
 
     /// One run. `external` because that is what every headless run on a real roster is: nobody
@@ -28,6 +38,8 @@ enum RosterFoldFixture {
         index: Int = 0,
         access: CockpitPresentation.Session.Access = .external,
         isArchived: Bool = false,
+        status: SessionStatus = .idle,
+        startedAtMs: Int? = nil,
     )
         -> CockpitPresentation.Session {
         RosterSessionFixture.session(
@@ -36,8 +48,10 @@ enum RosterFoldFixture {
             workspaceLocation: directory,
             access: access,
             entry: entry,
+            status: status,
             // Newest first, the order the Hub publishes in.
             lastSeenAtMs: 9_000_000 - index,
+            startedAtMs: startedAtMs,
             isArchived: isArchived,
         )
     }
