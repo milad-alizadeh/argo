@@ -62,8 +62,8 @@ struct ArgoApp: App {
         // A rename is the whole of what holds it, and that is not an oversight: no suite can reach
         // this fold. It is a `Scene` body in the app target, which has no unit-test bundle, and it
         // cannot move into ArgoUI — what it folds reads live Hub state, which exactly one file in
-        // ArgoUI may do and that file is the projection, not a view (ADR-0022 edge 1). A boundary
-        // edge is the only mechanism left for it (#960); see #997 gap 4.
+        // ArgoUI may do and that file is the projection, not a view (ADR-0022). Review is the
+        // only mechanism left for it (#960); see #997 gap 4.
         //
         // Handed on for the same reason, to three of the same readers. Named apart from the
         // property it is read from, so a rename there cannot quietly put the three rebuilds back.

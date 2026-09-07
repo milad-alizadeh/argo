@@ -436,9 +436,9 @@ Detail: `cockpit-app-shell-spec.md` → *Out-of-window attention*.
 > makes survives the rewrite and is why it is kept: one owner holds authoritative state,
 > there is exactly ONE seam, and views take facts rather than rendered states. The MECHANISM
 > named below — `applyEvent`/`applyDelta`, `@shared/projection`, IPC deltas, stories — does
-> not. Swift spells it Hub → cockpit projection → SwiftUI, with `swift-boundaries.sh`
-> enforcing the seam that this section could only assert. Read it for the shape; take names
-> and file paths from `apps/macOS`.
+> not. Swift spells it Hub → cockpit projection → SwiftUI. A gate enforced that seam for a
+> while; it was removed, so the seam is asserted here and held in review. Read this for the
+> shape; take names and file paths from `apps/macOS`.
 
 ### 11.1 The one seam
 

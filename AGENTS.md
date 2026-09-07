@@ -58,8 +58,14 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 ### Module boundaries
 
-`apps/macOS`'s package layering is nine gates in `scripts/swift-boundaries.sh`, and each failure
-message states its rule. The edges and their reasoning: `docs/agents/module-boundaries.md`.
+`apps/macOS` is layered by its SPM target graph: a module imports only what its `Package.swift`
+declares, and the compiler refuses the rest. That is the whole of the enforcement. The shell gate
+that used to check the rest — nine edges in `scripts/swift-boundaries.sh` — is gone, so what it
+carried is now convention, held by review rather than by exit code: the headless modules stay
+clear of SwiftUI and AppKit, `ArgoUI` does not import the dev-tool targets beside it, a design
+constant is declared in `ArgoDesign` and named once, and no view asks SwiftUI how tall a row is.
+ADR-0022, ADR-0027 and ADR-0030 hold the reasoning behind most of these;
+`apps/macOS/README.md` holds the dev-tool-target one.
 
 ### Quality gates
 

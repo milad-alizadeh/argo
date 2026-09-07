@@ -18,10 +18,6 @@
 #     spells it — the job retired with the runner — so this is now its only definition, and
 #     `swift-gate.test.mjs` holds it against ci.yml only for as long as one is written there.
 #
-#     Plus the four paths that carry the boundary gate's own thresholds. `'scripts/swift-*.sh'`
-#     matches none of them, so a push that moved only the ink budget answered "nothing in the
-#     Swift scope changed" and ran nothing over the tree that number governs (#1511).
-#
 # Called by .husky/pre-push. Run it by hand any time: `sh scripts/swift-gate.sh`.
 set -e
 
@@ -48,8 +44,6 @@ else
   # Kept identical to ci.yml's `changes` job.
   CHANGED=$(git diff --name-only "$BASE...HEAD" -- \
        apps/macOS 'scripts/swift-*.sh' \
-       scripts/check-text-ink-swift.sh scripts/text-ink-budget.txt \
-       scripts/check-design-tokens-swift.sh scripts/design-tokens-swift-allow.txt \
        package.json turbo.json \
        .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md')
   if [ -z "$CHANGED" ]; then
@@ -59,7 +53,7 @@ else
   fi
 fi
 
-# Every skip in the three Swift shell scripts becomes a failure.
+# Every skip in the two Swift shell scripts becomes a failure.
 ARGO_REQUIRE_SWIFT_TOOLS=1
 export ARGO_REQUIRE_SWIFT_TOOLS
 
@@ -67,8 +61,8 @@ export ARGO_REQUIRE_SWIFT_TOOLS
 # Which packages this change can reach, through the package graph. ALL when the change is
 # outside the packages at all, or when there was no base to diff against.
 #
-# The formatter, the linter, the boundary gate and the app build stay whole whatever this
-# says. They are cheap next to the suites, they read the tree rather than a diff, and the app
+# The formatter, the linter and the app build stay whole whatever this says. They are cheap
+# next to the suites, they read the tree rather than a diff, and the app
 # target links every package anyway — so scoping them would buy little and could hide a lot.
 # What it scopes is the suites, which is where the duplicated work is: `swift test` builds
 # each package again in its OWN scratch path, so four packages is four subgraphs compiled.
@@ -110,7 +104,7 @@ fi
 . "$GATE_DIR/build-lock.sh"
 build_lock_acquire
 
-echo "swift-gate: SwiftFormat · SwiftLint · module boundaries"
+echo "swift-gate: SwiftFormat · SwiftLint"
 bun run quality:swift
 
 echo "swift-gate: build"

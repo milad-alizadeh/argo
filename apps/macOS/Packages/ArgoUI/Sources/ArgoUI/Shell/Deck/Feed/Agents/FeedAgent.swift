@@ -33,7 +33,7 @@ package struct FeedAgent: Equatable, Sendable, Identifiable {
     /// work was instant and free.
     ///
     /// Set after the init rather than through it, and for `delegationHold`'s reason: that list is
-    /// at the count it is grandfathered at (`swift-boundaries` edge 6), and one more parameter
+    /// already past the four-parameter cap (`apps/macOS/.swiftlint.yml`), and one more parameter
     /// would authorise the next one.
     var measure = SubagentMeasure.unmeasured
 

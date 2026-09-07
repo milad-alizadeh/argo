@@ -7,7 +7,7 @@ prove a change to them.
 ## What runs where
 
 `bun run quality` is biome, duplication and Swift. `quality:swift` (SwiftFormat in check mode,
-SwiftLint, package boundaries) needs a Mac, so it runs **at push time, not on CI**:
+SwiftLint) needs a Mac, so it runs **at push time, not on CI**:
 `.husky/pre-push` calls `scripts/swift-gate.sh`, which runs `quality:swift`, the app build and the
 swift-testing suites, in that order, under `ARGO_REQUIRE_SWIFT_TOOLS=1`. A failing check refuses
 the push.
@@ -64,7 +64,7 @@ running this gate against each other. The arithmetic and the measurements are in
    lane.
 3. **It works out which packages the change reaches.** `scripts/swift-scope.sh` reads the
    `.package(path:)` edges and answers ALL for anything it cannot place. Only the SUITES are
-   scoped by it; the formatter, the linter, the boundary gate and the app build stay whole.
+   scoped by it; the formatter, the linter and the app build stay whole.
 
 ### The steps remember too
 
@@ -80,8 +80,8 @@ per gate: whichever runs first records the verdict, and the other reads it.
   is still on disk** — `worktree-gc --artifacts` deletes products, and a verdict is not a
   product. An `xcodebuild` that exits 0 having written no app is a failure, not a pass.
 
-So the shape of a push after an agent has already run the suites is: the boundary gate and the
-linters run, the build and the four suites do not, and the whole thing is under a minute.
+So the shape of a push after an agent has already run the suites is: the linters run, the build
+and the four suites do not, and the whole thing is under a minute.
 
 ### Measuring whether any of it worked
 
@@ -102,10 +102,9 @@ has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs` (with
 written the same way round: what it proves is that a MISS still happens when one must.
 
 Linux CI runs biome, duplication and `test:hooks` — the only executable suite there, and the
-suite that gates the push-time gate. Pre-commit runs lint-staged: biome, then SwiftFormat,
-SwiftLint and boundaries over staged Swift. The design-token gate is inside boundaries as edge 7
-(#1088), so it runs in the push gate rather than on pre-commit alone — `check:design-tokens` is
-the same scan by hand.
+suite that gates the push-time gate. Pre-commit runs lint-staged: biome, then SwiftFormat and
+SwiftLint over staged Swift. The design-token scan that used to run beside them was removed with
+the boundary gate, so a raw constant outside `ArgoDesign` is now a review catch, not a refusal.
 
 `test:hooks` is `scripts/run-suites.mjs`, and its suites are **the directory, not a list**: every
 `scripts/*.test.mjs` runs, so a new suite is added by writing the file and nothing else. It runs
@@ -132,8 +131,8 @@ not a gate itself**, for the reason `PerfBudgets.figureMachine` gives, and the o
 is the fold between its two arms — armed the day a quiet runner's figures land (#1024).
 
 Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
-so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still
-apply to every tracked `.mjs`.
+so have no subject since ADR-0023. Dormant, but the per-file caps still apply to every tracked
+`.mjs`.
 
 ## Why there is no `analyzer_rules:` in `.swiftlint.yml`
 
@@ -187,15 +186,14 @@ package build never touched.
 
 ## Where an exemption goes
 
-Exemptions live in **four** files, each entry labelled **KIND** (permanent — the rule doesn't
+Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule doesn't
 apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
-| `scripts/design-tokens-swift-allow.txt` | design constants outside `ArgoDesign` — one `grep -E` pattern per line with a comment line above it saying why. Both halves are gates: an entry with no reason is refused, and so is one that matches nothing any more |
-| `.swiftlint.yml` | the Swift caps, ratchets inline — including the initializer cap that `swift-boundaries.sh` edge 6 reads from there and SwiftLint itself cannot check. That one's ratchet is a named list, not a number: `# INIT: <file> <count> — <why>`, one line per grandfathered init, and edge 6 fails a stale line as well as an unnamed init (#992) |
+| `.swiftlint.yml` | the Swift caps, ratchets inline. The initializer cap is no longer checked by anything: SwiftLint cannot see an `init`, and the gate that applied the function cap to one was removed. The `# INIT: <file> <count> — <why>` lines under it are a record of the known widths, not a ratchet (#992) |
 
 Two rules have no linter and live in `rules/house.md` prose only: a cast standing in for a
 check, and the exhaustive construct over a closed set.

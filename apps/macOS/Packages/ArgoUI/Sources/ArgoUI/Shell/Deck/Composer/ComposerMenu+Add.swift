@@ -10,8 +10,8 @@ import ArgoDesign
 extension ComposerMenu {
     /// One row of `AddMenu`: what it opens, its icon and its shortcut key both DERIVED off the same
     /// `sigil` — `plus.png` draws one mark per row, unlike a `ComposerMenuRow`, which carries
-    /// none. One source rather than three redundant stored ones is also what keeps this under
-    /// edge 6's 4-parameter cap.
+    /// none. One source rather than three redundant stored ones is also what keeps this under the
+    /// four-parameter cap.
     struct AddRow: Equatable, Identifiable {
         let id: String
         let label: String
