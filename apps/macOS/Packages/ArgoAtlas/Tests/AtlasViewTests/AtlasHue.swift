@@ -43,7 +43,11 @@ struct AtlasHue {
 
     /// The hue in degrees, the textbook way round the wheel. Zero for a colour with no hue, which
     /// `band` never reaches: `saturation` has already answered for those.
-    private var degrees: Double {
+    ///
+    /// Read directly as well as through `band` since #1158: a Domain's colour is a hue at a rank
+    /// rather than one of three named swatches, and the claim about it is that washing it out
+    /// leaves it exactly where it was.
+    var degrees: Double {
         let span = high - low
         guard span > 0 else { return 0 }
         let raw = switch high {
