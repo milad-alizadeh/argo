@@ -12,7 +12,17 @@ extension SessionNavigator {
     /// `.swipeActions` gives the system's reveal, spring back, close-when-another-opens and
     /// full-swipe commit. `allowsFullSwipe` is what keeps story 12 — a hard pull still archives
     /// outright, without a second click.
-    @ViewBuilder func swipeable(_ row: SessionRosterProjection.Row) -> some View {
+    /// `aim` and `reading` are handed IN rather than read here, and that is the #1559 fix: both
+    /// were computed properties, so each of them was rebuilt once per row — `drawnRows` alone
+    /// concatenated the whole roster into a fresh array of `Row`s for every row it then filtered.
+    /// The list paid the roster squared on every update, for a value only a swipe or a menu reads.
+    /// `list` settles both once and passes them down.
+    @ViewBuilder func swipeable(
+        _ row: SessionRosterProjection.Row,
+        aim: SessionRosterProjection.ArchiveAim,
+        reading: SessionRosterProjection.Selection,
+    )
+        -> some View {
         let drawn = SessionRow(
             row: row,
             renaming: SessionRowRenaming(
@@ -26,9 +36,7 @@ extension SessionNavigator {
                 // The whole selection when the row is in it, that row alone when it is not, and
                 // only the rows on the SAME side of the foot — so the count in the menu is the
                 // number of Sessions the press actually archives.
-                targets: SessionRosterProjection.archiveTargets(
-                    under: row, aimed: held.selection.aim(at: row.id), in: drawnRows,
-                ),
+                targets: aim.targets(under: row),
                 act: archive,
             ),
             // The selection the `List`'s own click would have made, made by the row instead — the
@@ -70,7 +78,9 @@ extension SessionNavigator {
         }
     }
 
-    /// The one reading of "which row is selected", which the ground is drawn from.
+    /// The one reading of "which row is selected", which the ground is drawn from. Taken ONCE per
+    /// list pass and handed to every row (#1559): read as a computed property from inside the row,
+    /// it built a fresh `Selection` for each of them.
     var reading: SessionRosterProjection.Selection {
         SessionRosterProjection.Selection(rows: held.selection.rows)
     }

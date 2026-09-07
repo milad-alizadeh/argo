@@ -77,15 +77,23 @@ package struct SessionNavigator: View {
     }
 
     private var list: some View {
-        List(selection: held.listSelection(over: selectableRows)) {
+        // Settled ONCE for the whole pass and handed to every row (#1559). Both were read from
+        // inside the row before, and both walk the roster: a list of N rows built N drawn arrays
+        // and N selections, then filtered each of them — the roster squared, on every update, for
+        // a value only a swipe or a menu ever reads.
+        let drawn = drawnRows
+        let aim = SessionRosterProjection.ArchiveAim(selection: held.selection.rows, in: drawn)
+        let selected = reading
+
+        return List(selection: held.listSelection(over: selectableRows)) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
             } else {
                 ForEach(rows) { row in
-                    swipeable(row)
+                    swipeable(row, aim: aim, reading: selected)
                 }
             }
-            archivedFoot
+            archivedFoot(aim: aim, reading: selected)
         }
         // The whole reading of "is the reader at the top", in the one place it can be read from.
         // Compared against the top inset and not against zero: a list resting at its top sits at
@@ -120,12 +128,16 @@ package struct SessionNavigator: View {
     /// The section takes NO `isExpanded:` binding, deliberately: given one, a sidebar section draws
     /// the system's own disclosure under the pointer, and the foot then carries two chevrons with
     /// only that one live. The header owns the gesture instead (`RosterArchiveFoot`).
-    @ViewBuilder private var archivedFoot: some View {
+    @ViewBuilder private func archivedFoot(
+        aim: SessionRosterProjection.ArchiveAim,
+        reading: SessionRosterProjection.Selection,
+    )
+        -> some View {
         if let foot = SessionRosterProjection.archivedFoot(archived) {
             Section {
                 if isArchiveOpen {
                     ForEach(archived) { row in
-                        swipeable(row)
+                        swipeable(row, aim: aim, reading: reading)
                     }
                 }
             } header: {
