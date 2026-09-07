@@ -52,6 +52,32 @@ Status: accepted (#182) · 2026-07-22 · GitHub's grant settled (#367) · 2026-0
 > Project already bound to the old one, which is the failure this ADR's own "never a fabricated
 > read" principle exists to prevent.
 
+> **Status is polled AND pushed, for the code host** (#1579) · 2026-09-07 · The Decision below
+> says status is polled "because a desktop app has no public endpoint to receive webhooks". That
+> reasoning no longer holds. GitHub runs a **webhook forwarder**: `POST /repos/{scope}/hooks` with
+> `"name": "cli"` and no `config.url` answers with a `ws_url`, and a client that dials it is pushed
+> each delivery with no endpoint of its own. It is what `gh webhook forward` runs on.
+>
+> Measured against `milad-alizadeh/argo` on 2026-09-07: **713 ms** from the API call returning to
+> the `pull_request` delivery in hand, against a poll interval of 60 seconds. The socket held 45
+> seconds idle without dropping.
+>
+> **The poll stays, at its own interval, and is the floor.** `ws_url` is not in the public webhooks
+> documentation — it belongs to a CLI preview GitHub can change or withdraw without notice. So the
+> socket is a fast path and never load-bearing: it covers nothing the poll does not also cover, and
+> the day it goes away the product does not. The poll is also what carries the user whose grant
+> will not make a hook, the repository they do not administer, a dropped socket, and every delivery
+> that arrived while it was down — which is why **every reconnect derives before it listens**, since
+> the host never repeats what it delivered to nobody.
+>
+> **The grant does not change.** The forwarder hook is ephemeral: GitHub reaps it within two seconds
+> of the socket dropping, a clean close and a killed process alike (both measured). So it cannot
+> leak, there is never a second one to reuse, and nothing ever lists, reads or deletes one — which
+> were the only operations demanding `admin:repo_hook`. Creating works on `repo`, and no user is
+> asked to consent to anything new.
+>
+> This is the **code host** only. The Ticket poll is the same shape and has no measurement yet.
+
 > **GitHub's grant is an OAuth App + device flow, scope `repo`** — the first of the two options
 > the Decision below left to verify, settled in #367 and shipped by #256. It is the grant that
 > feeds both ports from one consent, and its non-expiring user token is why no refresh path
@@ -91,7 +117,8 @@ must have `gh` installed and authed) that the app can't own.
   host); Linear is Work-Item-only. Per the amendment above, this holds **per Account**.
 - **Status is polled**, not pushed — a desktop app has no public endpoint to receive webhooks.
   Adapters use conditional requests (ETags / `If-None-Match`) and backoff to stay within rate
-  limits.
+  limits. *(Amended by #1579 above: GitHub's webhook forwarder needs no endpoint, so the code host
+  is polled AND pushed. The poll stays as the floor.)*
 - **This is the *cockpit app* layer only.** Agents operating the repo (Claude Code / Codex)
   still use `gh` per AGENTS.md / `issue-tracker.md`. The two layers are independent — the app
   going OAuth+API does not change how agents drive the repo.

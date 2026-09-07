@@ -516,8 +516,11 @@ join it as observer families:
 
 - **Ticket provider** — GitHub Issues v1, Linear pluggable. **OAuth device flow, provider HTTP
   API, keychain-stored per-machine tokens** (ADR-0018) — *not* the `gh` CLI, which remains how
-  agents operate the repo. **Polled**: a desktop app receives no webhooks.
-- **Code host** — GitHub v1. One GitHub grant feeds both ports and fails as one.
+  agents operate the repo. **Polled.**
+- **Code host** — GitHub v1. One GitHub grant feeds both ports and fails as one. **Polled and
+  pushed**: GitHub's webhook forwarder needs no endpoint of Argo's, so a pull request lands in well
+  under a second (#1579). The poll stays as the floor — the socket is a fast path, never the only
+  one.
 
 The port interface is **capability-declared canonical intents**, not provider-shaped setters:
 `createTicket` · `updateFields` · `transitionTo(canonical)` (the adapter resolves the native

@@ -1,7 +1,12 @@
 import Foundation
 
-/// The repeating read every port is kept right by — a desktop app receives no webhooks, so polling
-/// is the only way a room is ever current (`CONTEXT.md` → Ports).
+/// The repeating read every port is kept right by, and the floor under every room's freshness
+/// (`CONTEXT.md` → Ports).
+///
+/// Not the only way a room is current any more: GitHub's webhook forwarder needs no endpoint of
+/// Argo's, so the code host is pushed as well as polled (`DeliverySocket`, ADR-0018 / #1579). This
+/// keeps its own interval regardless — the socket belongs to a CLI preview GitHub can withdraw, and
+/// it is what covers the user it will not open for.
 ///
 /// Held apart from what a tick READS because the Tickets poll and the Delivery derivation pace
 /// identically and differ only in the one call inside: two copies of this would be two chances to
@@ -18,7 +23,7 @@ public actor PortPollLoop {
     private let sleep: Sleeper
     private let tick: Tick
     private var loop: Task<Void, Never>?
-    private var pointedAt: Pointing?
+    private var pointedAt: PortPointing?
 
     public init(
         sleep: @escaping Sleeper = { try await Task.sleep(for: $0) },
@@ -42,7 +47,7 @@ public actor PortPollLoop {
             while !Task.isCancelled {
                 guard let self else { return }
                 await tick(target)
-                guard await sleptWithoutCancelling(interval) else { return }
+                guard await PortSleep.uncancelled(sleep, for: interval) else { return }
             }
         }
     }
@@ -73,31 +78,10 @@ public actor PortPollLoop {
         every interval: Duration,
     ) {
         guard let projectID, case let .ready(binding) = resolution else { return stop() }
-        let target = Pointing(binding: binding, projectID: projectID)
+        let target = PortPointing(binding: binding, projectID: projectID)
         guard target != pointedAt else { return }
         // Recorded AFTER the start, which forgets whatever it was pointed at before.
         start(PortReadTarget(binding: binding, projectID: projectID), every: interval)
         pointedAt = target
-    }
-
-    /// What the loop is currently reading, by the parts of it that can be compared.
-    private struct Pointing: Equatable {
-        let binding: ProjectBinding
-        let projectID: String
-        /// The token, because re-authorizing an Account leaves the Binding identical and replaces
-        /// the grant — and a loop that treated that as unchanged would read for the rest of the
-        /// launch on a token the provider has stopped taking.
-        let accessToken: String
-
-        init(binding: ResolvedBinding, projectID: String) {
-            self.binding = binding.binding
-            self.projectID = projectID
-            self.accessToken = binding.grant.accessToken
-        }
-    }
-
-    /// `false` once the wait was cancelled, which is the loop's only exit besides `stop()`.
-    private func sleptWithoutCancelling(_ interval: Duration) async -> Bool {
-        await (try? sleep(interval)) != nil
     }
 }

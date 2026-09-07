@@ -1,7 +1,10 @@
 import Foundation
 
-/// The repeating read of one Project's Tickets — a desktop app receives no webhooks, so polling
-/// is the only way the room is ever right (`CONTEXT.md` → Ports).
+/// The repeating read of one Project's Tickets, and the only way the room is ever right
+/// (`CONTEXT.md` → Ports).
+///
+/// Only, for THIS port. The code host has a push path as well now, over GitHub's webhook forwarder
+/// (`DeliverySocket`, ADR-0018 / #1579); Tickets are the same shape and have no measurement yet.
 ///
 /// An actor, so no read and no decode ever runs on the MainActor. The loop itself is
 /// `PortPollLoop`'s, which every port's repeating read is paced by.
