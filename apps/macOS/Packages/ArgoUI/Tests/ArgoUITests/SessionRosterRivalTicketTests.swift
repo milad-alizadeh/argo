@@ -65,6 +65,7 @@ struct SessionRosterRivalTicketTests {
     }
 
     @Test
+    @MainActor
     func `the deck header reads the same title the row gave up the ticket for`() throws {
         let sessions = [
             Self.session(id: "one", title: "Write a caption for one folder"),
@@ -85,6 +86,7 @@ struct SessionRosterRivalTicketTests {
     }
 
     @Test
+    @MainActor
     func `the deck header keeps the words a rival the reader cannot see left alone`() throws {
         let sessions = [
             Self.session(id: "live", title: "Name the widest module"),

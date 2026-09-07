@@ -4,6 +4,7 @@ import Testing
 /// The roster pipeline: project, then hold — which is the whole of it. A pipeline reordered by
 /// accident produces a roster that still renders, so these are the claims that catch it.
 @Suite("Roster listing")
+@MainActor
 struct RosterListingTests {
     // MARK: - The published order
 

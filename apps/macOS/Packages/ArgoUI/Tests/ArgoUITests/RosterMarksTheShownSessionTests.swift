@@ -12,6 +12,7 @@ import Testing
 /// draws is `RosterListing.Reading` plus `SessionRosterProjection.isArchiveOpen`, which is the one
 /// answer `SessionNavigator` draws its rows and its ground from.
 @Suite("The roster marks the Session the deck renders")
+@MainActor
 struct RosterMarksTheShownSessionTests {
     @Test
     func `selecting another Session moves the mark with the deck`() {

@@ -4,6 +4,7 @@ import Foundation
 import Testing
 
 /// #1404: the roster stopped drawing rows partway down and left the rest of the pane blank.
+@MainActor
 struct RosterTruncationTests {
     /// Every kept Session gets a row. A roster that drops its tail is the bug.
     @Test func `every session draws A row`() {
