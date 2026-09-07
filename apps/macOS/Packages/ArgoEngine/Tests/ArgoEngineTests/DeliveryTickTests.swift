@@ -12,20 +12,13 @@ struct DeliveryTickTests {
     private static let landed = "argo/#99-done"
     private static let live = "argo/#1158-atlas"
 
-    private static func derivation(
-        _ port: ScriptedCodeHost, into ledger: DeliveryLedger,
-    )
-        -> DeliveryDerivation {
-        DeliveryDerivation(port: port, health: ConnectionHealthLedger(), deliveries: ledger)
-    }
-
     /// Two ticks over the same derivation, which is the only way to observe what the second one
     /// asked about: the first fills the ledger the second reads.
     private static func twice(
         _ host: ScriptedCodeHost, over branch: String,
     ) async
         -> [String] {
-        let derivation = derivation(host, into: DeliveryLedger())
+        let derivation = DeliveryDerivation.over(host, into: DeliveryLedger())
         let locally = DeliveryDerivation.Locally(workspaces: [.on(branch)])
         await derivation.derive(.codeHost(), locally: locally)
         await derivation.derive(.codeHost(), locally: locally)
@@ -46,7 +39,7 @@ struct DeliveryTickTests {
         // after the one that read it.
         let merged = Delivery(branch: Self.landed, pullRequest: .merged(number: 3))
         let ledger = DeliveryLedger()
-        let derivation = Self.derivation(
+        let derivation = DeliveryDerivation.over(
             ScriptedCodeHost([.success([])], byBranch: [Self.landed: merged]), into: ledger,
         )
         let locally = DeliveryDerivation.Locally(workspaces: [.on(Self.landed)])

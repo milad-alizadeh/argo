@@ -31,10 +31,32 @@ struct DeliveryLedgerTests {
     }
 
     @Test
-    func `a second derivation replaces the first whole`() async {
+    func `a second derivation replaces the branches it reached`() async {
+        let ledger = await Self.loaded()
+        let reached = Delivery(branch: "argo/#258-code-host", pullRequest: .stub(number: 8))
+        await ledger.record([reached], for: "P1")
+
+        #expect(await ledger.delivery(ofBranch: "argo/#258-code-host", in: "P1") == reached)
+    }
+
+    @Test
+    func `a second derivation keeps the branches it did not reach`() async {
         let ledger = await Self.loaded()
         await ledger.record([Delivery(branch: "spike/idea", pullRequest: nil)], for: "P1")
 
-        #expect(await ledger.deliveries(of: "P1").map(\.branch) == ["spike/idea"])
+        #expect(await ledger.deliveries(of: "P1").map(\.branch)
+            == ["argo/#258-code-host", "spike/idea"])
+    }
+
+    @Test
+    func `Deliveries are recorded in branch order whatever order they arrived in`() async {
+        let ledger = DeliveryLedger()
+        await ledger.record([
+            Delivery(branch: "spike/idea", pullRequest: nil),
+            Delivery(branch: "argo/#258-code-host", pullRequest: nil),
+        ], for: "P1")
+
+        #expect(await ledger.deliveries(of: "P1").map(\.branch)
+            == ["argo/#258-code-host", "spike/idea"])
     }
 }

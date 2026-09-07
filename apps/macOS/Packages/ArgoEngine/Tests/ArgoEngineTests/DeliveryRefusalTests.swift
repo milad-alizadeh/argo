@@ -13,7 +13,7 @@ struct DeliveryRefusalTests {
     func `a refused branch read leaves the listing's own Deliveries standing`() async {
         let hosted = Delivery(branch: Self.atlas, pullRequest: .stub(number: 1541))
         let ledger = DeliveryLedger()
-        await Self.derivation(
+        await DeliveryDerivation.over(
             ScriptedCodeHost([.success([hosted])], refusing: [Self.stale]), into: ledger,
         )
         .derive(.codeHost(), locally: .init(workspaces: [.on(Self.atlas), .on(Self.stale)]))
@@ -26,12 +26,29 @@ struct DeliveryRefusalTests {
         // Never one at its commits: that is what a branch the host ANSWERED nothing for reads, and
         // a refusal established nothing to tell the two apart with.
         let ledger = DeliveryLedger()
-        await Self.derivation(
+        await DeliveryDerivation.over(
             ScriptedCodeHost([.success([])], refusing: [Self.stale]), into: ledger,
         )
         .derive(.codeHost(), locally: .init(workspaces: [.on(Self.stale)]))
 
         #expect(await ledger.deliveries(of: "P1").isEmpty)
+    }
+
+    @Test
+    func `a refused branch keeps the open pull request the last derivation established`() async {
+        // The settled skip shelters a FINISHED Delivery from the fan-out, so an open one is the
+        // case a refusal actually reaches: nothing is established for the branch, and the ledger is
+        // the only thing standing between the row and an empty mark.
+        let open = Delivery(branch: Self.stale, pullRequest: .stub(number: 1589))
+        let host = ScriptedCodeHost([.success([])], byBranch: [Self.stale: open])
+        let ledger = DeliveryLedger()
+        let derivation = DeliveryDerivation.over(host, into: ledger)
+        let locally = DeliveryDerivation.Locally(workspaces: [.on(Self.stale)])
+        await derivation.derive(.codeHost(), locally: locally)
+        await host.refuse([Self.stale])
+        await derivation.derive(.codeHost(), locally: locally)
+
+        #expect(await ledger.delivery(ofBranch: Self.stale, in: "P1")?.pullRequest?.number == 1589)
     }
 
     @Test
@@ -42,19 +59,12 @@ struct DeliveryRefusalTests {
         let merged = Delivery(branch: Self.stale, pullRequest: .merged(number: 3))
         let host = ScriptedCodeHost([.success([])], byBranch: [Self.stale: merged])
         let ledger = DeliveryLedger()
-        let derivation = Self.derivation(host, into: ledger)
+        let derivation = DeliveryDerivation.over(host, into: ledger)
         let locally = DeliveryDerivation.Locally(workspaces: [.on(Self.stale)])
         await derivation.derive(.codeHost(), locally: locally)
         await host.refuse([Self.stale])
         await derivation.derive(.codeHost(), locally: locally)
 
         #expect(await ledger.deliveries(of: "P1").first?.stage == .merge)
-    }
-
-    private static func derivation(
-        _ port: ScriptedCodeHost, into ledger: DeliveryLedger,
-    )
-        -> DeliveryDerivation {
-        DeliveryDerivation(port: port, health: ConnectionHealthLedger(), deliveries: ledger)
     }
 }
