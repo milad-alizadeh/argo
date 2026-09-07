@@ -15,33 +15,6 @@ import Testing
 struct DeliverySocketTests {
     private let target = PortReadTarget.codeHost()
 
-    /// One socket, the watch behind it and the derivations it asked for — what every case here
-    /// asserts against.
-    private struct Watching {
-        let socket: DeliverySocket
-        let watch: ScriptedCodeHostWatch
-        let derivations: SocketDerivations
-        let waits: PollSleeps
-        let wait: PollWait
-
-        /// `between` is how long the fake sleeper waits AFTER announcing the backoff. A case
-        /// asserting an EXACT count passes `.held`, so the run parks after one socket rather than
-        /// racing the case for the window in which to stop it.
-        init(_ script: [ScriptedSocket], between reconnects: Duration = .held) {
-            let watch = ScriptedCodeHostWatch(script)
-            let derivations = SocketDerivations()
-            let wait = PollWait()
-            let waits = PollSleeps(wait, held: reconnects)
-            self.watch = watch
-            self.derivations = derivations
-            self.wait = wait
-            self.waits = waits
-            self.socket = DeliverySocket(
-                watch: watch, derive: derivations.derive, sleep: waits.sleep,
-            )
-        }
-    }
-
     @Test
     func `a socket that opens derives once before it waits for a move`() async {
         // The resync AC 4 asks for: a socket that was down missed deliveries and the host never
@@ -95,6 +68,20 @@ struct DeliverySocketTests {
 
         #expect(await watching.watch.openCount() == 1)
         #expect(await watching.derivations.derived() == 0)
+    }
+
+    @Test
+    func `a watch the host will not open reports the dial failure`() async {
+        // #1643: the degrade-down above is unchanged, but a dial that never opens is no longer
+        // total silence — this is the reading a person or a test can now see.
+        let watching = Watching([.refused])
+
+        await watching.socket.point(.ready(target.binding), at: "P1")
+        await watching.failures.untilReported(1)
+        await watching.socket.stop()
+
+        #expect(await watching.failures.count() == 1)
+        #expect(await watching.failures.last()?.projectID == "P1")
     }
 
     @Test
@@ -215,5 +202,38 @@ struct DeliverySocketTests {
         let asked = await watching.watch.lastAsked()
         #expect(asked?.scope == "acme/api")
         #expect(asked?.token == AccountGrant.listing.accessToken)
+    }
+}
+
+/// One socket, the watch behind it and the derivations it asked for — what every case in
+/// `DeliverySocketTests` asserts against.
+private struct Watching {
+    let socket: DeliverySocket
+    let watch: ScriptedCodeHostWatch
+    let derivations: SocketDerivations
+    let failures: SocketFailures
+    let waits: PollSleeps
+    let wait: PollWait
+
+    /// `between` is how long the fake sleeper waits AFTER announcing the backoff. A case asserting
+    /// an EXACT count passes `.held`, so the run parks after one socket rather than racing the case
+    /// for the window in which to stop it.
+    init(_ script: [ScriptedSocket], between reconnects: Duration = .held) {
+        let watch = ScriptedCodeHostWatch(script)
+        let derivations = SocketDerivations()
+        let failures = SocketFailures()
+        let wait = PollWait()
+        let waits = PollSleeps(wait, held: reconnects)
+        self.watch = watch
+        self.derivations = derivations
+        self.failures = failures
+        self.wait = wait
+        self.waits = waits
+        self.socket = DeliverySocket(
+            watch: watch,
+            derive: derivations.derive,
+            reportDialFailure: failures.reportDialFailure,
+            sleep: waits.sleep,
+        )
     }
 }

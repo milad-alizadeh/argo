@@ -107,6 +107,39 @@ actor SocketWaits {
     }
 }
 
+/// Every dial failure the socket reported, and a wait for the next one — what a case about #1643's
+/// reading acts on, rather than a sleep it hopes has elapsed.
+actor SocketFailures {
+    private var reported: [(target: PortReadTarget, error: Error)] = []
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    nonisolated var reportDialFailure: DeliverySocket.ReportDialFailure {
+        { target, error in await self.record(target, error) }
+    }
+
+    func count() -> Int {
+        reported.count
+    }
+
+    func last() -> PortReadTarget? {
+        reported.last?.target
+    }
+
+    func untilReported(_ wanted: Int) async {
+        while reported.count < wanted {
+            await withCheckedContinuation { waiters.append($0) }
+        }
+    }
+
+    private func record(_ target: PortReadTarget, _ error: Error) {
+        reported.append((target, error))
+        for waiter in waiters {
+            waiter.resume()
+        }
+        waiters = []
+    }
+}
+
 /// How many derivations the socket asked for, and a wait for the next one — so a case acts on a
 /// derivation that has happened rather than on a sleep it hopes has elapsed.
 actor SocketDerivations {

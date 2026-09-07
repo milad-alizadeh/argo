@@ -41,6 +41,11 @@ public final class DeliveryReadings {
             // The poll's own derivation, so a fact the socket heard about is recorded exactly as a
             // polled one is — health and landing included.
             derive: { [weak self] target in await self?.poll.derive(target) },
+            // The reading #1643 asked for: a dial that never opens is otherwise indistinguishable,
+            // from inside this box, from one that is working.
+            reportDialFailure: { [weak self] target, _ in
+                await self?.derivation.dialFailed(target)
+            },
             sleep: sleep,
         )
     }

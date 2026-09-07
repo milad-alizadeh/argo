@@ -229,6 +229,14 @@ public actor DeliveryDerivation {
         return slice
     }
 
+    /// A watch could not be dialled. The socket half of a Binding failing, recorded the same way a
+    /// failed read is: `DeliverySocket`'s own doc still holds — the roster degrades to the poll's
+    /// pace regardless — this only stops that degrade-down from being silent (#1643).
+    public func dialFailed(_ target: PortReadTarget, cause: ConnectionCause = .unreachable) async {
+        await health.failed(target.projectBinding, in: target.projectID, cause: cause)
+        await landed()
+    }
+
     /// The branches the local Workspaces are on, each once and in the order they were read.
     ///
     /// A Workspace with no branch contributes none — a detached HEAD, and a Session with no branch

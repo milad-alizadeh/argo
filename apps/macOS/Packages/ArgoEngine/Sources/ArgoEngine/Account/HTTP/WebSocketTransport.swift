@@ -36,4 +36,9 @@ public enum WebSocketError: Error, Equatable {
     /// and may gain a case, and a frame nobody can read is the end of the socket rather than a
     /// delivery to guess at.
     case unreadableFrame
+    /// The handshake ran past its budget with no word from the delegate either way — the shape of
+    /// the dial that shipped in #1579: a `resume()` nothing ever confirmed (#1643).
+    case dialTimedOut
+    /// The task completed before the handshake did, with no `Error` attached to say why.
+    case dialFailed
 }

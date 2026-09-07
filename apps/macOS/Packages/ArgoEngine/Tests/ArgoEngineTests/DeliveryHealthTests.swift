@@ -79,4 +79,22 @@ struct DeliveryHealthTests {
 
         #expect(await health.health(of: tickets, in: "P1").state == .needsReconnect)
     }
+
+    /// #1643: a socket that never dialled is not something `derive` ever saw, so it is its own
+    /// entry point onto this ledger rather than a shape `record` has to recognize.
+    @Test
+    func `a dial that never opened is readable off the health ledger`() async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget.codeHost()
+        let derivation = DeliveryDerivation(
+            port: ScriptedCodeHost([.success([])]),
+            health: health,
+            deliveries: DeliveryLedger(),
+        )
+
+        await derivation.dialFailed(target)
+
+        #expect(await health.health(of: target.projectBinding, in: "P1")
+            .state == .stale(.unreachable))
+    }
 }
