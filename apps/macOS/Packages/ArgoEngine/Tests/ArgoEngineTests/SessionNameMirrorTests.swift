@@ -289,7 +289,7 @@ private enum Drawn {
         SessionNameDraw(
             name: name,
             drawsDerivedTitle: drawsDerivedTitle,
-            takesTypedLine: true,
+            takesSlashCommand: true,
         )
     }
 }

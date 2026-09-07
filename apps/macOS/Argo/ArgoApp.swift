@@ -108,8 +108,9 @@ struct ArgoApp: App {
                     }
                     // A row whose drawn name the CLI has not been told is the one event worth a
                     // keystroke at its prompt (#1623). Keyed on the drawn names rather than on the
-                    // roster, and each one carries whether its Session would take a typed line —
-                    // so a Turn ending is what brings a refused `/rename` back to be retried.
+                    // roster, and each one carries whether its Session would run a slash command
+                    // — so a dialog clearing is what brings a refused `/rename` back to be
+                    // retried (#1662).
                     .onChange(of: presentation.namesToMirror, initial: true) { _, draws in
                         Task { await cockpit.hub.mirrorNames(draws) }
                     }
