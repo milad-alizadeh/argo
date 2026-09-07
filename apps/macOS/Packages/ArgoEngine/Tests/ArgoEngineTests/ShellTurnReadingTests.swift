@@ -25,8 +25,11 @@ struct ShellTurnReadingTests {
     /// Session waiting on one is working rather than idle.
     @Test
     func `a command that has not printed yet holds its Turn open`() async throws {
+        // The same file as it stands while the command is still running: everything the CLI has
+        // written by then is everything but the record it writes when the command exits.
+        let running = try Fixture.lines("shellCommandTurn").filter { !$0.contains("bash-stdout") }
         var session = HubSession(observation: hubTestObservation(id: "shell", events: []))
-        for event in try await Fixture.events("shellCommandRunning") {
+        for event in try await TranscriptReader().read(lines: running) {
             session.apply(event)
         }
 
@@ -41,15 +44,13 @@ struct ShellTurnReadingTests {
         #expect(ending.last == .turnEnded(.endTurn))
         #expect(ending.contains { event in
             guard case let .toolCall(call) = event else { return false }
-            return call.name == "shell command"
+            return call.name == ShellTurn.toolName
         })
         #expect(ending.contains { event in
             guard case let .toolCallOutcome(outcome) = event,
                   case let .output(printed)? = outcome.result
             else { return false }
-            // Both streams, in the order the record wrote them: a command that printed on one and
-            // failed on the other said both, and a reader that took only stdout would show the
-            // silence rather than the reason.
+            // Both streams: a command that printed on one and failed on the other said both.
             return printed.text == """
             Command did not complete within its 120s timeout.
             a terminal is required

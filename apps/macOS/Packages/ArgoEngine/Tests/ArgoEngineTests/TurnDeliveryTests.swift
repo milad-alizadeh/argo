@@ -13,11 +13,11 @@ struct TurnDeliveryTests {
     @Test
     func `a Turn the CLI wrote a record for is left alone`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("Fix the caption.", to: "session-a")
         watch.records = 2
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.retyped == 0)
         #expect(watch.lost.isEmpty)
@@ -28,7 +28,7 @@ struct TurnDeliveryTests {
     @Test
     func `the Turn reported and the silence watched are counted from one record`() {
         let watch = DeliveryRecorder(records: 7)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("Fix the caption.", to: "session-a")
         watch.records = 8
@@ -43,7 +43,7 @@ struct TurnDeliveryTests {
     @Test
     func `silence is answered with another Return`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("what is @README.md about?", to: "session-a")
 
@@ -55,12 +55,12 @@ struct TurnDeliveryTests {
     @Test
     func `a Return that lands stops the watch where it is`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
         watch.onRetype = { watch.records += 1 }
 
         delivery.typed("Carry on.", to: "session-a")
         #expect(await settle { watch.retyped == 1 })
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.retyped == 1)
         #expect(watch.lost.isEmpty)
@@ -72,7 +72,7 @@ struct TurnDeliveryTests {
     @Test
     func `a Turn that is never heard is reported with its words`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("what is @README.md about?", to: "session-a")
         #expect(await settle { !watch.lost.isEmpty })
@@ -88,7 +88,7 @@ struct TurnDeliveryTests {
     func `a Session whose PTY has gone is reported without waiting out the retries`() async {
         let watch = DeliveryRecorder(records: 1)
         watch.canRetype = false
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("Off you go.", to: "session-a")
         #expect(await settle { !watch.lost.isEmpty })
@@ -102,12 +102,12 @@ struct TurnDeliveryTests {
     @Test
     func `a second Turn replaces the first as the one being watched`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("First", to: "session-a")
         delivery.typed("Second", to: "session-a")
         #expect(await settle { !watch.lost.isEmpty })
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.lost.map(\.text) == ["Second"])
     }
@@ -121,11 +121,11 @@ struct TurnDeliveryTests {
     @Test
     func `a forgotten Session is left alone`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("Off you go.", to: "session-a")
         delivery.forget("session-a")
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.retyped == 0)
         #expect(watch.lost.isEmpty)
@@ -137,10 +137,10 @@ struct TurnDeliveryTests {
     func `a command that writes no record is not reported lost`() async {
         let watch = DeliveryRecorder(records: 4)
         watch.echo = .heard
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("/clear", to: "session-a")
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.lost.isEmpty)
         #expect(watch.retyped == 0)
@@ -152,10 +152,10 @@ struct TurnDeliveryTests {
     func `a Session that has taken the Turn gets no further Return`() async {
         let watch = DeliveryRecorder(records: 0)
         watch.echo = .heard
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("Carry on where you left off.", to: "session-a")
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.retyped == 0)
         #expect(watch.lost.isEmpty)
@@ -168,11 +168,11 @@ struct TurnDeliveryTests {
     func `a Turn Argo cannot read the composer for is left standing`() async {
         let watch = DeliveryRecorder(records: 1)
         watch.echo = .unreadable
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("what is @README.md about?", to: "session-a")
         #expect(await settle { watch.retyped == TurnDelivery.attempts })
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.lost.isEmpty)
     }
@@ -182,30 +182,14 @@ struct TurnDeliveryTests {
     @Test
     func `a composer that empties mid-watch ends it`() async {
         let watch = DeliveryRecorder(records: 1)
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
         watch.onRetype = { watch.echo = .heard }
 
         delivery.typed("what is @README.md about?", to: "session-a")
         #expect(await settle { watch.retyped == 1 })
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.retyped == 1)
         #expect(watch.lost.isEmpty)
     }
-
-    private static let patience = Duration.milliseconds(20)
-
-    /// Long enough that a watch which was going to do anything has done all of it. Only for the
-    /// claims that are about something NOT happening — everything else waits on the thing itself
-    /// through `settle`, because a wall-clock guess is how a suite under load goes green on a race
-    /// it never actually ran.
-    ///
-    /// Sleeps rather than yields: what is being waited on is a `Task.sleep`, and a yield loop
-    /// re-enqueues on the main actor without ever letting the clock run.
-    private static func pauseLongEnoughForTheWholeWatch() async {
-        try? await Task.sleep(for: patience * (attempts + 2))
-    }
-
-    /// One more wait than the watch takes, so the pause outlasts it.
-    private static let attempts = TurnDelivery.attempts + 1
 }

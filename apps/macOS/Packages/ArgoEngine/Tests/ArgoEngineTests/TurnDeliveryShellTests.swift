@@ -15,10 +15,10 @@ struct TurnDeliveryShellTests {
     func `a shell command's claim stands until its record answers`() async {
         let watch = DeliveryRecorder(records: 1)
         watch.echo = .heard
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("! gh auth refresh -h github.com", to: "session-a")
-        await Self.pauseLongEnoughForTheWholeWatch()
+        await DeliveryWatched.pauseLongEnoughForTheWholeWatch()
 
         #expect(watch.ended == 0)
         #expect(watch.submitted.map(\.text) == ["! gh auth refresh -h github.com"])
@@ -31,18 +31,10 @@ struct TurnDeliveryShellTests {
     func `a shell command the CLI never heard is still reported lost`() async {
         let watch = DeliveryRecorder(records: 1)
         watch.echo = .unheard
-        let delivery = TurnDelivery(watch.watch, patience: Self.patience)
+        let delivery = TurnDelivery(watch.watch, patience: DeliveryWatched.patience)
 
         delivery.typed("! ls", to: "session-a")
 
         #expect(await settle { watch.lost.map(\.text) == ["! ls"] })
-    }
-
-    private static let patience = Duration.milliseconds(20)
-
-    /// Long enough that a watch which was going to do anything has done all of it — see
-    /// `TurnDeliveryTests`, whose reasoning and figures these are.
-    private static func pauseLongEnoughForTheWholeWatch() async {
-        try? await Task.sleep(for: patience * (TurnDelivery.attempts + 3))
     }
 }
