@@ -33,7 +33,8 @@ const REFUSED = [
   // argo/#<N>-<slug> — and no name at all lands it on a generated one (#1684).
   ['an EnterWorktree name that conforms', () => enter({ name: 'ticket-901-naming' })],
   ['an EnterWorktree with no name at all', () => enter({})],
-  // The name a session reaches for when it names the tree after the ticket alone (#1683).
+  // #1683 asked for this name to be allowed; #1684 answered it by refusing every creation
+  // instead, so the row is the record of that reversal rather than a branch of its own.
   ['an EnterWorktree name carrying the ticket number', () => enter({ name: '1681-window' })],
   // A numberless name starting with a number is a dropped `#`, not a statement of no ticket.
   [
@@ -75,6 +76,9 @@ const PERMITTED = [
   ['re-entering a conforming tree by path', () => enter({ path: `${WT}/ticket-901-naming` })],
   // How a tree named before this guard, and the agent inside it, drain rather than break.
   ['re-entering an existing tree by path', () => enter({ path: `${WT}/parallel-workitem-edges` })],
+  // `path` is unchecked, location included: it names no tree this guard can still rename, and
+  // work outside .claude/worktrees/ is worktree-guard.mjs's refusal to make, not this one's.
+  ['re-entering a tree outside .claude/worktrees/', () => enter({ path: '../elsewhere' })],
   [
     'the documented recovery of a pushed branch (no -b)',
     () => bash(`git worktree add ${WT}/ticket-30-screen argo/#30-screen`),

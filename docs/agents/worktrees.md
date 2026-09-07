@@ -30,12 +30,13 @@ load-bearing twice over: `/ship`, which is the only thing that opens the PR, par
 `Closes #<N>`, and the Argo cockpit parses it to name the Session's row after the ticket (#745).
 A branch without it breaks the PR→ticket link and leaves the row reading `/implement <N>`.
 
-The `ticket-` prefix is not optional, and a bare `<N>-<slug>` directory is refused. Nothing
-downstream parses the prefix — `worktree-gc.sh` walks `.claude/worktrees/*/` and reads git, and
-the edit guard asks only whether a path sits under that directory — but one accepted spelling is
-what lets the resume check below be a `grep` on `<N>` alone. Accepting two would fork every
-reader of a directory name, and no session is pushed towards the bare form now that
-`EnterWorktree` creates no trees (#1683).
+The `ticket-` prefix is not optional, and a bare `<N>-<slug>` directory is refused. #1683 asked
+for both to be accepted, on the ground that nothing downstream parses the prefix — true:
+`worktree-gc.sh` walks `.claude/worktrees/*/` and reads git, and the edit guard asks only whether
+a path sits under that directory. It was answered by #1684 instead, which stopped
+`EnterWorktree` creating trees at all: that was the one route pushing sessions towards the bare
+name, and with it gone one spelling is what keeps the resume check below a single literal
+`grep "ticket-<N>-"` rather than a pattern every reader of a directory name has to carry.
 
 For work with no ticket, keep the shape but drop the number: worktree `ticket-<slug>`, branch
 `argo/<slug>`. Work with no ticket may start — refusing it would push spikes back into the
@@ -87,8 +88,9 @@ refuses:
   not `argo/#<N>-<slug>`.
 
 Every refusal states the correct shape, so the fix is in the message rather than a lookup. A
-refusal from `git worktree add` names the **entry** step after it as well, because that session
-has no tree to be inside yet; a rename refusal, which fires within one, does not.
+refusal from `git worktree add` names the **entry** step after it as well, because the tree it
+names is one the session is not in yet whatever its own cwd; a rename refusal names no new tree,
+so it does not.
 
 It fires **only at creation**, the one moment a name is still free. Editing inside an existing
 tree is not guarded here, and neither is `git worktree add <path> <branch>` (the recovery below),
