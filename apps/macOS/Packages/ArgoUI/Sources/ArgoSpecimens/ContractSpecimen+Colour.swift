@@ -71,7 +71,7 @@ extension ContractSpecimen {
                         id: \.0,
                     ) { voice in
                         FeedProseText(text: "the `ArgoPalette` ramp")
-                            .environment(\.proseVoice, voice.1)
+                            .environment(\.proseVoice, .one(voice.1))
                             .foregroundStyle(voice.1)
                     }
                 }

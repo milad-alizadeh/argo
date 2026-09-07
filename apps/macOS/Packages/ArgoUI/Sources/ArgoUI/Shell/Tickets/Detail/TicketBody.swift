@@ -43,11 +43,15 @@ package struct TicketBody: View {
 
     /// The tracker's own markdown, drawn by the FEED's renderer. It carries the feed's line height
     /// with it, so a paragraph here and a paragraph in a reading set at the same rhythm.
+    ///
+    /// Voiced by the RAMP rather than pinned to one rung of it (#1597): a `##` the tracker wrote
+    /// is a heading over the prose under it, exactly as `Children` and `Blocked by` below are, and
+    /// drawn in the same ink they are. Pinned to `.body`, the pane read as one grey tone and its
+    /// own headings were the only ones in it.
     @ViewBuilder private var prose: some View {
         if let body = ticket.body {
             FeedMarkdown(text: body)
-                .foregroundStyle(argo.color.text.ink(.body))
-                .environment(\.proseVoice, argo.color.text.ink(.body))
+                .environment(\.proseVoice, .ramp(argo.color.text))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

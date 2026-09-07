@@ -103,6 +103,36 @@ extension TicketsFixture {
     - `TicketsRoomProjection.room(from:in:)` is where both halves are assembled.
     """
 
+    /// Every block a tracker writes, in one body: two levels of heading, prose under each, a
+    /// bulleted list, a pipe table and a code span (#1597).
+    ///
+    /// The pane is judged as a WHOLE here rather than a line at a time — whether a heading reads
+    /// as a heading is a question about the block under it, and nothing that draws one construct
+    /// on its own can answer it.
+    package static let everyBlockBody = """
+    A ticket body is the tracker's markdown, drawn by the feed's renderer. Every kind of block \
+    it can hold is in this one, so the pane can be read as a page.
+
+    ## What the reader has to be able to tell apart
+
+    A heading from the prose it introduces, first of all. The rest follows from that one: a list \
+    is prose with a marker beside it, and a table is prose in cells.
+
+    - A bullet's own words sit at the body's rung, and its marker quieter than they are.
+    - `TicketBody` hands the renderer the ramp; which rung a block takes is the renderer's.
+
+    ### The rungs, as the contract pairs them
+
+    | Block | Kind | Rung |
+    |---|---|---|
+    | A heading the writer wrote | `title` | `primary` |
+    | The prose under it | `body` | `secondary` |
+    | A list's marker | `metadata` | `tertiary` |
+
+    The pane's own sections below — Children, Blocked by — are drawn at the same rung as the \
+    headings above, which is the whole of what this ticket is about.
+    """
+
     /// A bug report with its screenshot under it, which is the shape #1400 arrived in and the body
     /// #1412 was filed against: the pane drew the words `Atlas shading` where the picture belongs.
     ///

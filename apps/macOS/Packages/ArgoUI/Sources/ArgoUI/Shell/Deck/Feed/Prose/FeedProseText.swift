@@ -6,7 +6,7 @@ import SwiftUI
 /// marks are decided once. Ink and fold are the caller's claims, not the type's.
 package struct FeedProseText: View {
     @Environment(\.argo) private var argo
-    /// The ink the prose around this run is set in. Ambient because it is a property of the block
+    /// How the prose around this run is voiced. Ambient because it is a property of the block
     /// being drawn, not of each span inside it.
     @Environment(\.proseVoice) private var voice
 
@@ -44,9 +44,9 @@ package struct FeedProseText: View {
     /// the contrast floor once the span's ground lifts the backdrop out from under it. The choice
     /// itself is the palette's — see `TextRoles.marked(on:)`.
     private var span: ArgoColor? {
-        guard let voice else { return nil }
-        let floored = argo.color.text.marked(on: voice)
-        return floored == voice ? nil : floored
+        guard let words = voice?.body else { return nil }
+        let floored = argo.color.text.marked(on: words)
+        return floored == words ? nil : floored
     }
 
     /// The agent's own inline marks, drawn as marks. Inline only, whitespace preserved: every line

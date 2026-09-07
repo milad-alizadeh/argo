@@ -19,7 +19,7 @@ extension ProseSurface {
     /// `[text](url)` made, never a reading of the prose.
     @MainActor static func places(in placed: FeedProseFrame) -> [ProseLinkPlace] {
         placed.parts.flatMap { part -> [ProseLinkPlace] in
-            guard case let .words(run, _, indent) = part.part else { return [] }
+            guard case let .words(run, _, indent, _) = part.part else { return [] }
             // Held inside the row. A run's typographic box is the FONT's ascent over its descent,
             // which stands a little proud of the line box the rhythm is counted at — so the first
             // line's box reaches above the row it is in, and a target there would be a press on the

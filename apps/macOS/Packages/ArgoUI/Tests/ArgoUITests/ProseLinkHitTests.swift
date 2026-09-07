@@ -17,12 +17,7 @@ struct ProseLinkHitTests {
     private static func surface(_ text: String) -> ProseSurface {
         let surface = ProseSurface()
         surface.show(
-            ProseShowing(
-                text: text,
-                measure: measure,
-                ink: ink,
-                marker: ArgoPalette.graphite.text.tertiary,
-            ),
+            ProseShowing(text: text, measure: measure, ink: ink),
             theme: .graphite,
         )
         return surface
@@ -33,9 +28,12 @@ struct ProseLinkHitTests {
     private static var ink: ProseInk {
         let palette = ArgoPalette.graphite
         return ProseInk(
-            body: palette.text.primary,
+            voices: ProseVoices(
+                heading: ProseVoice(ink: palette.text.primary),
+                body: ProseVoice(ink: palette.text.primary),
+                marker: ProseVoice(ink: palette.text.tertiary),
+            ),
             link: palette.interaction.accent,
-            span: nil,
             marked: ProseMarkedInk(
                 ground: palette.surface.marked,
                 inset: CGSize(
