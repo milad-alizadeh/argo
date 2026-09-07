@@ -53,7 +53,12 @@ struct ArgoApp: App {
             ticketAddress: accounts.ticketAddress,
             deliveries: accounts.deliveryReadings.deliveries,
         )
-        let presentation = cockpit.presentation(shell)
+        // Wrapped rather than called beside it, so what the probe times is exactly the fold this
+        // pass exists to do. The one place a pass is counted, because this is the one place the
+        // whole window is re-derived. Inert unless `ARGO_FRAME_PROBE=1`.
+        let presentation = FrameProbePass.counting {
+            cockpit.presentation(shell)
+        }
         // A rename is the whole of what holds it, and that is not an oversight: no suite can reach
         // this fold. It is a `Scene` body in the app target, which has no unit-test bundle, and it
         // cannot move into ArgoUI — what it folds reads live Hub state, which exactly one file in
