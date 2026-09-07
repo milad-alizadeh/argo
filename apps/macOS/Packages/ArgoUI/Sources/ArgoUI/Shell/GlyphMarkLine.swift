@@ -10,7 +10,7 @@ struct GlyphMarkLine: View {
     /// `nil` draws the text alone. A caller whose mark says which KIND of thing this is has no
     /// honest glyph for a kind it has not read, and `CONTEXT.md`'s degrade-down rule renders an
     /// unestablished fact as absent rather than as the likelier guess (`SessionCheckoutMark`).
-    var symbol: String?
+    private var mark: Mark?
     let text: String
     let ink: ArgoColor
     /// Where a line too long for its slot loses its middle instead of its tail. A branch name
@@ -18,18 +18,55 @@ struct GlyphMarkLine: View {
     /// half that says WHICH ticket.
     var truncation: Text.TruncationMode = .tail
 
+    /// An SF Symbol, or a caller's own drawn shape — the pull request mark is neither an SF
+    /// Symbol nor absent, and no rung of `ArgoSymbol` names its fork (`DeliveryPullRequestMark`).
+    private enum Mark {
+        case symbol(String)
+        case custom(AnyView)
+    }
+
     var body: some View {
         HStack(spacing: ArgoSpacing.tight) {
-            if let symbol {
-                ArgoGlyph(symbol, .inline)
-                    .foregroundStyle(ink)
-                    .accessibilityHidden(true)
-            }
+            markView
             Text(text)
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(ink)
                 .lineLimit(1)
                 .truncationMode(truncation)
         }
+    }
+
+    @ViewBuilder private var markView: some View {
+        switch mark {
+        case let .symbol(symbol):
+            ArgoGlyph(symbol, .inline)
+                .foregroundStyle(ink)
+                .accessibilityHidden(true)
+        case let .custom(view):
+            view
+                .foregroundStyle(ink)
+                .accessibilityHidden(true)
+        case nil:
+            EmptyView()
+        }
+    }
+
+    init(symbol: String?, text: String, ink: ArgoColor, truncation: Text.TruncationMode = .tail) {
+        self.mark = symbol.map(Mark.symbol)
+        self.text = text
+        self.ink = ink
+        self.truncation = truncation
+    }
+
+    init(
+        text: String,
+        ink: ArgoColor,
+        truncation: Text.TruncationMode = .tail,
+        @ViewBuilder mark: () -> some View,
+    ) {
+        self.mark = .custom(AnyView(mark()))
+        self.text = text
+        self.ink = ink
+        self.truncation = truncation
     }
 }

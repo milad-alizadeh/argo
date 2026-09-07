@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// What a Header is assembled from — one value per zone it draws (#755, #999). The Header itself
 /// stays flat: the views read `header.title` and `header.marks`, and a grouping is how the readings
 /// ARRIVE rather than a second shape to draw them through.
@@ -8,6 +10,10 @@ extension SessionHeaderProjection.Header {
         let title: String
         let agent: String?
         let issue: IssueRow?
+        /// The branch's own pull request, read straight off `CockpitPresentation.Session` — the
+        /// roster row's own value (`SessionRosterProjection+Row.swift`), not a second join
+        /// (#1592). `nil` where the branch has none open.
+        let pullRequest: DeliveryPullRequest?
         let checkout: Checkout?
         let marks: [Mark]
         let access: AccessMark?

@@ -120,6 +120,33 @@ another ticket's number.
 The measurement is unchanged: `Link a ticket…` is nine characters wider than the word it replaces
 and the line is intrinsically sized.
 
+### Amended #1592: the pull request link takes the tab line's own leading edge, beside the Ticket
+
+The header named the Ticket a Session is on but not the pull request it produced — the number was
+readable only on the roster row, and a reader inside the Session had no way to reach it without
+leaving for the roster. `SessionPullRequestLink` draws immediately after `SessionIssueLink` and
+before `SessionCheckoutMark`, in the same `GlyphMarkLine` typography the Ticket link already uses,
+so the three read as one family: Ticket, pull request, branch, in that order, all naming what the
+Session is FOR and what it has produced.
+
+The label always spells the word — **`PR #1589`**, never the bare `#1589`— because the header
+speaks its own words rather than the roster row's number-only convention. Ink and mark are the
+roster row's own, unmodified, now shared from `DeliveryPullRequestMark.swift` rather than
+duplicated: `DeliveryPullRequest.ink(in:)` reads `delivery.merged` once merged, `state.idle` on a
+draft, `state.failure` on a closed-and-never-merged pull request, and `delivery.open` otherwise —
+all four readings, not a reduction to two — and the mark is `MergedPullRequestMark` once merged,
+`OpenPullRequestMark` otherwise.
+
+Pressing it opens `DeliveryPullRequest.url` via `@Environment(\.openURL)`, `DeliveryChip`'s own
+pattern. A pull request with no `url` still draws its reading and is not pressable — a dead button
+reads as a bug, a plain line does not. A Session with no pull request draws nothing at all: no
+placeholder, the same absence rule every other link on this line already keeps.
+
+No measurement changes: the link sets on the line at its own intrinsic width, in the same
+`ArgoSpacing.loose` gap every member of this line already keeps. The line is width-constrained at
+the narrowest deck (`TabLineInstruments` is what actually squeezes there); the pull request link
+does not — it draws at its intrinsic width leading of the tabs strip, which is what yields first.
+
 ## Measurements
 
 | Measurement | Value | Source |
