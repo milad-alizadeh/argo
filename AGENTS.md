@@ -74,6 +74,13 @@ Run it by hand with `sh scripts/swift-gate.sh`; skip it deliberately, and only f
 work in progress, with `ARGO_SKIP_SWIFT_GATE=1 git push`. CI is Linux only now, so **a green PR
 says nothing about Swift**: never read one as proof the app builds.
 
+**It fires for a branch with an open PR, not for every push** (#1577). A branch nobody is
+reading is work in progress, and the gate costs 3m32s plus the build-slot queue. So `ship` runs
+the gate itself before `gh pr create`, and every push after that is gated by the hook. Nothing
+reaches review ungated. Two consequences worth holding: a branch you pushed and never opened a
+PR for has been checked by nothing, and the first `gh pr create` on a branch is the moment its
+Swift is first proved.
+
 Where an exemption goes, why the hook only fires once it is on `main`, and the verification
 recipe: `docs/agents/quality-gates.md`.
 
