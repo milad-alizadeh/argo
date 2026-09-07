@@ -58,15 +58,62 @@ struct DeliveryReadingsTests {
         #expect(readings.box.deliveries.isEmpty)
     }
 
+    /// What the socket hears reaches the box the way a tick does, without one having happened —
+    /// which is the whole of #1579: a pull request GitHub pushes in under a second, on a roster
+    /// that would otherwise wait up to a minute for it.
+    @Test
+    func `a move the code host pushes publishes without a tick`() async {
+        // The poll is HELD after its first tick, so it makes exactly one read. The pull request is
+        // the THIRD answer, which only the socket's two derivations — one for connecting, one for
+        // the move — can reach. With no socket the box stays empty however long it waits.
+        let box = DeliveryReadings(
+            health: ConnectionHealthLedger(),
+            port: ScriptedCodeHost([.success([]), .success([]), .success([delivery])]),
+            watch: ScriptedCodeHostWatch([.carrying(1)]),
+            sleep: PollSleeps(PollWait(), held: .held).sleep,
+        )
+
+        await box.point(.ready(target.binding), at: "P1")
+        for _ in 1 ... 500 where box.deliveries.isEmpty {
+            await Task.yield()
+        }
+
+        #expect(box.deliveries == [delivery])
+    }
+
+    /// A watch the host will not open is a Project reading at the poll's own pace, and nothing the
+    /// user has to clear: the health ledger the connection chip draws stays as it was.
+    @Test
+    func `a watch the host refuses leaves the connection healthy`() async {
+        let health = ConnectionHealthLedger()
+        let box = DeliveryReadings(
+            health: health,
+            port: ScriptedCodeHost([.success([delivery])]),
+            watch: ScriptedCodeHostWatch([.refused]),
+            sleep: PollSleeps(PollWait(), held: .milliseconds(1)).sleep,
+        )
+
+        await box.point(.ready(target.binding), at: "P1")
+        for _ in 1 ... 200 where box.deliveries.isEmpty {
+            await Task.yield()
+        }
+
+        #expect(box.deliveries == [delivery])
+        #expect(await health.health(of: target.projectBinding, in: "P1").state == .healthy)
+    }
+
     /// One box over a scripted host, paced by a fake sleeper — the two seams the box exposes.
     @MainActor
     private struct Readings {
         let box: DeliveryReadings
 
-        init(_ host: ScriptedCodeHost) {
+        /// No watch by default, which is the socket switched off — every claim in this suite is
+        /// about the poll, and a live one would dial GitHub from a test.
+        init(_ host: ScriptedCodeHost, watch: (any CodeHostWatch)? = nil) {
             self.box = DeliveryReadings(
                 health: ConnectionHealthLedger(),
                 port: host,
+                watch: watch,
                 sleep: PollSleeps(PollWait(), held: .milliseconds(1)).sleep,
             )
         }
