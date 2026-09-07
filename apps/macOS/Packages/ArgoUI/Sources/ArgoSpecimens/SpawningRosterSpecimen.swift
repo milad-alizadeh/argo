@@ -2,7 +2,7 @@ import ArgoEngine
 import ArgoUI
 import SwiftUI
 
-/// The whole shell over a Project with nothing started in it, and a spawn that PUBLISHES.
+/// The whole shell over a Project, and a spawn that PUBLISHES.
 ///
 /// Every other specimen hands the shell `.inert` actions, which is useless for a click: pressing
 /// New Session against `.inert` would prove the control exists rather than that it starts anything.
@@ -14,9 +14,41 @@ struct SpawningRosterSpecimen: View {
     /// so a rename there shows up here as a failing walk.
     static let provisionalTitle = "New session"
 
-    @State private var presentation = CockpitPresentation.emptyPreview
+    /// The roster `crowdedSpawningRoster` starts from. A hundred, because #1562's reading is
+    /// about four times its roster and a handful of rows cannot tell a quadrupled tree from an
+    /// ordinary one. Named so the entry and `SessionRosterSpecimenTests` mean the same rows.
+    static let crowd = (0 ..< 100).map { settled(at: $0) }
+
+    @State private var presentation: CockpitPresentation
     @State private var navigation = CockpitNavigationModel()
     @State private var started = 0
+
+    init(seeded: [CockpitPresentation.Session] = []) {
+        let empty = CockpitPresentation.emptyPreview
+        _presentation = State(initialValue: CockpitPresentation(
+            projects: empty.projects,
+            activeProjectID: empty.activeProjectID,
+            sessions: seeded,
+            connection: empty.connection,
+        ))
+    }
+
+    /// One of the Sessions the roster is already holding. Titles differ per row so the naming pass
+    /// does the work it does on a real roster: a hundred rows sharing one title fold into one
+    /// (#1073), and a folded roster is not the tree that was counted.
+    private static func settled(at index: Int) -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: "settled-\(index)",
+            title: "/implement \(1000 + index)",
+            access: .managed,
+            status: .idle,
+            chain: .init(
+                program: .init(cli: .claude),
+                span: .init(lastSeenAtMs: CockpitPresentation.minutesAgo(index + 1)),
+            ),
+            work: .init(location: "/Users/milad/Developer/argo/.claude/worktrees/ticket-\(index)"),
+        )
+    }
 
     var body: some View {
         CockpitView(presentation: presentation, actions: actions)

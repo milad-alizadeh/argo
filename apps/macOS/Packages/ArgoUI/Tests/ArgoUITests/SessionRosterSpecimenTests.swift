@@ -130,4 +130,17 @@ struct SessionRosterSpecimenTests {
         // Including the loudest ink the roster has: a live dot on a Session nobody can steer.
         #expect(rows.contains { $0.isReadOnly && $0.state == .running })
     }
+
+    /// `crowdedSpawningRoster` is the roster `OutlineCount.swift` polls for #1562, and its whole
+    /// claim rests on the roster DRAWING a hundred rows. Rows sharing a title fold into one
+    /// (#1073), so a crowd that folded would have the probe report "no spike" off a roster of a
+    /// handful — the one wrong answer this repro can give.
+    @MainActor
+    @Test
+    func `the crowded spawning roster draws a roster a spike could be seen against`() {
+        let drawn = SessionRosterProjection.rows(from: SpawningRosterSpecimen.crowd, opened: [])
+
+        #expect(drawn.count == 100)
+        #expect(drawn.filter(\.takesSelection).count == drawn.count)
+    }
 }
