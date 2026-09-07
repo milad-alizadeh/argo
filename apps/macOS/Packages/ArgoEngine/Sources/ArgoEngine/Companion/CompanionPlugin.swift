@@ -14,7 +14,7 @@ enum CompanionPlugin {
     ///
     /// `bundle` defaults to the real resolution and is only ever overridden by a test staging a
     /// build with no bundle on disk (#1633) — production code never passes it.
-    static func shipsResources(in bundle: Bundle? = ModuleResourceBundle.resolved) -> Bool {
+    static func shipsResources(in bundle: Bundle? = EngineBundle.resolved) -> Bool {
         guard let bundle else { return false }
         return ["plugin", "mcp"].allSatisfy {
             bundle.url(forResource: $0, withExtension: "json", subdirectory: "Plugin") != nil
@@ -34,7 +34,7 @@ enum CompanionPlugin {
         under root: URL,
         socketPath: String,
         gatedBy grant: PermissionGrant? = nil,
-        from bundle: Bundle? = ModuleResourceBundle.resolved,
+        from bundle: Bundle? = EngineBundle.resolved,
     ) throws
         -> CompanionInvitation {
         let pluginRoot = root.appending(path: claim.value, directoryHint: .isDirectory)

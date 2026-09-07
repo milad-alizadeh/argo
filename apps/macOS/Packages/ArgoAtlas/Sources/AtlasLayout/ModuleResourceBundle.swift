@@ -5,9 +5,14 @@ import Foundation
 ///
 /// `Bundle.module`'s generated accessor is a `static let` that calls `fatalError` on this exact
 /// candidate walk coming up empty (#1633) — a build whose `.bundle` is swept or replaced under a
-/// running process finds that out on first touch. Shared by `AtlasView` and `AtlasFixtures`,
-/// the only two targets in this package that ship resources, so the walk is written once: both
-/// already depend on this target, and the walk itself does not vary by bundle name.
+/// running process finds that out on first touch.
+///
+/// The walk is written here once and read by every target that ships resources: `AtlasView` and
+/// `AtlasFixtures` in this package, and `ArgoEngine` through `EngineBundle` (#1652). It does not
+/// vary by bundle name, and each of them already depends on this target — `AtlasLayout` depends on
+/// nothing at all, so an edge from above it costs a caller nothing. Written out per package
+/// instead, it was the largest clone in the tree and it put the duplication gate over its
+/// threshold.
 public enum ModuleResourceBundle {
     private final class Anchor {}
 

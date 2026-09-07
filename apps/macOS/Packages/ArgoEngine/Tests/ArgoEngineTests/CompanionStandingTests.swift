@@ -17,7 +17,7 @@ struct CompanionStandingTests {
     /// The other half of #1633: `Bundle.module`'s generated accessor traps when its bundle is not
     /// on disk, which took the whole app down on a build swept or rebuilt under a running process.
     /// A missing bundle is staged directly here, rather than through
-    /// `PACKAGE_RESOURCE_BUNDLE_PATH`, because `ModuleResourceBundle.resolved` is cached exactly
+    /// `PACKAGE_RESOURCE_BUNDLE_PATH`, because `EngineBundle.resolved` is cached exactly
     /// like `Bundle.module` itself — an env var set after another test has already resolved it
     /// would do nothing.
     @Test
