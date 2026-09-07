@@ -28,13 +28,22 @@ public struct GitHubDeliveries: CodeHostPort {
     /// branch Argo's own worktrees are cut on carries a `#`, which a URL reads as the start of a
     /// fragment — so the unencoded spelling asks the host about every pull request in the
     /// repository and answers with whichever was touched last (#1398).
+    ///
+    /// The ref filter matches the pull request's LIVE head ref, and GitHub deletes that ref as it
+    /// merges the pull request — so on its own this answer decays, and a merged Delivery stops
+    /// being knowable at whatever moment the branch was deleted. the head commit is the fallback:
+    /// where the
+    /// ref filter answers nothing and the caller has a head commit, the commit is asked instead
+    /// (ADR-0032). Measured on this checkout, the ref filter alone reached 26 of 81 local
+    /// branches and the two composed reach 66.
     public func delivery(
-        ofBranch branch: String, in scope: String, grant: AccountGrant, revalidating: Bool,
+        of head: BranchHead, in scope: String, grant: AccountGrant, revalidating: Bool,
     ) async throws
         -> PortReading<Delivery?> {
         let owner = scope.prefix { $0 != "/" }
-        let named = branch.addingPercentEncoding(withAllowedCharacters: .branchInAQuery) ?? branch
-        return try await deliveries(
+        let named = head.branch
+            .addingPercentEncoding(withAllowedCharacters: .branchInAQuery) ?? head.branch
+        let byRef = try await deliveries(
             listedBy: "/repos/\(scope)/pulls?state=all&sort=updated&direction=desc"
                 + "&head=\(owner):\(named)",
             in: scope,
@@ -42,6 +51,44 @@ public struct GitHubDeliveries: CodeHostPort {
             revalidating: revalidating,
             only: 1,
         ).map(\.first)
+        // `unchanged` is the host's word that what the caller holds still stands, so there is
+        // nothing here for a second query to establish — and an empty ANSWER is the branch not
+        // being a name the host knows, which is where the commit is asked about instead.
+        guard let answered = byRef.answer else { return .unchanged }
+        if let found = answered {
+            return .answered(found)
+        }
+        guard let sha = head.sha else { return .answered(nil) }
+        let byCommit = try await delivery(atCommit: sha, in: scope, grant: grant)
+        return .answered(byCommit)
+    }
+
+    /// The same question keyed on a commit rather than on a ref, for the branch the host has
+    /// deleted (ADR-0032). Asked only where the ref filter answered nothing, so a live branch pays
+    /// for none of this.
+    ///
+    /// A 422 reads as `nil` rather than throwing, and that is the sharp edge here: GitHub answers
+    /// this endpoint `No commit found for SHA` for a local tip nobody pushed, which is a true fact
+    /// about that one branch. Left as a refusal it would set `union.refusal` and break the whole
+    /// per-branch fan-out, so one unpushed worktree could truncate a derivation.
+    private func delivery(
+        atCommit sha: String, in scope: String, grant: AccountGrant,
+    ) async throws
+        -> Delivery? {
+        let pulls: [GitHubPullRequest]? = try await reads.found(
+            "/repos/\(scope)/commits/\(sha)/pulls", grant: grant, tolerating: \.isCommitAbsent,
+        )
+        guard let chosen = Self.likeliest(of: pulls ?? []) else { return nil }
+        return try await delivery(chosen, in: scope, grant: grant)
+    }
+
+    /// Which of a commit's pull requests a row is about: a merged one, then the most recently
+    /// updated. This endpoint takes no `sort`, so unlike the ref filter's the order is Argo's own.
+    ///
+    /// The timestamps are GitHub's ISO-8601 in UTC with a fixed width, which sorts as text.
+    private static func likeliest(of pulls: [GitHubPullRequest]) -> GitHubPullRequest? {
+        let ranked = pulls.sorted { ($0.updatedAt ?? "") > ($1.updatedAt ?? "") }
+        return ranked.first { $0.mergedAt != nil } ?? ranked.first
     }
 
     /// The listing, and one assembled Delivery per pull request in it — or, capped at `only`, per

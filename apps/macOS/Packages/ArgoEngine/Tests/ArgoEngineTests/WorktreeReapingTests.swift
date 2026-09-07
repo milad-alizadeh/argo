@@ -6,12 +6,14 @@ import Testing
 @Suite("Worktree reaping")
 struct WorktreeReapingTests {
     private static let path = "/repo/.claude/worktrees/ticket-1398-archive"
+    private static let branch = "argo/#1398-archive"
+    private static let headSha = "bbb"
 
     /// A landed worktree: Argo's own, clean, level with its upstream, and held by the one Session
     /// being archived. Each test spoils exactly the fact it is about.
     private static func landed(
         kind: WorkspaceProjection.Kind = .worktree,
-        branch: String? = "argo/#1398-archive",
+        branch: String? = branch,
         dirty: Int = 0,
         divergence: UpstreamDivergence? = UpstreamDivergence(ahead: 0, behind: 0),
         holders: Int = 1,
@@ -19,7 +21,7 @@ struct WorktreeReapingTests {
         -> WorkspaceProjection {
         WorkspaceProjection(
             kind: kind,
-            refs: .init(branch: branch),
+            refs: .init(branch: branch, headSha: headSha),
             drift: .init(dirty: dirty, divergence: divergence),
             held: .init(count: holders, tier: .direct),
         )
@@ -29,7 +31,11 @@ struct WorktreeReapingTests {
     func `a clean pushed worktree of Argo's own is a candidate for its branch`() {
         let verdict = WorktreeReaping.candidate(at: Self.path, workspace: Self.landed())
 
-        #expect(verdict == .reap(.init(path: Self.path, branch: "argo/#1398-archive")))
+        #expect(verdict == .reap(.init(
+            path: Self.path,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        )))
     }
 
     @Test
@@ -95,7 +101,11 @@ struct WorktreeReapingTests {
             at: Self.path, workspace: Self.landed(divergence: nil),
         )
 
-        #expect(verdict == .reap(.init(path: Self.path, branch: "argo/#1398-archive")))
+        #expect(verdict == .reap(.init(
+            path: Self.path,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        )))
     }
 
     @Test
@@ -113,19 +123,37 @@ struct WorktreeReapingTests {
             at: Self.path, workspace: Self.landed(holders: 0),
         )
 
-        #expect(verdict == .reap(.init(path: Self.path, branch: "argo/#1398-archive")))
+        #expect(verdict == .reap(.init(
+            path: Self.path,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        )))
+    }
+
+    /// The head commit travels with the candidate because the landed question outlives the ref it
+    /// is about — the host is asked by commit once the branch is gone (ADR-0032).
+    @Test
+    func `a candidate carries the head commit the landed question is asked by`() {
+        let verdict = WorktreeReaping.candidate(at: Self.path, workspace: Self.landed())
+
+        guard case let .reap(candidate) = verdict else { return #expect(Bool(false)) }
+        #expect(candidate.headSha == Self.headSha)
     }
 
     @Test
     func `a candidate the code host does not call merged stays`() {
-        let candidate = WorktreeReaping.Candidate(path: Self.path, branch: "argo/#1398-archive")
+        let candidate = WorktreeReaping.Candidate(
+            path: Self.path, branch: Self.branch, headSha: Self.headSha,
+        )
 
         #expect(candidate.verdict(landed: false) == .hold(.notLanded))
     }
 
     @Test
     func `a candidate the code host calls merged is reaped`() {
-        let candidate = WorktreeReaping.Candidate(path: Self.path, branch: "argo/#1398-archive")
+        let candidate = WorktreeReaping.Candidate(
+            path: Self.path, branch: Self.branch, headSha: Self.headSha,
+        )
 
         #expect(candidate.verdict(landed: true) == .reap(candidate))
     }

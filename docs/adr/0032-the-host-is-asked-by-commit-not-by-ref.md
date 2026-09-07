@@ -49,8 +49,10 @@ that commit. Ref alone reaches 26 of 81, SHA alone reaches 61, and the two compo
 
 **The branch stays the Delivery's join key. The host stops being asked by the ref.**
 
-`CodeHostPort.delivery(ofBranch:at:in:grant:)` takes an optional head SHA. Inside
-`GitHubDeliveries`, and nowhere else:
+`CodeHostPort.delivery(of:in:grant:revalidating:)` takes a `BranchHead` — the branch and the
+commit at its head, as one value, because they are one join key read off one `WorkspaceProjection`
+and the parameter-count gate refuses a fifth argument. Inside `GitHubDeliveries`, and nowhere
+else:
 
 1. Ask `head=<owner>:<branch>`. If it answers, take it. **A live branch's behaviour does not
    move.**

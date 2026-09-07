@@ -28,8 +28,13 @@ struct GitHubReads: Sendable {
     /// The same read, with GitHub's own `Not Found` told apart from an answer that established
     /// nothing: `nil` is the host saying there is nothing behind this path, and everything else it
     /// could not be read as throws. `GitHubTicketTitles` draws the same line for the same reason.
-    func found<Reply: Decodable>(_ path: String, grant: AccountGrant) async throws -> Reply? {
-        try await decoded(call.send(path, grant: grant))
+    func found<Reply: Decodable>(
+        _ path: String,
+        grant: AccountGrant,
+        tolerating refusal: (GitHubFailure) -> Bool = { _ in false },
+    ) async throws
+        -> Reply? {
+        try await decoded(call.send(path, grant: grant), tolerating: refusal)
     }
 
     /// Every item of one listing, walked until a short page ends it or the backstop does. The
@@ -122,10 +127,20 @@ struct GitHubReads: Sendable {
     ///
     /// Checked before the reply, not after it fails to parse: a 4xx GitHub hands back as a BODY
     /// passes through the transport like any other answer.
-    private func decoded<Reply: Decodable>(_ data: Data) throws -> Reply? {
+    /// `tolerating` is a second refusal this one caller reads as `nil` too, and it is the
+    /// caller's because which of GitHub's 4xx are facts about the PATH is a per-endpoint question:
+    /// `/commits/<sha>/pulls` answers 422 for a commit the repository does not hold, which is a
+    /// true answer about that commit (ADR-0032). Every other reader tolerates nothing, so a
+    /// validation refusal stays a refusal everywhere else.
+    private func decoded<Reply: Decodable>(
+        _ data: Data, tolerating refusal: (GitHubFailure) -> Bool = { _ in false },
+    ) throws
+        -> Reply? {
         let decoder = GitHubCall.decoder
         if let failure = try? decoder.decode(GitHubFailure.self, from: data) {
-            guard failure.isNotFound else { throw ProviderFetchError.unreachable }
+            guard failure.isNotFound || refusal(failure) else {
+                throw ProviderFetchError.unreachable
+            }
             return nil
         }
         guard let reply = try? decoder.decode(Reply.self, from: data) else {

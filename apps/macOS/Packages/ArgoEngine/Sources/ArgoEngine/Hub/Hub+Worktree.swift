@@ -77,7 +77,7 @@ private extension Hub {
         // Asked outright: this holds nothing to keep, so `unchanged` would answer a reaping
         // decision with a validator and no pull request behind it.
         let read = try? await codeHost.delivery(
-            ofBranch: candidate.branch, in: binding.binding.scope, grant: binding.grant,
+            of: candidate.head, in: binding.binding.scope, grant: binding.grant,
             revalidating: false,
         )
         return read?.answer??.pullRequest?.isMerged == true

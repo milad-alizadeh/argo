@@ -37,6 +37,17 @@ struct GitHubFailure: Decodable {
         message == Self.notFound
     }
 
+    /// GitHub's own wording, in the 422 it answers a commit-keyed path with, for a commit this
+    /// repository does not have — a local tip nobody pushed. The SHA is appended to it, so this is
+    /// a prefix rather than an equality.
+    static let noCommitFound = "No commit found for SHA"
+
+    /// Whether the host is saying the commit is not its own. A fact about the commit asked about
+    /// and not about the read, which is why `GitHubDeliveries` may take it as an answer (ADR-0032).
+    var isCommitAbsent: Bool {
+        message.hasPrefix(Self.noCommitFound)
+    }
+
     /// GitHub's own words, its per-field complaints included — "Validation Failed" alone names
     /// nothing a reader could act on.
     var reason: String {

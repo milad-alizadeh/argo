@@ -14,7 +14,11 @@ struct HubWorktreeReapTests {
 
         let verdict = hub.worktreeToReap(archiving: true, id: hub.sessions[0].id)
 
-        #expect(verdict == .reap(.init(path: Self.worktree, branch: Self.branch)))
+        #expect(verdict == .reap(.init(
+            path: Self.worktree,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        )))
     }
 
     @Test
@@ -38,14 +42,25 @@ struct HubWorktreeReapTests {
         #expect(hub.worktreeToReap(archiving: true, id: hub.sessions[0].id) == .hold(.unread))
     }
 
-    @Test
-    func `archiving a Session whose branch merged takes its worktree with it`() async {
+    /// How the host files a merged pull request for the branch. `byCommit` is the state every
+    /// reap is actually in: GitHub deleted the head ref as it merged, so the host holds nothing
+    /// under the branch and answers only under the commit at its head (ADR-0032). Asked by branch
+    /// alone that case answered `false` forever and the folder survived.
+    enum Filing: Sendable {
+        case byRef
+        case byCommit
+    }
+
+    @Test(arguments: [Filing.byRef, .byCommit])
+    func `archiving a Session whose branch merged takes its worktree with it`(
+        _ filing: Filing,
+    ) async {
         let asked = AskedOf()
         let hub = Self.hub(removing: { repositoryURL, candidate in
             await asked.record(repositoryURL: repositoryURL, candidate: candidate)
             return .removed
         })
-        hub.codeHost = ScriptedCodeHost([], byBranch: [Self.branch: Self.merged])
+        hub.codeHost = Self.merged(filedBy: filing)
         await hubObserveToEnd(hub, Self.observation(id: "merged"))
         await hub.refreshWorkspaces()
 
@@ -53,7 +68,11 @@ struct HubWorktreeReapTests {
             archiving: true, id: hub.sessions[0].id, through: { .ready(Self.codeHost) },
         )
 
-        #expect(verdict == .reap(.init(path: Self.worktree, branch: Self.branch)))
+        #expect(verdict == .reap(.init(
+            path: Self.worktree,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        )))
         #expect(await asked.branch == Self.branch)
     }
 
@@ -101,7 +120,11 @@ struct HubWorktreeReapTests {
         await hubObserveToEnd(hub, Self.observation(id: "removed"))
         await hub.refreshWorkspaces()
 
-        let removal = await hub.reap(.init(path: Self.worktree, branch: Self.branch))
+        let removal = await hub.reap(.init(
+            path: Self.worktree,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        ))
 
         #expect(removal == .removed)
         // The checkout that HOLDS the worktree, never the folder being deleted.
@@ -113,7 +136,11 @@ struct HubWorktreeReapTests {
     func `a worktree git refused to remove says why`() async {
         let hub = Self.hub(removing: { _, _ in .refused("fatal: validation failed") })
 
-        let removal = await hub.reap(.init(path: Self.worktree, branch: Self.branch))
+        let removal = await hub.reap(.init(
+            path: Self.worktree,
+            branch: Self.branch,
+            headSha: Self.headSha,
+        ))
 
         #expect(removal == .refused("fatal: validation failed"))
     }
@@ -123,6 +150,16 @@ struct HubWorktreeReapTests {
     private static let merged = Delivery(
         branch: branch, pullRequest: .merged(number: 1398),
     )
+
+    /// A host holding that merged pull request under the one name the filing says it does, and
+    /// under nothing else.
+    private static func merged(filedBy filing: Filing) -> ScriptedCodeHost {
+        switch filing {
+        case .byRef: ScriptedCodeHost([], byBranch: [branch: merged])
+        case .byCommit: ScriptedCodeHost([], byCommit: [headSha: merged])
+        }
+    }
+
     private static let open = Delivery(
         branch: branch, pullRequest: .stub(number: 1398),
     )
@@ -130,6 +167,7 @@ struct HubWorktreeReapTests {
     private static let repository = reapRepository
     private static let worktree = reapWorktree
     private static let branch = reapBranch
+    private static let headSha = reapHeadSha
 
     private static func hub(
         removing removeWorktree: @escaping WorktreeRemovalWrite = { _, _ in .removed },
@@ -153,35 +191,3 @@ struct HubWorktreeReapTests {
         hubTestObservation(id: id, events: [.cwd(worktree), .title("Working", .summarised)])
     }
 }
-
-/// What the port was asked, kept off the main actor so the write stays `@Sendable`.
-private actor AskedOf {
-    private(set) var repositoryPath: String?
-    private(set) var branch: String?
-
-    func record(repositoryURL: URL, candidate: WorktreeReaping.Candidate) {
-        repositoryPath = repositoryURL.path
-        branch = candidate.branch
-    }
-}
-
-/// The repository this suite's Hub is pointed at, the one worktree it holds, and the branch that
-/// worktree is on. At file scope because the reads below are handed to an `Engine`, and named once
-/// because the suite asserts against the same three.
-private let reapRepository = "/tmp/argo-reap"
-private let reapWorktree = reapRepository + "/.claude/worktrees/ticket-1398-archive"
-private let reapBranch = "argo/#1398-archive"
-
-/// That worktree as git lists it, and as git reads it: Argo's own, clean and level with its
-/// upstream, so every local check passes and only the landed question is left.
-private let landedWorktree = WorktreeEntry(
-    path: reapWorktree, branch: reapBranch, headSha: "bbb", kind: .worktree,
-)
-
-private let landedRead = WorkspaceProjection(
-    kind: .worktree,
-    refs: WorkspaceProjection.Refs(branch: reapBranch, baseRef: "origin/main", headSha: "bbb"),
-    drift: WorkspaceProjection.Drift(
-        dirty: 0, divergence: UpstreamDivergence(ahead: 0, behind: 0),
-    ),
-)

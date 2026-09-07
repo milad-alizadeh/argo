@@ -30,7 +30,7 @@ struct WorktreeRemovalTests {
         // The name the repository's OWN checkout is on, which git refuses to delete while it is
         // checked out. Archiving asked for the folder, and it got the folder.
         let onTheMainBranch = WorktreeReaping.Candidate(
-            path: candidate.path, branch: repository.defaultBranch,
+            path: candidate.path, branch: repository.defaultBranch, headSha: nil,
         )
 
         let removal = await WorktreeRemover().remove(onTheMainBranch, from: repository.rootURL)
@@ -44,7 +44,9 @@ struct WorktreeRemovalTests {
         throws {
         let repository = try GitWorktreeFixture()
         defer { repository.remove() }
-        let stranger = WorktreeReaping.Candidate(path: "/tmp/not-a-worktree", branch: "nobody")
+        let stranger = WorktreeReaping.Candidate(
+            path: "/tmp/not-a-worktree", branch: "nobody", headSha: nil,
+        )
 
         let removal = await WorktreeRemover().remove(stranger, from: repository.rootURL)
 
@@ -107,7 +109,9 @@ private struct GitWorktreeFixture {
             .appending(path: name, directoryHint: .isDirectory).path
         let branch = "argo/#1398-\(name)"
         try run(["git", "-C", rootURL.path, "worktree", "add", "--quiet", "-b", branch, path])
-        return WorktreeReaping.Candidate(path: path, branch: branch)
+        // No head commit: removal is decided off the folder and the ref, and the commit is
+        // only ever read by the landed question upstream of it.
+        return WorktreeReaping.Candidate(path: path, branch: branch, headSha: nil)
     }
 
     /// Leaves an uncommitted change in a worktree.
