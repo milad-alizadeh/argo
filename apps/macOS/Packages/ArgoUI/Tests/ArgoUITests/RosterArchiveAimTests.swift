@@ -28,7 +28,7 @@ struct RosterArchiveAimTests {
     @Test
     func `the aim answers every row exactly as the per-row walk did`() {
         let drawn = Self.roster
-        let selection: Set<String> = ["live-1", "live-3", "archived-2"]
+        let selection: Set = ["live-1", "live-3", "archived-2"]
         let aim = SessionRosterProjection.ArchiveAim(selection: selection, in: drawn)
 
         for row in drawn {
@@ -46,36 +46,38 @@ struct RosterArchiveAimTests {
     /// its own name: getting it wrong archives a reader's whole selection from a row they never
     /// selected.
     @Test
-    func `a row outside the selection aims at itself`() {
+    func `a row outside the selection aims at itself`() throws {
         let drawn = Self.roster
         let aim = SessionRosterProjection.ArchiveAim(selection: ["live-1"], in: drawn)
 
-        #expect(aim.targets(under: Self.row("live-2", in: drawn)) == ["live-2"])
+        #expect(try aim.targets(under: Self.row("live-2", in: drawn)) == ["live-2"])
     }
 
     /// The two sides stay cut apart: a selection spanning the foot gives the row under the pointer
     /// only its own side, because the menu says one verb and a count.
     @Test
-    func `a selection spanning the foot is cut to the row's own side`() {
+    func `a selection spanning the foot is cut to the row's own side`() throws {
         let drawn = Self.roster
         let aim = SessionRosterProjection.ArchiveAim(
             selection: ["live-1", "archived-2"], in: drawn,
         )
 
-        #expect(aim.targets(under: Self.row("live-1", in: drawn)) == ["live-1"])
-        #expect(aim.targets(under: Self.row("archived-2", in: drawn)) == ["archived-2"])
+        #expect(try aim.targets(under: Self.row("live-1", in: drawn)) == ["live-1"])
+        #expect(try aim.targets(under: Self.row("archived-2", in: drawn)) == ["archived-2"])
     }
 
     /// A whole-side selection keeps the roster's DRAWN order, which is what the walk it replaces
     /// returned and what the menu's count is read off.
     @Test
-    func `a side selected whole comes back in drawn order`() {
+    func `a side selected whole comes back in drawn order`() throws {
         let drawn = Self.roster
         let aim = SessionRosterProjection.ArchiveAim(
             selection: ["live-3", "live-1", "live-2"], in: drawn,
         )
 
-        #expect(aim.targets(under: Self.row("live-1", in: drawn)) == ["live-1", "live-2", "live-3"])
+        #expect(
+            try aim.targets(under: Self.row("live-1", in: drawn)) == ["live-1", "live-2", "live-3"],
+        )
     }
 
     /// Rows either side of the foot, built through the projection rather than by hand: `Row`'s
@@ -87,11 +89,13 @@ struct RosterArchiveAimTests {
             + SessionRosterProjection.archivedRows(from: sessions)
     }
 
+    /// `#require` rather than a force unwrap: a fixture that stopped carrying the row should
+    /// name itself, not crash the whole suite from a line that reads like an assertion.
     private static func row(
         _ id: String, in drawn: [SessionRosterProjection.Row],
-    )
+    ) throws
         -> SessionRosterProjection.Row {
-        drawn.first { $0.id == id }!
+        try #require(drawn.first { $0.id == id })
     }
 
     private static func session(

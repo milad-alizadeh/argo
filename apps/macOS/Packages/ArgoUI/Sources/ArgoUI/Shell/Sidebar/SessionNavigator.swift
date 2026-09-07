@@ -44,15 +44,20 @@ package struct SessionNavigator: View {
     /// head brings a list that is already at the top back to the top (#1235), and a selection made
     /// on another surface brings its own row into view — `RosterReveal` (#1273).
     package var body: some View {
-        ScrollViewReader { roster in
-            list
+        // The one walk of the roster for the whole pass (#1559). `drawnRows` concatenates every
+        // kept row with every archived one, and three readers wanted it — this modifier, the
+        // list, and the reactions under it — so a pass built the array three times over.
+        let drawn = drawnRows
+
+        return ScrollViewReader { roster in
+            list(drawn: drawn)
                 .onChange(of: rows.first?.id) { previous, leading in
                     guard let top = SessionRosterProjection.topRow(
                         whenHeadMovedFrom: previous, to: leading, isAtTop: isAtTop,
                     ) else { return }
                     roster.scrollTo(top, anchor: .top)
                 }
-                .modifier(RosterReveal(selection: held.pointed, drawn: drawnRows, roster: roster))
+                .modifier(RosterReveal(selection: held.pointed, drawn: drawn, roster: roster))
         }
     }
 
@@ -60,7 +65,14 @@ package struct SessionNavigator: View {
     /// rather than selected. A row behind a shut fold is not in `rows` at all, which is what keeps
     /// a range off rows the reader cannot see (#1247).
     var selectableRows: [CockpitPresentation.Session.ID] {
-        drawnRows.filter(\.takesSelection).map(\.id)
+        SessionNavigator.selectable(in: drawnRows)
+    }
+
+    /// The same cut, over a roster already walked. Split out so a pass that has settled its drawn
+    /// rows does not walk them again to say which of them a range may reach (#1559).
+    static func selectable(in drawn: [SessionRosterProjection.Row])
+        -> [CockpitPresentation.Session.ID] {
+        drawn.filter(\.takesSelection).map(\.id)
     }
 
     /// Every row this list HAS, the foot's shut or open — what `RowSelectionReactions` cuts the
@@ -76,16 +88,17 @@ package struct SessionNavigator: View {
         rows + (isArchiveOpen ? archived : [])
     }
 
-    private var list: some View {
+    /// `drawn` is the pass's one reading of the roster, handed in by `body`.
+    private func list(drawn: [SessionRosterProjection.Row]) -> some View {
         // Settled ONCE for the whole pass and handed to every row (#1559). Both were read from
         // inside the row before, and both walk the roster: a list of N rows built N drawn arrays
         // and N selections, then filtered each of them — the roster squared, on every update, for
         // a value only a swipe or a menu ever reads.
-        let drawn = drawnRows
         let aim = SessionRosterProjection.ArchiveAim(selection: held.selection.rows, in: drawn)
         let selected = reading
+        let selectable = SessionNavigator.selectable(in: drawn)
 
-        return List(selection: held.listSelection(over: selectableRows)) {
+        return List(selection: held.listSelection(over: selectable)) {
             if rows.isEmpty, archived.isEmpty {
                 emptyState.previewSafeListRow()
             } else {
@@ -119,7 +132,7 @@ package struct SessionNavigator: View {
         .onChange(of: archived.isEmpty) { _, isEmpty in
             isArchiveShowing = isArchiveShowing && !isEmpty
         }
-        .modifier(RowSelectionReactions(held: held, drawn: selectableRows, membership: heldRows))
+        .modifier(RowSelectionReactions(held: held, drawn: selectable, membership: heldRows))
     }
 
     /// The archived Sessions, behind a count and shut by default. Absent entirely when nothing

@@ -31,6 +31,13 @@ extension SessionRosterProjection {
     /// The two sides are cut apart because the menu says one verb and a count. A selection
     /// spanning the foot would otherwise read "Archive 4 Sessions" over two already archived, and
     /// putting those back is the opposite act.
+    ///
+    /// **Nothing ships against this any more — `ArchiveAim` below is what the roster draws with,
+    /// and this is kept as its reference implementation** (#1559). It states the rule in the one
+    /// obvious way, at a cost the view could not pay, and `RosterArchiveAimTests` holds the two
+    /// against each other over every row. So a change to the cut belongs HERE FIRST: written into
+    /// the aim alone it leaves this asserting the old rule, and written here alone it never
+    /// reaches a reader. Either way the equivalence test is what says so.
     static func archiveTargets(under row: Row, aimed: Set<String>, in drawn: [Row]) -> [String] {
         drawn
             .filter { aimed.contains($0.id) && $0.isArchived == row.isArchived }
