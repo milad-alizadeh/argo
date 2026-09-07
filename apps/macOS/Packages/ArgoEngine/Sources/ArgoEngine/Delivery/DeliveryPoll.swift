@@ -39,29 +39,35 @@ public actor DeliveryPoll {
         await derivation.report(to: landed)
     }
 
-    /// A minute, the cadence the Tickets room already reads on. The host's hourly 5,000 is what
-    /// stops the number being smaller, and a tick costs more than one request per branch: every
-    /// pull request the tick touches costs TWO more, one for its check runs and one for its
+    /// A minute, the cadence the Tickets room already reads on. What used to stop the number being
+    /// smaller was the host's hourly 5,000: a tick costs more than one request per branch, since
+    /// every LIVE pull request it touches costs TWO more, one for its check runs and one for its
     /// reviews.
     ///
-    /// Counted rather than reasoned about, against this repository's own checkout — 63 worktree
-    /// branches, 15 of them with a finished pull request and one open (#1588):
+    /// Counted rather than reasoned about, against this repository's own checkout — 77 worktree
+    /// branches, 21 of them with a finished pull request and none open, so a settled tick is one
+    /// open listing plus 56 branches asked about by name:
     ///
-    /// | tick | requests | an hour |
-    /// | --- | --- | --- |
-    /// | before | 96 | 5,760 |
-    /// | the first after, still filling the ledger | 64 | — |
-    /// | every one after that | 50 | 3,000 |
+    /// | tick | requests | charged | an hour |
+    /// | --- | --- | --- | --- |
+    /// | before #1588, 63 branches | 96 | 96 | 5,760 |
+    /// | after #1588, this checkout | 57 | 57 | 3,420 |
+    /// | the first after #1620, filling the ETag ledger | 57 | 57 | — |
+    /// | every settled one after that | 57 | 0 | 0 |
     ///
-    /// Two changes buy the difference: a finished pull request costs no check runs and no reviews,
-    /// and a branch already holding a finished Delivery is answered from the ledger rather than
-    /// asked about again. Both are bounded by what the host says is terminal, so neither can leave
-    /// a branch on an answer that could still have moved.
+    /// The last row is measured against the host, not derived: each of the 57 goes out carrying the
+    /// `ETag` it was last answered with, all 57 come back `304 Not Modified`, and GitHub's
+    /// `x-ratelimit-used` does not move — a 304 does not count against the primary limit (#1620).
+    /// The requests are still made; what they cost is nothing.
     ///
-    /// The Tickets poll spends a measured 30 a tick on the same grant, so the pair now cost 4,800
-    /// against the host's 5,000 — clearing it, and not clearing it comfortably. The levers left are
-    /// conditional requests and a listing that covers more than what is open, both out of scope
-    /// here.
+    /// The floor is what cannot be validated: a branch holding an OPEN pull request is asked
+    /// outright, because a check run finishing does not touch the pull request it ran on, so the
+    /// listing that carries it would answer `304` while CI moved. One open pull request therefore
+    /// costs 3 a tick — the listing and its two sub-reads — or 180 an hour.
+    ///
+    /// The Tickets poll spends a measured 30 a tick on the same grant. With one pull request open
+    /// the pair now cost 1,980 against the host's 5,000, where they cost 4,800 before; with none,
+    /// 1,800. The lever left is a listing that covers more than what is open, out of scope here.
     public static let interval = Duration.seconds(60)
 
     /// Point at whatever a Project reads its code host through, or stop. What each resolution

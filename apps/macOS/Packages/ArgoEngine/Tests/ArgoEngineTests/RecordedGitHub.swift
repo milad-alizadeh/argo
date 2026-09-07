@@ -25,11 +25,17 @@ actor RecordedGitHub: HTTPTransport {
 
     private let replies: [String: String]
     private let failure: Error?
+    /// The keys whose URLs this host will validate rather than answer twice — it answers the first
+    /// ask with a body and every conditional ask after it with `304`, which is what a host does for
+    /// a page nobody has touched (#1620).
+    private let validating: Set<String>
+    private var answered: Set<String> = []
     private var sent: [HTTPRequest] = []
 
-    init(replies: [String: String], failure: Error? = nil) {
+    init(replies: [String: String], failure: Error? = nil, validating: Set<String> = []) {
         self.replies = replies
         self.failure = failure
+        self.validating = validating
     }
 
     func send(_ request: HTTPRequest) throws -> Data {
@@ -38,6 +44,28 @@ actor RecordedGitHub: HTTPTransport {
             throw failure
         }
         return Data(reply(to: request.url).utf8)
+    }
+
+    func fetch(_ request: HTTPRequest) throws -> HTTPReply {
+        // A host answers `304` only to a request that carried a validator, and only for a URL it
+        // has already handed a body — and an ETag with it — for.
+        if request.revalidating, answered.contains(request.url), isValidated(request.url) {
+            sent.append(request)
+            return .unchanged
+        }
+        let data = try send(request)
+        answered.insert(request.url)
+        return .answered(data)
+    }
+
+    /// Which requests went out carrying `If-None-Match`, in order — what a suite asserts on when
+    /// the claim is about WHICH reads a tick was willing to have validated.
+    func conditional() -> [String] {
+        sent.filter(\.revalidating).map(\.url)
+    }
+
+    private func isValidated(_ url: String) -> Bool {
+        validating.contains { url.contains($0) }
     }
 
     func urls() -> [String] {

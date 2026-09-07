@@ -12,17 +12,56 @@ actor ScriptedCodeHost: CodeHostPort {
     /// for: a refusal is the throttled read a checkout with many worktrees runs into, and "nothing
     /// there" is an answer.
     private var refusing: Set<String>
+    /// The listings answered `unchanged`, by read number from one — the host's word that what the
+    /// caller holds is still current, which is neither an answer nor a refusal (#1620).
+    private var unchangedListings: Set<Int>
+    /// The branches answered `unchanged`, told apart from the ones the host holds nothing for:
+    /// that distinction is the whole trap this fixture exists to let a suite press on.
+    private var unchangedBranches: Set<String>
     private var reads = 0
     private var asked: [String] = []
+    private var conditional: [String: Bool] = [:]
+    private var conditionalListings: [Bool] = []
+
+    /// Which reads this host validates rather than answers — one value, because a suite says
+    /// "these are unchanged" about the tick and not about the listing and the fan-out separately.
+    struct Unchanged {
+        var listings: Set<Int> = []
+        var branches: Set<String> = []
+    }
 
     init(
         _ script: [Result<[Delivery], ProviderFetchError>],
         byBranch: [String: Delivery] = [:],
         refusing: Set<String> = [],
+        unchanged: Unchanged = Unchanged(),
     ) {
         self.script = script
         self.byBranch = byBranch
         self.refusing = refusing
+        self.unchangedListings = unchanged.listings
+        self.unchangedBranches = unchanged.branches
+    }
+
+    /// Start answering `unchanged` — for these branches, and for every listing from here on. Set
+    /// after a derivation rather than at init, so a suite can land a real answer first and have the
+    /// tick AFTER it be the one that saved a request.
+    func hold(branches: Set<String> = [], listings: Bool = false) {
+        unchangedBranches = branches
+        if listings {
+            unchangedListings = Set(reads + 1 ... reads + 99)
+        }
+    }
+
+    /// Whether each branch was asked about with a validator on it — what a suite asserts when the
+    /// claim is that a read is only made conditional where its `304` can be kept.
+    func askedConditionally(_ branch: String) -> Bool? {
+        conditional[branch]
+    }
+
+    /// The same for the listings, in order.
+    func conditionalListing() -> [Bool] {
+        conditionalListings
     }
 
     /// Start refusing these branches, which is what a host does once a read has spent the last of
@@ -44,19 +83,49 @@ actor ScriptedCodeHost: CodeHostPort {
         reads
     }
 
-    func inFlight(in _: String, grant _: AccountGrant) async throws -> [Delivery] {
+    func inFlight(
+        in _: String, grant _: AccountGrant, revalidating: Bool,
+    ) async throws
+        -> PortReading<[Delivery]> {
         reads += 1
-        guard let answer = script.count > 1 ? script.removeFirst() : script.first else { return [] }
-        return try answer.get()
+        conditionalListings.append(revalidating)
+        if unchangedListings.contains(reads) {
+            return .unchanged
+        }
+        guard let answer = script.count > 1 ? script.removeFirst() : script.first else {
+            return .answered([])
+        }
+        return try .answered(answer.get())
     }
 
     func delivery(
-        ofBranch branch: String, in _: String, grant _: AccountGrant,
+        ofBranch branch: String, in _: String, grant _: AccountGrant, revalidating: Bool,
+    ) async throws
+        -> PortReading<Delivery?> {
+        asked.append(branch)
+        conditional[branch] = revalidating
+        guard !refusing.contains(branch) else { throw ProviderFetchError.rateLimited }
+        guard !unchangedBranches.contains(branch) else { return .unchanged }
+        return .answered(byBranch[branch])
+    }
+}
+
+extension CodeHostPort {
+    /// The two port reads asked outright and unwrapped, for a suite whose subject is not the third
+    /// outcome. A host with no validator on file cannot answer `unchanged`, so the unwrap is the
+    /// shape of the read and not an assumption about it.
+    func listed(in scope: String, grant: AccountGrant) async throws -> [Delivery] {
+        try await inFlight(in: scope, grant: grant, revalidating: false).answer ?? []
+    }
+
+    func delivered(
+        ofBranch branch: String, in scope: String, grant: AccountGrant,
     ) async throws
         -> Delivery? {
-        asked.append(branch)
-        guard !refusing.contains(branch) else { throw ProviderFetchError.rateLimited }
-        return byBranch[branch]
+        guard case let .answered(delivery) = try await delivery(
+            ofBranch: branch, in: scope, grant: grant, revalidating: false,
+        ) else { return nil }
+        return delivery
     }
 }
 

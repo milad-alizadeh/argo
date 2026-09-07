@@ -33,9 +33,29 @@ class StubHTTPProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.badURL))
             return
         }
+        let sent = request.value(forHTTPHeaderField: "If-None-Match") ?? ""
+        // A host answers `304` to a validator it still recognises, and only where the case asked
+        // for one: `validates=1` in the URL is a suite saying this endpoint offers that.
+        if response.value(forHTTPHeaderField: "validates") == "1",
+           sent == response.value(forHTTPHeaderField: "ETag"),
+           let unchanged = Self.notModified(url) {
+            client?.urlProtocol(self, didReceive: unchanged, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocolDidFinishLoading(self)
+            return
+        }
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data("{}".utf8))
+        // The body echoes the validator the request carried, which is the only way a suite behind
+        // the transport seam can see whether one went out at all.
+        // Escaped, because a real ETag is quoted — `W/"cafe"` — and unescaped it ends the string
+        // it is being echoed inside.
+        let echoed = sent.replacingOccurrences(of: "\"", with: "\\\"")
+        client?.urlProtocol(self, didLoad: Data(#"{"ifNoneMatch":"\#(echoed)"}"#.utf8))
         client?.urlProtocolDidFinishLoading(self)
+    }
+
+    /// A bodiless `304`, which is what the status means: the last body still stands.
+    private static func notModified(_ url: URL) -> HTTPURLResponse? {
+        HTTPURLResponse(url: url, statusCode: 304, httpVersion: nil, headerFields: [:])
     }
 
     override func stopLoading() {}

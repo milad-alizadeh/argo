@@ -104,18 +104,31 @@ public actor DeliveryDerivation {
         _ target: PortReadTarget, locally: Locally,
     ) async throws
         -> Assembled {
-        let hosted = try await port.inFlight(in: target.scope, grant: target.binding.grant)
+        // Read once, not per branch: this is the loop whose cost the ticket is about.
+        let held = await deliveries.deliveries(of: target.projectID)
+            .reduce(into: [String: Delivery]()) { held, delivery in
+                held[delivery.branch] = delivery
+            }
+        let open = held.values.filter { $0.pullRequest?.isFinished == false }
+        // Conditional only where a `304` is reproducible from what is held. An open pull request is
+        // not: its checks and reviews move without its own body moving, so the listing that carries
+        // it is asked outright (`GitHubDeliveries.deliveries`).
+        let listed = try await port.inFlight(
+            in: target.scope, grant: target.binding.grant, revalidating: open.isEmpty,
+        )
+        // An unchanged listing is the host's word that the open set has not moved, which for an
+        // empty one is the empty set — and NOT an empty derivation: every settled and every
+        // pull-request-less branch below is still to be assembled.
+        let hosted = listed.answer ?? Array(open)
         var union = Assembled(deliveries: hosted)
         let inFlight = Set(hosted.map(\.branch))
-        // Read once, not per branch: this is the loop whose cost the ticket is about.
-        let settled = await settled(of: target)
         for branch in Self.branches(of: locally.workspaces) where !inFlight.contains(branch) {
-            if let already = settled[branch] {
+            if let already = held[branch], already.pullRequest?.isFinished == true {
                 union.deliveries.append(already)
                 continue
             }
             do {
-                try await union.deliveries.append(named(branch, of: target))
+                try await union.deliveries.append(named(branch, holding: held[branch], of: target))
             } catch {
                 union.refusal = .refusal(error)
                 let carried = await carried(past: union.deliveries, of: target)
@@ -124,21 +137,6 @@ public actor DeliveryDerivation {
             }
         }
         return union.linked(by: locally.assertions, in: target.projectID)
-    }
-
-    /// What the ledger already holds for every branch whose pull request the host has finished
-    /// with, keyed by branch — merged, or closed without merging, which is a Delivery's terminal
-    /// state (`DeliveryPullRequest.isFinished`).
-    ///
-    /// Asking about one of these again buys an answer that cannot have moved, and on this
-    /// repository's own checkout that was 15 of the 63 branches in a tick, costing three requests
-    /// each (#1588). Reopening one, or opening a second pull request on the same branch, arrives
-    /// through the in-flight listing above — which runs first and takes the branch out of the
-    /// fan-out entirely, so nothing here can strand a branch on a stale terminal answer.
-    private func settled(of target: PortReadTarget) async -> [String: Delivery] {
-        await deliveries.deliveries(of: target.projectID)
-            .filter { $0.pullRequest?.isFinished == true }
-            .reduce(into: [:]) { settled, delivery in settled[delivery.branch] = delivery }
     }
 
     /// What the LAST derivation established for the branches this one never reached — old, and
@@ -160,12 +158,30 @@ public actor DeliveryDerivation {
 
     /// One local branch's Delivery. A branch the host has never seen has no pull request and no
     /// Checks, which is "no CI yet" rather than a synthesized pass.
+    ///
+    /// Asked conditionally where what is held for the branch is a pull request the host does not
+    /// have — which is the answer this read most often repeats, and the whole of it: there is
+    /// nothing under a branch with no pull request for a `304` to be silent about. That is where
+    /// the saving is. On this repository's checkout it is 47 of the 63 branches, and each is one
+    /// request that a `304` now costs nothing against the primary limit (#1620).
+    ///
+    /// A branch holding a LIVE pull request is asked outright, because its checks and reviews move
+    /// without its own body moving. A branch holding a settled one is not asked at all — the loop
+    /// above answers it from the ledger (#1588).
     private func named(
-        _ branch: String, of target: PortReadTarget,
+        _ branch: String, holding held: Delivery?, of target: PortReadTarget,
     ) async throws
         -> Delivery {
-        try await port.delivery(ofBranch: branch, in: target.scope, grant: target.binding.grant)
-            ?? Delivery(branch: branch, pullRequest: nil)
+        let none = Delivery(branch: branch, pullRequest: nil)
+        let read = try await port.delivery(
+            ofBranch: branch, in: target.scope, grant: target.binding.grant,
+            revalidating: held?.pullRequest == nil,
+        )
+        // `unchanged` keeps what the branch already had; only an ANSWER of `nil` is the host saying
+        // nobody has opened a pull request on it. Read the two as one and every tick that saved a
+        // request would erase the pull request the last tick found.
+        guard let answered = read.answer else { return held ?? none }
+        return answered ?? none
     }
 
     /// The branches the local Workspaces are on, each once and in the order they were read.

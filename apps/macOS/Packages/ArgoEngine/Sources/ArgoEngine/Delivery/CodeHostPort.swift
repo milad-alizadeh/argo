@@ -4,10 +4,18 @@ import Foundation
 ///
 /// It answers whole Deliveries rather than raw pull requests, so the host's own words are read at
 /// the boundary and nowhere else.
+///
+/// Every method answers a `PortReading` rather than a value, because the host has a third thing to
+/// say: that what the caller holds is still current (#1620). `revalidating` is how the caller says
+/// it is able to hear that — a caller holding nothing for this read must pass `false`, or a `304`
+/// would leave it with no answer at all.
 public protocol CodeHostPort: Sendable {
     /// Every Delivery still in flight, whether or not this machine has the branch — which is what
     /// puts a teammate's pull request in the room.
-    func inFlight(in scope: String, grant: AccountGrant) async throws -> [Delivery]
+    func inFlight(
+        in scope: String, grant: AccountGrant, revalidating: Bool,
+    ) async throws
+        -> PortReading<[Delivery]>
 
     /// What the host holds for one named branch, in flight or long merged, and `nil` where it holds
     /// nothing at all.
@@ -16,7 +24,7 @@ public protocol CodeHostPort: Sendable {
     /// by what is open: reaching merge — a Delivery's terminal state — through it would mean
     /// walking every pull request a repository ever had, on every read.
     func delivery(
-        ofBranch branch: String, in scope: String, grant: AccountGrant,
+        ofBranch branch: String, in scope: String, grant: AccountGrant, revalidating: Bool,
     ) async throws
-        -> Delivery?
+        -> PortReading<Delivery?>
 }

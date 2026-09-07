@@ -27,6 +27,15 @@ public struct HTTPRequest: Sendable {
     public let method: HTTPMethod
     public let body: HTTPBody?
     public let bearerToken: String?
+    /// Whether this ask may be answered "you already have it".
+    ///
+    /// Opt-in rather than automatic, because a `304` is only cheaper than a body if the CALLER can
+    /// still produce an answer from what it holds — and most of them cannot (#1620). A request that
+    /// leaves this `false` carries no validator, so the host has nothing to answer `304` against.
+    ///
+    /// Set after the fact rather than taken by the init, which is what keeps the ask itself — a
+    /// URL, a verb, a body, an identity — the whole of what the init describes.
+    public var revalidating = false
 
     /// An unnamed verb is read off the body — POST where there is one, GET where there is not,
     /// which is what every read and every OAuth exchange already assumed.
@@ -42,9 +51,29 @@ public struct HTTPRequest: Sendable {
         self.bearerToken = bearerToken
     }
 
+    /// The same ask, offered for validation.
+    public func revalidated(_ revalidating: Bool) -> HTTPRequest {
+        var asked = self
+        asked.revalidating = revalidating
+        return asked
+    }
+
     public init(url: String, form: [String: String], bearerToken: String? = nil) {
         self.init(url: url, body: .form(form), bearerToken: bearerToken)
     }
+}
+
+/// What one request established: a body, or the host's word that the last body still stands.
+///
+/// The third outcome the health vocabulary has no room for. `ProviderFetchError` says why a read
+/// did NOT land, and `unchanged` is not a failure — but it is not an answer either, and read as
+/// one it is an EMPTY answer, which for a per-branch pull request read means "nobody opened one".
+/// That reading would erase a mark on every tick that saved a request (#1620).
+public enum HTTPReply: Sendable {
+    case answered(Data)
+    /// `304 Not Modified`: the validator we sent still matches, and this costs nothing against
+    /// GitHub's primary rate limit.
+    case unchanged
 }
 
 /// The seam the provider adapters read through.
@@ -53,6 +82,18 @@ public struct HTTPRequest: Sendable {
 /// `URLSession`.
 public protocol HTTPTransport: Sendable {
     func send(_ request: HTTPRequest) async throws -> Data
+
+    /// The same ask, for a caller that can act on `unchanged`.
+    ///
+    /// Defaulted rather than required, because a transport that keeps no validators cannot produce
+    /// a `304` — it never sent an `If-None-Match` for one to be about.
+    func fetch(_ request: HTTPRequest) async throws -> HTTPReply
+}
+
+public extension HTTPTransport {
+    func fetch(_ request: HTTPRequest) async throws -> HTTPReply {
+        try await .answered(send(request))
+    }
 }
 
 public enum HTTPTransportError: Error, Equatable {
