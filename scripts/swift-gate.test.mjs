@@ -85,6 +85,34 @@ check('the pre-push hook exists and calls the gate', () => {
   assert.match(hook, /ARGO_SKIP_SWIFT_GATE/, 'the override must be named in the hook')
 })
 
+// The hook skips a branch nobody is reading (#1577). The two cases below are what keeps that
+// exemption from widening into "skips whenever asking is inconvenient": the question must be
+// asked of THIS branch, and a question that fails must gate rather than skip.
+check('the hook asks about this branch alone, and gates when it cannot ask', () => {
+  const hook = readFileSync(HOOK, 'utf8')
+  assert.match(
+    hook,
+    /gh pr list --head "\$branch" --state open/,
+    'the PR question must be scoped to the pushed branch',
+  )
+  assert.match(hook, /reviewed=1/, 'the hook must default to gating')
+  // `reviewed=0` is reachable only after `gh` answered, and answered zero. A hook that set it
+  // before the command, or outside the `&&` chain, would skip on a machine with no `gh`.
+  const skip = hook.slice(hook.indexOf('reviewed=1'), hook.indexOf('if [ "$reviewed" = "0" ]'))
+  assert.match(skip, /command -v gh/, 'the skip must be reached only through a working gh')
+  assert.match(
+    skip,
+    /&&\s*\\?\s*\n?\s*\[ "\$open_prs" = "0" \] && reviewed=0/,
+    'the skip must hang off gh succeeding AND answering zero',
+  )
+})
+
+check('the hook still gates a branch that has an open PR', () => {
+  const hook = readFileSync(HOOK, 'utf8')
+  const gated = hook.slice(hook.indexOf('if [ "$reviewed" = "0" ]'))
+  assert.match(gated, /else[\s\S]*swift-gate\.sh/, 'the branch with a PR must reach the gate')
+})
+
 // --- the script, run for real -------------------------------------------------------------
 
 // The repository, the stubs and the runner live in `gate-scenario.harness.mjs`, shared with

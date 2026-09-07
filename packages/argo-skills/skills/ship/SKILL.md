@@ -33,8 +33,8 @@ each merge invalidated seven other bases, and the cost of the gate was lanes mul
 merges rather than lanes plus merges. Every rebase but the last was work thrown away, because the
 branch was going to be rebased again before it landed.
 
-So the rebase moves to where it is needed once: `scripts/land.sh`, the landing lane, which
-rebases, gates and merges in one serialized pass. See `docs/agents/landing.md`.
+The rebase therefore does not happen here. A branch is rebased when it is about to be merged
+and not before, and merging is the human's (#1577). See `docs/agents/landing.md`.
 
 1. **Commit everything outstanding.** Anything the steps below change is committed the same way,
    before the push.
@@ -110,8 +110,15 @@ Each of these belongs in the PR body, and the ship continues past it.
    every fact, and leave code, paths, error strings and `Closes #<N>` exactly as they are. If
    the skill is not installed, write short sentences in the active voice and change no
    identifier.
-4. Open exactly one PR with `gh pr create --base <base>`, ready for review, its body carrying
+4. **Run `sh scripts/swift-gate.sh` before opening the PR**, and open nothing if it fails.
+   The pre-push hook gates a branch that already has an open PR and lets a branch with none
+   through, because a branch nobody is reading is not worth a build slot (#1577). The push in
+   step 3 is therefore the one push in a branch's life that is NOT gated by the hook, and the
+   PR this step opens is exactly what makes it readable. So the gate runs here instead. It is
+   a cache lookup when the tree has already passed it, which is the usual case for a branch
+   that has been pushed before.
+5. Open exactly one PR with `gh pr create --base <base>`, ready for review, its body carrying
    `Closes #<N>` and everything the section above told you to carry. Skip this step for a branch
-   that already had a PR open — the push updated it.
-5. Report the PR URL. The branch lands through `scripts/land.sh`, not from here, and merging
-   stays with the human either way.
+   that already had a PR open — the push updated it, and the hook gated it.
+6. Report the PR URL. Merging is the human's, and nothing in this repo does it for them
+   (#1577).
