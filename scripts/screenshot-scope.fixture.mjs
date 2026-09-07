@@ -6,29 +6,15 @@
 // which process the script talks to is readable without building or launching Argo.
 
 import { spawnSync } from 'node:child_process'
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { report as reportChecks } from './check-harness.mjs'
+import { REPO_ROOT, readCalls, reportAfterCleaning, stubber, write } from './shell-fixture.mjs'
 
-// The scratch tree is this fixture's to clean, so the shared report is wrapped rather than
-// called directly — a suite that exits 1 must not leave the tree behind either.
-export function report(suite) {
-  rmSync(scratch, { recursive: true, force: true })
-  reportChecks(suite)
-}
+export { isRunning, settled } from './shell-fixture.mjs'
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+export const report = (suite) => reportAfterCleaning(scratch, suite)
+
 const scratch = mkdtempSync(path.join(tmpdir(), 'argo-screenshot-scope-'))
 const appDir = path.join(scratch, 'apps', 'macOS')
 const script = path.join(appDir, 'scripts', 'screenshot.sh')
@@ -54,16 +40,8 @@ symlinkSync(
 // PROJECT_ROOT comes from `git rev-parse`, so the throwaway tree has to be a repository.
 spawnSync('git', ['init', '-q'], { cwd: scratch })
 
-function write(file, body) {
-  writeFileSync(file, body)
-  chmodSync(file, 0o755)
-}
-
-// Every stub logs `<name> <argv…>` on one line, so a failure can name both the tool and what it
-// was told to do — "osascript ran" and "osascript quit Argo" are different failures.
-function stub(name, body = '') {
-  write(path.join(stubDir, name), `#!/bin/sh\nprintf '${name} %s\\n' "$*" >> '${callLog}'\n${body}`)
-}
+// "osascript ran" and "osascript quit Argo" are different failures, so every stub logs its argv.
+const stub = stubber(stubDir, callLog)
 for (const name of ['xcodebuild', 'osascript', 'open']) {
   stub(name)
 }
@@ -88,23 +66,6 @@ write(
   ].join('\n'),
 )
 
-export function isRunning(pid) {
-  try {
-    process.kill(Number(pid), 0)
-    return true
-  } catch {
-    return false
-  }
-}
-
-// The script signals its instance and returns without reaping it, so "did it close" is only
-// answerable after a beat. Spun rather than slept, so a passing run costs only the beat it needs.
-export function settled(pid) {
-  const deadline = Date.now() + 5000
-  while (isRunning(pid) && Date.now() < deadline) spawnSync('/bin/sleep', ['0.05'])
-  return !isRunning(pid)
-}
-
 export function run(env = {}) {
   rmSync(callLog, { force: true })
   const result = spawnSync('/bin/sh', [script, out], {
@@ -124,8 +85,7 @@ export function run(env = {}) {
     // so a script that hands the app its stdout fails a test instead of wedging the suite.
     timeout: 25_000,
   })
-  const calls = existsSync(callLog) ? readFileSync(callLog, 'utf8').trimEnd().split('\n') : []
-  return { ...result, calls, output: `${result.stdout}${result.stderr}` }
+  return { ...result, calls: readCalls(callLog), output: `${result.stdout}${result.stderr}` }
 }
 
 // The launch the script made, told from a bystander's by its flags: only the script passes any.
