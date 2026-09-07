@@ -87,16 +87,23 @@ recipe: `docs/agents/quality-gates.md`.
 ### Landing
 
 **A lane never rebases to open a PR.** It gates once on the base it was cut from and opens its
-PR there; `sh scripts/land.sh` is the one place a branch is rebased onto the current default
-branch, gated and merged, one at a time. Rebasing per lane made the gate cost lanes multiplied by
-merges, and `main` takes about ninety commits a day (#1377). The exception is a PR GitHub reports
-`CONFLICTING`, which only that branch's own session can resolve.
+PR there. Rebasing per lane made the gate cost lanes multiplied by merges, and `main` takes about
+ninety commits a day (#1377). Being behind the base is the normal state of a branch, not a defect
+in it.
 
-**What leaves the base has to say so.** `land.sh` refuses a branch whose rebased tree drops a
-test the base has (`Removes-test: <name>`), deletes a file it has (`Removes-file: <path>`), or
-holds content the base has moved past (`Reverts-file: <path>`, or `*` for the whole change).
-One trailer line, in the commit that does it. A rebase that takes the pre-fix side of a file
-deletes the test that guarded the fix, and every suite is green afterwards (#1558).
+**Merging is the human's, and nothing here does it for them** (#1577). `scripts/land.sh` used to
+rebase, gate and merge in one pass, and no step in it asked a person; it is gone. So the rebase
+onto the current default branch has no automatic home either — the open question in #1577 is
+where it goes.
+
+**What leaves the base has to say so.** `scripts/kept-the-tests.sh` and
+`scripts/undoes-the-base.sh` read a merged tree against the base and refuse one that drops a test
+the base has (`Removes-test: <name>`), deletes a file it has (`Removes-file: <path>`), or holds
+content the base has moved past (`Reverts-file: <path>`, or `*` for the whole change). One
+trailer line, in the commit that does it. A rebase that takes the pre-fix side of a file deletes
+the test that guarded the fix, and every suite is green afterwards (#1558). `land.sh` was their
+caller and is gone, so run them by hand before merging:
+`sh scripts/kept-the-tests.sh . origin/main HEAD`.
 
 Two lanes never own the same file, whatever the vocabulary split says. The arithmetic, the
 measurements and what the gate now does before its first command: `docs/agents/landing.md`.
