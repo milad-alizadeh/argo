@@ -28,7 +28,7 @@ public struct GitHubDeliveryWatch: CodeHostWatch {
             "/repos/\(scope)/hooks", method: .post, body: Self.creating(), grant: grant,
         )
         let hook = try? GitHubCall.decoder.decode(GitHubForwarderHook.self, from: created)
-        guard let url = hook?.wsUrl else { throw ProviderFetchError.unreachable }
+        guard let url = hook?.wsUrl else { throw DeliveryWatchRefusal.noSocketOffered }
         // The RAW token, with no `Bearer` prefix — which is not what any of GitHub's HTTP endpoints
         // take (`cli/gh-webhook`, `webhook/forward.go`).
         let channel = try await sockets.open(

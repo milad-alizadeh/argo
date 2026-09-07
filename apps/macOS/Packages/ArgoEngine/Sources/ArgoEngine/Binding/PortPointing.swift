@@ -2,9 +2,8 @@ import Foundation
 
 /// What a repeating read is currently pointed at, by the parts of it that can be compared.
 ///
-/// Shared by the poll and the socket, because both answer the same question on every `point`: is
-/// this the Binding I am already reading through? Two copies would be two chances to disagree about
-/// what "unchanged" means, and one of them would keep reading a scope nobody asked for.
+/// Shared by the poll and the socket, so both answer "is this the Binding I am already reading
+/// through?" the same way.
 struct PortPointing: Equatable {
     let binding: ProjectBinding
     let projectID: String

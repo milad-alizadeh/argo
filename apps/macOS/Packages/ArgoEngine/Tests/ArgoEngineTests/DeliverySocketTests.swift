@@ -118,12 +118,12 @@ struct DeliverySocketTests {
     }
 
     @Test
-    func `a socket that carried resets the backoff`() async {
-        // A socket the host merely dropped is not the host declining to push, and treating the two
-        // alike would leave an ordinary reconnect waiting a minute.
+    func `a socket that carried a move resets the backoff`() async {
+        // A socket the host merely dropped after real work is not the host declining to push, and
+        // treating the two alike would leave an ordinary reconnect waiting a minute.
         let waits = SocketWaits()
         let socket = DeliverySocket(
-            watch: ScriptedCodeHostWatch([.carrying(0)]),
+            watch: ScriptedCodeHostWatch([.carrying(1)]),
             derive: SocketDerivations().derive,
             sleep: waits.sleep,
         )
@@ -133,6 +133,25 @@ struct DeliverySocketTests {
         await socket.stop()
 
         #expect(await waits.waits().prefix(3) == [.seconds(1), .seconds(1), .seconds(1)])
+    }
+
+    @Test
+    func `a socket that opens and carries nothing backs off like a refused dial`() async {
+        // A forwarder that takes the dial and drops at once — a withdrawn preview, a scope revoked
+        // mid-run — would otherwise reconnect every second forever, and each turn costs a hook
+        // create plus a whole derivation: many times the request rate of the poll this spares.
+        let waits = SocketWaits()
+        let socket = DeliverySocket(
+            watch: ScriptedCodeHostWatch([.carrying(0)]),
+            derive: SocketDerivations().derive,
+            sleep: waits.sleep,
+        )
+
+        await socket.point(.ready(target.binding), at: "P1")
+        await waits.untilWaited(4)
+        await socket.stop()
+
+        #expect(await Array(waits.waits().prefix(4)) == [2, 4, 8, 16].map(Duration.seconds))
     }
 
     @Test

@@ -38,7 +38,9 @@ public final class DeliveryReadings {
     @ObservationIgnored private lazy var socket = watch.map { watch in
         DeliverySocket(
             watch: watch,
-            derive: { [weak self] target in await self?.derive(target) },
+            // The poll's own derivation, so a fact the socket heard about is recorded exactly as a
+            // polled one is — health and landing included.
+            derive: { [weak self] target in await self?.poll.derive(target) },
             sleep: sleep,
         )
     }
@@ -67,12 +69,6 @@ public final class DeliveryReadings {
         await poll.report(to: { [weak self] in await self?.read() })
         await poll.point(resolution, at: projectID)
         await socket?.point(resolution, at: projectID)
-    }
-
-    /// One derivation, the poll's own — so a fact the socket heard about is recorded exactly as a
-    /// polled one is, health and landing included.
-    private func derive(_ target: PortReadTarget) async {
-        await poll.derive(target)
     }
 
     /// The local half of one derivation, asked for at the moment of the tick. No assertion is

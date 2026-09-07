@@ -47,7 +47,7 @@ public actor PortPollLoop {
             while !Task.isCancelled {
                 guard let self else { return }
                 await tick(target)
-                guard await sleptWithoutCancelling(interval) else { return }
+                guard await PortSleep.uncancelled(sleep, for: interval) else { return }
             }
         }
     }
@@ -83,10 +83,5 @@ public actor PortPollLoop {
         // Recorded AFTER the start, which forgets whatever it was pointed at before.
         start(PortReadTarget(binding: binding, projectID: projectID), every: interval)
         pointedAt = target
-    }
-
-    /// `false` once the wait was cancelled, which is the loop's only exit besides `stop()`.
-    private func sleptWithoutCancelling(_ interval: Duration) async -> Bool {
-        await (try? sleep(interval)) != nil
     }
 }
