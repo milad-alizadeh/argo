@@ -67,11 +67,12 @@ struct DriveRunFactsTests {
         #expect(written == ["\u{1B}[200~/effort xhigh\u{1B}[201~", ClaudeTurn.submit])
     }
 
-    /// Mid-Turn the CLI QUEUES a typed line as the next prompt instead of running it, so a `/model`
-    /// sent here would surface in the feed as something the user said — long after the popover
-    /// claimed the model had moved.
+    /// Both knobs move mid-Turn, and used to be refused there (#1658). `/model` and `/effort` are
+    /// run by the harness itself, exactly as `/rename` is, so a Turn in flight has nothing to queue
+    /// them behind — the belief that it did was one reading of `takesTypedLine` serving two
+    /// different questions.
     @Test
-    func `neither knob moves while a Turn is in flight`() async throws {
+    func `both knobs move while a Turn is in flight`() async throws {
         let live = Mutex<Set<String>>([])
         let fixture = try SpawnFixture(liveness: { live.withLock { $0 } })
         defer { fixture.remove() }
@@ -88,19 +89,19 @@ struct DriveRunFactsTests {
         ))
         #expect(fixture.hub.sessions.map(\.status) == [.running])
 
-        await #expect(throws: SessionDriveError.runFactsBusy) {
-            try await fixture.hub.driver.setModel("opus", for: "session-from-cli")
+        try await fixture.hub.driver.setModel("opus", for: "session-from-cli")
+        while (fixture.host.started.last?.written.count ?? 0) < 2 {
+            await Task.yield()
         }
-        await #expect(throws: SessionDriveError.runFactsBusy) {
-            try await fixture.hub.driver.setEffort(.max, for: "session-from-cli")
-        }
-        #expect(fixture.host.started.last?.written.isEmpty == true)
+
+        let written = try #require(fixture.host.started.last?.written)
+        #expect(written == ["\u{1B}[200~/model opus\u{1B}[201~", ClaudeTurn.submit])
     }
 
-    /// The other prompt nothing may be typed at (#1217). A Session blocked on a Permission or a
-    /// question has no Turn in flight, so the mid-Turn guard above never saw it — and its keyboard
-    /// belongs to a DIALOG, which takes the line and the Return behind it. `starting` is not among
-    /// them: the prompt is on its way rather than held, and a Session is set up in that moment.
+    /// The other prompt nothing may be typed at (#1217), and the only one left since #1658. A
+    /// Session blocked on a Permission or a question has its keyboard held by a DIALOG, which takes
+    /// the line and the Return behind it. `starting` is not among them: the prompt is on its way
+    /// rather than held, and a Session is set up in that moment.
     @Test
     func `a typed line is refused wherever the prompt is not the CLI's own`() {
         #expect(!SessionStatus.running.takesTypedLine)
@@ -110,6 +111,14 @@ struct DriveRunFactsTests {
         #expect(SessionStatus.idle.takesTypedLine)
         #expect(SessionStatus.stopped.takesTypedLine)
         #expect(SessionStatus.unknown.takesTypedLine)
+    }
+
+    /// A knob asked for under a dialog is still refused, on the one fact that survives the split.
+    @Test
+    func `neither knob moves while a dialog holds the keyboard`() {
+        #expect(!SessionStatus.permission.takesSlashCommand)
+        #expect(!SessionStatus.asking.takesSlashCommand)
+        #expect(SessionStatus.running.takesSlashCommand)
     }
 
     /// Unlike a rung, neither is remembered. A rung is filed because the ring is walked from a

@@ -75,11 +75,16 @@ struct SessionTitleMirrorTests {
         #expect(written == ["\u{1B}[200~/rename Derive the link\u{1B}[201~", ClaudeTurn.submit])
     }
 
-    /// Mid-Turn the CLI queues a typed line as the next prompt instead of running it, and under a
-    /// Permission or a question the DIALOG takes the line and the Return behind it (#1217). Neither
-    /// is a failed rename: the Argo-side name is already written and is what the roster draws.
+    /// A Turn in flight is NOT a refusal, and used to be (#1658). `/rename` is run by the harness
+    /// itself rather than queued behind the Turn the way a prompt is: measured on a real PTY, a
+    /// `/rename` typed mid-Turn renamed the Session while the Turn ran on untouched.
+    ///
+    /// This is the case the whole ticket is about. A spawn takes its opening prompt on ARGV
+    /// (`AgentSpawnPlan.launch`), so a Session started from a Ticket is busy from its first frame
+    /// and never idles until the work is done — refusing here left every such row nameless on
+    /// Claude's own surfaces for exactly as long as anybody was watching it.
     @Test
-    func `no rename is typed while a Turn is in flight`() async throws {
+    func `a rename is typed while a Turn is in flight`() async throws {
         let live = Mutex<Set<String>>([])
         let fixture = try SpawnFixture(liveness: { live.withLock { $0 } })
         defer { fixture.remove() }
@@ -96,10 +101,44 @@ struct SessionTitleMirrorTests {
         ))
         #expect(fixture.hub.sessions.map(\.status) == [.running])
 
-        await #expect(throws: SessionDriveError.titleBusy) {
-            try await fixture.hub.driver.setTitle("Derive the link", for: "session-from-cli")
+        try await fixture.hub.driver.setTitle("Derive the link", for: "session-from-cli")
+        while (fixture.host.started.last?.written.count ?? 0) < 2 {
+            await Task.yield()
         }
-        #expect(fixture.host.started.last?.written.isEmpty == true)
+
+        let written = try #require(fixture.host.started.last?.written)
+        #expect(written == ["\u{1B}[200~/rename Derive the link\u{1B}[201~", ClaudeTurn.submit])
+    }
+
+    /// The refusal that survives the split (#1217). A Session blocked on a Permission or a question
+    /// has its keyboard held by a DIALOG, so the line is eaten by it and the Return behind the line
+    /// answers whatever it had highlighted — a wrong answer to a real question, which is worse than
+    /// a rename that did not happen.
+    ///
+    /// Not a failed rename either way: the Argo-side name is already written and is what the roster
+    /// draws, and the mirror comes back for it once the dialog clears.
+    @Test
+    func `no rename is typed while a dialog holds the keyboard`() {
+        #expect(!SessionStatus.permission.takesSlashCommand)
+        #expect(!SessionStatus.asking.takesSlashCommand)
+    }
+
+    /// The half of `takesTypedLine` this splits away from (#1658). A slash command is refused at
+    /// strictly fewer moments than a prompt, and `running` is the whole of the difference: the
+    /// harness runs the command itself, so there is no Turn for it to queue behind.
+    @Test
+    func `a slash command is refused only where a dialog has the keyboard`() {
+        #expect(SessionStatus.running.takesSlashCommand)
+        #expect(!SessionStatus.running.takesTypedLine)
+
+        for status in [SessionStatus.permission, .asking] {
+            #expect(!status.takesSlashCommand)
+            #expect(!status.takesTypedLine)
+        }
+        for status in [SessionStatus.starting, .idle, .stopped, .ended, .unknown] {
+            #expect(status.takesSlashCommand)
+            #expect(status.takesTypedLine)
+        }
     }
 
     /// A Session Argo owns no terminal for — an external one, or a managed one whose process has

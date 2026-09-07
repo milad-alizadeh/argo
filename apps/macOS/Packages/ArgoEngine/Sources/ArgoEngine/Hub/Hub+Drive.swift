@@ -32,9 +32,10 @@ public extension Hub {
     /// Mirroring the name Argo holds onto the CLI's own Session title, so the same Session reads
     /// the same in Argo's roster, Claude mobile, Claude desktop and the web app.
     ///
-    /// Every refusal is swallowed: a `codex` Session, a Session Argo owns no terminal for, a Turn
-    /// in flight, a Permission or a question holding the keyboard. None of them is a failed rename
-    /// — the Argo-side name is written already and is what the roster draws.
+    /// Every refusal is swallowed: a `codex` Session, a Session Argo owns no terminal for, a
+    /// Permission or a question holding the keyboard. None of them is a failed rename — the
+    /// Argo-side name is written already and is what the roster draws. A Turn in flight is no
+    /// longer among them (#1658): the harness runs `/rename` itself rather than queueing it.
     ///
     /// The answer is for the caller that can try again. Both callers do: `TicketTitleResolver`
     /// retries a Ticket's words on its next sweep, and `SessionNameMirror` retries the name the
@@ -249,6 +250,7 @@ public extension Hub {
             mode: session.mode,
             isRunning: session.status == .running,
             takesTypedLine: session.status.takesTypedLine,
+            takesSlashCommand: session.status.takesSlashCommand,
         )
     }
 

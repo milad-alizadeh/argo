@@ -167,11 +167,14 @@ public enum SessionDriveError: Error, Equatable {
     /// the composer, which draws no control an adapter has not declared — so this answers the race
     /// where a Session's surface changed under a popover that was already open.
     case runFactsUnsupported
-    /// Model or Effort was asked for while the CLI's prompt was not free (#558, #1217). The CLI
-    /// takes each as a line typed at that prompt: mid-Turn the line is QUEUED as the next prompt
-    /// rather than run, so it lands in the feed as something the user said long after the popover
-    /// said it was set — and under a Permission or a question the DIALOG takes it instead, Return
-    /// and all. `SessionStatus.takesTypedLine` is the one answer both halves are read off.
+    /// Model or Effort was asked for while a DIALOG held the Session's keyboard (#558, #1217).
+    /// The CLI takes each as a line typed at its prompt, and under a Permission or a question that
+    /// dialog takes the line instead, Return and all — so the Return answers whatever it had
+    /// highlighted. `SessionStatus.takesSlashCommand` is the one answer both halves are read off.
+    ///
+    /// A Turn in flight is no longer among the moments this covers (#1658): the harness runs a
+    /// slash command itself rather than queueing it behind the Turn, so there was nothing to
+    /// refuse.
     case runFactsBusy
     /// A rung was asked for while a walk was still under way (#653). The ring is stepped one
     /// keystroke at a time, so a second walk would count its distance from a stance the first has
@@ -182,7 +185,7 @@ public enum SessionDriveError: Error, Equatable {
     /// though nothing draws either: that one's sentence names Model and Effort, and a refusal that
     /// says the wrong thing is only ever one surface away from being read out.
     case titleUnsupported
-    /// A title was mirrored to a Session whose prompt was not free — the same two moments
+    /// A title was mirrored to a Session whose keyboard a dialog held — the same moment
     /// `runFactsBusy` covers, and told apart from it because this one is never the reader's news:
     /// a mirror that did not go leaves the Argo-side name exactly where it was.
     case titleBusy
@@ -205,19 +208,19 @@ public enum SessionDriveError: Error, Equatable {
         case .modeWalking: "A Mode change is already under way on this Session"
         case .runFactsUnsupported:
             "This adapter does not choose its own Model or Effort"
-        // The remedy is left unnamed for the reason `modeBusy` leaves it: stopping the Turn is not
-        // the only way past this, and the wait is the expected way. It names the STATE the Session
-        // has to reach rather than the three it must not be in, because a reader who is told to
-        // wait for an idle prompt can see when that has happened.
+        // It names what is HOLDING the keyboard rather than the state to wait for: since #1658 a
+        // running Turn is no longer a refusal, so the only thing left in the way is a dialog, and
+        // a reader told that can see the one thing they have to answer to clear it.
         case .runFactsBusy:
-            "Model and Effort can only be changed at an idle prompt"
+            "Model and Effort cannot be changed while a Permission or a question is waiting"
         // Both title refusals say what did not happen and NOT that a rename failed, because none
         // of it did: the name the reader typed is on the row either way, and the only thing this
         // covers is the copy Claude's own apps would have shown.
         case .titleUnsupported:
             "This Session's CLI holds no title of its own — the name is Argo's alone"
         case .titleBusy:
-            "The title can only be mirrored at an idle prompt — the name is unchanged"
+            "The title cannot be mirrored while a Permission or a question is waiting — "
+                + "the name is unchanged"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "
                 + "silently dropped."
