@@ -131,6 +131,29 @@ func hubLiveObservation(
     return (TranscriptObservation(id: url.path, sourceURL: url, events: events), continuation)
 }
 
+/// A spawn's CLI writing its first records, which re-keys the provisional row to the id the
+/// transcript names (#361) — with the stream left OPEN, so a suite can say what lands next.
+///
+/// The `cwd` is spelled here and not by the caller: it is the fixture's own, and it is what binds
+/// the row to the claim. Only the records after it are the suite's to choose.
+///
+/// Shared rather than restated. Three suites about a claim of Argo's own — the submitted Turn, the
+/// lost Turn, the interrupted Turn — wanted these same five lines, which is where a helper hoists
+/// (`rules/house.md`).
+@MainActor
+@discardableResult
+func hubFirstRecords(
+    _ events: [TranscriptEvent],
+    landingFor fixture: SpawnFixture,
+) async
+    -> AsyncStream<[TranscriptEvent]>.Continuation {
+    let (observation, continuation) = hubLiveObservation(at: spawnedTranscriptURL)
+    await fixture.hub.startObserving(observation)
+    continuation.yield([.cwd(fixture.projectURL.path)] + events)
+    await hubSettle { fixture.hub.session(id: spawnedSessionID)?.events.count == events.count + 1 }
+    return continuation
+}
+
 /// Wait until the Hub's roster is standing. A `connect` returns before its file-backed tails have
 /// read anything, and the roster is deliberately held back until they have — so a test asserting on
 /// `sessions` straight after one is reading the emptiness it was given, not the answer.

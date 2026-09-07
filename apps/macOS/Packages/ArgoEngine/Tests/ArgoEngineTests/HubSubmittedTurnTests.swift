@@ -211,14 +211,9 @@ struct HubSubmittedTurnTests {
     ) async throws
         -> AsyncStream<[TranscriptEvent]>.Continuation {
         try await fixture.hub.spawnSession()
-        let (observation, continuation) = hubLiveObservation(at: spawnedTranscriptURL)
-        await fixture.hub.startObserving(observation)
-        continuation.yield([
-            .cwd(fixture.projectURL.path),
+        return await hubFirstRecords([
             .prompt(text: "First prompt", images: [], atMs: 1000),
             .turnEnded(.endTurn),
-        ])
-        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.status == .idle }
-        return continuation
+        ], landingFor: fixture)
     }
 }

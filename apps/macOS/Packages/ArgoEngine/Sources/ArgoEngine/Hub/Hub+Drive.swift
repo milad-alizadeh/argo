@@ -21,7 +21,7 @@ public extension Hub {
                 },
                 run: { [weak self] pick in self?.runStore.remember(pick) },
                 stoppedTurn: { [weak self] sessionID in
-                    self?.stopSubmittedTurn(for: sessionID)
+                    self?.rememberStopClaim(for: sessionID)
                 },
             ),
         )
@@ -168,8 +168,9 @@ public extension Hub {
     /// File the Turn Argo just typed at a Session (#1048), against the CLAIM for the reason
     /// `rememberLostTurn` below is, and refused for a Session with no claim for the same reason —
     /// which is also what keeps an external Session off a status only Argo's own channel supports.
-    /// `nil` is the watch saying the claim is OVER (#1409) — see `TurnDelivery.over(_:)`, and
-    /// `ClaimLedger.stopSubmittedTurn`, which is the one place a claim of Argo's ends.
+    /// `nil` is the watch saying the claim is OVER (#1409) — see `TurnDelivery.over(_:)` and
+    /// `ClaimLedger.stopSubmittedTurn`. The reader's own Stop takes `rememberStopClaim` below
+    /// instead, which ends the same claim and files Argo's `ESC` in its place (#1644).
     private func rememberSubmittedTurn(
         _ submission: SessionTurnSubmission?,
         for sessionID: String,
@@ -200,15 +201,23 @@ public extension Hub {
         claims.setLostTurn(text, for: claim)
     }
 
-    /// The reader stopped the Turn Argo typed at that Session (#1409) — see
-    /// `ClaimLedger.stopSubmittedTurn`, which is the whole rule.
+    /// The reader stopped the Turn at that Session (#1409, #1644) — see
+    /// `ClaimLedger.setStopClaim`, which is the whole rule.
     ///
     /// Against the CLAIM, on `rememberLostTurn` above's reasoning, and refused for a Session with
-    /// no claim on the same ground: an external Session is one Argo never typed at, so there is no
-    /// Turn of ours to stop.
-    func stopSubmittedTurn(for sessionID: String) {
+    /// no claim on the same ground: an external Session is one Argo never typed at, so there was no
+    /// `ESC` of ours to have sent.
+    ///
+    /// The count is read HERE and nowhere lower, because here is the last place that knows it: the
+    /// ledger is keyed by claim and holds no record, and by the time the roster publishes the
+    /// facts, the count has moved on. `recordCount(writtenBy:)` is the same resolution the
+    /// submission's own count takes, so the two claims are spent against the same number.
+    func rememberStopClaim(for sessionID: String) {
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
-        claims.stopSubmittedTurn(for: claim)
+        claims.setStopClaim(
+            SessionStopClaim(recordsWhenStopped: recordCount(writtenBy: sessionID)),
+            for: claim,
+        )
     }
 
     /// The composer has the words back, so the news is spent. Taken back rather than left standing:
