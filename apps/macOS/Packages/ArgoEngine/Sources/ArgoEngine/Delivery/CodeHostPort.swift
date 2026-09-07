@@ -23,8 +23,13 @@ public protocol CodeHostPort: Sendable {
     /// Asked per branch rather than folded into the listing above, because the listing is bounded
     /// by what is open: reaching merge — a Delivery's terminal state — through it would mean
     /// walking every pull request a repository ever had, on every read.
+    ///
+    /// Asked by `BranchHead` rather than by a branch name, and that is what keeps a merged
+    /// Delivery knowable: GitHub deletes a head branch as it merges it, so the branch stops being
+    /// a name the host will answer to while the commit at its head stays one (ADR-0032). A caller
+    /// holding no commit gets the branch reading alone.
     func delivery(
-        ofBranch branch: String, in scope: String, grant: AccountGrant, revalidating: Bool,
+        of head: BranchHead, in scope: String, grant: AccountGrant, revalidating: Bool,
     ) async throws
         -> PortReading<Delivery?>
 }

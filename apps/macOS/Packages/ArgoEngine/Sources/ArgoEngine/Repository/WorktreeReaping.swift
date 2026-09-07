@@ -57,6 +57,15 @@ public enum WorktreeReaping {
     public struct Candidate: Equatable, Sendable {
         public let path: String
         public let branch: String
+        /// The branch's head commit, and `nil` where git named none. Carried because a worktree
+        /// in exactly the state this reaps is one whose ref the host has already deleted, so asked
+        /// by branch alone the landed question below answers `false` forever (ADR-0032).
+        public let headSha: String?
+
+        /// The two names the landed question is asked by, as the port takes them.
+        public var head: BranchHead {
+            BranchHead(branch: branch, sha: headSha)
+        }
 
         /// The last check, and the one that costs a request. `landed` is what the code host said
         /// about this branch's pull request; a host that was not asked, could not be reached or
@@ -92,6 +101,6 @@ public enum WorktreeReaping {
         // The archiving Session is itself a holder, and the count is one sweep old at most — so
         // one is the folder being emptied and two is somebody else still in it.
         guard workspace.held.count <= 1 else { return .hold(.held(workspace.held.count)) }
-        return .reap(Candidate(path: path, branch: branch))
+        return .reap(Candidate(path: path, branch: branch, headSha: workspace.headSha))
     }
 }

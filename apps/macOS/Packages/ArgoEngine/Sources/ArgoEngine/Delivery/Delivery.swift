@@ -46,6 +46,22 @@ public struct Delivery: Equatable, Sendable, Identifiable {
         branch
     }
 
+    /// The same Delivery under the branch it was ASKED about.
+    ///
+    /// The branch normally comes from the host's own `head.ref`, which is the ref that was asked
+    /// about. It is not where the host is asked by commit instead (ADR-0032): one commit can be
+    /// the head of a pull request opened on a second branch name, and this checkout has such a
+    /// pair. Filed under the host's name the mark lands on a row that does not exist and the row
+    /// that asked gets none.
+    public func keyed(to branch: String) -> Delivery {
+        Delivery(
+            branch: branch,
+            pullRequest: pullRequest,
+            observed: Observed(checks: checks, reviews: reviews),
+            ticket: ticket,
+        )
+    }
+
     /// The same Delivery with its Ticket joined, `asserted` being what a human said this branch
     /// serves — consulted only where the derivation itself found nothing.
     public func linking(to asserted: Int?) -> Delivery {
