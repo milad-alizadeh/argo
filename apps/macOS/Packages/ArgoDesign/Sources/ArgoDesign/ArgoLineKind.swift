@@ -68,19 +68,11 @@ public extension ArgoPalette {
         lit ? interaction.accentBright : text.ink(.metadata)
     }
 
-    /// The ink a control takes when its presence is the whole of what it reports (#1575) — it is
-    /// simply available, and it is asserting nothing about the state of the thing it acts on.
+    /// The ink a control takes when its presence is the whole of what it reports: it is available,
+    /// and asserts nothing about the state of the thing it acts on (#1575).
     ///
-    /// `interaction.accent` is the alternative and it is wrong for such a control: an accent is a
-    /// call to action, and one that never goes away is read as a verdict the surface is making.
-    /// **Create PR** was drawn in it from the moment a managed Session opened and was read as the
-    /// readiness claim the roster's `Ready` badge holds. A tint — `SessionHandoffButton`'s — says
-    /// a line was crossed, and a route — the tab line's ticket link — says there is somewhere to
-    /// go; a control that is always there says neither, so it takes a rung off the ramp.
-    ///
-    /// Here rather than at the call site because it is a KIND of control and not a rung somebody
-    /// picked (`check:text-ink`), and because the second such control must land on this ink
-    /// rather than choose again.
+    /// Not `text.ink(_:)`: a kind is what a LINE of text is, and a control's word is not one. Here
+    /// rather than at the call site so the rung is picked once (`check:text-ink`).
     var availableControl: ArgoColor {
         text.secondary
     }

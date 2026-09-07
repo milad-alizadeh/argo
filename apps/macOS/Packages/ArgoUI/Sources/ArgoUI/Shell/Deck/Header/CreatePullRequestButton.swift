@@ -19,23 +19,17 @@ package struct CreatePullRequestButton: View {
     static let detail = "Runs /ship in this Session to open a pull request."
 
     package var body: some View {
-        HeaderCapsuleButton(
-            label: HeaderCapsuleButton.Label(
-                word: Self.word,
-                ink: Self.ink(in: argo.color),
-                detail: Self.detail,
-            ),
-            run: run,
-        )
+        HeaderCapsuleButton(label: Self.label(in: argo.color), run: run)
     }
 
-    /// `availableControl`, never `interaction.accent` (#1575). The control is present from the
-    /// moment a managed Session opens and reports only that there is a terminal to type `/ship`
-    /// into — nothing about the branch, the commits or the companion's claim. The contract holds
-    /// the reasoning and the rung; this states which of the two inks on the tab line the control
-    /// takes, because that is the fact #1575 was opened for.
-    static func ink(in palette: ArgoPalette) -> ArgoColor {
-        palette.availableControl
+    /// What the capsule draws, as a value: the ink is `availableControl` and never
+    /// `interaction.accent`, because presence is the whole of what this control reports (#1575).
+    static func label(in palette: ArgoPalette) -> HeaderCapsuleButton.Label {
+        HeaderCapsuleButton.Label(
+            word: word,
+            ink: palette.availableControl,
+            detail: detail,
+        )
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).

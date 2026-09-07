@@ -21,15 +21,16 @@ struct SessionHeaderCreatePullRequestTests {
         #expect(!header(access: .orphaned).showsCreatePullRequest)
     }
 
-    /// The control is drawn from the moment a managed Session opens, so an accent on it is a
-    /// permanent call to action on a Session asserting nothing. The verdict is the roster's
-    /// `Ready` badge, gated three ways this control is not; the control takes the tab line's
-    /// ordinary ink instead.
+    /// The label the capsule is handed, which is the ink the control is drawn in. An accent here
+    /// is a permanent call to action on a Session asserting nothing; the verdict is the roster's
+    /// `Ready` badge, gated three ways this control is not.
     @Test
-    func `the control takes the ordinary control ink, never the accent`() {
+    func `the drawn label takes the ordinary control ink, never the accent`() {
         let palette = ArgoPalette.graphite
-        #expect(CreatePullRequestButton.ink(in: palette) == palette.availableControl)
-        #expect(CreatePullRequestButton.ink(in: palette) != palette.interaction.accent)
+        let label = CreatePullRequestButton.label(in: palette)
+        #expect(label.word == "Create PR")
+        #expect(label.ink == palette.text.secondary)
+        #expect(label.ink != palette.interaction.accent)
     }
 
     private func header(

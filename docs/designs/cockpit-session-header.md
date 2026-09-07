@@ -53,10 +53,12 @@ trailing edge takes the group named `TabLineInstruments`, in this order:
 | 3 | Create PR | managed — always; see below |
 | 4 | Hand off | past 150k **and** managed |
 
-**Hand off takes the trailing edge, so the instrument slides inward when it appears.** That is
+**Hand off takes the trailing edge, so what is inward of it slides when it appears.** That is
 the prototype's order and what the renders show. It costs a reading that moves at the moment the
 reader is watching it, and it was accepted because a remedy belongs at the trailing edge and
-because the movement is itself the signal that a line was crossed.
+because the movement is itself the signal that a line was crossed. On a managed Session the thing
+that slides is Create PR, which is unconditional (see the amendment below) and therefore always
+between the instrument and the remedy.
 
 **The ⓘ stays inside the 200pt instrument**, beside the uppercase `CONTEXT` label, where #692
 put it — it annotates that label rather than the tab line. The prototype draws it outside; the
