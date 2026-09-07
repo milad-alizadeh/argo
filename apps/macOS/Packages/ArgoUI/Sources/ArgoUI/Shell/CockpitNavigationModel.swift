@@ -106,10 +106,16 @@ public final class CockpitNavigationModel {
     }
 
     /// The three fields a start holds, written together so no caller can set two of them.
+    ///
+    /// The claim is subtracted from the third, and it has to be: the spawn publishes its
+    /// provisional row and then SUSPENDS before answering, so the roster can already be carrying
+    /// this claim when the press reaches here (`HubSpawnPublishOrderTests`, #1681). Left in, the
+    /// spawn's own id reads as a row the reader could have been looking at, and `heirs` then
+    /// refuses this Session's own re-key as the forgery #1563 is about.
     private func hold(_ claim: CockpitPresentation.Session.ID?) {
         awaitedSession = claim
         startedClaim = claim
-        rosterBeforeStart = claim == nil ? [] : Set(lastRoster.map(\.id))
+        rosterBeforeStart = claim.map { Set(lastRoster.map(\.id)).subtracting([$0]) } ?? []
     }
 
     private func pick(_ id: CockpitPresentation.Session.ID?) {
@@ -151,8 +157,9 @@ public final class CockpitNavigationModel {
     /// writing any record must not hold the window on an id no row will ever carry.
     @ObservationIgnored private var startedClaim: CockpitPresentation.Session.ID?
 
-    /// The ids already published when that spawn was started, which is how `trusted` recognises
-    /// the forged edge worth refusing: the one whose heir the reader was already looking at.
+    /// The ids already published when that spawn was started, which is how `heirs` recognises the
+    /// forged edge worth refusing: the one whose heir the reader was already looking at. The
+    /// spawn's own claim is never among them, whatever the roster held — see `hold` (#1681).
     /// Unobserved, because nothing draws it.
     @ObservationIgnored private var rosterBeforeStart: Set<CockpitPresentation.Session.ID> = []
 

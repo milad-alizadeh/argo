@@ -20,6 +20,11 @@ enum TicketStartFixture {
     static let claim = "claim-7"
     static let cli = "session-7"
 
+    /// The ticket every press in these suites is made on, named once: the number reaches `start()`
+    /// as the row's own and `run(on:)` as the press's, and two spellings of it would let a suite
+    /// press a ticket the listing does not carry.
+    static let ticket = 899
+
     /// Three rows before the press, which is the report's own setup: enough that the first row is
     /// not the fresh one by accident.
     static var standing: [CockpitPresentation.Session] {
@@ -107,7 +112,7 @@ enum TicketStartFixture {
     /// one answers: the claim id the provisional row is published under.
     static func start() -> TicketStart {
         TicketStart(
-            tickets: [Ticket(number: 899, title: "Start", status: "Todo", closure: .open)],
+            tickets: [Ticket(number: ticket, title: "Start", status: "Todo", closure: .open)],
             designs: { [] },
             spawn: { _, _, _ in claim },
         )
@@ -131,7 +136,23 @@ enum TicketStartFixture {
     /// opening every test on this route shares, spelled once rather than per test.
     static func pressed() async -> CockpitNavigationModel {
         let model = navigation()
-        await start().run(on: 899, in: model)
+        await start().run(on: ticket, in: model)
+        return model
+    }
+
+    /// The same press, made after the shell has ALREADY reconciled the provisional row (#1681).
+    ///
+    /// This is the real order rather than a variant of it. `Hub.spawnSession` publishes the row and
+    /// then SUSPENDS before it returns — `await readings.spell` — so the shell gets a pass over a
+    /// roster carrying the claim while `TicketStart` is still awaiting the spawn, and
+    /// `pointAtStarting` runs after it. Measured, not read: `HubSpawnPublishOrderTests`.
+    ///
+    /// What that costs is what the press records as already standing when it happens, which is the
+    /// set the recycled-claim guard reads (`heirs(of:)`, #1563).
+    static func pressedAfterItsRowIsPublished() async -> CockpitNavigationModel {
+        let model = navigation()
+        model.reconcile(against: provisional.map(\.identity))
+        await start().run(on: ticket, in: model)
         return model
     }
 
