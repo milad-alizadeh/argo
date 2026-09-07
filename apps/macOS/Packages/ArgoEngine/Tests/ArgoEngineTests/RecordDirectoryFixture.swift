@@ -1,6 +1,18 @@
 @testable import ArgoEngine
 import Foundation
 
+/// Where a fixture's plan writes sit in its file — the two shapes #1594 measured on ten real
+/// Sessions, and the only thing separating them is what a bounded read of the two ends can reach.
+enum FixturePlanShape {
+    /// #1558's shape: every step but the LAST is created halfway through the filler, out of reach,
+    /// and the last is created at the file's end where a bounded read finds it. A fold of the two
+    /// ends alone is a list of ONE — a real entry with a real status, and the wrong list.
+    case someInTheTail
+    /// #1559's shape: every plan write is in the middle and the tail holds NONE. A fold of the two
+    /// ends alone is no list at all, which is a row with no `PlanBar` on it.
+    case noneInTheTail
+}
+
 /// One transcript to lay down in a fixture record directory.
 struct FixtureTranscript {
     var directory = "project"
@@ -57,21 +69,23 @@ struct RecordDirectoryFixture {
         return link
     }
 
-    /// Lay one transcript down, optionally with a Plan of `planSteps` written into it.
-    ///
-    /// The steps are laid in the shape #1594 measured on ten real Sessions: every one but the LAST
-    /// is created halfway through the filler, where no end-window reaches it, and the last is
-    /// created at the file's end where a bounded read does. So a fold of the two ends alone is a
-    /// list of ONE — a real entry with a real status, and the wrong list.
+    /// Lay one transcript down, optionally with a Plan of `planSteps` written into it, in one of
+    /// the two shapes #1594 measured on ten real Sessions (`FixturePlanShape`).
     @discardableResult
-    func write(_ transcript: FixtureTranscript, planSteps: Int = 0) throws -> URL {
+    func write(
+        _ transcript: FixtureTranscript,
+        planSteps: Int = 0,
+        placing shape: FixturePlanShape = .someInTheTail,
+    ) throws
+        -> URL {
         let directoryURL = rootURL.appending(
             path: transcript.directory,
             directoryHint: .isDirectory,
         )
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         let url = directoryURL.appending(path: "\(transcript.name).jsonl")
-        try Data(Self.record(for: transcript, planSteps: planSteps).utf8).write(to: url)
+        let body = Self.record(for: transcript, planSteps: planSteps, placing: shape)
+        try Data(body.utf8).write(to: url)
         try age(url, by: transcript.modifiedAgo)
         return url
     }
@@ -130,7 +144,12 @@ struct RecordDirectoryFixture {
 
     /// A user record is the smallest line that carries a `cwd`. One with none stands for a
     /// transcript whose opening records name no working directory.
-    private static func record(for transcript: FixtureTranscript, planSteps steps: Int) -> String {
+    private static func record(
+        for transcript: FixtureTranscript,
+        planSteps steps: Int,
+        placing shape: FixturePlanShape,
+    )
+        -> String {
         guard !transcript.isUnparseable else { return "not a record at all\nnor is this\n" }
         guard let cwd = transcript.cwd else { return "{\"type\":\"user\"}\n" }
         let opening = "{\"type\":\"user\",\"cwd\":\"\(cwd)\"}"
@@ -138,9 +157,11 @@ struct RecordDirectoryFixture {
         let filler = (0 ..< transcript.fillerRecords)
             .map { said("\(fillerPrefix)\($0) " + padding) }
         let half = filler.count / 2
-        let body = filler.prefix(half) + created(steps: 0 ..< max(steps - 1, 0))
-            + filler.dropFirst(half) + created(steps: max(steps - 1, 0) ..< steps)
-            + moved(steps: steps)
+        let inTheTail = shape == .someInTheTail
+        let lastStep = inTheTail ? max(steps - 1, 0) : steps
+        let middle = created(steps: 0 ..< lastStep) + (inTheTail ? [] : moved(steps: steps))
+        let tail = inTheTail ? created(steps: lastStep ..< steps) + moved(steps: steps) : []
+        let body = filler.prefix(half) + middle + filler.dropFirst(half) + tail
         return ([opening] + body + [said(closingWords, stopping: true)]).joined(separator: "\n")
             + "\n"
     }
@@ -160,9 +181,9 @@ struct RecordDirectoryFixture {
         }
     }
 
-    /// A `TaskUpdate` per step: every one but the last completed, the last in progress. Written at
-    /// the file's END, where a bounded read reaches them — and where, with the creates they address
-    /// out of reach in the middle, they move nothing at all.
+    /// A `TaskUpdate` per step: every one but the last completed, the last in progress. Where the
+    /// shape puts them in the tail, a bounded read reaches them and — with the creates they address
+    /// out of reach in the middle — they move nothing at all.
     private static func moved(steps: Int) -> [String] {
         (0 ..< steps).map { step in
             let status = step == steps - 1 ? "in_progress" : "completed"

@@ -29,9 +29,10 @@ public func transcriptEvents(
 /// What a launch sweep takes, and the whole of why a week-wide working set is affordable. A Session
 /// SELECTED is re-opened with `transcriptEvents` above, which reads the file whole.
 ///
-/// The Plan is the one fact the two ends cannot carry, so it is read separately and BEFORE them
-/// (`TranscriptPlanScan`), and the ledger that scan leaves is what the bounded reading goes on to
-/// fold live writes into (#1594).
+/// The Plan is the one fact the two ends cannot carry, so it is read separately, by a walk of the
+/// whole file for those records alone (`TranscriptPlanScan`). The scan hands over its LEDGER and
+/// not just its answer, so a step written after this read folds onto the list already drawn — and
+/// so the two ends, re-reading writes the scan has spent, report none of them again (#1594).
 public func transcriptExcerptEvents(
     at url: URL,
     readImage: @escaping ImageReader = noImageReader,
@@ -39,7 +40,7 @@ public func transcriptExcerptEvents(
 )
     -> AsyncStream<[TranscriptEvent]> {
     events(of: transcriptLines(at: url, excerptSideLimit: TranscriptExcerpt.sideByteLimit)) {
-        let scan = TranscriptPlanScan(of: url)
+        let scan = await TranscriptPlanScan.scanning(url)
         let reader = TranscriptReader(source: url, readImage: readImage, readSkill: readSkill)
         await reader.takeUp(scan.ledger)
         return TranscriptOpening(reader: reader, events: scan.plan.map { [.plan($0)] } ?? [])
@@ -50,8 +51,8 @@ public func transcriptExcerptEvents(
 /// before the first of them is read.
 struct TranscriptOpening: Sendable {
     let reader: TranscriptReader
-    /// Read from the file by something other than the line stream, and so carried in front of the
-    /// backfill rather than found in it. Empty for a whole reading, which finds everything itself.
+    /// Read from the file by something other than the line stream, and so carried WITH the backfill
+    /// rather than found in it. Empty for a whole reading, which finds everything itself.
     var events: [TranscriptEvent] = []
 }
 
@@ -75,8 +76,13 @@ private func events(
                 // A later read that meant nothing is not news, and a consumer folding it in would
                 // rebuild for a `system` record. The backfill is yielded whatever it holds: it is
                 // what says the file has been read at all.
+                //
+                // The opening's events go AFTER the backfill's, because the only one of them is a
+                // Plan the two ends could not rebuild: a consumer takes the last plan it sees, and
+                // the ledger has already spent every write the ends carry, so nothing in `events`
+                // is a newer list. In front, a whole-list write in the file's head would win.
                 if isBackfill || !events.isEmpty {
-                    continuation.yield(isBackfill ? opened.events + events : events)
+                    continuation.yield(isBackfill ? events + opened.events : events)
                 }
                 isBackfill = false
             }

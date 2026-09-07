@@ -71,6 +71,25 @@ struct ColdLaunchPlanTests {
         await hub.disconnect()
     }
 
+    /// AC 2's other transcript, #1559: not one plan record inside the last 64 KiB. The two ends
+    /// fold to NO list at all here rather than a short one, which is the row the ticket's
+    /// screenshot shows — a Session with a Plan and no `PlanBar` on it.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a row draws its Plan with no plan record in the file's tail`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let hub = try await Self.connected(to: fixture, placing: .noneInTheTail)
+        let session = try #require(hub.sessions.first)
+        let plan = try #require(Self.plan(of: session.id, in: hub))
+
+        #expect(session.transcriptExtent == .excerpt)
+        #expect(plan.entries.map(\.text) == (0 ..< Self.steps).map { "\(planStepPrefix)\($0)" })
+        #expect(plan.entries.filter { $0.status == .completed }.count == Self.steps - 1)
+        #expect(plan.entries.last?.status == .inProgress)
+        await hub.disconnect()
+    }
+
     /// A live write after the bounded read folds onto the scanned list rather than starting a new
     /// one — which is the whole reason the scan hands its LEDGER over and not just its answer.
     @Test(.timeLimit(.minutes(1)))
@@ -105,11 +124,16 @@ struct ColdLaunchPlanTests {
     /// A Hub over one transcript long enough that its two ends do not meet, whose plan writes are
     /// laid halfway through it.
     @MainActor
-    private static func connected(to fixture: RecordDirectoryFixture) async throws -> Hub {
+    private static func connected(
+        to fixture: RecordDirectoryFixture,
+        placing shape: FixturePlanShape = .someInTheTail,
+    ) async throws
+        -> Hub {
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         try fixture.write(
             FixtureTranscript(cwd: projectURL.path, fillerRecords: 400),
             planSteps: steps,
+            placing: shape,
         )
         let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))

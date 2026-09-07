@@ -120,6 +120,28 @@ struct TaskPlanReadingTests {
         #expect(finished?.entries.map(\.status) == [.completed])
     }
 
+    /// `TodoWrite` hands the whole list over and needs no fold, but it is folded ONCE all the same.
+    /// A file is read twice over, and a whole-list write re-read out of the file's head would be
+    /// emitted after the scanned list and supersede it with an older one (#1594).
+    @Test
+    func `a whole-list write read twice reports one list`() {
+        var ledger = PlanLedger()
+        let use = ToolUseBlock(
+            id: "call-1",
+            name: planTool,
+            input: .object(["todos": .array([.object([
+                "content": .string("Read the record"),
+                "status": .string("completed"),
+            ])])]),
+        )
+        let first = ledger.written(by: use)
+
+        let second = ledger.written(by: use)
+
+        #expect(first?.entries.map(\.text) == ["Read the record"])
+        #expect(second == nil)
+    }
+
     private static func creating(_ id: String, subject: String) -> ToolUseBlock {
         ToolUseBlock(id: id, name: taskCreateTool, input: .object(["subject": .string(subject)]))
     }

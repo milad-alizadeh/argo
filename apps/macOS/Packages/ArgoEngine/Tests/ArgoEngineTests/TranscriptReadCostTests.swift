@@ -65,7 +65,7 @@ struct TranscriptReadCostTests {
     /// marker widened until it matches ordinary prose turns this scan back into the whole read it
     /// exists to avoid, and a byte ceiling large enough for a big transcript would not notice.
     @Test
-    func `a plan scan parses the plan records and walks past the rest`() throws {
+    func `a plan scan parses the plan records and walks past the rest`() async throws {
         let fixture = try RecordDirectoryFixture()
         defer { fixture.remove() }
         let url = try fixture.write(
@@ -74,9 +74,10 @@ struct TranscriptReadCostTests {
         )
         let onDisk = try #require(try url.resourceValues(forKeys: [.fileSizeKey]).fileSize)
 
-        let scan = TranscriptPlanScan(of: url)
+        let scan = await TranscriptPlanScan.scanning(url)
 
         #expect(scan.plan?.entries.count == 12)
+        // One pass and never two: the bytes asked of the file system are the file's own length.
         #expect(scan.bytesScanned == onDisk)
         #expect(scan.bytesKept < onDisk / 100)
     }
