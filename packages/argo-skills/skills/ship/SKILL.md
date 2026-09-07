@@ -6,10 +6,9 @@ disable-model-invocation: true
 
 # Ship
 
-A ship run ends in a PR URL, in one of the three stops below, or — when `gh pr create` itself
-fails — in that command and its error, quoted in full. It never ends in a question: anything you
-could not tick is written into the PR body, not handed back to the caller. It never ends in
-silence either.
+A ship run ends in a PR URL, in one of the three stops below, or in a failure it names (step 7).
+It never ends in a question: anything you could not tick is written into the PR body, not handed
+back to the caller. It never ends in silence either.
 
 Merging stays with the human.
 
@@ -136,9 +135,10 @@ Each of these belongs in the PR body, and the ship continues past it.
    PR this step opens is exactly what makes it readable. So the gate runs here instead. It is
    a cache lookup when the tree has already passed it, which is the usual case for a branch
    that has been pushed before.
-5. **Open exactly one PR, and give `gh` the body from a file.** Write what step 3 returned to a
-   real path outside the repository — a scratch directory, so no commit can pick it up — and
-   then run one plain command:
+5. **Open exactly one PR, and give `gh` the body from a file.** Put what step 3 returned on disk
+   first, at a scratch path outside the repository so no commit can pick it up. Write it with
+   your harness's file-writing tool; with only a shell, `cat > <path> <<'BODY'` is a plain
+   redirection into a file and is fine. Then one command, and nothing computed inside it:
 
    ```
    gh pr create --base <base> --title "<title>" --body-file <path>
@@ -146,34 +146,37 @@ Each of these belongs in the PR body, and the ship continues past it.
 
    Ready for review, with `Closes #<N>` in the body and everything the section above told you to
    carry. A ticket that closed while you worked takes `--draft` and no `Closes` line, for the
-   reasons above. Skip this step for a branch that already had a PR open — the push updated it,
-   and the hook gated it.
+   reasons above. Skip this step and step 6 for a branch that already had a PR open — the push
+   updated it, and the hook gated it — and report that PR's URL.
 
-   **Never build the body inline.** Two shapes have each cost this repo a ship, and neither is
-   allowed here:
-   - **A heredoc inside a command substitution** — `--body "$(cat <<'EOF' ...)"`. The worktree
-     guard sees `gh` taking an argument computed at runtime, cannot prove the command is not a
-     `git` call, and refuses the whole thing before `gh` starts. That is what stopped the run in
-     #1659, and it stops it in every worktree, every time.
+   **The body never reaches `gh` as an argument or on stdin.** Two shapes have each cost this
+   repo a ship:
+   - **A heredoc inside a command substitution** — `--body "$(cat <<'EOF' ...)"`. The `--body`
+     value is then computed at runtime, and a harness that isolates the session to a worktree
+     screens commands before running them: it cannot tell what this one will run, so it refuses
+     the whole command and `gh` never starts. That is what stopped the run in #1659. The refusal
+     was the harness's own, not any script in this repo, so the exact wording varies — what does
+     not vary is that a command substitution is what made the command unreadable to it.
    - **A heredoc the shell hands to stdin** — `--body-file -`, or any pipe into `gh`. This opened
      PR #1016 with an empty body and exit code 0, so nothing failed and nothing said so.
 
-   A real file has neither failure mode, and it survives a retry unchanged.
-6. **Read the body back from the API before you call the PR done.** One request, one comparison:
+   A file has neither failure mode, and it survives a retry unchanged.
+6. **Read the body back from the API before you call the PR done**, because the body is the one
+   part of a PR that nothing else checks: #1016 shipped empty at exit 0 and no gate noticed.
+   One request, one comparison:
 
    ```
    gh pr view <url> --json body -q .body | wc -c
    wc -c < <path>
    ```
 
-   The two counts match, give or take a trailing newline. A body that came back empty, or far
-   short of the file, was not shipped: repair it with `gh pr edit <url> --body-file <path>` and
-   measure again.
+   The two counts agree within a byte or two: on PR #1660 the file was 2121 bytes and the
+   read-back 2122, the difference being the newline `-q` adds. A body that came back **empty, or
+   under half the file**, was not shipped: repair it with `gh pr edit <url> --body-file <path>`
+   and measure again.
 7. **A PR you could not open is reported, never swallowed.** When `gh pr create` exits non-zero,
-   say three things: the exit code, the error text whole, and the command you ran. Then retry it
-   once, as a single plain command with a fresh body file and no substitution anywhere. If that
-   fails too, report the branch as pushed and the PR as unopened, with the same three things. A
-   turn that ends on a failed `gh pr create` having said nothing is indistinguishable from a run
-   that never started (#1659).
-8. Report the PR URL and the body length you measured. Merging is the human's, and nothing in
-   this repo does it for them (#1577).
+   say three things — the exit code, the error text whole, and the command you ran — and report
+   the branch as pushed and the PR as unopened. A turn that ends on a failed `gh pr create`
+   having said nothing is indistinguishable from a run that never started (#1659).
+8. Report the PR URL. Merging is the human's, and nothing in this repo does it for them
+   (#1577).
