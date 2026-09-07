@@ -3,12 +3,9 @@ import Testing
 
 /// What the accent wash stands for, and the one route into the feed that earns it.
 ///
-/// The wash means *what you just sent landed*. It used to be decided on a row-COUNT delta inside
-/// one reading, which cannot tell rows that arrived because the reader SENT something from rows
-/// that arrived because Argo READ something — so opening a Session bloomed its last prompt over a
-/// reading nobody had written to (#1569). The signal here is the Turn this window typed: a
+/// The wash means *what you just sent landed*, so the signal is the Turn this window typed: a
 /// `.submitted` row is DIRECT on Argo's own submit, and the wash goes on the prompt the record
-/// answered it with.
+/// answered it with (#1569).
 @Suite("Feed wash")
 @MainActor
 struct FeedWashTests {
@@ -104,11 +101,12 @@ struct FeedWashTests {
         #expect(typed == .keep)
     }
 
-    /// A submission can end without its words reaching the record — a Turn reported lost drops the
-    /// row the way an answered one does. With nothing carrying those words, nothing is washed:
-    /// ambiguity resolves to the quieter claim.
+    /// A submission can end before its words reach the record: it ends the moment the record grows
+    /// by anything at all, and what grew can be the tail of the Turn before it. So the words wait,
+    /// and nothing is washed until they come back — a Turn reported lost waits for ever, which is
+    /// the quieter claim.
     @Test
-    func `a submission no prompt answered washes nothing`() {
+    func `a submission no prompt has answered yet waits for its words`() {
         let rows = Self.read(["from hours ago"])
 
         let lost = FeedView.wash(
@@ -117,7 +115,27 @@ struct FeedWashTests {
             in: rows,
         )
 
-        #expect(lost == .keep)
+        #expect(lost == .waiting("never heard"))
+    }
+
+    /// And the echo landing a frame later takes the wash the submission's own frame could not give
+    /// it — the whole point of holding the words rather than dropping them.
+    @Test
+    func `the words waiting take the wash when their row arrives`() {
+        let words = "ship the wash"
+
+        #expect(FeedView.echo(of: words, in: Self.read(["from hours ago"])) == nil)
+        #expect(FeedView.echo(of: words, in: Self.read(["from hours ago", words])) == 1)
+    }
+
+    /// The Turn Argo typed is not the record's answer to itself. It renders as a prompt bubble and
+    /// carries the same words, so only its content tells it from the row it is waiting for.
+    @Test
+    func `the submitted row is never its own echo`() {
+        let words = "ship the wash"
+        let rows = Self.read([]) + [FeedRow(id: 0, content: .submitted(text: words))]
+
+        #expect(FeedView.echo(of: words, in: rows) == nil)
     }
 
     /// Another READING is never an arrival, however it ended: the wash leaves with the reading
@@ -141,9 +159,12 @@ struct FeedWashTests {
     func `the submitted Turn is read off the rows and nothing else is`() {
         let read = Self.read(["from hours ago"])
 
-        #expect(FeedView.sent(in: read) == nil)
+        #expect(FeedView.submittedWords(in: read) == nil)
         #expect(
-            FeedView.sent(in: read + [FeedRow(id: 1, content: .submitted(text: "ship it"))]) ==
+            FeedView.submittedWords(in: read + [FeedRow(
+                id: 1,
+                content: .submitted(text: "ship it"),
+            )]) ==
                 "ship it",
         )
     }

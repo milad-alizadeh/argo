@@ -28,9 +28,24 @@ extension FeedView {
     func washArrived(between was: FeedFact<String?>, and now: FeedFact<String?>) {
         switch Self.wash(from: was, to: now, in: rows) {
         case .keep: return
-        case .clear: washed = nil
-        case let .onto(row): washed = row
+        case .clear:
+            washed = nil
+            awaitingEcho = nil
+        case let .waiting(words): awaitingEcho = words
+        case let .onto(row):
+            awaitingEcho = nil
+            washed = row
         }
+    }
+
+    /// The same echo landing LATER than the submission it answers. The submission ends the moment
+    /// the record grows by anything at all (`SessionTurnSubmission.isAwaitingRecord`), and what
+    /// grew can be the tail of the Turn before this one — the reader typed while the agent was
+    /// still working. So the words are held and every arrival after them is read for the echo.
+    func washSettled() {
+        guard let words = awaitingEcho, let echoed = Self.echo(of: words, in: rows) else { return }
+        awaitingEcho = nil
+        washed = echoed
     }
 
     /// The Turn this window has typed that no record has answered yet, read off the rows the feed
@@ -39,7 +54,7 @@ extension FeedView {
     ///
     /// The whole of what the wash is decided on. It is DIRECT: Argo performed the submit, so a row
     /// standing here is proof this window sent those words, and nothing else in the feed is.
-    static func sent(in rows: [FeedRow]) -> String? {
+    static func submittedWords(in rows: [FeedRow]) -> String? {
         for row in rows.reversed() {
             if case let .submitted(text) = row.content {
                 return text
@@ -58,12 +73,8 @@ extension FeedView {
     /// Nor is a READ one. A row-count delta cannot tell rows that arrived because the reader sent
     /// something from rows that arrived because Argo read something, and selecting a Session is the
     /// second kind: `Hub.readSelected(sessionID:)` fills in the stretch the bounded read skipped,
-    /// under the same reading id (#1569). So the delta this reads is the SUBMISSION's: a Turn Argo
-    /// typed leaving, which happens exactly once per send and never on a read.
-    ///
-    /// The words say which row rather than the position, and no match washes nothing: a submission
-    /// also ends when a Turn is reported lost, and there is then nothing in the record it landed
-    /// on. Ambiguity resolves to the quieter claim.
+    /// under the same reading id (#1569). The delta this reads is the SUBMISSION's instead: a Turn
+    /// Argo typed leaving, which happens exactly once per send and never on a read.
     static func wash(
         from was: FeedFact<String?>,
         to now: FeedFact<String?>,
@@ -72,21 +83,26 @@ extension FeedView {
         -> FeedWash {
         guard was.reading == now.reading else { return .clear }
         guard let sent = was.value, sent != now.value else { return .keep }
-        guard let echoed = rows.last(where: { echoes(sent, in: $0) }) else { return .keep }
-        return .onto(echoed.id)
+        guard let echoed = echo(of: sent, in: rows) else { return .waiting(sent) }
+        return .onto(echoed)
     }
 
-    /// Whether this row is the record's answer to those words. Trimmed on both sides: what goes
-    /// down the PTY carries the submit's own newline, and the record holds the prompt without it.
-    private static func echoes(_ sent: String, in row: FeedRow) -> Bool {
+    /// The row the record answered those words with, newest first — the words say which row rather
+    /// than the position, because a send lands under whatever arrived while it was in flight.
+    static func echo(of sent: String, in rows: [FeedRow]) -> FeedRow.ID? {
         let words = sent.trimmingCharacters(in: .whitespacesAndNewlines)
         // Nothing verbatim to match on, so nothing is claimed: a wordless prompt row carries the
         // empty string (`FeedRowKind`), and matching against it would wash a run of pasted
         // pictures for a send that had none.
-        guard !words.isEmpty else { return false }
-        let kind = row.kind
-        guard kind.isPrompt else { return false }
-        return kind.words?.trimmingCharacters(in: .whitespacesAndNewlines) == words
+        guard !words.isEmpty else { return nil }
+        return rows.last { row in
+            // The row's CONTENT and not `kind.isPrompt`, which a `submitted` row also answers to
+            // (`FeedRowKind`): the words Argo typed are not the record's answer to themselves.
+            // Trimmed on both sides — what goes down the PTY carries the submit's own newline, and
+            // the record holds the prompt without it.
+            guard case let .prompt(text, _) = row.content else { return false }
+            return text.trimmingCharacters(in: .whitespacesAndNewlines) == words
+        }?.id
     }
 
     /// The wash's whole lifetime: it stands for the hold and leaves.
@@ -111,6 +127,10 @@ enum FeedWash: Equatable {
     case keep
     /// Another reading — the wash belonged to the one that left.
     case clear
+    /// A Turn this window sent that nothing in the record answers yet. A submission also ends when
+    /// a Turn is reported lost, so this may never resolve; ambiguity resolves to the quieter claim
+    /// and nothing is washed until the words come back.
+    case waiting(String)
     /// The row the record answered this window's own Turn with.
     case onto(FeedRow.ID)
 }

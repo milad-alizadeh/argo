@@ -70,6 +70,8 @@ package struct FeedView: View {
 
     /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
+    /// The words this window sent that no row answers yet — see `washSettled`.
+    @State var awaitingEcho: String?
 
     package var body: some View {
         FeedTable(
@@ -94,9 +96,15 @@ package struct FeedView: View {
         // with it: rows arriving is not an arrival — opening a Session brings a great many and
         // the reader sent none of them (#1569). A submission LEAVING is the send's acceptance,
         // and it happens once per send.
-        .onChange(of: FeedFact(reading: reading, value: Self.sent(in: rows))) { was, now in
+        .onChange(of: FeedFact(
+            reading: reading,
+            value: Self.submittedWords(in: rows),
+        )) { was, now in
             washArrived(between: was, and: now)
         }
+        // The count after all, but only while words this window sent are waiting on their echo:
+        // `washSettled` does nothing at any other time, so opening a Session still brings none.
+        .onChange(of: rows.count) { _, _ in washSettled() }
         // Cancellation IS the reset: a second send while the first wash stands re-keys
         // the task, and the fresh one times the fresh row.
         .task(id: washed) { await washExpired() }

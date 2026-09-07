@@ -106,10 +106,8 @@ package struct FeedPrompt: View {
         .accessibilityLabel(spoken)
     }
 
-    /// The bubble's ground, and the accent wash AS that ground while it stands. Over the raised
-    /// surface rather than behind it: a wash drawn under an opaque ground shows only where the
-    /// ground is not, which is the whole measure to the left of the bubble and nothing of the
-    /// bubble itself (#1569).
+    /// The bubble's ground, and the accent wash AS that ground while it stands — over the raised
+    /// surface, which is opaque, rather than behind it (#1569).
     ///
     /// The muted tint is what the rest of the cockpit reads a state ON, so the words stay legible
     /// through it and the row is exactly as tall washed as not.

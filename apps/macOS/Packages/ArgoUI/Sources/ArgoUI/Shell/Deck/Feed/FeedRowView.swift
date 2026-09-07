@@ -9,10 +9,8 @@ struct FeedRowView: View {
     let row: FeedRow
     @Binding var isExpanded: Bool
     let selection: FeedRowSelection
-    /// Whether the accent wash stands on this row — see `FeedView.washed`. It reaches the BUBBLE
-    /// and not the row, which is why it is carried down rather than drawn by the cell (#1569).
-    /// Never true of a `submitted` row: nothing has answered those words yet, so there is no
-    /// arrival to mark (`FeedView.wash`).
+    /// Whether the accent wash stands on this row — see `FeedPrompt.isWashed`. Carried down rather
+    /// than drawn by the cell, because it reaches the bubble and not the row (#1569).
     var isWashed = false
 
     var body: some View {

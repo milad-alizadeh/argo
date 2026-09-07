@@ -58,13 +58,10 @@ enum SpecimenScene {
     }
 
     /// The accent wash on the prompt the record has just answered — the 1.4 seconds after a send
-    /// lands (#383, #1569). `FeedPreview` and not the deck shell, for the reason the fold uses it:
-    /// the wash is the reading's own state and nothing above the reading seeds one.
+    /// lands (#383, #1569). What it settles is the SHAPE: a still where the accent runs the full
+    /// measure rather than the bubble on the trailing edge is the bug, not the state.
     ///
-    /// What it settles is the SHAPE. The wash marks what was sent, and what was sent is the bubble
-    /// on the trailing edge — so a still where the accent runs the full measure is the bug, not the
-    /// state.
-    /// `argoStillsMotion` is what makes it renderable at all: the wash leaves 1.4 seconds after it
+    /// `argoStillsMotion` is what makes it renderable at all — the wash leaves 1.4 seconds after it
     /// lands, and a capture timed against that window comes out empty as often as not.
     static func washed(_ rows: [FeedRow]) -> some View {
         var preview = FeedPreview(rows: rows)
