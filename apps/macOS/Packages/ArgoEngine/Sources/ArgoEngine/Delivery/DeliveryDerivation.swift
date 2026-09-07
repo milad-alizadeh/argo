@@ -17,8 +17,7 @@ public actor DeliveryDerivation {
     private let now: @Sendable () -> Date
     private var landed: Landing = {}
     /// Held here rather than on `Delivery`, which is what a surface draws: this is the fan-out's
-    /// own
-    /// bookkeeping and no row renders it.
+    /// own bookkeeping, and no row renders it.
     private var unhosted = UnhostedBranches()
 
     public init(

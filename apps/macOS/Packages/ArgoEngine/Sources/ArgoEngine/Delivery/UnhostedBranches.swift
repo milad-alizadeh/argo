@@ -43,9 +43,8 @@ struct UnhostedBranches: Sendable {
     }
 
     /// Forget every branch of this Project that is not one of these — the worktrees reaped since
-    /// the
-    /// last read, which would otherwise accumulate for the life of the window. Other Projects' are
-    /// untouched: this read says nothing about branches it never looked at.
+    /// the last read, which would otherwise pile up for the life of the window. Other Projects'
+    /// branches are untouched: this read says nothing about branches it never looked at.
     mutating func prune(to branches: Set<String>, in projectID: String) {
         answeredAt = answeredAt.filter {
             $0.key.projectID != projectID || branches.contains($0.key.branch)

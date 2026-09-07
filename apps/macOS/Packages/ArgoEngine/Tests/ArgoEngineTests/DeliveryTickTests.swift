@@ -126,8 +126,7 @@ struct DeliveryTickTests {
     @Test
     func `a branch of another Project at the same commit is asked about on its own`() async {
         // The commit is not a key on its own: two Projects share `main`, and one's empty answer
-        // says
-        // nothing about the other's.
+        // says nothing at all about the other's.
         let host = ScriptedCodeHost([.success([])])
         let derivation = Self.derivation(host, into: DeliveryLedger())
         let locally = DeliveryDerivation.Locally(workspaces: [.on("main", at: "c0ffee")])
