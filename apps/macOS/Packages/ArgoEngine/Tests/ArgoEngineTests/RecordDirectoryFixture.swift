@@ -1,6 +1,18 @@
 @testable import ArgoEngine
 import Foundation
 
+/// Where a fixture's plan writes sit in its file — the two shapes #1594 measured on ten real
+/// Sessions, and the only thing separating them is what a bounded read of the two ends can reach.
+enum FixturePlanShape {
+    /// #1558's shape: every step but the LAST is created halfway through the filler, out of reach,
+    /// and the last is created at the file's end where a bounded read finds it. A fold of the two
+    /// ends alone is a list of ONE — a real entry with a real status, and the wrong list.
+    case someInTheTail
+    /// #1559's shape: every plan write is in the middle and the tail holds NONE. A fold of the two
+    /// ends alone is no list at all, which is a row with no `PlanBar` on it.
+    case noneInTheTail
+}
+
 /// One transcript to lay down in a fixture record directory.
 struct FixtureTranscript {
     var directory = "project"
@@ -57,15 +69,23 @@ struct RecordDirectoryFixture {
         return link
     }
 
+    /// Lay one transcript down, optionally with a Plan of `planSteps` written into it, in one of
+    /// the two shapes #1594 measured on ten real Sessions (`FixturePlanShape`).
     @discardableResult
-    func write(_ transcript: FixtureTranscript) throws -> URL {
+    func write(
+        _ transcript: FixtureTranscript,
+        planSteps: Int = 0,
+        placing shape: FixturePlanShape = .someInTheTail,
+    ) throws
+        -> URL {
         let directoryURL = rootURL.appending(
             path: transcript.directory,
             directoryHint: .isDirectory,
         )
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         let url = directoryURL.appending(path: "\(transcript.name).jsonl")
-        try Data(Self.record(for: transcript).utf8).write(to: url)
+        let body = Self.record(for: transcript, planSteps: planSteps, placing: shape)
+        try Data(body.utf8).write(to: url)
         try age(url, by: transcript.modifiedAgo)
         return url
     }
@@ -73,10 +93,23 @@ struct RecordDirectoryFixture {
     /// Say one more thing at the end of a transcript already written — the append an agent makes,
     /// which also puts the file back inside the working set.
     func append(_ words: String, to url: URL) throws {
+        try append(record: Self.said(words), to: url)
+    }
+
+    /// One more step written down after the file has already been read — the live write a launch
+    /// read has to fold ONTO the list it drew rather than under a list of its own.
+    func append(created id: String, subject: String, to url: URL) throws {
+        try append(
+            record: Self.planCall(id, taskCreateTool, "\"subject\":\"\(subject)\""),
+            to: url,
+        )
+    }
+
+    private func append(record: String, to url: URL) throws {
         let handle = try FileHandle(forWritingTo: url)
         defer { try? handle.close() }
         try handle.seekToEnd()
-        try handle.write(contentsOf: Data((Self.said(words) + "\n").utf8))
+        try handle.write(contentsOf: Data((record + "\n").utf8))
     }
 
     /// Move a transcript's mtime back, which is the only way a file leaves the working set.
@@ -111,15 +144,69 @@ struct RecordDirectoryFixture {
 
     /// A user record is the smallest line that carries a `cwd`. One with none stands for a
     /// transcript whose opening records name no working directory.
-    private static func record(for transcript: FixtureTranscript) -> String {
+    private static func record(
+        for transcript: FixtureTranscript,
+        planSteps steps: Int,
+        placing shape: FixturePlanShape,
+    )
+        -> String {
         guard !transcript.isUnparseable else { return "not a record at all\nnor is this\n" }
         guard let cwd = transcript.cwd else { return "{\"type\":\"user\"}\n" }
         let opening = "{\"type\":\"user\",\"cwd\":\"\(cwd)\"}"
         guard transcript.fillerRecords > 0 else { return opening + "\n" }
         let filler = (0 ..< transcript.fillerRecords)
             .map { said("\(fillerPrefix)\($0) " + padding) }
-        return ([opening] + filler + [said(closingWords, stopping: true)]).joined(separator: "\n")
+        let half = filler.count / 2
+        let inTheTail = shape == .someInTheTail
+        let lastStep = inTheTail ? max(steps - 1, 0) : steps
+        let middle = created(steps: 0 ..< lastStep) + (inTheTail ? [] : moved(steps: steps))
+        let tail = inTheTail ? created(steps: lastStep ..< steps) + moved(steps: steps) : []
+        let body = filler.prefix(half) + middle + filler.dropFirst(half) + tail
+        return ([opening] + body + [said(closingWords, stopping: true)]).joined(separator: "\n")
             + "\n"
+    }
+
+    /// A `TaskCreate` per step, each followed by the result that names it — the only place the
+    /// host's own task id is written, and so the only thing an update can be joined to.
+    private static func created(steps: Range<Int>) -> [String] {
+        steps.flatMap { step in
+            [
+                planCall(
+                    "create-\(step)",
+                    taskCreateTool,
+                    "\"subject\":\"\(planStepPrefix)\(step)\"",
+                ),
+                planResult("create-\(step)", taskID: "\(step)"),
+            ]
+        }
+    }
+
+    /// A `TaskUpdate` per step: every one but the last completed, the last in progress. Where the
+    /// shape puts them in the tail, a bounded read reaches them and — with the creates they address
+    /// out of reach in the middle — they move nothing at all.
+    private static func moved(steps: Int) -> [String] {
+        (0 ..< steps).map { step in
+            let status = step == steps - 1 ? "in_progress" : "completed"
+            return planCall(
+                "update-\(step)",
+                taskUpdateTool,
+                "\"taskId\":\"\(step)\",\"status\":\"\(status)\"",
+            )
+        }
+    }
+
+    /// One assistant record making one plan call.
+    static func planCall(_ id: String, _ name: String, _ input: String) -> String {
+        "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"content\":"
+            + "[{\"type\":\"tool_use\",\"id\":\"\(id)\",\"name\":\"\(name)\","
+            + "\"input\":{\(input)}}]}}"
+    }
+
+    /// The result record a create comes back with.
+    static func planResult(_ id: String, taskID: String) -> String {
+        "{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":"
+            + "[{\"type\":\"tool_result\",\"tool_use_id\":\"\(id)\",\"content\":\"done\"}]},"
+            + "\"toolUseResult\":{\"task\":{\"id\":\"\(taskID)\"}}}"
     }
 
     /// One assistant record carrying a line of prose, and optionally the reason its Turn ended.
@@ -136,3 +223,5 @@ struct RecordDirectoryFixture {
 let fillerPrefix = "filler "
 /// What the LAST record of a filled fixture says — the one only a tail read reaches.
 let closingWords = "The closing message"
+/// How a fixture's plan steps are named, so a test can say which of them a row drew.
+let planStepPrefix = "Step "

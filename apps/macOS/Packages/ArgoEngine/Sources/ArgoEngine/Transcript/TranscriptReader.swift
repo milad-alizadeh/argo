@@ -70,6 +70,17 @@ public actor TranscriptReader {
         self.readSkill = readSkill
     }
 
+    /// Take up the ledger another read of this same file already built (`TranscriptPlanScan`).
+    ///
+    /// A BOUNDED reading has to continue that fold rather than begin its own: the two ends hold a
+    /// handful of a Session's plan writes, and a ledger begun there rebuilds a list of three
+    /// entries where the file wrote thirty — wrong, not stale (#1594). Every call the scan folded
+    /// is spent, so the ends re-reading one writes nothing and only what was appended after the
+    /// scan is news.
+    func takeUp(_ ledger: PlanLedger) {
+        planLedger = ledger
+    }
+
     /// Whether the Turn, spend and Plan a record reports belong to what this reader is reading.
     ///
     /// A Session's reading disowns a sidechain record's three, for the reasons on
