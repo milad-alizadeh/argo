@@ -3,6 +3,7 @@
 // the name is still free to change. worktree-guard.mjs enforces that implementation edits
 // happen in a worktree; this enforces which one. Nothing about editing inside an existing tree
 // is guarded here, so a tree already named off-convention drains rather than breaks.
+// `EnterWorktree` cannot reach the convention by any input, so only its `path:` passes (#1684).
 // The convention and what parses it: docs/agents/worktrees.md.
 //
 // decide() is pure string logic (no fs, no git) and unit-tested in worktree-name-guard.test.mjs.
@@ -27,15 +28,23 @@ const HOW =
   `For work with no ticket, keep the shape and drop the number: ticket-<slug> / argo/<slug>. ` +
   `Full rules: docs/agents/worktrees.md.`
 
-// Only a session with no tree yet needs this, so it rides on that one refusal rather than on
-// HOW: a `git branch -m` refusal fires inside a worktree, and telling it to create one is noise.
+// The second half of the two-step. It rides on the refusals that name a tree the session is not
+// in yet rather than on HOW, because a `git branch -m` refusal names no tree at all: that
+// session is standing in one already, and telling it how to enter one is noise. It reads as its
+// own sentence because HOW ends on a doc citation and lands between the two.
+const ENTER =
+  `Enter the tree it makes by path: EnterWorktree ` +
+  `{ path: "${WORKTREES_DIR}/ticket-<N>-<slug>" } in Claude Code, cd in any other harness.`
+
 const TWO_STEP =
-  `Create the tree with git, then enter it by path: ` +
-  `git worktree add -b argo/#<N>-<slug> ${WORKTREES_DIR}/ticket-<N>-<slug>, then ` +
-  `EnterWorktree { path: "${WORKTREES_DIR}/ticket-<N>-<slug>" }.`
+  `Create the tree with git: git worktree add -b argo/#<N>-<slug> ` +
+  `${WORKTREES_DIR}/ticket-<N>-<slug>. ${ENTER}`
 
 const refuse = (what) => ({ block: true, reason: `${what} ${HOW}` })
 const ALLOW = { block: false }
+
+const addEntryStep = (decision) =>
+  decision.block ? { ...decision, reason: `${decision.reason} ${ENTER}` } : decision
 
 // A token still holding a `$` or a backtick is a path this hook cannot resolve; guessing at
 // the expansion would deny work over a name that may well be correct.
@@ -154,7 +163,7 @@ function checkSegment(tokens, cwd) {
   const args = gitArgs(tokens)
   if (!args) return ALLOW
   const add = parseWorktreeAdd(args)
-  if (add) return checkAdd(add)
+  if (add) return addEntryStep(checkAdd(add))
   const branch = parseBranchCreate(args)
   const inWorktree = String(cwd || '')
     .replace(/\\/g, '/')

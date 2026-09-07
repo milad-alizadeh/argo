@@ -33,6 +33,9 @@ const REFUSED = [
   // argo/#<N>-<slug> — and no name at all lands it on a generated one (#1684).
   ['an EnterWorktree name that conforms', () => enter({ name: 'ticket-901-naming' })],
   ['an EnterWorktree with no name at all', () => enter({})],
+  // #1683 asked for this name to be allowed; #1684 answered it by refusing every creation
+  // instead, so the row is the record of that reversal rather than a branch of its own.
+  ['an EnterWorktree name carrying the ticket number', () => enter({ name: '1681-window' })],
   // A numberless name starting with a number is a dropped `#`, not a statement of no ticket.
   [
     'a numberless name that starts with a number',
@@ -73,6 +76,9 @@ const PERMITTED = [
   ['re-entering a conforming tree by path', () => enter({ path: `${WT}/ticket-901-naming` })],
   // How a tree named before this guard, and the agent inside it, drain rather than break.
   ['re-entering an existing tree by path', () => enter({ path: `${WT}/parallel-workitem-edges` })],
+  // `path` is unchecked, location included: it names no tree this guard can still rename, and
+  // work outside .claude/worktrees/ is worktree-guard.mjs's refusal to make, not this one's.
+  ['re-entering a tree outside .claude/worktrees/', () => enter({ path: '../elsewhere' })],
   [
     'the documented recovery of a pushed branch (no -b)',
     () => bash(`git worktree add ${WT}/ticket-30-screen argo/#30-screen`),
@@ -124,6 +130,19 @@ check('the refusal spells out both names and cites the doc', () => {
   assert.match(reason, /argo\/#<N>-<slug>/)
   assert.match(reason, /ticket-<slug>/) // the numberless shape, not a dead end
   assert.match(reason, /docs\/agents\/worktrees\.md/)
+})
+
+// A refusal at creation is the one that fires with no tree to be inside, so it carries both
+// halves of the two-step: fixing only the name leaves the session guessing at the entry.
+check('the creation refusal names the enter step that follows', () => {
+  const { reason } = bash(`git worktree add ${WT}/parallel-workitem-edges`)
+  assert.match(reason, /EnterWorktree \{ path:/)
+})
+
+// The same tail inside a worktree is noise: that session has a tree and is standing in it.
+check('a rename refusal inside a worktree does not name the enter step', () => {
+  const { reason } = bash('git branch -M worktree-901-naming', IN_WT)
+  assert.doesNotMatch(reason, /EnterWorktree \{ path:/)
 })
 
 // Refusing the only tool that creates a tree costs nothing if the refusal names the road that
