@@ -1,14 +1,11 @@
 import ArgoDesign
 import CoreGraphics
 
-/// What a block of prose IS, as far as the ink it is set in is concerned — the three the surface
-/// draws itself. A fence, a table, a picture and a diagram lay themselves out and are drawn by the
-/// views that already draw them, so none of them is here.
+/// Which voice a run of prose is set in. The three the surface inks itself; a fence, a table, a
+/// picture and a diagram lay themselves out and are drawn by the views that already draw them.
 ///
-/// Three rather than one, because a heading is not the paragraph under it (#1597): the renderer
-/// used to carry a single voice for every block, and a `##` a tracker wrote set in the same grey
-/// as the prose it introduced.
-public enum ProseBlockKind: Sendable, CaseIterable {
+/// Three rather than one, because a heading is not the paragraph under it (#1597).
+public enum ProseVoiceKind: Sendable, CaseIterable {
     /// A `#` through `######` line — the heading over the block that answers it.
     case heading
     /// Running prose: a paragraph, and the words of a list item.
@@ -19,9 +16,9 @@ public enum ProseBlockKind: Sendable, CaseIterable {
 
 /// One voice: the glyphs a block is set in, and what a `code` span inside it falls back to.
 ///
-/// The two travel together because the second is a property of the first — a floor is a floor
-/// UNDER something — and a span floored against a voice its block is not set in is a span drawn
-/// at the wrong distance from the words around it.
+/// The two travel together because the second is a floor UNDER the first, and a span floored
+/// against a voice its block is not set in is a span drawn at the wrong distance from the words
+/// around it.
 public struct ProseVoice: Equatable, Sendable {
     /// The ink every glyph the record marked as nothing is set in.
     public var ink: ArgoColor
@@ -48,7 +45,7 @@ public struct ProseVoices: Equatable, Sendable {
         self.marker = marker
     }
 
-    public subscript(kind: ProseBlockKind) -> ProseVoice {
+    public subscript(kind: ProseVoiceKind) -> ProseVoice {
         switch kind {
         case .heading: heading
         case .body: body
@@ -72,7 +69,7 @@ public struct ProseInk: Equatable {
     public var marked: ProseMarkedInk
     /// Which of the voices this inking speaks in. A run draws in ONE of them, and a surface picks
     /// it per block with `voiced(_:)`.
-    public private(set) var speaking: ProseBlockKind = .body
+    public private(set) var speaking: ProseVoiceKind = .body
 
     public init(voices: ProseVoices, link: ArgoColor, marked: ProseMarkedInk) {
         self.voices = voices
@@ -88,7 +85,7 @@ public struct ProseInk: Equatable {
     /// The same ink speaking as another kind: a heading is drawn louder than the words under it
     /// and a list's marker quieter than the words beside it, and everything else about how a run
     /// is marked stays as it was.
-    public func voiced(_ kind: ProseBlockKind) -> ProseInk {
+    public func voiced(_ kind: ProseVoiceKind) -> ProseInk {
         var voiced = self
         voiced.speaking = kind
         return voiced

@@ -22,12 +22,10 @@ public enum ArgoLineKind: String, Sendable, CaseIterable {
     /// The word naming a block of rows, set over it rather than in it. Chrome about the content,
     /// so it is quieter than anything under it.
     ///
-    /// It is NOT a heading in prose, and the rung below is right for what it is (#1597). Every
-    /// call site is `ArgoTypography.sectionLabel` — the uppercase tracked caption over
-    /// `Deliveries`, over a fence's declared grammar, over the agents rail — and the design says
-    /// as much: the ticket detail heads Deliveries with a caption and Children with a heading
-    /// (`cockpit-work-room.md`, `.cap` vs `h2`). A `##` a tracker wrote in a body is the second
-    /// of those, so it takes `title`, which is where a heading in prose has always been named.
+    /// NOT the heading in a body of prose, which is `title` above (#1597): the design heads
+    /// Deliveries with a caption where it heads Children with a heading
+    /// (`cockpit-work-room.html`, `.cap` against `h2`), and every call site here is the uppercase
+    /// `ArgoTypography.sectionLabel`.
     case sectionHeader
     /// The quiet line beside or under a title, in the interface face — what a Session is doing,
     /// a ticket's status word.

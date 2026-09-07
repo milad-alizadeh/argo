@@ -26,23 +26,7 @@ struct ProseLinkHitTests {
     /// The feed's own ink, through the contract's own names: a test that spelled the inset and the
     /// radius by hand would go on passing after a token moved and stop exercising what ships.
     private static var ink: ProseInk {
-        let palette = ArgoPalette.graphite
-        return ProseInk(
-            voices: ProseVoices(
-                heading: ProseVoice(ink: palette.text.primary),
-                body: ProseVoice(ink: palette.text.primary),
-                marker: ProseVoice(ink: palette.text.tertiary),
-            ),
-            link: palette.interaction.accent,
-            marked: ProseMarkedInk(
-                ground: palette.surface.marked,
-                inset: CGSize(
-                    width: ArgoFeedRow.markedSpanInsetX,
-                    height: ArgoFeedRow.markedSpanInsetY,
-                ),
-                radius: ArgoRadius.marker,
-            ),
-        )
+        ProseTone.one(ArgoPalette.graphite.text.ink(.title)).inked(.graphite)
     }
 
     @Test

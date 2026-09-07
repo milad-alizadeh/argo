@@ -8,7 +8,7 @@ package struct FeedProseText: View {
     @Environment(\.argo) private var argo
     /// How the prose around this run is voiced. Ambient because it is a property of the block
     /// being drawn, not of each span inside it.
-    @Environment(\.proseVoice) private var voice
+    @Environment(\.proseTone) private var tone
 
     let text: String
     /// Which rung the run is set on. Only MARKUP passes one. The default must stay the contract's
@@ -40,13 +40,10 @@ package struct FeedProseText: View {
         )
     }
 
-    /// What a `code` span is inked in: nothing at all, unless the voice around it would fall under
-    /// the contrast floor once the span's ground lifts the backdrop out from under it. The choice
-    /// itself is the palette's — see `TextRoles.marked(on:)`.
+    /// What a `code` span in this run is inked in — `TextRoles.voiced(_:)`'s answer for the ink
+    /// the block around it claimed, and nothing at all where nobody claimed one.
     private var span: ArgoColor? {
-        guard let words = voice?.body else { return nil }
-        let floored = argo.color.text.marked(on: words)
-        return floored == words ? nil : floored
+        tone.flatMap { argo.color.text.voiced($0.body).span }
     }
 
     /// The agent's own inline marks, drawn as marks. Inline only, whitespace preserved: every line

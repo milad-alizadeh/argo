@@ -24,9 +24,9 @@ struct ProseLaidBlockHeightTests {
     /// Narrower than the feed's column cap and wider, so the cap is exercised rather than assumed.
     nonisolated static let widths: [CGFloat] = [460, 1000]
 
-    /// The voice the words inside a hosted block take — the body's, as the surface hands it. A
-    /// height is not an ink, but the view under test takes one and a colour must not decide it.
-    nonisolated static let voice = ProseVoice(ink: ArgoPalette.graphite.text.ink(.body))
+    /// The ink a hosted table's cells take, as the surface hands it. A height is not an ink, but
+    /// the view under test takes one and a colour must not decide it.
+    nonisolated static let prose = ArgoPalette.graphite.text.ink(.body)
 
     /// One fixture per self-laying kind, and the hard cases inside each: a fence with and without a
     /// language, an empty one, a table whose cell wraps, and both a diagram Argo reads and a fence
@@ -63,7 +63,7 @@ struct ProseLaidBlockHeightTests {
             }
             hosted += 1
             ruler.rootView = AnyView(
-                FeedProseLaidBlock(block: block, voice: Self.voice)
+                FeedProseLaidBlock(block: block, prose: Self.prose)
                     .frame(width: measure)
                     .argoAppearance(),
             )

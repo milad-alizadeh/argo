@@ -113,14 +113,14 @@ final class ProseSurface: NSView {
         for block in laid {
             block.view.removeFromSuperview()
         }
-        // The words inside a hosted block are prose, so they take the row's own body voice. No
-        // showing means no blocks either — a frame is placed from one — so nothing is hosted
-        // without one rather than hosted at a rung nobody picked.
-        let voice = showing?.ink.voiced(.body).voice
+        // A hosted block's own words are prose, so they take the row's body voice. No showing
+        // means no blocks either — a frame is placed from one — so nothing is hosted without one
+        // rather than hosted at a rung nobody picked.
+        let prose = showing?.ink.voices.body.ink
         laid = placed.parts.compactMap { part in
-            guard case let .laid(block) = part.part, let voice else { return nil }
+            guard case let .laid(block) = part.part, let prose else { return nil }
             let view = NSHostingView(rootView: AnyView(
-                FeedProseLaidBlock(block: block, voice: voice).argoTheme(theme),
+                FeedProseLaidBlock(block: block, prose: prose).argoTheme(theme),
             ))
             view.sizingOptions = []
             view.frame = part.rect

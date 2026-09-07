@@ -56,11 +56,9 @@ struct FeedProse: View {
     /// hit-test. What a reader can still take away whole is the Turn, through its copy chip.
     private var prose: some View {
         FeedMarkdown(text: words, tickets: tickets)
-            // ONE tone for the whole reading, headings included, and a deliberate value rather
-            // than the absence of one (#1597). A message is already at the loudest rung, so
-            // there is nothing to draw a heading in that a paragraph is not already in; a thought
-            // whose headings brightened would stop reading as a thought.
-            .environment(\.proseVoice, .one(ink))
+            // ONE tone for the whole reading, headings included: a thought whose headings
+            // brightened would stop reading as a thought (#1597).
+            .environment(\.proseTone, .one(ink))
     }
 
     private var ink: ArgoColor {

@@ -1,6 +1,5 @@
 import ArgoDesign
 import MermaidView
-import ProseText
 import SwiftUI
 
 /// A block that lays ITSELF out, drawn by the view that already draws it: a fence's ground and its
@@ -14,21 +13,14 @@ import SwiftUI
 /// Words never reach here. A paragraph, a heading and a list item are `ProseSurface`'s own.
 struct FeedProseLaidBlock: View {
     let block: MarkdownBlock
-    /// The voice the words INSIDE it take, where it holds any — a table's cells (#1597).
+    /// The ink the words INSIDE a table's cells take (#1597).
     ///
-    /// Handed in rather than inherited: each of these is hosted in its own view tree, so nothing
-    /// the surface's caller set reaches here, and a cell left to the platform's own label colour
-    /// was drawn at no rung of the ramp at all. A fence and a picture ink their own words and
-    /// take no notice of this.
-    let voice: ProseVoice
+    /// Handed in rather than inherited: this is hosted in its own view tree, so nothing the
+    /// surface's caller set reaches it, and a cell left to the platform's own label colour was
+    /// drawn at no rung of the ramp at all. The other three blocks ink their own words.
+    let prose: ArgoColor
 
     var body: some View {
-        drawn
-            .foregroundStyle(voice.ink.color)
-            .environment(\.proseVoice, .one(voice.ink))
-    }
-
-    @ViewBuilder private var drawn: some View {
         switch block {
         case let .fenced(code, info):
             FeedMarkdownFence(code: code, info: info)
@@ -36,6 +28,8 @@ struct FeedProseLaidBlock: View {
             MermaidView(diagram: diagram)
         case let .table(table):
             FeedMarkdownTable(table: table)
+                .foregroundStyle(prose.color)
+                .environment(\.proseTone, .one(prose))
         case let .picture(alt, source):
             FeedMarkdownPicture(alt: alt, source: source)
         // Words, which the surface inks. Reached only where the two readings of one string came

@@ -36,7 +36,7 @@ struct MinimapProseWords: Equatable, Sendable {
     /// What the block IS, which is what the feed's renderer picks its voice by (#1597). Beside
     /// the face rather than derived from it: the face and the ink are two readings of one
     /// decision, and a second reading of it is where they part.
-    var kind: ProseBlockKind = .body
+    var kind: ProseVoiceKind = .body
 
     /// How far the words themselves are held off the leading edge — a list item's marker column and
     /// the gap after it, which is what keeps a wrapped item inside its own words.

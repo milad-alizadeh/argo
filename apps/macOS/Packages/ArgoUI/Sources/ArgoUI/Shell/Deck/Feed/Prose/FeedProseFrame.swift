@@ -32,7 +32,7 @@ enum FeedProsePart {
     /// Words that wrap — a paragraph, a heading, one item of a list — as the very lines the measure
     /// counted them into, with the marker in its own column beside them and the indent that keeps a
     /// wrapped item inside its own words, and what the block IS, which is what picks its voice.
-    case words(run: ProseRun, marker: ProseRun?, indent: CGFloat, kind: ProseBlockKind)
+    case words(run: ProseRun, marker: ProseRun?, indent: CGFloat, kind: ProseVoiceKind)
     /// A block that lays ITSELF out: a fence's ground, a pipe table, a diagram. Drawn by the view
     /// that already draws it, hosted at the frame the measure gave it.
     case laid(MarkdownBlock)

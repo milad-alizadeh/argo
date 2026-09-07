@@ -46,12 +46,11 @@ package struct TicketBody: View {
     ///
     /// Voiced by the RAMP rather than pinned to one rung of it (#1597): a `##` the tracker wrote
     /// is a heading over the prose under it, exactly as `Children` and `Blocked by` below are, and
-    /// drawn in the same ink they are. Pinned to `.body`, the pane read as one grey tone and its
-    /// own headings were the only ones in it.
+    /// drawn in the same ink they are.
     @ViewBuilder private var prose: some View {
         if let body = ticket.body {
             FeedMarkdown(text: body)
-                .environment(\.proseVoice, .ramp(argo.color.text))
+                .environment(\.proseTone, .ramp(argo.color.text))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
