@@ -10,8 +10,16 @@
 #
 # The cap is a count of slots, not a single mutex, because one build does not saturate the
 # machine on its own and a strict mutex would idle cores between a lane's link and the next
-# lane's parse. Two is the default for a twelve-core machine. Raise it with
-# ARGO_BUILD_LOCK_SLOTS on a bigger one.
+# lane's parse. Four is the default for a twelve-core machine. Raise or lower it with
+# ARGO_BUILD_LOCK_SLOTS.
+#
+# It was two until #1577, and two was measured against the wrong number. `gate:report` over
+# 110 branches reads a MEDIAN slot wait of 0m00s and a worst of 30m40s — so the cap was idle
+# almost always and catastrophic in the tail, which is the shape of a cap set too tight for
+# its bursts rather than one holding back a saturated machine. Load average while gating is
+# 18.3 against the 178 that #1377 was written about, and free disk is 113 GB against 9 GB.
+# Both numbers say there is room. Watch the same two in `gate:report` after changing this: a
+# rising median wait or a load average back near the core count means four is too many.
 #
 # Usage, from a POSIX shell script:
 #
@@ -34,7 +42,7 @@
 # the landing would build uncapped while claiming to be serialised.
 
 BUILD_LOCK_ROOT=${ARGO_BUILD_LOCK_ROOT:-${TMPDIR:-/tmp}/argo-build-lock}
-BUILD_LOCK_SLOTS=${ARGO_BUILD_LOCK_SLOTS:-2}
+BUILD_LOCK_SLOTS=${ARGO_BUILD_LOCK_SLOTS:-4}
 BUILD_LOCK_HELD=""
 # Seconds this process spent waiting for a slot, for the caller to record. A cap that made
 # things slower would show up here and nowhere else: every other number would just say the
