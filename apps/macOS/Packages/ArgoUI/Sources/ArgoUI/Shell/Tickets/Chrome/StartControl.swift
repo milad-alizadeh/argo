@@ -44,8 +44,8 @@ package struct StartControl: View {
                 .argoSegmentFace()
         }
         .buttonStyle(.plain)
-        .help(StartVerb.spoken(verbs.command))
-        .accessibilityLabel(StartVerb.spoken(verbs.command))
+        .help(StartVerb.spoken(verbs.command, on: verbs.ticket))
+        .accessibilityLabel(StartVerb.spoken(verbs.command, on: verbs.ticket))
     }
 
     /// Spelled out: Swift synthesises no memberwise initializer above `internal` (#1085).
@@ -83,13 +83,13 @@ private struct ArgoPillSegment: ViewModifier {
 }
 
 #Preview("Start control — one pill, two segments") {
-    StartControl(verbs: TicketsChromeIntents.Verbs(command: .implement))
+    StartControl(verbs: TicketsChromeIntents.Verbs(ticket: 1242, command: .implement))
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }
 
 #Preview("Start control — a ticket that asks for no command") {
-    StartControl(verbs: TicketsChromeIntents.Verbs())
+    StartControl(verbs: TicketsChromeIntents.Verbs(ticket: 1182))
         .padding(ArgoSpacing.region)
         .argoAppearance()
 }

@@ -25,8 +25,8 @@ struct TicketsChromeIntentTests {
         #expect(Set(found) == Self.slots)
     }
 
-    /// The open ticket's verbs, which #1242 cut to three: the word's act, the command it says, and
-    /// starting on a command the reader picked instead. Asserted as a set, so a fourth added beside
+    /// The open ticket's verbs: the word's act, the ticket it acts on, the command it says, and
+    /// starting on a command the reader picked instead. Asserted as a set, so one added beside
     /// them has to be looked at.
     @Test
     func `the nested groups carry the slots their controls read`() {
@@ -36,7 +36,7 @@ struct TicketsChromeIntentTests {
 
         let verbs = Mirror(reflecting: TicketsChromeIntents.Verbs.inert).children
             .compactMap(\.label)
-        #expect(Set(verbs) == ["start", "command", "startOn", "closure"])
+        #expect(Set(verbs) == ["start", "ticket", "command", "startOn", "closure"])
 
         let closure = Mirror(reflecting: TicketsChromeIntents.Verbs.Closure()).children
             .compactMap(\.label)

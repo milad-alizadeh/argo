@@ -64,7 +64,7 @@ package struct NextUpCard: View {
     }
 
     private func starter(_ pick: NextUp.Pick) -> some View {
-        NextUpStarter(command: intents.starting.command(pick.number)) {
+        NextUpStarter(command: intents.starting.command(pick.number), ticket: pick.number) {
             intents.starting.run(pick.number)
         }
     }

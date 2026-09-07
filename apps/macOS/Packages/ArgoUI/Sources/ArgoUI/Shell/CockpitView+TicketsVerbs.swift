@@ -18,6 +18,7 @@ extension CockpitView {
         guard let ticket = navigation.ticket else { return .inert }
         var verbs = TicketsChromeIntents.Verbs()
         verbs.start = { Task { await start.run(on: ticket, in: navigation) } }
+        verbs.ticket = ticket
         verbs.command = start.command(on: ticket)
         verbs.startOn = { picked in
             Task { await start.run(on: ticket, in: navigation, sending: picked) }

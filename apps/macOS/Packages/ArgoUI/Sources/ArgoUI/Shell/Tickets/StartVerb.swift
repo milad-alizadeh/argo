@@ -47,9 +47,21 @@ struct StartVerb: View {
     /// How either control is announced and helped. A press that silently dispatched one of five
     /// different jobs is a press nobody can aim, and a reader who cannot see the command has to be
     /// told it here or not at all.
-    package static func spoken(_ command: WorkCommand?) -> String {
-        guard let command else { return "Start a Session on this ticket, with an empty composer" }
-        return "Start a Session on this ticket, on \(command.typed)"
+    ///
+    /// **It names the TICKET as well as the command** (#1682). The room draws both controls at
+    /// once and they point at different tickets, so one sentence for the two is the same offer
+    /// said twice.
+    ///
+    /// `ticket` is OPTIONAL and degrades down to the unnamed sentence: the pane header's verbs are
+    /// `inert` with no ticket open, and no control may name a ticket nobody chose.
+    ///
+    /// Bare digits and not `IssueReading.mark` — that form is for the number DRAWN, and a `#` read
+    /// aloud is a punctuation mark in the middle of a sentence. `NextUpCard.spoken` spells it the
+    /// same way.
+    package static func spoken(_ command: WorkCommand?, on ticket: Int?) -> String {
+        let subject = ticket.map { "ticket \($0)" } ?? "this ticket"
+        guard let command else { return "Start a Session on \(subject), with an empty composer" }
+        return "Start a Session on \(subject), on \(command.typed)"
     }
 }
 

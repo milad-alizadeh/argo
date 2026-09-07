@@ -15,6 +15,9 @@ import SwiftUI
 struct NextUpStarter: View {
     /// What the press will send, and `nil` where the pick asks for no command.
     let command: WorkCommand?
+    /// The pick this starts, which the label names (#1682). Not optional, unlike the reading
+    /// `StartVerb.spoken` takes: the card IS a pick, so it always has a number.
+    let ticket: Int
     var act: () -> Void = {}
 
     var body: some View {
@@ -22,16 +25,16 @@ struct NextUpStarter: View {
             StartVerb(command: command)
         }
         .buttonStyle(NextUpStarterStyle())
-        .help(StartVerb.spoken(command))
-        .accessibilityLabel(StartVerb.spoken(command))
+        .help(StartVerb.spoken(command, on: ticket))
+        .accessibilityLabel(StartVerb.spoken(command, on: ticket))
     }
 }
 
 #Preview("Next-up Start — the command, and the ticket that asks for none") {
     VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-        NextUpStarter(command: .implement)
-        NextUpStarter(command: .designToCode)
-        NextUpStarter(command: nil)
+        NextUpStarter(command: .implement, ticket: 899)
+        NextUpStarter(command: .designToCode, ticket: 1526)
+        NextUpStarter(command: nil, ticket: 1682)
     }
     .padding(ArgoSpacing.region)
     .argoAppearance()

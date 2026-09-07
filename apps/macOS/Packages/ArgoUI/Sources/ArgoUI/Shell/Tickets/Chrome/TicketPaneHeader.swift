@@ -28,6 +28,7 @@ struct TicketPaneHeader: View {
 #Preview("Ticket pane header") {
     TicketPaneHeader(
         verbs: TicketsChromeIntents.Verbs(
+            ticket: 1242,
             command: .implement,
             closure: TicketsChromeIntents.Verbs.Closure(current: .open),
         ),
@@ -40,6 +41,7 @@ struct TicketPaneHeader: View {
 #Preview("Ticket pane header — closed, offers reopen") {
     TicketPaneHeader(
         verbs: TicketsChromeIntents.Verbs(
+            ticket: 1242,
             command: .implement,
             closure: TicketsChromeIntents.Verbs.Closure(current: .resolved),
         ),
