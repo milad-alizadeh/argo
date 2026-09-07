@@ -22,7 +22,7 @@ struct RosterListWriteBackTests {
     func `survives the roster list writing its own selection back`() async {
         let navigation = Start.navigation()
 
-        await Start.start().run(on: 899, in: navigation)
+        await Start.start().run(on: Start.ticket, in: navigation)
         Start.hold(navigation).listSelection(over: Start.standing.map(\.id)).wrappedValue = []
 
         #expect(
@@ -41,7 +41,7 @@ struct RosterListWriteBackTests {
     func `lets a click made during the wait move the deck off it`() async {
         let navigation = Start.navigation()
 
-        await Start.start().run(on: 899, in: navigation)
+        await Start.start().run(on: Start.ticket, in: navigation)
         Start.hold(navigation).listSelection(over: Start.standing.map(\.id))
             .wrappedValue = ["beta"]
 

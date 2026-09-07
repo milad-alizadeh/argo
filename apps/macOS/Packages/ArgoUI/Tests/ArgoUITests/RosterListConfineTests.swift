@@ -22,7 +22,7 @@ struct RosterListConfineTests {
     func `holds the deck when the list has not drawn the re-keyed row yet`() async {
         let navigation = Start.navigation()
 
-        await Start.start().run(on: 899, in: navigation)
+        await Start.start().run(on: Start.ticket, in: navigation)
         navigation.reconcile(against: Start.provisional.map(\.identity))
         navigation.reconcile(against: Start.rekeyed.map(\.identity))
         // The list is still drawing the rows it had before the re-key, which is where the new id
@@ -54,7 +54,7 @@ struct RosterListConfineTests {
     func `cuts the drawn row the list is withholding behind a fold`() async {
         let navigation = Start.navigation()
 
-        await Start.start().run(on: 899, in: navigation)
+        await Start.start().run(on: Start.ticket, in: navigation)
         navigation.reconcile(against: Start.provisional.map(\.identity))
         // The fresh row is the list's, and the list has put it away.
         Start.hold(navigation).confineToDrawn(
@@ -72,7 +72,7 @@ struct RosterListConfineTests {
     func `still follows a row the reader clicks`() async {
         let navigation = Start.navigation()
 
-        await Start.start().run(on: 899, in: navigation)
+        await Start.start().run(on: Start.ticket, in: navigation)
         Start.hold(navigation).follow(drawnRow: "beta")
 
         #expect(navigation.session == "beta")

@@ -18,9 +18,14 @@ import Testing
 struct RosterSelectionPressAfterPublishTests {
     private typealias Start = TicketStartFixture
 
-    /// The edge itself. Nothing about the claim's own id makes it a row the reader could have been
-    /// looking at when they pressed — it is the id the press was handed — so the re-key it names is
-    /// this spawn's own succession and the window follows it.
+    /// Nothing about the claim's own id makes it a row the reader could have been looking at when
+    /// they pressed — it is the id the press was HANDED — so the re-key it names is this spawn's
+    /// own succession, and the window follows it.
+    ///
+    /// What this measures is the ground, and it is deliberately not the report's own landing: with
+    /// the edge refused the pointer stays on a claim no row carries, so the roster grounds NOTHING
+    /// rather than grounding the neighbour. The landing needs the hold to expire as well, which is
+    /// `rowCanStillArrive`'s bound and a defect of its own — see `RosterSelectionClaimHoldTests`.
     @Test
     func `follows the re-key of a claim its own row was already published under`() async {
         let navigation = await Start.pressedAfterItsRowIsPublished()
@@ -30,37 +35,13 @@ struct RosterSelectionPressAfterPublishTests {
         RosterMark.expect(Start.cli, in: Start.rekeyed, for: navigation)
     }
 
-    /// And the report's own symptom, which is where a refused edge ends up: the pointer holds on a
-    /// claim no row carries, and the first pass that brings no new id at all is the bound on that
-    /// hold (`rowCanStillArrive`). The window leaves for another row there — thirty seconds after
-    /// the press, with the Session it started still on the roster under the id the CLI picked.
-    @Test
-    func `does not leave it once nothing new is arriving`() async {
-        let navigation = await Start.pressedAfterItsRowIsPublished()
-
-        navigation.reconcile(against: Start.rekeyed.map(\.identity))
-        navigation.reconcile(against: Start.rekeyed.map(\.identity))
-
-        RosterMark.expect(Start.cli, in: Start.rekeyed, for: navigation)
-    }
-
-    /// The guard the fix narrows, still holding. A claim id absorbed by a row that was ALREADY
-    /// standing at the press is the forgery #1563 is about, and reconciling the provisional row
-    /// first must not turn that refusal off.
-    @Test
-    func `still refuses a recycled claim absorbed by a row that was standing`() async {
-        let navigation = await Start.pressedAfterItsRowIsPublished()
-
-        navigation.reconcile(against: Start.recycledClaim.map(\.identity))
-
-        #expect(
-            navigation.session == Start.claim,
-            "A recycled claim id handed the window an unrelated Session.",
-        )
-    }
-
-    /// And the same forgery folded into a chain id nothing was ever pointed at, which is the half
-    /// the heir's own id cannot give away.
+    /// The guard the fix narrows, still holding under the new ordering.
+    ///
+    /// This roster and not `recycledClaim` too, because only this one reaches the clause the fix
+    /// touches: `recycledClaim`'s heir gives itself away by its OWN id, which subtracting the claim
+    /// cannot affect, and `RosterSelectionClaimHoldTests` already holds that case. Here the heir is
+    /// a chain id nothing was ever pointed at and what gives it away is what it ABSORBS — the same
+    /// read the claim was wrongly answering.
     @Test
     func `still refuses a recycled claim folded into a continuation`() async {
         let navigation = await Start.pressedAfterItsRowIsPublished()
@@ -69,7 +50,7 @@ struct RosterSelectionPressAfterPublishTests {
 
         #expect(
             navigation.session == Start.claim,
-            "A recycled claim id handed the window an unrelated chain.",
+            "A recycled claim id handed the window a Session that was never this spawn.",
         )
     }
 }
