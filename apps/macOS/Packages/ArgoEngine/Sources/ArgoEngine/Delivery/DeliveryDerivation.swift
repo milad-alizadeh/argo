@@ -91,7 +91,8 @@ public actor DeliveryDerivation {
     }
 
     /// The union: every Delivery the host has in flight, then every local branch that listing held
-    /// nothing for, asked about by name.
+    /// nothing for, asked about by name, then what the ledger already holds for every branch
+    /// neither half reached.
     ///
     /// The fan-out stops at its first refusal. A host that refused one branch is refusing this
     /// read, not that branch — the answer is a rate limit or an outage, and the requests after it
@@ -118,11 +119,10 @@ public actor DeliveryDerivation {
                 try await union.deliveries.append(named(branch, of: target))
             } catch {
                 union.refusal = .refusal(error)
-                let carried = await carried(past: union.deliveries, of: target)
-                union.deliveries.append(contentsOf: carried)
                 break
             }
         }
+        await union.deliveries.append(contentsOf: carried(past: union.deliveries, of: target))
         return union.linked(by: locally.assertions, in: target.projectID)
     }
 
@@ -149,6 +149,19 @@ public actor DeliveryDerivation {
     /// would otherwise empty a strip that was full (`DeliveryLedger`). The refused branch itself is
     /// carried by the same rule, and is never derived at its commits — that reading is what a host
     /// ANSWERING nothing means, and a refusal established nothing.
+    ///
+    /// On EVERY derivation and not only a refused one (#1617). The local half is asked for at the
+    /// moment of the tick and is not a constant: an instrumented build of this repository's own
+    /// checkout recorded a healthy tick deriving against `Locally.workspaces` of length 0 while
+    /// another was deriving against 33, and two derivations landing inside the same second — the
+    /// poll's and the socket's. Whichever records last wins, so a tick that saw fewer branches than
+    /// the one before it took their marks off the roster (#1588's last criterion). Read at the END
+    /// of the assembly for that second reason: the derivation that records last has then read the
+    /// ledger last, so it carries what the other one established rather than predating it.
+    ///
+    /// A branch that is genuinely gone therefore keeps its Delivery here for the life of the
+    /// window. Nothing draws it: every surface joins by branch off a Workspace that no longer
+    /// exists, and nothing is persisted (ADR-0008).
     private func carried(
         past established: [Delivery], of target: PortReadTarget,
     ) async
