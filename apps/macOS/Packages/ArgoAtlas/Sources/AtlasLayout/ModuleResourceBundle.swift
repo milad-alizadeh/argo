@@ -5,17 +5,13 @@ import Foundation
 ///
 /// `Bundle.module`'s generated accessor is a `static let` that calls `fatalError` on this exact
 /// candidate walk coming up empty (#1633) — a build whose `.bundle` is swept or replaced under a
-/// running process finds that out on first touch, which for `AtlasVolumeRenderer` is the first
-/// frame it draws. Mirroring the walk here, ending in `nil`, is what lets it fall back to the
-/// no-Metal-Toolchain path instead of dying mid-render.
-enum ModuleResourceBundle {
+/// running process finds that out on first touch. Shared by `AtlasView` and `AtlasFixtures`,
+/// the only two targets in this package that ship resources, so the walk is written once: both
+/// already depend on this target, and the walk itself does not vary by bundle name.
+public enum ModuleResourceBundle {
     private final class Anchor {}
 
-    /// Cached like `Bundle.module` itself: the filesystem does not move mid-process for a bundle
-    /// that resolved once, and a bundle that vanished stays vanished for this process's purposes.
-    static let resolved: Bundle? = resolve(bundleName: "ArgoAtlas_AtlasView")
-
-    static func resolve(bundleName: String) -> Bundle? {
+    public static func resolve(bundleName: String) -> Bundle? {
         let overrides: [URL]
         #if DEBUG
             if let override = ProcessInfo.processInfo.environment["PACKAGE_RESOURCE_BUNDLE_PATH"]

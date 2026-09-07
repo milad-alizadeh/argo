@@ -23,7 +23,7 @@ public enum AtlasNotesFixture {
     /// What was written about this repository, at the checkout the Map fixture measured.
     public static func argo() throws -> AtlasNotes {
         let name = "argo-notes"
-        guard let bundle = ModuleResourceBundle.resolved,
+        guard let bundle = FixturesBundle.resolved,
               let url = bundle.url(
                   forResource: name,
                   withExtension: "json",

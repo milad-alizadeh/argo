@@ -1,3 +1,4 @@
+import AtlasLayout
 import MetalKit
 
 /// Draws `AtlasVolume.metal`'s boxes into an `MTKView` (#1147, stood up at #1150).
@@ -72,8 +73,13 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// at runtime, out of the same file. That is what lets `AtlasPickingTests` render the map the
     /// app renders rather than a second drawing of it written in Swift; without it the one claim
     /// #1153 makes could only be asserted by a suite that skipped itself.
+    /// Cached like `Bundle.module` itself: the filesystem does not move mid-process for a bundle
+    /// that resolved once, and a bundle that vanished stays vanished for this process's purposes.
+    nonisolated private static let resourceBundle: Bundle? =
+        ModuleResourceBundle.resolve(bundleName: "ArgoAtlas_AtlasView")
+
     nonisolated private static func library(on device: MTLDevice) -> MTLLibrary? {
-        guard let bundle = ModuleResourceBundle.resolved else { return nil }
+        guard let bundle = resourceBundle else { return nil }
         if let compiled = try? device.makeDefaultLibrary(bundle: bundle) {
             return compiled
         }

@@ -17,7 +17,7 @@ public enum AtlasMapFixture {
     /// This repository, as measured at commit 4478553.
     public static func argo() throws -> AtlasMap {
         let name = "argo-map"
-        guard let bundle = ModuleResourceBundle.resolved,
+        guard let bundle = FixturesBundle.resolved,
               let url = bundle.url(
                   forResource: name,
                   withExtension: "json",
