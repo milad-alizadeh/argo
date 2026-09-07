@@ -11,9 +11,13 @@ public struct GitHubDeliveries: CodeHostPort {
         self.reads = GitHubReads(transport: transport)
     }
 
-    public func inFlight(in scope: String, grant: AccountGrant) async throws -> [Delivery] {
+    public func inFlight(
+        in scope: String, grant: AccountGrant, revalidating: Bool,
+    ) async throws
+        -> PortReading<[Delivery]> {
         try await deliveries(
             listedBy: "/repos/\(scope)/pulls?state=open", in: scope, grant: grant,
+            revalidating: revalidating,
         )
     }
 
@@ -25,9 +29,9 @@ public struct GitHubDeliveries: CodeHostPort {
     /// fragment — so the unencoded spelling asks the host about every pull request in the
     /// repository and answers with whichever was touched last (#1398).
     public func delivery(
-        ofBranch branch: String, in scope: String, grant: AccountGrant,
+        ofBranch branch: String, in scope: String, grant: AccountGrant, revalidating: Bool,
     ) async throws
-        -> Delivery? {
+        -> PortReading<Delivery?> {
         let owner = scope.prefix { $0 != "/" }
         let named = branch.addingPercentEncoding(withAllowedCharacters: .branchInAQuery) ?? branch
         return try await deliveries(
@@ -35,21 +39,32 @@ public struct GitHubDeliveries: CodeHostPort {
                 + "&head=\(owner):\(named)",
             in: scope,
             grant: grant,
-        ).first
+            revalidating: revalidating,
+        ).map(\.first)
     }
 
+    /// The listing, and one assembled Delivery per pull request in it.
+    ///
+    /// Only the LISTING is conditional. The check runs and the reviews below are asked outright
+    /// every time, because a `304` on the listing is silent about them: a check run finishing does
+    /// not touch the pull request it ran on, so the listing's body — and its ETag with it — stands
+    /// still while CI moves. Answering the whole Delivery `unchanged` off the listing alone would
+    /// freeze the one thing on an open pull request a person is watching. What a caller may opt
+    /// into with `revalidating` is therefore narrow by construction: it holds nothing for this read
+    /// whose parts can move on their own (#1620).
     private func deliveries(
-        listedBy path: String, in scope: String, grant: AccountGrant,
+        listedBy path: String, in scope: String, grant: AccountGrant, revalidating: Bool,
     ) async throws
-        -> [Delivery] {
-        let pulls: [GitHubPullRequest] = try await reads.pages(
-            [GitHubPullRequest].self, of: path, grant: grant,
+        -> PortReading<[Delivery]> {
+        let listed = try await reads.pages(
+            [GitHubPullRequest].self, of: path, grant: grant, revalidating: revalidating,
         )
+        guard let pulls = listed.answer else { return .unchanged }
         var deliveries: [Delivery] = []
         for pull in pulls {
             try await deliveries.append(delivery(pull, in: scope, grant: grant))
         }
-        return deliveries
+        return .answered(deliveries)
     }
 
     /// One pull request with what was observed on it — which is TWO more requests, one for the

@@ -11,7 +11,7 @@ struct CodeHostListingTests {
     ) async throws
         -> [Delivery] {
         try await GitHubDeliveries(transport: RecordedGitHub(replies: replies))
-            .inFlight(in: "acme/api", grant: .listing)
+            .listed(in: "acme/api", grant: .listing)
     }
 
     private static func replies(
@@ -120,7 +120,7 @@ struct CodeHostListingTests {
         // (#1588): a merged pull request's Checks are as finished as it is.
         let api = RecordedGitHub(replies: Self.replies(pulls: [example]))
         _ = try await GitHubDeliveries(transport: api)
-            .delivery(ofBranch: "argo/#99-done", in: "acme/api", grant: .listing)
+            .delivered(ofBranch: "argo/#99-done", in: "acme/api", grant: .listing)
         let asked = await api.urls()
 
         #expect(!asked.contains { $0.contains("check-runs") })
@@ -131,7 +131,7 @@ struct CodeHostListingTests {
     func `an open pull request is still asked for its checks and its reviews`() async throws {
         let api = RecordedGitHub(replies: Self.replies(pulls: [PullRequestJSON(number: 8)]))
         _ = try await GitHubDeliveries(transport: api)
-            .delivery(ofBranch: "argo/#258-code-host", in: "acme/api", grant: .listing)
+            .delivered(ofBranch: "argo/#258-code-host", in: "acme/api", grant: .listing)
         let asked = await api.urls()
 
         #expect(asked.contains { $0.contains("check-runs") })
@@ -141,7 +141,7 @@ struct CodeHostListingTests {
     @Test
     func `a branch the host holds nothing for reads as no Delivery`() async throws {
         let found = try await GitHubDeliveries(transport: RecordedGitHub(replies: [:]))
-            .delivery(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
+            .delivered(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
 
         #expect(found == nil)
     }
@@ -150,7 +150,7 @@ struct CodeHostListingTests {
     func `a branch is asked about by the name the host files it under`() async throws {
         let api = RecordedGitHub(replies: Self.replies(pulls: [PullRequestJSON(number: 8)]))
         _ = try await GitHubDeliveries(transport: api)
-            .delivery(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
+            .delivered(ofBranch: "spike/idea", in: "acme/api", grant: .listing)
 
         #expect(await api.urls().contains { $0.contains("head=acme:spike/idea") })
     }
@@ -159,7 +159,7 @@ struct CodeHostListingTests {
     func `a branch name carrying a hash is asked about whole`() async throws {
         let api = RecordedGitHub(replies: Self.replies(pulls: [PullRequestJSON(number: 8)]))
         _ = try await GitHubDeliveries(transport: api)
-            .delivery(ofBranch: "argo/#1398-archive", in: "acme/api", grant: .listing)
+            .delivered(ofBranch: "argo/#1398-archive", in: "acme/api", grant: .listing)
 
         // Unencoded, a URL reads the `#` as the start of a fragment and the host is asked about
         // every pull request in the repository instead (#1398).
