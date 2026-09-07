@@ -34,19 +34,43 @@ for (const [tool, body] of [
 // The lock root is scoped to the scratch, not left to default. Without this the warm below takes
 // a slot under the MACHINE's `$TMPDIR/argo-build-lock` — the one real builds queue on — and a
 // suite that leaves a slot behind there throttles every lane on the box until someone finds it.
+//
+// The wait limit is part of the scoping, not a speed setting. Two cases below share this one
+// slot, so the second one's worker QUEUES — and this suite ends in a few seconds now, so
+// `rmSync(scratch)` takes the lock root out from under it while it is still going round
+// `mkdir "$root/slot-1"`, which cannot succeed again once the parent is gone. At the 900s
+// default that worker then spins for a quarter of an hour: 33 of them had piled up on this
+// machine from one afternoon's runs, which is precisely the leak #1450 exists to stop (#1552).
 const WARM_LOCK = path.join(scratch, 'lock')
-const LOCK_ENV = { ARGO_BUILD_LOCK_ROOT: WARM_LOCK, ARGO_BUILD_LOCK_SLOTS: '1' }
+const LOCK_ENV = {
+  ARGO_BUILD_LOCK_ROOT: WARM_LOCK,
+  ARGO_BUILD_LOCK_SLOTS: '1',
+  ARGO_WARM_WAIT_LIMIT: '5',
+}
 const WARMING = { pathValue: `${WARM_BIN}:/usr/bin:/bin`, env: LOCK_ENV }
 
-const sleep = (seconds) => execFileSync('sh', ['-c', `sleep ${seconds}`])
+// A pause that forks nothing. `execFileSync('sh', ['-c', 'sleep 0.2'])` was the tick here, and it
+// cost 212–312ms measured across load averages from 46 to 240 — so the loop below counted forks
+// and called them seconds (#1552).
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
 
 // Poll rather than sleep a fixed span: the answer is usually there in the first tick, and a
 // fixed wait long enough for the slowest machine is a fixed wait paid on every machine.
+//
+// The deadline is WALL-CLOCK, not a count of iterations. `seconds * 5` turns of a tick that
+// costs whatever this machine's fork costs meant "60 seconds" was really 67 here and something
+// else on the next box — a budget that moves with the load is one nobody can reason about, and
+// the cases below now bound things that should take no time at all rather than a build.
+// Asked once more after the deadline, before failing: the answer can arrive during the last
+// pause, and a case that reports a timeout for a condition holding as it says so is a case
+// nobody can act on.
 function waitFor(predicate, seconds, what) {
-  for (let i = 0; i < seconds * 5; i++) {
+  const deadline = Date.now() + seconds * 1000
+  do {
     if (predicate()) return true
-    sleep(0.2)
-  }
+    pause(25)
+  } while (Date.now() < deadline)
+  if (predicate()) return true
   assert.fail(`${what} did not happen within ${seconds}s`)
 }
 
@@ -93,20 +117,54 @@ check('warm-build.sh says where the build went', () => {
 // recorded under a pid that exited a moment later, the next lane to look reclaimed it as stale
 // and built on top of the warm, and nothing ever released it. Re-entering the script as a real
 // child process is what fixes it, and this is what says so.
+//
+// It runs against a lock root and a `swift` of its OWN, and that is what makes it a check rather
+// than a coin toss (#1552). Sharing WARM_LOCK with the cases above left THREE workers queueing
+// for one slot — the two warms started above are still building, and still waiting — so `slot-1`
+// emptied and refilled across about 86 seconds and the pid in it belonged to whichever worker
+// held it, not to the warm under test. `build_lock_acquire` polls every five seconds, so the
+// window in which the slot is genuinely free is at most that wide and its WIDTH IS ITS PHASE:
+// measured at 10ms resolution over eight replays, nine windows were 4.7–5.0s and two were 134ms
+// and 25ms. The poll watching for them cost 225ms a turn, so it could not see those two at all.
+// Missing one window cost a run the next generation's 25 seconds; missing both took it past the
+// bound, and the suite failed in about 66 seconds with nothing wrong.
+//
+// So the slot's whole history here is now one warm's, and the `swift` below BLOCKS until this
+// case lets it go. "The pid is still running" is a state the test ARRANGES rather than a window
+// it hopes to land in, and the release is observed after opening the gate rather than timed
+// against a build of a guessed length. Neither bound below is waiting for a build any more,
+// which is why both are small.
 check('warm-build.sh holds a live build slot and releases it', () => {
+  const lock = path.join(scratch, 'slot-lock')
+  const bin = path.join(scratch, 'slot-bin')
+  const gate = path.join(scratch, 'slot-gate')
+  mkdirSync(bin, { recursive: true })
+  writeFileSync(path.join(bin, 'uname'), '#!/bin/sh\nprintf Darwin\n')
+  // Held in the build until the gate goes. If this case fails before it opens the gate, the
+  // suite's own `rmSync(scratch)` takes the file and the worker finishes then — a failure here
+  // leaves nothing running and no slot held.
+  writeFileSync(path.join(bin, 'swift'), `#!/bin/sh\nwhile [ -e '${gate}' ]; do sleep 0.1; done\n`)
+  for (const tool of ['uname', 'swift']) chmodSync(path.join(bin, tool), 0o755)
+  writeFileSync(gate, '')
+
   const log = path.join(scratch, 'slot.log')
-  rmSync(WARM_LOCK, { recursive: true, force: true })
-  const result = run(WARM, { ...WARMING, env: { ...LOCK_ENV, ARGO_WARM_LOG: log } })
+  const env = { ARGO_BUILD_LOCK_ROOT: lock, ARGO_BUILD_LOCK_SLOTS: '1', ARGO_WARM_LOG: log }
+  const result = run(WARM, { pathValue: `${bin}:/usr/bin:/bin`, env })
   assert.equal(result.status, 0, result.output)
 
-  const slot = path.join(WARM_LOCK, 'slot-1')
+  const slot = path.join(lock, 'slot-1')
   const pidFile = path.join(slot, 'pid')
-  waitFor(() => existsSync(pidFile), 10, 'the warm took a build slot')
+  // WRITTEN, not merely there. `build-lock.sh` creates this file with `echo $$ >`, so the shell
+  // opens it before the pid reaches it and there is a moment when it is empty — one the 25ms
+  // tick samples about nine times more often than the 225ms tick it replaced. Reading it then
+  // gives `Number('')`, and the case fails with "slot pid unreadable: 0" on a healthy warm.
+  const recordedPid = () => (existsSync(pidFile) ? readFileSync(pidFile, 'utf8').trim() : '')
+  waitFor(() => recordedPid() !== '', 30, 'the warm took a build slot')
 
   // The pid in the slot must be a process that is still RUNNING. Before the fix it was the
   // parent's, which has already returned to the caller by the time this line runs, so
   // `build-lock.sh` would reclaim the slot from under the build still using it.
-  const pid = Number(readFileSync(pidFile, 'utf8').trim())
+  const pid = Number(recordedPid())
   assert.ok(Number.isInteger(pid) && pid > 0, `slot pid unreadable: ${pid}`)
   let alive = true
   try {
@@ -116,8 +174,9 @@ check('warm-build.sh holds a live build slot and releases it', () => {
   }
   assert.ok(alive, `slot recorded pid ${pid}, which is not running — another lane would reap it`)
 
-  // And it comes back. The stub sleeps per package, so this is the whole warm plus margin.
-  waitFor(() => !existsSync(slot), 60, 'the warm released its build slot')
+  // And it comes back, once the build it is holding is allowed to end.
+  rmSync(gate)
+  waitFor(() => !existsSync(slot), 30, 'the warm released its build slot')
 })
 
 // A warm whose tree has been taken away stops instead of spending a slot on nothing (#1450).
@@ -151,9 +210,20 @@ check('warm-build.sh stops when its worktree has gone', () => {
     },
   })
 
-  // Take the packages away while the worker is between them — the stub sleeps per package, so
-  // there is a window, and it is the same window a `worktree-gc` sweep opens.
-  waitFor(() => existsSync(path.join(lock, 'slot-1')), 10, 'the warm took a build slot')
+  // Take the packages away while the worker is BETWEEN them — the same window a `worktree-gc`
+  // sweep opens, and the one that says the guard is re-read every package rather than once.
+  //
+  // Waiting for the first package's line is what pins that window. Waiting for the slot alone
+  // put the removal before the loop had started as often as inside it, so which of the two the
+  // case exercised was down to how fast the poll happened to be that run (#1552).
+  waitFor(() => existsSync(path.join(lock, 'slot-1')), 30, 'the warm took a build slot')
+  // Whichever package `ARGO_BUILD_PACKAGES` names first, rather than that name written out
+  // here: the case is about the loop, and a reordering of the list is not a failure of it.
+  waitFor(
+    () => existsSync(log) && /^warm: Argo/m.test(readFileSync(log, 'utf8')),
+    30,
+    'the warm started on its first package',
+  )
   rmSync(packages, { recursive: true, force: true })
 
   waitFor(
