@@ -45,6 +45,11 @@ struct FeedPreview: View {
     /// the only way to look at the ring #533 asked for.
     var cursor: FeedRow.ID?
 
+    /// Which row the reading opens with the accent wash on it — see `FeedView.washed`. Set after
+    /// building for the reason `cursor` is: it arrives when the record answers a Turn Argo typed,
+    /// and a still cannot send one.
+    var washed: FeedRow.ID?
+
     /// Which row's evidence the preview opens on. A settable initial state for the same reason
     /// `SessionsDeck` takes one: the state belongs to the surface, and there is no other way to
     /// reach it without a click.
@@ -88,6 +93,7 @@ struct FeedPreview: View {
                     held: held,
                     deck: deck,
                     opensUnfolded: opensUnfolded,
+                    washed: washed,
                 )
                 if showsOverview {
                     DeckSeparator()

@@ -56,6 +56,19 @@ enum SpecimenScene {
         return preview
     }
 
+    /// The accent wash on the prompt the record has just answered — the 1.4 seconds after a send
+    /// lands (#383, #1569). `FeedPreview` and not the deck shell, for the reason the fold uses it:
+    /// the wash is the reading's own state and nothing above the reading seeds one.
+    ///
+    /// What it settles is the SHAPE. The wash marks what was sent, and what was sent is the bubble
+    /// on the trailing edge — so a still where the accent runs the full measure is the bug, not the
+    /// state.
+    static func washed(_ rows: [FeedRow]) -> some View {
+        var preview = FeedPreview(rows: rows)
+        preview.washed = rows.last { $0.kind.isPrompt }?.id
+        return preview
+    }
+
     /// The New Session verb mid-spawn. Alone rather than on the bar, because the bar is
     /// `toolbarScope`'s render and what this settles is a swap inside one container: the wait must
     /// not resize the circle or move anything beside it.

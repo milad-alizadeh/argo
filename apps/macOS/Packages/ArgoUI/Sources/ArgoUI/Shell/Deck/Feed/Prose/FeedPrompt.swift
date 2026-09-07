@@ -55,6 +55,11 @@ package struct FeedPrompt: View {
     /// Held by the feed, not here: the projection hands the feed a fresh copy of every row as the
     /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
+    /// Whether the accent wash stands on this bubble — the echo of what the reader just sent
+    /// landing, for the hold `FeedView.washExpired` gives it. Which bubble earns one is
+    /// `FeedView.wash`; drawing it is here, on the BUBBLE, because that is the shape that was
+    /// sent: a wash around the row marks a box four times its width (#1569).
+    var isWashed = false
 
     /// Whether the layout gave the control a box to stand in. Read back AFTER the pass that decided
     /// it, and used for NOTHING that lays out: that is what makes it safe here and makes the same
@@ -90,7 +95,7 @@ package struct FeedPrompt: View {
             }
             disclosure
         }
-        .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
+        .background(ground)
         // The one row narrower than the measure, so the one row that has to say where its keyboard
         // cursor goes. On the bubble and not on the box it is right-aligned in: a ring around that
         // box is the wrong one #533 was filed about.
@@ -99,6 +104,24 @@ package struct FeedPrompt: View {
         // combined bubble would fuse them into one label nobody can open.
         .accessibilityElement(children: prompt.shots.isEmpty ? .combine : .contain)
         .accessibilityLabel(spoken)
+    }
+
+    /// The bubble's ground, and the accent wash AS that ground while it stands. Over the raised
+    /// surface rather than behind it: a wash drawn under an opaque ground shows only where the
+    /// ground is not, which is the whole measure to the left of the bubble and nothing of the
+    /// bubble itself (#1569).
+    ///
+    /// The muted tint is what the rest of the cockpit reads a state ON, so the words stay legible
+    /// through it and the row is exactly as tall washed as not.
+    private var ground: some View {
+        RoundedRectangle(cornerRadius: ArgoRadius.popover)
+            .fill(argo.color.surface.raised)
+            .overlay {
+                if isWashed {
+                    RoundedRectangle(cornerRadius: ArgoRadius.popover)
+                        .fill(argo.color.state.muted(argo.color.interaction.accent))
+                }
+            }
     }
 
     /// The opening word carries the tier, because opacity does not reach a screen reader: `Sent`
@@ -151,10 +174,12 @@ package struct FeedPrompt: View {
         prompt: FeedPromptReading,
         open: @escaping (FeedShot) -> Void,
         isExpanded: Binding<Bool>,
+        isWashed: Bool = false,
     ) {
         self.prompt = prompt
         self.open = open
         _isExpanded = isExpanded
+        self.isWashed = isWashed
     }
 }
 
