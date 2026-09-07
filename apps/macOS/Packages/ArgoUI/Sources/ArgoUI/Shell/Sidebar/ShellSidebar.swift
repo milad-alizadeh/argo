@@ -57,8 +57,15 @@ package struct ShellSidebar: View {
     /// Split out from `body` so the strip above it stays one line: the roster is the sidebar's
     /// content, and the strip is the window's control sitting over it.
     private var navigator: some View {
+        // Taken here, once for the whole pass: the roster's Subagent dots need the one fact the
+        // record cannot hold, and the sidebar is the lane that asks for it (#1572). Asking wakes
+        // this body whenever a fan-out writes (#858) — the cost `cockpit-roster-row.md` rule 1 is
+        // worth, and the reason it is ONE table rather than a lookup per row.
         let reading = roster.reading(
-            of: presentation.sessions, opened: openFolds, selection: held.pointed,
+            of: presentation.sessions,
+            opened: openFolds,
+            selection: held.pointed,
+            watching: presentation.subagentGrowth.growth(),
         )
 
         return SessionNavigator(
