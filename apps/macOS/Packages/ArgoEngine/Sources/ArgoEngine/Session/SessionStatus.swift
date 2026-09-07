@@ -79,17 +79,40 @@ public extension SessionStatus {
     ///
     /// `running` is the obvious one: the CLI queues a line typed mid-Turn as the NEXT prompt rather
     /// than running it. The other two matter more. A `permission` or an `asking` Session has its
-    /// keyboard held by a DIALOG, so a `/model` line typed then is eaten by that dialog — and the
-    /// Return behind it answers whatever the dialog had highlighted. That is worse than a line
-    /// going nowhere, which is why the three answer together.
+    /// keyboard held by a DIALOG, so a line typed then is eaten by that dialog — and the Return
+    /// behind it answers whatever the dialog had highlighted. That is worse than a line going
+    /// nowhere, which is why the three answer together.
     ///
     /// `starting` is deliberately NOT among them. Argo has written the argv and has not heard the
     /// child yet; the prompt is on its way rather than held by something else, and refusing there
     /// would refuse the one moment a Session is being set up in.
+    ///
+    /// This is the question about a PROMPT. A slash command is a different question and has its
+    /// own answer below — see `takesSlashCommand` for why one reading could not serve both.
     var takesTypedLine: Bool {
         switch self {
         case .running, .permission, .asking: false
         case .starting, .idle, .stopped, .ended, .unknown: true
+        }
+    }
+
+    /// Whether a SLASH COMMAND typed at this Session would be run rather than swallowed (#1658).
+    ///
+    /// Narrower than `takesTypedLine` by exactly one status, and the difference is the whole point.
+    /// `/rename`, `/model` and `/effort` are handled by the harness itself and never reach the
+    /// agent, so a Turn in flight does not queue them the way it queues a prompt: measured on a
+    /// real PTY, `/rename` typed mid-Turn renamed the Session while the Turn ran on untouched.
+    /// Reading `running` as a refusal cost every Ticket-started Session its name for the WHOLE
+    /// length of its run, which is the only stretch anybody is looking at the list.
+    ///
+    /// A DIALOG is still a refusal, and for the reason it always was: under a `permission` or an
+    /// `asking` the keyboard belongs to that dialog, so the line is eaten by it and the Return
+    /// behind the line answers whatever it had highlighted (#1217). That risk is about who owns
+    /// the keyboard, not about what the line says, so it survives the split unchanged.
+    var takesSlashCommand: Bool {
+        switch self {
+        case .permission, .asking: false
+        case .running, .starting, .idle, .stopped, .ended, .unknown: true
         }
     }
 }

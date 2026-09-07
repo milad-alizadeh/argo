@@ -145,13 +145,19 @@ struct ClaudeSessionDriver: SessionDriver {
         guard let claim = ownership.ownerOf(sessionID: sessionID) else {
             throw SessionDriveError.notDrivable
         }
-        // Mid-Turn the CLI queues a typed line as the NEXT prompt rather than running it, so it
-        // would surface in the feed as something the user said. Refused with the reason instead.
+        // A Session blocked on a Permission or a question (#1217): the keyboard belongs to a
+        // DIALOG, so the line is eaten by it and the Return behind the line answers whatever it
+        // had highlighted — see `SessionStatus.takesSlashCommand`.
         //
-        // And on the same guard, a Session blocked on a Permission or a question (#1217): there
-        // the keyboard belongs to a DIALOG, so the line is eaten by it and the Return behind the
-        // line answers whatever it had highlighted — see `SessionStatus.takesTypedLine`.
-        guard stance(sessionID).takesTypedLine else { throw busy }
+        // A Turn in flight is NOT among the refusals, and used to be (#1658). The guard read
+        // `takesTypedLine`, on the belief that the CLI queues a line typed mid-Turn as the next
+        // prompt — true of a PROMPT, and false of every line this function sends. `/rename`,
+        // `/model` and `/effort` are run by the harness itself and never reach the agent:
+        // measured on a real PTY, `/rename` typed mid-Turn renamed the Session while the Turn ran
+        // on untouched. Reading a busy Turn as a refusal cost every Ticket-started Session its
+        // name for the whole length of its run, since a spawn takes its opening prompt on argv
+        // and is therefore busy from its first frame.
+        guard stance(sessionID).takesSlashCommand else { throw busy }
         guard terminals.write(ClaudeTurn.keystrokes(for: line), to: claim) else {
             throw SessionDriveError.notDrivable
         }
