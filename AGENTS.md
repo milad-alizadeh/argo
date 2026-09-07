@@ -147,9 +147,10 @@ git worktree add -b 'argo/#<N>-<slug>' .claude/worktrees/ticket-<N>-<slug>
 ```
 
 then `EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }` in Claude Code, or `cd` into
-it in another harness. **`EnterWorktree` with a `name` is refused**, because it names the branch
-`worktree-<name>` and its `name` cannot hold a `#`: no tree it creates reaches `argo/#<N>-<slug>`,
-so `/ship` cannot write `Closes #<N>` off one (#1684).
+it in another harness. **`EnterWorktree` creates no tree here: every call without a `path` is
+refused**, a `name` you chose and the random one it generates when you pass none alike. It names
+the branch `worktree-<name>` and its `name` cannot hold a `#`, so no tree it creates reaches
+`argo/#<N>-<slug>` and `/ship` cannot write `Closes #<N>` off one (#1684).
 
 Only read-only work (review, triage, Q&A) may stay in the main checkout, and only while it stays
 read-only. A write through `Bash` — `cat > file`, `sed -i`, `cp` — counts as a change; the guard

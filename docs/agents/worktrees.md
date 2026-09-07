@@ -21,13 +21,14 @@ reconstruct them from `<N>` alone:
 | worktree directory | `ticket-<N>-<slug>` | `.claude/worktrees/ticket-30-session-screen` |
 | branch | `argo/#<N>-<slug>` | `argo/#30-session-screen` |
 
-The two share the same `<N>-<slug>` stem and differ only in prefix: the branch namespaces the
-stem as `argo/#<N>-<slug>`, and a directory name can hold neither the `#` nor the `/`, so it uses
-a plain `ticket-<N>-<slug>`. Pick the `<slug>` once from the ticket title; keep it
-identical across both. The `#<N>` in the branch is load-bearing twice over: `/ship`, which is the
-only thing that opens the PR, parses it to write `Closes #<N>`, and the Argo cockpit parses it to
-name the Session's row after the ticket (#745). A branch without it breaks the PR→ticket link
-and leaves the row reading `/implement <N>`.
+The two share the same `<N>-<slug>` stem and differ only in prefix, and the prefixes differ
+because a directory name cannot hold the `/` that namespaces the branch under `argo/`. Neither
+carries the other's shape: the branch is `argo/#<N>-<slug>`, the directory a plain
+`ticket-<N>-<slug>`, and `DIR_RE` and `BRANCH_RE` in the guard are what say so. Pick the `<slug>`
+once from the ticket title; keep it identical across both. The `#<N>` in the branch is
+load-bearing twice over: `/ship`, which is the only thing that opens the PR, parses it to write
+`Closes #<N>`, and the Argo cockpit parses it to name the Session's row after the ticket (#745).
+A branch without it breaks the PR→ticket link and leaves the row reading `/implement <N>`.
 
 For work with no ticket, keep the shape but drop the number: worktree `ticket-<slug>`, branch
 `argo/<slug>`. Work with no ticket may start — refusing it would push spikes back into the
@@ -124,8 +125,8 @@ git branch --list "argo/#<N>-*" "*ticket-<N>-*"         # worktree gone, branch 
 Match on `<N>`, not the full slug — a slug typed slightly differently must not fork a second
 tree. The branch check globs **both** prefixes on purpose: a tree made through `EnterWorktree`
 before #1684, or interrupted before the rename that route needed, sits on
-`worktree-ticket-<N>-<slug>` or `ticket-<N>-<slug>`, so matching only `argo/#<N>-*` would miss
-it. If a match exists, re-enter it (Claude Code: `EnterWorktree` with
+`worktree-ticket-<N>-<slug>` or `ticket-<N>-<slug>`, so matching only `argo/#<N>-*` would miss it.
+If a match exists, re-enter it (Claude Code: `EnterWorktree` with
 `path:` to the existing directory; other harnesses: `cd` into it) and re-derive progress from
 durable state — the ticket, `git log` / `status` / `diff`, and a test run — not from the previous
 conversation. Only when no `#<N>` worktree or branch exists do you create a fresh one per

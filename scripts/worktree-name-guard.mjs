@@ -22,11 +22,17 @@ const WORKTREES_DIR = '.claude/worktrees'
 // reader a lookup.
 const HOW =
   `Name both from the ticket number <N> and one kebab-case <slug>: directory ` +
-  `${WORKTREES_DIR}/ticket-<N>-<slug>, branch argo/#<N>-<slug>. Create the tree with git, then ` +
-  `enter it by path: git worktree add -b argo/#<N>-<slug> ${WORKTREES_DIR}/ticket-<N>-<slug>, ` +
-  `then EnterWorktree { path: "${WORKTREES_DIR}/ticket-<N>-<slug>" }. ` +
+  `${WORKTREES_DIR}/ticket-<N>-<slug>, branch argo/#<N>-<slug> — e.g. ` +
+  `git worktree add -b argo/#30-session-screen ${WORKTREES_DIR}/ticket-30-session-screen. ` +
   `For work with no ticket, keep the shape and drop the number: ticket-<slug> / argo/<slug>. ` +
   `Full rules: docs/agents/worktrees.md.`
+
+// Only a session with no tree yet needs this, so it rides on that one refusal rather than on
+// HOW: a `git branch -m` refusal fires inside a worktree, and telling it to create one is noise.
+const TWO_STEP =
+  `Create the tree with git, then enter it by path: ` +
+  `git worktree add -b argo/#<N>-<slug> ${WORKTREES_DIR}/ticket-<N>-<slug>, then ` +
+  `EnterWorktree { path: "${WORKTREES_DIR}/ticket-<N>-<slug>" }.`
 
 const refuse = (what) => ({ block: true, reason: `${what} ${HOW}` })
 const ALLOW = { block: false }
@@ -171,14 +177,12 @@ function checkBash(command, cwd) {
 export function decide({ toolName, toolInput = {}, cwd, isAgent }) {
   if (!isAgent) return ALLOW // human workflow — never guarded
   if (toolName === 'EnterWorktree') {
-    // `path` re-enters an existing tree, and that is the only shape this tool can get right —
-    // it is also how a tree named before this guard keeps working. Creation through it cannot
-    // be got right by any input: it names the branch `worktree-<name>` and its `name` forbids
-    // `#`, so no tree it makes reaches argo/#<N>-<slug>, a generated name least of all (#1684).
+    // `path` re-enters an existing tree, which is also how a tree named before this guard keeps
+    // working. Every other shape creates one, and none of them can be right (#1684).
     if (toolInput.path) return ALLOW
     return refuse(
       'EnterWorktree names the branch `worktree-<name>`, and its name cannot hold a `#`, so no ' +
-        'tree it creates can sit on argo/#<N>-<slug>.',
+        `tree it creates can sit on argo/#<N>-<slug>. ${TWO_STEP}`,
     )
   }
   if (toolName === 'Bash' && typeof toolInput.command === 'string') {
