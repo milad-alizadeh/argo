@@ -18,16 +18,14 @@ public struct SessionNameDraw: Sendable, Equatable, Hashable {
     /// (`ArgoUI.SessionTitle.Naming.drawsDerivedTitle`). Only these are held to the floor:
     /// a Ticket's sentence says what the work is whatever the transcript has managed to say.
     public let drawsDerivedTitle: Bool
-    /// Whether a slash command typed at this Session would be RUN right now
-    /// (`SessionStatus.takesSlashCommand`). Not a gate — the driver refuses a held keyboard itself
-    /// — but the fact whose CHANGE brings the sweep back, which is how a refused `/rename` is
-    /// retried rather than lost.
+    /// Whether a slash command typed at this Session would be RUN right now. Not a gate — the
+    /// driver refuses a held keyboard itself — but the fact whose CHANGE brings the sweep back,
+    /// which is how a refused `/rename` is retried rather than lost.
     ///
-    /// It has to be the same reading the driver refuses on, and it was not (#1662). While this
-    /// carried `takesTypedLine`, `.permission -> .running` read `false -> false`: the map sat
-    /// still across the one transition that FREES a blocked rename — answering the dialog that
-    /// held the keyboard — so a Session sitting alone on a Permission kept its old name on
-    /// Claude's surfaces until some other row moved.
+    /// It has to be the reading the DRIVER refuses on (`SessionStatus.takesSlashCommand`) and not
+    /// the wider one about a prompt: a map keyed on a fact that stands still across
+    /// `.permission -> .running` sleeps through the one transition that frees a blocked rename
+    /// (#1662).
     public let takesSlashCommand: Bool
 
     public init(

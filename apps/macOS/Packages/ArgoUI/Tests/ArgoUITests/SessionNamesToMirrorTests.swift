@@ -61,21 +61,18 @@ struct SessionNamesToMirrorTests {
     }
 
     @Test
-    func `a row that can take no line right now is still handed over, so the sweep retries it`() {
+    func `a row that can run no slash command right now is still handed over`() {
         let draws = Self.presentation(sessions: [
             Self.session(id: "blocked", title: "Fix the roster titles", status: .permission),
         ]).namesToMirror
 
-        // Handed over and marked busy: the mirror does not gate on this, and its CHANGE is what
-        // brings the sweep back once the dialog clears.
+        // Handed over and marked refused: the mirror does not gate on this.
         #expect(draws["blocked"]?.takesSlashCommand == false)
     }
 
-    /// The one transition a blocked rename becomes possible on, and the map has to MOVE across it
-    /// or the sweep never runs again (#1662). Answering a Permission frees the keyboard the
-    /// `/rename` was refused by, so this is the retry — and while the draw carried
-    /// `takesTypedLine`, both sides of the transition read `false` and the map sat still while the
-    /// row kept its old name on Claude's surfaces.
+    /// Answering a Permission frees the keyboard the `/rename` was refused by, so it is the one
+    /// transition a blocked rename becomes possible on — and the map has to MOVE across it or the
+    /// sweep that retries the rename never runs (#1662).
     @Test
     func `answering a permission moves the map, so the refused rename is retried`() {
         let blocked = Self.presentation(sessions: [
@@ -86,10 +83,9 @@ struct SessionNamesToMirrorTests {
         ]).namesToMirror
 
         #expect(blocked != answered)
-        #expect(blocked["chain-a"]?.takesSlashCommand == false)
-        #expect(answered["chain-a"]?.takesSlashCommand == true)
-        // Same words on both sides: the trigger is the readiness moving, not the name.
+        // Same words on both sides, so the inequality can only be the readiness moving.
         #expect(blocked["chain-a"]?.name == answered["chain-a"]?.name)
+        #expect(answered["chain-a"]?.takesSlashCommand == true)
     }
 
     private static let issue = CockpitPresentation.Session.Issue(

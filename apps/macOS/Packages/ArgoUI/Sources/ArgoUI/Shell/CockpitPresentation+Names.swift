@@ -17,9 +17,8 @@ public extension CockpitPresentation {
     ///
     /// `takesSlashCommand` rides along because it is what the sweep is triggered BY as much as
     /// performed over: a dialog clearing is the moment a refused `/rename` can go, and a map that
-    /// did not move then is a retry that never happened. It is the driver's OWN reading and not
-    /// the wider `takesTypedLine`, which sat still across `.permission -> .running` and so slept
-    /// through the one transition that frees a blocked rename (#1662).
+    /// did not move then is a retry that never happened. It is the driver's own reading and never
+    /// the wider `takesTypedLine`, which stands still across `.permission -> .running` (#1662).
     @MainActor
     var namesToMirror: [String: SessionNameDraw] {
         sessions.reduce(into: [String: SessionNameDraw]()) { draws, session in
