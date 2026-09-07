@@ -21,8 +21,8 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         /// Handed a Model or an Effort only once the port took it, for the same reason (#1175): a
         /// pick the CLI refused is not the one the next New Session should open on.
         let run: (SessionRunPick) -> Void
-        /// Handed the Session whose Turn was just STOPPED (#1409) — see
-        /// `ClaimLedger.stopSubmittedTurn`, which is the whole rule.
+        /// Handed the Session whose Turn was just STOPPED (#1409, #1644) — see
+        /// `ClaimLedger.setStopClaim`, which is the whole rule.
         let stoppedTurn: (String) -> Void
     }
 
@@ -45,7 +45,9 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     }
 
     /// The `ESC`, and the claim it was pressed against ended with it (#1409) — see
-    /// `ClaimLedger.stopSubmittedTurn` for why an `ESC` alone can never end one.
+    /// `ClaimLedger.setStopClaim`, where the keystroke is filed as a claim of its own so that a
+    /// Turn stopped inside a tool call ends on it rather than on a record the CLI never writes
+    /// (#1644).
     ///
     /// Filed AFTER the keystroke and only where it went, exactly as the rung is: a Stop that could
     /// not reach the PTY stopped nothing. And filed HERE rather than at the surface that pressed

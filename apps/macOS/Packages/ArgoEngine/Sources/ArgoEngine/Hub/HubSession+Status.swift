@@ -59,6 +59,25 @@ public extension HubSession {
         if !startup.heardNothing, submittedTurn?.isAwaitingRecord(events.count) == true {
             return SessionStatusReading(tier: .direct, status: .running)
         }
+        // And the mirror of it: a Turn Argo STOPPED, standing until the record answers it (#1644).
+        // DIRECT on the submit's exact ground — the `ESC` went down a descriptor Argo owns — and
+        // beside it rather than above or below, because the two can never both stand: each of
+        // `ClaimLedger.setSubmittedTurn` and `setStopClaim` drops the other's claim.
+        //
+        // `idle` and not `unknown`, which is degrade-down (ADR-0008) read at a fact rather than
+        // against one: `unknown` is for an open Turn nothing corroborates either way, and this one
+        // IS corroborated, in the quiet direction. Nothing below can reach that word here —
+        // interrupted inside a tool call the CLI writes no sentence at all, so the last record
+        // carries `stop_reason: tool_use`, which ends nothing; the Turn stays open, the process
+        // stays up because `ESC` keeps it by design (ADR-0024), and liveness corroborates the
+        // PROCESS, never the Turn. This is the one fact that speaks for the Turn.
+        //
+        // Ungated by `startup`, unlike the submit above: what #1245 refused there was the LOUD
+        // claim over a CLI Argo has never heard, and the quieter of two readings is what
+        // degrade-down asks for whichever side the silence is on.
+        if stopClaim?.isAwaitingRecord(events.count) == true {
+            return SessionStatusReading(tier: .direct, status: .idle)
+        }
         // Below every channel above it and above the record's own fold: the reader ending a
         // delegation is Argo's own gesture, so it is DIRECT — but a CLI that has SPOKEN since
         // outranks a decision taken about the silence before it.

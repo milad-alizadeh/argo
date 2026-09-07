@@ -129,14 +129,10 @@ struct HubLostTurnTests {
     /// The CLI writing its first record, which is what re-keys the spawned row to the id the
     /// transcript names (#361).
     private static func record(landsFor fixture: SpawnFixture) async throws {
-        let (observation, continuation) = hubLiveObservation(at: spawnedTranscriptURL)
-        await fixture.hub.startObserving(observation)
-        continuation.yield([
-            .cwd(fixture.projectURL.path),
+        await hubFirstRecords([
             .prompt(text: "Fix the caption, not the sort.", images: [], atMs: 1000),
             .turnEnded(.endTurn),
-        ])
-        await hubSettle { fixture.hub.session(id: spawnedSessionID)?.status == .idle }
+        ], landingFor: fixture)
     }
 
     /// A Session Argo holds no claim on is one it cannot type at, so there was never a Turn of

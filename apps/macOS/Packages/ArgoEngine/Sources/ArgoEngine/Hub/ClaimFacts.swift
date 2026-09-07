@@ -37,6 +37,10 @@ struct ClaimFacts: Equatable {
     /// `SessionTurnSubmission.isRunning`'s answer and not this field's, so it outlives the Turn it
     /// stands for. Unreachable for an external Session, which has no claim to file one against.
     var submittedTurn: SessionTurnSubmission?
+    /// The `ESC` Argo last put on this claim's PTY, and the record count when it did (#1644) — see
+    /// `SessionStopClaim`. DIRECT, because Argo performed the keystroke. Unreachable for an
+    /// external Session, which has no claim and no PTY of Argo's to type at.
+    var stopClaim: SessionStopClaim?
     /// The backgrounded delegations the reader ENDED from the rail (#1267), by call id. Argo's own
     /// gesture and DIRECT: the report that would have closed the call is lost, so the reader says
     /// so instead, and this is the record of their having said it.
@@ -100,6 +104,7 @@ struct ClaimFacts: Equatable {
             && run == nil
             && driveStatus == nil
             && submittedTurn == nil
+            && stopClaim == nil
             && lostTurn == nil
             && endedDelegations.isEmpty
             && settledWaits.isEmpty

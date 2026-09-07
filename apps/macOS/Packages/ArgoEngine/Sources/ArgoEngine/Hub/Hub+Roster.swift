@@ -142,6 +142,7 @@ extension Hub {
             : facts.settledWaits
         published.driveStatus = facts.driveStatus
         published.submittedTurn = facts.submittedTurn
+        published.stopClaim = facts.stopClaim
         // The rung falls back to the row's own, which is where a spawn's lives until something
         // sets a second one.
         published.modeSet = facts.modeSet ?? session.modeSet

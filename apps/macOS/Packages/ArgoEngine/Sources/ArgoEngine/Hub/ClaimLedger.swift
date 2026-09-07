@@ -152,26 +152,47 @@ final class ClaimLedger {
     ) {
         update(claim) { facts in
             facts.submittedTurn = submission
+            facts.stopClaim = nil
             facts.report?.answered()
         }
     }
 
-    /// The reader STOPPED the Turn Argo typed (#1409), so the claim that one is in flight ends.
+    /// The `ESC` Argo just put on this claim's PTY (#1644), and the Turn Argo typed ended with it.
+    ///
+    /// The mirror of `setSubmittedTurn` above: one is a Turn Argo started, this is a Turn Argo
+    /// ended, and both are DIRECT because Argo performed the act.
+    ///
+    /// Filed UNCONDITIONALLY, unlike the guard below. Interrupted inside a tool call the assistant
+    /// record carrying the call has already landed, so the submission is spent before the reader
+    /// reaches for Stop — a stop filed only where one was standing files nothing in exactly the
+    /// case #1644 reported.
+    ///
+    /// It ends the submission in the same write: a Turn Argo typed and then stopped is not a Turn
+    /// in flight, whatever the record says next. That half stays idempotent rather than guarded —
+    /// `update` publishes nothing that did not move (#858) — and a steer's send refiles its own
+    /// submission behind this, dropping the stop with it.
+    func setStopClaim(_ stop: SessionStopClaim, for claim: SessionOwnership.ClaimID) {
+        update(claim) { facts in
+            facts.stopClaim = stop
+            facts.submittedTurn = nil
+        }
+    }
+
+    /// Argo's claim that a Turn is in flight, ENDED by the delivery watch running out of `yet`
+    /// (#1409) — `TurnDelivery.over(_:)` is the only caller, and the reader's own Stop goes through
+    /// `setStopClaim` above instead.
     ///
     /// The submission ends on the record growing and on nothing else, which leaves one act with no
-    /// way out: an interrupt reaching a CLI that has already returned to its prompt writes no
-    /// record, so the count never moves and the Session reads `running` at DIRECT for the rest of
-    /// the window's life — with Stop, on screen, doing nothing each time it is pressed. The `ESC`
-    /// really did go down the PTY; the claim it was pressed against is simply not one an `ESC` can
-    /// end.
+    /// way out: a Turn the CLI took and wrote no record for — a local `/command` writes none at all
+    /// — never moves the count, so the Session reads `running` at DIRECT for the rest of the
+    /// window's life. The watch is the bound, because the watch is the whole life of the claim.
     ///
-    /// It is the reader's own gesture that ends it, on `setLostTurn` below's exact ground: a Turn
-    /// Argo typed and then stopped is not a Turn in flight, whatever the record says next. And it
-    /// takes ONLY that — a status the agent reported and the rung Argo set are things that
-    /// happened, which stopping a Turn does not un-say.
+    /// It takes ONLY the submission, and says nothing in its place: a watch that has stopped
+    /// waiting has witnessed no act of Argo's to state, and a status the agent reported or the rung
+    /// Argo set are things that happened, which giving up does not un-say.
     func stopSubmittedTurn(for claim: SessionOwnership.ClaimID) {
-        // A Stop pressed over a Turn the CLI started itself files nothing: there is no claim of
-        // ours to end, and publishing over an untouched claim would move the roster for it.
+        // A watch that outlived a claim nothing filed files nothing: there is no claim of ours to
+        // end, and publishing over an untouched claim would move the roster for it.
         guard byClaim[claim]?.submittedTurn != nil else { return }
         update(claim) { $0.submittedTurn = nil }
     }
@@ -214,6 +235,10 @@ final class ClaimLedger {
             facts.standing = []
             facts.expiries = []
             facts.submittedTurn = nil
+            // The `ESC` too, on the same ground and with the same consequence: a Session whose PTY
+            // has gone reads `ended` off its orphaned provenance, which is louder news than the
+            // quiet word this claim was holding (#1644).
+            facts.stopClaim = nil
             facts.report?.channelClosed()
         }
     }

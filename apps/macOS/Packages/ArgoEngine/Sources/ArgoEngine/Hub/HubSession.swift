@@ -163,11 +163,15 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var isQueued = false
     /// The Turn in flight and what the last one ended as — see `SessionTurnState`.
     private(set) var turn = SessionTurnState()
-    /// The last Turn ARGO put to this Session (#1048) — see `SessionTurnSubmission`, which owns
-    /// whether that Turn is still running. Set by the Hub off the submit it performed itself. Not
-    /// public, because it is an input to the status fold rather than a fact a surface draws:
-    /// ADR-0027 has none of it to project.
-    var submittedTurn: SessionTurnSubmission?
+    /// The last Turn ARGO put to this Session (#1048) and the last `ESC` Argo put at it (#1644) —
+    /// see `SessionTurnSubmission` and `SessionStopClaim`, each of which owns whether the record
+    /// has answered it yet. Set by the Hub off the acts it performed itself, and declared as one
+    /// pair because they are one: each of `ClaimLedger.setSubmittedTurn` and `setStopClaim` drops
+    /// the other's claim, so at most one of these is ever standing.
+    ///
+    /// Neither is public, because both are inputs to the status fold rather than facts a surface
+    /// draws: ADR-0027 has none of them to project.
+    var submittedTurn: SessionTurnSubmission?, stopClaim: SessionStopClaim?
     /// Where this row's spawn is in the wait for its CLI's first byte (#1328) — see
     /// `SessionStartup`. Set by `init(spawn:)` for a spawn's own row, and by a resume's own claim
     /// otherwise — the one wait that reaches an EXISTING row rather than a provisional one.
