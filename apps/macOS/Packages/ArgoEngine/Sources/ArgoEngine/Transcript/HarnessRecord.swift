@@ -10,29 +10,6 @@ import Foundation
 // Nothing here rewords a prompt: the reading stays verbatim, taken from the fields the CLI put the
 // words in rather than from the markup it wrapped them in.
 
-/// The first textual part of a record's content with anything in it. Blank parts are stepped over
-/// rather than answered with.
-private func firstText(_ content: [ContentBlock]) -> String? {
-    for block in content {
-        guard case let .text(text) = block,
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else { continue }
-        return text
-    }
-    return nil
-}
-
-/// The contents of one `<name>…</name>` tag.
-private func tag(_ text: String, _ name: String) -> String? {
-    // `[\s\S]` rather than `.`, which stops at a newline: a command's body routinely spans lines.
-    guard let match = text.range(
-        of: "<\(name)>[\\s\\S]*?</\(name)>",
-        options: [.regularExpression],
-    ) else { return nil }
-    let inner = text[match].dropFirst(name.count + 2).dropLast(name.count + 3)
-    return inner.trimmingCharacters(in: .whitespacesAndNewlines)
-}
-
 /// A background agent's report, filed as a user record because that is where the CLI puts it.
 ///
 /// Never a prompt. Where it names the call that DELEGATED the work it is that call's outcome
@@ -69,12 +46,12 @@ func taskNotification(_ content: [ContentBlock]) -> TaskNotification? {
     guard let text = firstText(content), text.hasPrefix(notificationPreamble) else { return nil }
     // `result` is where a finished agent puts its report and `event` where a monitor puts its
     // mid-run one. Both are the agent's own words; only the tag around them differs.
-    let report = tag(text, "result") ?? tag(text, "event")
+    let report = tagged("result", in: text) ?? tagged("event", in: text)
     return TaskNotification(
-        callID: nonEmpty(tag(text, "tool-use-id")),
-        subagentID: nonEmpty(tag(text, "task-id")),
-        summary: nonEmpty(tag(text, "summary")),
-        status: reportedStatus(tag(text, "status")),
+        callID: nonEmpty(tagged("tool-use-id", in: text)),
+        subagentID: nonEmpty(tagged("task-id", in: text)),
+        summary: nonEmpty(tagged("summary", in: text)),
+        status: reportedStatus(tagged("status", in: text)),
         text: nonEmpty(report),
     )
 }
@@ -101,15 +78,15 @@ private func nonEmpty(_ text: String?) -> String? {
 /// content is this line, so a reader that drops it sees the question and never the reply.
 func localCommandOutput(_ content: [ContentBlock]) -> String? {
     guard let text = firstText(content) else { return nil }
-    return tag(text, "local-command-stdout")
+    return tagged("local-command-stdout", in: text)
 }
 
 /// A slash command as the user typed it — `/implement 318 open storybook while you do it`. The CLI
 /// stores the invocation as three sibling tags in one record; the raw text would title the exchange
 /// `<command-message>implement</command-message>`, markup the user never saw.
 func commandPrompt(_ text: String) -> String? {
-    guard let name = tag(text, "command-name") else { return nil }
-    let args = tag(text, "command-args") ?? ""
+    guard let name = tagged("command-name", in: text) else { return nil }
+    let args = tagged("command-args", in: text) ?? ""
     return args.isEmpty ? name : "\(name) \(args)"
 }
 
@@ -117,8 +94,9 @@ func commandPrompt(_ text: String) -> String? {
 /// the feed draws what was typed; a reader that ACTS on one particular command needs to know which
 /// command it was and what it was handed.
 func commandInvocation(_ content: [ContentBlock]) -> (name: String, args: String)? {
-    guard let text = firstText(content), let name = tag(text, "command-name") else { return nil }
-    return (name, tag(text, "command-args") ?? "")
+    guard let text = firstText(content), let name = tagged("command-name", in: text)
+    else { return nil }
+    return (name, tagged("command-args", in: text) ?? "")
 }
 
 /// The line the CLI writes in front of a skill's body when it hands one over (#688).
@@ -136,12 +114,13 @@ func skillDirectory(_ content: [ContentBlock]) -> String? {
 }
 
 /// What a user record asks for, or `nil` where it asks for nothing. A slash command reads as the
-/// command, a local command's stdout reads as nothing, and anything else reads as itself —
-/// unclamped and untrimmed, the way a verbatim prompt must be.
+/// command, a shell command as the line it was typed as, either one's output as nothing, and
+/// anything else as itself — unclamped and untrimmed, the way a verbatim prompt must be.
 func userPrompt(_ content: [ContentBlock]) -> String? {
     guard let text = firstText(content) else { return nil }
-    guard localCommandOutput(content) == nil else { return nil }
-    return commandPrompt(text) ?? text
+    guard localCommandOutput(content) == nil, ShellTurn.printed(in: content) == nil
+    else { return nil }
+    return ShellTurn.asked(in: content) ?? commandPrompt(text) ?? text
 }
 
 /// The CLI's own placeholder for a picture it moved into a block of its own — `[Image #3]`, written
@@ -196,6 +175,11 @@ private func promptText(_ content: [ContentBlock], carrying images: Int) -> Stri
 /// that ENDS the exchange is read as the boundary it is.
 func promptEvents(_ message: MessageRecord, in location: MediaLocation?)
     -> [TranscriptEvent] {
+    // The shell command's own answer, read first for the reason its own type states: it is the
+    // same exchange one record later, and the prompt path below would draw its markup (#1595).
+    if let printed = ShellTurn.printed(in: message.content) {
+        return ShellTurn.events(printed: printed, in: message)
+    }
     if let printed = localCommandOutput(message.content) {
         let id = message.uuid ?? "local-command"
         return [
