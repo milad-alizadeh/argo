@@ -81,7 +81,7 @@ struct HubTitleTests {
         await hub.startObserving(observation)
 
         continuation.yield([.prompt(text: "Fallback title", images: [], atMs: nil)])
-        continuation.yield([.title("Host-authored title")])
+        continuation.yield([.title("Host-authored title", .summarised)])
         continuation.yield([.prompt(text: "Later prompt", images: [], atMs: nil)])
         continuation.finish()
         await hubTailEnded(hub, transcriptID: "session")

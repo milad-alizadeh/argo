@@ -159,7 +159,10 @@ struct TranscriptWatchTests {
     /// roster rather than from the emptiness a tail is held back behind.
     private static func watching(_ id: String) async -> TranscriptWatch {
         let watch = watch()
-        await watch.startObserving(hubTestObservation(id: id, events: [.title("Kept")]))
+        await watch.startObserving(hubTestObservation(
+            id: id,
+            events: [.title("Kept", .summarised)],
+        ))
         let read = await settle { watch.sessions.map(\.id) == [id] }
         #expect(read, "the tail on \(id) never reached the roster")
         return watch

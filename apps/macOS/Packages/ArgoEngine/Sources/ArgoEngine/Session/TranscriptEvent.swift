@@ -11,8 +11,11 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// message-bearing record carries. Equal to the file's own id for all but a relocated
     /// transcript, where it is the only key the two halves share (#735).
     case originSession(id: String)
-    /// The host's own title for the session, verbatim.
-    case title(String)
+    /// The CLI's own title for the Session, verbatim, and which of its two wrote it
+    /// (`CONTEXT.md` L2 · CLI title). Both kinds arrive here rather than as two events: the fold
+    /// writes the name down and reads the kind to decide whether it may, which is one line either
+    /// way — and `HubSession.apply` is at its length ceiling (#1481).
+    case title(String, CLITitleKind)
     /// The working directory the records report. LATEST reading wins, and it is emitted only when
     /// it changes rather than once per record: `EnterWorktree` moves a run's root mid-session, and
     /// a Workspace pinned to the folder it started in reads the wrong repository (#1118).

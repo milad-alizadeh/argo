@@ -94,7 +94,7 @@ struct HubRosterCostTests {
                 id: "cost-\(index)",
                 events: [
                     .cwd("\(projectURL.path)/worktree-\(index)"),
-                    .title("Session \(index)"),
+                    .title("Session \(index)", .summarised),
                     .prompt(text: "Work", images: [], atMs: 1000 + index),
                 ],
             ))

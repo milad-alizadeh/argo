@@ -44,7 +44,10 @@ struct TicketTitleResolverTests {
 
         await resolver.resolve(links: ["chain-a": 745], through: Self.gitHub)
         // A second sweep, which is what every roster change amounts to.
-        await resolver.resolve(links: ["chain-a": 745, "chain-b": 745], through: Self.gitHub)
+        await resolver.resolve(
+            links: ["chain-a": 745, "chain-b": 745],
+            through: Self.gitHub,
+        )
 
         #expect(await api.urls().count == 1)
         #expect(await file.store().load().ticket("chain-b") == .named("Derive the link"))

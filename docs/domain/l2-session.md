@@ -50,6 +50,23 @@
   re-keys to the new path. A claim that stayed behind renders a Session Argo is steering right now
   as one it never spawned, which is #942.
 
+- **CLI title** — a name for the Session that the agent CLI itself holds, and that every surface
+  the CLI draws already shows. DERIVED: Argo reads it off the transcript and never owns it. Two
+  kinds, and the reader's outranks the summariser's whichever order they arrive in (#1623):
+  - **summarised** — the CLI's own summariser wrote it, off the conversation. The `ai-title`
+    record.
+  - **custom** — a person typed it at the CLI's prompt. The `custom-title` record `/rename` writes,
+    and what Argo's own mirror leaves behind when it types there (#1494).
+
+  Told apart from the two names ARGO holds — a Session's first prompt, and the name a reader typed
+  in the rename dialog — because that is what decides which way a name travels. Claude wins where
+  Claude has a name; Argo types the name it holds where Claude has none, so no Session is left
+  reading as a machine slug on the phone. A name the reader typed in Argo is the one exception: it
+  is mirrored over a CLI title, because a person naming a Session is not a reading to be yielded.
+
+  **`codex` holds none.** It has no `/rename` and no `customTitle`, so every `codex` Session keeps
+  the name Argo derives and nothing is typed at its prompt.
+
 - **Session status** — a DERIVED rollup on the Session, with one DIRECT value beside it:
   - **starting** — Argo started the process and it has not written to the PTY yet. **DIRECT and
     managed-only**, and the only value read off no record at all: the CLI writes none until its

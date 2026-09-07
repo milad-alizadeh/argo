@@ -86,7 +86,10 @@ struct HubSessionRetiredIDsTests {
     @Test
     func `a Session standing on its own absorbs nothing`() async {
         let hub = testHub(projectURL: Self.projectURL)
-        await hubObserveToEnd(hub, hubTestObservation(id: "alone", events: [.title("Alone")]))
+        await hubObserveToEnd(
+            hub,
+            hubTestObservation(id: "alone", events: [.title("Alone", .summarised)]),
+        )
 
         #expect(hub.sessions.map(\.absorbedIDs) == [[]])
     }

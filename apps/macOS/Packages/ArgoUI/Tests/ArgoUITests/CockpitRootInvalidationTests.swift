@@ -70,7 +70,7 @@ struct CockpitRootInvalidationTests {
             id: "root",
             sourceURL: URL(fileURLWithPath: "/tmp/argo-cockpit-root/root.jsonl"),
             events: AsyncStream { continuation in
-                continuation.yield([.title("Reading")])
+                continuation.yield([.title("Reading", .summarised)])
                 continuation.finish()
             },
         ))

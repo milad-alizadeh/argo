@@ -36,9 +36,14 @@ public extension Hub {
     /// in flight, a Permission or a question holding the keyboard. None of them is a failed rename
     /// — the Argo-side name is written already and is what the roster draws.
     ///
-    /// The answer is for the caller that can try again. `TicketTitleResolver` retries a title that
-    /// did not go on its next sweep, which is the difference between one busy moment costing a
-    /// Session its name for the launch and costing it a few seconds.
+    /// The answer is for the caller that can try again. Both callers do: `TicketTitleResolver`
+    /// retries a Ticket's words on its next sweep, and `SessionNameMirror` retries the name the
+    /// roster draws on its own — which is the difference between one busy moment costing a Session
+    /// its name for the launch and costing it a few seconds.
+    ///
+    /// Ungated on purpose, and the gate is `SessionNameMirror`'s: this types WHATEVER it is handed.
+    /// Whether a name of Argo's may replace a title the CLI already holds is a question about where
+    /// the name came from, and this port cannot see that (#1623).
     ///
     /// Beside `driver` rather than in the app target: it reads nothing the app owns, and a
     /// derivation there is one no test can reach (ADR-0022).
@@ -51,18 +56,15 @@ public extension Hub {
         }
     }
 
-    /// Mirror the name a reader gave a Session onto the CLI's own title (#1494).
+    /// Type the name each row draws at that Session's own prompt, wherever the CLI is not already
+    /// on it (#1623) — the sweep behind `names`, and the rule is `SessionNameMirror`'s.
     ///
-    /// The store's own normalising, asked here too, so a name of nothing but spaces mirrors
-    /// exactly what it stored: nothing. Clearing mirrors NOTHING either — what comes back is a
-    /// derived title Argo assembles, and typing one at the prompt would replace a generated name
-    /// with a copy of Argo's own rendering. The CLI keeps whatever it holds.
-    ///
-    /// Beside the mirror it types through rather than at the window: the normalising is the
-    /// annotation store's rule, and both are the engine's to know (ADR-0022).
-    func mirrorName(_ name: String?, to sessionID: String) async {
-        guard let named = SessionAnnotations.name(from: name) else { return }
-        _ = await mirrorTitle(named, to: sessionID)
+    /// What each row is CALLED comes in, because the roster's spelling and its Ticket contest are
+    /// the cockpit's; where each name stands is read here off `nameStandings`. Beside `mirrorTitle`
+    /// above rather than at the window, so the join of the two readings is one a suite can reach
+    /// (ADR-0022).
+    func mirrorNames(_ draws: [String: SessionNameDraw]) async {
+        await names.carry(draws, against: nameStandings)
     }
 }
 

@@ -73,7 +73,13 @@ public enum TranscriptRecord: Sendable, Equatable {
     case user(MessageRecord)
     case assistant(MessageRecord)
     case attachment(MessageRecord)
+    /// The title the CLI's own summariser wrote for this Session (`CONTEXT.md` L2 · CLI title).
     case aiTitle(String)
+    /// The title the reader typed at the CLI's own prompt — `/rename` writes this record, and it
+    /// is the ONE Claude-side name that outranks the summariser's (#1623). Recognised because
+    /// Argo types `/rename` itself (#1494): unread, Argo could write the CLI's title and not read
+    /// it back, so a Session renamed on the phone kept whatever Argo held.
+    case customTitle(String)
     case lastPrompt(leafUuid: String)
     /// The host's own note that a prompt was QUEUED rather than run. Recognised because of what a
     /// file carrying nothing else is: the CLI opens a transcript the moment a prompt is queued, so
@@ -110,6 +116,9 @@ public extension TranscriptRecord {
         case "ai-title":
             return record.stringField("aiTitle")
                 .map(TranscriptRecord.aiTitle) ?? .unknown(raw: line)
+        case "custom-title":
+            return record.stringField("customTitle")
+                .map(TranscriptRecord.customTitle) ?? .unknown(raw: line)
         case "last-prompt":
             return record.stringField("leafUuid")
                 .map { TranscriptRecord.lastPrompt(leafUuid: $0) } ?? .unknown(raw: line)
@@ -131,7 +140,7 @@ extension TranscriptRecord {
         switch self {
         case let .user(record), let .assistant(record), let .attachment(record):
             record.cwd
-        case .aiTitle, .lastPrompt, .queueOperation, .permissionMode, .unknown:
+        case .aiTitle, .customTitle, .lastPrompt, .queueOperation, .permissionMode, .unknown:
             nil
         }
     }

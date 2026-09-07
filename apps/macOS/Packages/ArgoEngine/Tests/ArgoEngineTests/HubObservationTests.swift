@@ -21,9 +21,9 @@ struct HubObservationTests {
 
         await hub.startObserving(dropped)
         await hub.startObserving(kept)
-        droppedEvents.yield([.title("Dropped")])
+        droppedEvents.yield([.title("Dropped", .summarised)])
         await hub.stopObserving(transcriptID: "dropped")
-        keptEvents.yield([.title("Still tailing")])
+        keptEvents.yield([.title("Still tailing", .summarised)])
         keptEvents.finish()
         await hubTailEnded(hub, transcriptID: "kept")
 
@@ -44,13 +44,13 @@ struct HubObservationTests {
 
         await hub.startObserving(first)
         await hub.stopObserving(transcriptID: "session")
-        firstEvents.yield([.title("After the stop")])
+        firstEvents.yield([.title("After the stop", .summarised)])
         firstEvents.yield([.cwd("/tmp/after-the-stop")])
         firstEvents.finish()
 
         let (second, secondEvents) = hubLiveObservation(id: "session")
         await hub.startObserving(second)
-        secondEvents.yield([.title("Fresh")])
+        secondEvents.yield([.title("Fresh", .summarised)])
         secondEvents.finish()
         await hubTailEnded(hub, transcriptID: "session")
 
@@ -149,12 +149,12 @@ struct HubObservationTests {
         let (previous, previousEvents) = hubLiveObservation(id: "previous")
 
         await hub.startObserving(previous)
-        previousEvents.yield([.title("Previous Project"), .cwd("/tmp/argo-first")])
+        previousEvents.yield([.title("Previous Project", .summarised), .cwd("/tmp/argo-first")])
         try await hub.connect(to: LaunchConfiguration(
             projectURL: Self.secondProjectURL,
             transcriptURLs: [hubFixtureURL("prose")],
         ))
-        previousEvents.yield([.title("Straggler")])
+        previousEvents.yield([.title("Straggler", .summarised)])
         previousEvents.finish()
         await Task.yield()
 

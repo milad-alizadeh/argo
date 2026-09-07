@@ -73,6 +73,15 @@ public final class Hub {
     /// the gate here holding nothing.
     @ObservationIgnored lazy var adapters = makeAdapters()
 
+    /// What each Session's own CLI has been told it is called (#1623). Lazy and stored for
+    /// `delivery`'s two reasons: it types through this Hub's driver, and it has to remember what
+    /// went for longer than the `driver` value that typed it — so a name refused by a busy prompt
+    /// is retried on the next sweep instead of retyped at a Session already wearing it.
+    ///
+    /// Not observed: nothing is drawn off it. The names are the roster's, and this only says which
+    /// of them have travelled.
+    @ObservationIgnored lazy var names = SessionNameMirror(mirror: .typing(through: self))
+
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.
     var spawns: [SessionOwnership.ClaimID: AgentSpawn] = [:]

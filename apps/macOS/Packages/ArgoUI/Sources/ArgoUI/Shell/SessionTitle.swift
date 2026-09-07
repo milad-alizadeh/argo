@@ -11,6 +11,16 @@
 ///
 /// It is also where the title is SPELLED: whichever link of the chain answers, no title the
 /// cockpit draws carries an em dash — see `spelled(_:)`.
+///
+/// Both edits this file makes — that spelling, and `toldApart`'s time-of-day prefix — now travel to
+/// the CLI, because what `SessionNameMirror` types is what this resolves (#1623). They stay, and
+/// #1623 point 4 asked for the reason rather than their removal. Each is load-bearing for a case
+/// the unedited words cannot answer: the clock is the ONLY thing telling apart the 197 rows a `-p`
+/// loop's one prompt template names identically (#1567), and the dash rewrite is what keeps a
+/// subject and what is said about it legible at a roster row's width. Neither is a guess — both are
+/// derived from facts Argo holds — so a phone showing them shows the same name the desk does, which
+/// is the agreement #1623 is about. Dropping either one is its own ticket, and it has to answer the
+/// case that put it here.
 enum SessionTitle {
     /// What one row is called, and what the surface drawing it must ask beside the words.
     struct Naming {

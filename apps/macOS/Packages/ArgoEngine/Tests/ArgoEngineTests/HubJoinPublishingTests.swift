@@ -79,7 +79,7 @@ struct HubJoinPublishingTests {
     private static func observation(_ index: Int) -> TranscriptObservation {
         hubTestObservation(
             at: URL(fileURLWithPath: "\(projectURL.path)/join-\(index).jsonl"),
-            events: [.cwd(projectURL.path), .title("Session \(index)")],
+            events: [.cwd(projectURL.path), .title("Session \(index)", .summarised)],
         )
     }
 }

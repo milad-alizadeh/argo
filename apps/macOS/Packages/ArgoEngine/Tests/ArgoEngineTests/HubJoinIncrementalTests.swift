@@ -80,7 +80,7 @@ struct HubJoinIncrementalTests {
     @Test
     func `a batch queuing an unanswered prompt still takes its row off the roster`() {
         expectSameJoin(
-            backfill: ["alpha": [.title("Queued")], "beta": [prompt(at: 20)]],
+            backfill: ["alpha": [.title("Queued", .summarised)], "beta": [prompt(at: 20)]],
             batches: [("alpha", [.queued])],
         )
     }
@@ -89,7 +89,7 @@ struct HubJoinIncrementalTests {
     @Test
     func `a batch answering a queued prompt still puts its row on the roster`() {
         expectSameJoin(
-            backfill: ["alpha": [.queued, .title("Queued")], "beta": [prompt(at: 20)]],
+            backfill: ["alpha": [.queued, .title("Queued", .summarised)], "beta": [prompt(at: 20)]],
             batches: [("alpha", [.message(markdown: "answered")])],
         )
     }

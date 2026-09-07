@@ -28,6 +28,19 @@ extension SessionRosterProjection {
         SessionRosterNamingMemo.namings(across: sessions).title(of: id)
     }
 
+    /// The whole naming behind that title, off the SAME pass — for the mirror, which needs to know
+    /// which link of the chain answered as well as what it said (#1623). `nil` on `namedTitle`'s
+    /// terms.
+    /// Internal rather than `package` like `namedTitle` above, because `SessionTitle.Naming` is:
+    /// the only caller outside the sidebar is the mirror's own derivation, in this module.
+    @MainActor
+    static func naming(
+        for id: CockpitPresentation.Session.ID, among sessions: [CockpitPresentation.Session],
+    )
+        -> SessionTitle.Naming? {
+        SessionRosterNamingMemo.namings(across: sessions).naming(of: id)
+    }
+
     /// The name each of these Sessions draws in one of the roster's two passes — the ONE place the
     /// rows being named are put to the rows that contest them, so no second caller can pair them
     /// differently.

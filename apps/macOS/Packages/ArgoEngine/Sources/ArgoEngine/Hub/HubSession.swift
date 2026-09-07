@@ -79,6 +79,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         name.text
     }
 
+    /// Where this Session's name stands on both sides of the ladder (#1623) — what its own CLI
+    /// calls it, and whether the name Argo holds says anything about the work.
+    ///
+    /// Beside `title` above because it is a different question about the same words: `title` is
+    /// what the roster DRAWS, and this is what the mirror has to know before typing any of it at a
+    /// prompt.
+    public var nameStanding: SessionNameStanding {
+        SessionNameStanding(cliTitle: name.cliTitle, namesTheWork: name.namesTheWork)
+    }
+
     public private(set) var cwd: String?
     /// The Model, Effort and stance the records report, latest reading each and nothing yet where
     /// no record said one (#558, ADR-0025) — see `SessionObservedWords`, which holds the three and
@@ -226,8 +236,8 @@ extension HubSession {
         // FILE its length ceiling, which the fact added above it spends the rest of.
         case let .headLeaf(uuid): headLeafUUID = uuid
         case let .originSession(id): originSessionID = id
-        case let .title(observedTitle):
-            name.state(observedTitle)
+        case let .title(observedTitle, kind):
+            name.state(observedTitle, kind)
         case let .cwd(observedCwd): cwd = observedCwd
         // The CLI's own two knobs, both verbatim and latest-wins (#558). One line each: they are
         // the two shortest arms in this switch, and spreading them costs the body its ceiling —

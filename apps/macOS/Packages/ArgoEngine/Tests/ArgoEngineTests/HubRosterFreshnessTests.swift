@@ -22,9 +22,9 @@ struct HubRosterFreshnessTests {
         let (observation, events) = hubLiveObservation(id: "batched")
 
         await hub.startObserving(observation)
-        events.yield([.title("First")])
+        events.yield([.title("First", .summarised)])
         await settle { hub.sessions.first?.title == "First" }
-        events.yield([.title("Second")])
+        events.yield([.title("Second", .summarised)])
         events.finish()
         await hubTailEnded(hub, transcriptID: "batched")
 
@@ -35,9 +35,15 @@ struct HubRosterFreshnessTests {
     func `a transcript joining after the roster was read reaches it`() async {
         let hub = testHub(projectURL: URL(fileURLWithPath: Self.cwd))
 
-        await hubObserveToEnd(hub, hubTestObservation(id: "one", events: [.title("One")]))
+        await hubObserveToEnd(
+            hub,
+            hubTestObservation(id: "one", events: [.title("One", .summarised)]),
+        )
         #expect(hub.sessions.map(\.title) == ["One"])
-        await hubObserveToEnd(hub, hubTestObservation(id: "two", events: [.title("Two")]))
+        await hubObserveToEnd(
+            hub,
+            hubTestObservation(id: "two", events: [.title("Two", .summarised)]),
+        )
 
         #expect(hub.sessions.count == 2)
     }

@@ -155,7 +155,9 @@ public actor TranscriptReader {
             askedModel = nil
             return identity(of: message) + context.events(for: message)
         case let .aiTitle(title):
-            return [.title(title)]
+            return [.title(title, .summarised)]
+        case let .customTitle(title):
+            return [.title(title, .custom)]
         case let .lastPrompt(leafUuid):
             return [.headLeaf(uuid: leafUuid)]
         case .queueOperation:

@@ -150,7 +150,7 @@ struct HubWorktreeReapTests {
     }
 
     private static func observation(id: String) -> TranscriptObservation {
-        hubTestObservation(id: id, events: [.cwd(worktree), .title("Working")])
+        hubTestObservation(id: id, events: [.cwd(worktree), .title("Working", .summarised)])
     }
 }
 

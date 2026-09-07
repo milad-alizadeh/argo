@@ -62,7 +62,7 @@ struct FeedProjectionTests {
         let unhandled: [TranscriptEvent] = [
             .recordIdentity(uuid: "record"),
             .headLeaf(uuid: "leaf"),
-            .title("A title"),
+            .title("A title", .summarised),
             .cwd("/tmp/project"),
             .model("claude-opus-5"),
             .branch("main"),
@@ -76,7 +76,7 @@ struct FeedProjectionTests {
     func `a row is addressed by its own place in the feed`() {
         let rows = FeedProjection.rows(.justTheStream([
             .message(markdown: "Same."),
-            .title("A title"),
+            .title("A title", .summarised),
             .message(markdown: "Same."),
         ]))
 

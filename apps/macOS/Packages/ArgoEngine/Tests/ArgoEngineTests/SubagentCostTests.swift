@@ -57,7 +57,10 @@ struct SubagentCostTests {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo-subagent-cost"))
         for index in 0 ..< count {
             await hub.startObserving(
-                hubTestObservation(id: "session-\(index)", events: [.title("Session \(index)")]),
+                hubTestObservation(
+                    id: "session-\(index)",
+                    events: [.title("Session \(index)", .summarised)],
+                ),
             )
         }
         await hubSettle { hub.sessions.count == count }
