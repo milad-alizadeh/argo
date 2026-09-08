@@ -17,12 +17,18 @@ extension TranscriptWatch {
             if let replacement = wanted.first(where: {
                 !isObserving(transcriptID: $0.path)
                     && $0.deletingPathExtension().lastPathComponent == transcript.sessionID
-            }), let observation = try? observe(
-                replacement,
-                reading: whole.holds(transcript.id) ? .whole : .excerpt,
-            ) {
-                await relocate(transcript, to: observation)
-                relocated.insert(replacement.path)
+            }) {
+                if let observation = try? observe(
+                    replacement,
+                    reading: whole.holds(transcript.id) ? .whole : .excerpt,
+                ) {
+                    await relocate(transcript, to: observation)
+                    relocated.insert(replacement.path)
+                } else {
+                    // Discovery saw the move, so keep the row it came from while the destination
+                    // is between file-system states. The next sweep retries the same handoff.
+                    await pauseObserving(transcriptID: transcript.id)
+                }
                 continue
             }
             await stopReading(transcript)
