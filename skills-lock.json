@@ -80,10 +80,10 @@
       "computedHash": "20e5f4afdef502637510bc5c64d27645d3c85c88df9cb006824bbb0980166319"
     },
     "implement": {
-      "source": "mattpocock/skills",
+      "source": "milad-alizadeh/argo",
       "sourceType": "github",
-      "skillPath": "skills/engineering/implement/SKILL.md",
-      "computedHash": "2139cfedf24791adbc839aaab6019cff158af1e28bfead020ec6e0ce01b3e74d"
+      "skillPath": "packages/argo-skills/skills/implement/SKILL.md",
+      "computedHash": "92a35a8f0df00bcd375dc918904911ff5c7d52128f7bf8a5745373fa3cd0aeb6"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
