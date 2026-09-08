@@ -168,13 +168,14 @@ import Testing
         unfolded: Set<FeedRow.ID> = [],
         held: FeedRow.ID? = nil,
         open: FeedRow.ID? = nil,
+        step: Int? = nil,
     )
         -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
         return FeedTableModel(
             rows: rows,
             selection: FeedRowSelection(
-                open: .constant(open), step: .constant(nil), lit: .constant(nil),
+                open: .constant(open), step: .constant(step), lit: .constant(nil),
                 focus: focus.projectedValue,
             ),
             held: held,
