@@ -45,6 +45,19 @@ struct SessionNamesToMirrorTests {
         #expect(draws["visible"]?.drawsDerivedTitle == false)
     }
 
+    /// The roster's OWN words ride along under the name drawn from them, and the two are not the
+    /// same string: a Ticket's sentence is what this row draws, and the title beneath it is what
+    /// the standing the mirror's floor reads was won at (#1695).
+    @Test
+    func `each draw carries the roster's own words under the name it draws`() {
+        let draws = Self.presentation(sessions: [
+            Self.session(id: "linked", title: "Fix the roster titles", issue: Self.issue),
+        ]).namesToMirror
+
+        #expect(draws["linked"]?.name == "Anchor the feed")
+        #expect(draws["linked"]?.rosterTitle == "Fix the roster titles")
+    }
+
     /// `SessionStatus.starting` takes a typed line by every reading Argo has — Argo started the
     /// process and has not heard it yet — but the CLI has not drawn its prompt, so the line is
     /// swallowed by the TUI's boot while the driver reports it sent. Filed as landed, it would
