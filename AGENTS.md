@@ -109,6 +109,20 @@ reaches review ungated. Two consequences worth holding: a branch you pushed and 
 PR for has been checked by nothing, and the first `gh pr create` on a branch is the moment its
 Swift is first proved.
 
+**It runs once, on the final reviewed tree, and every caller names itself** (#1711). `implement`
+gates the tree it committed after fixing the review, `ship` reads that verdict back, and neither
+runs a full suite before the review — a gate is priced per tree, and a review changes the tree.
+Prefix the call with what asked for it — `ARGO_GATE_CALLER=implement`, `ship`, `push`, `review`
+or `landing` — so `bun run gate:report` can say which step paid; an unset one records `unknown`
+rather than being guessed. A branch that shows more than one full gate is named in that report,
+with the caller of each.
+
+**The timing budgets run in their own phase.** `swift-test.sh` runs each package twice — the
+correctness suites in parallel, then the suites that read a clock alone with `--no-parallel`.
+A budget measured in seconds reads the machine as much as the code, and the parallel run is the
+loudest thing on the machine. The set is derived from the tree, not listed:
+`apps/macOS/scripts/timing-suites.sh`.
+
 Where an exemption goes, why the hook only fires once it is on `main`, and the verification
 recipe: `docs/agents/quality-gates.md`.
 
@@ -201,6 +215,15 @@ session over the diff.
 If no independent fresh context is reachable, **stop and report that** — do not run the axes
 yourself and present it as a review. Claude Code trap: agents spawned inside a `Workflow` have
 no `Agent` tool, so run implement directly, not nested in a Workflow.
+
+**A review agent is read-only, and one tree owns the expensive verification** (#1711). No axis
+runs a build, a full suite, `bun run quality` or the Swift gate: a review changes the tree, so
+anything the reviewer verifies is bytes nobody ships and the gate `ship` calls then pays in full.
+One focused test is the only exception, and only when the reviewer states the uncertainty it
+resolves and names its package. A complete axis runs a second time only for a **P0 or P1 fix that
+changes behaviour that axis covers** — everything else gets one focused review of the changed
+hunks. The brief every axis prompt carries, and the measurements behind both rules:
+`docs/agents/code-review.md`.
 
 ## Design work
 

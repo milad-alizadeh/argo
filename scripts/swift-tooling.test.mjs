@@ -13,6 +13,7 @@ import {
   BARE,
   MISSING,
   PACKAGES,
+  phaseSelections,
   REPORTING,
   run,
   STRICT,
@@ -109,17 +110,27 @@ for (const [configuration, environment, flags] of [
     swiftWriting(suite('errors="0" tests="9" failures="0"'))
     const result = run(TEST, { ...REPORTING, env: { ...environment, ...CACHE_ENV } })
     assert.equal(result.status, 0, result.output)
-    assert.match(result.output, new RegExp(`${PACKAGES[0]} \\(${configuration}\\)`))
+    assert.match(result.output, new RegExp(`${PACKAGES[0]} correctness \\(${configuration}\\)`))
     for (const name of PACKAGES.slice(1)) {
-      assert.match(result.output, new RegExp(`${name} clean, 0 failures across 9 reported tests`))
+      assert.match(
+        result.output,
+        new RegExp(`${name} correctness clean, 0 failures across 9 reported tests`),
+      )
     }
-    // Every invocation in order: the report path, then whatever flags the configuration adds.
-    // One per package in the loop — a package added to the script and not to `PACKAGES` would be
-    // a run nobody counted.
+    // Every invocation in order: the report path, whatever flags the configuration adds, and
+    // then the phase's own selection. One per PHASE per package — a package added to the script
+    // and not to `PACKAGES`, or a phase that stopped running, would be a run nobody counted.
     const passed = result.argv.filter((arg) => arg !== 'test' && !arg.endsWith('.xml'))
     assert.deepEqual(
       passed,
-      PACKAGES.flatMap(() => ['--xunit-output', ...flags, ...CACHE_FLAGS]),
+      PACKAGES.flatMap((pkg) =>
+        phaseSelections(pkg).flatMap((selection) => [
+          '--xunit-output',
+          ...flags,
+          ...CACHE_FLAGS,
+          ...selection,
+        ]),
+      ),
     )
   })
 }

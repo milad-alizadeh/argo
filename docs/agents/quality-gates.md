@@ -75,9 +75,10 @@ suites itself, and then `git push` fires the gate, which ran the same suites ove
 again — and the second run is the one a person waits on. So the memory is per STEP as well as
 per gate: whichever runs first records the verdict, and the other reads it.
 
-- `swift-test.sh` keys each package's suite on the content of `apps/macOS`, the configuration
-  and the toolchain. A **filtered** run is never cached in either direction: it proves less than
-  a full one, and it is asked for precisely when somebody wants that suite run again.
+- `swift-test.sh` keys each package's suite on the content of `apps/macOS`, the configuration,
+  the toolchain and the **phase** (#1711). A **filtered** run — a caller's own `--filter` — is
+  never cached in either direction: it proves less than a phase, and it is asked for precisely
+  when somebody wants that suite run again.
 - `build.sh` keys the app build the same way, and believes a recorded pass **only when this
   worktree's own app carries that key**. Two things have to hold, because the memory is the
   machine's and the product is one checkout's. The app must still be there — `worktree-gc
@@ -91,6 +92,56 @@ per gate: whichever runs first records the verdict, and the other reads it.
 So the shape of a push after an agent has already run the suites is: the linters run, the build
 and the four suites do not, and the whole thing is under a minute.
 
+### Nothing the gate exports reaches a turbo task unless `turbo.json` says so (#1711)
+
+Turbo 2 runs in **strict** env mode. A task sees a default allowlist plus whatever the config
+declares and **nothing else**, so a variable `swift-gate.sh` exports before `bun run build` or
+`bun run test` is gone by the time the step reads it — silently, because a stripped variable
+looks exactly like one nobody set:
+
+- **`ARGO_REQUIRE_SWIFT_TOOLS`** stripped means a missing SwiftFormat SKIPS rather than fails,
+  and the gate reports success having checked nothing. That is the failure `swift-tool-guard.sh`
+  exists for, arriving through the config instead of the script.
+- **`ARGO_TEST_SCOPE`** stripped means the gate works out which packages a change reaches
+  (#1377), announces it, and then runs all of them anyway.
+- **`ARGO_GATE_CALLER`** stripped means every step row records `unknown`, and the split below
+  cannot say which step paid.
+
+All three were being stripped. They are in `globalPassThroughEnv` now — pass-through and not
+`env`, because each changes how a step behaves or what it records and none of them changes what
+it produces, so none belongs in turbo's cache hash. `scripts/gate-env.test.mjs` derives the list
+from the `export` lines themselves and fails when one is missing, because the list IS the bug.
+
+### The two phases a package's suites run in (#1711)
+
+`swift-test.sh` runs each package **twice**, and the split is the point rather than an
+optimisation:
+
+- **`correctness`** — everything but the timing suites, in parallel, as before.
+- **`cost`** — the suites that read a clock, alone, with `--no-parallel`.
+
+A budget measured in seconds reads the MACHINE as much as the code (`ArgoUITests/CostMeasure`),
+and the parallel run is the loudest thing on the machine: hundreds of correctness tests across
+every core, and a measurement taken inside that is taken against it. Two budgets failed the #1703
+lane three times over and passed alone in 6.8 seconds —
+`FeedRowShapeTests.measuring by shape costs less than measuring through one ruler` and
+`FeedRowsCompareCostTests.the same-reading test does not scale with the reading`.
+
+The set is **derived from the tree, never listed**: `apps/macOS/scripts/timing-suites.sh` prints
+the suites that CALL one of `CostMeasure`'s four clock helpers, which is why `FeedRowShapeTests`
+is in it and `MinimapCostTests`, whose budgets are counts, is not. What it prints is the suite's
+TYPE name, because that is what `swift test --filter` matches and the `@Suite("…")` display name
+is not (#1358). `scripts/timing-suites.test.mjs` is what holds it: the two suites above are in
+the set, every name it prints is a type that exists, and a clock helper is defined in one file
+per test target so the set cannot silently split.
+
+The three `*FigureRecording` harnesses land in the set too, because they read a clock. They are
+`.enabled(if:)` on `ARGO_RECORD_FIGURES` and `record-figures.sh` calls `swift test` directly, so
+in the gate they cost a skip: ArgoUI's cost phase reports 21 tests of the 30 it selects.
+
+A failure in either phase still fails the gate, and a failed phase records nothing — so a retry
+runs it again rather than reading a pass it never earned.
+
 ### Measuring whether any of it worked
 
 Every run appends a row to `~/Library/Caches/argo-gate/metrics.tsv` (`scripts/metrics.sh`), and
@@ -99,6 +150,23 @@ nothing, what that saved, whether a full run is getting slower, and how long any
 a build slot. It prints them against the baseline #1377 measured, so the claim stays checkable
 rather than remembered. `ARGO_METRICS=off` writes nothing; nothing reads the file back, so it can
 never change what the gate decides.
+
+Each row also carries **who asked and which phase ran** (#1711). `ARGO_GATE_CALLER` is one of
+five words, and anything else — an unset one included — records `unknown` rather than being
+invented:
+
+| Caller | Set by |
+|---|---|
+| `push` | `.husky/pre-push`, on the one push that has an open PR to gate |
+| `implement` | the `implement` skill, on its final reviewed tree |
+| `ship` | the `ship` skill, before `gh pr create` — expected to be a cache hit |
+| `review` | nothing automatic. A review agent runs no gate (`docs/agents/code-review.md`); the word exists so one that does shows up as itself rather than hiding under `unknown` |
+| `landing` | nothing automatic. `scripts/land.sh` is gone and the rebase-before-merge has no home yet (#1577) |
+
+The report then prints two tables the earlier one could not: full runs and cache hits **by caller
+and phase**, and the branches that paid for **more than one full gate**, each with the caller and
+cost of every run. `scripts/gate-columns.test.mjs` proves the columns, over rows `metrics.sh`
+itself wrote; `scripts/gate-callers.test.mjs` proves the tables read off them.
 
 None of these can make the gate pass something it would otherwise fail. The cache records
 only after every command has passed, the lock changes when work runs and never whether, and the

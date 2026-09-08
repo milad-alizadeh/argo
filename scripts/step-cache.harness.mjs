@@ -37,6 +37,10 @@ function seed(dir) {
   mkdirSync(path.join(dir, 'scripts'), { recursive: true })
   for (const file of [
     'apps/macOS/scripts/swift-test.sh',
+    // The phase split reads the tree through this (#1711). The fixture's packages carry no
+    // test target, so it names nothing here and each package runs one correctness phase —
+    // which is what the cases below are about.
+    'apps/macOS/scripts/timing-suites.sh',
     'scripts/swift-tool-guard.sh',
     'scripts/gate-cache.sh',
     'scripts/metrics.sh',

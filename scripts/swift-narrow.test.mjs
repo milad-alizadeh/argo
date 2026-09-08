@@ -18,7 +18,7 @@ check('swift-test.sh runs one named package alone', () => {
   CLEAN()
   const result = run(TEST, { ...REPORTING, args: ['ArgoUI'] })
   assert.equal(result.status, 0, result.output)
-  assert.match(result.output, /ArgoUI clean/)
+  assert.match(result.output, /ArgoUI correctness clean/)
   for (const name of PACKAGES.filter((p) => p !== 'ArgoUI')) {
     assert.doesNotMatch(result.output, new RegExp(name))
   }

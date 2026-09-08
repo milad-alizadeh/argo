@@ -26,6 +26,15 @@ GATE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$GATE_DIR/metrics.sh"
 GATE_STARTED=$(metric_now)
 
+# WHO asked for this gate, for `bun run gate:report` (#1711). The names are `METRIC_CALLERS` in
+# `metrics.sh`; anything else, this one included when nothing set it, records `unknown`.
+# Exported so the steps below stamp the same caller on their own rows.
+ARGO_GATE_CALLER=${ARGO_GATE_CALLER:-unknown}
+export ARGO_GATE_CALLER
+# The gate's own rows. Each step overwrites it for the duration of that step.
+ARGO_GATE_PHASE=gate
+export ARGO_GATE_PHASE
+
 # The base to compare against. pre-push passes the remote ref it is about to update; by hand
 # there is none, so fall back to the fork point with main.
 BASE="${1:-}"
@@ -104,11 +113,13 @@ fi
 . "$GATE_DIR/build-lock.sh"
 build_lock_acquire
 
+# Each step names the phase its own metrics rows belong to (#1711). `bun run test` names none:
+# `swift-test.sh` runs two phases of its own and stamps each row itself.
 echo "swift-gate: SwiftFormat · SwiftLint"
-bun run quality:swift
+ARGO_GATE_PHASE=quality bun run quality:swift
 
 echo "swift-gate: build"
-bun run build --filter=@argo/macos
+ARGO_GATE_PHASE=build bun run build --filter=@argo/macos
 
 echo "swift-gate: swift tests"
 bun run test --filter=@argo/macos

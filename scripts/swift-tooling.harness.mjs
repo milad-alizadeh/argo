@@ -135,3 +135,26 @@ export function swiftWriting(report, code = 0) {
 // The package loop `swift-test.sh` spells, in its order — asserted by name in the configuration
 // cases and by verdict line elsewhere, so this list is the one place the count and order live.
 export const PACKAGES = ['ArgoEngine', 'ArgoUI', 'ArgoMermaid', 'ArgoAtlas']
+
+// The selection flags each of a package's PHASES passes (#1711): correctness skips the timing
+// suites, cost runs those alone and serialised, and a package with none runs once with neither.
+//
+// The pattern is derived by calling the same script the entrypoint calls, so this states the
+// SHAPE of the split and never a list of suite names — a timing suite added to the tree changes
+// the pattern in both places at once.
+export const phaseSelections = (pkg) => {
+  const derived = spawnSync(
+    '/bin/sh',
+    [
+      path.join(REPO_ROOT, 'apps/macOS/scripts/timing-suites.sh'),
+      path.join(REPO_ROOT, 'apps/macOS/Packages', pkg),
+    ],
+    { encoding: 'utf8' },
+  )
+  const timing = derived.stdout.trim().split('\n').filter(Boolean).join('|')
+  if (!timing) return [[]]
+  return [
+    ['--skip', timing],
+    ['--no-parallel', '--filter', timing],
+  ]
+}

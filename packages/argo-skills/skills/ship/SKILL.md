@@ -75,11 +75,11 @@ rename made twice — these collide in text and agree in intent. Resolve them an
 
 Nothing here is a reason to stop.
 
-- **Gates.** Run them on the tree you are about to push. An edit that nothing ran is how a PR
-  passes review and fails to build. For UI work, look at the affected states; unit tests do not
-  show you a screen. The Swift gate remembers the tree it passed, so a second run over an
-  unchanged tree costs a hash lookup — never take `ARGO_SKIP_SWIFT_GATE=1` to save time it is
-  not going to spend.
+- **Gates.** Step 4 below is the one call, and it runs on the tree you are about to push — not a
+  second one here, which would record a run no caller claimed. An edit that nothing ran is how a
+  PR passes review and fails to build. For UI work, look at the affected states; unit tests do
+  not show you a screen. Never take `ARGO_SKIP_SWIFT_GATE=1` to save time the gate is not going
+  to spend: it remembers the tree it passed.
 - **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
   per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
@@ -128,13 +128,20 @@ Each of these belongs in the PR body, and the ship continues past it.
    every fact, and leave code, paths, error strings and `Closes #<N>` exactly as they are. If
    the skill is not installed, write short sentences in the active voice and change no
    identifier.
-4. **Run `sh scripts/swift-gate.sh` before opening the PR**, and open nothing if it fails.
-   The pre-push hook gates a branch that already has an open PR and lets a branch with none
-   through, because a branch nobody is reading is not worth a build slot (#1577). The push in
-   step 3 is therefore the one push in a branch's life that is NOT gated by the hook, and the
-   PR this step opens is exactly what makes it readable. So the gate runs here instead. It is
-   a cache lookup when the tree has already passed it, which is the usual case for a branch
-   that has been pushed before.
+4. **Run `ARGO_GATE_CALLER=ship sh scripts/swift-gate.sh` before opening the PR**, and open
+   nothing if it fails. The pre-push hook gates a branch that already has an open PR and lets a
+   branch with none through, because a branch nobody is reading is not worth a build slot
+   (#1577). The push in step 3 is therefore the one push in a branch's life that is NOT gated by
+   the hook, and the PR this step opens is exactly what makes it readable. So the gate runs here
+   instead.
+
+   **It should be a whole-gate cache hit, and a full run here is a finding.** `implement` gates
+   its final reviewed tree, so this call reads that verdict back over the same content
+   (#1711). A full run means the tree moved after that gate — a review fix nobody re-gated, or a
+   rebase, which honestly needs a new one. Either way it is worth a line in the PR body, because
+   the alternative is what #1703 did: three full gates on one branch and nothing saying why.
+   `ARGO_GATE_CALLER=ship` is what puts this run under `ship` in `bun run gate:report`; without
+   it the row says `unknown` and the report cannot tell this call from a gate run by hand.
 5. **Open exactly one PR, and give `gh` the body from a file.** Put what step 3 returned on disk
    first, at a scratch path outside the repository so no commit can pick it up. Write it with
    your harness's file-writing tool; with only a shell, `cat > <path> <<'BODY'` is a plain
