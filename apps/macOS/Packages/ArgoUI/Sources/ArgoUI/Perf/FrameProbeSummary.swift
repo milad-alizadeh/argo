@@ -2,17 +2,32 @@ import Foundation
 
 /// One measurement window of frame intervals, reduced to the figures a frame budget is read off.
 ///
-/// Every figure is stated against `displayMaxFPS`, which the probe reads off the screen the window
-/// is on rather than assuming: the same JSON has to stay comparable when a 120 Hz panel replaces a
-/// 60 Hz one, and a bare "58 fps" says nothing without the ceiling it was measured under.
-///
-/// Two shapes of file exist and neither carries a version, so tell them apart by a key. A file with
-/// `band` was written on or after #1544: the four percentiles are nested under it, and `passes` and
-/// `passCosts` are there. A file with a top-level `p50MS` predates it and has no pass counters at
-/// all. `frame-band.py` reads either, because it re-derives the band from `timestamps` rather than
-/// reading the percentiles at all, and it reports an absent counter as absent rather than as a
+/// Three shapes of file exist and none carries a version, so tell them apart by a key. A file with
+/// `source` was written on or after #1566: the display ceiling is nested under it beside the
+/// executable that wrote it. A file with `band` and a top-level `displayMaxFPS` was written on or
+/// after #1544 and before #1566: the four percentiles are nested under `band`, and `passes` and
+/// `passCosts` are there. A file with a top-level `p50MS` predates both and has no pass counters at
+/// all. Nothing decodes any of them into this type — `FrameProbeReport` only ever encodes — so an
+/// older file is read by `frame-band.py`, which re-derives the band from `timestamps` rather than
+/// reading the percentiles at all, and reports an absent counter as absent rather than as a
 /// cockpit that never redrew.
 struct FrameProbeSummary: Codable {
+    /// Where the numbers came from, as against the numbers themselves.
+    ///
+    /// Every figure in the summary is stated against `displayMaxFPS`, which the probe reads off the
+    /// screen the window is on rather than assuming: the same JSON has to stay comparable when a
+    /// 120 Hz panel replaces a 60 Hz one, and a bare "58 fps" says nothing without the ceiling it
+    /// was measured under.
+    struct Source: Codable {
+        /// The executable of the process that wrote this. Every worktree builds its own
+        /// `Release/Argo.app` and they all carry the name, so a report that named no path could be
+        /// crossed with another build's and nothing afterwards could tell (#1566). The probe takes
+        /// `arguments[0]`, which is what the kernel was handed, so this is the same string
+        /// `ps -o comm=` reports and the one `hang-sample.sh` prints.
+        var executablePath: String
+        var displayMaxFPS: Int
+    }
+
     /// Frames longer than a multiple of the budget — the dropped-frame proxy. A display link
     /// callback that arrives late is a frame the main thread did not get to in time.
     struct Overrun: Codable {
@@ -54,7 +69,7 @@ struct FrameProbeSummary: Codable {
         var eachMS: [Double]
     }
 
-    var displayMaxFPS: Int
+    var source: Source
     var frameBudgetMS: Double
     var frameCount: Int
     var wallSeconds: Double

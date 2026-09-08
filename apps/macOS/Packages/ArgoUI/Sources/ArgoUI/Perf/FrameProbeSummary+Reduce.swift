@@ -3,13 +3,13 @@ import Foundation
 extension FrameProbeSummary {
     /// Reduces the raw per-frame wall stamps. Percentiles are nearest-rank over the sorted
     /// intervals, which needs no interpolation and never invents a value no frame had.
-    init(stamps: [Double], passes: [Double], passCosts: [Double], displayMaxFPS: Int) {
-        let budget = 1000 / Double(max(displayMaxFPS, 1))
+    init(stamps: [Double], passes: [Double], passCosts: [Double], source: Source) {
+        let budget = 1000 / Double(max(source.displayMaxFPS, 1))
         let intervals = zip(stamps.dropFirst(), stamps).map { ($0 - $1) * 1000 }
         let sorted = intervals.sorted()
         let wall = (stamps.last ?? 0) - (stamps.first ?? 0)
         let worst = intervals.indices.max { intervals[$0] < intervals[$1] }
-        self.displayMaxFPS = displayMaxFPS
+        self.source = source
         frameBudgetMS = budget
         frameCount = stamps.count
         wallSeconds = wall
