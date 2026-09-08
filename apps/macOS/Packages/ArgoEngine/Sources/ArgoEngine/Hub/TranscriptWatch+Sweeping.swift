@@ -12,10 +12,29 @@ extension TranscriptWatch {
     /// the descriptors that are bounded and not the roster.
     func move(onto wanted: [URL]) async {
         let wantedIDs = Set(wanted.map(\.path))
+        var relocated: Set<String> = []
         for transcript in join.transcripts where !wantedIDs.contains(transcript.id) {
+            if let replacement = wanted.first(where: {
+                !isObserving(transcriptID: $0.path)
+                    && $0.transcriptStem == transcript.sessionID
+            }) {
+                if let observation = try? observe(
+                    replacement,
+                    reading: whole.holds(transcript.id) ? .whole : .excerpt,
+                ) {
+                    await relocate(transcript, to: observation)
+                    relocated.insert(replacement.path)
+                } else {
+                    // Discovery saw the move, so keep the row it came from while the destination
+                    // is between file-system states. The next sweep retries the same handoff.
+                    await pauseObserving(transcriptID: transcript.id)
+                }
+                continue
+            }
             await stopReading(transcript)
         }
-        for url in wanted where !isObserving(transcriptID: url.path) {
+        for url in wanted
+            where !relocated.contains(url.path) && !isObserving(transcriptID: url.path) {
             // A file the sweep saw a moment ago can be gone by the time it is opened. Skipping it
             // is the honest answer: nobody named this file, and the next sweep sees it again if it
             // comes back — where a named transcript that cannot be read is a failed connection.

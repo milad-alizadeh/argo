@@ -17,10 +17,10 @@ struct MovedTranscriptTests {
         defer { fixture.remove() }
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         let started = try fixture.write(FixtureTranscript(name: "moved", cwd: projectURL.path))
+        _ = try fixture.write(FixtureTranscript(name: "neighbor", cwd: projectURL.path))
         let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))
-        await hubSettle { !hub.sessions.isEmpty }
-
+        await hubSettle { hub.sessions.count == 2 }
         let moved = try fixture.write(FixtureTranscript(
             directory: "worktree-project",
             name: "moved",
@@ -29,8 +29,8 @@ struct MovedTranscriptTests {
         try FileManager.default.removeItem(at: started)
         await hub.refreshWorkingSet()
 
-        await hubSettle { hub.sessions.map(\.sourceURL) == [moved.standardizedFileURL] }
-        #expect(hub.sessions.count == 1)
+        await hubSettle { hub.sessions.map(\.sourceURL).contains(moved.standardizedFileURL) }
+        #expect(hub.sessions.count == 2)
         await hub.disconnect()
     }
 

@@ -40,13 +40,13 @@ extension HubSession {
     /// Absent for a Session with no record on disk — a spawn whose CLI has written nothing has no
     /// chain to continue.
     var resumeID: String? {
-        chainTipURL?.deletingPathExtension().lastPathComponent
+        chainTipURL?.transcriptStem
     }
 
     /// The id the CLI wrote this chain's ROOT file under: the name a spawn hands it on argv, and
     /// the exact key ownership binds on (#742). The root and not the tip — what Argo named is the
     /// file the agent opened with, and a chain that grows must not stop answering for it.
     var transcriptUUID: String? {
-        sourceURL?.deletingPathExtension().lastPathComponent
+        sourceURL?.transcriptStem
     }
 }

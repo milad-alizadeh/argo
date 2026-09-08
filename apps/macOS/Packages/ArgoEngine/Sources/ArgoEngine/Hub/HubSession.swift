@@ -9,11 +9,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// the id everything links against must not move when the chain grows.
     private(set) var chainTipURL: URL?
     /// Every id this row has RETIRED, oldest first, and empty for a Session that has only ever
-    /// been published under one. Two things retire an id: a continuation read before its origin
-    /// stands as a Session of its own (`HubJoinPublishable`) until the sweep that finds the origin
-    /// folds it in, and a spawn stands under its claim until its CLI writes a record (#361). Both
-    /// leave one row under an id the reader was never pointed at, so a surface holding the retired
-    /// one can follow it here rather than read the Session as gone (#1481).
+    /// been published under one. Three things retire an id: a continuation read before its origin
+    /// stands as a Session of its own until the sweep folds it in, a spawn stands under its claim
+    /// until its CLI writes a record (#361), and a moved transcript keeps its UUID while its path
+    /// changes (#1703). Each leaves one row under a new id, so a surface holding the retired one
+    /// can follow it here rather than read the Session as gone (#1481).
     public internal(set) var absorbedIDs: [String] = []
     /// Set by the Hub off the ownership registry, never asserted here: a transcript file says
     /// nothing about who spawned the CLI that wrote it.
@@ -185,8 +185,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
         self.chainTipURL = observation.sourceURL
-        let transcriptUUID = observation.sourceURL.deletingPathExtension().lastPathComponent
-        self.name = SessionTitle(namedAfterTranscript: transcriptUUID)
+        self.name = SessionTitle(
+            namedAfterTranscript: observation.sourceURL.transcriptStem,
+        )
         self.moments = SessionMoments(recordedAtMs: observation.modifiedAt?.epochMs)
     }
 

@@ -45,6 +45,12 @@ struct WholeReadings {
         ids.removeAll { $0 == transcriptID }
     }
 
+    /// Carry a held reading to the path its transcript moved onto, at the same eviction age.
+    mutating func relocate(from transcriptID: String, to replacementID: String) {
+        guard let index = ids.firstIndex(of: transcriptID) else { return }
+        ids[index] = replacementID
+    }
+
     private static func events(of ids: [String], held: [String: Int]) -> Int {
         ids.reduce(0) { $0 + (held[$1] ?? 0) }
     }

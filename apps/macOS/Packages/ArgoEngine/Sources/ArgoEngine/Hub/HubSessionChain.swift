@@ -1,14 +1,14 @@
 import Foundation
 
 struct HubTranscript {
-    let id: String
+    private(set) var id: String
     /// The file, held here rather than read back off the Session: a Session Argo spawned has no
     /// transcript yet, so its own answer is absent.
-    let sourceURL: URL
+    private(set) var sourceURL: URL
     /// The chain's own uuid, which is the file's NAME — a different key from `id`, which is its
     /// PATH. Relocation links on this one: the origin a relocated record names is a bare uuid, and
     /// a run whose file MOVED keeps its uuid while its path changes (#770).
-    let sessionID: String
+    private(set) var sessionID: String
     var session: HubSession
     /// Which records `session`'s reading has already folded, so a file read twice into the same
     /// row is folded once (#1204) — see `HubRecordFold`. Held here and not on `HubSession`
@@ -36,7 +36,7 @@ struct HubTranscript {
     init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
-        self.sessionID = observation.sourceURL.deletingPathExtension().lastPathComponent
+        self.sessionID = observation.sourceURL.transcriptStem
         self.session = HubSession(observation: observation)
     }
 
@@ -46,6 +46,15 @@ struct HubTranscript {
     mutating func reread(_ observation: TranscriptObservation) {
         rereading = HubSession(observation: observation)
         rereadingFold = HubRecordFold()
+    }
+
+    /// Move this transcript's stale published reading under its new physical path. The first batch
+    /// from that path replaces it, exactly as a reread does.
+    mutating func relocate(to observation: TranscriptObservation) {
+        id = observation.id
+        sourceURL = observation.sourceURL
+        sessionID = observation.sourceURL.transcriptStem
+        reread(observation)
     }
 
     /// Fold part of a read into the reading it belongs to, publishing nothing: the fresh reading
@@ -113,9 +122,14 @@ enum HubSessionChain {
     static func roster(
         from transcripts: [HubTranscript],
         owners: [String: String],
+        retiredTranscriptIDs: [String: [String]] = [:],
     )
         -> HubRoster {
-        let graph = HubChainGraph(transcripts: transcripts, owners: owners)
+        let graph = HubChainGraph(
+            transcripts: transcripts,
+            owners: owners,
+            retiredTranscriptIDs: retiredTranscriptIDs,
+        )
         var claimed: Set<String> = []
         var chained: [Chained] = []
         // Walked in the graph's own key, which is the chain uuid rather than the path: two paths
