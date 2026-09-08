@@ -26,6 +26,7 @@ const config: ForgeConfig = {
     asar: true,
     name: 'Argo',
     appBundleId: 'tech.trili.argo.desktop',
+    icon: 'assets/icon',
     ignore: (file) => (file ? !KEPT_IN_PACKAGE.some((kept) => kept.test(file)) : false),
   },
   // Forge runs @electron/rebuild here, which is what rebuilds node-pty against Electron's ABI.
