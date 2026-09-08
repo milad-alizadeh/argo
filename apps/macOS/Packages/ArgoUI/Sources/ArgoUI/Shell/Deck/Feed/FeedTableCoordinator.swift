@@ -15,11 +15,8 @@ import SwiftUI
     /// the rows of a model no pass has measured yet. Written in one place, the turn a document
     /// lands (`FeedTableCoordinator+Settling`).
     var shown: [FeedRow] = []
-    /// What the visible cells were last drawn against.
-    var folds: Set<FeedRow.ID> = []
-    var drawnOpen: FeedRow.ID?
-    /// See `FeedTableModel.washed`.
-    var drawnWashed: FeedRow.ID?
+    /// What the visible cells were last drawn against — see `FeedDrawnFacts`.
+    var drawnFacts = FeedDrawnFacts()
     /// Whether the last model arrived mid seam-drag — the edge off it is when the full re-measure
     /// runs.
     private var wasResizing = false
@@ -298,21 +295,9 @@ import SwiftUI
         if fresh.environment.redraws(against: staleEnvironment) {
             refresh(rows: visibleRows())
         }
-        var affected = IndexSet()
-        if fresh.selection.open != drawnOpen {
-            // A row's id IS its position — assigned as one by `FeedProjection.rows`.
-            affected.formUnion(IndexSet([drawnOpen, fresh.selection.open].compactMap(\.self)))
-        }
-        let unfolded = fresh.unfolded.wrappedValue
-        if unfolded != folds {
-            affected.formUnion(IndexSet(folds.symmetricDifference(unfolded)))
-        }
-        if fresh.washed != drawnWashed {
-            affected.formUnion(IndexSet([drawnWashed, fresh.washed].compactMap(\.self)))
-        }
-        folds = unfolded
-        drawnWashed = fresh.washed
-        drawnOpen = fresh.selection.open
+        let facts = FeedDrawnFacts(fresh)
+        let affected = drawnFacts.stale(against: facts)
+        drawnFacts = facts
         guard !affected.isEmpty else { return }
         refresh(rows: affected)
     }
