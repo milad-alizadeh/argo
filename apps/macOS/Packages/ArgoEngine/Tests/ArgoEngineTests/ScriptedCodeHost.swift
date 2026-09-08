@@ -16,10 +16,10 @@ actor ScriptedCodeHost: CodeHostPort {
     /// for: a refusal is the throttled read a checkout with many worktrees runs into, and "nothing
     /// there" is an answer.
     private var refusing: Set<String>
-    /// The branches this host refuses with an error from OUTSIDE the transport, which the health
-    /// vocabulary has no word for. Told apart from `refusing`, whose refusal is the host's own and
-    /// does have one (#1698).
-    private let refusingUnclassified: Set<String>
+    /// What a refused branch is refused with. `rateLimited` is the throttled read a checkout with
+    /// many worktrees runs into; an error from outside the transport is the one the health
+    /// vocabulary has no word for (#1698).
+    private let refusedWith: Error
     /// The listings answered `unchanged`, by read number from one — the host's word that what the
     /// caller holds is still current, which is neither an answer nor a refusal (#1620).
     private var unchangedListings: Set<Int>
@@ -43,14 +43,14 @@ actor ScriptedCodeHost: CodeHostPort {
         byBranch: [String: Delivery] = [:],
         byCommit: [String: Delivery] = [:],
         refusing: Set<String> = [],
-        refusingUnclassified: Set<String> = [],
+        refusedWith: Error = ProviderFetchError.rateLimited,
         unchanged: Unchanged = Unchanged(),
     ) {
         self.script = script
         self.byBranch = byBranch
         self.byCommit = byCommit
         self.refusing = refusing
-        self.refusingUnclassified = refusingUnclassified
+        self.refusedWith = refusedWith
         self.unchangedListings = unchanged.listings
         self.unchangedBranches = unchanged.branches
     }
@@ -123,8 +123,7 @@ actor ScriptedCodeHost: CodeHostPort {
         let branch = head.branch
         asked.append(branch)
         conditional[branch] = revalidating
-        guard !refusing.contains(branch) else { throw ProviderFetchError.rateLimited }
-        guard !refusingUnclassified.contains(branch) else { throw OutsideTheTransport.raised }
+        guard !refusing.contains(branch) else { throw refusedWith }
         guard !revalidating || !unchangedBranches.contains(branch) else { return .unchanged }
         if let named = byBranch[branch] {
             return .answered(named)

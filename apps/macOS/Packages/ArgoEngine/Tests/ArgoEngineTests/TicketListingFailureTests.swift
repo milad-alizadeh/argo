@@ -57,19 +57,21 @@ struct TicketListingFailureTests {
         #expect(await Self.failure(body: #"{ "unexpected": true }"#) == .unreachable)
     }
 
-    @Test
-    func `an error the transport never raised has no word in this vocabulary`() {
-        // The `default: .unreachable` this replaced named every one of them for a provider that
-        // was asked and did not answer, which is a claim Argo had not observed (#1698).
-        #expect(ProviderFetchError.reading(OutsideTheTransport.raised) == nil)
-        #expect(ProviderFetchError.reading(CancellationError()) == nil)
-    }
+    /// A refusal Argo raised itself, a read the window cancelled, and two URLs nothing could be
+    /// asked through. None of them put anything to a provider, so the network is fine, the grant
+    /// is not in question, and nobody was asked and did not answer (#1698).
+    private static let wordless: [any Error & Sendable] = [
+        OutsideTheTransport.raised,
+        CancellationError(),
+        URLError(.cancelled),
+        HTTPTransportError.malformedURL("h ttp://"),
+    ]
 
-    @Test
-    func `a URL Argo could not build asked the provider nothing`() {
-        // The one transport failure with no cause word: the network is fine and the provider was
-        // never reached, so neither of those is what a reader should be sent to look at.
-        #expect(ProviderFetchError.reading(HTTPTransportError.malformedURL("h ttp://")) == nil)
+    @Test(arguments: wordless)
+    func `a failure none of the cause words is true of gets no word`(
+        _ error: any Error & Sendable,
+    ) {
+        #expect(ProviderFetchError.reading(error) == nil)
     }
 
     @Test

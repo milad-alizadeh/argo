@@ -82,14 +82,12 @@ public actor TicketWriter {
     ///
     /// Every error is converted, not only the port's own vocabulary: a second adapter has nothing
     /// forcing it to convert, and one that threw past this would leave the chip claiming a
-    /// connection nobody has checked since. Converting is not the same as naming a health word
-    /// for it: an error with none carries `nil`, and the chip is left where it was (#1698).
+    /// connection nobody has checked since. Converting is not naming a health word for it: an
+    /// error with none carries `nil`, and the chip is left where it was (#1698).
     private func recorded(_ error: Error, on target: PortReadTarget) async -> TicketWriteError {
         let refusal = error as? TicketWriteError
             ?? .unreachable(ProviderFetchError.refusal(error))
-        if let failure = refusal.fetchFailure {
-            await health.record(failure, of: target)
-        }
+        await health.record(refusal.fetchFailure, of: target)
         return refusal
     }
 }

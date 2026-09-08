@@ -63,10 +63,10 @@ public struct ClosedTicketReader: Sendable {
             await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
             // A read that established nothing IS evidence about the Binding, on `TicketFollower`'s
-            // terms: swallowing it would leave the chip claiming a connection nobody has checked
-            // since. The listing is left where it was — a failed page must not blank a view that
-            // was full a second ago, which is the poll's own rule.
-            await health.record(error, of: target)
+            // terms, and `refusal` draws the same line there: a word where the vocabulary has one,
+            // `nil` where it has none. The listing is left where it was — a failed page must not
+            // blank a view that was full a second ago, which is the poll's own rule.
+            await health.record(ProviderFetchError.refusal(error), of: target)
         }
     }
 }

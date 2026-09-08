@@ -47,7 +47,7 @@ public struct GitHubDeliveryWatch: CodeHostWatch {
 
     /// What the host said instead of a hook, where that is what it said. Read before the body is
     /// read as a hook, because `wsUrl` is optional and an error body decodes as a valid hook
-    /// offering no socket otherwise — which is the 422 read as a hook GitHub made the ordinary way
+    /// offering no socket otherwise — a dial refused for a reason nothing downstream can act on
     /// (#1697).
     private static func refusal(in created: Data) -> GitHubFailure? {
         try? GitHubCall.decoder.decode(GitHubFailure.self, from: created)

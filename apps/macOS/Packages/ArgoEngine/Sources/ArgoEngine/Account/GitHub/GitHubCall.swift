@@ -2,8 +2,8 @@ import Foundation
 
 /// Asking GitHub for one path, and the one place a failure becomes the health ledger's vocabulary.
 ///
-/// A failure that vocabulary has no word for travels on as itself, rather than as the nearest word
-/// to it (#1698).
+/// A failure that vocabulary has no word for travels on as itself, never as the nearest word to
+/// it (#1698).
 struct GitHubCall: Sendable {
     let transport: HTTPTransport
 

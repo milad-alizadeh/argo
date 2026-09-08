@@ -134,22 +134,27 @@ struct DeliveryHealthTests {
         #expect(await health.health(of: target.projectBinding, in: "P1").state == .healthy)
     }
 
-    /// The other half of that: recording nothing must not read as a read that landed either, or
-    /// half a fan-out would go missing behind a chip claiming the whole of it (#1698).
+    /// The other half of that, and the reason the fan-out keeps its refusal unclassified: nothing
+    /// is recorded, which is neither a cause word nor a read that landed. Folding it into "no
+    /// refusal" would report the whole fan-out as landing when half of it never did (#1698).
     @Test
-    func `a branch refused from outside the transport is not recorded as a read that landed`(
+    func `a branch refused from outside the transport records neither a cause nor a landing`(
     ) async {
         let health = ConnectionHealthLedger()
         let target = PortReadTarget.codeHost()
         await DeliveryDerivation(
             port: ScriptedCodeHost(
-                [.success([])], refusingUnclassified: ["worktree-1698-unnamed"],
+                [.success([])],
+                refusing: ["worktree-1698-unnamed"],
+                refusedWith: OutsideTheTransport.raised,
             ),
             health: health,
             deliveries: DeliveryLedger(),
         )
         .derive(target, locally: .init(workspaces: [.on("worktree-1698-unnamed")]))
+        let reading = await health.health(of: target.projectBinding, in: "P1")
 
-        #expect(await health.health(of: target.projectBinding, in: "P1").lastSuccess == nil)
+        #expect(reading.state == .healthy)
+        #expect(reading.lastSuccess == nil)
     }
 }
