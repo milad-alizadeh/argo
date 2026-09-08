@@ -6,7 +6,12 @@ import AtlasLayout
 /// A value rather than a reach into the environment, for the reason every view here takes resolved
 /// colours: the one thing that decides what the GPU is handed is this type's input, which is the
 /// only way the faces can be built without a window and asserted on.
-struct AtlasPigments {
+///
+/// `Equatable` because the city is a function of the plan and of this, and of nothing else: it is
+/// half of what `AtlasCityCache` asks to know whether the boxes have to be built again (#1598).
+/// Synthesized off the role families, so a material added to the contract is compared without
+/// being named here.
+struct AtlasPigments: Equatable {
     private let measure: ArgoPalette.MeasureRoles
     private let materials: ArgoPalette.MaterialRoles
 

@@ -84,11 +84,10 @@ struct AtlasSurface: NSViewRepresentable {
         // The projection is framed into the plan's own extent rather than the drawable's size,
         // because that is what `AtlasView` frames the surface at — and it is the shape the flat
         // camera has to be given for its picture to be the treemap exactly.
-        coordinator.renderer?.show(
-            AtlasVolumes.city(of: projection.plan, in: pigments),
-            through: AtlasEye(projection.camera, fit: projection.fit),
-            rising: AtlasRise(projection),
-        )
+        //
+        // One call, so nothing here can decide when the city is rebuilt: `present` is what does,
+        // and it is what the suite drives (#1598).
+        coordinator.renderer?.present(projection, in: pigments)
         view.clearColor = pigments.desktop.clearColor
         // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the
         // view's bounds are still zero, and invalidating an empty rect marks nothing dirty.

@@ -60,7 +60,7 @@ public extension ArgoPalette {
     ///
     /// A plate is lit ground, not a backdrop — the same lamp as everything else, dark enough that
     /// the files standing on it stay the subject.
-    struct MaterialRoles: Sendable {
+    struct MaterialRoles: Sendable, Equatable {
         /// The canvas ground. The contract names no other, because no other room has one: every
         /// room until now is documents on the deck.
         public let desktop: ArgoColor

@@ -40,10 +40,20 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     private let depth: MTLDepthStencilState
 
     /// The camera and the boxes, pushed by `AtlasSurface` on every update rather than fixed at
-    /// construction; the reason is stated there.
+    /// construction; the reason is stated there. The two are pushed SEPARATELY, and on different
+    /// clocks: `look(through:rising:)` per frame, `show(_:)` only when the map itself moves
+    /// (#1598).
     private var eye: AtlasEye?
-    private var volumes: MTLBuffer?
-    private var volumeCount = 0
+
+    /// The one buffer every city is written into. Not private: `AtlasDragTests` reads the buffer
+    /// it is holding across a drag, which is the only way to say from outside that the drag
+    /// allocated nothing.
+    let instances: AtlasVolumeBuffer
+
+    /// What the city in that buffer was built from. Held HERE rather than beside the surface, so
+    /// its lifetime is the buffer's exactly: a cache that outlived the boxes it describes would
+    /// answer "unchanged" to a renderer holding none, and draw an empty map.
+    private let cache = AtlasCityCache()
     /// Where the city is in its climb out of the plates (#1421). Pushed with the camera and the
     /// map, because it changes on the same clock they do — and `settled` until one is, so a
     /// renderer nobody has told about a rise draws the measured heights rather than nothing.
@@ -145,21 +155,42 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         self.depth = depth
         self.sampleCount = samples
         self.ids = ids
+        self.instances = AtlasVolumeBuffer(device: device)
         super.init()
     }
 
-    /// The map to draw next. The buffer is rebuilt here rather than per frame: the view is paused
-    /// and draws on demand, so a frame is a redraw of a map that did not change and copying the
-    /// whole city into a fresh allocation to redraw it would be work with no picture to show.
-    func show(_ city: AtlasCity, through eye: AtlasEye, rising rise: AtlasRise = .settled) {
-        self.eye = eye
+    /// The map to draw next: its boxes written into the one instance buffer, and the roster their
+    /// ids are read against held beside them.
+    ///
+    /// Called when the plan or the pigments change and at no other time (#1598) — `AtlasCityCache`
+    /// is what decides that. A camera drag and the rise push `look(through:rising:)` instead: the
+    /// city they would hand over is the city already here, and copying it in again is 2801 files'
+    /// worth of boxes per frame for a picture that differs only in where the reader stands.
+    func show(_ city: AtlasCity) {
         self.city = city
-        self.rise = rise
-        volumeCount = city.volumes.count
-        volumes = city.volumes.isEmpty ? nil : device.makeBuffer(
-            bytes: city.volumes,
-            length: MemoryLayout<AtlasVolume>.stride * city.volumes.count,
+        instances.write(city.volumes)
+    }
+
+    /// One update of the surface: the map where the map moved, and the eye every time (#1598).
+    ///
+    /// The whole of what `AtlasSurface` does per SwiftUI update, named here so the app and
+    /// `AtlasDragTests` drive the same two pushes. A drag reaches `look` alone, because the plan
+    /// and the pigments it was handed are the ones the frame before was drawn from.
+    func present(_ projection: AtlasProjection, in pigments: AtlasPigments) {
+        if let city = cache.rebuilt(of: projection.plan, in: pigments) {
+            show(city)
+        }
+        look(
+            through: AtlasEye(projection.camera, fit: projection.fit),
+            rising: AtlasRise(projection),
         )
+    }
+
+    /// Where the reader is looking from, and how far the city has climbed out of its plates
+    /// (#1421). What a drag pushes, per frame, leaving every box where it stands.
+    func look(through eye: AtlasEye, rising rise: AtlasRise = .settled) {
+        self.eye = eye
+        self.rise = rise
     }
 
     /// What is drawn at one pixel of the drawable — a file, a folder — or NOTHING, or no answer
@@ -238,7 +269,8 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         on buffer: MTLCommandBuffer,
     )
         -> Bool {
-        guard let volumes, var eye, volumeCount > 0, let target else { return false }
+        guard let volumes = instances.buffer, var eye, instances.boxes > 0, let target
+        else { return false }
 
         descriptor.colorAttachments[1].texture = target
         descriptor.colorAttachments[1].loadAction = .clear
@@ -274,7 +306,7 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
             type: .triangle,
             vertexStart: 0,
             vertexCount: Self.verticesPerVolume,
-            instanceCount: volumeCount,
+            instanceCount: instances.boxes,
         )
         encoder.endEncoding()
         return true

@@ -108,9 +108,21 @@ struct AtlasPickHarness {
         through camera: AtlasCamera,
     )
         async -> AtlasFrame? {
-        let fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
-        renderer.show(city, through: AtlasEye(camera, fit: fit))
+        renderer.show(city)
+        return await frame(of: plan, through: camera)
+    }
 
+    /// The map already pushed, drawn again through a new camera — the two calls in the order
+    /// `AtlasSurface` makes them, which is what a drag frame is (#1598).
+    func frame(of plan: AtlasPlan, through camera: AtlasCamera) async -> AtlasFrame? {
+        let fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
+        renderer.look(through: AtlasEye(camera, fit: fit))
+        return await frame()
+    }
+
+    /// Whatever the renderer has been pushed, drawn. What `AtlasDragTests` renders after driving
+    /// `present`, so nothing between the app's own call and the picture belongs to the harness.
+    func frame() async -> AtlasFrame? {
         let descriptor = MTLRenderPassDescriptor()
         descriptor.colorAttachments[0].texture = multisampled?.colour ?? colour
         descriptor.colorAttachments[0].loadAction = .clear

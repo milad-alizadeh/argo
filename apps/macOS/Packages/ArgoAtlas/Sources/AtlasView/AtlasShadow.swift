@@ -20,31 +20,17 @@ enum AtlasShadow {
         return min(1, max(0, (share - floor) / span))
     }
 
-    /// Which plate a rectangle lies on: the deepest frame its middle sits in, since a nested
-    /// plate's rect sits wholly inside the one it folds into. Its PLACE in the plan's own list,
-    /// because that is what names the folder — a decal is painted in this plate's tone and is
-    /// picked as this plate's folder, and both have to be the same one (#1156).
-    ///
-    /// Asked of the DECAL's own rect rather than the file's, which is what makes that sentence
-    /// true: a shadow thrown across a plate boundary lands on the neighbour's ground, and it is
-    /// the neighbour's ground it is drawn as.
-    ///
-    /// Nothing where no plate is under it at all, which is a tiling with no folders in it: the
-    /// decal then lies on the desktop and names nothing, the same as the desktop does.
-    static func plate(under rect: CGRect, on plates: [AtlasPlateFrame]) -> Int? {
-        let middle = CGPoint(x: rect.midX, y: rect.midY)
-        return plates.indices
-            .filter { plates[$0].rect.contains(middle) }
-            .max { plates[$0].depth < plates[$1].depth }
-    }
-
     /// The decal, or nothing when the file is too short to bother. Pushed across the plan away
     /// from the key by a share of the file's own height — real sunlight at this pitch would throw
     /// a shadow longer than the plate it lands on and read as somebody else's, so the throw is
     /// compressed the same way for every file.
+    ///
+    /// It comes back already carrying the id of the plate it lies on (#1156). One lookup rather
+    /// than two — the tone and the id are the same plate by construction here, where a caller
+    /// asking twice was two chances to name different ones (#1598).
     static func decal(
         of tile: AtlasTile,
-        on plates: [AtlasPlateFrame],
+        on plates: AtlasPlateIndex,
         ceiling: CGFloat,
         in pigments: AtlasPigments,
     )
@@ -62,8 +48,17 @@ enum AtlasShadow {
         )
         let rect = tile.rect.offsetBy(dx: offset.x, dy: offset.y)
 
-        let depth = plate(under: rect, on: plates).map { plates[$0].depth } ?? 0
+        // A decal carries the id of the PLATE it lies on, not 0 (#1156). It is drawn after that
+        // plate and coplanar with it, under a depth test that lets the later draw win, so an
+        // unidentified decal writes 0 over the plate's own id — a hole in the folder's ground that
+        // picks as nothing and is invisible at the flat camera, where the shader fades the decal
+        // out but the tiler still places it. It is painted in the plate's own tone; it is picked
+        // as the plate's own folder. Nothing under it at all is the desktop, which names nothing.
+        let ground = plates.plate(under: rect)
         let darkened = 1 - (1 - ArgoLight.shadowDepth) * weight
-        return AtlasVolume(rect, shade: darkened, pigment: pigments.plate(at: depth))
+        let decal = AtlasVolume(
+            rect, shade: darkened, pigment: pigments.plate(at: ground?.depth ?? 0),
+        )
+        return ground.map { decal.identified(as: UInt32($0.place + 1)) } ?? decal
     }
 }

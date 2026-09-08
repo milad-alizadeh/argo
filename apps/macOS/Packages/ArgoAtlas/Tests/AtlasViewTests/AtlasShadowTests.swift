@@ -13,7 +13,17 @@ struct AtlasShadowTests {
         rim: ArgoPalette.graphite.edge.hairline,
     )
     static let ground = CGRect(x: 0, y: 0, width: 100, height: 100)
-    static let plates = [AtlasPlateFrame(path: "a", rect: ground, depth: 0)]
+    static let plates = AtlasPlateIndex(
+        of: [AtlasPlateFrame(path: "a", rect: ground, depth: 0)],
+    )
+
+    /// The same ground with a folder nested on it, covering where the fixture's file throws.
+    static let nested = AtlasPlateIndex(of: [
+        AtlasPlateFrame(path: "a", rect: ground, depth: 0),
+        AtlasPlateFrame(
+            path: "a/b", rect: CGRect(x: 30, y: 30, width: 60, height: 60), depth: 1,
+        ),
+    ])
 
     static func tile(height: CGFloat) -> AtlasTile {
         AtlasTile(
@@ -66,5 +76,20 @@ struct AtlasShadowTests {
 
         #expect(tall.shade < short.shade)
         #expect(tall.shade >= Float(ArgoLight.shadowDepth))
+    }
+
+    /// A decal is painted in the tone of the plate it lands on and picked as that plate's folder,
+    /// and it has to be the SAME plate for both (#1156). The fixture's file throws onto a nested
+    /// plate, so a decal reading the outer one would come out a tone too light AND name the wrong
+    /// folder — one lookup is what makes that impossible.
+    @Test func `a decal takes the tone and the folder of the one plate under it`() throws {
+        let decal = try #require(AtlasShadow.decal(
+            of: Self.tile(height: 40), on: Self.nested, ceiling: 15, in: Self.pigments,
+        ))
+
+        #expect(decal.pigment == Self.pigments.plate(at: 1).simd)
+        #expect(decal.pigment != Self.pigments.plate(at: 0).simd)
+        // The nested plate is second in the list, so its id is 2.
+        #expect(decal.id == 2)
     }
 }
