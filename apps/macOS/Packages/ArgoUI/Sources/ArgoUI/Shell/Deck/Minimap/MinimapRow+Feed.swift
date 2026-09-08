@@ -14,8 +14,8 @@ extension MinimapRow {
     /// step its cell carries above it.
     ///
     /// `read` is the state the READING is in rather than the row: the reader's own fold, which only
-    /// the feed holds and which a prompt is the one row to change shape under, and the Ticket links
-    /// the words are drawn through.
+    /// the feed holds and which a prompt's bubble and a fold of calls change shape under, and the
+    /// Ticket links the words are drawn through.
     @MainActor init(
         _ row: FeedRow,
         height: CGFloat,
@@ -63,14 +63,10 @@ private extension FeedRow.Content {
         case let .message(text): prose(text, ink: .message, read: read)
         case let .thought(text): prose(text, ink: .thought, read: read)
         case let .call(call): call.shape
-        case let .survey(survey): .line(
-                parts: [.words(survey.label, survey.ending.ink)],
-                ink: survey.ending.ink,
-            )
-        case let .work(work): .line(
-                parts: [.words(work.label, work.ending.ink)],
-                ink: work.ending.ink,
-            )
+        // Both folds through one arm: a stretch of looking and a Turn's card of work are the same
+        // anatomy in the feed (`FeedFoldLine`), so they are one shape here too.
+        case let .survey(survey): survey.shape(read: read)
+        case let .work(work): work.shape(read: read)
         case let .unreadable(unreadable): .line(
                 parts: [.words(unreadable.label, .unreadable)],
                 ink: .unreadable,
@@ -101,6 +97,35 @@ private extension FeedRow.Content {
                 ink: end.ink,
             )
         }
+    }
+}
+
+private extension FeedFolded {
+    /// A fold as the lane draws it: one quiet line while the reader has it closed, and its count
+    /// line plus one per call it took while the reader has it open (#1691).
+    ///
+    /// The row's height is the stack's either way (`FeedShapeHeight.folded`), so a lane that read
+    /// the fold only for a prompt's bubble stretched one line over the whole of an open card — and
+    /// a reader scrubbing the lane could not tell an open card from a closed one.
+    @MainActor func shape(read: MinimapReadingState) -> MinimapRowShape {
+        let header: [MinimapLinePart] = [.words(label, ending.ink)]
+        guard !read.isFolded else { return .line(parts: header, ink: ending.ink) }
+        return .listed(header: header, steps: steps.map(\.parts), ink: ending.ink)
+    }
+}
+
+private extension FeedFoldStep {
+    /// One name in an open fold, as the row lists it: what the call named, and how many calls the
+    /// one name stands for — the `×3` the list carries so it adds up to the counts on the header.
+    @MainActor var parts: [MinimapLinePart] {
+        guard repeats > 1 else { return [.words(caption, ink)] }
+        return [.words(caption, ink), .words("×\(repeats)", ink, in: .machine)]
+    }
+
+    /// The ink the row draws this name in — a call's own ending rule over the one fact a step
+    /// carries, so a failed name is red in the lane exactly as it is in the row.
+    var ink: FeedInk {
+        (hasFailed ? FeedCall.Ending.failed : .succeeded).ink
     }
 }
 
@@ -159,7 +184,9 @@ extension SessionWaitSettled {
 /// lane's whole walk, handed down — and because an initializer here is at the four-parameter cap
 /// the boundaries gate holds it to (#755).
 struct MinimapReadingState {
-    /// Whether the reader has this row's prompt folded. Every row but a prompt ignores it.
+    /// Whether the reader has this row's own fold closed. Two shapes change under it — a prompt's
+    /// bubble draws fewer lines, and a fold of calls lists what it took (#1691); every other row
+    /// ignores it.
     var isFolded = true
     /// What the feed words as a Ticket, so the lane's silhouette is of the words the feed drew
     /// rather than of the URLs the record carried (#1178).

@@ -51,7 +51,13 @@ extension FeedTableCoordinator {
             }
             settle(stamp, measuring: nil)
         case let .rows(owed):
-            settle(stamp, measuring: owed)
+            // A fold the reader just let out is owed its rows in the same turn the cell was redrawn
+            // open, so the content and the geometry move together (#1691). Everything else — the
+            // tail a live Session grew, the Result that rewrote its last row — keeps the pass.
+            guard let standing = geometry.settled, standing.stamp.isReader(of: stamp) else {
+                return settle(stamp, measuring: owed)
+            }
+            settleInTurn(stamp, measuring: owed, over: standing)
         }
     }
 
@@ -183,7 +189,10 @@ extension FeedTableCoordinator {
     /// Atomic on purpose, and this is the whole of ADR-0030's promise: the rows the table draws,
     /// the heights it draws them at and the document the overview lane maps all change together,
     /// so there is no frame in which the feed is showing one reading's rows at another's heights.
-    private func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
+    ///
+    /// Not `private`, for the one caller that lands a document without a pass behind it — see
+    /// `settleInTurn`, which is beside this file because this one is at its length gate.
+    func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
         // The latch comes back FIRST, and on every way out of here (#1132). Nothing else can give
         // it back: the only other writes to it are the ones a pass makes when it STARTS. So a pass
         // that returns with no document — or returns to a deck `KeptDecks` has evicted, since

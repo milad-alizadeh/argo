@@ -62,6 +62,18 @@ struct FeedMeasureStamp: Equatable, Sendable {
         rows.isSameReading(as: other.rows)
     }
 
+    /// Whether the only thing that moved between the two is what the READER did — a fold let out,
+    /// a panel opened — over the very same rows, at the very same width and ink.
+    ///
+    /// The one delta the reader is watching for (#1691). The cell it is about has already been
+    /// redrawn in its new shape by the time this is asked (`FeedTableCoordinator.touchUp`), so a
+    /// height that arrives a hop later is a height that arrives after the content it belongs to:
+    /// the rows below sit at the old one for the hop and then step to the new one.
+    func isReader(of other: FeedMeasureStamp) -> Bool {
+        reader != other.reader && width == other.width && setting == other.setting
+            && rows == other.rows
+    }
+
     /// Whether the document taken against THIS stamp still stands under `other`: the same reading,
     /// or that reading grown at its tail (#1132).
     ///
