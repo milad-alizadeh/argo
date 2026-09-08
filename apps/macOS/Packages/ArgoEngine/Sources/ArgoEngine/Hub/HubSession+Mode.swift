@@ -9,7 +9,13 @@ public extension HubSession {
         // Nothing has been written since Argo set the rung, and `claude` writes its stance only at
         // Turn boundaries — so the rung Argo put the Session on is the later fact of the two.
         guard observedModeCount > modeSet.recordsWhenSet, let reported = observed.mode else {
-            return .exactly(modeSet.mode, cli: stance.value(for: modeSet.mode))
+            if cli == .claude, let permissionID = modeSet.permissionID {
+                return stance.reading(of: permissionID)
+            }
+            return .exactly(
+                modeSet.mode,
+                cli: stance.value(for: modeSet.mode),
+            )
         }
         // The record has spoken since, so it is what is true — except for Plan, which no CLI can
         // report: it reports Read Only's boundary either way, and the intent is knowable only from
@@ -29,7 +35,7 @@ public extension HubSession {
     /// moved on its own.
     var modeDidNotTake: SessionMode? {
         guard let modeSet, observedModeCount > modeSet.recordsWhenSet, let reported = observed.mode,
-              stance.value(for: modeSet.mode) != reported
+              !matches(set: modeSet, reported: reported)
         else { return nil }
         return modeSet.mode
     }
@@ -39,5 +45,12 @@ extension HubSession {
     /// The words THIS Session's CLI states a stance in (#749) — never one CLI's for both.
     private var stance: any AgentStanceVocabulary.Type {
         cli.stance
+    }
+
+    private func matches(set: SessionModeSet, reported: String) -> Bool {
+        let requested = set.permissionID ?? stance.value(for: set.mode)
+        guard cli == .claude else { return requested == reported }
+        return ClaudePermissionControl.normalized(requested)
+            == ClaudePermissionControl.normalized(reported)
     }
 }

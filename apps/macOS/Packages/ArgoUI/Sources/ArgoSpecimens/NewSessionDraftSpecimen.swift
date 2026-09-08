@@ -33,7 +33,7 @@ struct NewSessionDraftSpecimen: View {
                 harness: .claude,
                 catalog: .claude,
                 run: .unpicked,
-                mode: .code,
+                permission: specimenPermissionProfile(.claude),
             )
         }
         return actions

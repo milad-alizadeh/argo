@@ -135,6 +135,31 @@ struct DriveModeTests {
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
+    @Test
+    func `an adapter permission choice changes during a Turn`() async throws {
+        let live = Mutex<Set<String>>([])
+        let fixture = try SpawnFixture(liveness: { live.withLock { $0 } })
+        defer { fixture.remove() }
+        live.withLock { $0 = [fixture.resolvedProjectPath] }
+        _ = try await fixture.hub.spawnSession()
+        await fixture.hub.refreshLiveness()
+        await hubObserveToEnd(fixture.hub, hubTestObservation(
+            id: "session-from-cli",
+            events: [
+                .cwd(fixture.projectURL.path),
+                .mode(cli: "plan"),
+                .prompt(text: "Off you go", images: [], atMs: Date().epochMs),
+            ],
+        ))
+
+        _ = try await fixture.hub.driver.setPermission(
+            "acceptEdits",
+            for: "session-from-cli",
+        )
+
+        #expect(fixture.host.started.last?.written.count == 3)
+    }
+
     /// `claude` writes its stance at Turn boundaries, so the record still says what it said before
     /// the first change. Counting the second change from THAT would walk the ring too far — and the
     /// rung it lands on can be wider than the one asked for, which is what `modeBusy` exists to

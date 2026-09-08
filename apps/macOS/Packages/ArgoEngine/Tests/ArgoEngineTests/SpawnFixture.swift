@@ -172,6 +172,7 @@ struct SpawnFixture {
             // waiting for.
             mintTranscriptID: Self.minting(transcriptIDs),
         )
+        services.readClaudeModels = { .claude }
         services.readCodexModels = { _, _ in Self.codexCatalog }
         self.services = services
         self.hub = Self.makeHub(
@@ -249,13 +250,5 @@ struct SpawnFixture {
         let url = directory.appending(path: name)
         try "#!/bin/sh\n".write(to: url, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
-    }
-}
-
-/// A "terminal" that does no emulation at all: every line the agent wrote, in the order it wrote
-/// them. Enough to stand for a screen wherever the claim is that a reading found the right PTY.
-struct PlainTextScreen: TerminalScreen {
-    func rows(painted output: [UInt8], columns _: Int, rows _: Int) -> [String] {
-        (String(bytes: output, encoding: .utf8) ?? "").components(separatedBy: "\n")
     }
 }

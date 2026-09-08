@@ -19,19 +19,23 @@ enum DrivenCLI: CaseIterable, Sendable {
     @MainActor var surface: DriveSurface {
         switch self {
         case .claude:
-            return DriveSurface(
+            var surface = DriveSurface(
                 takesAttachments: true,
                 runsCommands: true,
                 resolvesMentions: true,
                 // `/model` and `/effort` reach the same input machinery a Turn does (#558).
                 chooses: .both,
             )
+            surface.catalog = .claude
+            surface.permission = ClaudePermissionControl.profile(mode: .code)
+            return surface
         case .codex:
             var surface = DriveSurface(
                 takesAttachments: true, runsCommands: false, resolvesMentions: false,
                 chooses: .both,
             )
             surface.catalog = SpawnFixture.codexCatalog
+            surface.permission = CodexPermissionControl.profile(mode: .code)
             return surface
         }
     }

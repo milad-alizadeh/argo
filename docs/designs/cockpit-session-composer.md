@@ -28,8 +28,8 @@ is no footer in them to hold the control.
 **Not re-rendered for #875**, which took the Mode control back to stock. Every render that draws a
 footer therefore draws a Mode pill with a ground, a stroke and a hand-drawn chevron the app no
 longer has; `run-modemenu.png` draws that pill open. The rungs, their marks, the width that hugs
-the selected one and everything else in those renders stands — see *Controls are stock, not
-bespoke*, which is where the revert is recorded.
+the selected one and everything else in those renders stands — see *Control behavior*, which is
+where the revert is recorded.
 
 Two further exceptions, named so nothing downstream reads them as drift. `perm.png` and
 `perm-edit.png` still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and
@@ -56,12 +56,13 @@ These become file names and ticket titles; renaming later is a migration.
 |---|---|
 | `SessionComposer` | the glass vessel and everything in it |
 | `ComposerField` | the growing text view |
-| `ComposerFooter` | attach · Mode · run facts · send |
+| `ComposerFooter` | attach · Permission on the left · run facts on the right · send |
 | `AddButton` | the leading `+`. Renamed from `AttachButton` by [`cockpit-composer-picker.md`](cockpit-composer-picker.md) (#590, done in #708): it opens files, skills and commands, and two of those are not attachments. The glyph is unchanged, and its sentence stays *Attach a file* until #689 gives it the menu |
 | `AttachmentTray` / `AttachmentChip` | chips above the field |
-| `ModePicker` | the `Read Only · Plan · Code · Auto` menu. Bespoke, not a `Picker` (#608) |
-| `RunFactsButton` | the `Opus 5 · Medium` fact line that opens the popover |
-| `RunSettingsPopover` | Model list + Effort scale + reset |
+| `ModePicker` | the adapter-authored Permission menu with a description per choice |
+| `AgentMark` | the monochrome Claude or ChatGPT provider mark |
+| `RunFactsButton` | the provider mark + Model + Effort control that opens the popover |
+| `RunSettingsPopover` | segmented Harness + descriptive Model list + segmented Effort + reset |
 | `SendButton` | the arrow, and its Stop state |
 | `QueuedTurnChip` | a follow-up held until the Turn ends |
 | `ComposerSeam` | the line above the vessel: draft, failure, capability notice |
@@ -98,8 +99,10 @@ grows by — then scrolls inside itself. The feed above is never squeezed.
 **The footer row** — `base` (8) gap, `base` (8) top padding. The 26pt below is no longer this
 study's own number: it is `ArgoControlBox.icon`, the box every icon button in the app is drawn in
 since #1243, and both controls here draw through `ArgoIconButton`. Controls left to right: `+`
-(26pt),
-spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
+(26pt), `ModePicker`, spacer, `RunFactsButton`, `SendButton` (26pt circle). Permission and run facts
+each hug their selected value at 28pt high, with the disclosure chevron immediately after the
+text. Both are clear at rest and take `surface.hover` under the
+pointer.
 
 **`ModePicker`'s closed control** — **the platform's, measured by nobody here** (amended in build,
 #875). It was 20pt high, radius `control` (6), `snug` (6) padding each side and `snug` (6) between
@@ -148,10 +151,10 @@ a pasted screenshot and a dropped file differ only in the name the chip derives.
 **Drag-over** — the whole vessel takes a 2pt (`ArgoStroke.indicator`) dashed accent rim and an
 accent wash reading *Drop to attach*.
 
-**The popover** — 264pt wide, radius `popover` (12), the same material as the vessel. Two
-sections: **Model** as an inline list with checkmarks, **Effort** as a four-stop segmented
-scale. It has **no second layer** — three model names fit inline, so nothing opens on top of
-anything.
+**The run popover** — 340pt wide, radius `popover` (12), the same material as the vessel. Harness is a
+two-stop segmented control with each monochrome provider mark tight against its label. Model is a
+vertical list of name, description and selected check. Effort is always segmented, including a
+six-rung scale.
 
 > **Corrected in build (#558): the Effort scale has FIVE stops, not four.** `run.png` draws
 > `Low · Medium · High · Max`, which was the CLI's whole ladder when the study was made.
@@ -189,9 +192,9 @@ anything.
 
 ## Harness, Model and Effort (#1692)
 
-The composer trigger reads `Claude Code · Opus 5 · Medium`, or the selected harness and its
-own Model and Effort. The run-settings popover gains a **Harness** section above Model and
-Effort. It uses a native, small segmented picker with **Claude Code** and **Codex**.
+The composer trigger shows the provider's monochrome mark followed by Model and Effort. The
+run-settings popover puts a segmented **Harness** control above a descriptive Model list and the
+segmented Effort scale.
 
 Before the Session process starts, choosing a harness changes the Model list and Effort scale
 to that harness's supported choices. The last harness is remembered app-wide across restarts.
@@ -199,28 +202,38 @@ Model and Effort selections belong to their harness; changing harness must not s
 model name to Codex or a Codex model name to Claude Code.
 
 After the process starts, Harness shows that Session's CLI and is disabled. Its tooltip reads
-`you can't change harness during a session create a new session`. Model, Effort and Mode remain
+`you can't change harness during a session create a new session`. Model, Effort and Permission remain
 editable during the Session, subject to the adapter's supported operations. A change must not
 claim to have altered a running request when the harness applies it to the next request.
 
+The footer calls the autonomy control **Permission** and renders the profile published by the
+selected Session adapter. Claude publishes `Allow · Ask · Deny · Automode`; Codex publishes
+`Ask for Approval · Approve for Me · Full Access`. Each adapter owns the ids, labels,
+descriptions, selected value, launch arguments and live mapping. Presentation returns the selected
+id without interpreting it. Permission changes are sent immediately, including during a Turn.
+
 Project settings no longer shows the Agent row. Its Companion plugin row remains absent.
 
-The existing popover width, native Form sections and type roles remain the contract. Harness
-adds one section; it does not open another modal. Required rendered states include editable
-Claude Code, editable Codex, and a started Session with the Harness segments disabled.
+The native Form sections and type roles remain the contract. Harness adds one section; it does not
+open another modal. Required rendered states include editable Claude Code, editable Codex, and a
+started Session with the Harness menu disabled.
 
-Mode may move during a Turn when every rung on the forward cycle is no wider than the wider
-endpoint. Auto to Code, Auto to Read only, and Code to Auto are allowed. Read only to Code
-remains held because the path crosses Auto, and the existing seam sentence explains that hold.
+Codex models come from the installed app-server's `model/list` response; Argo adds Astra when an
+older installed app-server does not advertise it yet. Claude models come from Anthropic's Models
+API when API credentials are available. Claude Code subscription installs do not expose an
+account model-list command, so Argo keeps its alias catalog as the offline fallback. Model and
+Effort always resolve within the selected harness's catalog.
 
-## Controls are stock, not bespoke
+Permission changes use the selected adapter's live mechanism and do not wait for a Turn boundary.
+
+## Control behavior
 
 | In the study | In the app |
 |---|---|
-| `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` — five stops, per the note above |
-| `.modemenu` (Mode) | `Menu`, indicator and all — bespoke from #608, stock again since #875 |
+| `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` — every offered stop |
+| `.modemenu` (Permission) | quiet content-width popover trigger; adapter-authored rows and descriptions |
 | the field | **`NSTextView` behind an `NSViewRepresentable`** (#734) — see the note under this table |
-| `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` |
+| `.picklist` (Harness and Model) | segmented Harness; descriptive Model button list |
 | `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
 | the popover's groups | `Form` sections, each with its own header |
 
@@ -464,10 +477,14 @@ chips are still drawn, both for reasons stated where they are measured.)
 10. **The roster row carries *Needs input*** with an amber dot while a Permission is pending, so
     a blocking Session is visible without opening it (#502's row, one addition).
 11. **A standing allow is a thing on the screen, not a thing the gate remembers** (#572). The
-    quiet third answer returns to the footer's trailing edge as *Always allow **Bash** in this
+    third answer reads *Always allow **Bash** in this
     Session* — the tool named, and the scope said in full rather than as *here*, which reads as
     the Workspace or the kind of call and was neither. Unbound to any key, because it is the one
     answer that outlives the call it is given for and so must not be reachable by muscle memory.
+    **Amended for #1692:** it sits beside *Allow* as the second positive path, while *Deny* stands
+    alone on the trailing edge. All three use neutral control fills inside the Permission vessel's
+    amber language; *Allow* carries the amber default outline. Return and Escape are plain text
+    hints, without colored keycap grounds.
     What it makes is drawn: a **`StandingAllowTray`** above the field, in the slot decision 4
     gives a queued turn and the chips give an attachment, reading *Always allowed in this
     Session* over one chip per tool, each with an `×`. Scope stated once over the row rather than
@@ -509,8 +526,8 @@ Everything snapped; **nothing was promoted**, so the contract is unchanged by th
 - **A 40pt attached seam is a poor drop target.** The rejected variant matched the Dock's height
   exactly, which read well at rest and badly with a file over it — the drop wash was a 40pt strip
   across the window's bottom edge. It is part of why the composer floats.
-- **A pop-up button inside the popover does not fit.** Its menu overflowed the popover's right
-  edge and covered the Effort row. That is the reason Model is an inline list, not a preference.
+- **A pop-up button needs enough width.** At 264pt its menu covered the Effort row. The 340pt
+  popover gives the native Harness and Model menus room while retaining the Effort scale.
 - **A popover nested in the deck header's fact line is invisible** — the fact line clips its own
   overflow so long branch names ellipsize. Anything dropped from that line must anchor to the
   band.
@@ -523,10 +540,13 @@ Everything snapped; **nothing was promoted**, so the contract is unchanged by th
 ### First Send starts the Session (#1692 clarification)
 
 New Session opens an empty composer without starting a Session process. The user chooses
-Harness, Model, Effort and Mode before the first Send. First Send starts the chosen harness
+Harness, Model, Effort and Permission before the first Send. First Send starts the chosen harness
 with those values. A failed start keeps the draft and the selected values for retry.
 Model and Effort choices come from the selected harness; changing harness restores its
 own remembered pair, validated against its available choices.
 
-Longer Effort lists use a native menu when they exceed the five segments that fit the
-264-point popover. Harness remains a native segmented picker in every state.
+Harness uses a segmented control and Model uses a descriptive list. Effort remains segmented for
+every harness because its values form an ordered scale; the 340pt popover fits the six Codex stops.
+
+**The Permission popover** — 330pt wide, enough for every adapter-authored description to retain
+the same readable line length.

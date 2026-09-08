@@ -175,37 +175,35 @@ struct ComposerRunFactsHeldTests {
         #expect(log.draft.notice == SessionDriveError.notDrivable.detail)
     }
 
-    // MARK: Criterion 6 — a Reset picked mid-Turn holds all three knobs, and lands all three
+    // MARK: Criterion 6 — a Reset picked mid-Turn holds both run knobs, and lands both
 
     @Test
-    func `a Reset refused mid-Turn holds all three knobs`() async {
+    func `a Reset refused mid-Turn holds both run knobs`() async {
         let log = Log()
 
         composer(
             log,
             refusingModel: .runFactsBusy,
             refusingEffort: .runFactsBusy,
-            refusingMode: .modeBusy,
         ).resetRunFacts()
-        // `resetRunFacts` fires a detached `Task`; give it a beat to run each of the three awaits.
+        // `resetRunFacts` fires a detached `Task`; give it a beat to run both awaits.
         try? await Task.sleep(for: .milliseconds(50))
 
-        #expect(log.draft.heldMode == RunFacts.defaultMode)
         #expect(log.draft.heldModel == RunFactsModel.default.id)
         #expect(log.draft.heldEffort == RunFacts.defaultEffort)
     }
 
-    /// A genuine refusal on the first knob still stops the rest — only a HOLD carries all three
+    /// A genuine refusal on the first knob still stops the rest — only a HOLD carries both
     /// through, on the rule `resetRunFacts()`'s own comment states.
     @Test
-    func `a Reset genuinely refused on Mode never reaches Model or Effort`() async {
+    func `a Reset genuinely refused on Model never reaches Effort`() async {
         let log = Log()
 
-        composer(log, refusingMode: .modeUnreachable).resetRunFacts()
+        composer(log, refusingModel: .runFactsUnsupported).resetRunFacts()
         try? await Task.sleep(for: .milliseconds(50))
 
-        #expect(log.acts == ["walk code"])
-        #expect(log.draft.heldMode == nil)
-        #expect(log.draft.notice == SessionDriveError.modeUnreachable.detail)
+        #expect(log.acts == ["model opus"])
+        #expect(log.draft.heldEffort == nil)
+        #expect(log.draft.notice == SessionDriveError.runFactsUnsupported.detail)
     }
 }

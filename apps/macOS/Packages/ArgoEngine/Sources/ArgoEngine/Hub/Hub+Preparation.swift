@@ -8,7 +8,7 @@ public extension Hub {
         -> SessionPreparation {
         let harness = harness ?? runStore.lastHarness()
         let catalog: SessionRunCatalog = switch harness {
-        case .claude: .claude
+        case .claude: await claudeCatalog()
         case .codex:
             try await spawnServices.readCodexModels(spawnServices.launcher, project.url.path)
         }
@@ -18,11 +18,18 @@ public extension Hub {
             throw AgentSpawnError.hostRefused(detail: "No models are available for this harness")
         }
         runStore.rememberHarness(harness)
+        var permission = adapters.permissionProfile(
+            for: modeStore.lastPicked(),
+            harness: harness,
+        )
+        if let remembered = runStore.lastPermission(for: harness) {
+            _ = permission.select(remembered)
+        }
         var preparation = SessionPreparation(
             harness: harness,
             catalog: catalog,
             run: run,
-            mode: modeStore.lastPicked(),
+            permission: permission,
         )
         preparation.cwd = sessionID.flatMap { id in
             sessions.first(where: { $0.id == id })?.cwd
@@ -60,6 +67,7 @@ public extension Hub {
             opening: SessionTurn.text(text, attaching: paths),
             mode: preparation.mode,
         )
+        seed.permission = preparation.permission.selected
         seed.run = preparation.run
         seed.catalog = preparation.catalog
         seed.images = zip(attachments, paths).filter(\.0.isImage).map(\.1)
@@ -81,10 +89,18 @@ public extension Hub {
             fallback: preparation.run,
         )
         modeStore.remember(preparation.mode)
+        if let permissionID = preparation.permission.selectedID {
+            runStore.rememberPermission(permissionID, for: preparation.harness)
+        }
     }
 }
 
 extension Hub {
+    func rememberPermission(_ id: String, for sessionID: String) {
+        let harness: AgentCLI = adapters.codex.thread(for: sessionID) == nil ? .claude : .codex
+        runStore.rememberPermission(id, for: harness)
+    }
+
     func rememberRun(_ pick: SessionRunPick, for sessionID: String) {
         if let thread = adapters.codex.thread(for: sessionID), let run = thread.run {
             runStore.remember(.model(run.model), for: .codex, fallback: run)
@@ -97,16 +113,27 @@ extension Hub {
 
 extension Hub {
     func configuredSeed(_ seed: SessionSeed, for harness: AgentCLI) async throws -> SessionSeed {
-        guard harness == .codex, seed.catalog == nil else { return seed }
-        let catalog = try await spawnServices.readCodexModels(
-            spawnServices.launcher, seed.cwd ?? project.url.path,
-        )
+        guard seed.catalog == nil else { return seed }
+        let catalog: SessionRunCatalog = switch harness {
+        case .claude: await claudeCatalog()
+        case .codex:
+            try await spawnServices.readCodexModels(
+                spawnServices.launcher, seed.cwd ?? project.url.path,
+            )
+        }
         guard let fallback = catalog.defaultRun else { throw SessionDriveError.runFactsUnsupported }
         let remembered = runStore.lastPicked(for: harness, fallback: fallback)
         var seed = seed
         seed.catalog = catalog
-        seed.run = catalog
-            .resolve(seed.run ?? seed.resuming.map { run(resuming: $0.sessionID) } ?? remembered)
+        if let resuming = seed.resuming {
+            seed.run = run(resuming: resuming.sessionID)
+        } else {
+            seed.run = catalog.resolve(seed.run ?? remembered)
+        }
         return seed
+    }
+
+    private func claudeCatalog() async -> SessionRunCatalog {
+        await (try? spawnServices.readClaudeModels()) ?? .claude
     }
 }

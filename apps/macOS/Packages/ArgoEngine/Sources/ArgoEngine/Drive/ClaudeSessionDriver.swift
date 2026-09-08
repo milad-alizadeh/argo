@@ -21,6 +21,7 @@ struct ClaudeSessionDriver: SessionDriver {
     /// the distance to walk is counted from it, and a copy of it here would be the second answer to
     /// a question the roster already answers.
     let stance: (String) -> SessionStance
+    let catalog: (String) -> SessionRunCatalog?
 
     /// All three, each for a reason of its own. Claude reads a path it is handed, which is the
     /// whole attachment mechanism (#540). A `/command` in the bracketed-paste burst `send` writes
@@ -28,8 +29,8 @@ struct ClaudeSessionDriver: SessionDriver {
     /// in `LiveCommandTests`, so that half is only as true as that run (#589). And an `@path` in
     /// the same burst is expanded by the CLI, so Argo naming the file again would hand the same
     /// bytes over twice (#687).
-    func surface(of _: String) -> DriveSurface {
-        DriveSurface(
+    func surface(of sessionID: String) -> DriveSurface {
+        var surface = DriveSurface(
             takesAttachments: true,
             runsCommands: true,
             resolvesMentions: true,
@@ -37,6 +38,9 @@ struct ClaudeSessionDriver: SessionDriver {
             // input machinery a Turn does — the mechanism `runsCommands` is already true for.
             chooses: .both,
         )
+        surface.catalog = catalog(sessionID)
+        surface.permission = ClaudePermissionControl.profile(reading: stance(sessionID).mode)
+        return surface
     }
 
     func send(_ text: String, to sessionID: String) throws {
@@ -90,7 +94,7 @@ struct ClaudeSessionDriver: SessionDriver {
             throw SessionDriveError.notDrivable
         }
         let standing = stance(sessionID)
-        guard let observed = standing.mode.cliValue,
+        guard let observed = ClaudePermissionControl.normalized(standing.mode.cliValue),
               let steps = ClaudePermissionMode.cycles(from: observed, to: mode)
         else { throw SessionDriveError.modeUnreachable }
         guard !standing.isRunning || ClaudePermissionMode.canWalkDuringTurn(
@@ -108,6 +112,29 @@ struct ClaudeSessionDriver: SessionDriver {
             }
             await ClaudeModeCycle.pace()
         }
+    }
+
+    /// Permission ids are Claude's own values. Unlike the generic Mode walk retained for older
+    /// callers, this control mirrors Claude's live permission picker and may be changed mid-Turn.
+    func setPermission(_ id: String, for sessionID: String) async throws -> SessionMode {
+        guard let choice = ClaudePermissionControl.choice(id: id) else {
+            throw SessionDriveError.modeUnreachable
+        }
+        guard let claim = ownership.ownerOf(sessionID: sessionID) else {
+            throw SessionDriveError.notDrivable
+        }
+        guard let observed = ClaudePermissionControl.normalized(stance(sessionID).mode.cliValue),
+              let steps = ClaudePermissionMode.cycles(from: observed, to: choice.id)
+        else { throw SessionDriveError.modeUnreachable }
+        guard terminals.beginWalk(on: claim) else { throw SessionDriveError.modeWalking }
+        defer { terminals.endWalk(on: claim) }
+        for _ in 0 ..< steps {
+            guard terminals.write(ClaudeModeCycle.keystroke, to: claim) else {
+                throw SessionDriveError.notDrivable
+            }
+            await ClaudeModeCycle.pace()
+        }
+        return choice.mode
     }
 
     /// `/model <id>` at the prompt. Nothing is walked and nothing is counted: unlike a rung, a

@@ -58,6 +58,20 @@ struct HarnessRememberingTests {
     }
 
     @Test
+    func `each harness restores its own opaque Permission choice`() throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let file = fixture.rootURL.appending(path: "run.json")
+        let store = SessionRunStore(fileURL: file)
+        store.rememberPermission("manual", for: .claude)
+        store.rememberPermission("fullAccess", for: .codex)
+
+        let reopened = SessionRunStore(fileURL: file)
+        #expect(reopened.lastPermission(for: .claude) == "manual")
+        #expect(reopened.lastPermission(for: .codex) == "fullAccess")
+    }
+
+    @Test
     func `an older run configuration defaults to Claude Code`() throws {
         let fixture = try ProjectFixture()
         defer { fixture.remove() }

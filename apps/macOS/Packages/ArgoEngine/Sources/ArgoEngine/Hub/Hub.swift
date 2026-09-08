@@ -106,6 +106,7 @@ public final class Hub {
     /// The Model and Effort a spawn opens on (#1175). Read at the spawn for the reason the rung
     /// above is: the file is where two windows meet.
     @ObservationIgnored let runStore: SessionRunStore
+    @ObservationIgnored var runCatalogs: [SessionOwnership.ClaimID: SessionRunCatalog] = [:]
 
     @ObservationIgnored let spawnServices: SpawnServices
     /// This Hub's own corner of the shared companion root: two Hubs mint the same claim ids, so

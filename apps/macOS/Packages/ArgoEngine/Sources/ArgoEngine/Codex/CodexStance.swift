@@ -38,6 +38,15 @@ struct CodexStance: Equatable {
     let approval: CodexApproval
     let sandbox: CodexSandbox
 
+    var mode: SessionMode {
+        switch (approval, sandbox) {
+        case (.never, .fullAccess): .auto
+        case (.untrusted, .workspaceWrite), (.onRequest, .workspaceWrite),
+             (.never, .workspaceWrite), (.untrusted, .fullAccess), (.onRequest, .fullAccess): .code
+        case (.untrusted, .readOnly), (.onRequest, .readOnly), (.never, .readOnly): .readOnly
+        }
+    }
+
     static func of(_ mode: SessionMode) -> CodexStance {
         switch mode {
         case .readOnly, .plan: CodexStance(approval: .onRequest, sandbox: .readOnly)

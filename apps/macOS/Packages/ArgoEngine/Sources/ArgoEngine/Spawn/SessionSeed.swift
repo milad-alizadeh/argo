@@ -11,6 +11,7 @@ public struct SessionSeed: Sendable, Equatable {
     var images: [URL] = []
     public var catalog: SessionRunCatalog?
     public var run: SessionRun?
+    var permission: SessionPermissionProfile.Choice?
     public let cwd: String?
     /// The prompt the agent opens on. Argo owns no more of the fresh Session than this — after the
     /// first turn it is an agent like any other.

@@ -17,6 +17,8 @@ package enum ComposerMenusOpening {
     /// the three above — nothing about it reads the draft — but it is the composer's other thing
     /// that opens, and a Specimen reaches every one of them through this one hook.
     case runSettings
+    /// The adapter-authored Permission popover on the footer's leading side.
+    case permission
 }
 
 /// Which menu the composer's line has open, where the keyboard is in it, and what each event does

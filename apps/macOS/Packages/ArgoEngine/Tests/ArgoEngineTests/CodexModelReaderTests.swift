@@ -8,7 +8,7 @@ struct CodexModelReaderTests {
     @Test func `catalog discovery creates no Session and follows every page`() async throws {
         let host = CatalogHost()
         let catalog = try await CodexModelReader(host: host).read(launch: Self.launch)
-        #expect(catalog.models.map(\.id) == ["first", "second"])
+        #expect(catalog.models.map(\.id) == ["first", "second", "gpt-6-astra"])
         #expect(catalog.defaultRun == SessionRun(model: "second", effort: .ultra))
         #expect(catalog.resolve(SessionRun(model: "first", effort: .max))
             == SessionRun(model: "first", effort: .medium))

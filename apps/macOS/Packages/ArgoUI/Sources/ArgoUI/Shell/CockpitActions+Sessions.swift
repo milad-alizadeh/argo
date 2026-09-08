@@ -8,7 +8,12 @@ public extension CockpitActions {
     /// Each closure defaults to doing nothing, on the same terms as `Projects`.
     struct Sessions {
         public var prepare: (AgentCLI?, String?) async throws -> SessionPreparation = { _, _ in
-            SessionPreparation(harness: .claude, catalog: .claude, run: .unpicked, mode: .code)
+            SessionPreparation(
+                harness: .claude,
+                catalog: .claude,
+                run: .unpicked,
+                permission: SessionPermissionProfile(choices: [], selectedID: nil, defaultID: ""),
+            )
         }
 
         public var remember: (SessionPreparation) -> Void = { _ in }

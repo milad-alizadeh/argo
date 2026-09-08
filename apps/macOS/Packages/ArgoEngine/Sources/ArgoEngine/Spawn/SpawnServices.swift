@@ -57,6 +57,10 @@ public struct SpawnServices {
     /// What this window can start and see, all three from the app layer — see `SpawnHosts`.
     public let hosts: SpawnHosts
     public let launcher: AgentLauncher
+    var readClaudeModels: () async throws -> SessionRunCatalog = {
+        try await ClaudeModelReader().read()
+    }
+
     var readCodexModels: (AgentLauncher, String) async throws
         -> SessionRunCatalog = { launcher, cwd in
             try await CodexModelReader().read(launcher: launcher, cwd: cwd)

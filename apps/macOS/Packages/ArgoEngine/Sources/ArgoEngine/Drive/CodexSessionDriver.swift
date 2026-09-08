@@ -38,6 +38,9 @@ struct CodexSessionDriver: SessionDriver {
             chooses: thread(for: sessionID)?.catalog == nil ? RunFactKnobs() : .both,
         )
         surface.catalog = thread(for: sessionID)?.catalog
+        if let thread = thread(for: sessionID) {
+            surface.permission = CodexPermissionControl.profile(mode: thread.stance.mode)
+        }
         return surface
     }
 
@@ -79,6 +82,14 @@ struct CodexSessionDriver: SessionDriver {
     func setMode(_ mode: SessionMode, for sessionID: String) async throws {
         guard let thread = thread(for: sessionID) else { throw SessionDriveError.notDrivable }
         thread.setMode(mode)
+    }
+
+    func setPermission(_ id: String, for sessionID: String) async throws -> SessionMode {
+        guard let choice = CodexPermissionControl.choice(id: id) else {
+            throw SessionDriveError.modeUnreachable
+        }
+        try await setMode(choice.mode, for: sessionID)
+        return choice.mode
     }
 
     func setModel(_ model: String, for sessionID: String) async throws {

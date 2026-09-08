@@ -29,6 +29,7 @@ extension CockpitView {
             chooses: surface.chooses,
         )
         capabilities.catalog = surface.catalog
+        capabilities.permission = surface.permission
         return capabilities
     }
 

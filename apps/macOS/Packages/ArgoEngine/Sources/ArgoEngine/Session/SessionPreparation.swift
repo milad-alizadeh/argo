@@ -4,16 +4,21 @@ public struct SessionPreparation: Equatable, Sendable {
     public let harness: AgentCLI
     public let catalog: SessionRunCatalog
     public var run: SessionRun
-    public var mode: SessionMode
+    public var permission: SessionPermissionProfile
 
-    public var modeReading: SessionModeReading {
-        .exactly(mode, cli: ClaudePermissionMode.value(for: mode))
+    public var mode: SessionMode {
+        permission.selected?.mode ?? .code
     }
 
-    public init(harness: AgentCLI, catalog: SessionRunCatalog, run: SessionRun, mode: SessionMode) {
+    public init(
+        harness: AgentCLI,
+        catalog: SessionRunCatalog,
+        run: SessionRun,
+        permission: SessionPermissionProfile,
+    ) {
         self.harness = harness
         self.catalog = catalog
         self.run = run
-        self.mode = mode
+        self.permission = permission
     }
 }

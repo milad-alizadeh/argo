@@ -17,8 +17,8 @@ struct PreparedSessionComposer: View {
     private var projection: SessionComposerProjection.Composer {
         SessionComposerProjection.Composer(
             sessionID: "new-session", placeholder: "Message \(preparation.harness.readableName)…",
-            facts: facts, standingAllows: [], isRunning: false,
-            mode: preparation.modeReading,
+            facts: facts, permission: preparation.permission, standingAllows: [], isRunning: false,
+            mode: .exactly(preparation.mode, cli: preparation.permission.selectedID ?? "unknown"),
             modeDidNotTake: nil, lostTurn: nil, canAttach: true,
             canRunCommands: preparation.harness == .claude,
             resolvesMentions: preparation.harness == .claude,

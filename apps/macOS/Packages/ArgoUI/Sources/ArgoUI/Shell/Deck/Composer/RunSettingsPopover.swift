@@ -5,14 +5,8 @@ import SwiftUI
 
 /// The Session's Model and Effort, set where they are stated (#558).
 ///
-/// **Two `Form` sections and no second layer.** Model is an inline list because three names fit and
-/// a pop-up button's menu overflowed the popover's right edge and covered the Effort row — nothing
-/// here opens on top of anything. Effort is segmented because it is ORDERED rather than a set of
-/// equals, which is what makes it a scale.
-///
-/// **Mode is not repeated here.** It is on the footer beside the trigger, where it is read without
-/// opening anything (design decision 1) — and a value stated in two places is one you keep in sync
-/// by eye. It appears in exactly one sentence: the reset's, which names what it restores.
+/// Harness and Effort are segmented choices. Models are a descriptive list, so the reader can
+/// compare them before choosing one.
 ///
 /// A section whose knob the adapter does not declare is OMITTED rather than drawn greyed
 /// (acceptance criterion 4). A popover with both omitted is never reached: `RunFactsButton` draws
@@ -22,27 +16,11 @@ struct RunSettingsPopover: View {
 
     /// What this popover says and does — see `RunFactsControl`.
     let control: RunFactsControl
-    /// Read for the reset's sentence alone; Mode itself is never drawn here (decision 1).
-    let mode: SessionModeReading
 
     var body: some View {
         Form {
-            if let harness = facts.harness {
-                Section("Harness") {
-                    Picker("Harness", selection: Binding(
-                        get: { harness },
-                        set: { control.setHarness?($0) },
-                    )) {
-                        ForEach(AgentCLI.allCases, id: \.self) { cli in
-                            Text(cli.readableName).tag(cli)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .disabled(control.setHarness == nil)
-                    .help(control.setHarness == nil ? Self
-                        .harnessLockedWords : "Choose the harness for this new Session")
-                }
+            if facts.harness != nil {
+                Section("Harness") { harnessControl }
             }
             // First, because it names what the rows below are about to draw a held mark on, and a
             // reader who opened the popover to see why a row did not tick needs the word before
@@ -50,13 +28,11 @@ struct RunSettingsPopover: View {
             if let lockWords = control.lockWords {
                 RunSettingsLock(words: lockWords)
             }
-            // The heading is spelled as a view rather than as `Section("Model")` because a Form
-            // draws a string header itself.
             if facts.chooses.model {
-                Section { models } header: { heading("Model") }
+                Section("Model") { modelList }
             }
             if facts.chooses.effort {
-                Section { efforts } header: { heading("Effort") }
+                Section("Effort") { effortPicker }
             }
             if facts.harness != .codex {
                 resetRow
@@ -67,64 +43,52 @@ struct RunSettingsPopover: View {
             }
         }
         .formStyle(.grouped)
-        // The design's own number. Held rather than hugged: the Effort scale's five segments and
-        // the Model rows' trailing notes would otherwise size the popover off whichever is longer.
         .frame(width: ArgoRunSettings.width)
         .scrollContentBackground(.hidden)
     }
 
-    /// One section's heading. The Form styles it exactly as it styles the string it replaces.
     static let harnessLockedWords = "you can't change harness during a session create a new session"
 
-    private func heading(_ words: String) -> some View {
-        Text(words)
+    private var harnessControl: some View {
+        harnessPicker
+            .disabled(control.setHarness == nil)
+            .help(control.setHarness == nil ? Self
+                .harnessLockedWords : "Choose the harness for this new Session")
     }
 
-    /// Rows with a checkmark, drawn rather than picked (#558).
-    ///
-    /// Buttons and not the `Picker(.inline)` the design names, because inside a grouped `Form`
-    /// that control draws RADIO BUTTONS and re-synthesises each row from its tag's label alone:
-    /// neither the checkmark nor the trailing note survives it.
-    private var models: some View {
-        ForEach(facts.models) { model in
-            Button { control.acts.setModel(model.id) } label: { row(model) }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(model == facts.tickedModel ? [.isSelected] : [])
+    private var harnessPicker: some View {
+        HStack(spacing: ArgoSpacing.hair) {
+            ForEach(AgentCLI.allCases, id: \.self) { cli in
+                HarnessSegment(
+                    harness: cli,
+                    isSelected: facts.harness == cli,
+                    select: { control.setHarness?(cli) },
+                )
+            }
+        }
+        .padding(ArgoSpacing.hair)
+        .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
+    }
+
+    private var modelList: some View {
+        VStack(spacing: ArgoSpacing.hair) {
+            ForEach(facts.models) { model in
+                DescriptiveChoiceRow(
+                    name: control.held.model == model.id ? "≈ \(model.name)" : model.name,
+                    detail: model.note,
+                    isSelected: model.id == modelSelection.wrappedValue,
+                ) {
+                    control.acts.setModel(model.id)
+                }
+            }
         }
     }
 
-    /// The tick, the name, and the note the design sets beside it. A Session whose records have
-    /// named no model ticks NOTHING rather than the first row, for the reason an inexact Mode
-    /// reading ticks nothing (#545) — and the mark's SPACE is held either way, so the names do not
-    /// shift when the tick moves.
-    ///
-    /// A row Argo is HOLDING draws its name under the same `≈` a held rung draws (#940, #1329):
-    /// the tick still ticks the CLI's own reading, because a held pick is not the Model the
-    /// Session runs at yet — it is a claim about the Turn's end, and the mark says so.
-    private func row(_ model: RunFactsModel) -> some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            ArgoGlyph(ArgoSymbol.chosen, .inline)
-                .foregroundStyle(argo.color.interaction.accent)
-                .opacity(model == facts.tickedModel ? 1 : 0)
-            Text(model.id == control.held.model ? "≈ \(model.name)" : model.name)
-                .argoText(ArgoTypography.body)
-            Spacer(minLength: ArgoSpacing.base)
-            Text(model.note)
-                .argoLine(ArgoTypography.caption, .body)
-        }
-        // Or only the words take the click, and the gap between name and note does nothing.
-        .contentShape(Rectangle())
-    }
-
-    /// Five stops, not the four the approved design drew — `claude --effort` documents
-    /// `low, medium, high, xhigh, max`, and a four-stop control could not set a value the CLI can
-    /// be on. See the amended-in-build note on `cockpit-session-composer.md`.
-    @ViewBuilder private var efforts: some View {
-        if facts.efforts.count > ClaudeEffort.offered.count {
-            effortPicker.pickerStyle(.menu)
-        } else {
-            effortPicker.pickerStyle(.segmented)
-        }
+    private var modelSelection: Binding<String?> {
+        Binding(
+            get: { control.held.model ?? facts.tickedModel?.id },
+            set: { picked in picked.map(control.acts.setModel) },
+        )
     }
 
     private var effortPicker: some View {
@@ -133,6 +97,7 @@ struct RunSettingsPopover: View {
                 Text(rung.label).tag(Optional(rung))
             }
         }
+        .pickerStyle(.segmented)
         .controlSize(.small)
         .labelsHidden()
     }
@@ -145,7 +110,7 @@ struct RunSettingsPopover: View {
     /// about what pressing it does.
     private var resetRow: some View {
         Button(action: control.acts.reset) {
-            Label(RunFacts.resetWords, systemImage: ArgoSymbol.reset)
+            Label(facts.resetWords, systemImage: ArgoSymbol.reset)
                 .argoText(ArgoTypography.caption)
         }
         .buttonStyle(.plain)
@@ -153,24 +118,14 @@ struct RunSettingsPopover: View {
         .foregroundStyle(isAtDefaults ? argo.color.text.tertiary : argo.color.text.secondary)
     }
 
-    /// Whether there is anything left for the reset to do. All THREE, because it sets all three:
-    /// inertness read off Model and Effort alone would draw a dead button on a Session sitting on
-    /// Auto, whose Mode this act would very much have moved.
-    ///
-    /// Never `isLocked` beside it any more (#1329): a reset mid-Turn is held rather than refused
-    /// (`SessionComposer.resetRunFacts()`), so it does something even where the prompt is busy.
     private var isAtDefaults: Bool {
-        facts.isDefault && mode.rung == RunFacts.defaultMode
+        facts.isDefault
     }
 
-    /// What this popover says, unwrapped once so the body above reads as the design does.
     private var facts: RunFacts {
         control.facts
     }
 
-    /// The Effort segment to draw selected — the CLI's own reading, or the rung Argo is HOLDING
-    /// while it does (#1329): a hold that drew no segment selected would read as though the pick
-    /// had not been taken at all, and `RunSettingsLock` is what says it is not landed yet.
     private var effortSelection: Binding<SessionEffort?> {
         Binding(
             get: { control.held.effort ?? facts.effort.rung },
@@ -182,16 +137,13 @@ struct RunSettingsPopover: View {
 /// The popover's own measurement, held here rather than inline for the reason
 /// `ArgoComposerVessel`'s are: it is the design's number, and a second spelling of it would drift.
 enum ArgoRunSettings {
-    /// 264pt, off `cockpit-session-composer.md`.
-    static let width: CGFloat = 264
+    /// 340pt, enough for every six-stop Effort scale without changing its control type.
+    static let width: CGFloat = 340
 }
 
-@MainActor private func popover(_ facts: RunFacts, mode: SessionMode = .code) -> some View {
-    RunSettingsPopover(
-        control: RunFactsControl(facts: facts),
-        mode: .exactly(mode, cli: "acceptEdits"),
-    )
-    .argoAppearance()
+@MainActor private func popover(_ facts: RunFacts) -> some View {
+    RunSettingsPopover(control: RunFactsControl(facts: facts))
+        .argoAppearance()
 }
 
 #Preview("Run settings — at the defaults, so the reset is inert") {
@@ -199,7 +151,7 @@ enum ArgoRunSettings {
 }
 
 #Preview("Run settings — off the defaults, so the reset names them") {
-    popover(bothKnobs("claude-sonnet-5", .exactly(.xhigh, cli: "xhigh")), mode: .auto)
+    popover(bothKnobs("claude-sonnet-5", .exactly(.xhigh, cli: "xhigh")))
 }
 
 // The read-back that acceptance criterion 2 is about: an id off Argo's table gets a row of its own
@@ -225,7 +177,6 @@ enum ArgoRunSettings {
             facts: bothKnobs("claude-opus-5", .exactly(.medium, cli: "medium")),
             held: RunFactsHeld(model: "claude-sonnet-5"),
         ),
-        mode: .exactly(.code, cli: "acceptEdits"),
     )
     .argoAppearance()
 }

@@ -18,9 +18,9 @@ extension SessionComposer {
                 toggle: toggleAddMenu,
             ),
             mode: ModePickerControl(
-                reading: composer.mode,
-                heldMode: draft.heldMode,
-                setMode: ask,
+                permission: composer.permission,
+                setPermission: askForPermission,
+                isPermissionOpenForRender: opening == .permission,
             ),
             runFacts: RunFactsControl(
                 facts: composer.facts,

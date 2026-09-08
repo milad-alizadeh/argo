@@ -309,8 +309,16 @@ stops nothing would be the promise decision 9 refuses to make about attachments.
 
 | name | tier | location | props | composed-of |
 | --- | --- | --- | --- | --- |
-| NewSessionComposer | organism | ArgoUI/Shell/Deck/Composer; owns the draft before startup | Session actions, optional adjacent Session id, started callback; loading, ready, refused | PreparedSessionComposer, native progress and retry controls |
-| PreparedSessionComposer | organism | ArgoUI/Shell/Deck/Composer; projects a ready draft | Preparation, intents, first Send and Harness callbacks | SessionComposer |
+| `NewSessionComposer` | organism | `ArgoUI/Shell/Deck/Composer/` — owns the draft before startup | Session actions, optional adjacent Session id, started callback; loading, ready, refused | `PreparedSessionComposer`, native progress and retry controls |
+| `PreparedSessionComposer` | organism | same — projects a ready draft | preparation, intents, first Send and Harness callbacks | `SessionComposer` |
+| `AgentMark` | atom | same — the provider identity belongs to the run controls | `harness: AgentCLI` | a monochrome template `Image` at `ArgoIconSize.control` |
+| `RunFactsButton` | atom | same — rewritten in place | `RunFactsControl` | `AgentMark`, run-fact text and the shared quiet footer face |
+| `RunSettingsPopover` | molecule | same — rewritten in place | `RunFactsControl` | segmented Harness, descriptive Model list, segmented Effort, reset `Button` |
+| `ComposerFooterControlFace` | atom | same — new shared face | hover state | clear content-width, 28pt-high control; `surface.hover` under the pointer |
+| `ModePicker` | molecule | same — rewritten in place | adapter-authored `SessionPermissionProfile`, selection callback | quiet footer face and descriptive Permission popover |
 
-The Harness picker stays inline in RunSettingsPopover. The draft uses the existing
-SessionComposer field, footer, Mode picker, attachment tray and settings controls.
+Harness and Model stay inside `RunSettingsPopover`; their repeated rows remain private to it. The
+Permission control stays on the footer's leading side and shares its exact frame with
+`RunFactsButton`. The provider marks extract because they appear in both the footer and Harness
+segments. Permission vocabulary comes from the adapter through `SessionPermissionProfile`; the UI
+contains no Claude or Codex permission switch.

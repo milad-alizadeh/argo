@@ -15,7 +15,8 @@ struct CodexModelPage: Decodable {
             }
             guard efforts.contains(defaultEffort) else { return nil }
             return SessionRunCatalog.Model(
-                id: model.model, name: model.displayName, efforts: efforts,
+                id: model.model, name: model.displayName,
+                detail: model.description ?? "OpenAI coding model", efforts: efforts,
                 defaultEffort: defaultEffort, isDefault: model.isDefault,
             )
         }
@@ -24,6 +25,7 @@ struct CodexModelPage: Decodable {
     struct Model: Decodable {
         let model: String
         let displayName: String
+        let description: String?
         let hidden: Bool
         let isDefault: Bool
         let defaultReasoningEffort: String

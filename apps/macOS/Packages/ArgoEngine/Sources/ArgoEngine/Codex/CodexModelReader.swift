@@ -91,7 +91,7 @@ final class CodexModelReader {
         models += page.models.filter { next in !models.contains { $0.id == next.id } }
         guard let cursor = page.nextCursor else {
             guard !models.isEmpty else { return finish(.failure(Failure.unavailable)) }
-            return finish(.success(SessionRunCatalog(models: models)))
+            return finish(.success(SessionRunCatalog(models: models).ensuringAstra()))
         }
         guard cursors.insert(cursor).inserted else { return finish(.failure(Failure.unavailable)) }
         list(cursor: cursor)

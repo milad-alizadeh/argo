@@ -86,6 +86,18 @@ public final class SessionRunStore {
         file.write(remembered)
     }
 
+    func lastPermission(for harness: AgentCLI) -> String? {
+        file.load(orEmpty: Remembered(model: "", effort: "")).permissions?[harness.rawValue]
+    }
+
+    func rememberPermission(_ id: String, for harness: AgentCLI) {
+        var remembered = file.load(orEmpty: Remembered(model: "", effort: ""))
+        var permissions = remembered.permissions ?? [:]
+        permissions[harness.rawValue] = id
+        remembered.permissions = permissions
+        file.write(remembered)
+    }
+
     /// The file's shape, owned here so the format is pinned in one place. Both halves are spelled
     /// in the CLI's own words — the model verbatim as it goes on argv, the effort as its rung's raw
     /// value, which is `claude`'s word for it too (`ClaudeEffort`).
@@ -99,5 +111,6 @@ public final class SessionRunStore {
         var effort: String
         var harness: String?
         var runs: [String: Pair]?
+        var permissions: [String: String]?
     }
 }

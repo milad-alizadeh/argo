@@ -60,13 +60,15 @@ extension CockpitView {
         )
     }
 
-    /// The three standing things the footer can put that Session on (#545, #558), bound the way
+    /// The four standing things the footer can put that Session on (#545, #558, #1692), bound the
+    /// way
     /// `stop` is and inert together with nothing selected — which is also the state with no footer
     /// to press them from. `async` because the port's are: a rung is walked a keystroke at a time
-    /// (#653), and the other two reach the CLI as a line typed at its prompt.
+    /// (#653), and the other settings reach the CLI through their harness adapter.
     private func settings(for sessionID: String?) -> SessionSettingIntents {
         guard let sessionID else { return SessionSettingIntents() }
         return SessionSettingIntents(
+            setPermission: { _ = try await actions.drive.setPermission($0, for: sessionID) },
             setMode: { try await actions.drive.setMode($0, for: sessionID) },
             setModel: { try await actions.drive.setModel($0, for: sessionID) },
             setEffort: { try await actions.drive.setEffort($0, for: sessionID) },

@@ -57,6 +57,11 @@ public protocol SessionDriver {
     /// answers when the walk is done, so the caller's refusal covers the whole of it.
     func setMode(_ mode: SessionMode, for sessionID: String) async throws
 
+    /// Select one adapter-published permission choice by its opaque id. The adapter owns the
+    /// vocabulary, maps the id to its mechanism, and returns the underlying rung it applied.
+    @discardableResult
+    func setPermission(_ id: String, for sessionID: String) async throws -> SessionMode
+
     /// Put the Session on a named model (#558). The id is the CLI's OWN — an alias it takes, or a
     /// full model name — and it is passed through untouched: Argo's readable table is for the
     /// composer's ink and has no business narrowing what may be asked for.

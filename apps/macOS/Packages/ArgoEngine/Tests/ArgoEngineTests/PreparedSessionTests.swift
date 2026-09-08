@@ -11,7 +11,7 @@ struct PreparedSessionTests {
         var preparation = try await fixture.hub.prepareSession(harness: .claude)
         #expect(fixture.host.launches.isEmpty)
         preparation.run = SessionRun(model: "sonnet", effort: .high)
-        preparation.mode = .readOnly
+        preparation.permission.select("manual")
         _ = try await fixture.hub.startPreparedSession(
             preparation,
             text: "Do the work",
@@ -20,7 +20,7 @@ struct PreparedSessionTests {
         let launch = try #require(fixture.host.launches.last)
         #expect(launch.arguments.contains("sonnet"))
         #expect(launch.arguments.contains("high"))
-        #expect(launch.arguments.contains("plan"))
+        #expect(launch.arguments.contains("manual"))
         #expect(launch.arguments.last == "Do the work")
     }
 
@@ -41,7 +41,7 @@ struct PreparedSessionTests {
             harness: .codex,
             catalog: catalog,
             run: SessionRun(model: "codex-first", effort: .high),
-            mode: .code,
+            permission: codexPermissions(),
         )
         let id = try await fixture.hub.startPreparedSession(
             preparation,
@@ -54,6 +54,7 @@ struct PreparedSessionTests {
         #expect(server.request("turn/start")?.params.stringField("model") == "codex-first")
         #expect(server.request("turn/start")?.params.stringField("effort") == "high")
         server.started(turn: "first")
+        _ = try await fixture.hub.driver.setPermission("fullAccess", for: id)
         try await fixture.hub.driver.setModel("codex-second", for: id)
         try await fixture.hub.driver.setEffort(.ultra, for: id)
         #expect(server.request("turn/start")?.params.stringField("model") == "codex-first")
@@ -61,6 +62,7 @@ struct PreparedSessionTests {
         try fixture.hub.driver.send("Next prompt", to: id)
         #expect(server.request("turn/start")?.params.stringField("model") == "codex-second")
         #expect(server.request("turn/start")?.params.stringField("effort") == "ultra")
+        #expect(server.request("turn/start")?.params.stringField("approvalPolicy") == "never")
         #expect(fixture.host.launches.count == 1)
         #expect(SessionRunStore(fileURL: fixture.runFileURL).lastPicked(
             for: .codex,
@@ -75,7 +77,8 @@ struct PreparedSessionTests {
         defer { fixture.remove() }
         let remembered = SessionPreparation(
             harness: .codex, catalog: SpawnFixture.codexCatalog,
-            run: SessionRun(model: "codex-default", effort: .high), mode: .code,
+            run: SessionRun(model: "codex-default", effort: .high),
+            permission: codexPermissions(),
         )
         fixture.hub.rememberPreparation(remembered)
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(
@@ -94,4 +97,42 @@ struct PreparedSessionTests {
         try fixture.hub.driver.send("Continue", to: claim.value)
         #expect(server.request("turn/start")?.params.stringField("effort") == "medium")
     }
+
+    @Test func `each adapter authors its own permission choices`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+
+        let claude = try await fixture.hub.prepareSession(harness: .claude)
+        let codex = try await fixture.hub.prepareSession(harness: .codex)
+
+        #expect(claude.permission.choices.map(\.name) == ["Allow", "Ask", "Deny", "Automode"])
+        #expect(codex.permission.choices.map(\.name) == [
+            "Ask for Approval", "Approve for Me", "Full Access",
+        ])
+        #expect(claude.permission.choices.allSatisfy { !$0.detail.isEmpty })
+        #expect(codex.permission.choices.allSatisfy { !$0.detail.isEmpty })
+    }
+
+    @Test func `a live permission choice becomes that harness next prepared choice`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        _ = try await fixture.hub.driver.setPermission("manual", for: claim.value)
+        let next = try await fixture.hub.prepareSession(harness: .claude)
+
+        #expect(next.permission.selectedID == "manual")
+    }
+}
+
+private func codexPermissions() -> SessionPermissionProfile {
+    SessionPermissionProfile(
+        choices: [
+            .init(id: "ask", name: "Ask for Approval", detail: "Ask first", mode: .readOnly),
+            .init(id: "approve", name: "Approve for Me", detail: "Approve safe work", mode: .code),
+            .init(id: "fullAccess", name: "Full Access", detail: "Ask nothing", mode: .auto),
+        ],
+        selectedID: "approve",
+        defaultID: "approve",
+    )
 }

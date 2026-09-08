@@ -160,9 +160,11 @@ public extension Hub {
     /// from THAT: from zero, its very next record would read as the CLI overruling a flag it had in
     /// fact honoured.
     private func publish(_ plan: AgentSpawnPlan) {
+        runCatalogs[plan.claim] = plan.seed.catalog
         claims.setMode(
             SessionModeSet(
                 mode: plan.mode,
+                permissionID: plan.seed.permission?.id,
                 recordsWhenSet: plan.seed.resuming.map { observedModeCount(of: $0.sessionID) } ?? 0,
             ),
             for: plan.claim,
@@ -269,6 +271,7 @@ public extension Hub {
         // The startup wait has its answer — the claim is being given up — and a clock left armed
         // would ask a retired spawn whether its process is up (#1245).
         startupClocks.removeValue(forKey: claim)?.cancel()
+        runCatalogs.removeValue(forKey: claim)
         delivery.forget(claim.value)
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)

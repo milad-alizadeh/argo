@@ -47,7 +47,10 @@ struct NewSessionComposer: View {
     private var intents: DeckIntents {
         DeckIntents(
             settings: SessionSettingIntents(
-                setMode: { preparation?.mode = $0; remember() },
+                setPermission: { id in
+                    preparation?.permission.select(id)
+                    remember()
+                },
                 setModel: { model in changeModel(model) },
                 setEffort: { effort in changeEffort(effort) },
             ),
@@ -66,11 +69,7 @@ struct NewSessionComposer: View {
         defer { isWorking = false }
         refusal = nil
         do {
-            let mode = preparation?.mode
-            var selected = try await actions.prepare(harness, beside)
-            if let mode {
-                selected.mode = mode
-            }
+            let selected = try await actions.prepare(harness, beside)
             guard !Task.isCancelled else { return }
             preparation = selected
         } catch {

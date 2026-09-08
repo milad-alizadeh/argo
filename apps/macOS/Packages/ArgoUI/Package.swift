@@ -46,6 +46,7 @@ let package = Package(
                 .product(name: "AtlasLayout", package: "ArgoAtlas"),
                 .product(name: "AtlasView", package: "ArgoAtlas"),
             ],
+            resources: [.process("Resources")],
         ),
         // Sample data, and nothing that draws: the transcripts the cockpit is judged against and
         // the Tickets they hang off. A leaf under both targets above it, so the fixtures cannot

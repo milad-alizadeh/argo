@@ -47,6 +47,13 @@ enum ClaudePermissionMode: AgentStanceVocabulary {
         return (end - start + ring.count) % ring.count
     }
 
+    static func cycles(from observed: String, to target: String) -> Int? {
+        guard let start = ring.firstIndex(of: observed),
+              let end = ring.firstIndex(of: target)
+        else { return nil }
+        return (end - start + ring.count) % ring.count
+    }
+
     static func canWalkDuringTurn(from observed: String, to target: SessionMode) -> Bool {
         guard let start = ring.firstIndex(of: observed),
               let steps = cycles(from: observed, to: target)

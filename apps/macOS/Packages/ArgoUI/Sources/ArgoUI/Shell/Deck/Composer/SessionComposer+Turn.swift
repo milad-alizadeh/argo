@@ -308,19 +308,20 @@ extension SessionComposer {
         }
     }
 
-    /// Mode, Model and Effort all back where a fresh Session starts (#558) — the one act the
-    /// popover's reset makes, and the reason its sentence NAMES all three.
+    /// Model and Effort both back where a fresh Session starts (#558) — the one act the
+    /// popover's reset makes, and the reason its sentence names both.
     ///
-    /// Ordered Mode first, and each awaited: they are three separate lines at one prompt, and
-    /// firing them together would interleave three pastes into one input batch. A HELD step does
-    /// not stop the rest (#1329): the reset is one intent, so a Turn in flight holds all three
+    /// Ordered Model first, and each awaited: they are separate lines at one prompt, and firing
+    /// them together would interleave two pastes into one input batch. A HELD step does not stop
+    /// the rest (#1329): the reset is one intent, so a Turn in flight holds both
     /// together rather than leaving Model and Effort at whatever they were on. Only a genuine
-    /// refusal stops it, because a reset that landed on two of three is not the state it named.
+    /// refusal stops it, because a reset that landed on only one value is not the state it named.
     func resetRunFacts() {
         Task {
-            guard await walk(to: RunFacts.defaultMode) != .refused else { return }
-            guard await setModel(RunFactsModel.default.id) != .refused else { return }
-            await setEffort(RunFacts.defaultEffort)
+            guard let reset = composer.facts.resetRun,
+                  await setModel(reset.model) != .refused
+            else { return }
+            await setEffort(reset.effort)
         }
     }
 
