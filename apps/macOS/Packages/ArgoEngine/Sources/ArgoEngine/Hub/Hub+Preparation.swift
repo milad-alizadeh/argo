@@ -1,7 +1,11 @@
 import Foundation
 
 public extension Hub {
-    func prepareSession(harness: AgentCLI? = nil) async throws -> SessionPreparation {
+    func prepareSession(
+        harness: AgentCLI? = nil,
+        beside sessionID: String? = nil,
+    ) async throws
+        -> SessionPreparation {
         let harness = harness ?? runStore.lastHarness()
         let catalog: SessionRunCatalog = switch harness {
         case .claude: .claude
@@ -17,12 +21,16 @@ public extension Hub {
             throw AgentSpawnError.hostRefused(detail: "No models are available for this harness")
         }
         runStore.rememberHarness(harness)
-        return SessionPreparation(
+        var preparation = SessionPreparation(
             harness: harness,
             catalog: catalog,
             run: run,
             mode: modeStore.lastPicked(),
         )
+        preparation.cwd = sessionID.flatMap { id in
+            sessions.first(where: { $0.id == id })?.cwd
+        } ?? project.url.path
+        return preparation
     }
 
     func startPreparedSession(

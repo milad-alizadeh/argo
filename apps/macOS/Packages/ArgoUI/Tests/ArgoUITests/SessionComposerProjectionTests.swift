@@ -13,7 +13,7 @@ struct SessionComposerProjectionTests {
 
         #expect(composer.sessionID == "session-a")
         #expect(composer.placeholder == "Message Claude Code…")
-        #expect(composer.facts.words == "Opus 5 · Medium")
+        #expect(composer.facts.words == "Claude Code · Opus 5 · Medium")
         #expect(!composer.isRunning)
     }
 
@@ -84,7 +84,7 @@ struct SessionComposerProjectionTests {
         let composer = try #require(
             SessionComposerProjection.composer(for: session(access: .managed, model: nil)),
         )
-        #expect(composer.facts.words == "unknown · Medium")
+        #expect(composer.facts.words == "Claude Code · unknown · Medium")
         #expect(composer.facts.tickedModel == nil)
     }
 
@@ -109,7 +109,7 @@ struct SessionComposerProjectionTests {
                 for: session(access: .managed, effort: "ludicrous"),
             ),
         )
-        #expect(composer.facts.words == "Opus 5 · ludicrous")
+        #expect(composer.facts.words == "Claude Code · Opus 5 · ludicrous")
         #expect(composer.facts.effort.rung == nil)
     }
 
@@ -121,18 +121,19 @@ struct SessionComposerProjectionTests {
                 for: session(access: .managed, model: nil, effort: nil),
             ),
         )
-        #expect(composer.facts.words == "unknown · unknown")
+        #expect(composer.facts.words == "Claude Code · unknown · unknown")
         #expect(!composer.facts.isDefault)
     }
 
-    /// Declared, not discovered (#558): a projection built with no capabilities draws no popover,
-    /// so the fact line has nothing to open.
+    /// The locked Harness explains why another Session is needed (#1692).
     @Test
-    func `an adapter declaring neither knob leaves the facts unopenable`() throws {
+    func `a known harness remains inspectable when neither run knob is editable`() throws {
         let composer = try #require(
             SessionComposerProjection.composer(for: session(access: .managed)),
         )
-        #expect(!composer.facts.canOpen)
+        #expect(composer.facts.canOpen)
+        #expect(composer.facts.harness == .claude)
+        #expect(!composer.facts.chooses.model && !composer.facts.chooses.effort)
     }
 
     @Test

@@ -207,7 +207,7 @@ struct ArgoApp: App {
         }
         actions.retry.checkout = { Task { await cockpit.refreshCheckout() } }
         actions.retry.connection = { Task { await cockpit.retryConnection() } }
-        actions.sessions.prepare = { try await cockpit.hub.prepareSession(harness: $0) }
+        actions.sessions.prepare = { try await cockpit.hub.prepareSession(harness: $0, beside: $1) }
         actions.sessions.remember = { cockpit.hub.rememberPreparation($0) }
         actions.sessions.start = { try await cockpit.hub.startPreparedSession(
             $0,

@@ -5,6 +5,7 @@ extension CockpitView {
         if let id = navigation.newSessionID {
             NewSessionComposer(
                 actions: actions.sessions,
+                menus: actions.composer,
                 beside: navigation.newSessionBeside,
                 started: {
                     guard navigation.newSessionID == id else { return }
@@ -14,5 +15,11 @@ extension CockpitView {
             .id(id)
             .room(isActive: navigation.room == .sessions)
         }
+    }
+}
+
+extension View {
+    func coveredByNewSession(_ covered: Bool) -> some View {
+        accessibilityHidden(covered).allowsHitTesting(!covered)
     }
 }

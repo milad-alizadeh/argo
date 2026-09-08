@@ -16,11 +16,11 @@ enum RunFactStep: Equatable {
 /// is why none of them reports a result of its own.
 extension SessionComposer {
     func submit() {
-        if let firstSend {
-            return firstSend()
-        }
         if menus.completes(on: line), complete() {
             return
+        }
+        if let firstSend {
+            return firstSend()
         }
         draft.submit(whileTurnInFlight: holdsTurn, via: sending)
     }

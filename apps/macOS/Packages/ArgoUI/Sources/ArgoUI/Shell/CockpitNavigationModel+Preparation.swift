@@ -1,6 +1,6 @@
 import Foundation
 
-extension CockpitNavigationModel {
+package extension CockpitNavigationModel {
     func prepareNewSession(beside sessionID: String? = nil) {
         newSessionBeside = sessionID
         newSessionID = UUID()

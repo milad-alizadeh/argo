@@ -89,6 +89,7 @@ extension CockpitView {
             scope: $feedScope,
             tickets: tickets,
         )
+        .coveredByNewSession(navigation.newSessionID != nil && navigation.room == .sessions)
         .overlay { newSessionComposer }
         // The Atlas room, injected from ABOVE the deck for the reason `argoAtlasRoom` states.
         // On THIS column only: the sidebar is its sibling and takes the room as a parameter, which

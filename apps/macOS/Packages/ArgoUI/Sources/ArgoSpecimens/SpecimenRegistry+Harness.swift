@@ -3,6 +3,9 @@ import ArgoUI
 
 extension SpecimenRegistry {
     static let harnessSettings: [SpecimenEntry] = [
+        SpecimenEntry("newSessionDraft") { NewSessionDraftSpecimen(state: .ready) },
+        SpecimenEntry("newSessionLoading") { NewSessionDraftSpecimen(state: .loading) },
+        SpecimenEntry("newSessionUnavailable") { NewSessionDraftSpecimen(state: .unavailable) },
         SpecimenEntry("composerHarnessClaudeDraft") { harness(.claude, editable: true) },
         SpecimenEntry("composerHarnessCodexDraft") { harness(.codex, editable: true) },
         SpecimenEntry("composerHarnessLocked") { harness(.codex, editable: false) },

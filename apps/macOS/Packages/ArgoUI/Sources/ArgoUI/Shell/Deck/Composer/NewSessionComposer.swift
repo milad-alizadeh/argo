@@ -4,6 +4,7 @@ import SwiftUI
 
 struct NewSessionComposer: View {
     let actions: CockpitActions.Sessions
+    let menus: CockpitActions.Composer
     let beside: String?
     let started: (String) -> Void
 
@@ -55,6 +56,8 @@ struct NewSessionComposer: View {
             mode: preparation.modeReading,
             modeDidNotTake: nil, lostTurn: nil, canAttach: true,
             canRunCommands: preparation.harness == .claude,
+            resolvesMentions: preparation.harness == .claude,
+            workspaceRoot: preparation.cwd,
         )
         var composer = SessionComposer(composer: projection, intents: DeckIntents(
             settings: SessionSettingIntents(
@@ -62,6 +65,11 @@ struct NewSessionComposer: View {
                 setModel: { model in changeModel(model) },
                 setEffort: { effort in changeEffort(effort) },
             ),
+            commands: menus.skills,
+            files: {
+                guard let cwd = preparation.cwd else { return [] }
+                return await menus.workspaceFiles(cwd)
+            },
             draft: $draft,
         ))
         composer.firstSend = { Task { await send() } }
@@ -76,7 +84,7 @@ struct NewSessionComposer: View {
         refusal = nil
         do {
             let mode = preparation?.mode
-            var selected = try await actions.prepare(harness)
+            var selected = try await actions.prepare(harness, beside)
             if let mode {
                 selected.mode = mode
             }
@@ -115,7 +123,13 @@ struct NewSessionComposer: View {
         isWorking = true
         defer { isWorking = false }
         do {
-            let id = try await actions.start(preparation, draft.text, draft.attachments, beside)
+            let attachments = preparation.harness == .claude ? draft.attachments : ComposerMentions
+                .attaching(
+                    draft.attachments,
+                    for: draft.text,
+                    within: preparation.cwd,
+                )
+            let id = try await actions.start(preparation, draft.text, attachments, beside)
             started(id)
         } catch {
             refusal = AgentRefusal.detail(of: error)
