@@ -33,7 +33,10 @@ package struct ArchiveConfirmationDialog: ViewModifier {
             // `.cancel` role and with it the Escape key: the prompt is only ever raised over live
             // work, so every way of dismissing it without choosing leaves that work alone.
             Button(
-                SessionArchiveProjection.confirmVerb(ending: batch.ending),
+                SessionArchiveProjection.confirmVerb(
+                    owned: batch.owned,
+                    matching: batch.matching,
+                ),
                 role: .destructive,
             ) {
                 archive(batch.ids)
@@ -41,7 +44,8 @@ package struct ArchiveConfirmationDialog: ViewModifier {
             Button("Cancel", role: .cancel) {}
         } message: { batch in
             Text(SessionArchiveProjection.confirmMessage(
-                ending: batch.ending,
+                owned: batch.owned,
+                matching: batch.matching,
                 staying: batch.staying,
             ))
         }

@@ -168,8 +168,11 @@ final class CockpitCoordinator {
     /// the three, because it is the slow one: it may ask the code host, and neither write above
     /// has any reason to wait on that.
     func setArchived(_ isArchived: Bool, sessionID: String) async {
-        hub.endSession(archiving: isArchived, id: sessionID)
+        let endResult = await hub.endSession(archiving: isArchived, id: sessionID)
         annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
+        if let detail = endResult.limitationDetail {
+            report(detail: detail, title: "Could not end this agent")
+        }
         await hub.reapWorktree(archiving: isArchived, id: sessionID, through: codeHostBinding)
     }
 

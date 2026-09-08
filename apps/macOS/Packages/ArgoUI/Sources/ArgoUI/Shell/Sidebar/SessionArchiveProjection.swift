@@ -25,20 +25,23 @@ enum SessionArchiveProjection {
         }
     }
 
-    /// Whether archiving this Session will actually end its agent (#1596).
+    /// The route archiving has to this Session's agent (#1596, #1609).
     ///
-    /// `managed` is exactly the set this window holds a live claim on, which is exactly the set
-    /// `Hub.endSession` reaches: `SessionOwnership.provenance` grades a Session `managed` on the
-    /// same bound-claim read `ownerOf` returns at. `external` was never Argo's, and `orphaned`
-    /// had a claim that has since stood down — from here the two are one case, because what the
-    /// end needs is a claim and neither has one.
+    /// A managed Session has the PTY this window holds. An orphaned Claude Session has the argv
+    /// identifier a previous Argo put there. An external Session has neither, and Codex carries
+    /// its identifier inside the protocol rather than on argv (#1609).
     ///
     /// It lives beside the copy it selects rather than in the view that asks, so the join the
     /// whole prompt rests on is a value a test can pin.
-    static func endsAgent(access: CockpitPresentation.Session.Access) -> Bool {
+    static func endsAgent(
+        access: CockpitPresentation.Session.Access,
+        cli: AgentCLI?,
+    )
+        -> ArchiveConfirmation.Session.AgentEnd {
         switch access {
-        case .managed: true
-        case .external, .orphaned: false
+        case .managed: .owned
+        case .orphaned: cli == .claude ? .orphanedClaude : .unavailable
+        case .external: .unavailable
         }
     }
 
@@ -52,31 +55,61 @@ enum SessionArchiveProjection {
         return "Archive \u{201C}\(one)\u{201D}?"
     }
 
-    /// What this archive does to the agents behind it, split by whether Argo can end them (#1596).
+    /// What this archive does to the agents behind it, split by how Argo can reach them (#1596,
+    /// #1609).
     ///
-    /// `ending` is the Sessions this window holds a claim on: archiving those closes their PTY.
-    /// `staying` is every other running one, where the claim that held the handle is gone and the
-    /// archive reaches only the row. A reader given one number for the two cannot tell which
-    /// agents survive the gesture, and that is precisely the state the roster was lying about.
+    /// `owned` is DIRECT: archiving closes those PTYs. `matching` is an attempt against exact argv
+    /// boundaries and stays conditional until one process is established. `staying` has no route.
     ///
     /// The staying half is hedged and the ending half is not, because the two facts sit on
     /// different tiers (`CONTEXT.md` · Honesty tier). A claim is DIRECT: Argo holds the PTY and
     /// knows. Without one, liveness is DERIVED off the process table, so the prompt says what
     /// Argo can see rather than what is so.
-    static func confirmMessage(ending: Int, staying: Int) -> String {
-        guard staying > 0 else { return ends(count: ending) }
-        guard ending > 0 else { return outlives(count: staying) }
-        guard staying > 1 else {
-            return """
-            Archiving ends \(spelled(ending)) of these agents and takes every Session off the \
+    static func confirmMessage(owned: Int, matching: Int = 0, staying: Int) -> String {
+        guard matching == 0 else {
+            return matchingMessage(owned: owned, matching: matching, staying: staying)
+        }
+        return if staying == 0 {
+            ends(count: owned)
+        } else if owned == 0 {
+            outlives(count: staying)
+        } else if staying == 1 {
+            """
+            Archiving ends \(spelled(owned)) of these agents and takes every Session off the \
             roster. This window is not holding the other process, so Argo cannot end it and, as \
             far as Argo can see, it keeps running. Putting a Session back keeps its history.
             """
+        } else {
+            """
+            Archiving ends \(spelled(owned)) of these agents and takes every Session off the roster. \
+            This window is not holding the other \(staying) processes, so Argo cannot end them and, \
+            as far as Argo can see, they keep running. Putting a Session back keeps its history.
+            """
         }
+    }
+
+    /// The argv route has not established an end while the prompt is up, so its first paragraph
+    /// promises only the attempt. The exact condition and the roster ordering follow immediately.
+    private static func matchingMessage(owned: Int, matching: Int, staying: Int) -> String {
+        let subject = matching == 1 ? "the orphaned Claude agent" : "\(matching) orphaned Claude agents"
+        let rosterObject = owned + matching + staying == 1 ? "the Session" : "every Session"
+        let ownedDetail = owned == 0
+            ? ""
+            : " Argo also ends \(spelled(owned)) agent\(owned == 1 ? "" : "s") this window owns."
+        let stayingVerb = staying == 1 ? "keeps" : "keep"
+        let stayingDetail = staying == 0
+            ? ""
+            : " It cannot end the other \(spelled(staying)) agent\(staying == 1 ? "" : "s"), which, as far as Argo can see, \(stayingVerb) running."
         return """
-        Archiving ends \(spelled(ending)) of these agents and takes every Session off the roster. \
-        This window is not holding the other \(staying) processes, so Argo cannot end them and, \
-        as far as Argo can see, they keep running. Putting a Session back keeps its history.
+        Before taking \(rosterObject) off the roster, Argo tries to identify and end \(subject) it \
+        previously started.\(ownedDetail)\(stayingDetail) Putting a Session back keeps its history.
+
+        Matching uses the exact Session id on argv: --session-id <id> for a fresh Session or \
+        --resume <id> for a resumed one. Argo ends an orphaned agent before taking its Session off \
+        the roster only when it establishes one unambiguous process. With zero matches, multiple \
+        matches, or conflicting identifier flags, Argo stops none of the candidate processes and \
+        reports the limitation after archiving. External Sessions stay out of scope because Argo \
+        did not start those agents.
         """
     }
 
@@ -127,11 +160,18 @@ enum SessionArchiveProjection {
     /// The button says both halves of what it does. "Archive" alone would read as the gesture that
     /// only hid the row, which is the behaviour this prompt exists because of.
     ///
-    /// Where nothing will be ended it says so by saying LESS, not by promising an end that will
-    /// not happen. "Anyway" is the word carrying the message's refusal onto the button, so the
-    /// reader who skipped the paragraph still presses something honest.
-    static func confirmVerb(ending: Int) -> String {
-        ending > 0 ? "Archive and End" : "Archive Anyway"
+    /// Where an end still depends on argv matching the button says it is an attempt. Where nothing
+    /// can be ended it says so by saying LESS, not by promising an end that will not happen.
+    /// "Anyway" is the word carrying the message's refusal onto the button, so the reader who
+    /// skipped the paragraph still presses something honest.
+    static func confirmVerb(owned: Int, matching: Int) -> String {
+        if matching > 0 {
+            "Archive and Try to End"
+        } else if owned > 0 {
+            "Archive and End"
+        } else {
+            "Archive Anyway"
+        }
     }
 
     /// Title Case, as menu items are, and the noun spelled out: a menu carries no row, so the item

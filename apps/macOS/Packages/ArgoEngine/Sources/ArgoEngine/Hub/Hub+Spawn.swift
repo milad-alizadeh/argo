@@ -69,39 +69,6 @@ public extension Hub {
         }
     }
 
-    /// ONE Session Argo owns, ended: its PTY closed, its claim given up, and every channel it
-    /// spoke over forgotten. What archiving a `managed` Session calls (#1290).
-    ///
-    /// A Session with no live claim is `external` or `orphaned`, and the claim is what holds the
-    /// PTY, so this Hub has no route to that process. That is not the same as nothing running: an
-    /// orphaned Session is very often a live agent an earlier run of Argo started, and an external
-    /// one an agent somebody started themselves (#1596). Ending nothing is the honest answer only
-    /// as far as the alternative goes — a cwd match is many-to-one, and the wrong agent killed is
-    /// not recoverable. The reader is told before the row goes, by
-    /// `SessionArchiveProjection.confirms` raising the prompt on STATUS.
-    ///
-    /// Not settled, deferred: #1609 has the argv route that would reach an ORPHANED Session, whose
-    /// `--session-id` is a key unique to it in a way its folder is not.
-    ///
-    /// `ownerOf` answers both cases in one read — an unowned Session was never bound, and an
-    /// orphaned one's claim has stood down — so nothing switches on `SessionProvenance` a second
-    /// way.
-    func endSession(id sessionID: String) {
-        guard let claim = ownership.ownerOf(sessionID: sessionID) else { return }
-        end(claim)
-    }
-
-    /// What the archive gesture asks of the Hub (#1290): archiving a Session Argo owns ends it,
-    /// and putting one back starts nothing.
-    ///
-    /// The `guard` is here rather than at the gesture because it is a RULE about archiving and not
-    /// a step in performing one — the app layer composes the two writes, and what each of them
-    /// means is the engine's to state and a test's to hold.
-    func endSession(archiving isArchived: Bool, id sessionID: String) {
-        guard isArchived else { return }
-        endSession(id: sessionID)
-    }
-
     /// Every process this Hub owns, ended, and every channel with them. What window close and app
     /// quit call: an agent Argo started must not outlive the Argo that started it.
     ///
@@ -110,12 +77,13 @@ public extension Hub {
     /// behind a claim this loop does not reach.
     func endOwnedSessions() {
         for claim in ownership.liveClaims {
-            end(claim)
+            endOwnedClaim(claim)
         }
-        // Kept as a sweep even though `end` forgets each claim's own watches, and deliberately not
-        // folded into it. Per-claim forgetting resolves a Session by the two ids a claim answers
-        // to; this is the quit path, where being one id short means a watch outliving the Hub that
-        // owns it. One call, and the guarantee stops resting on that resolution being exhaustive.
+        // Kept as a sweep even though `endOwnedClaim` forgets each claim's own watches, and
+        // deliberately not folded into it. Per-claim forgetting resolves a Session by the two ids
+        // a claim answers to; this is the quit path, where being one id short means a watch
+        // outliving the Hub that owns it. One call, and the guarantee stops resting on that
+        // resolution being exhaustive.
         delivery.forgetAll()
     }
 
@@ -249,7 +217,7 @@ public extension Hub {
     /// on covering a folder Argo no longer holds an agent in. The report still runs `relinquish` a
     /// second time, and that is harmless: releasing a claim that has already stood down does
     /// nothing, and the exit code it carries is written to the spawn either way.
-    private func end(_ claim: SessionOwnership.ClaimID) {
+    internal func endOwnedClaim(_ claim: SessionOwnership.ClaimID) {
         // `end` and not `terminate`: this death is Argo's own decision, so the PTY's entry goes
         // with it. `terminate` is the inference path above, which keeps the entry on purpose.
         terminals.end(claim)

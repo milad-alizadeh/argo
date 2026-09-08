@@ -1,17 +1,18 @@
 import ArgoUI
 import SwiftUI
 
-/// The archive prompt as it is actually raised, in the three readings it has (#1596).
+/// The archive prompt as it is actually raised, including the orphaned-Claude match (#1596,
+/// #1609).
 ///
 /// AppKit owns every pixel of the chrome, so what a render of this is evidence about is the WORDS:
 /// whether the message's sentences land in the order that matters, whether a mixed batch's two
 /// counts read as two facts rather than one, and whether the destructive verb still says something
 /// true where nothing is going to be ended.
 struct ArchivePromptSpecimen: View {
-    /// The end Argo can perform, the end it cannot, and the batch that is both — the three a
-    /// reader has to be able to tell apart from the paragraph alone.
+    /// The end Argo owns, the one it identifies from argv, the end it cannot perform, and the
+    /// batch that is both — each one legible from the paragraph alone.
     enum Reading {
-        case ending, outliving, mixed
+        case ending, orphanedClaude, outliving, mixed
     }
 
     /// Seeded open rather than reached by pressing: the gesture needs a roster with live work on
@@ -35,14 +36,22 @@ private extension ArchivePromptSpecimen.Reading {
     var sessions: [ArchiveConfirmation.Session] {
         switch self {
         case .ending:
-            [.init(id: "one", name: "Rebuild the roster's archived foot", endsAgent: true)]
+            [.init(id: "one", name: "Rebuild the roster's archived foot", agentEnd: .owned)]
+        case .orphanedClaude:
+            [
+                .init(
+                    id: "one",
+                    name: "Rebuild the roster's archived foot",
+                    agentEnd: .orphanedClaude,
+                ),
+            ]
         case .outliving:
-            [.init(id: "one", name: "Rebuild the roster's archived foot", endsAgent: false)]
+            [.init(id: "one", name: "Rebuild the roster's archived foot", agentEnd: .unavailable)]
         case .mixed:
             [
-                .init(id: "one", name: "Rebuild the roster's archived foot", endsAgent: true),
-                .init(id: "two", name: "Name the Delivery header", endsAgent: true),
-                .init(id: "three", name: "Fold the permission line", endsAgent: false),
+                .init(id: "one", name: "Rebuild the roster's archived foot", agentEnd: .owned),
+                .init(id: "two", name: "Name the Delivery header", agentEnd: .owned),
+                .init(id: "three", name: "Fold the permission line", agentEnd: .unavailable),
             ]
         }
     }
@@ -53,6 +62,13 @@ private extension ArchivePromptSpecimen.Reading {
 #Preview("Archive prompt — an agent Argo will end") {
     ArchivePromptSpecimen(.ending)
         .frame(width: 420, height: 260)
+}
+
+// The #1609 path: Argo will end this orphaned Claude agent only where its Session id identifies
+// exactly one process. The second paragraph must fit without burying that safety rule.
+#Preview("Archive prompt — an orphaned Claude agent") {
+    ArchivePromptSpecimen(.orphanedClaude)
+        .frame(width: 420, height: 320)
 }
 
 // The state #1596 is about: the row leaves the roster and the agent behind it keeps working. Read
