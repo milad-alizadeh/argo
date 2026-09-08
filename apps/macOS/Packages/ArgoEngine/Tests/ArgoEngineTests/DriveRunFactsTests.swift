@@ -121,6 +121,14 @@ struct DriveRunFactsTests {
         #expect(SessionStatus.running.takesSlashCommand)
     }
 
+    /// The roster cannot make a claim for a Session it has never heard of, so neither kind of
+    /// input reaches its terminal.
+    @Test
+    func `an unknown Session stance refuses typed lines and slash commands`() {
+        #expect(!SessionStance.unknown.takesTypedLine)
+        #expect(!SessionStance.unknown.takesSlashCommand)
+    }
+
     /// Unlike a rung, neither is remembered. A rung is filed because the ring is walked from a
     /// reading a set invalidates; these are named, and the CLI's own next record states where they
     /// landed — so a copy here would be a second answer to the transcript's question.
