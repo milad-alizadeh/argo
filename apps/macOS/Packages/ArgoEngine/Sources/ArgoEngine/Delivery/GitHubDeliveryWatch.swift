@@ -12,8 +12,8 @@ import Foundation
 /// there is never a second one to reuse — which is also why the grant needs no `admin:repo_hook`,
 /// the scope only list, read and delete demand.
 ///
-/// Those two seconds are the one thing that reasoning does not cover, because a dial can land
-/// inside them. `open` deletes the hook the repository is still holding when it does (#1697).
+/// The reap is not instant, though, so a dial can land while the previous hook is still there and
+/// be refused for it. `open` deletes that hook and creates again (#1697).
 public struct GitHubDeliveryWatch: CodeHostWatch {
     private let call: GitHubCall
     private let sockets: any WebSocketTransport
@@ -27,7 +27,14 @@ public struct GitHubDeliveryWatch: CodeHostWatch {
     }
 
     public func open(_ scope: String, grant: AccountGrant) async throws -> any DeliveryWatch {
-        let created = try await create(on: scope, grant: grant)
+        var created = try await createHook(on: scope, grant: grant)
+        if let refusal = Self.refusal(in: created) {
+            // Once, and no further: a repository that refuses the second create is holding
+            // something this cannot clear, and the poll carries the roster meanwhile.
+            guard refusal.isHookAlreadyHeld else { throw DeliveryWatchRefusal.noSocketOffered }
+            try await deleteHeldHook(on: scope, grant: grant)
+            created = try await createHook(on: scope, grant: grant)
+        }
         let hook = try? GitHubCall.decoder.decode(GitHubForwarderHook.self, from: created)
         guard let url = hook?.wsUrl else { throw DeliveryWatchRefusal.noSocketOffered }
         // The RAW token, with no `Bearer` prefix — which is not what any of GitHub's HTTP endpoints
@@ -38,38 +45,55 @@ public struct GitHubDeliveryWatch: CodeHostWatch {
         return GitHubForwarderWatch(channel: channel)
     }
 
-    /// The create, and the one refusal it clears rather than reports: a dial inside the reap window
-    /// is answered `422 Hook already exists on this repository`, which deleting the held hook
-    /// clears. Read as a failure before it is read as a hook, because the error body decodes as a
-    /// valid hook offering no socket otherwise.
-    ///
-    /// The create is sent once more and no further: a repository that refuses the second one is
-    /// holding something Argo cannot clear, and the poll carries the roster meanwhile.
-    private func create(on scope: String, grant: AccountGrant) async throws -> Data {
-        let created = try await posting(on: scope, grant: grant)
-        guard let failure = try? GitHubCall.decoder.decode(GitHubFailure.self, from: created),
-              failure.isHookAlreadyHeld
-        else { return created }
-        try await deleteHeldHook(on: scope, grant: grant)
-        return try await posting(on: scope, grant: grant)
+    /// What the host said instead of a hook, where that is what it said. Read before the body is
+    /// read as a hook, because `wsUrl` is optional and an error body decodes as a valid hook
+    /// offering no socket otherwise — which is the 422 reaching the health ledger as `unreachable`
+    /// (#1697).
+    private static func refusal(in created: Data) -> GitHubFailure? {
+        try? GitHubCall.decoder.decode(GitHubFailure.self, from: created)
     }
 
-    private func posting(on scope: String, grant: AccountGrant) async throws -> Data {
+    private func createHook(on scope: String, grant: AccountGrant) async throws -> Data {
         try await call.send(
-            "/repos/\(scope)/hooks", method: .post, body: Self.creating(), grant: grant,
+            Self.hooks(on: scope), method: .post, body: Self.creating(), grant: grant,
         )
     }
 
-    /// The `cli` hook the repository is still holding, deleted by the id its own listing gives.
-    /// Nothing is deleted where the listing holds no forwarder hook: a repository holding webhooks
-    /// somebody else set up keeps every one of them.
+    /// The `cli` hook the repository is still holding, deleted by the id its own listing gives —
+    /// the refusal names no id, and GitHub has no delete keyed by a hook's name.
+    ///
+    /// Every way this can fail — a listing that did not land, a listing holding no forwarder hook,
+    /// a delete the host refused — throws `noSocketOffered`, which is the reading the create's own
+    /// refusal had before there was a recovery to fail. So a recovery that cannot finish leaves the
+    /// health ledger exactly where an unrecovered 422 used to leave it, and no worse.
+    ///
+    /// A listing with no forwarder hook in it is one of those: a repository keeps every webhook
+    /// somebody else set up, so only `cli` is ever deleted.
     private func deleteHeldHook(on scope: String, grant: AccountGrant) async throws {
-        let listed = try await call.send("/repos/\(scope)/hooks", grant: grant)
-        let held = try? GitHubCall.decoder.decode([GitHubForwarderHook].self, from: listed)
-        guard let forwarder = held?.first(where: { $0.name == Creating.forwarder }) else { return }
-        _ = try await call.send(
-            "/repos/\(scope)/hooks/\(forwarder.id)", method: .delete, grant: grant,
+        guard let listed = try? await call.send(Self.hooks(on: scope), grant: grant),
+              let held = try? GitHubCall.decoder.decode([Held].self, from: listed),
+              let forwarder = held.first(where: { $0.name == Self.forwarderName })
+        else { throw DeliveryWatchRefusal.noSocketOffered }
+        let deleted = try? await call.send(
+            "\(Self.hooks(on: scope))/\(forwarder.id)", method: .delete, grant: grant,
         )
+        guard deleted != nil else { throw DeliveryWatchRefusal.noSocketOffered }
+    }
+
+    private static func hooks(on scope: String) -> String {
+        "/repos/\(scope)/hooks"
+    }
+
+    /// GitHub's own name for the forwarder's hook. It is what earns a `ws_url`, and what tells the
+    /// hook Argo made from the webhooks somebody else set up.
+    private static let forwarderName = "cli"
+
+    /// One row of the repository's own hook listing, read for the delete: the id it is keyed by and
+    /// the name that says whose hook it is. Both are on every row of
+    /// `GET /repos/milad-alizadeh/argo/hooks`, measured 2026-09-08 (#1697).
+    private struct Held: Decodable {
+        let id: Int
+        let name: String
     }
 
     /// What makes the hook a forwarder rather than an ordinary webhook: the name `cli`, and a
@@ -81,11 +105,7 @@ public struct GitHubDeliveryWatch: CodeHostWatch {
     }
 
     private struct Creating: Encodable {
-        /// GitHub's own name for the forwarder's hook, which is both what earns a `ws_url` and what
-        /// finds the hook again in the repository's listing.
-        static let forwarder = "cli"
-
-        let name = Creating.forwarder
+        let name = GitHubDeliveryWatch.forwarderName
         let active = true
         /// The one event a Delivery is derived from. A hook subscribed to more would wake the
         /// derivation for things no roster row draws.
