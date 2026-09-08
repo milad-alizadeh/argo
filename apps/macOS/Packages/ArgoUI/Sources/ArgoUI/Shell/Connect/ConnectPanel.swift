@@ -56,14 +56,7 @@ public struct ConnectPanel: View {
         ForEach(panel.ports) { port in
             ConnectPortRow(row: port, actions: actions)
         }
-        if let agent = panel.agent {
-            Picker("Agent", selection: Binding(get: { agent }, set: actions.chooseAgent)) {
-                ForEach(AgentCLI.allCases, id: \.self) { choice in
-                    Text(choice.readableName).tag(choice)
-                }
-            }
-            .argoText(ArgoTypography.control)
-        } else {
+        if panel.showsCompanion {
             ConnectRow(row: panel.companion) { EmptyView() }
         }
     }

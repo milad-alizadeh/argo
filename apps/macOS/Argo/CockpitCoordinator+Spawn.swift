@@ -6,18 +6,6 @@ import ArgoEngine
 /// success otherwise: nothing happens (#361).
 @MainActor
 extension CockpitCoordinator {
-    /// Returns the id the roster publishes the provisional row under — the claim's own, until the
-    /// CLI names a Session — so the shell can point at what it just started, and `nil` where
-    /// nothing started at all.
-    ///
-    /// The claim and not the row id it will be re-keyed to (#361), which the shell would have to
-    /// wait for: the row carries the claim it retired (`HubSession.absorbedIDs`), so a window
-    /// pointed here follows the re-key rather than losing it (`CockpitNavigationModel.reconcile`,
-    /// #1481/#1493). That keeps `CockpitNavigationModel` holding ids only, which is its contract.
-    func spawnSession() async -> String? {
-        await spawn(.unseeded)
-    }
-
     /// The one spawn every entry point below goes through. Each of them differs in nothing but its
     /// seed, and three copies of one `do`/`catch` was three places for a refusal to stop being
     /// reported.
@@ -56,16 +44,6 @@ extension CockpitCoordinator {
     /// empty composer.
     func spawnSession(on ticket: Int, mode: SessionMode, opening: String?) async -> String? {
         await spawn(SessionSeed(opening: opening, mode: mode, ticket: ticket))
-    }
-
-    /// The same spawn in another Session's folder (#546). Seeded with that Session's cwd and
-    /// nothing else: a fresh start on the same branch, not a handoff, so no brief and no prompt.
-    func spawnSession(beside sessionID: String) async -> String? {
-        guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
-            report(detail: "Argo does not know which folder that Session was running in")
-            return nil
-        }
-        return await spawn(SessionSeed(cwd: cwd))
     }
 
     /// Hand a full Session's work to a fresh one (#513), and say so where the reading cannot.

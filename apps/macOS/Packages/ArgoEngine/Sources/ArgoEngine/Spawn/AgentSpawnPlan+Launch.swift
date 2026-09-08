@@ -17,7 +17,7 @@ extension AgentSpawnPlan {
         let companion = cli.takesCompanionPlugin ? try invite(claim) : nil
         let launch = try await launcher.launch(cli: cli, cwd: cwd, companion: companion)
             .adding(cli.surfaceArguments)
-            .adding(cli.arguments(standingOn: mode))
+            .adding(seed.permission?.launchArguments ?? cli.arguments(standingOn: mode))
             .adding(cli.arguments(running: run))
             .adding(seed.resuming.map { cli.arguments(resuming: $0.chainID) } ?? [])
             // Never beside `--resume`: that continues a chain whose next file the CLI names itself,

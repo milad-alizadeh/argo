@@ -82,11 +82,6 @@ public actor ProjectRegistryStore {
         await engine.checkout(at: url).repositoryURL.standardizedFileURL
     }
 
-    public func chooseAgent(_ agent: AgentCLI, for projectID: String) -> ProjectChange {
-        let registry = persist(load().choosingAgent(agent, for: projectID))
-        return ProjectChange(registry: registry, project: registry.project(id: projectID))
-    }
-
     private func change(_ registry: ProjectRegistry, atPath path: String) -> ProjectChange {
         ProjectChange(registry: registry, project: registry.project(atPath: path))
     }

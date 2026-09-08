@@ -66,8 +66,7 @@ struct SpawnRunTests {
         #expect(fixture.launchedModel() == "opus")
     }
 
-    /// Codex declares neither knob and takes neither flag, so it is started on nothing — a default
-    /// it would ignore is a value the composer would then state about a Session nothing put it on.
+    /// Codex receives its run on the protocol rather than through command-line flags.
     @Test
     func `a codex spawn carries neither flag`() async throws {
         let fixture = try SpawnFixture()
@@ -77,8 +76,8 @@ struct SpawnRunTests {
 
         #expect(fixture.launchedModel() == nil)
         #expect(fixture.launchedEffort() == nil)
-        #expect(fixture.hub.sessions.map(\.model) == [nil])
-        #expect(fixture.hub.sessions.map(\.effort) == [nil])
+        #expect(fixture.hub.sessions.map(\.model) == ["codex-default"])
+        #expect(fixture.hub.sessions.map(\.effort) == ["medium"])
     }
 
     /// Argo put the words on argv, so Argo knows them — the row states the pair before the CLI has

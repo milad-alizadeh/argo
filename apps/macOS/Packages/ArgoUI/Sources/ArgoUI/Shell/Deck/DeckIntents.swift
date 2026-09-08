@@ -20,9 +20,9 @@ package struct DeckIntents {
     /// follow-up into it. One value for the reason `settings` below is one: they are one reading
     /// of the Session, and both begin with the same `ESC`.
     package var turn = SessionTurnIntents()
-    /// The three standing things the footer can put the Session on — its Mode rung, its Model and
-    /// its Effort (#545, #558). One value because they are one row of controls and one act binds
-    /// them: the popover's reset sets all three.
+    /// The four standing things the footer can put the Session on — its Permission, Mode rung,
+    /// Model and Effort (#545, #558, #1692). One value because they are one row of controls and
+    /// one act binds them. Reset restores Model and Effort while Permission remains explicit.
     var settings = SessionSettingIntents()
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder.
     var spawnBeside: () async -> Void = {}

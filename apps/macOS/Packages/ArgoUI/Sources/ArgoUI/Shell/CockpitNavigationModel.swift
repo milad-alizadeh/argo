@@ -1,5 +1,6 @@
 import ArgoEngine
 import CoreGraphics
+import Foundation
 import Observation
 
 /// Where one cockpit window is pointing: the room on screen and the Session it has selected.
@@ -9,6 +10,9 @@ import Observation
 @Observable
 public final class CockpitNavigationModel {
     /// The one field the app target touches: its Navigate menu sets the room.
+    var newSessionID: UUID?
+    var newSessionBeside: String?
+
     public var room: CockpitRoom = .sessions
 
     /// The ticket the Tickets room is open on. Beside the Session and not inside it: a room keeps
@@ -119,6 +123,8 @@ public final class CockpitNavigationModel {
     }
 
     private func pick(_ id: CockpitPresentation.Session.ID?) {
+        newSessionID = nil
+        newSessionBeside = nil
         pointedSession = id
         // Any other write is the reader pointing at a Session that already exists, so a wait left
         // over from a spawn they have since moved off is over.
@@ -179,20 +185,6 @@ public final class CockpitNavigationModel {
     private var pointedSession: CockpitPresentation.Session.ID?
 
     public init() {}
-
-    /// What a Project switch takes with it: the query alone, because it is the one thing here that
-    /// is a question about a particular Project's tickets (#873). The view, the fold and the seam
-    /// are the reader's own settings and stand.
-    @MainActor func projectSwitched() {
-        ticketsQuery = ""
-        // A spawn started in the Project the reader has left is not a row this Project's roster is
-        // ever going to publish, so its hold would refuse every landing on the new roster (#1602).
-        startedClaim = nil
-        rosterBeforeStart = []
-        // The answer goes with it, and the child running behind one goes first: a question about
-        // twelve tickets nobody is looking at any more is spend on a model for nothing.
-        stopAsking()
-    }
 
     /// Put a question in flight, replacing whatever was on screen. The caller owns the work; this
     /// owns the handle, so `stopAsking` has one thing to cancel and the surface has one place the
@@ -380,4 +372,19 @@ public final class CockpitNavigationModel {
     /// nothing draws the handle — `backlogAsk` is what the surface reads, and a task that also
     /// published would redraw the room on every state it passes through.
     @ObservationIgnored private var backlogAskWork: Task<Void, Never>?
+}
+
+extension CockpitNavigationModel {
+    @MainActor func projectSwitched() {
+        newSessionID = nil
+        newSessionBeside = nil
+        ticketsQuery = ""
+        // A spawn started in the Project the reader has left is not a row this Project's roster is
+        // ever going to publish, so its hold would refuse every landing on the new roster (#1602).
+        startedClaim = nil
+        rosterBeforeStart = []
+        // The answer goes with it, and the child running behind one goes first: a question about
+        // twelve tickets nobody is looking at any more is spend on a model for nothing.
+        stopAsking()
+    }
 }

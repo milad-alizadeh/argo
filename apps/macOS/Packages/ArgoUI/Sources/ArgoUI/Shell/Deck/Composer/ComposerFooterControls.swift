@@ -1,6 +1,6 @@
 import ArgoEngine
 
-// One value per control on the composer's footer row — the `+`, the Mode picker, the run-facts
+// One value per control on the composer's footer row — the `+`, Permission, the run-facts
 // line and Send (#558).
 //
 // Grouped rather than spelled flat on `ComposerFooter`, on the parameter cap's own rule: each of
@@ -26,16 +26,12 @@ struct AddButtonControl {
     var toggle: () -> Void = {}
 }
 
-/// The Mode ladder: what Argo can say the Session's stance is, what is being held against a Turn's
-/// end, and how to move it (#545, #940).
+/// The adapter-authored Permission choices and how to select one.
 struct ModePickerControl {
-    /// A READING and not a binding: what the control shows comes back off the Session, so the
-    /// footer holds no stance of its own.
-    var reading = SessionModeReading.unknown(cli: nil)
-    /// A rung picked while a Turn was running, held for the boundary (#940). It is what the picker
-    /// draws while it waits, under `≈` — never as the rung the Session stands on.
-    var heldMode: SessionMode?
-    var setMode: (SessionMode) -> Void = { _ in }
+    /// The adapter supplies every visible permission choice and the selected id.
+    var permission: SessionPermissionProfile?
+    var setPermission: (String) -> Void = { _ in }
+    var isPermissionOpenForRender = false
 }
 
 /// A Model or an Effort rung picked while a Turn was running, waiting on the boundary to be
@@ -52,12 +48,13 @@ struct RunFactsControl {
     var facts = RunFacts(model: nil, effort: .unknown(cli: nil))
     var acts = RunFactsActs()
     /// What is held for the boundary. It is what the popover draws instead of a silent click — the
-    /// row it names under a held mark, in the way `ModePickerControl.heldMode` is drawn under `≈`.
+    /// row it names under a held mark.
     var held = RunFactsHeld()
     /// Whether the popover should already be open the instant the footer appears — a Specimen's own
     /// hook, the way `ComposerMenusOpening` is (#689). Production always leaves it `false`: every
     /// render that opens something does it through the click a reader would.
     var isOpenForRender = false
+    var setHarness: ((AgentCLI) -> Void)?
 
     /// What the popover's lock line says while something is held, and `nil` where nothing is
     /// (#1329, formerly #1217's inert sentence). It NAMES what is held rather than the reason a
@@ -73,14 +70,13 @@ struct RunFactsControl {
     }
 }
 
-/// What the run-settings popover's three controls do.
+/// What the run-settings popover's controls do.
 struct RunFactsActs {
     /// By the id the CLI is asked for, untouched — an alias, or a model name Argo has never heard
     /// of.
     var setModel: (String) -> Void = { _ in }
     var setEffort: (SessionEffort) -> Void = { _ in }
-    /// Mode, Model and Effort all back where a fresh Session starts. It sets Mode too, which is why
-    /// the popover's one sentence about Mode belongs to this button.
+    /// Model and Effort both back where a fresh Session starts.
     var reset: () -> Void = {}
 }
 

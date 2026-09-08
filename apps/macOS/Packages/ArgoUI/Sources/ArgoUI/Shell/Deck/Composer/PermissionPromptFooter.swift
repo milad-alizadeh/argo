@@ -13,15 +13,16 @@ struct PermissionPromptFooter: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
             PermissionDecisionButton(answer: .allow) { decide(.allow) }
-            PermissionDecisionButton(answer: .deny) { decide(.deny) }
-            Spacer()
             StandingAllowOffer(toolName: toolName) { decide(.allowAlways) }
+            Spacer()
+            PermissionDecisionButton(answer: .deny) { decide(.deny) }
         }
         .argoText(ArgoTypography.control)
     }
 }
 
-/// The standing answer, as a line of text rather than a third pill.
+/// The standing answer as the third visible decision. It keeps the full scope in its words: this
+/// gate can remember a tool for this Session, while Claude's own prompt may offer a narrower rule.
 private struct StandingAllowOffer: View {
     @Environment(\.argo) private var argo
 
@@ -31,17 +32,27 @@ private struct StandingAllowOffer: View {
     var body: some View {
         Button(action: stand) {
             Text(StandingAllowProjection.offer(toolName))
-                .argoLine(ArgoTypography.rowMeta, .metadata)
+                .argoText(ArgoTypography.control)
+                .foregroundStyle(argo.color.text.secondary)
+                .padding(.horizontal, ArgoSpacing.comfortable)
+                .frame(minHeight: ArgoComposerVessel.decisionHeight)
+                .background(argo.color.surface.control, in: shape)
+                .overlay {
+                    shape.strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.border)
+                }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(StandingAllowProjection.offer(toolName))
     }
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: ArgoRadius.control)
+    }
 }
 
 /// One of the two answers, drawn rather than taken from a stock button style: the study's 27pt is
-/// taller than any `controlSize` the platform offers, the ring belongs OUTSIDE the fill, and a
-/// `.bordered` pill's own ground resolves to within a couple of points of a glass vessel. `Button`
-/// still owns the semantics and the keyboard.
+/// taller than any `controlSize` the platform offers. The neutral fill stays inside the amber
+/// Permission language, while `Button` still owns the semantics and the keyboard.
 private struct PermissionDecisionButton: View {
     @Environment(\.argo) private var argo
 
@@ -57,7 +68,9 @@ private struct PermissionDecisionButton: View {
         Button(action: act) {
             HStack(spacing: ArgoSpacing.tight) {
                 Text(verb)
-                DeckKeycap(key: key)
+                Text(key)
+                    .argoText(ArgoTypography.caption)
+                    .foregroundStyle(argo.color.text.tertiary)
             }
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.comfortable)
@@ -67,7 +80,6 @@ private struct PermissionDecisionButton: View {
             )
             .background(ground, in: shape)
             .overlay { shape.strokeBorder(border, lineWidth: ArgoStroke.border) }
-            .overlay { focusRing }
         }
         .buttonStyle(.plain)
         .keyboardShortcut(answer == .allow ? .defaultAction : .cancelAction)
@@ -75,16 +87,6 @@ private struct PermissionDecisionButton: View {
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: ArgoRadius.control)
-    }
-
-    /// Drawn on Allow unconditionally: Allow being focused is the state, not something that happens
-    /// once the vessel is clicked, and `⏎` answers from the moment the prompt appears. Hence the
-    /// ring shape and not `argoFocusRing`, which is off for a reader working the pointer (#533).
-    @ViewBuilder private var focusRing: some View {
-        if answer == .allow {
-            ArgoFocusRing(shape)
-                .padding(-(ArgoSpacing.hair + ArgoStroke.focus))
-        }
     }
 
     private var verb: String {
@@ -103,23 +105,20 @@ private struct PermissionDecisionButton: View {
 
     private var ink: ArgoColor {
         switch answer {
-        case .allow: argo.color.text.onAccent
-        case .deny: argo.color.state.failure
+        case .allow: argo.color.text.primary
+        case .deny: argo.color.text.secondary
         }
     }
 
     private var ground: ArgoColor {
-        switch answer {
-        case .allow: argo.color.interaction.accent
-        case .deny: argo.color.surface.control
-        }
+        argo.color.surface.control
     }
 
-    /// Allow's ground is its own edge; Deny's has to be drawn.
+    /// The default action carries the vessel's attention color; Deny stays neutral on the far edge.
     private var border: ArgoColor {
         switch answer {
-        case .allow: .transparent
-        case .deny: argo.color.state.rim(argo.color.state.failure)
+        case .allow: argo.color.state.rim(argo.color.state.attention)
+        case .deny: argo.color.edge.hairline
         }
     }
 }

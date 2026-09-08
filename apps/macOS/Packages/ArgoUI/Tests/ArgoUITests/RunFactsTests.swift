@@ -116,6 +116,15 @@ struct RunFactsTests {
         #expect(launched.isDefault)
     }
 
+    @Test
+    func `a full Claude model reading keeps its alias row selected and its Effort scale`() {
+        var observed = facts(model: "claude-opus-5")
+        observed.catalog = .claude
+
+        #expect(observed.tickedModel?.id == "opus")
+        #expect(observed.efforts == ClaudeEffort.offered)
+    }
+
     /// The words the reset names and the pair a spawn is started at are one answer, held here
     /// because they live in two packages: a second constant would let the sentence and the argv
     /// drift apart (#1175).
@@ -126,14 +135,31 @@ struct RunFactsTests {
     }
 
     /// The reset NAMES what it restores rather than saying "default" — a reader should not have to
-    /// open it to find out. All three, Mode included, because it sets all three.
+    /// open it to find out. Both Model and Effort appear because reset restores both.
     ///
     /// It names where the values LAND and never where the Session currently is: a Session on Auto
     /// reading `Reset to Auto` would be the control lying about what pressing it does.
     @Test
-    func `the reset names the three values it restores to, whatever the Session is on`() {
-        #expect(RunFacts.resetWords == "Reset to Code · Opus 5 · Medium")
-        #expect(RunFacts.defaultMode == .code)
+    func `the reset names the two run values it restores`() {
+        #expect(facts().resetWords == "Reset to Opus 5 · Medium")
+    }
+
+    @Test
+    func `reset resolves Opus through a full-id API catalog`() {
+        var apiFacts = facts(model: "claude-sonnet-5")
+        apiFacts.catalog = SessionRunCatalog(models: [
+            .init(
+                id: "claude-sonnet-5", name: "Sonnet 5", efforts: [.medium],
+                defaultEffort: .medium, isDefault: true,
+            ),
+            .init(
+                id: "claude-opus-5", name: "Opus 5", efforts: [.medium, .high],
+                defaultEffort: .high,
+            ),
+        ])
+
+        #expect(apiFacts.resetRun == SessionRun(model: "claude-opus-5", effort: .high))
+        #expect(apiFacts.resetWords == "Reset to Opus 5 · High")
     }
 
     /// What a pick mid-Turn draws now (#1329, formerly #1217). The two sections stay live; the

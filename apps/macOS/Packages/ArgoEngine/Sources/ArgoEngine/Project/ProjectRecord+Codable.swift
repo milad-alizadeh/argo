@@ -12,7 +12,6 @@ extension ProjectRecord: Codable {
         case id
         case path
         case bindings
-        case agent
     }
 
     /// A binding that does not decode is dropped while the Project around it still reads, the same
@@ -34,7 +33,6 @@ extension ProjectRecord: Codable {
             id: container.decode(String.self, forKey: .id),
             path: container.decode(String.self, forKey: .path),
             bindings: lenient.compactMap(\.binding),
-            agent: container.decodeIfPresent(AgentCLI.self, forKey: .agent) ?? .claude,
         )
     }
 
@@ -43,6 +41,5 @@ extension ProjectRecord: Codable {
         try container.encode(id, forKey: .id)
         try container.encode(path, forKey: .path)
         try container.encode(bindings, forKey: .bindings)
-        try container.encode(agent, forKey: .agent)
     }
 }

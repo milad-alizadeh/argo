@@ -19,7 +19,10 @@ public extension Hub {
                 mode: { [weak self] set, sessionID in
                     self?.rememberMode(set, for: sessionID)
                 },
-                run: { [weak self] pick in self?.runStore.remember(pick) },
+                permission: { [weak self] id, sessionID in
+                    self?.rememberPermission(id, for: sessionID)
+                },
+                run: { [weak self] pick, sessionID in self?.rememberRun(pick, for: sessionID) },
                 stoppedTurn: { [weak self] sessionID in
                     self?.rememberStopClaim(for: sessionID)
                 },
@@ -83,6 +86,7 @@ extension Hub {
                 attachments: AttachmentStore(root: Self.attachmentRoot),
                 delivery: delivery,
                 stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
+                catalog: { [weak self] sessionID in self?.catalog(of: sessionID) },
             ),
             codex: CodexSessionDriver(
                 ownership: ownership,
@@ -94,6 +98,11 @@ extension Hub {
                 serverHost: spawnServices.hosts.codex ?? CodexProcessHost(),
             ),
         )
+    }
+
+    private func catalog(of sessionID: String) -> SessionRunCatalog? {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return nil }
+        return runCatalogs[claim]
     }
 
     /// The host that says this window may start agents AT ALL — a Hub built with none is the render

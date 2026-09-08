@@ -23,6 +23,7 @@ struct ComposerSpecimen: View {
     /// What `AddMenu`, or the listing behind one of its rows, should already show — `.closed` by
     /// default, so a case that is not about `+` cannot accidentally open it (#689).
     let opening: ComposerMenusOpening
+    var harnessEditable = false
 
     init(
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
@@ -47,13 +48,21 @@ struct ComposerSpecimen: View {
 
     var body: some View {
         ComposerStage {
-            SessionComposer(
-                composer: composer,
-                intents: intents,
-                isDropTargeted: isDropTargeted,
-                opening: opening,
-            )
+            composerView
         }
+    }
+
+    private var composerView: SessionComposer {
+        var view = SessionComposer(
+            composer: composer,
+            intents: intents,
+            isDropTargeted: isDropTargeted,
+            opening: opening,
+        )
+        if harnessEditable {
+            view.setHarness = { _ in }
+        }
+        return view
     }
 
     /// The typing state's draft: multi-line, because the growth past one line IS the state.

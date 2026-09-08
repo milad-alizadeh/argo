@@ -87,9 +87,6 @@ final class CockpitCoordinator {
         // what a settled title needs, and a resolver holding the coordinator would be the second
         // reference into a window it does not otherwise know about.
         self.ticketTitles = TicketTitleResolver(annotations: annotationStore)
-        hub.agentForNewSession = { [store] projectURL in
-            await store.load().project(atPath: projectURL.path)?.agent ?? .claude
-        }
     }
 
     /// The active Project as a record; `nil` where the window points at an unregistered folder,

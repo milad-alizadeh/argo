@@ -18,9 +18,9 @@ extension SessionComposer {
                 toggle: toggleAddMenu,
             ),
             mode: ModePickerControl(
-                reading: composer.mode,
-                heldMode: draft.heldMode,
-                setMode: ask,
+                permission: composer.permission,
+                setPermission: askForPermission,
+                isPermissionOpenForRender: opening == .permission,
             ),
             runFacts: RunFactsControl(
                 facts: composer.facts,
@@ -31,6 +31,7 @@ extension SessionComposer {
                 ),
                 held: RunFactsHeld(model: draft.heldModel, effort: draft.heldEffort),
                 isOpenForRender: opening == .runSettings,
+                setHarness: setHarness,
             ),
             send: SendButtonControl(
                 isSendable: draft.isSendable,

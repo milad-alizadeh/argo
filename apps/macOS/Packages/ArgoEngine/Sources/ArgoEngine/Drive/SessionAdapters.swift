@@ -49,6 +49,17 @@ struct SessionAdapters: SessionDriver {
         try await adapter(for: sessionID).setMode(mode, for: sessionID)
     }
 
+    func setPermission(_ id: String, for sessionID: String) async throws -> SessionMode {
+        try await adapter(for: sessionID).setPermission(id, for: sessionID)
+    }
+
+    func permissionProfile(for mode: SessionMode, harness: AgentCLI) -> SessionPermissionProfile {
+        switch harness {
+        case .claude: ClaudePermissionControl.profile(mode: mode)
+        case .codex: CodexPermissionControl.profile(mode: mode)
+        }
+    }
+
     func setModel(_ modelID: String, for sessionID: String) async throws {
         try await adapter(for: sessionID).setModel(modelID, for: sessionID)
     }

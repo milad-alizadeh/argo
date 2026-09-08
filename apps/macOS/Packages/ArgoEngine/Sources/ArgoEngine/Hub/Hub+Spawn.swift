@@ -25,8 +25,9 @@ public extension Hub {
         let cli = if let cli {
             cli
         } else {
-            await agentForNewSession(project.url)
+            runStore.lastHarness()
         }
+        let seed = try await configuredSeed(seed, for: cli)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: cwd, isDirectory: &isDirectory),
               isDirectory.boolValue
@@ -46,7 +47,8 @@ public extension Hub {
             // The pair the user last picked, resolved here for the reason the rung is: the argv
             // and the row this spawn publishes must state one answer (#1175). A resume answers off
             // the Session it continues instead — see `run(resuming:)`.
-            run: seed.resuming.map { run(resuming: $0.sessionID) } ?? runStore.lastPicked(),
+            run: seed.run ?? seed.resuming.map { run(resuming: $0.sessionID) } ?? runStore
+                .lastPicked(),
             seed: seed,
             claim: claim(for: seed, naming: namedUUID),
             namedUUID: namedUUID,
@@ -158,9 +160,11 @@ public extension Hub {
     /// from THAT: from zero, its very next record would read as the CLI overruling a flag it had in
     /// fact honoured.
     private func publish(_ plan: AgentSpawnPlan) {
+        runCatalogs[plan.claim] = plan.seed.catalog
         claims.setMode(
             SessionModeSet(
                 mode: plan.mode,
+                permissionID: plan.seed.permission?.id,
                 recordsWhenSet: plan.seed.resuming.map { observedModeCount(of: $0.sessionID) } ?? 0,
             ),
             for: plan.claim,
@@ -168,7 +172,7 @@ public extension Hub {
         // What Argo put on this Session's argv (#1175). DIRECT for as long as it is the only thing
         // that has spoken: the first record's own reading supersedes it, and the composer states
         // this in the meantime rather than `unknown`. Filed under the claim like the rung above.
-        if plan.cli.takesRunFlags {
+        if plan.cli.takesRunFlags || plan.seed.run != nil {
             claims.setRun(plan.run, for: plan.claim)
         }
         // Filed under the claim for the reason the rung is: it must survive the re-key to the id
@@ -267,6 +271,7 @@ public extension Hub {
         // The startup wait has its answer — the claim is being given up — and a clock left armed
         // would ask a retired spawn whether its process is up (#1245).
         startupClocks.removeValue(forKey: claim)?.cancel()
+        runCatalogs.removeValue(forKey: claim)
         delivery.forget(claim.value)
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)

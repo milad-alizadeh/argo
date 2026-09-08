@@ -14,6 +14,8 @@ package struct RunFacts: Equatable {
     /// The model the records report, verbatim and unread — a provider's id, or the alias a spawn
     /// put on argv or a `/model` command was handed (#1411). `nil` where none has been read, which
     /// is `unknown` rather than a guess.
+    package var harness: AgentCLI?
+    package var catalog: SessionRunCatalog?
     package let model: String?
     /// The effort as Argo can place it — a rung, or the CLI's own word off the ladder.
     package let effort: SessionEffortReading
@@ -39,18 +41,20 @@ package struct RunFacts: Equatable {
     /// does not is stated VERBATIM, because the ids belong to the providers and a newer model is
     /// not an error (`ReadableModelName`).
     var modelWords: String {
-        model.map(ReadableModelName.readable) ?? Self.unknownWords
+        catalogModel?.name
+            ?? model.map(ReadableModelName.readable) ?? Self.unknownWords
     }
 
     /// The whole trigger: `Opus 5 · Medium`, in the deck header's own dim `·`-separated idiom.
     var words: String {
-        "\(modelWords) · \(effort.words)"
+        [harness?.readableName, modelWords, effort.words].compactMap(\.self)
+            .joined(separator: " · ")
     }
 
     /// Whether either knob can be reached at all. `false` leaves the facts as WORDS — a trigger
     /// that opened onto nothing would be a promise the footer cannot keep.
     var canOpen: Bool {
-        chooses.model || chooses.effort
+        harness != nil || chooses.model || chooses.effort
     }
 
     /// Whether both facts are where a fresh Session starts. The trigger is chromeless at the
@@ -60,7 +64,8 @@ package struct RunFacts: Equatable {
     /// An `unknown` on either side is NOT default: a fact Argo could not establish is exactly the
     /// one worth looking at, and drawing it quiet would hide it.
     var isDefault: Bool {
-        modelWords == RunFactsModel.default.name && effort.rung == Self.defaultEffort
+        guard let resetRun else { return false }
+        return modelWords == resetModelWords && effort.rung == resetRun.effort
     }
 
     /// The rung a fresh Session starts on, and the one the reset names. The engine's own value for
@@ -75,9 +80,25 @@ package struct RunFacts: Equatable {
     /// not recognise renders as given. Without the extra row the tick would have nowhere to land,
     /// and a list with nothing ticked reads as a Session on no model at all.
     var models: [RunFactsModel] {
-        let offered = RunFactsModel.offered
+        let offered = offeredModels
         guard let model, !offered.contains(where: { $0.name == modelWords }) else { return offered }
         return offered + [RunFactsModel(id: model, name: modelWords, note: "as the CLI reports it")]
+    }
+
+    private var offeredModels: [RunFactsModel] {
+        if let catalog {
+            return catalog.models.map {
+                RunFactsModel(id: $0.id, name: $0.name, note: $0.detail)
+            }
+        }
+        return harness == .codex ? [] : RunFactsModel.offered
+    }
+
+    var efforts: [SessionEffort] {
+        if catalog != nil {
+            return catalogModel?.efforts ?? []
+        }
+        return harness == .codex ? [] : ClaudeEffort.offered
     }
 
     /// The row to tick, and `nil` where a tick would be a lie — a Session whose records have named
@@ -87,18 +108,36 @@ package struct RunFacts: Equatable {
         return models.first { $0.name == modelWords }
     }
 
-    /// The rung the reset puts the Session back on. Beside `defaultEffort` because the reset
-    /// restores all three together, and one of them naming a different value than it sets would be
-    /// the control lying about what pressing it does.
-    static let defaultMode = SessionMode.code
+    private var catalogModel: SessionRunCatalog.Model? {
+        guard let model else { return nil }
+        return catalog?.models.first {
+            $0.id == model || $0.name == ReadableModelName.readable(model)
+        }
+    }
 
-    /// What the reset RESTORES, named rather than called "default" — `Code · Opus 5 · Medium`. A
+    /// What the reset RESTORES, named rather than called "default" — `Opus 5 · Medium`. A
     /// reset that said "default" would make the reader open it to find out what that was.
     ///
-    /// A constant, not a function of the Session's current stance: what it names is where the three
-    /// values LAND, which does not vary.
-    static let resetWords =
-        "Reset to \(defaultMode.label) · \(RunFactsModel.default.name) · \(defaultEffort.label)"
+    /// A constant, not a function of the Session's current stance: what it names is where the two
+    /// values land, which does not vary.
+    var resetWords: String {
+        guard let resetRun else { return "Reset Model and Effort" }
+        return "Reset to \(resetModelWords) · \(resetRun.effort.label)"
+    }
+
+    var resetRun: SessionRun? {
+        guard let catalog else { return .unpicked }
+        guard let model = catalog.models.first(where: { $0.name == RunFactsModel.default.name })
+            ?? catalog.models.first(where: \.isDefault) ?? catalog.models.first
+        else { return nil }
+        return SessionRun(model: model.id, effort: model.defaultEffort)
+    }
+
+    private var resetModelWords: String {
+        guard let resetRun else { return Self.unknownWords }
+        return catalog?.models.first(where: { $0.id == resetRun.model })?.name
+            ?? ReadableModelName.readable(resetRun.model)
+    }
 }
 
 /// One row of the popover's Model list: what to ask the CLI for, what to call it, and the one-line
@@ -119,13 +158,10 @@ package struct RunFactsModel: Equatable, Hashable, Identifiable {
     /// A pure data catalog, staleable by construction the way `ReadableModelName` is: the aliases
     /// belong to the CLI, and a row whose alias it stops resolving is a row that stops working
     /// rather than one that silently picks something else.
-    static let offered = [
-        RunFactsModel(id: "opus", name: "Opus 5", note: "the default"),
-        RunFactsModel(id: "sonnet", name: "Sonnet 5", note: "faster, cheaper"),
-        RunFactsModel(id: "haiku", name: "Haiku 4.5", note: "quick edits"),
-    ]
+    static let offered = SessionRunCatalog.claude.models.map {
+        RunFactsModel(id: $0.id, name: $0.name, note: $0.detail)
+    }
 
-    /// The one the reset names, and the one `isDefault` is measured against.
     static var `default`: RunFactsModel {
         offered[0]
     }

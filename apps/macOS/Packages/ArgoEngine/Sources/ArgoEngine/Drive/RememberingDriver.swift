@@ -18,12 +18,26 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     struct Remembered {
         /// Handed the rung only once it landed. A refusal filed as a set is the same stale count.
         let mode: (SessionModeSet, String) -> Void
+        /// Handed the adapter's opaque Permission id only after its mechanism took the choice.
+        let permission: (String, String) -> Void
         /// Handed a Model or an Effort only once the port took it, for the same reason (#1175): a
         /// pick the CLI refused is not the one the next New Session should open on.
-        let run: (SessionRunPick) -> Void
+        let run: (SessionRunPick, String) -> Void
         /// Handed the Session whose Turn was just STOPPED (#1409, #1644) — see
         /// `ClaimLedger.setStopClaim`, which is the whole rule.
         let stoppedTurn: (String) -> Void
+
+        init(
+            mode: @escaping (SessionModeSet, String) -> Void,
+            permission: @escaping (String, String) -> Void = { _, _ in },
+            run: @escaping (SessionRunPick, String) -> Void,
+            stoppedTurn: @escaping (String) -> Void,
+        ) {
+            self.mode = mode
+            self.permission = permission
+            self.run = run
+            self.stoppedTurn = stoppedTurn
+        }
     }
 
     init(
@@ -84,18 +98,29 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         remembers.mode(SessionModeSet(mode: mode, recordsWhenSet: before), sessionID)
     }
 
+    func setPermission(_ id: String, for sessionID: String) async throws -> SessionMode {
+        let before = records(sessionID)
+        let mode = try await base.setPermission(id, for: sessionID)
+        remembers.mode(
+            SessionModeSet(mode: mode, permissionID: id, recordsWhenSet: before),
+            sessionID,
+        )
+        remembers.permission(id, sessionID)
+        return mode
+    }
+
     /// Remembered APP-WIDE and never against this Session (#1175). Where `setMode` files a rung and
     /// a record count for the Session it was set on, these two file only the pick itself: a model
     /// and an effort are NAMED rather than walked to, and where THIS Session stands on them is a
     /// question its own next record answers. What is kept is what the next New Session opens on.
     func setModel(_ modelID: String, for sessionID: String) async throws {
         try await base.setModel(modelID, for: sessionID)
-        remembers.run(.model(modelID))
+        remembers.run(.model(modelID), sessionID)
     }
 
     func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
         try await base.setEffort(effort, for: sessionID)
-        remembers.run(.effort(effort))
+        remembers.run(.effort(effort), sessionID)
     }
 
     /// Passed straight through and remembered NOWHERE (#1494). The two above file a pick because

@@ -94,7 +94,7 @@ final class AccountsCoordinator {
     ///
     func open(on project: ProjectRecord?, welcoming: Bool = false) async {
         self.project = await projects.load().project(id: project?.id)
-        mode = self.project.map { .settings(agent: $0.agent) } ?? .creating
+        mode = self.project == nil ? .creating : .settings
         startsAtWelcome = welcoming
         note = nil
         isOpen = true

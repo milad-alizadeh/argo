@@ -304,3 +304,21 @@ moved after the opening reading. It is punctuation like every other mark and tak
 `SendButton`'s **Stop** state, which
 `queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
 stops nothing would be the promise decision 9 refuses to make about attachments.
+
+## #1692 additions
+
+| name | tier | location | props | composed-of |
+| --- | --- | --- | --- | --- |
+| `NewSessionComposer` | organism | `ArgoUI/Shell/Deck/Composer/` — owns the draft before startup | Session actions, optional adjacent Session id, started callback; loading, ready, refused | `PreparedSessionComposer`, native progress and retry controls |
+| `PreparedSessionComposer` | organism | same — projects a ready draft | preparation, intents, first Send and Harness callbacks | `SessionComposer` |
+| `AgentMark` | atom | same — the provider identity belongs to the run controls | `harness: AgentCLI` | a monochrome template `Image` at `ArgoIconSize.control` |
+| `RunFactsButton` | atom | same — rewritten in place | `RunFactsControl` | `AgentMark`, run-fact text and the shared quiet footer face |
+| `RunSettingsPopover` | molecule | same — rewritten in place | `RunFactsControl` | segmented Harness, descriptive Model list, segmented Effort, reset `Button` |
+| `ComposerFooterControlFace` | atom | same — new shared face | hover state | clear content-width, 28pt-high control; `surface.hover` under the pointer |
+| `ModePicker` | molecule | same — rewritten in place | adapter-authored `SessionPermissionProfile`, selection callback | quiet footer face and descriptive Permission popover |
+
+Harness and Model stay inside `RunSettingsPopover`; their repeated rows remain private to it. The
+Permission control stays on the footer's leading side and shares its exact frame with
+`RunFactsButton`. The provider marks extract because they appear in both the footer and Harness
+segments. Permission vocabulary comes from the adapter through `SessionPermissionProfile`; the UI
+contains no Claude or Codex permission switch.

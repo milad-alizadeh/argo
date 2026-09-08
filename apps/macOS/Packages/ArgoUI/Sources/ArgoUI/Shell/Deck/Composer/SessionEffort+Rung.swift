@@ -9,6 +9,9 @@ import ArgoEngine
 extension SessionEffort {
     var label: String {
         switch self {
+        case .none: "None"
+        case .minimal: "Minimal"
+        case .ultra: "Ultra"
         case .low: "Low"
         case .medium: "Medium"
         case .high: "High"

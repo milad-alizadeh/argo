@@ -23,7 +23,7 @@ package enum ConnectPanelProjection {
         package let ports: [PortRow]
         let companion: Row
         /// Absent while creating: a Project that does not exist yet starts no Sessions.
-        let agent: AgentCLI?
+        let showsCompanion: Bool
         let challenge: ConnectChallenge?
         let note: ConnectNote?
         let call: String
@@ -37,7 +37,7 @@ package enum ConnectPanelProjection {
             folderCall: reading.folder == nil ? "Choose folder…" : "Change folder…",
             ports: portRows(from: reading),
             companion: companionRow(from: reading),
-            agent: agentRow(of: reading.mode),
+            showsCompanion: reading.mode == .creating,
             challenge: reading.challenge,
             note: reading.note,
             call: call(of: reading.mode),
@@ -96,13 +96,6 @@ package enum ConnectPanelProjection {
             "The last session started without its plugin: \(why)"
         case .unknown:
             "unknown"
-        }
-    }
-
-    private static func agentRow(of mode: ConnectPanelMode) -> AgentCLI? {
-        switch mode {
-        case .creating: nil
-        case let .settings(agent): agent
         }
     }
 }

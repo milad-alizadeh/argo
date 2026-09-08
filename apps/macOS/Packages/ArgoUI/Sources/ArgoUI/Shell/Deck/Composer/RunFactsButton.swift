@@ -4,9 +4,8 @@ import SwiftUI
 
 /// `Opus 5 · Medium` on the footer — what the Session runs at, and the way into changing it (#558).
 ///
-/// **A fact line, not a capsule with a chevron.** It is the deck header's own dim `·`-separated
-/// idiom and stays chromeless until hovered, because at the defaults there is nothing here worth a
-/// reader's attention. It BRIGHTENS off the defaults, which is the one state that is.
+/// It uses the same quiet, hover-only control as Permission and hugs its current value.
+/// The provider mark identifies the harness before the `·`-separated Model and Effort facts.
 ///
 /// An adapter that chooses neither knob gets the words and no button at all — a trigger that
 /// opened onto an empty popover would be a promise this footer cannot keep. That is the same rule
@@ -16,10 +15,6 @@ struct RunFactsButton: View {
 
     /// What this control says, what it does, and whether it starts open — see `RunFactsControl`.
     let control: RunFactsControl
-    /// The Session's stance, for the reset's sentence alone — the reset names Mode among what it
-    /// restores, and a reset that said "default" would make the reader open it to find out.
-    /// Mode itself is NOT drawn in the popover: it is on the footer beside this (decision 1).
-    let mode: SessionModeReading
 
     @State private var isOpen = false
     @State private var isHovered = false
@@ -37,21 +32,27 @@ struct RunFactsButton: View {
             .buttonStyle(.plain)
             .onHover { isHovered = $0 }
             .help("What this Session runs at — \(facts.words)")
-            .accessibilityLabel("Model and Effort, \(facts.words)")
+            .accessibilityLabel("Harness, Model and Effort, \(facts.words)")
             .popover(isPresented: $isOpen, arrowEdge: .bottom) {
-                RunSettingsPopover(control: control, mode: mode)
+                RunSettingsPopover(control: control)
                     .presentationBackground(.regularMaterial)
             }
             .onAppear { isOpen = control.isOpenForRender }
     }
 
-    /// The words alone. `machineCaption` rather than `rowMeta`, which is the deck header's idiom
-    /// the design names: a model name and a rung are both machine facts, and the header sets its
-    /// own beside them the same way.
+    /// The mark and facts inside the platform control.
     private var words: some View {
-        Text(facts.words)
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(ink)
+        HStack(spacing: ArgoSpacing.snug) {
+            if let harness = facts.harness {
+                AgentMark(harness: harness)
+            }
+            Text(facts.words)
+                .lineLimit(1)
+            Image(systemName: "chevron.up.chevron.down").argoIcon(.chevron)
+        }
+        .argoText(ArgoTypography.control)
+        .foregroundStyle(ink)
+        .composerFooterControl(isHovered: isHovered)
     }
 
     /// What this control says, unwrapped once so the body above reads as the design does.
@@ -69,11 +70,8 @@ struct RunFactsButton: View {
 }
 
 /// One control at a state, framed the way the footer frames it.
-@MainActor private func button(_ facts: RunFacts, mode: SessionMode = .code) -> some View {
-    RunFactsButton(
-        control: RunFactsControl(facts: facts),
-        mode: .exactly(mode, cli: "acceptEdits"),
-    )
+@MainActor private func button(_ facts: RunFacts) -> some View {
+    RunFactsButton(control: RunFactsControl(facts: facts))
 }
 
 /// A reading on an adapter that declares BOTH knobs — the state every case below but the last

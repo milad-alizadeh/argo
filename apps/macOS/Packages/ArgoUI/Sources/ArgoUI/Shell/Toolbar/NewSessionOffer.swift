@@ -10,7 +10,7 @@ package struct NewSessionOffer: Equatable, Sendable {
     /// The key the MENU owns. The button names it rather than binding it: two controls on one
     /// shortcut is one binding with a loser.
     static let shortcutDescription = "⌘N"
-    static let detail = "Starts an agent in the active Project's folder"
+    static let detail = "Opens a new composer in the active Project"
 
     /// Why it cannot be launched, or `nil` when it can. Present means the control is drawn and
     /// DISABLED with this sentence on it.

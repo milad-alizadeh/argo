@@ -17,7 +17,7 @@ import Testing
 struct DriveRunFactsTests {
     @Test
     func `the effort scale is the CLI's own five words, in the CLI's own order`() {
-        #expect(SessionEffort.allCases.map(\.rawValue)
+        #expect(ClaudeEffort.offered.map(\.rawValue)
             == ["low", "medium", "high", "xhigh", "max"])
     }
 

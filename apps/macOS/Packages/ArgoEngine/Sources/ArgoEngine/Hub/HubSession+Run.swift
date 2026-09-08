@@ -16,13 +16,16 @@ public extension HubSession {
     /// `<synthetic>` — off a ledger entry written before that guard existed — would otherwise keep
     /// offering it as the composer's ticked row, which is where the picker can never land.
     var model: String? {
-        ModelID.named(in: observed.model ?? launchedRun?.model)
+        let model = cli == .codex ? launchedRun?.model ?? observed.model : observed
+            .model ?? launchedRun?.model
+        return ModelID.named(in: model)
     }
 
     /// The CLI's own word for the effort level, on the same terms as `model` above. The launch
     /// value is spelled in the CLI's own words too (`ClaudeEffort`), so a reader here cannot tell
     /// which of the two it got — which is the point: both say what the Session is running at.
     var effort: String? {
-        observed.effort ?? launchedRun.map { ClaudeEffort.value(for: $0.effort) }
+        let selected = launchedRun?.effort.rawValue
+        return cli == .codex ? selected ?? observed.effort : observed.effort ?? selected
     }
 }

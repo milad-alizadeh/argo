@@ -10,11 +10,15 @@
 /// yet. Argo would then go on drawing a rung it merely asked for (#629).
 public struct SessionModeSet: Equatable, Sendable {
     public let mode: SessionMode
+    /// The adapter's exact permission value where this set came from its permission control.
+    /// `nil` for the older generic Mode control, whose rung is already exact enough.
+    public let permissionID: String?
     /// Zero at spawn, where nothing had been written yet — which is the same fact, not a gap.
     public let recordsWhenSet: Int
 
-    public init(mode: SessionMode, recordsWhenSet: Int = 0) {
+    public init(mode: SessionMode, permissionID: String? = nil, recordsWhenSet: Int = 0) {
         self.mode = mode
+        self.permissionID = permissionID
         self.recordsWhenSet = recordsWhenSet
     }
 }

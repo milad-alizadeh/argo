@@ -19,7 +19,7 @@ struct RememberingDriverTests {
         stoppedTurn: @escaping (String) -> Void = { _ in },
     )
         -> RememberingDriver<InMemorySessionDriver>.Remembered {
-        .init(mode: mode, run: run, stoppedTurn: stoppedTurn)
+        .init(mode: mode, run: { pick, _ in run(pick) }, stoppedTurn: stoppedTurn)
     }
 
     /// Every act but `setMode` reaches the adapter untouched, so wrapping cannot quietly cost one.

@@ -30,6 +30,7 @@ public final class InMemorySessionDriver: SessionDriver {
     private var answers: [String: [(ask: String, answer: AskAnswer)]] = [:]
     private var revocations: [String: [String]] = [:]
     private var modes: [String: [SessionMode]] = [:]
+    private var permissions: [String: [String]] = [:]
     private var models: [String: [String]] = [:]
     private var efforts: [String: [SessionEffort]] = [:]
     private var titles: [String: [String]] = [:]
@@ -100,6 +101,18 @@ public final class InMemorySessionDriver: SessionDriver {
         }
         duringSetMode?()
         modes[sessionID, default: []].append(mode)
+    }
+
+    public func setPermission(_ id: String, for sessionID: String) async throws -> SessionMode {
+        if let refusal {
+            throw refusal
+        }
+        guard let choice = declaredSurface.permission?.choices.first(where: { $0.id == id }) else {
+            throw SessionDriveError.modeUnreachable
+        }
+        permissions[sessionID, default: []].append(id)
+        modes[sessionID, default: []].append(choice.mode)
+        return choice.mode
     }
 
     /// Records the id VERBATIM, which is the claim a surface has to be able to make about this one:

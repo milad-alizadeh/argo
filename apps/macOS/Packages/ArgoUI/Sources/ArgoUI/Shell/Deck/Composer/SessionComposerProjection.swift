@@ -3,40 +3,6 @@ import ArgoEngine
 /// What the composer states about the Session it drives, derived the way the header's facts are:
 /// off the presentation, in a projection a test can hold still.
 package enum SessionComposerProjection {
-    /// What the Session's adapter declares about itself. One type rather than three parallel flags
-    /// because they travel together from `CockpitView` down to the vessel, and each is read off the
-    /// drive port for the same Session at the same moment.
-    /// `package` so the specimen deck can ask for the WHOLE projection rather than hand-building a
-    /// `Composer` (#1179): a case about what the projection derives off a status proves nothing
-    /// when the fixture states the derivation itself.
-    package struct Capabilities: Equatable {
-        /// Whether this adapter takes attachments at all (#540).
-        var canAttach = false
-        /// Whether a `/command` fires the CLI's own command handling (#685).
-        var canRunCommands = false
-        /// Whether the CLI resolves an `@path` itself (#687). Where it does not, Argo names the
-        /// file on its own line, so `@` is offered on both adapters where `/` is offered on one.
-        var resolvesMentions = false
-        /// Which of the CLI's own two knobs this adapter can be SET on (#558). One value, the way
-        /// the port declares it: a knob it does not answer for leaves its section OUT of the
-        /// run-settings popover — absent, not disabled.
-        var chooses = RunFactKnobs()
-
-        /// Spelled out because Swift's synthesised memberwise init for a `package` struct is
-        /// `internal`, and the specimens build this from their own target.
-        package init(
-            canAttach: Bool = false,
-            canRunCommands: Bool = false,
-            resolvesMentions: Bool = false,
-            chooses: RunFactKnobs = RunFactKnobs(),
-        ) {
-            self.canAttach = canAttach
-            self.canRunCommands = canRunCommands
-            self.resolvesMentions = resolvesMentions
-            self.chooses = chooses
-        }
-    }
-
     package struct Composer: Equatable {
         /// The handle `send` is keyed by — the roster's own id for the Session.
         package let sessionID: String
@@ -46,7 +12,9 @@ package enum SessionComposerProjection {
         /// What the Session runs at — `Opus 5 · Medium` — stated on the composer and nowhere else
         /// (design decision 2, #558). The whole reading, because what the trigger says, what the
         /// popover ticks and which sections it draws are all things this one value settles.
-        package let facts: RunFacts
+        package var facts: RunFacts
+        /// Adapter-authored permission vocabulary and selected value.
+        package var permission: SessionPermissionProfile?
         /// What this Session has stopped asking about (#572). Empty for a Session holding none,
         /// which draws no tray.
         let standingAllows: [StandingAllow]
@@ -151,6 +119,7 @@ package enum SessionComposerProjection {
             sessionID: String,
             placeholder: String,
             facts: RunFacts,
+            permission: SessionPermissionProfile? = nil,
             standingAllows: [StandingAllow],
             isRunning: Bool,
             mode: SessionModeReading,
@@ -165,6 +134,7 @@ package enum SessionComposerProjection {
             self.sessionID = sessionID
             self.placeholder = placeholder
             self.facts = facts
+            self.permission = permission
             self.standingAllows = standingAllows
             self.isRunning = isRunning
             self.isTurnInFlight = isRunning
@@ -214,6 +184,7 @@ package enum SessionComposerProjection {
                 effort: session.effort.map(ClaudeEffort.reading) ?? .unknown(cli: nil),
                 chooses: can.chooses,
             ),
+            permission: can.permission,
             standingAllows: StandingAllowProjection.allows(for: session),
             isRunning: isRunning,
             mode: session.mode,
@@ -225,6 +196,8 @@ package enum SessionComposerProjection {
             workspaceRoot: session.workspaceLocation,
             touchedFiles: TouchedFiles.touched(in: events, within: session.workspaceLocation),
         )
+        composer.facts.harness = session.cli
+        composer.facts.catalog = can.catalog
         composer.isTurnInFlight = isTurnInFlight(session)
         composer.hasTurnEnded = hasTurnEnded(session.status)
         composer.endedByInterrupt = endedByInterrupt(events)
@@ -325,10 +298,6 @@ package enum SessionComposerProjection {
         return false
     }
 
-    /// Addressed to the agent when the record has named one, and to the role when it has not: a
-    /// managed Session's first moments are a claim without a CLI's own record behind it.
-    private static func placeholder(addressing cli: AgentCLI?) -> String {
-        guard let cli else { return "Message the agent…" }
-        return "Message \(cli.readableName)…"
-    }
+    // Addressed to the agent when the record has named one, and to the role when it has not: a
+    // managed Session's first moments are a claim without a CLI's own record behind it.
 }

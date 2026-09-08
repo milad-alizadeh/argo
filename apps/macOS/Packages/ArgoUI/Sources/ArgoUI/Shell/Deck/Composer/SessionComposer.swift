@@ -16,6 +16,8 @@ package struct SessionComposer: View {
     /// What the vessel's controls do — the deck's own value, the one the feed already holds. The
     /// composer reads the acts it draws a control for; `decide` and `spawnBeside` belong to the
     /// other two vessels in the same slot.
+    var firstSend: (() -> Void)?
+    package var setHarness: ((AgentCLI) -> Void)?
     let intents: DeckIntents
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
@@ -186,13 +188,6 @@ package struct SessionComposer: View {
     /// its own `ESC` has ended the Turn, so `isRunning` reads false for the whole of the pause
     /// before the paste lands. A Return sent straight through there would reach the CLI AHEAD of
     /// the follow-up the reader had just chosen to send first.
-    func submit() {
-        if menus.completes(on: line), complete() {
-            return
-        }
-        draft.submit(whileTurnInFlight: holdsTurn, via: sending)
-    }
-
     /// Whether a Turn is in flight by ANY reading the composer has: the Session's own, a steer
     /// mid-paste, and a Turn Argo put that the record has yet to show running (#1636).
     ///
@@ -235,7 +230,7 @@ package struct SessionComposer: View {
     /// no menu at all, or the filter matched nothing and there is no row under the cursor to take
     /// (design decision 8). ⏎ asks the same question, but only over a row `completes(on:)` says
     /// would extend the line; anything else it leaves to the Turn (#1208).
-    private func complete() -> Bool {
+    func complete() -> Bool {
         if let row = menus.addMenuPick(on: line) {
             open(row)
             return true

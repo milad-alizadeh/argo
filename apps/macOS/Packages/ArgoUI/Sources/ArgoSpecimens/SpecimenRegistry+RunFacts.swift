@@ -9,7 +9,7 @@ import SwiftUI
 /// before any record (#1175), an adapter that declares one knob, one that declares neither, and a
 /// Turn in flight, which locks both (#1217).
 extension SpecimenRegistry {
-    static let runFacts: [SpecimenEntry] = [
+    static let runFacts: [SpecimenEntry] = harnessSettings + [
         // `rest.png`. The closed state at the defaults — chromeless, quiet, `Opus 5 · Medium`.
         SpecimenEntry("composerRunFacts") {
             ComposerSpecimen(composer: ComposerSpecimen.composer)

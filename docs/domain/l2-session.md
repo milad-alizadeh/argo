@@ -163,9 +163,14 @@
   stated about a Session nothing put it on. Unread and unlaunched is still `unknown`, never a
   plausible value.
 
-  Which pair a New Session opens on is remembered app-wide — one value for the whole app beside the
-  last-picked Mode, `Opus 5 · Medium` where nothing has ever been picked, and written where a pick
-  LANDED so one the CLI refused is not the one the next Session opens on.
+  The last chosen harness is remembered app-wide. Each harness remembers its own Model and Effort
+  pair, using that harness's available choices when a new composer opens. A new composer is an
+  unsent draft; the first Send starts the Session and fixes its harness. Model, Effort and Mode
+  remain editable during the Session (#1692).
+
+  A Codex Model or Effort chosen during a Session is a DIRECT choice for the next Turn, not a
+  claim about the Turn already running. The composer states that timing. A setting a harness
+  refused is never remembered as an accepted choice.
 
   **Neither is Mode**, and the separation is load-bearing (#558): Mode is Argo's standing autonomy
   stance and settles how far the agent may act before it stops, while these two settle what does

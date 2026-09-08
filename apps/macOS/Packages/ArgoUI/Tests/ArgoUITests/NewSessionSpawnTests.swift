@@ -15,9 +15,9 @@ struct NewSessionSpawnTests {
 
         func actions() -> CockpitActions {
             var actions = CockpitActions(drive: InMemorySessionDriver())
-            actions.sessions.spawn = { [self] in
+            actions.sessions.start = { [self] _, _, _, _ in
                 requests += 1
-                return answer
+                return answer ?? "unexpected"
             }
             return actions
         }
@@ -44,7 +44,7 @@ struct NewSessionSpawnTests {
     }
 
     @Test
-    func `activating the action asks for a spawn`() async {
+    func `new Session opens a draft without starting an agent`() async {
         let recorder = SpawnRecorder()
         recorder.answer = "claim-1"
         let navigation = CockpitNavigationModel()
@@ -56,7 +56,8 @@ struct NewSessionSpawnTests {
 
         await spawn.run()
 
-        #expect(recorder.requests == 1)
+        #expect(recorder.requests == 0)
+        #expect(navigation.newSessionID != nil)
     }
 
     /// A shortcut reaches the action without passing the disabled button, so the refusal has to
@@ -78,7 +79,7 @@ struct NewSessionSpawnTests {
     }
 
     @Test
-    func `the Session that just started becomes the selection`() async {
+    func `first Send can replace the draft with the started Session`() async {
         let recorder = SpawnRecorder()
         recorder.answer = "claim-1"
         let navigation = CockpitNavigationModel()
@@ -91,13 +92,16 @@ struct NewSessionSpawnTests {
 
         await spawn.run()
 
+        #expect(navigation.newSessionID != nil)
+        navigation.pointAtStarting("claim-1")
+        #expect(navigation.newSessionID == nil)
         #expect(navigation.session == "claim-1")
     }
 
     /// A spawn that failed reported itself in the app's own alert; the roster must not move off the
     /// Session the reader was on, and above all must not point at a row nobody published.
     @Test
-    func `a spawn that did not happen leaves the selection where it was`() async {
+    func `opening a draft preserves the existing Session selection`() async {
         let recorder = SpawnRecorder()
         let navigation = CockpitNavigationModel()
         navigation.session = "shell"
@@ -109,7 +113,8 @@ struct NewSessionSpawnTests {
 
         await spawn.run()
 
-        #expect(recorder.requests == 1)
+        #expect(recorder.requests == 0)
+        #expect(navigation.newSessionID != nil)
         #expect(navigation.session == "shell")
     }
 }

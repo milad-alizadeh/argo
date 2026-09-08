@@ -58,7 +58,7 @@ struct ConnectCopyTests {
         ConnectFixture.pluginMissing,
         ConnectFixture.pluginFailed,
         ConnectReading(companion: .unknown),
-        ConnectReading(folder: ConnectFixture.folder, mode: .settings(agent: .claude)),
+        ConnectReading(folder: ConnectFixture.folder, mode: .settings),
     ].map(ConnectPanelProjection.panel(from:))
 
     /// Every string this flow can render, flattened once: the panel's rows, its failures, the

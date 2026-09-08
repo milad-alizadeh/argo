@@ -57,6 +57,15 @@ public struct SpawnServices {
     /// What this window can start and see, all three from the app layer — see `SpawnHosts`.
     public let hosts: SpawnHosts
     public let launcher: AgentLauncher
+    var readClaudeModels: () async throws -> SessionRunCatalog = {
+        try await ClaudeModelReader().read()
+    }
+
+    var readCodexModels: (AgentLauncher, String) async throws
+        -> SessionRunCatalog = { launcher, cwd in
+            try await CodexModelReader().read(launcher: launcher, cwd: cwd)
+        }
+
     /// Where the companion channel writes its sockets and plugin directories. Beside the files
     /// above rather than in them: it is a directory Argo owns and always has one, where each of
     /// those is a file it may be told to keep nothing in.

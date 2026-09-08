@@ -7,23 +7,27 @@ public extension CockpitActions {
     ///
     /// Each closure defaults to doing nothing, on the same terms as `Projects`.
     struct Sessions {
-        /// Start an agent in the active Project's folder, with Argo owning its PTY. Answers with
-        /// the fresh Session's id — the claim the roster publishes its row under — and `nil` where
-        /// no Session started; the app performs the spawn, the shell decides what to point at.
-        public var spawn: () async -> String? = { nil }
+        public var prepare: (AgentCLI?, String?) async throws -> SessionPreparation = { _, _ in
+            SessionPreparation(
+                harness: .claude,
+                catalog: .claude,
+                run: .unpicked,
+                permission: SessionPermissionProfile(choices: [], selectedID: nil, defaultID: ""),
+            )
+        }
+
+        public var remember: (SessionPreparation) -> Void = { _ in }
+        public var start: (SessionPreparation, String, [SessionAttachment], String?) async throws
+            -> String = { _, _, _, _ in
+                throw SessionDriveError.notDrivable
+            }
+
         /// Continue a Session Argo can no longer steer, in a fresh process on the same chain (#10).
         /// Raised by selection, because the click is the intent.
         ///
         /// It answers nothing: the composer appearing is the answer, and a refusal is said by the
         /// app.
         public var resume: (String) async -> Void = { _ in }
-        /// Start an agent in the folder ANOTHER Session was running in — the act available on a
-        /// Session that cannot be driven and cannot be continued either (#546). Keyed by that
-        /// Session's id and not by a path, because the folder is the engine's to read: the shell
-        /// knows which Session the reader is looking at and nothing about where it lives.
-        ///
-        /// Answers the way `spawn` does, and for the same reason.
-        public var spawnBeside: (String) async -> String? = { _ in nil }
         /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
         /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
         /// archiving a decision rather than a status transition (#502, story 14).

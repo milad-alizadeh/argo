@@ -112,15 +112,8 @@ struct DriveModeTests {
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
-    /// The way round the ring passes through rungs the user did not ask for, `Auto` among them.
-    /// That
-    /// is nothing while the agent is idle, and a widened boundary while it is mid-Turn — so the
-    /// change waits for the Turn rather than racing it.
     @Test
-    func `the rung does not move while a Turn is in flight`() async throws {
-        // A process in the Session's own folder is the other half of `running`: an open Turn
-        // nothing
-        // corroborates is quiet, so the fixture has to answer the process table too.
+    func `a walk through a wider rung is held while a Turn is in flight`() async throws {
         let live = Mutex<Set<String>>([])
         let fixture = try SpawnFixture(liveness: { live.withLock { $0 } })
         defer { fixture.remove() }
@@ -131,16 +124,40 @@ struct DriveModeTests {
             id: "session-from-cli",
             events: [
                 .cwd(fixture.projectURL.path),
-                .mode(cli: "acceptEdits"),
+                .mode(cli: "plan"),
                 .prompt(text: "Off you go", images: [], atMs: Date().epochMs),
             ],
         ))
         #expect(fixture.hub.sessions.map(\.status) == [.running])
-
         await #expect(throws: SessionDriveError.modeBusy) {
-            try await fixture.hub.driver.setMode(.auto, for: "session-from-cli")
+            try await fixture.hub.driver.setMode(.code, for: "session-from-cli")
         }
         #expect(fixture.host.started.last?.written.isEmpty == true)
+    }
+
+    @Test
+    func `an adapter permission choice changes during a Turn`() async throws {
+        let live = Mutex<Set<String>>([])
+        let fixture = try SpawnFixture(liveness: { live.withLock { $0 } })
+        defer { fixture.remove() }
+        live.withLock { $0 = [fixture.resolvedProjectPath] }
+        _ = try await fixture.hub.spawnSession()
+        await fixture.hub.refreshLiveness()
+        await hubObserveToEnd(fixture.hub, hubTestObservation(
+            id: "session-from-cli",
+            events: [
+                .cwd(fixture.projectURL.path),
+                .mode(cli: "plan"),
+                .prompt(text: "Off you go", images: [], atMs: Date().epochMs),
+            ],
+        ))
+
+        _ = try await fixture.hub.driver.setPermission(
+            "acceptEdits",
+            for: "session-from-cli",
+        )
+
+        #expect(fixture.host.started.last?.written.count == 3)
     }
 
     /// `claude` writes its stance at Turn boundaries, so the record still says what it said before

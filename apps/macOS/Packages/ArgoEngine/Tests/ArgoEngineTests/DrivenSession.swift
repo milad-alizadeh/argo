@@ -16,20 +16,27 @@ enum DrivenCLI: CaseIterable, Sendable {
 
     /// What the port must declare about this CLI (#761), stated here rather than read back off the
     /// adapter: a surface asked of the router and answered by the wrong adapter agrees with itself.
-    var surface: DriveSurface {
+    @MainActor var surface: DriveSurface {
         switch self {
         case .claude:
-            DriveSurface(
+            var surface = DriveSurface(
                 takesAttachments: true,
                 runsCommands: true,
                 resolvesMentions: true,
                 // `/model` and `/effort` reach the same input machinery a Turn does (#558).
                 chooses: .both,
             )
+            surface.catalog = .claude
+            surface.permission = ClaudePermissionControl.profile(mode: .code)
+            return surface
         case .codex:
-            // Neither knob: Argo reads no model and no effort off this surface, so a set here
-            // would put the composer on a value nothing could ever read back (#558).
-            DriveSurface(takesAttachments: true, runsCommands: false, resolvesMentions: false)
+            var surface = DriveSurface(
+                takesAttachments: true, runsCommands: false, resolvesMentions: false,
+                chooses: .both,
+            )
+            surface.catalog = SpawnFixture.codexCatalog
+            surface.permission = CodexPermissionControl.profile(mode: .code)
+            return surface
         }
     }
 }

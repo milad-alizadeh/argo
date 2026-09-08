@@ -24,3 +24,14 @@ extension SpawnFixture {
         return CodexSession(id: claim.value, server: server)
     }
 }
+
+extension SpawnFixture {
+    static let codexCatalog = SessionRunCatalog(models: [
+        .init(
+            id: "codex-default",
+            name: "Codex default",
+            efforts: [.medium, .high],
+            defaultEffort: .medium,
+        ),
+    ])
+}
