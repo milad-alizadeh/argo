@@ -167,10 +167,14 @@ sum_attribute() {
 # reason any of #918's flakes were ever noticed. The xUnit report is the honest one, because
 # it carries the counts as DATA. Fail closed on all three ways it can be absent: no report,
 # a report of no tests, and a report of failures.
+#
+# `verdict <package> <phase>`: it reads that phase's own report, so one package's two phases are
+# judged separately rather than summed (#1711).
 verdict() {
-  found=$(find "$REPORT_DIR" -type f -name "$1*.xml")
+  said="$1 $2"
+  found=$(find "$REPORT_DIR" -type f -name "$1-$2*.xml")
   if [ -z "$found" ]; then
-    echo "swift-test: $1 wrote no test report — the run never got that far" >&2
+    echo "swift-test: $said wrote no test report — the run never got that far" >&2
     return 1
   fi
   tests=$(sum_attribute tests "$found")
@@ -179,24 +183,38 @@ verdict() {
     if [ -n "$FILTER" ]; then
       # The fail-open case this guard exists for: `swift test` selected nothing and exited 0.
       # Naming the pattern is the whole message, because the pattern is what was wrong.
-      echo "swift-test: $1 matched no test for --filter $FILTER — nothing ran" >&2
+      echo "swift-test: $said matched no test for --filter $FILTER — nothing ran" >&2
       echo "swift-test: --filter matches type names, not the names in @Suite(\"…\")" >&2
     else
-      echo "swift-test: $1 reported 0 tests — nothing ran" >&2
+      echo "swift-test: $said reported 0 tests — nothing ran" >&2
     fi
     return 1
   fi
   if [ "$bad" -ne 0 ]; then
-    echo "swift-test: $1 reported $bad failure(s) across $tests tests" >&2
+    echo "swift-test: $said reported $bad failure(s) across $tests tests" >&2
     return 1
   fi
   # "reported" rather than "ran": a skipped suite is in neither the report nor this number,
   # so it sits BELOW the count in `swift test`'s own summary line.
-  echo "swift-test: $1 clean, 0 failures across $tests reported tests"
+  echo "swift-test: $said clean, 0 failures across $tests reported tests"
 }
 
-for package in $PACKAGES; do
-  # Has this exact tree already passed this package's suite? (#1377)
+# One `swift test` over one package under one PHASE, and the only place this script starts a
+# compiler. Three phases: `correctness`, `cost` and a caller's own `filtered` (#1711).
+#
+# `run_phase <package> <phase> [selection flags…]`
+run_phase() {
+  phase_package=$1
+  phase=$2
+  shift 2
+  step_label="swift-test:$phase_package:$CONFIGURATION:$phase"
+  # Which phase the rows below belong to, for `bun run gate:report` (#1711). Set FIRST, because
+  # a cache hit writes a row too: stamped after the check, a hit inherited whatever the caller
+  # exported — `gate` under `swift-gate.sh`, or the previous phase once one had run.
+  ARGO_GATE_PHASE=$phase
+  export ARGO_GATE_PHASE
+
+  # Has this exact tree already passed this phase? (#1377)
   #
   # The pair this closes: an agent finishes a ticket, runs the suites itself, and then `git
   # push` fires the pre-push gate, which ran the same suites over the same bytes again. The
@@ -208,47 +226,70 @@ for package in $PACKAGES; do
   # configs beside it — all of which live under that path. Coarse, and coarse in the safe
   # direction: a change anywhere in the app re-runs every suite.
   #
-  # A FILTERED run is never cached, in either direction. It proves less than a full one, so it
-  # must not record a pass; and it is asked for precisely when somebody wants that suite run
-  # again, so it must not read one either.
-  package_key=""
-  if [ -z "$FILTER" ]; then
-    package_key=$(step_key "swift-test:$package:$CONFIGURATION" apps/macOS)
-    if step_cached "$package_key"; then
-      echo "swift-test: $package passed this tree at $(step_recorded_at "$package_key") — not run again"
-      metric_append step "swift-test:$package:$CONFIGURATION" hit 0 0
-      continue
+  # It is keyed per phase, and the two phases together are the whole package, so a recorded
+  # pass never certifies more than it covered. A CALLER'S filter is a fraction of one and is
+  # cached in neither direction: it proves less than a phase, and it is asked for precisely
+  # when somebody wants that suite run again (#1711).
+  phase_key=""
+  if [ "$phase" != filtered ]; then
+    phase_key=$(step_key "$step_label" apps/macOS)
+    if step_cached "$phase_key"; then
+      echo "swift-test: $phase_package $phase passed this tree at" \
+        "$(step_recorded_at "$phase_key") — not run again"
+      metric_append step "$step_label" hit 0 0
+      return 0
     fi
   fi
 
-  # One of the machine's build slots (#1377), inside the loop and after the cached check so a
-  # tree whose every package already passed never queues for a slot it would not use.
-  # The wait it reports below belongs to the package that actually paid it: the acquire returns
-  # at once for every package after the first, and zeroes its own figure when it does.
+  # One of the machine's build slots (#1377), after the cached check so a tree whose every
+  # phase already passed never queues for a slot it would not use. The wait it reports belongs
+  # to the phase that actually paid it: the acquire returns at once for every one after the
+  # first, and zeroes its own figure when it does.
   build_lock_acquire
 
-  echo "swift-test: $package ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
-  package_started=$(metric_now)
+  echo "swift-test: $phase_package $phase ($CONFIGURATION)${FILTER:+ filtered to $FILTER}"
+  phase_started=$(metric_now)
   status=0
   # The report path stays third, ahead of the configuration flags: swift-tooling.test.mjs stubs
   # `swift` positionally, and a stub that wrote nowhere would pass by reporting nothing. The
-  # filter goes last, so an unfiltered run's argv is the one those tests already assert on.
+  # selection flags go last, so an unfiltered run's argv is the one those tests already assert
+  # on. One report per phase, so `verdict` judges each on its own counts.
   # shellcheck disable=SC2086 # CONFIGURATION_FLAGS and CACHE_FLAGS are word lists, not arguments.
-  (cd "$APP_DIR/Packages/$package" &&
-    swift test --xunit-output "$REPORT_DIR/$package.xml" $CONFIGURATION_FLAGS $CACHE_FLAGS \
-      ${FILTER:+--filter "$FILTER"}) ||
+  (cd "$APP_DIR/Packages/$phase_package" &&
+    swift test --xunit-output "$REPORT_DIR/$phase_package-$phase.xml" \
+      $CONFIGURATION_FLAGS $CACHE_FLAGS "$@") ||
     status=$?
   # The STATUS first. A compile failure or a signalled `swift` never reaches a report, and
   # `verdict`'s "wrote no test report" would bury the reason it did not.
   if [ "$status" -ne 0 ]; then
-    echo "swift-test: $package exited $status" >&2
+    echo "swift-test: $phase_package $phase exited $status" >&2
     exit "$status"
   fi
-  # `verdict` is what decides a package passed — the xUnit counts, not the exit status, because
+  # `verdict` is what decides a phase passed — the xUnit counts, not the exit status, because
   # `swift test` exits 0 on a failed run (#918). So the record goes after it and only after it,
-  # and `set -e` means a failing verdict never reaches this line.
-  verdict "$package"
-  step_record "$package_key" "swift-test:$package:$CONFIGURATION" apps/macOS
-  metric_append step "swift-test:$package:$CONFIGURATION" run \
-    "$(($(metric_now) - package_started))" "$BUILD_LOCK_WAITED"
+  # and `set -e` means a failing verdict never reaches this line: a failed phase records
+  # nothing, and a retry runs it again rather than reading a pass it never earned.
+  verdict "$phase_package" "$phase"
+  step_record "$phase_key" "$step_label" apps/macOS
+  metric_append step "$step_label" run "$(($(metric_now) - phase_started))" "$BUILD_LOCK_WAITED"
+}
+
+for package in $PACKAGES; do
+  if [ -n "$FILTER" ]; then
+    run_phase "$package" filtered --filter "$FILTER"
+    continue
+  fi
+
+  # The suites that read a clock, alternated into the one regex `--skip` and `--filter` take.
+  TIMING=$(sh "$APP_DIR/scripts/timing-suites.sh" "$APP_DIR/Packages/$package" |
+    tr '\n' '|' | sed 's/|$//')
+
+  if [ -z "$TIMING" ]; then
+    run_phase "$package" correctness
+    continue
+  fi
+
+  run_phase "$package" correctness --skip "$TIMING"
+  # `--no-parallel`, not `--filter` alone: two budgets measured at once measure each other.
+  run_phase "$package" cost --no-parallel --filter "$TIMING"
 done

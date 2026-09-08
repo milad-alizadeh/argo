@@ -50,6 +50,9 @@ else
     # No ref list is read from stdin: the script's base is the fork point with origin/main,
     # which is the range CI compared too, and consuming stdin here would eat what git feeds
     # the hook.
-    sh "$root/scripts/swift-gate.sh"
+    #
+    # `ARGO_GATE_CALLER=push` puts this run's row under `push` in `bun run gate:report` rather
+    # than under `unknown` (#1711).
+    ARGO_GATE_CALLER=push sh "$root/scripts/swift-gate.sh"
   fi
 fi

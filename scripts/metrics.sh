@@ -21,10 +21,16 @@
 #   8 loadavg         one-minute load average when it started
 #   9 free_gb         free space on the data volume when it started
 #  10 arm             capped | uncapped when the cap A/B is on, `-` otherwise (#1440)
+#  11 caller          `METRIC_CALLERS` below, or unknown (#1711)
+#  12 phase           `METRIC_PHASES` below, or unknown (#1711)
 #
 # The arm is stamped at write time rather than worked out later, because "which runs were
 # capped" is not recoverable from a timestamp: the arms alternate per run, and two lanes
 # starting a second apart are in different ones.
+#
+# The caller and the phase are the same kind of fact, stamped for the same reason (#1711). An
+# absent or unrecognised one reads `unknown` rather than being invented, so the report never
+# states a caller nobody claimed (CONTEXT.md L2 · degrade-down).
 #
 # Nothing here is ever fatal, and nothing here is read back by the gate. A metrics file that
 # could fail a push, or change what the gate decides, would be a liability rather than a record.
@@ -34,6 +40,29 @@ ARGO_METRICS_FILE=${ARGO_METRICS_FILE:-${ARGO_CACHE_ROOT:-${XDG_CACHE_HOME:-$HOM
 # Seconds since the epoch, for timing a section: `started=$(metric_now)`.
 metric_now() {
   date +%s
+}
+
+# The callers and phases a row can carry, and no others: recording an unrecognised word would
+# let a typo look like a step. Who sets each: `docs/agents/quality-gates.md`.
+METRIC_CALLERS='implement review ship push landing'
+METRIC_PHASES='gate quality build correctness cost filtered'
+
+# One of a closed set, or `unknown`. Never the word itself.
+#
+# The whitespace case first, because the membership test is a substring of a space-joined list:
+# `ship push` sits inside ` implement review ship push landing ` and would be recorded whole,
+# putting a caller in the file that no run had.
+metric_word() {
+  case $1 in
+    '' | *[[:space:]]*)
+      printf unknown
+      return 0
+      ;;
+  esac
+  case " $2 " in
+    *" $1 "*) printf '%s' "$1" ;;
+    *) printf unknown ;;
+  esac
 }
 
 # metric_append <event> <name> <outcome> <seconds> <waited>
@@ -47,13 +76,16 @@ metric_append() {
   _metric_load=$(uptime | sed -n 's/.*load averages*: *\([0-9.]*\).*/\1/p')
   _metric_free=$(df -g /System/Volumes/Data 2>/dev/null | awk 'NR == 2 { print $4 }')
 
-  # Read off the lock rather than passed in, so every existing `metric_append` call site keeps
-  # its five arguments and no caller has to know the experiment exists.
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  # The arm, the caller and the phase are read off the environment rather than passed in, so
+  # every existing `metric_append` call site keeps its five arguments and no caller has to know
+  # any of the three exist.
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
     "$1" "$2" "$3" "${4:-0}" "${5:-0}" \
     "${_metric_branch:-unknown}" "${_metric_load:-0}" "${_metric_free:-0}" \
     "${BUILD_LOCK_ARM:--}" \
+    "$(metric_word "${ARGO_GATE_CALLER:-}" "$METRIC_CALLERS")" \
+    "$(metric_word "${ARGO_GATE_PHASE:-}" "$METRIC_PHASES")" \
     >> "$ARGO_METRICS_FILE" 2>/dev/null || return 0
   return 0
 }

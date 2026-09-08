@@ -14,7 +14,8 @@
 //      the load average while the gate ran.
 //
 // Usage: node scripts/gate-report.mjs [--days N] [--file PATH]
-import { readFileSync } from 'node:fs'
+import { renderCallerPhases, renderRepeatedFullGates } from './gate-callers.mjs'
+import { median, mmss, percentile, readMetrics } from './gate-stats.mjs'
 
 const args = process.argv.slice(2)
 const optionAfter = (name) => {
@@ -26,48 +27,15 @@ const file =
   optionAfter('--file') ??
   `${process.env.ARGO_METRICS_FILE ?? `${process.env.HOME}/Library/Caches/argo-gate/metrics.tsv`}`
 
-let rows = []
-try {
-  rows = readFileSync(file, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      const [when, event, name, outcome, seconds, waited, branch, load, freeGb] = line.split('\t')
-      return {
-        when: new Date(when),
-        event,
-        name,
-        outcome,
-        seconds: Number(seconds),
-        waited: Number(waited),
-        branch,
-        load: Number(load),
-        freeGb: Number(freeGb),
-      }
-    })
-} catch {
+const rows = readMetrics(file, days)
+if (rows === null) {
   console.log(`gate-report: no metrics at ${file} yet — run the gate once and come back`)
   process.exit(0)
 }
-
-const since = new Date(Date.now() - days * 86_400_000)
-rows = rows.filter((r) => r.when >= since)
 if (rows.length === 0) {
   console.log(`gate-report: no rows in the last ${days} days`)
   process.exit(0)
 }
-
-const median = (values) => {
-  if (values.length === 0) return 0
-  const sorted = [...values].sort((a, b) => a - b)
-  return sorted[Math.floor(sorted.length / 2)]
-}
-const percentile = (values, p) => {
-  if (values.length === 0) return 0
-  const sorted = [...values].sort((a, b) => a - b)
-  return sorted[Math.min(sorted.length - 1, Math.floor((sorted.length * p) / 100))]
-}
-const mmss = (s) => `${Math.floor(s / 60)}m${String(Math.round(s % 60)).padStart(2, '0')}s`
 
 const gates = rows.filter((r) => r.event === 'gate')
 const full = gates.filter((r) => r.outcome === 'run')
@@ -108,7 +76,9 @@ if (stepNames.length > 0) {
     const med = median(ran.map((r) => r.seconds))
     stepSaved += hit.length * med
     console.log(
-      `  ${name.padEnd(32)} ran ${String(ran.length).padStart(3)}  skipped ${String(hit.length).padStart(3)}  median ${mmss(med)}`,
+      // 40, not 32: a suite's step name carries its phase now (#1711), and
+      // `swift-test:ArgoUI:debug:correctness` is 35 characters.
+      `  ${name.padEnd(40)} ran ${String(ran.length).padStart(3)}  skipped ${String(hit.length).padStart(3)}  median ${mmss(med)}`,
     )
   }
 }
@@ -134,6 +104,12 @@ const perBranch = branches.map((b) => full.filter((r) => r.branch === b).length)
 console.log('\nFull gate runs per branch')
 console.log(`  branches seen     ${branches.length}`)
 console.log(`  median per branch ${median(perBranch)}   worst ${Math.max(0, ...perBranch)}`)
+
+// WHO asked, and WHICH branch paid twice — the two things #1703's rows could not say (#1711).
+// The first table reads every row, because the phases below `gate` are the steps' own; the
+// second reads gate rows only, since a full GATE is what a branch pays twice.
+for (const line of renderCallerPhases(rows)) console.log(line)
+for (const line of renderRepeatedFullGates(gates)) console.log(line)
 
 // Every gate row, not only the full ones: a window of pure hits still says what the machine
 // looked like, and reading zeros off an empty set would say the opposite.

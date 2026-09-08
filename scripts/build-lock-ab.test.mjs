@@ -168,7 +168,7 @@ metric_append gate gate run 12 3`,
     { ARGO_BUILD_LOCK_AB: 'capped', ARGO_METRICS_FILE: file },
   )
   const columns = readFileSync(file, 'utf8').trim().split('\t')
-  assert.equal(columns.length, 10, `expected ten columns, got ${columns.length}`)
+  assert.equal(columns.length, 12, `expected twelve columns, got ${columns.length}`)
   assert.equal(columns[9], 'capped')
   rmSync(dir, { recursive: true, force: true })
 })
@@ -184,7 +184,7 @@ check('the arm column is a placeholder when the experiment is off', () => {
     { env: { ...process.env, ARGO_METRICS_FILE: file } },
   )
   const columns = readFileSync(file, 'utf8').trim().split('\t')
-  assert.equal(columns.length, 10)
+  assert.equal(columns.length, 12)
   assert.equal(columns[9], '-')
   rmSync(dir, { recursive: true, force: true })
 })
