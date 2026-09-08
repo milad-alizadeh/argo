@@ -58,6 +58,13 @@ struct WriteRefusalReasonTests {
         )
     }
 
+    /// A failure the health vocabulary has no word for is worded with none of them: the three
+    /// causes each point the reader at something to wait for, and this is not one of them (#1698).
+    @Test
+    func `a write refused from outside the transport carries no cause word`() {
+        #expect(TicketWriteError.unreachable(nil).reason == "The write did not land")
+    }
+
     @Test
     func `every write has a noun to be refused by`() {
         for write in TicketWrite.allCases {

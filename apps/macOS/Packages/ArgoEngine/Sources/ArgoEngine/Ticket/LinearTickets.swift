@@ -107,7 +107,9 @@ public struct LinearTickets: TicketPort {
             guard let team = payload.team else { throw LinearFailure.unreadable }
             return team.issues
         } catch let failure as LinearFailure {
-            throw failure.fetchError
+            // The health word where there is one, and the failure itself where there is not: the
+            // ledger classifies what reaches it, and naming a word here would be the guess (#1698).
+            throw failure.fetchError ?? failure
         }
     }
 
@@ -120,7 +122,7 @@ public struct LinearTickets: TicketPort {
         do {
             return try await issue(number, in: scope, grant: grant)?.ticket()
         } catch {
-            throw error.fetchError
+            throw error.fetchError ?? error
         }
     }
 

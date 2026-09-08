@@ -19,11 +19,13 @@ public enum TicketWriteError: Error, Equatable {
     /// The provider took the request and refused it, in its own words, held verbatim.
     case refused(String)
 
-    /// The write never reached the provider, or its answer could not be read.
-    case unreachable(ProviderFetchError)
+    /// The write never reached the provider, or its answer could not be read — carrying the
+    /// health vocabulary's word for that, and `nil` where it has none for it (#1698).
+    case unreachable(ProviderFetchError?)
 
-    /// The connection-level cause, for the caller recording health, and `nil` for the refusals that
-    /// say nothing about the connection: a provider that answered "no" is a provider that answered.
+    /// What the caller recording health should file, and `nil` where there is nothing to file.
+    /// Both refusals answer `nil` and mean it: a provider that answered "no" is a provider that
+    /// answered, and a failure with no cause word is one nothing may be claimed from (#1698).
     public var fetchFailure: ProviderFetchError? {
         guard case let .unreachable(error) = self else { return nil }
         return error

@@ -51,9 +51,11 @@ public struct TicketFollower: Sendable {
             await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
             // A read that established nothing is the other half of that distinction, and it IS
-            // evidence about the Binding — swallowing it would leave the chip claiming a
-            // connection nobody has checked since.
-            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
+            // evidence about the Binding — swallowing a failure the vocabulary has a word for
+            // would leave the chip claiming a connection nobody has checked since. A failure it
+            // has no word for is the one thing this may not name, and `refusal` returns `nil` for
+            // it (#1698).
+            await health.record(ProviderFetchError.refusal(error), of: target)
         }
     }
 }

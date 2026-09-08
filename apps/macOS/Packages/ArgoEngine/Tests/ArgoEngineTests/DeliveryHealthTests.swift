@@ -115,4 +115,47 @@ struct DeliveryHealthTests {
 
         #expect(await health.health(of: target.projectBinding, in: "P1").state == .needsReconnect)
     }
+
+    /// #1698: the chip is the one place a user learns whether Argo can talk to a provider, so an
+    /// error Argo raised itself must leave it saying nothing rather than saying the provider was
+    /// asked and did not answer.
+    @Test
+    func `a dial refused from outside the transport records no cause at all`() async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget.codeHost()
+        let derivation = DeliveryDerivation(
+            port: ScriptedCodeHost([.success([])]),
+            health: health,
+            deliveries: DeliveryLedger(),
+        )
+
+        await derivation.dialFailed(target, error: OutsideTheTransport.raised)
+        let reading = await health.health(of: target.projectBinding, in: "P1")
+
+        #expect(reading.state == .healthy)
+        #expect(reading.lastSuccess == nil)
+    }
+
+    /// The other half of that, and the reason the fan-out keeps its refusal unclassified: nothing
+    /// is recorded, which is neither a cause word nor a read that landed. Folding it into "no
+    /// refusal" would report the whole fan-out as landing when half of it never did (#1698).
+    @Test
+    func `a branch refused from outside the transport records neither a cause nor a landing`(
+    ) async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget.codeHost()
+        await DeliveryDerivation(
+            port: ScriptedCodeHost(
+                [.success([])],
+                refusing: .init(["worktree-1698-unnamed"], with: OutsideTheTransport.raised),
+            ),
+            health: health,
+            deliveries: DeliveryLedger(),
+        )
+        .derive(target, locally: .init(workspaces: [.on("worktree-1698-unnamed")]))
+        let reading = await health.health(of: target.projectBinding, in: "P1")
+
+        #expect(reading.state == .healthy)
+        #expect(reading.lastSuccess == nil)
+    }
 }

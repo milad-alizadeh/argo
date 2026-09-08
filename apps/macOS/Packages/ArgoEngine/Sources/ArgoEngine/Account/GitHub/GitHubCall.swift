@@ -1,6 +1,9 @@
 import Foundation
 
 /// Asking GitHub for one path, and the one place a failure becomes the health ledger's vocabulary.
+///
+/// A failure that vocabulary has no word for travels on as itself, never as the nearest word to
+/// it (#1698).
 struct GitHubCall: Sendable {
     let transport: HTTPTransport
 
@@ -30,7 +33,7 @@ struct GitHubCall: Sendable {
         do {
             return try await transport.send(request(path, method: method, body: body, grant: grant))
         } catch {
-            throw ProviderFetchError.reading(error)
+            throw ProviderFetchError.reading(error) ?? error
         }
     }
 
@@ -48,7 +51,7 @@ struct GitHubCall: Sendable {
                 request(path, grant: grant).revalidated(revalidating),
             )
         } catch {
-            throw ProviderFetchError.reading(error)
+            throw ProviderFetchError.reading(error) ?? error
         }
     }
 }

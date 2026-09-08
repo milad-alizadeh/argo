@@ -97,7 +97,7 @@ public actor TicketPoll {
             await items.record(listed, for: target.projectID)
             await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
-            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
+            await health.record(ProviderFetchError.refusal(error), of: target)
         }
         // On the failing path too: the listing did not move, but the health behind the provider's
         // own dot did, and that is drawn from the same read.

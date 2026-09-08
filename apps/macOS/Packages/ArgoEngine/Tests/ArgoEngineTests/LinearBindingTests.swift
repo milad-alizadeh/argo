@@ -89,6 +89,18 @@ struct LinearBindingTests {
         #expect(catalogue == .unreadable("Linear could not be reached."))
     }
 
+    @Test
+    func `a failure that says nothing about reaching Linear does not claim it was unreachable`(
+    ) async {
+        // A URL Argo built and cannot parse asked Linear nothing, so the picker says only that no
+        // list came back (#1698).
+        let api = StubProviderAPI(failure: .malformedURL("h ttp://"))
+
+        let catalogue = await ProviderScopeCatalog(transport: api).scopes(for: Self.query)
+
+        #expect(catalogue == .unreadable("Linear did not answer with a list of teams."))
+    }
+
     private static let query = ScopeQuery(
         port: .ticket, provider: .linear, grant: .linear,
     )

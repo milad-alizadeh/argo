@@ -76,12 +76,12 @@ public actor DeliveryDerivation {
             let union = try await union(target, locally: locally)
             await deliveries.record(union.deliveries, for: target.projectID)
             if let refusal = union.refusal {
-                await health.record(refusal, of: target)
+                await health.record(ProviderFetchError.refusal(refusal), of: target)
             } else {
                 await health.succeeded(target.projectBinding, in: target.projectID, at: now())
             }
         } catch {
-            await health.record(.refusal(error), of: target)
+            await health.record(ProviderFetchError.refusal(error), of: target)
         }
         await landed()
     }
@@ -91,7 +91,10 @@ public actor DeliveryDerivation {
     /// fan-out leaves a set that is honest as far as it goes and a host that is not healthy.
     private struct Assembled {
         var deliveries: [Delivery] = []
-        var refusal: ProviderFetchError?
+        /// The refusal that cut the fan-out short, as it was thrown. Kept unclassified, because a
+        /// health word here has no room for "there is no word for this": that is `nil`, which this
+        /// field already spends on "nothing refused the read" — a success (#1698).
+        var refusal: Error?
 
         /// The same answer with every Delivery's Ticket joined, `asserted` being the human's own
         /// link. Taken at the end, so every Delivery this read established is linked by the
@@ -174,7 +177,7 @@ public actor DeliveryDerivation {
                     named(branch, at: heads[branch], holding: held[branch], of: target),
                 )
             } catch {
-                union.refusal = .refusal(error)
+                union.refusal = error
                 break
             }
         }
@@ -239,9 +242,11 @@ public actor DeliveryDerivation {
     /// failing, recorded the same way a failed read is. `DeliverySocket`'s own doc still holds —
     /// the
     /// roster degrades to the poll's pace regardless — this only stops that degrade-down from being
-    /// silent (#1643).
+    /// silent (#1643). It stays silent for a dial Argo's own code refused: the vocabulary has no
+    /// word for such an error, and every word it does have is a fault the reader cannot act on
+    /// (#1698).
     public func dialFailed(_ target: PortReadTarget, error: Error) async {
-        await health.record(.refusal(error), of: target)
+        await health.record(ProviderFetchError.refusal(error), of: target)
         await landed()
     }
 

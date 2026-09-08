@@ -57,6 +57,44 @@ struct TicketListingFailureTests {
         #expect(await Self.failure(body: #"{ "unexpected": true }"#) == .unreachable)
     }
 
+    /// A refusal Argo raised itself, a read the window cancelled, and two URLs nothing could be
+    /// asked through. None of them put anything to a provider, so the network is fine, the grant
+    /// is not in question, and nobody was asked and did not answer (#1698).
+    private static let wordless: [any Error & Sendable] = [
+        OutsideTheTransport.raised,
+        CancellationError(),
+        URLError(.cancelled),
+        HTTPTransportError.malformedURL("h ttp://"),
+    ]
+
+    @Test(arguments: wordless)
+    func `a failure none of the cause words is true of gets no word`(
+        _ error: any Error & Sendable,
+    ) {
+        #expect(ProviderFetchError.reading(error) == nil)
+    }
+
+    /// The whole read path rather than the classifier alone: the adapter, the poll's own catch and
+    /// the ledger, with nothing recorded at the end of it. The chip is left where it was instead of
+    /// naming a fault no reader could act on (#1698).
+    @Test
+    func `a listing refused from outside the transport records nothing on the ledger`() async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget(binding: .stub(), projectID: "P1")
+        let poll = TicketPoll(
+            port: ProviderTickets(
+                transport: RecordedGitHub(replies: [:], failure: OutsideTheTransport.raised),
+            ),
+            ledgers: TicketPoll.Ledgers(health: health, items: TicketLedger()),
+        )
+
+        await poll.poll(target)
+        let reading = await health.health(of: target.projectBinding, in: "P1")
+
+        #expect(reading.state == .healthy)
+        #expect(reading.lastSuccess == nil)
+    }
+
     @Test
     func `only a refused grant is an account-level cause`() {
         // The ledger keys the other three on the Binding, so they take one port of one Project

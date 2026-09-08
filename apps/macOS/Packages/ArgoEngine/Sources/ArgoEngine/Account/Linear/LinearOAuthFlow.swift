@@ -105,7 +105,7 @@ public struct LinearOAuthFlow: Sendable {
     private static func identityFailure(_ failure: LinearFailure) -> LinearAuthorizationError {
         switch failure.fetchError {
         case .grantRefused: .refused("Linear refused the token it had just issued.")
-        case .offline, .rateLimited, .unreachable: .malformedResponse
+        case .offline, .rateLimited, .unreachable, nil: .malformedResponse
         }
     }
 

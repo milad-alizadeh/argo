@@ -46,7 +46,12 @@ public actor ConnectionHealthLedger {
 
     /// A read through one port failed, filed at whichever level the error names. Both ports record
     /// through here, so two failing the same way cannot reach this ledger as two states.
-    public func record(_ error: ProviderFetchError, of target: PortReadTarget) {
+    ///
+    /// `nil` is a failure the health vocabulary has no word for, and it is recorded as nothing at
+    /// all: the chip is left on whatever it last observed rather than told a cause Argo has not
+    /// observed. The caller classifies, through `ProviderFetchError.refusal(_:)` (#1698).
+    public func record(_ error: ProviderFetchError?, of target: PortReadTarget) {
+        guard let error else { return }
         guard let cause = error.cause else {
             return grantRefused(target.accountID)
         }

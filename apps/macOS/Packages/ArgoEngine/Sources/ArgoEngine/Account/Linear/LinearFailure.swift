@@ -11,16 +11,18 @@ enum LinearFailure: Error, Equatable {
     case refused(String)
     /// Linear answered with neither the payload nor a refusal, so nothing was established.
     case unreadable
-    /// The operation never reached Linear, or its answer was not an answer.
-    case reached(ProviderFetchError)
+    /// The operation never reached Linear, or its answer was not an answer — carrying the health
+    /// vocabulary's word for the throw, and `nil` where it has none for it (#1698).
+    case reached(ProviderFetchError?)
 
     static func sending(_ error: Error) -> LinearFailure {
         .reached(.reading(error))
     }
 
-    /// The health ledger's word. A refusal reaches it as `unreachable` because this READ
-    /// established nothing — not because the connection is suspect.
-    var fetchError: ProviderFetchError {
+    /// The health ledger's word, and `nil` where there is nothing to claim about the connection. A
+    /// refusal reaches it as `unreachable` because this READ established nothing — not because the
+    /// connection is suspect.
+    var fetchError: ProviderFetchError? {
         switch self {
         case .refused, .unreadable: .unreachable
         case let .reached(error): error
