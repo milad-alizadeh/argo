@@ -186,12 +186,29 @@ package struct SessionComposer: View {
     /// its own `ESC` has ended the Turn, so `isRunning` reads false for the whole of the pause
     /// before the paste lands. A Return sent straight through there would reach the CLI AHEAD of
     /// the follow-up the reader had just chosen to send first.
+    ///
+    /// And so does a Turn this composer PUT that the record has not yet shown running — the third
+    /// clause, and the whole of #1636. Both Session-side readings can be false over a CLI that is
+    /// in fact busy: `hasUnansweredTurn` ends the moment the record grows by ANYTHING, and
+    /// `events.count` counts FOLDED events, of which only `prompt` and `turnResumed` open a Turn.
+    /// `recordIdentity` leads every message-bearing record, ahead of the `prompt` behind it, so
+    /// the claim is routinely spent a fold before the status word turns. Two Turns typed either
+    /// side of that gap reached the CLI as one prompt, their texts run together with no space
+    /// between them.
+    ///
+    /// Read only where the Session reads as AT REST, which is what keeps #1238's rule intact: at
+    /// `asking` the field is the only way to answer a live question, and a Return queued there is
+    /// an answer the agent never hears. `hasTurnEnded` is false at every PAUSE, so the claim
+    /// cannot reach one — it speaks only where the status claims the Turn is over and Argo's own
+    /// act says that reading is stale. The claim is spent by a Turn read running and bounded by
+    /// `watchPut(patience:)`, so nothing it holds back can be stranded.
     func submit() {
         if menus.completes(on: line), complete() {
             return
         }
         draft.submit(
-            whileTurnInFlight: composer.isTurnInFlight || draft.steeringTurn != nil,
+            whileTurnInFlight: composer.isTurnInFlight || draft.steeringTurn != nil
+                || (draft.isAwaitingPutTurn && composer.hasTurnEnded),
             via: sending,
         )
     }

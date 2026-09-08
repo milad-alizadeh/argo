@@ -146,6 +146,12 @@ package struct ComposerDraft: Equatable {
         text = ""
         attachments = []
         say(nil)
+        // Last, and only on the send that went: a Turn this composer put is a Turn the record has
+        // yet to show running, however it left the field (#1636). The straight send used to make
+        // no such claim, so the only thing saying a Turn was in flight was `hasUnansweredTurn` —
+        // which ends on the record growing by ANYTHING, and 24 of the 26 folded event kinds grow
+        // it without opening a Turn. A second Turn typed in that window went down a busy PTY.
+        claimPutTurn()
     }
 
     /// Stand under a refusal, or take the standing one away. Every mutation of the pair goes
