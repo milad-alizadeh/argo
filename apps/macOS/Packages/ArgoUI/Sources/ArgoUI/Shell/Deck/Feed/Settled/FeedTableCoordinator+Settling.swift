@@ -55,7 +55,7 @@ extension FeedTableCoordinator {
             // cell was redrawn open, so the content and the geometry move together (#1691).
             // Everything else keeps the pass — the tail a live Session grew, the Result that
             // rewrote its last row, and the two folds whose height is typeset, not counted.
-            guard let standing = geometry.settled, standing.stamp.isFold(of: stamp),
+            guard let standing = geometry.settled, standing.stamp.differsByFold(from: stamp),
                   owed.allSatisfy({ stamp.isFoldOfCalls(at: $0) })
             else {
                 return settle(stamp, measuring: owed)

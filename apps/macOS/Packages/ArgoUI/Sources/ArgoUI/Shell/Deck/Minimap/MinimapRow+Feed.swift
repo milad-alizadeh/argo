@@ -125,11 +125,9 @@ private extension FeedFoldStep {
     /// The ink this name takes: a call's own ending rule over the one fact a step carries, so a
     /// failure is red here exactly as `FeedFoldStepName` draws it red there.
     ///
-    /// The row has a third reading this does not spend — a call the record answered with nothing is
-    /// drawn at `text.disabled`, and the lane has no ink for that: the one role at that rung is
-    /// `boundary`, which is drawn as a RULE, and a hairline among the names would read as the
-    /// punctuation between Turns. So an inert name takes a call's ink, one rung louder than the row
-    /// sets it, which is the same licence the header already takes.
+    /// Two readings of the row's three. A call the record answered with nothing is drawn at
+    /// `text.disabled` there and at a call's own ink here, because the only role at that rung is
+    /// `boundary` and `boundary` is drawn as a rule.
     var ink: FeedInk {
         (hasFailed ? FeedCall.Ending.failed : .succeeded).ink
     }

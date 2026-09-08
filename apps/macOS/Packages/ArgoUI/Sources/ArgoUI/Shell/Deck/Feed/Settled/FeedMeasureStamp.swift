@@ -74,7 +74,7 @@ struct FeedMeasureStamp: Equatable, Sendable {
     /// row's height, so a delta it owes has nothing to settle in a hurry. Off `rewraps` rather than
     /// a width comparison of its own, because the MEASURE is what a height is a function of and a
     /// bounce between two widths above the column is no re-wrap at all (#1132).
-    func isFold(of other: FeedMeasureStamp) -> Bool {
+    func differsByFold(from other: FeedMeasureStamp) -> Bool {
         !rewraps(against: other) && rows == other.rows && reader.open == other.reader.open
             && reader.unfolded != other.reader.unfolded
     }

@@ -21,7 +21,7 @@ extension FeedTableCoordinator {
     /// It runs INSIDE `settleIfOwed`'s own guard, which is what makes it safe: landing a document
     /// reloads the table, and the frame change that causes is where a settle is decided from.
     ///
-    /// Only a fold of calls comes here. The other two shapes the reader's fold changes typeset —
+    /// Only a fold of calls comes here. The other shapes the reader's fold changes all typeset —
     /// `FeedRow.Content.Shape.isFoldOfCalls` is where that is decided, and it is the caller's guard
     /// rather than an assertion here, because the caller is the one holding the delta.
     func settleInTurn(

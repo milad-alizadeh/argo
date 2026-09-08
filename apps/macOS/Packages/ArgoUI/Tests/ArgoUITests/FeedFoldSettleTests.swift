@@ -14,13 +14,27 @@ import Testing
 struct FeedFoldSettleTests {
     private static let column = CGSize(width: ArgoFeedRow.column, height: 800)
 
-    /// A card of work with a row under it — the rows below are what the reader sees move.
-    private static let rows = [
-        FeedRow(id: 0, content: .work(RowKindFixture.work)),
-        FeedRow(id: 1, content: .message("That is the lot of it")),
+    /// Both folds, each with a row under it — the rows below are what the reader sees move. One
+    /// parameterised case over the two rather than a suite about the card alone: a stretch of
+    /// looking and a Turn's work take the same path, and a claim made over one of them says
+    /// nothing about the other.
+    nonisolated static let folds: [FeedRow.Content] = [
+        .work(RowKindFixture.work),
+        .survey(FeedSurvey(calls: [RowKindFixture.answeredCall, RowKindFixture.answeredCall])),
     ]
 
-    private static func opened(_ unfolded: Set<FeedRow.ID>) -> FeedTableModel {
+    nonisolated private static func rows(_ fold: FeedRow.Content) -> [FeedRow] {
+        [
+            FeedRow(id: 0, content: fold),
+            FeedRow(id: 1, content: .message("That is the lot of it")),
+        ]
+    }
+
+    /// The work card, for the cases that state one reading rather than both.
+    private static let rows = rows(folds[0])
+
+    private static func opened(_ unfolded: Set<FeedRow.ID>, of rows: [FeedRow] = rows)
+        -> FeedTableModel {
         FeedTableFixture.model(showing: rows, unfolded: unfolded)
     }
 
@@ -41,16 +55,21 @@ struct FeedFoldSettleTests {
 
     /// The row below stands where it will stand, on the turn of the press. Two answers that differ
     /// is the step the reader sees.
-    @Test
-    func `the row below the card moves once, to the place it settles at`() async throws {
+    @Test(arguments: folds)
+    func `the row below a fold moves once, to the place it settles at`(
+        fold: FeedRow.Content,
+    ) async throws {
+        let rows = Self.rows(fold)
         let handle = FeedTableHandle()
-        let coordinator = await FeedTableFixture.laidOut(
-            Self.rows, in: Self.column, through: handle,
-        )
+        let coordinator = await FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
         let table = try #require(coordinator.table)
         let closed = table.rect(ofRow: 1).minY
-        coordinator.apply(Self.opened([0]))
+        coordinator.apply(Self.opened([0], of: rows))
         let opened = table.rect(ofRow: 1).minY
+        // The row below is the FIRST row's height down the document, so the place it stands at is
+        // the card's own open height. Said as that number rather than as "further down", which a
+        // second pass landing the same answer would also satisfy.
+        #expect(opened == coordinator.tableView(table, heightOfRow: 0))
         #expect(opened > closed)
         await FeedTableFixture.settled(coordinator)
         #expect(table.rect(ofRow: 1).minY == opened)

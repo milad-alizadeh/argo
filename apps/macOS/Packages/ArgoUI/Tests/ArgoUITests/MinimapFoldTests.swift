@@ -107,17 +107,23 @@ struct MinimapFoldTests {
         #expect(rects.dropFirst().allSatisfy { $0.from == ArgoFeedRow.foldNameIndent })
     }
 
-    /// The pitch and the height are one arithmetic or the lane draws past the row it belongs to:
-    /// `FeedShapeHeight.folded` is what the table measured the open row at, and the stack has to
-    /// fit inside it (ADR-0030, Rule 7).
+    /// The pitch the lane stacks at IS the pitch the height was measured from, exactly.
+    ///
+    /// Stated as arithmetic rather than as slack, because slack cannot see the drift that matters:
+    /// `ArgoSpacing.flush` is zero, so a `foldedLineStep` that dropped the ground inset would move
+    /// every name up by `FeedRowButtonStyle.groundInsetY * 2` a line and still sit inside the row.
+    /// A card of `n` calls stands at its header plus `n` steps, and nothing else can satisfy that.
     @Test
-    func `the open stack stays inside the height the feed measured the row at`() {
+    func `the lane's pitch is the one the height formula stacks the lines at`() {
         let content = FeedRow.Content.work(Self.card)
         let height = FeedShapeHeight(
             standing: FeedRowStanding(isUnfolded: true),
             measure: Self.measure,
             tickets: .none,
         ).height(of: content)
+        #expect(height == FeedShapeHeight.pressedLine
+            + FeedShapeHeight.foldedLineStep * CGFloat(Self.card.calls.count))
+        // And the stack the lane reports is inside it, which is ADR-0030 Rule 7's own claim.
         let drawn = Self.shape(content, isFolded: false)
             .rects(across: Self.measure, height: height)
             .map { $0.y + $0.height }
