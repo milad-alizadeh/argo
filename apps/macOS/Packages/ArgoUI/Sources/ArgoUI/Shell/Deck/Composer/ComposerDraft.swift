@@ -95,8 +95,13 @@ package struct ComposerDraft: Equatable {
     /// live in `ComposerDraft+Steer.swift`, and Swift's `private` is file-scoped.
     var steerInterrupts = 0
     /// How many Turns this composer has PUT that the record has yet to show running (#1238,
-    /// #1337) — the one place the status is not merely stale but actively WRONG. Both ways a
-    /// follow-up goes leave one: a steer, and the boundary release.
+    /// #1337) — the one place the status is not merely stale but actively WRONG. Every way a Turn
+    /// leaves the composer leaves one: a straight send, a steer, and the boundary release (#1636).
+    ///
+    /// UNLIKE `unansweredStops` above, it IS part of `isEmpty`, and the difference is which of
+    /// them the store can afford to drop: a Turn put from an empty field leaves a draft that holds
+    /// nothing else, so eviction would take this claim one write-back after it was made and the
+    /// next Turn would go down a busy PTY.
     ///
     /// Counted rather than flagged for the reason `unansweredStops` is: the vessel keys its wait
     /// on this value moving (`SessionComposer.watchPut(patience:)`), and a flag already true would
@@ -131,11 +136,18 @@ package struct ComposerDraft: Equatable {
     }
 
     /// Whether this draft holds anything at all — nothing typed, nothing waiting, nothing said,
-    /// and no rung held for the Turn. What the store keys eviction on: a draft evicted while it
-    /// holds a rung is one whose rung is never walked.
+    /// no rung held for the Turn, and no Turn of Argo's own still in flight. What the store keys
+    /// eviction on: a draft evicted while it holds a rung is one whose rung is never walked.
+    ///
+    /// The put claim is in here for that same reason, read one step on (#1636). A Turn put from an
+    /// empty field leaves a draft that is empty by every other measure, so the store dropped it
+    /// and the claim with it — and the claim is the only thing that knows the CLI is busy before
+    /// the record says so. `ComposerDrafts` is the one reader of this, and a claim that cannot
+    /// survive one write-back through its binding cannot be read by anything.
     var isEmpty: Bool {
         text.isEmpty && queued.isEmpty && attachments.isEmpty && refusal == nil && notice == nil
             && heldMode == nil && heldModel == nil && heldEffort == nil
+            && putTurnsAwaitingRecord == 0
     }
 
     /// Put the draft to the Session through `deliver`. A refusal keeps every character where it
@@ -146,11 +158,9 @@ package struct ComposerDraft: Equatable {
         text = ""
         attachments = []
         say(nil)
-        // Last, and only on the send that went: a Turn this composer put is a Turn the record has
-        // yet to show running, however it left the field (#1636). The straight send used to make
-        // no such claim, so the only thing saying a Turn was in flight was `hasUnansweredTurn` —
-        // which ends on the record growing by ANYTHING, and 24 of the 26 folded event kinds grow
-        // it without opening a Turn. A second Turn typed in that window went down a busy PTY.
+        // A Turn this composer put is one the record has yet to show running, however it left the
+        // field: `hasUnansweredTurn` ends on the record growing by ANYTHING, and 24 of the 26
+        // folded `TranscriptEvent` kinds grow it without opening a Turn (#1636).
         claimPutTurn()
     }
 

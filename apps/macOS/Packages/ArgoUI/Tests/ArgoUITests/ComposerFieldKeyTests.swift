@@ -57,7 +57,12 @@ import Testing
             #expect(field.input.string.isEmpty)
         }
 
-        #expect(field.sent == (1 ... 5).map { "turn \($0)" })
+        // Where the five Turns GO is not this case's claim, and since #1636 it is not five sends:
+        // the first goes and the rest queue behind the Turn it started, one per boundary. All five
+        // are accounted for, which is what says every Return was carried out and no words were
+        // dropped by the clear.
+        #expect(field.sent == ["turn 1"])
+        #expect(field.draft.queued.map(\.text) == (2 ... 5).map { "turn \($0)" })
     }
 
     /// The field grew onto a second line and has to come back off it: the clear a send leaves

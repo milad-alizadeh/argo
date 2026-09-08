@@ -1,25 +1,21 @@
 import ArgoEngine
-@testable import ArgoSpecimens
 @testable import ArgoUI
-import SwiftUI
 import Testing
 
 /// The window between the record answering a Turn and the status turning, and where a Turn typed
 /// inside it goes (#1636).
 ///
-/// Two Turns sent while a Session was busy arrived as ONE prompt and one bubble, their texts run
-/// together with no space between them. Neither reading the composer asks could see the CLI was
-/// busy: `hasUnansweredTurn` — Argo's own submit — is spent by the record growing by ANYTHING,
-/// and `events.count` counts folded events, of which 24 of 26 kinds grow it without opening a
-/// Turn. `.recordIdentity` leads every message-bearing record, ahead of the `.prompt` that opens
-/// the Turn, so the claim is routinely spent a fold before the status word turns. The second Turn
-/// then took the straight-send branch into a PTY the CLI was busy on.
+/// Two Turns sent while a Session was busy arrive as ONE prompt and one bubble, their texts run
+/// together with no space between them. Neither reading the composer asks can see the CLI is busy:
+/// `hasUnansweredTurn` is spent by the record growing by ANYTHING, and `recordIdentity` leads
+/// every message-bearing record, ahead of the `prompt` that opens the Turn — so it is spent a fold
+/// before the status word turns, and the second Turn takes the straight-send branch into a PTY the
+/// CLI is busy on.
 ///
 /// What closes it is the claim the composer already makes about its own act: a Turn it PUT that
-/// the record has yet to show running (#1337). The release has read it since #1337 precisely
-/// because the status is not merely stale there but actively WRONG — and the submit, deciding the
-/// same question from the other side, was not reading it at all. Its own suite because the claim
-/// is about where a Turn GOES, which is neither the release's question nor the put wait's.
+/// the record has yet to show running (#1337), which `ComposerRelease` reads and
+/// `SessionComposer.holdsTurn` now reads too. Its own suite because the claim is about where a
+/// Turn GOES, which is neither the release's question nor the put wait's.
 @Suite("Composer busy window")
 @MainActor
 struct ComposerBusyWindowTests {
@@ -91,6 +87,42 @@ struct ComposerBusyWindowTests {
 
         #expect(log.acts == ["send Open the PR.", "send Yes, use the second one."])
         #expect(log.draft.queued.isEmpty)
+    }
+
+    /// The same window over the REAL store, which is the seam production writes through.
+    ///
+    /// Its own case because the store DROPS a draft that holds nothing, and a Turn put from an
+    /// empty field leaves one that is empty by every other measure — so the claim that knows the
+    /// CLI is busy has to survive a write-back through `ComposerDrafts.binding(for:)` to be read
+    /// at all. Held on a bare `var draft`, every other case here would pass over that bug.
+    @Test
+    func `the window holds through the store the cockpit writes through`() throws {
+        let drafts = ComposerDrafts(now: { 0 })
+        let log = Log()
+        type("Open the PR.", into: drafts, log, at: .idle)
+        let id = Self.session(at: .idle).sessionID
+        try #require(log.acts == ["send Open the PR."])
+        // The claim outlived the write-back, which is the whole of this case.
+        #expect(drafts[id].isAwaitingPutTurn)
+
+        type("And tag it.", into: drafts, log, at: .idle)
+
+        #expect(log.acts == ["send Open the PR."])
+        #expect(drafts[id].queued.map(\.text) == ["And tag it."])
+    }
+
+    /// The field must not invite a message it is going to queue. The projection words the
+    /// placeholder off the Session alone and has never seen a draft, so in this window it read
+    /// `Message Claude Code…` over a Return that queues — the state the projection's own comment
+    /// forbids, arriving from the draft's side.
+    @Test
+    func `the field says it is queueing while Argo's own put stands`() throws {
+        let log = Log()
+        type("Open the PR.", in: log, at: .idle)
+        try #require(log.draft.isAwaitingPutTurn)
+
+        #expect(composer(log, at: .idle).holdsTurn)
+        #expect(composer(log, at: .idle).placeholder == SessionComposerProjection.queuePlaceholder)
     }
 
     /// A steer and the boundary that follows it, which is the second way #1636 could have folded
