@@ -12,8 +12,6 @@ struct ArgoApp: App {
     /// is written into `projects.json`, so a second store would be a second answer.
     @State private var accounts: AccountsCoordinator
     @State private var navigation = CockpitNavigationModel()
-    /// What the Session menu acts on, published by the shell — absent when nothing is selected.
-    @FocusedValue(\.sessionCommands) private var sessionCommands
     private let specimen: SpecimenEntry?
 
     init() {
@@ -155,7 +153,7 @@ struct ArgoApp: App {
                 navigation: navigation,
             )
             NavigateCommands(navigation: navigation)
-            CommandMenu("Session") { SessionCommandItems(commands: sessionCommands) }
+            CommandMenu("Session") { FocusedSessionCommandItems() }
             // In the slot Preferences would have taken, because there is no app-global one.
             ProjectSettingsCommands(presentation: presentation, actions: actions)
         }
