@@ -37,5 +37,12 @@
   "workspaces": [
     "packages/*",
     "apps/*"
+  ],
+  "trustedDependencies": [
+    "electron",
+    "esbuild",
+    "fs-xattr",
+    "macos-alias",
+    "node-pty"
   ]
 }
