@@ -35,12 +35,13 @@ struct AtlasLighting: Equatable {
 
     /// Solved from the contract's own lamps. An ambient term has no direction, so it lights every
     /// face alike and is folded into all three before either directional lamp is added.
+    /// `feet` is one parameter because it is one reading: how much of its own light a face keeps
+    /// where the light runs out — a wall at its foot, a roof on the side away from the lamp.
     init(
         ambient: ArgoLight.Lamp,
         key: ArgoLight.Lamp,
         fill: ArgoLight.Lamp,
-        contactFoot: Double,
-        sheenFoot: Double,
+        feet: (contact: Double, sheen: Double),
     ) {
         let base = Self.strength(of: ambient)
         let keyDirection = Self.normalized(key.direction)
@@ -57,10 +58,10 @@ struct AtlasLighting: Equatable {
         self.roof = factor(SIMD3(0, 0, 1))
         self.nearX = factor(SIMD3(-1, 0, 0))
         self.nearY = factor(SIMD3(0, -1, 0))
-        self.contactFoot = Float(contactFoot)
+        self.contactFoot = Float(feet.contact)
         let plan = Self.plan(of: key)
         self.keyPlan = SIMD2<Float>(Float(plan.x), Float(plan.y))
-        self.sheenFoot = Float(sheenFoot)
+        self.sheenFoot = Float(feet.sheen)
     }
 
     /// One lamp's direction across the plan alone, normalised — or nothing where the lamp is
@@ -79,7 +80,7 @@ struct AtlasLighting: Equatable {
     /// per frame: nothing here depends on the camera, so there is nothing a turn could invalidate.
     static let city = AtlasLighting(
         ambient: ArgoLight.ambient, key: ArgoLight.key, fill: ArgoLight.fill,
-        contactFoot: ArgoLight.contactFoot, sheenFoot: ArgoLight.sheenFoot,
+        feet: (contact: ArgoLight.contactFoot, sheen: ArgoLight.sheenFoot),
     )
 
     private static func normalized(_ vector: SIMD3<Double>) -> SIMD3<Double> {

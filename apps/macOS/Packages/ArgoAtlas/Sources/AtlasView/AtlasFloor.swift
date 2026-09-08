@@ -14,13 +14,11 @@ import CoreGraphics
 enum AtlasFloor {
     /// How hard the outermost plate lights the floor under it.
     ///
-    /// The design's own weight is 0.018 of a brighter cyan than the contract has (`drawFloor`,
-    /// `rgba([70, 175, 205], 0.018 / ...)`). The contract already names the floor's light — `fog`,
-    /// "the floor's own light, which the contour grid takes" — so the pigment is `fog` and the
-    /// weight is the one that lands the SAME contribution on the ground: 0.018 of (70, 175, 205)
-    /// is (1.26, 3.15, 3.69) of 255, and `fog` at 0.056 is (1.46, 2.91, 3.58). The page's two raw
-    /// cyans are the floor's light from before the contract had a name for it.
-    static let plateLight = 0.056
+    /// The design draws it in a brighter cyan than the contract has, and the contract already
+    /// names the floor's light — `fog`, "the floor's own light, which the contour grid takes" — so
+    /// the pigment is `fog` and the weight is the one that lands the same LUMINANCE on the ground.
+    /// `docs/designs/cockpit-atlas.md` carries the arithmetic for this and for the grid below.
+    static let plateLight = 0.0589
 
     /// How fast that light falls away with nesting, from the design's own `1 + depth * 0.45`.
     ///
@@ -34,17 +32,13 @@ enum AtlasFloor {
     /// floor reads as contours rather than as graph paper. Drawn in this order, which is the
     /// design's.
     ///
-    /// The coarse weight is the design's 0.055 of the same brighter cyan, put back onto `fog` the
-    /// way `plateLight` is: 0.055 of (80, 178, 205) is (4.4, 9.8, 11.3) of 255, and `fog` at 0.178
-    /// is (4.6, 9.3, 11.4). The fine one is already `fog` in the page and is its own number.
-    static let grid: [(divisions: Int, weight: Double)] = [(32, 0.10), (8, 0.178)]
+    /// The fine weight is already `fog` in the page and is its own number; the coarse one is put
+    /// back onto `fog` the way `plateLight` is.
+    static let grid: [(divisions: Int, weight: Double)] = [(32, 0.10), (8, 0.185)]
 
-    /// How far the floor runs: the plan, and a margin past it. Just past the footprint — a floor
-    /// that reaches the edge of the picture is the subject, and the model is what the reader came
-    /// for. The margin is a share of the SHORTER side, which is the side every other plan-relative
-    /// measure here is taken off (`AtlasElevation`).
+    /// How far the floor runs: the plan, and `AtlasElevation.pad(of:)` past it.
     static func extent(of plan: CGSize) -> CGRect {
-        let pad = min(plan.width, plan.height) * AtlasElevation.padShare
+        let pad = AtlasElevation.pad(of: plan)
         return CGRect(origin: .zero, size: plan).insetBy(dx: -pad, dy: -pad)
     }
 

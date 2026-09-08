@@ -73,10 +73,13 @@ struct AtlasTableTests {
         #expect(lit.colour != unlit.colour, "the plates light nothing the reader can see")
     }
 
-    /// Nothing on this map moves at rest, the grain included: two frames of one still map are the
-    /// same bytes. A grain drawn from an unseeded generator, or a floor solved off a clock, would
-    /// red here — and would also make every other pixel claim in this package unrepeatable.
-    @Test func `two frames of a still map are the same picture`() async throws {
+    /// Nothing on this map moves at rest, the grain included — measured the way the prototype
+    /// measured it, as pixels changed at rest, of which there are none.
+    ///
+    /// The third render is what stops this passing for the wrong reason: a picture with no grain in
+    /// it at all is byte-identical between two frames too, which is what the shipped tree was. So
+    /// the grain has to be BOTH in the picture and the same in both frames.
+    @Test func `two frames of a still map are the same picture, grain and all`() async throws {
         let harness = try #require(AtlasPickHarness(), AtlasPickingTests.unrenderable)
         let plan = AtlasPickingTests.plan()
         let camera = AtlasCamera.city(over: plan.extent)
@@ -84,8 +87,46 @@ struct AtlasTableTests {
 
         let first = try #require(await harness.frame(of: city, plan: plan, through: camera))
         let second = try #require(await harness.frame(of: plan, through: camera))
+        var undithered = city.ground
+        undithered.grain = 0
+        let plain = try #require(await harness.frame(
+            of: Self.grounded(city, on: undithered), plan: plan, through: camera,
+        ))
 
         #expect(first.colour == second.colour)
+        #expect(first.colour != plain.colour, "the grain is not in the picture")
+    }
+
+    /// The lamp reaches the middle of the plan: the ground there is the LIT stop, which is the half
+    /// of the grade no test over the shipped fixture can see — the city stands on it. So the plan
+    /// this one renders leaves its middle bare.
+    @Test func `the ground under the lamp is the lit stop of the grade`() async throws {
+        let harness = try #require(AtlasPickHarness(), AtlasPickingTests.unrenderable)
+        let plan = Self.cornered()
+        let projection = AtlasProjection(of: plan, through: .city(over: plan.extent))
+        let frame = try #require(await harness.frame(
+            of: AtlasVolumes.city(of: plan, in: Self.pigments),
+            plan: plan,
+            through: projection.camera,
+        ))
+
+        let middle = projection.viewPoint(
+            x: plan.extent.width / 2,
+            y: plan.extent.height / 2,
+            height: AtlasElevation.drop(of: plan.extent),
+        )
+        let pixel = AtlasPixel(x: Int(middle.x), y: Int(middle.y))
+        #expect(harness.pick(at: pixel)?.target == nil, "the middle of the plan is covered")
+        // The DARKEST bare pixel of a small window, not the one at the middle: the lattice runs
+        // about four pixels apart there and the plan's own middle lands on a crossing of it, so a
+        // single pixel is as likely to be two grid lines as it is to be the ground. Everything on
+        // the floor only ever ADDS light, so the darkest of them is the bare ground.
+        let drawn = Self.darkestGround(around: pixel, in: frame, from: harness)
+        let materials = ArgoPalette.graphite.atlas.materials
+
+        #expect(abs(drawn - Self.light(of: materials.groundLit)) < 1.5)
+        #expect(drawn > Self.light(of: materials.groundDeep))
+        #expect(drawn > Self.light(of: materials.desktop))
     }
 
     /// A drag rewrites no floor. The floor is a function of the plan and the pigments, exactly as
@@ -113,6 +154,30 @@ struct AtlasTableTests {
         #expect(try #require(latest).colour != opening.colour)
         #expect(floor.laid === laid)
         #expect(floor.patches == patches)
+    }
+
+    /// The same city on a different ground, for a render that turns one of its numbers off.
+    private static func grounded(_ city: AtlasCity, on ground: AtlasGround) -> AtlasCity {
+        AtlasCity(
+            volumes: city.volumes, roster: city.roster, patches: city.patches, ground: ground,
+        )
+    }
+
+    /// A plan whose plates leave the middle bare: one small plate in a corner, so the ground under
+    /// the lamp is ground the frame can actually see.
+    private static func cornered() -> AtlasPlan {
+        let extent = CGSize(width: 200, height: 150)
+        let rect = CGRect(x: 0, y: 0, width: 40, height: 30)
+        return AtlasPlan(
+            extent: extent,
+            plates: [.init(path: "argo", rect: rect, depth: 0)],
+            tiles: [AtlasTile(
+                path: "argo/one",
+                rect: rect.insetBy(dx: 4, dy: 3),
+                band: .quiet,
+                height: 8,
+            )],
+        )
     }
 
     /// The same city standing on a different floor, for a render that takes one patch out.
@@ -158,6 +223,33 @@ struct AtlasTableTests {
         return weights.blue * Double(frame.colour[index * 4])
             + weights.green * Double(frame.colour[index * 4 + 1])
             + weights.red * Double(frame.colour[index * 4 + 2])
+    }
+
+    /// The darkest bare-ground pixel within a few of one point, in the frame's own 0-255.
+    private static func darkestGround(
+        around pixel: AtlasPixel,
+        in frame: AtlasFrame,
+        from harness: AtlasPickHarness,
+    )
+        -> Double {
+        let size = AtlasPickHarness.size
+        var darkest = Double.infinity
+        for y in (pixel.y - 4) ... (pixel.y + 4) {
+            for x in (pixel.x - 4) ... (pixel.x + 4) {
+                guard x >= 0, y >= 0, x < size.width, y < size.height,
+                      harness.pick(at: AtlasPixel(x: x, y: y))?.target == nil
+                else { continue }
+                darkest = min(darkest, Self.light(of: frame, atPixel: y * size.width + x))
+            }
+        }
+        return darkest
+    }
+
+    /// How bright one contract colour reads, on the same three weights, in the frame's own 0-255.
+    private static func light(of colour: ArgoColor) -> Double {
+        let weights = ArgoColor.rec709Weights
+        return (weights.red * colour.red + weights.green * colour.green
+            + weights.blue * colour.blue) * 255
     }
 
     private static func mean(_ values: [Double]) -> Double {

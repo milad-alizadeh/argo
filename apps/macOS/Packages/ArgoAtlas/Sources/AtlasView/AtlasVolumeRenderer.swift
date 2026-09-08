@@ -51,13 +51,18 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// The second attachment of every draw: the id per pixel, and what a pick reads (#1153).
     private let ids: AtlasIdTarget
 
-    /// The table the boxes stand on and the grain over them (#1600), or NOTHING where this build's
-    /// library is missing one of their functions — in which case the city is drawn on a plain
+    /// The table the boxes stand on (#1600), or NOTHING where this build's library is missing one
+    /// of its functions — in which case the city is drawn on a plain
     /// ground, which is a worse picture rather than a broken one.
     ///
     /// Not private, for the reason `instances` is not: `AtlasTableTests` reads what the floor is
     /// holding across a drag.
     let floor: AtlasFloorStage?
+
+    /// The tile the grain is dithered from (#1600). Held HERE rather than beside the floor,
+    /// because the BOXES' own fragment stage reads it too — the grain is spent on each surface's
+    /// finished pixel, and the boxes are the surface it has to be careful with.
+    private let grain: MTLTexture
 
     /// Three quads a box — the roof and the two walls that face the reader — as a triangle list.
     static let verticesPerVolume = 18
@@ -84,7 +89,8 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
               let library = Self.library(on: device),
               let vertex = library.makeFunction(name: "atlas_volume_vertex"),
               let fragment = library.makeFunction(name: "atlas_volume_fragment"),
-              let ids = AtlasIdTarget(device: device, library: library, samples: samples)
+              let ids = AtlasIdTarget(device: device, library: library, samples: samples),
+              let grain = AtlasGrain.texture(on: device)
         else { return nil }
 
         let descriptor = MTLRenderPipelineDescriptor()
@@ -115,10 +121,9 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         self.depth = depth
         self.sampleCount = samples
         self.ids = ids
+        self.grain = grain
         self.floor = AtlasFloorStage(
-            device: device,
-            library: library,
-            target: AtlasFloorTarget(pixelFormat: pixelFormat, samples: samples),
+            device: device, library: library, pixelFormat: pixelFormat, samples: samples,
         )
         self.instances = AtlasVolumeBuffer(device: device)
         super.init()
@@ -256,6 +261,11 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         // pixel of the picture and a pixel of the floor's falloff are one pixel.
         var ground = city.ground
         ground.size = SIMD2<Float>(Float(target.width), Float(target.height))
+        // Both fragment stages of this pass read these two: the floor for its grade and its
+        // falloff, the boxes for the grain alone. Bound once here rather than by each, so a pixel
+        // of the table and a pixel of a roof are dithered from the same tile.
+        encoder.setFragmentBytes(&ground, length: MemoryLayout<AtlasGround>.stride, index: 0)
+        encoder.setFragmentTexture(grain, index: 0)
         floor?.table(in: encoder, eye: &eye, ground: &ground)
         encoder.setRenderPipelineState(pipeline)
         encoder.setDepthStencilState(depth)
@@ -283,9 +293,6 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
             vertexCount: Self.verticesPerVolume,
             instanceCount: instances.boxes,
         )
-        // The grain last, over the finished picture and inside the same pass — a pass of its own
-        // would dither a resolve rather than the samples the resolve is taken from (#1600).
-        floor?.grain(in: encoder, ground: &ground)
         encoder.endEncoding()
         return true
     }

@@ -38,6 +38,11 @@ package enum AtlasElevation {
         -min(extent.width, extent.height) * dropShare
     }
 
+    /// How far past this ground the floor runs.
+    package static func pad(of extent: CGSize) -> CGFloat {
+        min(extent.width, extent.height) * padShare
+    }
+
     /// The tallest a file stands on this ground. `package` because a cast shadow (#1151) reads a
     /// file's height as a SHARE of this same ceiling — the shadow's own throw is a plan-relative
     /// number for the reason the height it answers to is, and the drawing half has no ceiling of

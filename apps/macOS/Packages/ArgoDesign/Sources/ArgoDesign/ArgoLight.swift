@@ -92,9 +92,10 @@ public enum ArgoLight {
     ///
     /// The design spends the sheen as `1.07` at the lit corner against `0.93` at the far one. The
     /// RATIO across the roof is kept exactly and the lit end is pinned to the face's own light
-    /// rather than 7% above it: a hot roof at `roof * 1.07` sits 0.195 from its legend swatch
-    /// (`0.911 * 0.214`, the pigment's own length times the drift) and `legendTolerance` bounds
-    /// that at 0.15. So the sheen darkens away from the lamp; it never brightens past it.
+    /// rather than 7% above it: at `roof * 1.07` a middling roof sits 0.215 from its legend swatch
+    /// and a hot one 0.195, where `legendTolerance` bounds that at 0.15. So the sheen darkens away
+    /// from the lamp; it never brightens past it. `AtlasLightingTests` measures both ends, and the
+    /// grain over them.
     public static let sheenFoot = 0.93 / 1.07
 
     /// The share of the tallest file's own height a file has to clear before it casts anything —

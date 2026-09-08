@@ -7,15 +7,11 @@ import Testing
 /// THE MEASUREMENT #1600 asks for: a roof's colour against the legend swatch it is supposed to
 /// match, over a real rendered frame rather than over the light model's own arithmetic.
 ///
-/// **The prototype's own percentages are not reproducible, and this is not them.** It published
-/// 99.1 / 98.7 / 97.8 for the city against 100 / 100 / 100 for the treemap
-/// (`docs/designs/prototypes/atlas-holo.md`), and no harness that produced those numbers was ever
-/// committed — the page has no colour readback in it on any branch, and no issue states a
-/// population or a tolerance. So the METHOD is reconstructed from the two things the repository
-/// does say: the population is the roof CENTRES ("picking is counted over hundreds of roof
-/// centres", the commit that published the table), and the comparison is a HUE ("its bloom moved
-/// every band a hue off its legend", the same commit) — which is also the one thing the light model
-/// may never move (#1151).
+/// **The prototype's 99.1 / 98.7 / 97.8 is not reproducible**: no harness that produced it was
+/// ever committed. The method here is reconstructed from what the repository does say — the
+/// population is the roof CENTRES ("picking is counted over hundreds of roof centres") and the
+/// comparison is a HUE ("its bloom moved every band a hue off its legend"), both from the commit
+/// that published the table.
 ///
 /// A roof centre is used rather than a sweep of the frame because it is the only population that
 /// isolates ROOFS: the id target names which file a pixel is and not which face of it, and a
@@ -26,15 +22,19 @@ import Testing
 ///
 /// **What it measured when the floor, the grain and the sheen landed** (#1600): 69, 71 and 76
 /// unoccluded roof centres for quiet, middling and hot, and 100.0% of each still read as its own
-/// band. The worst single roof centre sat 0.067, 0.085 and 0.074 from its swatch in
-/// `ArgoColor.distance(to:)`, against the 0.15 `ArgoLight.legendTolerance` allows. The prototype's
-/// 99.1 / 98.7 / 97.8 was measured over a picture that also drew seams, lit rims, note marks and
-/// labels ACROSS its roofs; none of those is ported yet, so there is nothing here for a roof
-/// centre to be covered by but another roof.
+/// band. The worst single roof centre sat 0.078, 0.093 and 0.083 from its swatch in
+/// `ArgoColor.distance(to:)`, against the 0.15 `ArgoLight.legendTolerance` allows.
+///
+/// A roof CENTRE sits half way along the sheen, so the brightest pixel of a roof is not in this
+/// population at all. `AtlasLightingTests` bounds that one, where it is exact.
 @Suite("Atlas — a roof is still its own band", .enabled(if: AtlasPickHarness.isAvailable))
 @MainActor
 struct AtlasRoofBandTests {
     static let pigments = AtlasPickingTests.pigments
+
+    /// The fewest roof centres a band has to show for a share of them to mean anything. The
+    /// crowded fixture below draws 208 files a band and towers hide most of them.
+    static let leastMeasurable = 60
 
     @Test func `every roof the picture shows is still its own band`() async throws {
         let harness = try #require(AtlasPickHarness(), AtlasPickingTests.unrenderable)
@@ -65,7 +65,10 @@ struct AtlasRoofBandTests {
 
         for band in [AtlasBand.quiet, .middling, .hot] {
             let seen = shown[band] ?? 0
-            #expect(seen > 60, "\(band) drew too few unoccluded roofs to measure")
+            #expect(
+                seen > Self.leastMeasurable,
+                "\(band) drew too few unoccluded roofs to measure",
+            )
             // The band the picture reads back as. This is the claim the light model owes: a
             // scalar multiply keeps a hue, so every roof centre is still its own band.
             #expect(

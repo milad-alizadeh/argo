@@ -124,6 +124,47 @@ struct AtlasWrite {
     uint id [[color(1)]];
 };
 
+/// The floor's own numbers: the three stops of the graded ground, where the grade and the falloff
+/// reach, the plane the floor lies on, and what the grain is spent at.
+///
+/// `AtlasGround` on the Swift side is the same fields in the same order; `AtlasFloorTests` asserts
+/// the offsets, for the reason `AtlasVolumeTests` asserts the instance's.
+struct AtlasGround {
+    /// The drawable, in pixels. Every radius here is a SHARE of one of its sides, so the grade and
+    /// the falloff are the same picture in a small window and a large one.
+    float2 size;
+    /// The middle stop: the ground where the lamp reaches it, at the middle of the plan.
+    float3 lit;
+    /// The dip, half way out.
+    float3 deep;
+    /// The desktop tone, which the grade returns to at the rim and the vignette lands on.
+    float3 rim;
+    /// How far out the grade runs, as a share of the drawable's LONGER side.
+    float grade;
+    /// Where the vignette starts, as a share of the shorter side, and where it lands, as a share
+    /// of the longer.
+    float2 falloff;
+    /// The floor's own plane, in the plan's own points. Negative: it is under the plates.
+    float drop;
+    /// The weight the grain is spent at.
+    float grain;
+};
+
+/// One patch of light laid on the floor: a plate's own light, or the contour grid.
+///
+/// The two are one primitive because they are one fact — light on the floor, bounded by the
+/// vignette — and one instanced draw is what keeps them from needing a pipeline each. `divisions`
+/// is the whole difference.
+struct AtlasFloorPatch {
+    /// Where the patch lies on the plan: origin, then size, in the plan's own points.
+    float4 plan;
+    /// What it is washed in: a pigment, and the weight it is spent at.
+    float4 wash;
+    /// 0 for a flat wash. Above 0 it is a contour grid at that many divisions of the patch's own
+    /// span, which is what lets one quad carry a lattice instead of eighty-four lines.
+    float divisions;
+};
+
 /// One point of the model, in clip space.
 ///
 /// The divide is left to the HARDWARE — `w` is the distance along the view axis and the depth is
@@ -275,74 +316,64 @@ vertex AtlasFragment atlas_volume_vertex(
     return out;
 }
 
-fragment AtlasWrite atlas_volume_fragment(AtlasFragment in [[stage_in]]) {
+/// The grain, over one finished pixel: the design's own `overlay` fill at 0.05 (`rebuild`).
+///
+/// One 96-pixel tile of noise, read one texel a pixel. Large smooth gradients on a near-black
+/// ground band in 8-bit, and the grain is what keeps them smooth.
+///
+/// **An overlay, not a multiply, and the difference is all on the lit roofs.** Below half
+/// brightness the two are one expression to the last bit: overlay's dark branch composites to
+/// `b * (1 + a * (2s - 1))`, which IS a multiply. Above it they part by `a * (2b - 1) * (1 - 2s)`,
+/// up to 0.019 — five 8-bit steps — on the brightest channel this map draws. Overlay compresses
+/// toward white and barely moves a lit roof; a multiply lifts it by its full 2.5%, and that margin
+/// is the whole tolerance. A middling roof at its lit corner sits 0.135 from its legend swatch of
+/// the 0.15 `ArgoLight.legendTolerance` allows; under a multiply it sits 0.163.
+/// `AtlasLightingTests` is what holds that.
+///
+/// It is spent HERE, on each opaque surface's own finished colour, rather than in a pass over the
+/// picture: the only blend Metal can be asked for is the multiply, and a pass that read the colour
+/// attachment back is not portable. Every visible pixel is written by exactly one surface, so this
+/// is the arithmetic a fill over the whole picture would do.
+static float3 atlas_grain(
+    float3 colour,
+    float2 pixel,
+    constant AtlasGround &ground,
+    texture2d<float, access::read> grain
+) {
+    uint2 at = uint2(pixel) % uint2(grain.get_width(), grain.get_height());
+    float noise = grain.read(at).x;
+    float3 dark = 2.0 * colour * noise;
+    float3 light = 1.0 - 2.0 * (1.0 - colour) * (1.0 - noise);
+    return mix(colour, select(light, dark, colour < 0.5), ground.grain);
+}
+
+fragment AtlasWrite atlas_volume_fragment(
+    AtlasFragment in [[stage_in]],
+    constant AtlasGround &ground [[buffer(0)]],
+    texture2d<float, access::read> grain [[texture(0)]]
+) {
+    float3 lit = in.pigment * in.light * in.across;
     return AtlasWrite {
-        float4(in.pigment * in.light * in.across, 1),
+        float4(atlas_grain(lit, in.position.xy, ground, grain), 1),
         in.id
     };
 }
 
 // ---------- the floor, the vignette and the grain (#1600) ----------
 //
-// The city is a lit diorama on a graded table, and this is the table. Three passes before and
-// after the boxes, all inside the SAME render pass so the resolve happens once: the graded ground
-// with its vignette, the light laid on the floor — the plates' own and the contour grid — and the
-// grain over the finished picture.
+// The city is a lit diorama on a graded table, and this is the table: the graded ground with its
+// vignette, and the light laid on the floor — the plates' own and the contour grid. Both are
+// encoded into the SAME render pass the boxes are, before them. The grain is not a pass at all;
+// `atlas_grain` below says where it is spent and why.
 //
-// NONE OF IT COSTS ANYTHING AT REST, because at rest nothing is drawn at all: the view is paused
-// and redraws on demand (`AtlasSurface`), so the floor and the grain cost exactly what every other
-// pass costs a still frame, which is nothing.
+// `AtlasGround`, `AtlasFloorPatch` and `atlas_grain` are declared with the other structs above
+// rather than here, because the BOXES' own fragment stage reads all three and Metal has no forward
+// declarations.
 //
 // NOTHING HERE IS GATED ON `relief`. The floor is a real plane at `drop` under the plates and
-// `atlas_clip` already scales every height by `relief`, so the plane rises onto the plan of its
-// own accord as the camera goes flat — the treemap then shows the grid in the ring outside the
-// plates and nothing under them, which is the picture the design draws. One expression, both
-// cameras, exactly as the heights and the light already are.
-
-/// The floor's own numbers: the three stops of the graded ground, where the grade and the falloff
-/// reach, the plane the floor lies on, and what the grain is spent at.
-///
-/// `AtlasGround` on the Swift side is the same fields in the same order; `AtlasGroundTests`
-/// asserts the offsets, for the reason `AtlasVolumeTests` asserts the instance's.
-struct AtlasGround {
-    /// The drawable, in pixels. Every radius here is a SHARE of one of its sides, so the grade and
-    /// the falloff are the same picture in a small window and a large one.
-    float2 size;
-    /// The middle stop: the ground where the lamp reaches it, at the middle of the plan.
-    float3 lit;
-    /// The dip, half way out.
-    float3 deep;
-    /// The desktop tone, which the grade returns to at the rim and the vignette lands on.
-    float3 rim;
-    /// How far out the grade runs, as a share of the drawable's LONGER side.
-    float grade;
-    /// Where the vignette starts, as a share of the shorter side, and where it lands, as a share
-    /// of the longer.
-    float2 falloff;
-    /// The floor's own plane, in the plan's own points. Negative: it is under the plates.
-    float drop;
-    /// The weight the grain is spent at.
-    float grain;
-};
-
-/// One patch of light laid on the floor: a plate's own light, or the contour grid.
-///
-/// The two are one primitive because they are one fact — light on the floor, bounded by the
-/// vignette — and one instanced draw is what keeps them from needing a pipeline each. `divisions`
-/// is the whole difference.
-struct AtlasFloorPatch {
-    /// Where the patch lies on the plan: origin, then size, in the plan's own points.
-    float4 plan;
-    /// What it is washed in: a pigment, and the weight it is spent at.
-    float4 wash;
-    /// 0 for a flat wash. Above 0 it is a contour grid at that many divisions of the patch's own
-    /// span, which is what lets one quad carry a lattice instead of eighty-four lines.
-    float divisions;
-};
-
-struct AtlasScreenFragment {
-    float4 position [[position]];
-};
+// `atlas_clip` already scales every height by `relief`, so the plane rises onto the plan of its own
+// accord as the camera goes flat — the treemap then shows the grid in the ring outside the plates
+// and nothing under them, which is the picture the design draws.
 
 struct AtlasGroundFragment {
     float4 position [[position]];
@@ -412,14 +443,16 @@ vertex AtlasGroundFragment atlas_ground_vertex(
 /// grain below exists to break up.
 fragment float4 atlas_ground_fragment(
     AtlasGroundFragment in [[stage_in]],
-    constant AtlasGround &ground [[buffer(0)]]
+    constant AtlasGround &ground [[buffer(0)]],
+    texture2d<float, access::read> grain [[texture(0)]]
 ) {
     float reach = max(max(ground.size.x, ground.size.y) * ground.grade, 1.0);
     float out = saturate(length(in.position.xy - in.middle) / reach);
     float3 graded = out < 0.5
         ? mix(ground.lit, ground.deep, out * 2.0)
         : mix(ground.deep, ground.rim, (out - 0.5) * 2.0);
-    return float4(mix(graded, ground.rim, atlas_vignette(in.position.xy, in.middle, ground)), 1);
+    float3 table = mix(graded, ground.rim, atlas_vignette(in.position.xy, in.middle, ground));
+    return float4(atlas_grain(table, in.position.xy, ground, grain), 1);
 }
 
 vertex AtlasFloorFragment atlas_floor_vertex(
@@ -468,39 +501,12 @@ fragment float4 atlas_floor_fragment(
     AtlasFloorFragment in [[stage_in]],
     constant AtlasGround &ground [[buffer(0)]]
 ) {
+    // No grain here: a patch is blended over ground that already carries it, and dithering the
+    // wash as well would only weaken what is under it by the patch's own weight.
     float cover = in.divisions > 0 ? atlas_grid(in.unit, in.divisions) : 1;
     float weight = in.wash.w * cover
         * (1.0 - atlas_vignette(in.position.xy, in.middle, ground));
     return float4(in.wash.xyz * weight, weight);
-}
-
-vertex AtlasScreenFragment atlas_grain_vertex(uint vertex_id [[vertex_id]]) {
-    AtlasScreenFragment out;
-    out.position = atlas_screen(vertex_id);
-    return out;
-}
-
-/// The grain, as the one scalar the blend multiplies the finished picture by.
-///
-/// One 96-pixel tile of noise, built once and read one texel a pixel. Large smooth gradients on a
-/// near-black ground band in 8-bit, and the grain is what keeps them smooth.
-///
-/// The design spends it as an `overlay` fill at alpha 0.05. This is a MULTIPLY, and the two are the
-/// same expression wherever the picture is dark: overlay's dark branch is `2 * b * s`, which at
-/// alpha `a` composites to `b * (1 + a * (2s - 1))` — a scalar on the finished pixel, and exactly
-/// what the blend computes from what is returned here. They part only above half brightness, by at
-/// most `a * (1 - 2s)` = 0.0037, under one 8-bit step. A multiply is also the only one of the two
-/// that can never turn a hue: overlay's bright branch washes each channel toward white by a
-/// different amount, and nothing on this map may do that (#1151).
-fragment float4 atlas_grain_fragment(
-    AtlasScreenFragment in [[stage_in]],
-    constant AtlasGround &ground [[buffer(0)]],
-    texture2d<float, access::read> grain [[texture(0)]]
-) {
-    uint2 at = uint2(in.position.xy) % uint2(grain.get_width(), grain.get_height());
-    float scale = 1.0 + ground.grain * (2.0 * grain.read(at).x - 1.0);
-    // The blend leaves alpha alone, so what is written in it never reaches the picture.
-    return float4(scale, scale, scale, 1);
 }
 
 /// ONE SAMPLE OF THE ID TARGET, CHOSEN — never averaged (#1153, under #1400's multisampling).

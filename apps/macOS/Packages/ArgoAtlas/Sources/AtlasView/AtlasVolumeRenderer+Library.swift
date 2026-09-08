@@ -1,11 +1,8 @@
 import AtlasLayout
 import MetalKit
 
-/// Where this build's shader comes from, and how many samples the device will resolve it at.
-///
-/// Lifted out of `AtlasVolumeRenderer` unchanged (#1600): the renderer's own body is at the house
-/// ceiling, and this is the one cluster in it that answers a different question — not "how is the
-/// map drawn" but "can this machine draw it, and out of which file".
+/// Whether this machine can draw the map, out of which file, and at how many samples — the
+/// questions that come before "how is the map drawn".
 extension AtlasVolumeRenderer {
     /// How many samples a pixel is resolved from. Every edge in this picture is a box's own
     /// silhouette against whatever stands behind it — there is no texture and no wireframe to hide
@@ -50,12 +47,25 @@ extension AtlasVolumeRenderer {
     /// `internal` for `resourceBundle`'s reason.
     nonisolated static func library(on device: MTLDevice) -> MTLLibrary? {
         guard let bundle = resourceBundle else { return nil }
-        if let compiled = try? device.makeDefaultLibrary(bundle: bundle) {
-            return compiled
+        if let prebuilt = try? device.makeDefaultLibrary(bundle: bundle) {
+            return prebuilt
         }
-        guard let url = bundle.url(forResource: "AtlasVolume", withExtension: "metal"),
+        return try? compiled(on: device)
+    }
+
+    /// The same shader compiled from the SOURCE in the bundle — the SwiftPM path, and the one a
+    /// `swift test` binary takes.
+    ///
+    /// It THROWS where `library(on:)` answers nothing, and that is the whole reason it is a
+    /// separate call: every rendering suite in this package is gated on the shader having its
+    /// functions, so a `AtlasVolume.metal` that stopped compiling turns all of them green by
+    /// SKIPPING — a `nil` saying "no Metal on this machine" where the truth is "this file is
+    /// broken". #1600 lost a round to exactly that. `AtlasShaderTests` is what reds instead.
+    nonisolated static func compiled(on device: MTLDevice) throws -> MTLLibrary? {
+        guard let bundle = resourceBundle,
+              let url = bundle.url(forResource: "AtlasVolume", withExtension: "metal"),
               let source = try? String(contentsOf: url, encoding: .utf8)
         else { return nil }
-        return try? device.makeLibrary(source: source, options: nil)
+        return try device.makeLibrary(source: source, options: nil)
     }
 }

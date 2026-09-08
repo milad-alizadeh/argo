@@ -57,37 +57,55 @@ know it: `worktrees:gc` deletes `design/atlas` the moment #643 closes, distilled
 ## Measurements — the floor, the vignette, the grain and the roof sheen
 
 Distilled out of the page by #1600, which is the first pass at the table this file is supposed to
-carry. **Only these six things.** Everything else the screen settles is still only in the page, and
-the warning above still stands.
+carry. **Only what #1600 built**: the floor and its two measures, the graded ground, the vignette,
+the plates' light, the contour grid, the grain and the roof sheen. Everything else the screen
+settles is still only in the page, and the warning above still stands.
 
 | What | The page's number | Where it lives now |
 |---|---|---|
-| The floor's plane | `FLOOR_Z = -22` of a 1000-unit plan | `AtlasElevation.dropShare = 0.022`, off the shorter side |
+| The floor's plane | `FLOOR_Z = -22` of a 1000-unit plan | `AtlasElevation.dropShare = 0.022` |
 | How far the floor runs past the plan | `FLOOR_PAD = 0.018` | `AtlasElevation.padShare` |
 | The graded ground | `#0b1015` at the middle, `#080c10` at 0.5, `--desktop` at 1, out to `max(W, H) * 0.72` | `atlas.materials.groundLit`, `groundDeep`, `desktop`; `AtlasGround.grade` |
 | The vignette | `min(W, H) * 0.30` to `max(W, H) * 0.62`, landing on `--desktop` | `AtlasGround.falloff` |
-| The plates' light on the floor | `rgba(70, 175, 205, 0.018 / (1 + depth * 0.45))` | `atlas.materials.fog` at `AtlasFloor.plateLight = 0.056`, `plateFalloff = 0.45` |
-| The contour grid | 32 divisions of `fog` at 0.10, then 8 of `rgba(80, 178, 205, 0.055)` | `AtlasFloor.grid = [(32, 0.10), (8, 0.178)]`, both in `fog` |
-| The grain | one 96px tile, values `118 + rand * 74`, `overlay` at 0.05 | `AtlasGrain.width`, `AtlasGrain.range`, `AtlasGround.grain`; spent as a multiply |
+| The plates' light on the floor | `rgba(70, 175, 205, 0.018 / (1 + depth * 0.45))` | `atlas.materials.fog` at `AtlasFloor.plateLight = 0.0589`, `plateFalloff = 0.45` |
+| The contour grid | 32 divisions of `fog` at 0.10, then 8 of `rgba(80, 178, 205, 0.055)` | `AtlasFloor.grid = [(32, 0.10), (8, 0.185)]`, both in `fog` |
+| The grain | one 96px tile, values `118 + rand * 74`, `overlay` at 0.05 | `AtlasGrain.side`, `AtlasGrain.range`, `AtlasGround.grain` |
 | The roof sheen | `ao * 1.07` at the lit corner, `ao * 0.93` at the far one | `ArgoLight.sheenFoot = 0.93 / 1.07`, pinned so the lit end is the face's own light |
 
-Three of the page's numbers are put back onto a token rather than carried across as they are, and
-each is arithmetic rather than taste:
+Four of the page's numbers are read differently in the port, and each is arithmetic rather than
+taste.
 
-- **The two raw cyans become `fog`.** The contract already names the floor's light — `fog`, "the
-  floor's own light, which the contour grid takes" — and the page's `rgba(70, 175, 205)` and
-  `rgba(80, 178, 205)` are that light from before it had a name. The weights carry the difference:
-  0.018 of (70, 175, 205) is (1.26, 3.15, 3.69) of 255 and `fog` at 0.056 is (1.46, 2.91, 3.58);
-  0.055 of (80, 178, 205) is (4.4, 9.8, 11.3) and `fog` at 0.178 is (4.6, 9.3, 11.4).
-- **The grain is a multiply, not an `overlay`.** Overlay's own dark branch composites to
-  `b * (1 + a * (2s - 1))` — a scalar on the finished pixel, which is what a multiply blend is —
-  and the two part only above half brightness, by at most 0.0037, under one 8-bit step. A multiply
-  is also the only one of the two that cannot wash a channel toward white, which nothing on this
-  map may do.
-- **The sheen is pinned rather than centred.** The page runs it 1.07 against 0.93 about the shade a
-  face reads at. Spent upward on this contract's roof factor, a hot roof lands 0.195 from its
-  legend swatch and `ArgoLight.legendTolerance` bounds that at 0.15. The ratio across the roof is
-  the page's exactly; the lit end is the face's own light rather than 7% above it.
+**The two raw cyans become `fog`.** The contract already names the floor's light — `fog`, "the
+floor's own light, which the contour grid takes" — and the page's `rgba(70, 175, 205)` and
+`rgba(80, 178, 205)` are that light from before it had a name. The weight carries the difference,
+matched on LUMINANCE at Rec. 709, which is what a reader sees: `fog` is (26, 52, 64) and reads
+47.34 of 255; (70, 175, 205) reads 154.84, so 0.018 of it is 2.787 and `fog` needs 0.0589; (80,
+178, 205) reads 159.12, so 0.055 of it is 8.752 and `fog` needs 0.185. Per channel `fog` is
+warmer than the page's cyan by about a sixth in red, on a contribution of three parts in 255 over
+a near-black ground.
+
+**The floor's two measures are shares of the SHORTER side.** The page's plan is a 1000-unit
+square, so `FLOOR_Z` and `FLOOR_PAD` are shares of a span with only one length. Argo tiles into
+the window's own extent, which is not square, and `AtlasElevation` already measures every
+plan-relative height off the shorter side for a stated reason: a tower measured off the longer
+side of a wide map overhangs the short one. The floor follows the heights it hangs under.
+
+**The grain is the page's `overlay`, and it is not a multiply.** It is spent on each opaque
+surface's own finished pixel rather than as a fill over the picture, because the only blend Metal
+offers here is a multiply and a pass that reads the colour attachment back is not portable — and
+every visible pixel is written by exactly one surface, so the arithmetic is the fill's. The
+multiply was tried and is wrong: below half brightness the two are one expression, since overlay's
+dark branch composites to `b * (1 + a * (2s - 1))`, but above it they part by
+`a * (2b - 1) * (1 - 2s)` — up to 0.019, five 8-bit steps, on the brightest channel this map
+draws. All of that difference lands on the lit roofs, and the whole tolerance is there: a middling
+roof at its lit corner sits 0.135 from its legend swatch of the 0.15 `ArgoLight.legendTolerance`
+allows, and the multiply spent 0.163 of it. Overlay compresses toward white and barely moves a lit
+roof; a multiply lifts it by its full 2.5%.
+
+**The sheen is pinned rather than centred.** The page runs it 1.07 against 0.93 about the shade a
+face reads at. Spent upward on this contract's roof factor of 1.1344, a middling roof lands 0.215
+from its legend swatch and a hot one 0.195, against the same 0.15. The ratio across the roof is
+the page's exactly; the lit end is the face's own light rather than 7% above it.
 
 ## When Atlas ships
 

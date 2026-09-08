@@ -105,11 +105,10 @@ struct AtlasFloorTests {
         let first = AtlasGrain.noise()
 
         #expect(first == AtlasGrain.noise())
-        #expect(first.count == AtlasGrain.width * AtlasGrain.width)
+        #expect(first.count == AtlasGrain.side * AtlasGrain.side)
         #expect(first.allSatisfy { AtlasGrain.range.contains($0) })
-        // It is noise, not a fill: a generator that returned one value — or a handful — would pass
-        // everything above. Nearly every value the range holds is drawn at least once over 9,216
-        // texels, so anything under most of them is a generator with a period.
+        // It is noise, not a fill: a generator returning one value, or a handful, would pass
+        // everything above.
         #expect(Set(first).count > AtlasGrain.range.count / 2)
     }
 
