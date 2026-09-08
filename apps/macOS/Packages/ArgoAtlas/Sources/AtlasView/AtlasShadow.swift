@@ -38,13 +38,15 @@ enum AtlasShadow {
         let weight = weight(of: tile.height, ceiling: ceiling)
         guard weight > 0 else { return nil }
 
-        let key = ArgoLight.key.direction
-        let planar = (key.x * key.x + key.y * key.y).squareRoot()
-        guard planar > 0 else { return nil }
+        // The key's plan direction, from the one place that normalises it: the sheen across a
+        // roof runs along the same number (#1600), and two copies of it are two chances for a roof
+        // to be bright on the side its own shadow falls.
+        let key = AtlasLighting.plan(of: ArgoLight.key)
+        guard key != .zero else { return nil }
         let throwLength = tile.height * ArgoLight.shadowSlope
         let offset = CGPoint(
-            x: -CGFloat(key.x / planar) * throwLength,
-            y: -CGFloat(key.y / planar) * throwLength,
+            x: -CGFloat(key.x) * throwLength,
+            y: -CGFloat(key.y) * throwLength,
         )
         let rect = tile.rect.offsetBy(dx: offset.x, dy: offset.y)
 

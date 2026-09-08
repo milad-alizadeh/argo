@@ -86,6 +86,17 @@ public enum ArgoLight {
     /// only how dark the same colour gets nearer the floor.
     public static let contactFoot = 0.44
 
+    /// How much of its own light the far side of a roof keeps — the roof's own `contactFoot`, and
+    /// what makes a roof a lit plane rather than a flat chip. A scalar ACROSS the one face,
+    /// brightest on the side the key comes from (`docs/designs/cockpit-atlas.html`, `drawBox`).
+    ///
+    /// The design spends the sheen as `1.07` at the lit corner against `0.93` at the far one. The
+    /// RATIO across the roof is kept exactly and the lit end is pinned to the face's own light
+    /// rather than 7% above it: a hot roof at `roof * 1.07` sits 0.195 from its legend swatch
+    /// (`0.911 * 0.214`, the pigment's own length times the drift) and `legendTolerance` bounds
+    /// that at 0.15. So the sheen darkens away from the lamp; it never brightens past it.
+    public static let sheenFoot = 0.93 / 1.07
+
     /// The share of the tallest file's own height a file has to clear before it casts anything —
     /// short enough not to bother, in the same units `AtlasElevation.ceiling(of:)` scales heights
     /// in. Below it a shadow would be a smudge on the plate with nothing worth casting one.
@@ -130,6 +141,6 @@ public enum ArgoLight {
     /// The scalars that are not lamps, and are drawn as what they do to a pigment.
     public static let shades: [(name: String, value: Double)] = [
         ("planShade", planShade), ("orbDim", orbDim),
-        ("contactFoot", contactFoot), ("shadowDepth", shadowDepth),
+        ("contactFoot", contactFoot), ("sheenFoot", sheenFoot), ("shadowDepth", shadowDepth),
     ]
 }

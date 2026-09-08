@@ -22,6 +22,22 @@ package enum AtlasElevation {
     /// than the thing the picture depends on.
     static let floorShare: CGFloat = 0.002
 
+    /// How far UNDER the plates the floor's own plane sits: the design's 22 units of the same
+    /// 1000 (`docs/designs/cockpit-atlas.html`, `FLOOR_Z`). A real plane a fixed distance under
+    /// the plates is what makes the model read as hovering rather than as a city standing on
+    /// nothing.
+    package static let dropShare: CGFloat = 0.022
+
+    /// How far past the plan the floor runs, as a share of it: the design's own `FLOOR_PAD`. Just
+    /// past the footprint — a floor that reaches the edge of the picture is the subject, and the
+    /// model is what the reader came for.
+    package static let padShare: CGFloat = 0.018
+
+    /// The floor's own plane on this ground, below it — which is why it is negative.
+    package static func drop(of extent: CGSize) -> CGFloat {
+        -min(extent.width, extent.height) * dropShare
+    }
+
     /// The tallest a file stands on this ground. `package` because a cast shadow (#1151) reads a
     /// file's height as a SHARE of this same ceiling — the shadow's own throw is a plan-relative
     /// number for the reason the height it answers to is, and the drawing half has no ceiling of

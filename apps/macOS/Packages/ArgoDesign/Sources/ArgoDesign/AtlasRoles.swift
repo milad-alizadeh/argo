@@ -61,9 +61,21 @@ public extension ArgoPalette {
     /// A plate is lit ground, not a backdrop — the same lamp as everything else, dark enough that
     /// the files standing on it stay the subject.
     struct MaterialRoles: Sendable, Equatable {
-        /// The canvas ground. The contract names no other, because no other room has one: every
-        /// room until now is documents on the deck.
+        /// The canvas ground, and the OUTERMOST stop of the graded one: the ground is a radial
+        /// grade from `groundLit` at the middle of the plan through `groundDeep` half way out and
+        /// back to this at the corners, and the vignette lands on this too. The contract names no
+        /// other ground, because no other room has one: every room until now is documents on the
+        /// deck.
         public let desktop: ArgoColor
+        /// The ground where the lamp reaches it — the middle of the plan, and the middle stop of
+        /// the grade. Cooler and one step up from `desktop`: this is the lamp landing on the
+        /// table, so the picture has a centre of attention rather than an even field
+        /// (`docs/designs/cockpit-atlas.html`, `drawFloor`).
+        public let groundLit: ArgoColor
+        /// The deepest the ground gets, half way out from the middle, before it returns to
+        /// `desktop` at the rim. A grade that fell straight from lit to the desktop tone would
+        /// read as a single soft blob; the dip is what gives the table a middle AND an edge.
+        public let groundDeep: ArgoColor
         /// The top plate: a folder at the root of the map.
         public let plate1: ArgoColor
         /// One level in.
@@ -88,6 +100,8 @@ public extension ArgoPalette {
 
         public init(
             desktop: ArgoColor,
+            groundLit: ArgoColor,
+            groundDeep: ArgoColor,
             plate1: ArgoColor,
             plate2: ArgoColor,
             plate3: ArgoColor,
@@ -97,6 +111,8 @@ public extension ArgoPalette {
             inferred: ArgoColor,
         ) {
             self.desktop = desktop
+            self.groundLit = groundLit
+            self.groundDeep = groundDeep
             self.plate1 = plate1
             self.plate2 = plate2
             self.plate3 = plate3
@@ -122,7 +138,8 @@ public extension ArgoPalette {
         /// rule a caption can break.
         public var grounds: [(name: String, color: ArgoColor)] {
             [
-                ("desktop", desktop), ("plate1", plate1), ("plate2", plate2), ("plate3", plate3),
+                ("desktop", desktop), ("groundLit", groundLit), ("groundDeep", groundDeep),
+                ("plate1", plate1), ("plate2", plate2), ("plate3", plate3),
                 ("fog", fog), ("unassigned", unassigned), ("hushed", hushed),
             ]
         }

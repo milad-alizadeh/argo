@@ -25,10 +25,23 @@ struct AtlasLighting: Equatable {
     /// The wall's own foot term, carried alongside rather than folded into `nearX`/`nearY`: it is
     /// a SECOND scalar, read along the wall's own height rather than picked by its face.
     var contactFoot: Float
+    /// The key's own direction across the PLAN, normalised — which way a roof's sheen runs (#1600).
+    /// A plan direction rather than a screen one, so turning the map turns which side of a roof is
+    /// bright; the same number every cast shadow is thrown along (`AtlasShadow.decal`).
+    var keyPlan: SIMD2<Float>
+    /// How much of its own light the far side of a roof keeps: the roof's own `contactFoot`, and
+    /// the third scalar the shader reads across a face rather than off it (#1600).
+    var sheenFoot: Float
 
     /// Solved from the contract's own lamps. An ambient term has no direction, so it lights every
     /// face alike and is folded into all three before either directional lamp is added.
-    init(ambient: ArgoLight.Lamp, key: ArgoLight.Lamp, fill: ArgoLight.Lamp, contactFoot: Double) {
+    init(
+        ambient: ArgoLight.Lamp,
+        key: ArgoLight.Lamp,
+        fill: ArgoLight.Lamp,
+        contactFoot: Double,
+        sheenFoot: Double,
+    ) {
         let base = Self.strength(of: ambient)
         let keyDirection = Self.normalized(key.direction)
         let fillDirection = Self.normalized(fill.direction)
@@ -45,13 +58,28 @@ struct AtlasLighting: Equatable {
         self.nearX = factor(SIMD3(-1, 0, 0))
         self.nearY = factor(SIMD3(0, -1, 0))
         self.contactFoot = Float(contactFoot)
+        let plan = Self.plan(of: key)
+        self.keyPlan = SIMD2<Float>(Float(plan.x), Float(plan.y))
+        self.sheenFoot = Float(sheenFoot)
+    }
+
+    /// One lamp's direction across the plan alone, normalised — or nothing where the lamp is
+    /// straight overhead and has no plan direction to give.
+    ///
+    /// The one declaration of it: the sheen runs along it and every cast shadow is thrown against
+    /// it, and two copies of a normalise are two chances for a roof to be bright on the side its
+    /// own shadow falls.
+    static func plan(of lamp: ArgoLight.Lamp) -> SIMD2<Double> {
+        let plan = SIMD2(lamp.direction.x, lamp.direction.y)
+        let length = (plan.x * plan.x + plan.y * plan.y).squareRoot()
+        return length > 0 ? plan / length : .zero
     }
 
     /// The one lighting the Atlas ever draws — the contract's own lamps, solved once rather than
     /// per frame: nothing here depends on the camera, so there is nothing a turn could invalidate.
     static let city = AtlasLighting(
         ambient: ArgoLight.ambient, key: ArgoLight.key, fill: ArgoLight.fill,
-        contactFoot: ArgoLight.contactFoot,
+        contactFoot: ArgoLight.contactFoot, sheenFoot: ArgoLight.sheenFoot,
     )
 
     private static func normalized(_ vector: SIMD3<Double>) -> SIMD3<Double> {

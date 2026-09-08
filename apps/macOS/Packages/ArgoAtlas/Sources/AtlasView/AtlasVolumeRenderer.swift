@@ -65,6 +65,11 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// The second attachment of every draw: the id per pixel, and what a pick reads (#1153).
     private let ids: AtlasIdTarget
 
+    /// The table the boxes stand on and the grain over them (#1600), or NOTHING where this build's
+    /// library is missing one of their functions — in which case the city is drawn on a plain
+    /// ground, which is a worse picture rather than a broken one.
+    private let floor: AtlasFloorStage?
+
     /// Whether this machine can draw the map at all: a Metal device, and this package's shader
     /// compiled into its own bundle. The same two `init` fails on, asked without building a
     /// pipeline — and `nonisolated`, because the one caller is a suite trait, evaluated before
@@ -155,6 +160,11 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         self.depth = depth
         self.sampleCount = samples
         self.ids = ids
+        self.floor = AtlasFloorStage(
+            device: device,
+            library: library,
+            target: AtlasFloorTarget(pixelFormat: pixelFormat, samples: samples),
+        )
         self.instances = AtlasVolumeBuffer(device: device)
         super.init()
     }
@@ -169,6 +179,9 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     func show(_ city: AtlasCity) {
         self.city = city
         instances.write(city.volumes)
+        // The floor is written on the same clock, because it is a function of the same plan and
+        // the same pigments: a map that has not moved is a floor that has not moved (#1598).
+        floor?.show(city.patches)
     }
 
     /// One update of the surface: the map where the map moved, and the eye every time (#1598).
@@ -282,6 +295,13 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         guard let encoder = buffer.makeRenderCommandEncoder(descriptor: descriptor) else {
             return false
         }
+        // The table first, under everything: the graded ground, its vignette, and the light laid
+        // on the floor (#1600). The drawable's own size is the one number the floor cannot know
+        // until here, and it is read off the id attachment — which IS the drawable's size, so a
+        // pixel of the picture and a pixel of the floor's falloff are one pixel.
+        var ground = city.ground
+        ground.size = SIMD2<Float>(Float(target.width), Float(target.height))
+        floor?.table(in: encoder, eye: &eye, ground: &ground)
         encoder.setRenderPipelineState(pipeline)
         encoder.setDepthStencilState(depth)
         encoder.setVertexBuffer(volumes, offset: 0, index: 0)
@@ -308,6 +328,9 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
             vertexCount: Self.verticesPerVolume,
             instanceCount: instances.boxes,
         )
+        // The grain last, over the finished picture and inside the same pass — a pass of its own
+        // would dither a resolve rather than the samples the resolve is taken from (#1600).
+        floor?.grain(in: encoder, ground: &ground)
         encoder.endEncoding()
         return true
     }
