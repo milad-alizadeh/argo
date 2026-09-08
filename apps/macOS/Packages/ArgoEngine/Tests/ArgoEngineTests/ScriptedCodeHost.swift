@@ -15,11 +15,7 @@ actor ScriptedCodeHost: CodeHostPort {
     /// The branches this host REFUSES to answer about, told apart from the ones it holds nothing
     /// for: a refusal is the throttled read a checkout with many worktrees runs into, and "nothing
     /// there" is an answer.
-    private var refusing: Set<String>
-    /// What a refused branch is refused with. `rateLimited` is the throttled read a checkout with
-    /// many worktrees runs into; an error from outside the transport is the one the health
-    /// vocabulary has no word for (#1698).
-    private let refusedWith: Error
+    private var refusing: Refusing
     /// The listings answered `unchanged`, by read number from one — the host's word that what the
     /// caller holds is still current, which is neither an answer nor a refusal (#1620).
     private var unchangedListings: Set<Int>
@@ -30,6 +26,25 @@ actor ScriptedCodeHost: CodeHostPort {
     private var asked: [String] = []
     private var conditional: [String: Bool] = [:]
     private var conditionalListings: [Bool] = []
+
+    /// Which branches this host refuses and what with — one value, because a suite says "these
+    /// are refused, like this" rather than naming the set and the error apart. A list literal is
+    /// the branches alone, which is what every case but one says.
+    struct Refusing: ExpressibleByArrayLiteral {
+        let branches: Set<String>
+        /// `rateLimited` is the throttled read a checkout with many worktrees runs into; an error
+        /// from outside the transport is the one the health vocabulary has no word for (#1698).
+        let with: Error
+
+        init(_ branches: Set<String>, with: Error = ProviderFetchError.rateLimited) {
+            self.branches = branches
+            self.with = with
+        }
+
+        init(arrayLiteral branches: String...) {
+            self.init(Set(branches))
+        }
+    }
 
     /// Which reads this host validates rather than answers — one value, because a suite says
     /// "these are unchanged" about the tick and not about the listing and the fan-out separately.
@@ -42,15 +57,13 @@ actor ScriptedCodeHost: CodeHostPort {
         _ script: [Result<[Delivery], ProviderFetchError>],
         byBranch: [String: Delivery] = [:],
         byCommit: [String: Delivery] = [:],
-        refusing: Set<String> = [],
-        refusedWith: Error = ProviderFetchError.rateLimited,
+        refusing: Refusing = [],
         unchanged: Unchanged = Unchanged(),
     ) {
         self.script = script
         self.byBranch = byBranch
         self.byCommit = byCommit
         self.refusing = refusing
-        self.refusedWith = refusedWith
         self.unchangedListings = unchanged.listings
         self.unchangedBranches = unchanged.branches
     }
@@ -80,7 +93,7 @@ actor ScriptedCodeHost: CodeHostPort {
     /// the hour's budget. Set after a derivation rather than at init, so a suite can land a clean
     /// one first and refuse the read after it.
     func refuse(_ branches: Set<String>) {
-        refusing = branches
+        refusing = Refusing(branches, with: refusing.with)
     }
 
     /// Which branches the host was asked about BY NAME, in order — what a suite about the tick's
@@ -123,7 +136,7 @@ actor ScriptedCodeHost: CodeHostPort {
         let branch = head.branch
         asked.append(branch)
         conditional[branch] = revalidating
-        guard !refusing.contains(branch) else { throw refusedWith }
+        guard !refusing.branches.contains(branch) else { throw refusing.with }
         guard !revalidating || !unchangedBranches.contains(branch) else { return .unchanged }
         if let named = byBranch[branch] {
             return .answered(named)

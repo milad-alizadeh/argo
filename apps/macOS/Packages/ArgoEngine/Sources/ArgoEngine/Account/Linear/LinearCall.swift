@@ -30,8 +30,8 @@ struct LinearCall: Sendable {
     ) async throws(LinearFailure)
         -> LinearReply<Payload> {
         guard let body = try? JSONEncoder().encode(operation) else {
-            // Argo's own operation, so nothing was put to Linear and there is no health word for
-            // it. `unreadable` would file an Argo bug as a provider that answered badly (#1698).
+            // Argo's own operation, so nothing was put to Linear and no cause word is true of
+            // it (#1698).
             throw LinearFailure.reached(nil)
         }
         let request = HTTPRequest(

@@ -49,9 +49,7 @@ public actor ConnectionHealthLedger {
     ///
     /// `nil` is a failure the health vocabulary has no word for, and it is recorded as nothing at
     /// all: the chip is left on whatever it last observed rather than told a cause Argo has not
-    /// observed (#1698). It is the caller that classifies, through
-    /// `ProviderFetchError.refusal(_:)` — the parameter is typed so that a caller holding an error
-    /// of some other vocabulary cannot reach this at all.
+    /// observed. The caller classifies, through `ProviderFetchError.refusal(_:)` (#1698).
     public func record(_ error: ProviderFetchError?, of target: PortReadTarget) {
         guard let error else { return }
         guard let cause = error.cause else {

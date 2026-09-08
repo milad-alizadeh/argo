@@ -3,8 +3,7 @@ import Foundation
 /// Each way the transport refuses, in the health ledger's vocabulary — and `nil` for the one the
 /// three cause words have no room for.
 ///
-/// Exhaustive, which is the point of it being here rather than a `case` in `reading`: a fifth
-/// transport failure fails the build until somebody words it (#1698).
+/// Exhaustive: a fifth transport failure fails the build until somebody words it (#1698).
 extension HTTPTransportError {
     var fetchFailure: ProviderFetchError? {
         switch self {

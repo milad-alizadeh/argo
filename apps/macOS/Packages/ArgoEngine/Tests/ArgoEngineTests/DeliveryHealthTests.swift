@@ -130,8 +130,10 @@ struct DeliveryHealthTests {
         )
 
         await derivation.dialFailed(target, error: OutsideTheTransport.raised)
+        let reading = await health.health(of: target.projectBinding, in: "P1")
 
-        #expect(await health.health(of: target.projectBinding, in: "P1").state == .healthy)
+        #expect(reading.state == .healthy)
+        #expect(reading.lastSuccess == nil)
     }
 
     /// The other half of that, and the reason the fan-out keeps its refusal unclassified: nothing
@@ -145,8 +147,7 @@ struct DeliveryHealthTests {
         await DeliveryDerivation(
             port: ScriptedCodeHost(
                 [.success([])],
-                refusing: ["worktree-1698-unnamed"],
-                refusedWith: OutsideTheTransport.raised,
+                refusing: .init(["worktree-1698-unnamed"], with: OutsideTheTransport.raised),
             ),
             health: health,
             deliveries: DeliveryLedger(),
