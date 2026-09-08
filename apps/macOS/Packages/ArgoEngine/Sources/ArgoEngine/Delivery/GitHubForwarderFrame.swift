@@ -6,6 +6,14 @@ import Foundation
 /// preview GitHub can change or withdraw without notice — so its absence is simply no socket rather
 /// than a failure worth a word (#1579).
 struct GitHubForwarderHook: Decodable {
+    /// What a delete is keyed by. GitHub has no delete keyed by a hook's name, and the 422 that
+    /// says a hook is already there names no id, so the repository's own listing is the only place
+    /// the id of the hook it holds can be read (#1697).
+    let id: Int
+    /// `cli` on the forwarder's hook and `web` on an ordinary webhook, which is what tells the one
+    /// Argo made from ones somebody else set up. Optional because the create answers a hook the
+    /// caller already knows the name of, and only the listing was measured carrying it.
+    let name: String?
     let wsUrl: String?
 }
 
