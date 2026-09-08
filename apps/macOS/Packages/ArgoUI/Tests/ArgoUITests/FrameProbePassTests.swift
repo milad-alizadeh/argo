@@ -13,7 +13,15 @@ struct FrameProbePassTests {
         costs: [Double],
     )
         -> FrameProbeSummary {
-        FrameProbeSummary(stamps: frames, passes: passes, passCosts: costs, displayMaxFPS: 60)
+        FrameProbeSummary(
+            stamps: frames,
+            passes: passes,
+            passCosts: costs,
+            source: FrameProbeSummary.Source(
+                executablePath: "/tmp/one-worktree/Argo.app/Contents/MacOS/Argo",
+                displayMaxFPS: 60,
+            ),
+        )
     }
 
     @Test func `no passes is no passes, not a division`() {

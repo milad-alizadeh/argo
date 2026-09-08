@@ -27,6 +27,12 @@ import QuartzCore
         ProcessInfo.processInfo.environment["ARGO_FRAME_PROBE"] == "1"
     }
 
+    /// What this process was launched as, for `FrameProbeSummary.Source` to name the build.
+    /// Absent rather than substituted where there is no argv at all: nothing else here is a path.
+    static var executablePath: String? {
+        ProcessInfo.processInfo.arguments.first
+    }
+
     private var stamps: [Double] = []
     /// Wall clock of every root body evaluation inside the window, on the same clock as `stamps`,
     /// and what each one cost in milliseconds. See `FrameProbePass` for why they ride here rather
@@ -134,7 +140,10 @@ import QuartzCore
                 stamps: stamps,
                 passes: passes,
                 passCosts: passCosts,
-                displayMaxFPS: displayMaxFPS,
+                source: FrameProbeSummary.Source(
+                    executablePath: Self.executablePath,
+                    displayMaxFPS: displayMaxFPS,
+                ),
             ),
         )
         if exiting {
