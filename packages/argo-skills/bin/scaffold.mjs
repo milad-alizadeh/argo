@@ -27,6 +27,7 @@ import {
   SKILL_DIRS,
   snapshotOwnedSkills,
 } from './protect-owned-skills.mjs'
+import { repairSkillLinks } from './repair-skill-links.mjs'
 import { groupBySource, LOCK_PATH } from './skills-lock.mjs'
 
 const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -284,6 +285,11 @@ for (const [source, names] of bySource) {
 
 const restored = restoreOwnedSkills(projectRoot, ownedSkills)
 if (restored.length) console.log(describeRestore(restored))
+const repairedLinks = dryRun ? [] : repairSkillLinks(projectRoot)
+if (repairedLinks.length) {
+  console.log(`\nrepaired ${repairedLinks.length} redundant universal skill link(s):`)
+  for (const link of repairedLinks) console.log(`    ${link}`)
+}
 
 // Skipped for Argo itself, which owns the template's source and its own .rtk/filters.toml.
 if (realpathSync(SOURCE_ROOT) !== realpathSync(projectRoot)) seedAssets(projectRoot, dryRun)
