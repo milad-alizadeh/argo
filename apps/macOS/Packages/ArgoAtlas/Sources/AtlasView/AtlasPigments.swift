@@ -8,10 +8,9 @@ import AtlasLayout
 /// only way the faces can be built without a window and asserted on.
 ///
 /// `Equatable` because the city is a function of the plan and of this, and of nothing else: it is
-/// half of what `AtlasCityCache` asks to know whether the boxes have to be built again (#1598). The
-/// conformance is synthesized off the role families rather than a list of the colours the map
-/// happens to paint today, so a material added to the contract is compared without being named
-/// here.
+/// half of what `AtlasCityCache` asks to know whether the boxes have to be built again (#1598).
+/// Synthesized off the role families, so a material added to the contract is compared without
+/// being named here.
 struct AtlasPigments: Equatable {
     private let measure: ArgoPalette.MeasureRoles
     private let materials: ArgoPalette.MaterialRoles

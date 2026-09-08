@@ -117,7 +117,12 @@ struct AtlasPickHarness {
     func frame(of plan: AtlasPlan, through camera: AtlasCamera) async -> AtlasFrame? {
         let fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
         renderer.look(through: AtlasEye(camera, fit: fit))
+        return await frame()
+    }
 
+    /// Whatever the renderer has been pushed, drawn. What `AtlasDragTests` renders after driving
+    /// `present`, so nothing between the app's own call and the picture belongs to the harness.
+    func frame() async -> AtlasFrame? {
         let descriptor = MTLRenderPassDescriptor()
         descriptor.colorAttachments[0].texture = multisampled?.colour ?? colour
         descriptor.colorAttachments[0].loadAction = .clear

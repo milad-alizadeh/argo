@@ -55,9 +55,10 @@ enum AtlasShadow {
         // out but the tiler still places it. It is painted in the plate's own tone; it is picked
         // as the plate's own folder. Nothing under it at all is the desktop, which names nothing.
         let ground = plates.plate(under: rect)
-        let depth = ground.map(plates.depth(of:)) ?? 0
         let darkened = 1 - (1 - ArgoLight.shadowDepth) * weight
-        let decal = AtlasVolume(rect, shade: darkened, pigment: pigments.plate(at: depth))
-        return ground.map { decal.identified(as: UInt32($0 + 1)) } ?? decal
+        let decal = AtlasVolume(
+            rect, shade: darkened, pigment: pigments.plate(at: ground?.depth ?? 0),
+        )
+        return ground.map { decal.identified(as: UInt32($0.place + 1)) } ?? decal
     }
 }

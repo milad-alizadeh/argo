@@ -1,5 +1,4 @@
 @testable import AtlasLayout
-@testable import AtlasView
 import CoreGraphics
 import Testing
 
@@ -51,36 +50,61 @@ struct AtlasPlateIndexTests {
     }()
 
     /// THE CLAIM, over every third point of the ground and a margin outside it: the grid answers
-    /// what the walk answered, plate for plate.
+    /// what the walk answered, both the plate's place in the list and the depth read off it.
     @Test func `the grid answers what a walk of the whole list answers`() {
         let index = AtlasPlateIndex(of: Self.plates)
 
         var disagreements: [String] = []
+        var found = 0
         for x in stride(from: -12.0, through: 212.0, by: 3.0) {
             for y in stride(from: -12.0, through: 212.0, by: 3.0) {
                 let point = CGPoint(x: x, y: y)
                 let grid = index.plate(under: CGRect(origin: point, size: .zero))
                 let walk = Self.walked(to: point, on: Self.plates)
-                if grid != walk {
+                if grid?.place != walk || grid?.depth != walk.map({ Self.plates[$0].depth }) {
                     disagreements.append(
                         "at \(x), \(y): the grid says \(grid as Any), the walk \(walk as Any)",
                     )
+                }
+                if walk != nil {
+                    found += 1
                 }
             }
         }
 
         #expect(disagreements.isEmpty, "\(disagreements.prefix(4))")
+        // Without this the sweep passes on a fixture where the walk finds nothing anywhere, which
+        // is a pair of agreeing nils rather than an index that works.
+        #expect(found > 1000)
+    }
+
+    /// The deepest plate wins, and the grid has to find it in whichever cell it was filed under.
+    /// The innermost of a nest is the folder a decal on that ground belongs to (#1156).
+    @Test func `the deepest plate over a point is the one answered`() throws {
+        let index = AtlasPlateIndex(of: Self.plates)
+
+        // Inside the third nested plate of the top-right quarter, which is three levels in.
+        let deep = try #require(index.plate(under: CGRect(x: 148, y: 148, width: 2, height: 2)))
+
+        #expect(deep.depth == 2)
+        #expect(Self.plates[deep.place].path.hasPrefix("argo/q11/n"))
+        // The shallower plates that also cover that point were passed over, not merely present.
+        #expect(Self.plates[deep.place].rect.contains(CGPoint(x: 149, y: 149)))
     }
 
     /// The point a lookup is asked about is the rectangle's MIDDLE, not its corner: a decal is
     /// asked of its own thrown rect, and the plate it lands on is the plate its middle is over.
-    @Test func `the middle of the rectangle is what decides`() {
+    @Test func `the middle of the rectangle is what decides`() throws {
         let index = AtlasPlateIndex(of: Self.plates)
 
         // A rect straddling the two left quarters, whose middle is in the upper one.
         let straddling = CGRect(x: 30, y: 90, width: 20, height: 40)
-        #expect(index.plate(under: straddling)
-            == Self.walked(to: CGPoint(x: 40, y: 110), on: Self.plates))
+        let corner = try #require(index.plate(under: CGRect(x: 30, y: 90, width: 0, height: 0)))
+        let middle = try #require(index.plate(under: straddling))
+
+        #expect(middle.place == Self.walked(to: CGPoint(x: 40, y: 110), on: Self.plates))
+        // And the two really are different plates, or the claim is about nothing.
+        #expect(middle.place != corner.place)
     }
 
     /// A tiling with no folders in it: the decal lies on the desktop and names nothing, the same
@@ -91,22 +115,12 @@ struct AtlasPlateIndexTests {
         #expect(index.plate(under: CGRect(x: 10, y: 10, width: 4, height: 4)) == nil)
     }
 
-    /// A rect whose edge is not a number — a plan nothing tiled — answers rather than trapping the
-    /// conversion into a cell.
+    /// A rect whose edge is not a measurement — a plan nothing tiled — answers rather than
+    /// trapping the conversion into a cell.
     @Test(arguments: [CGFloat.infinity, -CGFloat.infinity, CGFloat.nan])
     func `an edge that is not a measurement answers nothing`(edge: CGFloat) {
         let index = AtlasPlateIndex(of: Self.plates)
 
         #expect(index.plate(under: CGRect(x: edge, y: edge, width: 0, height: 0)) == nil)
-    }
-
-    /// The depth a plate sits at is read off the index rather than looked up again by the caller:
-    /// the tone a decal is painted in and the folder it is picked as have to be one plate.
-    @Test func `the index says how deep the plate it found sits`() throws {
-        let index = AtlasPlateIndex(of: Self.plates)
-
-        let deep = try #require(index.plate(under: CGRect(x: 148, y: 148, width: 2, height: 2)))
-        #expect(index.depth(of: deep) == Self.plates[deep].depth)
-        #expect(index.depth(of: 0) == 0)
     }
 }

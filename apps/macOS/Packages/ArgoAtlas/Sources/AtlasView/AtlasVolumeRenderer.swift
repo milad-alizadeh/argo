@@ -50,11 +50,10 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// allocated nothing.
     let instances: AtlasVolumeBuffer
 
-    /// The last frame this presented, so a map arriving while that frame is still reading the
-    /// instances waits for it rather than tearing it. Only ever a COMMITTED buffer, which is what
-    /// makes the wait in `show` safe — the offscreen renders in `AtlasPickHarness` commit and wait
-    /// on their own, so nothing there needs recording here.
-    private var drawn: MTLCommandBuffer?
+    /// What the city in that buffer was built from. Held HERE rather than beside the surface, so
+    /// its lifetime is the buffer's exactly: a cache that outlived the boxes it describes would
+    /// answer "unchanged" to a renderer holding none, and draw an empty map.
+    private let cache = AtlasCityCache()
     /// Where the city is in its climb out of the plates (#1421). Pushed with the camera and the
     /// map, because it changes on the same clock they do — and `settled` until one is, so a
     /// renderer nobody has told about a rise draws the measured heights rather than nothing.
@@ -169,12 +168,22 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// worth of boxes per frame for a picture that differs only in where the reader stands.
     func show(_ city: AtlasCity) {
         self.city = city
-        // A frame may still be reading the buffer `write` is about to overwrite. It has almost
-        // always landed — a map changes on a reader's action, a frame behind it — so this costs
-        // nothing on the path it guards, and the alternative is a torn picture rather than a
-        // stale one.
-        drawn?.waitUntilCompleted()
         instances.write(city.volumes)
+    }
+
+    /// One update of the surface: the map where the map moved, and the eye every time (#1598).
+    ///
+    /// The whole of what `AtlasSurface` does per SwiftUI update, named here so the app and
+    /// `AtlasDragTests` drive the same two pushes. A drag reaches `look` alone, because the plan
+    /// and the pigments it was handed are the ones the frame before was drawn from.
+    func present(_ projection: AtlasProjection, in pigments: AtlasPigments) {
+        if let city = cache.rebuilt(of: projection.plan, in: pigments) {
+            show(city)
+        }
+        look(
+            through: AtlasEye(projection.camera, fit: projection.fit),
+            rising: AtlasRise(projection),
+        )
     }
 
     /// Where the reader is looking from, and how far the city has climbed out of its plates
@@ -226,9 +235,6 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         resolveIds(in: buffer)
         buffer.present(drawable)
         buffer.commit()
-        // AFTER the commit, never before: `waitUntilCompleted` on a buffer nobody committed never
-        // returns, and `show` is what waits on this one.
-        drawn = buffer
     }
 
     /// The id attachment for a drawable of this size, at THIS renderer's own sample count — which

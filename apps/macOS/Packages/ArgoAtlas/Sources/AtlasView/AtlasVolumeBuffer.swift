@@ -9,6 +9,14 @@ import Metal
 /// It grows and never shrinks. A city that fits the buffer already there is written into it, so a
 /// re-tile of the same repository costs the copy alone — and a smaller city leaves the tail of the
 /// buffer holding boxes nothing draws, because `boxes` is what the encoder draws instances from.
+///
+/// **A write can land while the GPU is still reading.** Shared storage is visible to both at once,
+/// so a map arriving between a frame's commit and its completion can leave that one frame drawn
+/// from a mix of two cities. It is not guarded here: `show` runs on the main actor and waiting on
+/// the frame there is the cost this change exists to remove, and the frame after a map change is
+/// always redrawn (`AtlasSurface` marks the view dirty), so a mixed frame is replaced rather than
+/// left. The fix that costs neither is a rotation of buffers, which belongs with the frame pipeline
+/// in #1601.
 @MainActor
 final class AtlasVolumeBuffer {
     private let device: MTLDevice
@@ -40,9 +48,8 @@ final class AtlasVolumeBuffer {
             return
         }
         if capacity < volumes.count {
-            // Shared storage, stated rather than defaulted: the CPU writes these and the GPU only
-            // reads them, and a managed buffer would need every write declared to Metal by range
-            // — a second thing to keep in step with the copy below.
+            // Shared storage, stated rather than defaulted: the CPU writes these and the GPU
+            // only reads them, and a managed buffer needs every write declared to Metal by range.
             guard let grown = device.makeBuffer(
                 length: Self.stride * volumes.count, options: .storageModeShared,
             ) else {

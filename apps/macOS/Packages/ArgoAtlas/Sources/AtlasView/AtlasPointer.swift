@@ -16,11 +16,6 @@ final class AtlasPointer: NSObject, MTKViewDelegate {
     /// the hover names files where a click also lands on folders.
     var picked: (AtlasTarget?) -> Void = { _ in }
 
-    /// What the city on the GPU was built from, so a camera drag builds none (#1598). Held here
-    /// rather than in the surface, because the surface is a struct SwiftUI rebuilds per body and
-    /// the coordinator is the one thing that outlives a frame.
-    let city = AtlasCityCache()
-
     /// The last point the pointer was at, in the view's own points, or nothing once it has left.
     /// Kept so a frame that has just landed can re-answer the question the pointer already asked,
     /// without waiting for it to move again.

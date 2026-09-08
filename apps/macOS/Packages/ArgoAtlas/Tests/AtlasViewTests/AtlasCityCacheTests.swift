@@ -6,14 +6,15 @@ import Testing
 
 /// The city is built when the map changes, and never because the reader moved (#1598).
 ///
-/// A camera drag writes an orientation into a binding, SwiftUI runs the body, and `AtlasSurface` is
-/// handed the same plan and the same pigments it had the frame before. What is asked here is what
-/// comes back from that ask: a city on the frame that first has one, and NOTHING on every frame of
-/// the drag after it — because the boxes are already on the GPU and building them again was over
-/// 6000 structs on the main actor, once per frame.
+/// What the cache answers is the whole of what decides it: a city on the first ask, and NOTHING
+/// where neither the plan nor the pigments have moved since. `AtlasVolumeRenderer.present` reaches
+/// `show` only through a non-nil answer here, so these are the claims that make "a drag rebuilds no
+/// city" true; `AtlasDragTests` drives `present` itself and says what the GPU does with it.
 ///
-/// The projections are the real ones, solved off `AtlasCamera` the way the surface solves them, so
-/// the claim is about a drag rather than about a comparison of two values chosen to be equal.
+/// A camera drag leaves the plan and the pigments untouched by construction — `AtlasProjection`
+/// carries the plan verbatim and a yaw cannot reach it. That is the point rather than a weakness of
+/// the fixture, and the projections below are built anyway so the values handed over are the ones
+/// the surface really hands over.
 @Suite("Atlas — the city is built when the map moves, not when the reader does")
 struct AtlasCityCacheTests {
     static let pigments = AtlasPigments(
@@ -44,14 +45,26 @@ struct AtlasCityCacheTests {
         rim: ArgoPalette.graphite.edge.subtle,
     )
 
-    static func plan(extent: CGSize = CGSize(width: 200, height: 150)) -> AtlasPlan {
+    static let ground = CGSize(width: 200, height: 150)
+
+    /// A plate of files, every rect derived FROM the extent — so a plan tiled into a window of
+    /// another size is a plan whose every box has moved, which is what a re-tile really is. A
+    /// fixture whose rects came from the index alone would let a stale city pass a re-tile.
+    static func plan(extent: CGSize = AtlasCityCacheTests.ground) -> AtlasPlan {
         let bands: [AtlasBand] = [.quiet, .middling, .hot]
-        let tiles = (0 ..< 12).map { (index: Int) -> AtlasTile in
-            let x = CGFloat(index % 4) * 48 + 4
-            let y = CGFloat(index / 4) * 44 + 6
+        let across = 4
+        let down = 3
+        let cell = CGSize(
+            width: extent.width / CGFloat(across), height: extent.height / CGFloat(down),
+        )
+        let tiles = (0 ..< across * down).map { (index: Int) -> AtlasTile in
+            let x = CGFloat(index % across) * cell.width + 2
+            let y = CGFloat(index / across) * cell.height + 4
             return AtlasTile(
                 path: "argo/plate/file-\(index)",
-                rect: CGRect(x: x, y: y, width: 44, height: 40),
+                rect: CGRect(
+                    x: x, y: y, width: cell.width - 4, height: cell.height - 8,
+                ),
                 band: bands[index % bands.count],
                 height: CGFloat(6 + index * 3),
             )
@@ -91,6 +104,8 @@ struct AtlasCityCacheTests {
         #expect(city.volumes.count == expected.volumes.count)
         #expect(city.roster == expected.roster)
         #expect(city.volumes.map(\.id) == expected.volumes.map(\.id))
+        #expect(city.volumes.map(\.origin) == expected.volumes.map(\.origin))
+        #expect(city.volumes.map(\.pigment) == expected.volumes.map(\.pigment))
     }
 
     /// THE CLAIM. Twenty-four frames of a drag over one plan, and one city built between them.
@@ -135,28 +150,34 @@ struct AtlasCityCacheTests {
     func `a pigment change builds the city again`(pigments: AtlasPigments) throws {
         let cache = AtlasCityCache()
         let plan = Self.plan()
-        _ = cache.rebuilt(of: plan, in: Self.pigments)
+        let first = try #require(cache.rebuilt(of: plan, in: Self.pigments))
 
         let repainted = try #require(cache.rebuilt(of: plan, in: pigments))
 
-        let expected = AtlasVolumes.city(of: plan, in: pigments)
-        #expect(repainted.volumes.map(\.pigment) == expected.volumes.map(\.pigment))
-        // And the old pigments come back as a build of their own rather than as a cache hit on a
+        // Really repainted, and repainted the way a fresh build would be.
+        #expect(repainted.volumes.map(\.pigment) != first.volumes.map(\.pigment))
+        #expect(repainted.volumes.map(\.pigment)
+            == AtlasVolumes.city(of: plan, in: pigments).volumes.map(\.pigment))
+        // And the old pigments come back as a build of their own rather than as a hit on a
         // comparison that only ever looks at the plan.
         #expect(cache.rebuilt(of: plan, in: Self.pigments) != nil)
     }
 
-    /// A re-tile is a new city, and so is a plan tiled into a window of a different size: the
-    /// window is what the extent is, and every rect in the plan is in its points.
+    /// A re-tile is a new city. The window is what the extent is, and every rect in the plan is in
+    /// its points — so a city the cache kept would draw the old window's boxes in the new one.
     @Test func `a re-tile builds the city again`() throws {
         let cache = AtlasCityCache()
-        _ = cache.rebuilt(of: Self.plan(), in: Self.pigments)
+        let first = try #require(cache.rebuilt(of: Self.plan(), in: Self.pigments))
 
-        let resized = Self.plan(extent: CGSize(width: 260, height: 150))
+        let resized = Self.plan(extent: CGSize(width: 320, height: 150))
         let city = try #require(cache.rebuilt(of: resized, in: Self.pigments))
 
-        #expect(city.volumes.count == AtlasVolumes.city(of: resized, in: Self.pigments)
-            .volumes.count)
+        // Every box moved, and moved to where a fresh build puts it.
+        #expect(city.volumes.map(\.origin) != first.volumes.map(\.origin))
+        #expect(city.volumes.map(\.origin)
+            == AtlasVolumes.city(of: resized, in: Self.pigments).volumes.map(\.origin))
+        #expect(city.volumes.map(\.size)
+            == AtlasVolumes.city(of: resized, in: Self.pigments).volumes.map(\.size))
         // The same plan handed back after it settles is not a third build.
         #expect(cache.rebuilt(of: resized, in: Self.pigments) == nil)
     }
