@@ -49,7 +49,8 @@ enum CompanionArguments {
     /// draw. A blank or absent reason degrades to `nil` rather than an empty string standing in
     /// for one.
     private static func ready(from arguments: JSONValue) -> CompanionFact? {
-        .ready(CompanionReady.reading(arguments))
+        let claim = CompanionReady.reading(arguments)
+        return .ready(CompanionReady(reason: claim.reason, receivedAt: Date()))
     }
 
     private static func outcome(from arguments: JSONValue) -> CompanionFact? {

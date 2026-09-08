@@ -1,5 +1,6 @@
 import ArgoEngine
 @testable import ArgoUI
+import Foundation
 import Testing
 
 /// The badge slot's `Ready` reading, and the pull request that outranks it (#1335,
@@ -43,10 +44,8 @@ struct SessionRowReadyToShipTests {
         #expect(row.badge == nil)
     }
 
-    /// A pull request whose life is over is not a reason to withhold a fresh claim: the branch
-    /// can be ready again, and often is.
     @Test
-    func `a merged or closed pull request leaves the badge standing`() throws {
+    func `a finished pull request without claim ordering keeps Ready off`() throws {
         let merged = try #require(
             rows(claim: claim, pullRequest: .fixture(state: "closed", isMerged: true)).first,
         )
@@ -54,8 +53,35 @@ struct SessionRowReadyToShipTests {
             rows(claim: claim, pullRequest: .fixture(state: "closed")).first,
         )
 
-        #expect(merged.badge == .readyToShip)
-        #expect(closed.badge == .readyToShip)
+        #expect(merged.badge == nil)
+        #expect(closed.badge == nil)
+    }
+
+    @Test(arguments: [false, true], [99.0, 100.0, 100.5, 101.0])
+    func `a Ready badge draws only for a claim after the pull request finished`(
+        isMerged: Bool, receivedAt: TimeInterval,
+    ) throws {
+        let row = try #require(rows(
+            claim: CompanionReady(reason: nil, receivedAt: Date(timeIntervalSince1970: receivedAt)),
+            pullRequest: .fixture(state: "closed", isMerged: isMerged),
+        ).first)
+
+        #expect(row.badge == (receivedAt == 101 ? .readyToShip : nil))
+    }
+
+    @Test(arguments: [false, true])
+    func `a claim with no terminal event time stays hidden`(isMerged: Bool) throws {
+        let pullRequest = DeliveryPullRequest(
+            number: 1720, title: "Finished", state: "closed",
+            facts: .init(isDraft: false, isMerged: isMerged, baseBranch: "main", headSHA: "abc123"),
+            body: nil, url: nil,
+        )
+        let row = try #require(rows(
+            claim: CompanionReady(reason: nil, receivedAt: Date(timeIntervalSince1970: 101)),
+            pullRequest: pullRequest,
+        ).first)
+
+        #expect(row.badge == nil)
     }
 
     /// Degrade-down: a host word Argo cannot place is not evidence the pull request is over, so

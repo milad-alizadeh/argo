@@ -127,18 +127,25 @@ public extension CockpitPresentation.Session {
             public let pullRequest: DeliveryPullRequest?
             public let readyToShip: Bool
 
-            /// Takes the CONVENTION claim RAW and resolves it here, which is what makes a stale
-            /// claim unrepresentable (#1335): there is no way to hand this an open pull request
-            /// and a drawn `Ready` together, so no surface — and no fixture — can state the pair
-            /// the design forbids.
-            ///
-            /// A pull request the host has not finished with always wins
-            /// (`cockpit-roster-row.md`, decision 7), and a word the host uses that Argo cannot
-            /// place counts as unfinished — see `DeliveryPullRequest.isFinished`. A merged or
-            /// closed one does not win: a fresh claim after either is not a lie.
+            /// A terminal pull request retires earlier claims; unknown ordering stays quiet
+            /// (#1720).
             public init(pullRequest: DeliveryPullRequest? = nil, claim: CompanionReady? = nil) {
                 self.pullRequest = pullRequest
-                self.readyToShip = claim != nil && pullRequest?.isFinished != false
+                guard let pullRequest else {
+                    self.readyToShip = claim != nil
+                    return
+                }
+                guard pullRequest.isFinished,
+                      let finishedAt = pullRequest.finishedAt,
+                      let receivedAt = claim?.receivedAt
+                else {
+                    self.readyToShip = false
+                    return
+                }
+                // GitHub timestamps have second precision, so claims in that same second are
+                // ambiguous.
+                self.readyToShip = receivedAt.timeIntervalSince1970.rounded(.down)
+                    > finishedAt.timeIntervalSince1970
             }
         }
 

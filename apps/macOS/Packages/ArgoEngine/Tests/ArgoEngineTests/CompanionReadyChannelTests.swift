@@ -1,4 +1,5 @@
 @testable import ArgoEngine
+import Foundation
 import Testing
 
 /// The channel's fourth tool, split from `CompanionChannelTests` to keep that suite under the
@@ -9,13 +10,16 @@ struct CompanionReadyChannelTests {
     @Test
     func `a reported ready claim reaches the roster at the CONVENTION tier`() async throws {
         try await CompanionChannelTests.withChannel { fixture, client in
+            let before = Date()
             try await CompanionChannelTests.report(
                 client, "report_ready", ["reason": "3 files, 2 commits"],
             )
             await settle { fixture.hub.sessions.first?.convention?.readyToShip != nil }
 
-            let ready = CompanionReady(reason: "3 files, 2 commits")
-            #expect(fixture.hub.sessions.first?.convention?.readyToShip == ready)
+            let ready = try #require(fixture.hub.sessions.first?.convention?.readyToShip)
+            #expect(ready.reason == "3 files, 2 commits")
+            let receivedAt = try #require(ready.receivedAt)
+            #expect(receivedAt >= before && receivedAt <= Date())
         }
     }
 
@@ -27,8 +31,9 @@ struct CompanionReadyChannelTests {
             try await CompanionChannelTests.report(client, "report_ready", [:])
             await settle { fixture.hub.sessions.first?.convention?.readyToShip != nil }
 
-            #expect(fixture.hub.sessions.first?.convention?
-                .readyToShip == CompanionReady(reason: nil))
+            let ready = try #require(fixture.hub.sessions.first?.convention?.readyToShip)
+            #expect(ready.reason == nil)
+            #expect(ready.receivedAt != nil)
         }
     }
 }

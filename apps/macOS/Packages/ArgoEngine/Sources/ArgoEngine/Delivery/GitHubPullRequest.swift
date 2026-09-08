@@ -12,6 +12,7 @@ struct GitHubPullRequest: Decodable {
     let state: String
     let draft: Bool
     let mergedAt: String?
+    let closedAt: String?
     /// When the host last saw it move. Read for ORDER and nothing else — it is how a commit's
     /// several pull requests are ranked, where the commit-keyed path takes no `sort` of its own
     /// (ADR-0032) — so it stops at this boundary and no Delivery holds it.
@@ -32,7 +33,7 @@ struct GitHubPullRequest: Decodable {
     /// rather than `htmlURL` — so this one key is named rather than derived.
     enum CodingKeys: String, CodingKey {
         case number, title, state, draft, body, head, base
-        case mergedAt, updatedAt
+        case mergedAt, closedAt, updatedAt
         case htmlURL = "htmlUrl"
     }
 
@@ -49,6 +50,7 @@ struct GitHubPullRequest: Decodable {
             ),
             body: body,
             url: htmlURL.flatMap(URL.init(string:)),
+            finishedAt: (mergedAt ?? closedAt).flatMap { ISO8601DateFormatter().date(from: $0) },
         )
     }
 }
