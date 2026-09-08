@@ -78,8 +78,7 @@ package struct FeedAskLine: View {
         case .waiting:
             .waiting(offers: ask.offers(in: question), held: FeedAskQuestion.Waiting(
                 held: Binding(get: { held[index] }, set: { held[index] = $0 }),
-                needsClosing: held.needsClosing(question, at: index),
-                hasSomethingToSend: held.hasSomethingToSend(at: index),
+                closing: held.closing(ask.ask, at: index),
                 pick: { pick($0, in: question, at: index) },
                 send: { close(at: index) },
             ))
@@ -171,8 +170,7 @@ private struct FeedAskQuestion: View {
     /// What this question offers while Argo holds it open.
     struct Waiting {
         let held: Binding<FeedAskHeld.Marks>
-        let needsClosing: Bool
-        let hasSomethingToSend: Bool
+        let closing: FeedAskHeld.Closing
         let pick: (Int) -> Void
         let send: () -> Void
     }
@@ -230,8 +228,7 @@ private struct FeedAskQuestion: View {
                 question: question,
                 offers: offers,
                 held: waiting.held,
-                needsClosing: waiting.needsClosing,
-                hasSomethingToSend: waiting.hasSomethingToSend,
+                closing: waiting.closing,
                 pick: waiting.pick,
                 send: waiting.send,
             )

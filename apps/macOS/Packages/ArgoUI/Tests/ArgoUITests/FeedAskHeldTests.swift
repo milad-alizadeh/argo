@@ -27,6 +27,49 @@ struct FeedAskHeldTests {
         held[0].ordinals = [1]
 
         #expect(held.isSettled(Self.oneOf, at: 0))
+        // Nothing closes it, so the card draws neither a field nor an `Answer` under it.
+        #expect(held.closing(Ask(questions: [Self.oneOf]), at: 0) == .click)
+    }
+
+    /// The whole of #1664's first half. `Answer` on one question of a call settled that question
+    /// and nothing on the card said so: the field kept the words, the button stayed live, and the
+    /// options stayed pressable, so a press that worked and one that did nothing drew the same.
+    ///
+    /// The card now says it — and the reply still has not gone, because one `AskUserQuestion` is
+    /// one thing the agent waits on.
+    @Test
+    func `a question closed by Answer draws the held line while the rest stay open`() {
+        let call = Ask(questions: [Self.manyOf, Self.freeForm])
+        var held = FeedAskHeld()
+        held[0].ordinals = [1]
+
+        #expect(held.closing(call, at: 0) == .field(canSend: true))
+
+        held[0].isClosed = true
+
+        #expect(held.closing(call, at: 0) == .held)
+        // The other question is untouched, and its own field has nothing to send yet.
+        #expect(held.closing(call, at: 1) == .field(canSend: false))
+        #expect(!held.isSettled(call))
+    }
+
+    /// `held` says the answer is waiting on the questions beside it, so it must not be what a
+    /// question draws once there are none left: the press that settles the last one SENDS, and a
+    /// card still saying it is holding would state the opposite of what happened. On a call that
+    /// put one question the very first press is that press.
+    @Test
+    func `the last question closed says the reply has gone rather than that it is held`() {
+        let alone = Ask(questions: [Self.freeForm])
+        var held = FeedAskHeld()
+        held[0].other = "The delivery digest"
+        held[0].isClosed = true
+
+        #expect(held.isSettled(alone))
+        #expect(held.closing(alone, at: 0) == .sent)
+
+        // The same marks inside a call of two: nothing has gone, so the same question reads held.
+        let call = Ask(questions: [Self.freeForm, Self.manyOf])
+        #expect(held.closing(call, at: 0) == .held)
     }
 
     /// A second click on a box is a correction rather than a second answer, so the act has to be

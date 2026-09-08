@@ -10,6 +10,9 @@ import SwiftUI
 /// under each other.
 struct FeedAskOfferRow: View {
     @Environment(\.argo) private var argo
+    /// Whether the question is still open. A closed one draws its options as the reading they now
+    /// are: no hover, and the ones nobody took step back (#1664).
+    @Environment(\.isEnabled) private var isEnabled
 
     let offer: FeedAskOffer
     /// Whether this question takes more than one option, which is what draws the box.
@@ -32,20 +35,26 @@ struct FeedAskOfferRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, ArgoSpacing.base)
             .padding(.horizontal, ArgoSpacing.comfortable)
-            .feedAskCard(isHovered: isHovered, isTicked: isTicked)
+            .feedAskCard(isHovered: showsHover, isTicked: isTicked, isReading: !isEnabled)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
-        .argoAnimation(.selection, value: isHovered)
+        .argoAnimation(.selection, value: showsHover)
         .accessibilityLabel(spoken)
         .accessibilityAddTraits(isTicked ? [.isSelected] : [])
+    }
+
+    /// `onHover` is not gated by `isEnabled`, so the pointer still crosses a closed question's
+    /// cards and the ground would still light under it.
+    private var showsHover: Bool {
+        isHovered && isEnabled
     }
 
     private var words: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.stepBeforeProse) {
             Text(offer.label)
                 .argoText(ArgoFeedRow.proseRung)
-                .foregroundStyle(argo.color.text.primary)
+                .foregroundStyle(label)
                 .fixedSize(horizontal: false, vertical: true)
             if let detail = offer.detail {
                 Text(detail)
@@ -57,6 +66,12 @@ struct FeedAskOfferRow: View {
 
     private var number: ArgoColor {
         isTicked ? argo.color.state.attention : argo.color.text.tertiary
+    }
+
+    /// An option steps back only once the question is closed and another one was taken — the same
+    /// rung, for the same reason, `FeedAskOptions` quiets an offer the answer passed over.
+    private var label: ArgoColor {
+        !isEnabled && !isTicked ? argo.color.text.secondary : argo.color.text.primary
     }
 
     /// Spoken with its number, because the number is how the answer names an option.

@@ -131,7 +131,7 @@ package extension FeedProjection {
 
     /// The question under the work that led to it, with what came back — the settled reading, built
     /// through the SHIPPING projection so a render here is the row the cockpit draws.
-    private static func answeredRows(_ questions: [Ask.Question], _ answer: String) -> [FeedRow] {
+    static func answeredRows(_ questions: [Ask.Question], _ answer: String) -> [FeedRow] {
         rows(.justTheStream(askTranscript(questions) + [
             .toolCallOutcome(ToolCallOutcome(
                 id: previewAskID,
@@ -182,7 +182,7 @@ package extension FeedProjection {
 
     /// The question waiting, under the work that led to it — the reading a render has to be judged
     /// in, since the row's whole promise is that it interrupts a column rather than replacing one.
-    private static func askRows(_ questions: [Ask.Question]) -> [FeedRow] {
+    static func askRows(_ questions: [Ask.Question]) -> [FeedRow] {
         rows(FeedInput(
             events: askTranscript(questions),
             beside: .just(FeedGateHolds.holding(FeedAskProjection.Asking(

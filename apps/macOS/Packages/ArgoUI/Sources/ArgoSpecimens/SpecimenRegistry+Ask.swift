@@ -52,5 +52,15 @@ extension SpecimenRegistry {
         SpecimenEntry("feedAskAnsweredFreeForm") {
             SpecimenScene.sessions(FeedProjection.previewAskAnsweredFreeForm)
         },
+        // The state #1664 closed: one question of a call answered in somebody's own words. Judged
+        // against `feedAskAnswered` — the typed question drew nothing at all before it.
+        SpecimenEntry("feedAskAnsweredTyped") {
+            SpecimenScene.sessions(FeedProjection.previewAskAnsweredTyped)
+        },
+        // The call the other half of #1664 is pressed on: its second question closes on an `Answer`
+        // of its own, so the held line is one press away from this render.
+        SpecimenEntry("feedAskClosable") {
+            SpecimenScene.sessions(FeedProjection.previewAskClosable)
+        },
     ]
 }
