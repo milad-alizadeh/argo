@@ -150,17 +150,20 @@ package struct FeedAsk: Equatable, Sendable {
     /// The way one question went, as the settled row draws it (#1207). `nil` where the record has
     /// not settled this ask, and where nothing readable came back.
     ///
-    /// The option's own label where the answer named one, and the record's prose where it named
-    /// none — a free-form ask, or an answer that agreed with nothing on the list.
+    /// The option's own label where the answer named one, then whatever the record said about THIS
+    /// question, and last the whole payload where the call put only one question.
     ///
-    /// The prose stands in only where the call put ONE question, because a call's answer is one
-    /// payload covering every question in it: under each of two it would draw one fact twice. A
-    /// question of a longer call that named no option draws nothing — degrade-down takes the
-    /// quieter reading.
+    /// The third step is the narrow one and stays narrow: an answer that names no question at all
+    /// is one blob covering the call, so under each of two questions it would draw one fact twice
+    /// (#1207). The second step is what #1664 added — a record that DOES name the question speaks
+    /// for it however many the call put, which is how a typed answer to one of four is drawn.
     func answered(_ question: Ask.Question) -> FeedAskAnswer.Words? {
         guard isAnswered else { return nil }
         if let chosen = chosen(in: question) {
             return FeedAskAnswer.Words(words: chosen, isChosen: true)
+        }
+        if let said = said(about: question) {
+            return FeedAskAnswer.Words(words: said, isChosen: false)
         }
         guard questions.count == 1, let answer, !answer.trimmed.isEmpty else { return nil }
         return FeedAskAnswer.Words(words: answer, isChosen: false)
@@ -205,11 +208,21 @@ package struct FeedAsk: Equatable, Sendable {
     /// reading is that the answer CONTAINS the label. Nothing is chosen where no option is named.
     /// Where two labels are named, the longer wins — one label containing another is the only way
     /// both can be true of one answer.
+    ///
+    /// Read over the question's OWN words where the record named them, and over the whole payload
+    /// only where it did not. Two questions of one call number their options from 1 and may offer
+    /// the same labels, so the wider read ticks an option under a question nobody answered that
+    /// way (#1664).
     func chosen(in question: Ask.Question) -> String? {
-        guard let answer else { return nil }
+        guard let named = said(about: question) ?? answer else { return nil }
         return question.options
             .map(\.label)
-            .filter(answer.contains)
+            .filter(named.contains)
             .max { $0.count < $1.count }
+    }
+
+    /// What the record said about this one question, keyed by its own words (`FeedAskAnswers`).
+    private func said(about question: Ask.Question) -> String? {
+        answer.flatMap { FeedAskAnswers.said(about: question.text, in: $0) }
     }
 }

@@ -58,6 +58,25 @@ struct FeedAskHeld: Equatable {
         return !held.ordinals.isEmpty || !held.other.trimmed.isEmpty
     }
 
+    /// How one waiting question is closed, which is the whole of what the card draws under its
+    /// options. One closed set rather than three flags: `Answer` pressed while the field is still
+    /// live is the state #1664 drew, and a set cannot be in it.
+    enum Closing: Equatable {
+        /// A click on an option IS the answer, so there is nothing further to draw.
+        case click
+        /// The field and its `Answer`, and whether that button has anything to send.
+        case field(canSend: Bool)
+        /// `Answer` has been pressed. The question is answered and the reply is held for the rest
+        /// of the call, so nothing here is pressable any more.
+        case held
+    }
+
+    /// What closes this question, as the card draws it.
+    func closing(_ question: Ask.Question, at index: Int) -> Closing {
+        guard needsClosing(question, at: index) else { return .click }
+        return self[index].isClosed ? .held : .field(canSend: hasSomethingToSend(at: index))
+    }
+
     /// The whole call's answer, in the order the questions were put.
     ///
     /// `Other` carries no ordinal, so it travels as the words themselves — the feed numbers only

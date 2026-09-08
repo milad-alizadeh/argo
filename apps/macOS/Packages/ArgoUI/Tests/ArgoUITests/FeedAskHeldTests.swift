@@ -27,6 +27,30 @@ struct FeedAskHeldTests {
         held[0].ordinals = [1]
 
         #expect(held.isSettled(Self.oneOf, at: 0))
+        // Nothing closes it, so the card draws neither a field nor an `Answer` under it.
+        #expect(held.closing(Self.oneOf, at: 0) == .click)
+    }
+
+    /// The whole of #1664's first half. `Answer` on one question of a call settled that question
+    /// and nothing on the card said so: the field kept the words, the button stayed live, and the
+    /// options stayed pressable, so a press that worked and one that did nothing drew the same.
+    ///
+    /// The card now says it — and the reply still has not gone, because one `AskUserQuestion` is
+    /// one thing the agent waits on.
+    @Test
+    func `a question closed by Answer draws the held line while the rest stay open`() {
+        let call = Ask(questions: [Self.manyOf, Self.freeForm])
+        var held = FeedAskHeld()
+        held[0].ordinals = [1]
+
+        #expect(held.closing(Self.manyOf, at: 0) == .field(canSend: true))
+
+        held[0].isClosed = true
+
+        #expect(held.closing(Self.manyOf, at: 0) == .held)
+        // The other question is untouched, and its own field has nothing to send yet.
+        #expect(held.closing(Self.freeForm, at: 1) == .field(canSend: false))
+        #expect(!held.isSettled(call))
     }
 
     /// A second click on a box is a correction rather than a second answer, so the act has to be
