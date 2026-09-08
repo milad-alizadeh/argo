@@ -49,8 +49,12 @@ final class AtlasFloorStage {
     /// Not private, for the reason `AtlasVolumeBuffer` is not: `AtlasTableTests` reads the buffer
     /// the floor is holding across a drag, which is the only way to say from outside that a drag
     /// rewrites no floor.
-    private(set) var patches: MTLBuffer?
-    private(set) var count = 0
+    ///
+    /// Named for what they are rather than spelled `buffer` and `count`, the way the instance
+    /// buffer names its own boxes: a floor with none is a real state — a map that has no plates —
+    /// rather than an empty collection.
+    private(set) var laid: MTLBuffer?
+    private(set) var patches = 0
 
     init?(device: MTLDevice, library: MTLLibrary, target: AtlasFloorTarget) {
         let descriptor = MTLDepthStencilDescriptor()
@@ -74,8 +78,8 @@ final class AtlasFloorStage {
     /// grid and the plates' light not — a real state, for a map that has no plates.
     func show(_ patches: [AtlasFloorPatch]) {
         guard !patches.isEmpty else {
-            self.patches = nil
-            count = 0
+            laid = nil
+            self.patches = 0
             return
         }
         let written = patches.withUnsafeBytes { raw in
@@ -83,8 +87,8 @@ final class AtlasFloorStage {
                 device.makeBuffer(bytes: $0, length: raw.count, options: .storageModeShared)
             }
         }
-        self.patches = written
-        count = written == nil ? 0 : patches.count
+        laid = written
+        self.patches = written == nil ? 0 : patches.count
     }
 
     /// The table, under the boxes: the graded ground, then every patch of light on it.
@@ -105,11 +109,11 @@ final class AtlasFloorStage {
         encoder.setVertexBytes(&ground, length: MemoryLayout<AtlasGround>.stride, index: 4)
         encoder.setFragmentBytes(&ground, length: MemoryLayout<AtlasGround>.stride, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: Self.quad)
-        guard let patches, count > 0 else { return }
+        guard let laid, patches > 0 else { return }
         encoder.setRenderPipelineState(lighting)
-        encoder.setVertexBuffer(patches, offset: 0, index: 0)
+        encoder.setVertexBuffer(laid, offset: 0, index: 0)
         encoder.drawPrimitives(
-            type: .triangle, vertexStart: 0, vertexCount: Self.quad, instanceCount: count,
+            type: .triangle, vertexStart: 0, vertexCount: Self.quad, instanceCount: patches,
         )
     }
 

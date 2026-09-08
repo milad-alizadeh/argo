@@ -98,9 +98,9 @@ struct AtlasTableTests {
 
         harness.renderer.present(AtlasDragTests.projection(of: plan, yaw: 0), in: Self.pigments)
         let opening = try #require(await harness.frame())
-        let patches = try #require(floor.patches)
-        let count = floor.count
-        #expect(count == AtlasFloor.patches(of: plan, in: Self.pigments).count)
+        let laid = try #require(floor.laid)
+        let patches = floor.patches
+        #expect(patches == AtlasFloor.patches(of: plan, in: Self.pigments).count)
 
         var latest: AtlasFrame?
         for step in 1 ... 8 {
@@ -111,8 +111,8 @@ struct AtlasTableTests {
         }
 
         #expect(try #require(latest).colour != opening.colour)
-        #expect(floor.patches === patches)
-        #expect(floor.count == count)
+        #expect(floor.laid === laid)
+        #expect(floor.patches == patches)
     }
 
     /// The same city standing on a different floor, for a render that takes one patch out.
