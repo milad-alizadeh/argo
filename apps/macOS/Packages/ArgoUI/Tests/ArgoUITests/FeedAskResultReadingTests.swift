@@ -26,19 +26,19 @@ struct FeedAskResultReadingTests {
     /// Claude Code's own picker: `"question"="answer"` pairs under one head, and the tail it adds
     /// after the last of them.
     private static let picked = """
-        Your questions have been answered: "Which ticket should I implement?"="#713 — PlanPill", \
-        "And what should the branch be called?"="argo/#1664-ask-typed-answer". You can now \
-        continue with these answers in mind.
-        """
+    Your questions have been answered: "Which ticket should I implement?"="#713 — PlanPill", \
+    "And what should the branch be called?"="argo/#1664-ask-typed-answer". You can now \
+    continue with these answers in mind.
+    """
 
     /// Argo's own gate: an answered ask is a `PreToolUse` deny whose reason IS the answer, and the
     /// reason arrives as the tool result verbatim. Segments joined by ` · `, the pick spelled with
     /// the number the row drew beside it.
     private static let argo = """
-        Answered in Argo, by the person this Session belongs to. · Which ticket should I \
-        implement? → 2. #713 — PlanPill · And what should the branch be called? → \
-        argo/#1664-ask-typed-answer
-        """
+    Answered in Argo, by the person this Session belongs to. · Which ticket should I \
+    implement? → 2. #713 — PlanPill · And what should the branch be called? → \
+    argo/#1664-ask-typed-answer
+    """
 
     /// The whole ticket, in the spelling the CLI writes. The second question was answered in
     /// somebody's own words, so nothing on its list is named — and it is drawn anyway.
@@ -78,10 +78,10 @@ struct FeedAskResultReadingTests {
             ask: Ask(questions: [first, second]),
             isAnswered: true,
             answer: """
-                Your questions have been answered: "What happens to the ground?"="Keep the \
-                ground", "And to the stroke?"="neither, take it off entirely". You can now \
-                continue with these answers in mind.
-                """,
+            Your questions have been answered: "What happens to the ground?"="Keep the \
+            ground", "And to the stroke?"="neither, take it off entirely". You can now \
+            continue with these answers in mind.
+            """,
         )
 
         #expect(settled.chosen(in: second) == nil)
@@ -114,9 +114,9 @@ struct FeedAskResultReadingTests {
             ask: Ask(questions: [marked]),
             isAnswered: true,
             answer: """
-                Your questions have been answered: "Where should the chosen option be \
-                marked?"="On the option itself"
-                """,
+            Your questions have been answered: "Where should the chosen option be \
+            marked?"="On the option itself"
+            """,
         )
 
         let named = try #require(settled.answered(marked))
@@ -135,10 +135,10 @@ struct FeedAskResultReadingTests {
             ask: Ask(questions: [short, long]),
             isAnswered: true,
             answer: """
-                Answered in Argo, by the person this Session belongs to. · what should the branch \
-                be called? → off the ticket number · and what should the branch be called? → off \
-                the slug
-                """,
+            Answered in Argo, by the person this Session belongs to. · what should the branch \
+            be called? → off the ticket number · and what should the branch be called? → off \
+            the slug
+            """,
         )
 
         #expect(try #require(settled.answered(short)).words == "off the ticket number")
@@ -147,14 +147,15 @@ struct FeedAskResultReadingTests {
 
     /// Typed words may quote something themselves. The pair closes on the quote the writer follows
     /// with a comma or the sentence's full stop, so the answer is carried whole rather than cut at
-    /// the first inner quote — a verbatim read is never reworded, and half a sentence is a rewording.
+    /// the first inner quote — a verbatim read is never reworded, and half a sentence is a
+    /// rewording.
     @Test
     func `typed words that quote something are carried whole`() throws {
         let settled = Self.answered("""
-            Your questions have been answered: "Which ticket should I implement?"="#713 — \
-            PlanPill", "And what should the branch be called?"="the one you called "the short \
-            slug" yesterday". You can now continue with these answers in mind.
-            """)
+        Your questions have been answered: "Which ticket should I implement?"="#713 — \
+        PlanPill", "And what should the branch be called?"="the one you called "the short \
+        slug" yesterday". You can now continue with these answers in mind.
+        """)
 
         let typed = try #require(settled.answered(Self.branch))
         #expect(typed.words == "the one you called \"the short slug\" yesterday")

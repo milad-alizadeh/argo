@@ -13,10 +13,10 @@ package extension FeedProjection {
     /// `answered` mark instead, because nothing on its list was named. Before #1664 the second
     /// question drew nothing at all.
     static let previewAskAnsweredTyped = answeredRows([previewAskWhere, previewAskEsc], """
-        Your questions have been answered: "Where should the ask take its answer?"="In the feed, \
-        where it was asked", "What does esc do on an ask?"="nothing, but it should clear the field \
-        first". You can now continue with these answers in mind.
-        """)
+    Your questions have been answered: "Where should the ask take its answer?"="In the feed, \
+    where it was asked", "What does esc do on an ask?"="nothing, but it should clear the field \
+    first". You can now continue with these answers in mind.
+    """)
 
     /// A waiting call whose FIRST question closes on an `Answer` of its own — a many-of question,
     /// whose field is open beside its boxes from the start.
