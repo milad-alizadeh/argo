@@ -10,16 +10,19 @@ public struct ClosedTicketReader: Sendable {
     private let items: TicketLedger
     private let health: ConnectionHealthLedger
     private let reads: TicketReading
+    private let now: @Sendable () -> Date
 
     public init(
         bindings: ProjectBindings,
         ledgers: TicketPoll.Ledgers,
         reads: TicketReading = ProviderTickets(),
+        now: @escaping @Sendable () -> Date = Date.init,
     ) {
         self.bindings = bindings
         self.items = ledgers.items
         self.health = ledgers.health
         self.reads = reads
+        self.now = now
     }
 
     /// The first page, replacing whatever was held — what opening the view reads. It reads on every
@@ -47,6 +50,7 @@ public struct ClosedTicketReader: Sendable {
         guard let projectID,
               case let .ready(binding) = await bindings.resolve(port: .ticket, for: projectID)
         else { return }
+        let target = PortReadTarget(binding: binding, projectID: projectID)
         do {
             let page = try await reads.closed(after: cursor, through: binding)
             if cursor == nil {
@@ -54,15 +58,15 @@ public struct ClosedTicketReader: Sendable {
             } else {
                 await items.extendClosed(page, for: projectID)
             }
+            // A page that landed is evidence about the Binding too, and every reader files under
+            // one key, so the fault this clears may be another reader's (#1699).
+            await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
             // A read that established nothing IS evidence about the Binding, on `TicketFollower`'s
             // terms: swallowing it would leave the chip claiming a connection nobody has checked
             // since. The listing is left where it was — a failed page must not blank a view that
             // was full a second ago, which is the poll's own rule.
-            await health.record(
-                error as? ProviderFetchError ?? .unreachable,
-                of: PortReadTarget(binding: binding, projectID: projectID),
-            )
+            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
         }
     }
 }

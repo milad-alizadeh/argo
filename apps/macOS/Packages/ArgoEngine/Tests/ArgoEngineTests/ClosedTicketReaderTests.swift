@@ -1,4 +1,5 @@
 @testable import ArgoEngine
+import Foundation
 import Testing
 
 /// The closed read end to end, through the Project's own Binding — `TicketFollower`'s sibling, and
@@ -8,55 +9,11 @@ import Testing
 /// `Load more` actually cost, counted in requests.
 @Suite("Reading the closed listing through a Binding")
 struct ClosedTicketReaderTests {
-    private struct Bound {
-        let reader: ClosedTicketReader
-        let items: TicketLedger
-        let health: ConnectionHealthLedger
-        let projectID: String
-
-        func fault() async -> ConnectionFault? {
-            await health.health(of: .gitHub(), in: projectID).fault
-        }
-    }
-
-    private static func bound(_ fixture: BindingFixture, _ api: RecordedGitHub) async throws
-        -> Bound {
-        let projectID = try await fixture.project("argo")
-        try await fixture.accountStore().authorizeGitHub(id: "1")
-        try await fixture.bindings().bind(.gitHub(), to: projectID)
-        let items = TicketLedger()
-        let health = ConnectionHealthLedger()
-        return Bound(
-            reader: ClosedTicketReader(
-                bindings: fixture.bindings(),
-                ledgers: TicketPoll.Ledgers(health: health, items: items),
-                reads: ProviderTickets(transport: api),
-            ),
-            items: items,
-            health: health,
-            projectID: projectID,
-        )
-    }
-
-    /// A full first page and a short second, so a suite can extend and see which one it landed on.
-    private static func paged() -> RecordedGitHub {
-        RecordedGitHub(replies: [
-            RecordedGitHub.closedIssues(page: 1): IssueJSON.list(
-                (0 ..< ClosedTicketPage.size).map {
-                    IssueJSON(number: 500 - $0, state: "closed", reason: "completed")
-                },
-            ),
-            RecordedGitHub.closedIssues(page: 2): IssueJSON.list([
-                IssueJSON(number: 400, state: "closed", reason: "not_planned"),
-            ]),
-        ])
-    }
-
     @Test
     func `opening the view reads the first page through the Project's Binding`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
-        let bound = try await Self.bound(fixture, Self.paged())
+        let bound = try await closedReader(fixture, paged())
 
         await bound.reader.open(forProject: bound.projectID)
 
@@ -69,7 +26,7 @@ struct ClosedTicketReaderTests {
     func `the next page is appended to the one already in hand`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
-        let bound = try await Self.bound(fixture, Self.paged())
+        let bound = try await closedReader(fixture, paged())
         await bound.reader.open(forProject: bound.projectID)
 
         await bound.reader.extend(forProject: bound.projectID)
@@ -85,8 +42,8 @@ struct ClosedTicketReaderTests {
     func `the next page is asked for at the cursor the first served`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
-        let api = Self.paged()
-        let bound = try await Self.bound(fixture, api)
+        let api = paged()
+        let bound = try await closedReader(fixture, api)
         await bound.reader.open(forProject: bound.projectID)
 
         await bound.reader.extend(forProject: bound.projectID)
@@ -101,8 +58,8 @@ struct ClosedTicketReaderTests {
     func `extending past the last page costs no request`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
-        let api = Self.paged()
-        let bound = try await Self.bound(fixture, api)
+        let api = paged()
+        let bound = try await closedReader(fixture, api)
         await bound.reader.open(forProject: bound.projectID)
         await bound.reader.extend(forProject: bound.projectID)
 
@@ -115,27 +72,12 @@ struct ClosedTicketReaderTests {
     func `extending before the view was opened costs no request`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
-        let api = Self.paged()
-        let bound = try await Self.bound(fixture, api)
+        let api = paged()
+        let bound = try await closedReader(fixture, api)
 
         await bound.reader.extend(forProject: bound.projectID)
 
         #expect(await api.urls().isEmpty)
-    }
-
-    /// A read that established nothing IS evidence about the Binding, on `TicketFollower`'s terms.
-    @Test
-    func `a closed read that could not be made is recorded against the Binding`() async throws {
-        let fixture = try BindingFixture()
-        defer { fixture.remove() }
-        let api = RecordedGitHub(replies: [:], failure: HTTPTransportError.unauthorized(
-            code: 401, reason: nil,
-        ))
-        let bound = try await Self.bound(fixture, api)
-
-        await bound.reader.open(forProject: bound.projectID)
-
-        #expect(await bound.fault() != nil)
     }
 
     /// A failed page must not blank a view that was full a second ago — the poll's own rule, and
@@ -144,7 +86,7 @@ struct ClosedTicketReaderTests {
     func `a failed read leaves the listing where it was`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
-        let bound = try await Self.bound(fixture, RecordedGitHub(
+        let bound = try await closedReader(fixture, RecordedGitHub(
             replies: [:], failure: ProviderFetchError.unreachable,
         ))
         await bound.items.openClosed(
@@ -157,5 +99,128 @@ struct ClosedTicketReaderTests {
         await bound.reader.open(forProject: bound.projectID)
 
         #expect(await bound.items.closedListing(of: bound.projectID)?.items.map(\.number) == [264])
+    }
+}
+
+/// What a closed page says about the connection it was read through, both ways round (#1699).
+///
+/// Every reader files under one key — the Binding plus the Account — so whichever of them read
+/// last is the one the chip is answering from.
+@Suite("What a closed page records about the connection")
+struct ClosedTicketReaderHealthTests {
+    /// A read that established nothing IS evidence about the Binding, on `TicketFollower`'s terms.
+    @Test
+    func `a closed read that could not be made is recorded against the Binding`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let api = RecordedGitHub(replies: [:], failure: HTTPTransportError.unauthorized(
+            code: 401, reason: nil,
+        ))
+        let bound = try await closedReader(fixture, api)
+
+        await bound.reader.open(forProject: bound.projectID)
+
+        #expect(await bound.fault() != nil)
+    }
+
+    /// A second `Load more` that landed used to leave the chip contradicting the page it served,
+    /// for as long as the minute the poll waits.
+    @Test
+    func `a closed page that landed clears the fault a failed one set`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let bound = try await closedReader(fixture, RecordedGitHub(
+            replies: [:], failure: ProviderFetchError.unreachable,
+        ))
+        await bound.reader.open(forProject: bound.projectID)
+        try #require(await bound.fault() != nil)
+
+        await bound.anotherReader(over: paged()).open(forProject: bound.projectID)
+
+        #expect(await bound.fault() == nil)
+    }
+
+    /// The age the chip counts from is the moment the page landed, so a landed page dates itself.
+    @Test
+    func `a closed page that landed is dated at the moment it did`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let landed = Date(timeIntervalSince1970: 1_700_000_000)
+        let bound = try await closedReader(fixture, paged(), now: { landed })
+
+        await bound.reader.open(forProject: bound.projectID)
+
+        #expect(await bound.lastSuccess() == landed)
+    }
+}
+
+// MARK: - One reader on a throwaway machine, shared by both suites
+
+/// A full first page and a short second, so a suite can extend and see which one it landed on.
+private func paged() -> RecordedGitHub {
+    RecordedGitHub(replies: [
+        RecordedGitHub.closedIssues(page: 1): IssueJSON.list(
+            (0 ..< ClosedTicketPage.size).map {
+                IssueJSON(number: 500 - $0, state: "closed", reason: "completed")
+            },
+        ),
+        RecordedGitHub.closedIssues(page: 2): IssueJSON.list([
+            IssueJSON(number: 400, state: "closed", reason: "not_planned"),
+        ]),
+    ])
+}
+
+private func closedReader(
+    _ fixture: BindingFixture,
+    _ api: RecordedGitHub,
+    now: @escaping @Sendable () -> Date = Date.init,
+) async throws
+    -> BoundClosedReader {
+    let projectID = try await fixture.project("argo")
+    try await fixture.accountStore().authorizeGitHub(id: "1")
+    try await fixture.bindings().bind(.gitHub(), to: projectID)
+    let items = TicketLedger()
+    let health = ConnectionHealthLedger()
+    return BoundClosedReader(
+        reader: ClosedTicketReader(
+            bindings: fixture.bindings(),
+            ledgers: TicketPoll.Ledgers(health: health, items: items),
+            reads: ProviderTickets(transport: api),
+            now: now,
+        ),
+        bindings: fixture.bindings(),
+        items: items,
+        health: health,
+        projectID: projectID,
+        now: now,
+    )
+}
+
+private struct BoundClosedReader {
+    let reader: ClosedTicketReader
+    let bindings: ProjectBindings
+    let items: TicketLedger
+    let health: ConnectionHealthLedger
+    let projectID: String
+    let now: @Sendable () -> Date
+
+    func fault() async -> ConnectionFault? {
+        await health.health(of: .gitHub(), in: projectID).fault
+    }
+
+    func lastSuccess() async -> Date? {
+        await health.health(of: .gitHub(), in: projectID).lastSuccess
+    }
+
+    /// A second reader over the same two ledgers and the same clock. One recorded host either
+    /// fails for the whole of its life or answers for it, so a failed read followed by a landed
+    /// one takes two.
+    func anotherReader(over api: RecordedGitHub) -> ClosedTicketReader {
+        ClosedTicketReader(
+            bindings: bindings,
+            ledgers: TicketPoll.Ledgers(health: health, items: items),
+            reads: ProviderTickets(transport: api),
+            now: now,
+        )
     }
 }
