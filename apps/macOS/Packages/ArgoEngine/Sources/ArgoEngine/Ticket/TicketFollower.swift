@@ -15,17 +15,20 @@ public struct TicketFollower: Sendable {
     private let items: TicketLedger
     private let health: ConnectionHealthLedger
     private let reads: TicketReading
+    private let now: @Sendable () -> Date
 
     public init(
         bindings: ProjectBindings,
         items: TicketLedger,
         health: ConnectionHealthLedger,
         reads: TicketReading = ProviderTickets(),
+        now: @escaping @Sendable () -> Date = Date.init,
     ) {
         self.bindings = bindings
         self.items = items
         self.health = health
         self.reads = reads
+        self.now = now
     }
 
     /// It answers nothing: the listing the ticket lands in is the answer, the way
@@ -36,20 +39,21 @@ public struct TicketFollower: Sendable {
               await !items.items(of: projectID).contains(where: { $0.number == number }),
               case let .ready(binding) = await bindings.resolve(port: .ticket, for: projectID)
         else { return }
+        let target = PortReadTarget(binding: binding, projectID: projectID)
         do {
             // A provider that answered and has nothing behind the number establishes a fact about
             // the NUMBER and none about the Binding, so it records no health and keeps nothing.
             guard let item = try await reads.ticket(number: number, through: binding)
             else { return }
             await items.follow(item, for: projectID)
+            // A ticket that came back is a read that went through, and every reader files under
+            // one key, so the fault this clears may be another reader's (#1699).
+            await health.succeeded(target.projectBinding, in: target.projectID, at: now())
         } catch {
             // A read that established nothing is the other half of that distinction, and it IS
             // evidence about the Binding — swallowing it would leave the chip claiming a
             // connection nobody has checked since.
-            await health.record(
-                error as? ProviderFetchError ?? .unreachable,
-                of: PortReadTarget(binding: binding, projectID: projectID),
-            )
+            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
         }
     }
 }

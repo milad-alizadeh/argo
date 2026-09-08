@@ -1,4 +1,5 @@
 @testable import ArgoEngine
+import Foundation
 import Testing
 
 /// What a ticket read by the number a link named does to the listing the room draws from (#895).
@@ -75,9 +76,17 @@ struct TicketFollowingTests {
         func fault() async -> ConnectionFault? {
             await health.health(of: .gitHub(), in: projectID).fault
         }
+
+        func lastSuccess() async -> Date? {
+            await health.health(of: .gitHub(), in: projectID).lastSuccess
+        }
     }
 
-    private static func bound(_ fixture: BindingFixture, _ api: StubProviderAPI) async throws
+    private static func bound(
+        _ fixture: BindingFixture,
+        _ api: StubProviderAPI,
+        now: @escaping @Sendable () -> Date = Date.init,
+    ) async throws
         -> Bound {
         let projectID = try await fixture.project("argo")
         try await fixture.accountStore().authorizeGitHub(id: "1")
@@ -90,6 +99,7 @@ struct TicketFollowingTests {
                 items: items,
                 health: health,
                 reads: ProviderTickets(transport: api),
+                now: now,
             ),
             items: items,
             health: health,
@@ -147,7 +157,7 @@ struct TicketFollowingTests {
 
     /// The two halves of the port's absence, told apart where it matters. A number the provider
     /// answered nothing for says something about the NUMBER, so the chip behind the Binding stays
-    /// as it was.
+    /// as it was — neither faulted nor dated (#1699).
     @Test
     func `a number the provider answers nothing for leaves the connection alone`() async throws {
         let fixture = try BindingFixture()
@@ -158,6 +168,24 @@ struct TicketFollowingTests {
         await bound.follower.follow(9001, forProject: bound.projectID)
 
         #expect(await bound.fault() == nil)
+        #expect(await bound.lastSuccess() == nil)
+    }
+
+    /// The half of that distinction nothing wrote down (#1699): a ticket that came back is a read
+    /// that went through, and the chip's age is counted from when it did.
+    @Test
+    func `a followed ticket that came back is dated at the moment it did`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let landed = Date(timeIntervalSince1970: 1_700_000_000)
+        let api = StubProviderAPI(
+            body: IssueJSON(number: 264, state: "closed", reason: "completed").json,
+        )
+        let bound = try await Self.bound(fixture, api, now: { landed })
+
+        await bound.follower.follow(264, forProject: bound.projectID)
+
+        #expect(await bound.lastSuccess() == landed)
     }
 
     /// The other half: a read that established nothing IS evidence about the Binding, and a chip
