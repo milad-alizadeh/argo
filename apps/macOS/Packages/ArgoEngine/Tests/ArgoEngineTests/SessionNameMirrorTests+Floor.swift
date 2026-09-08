@@ -29,6 +29,27 @@ struct SessionNameMirrorFloorTests {
         #expect(await mirrored.calls().isEmpty)
     }
 
+    /// #1695, and the mechanism under it. The floor joins two facts read at DIFFERENT moments: the
+    /// draw is captured in an `onChange` payload while the standing is read later, inside this
+    /// actor's hop. So a draw taken while the row still wore its transcript's filename borrowed a
+    /// standing read after the first prompt had folded, and cleared the floor with a UUID as the
+    /// words. The CLI wrote it back as a `custom-title`, which nothing outranks, and every later
+    /// sweep then read a legal name and typed it again — nine repeats in the reported transcript.
+    @Test
+    func `a draw from one pass joined to a standing from the next types nothing`() async {
+        let mirrored = MirroredNames()
+        let uuid = "a897fbbf-f7ec-417b-900b-322a20db5f4a"
+
+        await SessionNameMirror(mirror: mirrored.mirror).carry(
+            [uuid: SessionNameFixture.derived(uuid, inPass: uuid)],
+            // The pass that read the standing has moved past the filename — which is the whole
+            // reason `namesTheWork` is true here and the floor let the UUID through.
+            against: [uuid: SessionNameFixture.unnamed(inPass: "Composer harness selection")],
+        )
+
+        #expect(await mirrored.calls().isEmpty)
+    }
+
     /// The floor is on the DERIVED name alone. A Ticket's sentence says what the work is whatever
     /// the transcript has managed to say about it, so a row wearing one is typed even where the
     /// Session's own name has not risen past its filename.

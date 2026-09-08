@@ -43,10 +43,41 @@ struct SessionTitle: Equatable, Sendable {
     }
 
     private(set) var text: String
-    private(set) var standing: Standing = .placeholder
+    /// The rung the words above ARRIVED at. Read through `standing` below, never directly: one
+    /// name is a placeholder whatever rung wrote it.
+    private var wonAt: Standing = .placeholder
+    /// The uuid this row's TRANSCRIPT is named after, and `nil` for a row that has written none
+    /// yet — one initialiser below each (#1695).
+    private let transcriptUUID: String?
 
+    /// A row read off a transcript, opening under the uuid that file is named after — see
+    /// `standing` for why those words never rise off the bottom rung.
+    init(namedAfterTranscript uuid: String) {
+        self.text = uuid
+        self.transcriptUUID = uuid
+    }
+
+    /// The words a spawn opened with. It has written no transcript yet, so it has no name of its
+    /// own to mistake for one.
     init(startingWith text: String) {
         self.text = text
+        self.transcriptUUID = nil
+    }
+
+    /// How much of a claim the current name has — the rung it arrived at, except for a name that IS
+    /// the uuid this row's transcript is named after, which is a placeholder however it arrived
+    /// (#1695).
+    ///
+    /// Read-time rather than refused at `state` and `observe`, because a rung is what the ladder
+    /// compares and every future writer of `text` is then covered by one rule. It leaves the uuid
+    /// in `text`, so the row still DRAWS it until a better name lands — unavoidable either way,
+    /// there being nothing else to draw.
+    ///
+    /// The uuid and not `HubSession.id`, which is the transcript's PATH (`Engine.observation(at:)`
+    /// keys by it). The title record the CLI writes back holds the bare uuid, so a path would never
+    /// match it and this would never fire on the one row it exists for.
+    var standing: Standing {
+        text == transcriptUUID ? .placeholder : wonAt
     }
 
     /// A title one of the CLI's own records stated (`CONTEXT.md` L2 · CLI title).
@@ -58,7 +89,7 @@ struct SessionTitle: Equatable, Sendable {
     mutating func state(_ title: String, _ kind: CLITitleKind) {
         guard kind.standing >= standing else { return }
         text = title
-        standing = kind.standing
+        wonAt = kind.standing
     }
 
     /// The CLI's own title for this Session, and `nil` where it holds none — the one question the
@@ -80,6 +111,15 @@ struct SessionTitle: Equatable, Sendable {
         standing >= .prompt
     }
 
+    /// The three readings the mirror decides with, taken together (#1623, #1695).
+    ///
+    /// Assembled here rather than at `HubSession.nameStanding`, which forwards to it: all three
+    /// come off this value, so a caller cannot hold a `namesTheWork` from one pass and words from
+    /// another.
+    var nameStanding: SessionNameStanding {
+        SessionNameStanding(cliTitle: cliTitle, namesTheWork: namesTheWork, rosterTitle: text)
+    }
+
     /// The first line of a prompt, taken as the row's name while nothing better has claimed it. A
     /// blank line names nothing and is ignored.
     mutating func observe(prompt: String) {
@@ -89,17 +129,27 @@ struct SessionTitle: Equatable, Sendable {
         let candidate = String(firstLine).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !candidate.isEmpty else { return }
         text = candidate
-        standing = isBareCommand(candidate) ? .provisional : .prompt
+        wonAt = isBareCommand(candidate) ? .provisional : .prompt
     }
 
     /// The later half of a resume chain names the whole chain, where it has anything to name it
     /// with: a continuation's own placeholder is never one.
     mutating func merge(_ continuation: SessionTitle) {
         if continuation.standing.isCLITitle, continuation.standing >= standing {
-            self = continuation
+            take(continuation)
         } else if standing < .prompt, continuation.standing > .placeholder {
-            self = continuation
+            take(continuation)
         }
+    }
+
+    /// The words and the rung they ARRIVED at, never the whole value: `transcriptUUID` is the ROOT
+    /// link's, and a chain is walked root-first, so assigning the continuation over this would
+    /// leave the chain reading its name against a link's file instead of its own (#1695). The
+    /// arrival rung and not `standing`, so a demoted continuation cannot launder one into a stored
+    /// rung — the conditions above refuse one today, and this holds if they widen.
+    private mutating func take(_ continuation: SessionTitle) {
+        text = continuation.text
+        wonAt = continuation.wonAt
     }
 
     private func isBareCommand(_ line: String) -> Bool {

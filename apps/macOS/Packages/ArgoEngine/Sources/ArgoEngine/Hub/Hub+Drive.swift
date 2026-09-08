@@ -64,6 +64,9 @@ public extension Hub {
     /// the cockpit's; where each name stands is read here off `nameStandings`. Beside `mirrorTitle`
     /// above rather than at the window, so the join of the two readings is one a suite can reach
     /// (ADR-0022).
+    ///
+    /// `draws` was captured in the window's `onChange` payload; `nameStandings` is read on the line
+    /// below. The mirror is what refuses a join across those two moments (#1695).
     func mirrorNames(_ draws: [String: SessionNameDraw]) async {
         await names.carry(draws, against: nameStandings)
     }

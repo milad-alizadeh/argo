@@ -1,61 +1,3 @@
-/// One row's name as the cockpit DRAWS it, and where those words came from (#1623).
-///
-/// The words rather than the standing they were won at: `SessionTitle` decides which of a Session's
-/// names a row wears, and by the time the mirror runs that contest is over. What it still has to
-/// know is where they CAME from — a name Argo derived is the one case that has to clear a floor
-/// before it may be typed at all.
-///
-/// It no longer asks whether the READER chose them (#1653). That fact existed to except a person's
-/// rename from a gate that yielded to any CLI title, and with the gate gone there is nothing for
-/// the exception to except: the roster's words are typed whoever wrote them.
-public struct SessionNameDraw: Sendable, Equatable, Hashable {
-    /// The name on the row, spelled exactly as the roster spells it — Argo's own edits included,
-    /// which is deliberate: the two surfaces agreeing is the whole point, and a phone showing the
-    /// unedited words would disagree with the desk again (`ArgoUI.SessionTitle.spelled`).
-    public let name: String
-    /// Whether the row fell all the way through the naming chain to its OWN summary — so these
-    /// words are Argo's reading of the conversation rather than a Ticket's or a person's
-    /// (`ArgoUI.SessionTitle.Naming.drawsDerivedTitle`). Only these are held to the floor:
-    /// a Ticket's sentence says what the work is whatever the transcript has managed to say.
-    public let drawsDerivedTitle: Bool
-    /// Whether a slash command typed at this Session would be RUN right now. Not a gate — the
-    /// driver refuses a held keyboard itself — but the fact whose CHANGE brings the sweep back,
-    /// which is how a refused `/rename` is retried rather than lost.
-    ///
-    /// It has to be the reading the DRIVER refuses on (`SessionStatus.takesSlashCommand`) and not
-    /// the wider one about a prompt: a map keyed on a fact that stands still across
-    /// `.permission -> .running` sleeps through the one transition that frees a blocked rename
-    /// (#1662).
-    public let takesSlashCommand: Bool
-
-    public init(
-        name: String,
-        drawsDerivedTitle: Bool,
-        takesSlashCommand: Bool,
-    ) {
-        self.name = name
-        self.drawsDerivedTitle = drawsDerivedTitle
-        self.takesSlashCommand = takesSlashCommand
-    }
-}
-
-/// Where one Session's name stands on both sides of the ladder, read off the Hub (#1623).
-///
-/// Two facts and not one, because the mirror asks two different questions: whether Claude already
-/// has a name for this Session, and whether the name ARGO holds is one worth putting at a prompt.
-public struct SessionNameStanding: Sendable, Equatable {
-    /// The CLI's own title, and `nil` where it holds none — see `SessionTitle.cliTitle`.
-    public let cliTitle: String?
-    /// Whether the name Argo derived says anything about the work — see
-    /// `SessionTitle.namesTheWork`.
-    public let namesTheWork: Bool
-
-    public init(cliTitle: String?, namesTheWork: Bool) {
-        self.cliTitle = cliTitle
-        self.namesTheWork = namesTheWork
-    }
-}
-
 /// Typing the name Argo draws at the Session's own prompt, so the phone stops reading a machine
 /// slug (#1623).
 ///
@@ -98,12 +40,17 @@ public actor SessionNameMirror {
 
     /// Mirror every row whose name the CLI does not already hold.
     ///
-    /// Both readings come from the same roster pass: `draws` is what each row is CALLED, and
-    /// `standings` is where its name stands on either side of the ladder (`Hub.nameStandings`).
-    /// Taken as two maps rather than one joined value because they are two different windows'
-    /// facts — one the cockpit's spelling of a name, one a reading off the transcript — and joining
-    /// them at the caller would put the join in the app target where no suite can reach it
-    /// (ADR-0022).
+    /// `draws` is what each row is CALLED, and `standings` is where its name stands on either side
+    /// of the ladder (`Hub.nameStandings`). Taken as two maps rather than one joined value because
+    /// they are two different windows' facts — one the cockpit's spelling of a name, one a reading
+    /// off the transcript — and joining them at the caller would put the join in the app target
+    /// where no suite can reach it (ADR-0022).
+    ///
+    /// So the join is HERE, and it is checked rather than assumed: each half names the roster title
+    /// it was read at, and a draw whose standing was read at other words is stale (#1695). Not the
+    /// whole of that fix — a `custom-title` repeating the words already on the row raises the
+    /// standing WITHOUT moving them, so the two halves agree while the floor is still wrong.
+    /// `SessionTitle.standing` is what refuses that one.
     public func carry(
         _ draws: [String: SessionNameDraw],
         against standings: [String: SessionNameStanding],
@@ -120,10 +67,9 @@ public actor SessionNameMirror {
         to sessionID: String,
         standing: SessionNameStanding?,
     ) async {
-        // A row nothing could state a standing for. Both maps are built off the same roster pass,
-        // so nothing should produce one — and the honest answer to it is the quieter one anyway
-        // (`CONTEXT.md` L2 · degrade-down): say nothing rather than type at a Session Argo cannot
-        // say a thing about.
+        // A row nothing could state a standing for — a row the draw's own pass held and the
+        // standings' pass has retired. The honest answer is the quieter one (`CONTEXT.md` L2 ·
+        // degrade-down): say nothing rather than type at a Session Argo cannot say a thing about.
         guard let standing else { return }
         // Already told this CLI these words, or a sweep is telling it right now. The sweep runs
         // whenever a name or a Session's readiness moves, and one mirror per sweep would retype
@@ -138,7 +84,20 @@ public actor SessionNameMirror {
         }
         // A name of Argo's OWN making has to say something about the work first — see the type's
         // own note for why a placeholder typed once can never be taken back.
-        guard !draw.drawsDerivedTitle || standing.namesTheWork else { return }
+        //
+        // Asked of the SAME pass the words came from, which is the join #1695 was about. The two
+        // are read at different moments: the draw is captured in an `onChange` payload and the
+        // standing is read later, inside this actor's hop (`Hub.mirrorNames`). A draw taken while
+        // the row still wore its transcript's filename, held against a standing read after the
+        // first prompt folded, cleared this floor with a UUID as the words. Silence when they
+        // disagree — the pass the draw came from is gone, and the sweep the moving title fires
+        // brings both halves back together.
+        //
+        // Under the derived draws alone, because they are the only ones that read `namesTheWork`:
+        // a Ticket's sentence and a person's rename have no join here to be stale.
+        guard !draw.drawsDerivedTitle
+            || (draw.rosterTitle == standing.rosterTitle && standing.namesTheWork)
+        else { return }
         // There is NO second gate here, and the one that stood in this place is why the two
         // surfaces disagreed (#1653). It read `draw.isReaderNamed || standing.cliTitle == nil` —
         // Claude wins where Claude has a name — and it yielded to a title Argo had usually

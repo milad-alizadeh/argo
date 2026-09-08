@@ -84,9 +84,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     ///
     /// Beside `title` above because it is a different question about the same words: `title` is
     /// what the roster DRAWS, and this is what the mirror has to know before typing any of it at a
-    /// prompt.
+    /// prompt. It carries the words themselves too, so the mirror can tell which pass read it
+    /// (#1695), and `name` assembles all three — see `SessionTitle.nameStanding`.
     public var nameStanding: SessionNameStanding {
-        SessionNameStanding(cliTitle: name.cliTitle, namesTheWork: name.namesTheWork)
+        name.nameStanding
     }
 
     public private(set) var cwd: String?
@@ -184,9 +185,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
         self.chainTipURL = observation.sourceURL
-        self.name = SessionTitle(
-            startingWith: observation.sourceURL.deletingPathExtension().lastPathComponent,
-        )
+        let transcriptUUID = observation.sourceURL.deletingPathExtension().lastPathComponent
+        self.name = SessionTitle(namedAfterTranscript: transcriptUUID)
         self.moments = SessionMoments(recordedAtMs: observation.modifiedAt?.epochMs)
     }
 

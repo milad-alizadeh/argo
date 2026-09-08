@@ -15,6 +15,9 @@ public extension CockpitPresentation {
     /// answer would put a name on the phone the desk never draws, which is the disagreement this
     /// ticket exists to end.
     ///
+    /// `rosterTitle` rides along as the row's own words UNDER that answer, before the chain
+    /// contests it and before this package spells it — see `SessionNameDraw.rosterTitle` (#1695).
+    ///
     /// `takesSlashCommand` rides along because it is what the sweep is triggered BY as much as
     /// performed over: a dialog clearing is the moment a refused `/rename` can go, and a map that
     /// did not move then is a retry that never happened. It is the driver's own reading and never
@@ -34,6 +37,7 @@ public extension CockpitPresentation {
                 name: naming.title,
                 drawsDerivedTitle: naming.drawsDerivedTitle,
                 takesSlashCommand: session.status.takesSlashCommand,
+                rosterTitle: session.title,
             )
         }
     }
