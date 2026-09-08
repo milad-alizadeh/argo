@@ -27,6 +27,23 @@ struct FeedAskHeld: Equatable {
         var isClosed = false
     }
 
+    /// How one waiting question is closed, which is the whole of what the card draws under its
+    /// options. One closed set rather than three flags: `Answer` pressed while the field is still
+    /// live is the state #1664 drew, and a set cannot be in it.
+    enum Closing: Equatable {
+        /// A click on an option IS the answer, so there is nothing further to draw.
+        case click
+        /// The field and its `Answer`, and whether that button has anything to send.
+        case field(canSend: Bool)
+        /// `Answer` has been pressed and other questions are still open, so the answer is held.
+        case held
+        /// `Answer` has been pressed and it settled the last question, so the answer has GONE.
+        /// Apart from `held` because the card would otherwise say it is waiting on questions
+        /// nobody has left to answer — including on a call that put one question, where the very
+        /// first press sends.
+        case sent
+    }
+
     private var marks: [Int: Marks] = [:]
 
     subscript(question: Int) -> Marks {
@@ -58,23 +75,16 @@ struct FeedAskHeld: Equatable {
         return !held.ordinals.isEmpty || !held.other.trimmed.isEmpty
     }
 
-    /// How one waiting question is closed, which is the whole of what the card draws under its
-    /// options. One closed set rather than three flags: `Answer` pressed while the field is still
-    /// live is the state #1664 drew, and a set cannot be in it.
-    enum Closing: Equatable {
-        /// A click on an option IS the answer, so there is nothing further to draw.
-        case click
-        /// The field and its `Answer`, and whether that button has anything to send.
-        case field(canSend: Bool)
-        /// `Answer` has been pressed. The question is answered and the reply is held for the rest
-        /// of the call, so nothing here is pressable any more.
-        case held
-    }
-
-    /// What closes this question, as the card draws it.
-    func closing(_ question: Ask.Question, at index: Int) -> Closing {
-        guard needsClosing(question, at: index) else { return .click }
-        return self[index].isClosed ? .held : .field(canSend: hasSomethingToSend(at: index))
+    /// What closes one question of this call, as the card draws it. Off the whole `Ask` and not
+    /// the one question, because whether a closed one is still HOLDING its answer depends on the
+    /// questions beside it.
+    func closing(_ ask: Ask, at index: Int) -> Closing {
+        guard ask.questions.indices.contains(index) else { return .click }
+        guard needsClosing(ask.questions[index], at: index) else { return .click }
+        guard self[index].isClosed else {
+            return .field(canSend: hasSomethingToSend(at: index))
+        }
+        return isSettled(ask) ? .sent : .held
     }
 
     /// The whole call's answer, in the order the questions were put.

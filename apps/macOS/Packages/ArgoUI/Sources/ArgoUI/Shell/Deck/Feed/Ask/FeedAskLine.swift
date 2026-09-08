@@ -78,7 +78,7 @@ package struct FeedAskLine: View {
         case .waiting:
             .waiting(offers: ask.offers(in: question), held: FeedAskQuestion.Waiting(
                 held: Binding(get: { held[index] }, set: { held[index] = $0 }),
-                closing: held.closing(question, at: index),
+                closing: held.closing(ask.ask, at: index),
                 pick: { pick($0, in: question, at: index) },
                 send: { close(at: index) },
             ))

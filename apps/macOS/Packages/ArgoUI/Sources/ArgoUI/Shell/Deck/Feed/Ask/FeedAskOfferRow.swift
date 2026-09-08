@@ -35,7 +35,7 @@ struct FeedAskOfferRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, ArgoSpacing.base)
             .padding(.horizontal, ArgoSpacing.comfortable)
-            .feedAskCard(isHovered: showsHover, isTicked: isTicked)
+            .feedAskCard(isHovered: showsHover, isTicked: isTicked, isReading: !isEnabled)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }

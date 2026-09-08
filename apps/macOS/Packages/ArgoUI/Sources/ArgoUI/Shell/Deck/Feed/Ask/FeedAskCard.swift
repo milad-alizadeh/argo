@@ -14,6 +14,10 @@ struct FeedAskCard: ViewModifier {
     let isHovered: Bool
     /// Only an option can be ticked; `Other…` passes `false` and never draws the chosen state.
     var isTicked = false
+    /// Whether the card is a READING rather than a control — the options of a question whose
+    /// `Answer` has been pressed (#1664). It keeps its box, so closing a question moves nothing,
+    /// and drops the ground and edge that are what say "press me".
+    var isReading = false
 
     func body(content: Content) -> some View {
         content
@@ -29,10 +33,14 @@ struct FeedAskCard: ViewModifier {
     /// role's own words.
     private var ground: some View {
         ZStack {
-            shape.fill(argo.color.surface.control.color)
+            if !isReading {
+                shape.fill(argo.color.surface.control.color)
+            }
             if isHovered {
                 shape.fill(argo.color.surface.hover.color)
             }
+            // The wash STAYS on a reading: it is the record of which option was taken, and the
+            // one thing on a closed question that still has something to say.
             if isTicked {
                 shape.fill(argo.color.state.wash(argo.color.state.attention).color)
             }
@@ -43,12 +51,16 @@ struct FeedAskCard: ViewModifier {
         if isTicked {
             return argo.color.state.rim(argo.color.state.attention)
         }
+        if isReading {
+            return .transparent
+        }
         return isHovered ? argo.color.edge.subtle : argo.color.edge.hairline
     }
 }
 
 extension View {
-    func feedAskCard(isHovered: Bool, isTicked: Bool = false) -> some View {
-        modifier(FeedAskCard(isHovered: isHovered, isTicked: isTicked))
+    func feedAskCard(isHovered: Bool, isTicked: Bool = false, isReading: Bool = false)
+        -> some View {
+        modifier(FeedAskCard(isHovered: isHovered, isTicked: isTicked, isReading: isReading))
     }
 }

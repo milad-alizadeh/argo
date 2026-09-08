@@ -209,10 +209,11 @@ package struct FeedAsk: Equatable, Sendable {
     /// Where two labels are named, the longer wins — one label containing another is the only way
     /// both can be true of one answer.
     ///
-    /// Read over the question's OWN words where the record named them, and over the whole payload
-    /// only where it did not. Two questions of one call number their options from 1 and may offer
-    /// the same labels, so the wider read ticks an option under a question nobody answered that
-    /// way (#1664).
+    /// Read over the question's OWN words where the result named them, and over the whole payload
+    /// where it did not, which leaves the wider read in place for a payload that names no
+    /// question at all. Narrowed at all because two questions of one call number their options
+    /// from 1 and may offer the same labels, so the wider read ticks an option under a question
+    /// nobody answered that way (#1664).
     func chosen(in question: Ask.Question) -> String? {
         guard let named = said(about: question) ?? answer else { return nil }
         return question.options
@@ -221,8 +222,9 @@ package struct FeedAsk: Equatable, Sendable {
             .max { $0.count < $1.count }
     }
 
-    /// What the record said about this one question, keyed by its own words (`FeedAskAnswers`).
+    /// What the result said about this one question, keyed by its own words
+    /// (`FeedAskResultReading`).
     private func said(about question: Ask.Question) -> String? {
-        answer.flatMap { FeedAskAnswers.said(about: question.text, in: $0) }
+        answer.flatMap { FeedAskResultReading.said(about: question.text, in: $0) }
     }
 }

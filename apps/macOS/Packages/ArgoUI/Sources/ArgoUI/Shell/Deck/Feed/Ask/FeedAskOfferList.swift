@@ -39,8 +39,10 @@ struct FeedAskOfferList: View {
         .disabled(isHeld)
     }
 
+    /// Whether the question has been closed, either way round — the answer held for the rest of
+    /// the call, or already gone. Nothing under it presses in either.
     private var isHeld: Bool {
-        closing == .held
+        closing == .held || closing == .sent
     }
 
     /// `Other…` carries NO number: the feed numbers only what was offered, so a numbered one would
@@ -68,13 +70,15 @@ struct FeedAskOfferList: View {
                 send: send,
             )
         case .held:
-            FeedAskHeldRow()
+            FeedAskHeldRow(hasGone: false)
+        case .sent:
+            FeedAskHeldRow(hasGone: true)
         }
     }
 }
 
 /// What stands where the field stood once `Answer` closed the question: that it is answered, and
-/// why nothing has gone yet (#1664).
+/// where the answer got to (#1664).
 ///
 /// DIRECT — Argo is holding these words itself, which is exactly why the card can say so before
 /// any record has.
@@ -86,22 +90,30 @@ struct FeedAskOfferList: View {
 private struct FeedAskHeldRow: View {
     @Environment(\.argo) private var argo
 
+    /// Whether the press that closed this question also sent the whole call.
+    let hasGone: Bool
+
     var body: some View {
         HStack(spacing: ArgoSpacing.tight) {
+            // The card's own "you took this" mark, the one the ticked box beside it wears. It says
+            // the act is done and claims nothing about which option was named, so a question
+            // answered in somebody's own words carries it too.
             ArgoGlyph(ArgoSymbol.chosen, .inline)
                 .foregroundStyle(argo.color.state.attention)
-            Text(Self.words)
+            Text(words)
                 .argoLine(ArgoTypography.rowMeta, .metadata)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(height: ArgoComposerVessel.decisionHeight, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Answered. The reply is held until every question is answered.")
+        .accessibilityLabel("Answered, \(words)")
     }
 
-    /// One `AskUserQuestion` is one thing the agent waits on, so the card has to say that this
-    /// question is done AND that the reply has not gone — either half alone reads as the other.
-    private static let words = "answered · held until every question is answered"
+    /// One `AskUserQuestion` is one thing the agent waits on, so the card says that this question
+    /// is done AND what became of the reply — either half alone reads as the other.
+    private var words: String {
+        hasGone ? "answered · reply sent" : "answered · held until every question is answered"
+    }
 }
 
 /// The way out of the options offered — pressing it swaps the pick for a field.
