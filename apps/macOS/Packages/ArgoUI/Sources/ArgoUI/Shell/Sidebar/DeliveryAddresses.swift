@@ -86,6 +86,7 @@ package extension DeliveryPullRequest {
             ),
             body: nil,
             url: nil,
+            finishedAt: state == "closed" || isMerged ? Date(timeIntervalSince1970: 100) : nil,
         )
     }
 }

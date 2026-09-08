@@ -12,6 +12,8 @@ public struct DeliveryPullRequest: Equatable, Sendable {
     /// Whether the host says this landed. Merged is the Delivery's terminal state, and a closed
     /// pull request that was NOT merged is the other way a branch's life ends.
     public let isMerged: Bool
+    /// The host's terminal event time, absent when unreadable or unfinished.
+    public let finishedAt: Date?
     /// The branch it merges into — the base a Diff is addressed against.
     public let baseBranch: String
     /// The commit at the head of the branch when the host last answered, which is what addresses
@@ -40,6 +42,7 @@ public struct DeliveryPullRequest: Equatable, Sendable {
         facts: Facts,
         body: String?,
         url: URL?,
+        finishedAt: Date? = nil,
     ) {
         self.number = number
         self.title = title
@@ -50,6 +53,7 @@ public struct DeliveryPullRequest: Equatable, Sendable {
         self.headSHA = facts.headSHA
         self.body = body
         self.url = url
+        self.finishedAt = finishedAt
     }
 
     /// The four git-side facts.

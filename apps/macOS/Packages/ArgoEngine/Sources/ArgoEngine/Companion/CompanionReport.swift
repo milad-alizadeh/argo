@@ -88,8 +88,12 @@ public struct CompanionReady: Sendable, Equatable {
     /// none of which drops the claim itself (`CompanionArguments.ready(from:)`).
     public let reason: String?
 
-    public init(reason: String?) {
+    /// When Argo received the live claim; absent on a transcript-only reading.
+    public let receivedAt: Date?
+
+    public init(reason: String?, receivedAt: Date? = nil) {
         self.reason = reason
+        self.receivedAt = receivedAt
     }
 
     /// Reads `reason` off a call's raw input, blank or absent degrading to `nil` rather than an

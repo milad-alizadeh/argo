@@ -9,6 +9,7 @@ struct PullRequestJSON: Sendable {
     var state = "open"
     var draft = false
     var mergedAt: String?
+    var closedAt: String?
     /// GitHub's own `updated_at`, which the commit-keyed lookup ranks by — spelled here because a
     /// suite about that order has to be able to set it.
     var updatedAt = "2026-08-01T00:00:00Z"
@@ -22,6 +23,7 @@ struct PullRequestJSON: Sendable {
         { "number": \(number), "title": "\(title)", "state": "\(state)",
           "draft": \(draft),
           "merged_at": \(mergedAt.map { "\"\($0)\"" } ?? "null"),
+          "closed_at": \(closedAt.map { "\"\($0)\"" } ?? "null"),
           "updated_at": "\(updatedAt)",
           "body": \(body.map { "\"\($0)\"" } ?? "null"),
           "html_url": "\(Self.host)/\(number)",
@@ -45,6 +47,7 @@ struct PullRequestJSON: Sendable {
             ),
             body: body,
             url: URL(string: "\(Self.host)/\(number)"),
+            finishedAt: (mergedAt ?? closedAt).flatMap { ISO8601DateFormatter().date(from: $0) },
         )
     }
 

@@ -30,6 +30,32 @@ struct ReadyToShipRosterSpecimen: View {
                 plan: finished,
             ),
             session(
+                id: "merged-stale", title: "Merged after the Ready claim",
+                delivery: .init(
+                    pullRequest: .fixture(state: "closed", isMerged: true),
+                    claim: claim,
+                ),
+                plan: finished,
+            ),
+            session(
+                id: "merged-fresh", title: "Ready again after merging",
+                delivery: .init(
+                    pullRequest: .fixture(state: "closed", isMerged: true),
+                    claim: freshClaim,
+                ),
+                plan: finished,
+            ),
+            session(
+                id: "closed-stale", title: "Closed after the Ready claim",
+                delivery: .init(pullRequest: .fixture(state: "closed"), claim: claim),
+                plan: finished,
+            ),
+            session(
+                id: "closed-fresh", title: "Ready again after closing",
+                delivery: .init(pullRequest: .fixture(state: "closed"), claim: freshClaim),
+                plan: finished,
+            ),
+            session(
                 id: "unclaimed", title: "Nothing claimed yet",
                 delivery: .init(), plan: partDone,
             ),
@@ -38,7 +64,12 @@ struct ReadyToShipRosterSpecimen: View {
 
     /// The claim as the channel delivered it, reason and all — the roster draws none of the
     /// reason, and the feed is where that is read (`FeedMark.readyToShip`).
-    private static let claim = CompanionReady(reason: "3 files, 2 commits")
+    private static let claim = CompanionReady(
+        reason: "3 files, 2 commits", receivedAt: Date(timeIntervalSince1970: 99),
+    )
+    private static let freshClaim = CompanionReady(
+        reason: "1 file, 1 commit", receivedAt: Date(timeIntervalSince1970: 101),
+    )
 
     /// A Session that says it is ready reads as a FULL Plan bar with no pull request mark beside
     /// it (`cockpit-roster-row.md`, the `ready` state) — the shape says it before the word does,
