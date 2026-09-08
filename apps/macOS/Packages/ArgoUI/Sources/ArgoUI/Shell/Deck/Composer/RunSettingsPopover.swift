@@ -27,6 +27,23 @@ struct RunSettingsPopover: View {
 
     var body: some View {
         Form {
+            if let harness = facts.harness {
+                Section("Harness") {
+                    Picker("Harness", selection: Binding(
+                        get: { harness },
+                        set: { control.setHarness?($0) },
+                    )) {
+                        ForEach(AgentCLI.allCases, id: \.self) { cli in
+                            Text(cli.readableName).tag(cli)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .disabled(control.setHarness == nil)
+                    .help(control.setHarness == nil ? Self
+                        .harnessLockedWords : "Choose the harness for this new Session")
+                }
+            }
             // First, because it names what the rows below are about to draw a held mark on, and a
             // reader who opened the popover to see why a row did not tick needs the word before
             // the row (#1329).
@@ -41,7 +58,13 @@ struct RunSettingsPopover: View {
             if facts.chooses.effort {
                 Section { efforts } header: { heading("Effort") }
             }
-            resetRow
+            if facts.harness != .codex {
+                resetRow
+            }
+            if facts.harness == .codex, control.setHarness == nil {
+                Text("Changes apply to the next Turn")
+                    .argoText(ArgoTypography.caption)
+            }
         }
         .formStyle(.grouped)
         // The design's own number. Held rather than hugged: the Effort scale's five segments and
@@ -51,6 +74,8 @@ struct RunSettingsPopover: View {
     }
 
     /// One section's heading. The Form styles it exactly as it styles the string it replaces.
+    static let harnessLockedWords = "you can't change harness during a session create a new session"
+
     private func heading(_ words: String) -> some View {
         Text(words)
     }
@@ -94,13 +119,20 @@ struct RunSettingsPopover: View {
     /// Five stops, not the four the approved design drew — `claude --effort` documents
     /// `low, medium, high, xhigh, max`, and a four-stop control could not set a value the CLI can
     /// be on. See the amended-in-build note on `cockpit-session-composer.md`.
-    private var efforts: some View {
+    @ViewBuilder private var efforts: some View {
+        if facts.efforts.count > ClaudeEffort.offered.count {
+            effortPicker.pickerStyle(.menu)
+        } else {
+            effortPicker.pickerStyle(.segmented)
+        }
+    }
+
+    private var effortPicker: some View {
         Picker("Effort", selection: effortSelection) {
-            ForEach(SessionEffort.allCases, id: \.self) { rung in
+            ForEach(facts.efforts, id: \.self) { rung in
                 Text(rung.label).tag(Optional(rung))
             }
         }
-        .pickerStyle(.segmented)
         .controlSize(.small)
         .labelsHidden()
     }

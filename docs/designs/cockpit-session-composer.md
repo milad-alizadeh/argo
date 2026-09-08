@@ -519,3 +519,14 @@ Everything snapped; **nothing was promoted**, so the contract is unchanged by th
 
 `/to-tickets` against this, then `design-to-code` per ticket. Judge the result with
 `/pixel-review` against [`composer/`](composer/).
+
+### First Send starts the Session (#1692 clarification)
+
+New Session opens an empty composer without starting a Session process. The user chooses
+Harness, Model, Effort and Mode before the first Send. First Send starts the chosen harness
+with those values. A failed start keeps the draft and the selected values for retry.
+Model and Effort choices come from the selected harness; changing harness restores its
+own remembered pair, validated against its available choices.
+
+Longer Effort lists use a native menu when they exceed the five segments that fit the
+264-point popover. Harness remains a native segmented picker in every state.

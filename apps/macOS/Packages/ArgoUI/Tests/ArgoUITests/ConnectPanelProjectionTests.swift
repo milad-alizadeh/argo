@@ -45,20 +45,20 @@ struct ConnectPanelProjectionTests {
         let reading = ConnectReading(
             folder: ConnectFixture.folder,
             accounts: [ConnectFixture.personal],
-            mode: .settings(agent: .claude),
+            mode: .settings,
         )
         let panel = ConnectPanelProjection.panel(from: reading)
 
         #expect(panel.heading == "Project settings")
         #expect(panel.call == "Done")
         #expect(panel.isCallEnabled)
-        #expect(panel.agent == .claude)
+        #expect(!panel.showsCompanion)
         #expect(panel.ports.map(\.id) == [.ticket, .codeHost])
     }
 
     @Test
-    func `onboarding carries no Agent row`() {
-        #expect(ConnectPanelProjection.panel(from: ConnectFixture.wired).agent == nil)
+    func `onboarding still describes the Companion plugin`() {
+        #expect(ConnectPanelProjection.panel(from: ConnectFixture.wired).showsCompanion)
     }
 
     @Test

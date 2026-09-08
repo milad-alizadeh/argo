@@ -57,7 +57,7 @@ struct SpawningRosterSpecimen: View {
 
     private var actions: CockpitActions {
         var actions = CockpitActions(drive: InMemorySessionDriver())
-        actions.sessions.spawn = publish
+        actions.sessions.start = { _, _, _, _ in publish() }
         return actions
     }
 

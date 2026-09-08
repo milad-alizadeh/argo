@@ -1,4 +1,5 @@
 import ArgoDesign
+import ArgoEngine
 
 /// Why a Session has no composer, and what the line in its place says (#546, design decision 7).
 ///
@@ -87,5 +88,12 @@ extension SessionComposerProjection {
         case .orphaned: return .orphaned
         case .managed: return session.status == .ended ? .ended : nil
         }
+    }
+}
+
+extension SessionComposerProjection {
+    static func placeholder(addressing cli: AgentCLI?) -> String {
+        guard let cli else { return "Message the agent…" }
+        return "Message \(cli.readableName)…"
     }
 }

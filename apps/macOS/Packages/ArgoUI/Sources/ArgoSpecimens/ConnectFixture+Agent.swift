@@ -5,6 +5,6 @@ extension ConnectFixture {
         folder: folder,
         accounts: [personal, work],
         ports: wired.ports,
-        mode: .settings(agent: .codex),
+        mode: .settings,
     )
 }

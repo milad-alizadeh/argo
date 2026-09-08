@@ -6,6 +6,7 @@ import Foundation
 /// No memberwise default: an adapter that grows a capability has to state its answer, and a fake
 /// that inherited one would be asserting a value nobody chose.
 public struct DriveSurface: Equatable, Sendable {
+    public var catalog: SessionRunCatalog?
     /// Whether this surface takes attachments at all (#540) — the composer omits the `+` rather
     /// than disabling it, and a drop is refused with the reason.
     public let takesAttachments: Bool

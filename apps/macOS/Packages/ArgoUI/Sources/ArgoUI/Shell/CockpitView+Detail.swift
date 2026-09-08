@@ -22,12 +22,14 @@ extension CockpitView {
     private var capabilities: SessionComposerProjection.Capabilities {
         guard let sessionID = navigation.session else { return .init() }
         let surface = actions.drive.surface(of: sessionID)
-        return SessionComposerProjection.Capabilities(
+        var capabilities = SessionComposerProjection.Capabilities(
             canAttach: surface.takesAttachments,
             canRunCommands: surface.runsCommands,
             resolvesMentions: surface.resolvesMentions,
             chooses: surface.chooses,
         )
+        capabilities.catalog = surface.catalog
+        return capabilities
     }
 
     /// What the feed may read as a Ticket rather than as a web link (#1178) — the Binding that
@@ -87,6 +89,7 @@ extension CockpitView {
             scope: $feedScope,
             tickets: tickets,
         )
+        .overlay { newSessionComposer }
         // The Atlas room, injected from ABOVE the deck for the reason `argoAtlasRoom` states.
         // On THIS column only: the sidebar is its sibling and takes the room as a parameter, which
         // is where #1489 says why.

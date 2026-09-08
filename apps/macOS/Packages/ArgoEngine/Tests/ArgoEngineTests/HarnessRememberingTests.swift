@@ -34,6 +34,30 @@ struct HarnessRememberingTests {
     }
 
     @Test
+    func `each harness restores its own Model and Effort across launches`() throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let file = fixture.rootURL.appending(path: "run.json")
+        let codexDefault = SessionRun(model: "codex-default", effort: .medium)
+        let store = SessionRunStore(fileURL: file)
+        store.remember(.model("sonnet"))
+        store.remember(.effort(.high))
+        #expect(store.lastPicked(for: .codex, fallback: codexDefault) == codexDefault)
+        store.remember(.model("codex-selected"), for: .codex, fallback: codexDefault)
+        store.remember(.effort(.xhigh), for: .codex, fallback: codexDefault)
+        store.rememberHarness(.codex)
+        store.remember(.model("haiku"))
+        let reopened = SessionRunStore(fileURL: file)
+        #expect(reopened.lastHarness() == .codex)
+        #expect(reopened.lastPicked() == SessionRun(model: "haiku", effort: .high))
+        #expect(reopened.lastPicked(for: .codex, fallback: codexDefault)
+            == SessionRun(model: "codex-selected", effort: .xhigh))
+        reopened.rememberHarness(.claude)
+        #expect(SessionRunStore(fileURL: file).lastPicked(for: .codex, fallback: codexDefault)
+            == SessionRun(model: "codex-selected", effort: .xhigh))
+    }
+
+    @Test
     func `an older run configuration defaults to Claude Code`() throws {
         let fixture = try ProjectFixture()
         defer { fixture.remove() }

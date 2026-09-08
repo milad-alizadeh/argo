@@ -188,7 +188,6 @@ struct ArgoApp: App {
             unbindPort: { port in Task { await accounts.unbind(port) } },
             stopWaiting: { Task { await accounts.stopWaiting() } },
             finish: { accounts.close() },
-            chooseAgent: { agent in Task { await accounts.chooseAgent(agent) } },
         )
     }
 
@@ -208,9 +207,15 @@ struct ArgoApp: App {
         }
         actions.retry.checkout = { Task { await cockpit.refreshCheckout() } }
         actions.retry.connection = { Task { await cockpit.retryConnection() } }
-        actions.sessions.spawn = { await cockpit.spawnSession() }
+        actions.sessions.prepare = { try await cockpit.hub.prepareSession(harness: $0) }
+        actions.sessions.remember = { cockpit.hub.rememberPreparation($0) }
+        actions.sessions.start = { try await cockpit.hub.startPreparedSession(
+            $0,
+            text: $1,
+            attachments: $2,
+            beside: $3,
+        ) }
         actions.sessions.resume = { id in await cockpit.resumeSession(sessionID: id) }
-        actions.sessions.spawnBeside = { id in await cockpit.spawnSession(beside: id) }
         actions.sessions.setArchived = { await cockpit.setArchived($1, sessionID: $0) }
         actions.sessions.setName = { await cockpit.setName($1, sessionID: $0) }
         actions.sessions.setTicketLink = { await cockpit.setPinnedTicket($1, sessionID: $0) }

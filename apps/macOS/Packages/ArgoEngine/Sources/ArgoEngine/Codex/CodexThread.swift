@@ -22,6 +22,8 @@ final class CodexThread {
         case refused
     }
 
+    var run: SessionRun?
+    var catalog: SessionRunCatalog?
     let cwd: String
     /// The Permissions this Session raises (#549). Held rather than reached for, because an
     /// approval and the Turn it belongs to arrive down the same pipe and end with the same process.
@@ -175,14 +177,19 @@ final class CodexThread {
     private func start(_ text: String, on threadID: String) -> Bool {
         let images = pendingImages
         pendingImages = []
-        let sent = ask("turn/start", [
+        var params: [String: JSONValue] = [
             "threadId": .string(threadID),
             "cwd": .string(cwd),
             "approvalPolicy": .string(stance.approval.rawValue),
             "sandboxPolicy": stance.sandbox.policy,
             "input": .array([.object(["type": .string("text"), "text": .string(text)])]
                 + images.map(Self.imageInput)),
-        ]) != nil
+        ]
+        if let run {
+            params["model"] = .string(run.model)
+            params["effort"] = .string(run.effort.rawValue)
+        }
+        let sent = ask("turn/start", params) != nil
         // The images go back on the pile when the write failed, for the reason the composer keeps
         // its chips: nothing about the Turn has happened, so nothing about it may be forgotten.
         if !sent {

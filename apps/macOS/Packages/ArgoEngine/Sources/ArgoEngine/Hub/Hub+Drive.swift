@@ -19,7 +19,7 @@ public extension Hub {
                 mode: { [weak self] set, sessionID in
                     self?.rememberMode(set, for: sessionID)
                 },
-                run: { [weak self] pick in self?.runStore.remember(pick) },
+                run: { [weak self] pick, sessionID in self?.rememberRun(pick, for: sessionID) },
                 stoppedTurn: { [weak self] sessionID in
                     self?.rememberStopClaim(for: sessionID)
                 },

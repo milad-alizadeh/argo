@@ -30,8 +30,15 @@ struct CodexSessionDriver: SessionDriver {
     /// `/command` put here arrives at the model as prose (#685), and it has no mention machinery at
     /// all, so an `@path` would arrive the same way (#687). Argo names those files on their own
     /// line instead, which is why the `@` menu is offered here and the `/` one is not.
-    func surface(of _: String) -> DriveSurface {
-        DriveSurface(takesAttachments: true, runsCommands: false, resolvesMentions: false)
+    func surface(of sessionID: String) -> DriveSurface {
+        var surface = DriveSurface(
+            takesAttachments: true,
+            runsCommands: false,
+            resolvesMentions: false,
+            chooses: thread(for: sessionID)?.catalog == nil ? RunFactKnobs() : .both,
+        )
+        surface.catalog = thread(for: sessionID)?.catalog
+        return surface
     }
 
     func send(_ text: String, to sessionID: String) throws {
@@ -74,19 +81,30 @@ struct CodexSessionDriver: SessionDriver {
         thread.setMode(mode)
     }
 
-    /// Neither knob, and REFUSED rather than accepted quietly (#558). Argo reads no model and no
-    /// effort off this surface — a `codex` thread's records carry neither — so a set here would put
-    /// the composer on a value nothing could ever read back, which is the false DIRECT the honesty
-    /// tiers exist to stop. `surface(of:)` declares both `false`, so the popover never draws the
-    /// control that would reach this.
-    func setModel(_: String, for sessionID: String) async throws {
-        guard thread(for: sessionID) != nil else { throw SessionDriveError.notDrivable }
-        throw SessionDriveError.runFactsUnsupported
+    func setModel(_ model: String, for sessionID: String) async throws {
+        guard let thread = thread(for: sessionID) else { throw SessionDriveError.notDrivable }
+        guard let catalog = thread.catalog, let current = thread.run,
+              catalog.models.contains(where: { $0.id == model }),
+              let run = catalog.resolve(SessionRun(model: model, effort: current.effort))
+        else { throw SessionDriveError.runFactsUnsupported }
+        thread.run = run
+        publish(run, for: sessionID)
     }
 
-    func setEffort(_: SessionEffort, for sessionID: String) async throws {
-        guard thread(for: sessionID) != nil else { throw SessionDriveError.notDrivable }
-        throw SessionDriveError.runFactsUnsupported
+    func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
+        guard let thread = thread(for: sessionID) else { throw SessionDriveError.notDrivable }
+        guard let current = thread.run,
+              let model = thread.catalog?.models.first(where: { $0.id == current.model }),
+              model.efforts.contains(effort)
+        else { throw SessionDriveError.runFactsUnsupported }
+        let run = SessionRun(model: current.model, effort: effort)
+        thread.run = run
+        publish(run, for: sessionID)
+    }
+
+    private func publish(_ run: SessionRun, for sessionID: String) {
+        guard let claim = ownership.ownerOf(sessionID: sessionID) else { return }
+        claims.setRun(run, for: claim)
     }
 
     /// No title of its own to mirror (#1494). `codex` has no `/rename`, and its `/` is parsed in a

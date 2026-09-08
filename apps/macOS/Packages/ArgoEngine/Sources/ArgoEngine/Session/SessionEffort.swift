@@ -6,11 +6,14 @@
 /// Ordered rather than a set of equals, which is what makes the control a scale and not a list.
 /// The order here IS the scale's, so `allCases` is what the segments are drawn from.
 public enum SessionEffort: String, CaseIterable, Hashable, Sendable {
+    case none
+    case minimal
     case low
     case medium
     case high
     case xhigh
     case max
+    case ultra
 }
 
 /// A Session's effort as Argo can state it: the rung, or the CLI's own word where that word is on
@@ -51,6 +54,8 @@ public enum SessionEffortReading: Equatable, Sendable {
 /// approved design drew four; the fifth is why `cockpit-session-composer.md` carries an
 /// amended-in-build note against #558.
 public enum ClaudeEffort {
+    public static let offered: [SessionEffort] = [.low, .medium, .high, .xhigh, .max]
+
     /// What Argo types to put a Session on this rung. The CLI's own words are the enum's raw
     /// values, so there is one spelling and no table to keep in step with the ladder.
     public static func value(for effort: SessionEffort) -> String {

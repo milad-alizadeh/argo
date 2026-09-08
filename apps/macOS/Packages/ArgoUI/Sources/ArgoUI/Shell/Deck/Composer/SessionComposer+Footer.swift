@@ -31,6 +31,7 @@ extension SessionComposer {
                 ),
                 held: RunFactsHeld(model: draft.heldModel, effort: draft.heldEffort),
                 isOpenForRender: opening == .runSettings,
+                setHarness: setHarness,
             ),
             send: SendButtonControl(
                 isSendable: draft.isSendable,

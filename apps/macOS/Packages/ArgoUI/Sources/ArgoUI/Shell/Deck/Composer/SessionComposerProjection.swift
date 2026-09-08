@@ -21,6 +21,7 @@ package enum SessionComposerProjection {
         /// the port declares it: a knob it does not answer for leaves its section OUT of the
         /// run-settings popover — absent, not disabled.
         var chooses = RunFactKnobs()
+        var catalog: SessionRunCatalog?
 
         /// Spelled out because Swift's synthesised memberwise init for a `package` struct is
         /// `internal`, and the specimens build this from their own target.
@@ -46,7 +47,7 @@ package enum SessionComposerProjection {
         /// What the Session runs at — `Opus 5 · Medium` — stated on the composer and nowhere else
         /// (design decision 2, #558). The whole reading, because what the trigger says, what the
         /// popover ticks and which sections it draws are all things this one value settles.
-        package let facts: RunFacts
+        package var facts: RunFacts
         /// What this Session has stopped asking about (#572). Empty for a Session holding none,
         /// which draws no tray.
         let standingAllows: [StandingAllow]
@@ -225,6 +226,8 @@ package enum SessionComposerProjection {
             workspaceRoot: session.workspaceLocation,
             touchedFiles: TouchedFiles.touched(in: events, within: session.workspaceLocation),
         )
+        composer.facts.harness = session.cli
+        composer.facts.catalog = can.catalog
         composer.isTurnInFlight = isTurnInFlight(session)
         composer.hasTurnEnded = hasTurnEnded(session.status)
         composer.endedByInterrupt = endedByInterrupt(events)
@@ -325,10 +328,6 @@ package enum SessionComposerProjection {
         return false
     }
 
-    /// Addressed to the agent when the record has named one, and to the role when it has not: a
-    /// managed Session's first moments are a claim without a CLI's own record behind it.
-    private static func placeholder(addressing cli: AgentCLI?) -> String {
-        guard let cli else { return "Message the agent…" }
-        return "Message \(cli.readableName)…"
-    }
+    // Addressed to the agent when the record has named one, and to the role when it has not: a
+    // managed Session's first moments are a claim without a CLI's own record behind it.
 }

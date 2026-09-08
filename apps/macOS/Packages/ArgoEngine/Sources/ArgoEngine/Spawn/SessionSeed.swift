@@ -1,3 +1,5 @@
+import Foundation
+
 /// What a spawn is given beyond "start the agent": where to run, and what to open on.
 ///
 /// Both absent by default, which is the plain New Session: the Project's own folder and a prompt
@@ -6,6 +8,9 @@
 public struct SessionSeed: Sendable, Equatable {
     /// The folder to run in, overriding the Project's. This is how a fresh Session inherits the
     /// Workspace of the one it continues — same folder, same branch, same derivations off it.
+    var images: [URL] = []
+    public var catalog: SessionRunCatalog?
+    public var run: SessionRun?
     public let cwd: String?
     /// The prompt the agent opens on. Argo owns no more of the fresh Session than this — after the
     /// first turn it is an agent like any other.

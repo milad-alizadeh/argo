@@ -18,6 +18,9 @@ extension CodexSessionDriver: SessionChannel {
             approvals: approvals(under: plan.claim),
             channel: channel(under: plan.claim),
         )
+        thread.run = plan.seed.run
+        thread.catalog = plan.seed.catalog
+        thread.willSend(images: plan.seed.images)
         threads.open(plan.claim, thread: thread)
         guard let opening = plan.seed.opening else { return }
         _ = thread.send(opening)

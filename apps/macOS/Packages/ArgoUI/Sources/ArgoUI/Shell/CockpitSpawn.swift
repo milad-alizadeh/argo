@@ -26,8 +26,8 @@ package struct CockpitSpawn {
     /// The refusal is checked here as well as drawn, because a shortcut reaches the action without
     /// passing the button that is disabled.
     func run() async {
-        guard offer.isLaunchable, let fresh = await actions.sessions.spawn() else { return }
-        navigation.pointAtStarting(fresh)
+        guard offer.isLaunchable else { return }
+        navigation.prepareNewSession()
     }
 
     /// The handoff's half of the same act (#513, #1229). The app runs `/handoff`, waits for the
@@ -46,7 +46,6 @@ package struct CockpitSpawn {
     /// (#546). `offer` is not consulted: what that check refuses is a spawn with no reachable
     /// Project folder to run in, and this one brings its own.
     func run(beside sessionID: String) async {
-        guard let fresh = await actions.sessions.spawnBeside(sessionID) else { return }
-        navigation.pointAtStarting(fresh)
+        navigation.prepareNewSession(beside: sessionID)
     }
 }

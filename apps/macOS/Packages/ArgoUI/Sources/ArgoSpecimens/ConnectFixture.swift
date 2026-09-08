@@ -127,7 +127,7 @@ enum ConnectFixture {
         folder: folder,
         accounts: [personal, work],
         ports: wired.ports,
-        mode: .settings(agent: .claude),
+        mode: .settings,
     )
 
     /// An identity just authorized, its repositories on the way. The state the device-code card

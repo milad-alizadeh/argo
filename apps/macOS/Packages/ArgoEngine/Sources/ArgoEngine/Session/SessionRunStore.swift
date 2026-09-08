@@ -39,23 +39,40 @@ public final class SessionRunStore {
     /// next Session opens on — and one knob at a time, because that is how the popover sets them:
     /// the half nobody touched is written back as it was rather than reset to the default.
     func remember(_ pick: SessionRunPick) {
-        let picked = lastPicked()
+        remember(pick, for: .claude, fallback: .unpicked)
+    }
+
+    func lastPicked(for harness: AgentCLI, fallback: SessionRun) -> SessionRun {
+        guard harness != .claude else { return lastPicked() }
+        let remembered = file.load(orEmpty: Remembered(model: "", effort: ""))
+        guard let picked = remembered.runs?[harness.rawValue] else { return fallback }
+        return SessionRun(
+            model: ModelID.named(in: picked.model) ?? fallback.model,
+            effort: SessionEffort(rawValue: picked.effort) ?? fallback.effort,
+        )
+    }
+
+    func remember(_ pick: SessionRunPick, for harness: AgentCLI, fallback: SessionRun) {
+        let picked = lastPicked(for: harness, fallback: fallback)
+        let next: Pair
         switch pick {
         case let .model(model):
-            // A placeholder is not a pick, so it is never written (#1223).
             guard let model = ModelID.named(in: model) else { return }
-            file.write(Remembered(
-                model: model,
-                effort: picked.effort.rawValue,
-                harness: lastHarness().rawValue,
-            ))
+            next = Pair(model: model, effort: picked.effort.rawValue)
         case let .effort(effort):
-            file.write(Remembered(
-                model: picked.model,
-                effort: effort.rawValue,
-                harness: lastHarness().rawValue,
-            ))
+            next = Pair(model: picked.model, effort: effort.rawValue)
         }
+        var remembered = file.load(orEmpty: Remembered(model: "", effort: ""))
+        switch harness {
+        case .claude:
+            remembered.model = next.model
+            remembered.effort = next.effort
+        case .codex:
+            var runs = remembered.runs ?? [:]
+            runs[harness.rawValue] = next
+            remembered.runs = runs
+        }
+        file.write(remembered)
     }
 
     func lastHarness() -> AgentCLI {
@@ -64,20 +81,23 @@ public final class SessionRunStore {
     }
 
     func rememberHarness(_ harness: AgentCLI) {
-        let picked = lastPicked()
-        file.write(Remembered(
-            model: picked.model,
-            effort: picked.effort.rawValue,
-            harness: harness.rawValue,
-        ))
+        var remembered = file.load(orEmpty: Remembered(model: "", effort: ""))
+        remembered.harness = harness.rawValue
+        file.write(remembered)
     }
 
     /// The file's shape, owned here so the format is pinned in one place. Both halves are spelled
     /// in the CLI's own words — the model verbatim as it goes on argv, the effort as its rung's raw
     /// value, which is `claude`'s word for it too (`ClaudeEffort`).
-    private struct Remembered: Codable, Sendable {
+    private struct Pair: Codable, Sendable {
         let model: String
         let effort: String
+    }
+
+    private struct Remembered: Codable, Sendable {
+        var model: String
+        var effort: String
         var harness: String?
+        var runs: [String: Pair]?
     }
 }

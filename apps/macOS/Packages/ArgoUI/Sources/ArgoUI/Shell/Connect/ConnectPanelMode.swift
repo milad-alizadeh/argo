@@ -11,5 +11,5 @@ import ArgoEngine
 /// Project cannot be handed one to draw: a Project that does not exist yet starts no Sessions.
 public enum ConnectPanelMode: Equatable, Sendable {
     case creating
-    case settings(agent: AgentCLI)
+    case settings
 }

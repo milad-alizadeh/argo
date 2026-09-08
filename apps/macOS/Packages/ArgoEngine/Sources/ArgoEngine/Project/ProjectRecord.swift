@@ -8,7 +8,6 @@ import Foundation
 public struct ProjectRecord: Equatable, Sendable, Identifiable {
     public let id: String
     public let path: String
-    public let agent: AgentCLI
     /// At most one Binding per port, collapsed here rather than checked by callers so it also holds
     /// for a hand-edited file. The first entry for a port wins.
     public let bindings: [ProjectBinding]
@@ -17,11 +16,9 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
         id: String,
         path: String,
         bindings: [ProjectBinding] = [],
-        agent: AgentCLI = .claude,
     ) {
         self.id = id
         self.path = path
-        self.agent = agent
         var seen: Set<AccountPort> = []
         self.bindings = bindings.filter { seen.insert($0.port).inserted }
     }
@@ -33,7 +30,7 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
     /// The same Project at a new path. Everything keyed on the id, Bindings included, comes with
     /// it.
     func relocated(to path: String) -> ProjectRecord {
-        ProjectRecord(id: id, path: path, bindings: bindings, agent: agent)
+        ProjectRecord(id: id, path: path, bindings: bindings)
     }
 
     /// Bind a port, replacing whatever filled it. Only that port moves: one GitHub Account normally
@@ -43,7 +40,6 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
             id: id,
             path: path,
             bindings: [binding] + bindings.filter { $0.port != binding.port },
-            agent: agent,
         )
     }
 
@@ -52,12 +48,7 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
             id: id,
             path: path,
             bindings: bindings.filter { $0.port != port },
-            agent: agent,
         )
-    }
-
-    func choosingAgent(_ agent: AgentCLI) -> ProjectRecord {
-        ProjectRecord(id: id, path: path, bindings: bindings, agent: agent)
     }
 
     public var url: URL {

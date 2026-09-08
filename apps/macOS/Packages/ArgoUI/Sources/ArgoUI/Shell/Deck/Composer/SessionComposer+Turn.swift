@@ -15,6 +15,33 @@ enum RunFactStep: Equatable {
 /// Every act here ends in the draft, because the draft owns what a refusal leaves behind — which
 /// is why none of them reports a result of its own.
 extension SessionComposer {
+    func submit() {
+        if let firstSend {
+            return firstSend()
+        }
+        if menus.completes(on: line), complete() {
+            return
+        }
+        draft.submit(whileTurnInFlight: holdsTurn, via: sending)
+    }
+
+    // Tab, which takes the row under the cursor exactly as ⏎ does over the same menu (#1181) —
+    // the completion key every other such menu answers, and the one the hand reaches for.
+    //
+    // It is the WHOLE of what ⏎ does over a menu, called by both keys rather than spelled twice:
+    // two lists of what a pick means could drift, and a Tab that took a different row from the ⏎
+    // beside it is the one way this could be worse than not answering Tab at all.
+    //
+    // Over `AddMenu` it OPENS the row's section, which is that menu's own meaning of a pick
+    // (design decision 11): its rows insert nothing to be taken. Tab cannot simply decline there
+    // either — a Tab that walked focus away would leave the drawer drawn with a keyboard cursor
+    // the arrows no longer reach.
+    //
+    // `false` is what leaves Tab alone, and the field walks focus with it as #718 built: there is
+    // no menu at all, or the filter matched nothing and there is no row under the cursor to take
+    // (design decision 8). ⏎ asks the same question, but only over a row `completes(on:)` says
+    // would extend the line; anything else it leaves to the Turn (#1208).
+
     /// `send`, with the mentioned files NAMED where the CLI will not resolve an `@path` itself
     /// (#687). Wrapped once rather than at the three call sites, so a queued Turn and a retried one
     /// carry their files exactly as a straight send does.

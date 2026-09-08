@@ -304,3 +304,12 @@ moved after the opening reading. It is punctuation like every other mark and tak
 `SendButton`'s **Stop** state, which
 `queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
 stops nothing would be the promise decision 9 refuses to make about attachments.
+
+## #1692 additions
+
+| name | tier | location | props | composed-of |
+| --- | --- | --- | --- | --- |
+| NewSessionComposer | organism | ArgoUI/Shell/Deck/Composer; owns the draft before startup | Session actions, optional adjacent Session id, started callback; loading, ready, refused | SessionComposer, native progress and retry controls |
+
+The Harness picker stays inline in RunSettingsPopover. The draft uses the existing
+SessionComposer field, footer, Mode picker, attachment tray and settings controls.

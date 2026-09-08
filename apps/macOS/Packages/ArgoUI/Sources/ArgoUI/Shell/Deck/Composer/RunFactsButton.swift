@@ -37,7 +37,7 @@ struct RunFactsButton: View {
             .buttonStyle(.plain)
             .onHover { isHovered = $0 }
             .help("What this Session runs at — \(facts.words)")
-            .accessibilityLabel("Model and Effort, \(facts.words)")
+            .accessibilityLabel("Harness, Model and Effort, \(facts.words)")
             .popover(isPresented: $isOpen, arrowEdge: .bottom) {
                 RunSettingsPopover(control: control, mode: mode)
                     .presentationBackground(.regularMaterial)

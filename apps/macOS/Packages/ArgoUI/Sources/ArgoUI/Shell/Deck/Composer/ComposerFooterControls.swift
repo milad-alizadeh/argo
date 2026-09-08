@@ -58,6 +58,7 @@ struct RunFactsControl {
     /// hook, the way `ComposerMenusOpening` is (#689). Production always leaves it `false`: every
     /// render that opens something does it through the click a reader would.
     var isOpenForRender = false
+    var setHarness: ((AgentCLI) -> Void)?
 
     /// What the popover's lock line says while something is held, and `nil` where nothing is
     /// (#1329, formerly #1217's inert sentence). It NAMES what is held rather than the reason a

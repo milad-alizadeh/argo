@@ -76,10 +76,6 @@ public struct ProjectRegistry: Equatable, Sendable {
         updating(projectID) { $0.removingBinding(port: port) }
     }
 
-    func choosingAgent(_ agent: AgentCLI, for projectID: String) -> ProjectRegistry {
-        updating(projectID) { $0.choosingAgent(agent) }
-    }
-
     private func updating(
         _ projectID: String,
         _ transform: (ProjectRecord) -> ProjectRecord,

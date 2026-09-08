@@ -20,7 +20,7 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         let mode: (SessionModeSet, String) -> Void
         /// Handed a Model or an Effort only once the port took it, for the same reason (#1175): a
         /// pick the CLI refused is not the one the next New Session should open on.
-        let run: (SessionRunPick) -> Void
+        let run: (SessionRunPick, String) -> Void
         /// Handed the Session whose Turn was just STOPPED (#1409, #1644) — see
         /// `ClaimLedger.setStopClaim`, which is the whole rule.
         let stoppedTurn: (String) -> Void
@@ -90,12 +90,12 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     /// question its own next record answers. What is kept is what the next New Session opens on.
     func setModel(_ modelID: String, for sessionID: String) async throws {
         try await base.setModel(modelID, for: sessionID)
-        remembers.run(.model(modelID))
+        remembers.run(.model(modelID), sessionID)
     }
 
     func setEffort(_ effort: SessionEffort, for sessionID: String) async throws {
         try await base.setEffort(effort, for: sessionID)
-        remembers.run(.effort(effort))
+        remembers.run(.effort(effort), sessionID)
     }
 
     /// Passed straight through and remembered NOWHERE (#1494). The two above file a pick because
