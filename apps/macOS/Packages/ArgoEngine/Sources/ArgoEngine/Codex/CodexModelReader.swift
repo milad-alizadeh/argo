@@ -2,7 +2,7 @@ import Foundation
 
 /// Queries the catalog without creating a thread or submitting a Turn.
 @MainActor
-public final class CodexModelReader {
+final class CodexModelReader {
     private let host: AgentProcessHost
     private var process: AgentProcess?
     private var lines = CodexLineBuffer()
@@ -11,7 +11,7 @@ public final class CodexModelReader {
     private var requestID = 1
     private var cursors: Set<String> = []
 
-    public convenience init() {
+    convenience init() {
         self.init(host: CodexProcessHost())
     }
 
@@ -19,7 +19,7 @@ public final class CodexModelReader {
         self.host = host
     }
 
-    public func read(launcher: AgentLauncher, cwd: String) async throws -> SessionRunCatalog {
+    func read(launcher: AgentLauncher, cwd: String) async throws -> SessionRunCatalog {
         let launch = try await launcher.launch(cli: .codex, cwd: cwd, companion: nil)
         return try await read(launch: launch.adding(["app-server"]))
     }

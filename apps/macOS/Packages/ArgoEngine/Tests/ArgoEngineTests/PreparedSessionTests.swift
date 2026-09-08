@@ -68,4 +68,30 @@ struct PreparedSessionTests {
         )
             == SessionRun(model: "codex-second", effort: .ultra))
     }
+
+    @Test func `a Ticket Session inherits remembered Codex settings and keeps them editable`(
+    ) async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let remembered = SessionPreparation(
+            harness: .codex, catalog: SpawnFixture.codexCatalog,
+            run: SessionRun(model: "codex-default", effort: .high), mode: .code,
+        )
+        fixture.hub.rememberPreparation(remembered)
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(
+            opening: "Ticket work",
+            ticket: 1692,
+        ))
+        let process = try #require(fixture.host.started.last)
+        let server = CodexConversation(written: { process.written }, deliver: { process.emit($0) })
+        server.open()
+        #expect(server.request("turn/start")?.params.stringField("model") == "codex-default")
+        #expect(server.request("turn/start")?.params.stringField("effort") == "high")
+        #expect(fixture.hub.driver.surface(of: claim.value).chooses == .both)
+        try await fixture.hub.driver.setEffort(.medium, for: claim.value)
+        server.started(turn: "ticket-first")
+        server.completedTurn()
+        try fixture.hub.driver.send("Continue", to: claim.value)
+        #expect(server.request("turn/start")?.params.stringField("effort") == "medium")
+    }
 }

@@ -309,7 +309,8 @@ stops nothing would be the promise decision 9 refuses to make about attachments.
 
 | name | tier | location | props | composed-of |
 | --- | --- | --- | --- | --- |
-| NewSessionComposer | organism | ArgoUI/Shell/Deck/Composer; owns the draft before startup | Session actions, optional adjacent Session id, started callback; loading, ready, refused | SessionComposer, native progress and retry controls |
+| NewSessionComposer | organism | ArgoUI/Shell/Deck/Composer; owns the draft before startup | Session actions, optional adjacent Session id, started callback; loading, ready, refused | PreparedSessionComposer, native progress and retry controls |
+| PreparedSessionComposer | organism | ArgoUI/Shell/Deck/Composer; projects a ready draft | Preparation, intents, first Send and Harness callbacks | SessionComposer |
 
 The Harness picker stays inline in RunSettingsPopover. The draft uses the existing
 SessionComposer field, footer, Mode picker, attachment tray and settings controls.

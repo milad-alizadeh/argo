@@ -186,10 +186,6 @@ public final class CockpitNavigationModel {
 
     public init() {}
 
-    // What a Project switch takes with it: the query alone, because it is the one thing here that
-    // is a question about a particular Project's tickets (#873). The view, the fold and the seam
-    // are the reader's own settings and stand.
-
     /// Put a question in flight, replacing whatever was on screen. The caller owns the work; this
     /// owns the handle, so `stopAsking` has one thing to cancel and the surface has one place the
     /// state comes from.

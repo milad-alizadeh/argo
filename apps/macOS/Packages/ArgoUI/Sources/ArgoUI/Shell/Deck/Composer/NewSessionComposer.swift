@@ -21,8 +21,13 @@ struct NewSessionComposer: View {
                 Text(refusal).argoText(ArgoTypography.caption)
             }
             if let preparation {
-                composer(preparation)
-                    .disabled(isWorking)
+                PreparedSessionComposer(
+                    preparation: preparation,
+                    intents: intents,
+                    firstSend: { Task { await send() } },
+                    setHarness: { harness in Task { await choose(harness) } },
+                )
+                .disabled(isWorking)
             } else {
                 ProgressView().controlSize(.small)
                 if refusal != nil {
@@ -39,42 +44,20 @@ struct NewSessionComposer: View {
         .task { await choose(nil) }
     }
 
-    private func composer(_ preparation: SessionPreparation) -> SessionComposer {
-        var facts = RunFacts(
-            model: preparation.run.model,
-            effort: .exactly(
-                preparation.run.effort,
-                cli: preparation.run.effort.rawValue,
-            ),
-            chooses: .both,
-        )
-        facts.harness = preparation.harness
-        facts.catalog = preparation.catalog
-        let projection = SessionComposerProjection.Composer(
-            sessionID: "new-session", placeholder: "Message \(preparation.harness.readableName)…",
-            facts: facts, standingAllows: [], isRunning: false,
-            mode: preparation.modeReading,
-            modeDidNotTake: nil, lostTurn: nil, canAttach: true,
-            canRunCommands: preparation.harness == .claude,
-            resolvesMentions: preparation.harness == .claude,
-            workspaceRoot: preparation.cwd,
-        )
-        var composer = SessionComposer(composer: projection, intents: DeckIntents(
+    private var intents: DeckIntents {
+        DeckIntents(
             settings: SessionSettingIntents(
-                setMode: { self.preparation?.mode = $0; remember() },
+                setMode: { preparation?.mode = $0; remember() },
                 setModel: { model in changeModel(model) },
                 setEffort: { effort in changeEffort(effort) },
             ),
             commands: menus.skills,
             files: {
-                guard let cwd = preparation.cwd else { return [] }
+                guard let cwd = preparation?.cwd else { return [] }
                 return await menus.workspaceFiles(cwd)
             },
             draft: $draft,
-        ))
-        composer.firstSend = { Task { await send() } }
-        composer.setHarness = { harness in Task { await choose(harness) } }
-        return composer
+        )
     }
 
     private func choose(_ harness: AgentCLI?) async {

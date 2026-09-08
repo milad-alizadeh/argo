@@ -10,10 +10,7 @@ public extension Hub {
         let catalog: SessionRunCatalog = switch harness {
         case .claude: .claude
         case .codex:
-            try await CodexModelReader().read(
-                launcher: spawnServices.launcher,
-                cwd: project.url.path,
-            )
+            try await spawnServices.readCodexModels(spawnServices.launcher, project.url.path)
         }
         guard let fallback = catalog.defaultRun,
               let run = catalog.resolve(runStore.lastPicked(for: harness, fallback: fallback))
@@ -95,5 +92,21 @@ extension Hub {
         } else {
             runStore.remember(pick)
         }
+    }
+}
+
+extension Hub {
+    func configuredSeed(_ seed: SessionSeed, for harness: AgentCLI) async throws -> SessionSeed {
+        guard harness == .codex, seed.catalog == nil else { return seed }
+        let catalog = try await spawnServices.readCodexModels(
+            spawnServices.launcher, seed.cwd ?? project.url.path,
+        )
+        guard let fallback = catalog.defaultRun else { throw SessionDriveError.runFactsUnsupported }
+        let remembered = runStore.lastPicked(for: harness, fallback: fallback)
+        var seed = seed
+        seed.catalog = catalog
+        seed.run = catalog
+            .resolve(seed.run ?? seed.resuming.map { run(resuming: $0.sessionID) } ?? remembered)
+        return seed
     }
 }

@@ -143,7 +143,7 @@ struct SpawnFixture {
         self.modeFileURL = root.appending(path: "mode.json")
         self.runFileURL = root.appending(path: "run.json")
         self.engine = Engine(reads: .init(checkout: CheckoutFixture().read, liveness: liveness))
-        self.services = SpawnServices(
+        var services = SpawnServices(
             hosts: SpawnHosts(
                 pty: host,
                 // The same stand-in for both surfaces: what a Codex spawn does with its pipes is
@@ -172,6 +172,8 @@ struct SpawnFixture {
             // waiting for.
             mintTranscriptID: Self.minting(transcriptIDs),
         )
+        services.readCodexModels = { _, _ in Self.codexCatalog }
+        self.services = services
         self.hub = Self.makeHub(
             projectURL: projectURL,
             engine: engine,

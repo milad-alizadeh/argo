@@ -27,6 +27,7 @@ public extension Hub {
         } else {
             runStore.lastHarness()
         }
+        let seed = try await configuredSeed(seed, for: cli)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: cwd, isDirectory: &isDirectory),
               isDirectory.boolValue
