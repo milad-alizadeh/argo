@@ -25,16 +25,22 @@ public enum ProviderFetchError: Error, Equatable {
 }
 
 public extension ProviderFetchError {
-    /// Every way an ask can fail, in this vocabulary. Shared by both adapters rather than spelled
+    /// Every way an ask through the TRANSPORT can fail, in this vocabulary — and `nil` where none
+    /// of the four words is true of the failure. Shared by both adapters rather than spelled
     /// per-provider, so two providers failing the same way cannot reach the ledger as two states.
-    static func reading(_ error: Error) -> ProviderFetchError {
+    ///
+    /// All four describe something a provider or a network did, so an error Argo raised itself and
+    /// a read the window cancelled are none of them. The `default: .unreachable` this used to end
+    /// in put both on the chip as a provider that was asked and did not answer, which is a claim
+    /// Argo had not observed (#1698).
+    static func reading(_ error: Error) -> ProviderFetchError? {
         switch error {
-        case HTTPTransportError.unauthorized: .grantRefused
-        case HTTPTransportError.rateLimited: .rateLimited
+        case let transportError as HTTPTransportError: transportError.fetchFailure
         // Nothing was asked, so nothing was refused. Every other `URLError` reached the wire and
         // failed there, which is `unreachable`.
-        case let urlError as URLError where offlineCodes.contains(urlError.code): .offline
-        default: .unreachable
+        case let urlError as URLError:
+            offlineCodes.contains(urlError.code) ? .offline : .unreachable
+        default: nil
         }
     }
 
@@ -42,7 +48,7 @@ public extension ProviderFetchError {
     /// port, whose adapters throw these and whose own failures throw everything else. `reading`
     /// alone would flatten a port's own `rateLimited` to `unreachable`, and the cause words are the
     /// half of the health reading a reader acts on.
-    static func refusal(_ error: Error) -> ProviderFetchError {
+    static func refusal(_ error: Error) -> ProviderFetchError? {
         error as? ProviderFetchError ?? reading(error)
     }
 

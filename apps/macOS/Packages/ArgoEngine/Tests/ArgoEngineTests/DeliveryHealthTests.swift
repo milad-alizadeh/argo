@@ -115,4 +115,41 @@ struct DeliveryHealthTests {
 
         #expect(await health.health(of: target.projectBinding, in: "P1").state == .needsReconnect)
     }
+
+    /// #1698: the chip is the one place a user learns whether Argo can talk to a provider, so an
+    /// error Argo raised itself must leave it saying nothing rather than saying the provider was
+    /// asked and did not answer.
+    @Test
+    func `a dial refused from outside the transport records no cause at all`() async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget.codeHost()
+        let derivation = DeliveryDerivation(
+            port: ScriptedCodeHost([.success([])]),
+            health: health,
+            deliveries: DeliveryLedger(),
+        )
+
+        await derivation.dialFailed(target, error: OutsideTheTransport.raised)
+
+        #expect(await health.health(of: target.projectBinding, in: "P1").state == .healthy)
+    }
+
+    /// The other half of that: recording nothing must not read as a read that landed either, or
+    /// half a fan-out would go missing behind a chip claiming the whole of it (#1698).
+    @Test
+    func `a branch refused from outside the transport is not recorded as a read that landed`(
+    ) async {
+        let health = ConnectionHealthLedger()
+        let target = PortReadTarget.codeHost()
+        await DeliveryDerivation(
+            port: ScriptedCodeHost(
+                [.success([])], refusingUnclassified: ["worktree-1698-unnamed"],
+            ),
+            health: health,
+            deliveries: DeliveryLedger(),
+        )
+        .derive(target, locally: .init(workspaces: [.on("worktree-1698-unnamed")]))
+
+        #expect(await health.health(of: target.projectBinding, in: "P1").lastSuccess == nil)
+    }
 }

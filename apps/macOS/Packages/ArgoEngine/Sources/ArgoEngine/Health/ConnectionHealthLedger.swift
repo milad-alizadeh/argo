@@ -46,8 +46,14 @@ public actor ConnectionHealthLedger {
 
     /// A read through one port failed, filed at whichever level the error names. Both ports record
     /// through here, so two failing the same way cannot reach this ledger as two states.
-    public func record(_ error: ProviderFetchError, of target: PortReadTarget) {
-        guard let cause = error.cause else {
+    ///
+    /// **An error the health vocabulary has no word for is recorded as nothing at all**, which
+    /// leaves the chip on whatever it last observed. Taking the throw rather than the word is what
+    /// keeps that in one place: a caller made to name its error first names the nearest word, and
+    /// the nearest word to an Argo-side refusal was a provider that could not be reached (#1698).
+    public func record(_ error: Error, of target: PortReadTarget) {
+        guard let refusal = ProviderFetchError.refusal(error) else { return }
+        guard let cause = refusal.cause else {
             return grantRefused(target.accountID)
         }
         failed(target.projectBinding, in: target.projectID, cause: cause)

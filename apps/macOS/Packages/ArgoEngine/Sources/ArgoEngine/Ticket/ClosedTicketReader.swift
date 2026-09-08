@@ -66,7 +66,7 @@ public struct ClosedTicketReader: Sendable {
             // terms: swallowing it would leave the chip claiming a connection nobody has checked
             // since. The listing is left where it was — a failed page must not blank a view that
             // was full a second ago, which is the poll's own rule.
-            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
+            await health.record(error, of: target)
         }
     }
 }

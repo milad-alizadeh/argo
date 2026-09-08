@@ -58,6 +58,21 @@ struct TicketListingFailureTests {
     }
 
     @Test
+    func `an error the transport never raised has no word in this vocabulary`() {
+        // The `default: .unreachable` this replaced named every one of them for a provider that
+        // was asked and did not answer, which is a claim Argo had not observed (#1698).
+        #expect(ProviderFetchError.reading(OutsideTheTransport.raised) == nil)
+        #expect(ProviderFetchError.reading(CancellationError()) == nil)
+    }
+
+    @Test
+    func `a URL Argo could not build asked the provider nothing`() {
+        // The one transport failure with no cause word: the network is fine and the provider was
+        // never reached, so neither of those is what a reader should be sent to look at.
+        #expect(ProviderFetchError.reading(HTTPTransportError.malformedURL("h ttp://")) == nil)
+    }
+
+    @Test
     func `only a refused grant is an account-level cause`() {
         // The ledger keys the other three on the Binding, so they take one port of one Project
         // with them and leave every other Binding on that Account reading.

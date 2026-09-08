@@ -53,7 +53,7 @@ public struct TicketFollower: Sendable {
             // A read that established nothing is the other half of that distinction, and it IS
             // evidence about the Binding — swallowing it would leave the chip claiming a
             // connection nobody has checked since.
-            await health.record(error as? ProviderFetchError ?? .unreachable, of: target)
+            await health.record(error, of: target)
         }
     }
 }

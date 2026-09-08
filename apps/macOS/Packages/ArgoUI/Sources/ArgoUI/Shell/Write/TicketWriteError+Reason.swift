@@ -16,7 +16,7 @@ extension TicketWriteError {
         case let .refused(words):
             output?.summary ?? words
         case let .unreachable(failure):
-            failure.reason
+            failure?.reason ?? ProviderFetchError.didNotLand
         }
     }
 
@@ -35,8 +35,12 @@ private extension ProviderFetchError {
     /// it. `grantRefused` has none because it is an Account fact, not a connection one.
     var reason: String {
         guard let cause else { return "The account's token was refused" }
-        return "The write did not land — \(cause.readableName)"
+        return "\(Self.didNotLand) — \(cause.readableName)"
     }
+
+    /// The whole line where the health vocabulary has no word for the failure at all: the write
+    /// did not land, and nothing about the connection was established (#1698).
+    static let didNotLand = "The write did not land"
 }
 
 private extension TicketWrite {

@@ -43,6 +43,9 @@ struct LinearScopeCatalog: BindingScopeCatalog {
                 "Linear is rate-limiting this account. Try again in a few minutes.",
             )
         case .offline, .unreachable: .unreadable("Linear could not be reached.")
+        // A failure with no health word says nothing about reaching Linear, so neither does the
+        // picker (#1698).
+        case nil: .unreadable("Linear did not answer with a list of teams.")
         }
     }
 

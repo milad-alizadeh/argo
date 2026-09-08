@@ -30,7 +30,7 @@ struct LinearBindingTests {
         let codeHost = PortReadTarget(binding: .stub(), projectID: "P1")
 
         await ledger.succeeded(codeHost.projectBinding, in: "P1", at: Date())
-        await ledger.record(.unreachable, of: ticket)
+        await ledger.record(ProviderFetchError.unreachable, of: ticket)
 
         #expect(await ledger.health(of: ticket.projectBinding, in: "P1").state != .healthy)
         #expect(await ledger.health(of: codeHost.projectBinding, in: "P1").state == .healthy)
@@ -42,8 +42,8 @@ struct LinearBindingTests {
         let ticket = PortReadTarget(binding: .linear(), projectID: "P1")
         let codeHost = PortReadTarget(binding: .stub(), projectID: "P1")
 
-        await ledger.record(.grantRefused, of: ticket)
-        await ledger.record(.grantRefused, of: codeHost)
+        await ledger.record(ProviderFetchError.grantRefused, of: ticket)
+        await ledger.record(ProviderFetchError.grantRefused, of: codeHost)
         // The Linear identity is authorized again. GitHub's refusal is a different Account's.
         await ledger.reconnected(ticket.projectBinding.accountID)
 
