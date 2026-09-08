@@ -41,7 +41,7 @@ struct FeedShapeHeight {
         case let .submitted(text): bubble(text: text, shots: [])
         case let .message(text): prose(text)
         case let .thought(text): prose(text)
-        case .call: pressedLine
+        case .call: Self.pressedLine
         case let .survey(survey): folded(survey.calls.count)
         case let .work(work): folded(work.calls.count)
         case let .gallery(gallery): Self.shots(gallery.shots, across: measure)
@@ -81,17 +81,17 @@ struct FeedShapeHeight {
     /// FLUSH, and neither the hairline over a name nor the box's border takes a point: the rule is
     /// an overlay and the border is a stroke inside its own bounds (#1228).
     private func folded(_ calls: Int) -> CGFloat {
-        guard standing.isUnfolded else { return pressedLine }
+        guard standing.isUnfolded else { return Self.pressedLine }
         return Self.stackedLines(
-            calls + 1, at: pressedLine, step: ArgoSpacing.flush,
+            calls + 1, at: Self.pressedLine, step: ArgoSpacing.flush,
         )
     }
 
     /// A stretch nothing could read: its own line, and the raw text under it once it is let out.
     private func unread(_ unreadable: FeedUnreadable) -> CGFloat {
-        guard standing.isUnfolded else { return pressedLine }
+        guard standing.isUnfolded else { return Self.pressedLine }
         let inset = Self.symbolIndent
-        return pressedLine + ArgoFeedRow.callStep
+        return Self.pressedLine + ArgoFeedRow.callStep
             + Self.unleaded(unreadable.raw, in: .machine, across: measure - inset)
     }
 
@@ -128,8 +128,17 @@ extension FeedShapeHeight {
 
     /// A row drawn as a pressable line: its words, and `FeedRowButtonStyle`'s own step above and
     /// below them.
-    var pressedLine: CGFloat {
-        Self.bodyLine + FeedRowButtonStyle.groundInsetY * 2
+    static var pressedLine: CGFloat {
+        bodyLine + FeedRowButtonStyle.groundInsetY * 2
+    }
+
+    /// How far the nth line of an open fold stands below the one above it — every line is a pressed
+    /// line and they stack flush, so this is the pitch `folded(_:)` stacks at.
+    ///
+    /// Named because the LANE draws the same stack at its own scale and must agree with it to the
+    /// point (`MinimapRowShape.listed`, #1691).
+    static var foldedLineStep: CGFloat {
+        pressedLine + ArgoSpacing.flush
     }
 
     /// A skill load's chip — one line of its own quieter rung, inside the chip's padding.

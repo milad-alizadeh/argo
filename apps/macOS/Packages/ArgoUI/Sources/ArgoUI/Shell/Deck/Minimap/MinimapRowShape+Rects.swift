@@ -18,6 +18,8 @@ extension MinimapRowShape {
             Self.bubble(text, shots: shots, isFolded: isFolded, across: measure)
         case let .line(parts, ink):
             Self.line(parts, ink: ink, across: measure)
+        case let .listed(header, steps, ink):
+            Self.listed(header, steps: steps, ink: ink, across: measure)
         case let .shots(widths):
             Self.shots(widths, across: measure)
         case let .card(card):

@@ -30,6 +30,12 @@ extension MinimapLinePart {
         MinimapLinePart(text: "", ink: ink, width: width)
     }
 
+    /// The `×3` a line carries where it stands for several calls — a collapsed run on a call's own
+    /// row, and a name in an open fold's list. The one place the lane spells that mark.
+    static func repeats(_ count: Int, _ ink: FeedInk) -> MinimapLinePart {
+        .words("×\(count)", ink, in: .machine)
+    }
+
     /// How wide this piece is drawn: its column where it has one, and what its words measure
     /// otherwise.
     @MainActor var drawnWidth: CGFloat {

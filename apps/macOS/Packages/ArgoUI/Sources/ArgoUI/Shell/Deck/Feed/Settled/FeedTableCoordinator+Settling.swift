@@ -51,7 +51,16 @@ extension FeedTableCoordinator {
             }
             settle(stamp, measuring: nil)
         case let .rows(owed):
-            settle(stamp, measuring: owed)
+            // A fold of calls the reader just let out is owed its rows in the same turn the
+            // cell was redrawn open, so the content and the geometry move together (#1691).
+            // Everything else keeps the pass — the tail a live Session grew, the Result that
+            // rewrote its last row, and the two folds whose height is typeset, not counted.
+            guard let standing = geometry.settled, standing.stamp.differsByFold(from: stamp),
+                  owed.allSatisfy({ stamp.isFoldOfCalls(at: $0) })
+            else {
+                return settle(stamp, measuring: owed)
+            }
+            settleInTurn(stamp, measuring: owed, over: standing)
         }
     }
 
@@ -183,7 +192,10 @@ extension FeedTableCoordinator {
     /// Atomic on purpose, and this is the whole of ADR-0030's promise: the rows the table draws,
     /// the heights it draws them at and the document the overview lane maps all change together,
     /// so there is no frame in which the feed is showing one reading's rows at another's heights.
-    private func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
+    ///
+    /// Not `private`, for the one caller that lands a document without a pass behind it — see
+    /// `settleInTurn`, which is beside this file because this one is at its length gate.
+    func landed(_ document: FeedSettledDocument?, for stamp: FeedMeasureStamp) {
         // The latch comes back FIRST, and on every way out of here (#1132). Nothing else can give
         // it back: the only other writes to it are the ones a pass makes when it STARTS. So a pass
         // that returns with no document — or returns to a deck `KeptDecks` has evicted, since
@@ -279,15 +291,17 @@ extension FeedTableCoordinator {
     /// read as a re-wrap this walk would have started a whole-document pass per landing.
     ///
     /// WHERE it is called from is load-bearing, and not for the reason the re-entrancy guard above
-    /// might suggest. `landed` runs in the settling Task's continuation, OUTSIDE `settleIfOwed`, so
-    /// `isDecidingSettle` is not holding anything here: `rect(ofRow:)` tiles, the tile resizes the
-    /// table, `FeedTableView.setFrameSize` reports it, and `settleIfOwed` re-enters freely. What
-    /// stops it recurring is that `geometry.settle` and `show` have ALREADY run by this line, so
-    /// the nested decision reads `.settled`, reaches `adoptSettled`, finds `shown` is that
-    /// document's own rows, and returns. Move this call above those two and it becomes a loop.
+    /// might suggest. Reached through `landed` from the settling Task's continuation it runs
+    /// OUTSIDE `settleIfOwed`, so `isDecidingSettle` is not holding anything: `rect(ofRow:)`
+    /// tiles, the tile resizes the table, `FeedTableView.setFrameSize` reports it, and
+    /// `settleIfOwed` re-enters freely. What stops it recurring is that `geometry.settle` and
+    /// `show` have ALREADY run by this line, so the nested decision reads `.settled`, reaches
+    /// `adoptSettled`, finds `shown` is that document's own rows, and returns. Move this call
+    /// above those two and it becomes a loop.
     ///
-    /// `adoptSettled` calls it too, and there the re-entrancy really is held by `isDecidingSettle`:
-    /// that path runs inside `settleIfOwed`.
+    /// Two paths reach it from INSIDE `settleIfOwed`, where the re-entrancy really is held by
+    /// `isDecidingSettle`: `adoptSettled`, and `settleInTurn`'s landing (#1691). Both are safe
+    /// either way — the guard holds them, and the order above would hold them without it.
     private func converge(_ table: FeedTableView) {
         let rows = table.numberOfRows
         walkedRows(rows)

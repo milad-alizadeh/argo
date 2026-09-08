@@ -54,3 +54,22 @@ extension FeedRow.Content {
         }
     }
 }
+
+extension FeedRow.Content.Shape {
+    /// Whether this row's height is a LINE COUNT rather than a typesetting — a fold of calls, whose
+    /// open height is its lines times a line box (`FeedShapeHeight.folded`).
+    ///
+    /// It is what decides whether a height may be taken where the main actor stands
+    /// (`FeedTableCoordinator.settleInTurn`). FIVE shapes change height under the reader's own
+    /// fold, and the three that are not this one typeset: a prompt and a drawn Turn each lay their
+    /// words out to know how many lines they are hiding (`FeedShapeHeight+Bubble`), and an
+    /// unreadable run typesets its whole raw blob when the reader lets it out. That is exactly the
+    /// work the measure pass keeps off this actor (ADR-0030, Rules 1 and 3).
+    var isFoldOfCalls: Bool {
+        switch self {
+        case .survey, .work: true
+        case .prompt, .submitted, .message, .thought, .call, .gallery, .skillLoaded, .ask, .mark,
+             .settledWait, .delegationEnded, .unreadable: false
+        }
+    }
+}

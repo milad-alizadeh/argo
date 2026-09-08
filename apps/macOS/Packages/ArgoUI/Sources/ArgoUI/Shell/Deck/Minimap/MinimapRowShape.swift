@@ -21,6 +21,10 @@ enum MinimapRowShape: Equatable, Sendable {
     /// A row the feed says in a single line, as the pieces it says it in — a call's mark, its verb,
     /// what it named, and what it did in lines.
     case line(parts: [MinimapLinePart], ink: FeedInk)
+    /// A fold the reader has let out, as the lines it lists: its own count line, and one per call
+    /// it took. The folded state is a `line` — an open card measured at the stack's full height and
+    /// reported as one line drew a card of nineteen steps exactly like a card of one (#1691).
+    case listed(header: [MinimapLinePart], steps: [[MinimapLinePart]], ink: FeedInk)
     /// A run of pictures, as the WIDTHS the row draws them at — a shot keeps its own ratio at the
     /// gallery's fixed height (#1015), so a count alone would put the lane's frames on a grid the
     /// feed stopped laying out on. The lane wraps them across itself the way the row wraps them
@@ -44,6 +48,7 @@ extension MinimapRowShape {
         case let .composed(_, ink): ink
         case .bubble: .prompt
         case let .line(_, ink): ink
+        case let .listed(_, _, ink): ink
         case .shots: .media
         case let .card(card): card.ink
         case let .whole(ink): ink
