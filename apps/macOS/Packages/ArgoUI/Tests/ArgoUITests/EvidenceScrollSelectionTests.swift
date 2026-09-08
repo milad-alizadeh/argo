@@ -10,38 +10,72 @@ import Testing
 /// #1355's and is not re-proved here.
 ///
 /// Each half is asserted where it lives. The panel's report needs a REAL scroll of a real
-/// `NSScrollView`, because what it reports is read off SwiftUI's own frames — a suite that called
-/// `onScroll` itself would be asserting its own arithmetic. The repaint needs the feed's table,
-/// because the rows live in recycled cells that inherit nothing from the tree above them.
+/// `NSScrollView`, because what it reports is read off SwiftUI's own frames. The stale set is a
+/// value, so it is asserted as one.
+///
+/// The one-step rule — a panel with a single result tells the feed nothing — is the PANEL's, held
+/// by `evidence.steps.count > 1` in `EvidencePanel.reportTop`. `FeedDrawnFacts` knows nothing
+/// about step counts, so `a panel of one step reports nothing` is where that rule is pinned.
 @Suite("Evidence scroll selection")
 @MainActor
 struct EvidenceScrollSelectionTests {
     private static let column = CGSize(width: 620, height: 800)
-    /// Far enough that the first step's own top has left the view, which is the whole of what
-    /// "another step is at the top now" means.
-    private static let pastTheFirstStep: CGFloat = 400
+    /// How many results the panel under test holds. Every bound below is derived from it, so a
+    /// fixture grown by one cannot leave an assertion pinning the old last step.
+    private static let steps = 6
+
+    /// A third of the way down the document, which for a panel of six equal steps is inside the
+    /// second or the third — so the first step's own top has left the view, which is the whole of
+    /// what "another step is at the top now" means.
+    ///
+    /// Derived and not a number: a step's height in points is Core Text's answer, and a literal
+    /// that happened to land inside the FIRST step is how an earlier draft of this suite passed
+    /// while asserting nothing.
+    private static func pastTheFirstStep(of panel: HostedEvidencePanel) throws -> CGFloat {
+        try panel.documentHeight() / 3
+    }
+
+    /// Before a reader has touched it, the step at the top of the view IS the first one — which is
+    /// why opening a folded row lights its first name rather than nothing.
+    @Test
+    func `at rest the panel reports its first step`() async {
+        let panel = HostedEvidencePanel(steps: Self.steps)
+        await panel.settled()
+
+        #expect(panel.reported == 0)
+    }
 
     @Test
     func `a scroll past a step reports the step now at the top`() async throws {
-        let panel = HostedEvidencePanel(steps: 6)
-        try await panel.scrolled(to: Self.pastTheFirstStep)
+        let panel = HostedEvidencePanel(steps: Self.steps)
+        try await panel.scrolled(to: Self.pastTheFirstStep(of: panel))
         let reported = try #require(panel.reported)
 
         #expect(reported > 0)
     }
 
+    /// The far end pinned exactly, not just as "later": every step here is taller than the view,
+    /// so a scroll to the foot leaves the LAST step's top above the visible top and no other
+    /// qualifies. An off-by-one in `topStep()` fails this.
+    @Test
+    func `a scroll to the foot reports the last step`() async throws {
+        let panel = HostedEvidencePanel(steps: Self.steps)
+        try await panel.scrolled(to: panel.documentHeight())
+
+        #expect(panel.reported == Self.steps - 1)
+    }
+
     /// The report names the step at the TOP of the view, so the further the reader scrolls the
-    /// later the step — and it never runs past the last one.
+    /// later the step.
     @Test
     func `the reported step follows the scroll down the panel`() async throws {
-        let panel = HostedEvidencePanel(steps: 6)
-        try await panel.scrolled(to: Self.pastTheFirstStep)
+        let panel = HostedEvidencePanel(steps: Self.steps)
+        try await panel.scrolled(to: Self.pastTheFirstStep(of: panel))
         let near = try #require(panel.reported)
         try await panel.scrolled(to: panel.documentHeight())
         let far = try #require(panel.reported)
 
         #expect(far > near)
-        #expect(far <= 5)
     }
 
     /// A panel of one result has no other step to distinguish, so it tells the feed nothing: the
@@ -55,49 +89,60 @@ struct EvidenceScrollSelectionTests {
     }
 
     /// The fight #1355 rules out: the panel's own report arrives back as `current`, and answering
-    /// that with another `scrollTo` would send the reader back to whichever step they came from.
+    /// it with another `scrollTo` would move the panel under the reader.
+    ///
+    /// Against where the scroll LANDED rather than against a single reading taken afterwards — a
+    /// `scrollTo` answering the report is already baked into the later one.
     @Test
-    func `the step the panel reported does not scroll the panel back`() async throws {
-        let panel = HostedEvidencePanel(steps: 6)
-        let landed = try await panel.scrolled(to: Self.pastTheFirstStep)
-        await panel.settled()
-        let stayed = try panel.offset()
+    func `the step the panel reported moves the panel nowhere`() async throws {
+        let panel = HostedEvidencePanel(steps: Self.steps)
+        let scroll = try await panel.scrolled(to: Self.pastTheFirstStep(of: panel))
 
-        #expect(panel.reported != nil)
-        // Not back at the top, which is where a `scrollTo` answering the panel's own report
-        // would have put it, and not drifting on the passes after that either.
-        #expect(landed > 0)
-        #expect(stayed == landed)
+        #expect(scroll.landed > 0)
+        #expect(scroll.stayed == scroll.landed)
     }
 
     /// The repaint half, and the defect #1646 was. A cell is re-drawn only where the table is told
     /// which row went stale, so a step that moved on its own has to name the row the panel is open
     /// on — or its list keeps the highlight it was last drawn with.
     @Test
-    func `the step the panel reported leaves the row it is open on stale`() async throws {
+    func `the step the panel reported leaves the row it is open on stale`() throws {
         let open = try #require(FeedProjection.previewSurveyRowID)
-        let feed = try await Self.reading(open: open, at: 0)
 
-        let scrolled = FeedTableFixture.model(showing: Self.rows, open: open, step: 2)
-        #expect(feed.coordinator.staleRows(under: scrolled) == IndexSet([open]))
+        let drawn = FeedDrawnFacts(open: open, step: 0)
+        #expect(drawn.stale(against: FeedDrawnFacts(open: open, step: 2)) == IndexSet([open]))
     }
 
     /// The same step arriving again is the panel's report echoing home through the feed, and it
     /// leaves nothing stale: a repaint per pass would cost every visible cell the in-row state the
     /// reader had.
     @Test
-    func `the step it is already drawn at leaves nothing stale`() async throws {
+    func `the step it is already drawn at leaves nothing stale`() throws {
         let open = try #require(FeedProjection.previewSurveyRowID)
-        let feed = try await Self.reading(open: open, at: 2)
 
-        let echo = FeedTableFixture.model(showing: Self.rows, open: open, step: 2)
-        #expect(feed.coordinator.staleRows(under: echo).isEmpty)
+        let drawn = FeedDrawnFacts(open: open, step: 2)
+        #expect(drawn.stale(against: FeedDrawnFacts(open: open, step: 2)).isEmpty)
+    }
+
+    /// The other half of the repaint: the row the stale set names is a row the table DRAWS, so
+    /// `refresh(rows:)` has a cell to hand a fresh tree to. It asks for none
+    /// (`makeIfNecessary: false`) and filters to `shown.indices`, so a set naming a row outside
+    /// them would be dropped without a word.
+    @Test
+    func `the stale row is one the table draws`() async throws {
+        let open = try #require(FeedProjection.previewSurveyRowID)
+        let feed = try await Self.reading(open: open, at: 0)
+
+        let stale = FeedDrawnFacts(open: open, step: 0)
+            .stale(against: FeedDrawnFacts(open: open, step: 2))
+        #expect(!stale.isEmpty)
+        #expect(stale.allSatisfy { feed.coordinator.shown.indices.contains($0) })
     }
 
     /// A selection and never a scroll (#1355): the reader is reading the panel, and the reading
     /// under their eyes stays exactly where they left it.
     @Test
-    func `a step the panel reported leaves the feed where it is`() async throws {
+    func `a step that moved scrolls the feed nowhere`() async throws {
         let open = try #require(FeedProjection.previewSurveyRowID)
         let feed = try await Self.reading(open: open, at: 0)
         let scroller = try #require(feed.coordinator.scroller)
@@ -122,146 +167,10 @@ struct EvidenceScrollSelectionTests {
         let handle: FeedTableHandle
     }
 
-    private static func reading(open: FeedRow.ID, at step: Int) async throws -> Reading {
+    private static func reading(open: FeedRow.ID, at step: Int) async -> Reading {
         let handle = FeedTableHandle()
         let coordinator = await FeedTableFixture.laidOut(rows, in: column, through: handle)
         coordinator.apply(FeedTableFixture.model(showing: rows, open: open, step: step))
         return Reading(coordinator: coordinator, handle: handle)
-    }
-}
-
-/// One `EvidencePanel` hosted for real, wired the way `DeckContentRow` wires it: what the panel
-/// reports is written straight back as its `current`, so the two directions can fight if the
-/// guards let them.
-///
-/// The precedent for hosting at all is `HostedDeck` — a claim about the seam between a SwiftUI
-/// scroll view and what it reports upward cannot be made from either side alone.
-@MainActor final class HostedEvidencePanel {
-    /// What the panel told the feed, as `FeedRowSelection.scrolled(to:)` receives it.
-    @Observable final class Told {
-        var step: Int?
-    }
-
-    private let told = Told()
-    private let host: NSHostingView<AnyView>
-    /// Held for the life of the harness: a hosting view with no window lays out but does not run
-    /// as one on screen does.
-    let window: NSWindow
-
-    /// The panel at the floor of its own zone, and short enough that a few hundred points of
-    /// scroll crosses a step for certain.
-    private static let size = CGSize(width: 360, height: 320)
-
-    init(steps: Int) {
-        self.host = NSHostingView(rootView: AnyView(
-            HostedEvidenceWrapper(told: told, evidence: Self.evidence(steps: steps))
-                .frame(width: Self.size.width, height: Self.size.height)
-                .argoAppearance(),
-        ))
-        host.frame = NSRect(origin: .zero, size: Self.size)
-        self.window = NSWindow(
-            contentRect: host.frame,
-            styleMask: [.titled],
-            backing: .buffered,
-            defer: false,
-        )
-        window.contentView = host
-        host.layoutSubtreeIfNeeded()
-    }
-
-    var reported: Int? {
-        told.step
-    }
-
-    /// The panel's own scroller, which SwiftUI built for its `ScrollView`.
-    func scroller() throws -> NSScrollView {
-        try #require(
-            HostedDeck.find(NSScrollView.self, in: host), "The hosted panel built no scroller.",
-        )
-    }
-
-    func documentHeight() throws -> CGFloat {
-        try scroller().documentView?.frame.height ?? 0
-    }
-
-    func offset() throws -> CGFloat {
-        try scroller().contentView.bounds.origin.y
-    }
-
-    /// The reader's own scroll, as far as `offset` reaches, with where it actually landed handed
-    /// back — a scroller clamps, and a claim about where the panel STAYED has to be made against
-    /// where it went rather than where it was asked to go.
-    @discardableResult
-    func scrolled(to offset: CGFloat) async throws -> CGFloat {
-        await settled()
-        let scroller = try scroller()
-        scroller.contentView.scroll(to: NSPoint(x: 0, y: offset))
-        scroller.reflectScrolledClipView(scroller.contentView)
-        await settled()
-        return scroller.contentView.bounds.origin.y
-    }
-
-    /// The same wait as `settle()`, taken from an `async` caller: `RunLoop.run(_:before:)` is
-    /// unavailable there, so the turns are `Task.sleep` and the run loop is turned either side of
-    /// them — which is `HostedDeck`'s split, for `HostedDeck`'s reason.
-    func settled() async {
-        settle()
-        for _ in 0 ..< Self.turns {
-            try? await Task.sleep(for: .milliseconds(2))
-            host.layoutSubtreeIfNeeded()
-        }
-        settle()
-    }
-
-    /// Turns the run loop, then lays out. SwiftUI applies a state write on a turn of its own, and
-    /// the panel's report comes off a preference that a layout pass recomputes — so a caller that
-    /// only asked for layout would read the frames from before the scroll.
-    func settle() {
-        for _ in 0 ..< Self.turns {
-            RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.002))
-            host.layoutSubtreeIfNeeded()
-        }
-    }
-
-    private static let turns = 24
-
-    /// A run of results, each tall enough that one scroll crosses one.
-    static func evidence(steps: Int) -> FeedEvidence {
-        FeedEvidence(
-            verb: "Ran",
-            symbol: "›",
-            label: "Ran \(steps) Commands",
-            ending: .succeeded,
-            steps: (0 ..< steps).map { index in
-                FeedEvidence.Step(
-                    id: index,
-                    address: .typed("say-\(index)"),
-                    language: nil,
-                    isExternal: false,
-                    result: .output(OutputEvidence(
-                        tier: .direct,
-                        text: (0 ..< 12).map { "line \(index)-\($0)" }.joined(separator: "\n"),
-                    )),
-                )
-            },
-        )
-    }
-}
-
-/// `DeckContentRow.panel`'s wiring, and only that: `current` in, the report written back onto it.
-private struct HostedEvidenceWrapper: View {
-    let told: HostedEvidencePanel.Told
-    let evidence: FeedEvidence
-
-    /// The deck's `FeedRowSelection.step`, held as the state it is above the panel.
-    @State private var current: Int?
-
-    var body: some View {
-        EvidencePanel(evidence: evidence, current: current, onScroll: reported)
-    }
-
-    private func reported(_ step: Int) {
-        told.step = step
-        current = step
     }
 }

@@ -23,16 +23,16 @@ struct KeptDeckEvictionTests {
         let alpha = try #require(deck.kept(FeedSwitchFixture.alpha))
         alpha.folds = [3, 9]
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
-        #expect(alpha.coordinator.folds == [3, 9])
+        #expect(alpha.coordinator.drawnFacts.folds == [3, 9])
 
         await deck.show(FeedSwitchFixture.bravoRows, of: FeedSwitchFixture.bravo)
         let bravo = try #require(deck.kept(FeedSwitchFixture.bravo))
         await deck.show(FeedSwitchFixture.alphaRows, of: FeedSwitchFixture.alpha)
 
         #expect(bravo.folds == nil)
-        #expect(bravo.coordinator.folds.isEmpty)
+        #expect(bravo.coordinator.drawnFacts.folds.isEmpty)
         #expect(alpha.folds == [3, 9])
-        #expect(alpha.coordinator.folds == [3, 9])
+        #expect(alpha.coordinator.drawnFacts.folds == [3, 9])
     }
 
     /// The heights are held under a wider bound than the decks, so a Session pushed out re-opens

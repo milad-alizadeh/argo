@@ -15,15 +15,8 @@ import SwiftUI
     /// the rows of a model no pass has measured yet. Written in one place, the turn a document
     /// lands (`FeedTableCoordinator+Settling`).
     var shown: [FeedRow] = []
-    /// What the visible cells were last drawn against.
-    var folds: Set<FeedRow.ID> = []
-    var drawnOpen: FeedRow.ID?
-    /// Which step inside the open row those cells were drawn against — see
-    /// `FeedRowSelection.step`. A drawn fact like the three beside it, because the highlight in a
-    /// folded row's list is read off it, and the panel moves it as the reader scrolls (#1646).
-    var drawnStep: Int?
-    /// See `FeedTableModel.washed`.
-    var drawnWashed: FeedRow.ID?
+    /// What the visible cells were last drawn against — see `FeedDrawnFacts`.
+    var drawnFacts = FeedDrawnFacts()
     /// Whether the last model arrived mid seam-drag — the edge off it is when the full re-measure
     /// runs.
     private var wasResizing = false
@@ -288,12 +281,7 @@ import SwiftUI
         let visible = table.rows(in: table.visibleRect)
         return IndexSet(integersIn: visible.location ..< visible.location + visible.length)
     }
-}
 
-/// What a cell DRAWS, kept apart from the class body so that body stays inside its length gate —
-/// the same reason as the extension below it. A type's `private` members reach across the whole
-/// file since Swift 4, which is why `touchUp` may sit out here and still be the class's own.
-extension FeedTableCoordinator {
     /// The equal-rows path: nothing structural moved, so only what a cell DRAWS can be stale —
     /// and only the rows whose rendered fact changed are touched, because replacing a rootView
     /// resets whatever in-row state the reader had (a text selection, a hover).
@@ -307,38 +295,11 @@ extension FeedTableCoordinator {
         if fresh.environment.redraws(against: staleEnvironment) {
             refresh(rows: visibleRows())
         }
-        let affected = staleRows(under: fresh)
-        folds = fresh.unfolded.wrappedValue
-        drawnWashed = fresh.washed
-        drawnOpen = fresh.selection.open
-        drawnStep = fresh.selection.step
+        let facts = FeedDrawnFacts(fresh)
+        let affected = drawnFacts.stale(against: facts)
+        drawnFacts = facts
         guard !affected.isEmpty else { return }
         refresh(rows: affected)
-    }
-
-    /// Which rows a fresh model leaves stale — the ones whose drawn facts it moved, which is what
-    /// `refresh(rows:)` is owed once the environment has been dealt with. A read of the two sides
-    /// and nothing else, so which rows a model change leaves stale can be asked without a table
-    /// to draw them into.
-    func staleRows(under fresh: FeedTableModel) -> IndexSet {
-        var affected = IndexSet()
-        // A row's id IS its position — assigned as one by `FeedProjection.rows`.
-        //
-        // The STEP goes with the open row: the highlight under a folded row names whichever step
-        // the panel is showing, and the panel reports its own as the reader scrolls it (#1646). A
-        // step that moved on its own leaves the same one row stale, since only the open row draws
-        // it (`FeedRowView.opening`).
-        if fresh.selection.open != drawnOpen || fresh.selection.step != drawnStep {
-            affected.formUnion(IndexSet([drawnOpen, fresh.selection.open].compactMap(\.self)))
-        }
-        let unfolded = fresh.unfolded.wrappedValue
-        if unfolded != folds {
-            affected.formUnion(IndexSet(folds.symmetricDifference(unfolded)))
-        }
-        if fresh.washed != drawnWashed {
-            affected.formUnion(IndexSet([drawnWashed, fresh.washed].compactMap(\.self)))
-        }
-        return affected
     }
 }
 
