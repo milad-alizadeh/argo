@@ -205,10 +205,14 @@ extension CockpitView {
                 Task { await actions.sessions.setArchived(sessionID, isArchived) }
                 return nil
             }
+            let agentEnd = SessionArchiveProjection.endsAgent(
+                access: session.access,
+                cli: session.cli,
+            )
             return ArchiveConfirmation.Session(
                 id: session.id,
                 name: session.title,
-                endsAgent: SessionArchiveProjection.endsAgent(access: session.access),
+                agentEnd: agentEnd,
             )
         }
         guard !asked.isEmpty else { return }

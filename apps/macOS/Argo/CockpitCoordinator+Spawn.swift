@@ -78,7 +78,7 @@ extension CockpitCoordinator {
     }
 
     /// One shape for every refusal; the sentence under the title is the tool's own.
-    private func report(detail: String, title: String = "Could not start a session") {
+    func report(detail: String, title: String = "Could not start a session") {
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = title

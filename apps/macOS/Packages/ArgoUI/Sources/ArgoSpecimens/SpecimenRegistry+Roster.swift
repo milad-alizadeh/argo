@@ -202,11 +202,13 @@ extension SpecimenRegistry {
         SpecimenEntry("foldedRoster") { FoldedRosterSpecimen() },
         SpecimenEntry("openFoldedRoster") { FoldedRosterSpecimen(isOpened: true) },
         SpecimenEntry("editingRow") { EditingRowSpecimen() },
-        // The prompt the archive gesture raises, in the three readings it has (#1596). AppKit
-        // draws the chrome, so what these are evidence about is the words: the end Argo can
-        // perform, the end it cannot, and the batch that is both.
+        // The prompt the archive gesture raises, including the orphaned-Claude argv match (#1596,
+        // #1609). AppKit draws the chrome, so what these evidence is the words and their order.
         SpecimenEntry("archivePromptEnding") {
             ArchivePromptSpecimen(.ending)
+        },
+        SpecimenEntry("archivePromptOrphanedClaude") {
+            ArchivePromptSpecimen(.orphanedClaude)
         },
         SpecimenEntry("archivePromptOutliving") {
             ArchivePromptSpecimen(.outliving)

@@ -28,6 +28,7 @@ struct SessionResumeIDTests {
         // The id everything links against stays the root's; only the resume target moves.
         #expect(session.id == "root")
         #expect(session.resumeID == "third")
+        #expect(session.chainTranscriptIDs == ["root", "second", "third"])
     }
 
     /// A spawn Argo published a row for has no file yet, so there is no chain to continue — which

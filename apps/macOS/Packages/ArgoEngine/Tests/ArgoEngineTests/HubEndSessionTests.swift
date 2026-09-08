@@ -13,7 +13,7 @@ struct HubEndSessionTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        fixture.hub.endSession(id: claim.value)
+        _ = await fixture.hub.endSession(id: claim.value)
 
         #expect(fixture.host.started.last?.isTerminated == true)
         #expect(fixture.hub.ownership.liveClaims.isEmpty)
@@ -28,26 +28,76 @@ struct HubEndSessionTests {
         let ending = try await fixture.hub.spawnSession()
         let staying = try await fixture.hub.spawnSession()
 
-        fixture.hub.endSession(id: ending.value)
+        _ = await fixture.hub.endSession(id: ending.value)
 
         #expect(fixture.hub.ownership.liveClaims == [staying])
         #expect(fixture.host.started.first?.isTerminated == true)
         #expect(fixture.host.started.last?.isTerminated == false)
     }
 
-    /// A Session whose PTY has already exited is `orphaned`, and there is nothing left to end. The
-    /// verb answers by doing nothing rather than by reaching for a claim that has stood down.
+    /// A restarted Hub has no PTY, but the Claude argv still carries the exact Session id. That
+    /// key reaches the old process without treating another agent in the folder as this one.
     @Test
-    func `ending an orphaned Session touches nothing`() async throws {
-        let fixture = try SpawnFixture()
+    func `archiving an orphaned Claude Session ends its identified process`() async throws {
+        let signalled = RecordedProcessSignals()
+        let state = try await restartedOrphanedHub(
+            table: "1201",
+            arguments: [1201: ["claude", "--session-id", spawnedChainID]],
+            signalled: signalled,
+        )
+        let fixture = state.fixture
         defer { fixture.remove() }
-        let claim = try await fixture.hub.spawnSession()
-        fixture.host.endLastProcess(exitCode: 0)
-        #expect(fixture.hub.ownership.liveClaims.isEmpty)
+        let relaunched = state.hub
+        #expect(relaunched.sessions.map(\.provenance) == [.orphaned])
 
-        fixture.hub.endSession(id: claim.value)
+        let result = await relaunched.endSession(archiving: true, id: spawnedSessionID)
 
-        #expect(fixture.hub.ownership.provenance(sessionID: claim.value) == .orphaned)
+        #expect(result == .ended)
+        #expect(signalled.values == [1201])
+    }
+
+    @Test
+    func `an ambiguous orphaned Claude match leaves every process alone`() async throws {
+        let signalled = RecordedProcessSignals()
+        let state = try await restartedOrphanedHub(
+            table: "1201\n1202",
+            arguments: [
+                1201: ["claude", "--session-id", spawnedChainID],
+                1202: ["claude", "--resume", spawnedChainID],
+            ],
+            signalled: signalled,
+        )
+        let fixture = state.fixture
+        defer { fixture.remove() }
+        let relaunched = state.hub
+
+        let result = await relaunched.endSession(archiving: true, id: spawnedSessionID)
+
+        #expect(result == .ambiguous)
+        #expect(signalled.values.isEmpty)
+    }
+
+    private func restartedOrphanedHub(
+        table: String,
+        arguments: [Int32: [String]],
+        signalled: RecordedProcessSignals,
+    ) async throws
+        -> (fixture: SpawnFixture, hub: Hub) {
+        let fixture = try SpawnFixture(orphanedSessionProcess: .init(
+            run: { _ in table },
+            arguments: { arguments[$0] },
+            signal: signalled.record,
+        ))
+        do {
+            _ = try await fixture.hub.spawnSession()
+            await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
+            let relaunched = fixture.restarted()
+            await hubObserveToEnd(relaunched, spawnedSessionObservation(of: fixture))
+            return (fixture, relaunched)
+        } catch {
+            fixture.remove()
+            throw error
+        }
     }
 
     /// A Session no claim of this Hub names is external: Argo has no channel to it, whatever its
@@ -59,7 +109,7 @@ struct HubEndSessionTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        fixture.hub.endSession(id: "a-session-argo-never-started")
+        _ = await fixture.hub.endSession(id: "a-session-argo-never-started")
 
         #expect(fixture.hub.ownership.liveClaims == [claim])
         #expect(fixture.host.started.last?.isTerminated == false)
@@ -73,7 +123,7 @@ struct HubEndSessionTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        fixture.hub.endSession(id: claim.value)
+        _ = await fixture.hub.endSession(id: claim.value)
         // Nothing has reported yet: Argo asked the agent to end, and an exit it has not heard is
         // not a fact it can state.
         #expect(fixture.hub.spawns[claim]?.startup.exit == nil)
@@ -92,7 +142,7 @@ struct HubEndSessionTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        fixture.hub.endSession(archiving: true, id: claim.value)
+        _ = await fixture.hub.endSession(archiving: true, id: claim.value)
 
         #expect(fixture.host.started.last?.isTerminated == true)
         #expect(fixture.hub.ownership.liveClaims.isEmpty)
@@ -106,7 +156,7 @@ struct HubEndSessionTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        fixture.hub.endSession(archiving: false, id: claim.value)
+        _ = await fixture.hub.endSession(archiving: false, id: claim.value)
 
         #expect(fixture.host.started.last?.isTerminated == false)
         #expect(fixture.hub.ownership.liveClaims == [claim])

@@ -72,6 +72,10 @@ public struct SpawnServices {
     public let companionRoot: URL
     public let files: Files
     public let patience: Patience
+    /// The operating-system boundaries for orphaned Claude termination (#1609). Internal so only
+    /// the Hub can ask, and mutable so a suite can stand in for the process table without replacing
+    /// the matching implementation it is meant to prove.
+    var orphanedSessionProcess = OrphanedSessionProcess.Services()
     /// The transcript id a fresh spawn tells its CLI to write under (#742). Injected so a test can
     /// stand in for the CLI's own record under a name it knows: the id is on argv and in the claim,
     /// and a test that could not predict it would have to read one to assert the other.

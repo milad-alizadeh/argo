@@ -8,6 +8,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The file of the chain's LATEST link. `sourceURL` is the root's and stays the root's, because
     /// the id everything links against must not move when the chain grows.
     private(set) var chainTipURL: URL?
+    /// Every Claude Session id a link in this chain was started or resumed under. The current
+    /// process may still carry any one of them on argv: its resume creates the NEXT transcript,
+    /// so matching only the newest file would look one link too far ahead (#1609).
+    private(set) var chainTranscriptIDs: Set<String> = []
     /// Every id this row has RETIRED, oldest first, and empty for a Session that has only ever
     /// been published under one. Three things retire an id: a continuation read before its origin
     /// stands as a Session of its own until the sweep folds it in, a spawn stands under its claim
@@ -185,6 +189,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
         self.chainTipURL = observation.sourceURL
+        self.chainTranscriptIDs = [observation.sourceURL.transcriptStem]
         self.name = SessionTitle(
             namedAfterTranscript: observation.sourceURL.transcriptStem,
         )
@@ -241,18 +246,15 @@ extension HubSession {
         // FILE its length ceiling, which the fact added above it spends the rest of.
         case let .headLeaf(uuid): headLeafUUID = uuid
         case let .originSession(id): originSessionID = id
-        case let .title(observedTitle, kind):
-            name.state(observedTitle, kind)
+        case let .title(observedTitle, kind): name.state(observedTitle, kind)
         case let .cwd(observedCwd): cwd = observedCwd
         // The CLI's own two knobs, both verbatim and latest-wins (#558). One line each: they are
         // the two shortest arms in this switch, and spreading them costs the body its ceiling —
         // which `.cwd` above and `.mode` and `.usage` below are packed for too (#1481).
         case let .model(reported): observed.model = reported
         case let .effort(reported): observed.effort = reported
-        case let .branch(observedBranch):
-            branch = Self.branchName(observedBranch)
-        case let .entry(cli):
-            entry = SessionEntry(entrypoint: cli)
+        case let .branch(observedBranch): branch = Self.branchName(observedBranch)
+        case let .entry(cli): entry = SessionEntry(entrypoint: cli)
         case let .mode(cli): observe(mode: cli)
         case let .prompt(text, _, atMs):
             observe(prompt: text, atMs: atMs)
@@ -396,6 +398,7 @@ extension HubSession {
         // The tip moves with the chain, unlike `sourceURL`: a resume continues the last link, and
         // the last link is whatever was merged in most recently.
         chainTipURL = continuation.chainTipURL ?? chainTipURL
+        chainTranscriptIDs.formUnion(continuation.chainTranscriptIDs)
         // After the extent above, never before it: one bounded link makes the joined reading an
         // excerpt, and an excerpt withholds the earliest moment rather than guessing it.
         moments.merge(continuation.moments, extent: transcriptExtent)

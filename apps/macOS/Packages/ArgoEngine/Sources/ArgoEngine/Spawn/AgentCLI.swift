@@ -123,10 +123,7 @@ public enum AgentCLI: String, Codable, Sendable, CaseIterable {
     /// the alternative was matching a transcript back by folder and start time, which an unrelated
     /// agent fits just as well.
     func arguments(namingFreshSession uuid: String) -> [String] {
-        switch self {
-        case .claude: ["--session-id", uuid]
-        case .codex: []
-        }
+        freshSessionIdentifierFlag.map { [$0, uuid] } ?? []
     }
 
     /// Whether `arguments(namingFreshSession:)` has anything to say. Asked before an id is minted,
@@ -146,9 +143,27 @@ public enum AgentCLI: String, Codable, Sendable, CaseIterable {
     /// observe a Codex record to name a chain from — so nothing here, and `Hub.resumeSession` stays
     /// on `claude`.
     func arguments(resuming chainID: String) -> [String] {
+        resumeIdentifierFlag.map { [$0, chainID] } ?? []
+    }
+
+    /// Every argv option that can identify one process as this CLI's Session (#1609). These are
+    /// the same words the launch methods above emit, so changing launch syntax cannot silently
+    /// leave orphan termination matching the old spelling.
+    var processIdentifierFlags: Set<String> {
+        Set([freshSessionIdentifierFlag, resumeIdentifierFlag].compactMap(\.self))
+    }
+
+    private var freshSessionIdentifierFlag: String? {
         switch self {
-        case .claude: ["--resume", chainID]
-        case .codex: []
+        case .claude: "--session-id"
+        case .codex: nil
+        }
+    }
+
+    private var resumeIdentifierFlag: String? {
+        switch self {
+        case .claude: "--resume"
+        case .codex: nil
         }
     }
 }

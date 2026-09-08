@@ -121,6 +121,7 @@ struct SpawnFixture {
         patience: SpawnServices.Patience = SpawnServices.Patience(),
         store: TranscriptRecordStore = .claudeCode,
         transcriptIDs: TranscriptIDs = .single,
+        orphanedSessionProcess: OrphanedSessionProcess.Services? = nil,
     ) throws {
         self.store = store
         let token = String(UUID().uuidString.prefix(8))
@@ -174,6 +175,9 @@ struct SpawnFixture {
         )
         services.readClaudeModels = { .claude }
         services.readCodexModels = { _, _ in Self.codexCatalog }
+        if let orphanedSessionProcess {
+            services.orphanedSessionProcess = orphanedSessionProcess
+        }
         self.services = services
         self.hub = Self.makeHub(
             projectURL: projectURL,
