@@ -75,7 +75,7 @@ actor RecordedGitHub: HTTPTransport {
     /// Every request that carried a verb other than GET — what a write test asserts on, since half
     /// of what the port claims is about requests NOT made.
     func writes() -> [RecordedWrite] {
-        sent.filter { $0.method != .get }.map(RecordedWrite.init)
+        sent.writes
     }
 
     /// The most specific key that names this URL. The longest match wins, not the first: a paged
@@ -126,5 +126,13 @@ struct RecordedWrite: Sendable {
             withJSONObject: value, options: [.fragmentsAllowed],
         )
         return json.flatMap { String(data: $0, encoding: .utf8) } ?? "\(value)"
+    }
+}
+
+extension [HTTPRequest] {
+    /// Every request that carried a verb other than GET, in order — spelled once, because every
+    /// recorded host in this target asserts on writes the same way.
+    var writes: [RecordedWrite] {
+        filter { $0.method != .get }.map(RecordedWrite.init)
     }
 }

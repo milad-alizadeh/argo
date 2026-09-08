@@ -48,6 +48,17 @@ struct GitHubFailure: Decodable {
         message.hasPrefix(Self.noCommitFound)
     }
 
+    /// GitHub's own wording, in the per-field complaint behind the 422 it answers a forwarder
+    /// create with while the repository is still holding the previous `cli` hook. The top-level
+    /// message is only "Validation Failed", so the complaint is the half that names what happened.
+    static let hookAlreadyHeld = "Hook already exists on this repository"
+
+    /// Whether the refusal is the repository saying it still holds the hook. A state the caller can
+    /// clear — delete that hook and create again — rather than a host it could not reach (#1697).
+    var isHookAlreadyHeld: Bool {
+        (errors ?? []).contains { $0.message == Self.hookAlreadyHeld }
+    }
+
     /// GitHub's own words, its per-field complaints included — "Validation Failed" alone names
     /// nothing a reader could act on.
     var reason: String {
