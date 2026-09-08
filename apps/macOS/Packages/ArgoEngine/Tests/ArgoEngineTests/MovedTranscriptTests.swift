@@ -17,9 +17,13 @@ struct MovedTranscriptTests {
         defer { fixture.remove() }
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         let started = try fixture.write(FixtureTranscript(name: "moved", cwd: projectURL.path))
+        _ = try fixture.write(FixtureTranscript(name: "neighbor", cwd: projectURL.path))
         let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))
-        await hubSettle { !hub.sessions.isEmpty }
+        await hubSettle { hub.sessions.count == 2 }
+        var publications: [[HubSession]] = []
+        hub.watch.onPublished = { publications.append(hub.sessions) }
+        try? await Task.sleep(for: .seconds(TranscriptWatch.publishWindow))
 
         let moved = try fixture.write(FixtureTranscript(
             directory: "worktree-project",
@@ -29,9 +33,17 @@ struct MovedTranscriptTests {
         try FileManager.default.removeItem(at: started)
         await hub.refreshWorkingSet()
 
-        await hubSettle { hub.sessions.map(\.sourceURL) == [moved.standardizedFileURL] }
-        #expect(hub.sessions.count == 1)
-        #expect(hub.sessions.first?.absorbedIDs == [started.standardizedFileURL.path])
+        await hubSettle { hub.sessions.map(\.sourceURL).contains(moved.standardizedFileURL) }
+        #expect(hub.sessions.count == 2)
+        let relocated = hub.sessions.first { $0.sourceURL == moved.standardizedFileURL }
+        #expect(relocated?.absorbedIDs == [started.standardizedFileURL.path])
+        #expect(!publications.isEmpty)
+        #expect(publications.allSatisfy { sessions in
+            sessions.contains {
+                $0.id == started.standardizedFileURL.path
+                    || $0.absorbedIDs.contains(started.standardizedFileURL.path)
+            }
+        })
         await hub.disconnect()
     }
 

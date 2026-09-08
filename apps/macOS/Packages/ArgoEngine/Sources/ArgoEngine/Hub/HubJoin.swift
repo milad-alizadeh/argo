@@ -5,7 +5,7 @@ import Foundation
 /// in it, so dropping a whole Project's worth is `HubJoin()`.
 struct HubJoin {
     /// The Sessions the transcripts stitch into, as the last fold left them.
-    private var roster = HubRoster()
+    var roster = HubRoster()
     /// Whether a write moved something the fold reads since the last fold was taken — so the fold
     /// is taken on the READ that needs it rather than under the write that asked for it.
     ///
@@ -18,7 +18,7 @@ struct HubJoin {
     /// What makes deferring safe is that `chainKeys` below is retaken by the fold alone: every fact
     /// that can move the graph is in `HubJoinFacts`, which `apply` compares itself, so a stale
     /// `chainKeys` is only ever read on a write that already has a fold pending.
-    private var needsFold = false
+    var needsFold = false
     /// Whether the roster is still in the order a fold left it in. A batch written in place moves
     /// its row's sort key without moving the row, so the order is restored on READ instead — the
     /// same comparator, over the same rows, which is the same answer a refold would have given.
@@ -34,13 +34,13 @@ struct HubJoin {
 
     /// In the order they joined the set, which is the order the observation projection renders and
     /// the one record ownership is resolved by.
-    private(set) var transcripts: [HubTranscript] = []
+    var transcripts: [HubTranscript] = []
     /// Record uuid → the id of the transcript that owns it. Keyed by id and not by position:
     /// dropping one transcript renumbers every position after it.
-    private var recordOwners: [String: String] = [:]
+    var recordOwners: [String: String] = [:]
     /// Transcript id to its position in `transcripts`. Held rather than scanned for: a Subagent's
     /// tail asks this on every batch it delivers.
-    private var positions: [String: Int] = [:]
+    var positions: [String: Int] = [:]
     /// The uuids the transcripts in the set resume FROM. Held so a batch can ask in O(batch)
     /// whether the record identities it claimed can have re-parented anything: the chain graph
     /// reads record ownership through `headLeafUUID` alone, so a claim on any other uuid is
@@ -48,10 +48,10 @@ struct HubJoin {
     private var chainKeys: Set<String> = []
     /// The transcript ids the last fold published. What the next fold keeps published, so a row
     /// that has stood on the roster is never taken away by a sweep (`HubJoinPublishable`).
-    private var standing: Set<String> = []
+    var standing: Set<String> = []
     /// Paths removed from the working set, keyed by the transcript UUID that can reappear under a
     /// new path when the CLI moves its file into a worktree (#1703).
-    private var retiredTranscriptIDs: [String: [String]] = [:]
+    var retiredTranscriptIDs: [String: [String]] = [:]
 
     #if DEBUG
         /// How many whole-set rebuilds this join paid, counted rather than timed (ADR-0028 Rule
@@ -151,19 +151,6 @@ struct HubJoin {
         return moved
     }
 
-    /// Drop one transcript's row. A transcript the set never held drops nothing.
-    @discardableResult
-    mutating func remove(transcriptID: String) -> Bool {
-        guard let index = position(of: transcriptID) else { return false }
-        retiredTranscriptIDs[transcripts[index].sessionID, default: []].append(transcriptID)
-        transcripts.removeAll { $0.id == transcriptID }
-        // Every position after the one dropped has moved, so the table is taken again whole.
-        positions = Dictionary(transcripts.enumerated().map { ($1.id, $0) }) { first, _ in first }
-        recordOwners = recordOwners.filter { $0.value != transcriptID }
-        needsFold = true
-        return true
-    }
-
     /// Fold one slice of a read into the transcript's reading, publishing NOTHING.
     ///
     /// What a read longer than `TranscriptSlice.events` lands in, so no single write holds the main
@@ -261,7 +248,7 @@ struct HubJoin {
         return chainKeys.contains(uuid)
     }
 
-    private func position(of transcriptID: String) -> Int? {
+    func position(of transcriptID: String) -> Int? {
         positions[transcriptID]
     }
 

@@ -73,6 +73,21 @@ struct HubSessionRetiredIDsTests {
         #expect(hub.sessions.map(\.absorbedIDs) == [[originalURL.path]])
     }
 
+    /// A path that ended rather than moved is no Session's identity history. If the same file name
+    /// later appears elsewhere, it starts clean.
+    @Test
+    func `an ordinary deletion leaves no retired path behind`() async {
+        let hub = testHub(projectURL: Self.projectURL)
+        let originalURL = recordURL("-tmp-argo-roster-identity", "same-session")
+        await hubObserveToEnd(hub, hubTestObservation(at: originalURL, events: [.cwd("/tmp")]))
+        await hub.stopObserving(transcriptID: originalURL.path)
+
+        let laterURL = recordURL("-tmp-argo-roster-identity-later", "same-session")
+        await hubObserveToEnd(hub, hubTestObservation(at: laterURL, events: [.cwd("/tmp/later")]))
+
+        #expect(hub.sessions.map(\.absorbedIDs) == [[]])
+    }
+
     /// A chain of three, folded root-first: the middle link's own id has to survive the second
     /// merge, or a reader who was on the earliest resume is the one left pointing at nothing.
     @Test

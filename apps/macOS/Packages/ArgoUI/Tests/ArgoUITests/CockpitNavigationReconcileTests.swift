@@ -121,6 +121,28 @@ struct CockpitNavigationReconcileTests {
         #expect(model.chosenSession == picked)
     }
 
+    /// A moved transcript is published first under its old path while the replacement is read,
+    /// then under its new path carrying the old one. Neither publication may select the neighbour.
+    @Test
+    func `a moved transcript stays selected through every publication`() {
+        let model = CockpitNavigationModel()
+        model.reconcile(against: roster("old-path", "neighbor"))
+        model.session = "old-path"
+        let picked = model.chosenSession
+
+        let publications = [
+            roster("old-path", "neighbor"),
+            [RosterIdentity("new-path", absorbing: ["old-path"]), .init("neighbor")],
+        ]
+        for publication in publications {
+            model.reconcile(against: publication)
+            #expect(model.session != "neighbor")
+        }
+
+        #expect(model.session == "new-path")
+        #expect(model.chosenSession == picked)
+    }
+
     /// The control for the case above: an id no row accounts for HAS gone, and that is the one
     /// reading that may move the reader.
     @Test

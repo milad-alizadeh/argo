@@ -303,3 +303,15 @@ final class TranscriptWatch {
         tails.removeValue(forKey: observation.id)
     }
 }
+
+extension TranscriptWatch {
+    /// Transfer a tail between the two paths of one transcript without publishing the gap between
+    /// them. Its stale reading stands until the replacement path's backfill lands.
+    func relocate(_ transcript: HubTranscript, to observation: TranscriptObservation) async {
+        whole.drop(transcript.id)
+        readings.forget(claims: subagents.surrenderClaims(of: transcript.id))
+        admissions.forget(transcript.id)
+        await pauseObserving(transcriptID: transcript.id)
+        await tail(observation) { $0.relocate(observation, from: transcript.id) }
+    }
+}
