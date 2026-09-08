@@ -31,6 +31,7 @@ struct MovedTranscriptTests {
 
         await hubSettle { hub.sessions.map(\.sourceURL) == [moved.standardizedFileURL] }
         #expect(hub.sessions.count == 1)
+        #expect(hub.sessions.first?.absorbedIDs == [started.standardizedFileURL.path])
         await hub.disconnect()
     }
 

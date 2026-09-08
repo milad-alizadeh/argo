@@ -47,6 +47,32 @@ struct HubSessionRetiredIDsTests {
         #expect(hub.sessions.map(\.absorbedIDs) == [["moved"]])
     }
 
+    /// The other relocation shape moves one transcript file between record directories. Its UUID
+    /// stays fixed while its path, which is the roster key, changes underneath the selected row.
+    @Test
+    func `a moved transcript carries the path its row was published under`() async {
+        let hub = testHub(projectURL: Self.projectURL)
+        let originalURL = recordURL("-tmp-argo-roster-identity", "same-session")
+        let movedURL = recordURL("-tmp-argo-roster-identity-worktree", "same-session")
+        await hubObserveToEnd(
+            hub,
+            hubTestObservation(at: originalURL, events: [
+                .prompt(text: "Start", images: [], atMs: 1000),
+            ]),
+        )
+        #expect(hub.sessions.map(\.id) == [originalURL.path])
+
+        await hubObserveToEnd(
+            hub,
+            hubTestObservation(at: movedURL, events: [
+                .prompt(text: "Continue", images: [], atMs: 2000),
+            ]),
+        )
+
+        #expect(hub.sessions.map(\.id) == [movedURL.path])
+        #expect(hub.sessions.map(\.absorbedIDs) == [[originalURL.path]])
+    }
+
     /// A chain of three, folded root-first: the middle link's own id has to survive the second
     /// merge, or a reader who was on the earliest resume is the one left pointing at nothing.
     @Test

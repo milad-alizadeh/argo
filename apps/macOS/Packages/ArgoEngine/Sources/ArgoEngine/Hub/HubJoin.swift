@@ -49,6 +49,9 @@ struct HubJoin {
     /// The transcript ids the last fold published. What the next fold keeps published, so a row
     /// that has stood on the roster is never taken away by a sweep (`HubJoinPublishable`).
     private var standing: Set<String> = []
+    /// Paths removed from the working set, keyed by the transcript UUID that can reappear under a
+    /// new path when the CLI moves its file into a worktree (#1703).
+    private var retiredTranscriptIDs: [String: [String]] = [:]
 
     #if DEBUG
         /// How many whole-set rebuilds this join paid, counted rather than timed (ADR-0028 Rule
@@ -151,7 +154,8 @@ struct HubJoin {
     /// Drop one transcript's row. A transcript the set never held drops nothing.
     @discardableResult
     mutating func remove(transcriptID: String) -> Bool {
-        guard position(of: transcriptID) != nil else { return false }
+        guard let index = position(of: transcriptID) else { return false }
+        retiredTranscriptIDs[transcripts[index].sessionID, default: []].append(transcriptID)
         transcripts.removeAll { $0.id == transcriptID }
         // Every position after the one dropped has moved, so the table is taken again whole.
         positions = Dictionary(transcripts.enumerated().map { ($1.id, $0) }) { first, _ in first }
@@ -292,7 +296,11 @@ struct HubJoin {
             of: transcripts, owners: recordOwners, standing: standing,
         )
         standing = Set(publishable.transcripts.map(\.id))
-        roster = HubSessionChain.roster(from: publishable.transcripts, owners: recordOwners)
+        roster = HubSessionChain.roster(
+            from: publishable.transcripts,
+            owners: recordOwners,
+            retiredTranscriptIDs: retiredTranscriptIDs,
+        )
         guard !publishable.isComplete else { return }
         roster.holdWrites()
     }

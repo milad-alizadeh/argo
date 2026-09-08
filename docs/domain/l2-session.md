@@ -26,12 +26,12 @@
   every L1-triangle derivation and of external liveness matching).
 
 - **retired id** — an id a Session WAS published under and is not any more. The chain id above is
-  stable for a Session, but the id a ROW carries is the id of whichever link the fold made its
-  root, and two passes retire one: a resume file read before its origin stands alone until the
-  sweep that finds the origin folds it in, and a spawn stands under its claim until its CLI writes
-  a record (#361). Every Session carries the ids it has retired, so a surface holding one follows
-  it to the row that took it rather than reading the Session as ended (#1481). A retired id is
-  never re-used and never names a second Session.
+  stable for a Session, but the id a ROW carries can change: a resume file read before its origin
+  stands alone until the sweep folds it in, a spawn stands under its claim until its CLI writes a
+  record (#361), and a moved transcript keeps its UUID while its path changes (#1703). Every
+  Session carries the ids it has retired, so a surface holding one follows it to the row that took
+  it rather than reading the Session as ended (#1481). A retired id is never re-used and never
+  names a second Session.
 
 - **Transcript file** — the *physical* per-file CLI record (owned by the CLI). One Session
   stitches one or more. Never itself called a "Session."

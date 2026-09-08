@@ -46,9 +46,9 @@ struct HubRoster {
     /// reading is appended in front of the continuation's, where writing in place lands at the
     /// end. Only the chain's last link is written directly.
     ///
-    /// And either half of a uuid two paths carry: that is one file the CLI moved, one half of it
-    /// is a frozen prefix the graph drops, and which half is live is the graph's answer rather
-    /// than this one's.
+    /// And either half of a uuid two paths carry: that is one file the CLI moved, one half is a
+    /// frozen prefix the graph retires, and which half is live is the graph's answer rather than
+    /// this one's.
     private static func writableRows(
         of chained: [HubSessionChain.Chained],
         transcripts: [HubTranscript],

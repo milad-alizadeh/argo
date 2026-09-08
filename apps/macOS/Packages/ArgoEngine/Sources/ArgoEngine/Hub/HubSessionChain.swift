@@ -113,9 +113,14 @@ enum HubSessionChain {
     static func roster(
         from transcripts: [HubTranscript],
         owners: [String: String],
+        retiredTranscriptIDs: [String: [String]] = [:],
     )
         -> HubRoster {
-        let graph = HubChainGraph(transcripts: transcripts, owners: owners)
+        let graph = HubChainGraph(
+            transcripts: transcripts,
+            owners: owners,
+            retiredTranscriptIDs: retiredTranscriptIDs,
+        )
         var claimed: Set<String> = []
         var chained: [Chained] = []
         // Walked in the graph's own key, which is the chain uuid rather than the path: two paths

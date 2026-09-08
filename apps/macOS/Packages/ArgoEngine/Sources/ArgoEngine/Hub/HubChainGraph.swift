@@ -9,13 +9,17 @@ struct HubChainGraph {
 
     /// Keyed by the transcripts' chain uuids, never their paths: the origin a relocated record
     /// names is a bare uuid, so a path-keyed table can never match one (#770).
-    init(transcripts: [HubTranscript], owners: [String: String]) {
+    init(
+        transcripts: [HubTranscript],
+        owners: [String: String],
+        retiredTranscriptIDs: [String: [String]] = [:],
+    ) {
         // Record ownership is filed against a transcript's PATH. Translated once here rather than
         // at each lookup, so the whole graph speaks one key. A path is in the join once, so the
         // tie-break never fires.
         let uuids = Dictionary(transcripts.map { ($0.id, $0.sessionID) }) { first, _ in first }
         let ownerUUIDs = owners.compactMapValues { uuids[$0] }
-        let byID = Self.sessions(of: transcripts)
+        let byID = Self.sessions(of: transcripts, retiredTranscriptIDs: retiredTranscriptIDs)
         var children: [String: [String]] = [:]
         var roots: [String] = []
         for transcript in transcripts {
@@ -39,11 +43,18 @@ struct HubChainGraph {
     /// Two paths carrying one uuid are one file the CLI MOVED, and the path it left holds a frozen
     /// prefix of the same reading. The half that ran LATEST is the live one — array position cannot
     /// decide it, because discovery hands transcripts over newest-mtime first (`isEarlier` below
-    /// keeps the same trap). One that can say nothing about when it ran never displaces one that
-    /// can.
-    private static func sessions(of transcripts: [HubTranscript]) -> [String: HubSession] {
+    /// keeps the same trap). The other paths become retired ids, so a selection follows the row
+    /// across the move (#1703). One that can say nothing about when it ran never displaces one
+    /// that can.
+    private static func sessions(
+        of transcripts: [HubTranscript],
+        retiredTranscriptIDs: [String: [String]],
+    )
+        -> [String: HubSession] {
         var byID: [String: HubSession] = [:]
+        var pathsByID: [String: [HubSession]] = [:]
         for transcript in transcripts {
+            pathsByID[transcript.sessionID, default: []].append(transcript.session)
             guard let held = byID[transcript.sessionID] else {
                 byID[transcript.sessionID] = transcript.session
                 continue
@@ -52,6 +63,15 @@ struct HubChainGraph {
             if seen > held.lastSeenAtMs ?? Int.min {
                 byID[transcript.sessionID] = transcript.session
             }
+        }
+        for (id, paths) in pathsByID {
+            guard var published = byID[id] else { continue }
+            let retired = (retiredTranscriptIDs[id] ?? []) + paths.map(\.id)
+            for path in retired
+                where path != published.id && !published.absorbedIDs.contains(path) {
+                published.absorbedIDs.append(path)
+            }
+            byID[id] = published
         }
         return byID
     }
