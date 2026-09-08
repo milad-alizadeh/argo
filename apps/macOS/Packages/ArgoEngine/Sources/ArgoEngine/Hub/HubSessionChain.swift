@@ -36,7 +36,7 @@ struct HubTranscript {
     init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
-        self.sessionID = observation.sourceURL.deletingPathExtension().lastPathComponent
+        self.sessionID = observation.sourceURL.transcriptSessionID
         self.session = HubSession(observation: observation)
     }
 
@@ -53,7 +53,7 @@ struct HubTranscript {
     mutating func relocate(to observation: TranscriptObservation) {
         id = observation.id
         sourceURL = observation.sourceURL
-        sessionID = observation.sourceURL.deletingPathExtension().lastPathComponent
+        sessionID = observation.sourceURL.transcriptSessionID
         reread(observation)
     }
 

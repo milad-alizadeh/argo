@@ -29,7 +29,7 @@ extension HubJoin {
         guard !holds(transcriptID: observation.id),
               let index = position(of: transcriptID)
         else { return false }
-        let sessionID = observation.sourceURL.deletingPathExtension().lastPathComponent
+        let sessionID = observation.sourceURL.transcriptSessionID
         guard transcripts[index].sessionID == sessionID else { return false }
         retiredTranscriptIDs[sessionID, default: []].append(transcriptID)
         transcripts[index].relocate(to: observation)

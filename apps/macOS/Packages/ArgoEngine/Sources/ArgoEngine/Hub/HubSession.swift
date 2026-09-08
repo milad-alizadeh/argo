@@ -185,8 +185,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
         self.chainTipURL = observation.sourceURL
-        let transcriptUUID = observation.sourceURL.deletingPathExtension().lastPathComponent
-        self.name = SessionTitle(namedAfterTranscript: transcriptUUID)
+        self.name = SessionTitle(
+            namedAfterTranscript: observation.sourceURL.transcriptSessionID,
+        )
         self.moments = SessionMoments(recordedAtMs: observation.modifiedAt?.epochMs)
     }
 

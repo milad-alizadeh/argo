@@ -16,7 +16,7 @@ extension TranscriptWatch {
         for transcript in join.transcripts where !wantedIDs.contains(transcript.id) {
             if let replacement = wanted.first(where: {
                 !isObserving(transcriptID: $0.path)
-                    && $0.deletingPathExtension().lastPathComponent == transcript.sessionID
+                    && $0.transcriptSessionID == transcript.sessionID
             }) {
                 if let observation = try? observe(
                     replacement,

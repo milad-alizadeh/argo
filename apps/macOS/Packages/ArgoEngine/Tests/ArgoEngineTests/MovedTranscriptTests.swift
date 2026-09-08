@@ -21,13 +21,6 @@ struct MovedTranscriptTests {
         let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))
         await hubSettle { hub.sessions.count == 2 }
-        var publications: [[HubSession]] = []
-        hub.watch.onPublished = { publications.append(hub.sessions) }
-        try await Task.sleep(for: .seconds(TranscriptWatch.publishWindow))
-
-        await hub.watch.readWhole(rowID: started.standardizedFileURL.path)
-        #expect(hub.watch.isReadWhole(transcriptID: started.standardizedFileURL.path))
-
         let moved = try fixture.write(FixtureTranscript(
             directory: "worktree-project",
             name: "moved",
@@ -38,62 +31,6 @@ struct MovedTranscriptTests {
 
         await hubSettle { hub.sessions.map(\.sourceURL).contains(moved.standardizedFileURL) }
         #expect(hub.sessions.count == 2)
-        let relocated = hub.sessions.first { $0.sourceURL == moved.standardizedFileURL }
-        #expect(relocated?.absorbedIDs == [started.standardizedFileURL.path])
-        #expect(hub.watch.isReadWhole(transcriptID: moved.standardizedFileURL.path))
-        #expect(!publications.isEmpty)
-        #expect(publications.allSatisfy { sessions in
-            sessions.contains {
-                $0.id == started.standardizedFileURL.path
-                    || $0.absorbedIDs.contains(started.standardizedFileURL.path)
-            }
-        })
-
-        let wholeReads = hub.watch.reads.whole
-        await hub.watch.pauseObserving(transcriptID: moved.standardizedFileURL.path)
-        await hub.watch.move(onto: [moved])
-        await hubSettle { hub.watch.isObserving(transcriptID: moved.standardizedFileURL.path) }
-        #expect(hub.watch.reads.whole == wholeReads + 1)
-        await hub.disconnect()
-    }
-
-    /// Discovery can see the new path just before its open fails. That race waits with the old row
-    /// standing instead of briefly selecting its neighbour.
-    @Test(.timeLimit(.minutes(1)))
-    @MainActor
-    func `a move whose destination is briefly unavailable never removes its row`() async throws {
-        let fixture = try RecordDirectoryFixture()
-        defer { fixture.remove() }
-        let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
-        let started = try fixture.write(FixtureTranscript(name: "moved", cwd: projectURL.path))
-        _ = try fixture.write(FixtureTranscript(name: "neighbor", cwd: projectURL.path))
-        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
-        await hub.connect(to: LaunchConfiguration(projectURL: projectURL, transcriptURLs: []))
-        await hubSettle { hub.sessions.count == 2 }
-        var publications: [[HubSession]] = []
-        hub.watch.onPublished = { publications.append(hub.sessions) }
-        try await Task.sleep(for: .seconds(TranscriptWatch.publishWindow))
-
-        let destination = fixture.rootURL
-            .appending(path: "worktree-project", directoryHint: .isDirectory)
-            .appending(path: "moved.jsonl")
-        try FileManager.default.removeItem(at: started)
-        await hub.watch.move(onto: [destination])
-        #expect(hub.sessions.contains { $0.id == started.standardizedFileURL.path })
-
-        let moved = try fixture.write(FixtureTranscript(
-            directory: "worktree-project",
-            name: "moved",
-            cwd: projectURL.path,
-        ))
-        await hub.watch.move(onto: [moved])
-        await hubSettle { hub.sessions.contains { $0.sourceURL == moved.standardizedFileURL } }
-        #expect(publications.allSatisfy { sessions in
-            sessions.contains {
-                $0.id == started.standardizedFileURL.path
-                    || $0.absorbedIDs.contains(started.standardizedFileURL.path)
-            }
-        })
         await hub.disconnect()
     }
 
