@@ -171,11 +171,11 @@ package struct SessionComposer: View {
     /// anything (design decision 11), the same act a click makes; see `open(_:)`.
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
-    /// Where it goes is `isTurnInFlight`, and NOT `hasTurnEnded`, which the release reads (#1238).
-    /// The two are deliberately different questions at one reading: `asking` holds a live question
-    /// the composer is the only way to answer, so what is typed there goes NOW, while the
-    /// follow-ups queued behind the Turn go on waiting for its end. A Return queued at that moment
-    /// would be an answer the agent never hears.
+    /// Where it goes is `holdsTurn`, which leads on `isTurnInFlight` and NOT on `hasTurnEnded`,
+    /// the reading the release makes (#1238). The two are deliberately different questions at one
+    /// reading: `asking` holds a live question the composer is the only way to answer, so what is
+    /// typed there goes NOW, while the follow-ups queued behind the Turn go on waiting for its
+    /// end. A Return queued at that moment would be an answer the agent never hears.
     ///
     /// Nor is it the status WORD (#1179). A Session Argo has just typed a Turn at, and one whose
     /// process has not spoken yet, are both working and neither reads `running` — and both used to
@@ -190,10 +190,33 @@ package struct SessionComposer: View {
         if menus.completes(on: line), complete() {
             return
         }
-        draft.submit(
-            whileTurnInFlight: composer.isTurnInFlight || draft.steeringTurn != nil,
-            via: sending,
-        )
+        draft.submit(whileTurnInFlight: holdsTurn, via: sending)
+    }
+
+    /// Whether a Turn is in flight by ANY reading the composer has: the Session's own, a steer
+    /// mid-paste, and a Turn Argo put that the record has yet to show running (#1636).
+    ///
+    /// Named for the reason `ComposerRelease` names the three readings it makes — this is the
+    /// mirror of `putsNext`, deciding where the NEXT Turn goes where that one decides whether what
+    /// waits may go, and the two must be read off the same facts or they disagree on screen.
+    ///
+    /// The put claim is what the Session-side readings cannot supply. Both can be false over a CLI
+    /// that is in fact busy: `hasUnansweredTurn` ends the moment the record grows by ANYTHING, and
+    /// `recordIdentity` leads every message-bearing record, ahead of the `prompt` that opens the
+    /// Turn — so the claim is routinely spent a fold before the status word turns.
+    ///
+    /// It is read only where the Session reads as AT REST, which is what keeps #1238's rule
+    /// intact: `hasTurnEnded` is false at every PAUSE, so the claim cannot reach `asking`.
+    ///
+    /// Spent by a Turn read running, and where none ever is — a Turn short enough that it opened
+    /// and closed between two folds — by `watchPut(patience:)` five seconds later. So a follow-up
+    /// typed straight after a very short Turn is held as a chip for that long where it used to go
+    /// at once, which is the price of the guarantee and the direction worth being wrong in: the
+    /// wait is visible and recoverable, and what it buys is that two Turns can no longer arrive as
+    /// one prompt with their texts run together.
+    var holdsTurn: Bool {
+        composer.isTurnInFlight || draft.steeringTurn != nil
+            || (draft.isAwaitingPutTurn && composer.hasTurnEnded)
     }
 
     /// Tab, which takes the row under the cursor exactly as ⏎ does over the same menu (#1181) —

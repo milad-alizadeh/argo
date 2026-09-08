@@ -1,18 +1,23 @@
-/// The Turn a put follow-up starts, and the wait for the record to show it (#1238, #1337).
+/// The Turn a put follow-up starts, and the wait for the record to show it (#1238, #1337, #1636).
 ///
-/// Its own file because it has two callers — `putNext(via:)` at the boundary and
-/// `steerLanded(_:)` through an interrupt — and neither owns it.
+/// Its own file because it has three callers — `send(via:)` and `putNext(via:)` in the draft, and
+/// `steerLanded(_:)` through an interrupt — and none of them owns it. Every Turn that leaves the
+/// composer goes through one of the three, which is what makes the claim total.
 extension ComposerDraft {
-    /// Whether a Turn this composer put is still waiting to be seen by the record. What
-    /// `ComposerRelease` reads, so no release is made on a status that has not caught up with
-    /// Argo's own act: `hasTurnEnded` is DERIVED off the record, so it goes on reading `true` over
-    /// a Turn Argo has just started, and a release made there puts the next follow-up to a CLI
-    /// already busy.
+    /// Whether a Turn this composer put is still waiting to be seen by the record.
+    ///
+    /// Read by both decisions the composer makes about a Turn (#1636). `ComposerRelease` reads it
+    /// so no release is made on a status that has not caught up with Argo's own act: `hasTurnEnded`
+    /// is DERIVED off the record, so it goes on reading `true` over a Turn Argo has just started,
+    /// and a release made there puts the next follow-up to a CLI already busy.
+    /// `SessionComposer.holdsTurn` reads it for the mirror of that question — where the NEXT Turn
+    /// goes.
     var isAwaitingPutTurn: Bool {
         putTurnsAwaitingRecord > 0
     }
 
-    /// Say that a put has started a Turn, so nothing is released until the record has seen it.
+    /// Say that a put has started a Turn, so nothing is released until the record has seen it, and
+    /// nothing typed meanwhile is sent straight to a CLI already working on it.
     mutating func claimPutTurn() {
         putTurnsAwaitingRecord += 1
     }

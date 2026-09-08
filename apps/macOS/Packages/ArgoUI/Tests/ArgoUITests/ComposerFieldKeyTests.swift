@@ -55,6 +55,10 @@ import Testing
             field.press([])
             field.settle { field.input.string.isEmpty }
             #expect(field.input.string.isEmpty)
+            // The record catching up on the Turn just sent, which is what a real Session does
+            // between two Returns — and without it the SECOND one queues behind Argo's own claim
+            // (#1636) and this case would prove the clear on one send instead of five.
+            field.store.draft.turnStarted()
         }
 
         #expect(field.sent == (1 ... 5).map { "turn \($0)" })
