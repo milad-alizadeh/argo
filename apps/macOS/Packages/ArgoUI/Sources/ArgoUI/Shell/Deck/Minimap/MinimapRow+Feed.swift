@@ -119,11 +119,17 @@ private extension FeedFoldStep {
     /// one name stands for — the `×3` the list carries so it adds up to the counts on the header.
     @MainActor var parts: [MinimapLinePart] {
         guard repeats > 1 else { return [.words(caption, ink)] }
-        return [.words(caption, ink), .words("×\(repeats)", ink, in: .machine)]
+        return [.words(caption, ink), .repeats(repeats, ink)]
     }
 
-    /// The ink the row draws this name in — a call's own ending rule over the one fact a step
-    /// carries, so a failed name is red in the lane exactly as it is in the row.
+    /// The ink this name takes: a call's own ending rule over the one fact a step carries, so a
+    /// failure is red here exactly as `FeedFoldStepName` draws it red there.
+    ///
+    /// The row has a third reading this does not spend — a call the record answered with nothing is
+    /// drawn at `text.disabled`, and the lane has no ink for that: the one role at that rung is
+    /// `boundary`, which is drawn as a RULE, and a hairline among the names would read as the
+    /// punctuation between Turns. So an inert name takes a call's ink, one rung louder than the row
+    /// sets it, which is the same licence the header already takes.
     var ink: FeedInk {
         (hasFailed ? FeedCall.Ending.failed : .succeeded).ink
     }
@@ -146,7 +152,7 @@ private extension FeedCall {
             .words(subject.captioned, ending.ink),
         ]
         if repeats > 1 {
-            parts.append(.words("×\(repeats)", ending.ink, in: .machine))
+            parts.append(.repeats(repeats, ending.ink))
         }
         parts += churnParts
         if let printed = printed?.drawn {

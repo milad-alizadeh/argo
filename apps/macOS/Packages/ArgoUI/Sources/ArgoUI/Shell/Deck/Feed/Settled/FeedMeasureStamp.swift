@@ -62,16 +62,28 @@ struct FeedMeasureStamp: Equatable, Sendable {
         rows.isSameReading(as: other.rows)
     }
 
-    /// Whether the only thing that moved between the two is what the READER did — a fold let out,
-    /// a panel opened — over the very same rows, at the very same width and ink.
+    /// Whether the only thing that moved between the two is the reader's own FOLD, over the very
+    /// same rows at the very same wrap.
     ///
     /// The one delta the reader is watching for (#1691). The cell it is about has already been
     /// redrawn in its new shape by the time this is asked (`FeedTableCoordinator.touchUp`), so a
     /// height that arrives a hop later is a height that arrives after the content it belongs to:
     /// the rows below sit at the old one for the hop and then step to the new one.
-    func isReader(of other: FeedMeasureStamp) -> Bool {
-        reader != other.reader && width == other.width && setting == other.setting
-            && rows == other.rows
+    ///
+    /// The evidence panel is NOT one of these, though it is the reader's too: opening it changes no
+    /// row's height, so a delta it owes has nothing to settle in a hurry. Off `rewraps` rather than
+    /// a width comparison of its own, because the MEASURE is what a height is a function of and a
+    /// bounce between two widths above the column is no re-wrap at all (#1132).
+    func isFold(of other: FeedMeasureStamp) -> Bool {
+        !rewraps(against: other) && rows == other.rows && reader.open == other.reader.open
+            && reader.unfolded != other.reader.unfolded
+    }
+
+    /// Whether the row at `index` is a fold of calls — see `FeedRow.Content.Shape.isFoldOfCalls`,
+    /// which is what says a height may be taken where the main actor stands.
+    func isFoldOfCalls(at index: Int) -> Bool {
+        guard rows.indices.contains(index) else { return false }
+        return rows[index].content.shape.isFoldOfCalls
     }
 
     /// Whether the document taken against THIS stamp still stands under `other`: the same reading,

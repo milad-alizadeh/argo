@@ -74,15 +74,39 @@ struct FeedFoldSettleTests {
         #expect(table.rect(ofRow: 1).minY == closed)
     }
 
-    /// The mechanism said out loud: the reader's own press owes no pass at all, so there is no hop
-    /// for the rows below to stand at the old height across.
+    /// And the lane beside it never goes absent for a press. A deck that owes a measure is
+    /// PROVISIONAL, which is what makes the overview lane hold the reading it last drew instead of
+    /// mapping the one on screen (ADR-0030, Rule 7) — for exactly the hop the pass would take.
     @Test
-    func `a press on a fold leaves no measure in flight`() async {
+    func `a press on a fold never puts the lane in its provisional state`() async {
         let handle = FeedTableHandle()
         let coordinator = await FeedTableFixture.laidOut(
             Self.rows, in: Self.column, through: handle,
         )
         coordinator.apply(Self.opened([0]))
-        #expect(coordinator.isMeasuring == false)
+        #expect(coordinator.readingStamp()?.isProvisional == false)
+    }
+
+    /// A prompt is the fold that must NOT come this way. Its open height is typeset rather than
+    /// counted (`FeedShapeHeight.bubble`), and Core Text on the main actor inside the press is the
+    /// work ADR-0030 Rules 1 and 3 moved off it — so the press keeps the pass, and the height still
+    /// lands.
+    @Test
+    func `a press on a prompt keeps the measure pass`() async throws {
+        let long = String(repeating: "Read the whole anatomy study before you start. ", count: 14)
+        let rows = [
+            FeedRow(id: 0, content: .prompt(text: long, shots: [])),
+            FeedRow(id: 1, content: .message("That is the lot of it")),
+        ]
+        let handle = FeedTableHandle()
+        let coordinator = await FeedTableFixture.laidOut(rows, in: Self.column, through: handle)
+        let table = try #require(coordinator.table)
+        let closed = coordinator.tableView(table, heightOfRow: 0)
+
+        coordinator.apply(FeedTableFixture.model(showing: rows, unfolded: [0]))
+
+        #expect(coordinator.isMeasuring)
+        await FeedTableFixture.settled(coordinator)
+        #expect(coordinator.tableView(table, heightOfRow: 0) > closed)
     }
 }
