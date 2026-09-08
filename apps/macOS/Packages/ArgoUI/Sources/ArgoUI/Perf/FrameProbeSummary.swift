@@ -20,11 +20,19 @@ struct FrameProbeSummary: Codable {
     /// was measured under.
     struct Source: Codable {
         /// The executable of the process that wrote this. Every worktree builds its own
-        /// `Release/Argo.app` and they all carry the name, so a report that named no path could be
-        /// crossed with another build's and nothing afterwards could tell (#1566). The probe takes
-        /// `arguments[0]`, which is what the kernel was handed, so this is the same string
-        /// `ps -o comm=` reports and the one `hang-sample.sh` prints.
-        var executablePath: String
+        /// `Release/Argo.app` and they all carry the name, so a report naming no path could be
+        /// crossed with another build's and nothing afterwards could tell (#1566).
+        ///
+        /// It is `arguments[0]`, which on macOS is exactly what `ps -o comm=` reports — measured:
+        /// `cd /bin && ./sleep 20` reads back as `./sleep` there. That is what makes it the same
+        /// string `hang-sample.sh` prints off `comm=` since #1560, which is the point: two tools
+        /// naming one build two ways is the crossing this stops. It follows that the value is
+        /// whatever the caller passed rather than a resolved path, and absolute only because
+        /// LaunchServices passes an absolute one — `open -n`, which is how the probe is launched.
+        ///
+        /// Absent, never empty, if there is no argv: a report that cannot name its build has to
+        /// read as one, and `""` would be a value shaped like an answer.
+        var executablePath: String?
         var displayMaxFPS: Int
     }
 

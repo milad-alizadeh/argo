@@ -27,13 +27,10 @@ import QuartzCore
         ProcessInfo.processInfo.environment["ARGO_FRAME_PROBE"] == "1"
     }
 
-    /// What this process was launched as, so the report can name its own build. `arguments[0]` is
-    /// the string the kernel was handed, which is what `ps -o comm=` reports and what
-    /// `hang-sample.sh` prints — two tools naming one build two ways is the crossing #1566 stops.
-    /// Empty rather than the bare process name when there is no argv, because the name is the
-    /// ambiguity a path is here to settle.
-    static var executablePath: String {
-        ProcessInfo.processInfo.arguments.first ?? ""
+    /// What this process was launched as, for `FrameProbeSummary.Source` to name the build.
+    /// Absent rather than substituted where there is no argv at all: nothing else here is a path.
+    static var executablePath: String? {
+        ProcessInfo.processInfo.arguments.first
     }
 
     private var stamps: [Double] = []

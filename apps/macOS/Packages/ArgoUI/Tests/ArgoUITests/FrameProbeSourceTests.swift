@@ -50,6 +50,21 @@ struct FrameProbeSourceTests {
             .source.executablePath == other)
     }
 
+    /// A report that cannot name its build says so by carrying no key, rather than by carrying a
+    /// key with nothing in it. An empty string would read as an answer to a reader diffing a pair.
+    @Test func `a summary with no path to name omits the key rather than emptying it`() throws {
+        let summary = FrameProbeSummary(
+            stamps: [100.0, 101.0],
+            passes: [],
+            passCosts: [],
+            source: FrameProbeSummary.Source(executablePath: nil, displayMaxFPS: 60),
+        )
+        let encoded = try JSONEncoder().encode(summary)
+        let written = try #require(String(bytes: encoded, encoding: .utf8))
+        #expect(written.contains("executablePath") == false)
+        #expect(written.contains("displayMaxFPS"))
+    }
+
     /// The ceiling moved into `source` and every figure is still stated against it, which is what
     /// the grouping had to leave untouched: 120 Hz is an 8.33ms budget, not 16.67.
     @Test func `the budget is still read off the ceiling now grouped under source`() throws {
@@ -65,13 +80,23 @@ struct FrameProbeSourceTests {
 @Suite("Frame probe — the path it records")
 @MainActor
 struct FrameProbeExecutablePathTests {
-    /// A bare process name is the ambiguity the path settles — every copy shares the name — so
-    /// what is recorded has to be a path that resolves, and `arguments[0]` is the one
-    /// `ps -o comm=` reports for the same process.
-    @Test func `the probe records a resolvable path, not a process name`() {
-        let path = FrameProbe.executablePath
-        #expect(path.hasPrefix("/"))
-        #expect(FileManager.default.isExecutableFile(atPath: path))
-        #expect(URL(fileURLWithPath: path).lastPathComponent != path)
+    /// The claim the whole ticket rests on, and the only one worth asserting here: the string the
+    /// probe records for a process is the string `ps -o comm=` reports for that same process.
+    /// `hang-sample.sh` prints its target off `comm=` since #1560, so agreeing with `ps` IS
+    /// agreeing with the sampler — and a shape check (absolute, resolves on disk) would instead
+    /// assert a property of however this suite happened to be launched.
+    @Test func `the path the probe records is the one ps reports for the same process`() throws {
+        let reading = Process()
+        reading.executableURL = URL(fileURLWithPath: "/bin/ps")
+        reading.arguments = ["-o", "comm=", "-p", String(ProcessInfo.processInfo.processIdentifier)]
+        let output = Pipe()
+        reading.standardOutput = output
+        try reading.run()
+        let printed = output.fileHandleForReading.readDataToEndOfFile()
+        reading.waitUntilExit()
+        let reported = try #require(String(bytes: printed, encoding: .utf8))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        #expect(reported.isEmpty == false)
+        #expect(FrameProbe.executablePath == reported)
     }
 }
