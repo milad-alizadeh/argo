@@ -186,7 +186,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.sourceURL = observation.sourceURL
         self.chainTipURL = observation.sourceURL
         self.name = SessionTitle(
-            namedAfterTranscript: observation.sourceURL.transcriptSessionID,
+            namedAfterTranscript: observation.sourceURL.transcriptStem,
         )
         self.moments = SessionMoments(recordedAtMs: observation.modifiedAt?.epochMs)
     }

@@ -172,7 +172,7 @@ enum SubagentTranscripts {
     /// name for an Agent has no id to key it by.
     private static func transcript(at url: URL) -> SubagentTranscript? {
         guard url.pathExtension == "jsonl" else { return nil }
-        let name = url.transcriptSessionID
+        let name = url.transcriptStem
         guard name.hasPrefix(agentFilePrefix) else { return nil }
         return SubagentTranscript(agentID: String(name.dropFirst(agentFilePrefix.count)), url: url)
     }
