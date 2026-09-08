@@ -19,7 +19,7 @@ public extension ArgoPalette {
     /// A viridis ramp was tried, cleared every role, and was rejected on sight: it reads as a
     /// heatmap rather than a place, and it throws away the one thing a reader does not have to be
     /// taught.
-    struct MeasureRoles: Sendable {
+    struct MeasureRoles: Sendable, Equatable {
         /// Half the files.
         public let quiet: ArgoColor
         /// The band between the two.

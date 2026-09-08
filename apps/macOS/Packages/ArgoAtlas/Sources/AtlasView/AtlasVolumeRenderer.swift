@@ -40,10 +40,21 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     private let depth: MTLDepthStencilState
 
     /// The camera and the boxes, pushed by `AtlasSurface` on every update rather than fixed at
-    /// construction; the reason is stated there.
+    /// construction; the reason is stated there. The two are pushed SEPARATELY, and on different
+    /// clocks: `look(through:rising:)` per frame, `show(_:)` only when the map itself moves
+    /// (#1598).
     private var eye: AtlasEye?
-    private var volumes: MTLBuffer?
-    private var volumeCount = 0
+
+    /// The one buffer every city is written into. Not private: `AtlasDragTests` reads the buffer
+    /// it is holding across a drag, which is the only way to say from outside that the drag
+    /// allocated nothing.
+    let instances: AtlasVolumeBuffer
+
+    /// The last frame this presented, so a map arriving while that frame is still reading the
+    /// instances waits for it rather than tearing it. Only ever a COMMITTED buffer, which is what
+    /// makes the wait in `show` safe — the offscreen renders in `AtlasPickHarness` commit and wait
+    /// on their own, so nothing there needs recording here.
+    private var drawn: MTLCommandBuffer?
     /// Where the city is in its climb out of the plates (#1421). Pushed with the camera and the
     /// map, because it changes on the same clock they do — and `settled` until one is, so a
     /// renderer nobody has told about a rise draws the measured heights rather than nothing.
@@ -145,21 +156,32 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         self.depth = depth
         self.sampleCount = samples
         self.ids = ids
+        self.instances = AtlasVolumeBuffer(device: device)
         super.init()
     }
 
-    /// The map to draw next. The buffer is rebuilt here rather than per frame: the view is paused
-    /// and draws on demand, so a frame is a redraw of a map that did not change and copying the
-    /// whole city into a fresh allocation to redraw it would be work with no picture to show.
-    func show(_ city: AtlasCity, through eye: AtlasEye, rising rise: AtlasRise = .settled) {
-        self.eye = eye
+    /// The map to draw next: its boxes written into the one instance buffer, and the roster their
+    /// ids are read against held beside them.
+    ///
+    /// Called when the plan or the pigments change and at no other time (#1598) — `AtlasCityCache`
+    /// is what decides that. A camera drag and the rise push `look(through:rising:)` instead: the
+    /// city they would hand over is the city already here, and copying it in again is 2801 files'
+    /// worth of boxes per frame for a picture that differs only in where the reader stands.
+    func show(_ city: AtlasCity) {
         self.city = city
+        // A frame may still be reading the buffer `write` is about to overwrite. It has almost
+        // always landed — a map changes on a reader's action, a frame behind it — so this costs
+        // nothing on the path it guards, and the alternative is a torn picture rather than a
+        // stale one.
+        drawn?.waitUntilCompleted()
+        instances.write(city.volumes)
+    }
+
+    /// Where the reader is looking from, and how far the city has climbed out of its plates
+    /// (#1421). What a drag pushes, per frame, leaving every box where it stands.
+    func look(through eye: AtlasEye, rising rise: AtlasRise = .settled) {
+        self.eye = eye
         self.rise = rise
-        volumeCount = city.volumes.count
-        volumes = city.volumes.isEmpty ? nil : device.makeBuffer(
-            bytes: city.volumes,
-            length: MemoryLayout<AtlasVolume>.stride * city.volumes.count,
-        )
     }
 
     /// What is drawn at one pixel of the drawable — a file, a folder — or NOTHING, or no answer
@@ -204,6 +226,9 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         resolveIds(in: buffer)
         buffer.present(drawable)
         buffer.commit()
+        // AFTER the commit, never before: `waitUntilCompleted` on a buffer nobody committed never
+        // returns, and `show` is what waits on this one.
+        drawn = buffer
     }
 
     /// The id attachment for a drawable of this size, at THIS renderer's own sample count — which
@@ -238,7 +263,8 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         on buffer: MTLCommandBuffer,
     )
         -> Bool {
-        guard let volumes, var eye, volumeCount > 0, let target else { return false }
+        guard let volumes = instances.buffer, var eye, instances.boxes > 0, let target
+        else { return false }
 
         descriptor.colorAttachments[1].texture = target
         descriptor.colorAttachments[1].loadAction = .clear
@@ -274,7 +300,7 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
             type: .triangle,
             vertexStart: 0,
             vertexCount: Self.verticesPerVolume,
-            instanceCount: volumeCount,
+            instanceCount: instances.boxes,
         )
         encoder.endEncoding()
         return true

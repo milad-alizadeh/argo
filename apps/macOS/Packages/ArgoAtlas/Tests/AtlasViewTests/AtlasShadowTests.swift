@@ -13,7 +13,9 @@ struct AtlasShadowTests {
         rim: ArgoPalette.graphite.edge.hairline,
     )
     static let ground = CGRect(x: 0, y: 0, width: 100, height: 100)
-    static let plates = [AtlasPlateFrame(path: "a", rect: ground, depth: 0)]
+    static let plates = AtlasPlateIndex(
+        of: [AtlasPlateFrame(path: "a", rect: ground, depth: 0)],
+    )
 
     static func tile(height: CGFloat) -> AtlasTile {
         AtlasTile(

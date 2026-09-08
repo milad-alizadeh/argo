@@ -17,7 +17,7 @@ public extension ArgoPalette {
     /// Past about thirty domains adjacent hues stop being tellable apart at any saturation, which
     /// is why every region is named on the map and in the rail — the colour is an aid to a name,
     /// never the identifier.
-    struct DomainWheel: Sendable {
+    struct DomainWheel: Sendable, Equatable {
         /// A domain we are unsure of arrives washed out.
         public let saturationLeast: Double
         /// Saturation carries confidence; hue carries identity.

@@ -108,8 +108,15 @@ struct AtlasPickHarness {
         through camera: AtlasCamera,
     )
         async -> AtlasFrame? {
+        renderer.show(city)
+        return await frame(of: plan, through: camera)
+    }
+
+    /// The map already pushed, drawn again through a new camera — the two calls in the order
+    /// `AtlasSurface` makes them, which is what a drag frame is (#1598).
+    func frame(of plan: AtlasPlan, through camera: AtlasCamera) async -> AtlasFrame? {
         let fit = AtlasFit(framing: plan, through: camera, into: plan.extent)
-        renderer.show(city, through: AtlasEye(camera, fit: fit))
+        renderer.look(through: AtlasEye(camera, fit: fit))
 
         let descriptor = MTLRenderPassDescriptor()
         descriptor.colorAttachments[0].texture = multisampled?.colour ?? colour

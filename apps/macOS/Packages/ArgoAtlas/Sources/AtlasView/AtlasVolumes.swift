@@ -66,19 +66,11 @@ enum AtlasVolumes {
         // ground already drawn, and before every file, so a file standing where its own shadow
         // falls draws over it rather than under it (#1151).
         let ceiling = AtlasElevation.ceiling(of: plan.extent)
-        //
-        // A decal carries the id of the PLATE it lies on, not 0 (#1156). It is drawn after that
-        // plate and coplanar with it, under a depth test that lets the later draw win, so an
-        // unidentified decal writes 0 over the plate's own id — a hole in the folder's ground that
-        // picks as nothing and is invisible at the flat camera, where the shader fades the decal
-        // out but the tiler still places it. The decal is painted in the plate's own tone; it is
-        // picked as the plate's own folder.
-        let shadows = plan.tiles.compactMap { tile -> AtlasVolume? in
-            guard let decal = AtlasShadow.decal(
-                of: tile, on: plan.plates, ceiling: ceiling, in: pigments,
-            ) else { return nil }
-            let ground = AtlasShadow.plate(under: decal.rect, on: plan.plates)
-            return ground.map { decal.identified(as: UInt32($0 + 1)) } ?? decal
+        // Every file asks which plate its shadow landed on, so the plates are indexed by the
+        // ground they cover once here rather than filtered per file (#1598).
+        let ground = AtlasPlateIndex(of: plan.plates)
+        let shadows = plan.tiles.compactMap {
+            AtlasShadow.decal(of: $0, on: ground, ceiling: ceiling, in: pigments)
         }
         // The id a file is picked by is its place in `plan.tiles` PLUS the plates in front of it
         // in the roster, plus one — so 0 is left meaning nothing, which on this map is the desktop

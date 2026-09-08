@@ -81,14 +81,21 @@ struct AtlasSurface: NSViewRepresentable {
         // captured once would go on writing the state of a body two renders old.
         coordinator.resolve = resolve
         coordinator.picked = pick
-        // The projection is framed into the plan's own extent rather than the drawable's size,
-        // because that is what `AtlasView` frames the surface at — and it is the shape the flat
-        // camera has to be given for its picture to be the treemap exactly.
-        coordinator.renderer?.show(
-            AtlasVolumes.city(of: projection.plan, in: pigments),
-            through: AtlasEye(projection.camera, fit: projection.fit),
-            rising: AtlasRise(projection),
-        )
+        if let renderer = coordinator.renderer {
+            // The map is pushed only where the plan or the pigments moved (#1598). Every other
+            // update — and a camera drag is one per frame — pushes the eye and the rise alone,
+            // because that is all of the picture that changed.
+            if let city = coordinator.city.rebuilt(of: projection.plan, in: pigments) {
+                renderer.show(city)
+            }
+            // The projection is framed into the plan's own extent rather than the drawable's size,
+            // because that is what `AtlasView` frames the surface at — and it is the shape the
+            // flat camera has to be given for its picture to be the treemap exactly.
+            renderer.look(
+                through: AtlasEye(projection.camera, fit: projection.fit),
+                rising: AtlasRise(projection),
+            )
+        }
         view.clearColor = pigments.desktop.clearColor
         // `needsDisplay`, not `setNeedsDisplay(_:)`: the first update lands before layout, when the
         // view's bounds are still zero, and invalidating an empty rect marks nothing dirty.
