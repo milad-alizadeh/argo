@@ -6,13 +6,18 @@ import {
   lstatSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
+  readlinkSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { repairSkillLinks } from '../packages/argo-skills/bin/repair-skill-links.mjs'
+import {
+  repairSkillLinks,
+  UNIVERSAL_SKILLS_DIR,
+} from '../packages/argo-skills/bin/repair-skill-links.mjs'
 import { check, report } from './check-harness.mjs'
 
 function git(root, ...args) {
@@ -20,10 +25,10 @@ function git(root, ...args) {
 }
 
 function installBrokenSkill(root, name = 'audit-agent-context') {
-  const skill = path.join(root, '.agents/skills', name)
+  const skill = path.join(root, UNIVERSAL_SKILLS_DIR, name)
   mkdirSync(skill, { recursive: true })
   writeFileSync(path.join(skill, 'SKILL.md'), '# Audit\n')
-  symlinkSync(`../../.agents/skills/${name}`, path.join(skill, name))
+  symlinkSync(`../../${UNIVERSAL_SKILLS_DIR}/${name}`, path.join(skill, name))
   return skill
 }
 
@@ -45,13 +50,29 @@ check('removes the broken self-link from a regular project', () => {
   const skill = installBrokenSkill(root)
   const nested = path.join(skill, 'audit-agent-context')
 
-  assert.equal(existsSync(nested), false, 'the upstream relative target is broken')
+  assert.equal(lstatSync(nested).isSymbolicLink(), true)
+  assert.equal(readlinkSync(nested), '../../.agents/skills/audit-agent-context')
   assert.deepEqual(repairSkillLinks(root), [
     '.agents/skills/audit-agent-context/audit-agent-context',
   ])
-  assert.equal(existsSync(nested), false)
+  assert.throws(() => lstatSync(nested), { code: 'ENOENT' })
   assert.equal(lstatSync(skill).isDirectory(), true)
   assert.deepEqual(repairSkillLinks(root), [], 'a second install cleanup is a no-op')
+  rmSync(root, { recursive: true, force: true })
+})
+
+check('preserves a same-named symlink with a different target', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'argo-skill-links-'))
+  const skill = installBrokenSkill(root, 'shared')
+  const nested = path.join(skill, 'shared')
+  const payload = path.join(root, 'payload')
+  rmSync(nested)
+  mkdirSync(payload)
+  symlinkSync(payload, nested)
+
+  assert.deepEqual(repairSkillLinks(root), [])
+  assert.equal(lstatSync(nested).isSymbolicLink(), true)
+  assert.equal(readlinkSync(nested), payload)
   rmSync(root, { recursive: true, force: true })
 })
 
@@ -60,6 +81,12 @@ check('repairs a linked worktree without touching its main checkout', () => {
   const mainSkill = installBrokenSkill(root, 'main-only')
   const linkedSkill = installBrokenSkill(worktree)
 
+  assert.match(
+    readFileSync('packages/argo-skills/bin/scaffold.mjs', 'utf8'),
+    /repairSkillLinks\(projectRoot\)/,
+    'the scaffolder runs this repair after installing skills',
+  )
+  assert.equal(lstatSync(path.join(linkedSkill, 'audit-agent-context')).isSymbolicLink(), true)
   assert.deepEqual(repairSkillLinks(worktree), [
     '.agents/skills/audit-agent-context/audit-agent-context',
   ])
