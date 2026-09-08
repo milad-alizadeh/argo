@@ -1,3 +1,4 @@
+import ArgoDesign
 @testable import AtlasLayout
 
 /// One drawn frame, read back: what a reader actually sees.
@@ -17,9 +18,36 @@ struct AtlasFrame {
     /// the desktop, the plates, their rims, the shadow decals — keeps a hue no band has. That is
     /// what makes the picture readable back to a band without eyedropping a tolerance on value.
     func band(atPixel index: Int) -> AtlasBand? {
-        let blue = Double(colour[index * 4]) / 255
-        let green = Double(colour[index * 4 + 1]) / 255
-        let red = Double(colour[index * 4 + 2]) / 255
-        return AtlasHue(red: red, green: green, blue: blue).band
+        pixel(at: index).band
+    }
+
+    /// How bright one pixel came out, in the frame's own 0-255 (#1600).
+    ///
+    /// The other half of reading a frame back: the band is what a pixel is PAINTED in, and this is
+    /// what the light and the grain spent on it. Rec. 709, the same three weights every other
+    /// luminance in this contract is read on.
+    func light(atPixel index: Int) -> Double {
+        let read = pixel(at: index)
+        let weights = ArgoColor.rec709Weights
+        return (weights.red * read.red + weights.green * read.green
+            + weights.blue * read.blue) * 255
+    }
+
+    /// One pixel as three channels again, out of the drawable's own BGRA order.
+    private func pixel(at index: Int) -> AtlasHue {
+        AtlasHue(
+            red: Double(colour[index * 4 + 2]) / 255,
+            green: Double(colour[index * 4 + 1]) / 255,
+            blue: Double(colour[index * 4]) / 255,
+        )
+    }
+}
+
+extension ArgoColor {
+    /// How bright this colour reads on a frame's own scale, so a claim about a pixel can be made
+    /// against the tone it was supposed to be drawn in (#1600).
+    var frameLight: Double {
+        let weights = ArgoColor.rec709Weights
+        return (weights.red * red + weights.green * green + weights.blue * blue) * 255
     }
 }

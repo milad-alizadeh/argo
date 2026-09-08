@@ -13,6 +13,17 @@ struct AtlasCity {
     /// one walk decides both.
     let roster: [AtlasTarget]
 
+    /// The light laid on the floor under those boxes (#1600): each plate's own, and the contour
+    /// grid over them. It travels with the city for the reason the roster does — it is a function
+    /// of the same plan and the same pigments, so it is rebuilt exactly when they are and never
+    /// per frame (`AtlasCityCache`).
+    let patches: [AtlasFloorPatch]
+
+    /// The floor itself: the graded ground, the vignette's reach and the grain's weight, resolved
+    /// from the plan and the contract. Everything but the drawable's own size, which only the
+    /// frame knows.
+    let ground: AtlasGround
+
     /// What one id names, or nothing. 0 is the desktop and a cast shadow — the parts of the map
     /// that are neither a file nor a folder — and an id past the roster is a target drawn from an
     /// older map than the one being asked, which is nothing rather than a guess (#1153's "a point
@@ -26,6 +37,20 @@ struct AtlasCity {
     /// over the map names the file under the pointer, and a folder is not one.
     func file(at id: UInt32) -> String? {
         target(at: id)?.file
+    }
+
+    /// The city, and the table it stands on. The floor is defaulted so a caller that has no
+    /// opinion about it — a map with nothing on it, a suite naming two boxes — still builds one.
+    init(
+        volumes: [AtlasVolume],
+        roster: [AtlasTarget],
+        patches: [AtlasFloorPatch] = [],
+        ground: AtlasGround = .none,
+    ) {
+        self.volumes = volumes
+        self.roster = roster
+        self.patches = patches
+        self.ground = ground
     }
 
     static let empty = AtlasCity(volumes: [], roster: [])

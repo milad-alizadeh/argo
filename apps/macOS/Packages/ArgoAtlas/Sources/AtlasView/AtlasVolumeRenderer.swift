@@ -17,20 +17,6 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// BLEND order, and a translucent volume would need it back (#1151 onward).
     static let depthFormat = MTLPixelFormat.depth32Float
 
-    /// How many samples a pixel is resolved from. Every edge in this picture is a box's own
-    /// silhouette against whatever stands behind it — there is no texture and no wireframe to hide
-    /// a staircase in — so at one sample a roof's diagonal far edge is drawn as a run of whole
-    /// pixels, and a city of a few thousand of them reads as ragged rather than as flat quads
-    /// (#1400). Four is the count every Metal device on this platform supports; `sampleCount(on:)`
-    /// asks the device rather than assuming, for the reason every other failure here is a `nil`.
-    nonisolated static let preferredSampleCount = 4
-
-    /// What this device will actually resolve a pixel from. `AtlasSamplingTests` is what holds it
-    /// to `preferredSampleCount`.
-    nonisolated static func sampleCount(on device: MTLDevice) -> Int {
-        device.supportsTextureSampleCount(preferredSampleCount) ? preferredSampleCount : 1
-    }
-
     let device: MTLDevice
     /// What this device actually gave, which is what the view and the pipeline both have to be
     /// built at: a pass whose attachments and pipeline disagree on the count does not draw.
@@ -65,39 +51,18 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// The second attachment of every draw: the id per pixel, and what a pick reads (#1153).
     private let ids: AtlasIdTarget
 
-    /// Whether this machine can draw the map at all: a Metal device, and this package's shader
-    /// compiled into its own bundle. The same two `init` fails on, asked without building a
-    /// pipeline — and `nonisolated`, because the one caller is a suite trait, evaluated before
-    /// there is a main actor to ask on (`AtlasPickHarness`).
-    nonisolated static var isSupported: Bool {
-        guard let device = MTLCreateSystemDefaultDevice(), let library = library(on: device)
-        else { return false }
-        return library.makeFunction(name: "atlas_volume_vertex") != nil
-    }
-
-    /// `AtlasVolume.metal`, however this build has it.
+    /// The table the boxes stand on (#1600), or NOTHING where this build's library is missing one
+    /// of its functions — in which case the city is drawn on a plain
+    /// ground, which is a worse picture rather than a broken one.
     ///
-    /// Xcode compiles it into the target's `default.metallib`, which is what the shipped app loads.
-    /// SwiftPM does not compile Metal at all — the manifest says so — and carries the SOURCE in the
-    /// bundle instead, so a `swift test` binary and a Mac with no Metal Toolchain compile it here,
-    /// at runtime, out of the same file. That is what lets `AtlasPickingTests` render the map the
-    /// app renders rather than a second drawing of it written in Swift; without it the one claim
-    /// #1153 makes could only be asserted by a suite that skipped itself.
-    /// Cached like `Bundle.module` itself: the filesystem does not move mid-process for a bundle
-    /// that resolved once, and a bundle that vanished stays vanished for this process's purposes.
-    nonisolated private static let resourceBundle: Bundle? =
-        ModuleResourceBundle.resolve(bundleName: "ArgoAtlas_AtlasView")
+    /// Not private, for the reason `instances` is not: `AtlasTableTests` reads what the floor is
+    /// holding across a drag.
+    let floor: AtlasFloorStage?
 
-    nonisolated private static func library(on device: MTLDevice) -> MTLLibrary? {
-        guard let bundle = resourceBundle else { return nil }
-        if let compiled = try? device.makeDefaultLibrary(bundle: bundle) {
-            return compiled
-        }
-        guard let url = bundle.url(forResource: "AtlasVolume", withExtension: "metal"),
-              let source = try? String(contentsOf: url, encoding: .utf8)
-        else { return nil }
-        return try? device.makeLibrary(source: source, options: nil)
-    }
+    /// The tile the grain is dithered from (#1600). Held HERE rather than beside the floor,
+    /// because the BOXES' own fragment stage reads it too — the grain is spent on each surface's
+    /// finished pixel, and the boxes are the surface it has to be careful with.
+    private let grain: MTLTexture
 
     /// Three quads a box — the roof and the two walls that face the reader — as a triangle list.
     static let verticesPerVolume = 18
@@ -124,7 +89,8 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
               let library = Self.library(on: device),
               let vertex = library.makeFunction(name: "atlas_volume_vertex"),
               let fragment = library.makeFunction(name: "atlas_volume_fragment"),
-              let ids = AtlasIdTarget(device: device, library: library, samples: samples)
+              let ids = AtlasIdTarget(device: device, library: library, samples: samples),
+              let grain = AtlasGrain.texture(on: device)
         else { return nil }
 
         let descriptor = MTLRenderPipelineDescriptor()
@@ -155,6 +121,10 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         self.depth = depth
         self.sampleCount = samples
         self.ids = ids
+        self.grain = grain
+        self.floor = AtlasFloorStage(
+            device: device, library: library, pixelFormat: pixelFormat, samples: samples,
+        )
         self.instances = AtlasVolumeBuffer(device: device)
         super.init()
     }
@@ -169,6 +139,9 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     func show(_ city: AtlasCity) {
         self.city = city
         instances.write(city.volumes)
+        // The floor is written on the same clock, because it is a function of the same plan and
+        // the same pigments: a map that has not moved is a floor that has not moved (#1598).
+        floor?.show(city.patches)
     }
 
     /// One update of the surface: the map where the map moved, and the eye every time (#1598).
@@ -282,6 +255,18 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
         guard let encoder = buffer.makeRenderCommandEncoder(descriptor: descriptor) else {
             return false
         }
+        // The table first, under everything: the graded ground, its vignette, and the light laid
+        // on the floor (#1600). The drawable's own size is the one number the floor cannot know
+        // until here, and it is read off the id attachment — which IS the drawable's size, so a
+        // pixel of the picture and a pixel of the floor's falloff are one pixel.
+        var ground = city.ground
+        ground.size = SIMD2<Float>(Float(target.width), Float(target.height))
+        // Both fragment stages of this pass read these two: the floor for its grade and its
+        // falloff, the boxes for the grain alone. Bound once here rather than by each, so a pixel
+        // of the table and a pixel of a roof are dithered from the same tile.
+        encoder.setFragmentBytes(&ground, length: MemoryLayout<AtlasGround>.stride, index: 0)
+        encoder.setFragmentTexture(grain, index: 0)
+        floor?.table(in: encoder, eye: &eye, ground: &ground)
         encoder.setRenderPipelineState(pipeline)
         encoder.setDepthStencilState(depth)
         encoder.setVertexBuffer(volumes, offset: 0, index: 0)

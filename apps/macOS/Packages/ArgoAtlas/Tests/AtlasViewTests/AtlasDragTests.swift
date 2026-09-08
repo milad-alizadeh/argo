@@ -117,8 +117,14 @@ struct AtlasDragTests {
         // A cast decal is the only box on the map carrying a baked darkening (#1151).
         let decals = city.volumes.filter { $0.shade < 1 }
         #expect(!decals.isEmpty, "no file in the fixture is tall enough to cast anything")
+        // The floor is carried over unchanged (#1600): the only difference between the two
+        // renders has to be the decals, and a city built without a table would differ by the
+        // whole ground as well.
         let unshadowed = AtlasCity(
-            volumes: city.volumes.filter { $0.shade >= 1 }, roster: city.roster,
+            volumes: city.volumes.filter { $0.shade >= 1 },
+            roster: city.roster,
+            patches: city.patches,
+            ground: city.ground,
         )
         let camera = AtlasCamera(relief: 1, orientation: .opening, over: plan.extent)
 

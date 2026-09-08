@@ -128,6 +128,11 @@ public extension ArgoPalette {
             ),
             materials: MaterialRoles(
                 desktop: ArgoColor(hex: 0x0D0E10),
+                // The two inner stops of the graded ground, from the approved page's own
+                // `drawFloor`: the lamp landing at the middle of the plan, and the dip half way
+                // out to the desktop tone at the rim.
+                groundLit: ArgoColor(hex: 0x0B1015),
+                groundDeep: ArgoColor(hex: 0x080C10),
                 plate1: ArgoColor(hex: 0x263138),
                 plate2: ArgoColor(hex: 0x1E282E),
                 plate3: ArgoColor(hex: 0x182127),

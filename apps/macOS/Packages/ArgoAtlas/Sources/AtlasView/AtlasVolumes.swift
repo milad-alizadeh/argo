@@ -44,6 +44,8 @@ enum AtlasVolumes {
         AtlasCity(
             volumes: volumes(of: plan, in: pigments),
             roster: plan.plates.map { .folder($0.path) } + plan.tiles.map { .file($0.path) },
+            patches: AtlasFloor.patches(of: plan, in: pigments),
+            ground: AtlasGround(plan: plan.extent, in: pigments),
         )
     }
 

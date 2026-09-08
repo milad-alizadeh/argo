@@ -14,14 +14,18 @@ struct AtlasLightingTests {
         ("nearY", AtlasLighting.city.nearY),
     ]
 
-    /// `AtlasLighting` crosses to the fragment shader as four packed floats — no padding for a
-    /// `float2`/`float3` to force, so Swift and Metal agree on this one without help.
+    /// `AtlasLighting` crosses to the vertex shader as four packed floats, a `float2` and a fifth
+    /// — and the `float2` is what makes this worth asserting: it aligns to 8 in both languages, so
+    /// every offset after it is a padding rule agreeing across two declarations neither side of
+    /// which can see the other.
     @Test func `the light is laid out the way the shader reads it`() {
         #expect(MemoryLayout<AtlasLighting>.offset(of: \.roof) == 0)
         #expect(MemoryLayout<AtlasLighting>.offset(of: \.nearX) == 4)
         #expect(MemoryLayout<AtlasLighting>.offset(of: \.nearY) == 8)
         #expect(MemoryLayout<AtlasLighting>.offset(of: \.contactFoot) == 12)
-        #expect(MemoryLayout<AtlasLighting>.stride == 16)
+        #expect(MemoryLayout<AtlasLighting>.offset(of: \.keyPlan) == 16)
+        #expect(MemoryLayout<AtlasLighting>.offset(of: \.sheenFoot) == 24)
+        #expect(MemoryLayout<AtlasLighting>.stride == 32)
     }
 
     /// Every face reads something: the ambient term alone is enough that no face is ever the same
@@ -63,6 +67,80 @@ struct AtlasLightingTests {
         for (brighter, darker) in zip(ordered, ordered.dropFirst()) {
             #expect(Double(brighter / darker) >= ArgoLight.faceStep)
         }
+    }
+
+    /// The roof's sheen keeps its band at BOTH ends of itself, AND the grain over the brighter of
+    /// them keeps it too (#1600).
+    ///
+    /// The brightest pixel of a roof is the one every bound here is really about: the face's own
+    /// light, times the lit end of the sheen, times the brightest texel of the grain tile. That is
+    /// the corner a roof-centre measurement cannot see, so it is measured here — through
+    /// `AtlasLighting.city`, which is the value the GPU is handed, rather than through the
+    /// contract twice.
+    @Test(arguments: palettes)
+    func `a roof keeps its band at both ends of the sheen, and under the grain`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let roof = Double(AtlasLighting.city.roof)
+        let sheen = Double(AtlasLighting.city.sheenFoot)
+        for band in appearance.palette.atlas.measure.all {
+            for shade in [roof, roof * sheen] {
+                let lit = band.color.scaled(by: shade)
+                #expect(lit.hueDistance(to: band.color) < 0.01)
+                #expect(lit.distance(to: band.color) < ArgoLight.legendTolerance)
+            }
+            let dithered = Self.grained(band.color.scaled(by: roof))
+            #expect(dithered.hueDistance(to: band.color) < AtlasHue.tolerance)
+            #expect(dithered.distance(to: band.color) < ArgoLight.legendTolerance)
+        }
+    }
+
+    /// The sheen darkens away from the lamp and never brightens past the face's own light — and
+    /// the measurement that says why, rather than a sentence in a doc comment.
+    ///
+    /// The design runs the sheen between these two numbers about the shade a face reads at. Spent
+    /// upward on this contract's roof factor, a middling roof and a hot one both land past
+    /// `legendTolerance`; pinned, the brightest roof pixel is where the claim above bounds it. The
+    /// day `legendTolerance` or the lamps move, this says whether the sheen could brighten again.
+    @Test func `the sheen darkens away from the lamp, never brightens past the face`() {
+        let measure = ArgoPalette.graphite.atlas.measure
+        let roof = Double(AtlasLighting.city.roof)
+        let design = (lit: 1.07, far: 0.93)
+
+        #expect(abs(ArgoLight.sheenFoot - design.far / design.lit) < 0.0001)
+        #expect(ArgoLight.sheenFoot < 1)
+        for band in [measure.middling, measure.hot] {
+            #expect(band.scaled(by: roof * design.lit).distance(to: band)
+                > ArgoLight.legendTolerance)
+            #expect(band.scaled(by: roof).distance(to: band) < ArgoLight.legendTolerance)
+        }
+    }
+
+    /// One colour through the brightest texel the grain tile holds, on the design's own `overlay`
+    /// at `AtlasGround.grain` — the expression `atlas_grain` spends, written once here.
+    private static func grained(_ colour: ArgoColor) -> ArgoColor {
+        let weight = Double(AtlasGround.grain)
+        let noise = Double(AtlasGrain.range.upperBound) / 255
+        func over(_ channel: Double) -> Double {
+            let lit = channel < 0.5
+                ? 2 * channel * noise
+                : 1 - 2 * (1 - channel) * (1 - noise)
+            return channel + (lit - channel) * weight
+        }
+        return ArgoColor(red: over(colour.red), green: over(colour.green), blue: over(colour.blue))
+    }
+
+    /// The sheen runs along the key's own PLAN direction, and it is the same number every cast
+    /// shadow is thrown against — so a roof cannot come out bright on the side its own shadow
+    /// falls (`AtlasShadow.decal`).
+    @Test func `the sheen runs along the direction the shadows are thrown against`() {
+        let plan = AtlasLighting.plan(of: ArgoLight.key)
+
+        #expect(abs(plan.x * plan.x + plan.y * plan.y - 1) < 0.0001)
+        #expect(AtlasLighting.city.keyPlan == SIMD2<Float>(Float(plan.x), Float(plan.y)))
+        // Overhead and from the reader's left, which `ArgoLightTests` holds the key to: the plan
+        // direction keeps that sign, so the bright side of a roof is the -x side.
+        #expect(plan.x < 0)
     }
 
     /// The roof is what the legend is held against — the flat swatch beside a map whose roofs are

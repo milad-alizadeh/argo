@@ -97,8 +97,26 @@ struct AtlasPigments: Equatable {
         edge.composited(over: depth > 0 ? plate(at: depth - 1) : desktop)
     }
 
-    /// The ground the whole city stands on.
+    /// The ground the whole city stands on, and the OUTERMOST stop of the graded one (#1600).
     var desktop: ArgoColor {
         materials.desktop
+    }
+
+    /// The ground where the lamp reaches it, at the middle of the plan — the middle stop of the
+    /// grade (#1600).
+    var groundLit: ArgoColor {
+        materials.groundLit
+    }
+
+    /// The dip half way out, before the grade returns to `desktop` at the rim (#1600).
+    var groundDeep: ArgoColor {
+        materials.groundDeep
+    }
+
+    /// The floor's own light: what every patch laid on the floor is drawn in, the plates' own and
+    /// the contour grid alike (#1600). The contract's own words for it — "the floor's own light,
+    /// which the contour grid takes" — so nothing on the floor names a second one.
+    var fog: ArgoColor {
+        materials.fog
     }
 }
