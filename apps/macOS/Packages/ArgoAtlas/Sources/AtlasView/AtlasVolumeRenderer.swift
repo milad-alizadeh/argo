@@ -68,7 +68,10 @@ final class AtlasVolumeRenderer: NSObject, MTKViewDelegate {
     /// The table the boxes stand on and the grain over them (#1600), or NOTHING where this build's
     /// library is missing one of their functions — in which case the city is drawn on a plain
     /// ground, which is a worse picture rather than a broken one.
-    private let floor: AtlasFloorStage?
+    ///
+    /// Not private, for the reason `instances` is not: `AtlasTableTests` reads what the floor is
+    /// holding across a drag.
+    let floor: AtlasFloorStage?
 
     /// Whether this machine can draw the map at all: a Metal device, and this package's shader
     /// compiled into its own bundle. The same two `init` fails on, asked without building a

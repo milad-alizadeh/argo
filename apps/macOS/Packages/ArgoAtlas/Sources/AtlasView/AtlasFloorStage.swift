@@ -45,8 +45,12 @@ final class AtlasFloorStage {
     /// The patches the floor is lit by. Written on the CITY's clock rather than the frame's —
     /// `AtlasCityCache` decides when — so the allocation is paid when the map moves and never per
     /// drag frame, which is the cost #1598 took off the boxes.
-    private var patches: MTLBuffer?
-    private var count = 0
+    ///
+    /// Not private, for the reason `AtlasVolumeBuffer` is not: `AtlasTableTests` reads the buffer
+    /// the floor is holding across a drag, which is the only way to say from outside that a drag
+    /// rewrites no floor.
+    private(set) var patches: MTLBuffer?
+    private(set) var count = 0
 
     init?(device: MTLDevice, library: MTLLibrary, target: AtlasFloorTarget) {
         let descriptor = MTLDepthStencilDescriptor()

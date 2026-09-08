@@ -54,6 +54,41 @@ know it: `worktrees:gc` deletes `design/atlas` the moment #643 closes, distilled
   read first — the prototype's own bands sat 0.03 to 0.09 from `state.running`, `state.attention`
   and `state.failure`, so a complex file and a crashed session were the same colour.
 
+## Measurements — the floor, the vignette, the grain and the roof sheen
+
+Distilled out of the page by #1600, which is the first pass at the table this file is supposed to
+carry. **Only these six things.** Everything else the screen settles is still only in the page, and
+the warning above still stands.
+
+| What | The page's number | Where it lives now |
+|---|---|---|
+| The floor's plane | `FLOOR_Z = -22` of a 1000-unit plan | `AtlasElevation.dropShare = 0.022`, off the shorter side |
+| How far the floor runs past the plan | `FLOOR_PAD = 0.018` | `AtlasElevation.padShare` |
+| The graded ground | `#0b1015` at the middle, `#080c10` at 0.5, `--desktop` at 1, out to `max(W, H) * 0.72` | `atlas.materials.groundLit`, `groundDeep`, `desktop`; `AtlasGround.grade` |
+| The vignette | `min(W, H) * 0.30` to `max(W, H) * 0.62`, landing on `--desktop` | `AtlasGround.falloff` |
+| The plates' light on the floor | `rgba(70, 175, 205, 0.018 / (1 + depth * 0.45))` | `atlas.materials.fog` at `AtlasFloor.plateLight = 0.056`, `plateFalloff = 0.45` |
+| The contour grid | 32 divisions of `fog` at 0.10, then 8 of `rgba(80, 178, 205, 0.055)` | `AtlasFloor.grid = [(32, 0.10), (8, 0.178)]`, both in `fog` |
+| The grain | one 96px tile, values `118 + rand * 74`, `overlay` at 0.05 | `AtlasGrain.width`, `AtlasGrain.range`, `AtlasGround.grain`; spent as a multiply |
+| The roof sheen | `ao * 1.07` at the lit corner, `ao * 0.93` at the far one | `ArgoLight.sheenFoot = 0.93 / 1.07`, pinned so the lit end is the face's own light |
+
+Three of the page's numbers are put back onto a token rather than carried across as they are, and
+each is arithmetic rather than taste:
+
+- **The two raw cyans become `fog`.** The contract already names the floor's light — `fog`, "the
+  floor's own light, which the contour grid takes" — and the page's `rgba(70, 175, 205)` and
+  `rgba(80, 178, 205)` are that light from before it had a name. The weights carry the difference:
+  0.018 of (70, 175, 205) is (1.26, 3.15, 3.69) of 255 and `fog` at 0.056 is (1.46, 2.91, 3.58);
+  0.055 of (80, 178, 205) is (4.4, 9.8, 11.3) and `fog` at 0.178 is (4.6, 9.3, 11.4).
+- **The grain is a multiply, not an `overlay`.** Overlay's own dark branch composites to
+  `b * (1 + a * (2s - 1))` — a scalar on the finished pixel, which is what a multiply blend is —
+  and the two part only above half brightness, by at most 0.0037, under one 8-bit step. A multiply
+  is also the only one of the two that cannot wash a channel toward white, which nothing on this
+  map may do.
+- **The sheen is pinned rather than centred.** The page runs it 1.07 against 0.93 about the shade a
+  face reads at. Spent upward on this contract's roof factor, a hot roof lands 0.195 from its
+  legend swatch and `ArgoLight.legendTolerance` bounds that at 0.15. The ratio across the roof is
+  the page's exactly; the lit end is the face's own light rather than 7% above it.
+
 ## When Atlas ships
 
 The last ticket against this screen sets the front matter to `built`, records the commit, and
