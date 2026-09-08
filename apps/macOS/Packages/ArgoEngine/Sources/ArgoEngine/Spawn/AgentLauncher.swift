@@ -72,6 +72,9 @@ public actor AgentLauncher {
         for (key, value) in companion?.environment ?? [:] {
             environment[key] = value
         }
+        for (key, value) in cli.requiredEnvironment {
+            environment[key] = value
+        }
         return environment
     }
 }

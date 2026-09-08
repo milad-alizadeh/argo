@@ -107,6 +107,32 @@ struct AgentLauncherTests {
         #expect(asked.withLock { $0 } == 1)
     }
 
+    @Test(arguments: AgentCLI.allCases, [nil, "0", "1"] as [String?])
+    func `only Claude launches require task tools regardless of inherited defaults`(
+        cli: AgentCLI,
+        inheritedValue: String?,
+    ) async throws {
+        let directory = try Self.directoryHolding(cli.command)
+        defer {
+            do {
+                try FileManager.default.removeItem(at: directory)
+            } catch {
+                Issue.record(error)
+            }
+        }
+        var inherited: [String: String] = [:]
+        for key in ["CLAUDE_CODE_ENABLE_TODO_TOOLS", "CLAUDE_CODE_ENABLE_TASKS"] {
+            inherited[key] = inheritedValue
+        }
+        let launcher = AgentLauncher(run: { _ in directory.path }, inherited: inherited)
+
+        let launch = try await launcher.launch(cli: cli, cwd: "/tmp", companion: nil)
+
+        let expected = cli == .claude ? "1" : inheritedValue
+        #expect(launch.environment["CLAUDE_CODE_ENABLE_TODO_TOOLS"] == expected)
+        #expect(launch.environment["CLAUDE_CODE_ENABLE_TASKS"] == expected)
+    }
+
     private static func directoryHolding(_ command: String) throws -> URL {
         let directory = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-bin-\(UUID().uuidString.prefix(8))", directoryHint: .isDirectory)

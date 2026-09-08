@@ -36,6 +36,16 @@ public enum AgentCLI: String, Codable, Sendable, CaseIterable {
         }
     }
 
+    /// Claude 2.1.233 made task tools opt-in on newer models; Argo needs them for the live Plan.
+    var requiredEnvironment: [String: String] {
+        switch self {
+        case .claude:
+            ["CLAUDE_CODE_ENABLE_TODO_TOOLS": "1", "CLAUDE_CODE_ENABLE_TASKS": "1"]
+        case .codex:
+            [:]
+        }
+    }
+
     /// The flags that pick the CLI's SURFACE, before anything about this particular Session. Claude
     /// has none — the bare command is the interactive TUI, which is the surface that keeps
     /// subscription billing. Codex names its server explicitly.

@@ -1,6 +1,7 @@
 @testable import ArgoEngine
 import ArgoTerminal
 import Foundation
+import Testing
 
 /// Whether the live-CLI tests run: they spawn the real `claude`, spend the user's tokens, and take
 /// as long as an agent takes. Off unless asked for, by name, in the environment.
@@ -200,12 +201,14 @@ final class LiveClaudeFixture {
         }
     }
 
-    /// `claude` opens a folder it has never seen with a trust question, and answers to `1`. Sent
-    /// blind because Argo reads no PTY output here — the question is the first thing a fresh
-    /// folder shows, and the terminal holds the keystroke until the CLI is ready to read it.
+    /// Claude 2.1.263 defaults the trust question to No; arrow keys must arrive outside a paste.
     private func trustTheFolder() async throws {
         await pause(seconds: 3)
-        try hub.driver.send("1", to: claim.value)
+        let terminal = try #require(hub.terminals.attach(to: claim) { _ in })
+        defer { terminal.detach() }
+        terminal.write("\u{1B}[B")
+        await pause(seconds: 1)
+        terminal.write("\r")
         await pause(seconds: 3)
     }
 
