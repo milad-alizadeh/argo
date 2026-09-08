@@ -17,14 +17,13 @@ import Metal
 @MainActor
 final class AtlasFloorStage {
     /// The graded ground and its vignette, in one screen-space fill.
-    private static let ground = (
-        vertex: "atlas_ground_vertex", fragment: "atlas_ground_fragment", blend: AtlasFloorBlend
-            .opaque
+    private static let ground = AtlasFloorPass(
+        vertex: "atlas_ground_vertex", fragment: "atlas_ground_fragment", blend: .opaque,
     )
 
     /// Every patch of light on the floor: each plate's own, and the contour grid over them.
-    private static let light = (
-        vertex: "atlas_floor_vertex", fragment: "atlas_floor_fragment", blend: AtlasFloorBlend.over
+    private static let light = AtlasFloorPass(
+        vertex: "atlas_floor_vertex", fragment: "atlas_floor_fragment", blend: .over,
     )
 
     /// One quad as two triangles, which is both passes here: the drawable, or one patch of floor.
@@ -115,7 +114,7 @@ final class AtlasFloorStage {
     }
 
     private static func state(
-        _ pass: (vertex: String, fragment: String, blend: AtlasFloorBlend),
+        _ pass: AtlasFloorPass,
         from library: MTLLibrary,
         on device: MTLDevice,
         into descriptor: MTLRenderPipelineDescriptor,

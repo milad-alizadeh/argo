@@ -33,7 +33,7 @@ struct AtlasTableTests {
             of: AtlasVolumes.city(of: plan, in: Self.pigments), plan: plan, through: camera,
         ))
 
-        let ground = Self.ground(in: frame, from: harness)
+        let ground = harness.bareGround(in: frame)
         #expect(ground.count > 1000, "the camera left too little bare ground to measure")
         let sorted = ground.map(\.reach).sorted()
         let median = sorted[sorted.count / 2]
@@ -121,12 +121,12 @@ struct AtlasTableTests {
         // about four pixels apart there and the plan's own middle lands on a crossing of it, so a
         // single pixel is as likely to be two grid lines as it is to be the ground. Everything on
         // the floor only ever ADDS light, so the darkest of them is the bare ground.
-        let drawn = Self.darkestGround(around: pixel, in: frame, from: harness)
+        let drawn = harness.darkestGround(around: pixel, in: frame)
         let materials = ArgoPalette.graphite.atlas.materials
 
-        #expect(abs(drawn - Self.light(of: materials.groundLit)) < 1.5)
-        #expect(drawn > Self.light(of: materials.groundDeep))
-        #expect(drawn > Self.light(of: materials.desktop))
+        #expect(abs(drawn - materials.groundLit.frameLight) < 1.5)
+        #expect(drawn > materials.groundDeep.frameLight)
+        #expect(drawn > materials.desktop.frameLight)
     }
 
     /// A drag rewrites no floor. The floor is a function of the plan and the pigments, exactly as
@@ -192,64 +192,6 @@ struct AtlasTableTests {
             patches: Array(patches),
             ground: city.ground,
         )
-    }
-
-    /// Every pixel of the frame that is on NO box — bare ground — as how far it sits from the
-    /// middle of the plan and how bright it came out.
-    ///
-    /// "On no box" is asked of the id target rather than of the colour, so nothing here has to know
-    /// what the ground is painted in to find it.
-    private static func ground(
-        in frame: AtlasFrame,
-        from harness: AtlasPickHarness,
-    )
-        -> [(reach: Double, light: Double)] {
-        let size = AtlasPickHarness.size
-        let middle = CGPoint(x: Double(size.width) / 2, y: Double(size.height) / 2)
-        return (0 ..< size.width * size.height).compactMap { index in
-            let x = index % size.width
-            let y = index / size.width
-            guard harness.pick(at: AtlasPixel(x: x, y: y))?.target == nil else { return nil }
-            let reach = (Double(x) - middle.x) * (Double(x) - middle.x)
-                + (Double(y) - middle.y) * (Double(y) - middle.y)
-            return (reach: reach.squareRoot(), light: Self.light(of: frame, atPixel: index))
-        }
-    }
-
-    /// How bright one pixel of the frame came out, on the same three weights every other
-    /// luminance in this contract is read on. BGRA, in the drawable's own order.
-    private static func light(of frame: AtlasFrame, atPixel index: Int) -> Double {
-        let weights = ArgoColor.rec709Weights
-        return weights.blue * Double(frame.colour[index * 4])
-            + weights.green * Double(frame.colour[index * 4 + 1])
-            + weights.red * Double(frame.colour[index * 4 + 2])
-    }
-
-    /// The darkest bare-ground pixel within a few of one point, in the frame's own 0-255.
-    private static func darkestGround(
-        around pixel: AtlasPixel,
-        in frame: AtlasFrame,
-        from harness: AtlasPickHarness,
-    )
-        -> Double {
-        let size = AtlasPickHarness.size
-        var darkest = Double.infinity
-        for y in (pixel.y - 4) ... (pixel.y + 4) {
-            for x in (pixel.x - 4) ... (pixel.x + 4) {
-                guard x >= 0, y >= 0, x < size.width, y < size.height,
-                      harness.pick(at: AtlasPixel(x: x, y: y))?.target == nil
-                else { continue }
-                darkest = min(darkest, Self.light(of: frame, atPixel: y * size.width + x))
-            }
-        }
-        return darkest
-    }
-
-    /// How bright one contract colour reads, on the same three weights, in the frame's own 0-255.
-    private static func light(of colour: ArgoColor) -> Double {
-        let weights = ArgoColor.rec709Weights
-        return (weights.red * colour.red + weights.green * colour.green
-            + weights.blue * colour.blue) * 255
     }
 
     private static func mean(_ values: [Double]) -> Double {
