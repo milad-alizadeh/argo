@@ -120,7 +120,7 @@ package struct SessionComposer: View {
             }
             ComposerField(
                 text: $draft.text,
-                placeholder: placeholder,
+                placeholder: composer.placeholder,
                 canRunCommands: line.canRunCommands,
                 submit: submit,
                 walk: { menus.walk($0, on: line) },
@@ -171,11 +171,11 @@ package struct SessionComposer: View {
     /// anything (design decision 11), the same act a click makes; see `open(_:)`.
     /// Not `private`, for the reason `menus` is not: `SessionComposer+Footer.swift` hands this to
     /// the send control.
-    /// Where it goes is `isTurnInFlight`, and NOT `hasTurnEnded`, which the release reads (#1238).
-    /// The two are deliberately different questions at one reading: `asking` holds a live question
-    /// the composer is the only way to answer, so what is typed there goes NOW, while the
-    /// follow-ups queued behind the Turn go on waiting for its end. A Return queued at that moment
-    /// would be an answer the agent never hears.
+    /// Where it goes is `holdsTurn`, which leads on `isTurnInFlight` and NOT on `hasTurnEnded`,
+    /// the reading the release makes (#1238). The two are deliberately different questions at one
+    /// reading: `asking` holds a live question the composer is the only way to answer, so what is
+    /// typed there goes NOW, while the follow-ups queued behind the Turn go on waiting for its
+    /// end. A Return queued at that moment would be an answer the agent never hears.
     ///
     /// Nor is it the status WORD (#1179). A Session Argo has just typed a Turn at, and one whose
     /// process has not spoken yet, are both working and neither reads `running` — and both used to
@@ -191,19 +191,6 @@ package struct SessionComposer: View {
             return
         }
         draft.submit(whileTurnInFlight: holdsTurn, via: sending)
-    }
-
-    /// What the field invites, answered off the same reading Return acts on.
-    ///
-    /// The projection words it from the Session alone, and cannot do otherwise — it has never seen
-    /// a draft. So the two readings that only the draft knows are answered here, or the field
-    /// would invite a message while Return queued one: the state
-    /// `SessionComposerProjection.composer(for:can:)` names as "the two disagreeing on screen",
-    /// arriving from the other side (#1636).
-    /// Not `private`, for the reason `menus` is not: a case asserts what the field invites,
-    /// and Swift's `private` is file-scoped.
-    var placeholder: String {
-        holdsTurn ? SessionComposerProjection.queuePlaceholder : composer.placeholder
     }
 
     /// Whether a Turn is in flight by ANY reading the composer has: the Session's own, a steer

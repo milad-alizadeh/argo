@@ -55,14 +55,13 @@ import Testing
             field.press([])
             field.settle { field.input.string.isEmpty }
             #expect(field.input.string.isEmpty)
+            // The record catching up on the Turn just sent, which is what a real Session does
+            // between two Returns — and without it the SECOND one queues behind Argo's own claim
+            // (#1636) and this case would prove the clear on one send instead of five.
+            field.store.draft.turnStarted()
         }
 
-        // Where the five Turns GO is not this case's claim, and since #1636 it is not five sends:
-        // the first goes and the rest queue behind the Turn it started, one per boundary. All five
-        // are accounted for, which is what says every Return was carried out and no words were
-        // dropped by the clear.
-        #expect(field.sent == ["turn 1"])
-        #expect(field.draft.queued.map(\.text) == (2 ... 5).map { "turn \($0)" })
+        #expect(field.sent == (1 ... 5).map { "turn \($0)" })
     }
 
     /// The field grew onto a second line and has to come back off it: the clear a send leaves

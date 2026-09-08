@@ -111,18 +111,18 @@ struct ComposerBusyWindowTests {
         #expect(drafts[id].queued.map(\.text) == ["And tag it."])
     }
 
-    /// The field must not invite a message it is going to queue. The projection words the
-    /// placeholder off the Session alone and has never seen a draft, so in this window it read
-    /// `Message Claude Code…` over a Return that queues — the state the projection's own comment
-    /// forbids, arriving from the draft's side.
+    /// The reading itself, named: what Return acts on in the window, over a Session every
+    /// Session-side reading calls at rest.
     @Test
-    func `the field says it is queueing while Argo's own put stands`() throws {
+    func `the composer holds the Turn on its own act, over a Session that reads at rest`() throws {
         let log = Log()
         type("Open the PR.", in: log, at: .idle)
         try #require(log.draft.isAwaitingPutTurn)
 
         #expect(composer(log, at: .idle).holdsTurn)
-        #expect(composer(log, at: .idle).placeholder == SessionComposerProjection.queuePlaceholder)
+        // The Session's own reading says the opposite, which is the disagreement being resolved.
+        #expect(!Self.session(at: .idle).isTurnInFlight)
+        #expect(Self.session(at: .idle).hasTurnEnded)
     }
 
     /// A steer and the boundary that follows it, which is the second way #1636 could have folded
@@ -133,6 +133,9 @@ struct ComposerBusyWindowTests {
     func `a steered follow-up the boundary follows is delivered exactly once`() async throws {
         let log = Log()
         type("Open the PR.", in: log, at: .running)
+        // A second follow-up BEHIND the steered one, or the boundary declines on an empty queue
+        // and the claim this case is named for is never the thing that held it.
+        type("And tag it.", in: log, at: .running)
         let steered = try #require(log.draft.queued.first?.id)
 
         await composer(log, at: .running).steering(steered)
@@ -140,6 +143,7 @@ struct ComposerBusyWindowTests {
         composer(log, at: .idle).turnEnded()
 
         #expect(log.acts == ["interrupt", "steer Open the PR."])
-        #expect(log.draft.queued.isEmpty)
+        // The one behind it is still waiting: the steer's boundary is not its boundary.
+        #expect(log.draft.queued.map(\.text) == ["And tag it."])
     }
 }
