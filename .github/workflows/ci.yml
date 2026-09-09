@@ -1,5 +1,7 @@
-# Two tiers. `check` runs biome, the typecheck, the duplication gate and the guardrail-hook tests
-# on Linux for every PR. `desktop-artifact` packages `apps/desktop` for arm64 on macOS, asserts the
+# Two tiers. `check` runs biome, the typecheck, the duplication gate, the guardrail-hook tests and
+# the packaged-contents manifest (#1806) on Linux for every PR — the manifest with no path filter,
+# because a lockfile refresh can change what ships without touching an `apps/desktop` file.
+# `desktop-artifact` packages `apps/desktop` for arm64 on macOS, asserts the
 # packaged `node-pty` and runs the shipped app (#1769) — only when the PR touches the desktop app,
 # the root manifest, the lockfile or `.github/`, and its filter fails CLOSED.
 #
@@ -73,6 +75,38 @@ jobs:
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks
+
+      # The package contents, on EVERY pull request and with no path filter (#1806). The
+      # manifest's likeliest regression is a lockfile refresh, and a dependency bump may touch no
+      # `apps/desktop` file at all, so the filter the macOS job carries would be wrong here.
+      #
+      # Forge packages for darwin on Linux, and the asar entry list is plain JavaScript over the
+      # built app. Nothing here signs, notarizes or builds the DMG, and none of that is what the
+      # manifest reads. This job needs no `Install the Electron binary` step, unlike the macOS one
+      # below: a cross-platform target is never the local `node_modules/electron`, so
+      # @electron/packager downloads the darwin zip through @electron/get itself. Verified by
+      # packaging darwin arm64 in a Linux container on the pinned Node.
+      #
+      # arm64: the architecture that actually ships, so both tiers read one package shape. A
+      # non-darwin host can build it only because `resetAdHocDarwinSignature` is narrowed to a
+      # darwin build host in forge.config.ts, which is where the reason for it is written down.
+      #
+      # This job's `name:` is `main`'s required status check, matched literally, and renaming it
+      # strands every open pull request on a check that never reports (#1733). So the name still
+      # says what it said before this step arrived.
+      - id: package
+        name: Package for darwin
+        if: ${{ !cancelled() }}
+        working-directory: apps/desktop
+        run: bun run package --platform darwin --arch arm64
+
+      # Gated on the package step alone, not `success()`: every gate above runs even after an
+      # earlier one fails, so a lint error must not take the manifest verdict with it. What this
+      # cannot survive is a failed package, which reports "no Contents/Resources" over the cause.
+      - name: Package manifest
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        working-directory: apps/desktop
+        run: bun run desktop:manifest out/Argo-darwin-arm64/Argo.app
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and RUN it. Everything #1769 asserts about
@@ -173,6 +207,15 @@ jobs:
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
         run: bun run assert:packaged out/Argo-darwin-arm64/Argo.app
+
+      # The same manifest the Linux tier compared, re-read off the app THIS job packaged (#1806).
+      # It is not a duplicate run: signing adds files to a bundle, so the shipped bytes are the
+      # ones the exact set has to hold for. Until `osxSign` is configured (#1771) the two readings
+      # agree, and that agreement is itself worth a step once they stop.
+      - name: Package manifest
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
+        working-directory: apps/desktop
+        run: bun run desktop:manifest out/Argo-darwin-arm64/Argo.app
 
       # The #1749 acceptance boundary, inside the shipped binary: start, input, output, resize,
       # interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a
