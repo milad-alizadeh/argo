@@ -8,10 +8,10 @@ Everything here is a fact about this repository. Process belongs to the skill th
 
 ## Where things are written down
 
-- **Issues and PRDs** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A screenshot goes in
-  the issue body, and in the PR body when a screen changes. `docs/agents/issue-tracker.md`.
-- **Triage labels** — five canonical roles, each label string equal to its name, applied in the
-  `gh issue create` call and never afterwards. `docs/agents/triage-labels.md`.
+- **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A
+  screenshot goes in the issue body, and in the PR body when a screen changes. Every issue is
+  labelled in the `gh issue create` call and never afterwards, and each label string equals its
+  role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
 - **House engineering rules** — `rules/`. **Nothing loads these for you.** Before your first
   edit, read the one whose `paths:` frontmatter matches what you are about to touch: `house.md`
   matches everything, `swift.md` only `apps/macOS/**/*.swift`. The arithmetic behind them is
@@ -19,26 +19,33 @@ Everything here is a fact about this repository. Process belongs to the skill th
 - **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`. Nothing loads it. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.
   Code comments cite it as `CONTEXT.md L1 · Binding`. Change a term only after
-  `docs/domain/rationale.md`.
+  `docs/domain/rationale.md`. A concept the model does not name is a signal: either the name is
+  invented and wants reconsidering, or the gap is real and wants recording.
+- **Decisions** — `docs/adr/`. Nothing loads these either. Read the ones covering an area before
+  changing it, and when your work contradicts one, **say so rather than quietly overriding it**:
+  *Contradicts ADR-0026, but worth reopening because…*
 - **Before editing any file an agent reads**, including this one: `/writing-for-agents`.
+- **Before any text a person reads**: `/simple-english`. An issue title and body, a comment, a
+  close message, a PR title and body, and every question you put to the user, a grilling round
+  included. It runs on the draft, not as a cleanup pass afterwards.
 
 ## Gates
 
-**CI is the only gate**, and there is no push-time one. `.github/workflows/ci.yml` runs biome, the
-duplication gate on Linux; a `macos-26` job packages `apps/desktop`,
-asserts the packaged `node-pty` and runs the shipped app (#1769) when the PR touches
-`apps/desktop`, the root manifest, the lockfile or `.github/`. `quality` is biome **plus** the
-duplication gate; biome alone leaves a duplication breach for CI.
+**CI is the only gate**, and there is no push-time one. `.github/workflows/ci.yml` names every
+step it runs on Linux and `bun run quality` is the local subset; read the step list there, never
+a copy of it. `quality` is wider than biome, so biome alone leaves a typecheck or a duplication
+breach for CI. A `macos-26` job packages `apps/desktop`, asserts the packaged `node-pty` and runs
+the shipped app (#1769) when the PR touches `apps/desktop`, the root manifest, the lockfile or
+`.github/`.
 
 When a gate fires, fix it or ratchet it in `biome.jsonc`: **never suppress inline, never raise a
 global cap.** Both configs fail open when commented, so no gate is proved by exit code alone.
 
 **Node is pinned to `.node-version` exactly**, and `scripts/node-version-gate.mjs` refuses any
 other from the root `preinstall` and from `bun run quality:node` (#1800). After switching Node,
-delete `node_modules` and reinstall: `node-pty` is a native addon bound to the ABI. A workflow or
-composite action reads `node-version-file: .node-version`, and nothing now checks that: the test
-that failed on a literal version anywhere went with the hook suite, so a hard-coded version in a
-workflow is caught by review or not at all.
+delete `node_modules` and reinstall: `node-pty` is a native addon bound to the ABI. A workflow
+reaches the pin through `node-version-file: .node-version`, and nothing checks that it does, so a
+literal version hard-coded into one is caught by review or not at all.
 
 **A desktop release publishes only on a passing verdict** (#1807, ADR-0036). `release.yml` is
 `workflow_dispatch` only, signs and notarizes, writes one `release-verdict.json` naming the SHA-256
@@ -52,16 +59,24 @@ setting are the human's, and the checklist is in `apps/desktop/README.md`.
 **`apps/macOS` is deprecated and verified by nothing.** No build, test, screenshot or render. A
 Swift change says in the PR body that it was checked by hand, or not at all.
 
-**macOS runners are free** on public repos, `argo` included (#1758). The "99% of the Actions
-spend" figure that removed a `macos-26` job read the gross column; billed is $0. Never quote it.
+**macOS runners are free** on public repos, `argo` included (#1758): billed is $0, and the "99%
+of the Actions spend" figure still quoted in older notes read the gross column. Never repeat it.
 The real limits: 5 concurrent macOS jobs on GitHub Free, and no secrets on a fork PR.
+
+Where each gate fails open, and what none of them proves: `docs/agents/quality-gates.md`.
 
 ## Landing
 
-**Pushing a work branch and opening the PR are `/ship`'s step** (#1669): it carries the close-out
-nothing else runs, so every other run ends at the reviewed diff, committed on its branch. `/ship`
-is invocable by an agent as well as typed, and the review is still its precondition, not its job. A `PreToolUse` hook denies both commands, and it cannot tell which skill
-is running, so `/ship` claims the exemption by prefixing its own commands with `ARGO_SHIP=1`.
+**Pushing a work branch and opening the PR are `/ship`'s step** (#1669), and an agent invokes it
+as readily as the user types it. Every other run therefore ends at the reviewed diff, committed
+on its branch; the review is `/ship`'s precondition, never its job. A `PreToolUse` hook denies
+both commands and cannot tell which skill is running, so `/ship` claims the exemption by
+prefixing its own commands with `ARGO_SHIP=1`.
+
+**What leaves the base says so in a trailer**, one line in the commit that does it:
+`Removes-test: <name>`, `Removes-file: <path>`, `Reverts-file: <path>` (or `*`). Nothing enforces
+it; a reviewer is the check. Why a green suite cannot be:
+`docs/agents/landing.md`.
 
 **Merging is the human's** (#1577). Nothing here does it for them.
 
@@ -90,38 +105,29 @@ sub-agent rule: `docs/agents/worktrees.md`.
 and `.codex/hooks.json`; never hand-edit those blocks. The hooks carry no convention of their own:
 this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`, `docs`)
 and `worktreeGc.artifactPaths`. **Unset `branchPrefix` and the guard stops judging branch names
-at all**, which is what a consumer who has declared no convention gets. A consumer opts in by
-hand, and `setup-argo-skills` carries the steps.
+at all**, so an edit that empties it silently retires the naming rule.
 
 ## Skill bundle
 
-`skills-lock.json` is the bundle manifest and this repo's install record.
-
-**Install with `npx skills@latest add milad-alizadeh/argo`, and answer its questions.** The CLI
-asks which agents, then "Installation method"; picking claude-code alongside a universal agent
-such as codex is what makes it write `.claude/skills/<name> -> ../../.agents/skills/<name>`
-itself. It asks only when the chosen agents span more than one skills directory, and `--yes`
-suppresses the question, so a `--yes` install leaves Claude Code with nothing. **Update with
-`npx skills update --project --yes`**, which reads the installed agent set off disk and so keeps
-Claude Code, and takes latest rather than a revision because Argo's lock entries carry no `ref`.
-
-`skills add` only adds, so renaming or deleting a skill means deleting the installed copy by
-hand, and editing one of Argo's own skills needs a push to `main` before a reinstall sees it.
-Add/sweep workflow: `packages/argo-skills/README.md`.
+`skills-lock.json` is the bundle manifest and this repo's install record. **`skills add` only
+adds**, so renaming or deleting a skill means deleting the installed copy by hand, and editing
+one of Argo's own skills needs a push to `main` before a reinstall sees it. **The install is
+interactive and a `--yes` add leaves Claude Code with nothing**: the exact commands, the question
+that trap turns on, and the add/sweep workflow are `packages/argo-skills/README.md`.
 
 ## Design work
 
-**Nothing takes the design route today** (#1758): every design in `docs/designs/` is for
-`apps/macOS`. It is written down for `apps/desktop`, which will need its own designs and its own
-renderer. When it does, a UI ticket whose screen has a design there is built with
-`design-to-code`, because which tickets take that route depends on what is in `docs/designs/`
-and no portable skill can know that.
+**A design is a ticket and a throwaway branch, and neither outlives the screen.** The
+measurements, the frozen component names and the state renders are the body of the **design
+ticket**; its explorable page is the only content of `design/#<N>-<screen>`, a branch named for
+that ticket and reaped by `bun run worktrees:gc` once it closes. **Nothing lands on `main`**, so
+there is no third copy to drift from the other two, and a ticket whose branch is gone is still
+the whole spec.
 
-**The design `.md` is on `main`; its explorable `.html` never is** (#1526). The page lives on the
-branch the `.md`'s front matter names, `explorable: design/<screen>`, and is read without a
-checkout with `git show design/<screen>:docs/designs/<screen>.html`. `explorable: gone` means the
-screen shipped and the branch was deleted. So a listing showing no page is the rule working, not
-a design that is missing.
+A UI ticket whose screen has a design ticket is built with `design-to-code`.
+
+**`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
+goes there.
 
 ## Visual verification
 

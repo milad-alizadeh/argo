@@ -5,14 +5,15 @@ description: Approve one prototype variant as the design, once per screen, befor
 
 # Prototype To Design
 
-`/prototype` explores. This approves one of what it explored and splits the result in two: an
-HTML design that speaks only the token contract, which **stays on the throwaway branch**, and
-the durable record — a design `.md` and a render per state — which lands on `main`.
-`design-to-code` then runs once per ticket against them.
+`/prototype` explores. This approves one of what it explored and splits the result by lifetime:
+the **durable** half is a design ticket carrying the measurements, and the **throwaway** half is
+an HTML page speaking only the token contract, alone on its own branch. `design-to-code` then
+runs once per ticket against both.
 
-**The page never lands on `main`.** A page on `main` is a live file with an owner, and it goes on
-being edited long after the screen it describes has shipped. It is worth having only while the
-screen is being built, which is exactly as long as the branch lives.
+**Nothing lands on `main`.** A design file on `main` is a live file with an owner: it goes on
+being edited long after the screen it describes has shipped, and it drifts from the ticket that
+asked for the screen and from the page that shows it. Two copies can be kept in step by deleting
+one of them on a known day. Three cannot.
 
 A prototype settles one of two things. Unsettled *behaviour* ("does this state model work?")
 goes `/prototype` → `/handoff` → `/to-spec`, and never through here. Unsettled *appearance*
@@ -33,7 +34,7 @@ as raw material, then come back.
 Delete the other variants, the switcher and their URL plumbing. Keep every state reachable
 by URL: error, empty and loading are what `design-to-code` extracts against and what
 `pixel-review` judges. Note what the prototype learned that the render will not show (a fact
-the data exposed, a case that overflowed) for step 6.
+the data exposed, a case that overflowed) for the ticket in step 4.
 
 Done when the file renders only the agreed variant and every state is reachable by URL.
 
@@ -41,6 +42,8 @@ Done when the file renders only the agreed variant and every state is reachable 
 
 Per family (colours, font sizes, spacing, radii, durations), one list of distinct values,
 including values inherited from a hand-written stylesheet.
+
+Done when every family has a list and no value in the page is missing from one.
 
 ## 3. Snap or promote, nothing stays raw
 
@@ -54,67 +57,69 @@ For each distinct value, exactly one of:
 Show the user the snap/promote table before proceeding; a promotion is a contract change and
 lands with its framework wiring in every theme variant.
 
-## 4. Write the design on its own branch
+Done when the user has seen the table and every raw value has a verdict.
 
-Move the winner to `docs/designs/<screen>.html`, from the design template and token mirror
-`docs/designs/stack.md` names (`design-template.html` and `tokens.css` by default):
+## 4. Open the design ticket
+
+The durable half is a ticket. Open it with the `documentation` kind label, titled for the
+screen, carrying:
+
+- **every measurement this screen settled** — the numbers themselves, not a pointer to the page
+  that draws them;
+- **the snap/promote table**, and any token that reached the contract;
+- **what the prototype exposed that a render will not show**: a fact the data revealed, a case
+  that overflowed.
+
+Its number is `<N>` for the rest of this skill.
+
+**The ticket's own state is the design's state**, so nothing has to be written down twice: open
+means agreed and not yet fully built, closed means the screen shipped and the branch is free to
+go. The one state the tracker cannot express is **stale** — the app changed this screen without
+coming through here — and that is a `stale` label on the ticket. A stale design is re-based
+before it is edited: screenshot the shipped screen, correct the design to match, then explore.
+
+Done when the ticket exists and a reader who cannot open the page could still build from it.
+
+## 5. Put the page on its own branch
+
+Move the winner to `design.html` at the root of a branch named `design/#<N>-<screen>`, built
+from the design template and token mirror the project's design stack names
+(`design-template.html` and `tokens.css` by default):
 
 - every value via `var(--token)` or a role class;
-- every meaningful region carries `data-component="PascalCaseName"`. Those names are frozen:
-  they become component files and ticket titles;
+- every meaningful region carries `data-component="PascalCaseName"`;
 - repeated shapes call a named render function in `kit.js`.
 
-Commit it to the branch `design/<screen>` and push that branch. A real branch, not a ref outside
-the branch namespace: a branch shows in the code host's UI, it clones, and `git switch` reaches
-it, where a bare ref needs a hand-written fetch refspec before anyone can read the design.
+Push that branch holding `design.html` alone. A real branch, not a ref outside the branch
+namespace: a branch shows in the code host's UI, it clones, and `git switch` reaches it, where a
+bare ref wants a hand-written fetch refspec before anyone can read the design.
 
-Add the front matter to the page:
+**The number in the branch name is what reaps it.** The sweep reads `#<N>` off the name and drops
+the branch once that ticket closes, so the name carries its own expiry and no file anywhere has
+to remember this branch exists.
 
-```html
-<!-- status: approved
-     approved-at: <commit>
-     prototype: <throwaway branch> -->
-```
-
-Done when `design/<screen>` is pushed, the no-raw-values check passes on the file and every
+Done when the branch is pushed, the no-raw-values check passes on `design.html`, and every
 region has a `data-component`.
 
-## 5. Render it, and write the record on `main`
+## 6. Freeze the names and the renders onto the ticket
 
-Screenshot the design via the render method in `stack.md`. What lands on `main` is the durable
-record, and only that: one PNG per state under `docs/designs/<screen>/`, and
-`docs/designs/<screen>.md` carrying the measurements, the frozen component names and this front
-matter:
+Two things now exist only in the page, and both belong on the durable half before the page can
+be thrown away:
 
-```html
-<!-- status: approved
-     approved-at: <commit>
-     prototype: <throwaway branch>
-     explorable: design/<screen>
-     epic: #<the screen's epic> -->
-```
+- **The component names.** Copy every `data-component` value onto the ticket. They become
+  component files and ticket titles, and they are frozen from here.
+- **The state renders.** Screenshot the page per the project's render method, one PNG per state,
+  and attach them under a `## States` heading using the project's durable evidence namespace
+  (`refs/evidence/issue-<N>`, per its issue conventions). Say which commit on the branch each
+  render came from: a render nobody can tie to a version of the page is a picture, not a spec.
 
-`explorable` names the branch, so `design-to-code` and `pixel-review` can find the page without
-being told; `epic` is what the branch sweep, where the project installed one, keys the deletion on. Neither reader needs a
-checkout:
+Done when the ticket carries every frozen name, one PNG per state, and the commit they were
+taken from.
 
-```sh
-git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
-```
+## 7. Report
 
-`status` takes three values: `approved` (agreed, not yet in the app), `built` (`design-to-code`
-finished the screen — and the branch is now free to go), `stale` (the app has since changed this
-screen without coming through here). A `stale` design is re-based before it is edited: screenshot
-the shipped screen, correct the design to match, then explore. Once the branch is deleted,
-`explorable` reads `gone` and the `.md` and its renders are the whole record — which is why the
-measurements go in the `.md` and not only in the page.
-
-Done when `main` carries the `.md` and one PNG per state, and no `.html`.
-
-## 6. Report
-
-- The snap/promote table, and any token that landed in the contract.
-- The measurements the tickets must carry: the numbers this screen settled.
-- What the prototype exposed that the render doesn't show.
-- Where the `.md` and its PNGs live on `main`, the branch the page is on, and the next step:
-  `/to-tickets`, then `design-to-code` per ticket.
+- The snap/promote table, and any token that reached the contract.
+- The design ticket number, and the branch holding its page.
+- The measurements the build tickets must carry.
+- What the prototype exposed that the render does not show.
+- The next step: `/to-tickets`, then `design-to-code` per ticket.

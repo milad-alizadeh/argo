@@ -78,19 +78,17 @@ conversation.
 
 ## No design page lives here
 
-A design's explorable `.html` is **never on `main`** (#1526). It lives on the branch
-`design/<screen>` for as long as the screen is being built, and it goes when the screen is done.
-What `main` carries is the durable record: the design `.md` with its measurements and frozen
-component names, the state renders in `<screen>/`, and the build inventory beside it.
+A design's explorable `.html` was **never on `main`** (#1526), and the pages these `.md` files
+were drawn from are gone. Where one survives, an `explorable:` key in front matter names its
+branch and `explorable: gone` says the screen shipped; read either out with
+`git show <branch>:docs/designs/<screen>.html`, which is why the measurements were written
+into the `.md`.
 
-The front-matter keys, how a reader gets at the page and when the branch dies are all one
-rule, stated in AGENTS.md → *Design work*. What it means here: a `.md` names its page with
-`explorable: design/<screen>`, and `explorable: gone` means the screen shipped and the branch was
-deleted. The measurements therefore belong in the `.md`, because it outlives the page.
+**That vocabulary is archive-only.** A design opened today is a ticket plus a
+`design/#<N>-<screen>` branch and touches this directory not at all: AGENTS.md → *Design work*
+states the live route.
 
-**A shipped screen keeps no page**, and nothing is kept just in case: a `stale` design is
-re-based by screenshotting the shipped app, which reads more than an old page would have.
-Every explorable that was on `main` when the rule landed was deleted with it — history keeps them,
+Every explorable that was on `main` when the rule landed was deleted with it. History keeps them,
 and `git log --diff-filter=D -- docs/designs/` finds the commit that removed one.
 
 ## The specs

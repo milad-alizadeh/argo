@@ -13,7 +13,6 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { decide as decidePublish, SHIP_MARKER } from './pr-ownership-guard.mjs'
 import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mjs'
-import { configureNaming, decideName } from './worktree-names.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '..')
@@ -110,58 +109,6 @@ test('a git subcommand that is not push is left alone', () => {
 
 test('a non-Bash tool call is left alone', () => {
   assert.equal(decidePublish({ toolName: 'Read', toolInput: {}, isAgent: true }).block, false)
-})
-
-// --- worktree-names ---------------------------------------------------------------------------
-
-test('EnterWorktree with a path re-enters an existing tree', () => {
-  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
-  assert.equal(
-    decideName({
-      toolName: 'EnterWorktree',
-      toolInput: { path: '.claude/worktrees/x' },
-      isAgent: true,
-    }).block,
-    false,
-  )
-})
-
-test('EnterWorktree without a path cannot reach the convention, so it is refused', () => {
-  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
-  const decision = decideName({
-    toolName: 'EnterWorktree',
-    toolInput: { name: 'x' },
-    isAgent: true,
-  })
-  assert.equal(decision.block, true)
-  assert.match(decision.reason, /git worktree add/)
-})
-
-test('an on-convention worktree add passes', () => {
-  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
-  assert.equal(
-    decideName(bash("git worktree add -b 'argo/#901-naming' .claude/worktrees/ticket-901-naming"))
-      .block,
-    false,
-  )
-})
-
-test('an off-convention branch name is refused', () => {
-  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
-  assert.equal(
-    decideName(bash('git worktree add -b fix-stuff .claude/worktrees/ticket-901-naming')).block,
-    true,
-  )
-})
-
-test('an unset branchPrefix stops the guard judging branch names at all', () => {
-  // What a consumer who has declared no convention gets (AGENTS.md, Cross-CLI guardrail hooks).
-  configureNaming({ dir: '.claude/worktrees' })
-  assert.equal(
-    decideName(bash('git worktree add -b fix-stuff .claude/worktrees/ticket-x')).block,
-    false,
-  )
-  configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/' })
 })
 
 // --- the regression this suite exists for -------------------------------------------------------

@@ -207,7 +207,7 @@ any section of the same heading in place.
 | template | install when | how |
 |---|---|---|
 | `templates/task-tracking.md` | always | verbatim, naming only the harnesses this project uses |
-| `templates/writing-style.md` | `docs/agents/issue-tracker.md` exists | verbatim |
+| `templates/writing-style.md` | always | verbatim; it binds every user-facing surface, not only a tracker |
 | `templates/labels.md` | `docs/agents/issue-tracker.md` exists | **resolved, never verbatim** (below) |
 | `templates/screenshots.md` | `docs/agents/issue-tracker.md` exists | verbatim on GitHub; elsewhere append the two bullets and stop, since the rest is the GitHub publish method |
 

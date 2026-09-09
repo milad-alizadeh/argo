@@ -1,31 +1,31 @@
 ---
 name: design-to-code
-description: Build a screen from its approved design in docs/designs/, once per ticket. Use for any UI ticket whose screen has a design there, even when the user says "implement" or "build" without naming it.
+description: Build a screen from its approved design ticket, once per build ticket. Use for any UI ticket whose screen has a design ticket, even when the user says "implement" or "build" without naming it.
 ---
 
 # Design To Code
 
-Input: one approved design (from `prototype-to-design`) and its render. Output: the screen
+Input: one approved design (from `prototype-to-design`) and its state renders. Output: the screen
 assembled from existing primitives against a derived view-model, plus an inventory of the
 components extraction actually justified. The design is a disposable spec, not source: its
 decisions survive as tokens and inventory rows, its markup does not.
 
-**Where the input is.** `docs/designs/<screen>.md` is on `main` and carries the measurements, the
-frozen component names and the state renders. The explorable page is **not** on `main`: the
-`.md`'s front matter names its branch as `explorable: design/<screen>`, and one command reads it
-without a checkout:
+**Where the input is.** The **durable** half is the design ticket, carrying the measurements, the
+frozen component names and the state renders. The **throwaway** half is its page, alone at the
+root of `design/#<N>-<screen>`, read without a checkout:
 
 ```sh
-git fetch origin design/<screen>
-git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
+git fetch origin 'design/#<N>-<screen>'
+git show 'design/#<N>-<screen>:design.html' > "$TMPDIR/<screen>.html"
 ```
 
-If `explorable` reads `gone`, the branch was deleted when the screen finished and the `.md` plus
-its renders are the whole spec. That is not a missing input — build from them.
+A branch that is gone is the process working, not an input that is missing: the screen shipped
+and the sweep reaped it. The ticket is then the whole spec, which is why the measurements were
+written there. Build from it.
 
 ## 0. Read the stack
 
-`docs/designs/stack.md` answers four questions for this repo: where the token contract
+`docs/design-stack.md` answers four questions for this repo: where the token contract
 lives, where components live and how to choose between locations, what the isolated-state
 mechanism is (a story, a specimen case, a preview), and how to render a state. Every step
 below defers to it. If the file is missing, answer the four questions from what the repo
@@ -35,9 +35,11 @@ Done when you hold the four answers.
 
 ## 1. Confirm the design is current
 
-If its front matter reads `status: stale`, re-base it first (`prototype-to-design`, step 4).
+If the design ticket carries a `stale` label, re-base it first (`prototype-to-design`, step 4).
 A raw value appearing in this build is a build bug, not a decision to make now: snap it and
 say so.
+
+Done when the ticket is open and unlabelled `stale`.
 
 ## 2. Assemble the screen skeleton
 
@@ -56,14 +58,14 @@ Extract a block into a named component when any is true, else it stays inline:
   empty-state, drawer header), even at one occurrence here.
 - **Unexercised states**: states the happy path doesn't render that need their own coverage.
 
-Write the inventory from these extractions (`<design>.inventory.md`, linked from the designs
-README), one row per extracted component:
+Write the inventory as a comment on **this build ticket**, one row per extracted component. What
+was extracted and why is a property of this build, so it is recorded against this build:
 
 | Column | Meaning |
 |---|---|
-| name | component name = the file to create, from the design's `data-component` |
-| tier | the project's altitude label per `stack.md`, applied at extraction |
-| location | which of `stack.md`'s component locations, and why |
+| name | component name = the file to create, from the ticket's frozen `data-component` names |
+| tier | the project's altitude label per `docs/design-stack.md`, applied at extraction |
+| location | which of `docs/design-stack.md`'s component locations, and why |
 | props | the surface the skeleton proved: every prop, its type, variants, states |
 | composed-of | which lower-tier components it renders |
 
@@ -72,7 +74,7 @@ Show the user the inventory and which blocks stayed inline, and get a nod.
 ## 4. Harden
 
 Build or relocate each extracted component per the target repo's `rules/`, placed by its
-`location`, with a colocated isolated-state case per `stack.md` for the
+`location`, with a colocated isolated-state case per `docs/design-stack.md` for the
 states it has. Add a screen-level case for the assembled view, composed from the child
 cases, with connected logic in a wrapper outside it.
 
@@ -88,22 +90,18 @@ wrong, in the same change.
 Done when the gates are green, `pixel-review` has run, and every finding is fixed and
 re-judged or rejected with a cited rule.
 
-## 6. Mark the design, and drop the branch
+## 6. Close the design ticket
 
-When this ticket was the last one against the design, set the `.md`'s front matter to
-`status: built` and record the commit. The page's branch has now stopped being an input to
-anything, so delete it. This push removes a branch rather than publishing work, so it is not
-the work-branch push a project may reserve for its release skill:
+When this build ticket was the last one against the design, **close the design ticket**, naming
+the commit that finished the screen. That one act retires both halves: the ticket's state now
+reads "shipped", and the sweep reaps `design/#<N>-<screen>` on its next run because the number in
+the branch name points at a closed issue.
 
-```sh
-git push origin --delete design/<screen>
-```
-
-**Write `explorable: gone` only after that delete succeeds.** The sweep finds a branch by the
-`explorable:` key that names it, so a `gone` written ahead of the delete strands the branch where
-the branch sweep can no longer see it — the exact case the sweep is there to catch. If the
-delete fails, leave the key naming the branch and let the sweep take it when the epic closes.
+Closing is the whole step: the branch carries its own expiry in its name, so nothing else has to
+be updated or remembered.
 
 A shipped screen keeps no page. Re-opening the design re-bases it against the shipped app
-(`prototype-to-design`, step 4), which screenshots what actually ships — so a stale explorable
-would add nothing that re-base would not read for itself.
+(`prototype-to-design`, step 4), which screenshots what actually ships, so a kept page would add
+nothing a re-base would not read for itself.
+
+Done when the design ticket is closed and names the finishing commit.

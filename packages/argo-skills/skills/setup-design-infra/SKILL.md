@@ -1,6 +1,6 @@
 ---
 name: setup-design-infra
-description: "Install the design-to-code machinery: the token contract, docs/designs/, the no-raw-values check and a render command. Settles token values from observed usage, blessed by the user; re-run as an audit of drift."
+description: "Install the design-to-code machinery: the token contract, the design kit, the no-raw-values check and a render command. Settles token values from observed usage, blessed by the user; re-run as an audit of drift."
 disable-model-invocation: true
 ---
 
@@ -11,6 +11,10 @@ apps and every framework rendering of them speak only in those names. Phase A in
 structure; phase B settles the values in it. `prototype-to-design` reconciles a screen
 against those values and never designs a scale. Every path, glob and command installed must
 resolve to something real in this repo.
+
+**Everything installed here is durable**, and that is what separates it from the designs it
+serves: a design is a ticket plus a branch that both go when its screen ships, while the kit
+below outlives every screen. Nothing here is written per screen.
 
 ## A1. Detect the target stack
 
@@ -32,14 +36,18 @@ colours.
 
 Done when each family has a named slot, populated or marked `TODO: phase B`.
 
-## A3. Install the design scaffolding
+## A3. Install the design kit
 
-- `docs/designs/` with a `README.md` index.
-- `docs/designs/tokens.css`, the browser mirror of the contract. When the contract is CSS,
-  mirror it; otherwise this is an export step, a small generator or a Style Dictionary target
-  wired into the same command that builds the app or runs quality, never a hand copy.
-- `docs/designs/design-template.html` from `templates/design-template.html`, and a
-  `docs/designs/kit.js` seeded with one render function, since the template loads it.
+Three files under `docs/design/`, which every design page on a branch is built from:
+
+- `tokens.css`, the browser mirror of the contract. When the contract is CSS, mirror it;
+  otherwise this is an export step, a small generator or a Style Dictionary target wired into
+  the same command that builds the app or runs quality, never a hand copy.
+- `design-template.html` from `templates/design-template.html`.
+- `kit.js`, seeded with one render function, since the template loads it.
+
+A design page carries its own copy of the kit when it is pushed, so a branch stays readable
+without a checkout of `main`.
 
 Done when the three files exist and the template resolves every `var(--…)` it names.
 
@@ -58,9 +66,9 @@ and the debt visible.
 
 `pixel-review` and `design-to-code` need one UI state rendered deterministically. Recommend
 from what is present: `.storybook/` → Storybook; a native isolated-state harness → that
-harness, launched by state name; `docs/designs/` populated → the designs via `file://`; a
-`dev` script → the dev server; several → the app's harness for built screens, the designs for
-unbuilt ones. For browser targets copy `templates/screenshot-states.mjs` to `scripts/` (it
+harness, launched by state name; a live design branch → its `design.html` via `file://`; a
+`dev` script → the dev server; several → the app's harness for built screens, the design page
+for unbuilt ones. For browser targets copy `templates/screenshot-states.mjs` to `scripts/` (it
 needs Playwright; use the project's devDependency or note `npx playwright`). For native
 targets record the project's own capture command and confirm it captures the window.
 
@@ -96,31 +104,34 @@ Done when the user has answered each family's table; an unanswered table blocks 
 
 Every family, every theme variant, full tuples, in the slots A2 made, with the framework
 wiring in the same change; regenerate the mirror with the command A3 recorded. Then
-`docs/designs/foundations.html` imports the mirror and renders every role: a line per type
+`docs/design/foundations.html` imports the mirror and renders every role: a line per type
 role, spacing blocks, the core ramps plus semantic chips per theme, radius and motion demos.
-It styles only via `var(--token)`, so it always shows the current contract; link it first in
-the designs README.
+It styles only via `var(--token)`, so it always shows the current contract.
 
 Done when the no-raw-values check passes on the contract's consumers and every token name in
 the contract appears in the specimen (grep both, diff empty).
 
-## B5. Re-base approved designs, when values moved
+## B5. Mark the live designs stale, when values moved
 
 Snapped jitter (≤1px) leaves existing designs untouched. When the bless deliberately moved
-values, translate each approved design through the mapping tables (substitute each raw value
-for its token), re-render the PNG beside it, and match each visible delta to the mapping row
-that explains it.
+values, every open design ticket now describes measurements the contract no longer holds:
+label each one `stale` and hand the mapping tables to the user. `prototype-to-design` re-bases
+a stale design when someone next works on it, which is where the translation belongs — doing it
+here re-renders screens nobody is building.
 
-## C. Write `stack.md` and the design rule
+Closed design tickets are shipped screens and take no label: the app is the truth for those.
 
-`docs/designs/stack.md` answers five questions and nothing else; every later design skill
+## C. Write the design stack and the design rule
+
+`docs/design-stack.md` answers these questions and nothing else; every later design skill
 reads it instead of hardcoding a framework:
 
 ```markdown
 # Design stack
 
 - **Token contract** — <path>. The only place raw values live.
-- **Browser mirror** — docs/designs/tokens.css, generated by <command>.
+- **Design kit** — docs/design/, holding tokens.css (generated by <command>),
+  design-template.html and kit.js. A design page is built from these.
 - **Components live in** — <path(s)>, and the rule for choosing between them.
 - **Isolated-state mechanism** — <stories | specimen catalog | preview target>, added by <what a new state costs>.
 - **Render a state** — <command>, output <where>.
@@ -136,11 +147,11 @@ own spelling (grep the stack for the constructs you name before writing them):
 - every unit is placed in a tier (atom, molecule, organism) before it is written, and an
   existing primitive is never re-implemented inline;
 - a screen is a thin container that resolves state and a pure View that takes a value;
-- a settled design in `docs/designs/` is a spec, never a source, and the directory holds the
-  agreed-latest set only.
+- an approved design is a spec, never a source: its decisions survive as tokens and component
+  names, and the page it was drawn on goes when the screen ships.
 
-Add a **Visual verification** section to the project doc pointing at `stack.md` and
-`rules/design.md`.
+Add a **Visual verification** section to the project doc pointing at `docs/design-stack.md`
+and `rules/design.md`.
 
 ## D. Verify and report
 
@@ -152,7 +163,7 @@ method, allowlist debt, and the next step: `/prototype` the first screen.
 
 ## Re-running as an audit
 
-Re-extract current usage (approved designs plus app source), compare against the contract,
-and present only the drift: tokens nothing uses, values nothing names, families still
-missing, jitter that leaked into the contract. Fix through the same bless → land → specimen
-loop (B3–B5).
+Re-extract current usage (the live design branches plus app source), compare against the
+contract, and present only the drift: tokens nothing uses, values nothing names, families
+still missing, jitter that leaked into the contract. Fix through the same bless → land →
+specimen loop (B3–B5).

@@ -33,9 +33,15 @@
     "roots": ["."],
     "dir": ".claude/worktrees",
     "branchPrefix": "argo/",
+    "publishBranches": ["design/"],
     "docs": "docs/agents/worktrees.md"
   },
   "worktreeGc": {
-    "artifactPaths": ["apps/macOS/build", "apps/macOS/Packages/*/.build"]
+    "artifactPaths": [
+      "apps/desktop/.vite",
+      "apps/desktop/out",
+      "apps/macOS/build",
+      "apps/macOS/Packages/*/.build"
+    ]
   }
 }
