@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
-import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { FuseV1Options, FuseVersion, flipFuses } from '@electron/fuses'
+import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from './acceptance-protocol.mjs'
 import { PRODUCTION_FUSE_PROFILE, readFuseWire } from './fuse-profile.mjs'
@@ -13,7 +13,12 @@ const request = { version: 1, type: 'project.open', requestId: 'open-1', project
 
 async function prepare(root) {
   const application = path.join(root, 'Argo.app')
-  await cp(packagedApp('arm64'), application, { recursive: true })
+  await cp(packagedApp('arm64'), application, { recursive: true, verbatimSymlinks: true })
+  const copiedRoot = await realpath(application)
+  assert.equal(
+    (await realpath(pathToFuseFile(application))).startsWith(`${copiedRoot}${path.sep}`),
+    true,
+  )
   await flipFuses(application, {
     version: FuseVersion.V1,
     ...PRODUCTION_FUSE_PROFILE,
