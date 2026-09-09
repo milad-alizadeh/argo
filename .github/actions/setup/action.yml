@@ -7,14 +7,6 @@ inputs:
       Write bun's module cache back. Exactly one job per workflow should do this:
       parallel writers race for the same key and all but one lose the reservation.
     default: "false"
-  node-version:
-    description: >-
-      The Node to install. The default is what the Linux gate has always used. The desktop
-      artifact job overrides it with the version the repo actually ships on, because the
-      yauzl@2 hang the root override exists to prevent only appears on Node 24.16 and later
-      (forge#4277) — a gate on an older Node would never see it. Pin #1751 lands as
-      `.node-version` in #1777, and this input becomes `node-version-file` then.
-    default: "22"
 
 runs:
   using: composite
@@ -25,9 +17,17 @@ runs:
 
     # setup-bun ships no Node, and vitest's `#!/usr/bin/env node` bin hangs silently
     # without one rather than failing (vitest#7681).
+    #
+    # `node-version-file` and never a literal here: `.node-version` is the repository's single
+    # source for the pin (#1751), `scripts/node-version-gate.mjs` refuses any Node that does not
+    # match it, and the root `preinstall` below runs that gate. A hard-coded version in this file
+    # would make CI the one machine that installs on an unpinned Node and then fails the gate it
+    # just paid to reach. `scripts/node-version-source.test.mjs` is what fails if this line
+    # regresses — it refuses a hard-coded `node-version:` in ANY workflow or composite action,
+    # not just this one, and separately requires this file to name `.node-version`.
     - uses: actions/setup-node@v5
       with:
-        node-version: ${{ inputs.node-version }}
+        node-version-file: .node-version
 
     - id: cache-key
       shell: bash

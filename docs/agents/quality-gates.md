@@ -15,6 +15,10 @@ One place, and it is CI. `.github/workflows/ci.yml` runs four steps on `ubuntu-l
 
 Nothing runs at push time. `.husky/pre-commit` still runs lint-staged; `.husky/pre-push` is gone.
 
+`bun run quality` locally is the Node pin, biome and duplication, in that order. CI does not run
+`quality:node` as a step of its own — the pin reaches CI through `node-version-file:` and the
+root `preinstall`, so a mismatch fails the install rather than a gate.
+
 ## What used to be here, and why it is not (#1758)
 
 Most of this file described `scripts/swift-gate.sh` and the machinery it needed: the verdict cache
@@ -90,12 +94,11 @@ oversight:
 
 Two more pieces of #1733 turned out not to belong in a commit at all.
 
-**The Node pin is real work and it is #1777, not this.** #1751 decided Node 24.20.0 exactly, in a
-root `.node-version`, with a preflight before the root install. None of it was in the tree: no
-`.node-version`, no `engines`, and `.github/actions/setup` still says `node-version: "22"`. It was
-split out because merging it stops `bun install` on any machine not on 24.20.0 — which is the pin
-working, not a defect — and the machine this was found on runs v22.10.0, below Electron 44's own
-floor of 22.12.0. A change to every contributor's setup earns its own deliberate merge.
+**The Node pin was split out of #1733 and is #1777**, whose section follows. It was split because
+merging it stops `bun install` on any machine not on
+24.20.0 — which is the pin working, not a defect — and the machine it was found on runs v22.10.0,
+below Electron 44's own floor of 22.12.0. A change to every contributor's setup earns its own
+deliberate merge.
 
 **The skill bundle is a property of a checkout, not of a commit.** `bun run scaffold` installs into
 `.claude/skills`, which this repository does not track, so running it inside a worktree changes
@@ -106,9 +109,84 @@ never expecting it in a diff.
 The packaged acceptance test, `apps/desktop/scripts/prove-packaged-pty.mjs`, needs a Mac, a full
 Forge package and several minutes, so no local gate runs it. It now has a home: the
 `desktop-artifact` job on `macos-26` in `.github/workflows/ci.yml`, free on the standard runner as
-#1758 established, gated on a path filter that fails closed. What it cannot cover is signing —
-`osxSign` is unconfigured until #1771 chooses the entitlements, and a re-signature can invalidate
-what the package proved, so `assert:packaged` has to run again after it once that lands.
+#1758 established, gated on a path filter that fails closed. What it cannot cover is signing — #1771 has chosen the
+entitlement set but `osxSign` is not wired to it, and a re-signature can invalidate what the
+package proved, so `assert:packaged` has to run again after it once that lands.
+
+## The Node pin, and why it is a `preinstall` (#1777)
+
+`.node-version` at the root pins Node **exactly**, and `scripts/node-version-gate.mjs` is what
+refuses anything else. It is not that file's only reader — `actions/setup-node` reads it too, via
+`node-version-file: .node-version` in the shared setup action, which is how CI installs the pin
+instead of agreeing with it by coincidence. *Single source* means one place it is **written**.
+
+The callers: root `preinstall`, `quality:node` as `quality`'s first step, `install:electron`, and
+every `apps/desktop` command that reaches Electron or Forge.
+
+`preinstall` is the load-bearing one, and it is the only lifecycle hook bun runs at the root at
+all. It makes a wrong Node a failed `bun install` rather than a failure further along that says
+nothing about the Node — Electron 44's installer is CommonJS requiring an ESM-only
+`@electron/get`, so an older Node gets `ERR_REQUIRE_ESM` and no clue.
+
+**`preinstall` does not run before the install, whatever its name says.** Measured on bun 1.3.13:
+a dependency's own `postinstall` fires about 40ms *before* the root `preinstall`, `Saved lockfile`
+is already printed, and `node_modules` is fully linked when the gate finally speaks. So the gate
+buys a non-zero exit, not an install that never happened, and the difference is not academic —
+`node-pty`'s `install` script (`node scripts/prebuild.js || node-gyp rebuild`) has by then
+compiled it against the wrong Node's ABI. **After switching Node, delete `node_modules` and
+install again.** A second install that goes green over that tree proves nothing about it.
+
+Three shapes get past the hook entirely, all of them knowingly accepted:
+
+- `bun install --ignore-scripts` skips every lifecycle script there is.
+- `bun pm trust <pkg>` runs that dependency's `install`/`postinstall` — the node-pty native build
+  among them — with no root lifecycle at all.
+  `docs/research/2026-09-08-packaged-electron-toolchain-proof.md` recommends exactly that command,
+  so this is a real path rather than a theoretical one.
+- Any command run as `node …` directly rather than through its `package.json` script. That is why
+  the acceptance test is documented as `bun run prove:pty` and the Electron installer as
+  `bun run install:electron`: the bare `node` spellings of both reach Forge and `@electron/get`
+  ungated, and no manifest check can see a command that is only in a README.
+
+Four traps worth holding. The first two are proved by running the gate
+(`scripts/node-version-gate.test.mjs`); the third and fourth are read off the manifests
+(`node-version-pin.test.mjs`, `node-version-source.test.mjs`), because they are properties of the
+wiring rather than of the gate:
+
+- **Never let Bun run the gate.** Bun's `process.versions.node` is a compatibility number, not the
+  machine's Node: bun 1.3.13 reports 24.3.0 where `node -v` says v22.10.0. So a Bun-run gate
+  answers a question nobody asked, and while it usually refuses by accident — the compat number is
+  not the pin — pin the repo to 24.3.0 and it exits 0 on a machine with no Node at all. #1751
+  records the Forge commands being run by hand on exactly 24.3.0, so that is a shape, not a
+  hypothetical. The suite's case pins the sandbox to Bun's own number, so deleting the guard fails
+  it on the exit status and not only on the message.
+- **A missing `.node-version` is a refusal, not a skip.** Deleting the pin reads as "no pin" to
+  every tool that consumes it, and that is the fail-open shape this file exists for.
+- **Launching the gate is not gating.** `node …gate.mjs || true` and `node …gate.mjs ; next` both
+  run it and carry on past its refusal. The wiring check anchors both ends — the gate is the first
+  command, and what follows is `&&` or nothing. The first version of it matched only the
+  invocation, and passed on a tree where a wrong Node did not fail the install.
+- **The version is written in exactly one place**, and the checks for that are about *shape*, not
+  about the current value. No `engines.node` in any workspace manifest, no `.nvmrc`,
+  `.tool-versions` or `mise.toml`, no `volta` block — `actions/setup-node` prefers volta's version
+  over `node-version-file`, so that one would outrank the pin on CI — and no hard-coded
+  `node-version:` in any workflow or composite action. Grepping for the pinned string cannot hold
+  this rule, because the duplicate that bites is the one forgotten when the pin **moves**, and a
+  forgotten copy holds the old value while the grep hunts the new one: that check went green with
+  `.node-version` at 24.21.0 and an `engines.node` of 24.20.0 in the root manifest. It is kept as
+  a weak extra, named for what it is.
+
+The exactness is deliberate: a newer patch does not pass until the repository updates the file.
+A range's failure mode is "works on my machine, at a patch nobody else has", which is what the
+pin closes.
+
+**nvm does not read `.node-version`** — it reads `.nvmrc`, and has no fallback. `fnm` reads
+`.node-version`, but installs nothing, so it needs `fnm install` first. `asdf` reads it **only**
+with `legacy_version_file = yes` in `~/.asdfrc`; by default it ignores the file entirely. So on
+nvm and on a default asdf the pin is enforced but not applied, and switching is manual:
+`nvm install "$(cat .node-version)" && nvm use "$(cat .node-version)"`. Adding a `.nvmrc` to fix
+that would break the single-source rule above — and `node-version-source.test.mjs` now refuses
+one — which is why this is documented rather than solved.
 
 ## Where an exemption goes
 

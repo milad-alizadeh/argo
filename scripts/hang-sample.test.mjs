@@ -19,6 +19,27 @@ const BIN = path.join(SCRATCH, 'bin')
 const ONE = '/one/build/Build/Products/Release/Argo.app/Contents/MacOS/Argo'
 const TWO = '/two/build/Build/Products/Release/Argo.app/Contents/MacOS/Argo'
 
+// A pid nothing can be running under, for the one check that turns on the target being GONE.
+//
+// It staged the same literal 4242 as every other check, and that check is the only one whose
+// verdict depends on `kill -0` failing. On a busy CI runner 4242 is sometimes a live process, and
+// then the watch loop polls it happily, never prints "has gone", and the 4s read window expires:
+// a red PR whose diff was three markdown files. Reproduced by staging a live pid deliberately,
+// which fails with exactly the CI error.
+//
+// `2**31 - 1` is past every kernel's pid ceiling — Linux caps `pid_max` at 2**22, macOS at 99999 —
+// so unlike a merely-unused pid it cannot be allocated between here and the run. Asserted rather
+// than assumed, because "the test is fine, the pid is free" is the belief that just cost a PR.
+const GONE = 2 ** 31 - 1
+try {
+  process.kill(GONE, 0)
+  throw new Error(`pid ${GONE} answered a signal; this suite needs a pid that cannot exist`)
+} catch (err) {
+  // ESRCH is "no such process" and EINVAL is "no such pid is possible". Either is what we want;
+  // EPERM would mean something is running there and we simply may not signal it.
+  if (err.code !== 'ESRCH' && err.code !== 'EINVAL') throw err
+}
+
 mkdirSync(BIN, { recursive: true })
 process.on('exit', () => rmSync(SCRATCH, { recursive: true, force: true }))
 
@@ -119,11 +140,13 @@ check('watch mode names the executable beside the pid', () => {
   namesTarget(runHangSample([], 4000).stdout, 4242, ONE)
 })
 
+// `GONE` and not 4242: this is the one check whose verdict is the target being gone, so it is the
+// one check a live pid silently inverts. See GONE's own note.
 check('a watch whose target goes away names it on the way out', () => {
-  stageProcesses({ 4242: ONE })
+  stageProcesses({ [GONE]: ONE })
   const said = runHangSample([], 4000).stdout
   assert.match(said, /has gone/, said)
-  namesTarget(said.slice(said.indexOf('has gone') - 200), 4242, ONE)
+  namesTarget(said.slice(said.indexOf('has gone') - 200), GONE, ONE)
 })
 
 check('no process at all is still a refusal that names what it looked for', () => {

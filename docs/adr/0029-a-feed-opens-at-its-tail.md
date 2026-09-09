@@ -1,6 +1,11 @@
 # 0029 · A feed opens at its tail only once a height is cheap, and never by discovery
 
-Status: proposed · 2026-08-31
+Status: proposed 2026-08-31 · withdrawn for `apps/desktop` by
+[ADR-0033](./0033-dom-geometry-is-settled-before-it-is-shown.md) (#1795)
+
+> **Scoped to `apps/macOS`, which is deprecated.** This ADR was never accepted — its own
+> recommendation is not to build the tail-first open — and it is the record of that reasoning
+> for the Swift app. Its whole-document Minimap contract is carried forward by ADR-0033 rule 7.
 
 Binding on `apps/macOS`. Read against `argo/perf-60fps` at
 `92f3726556a4ba75c20d6d578efd31a53f0dd74b`. It answers the tail-first open proposed against the

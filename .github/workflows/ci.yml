@@ -126,13 +126,11 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
 
+      # Both jobs take Node from `.node-version` (#1800), which is what this job needs anyway: the
+      # yauzl@2 hang the root override prevents only appears from Node 24.16 (forge#4277), so a
+      # gate on an older Node would never see the thing the override is there for.
       - if: steps.touched.outputs.desktop == 'true'
         uses: ./.github/actions/setup
-        with:
-          # The version the repo ships on (#1751), not the Linux job's 22: the yauzl@2 hang the
-          # root override prevents only appears from Node 24.16 (forge#4277), so a gate on an
-          # older Node would never see the thing the override is there for.
-          node-version: "24.20.0"
 
       # Electron 44 ships no `postinstall`, so `bun install` leaves no Electron binary at all and
       # Forge dies on a missing one. `trustedDependencies` does not help: there is no script to

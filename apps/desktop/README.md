@@ -35,10 +35,14 @@ binary and then runs it:
 ```sh
 bun run package --arch arm64                       # the postPackage hook asserts on its own
 bun run assert:packaged out/Argo-darwin-arm64/Argo.app   # the same checks, standalone
-node scripts/prove-packaged-pty.mjs --arch arm64   # package, then launch and run acceptance
-node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package
-node scripts/prove-packaged-pty.mjs --arch arm64 --skip-endurance
+bun run prove:pty --arch arm64                     # package, then launch and run acceptance
+bun run prove:pty --arch arm64 --skip-package
+bun run prove:pty --arch arm64 --skip-endurance
 ```
+
+Through the script, never `node scripts/prove-packaged-pty.mjs` directly: the script carries the
+Node-pin gate (#1777), and the bare `node` invocation packages with Forge on whatever Node you
+happen to be on.
 
 `assert:packaged` is the same code `forge package` runs in its `postPackage` hook, so packaging
 already refuses an app whose `node-pty` is absent, packed inside the asar, or stripped of its
@@ -52,11 +56,12 @@ interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cy
 descriptor count.
 
 Only arm64 is proved. [#1745](https://github.com/milad-alizadeh/argo/issues/1745) ships arm64
-alone. It packages but does **not** sign: `osxSign` is unconfigured until the entitlement set is
-chosen ([#1771](https://github.com/milad-alizadeh/argo/issues/1771)) and this repository holds no
-identity. When both arrive, the signing steps belong between the package and the launch, and
-`assert:packaged` should run **again** after them, because a re-signature can invalidate what the
-package proved.
+alone. It packages but does **not** sign: this repository holds no identity, and while
+[#1771](https://github.com/milad-alizadeh/argo/issues/1771) has now chosen the entitlement set —
+one `com.apple.security.cs.allow-jit` on the five executables that run V8, recorded in
+`docs/research/2026-09-09-electron-app-entitlements.md` — `osxSign` is not wired to it yet. When
+it is, the signing steps belong between the package and the launch, and `assert:packaged` must run
+**again** after them, because a re-signature can invalidate what the package proved.
 
 ### node-pty is pinned to the `beta` line, and it is the endurance check that pins it
 
@@ -87,20 +92,45 @@ CLI can no longer be handed one. Nothing in Argo does that today.
 
 ## Two things will bite you
 
-**Node must be 22.12 or newer.** Electron 44 declares `engines.node >= 22.12.0` and means it. Its
-installer is CommonJS and requires `@electron/get` v5, which is ESM-only, so on an older Node it
-dies with `ERR_REQUIRE_ESM`. The repo still pins no Node version, but that is no longer an open
-question: [Pin a Node version for the repo](https://github.com/milad-alizadeh/argo/issues/1751)
-chose 24.20.0 exactly, in a root `.node-version`, and
-[implementing it](https://github.com/milad-alizadeh/argo/issues/1777) is the open ticket. Until
-that lands, nothing checks the Node you are on and this failure is the first thing you will see.
+**Node is pinned exactly, and the pin is enforced.** The root `.node-version` is the single place
+the version is written, and `scripts/node-version-gate.mjs` refuses any other version, including a
+newer patch. It runs at root `preinstall`, so a wrong Node fails `bun install`, and before every
+command here that reaches Electron or Forge. `bun run quality` runs it first, and CI reads the same
+file through `node-version-file:`.
 
-**Electron 44 ships no `postinstall`.** `bun install` alone leaves you with no Electron binary at
-all. Install it explicitly afterwards:
+Do not read that failed install as "nothing happened": bun runs the root `preinstall` *after* it
+has linked `node_modules` and built the native dependencies, so on the wrong Node `node-pty` is
+already compiled against the wrong ABI. **Delete `node_modules` and install again** once you are
+on the pinned version.
+
+The reason it is a gate rather than a note: Electron 44 declares `engines.node >= 22.12.0` and
+means it, its installer is CommonJS and requires an ESM-only `@electron/get`, and on an older Node
+it dies with `ERR_REQUIRE_ESM` — a message that says nothing about your Node. The exactness is
+[#1751](https://github.com/milad-alizadeh/argo/issues/1751)'s decision and
+[#1777](https://github.com/milad-alizadeh/argo/issues/1777) wired it.
+
+**Your version manager probably will not apply the pin for you.** nvm reads `.nvmrc` and has no
+`.node-version` fallback at all. `fnm` reads `.node-version` but installs nothing, so it needs an
+`fnm install` first. `asdf` reads it only with `legacy_version_file = yes` in `~/.asdfrc`, and
+ignores the file by default. Switch by hand, from this directory:
 
 ```sh
-node node_modules/electron/install.js
+nvm install "$(cat ../../.node-version)" && nvm use "$(cat ../../.node-version)"
+fnm install "$(cat ../../.node-version)" && fnm use "$(cat ../../.node-version)"
 ```
+
+**Electron 44 ships no `postinstall`.** `bun install` alone leaves you with no Electron binary at
+all. Install it explicitly afterwards, **from the repo root**:
+
+```sh
+bun run install:electron
+```
+
+That is `node_modules/electron/install.js` behind the Node-pin gate. Run the installer directly
+and you get the one failure the pin exists for — `ERR_REQUIRE_ESM`, out of a CommonJS installer
+requiring an ESM-only `@electron/get`, saying nothing about your Node. The script is also why the
+path is not spelled here: bun hoists Electron to the root, and this package has no `node_modules`
+of its own.
 
 Do **not** use `npx install-electron --no`. It deletes `node_modules/electron` first, and npx's
 own `--no` flag then refuses to reinstall it, so you end up with nothing and need

@@ -101,57 +101,35 @@ Every rule in `bun run quality` is an **error, never a warning**, and the caps l
 suppress inline, never raise a global cap.** Both configs fail open when commented, so no gate is
 proved by exit code alone.
 
-**CI is the only gate.** `.github/workflows/ci.yml` runs biome, the
-duplication gate and `bun run test:hooks` on Linux, and a second job on `macos-26` that packages
-`apps/desktop` for arm64, asserts the packaged `node-pty`, and runs the shipped app's acceptance
-harness (#1769). That job runs only when the pull request touches `apps/desktop`, the root
-manifest, the lockfile or `.github/`, and its filter fails CLOSED: an unreadable base ref runs the
-job rather than skipping it. There is no push-time gate: `.husky/pre-push` is gone,
-and so are `scripts/swift-gate.sh` and the cache, build-lock and metrics machinery around it. No
-`ARGO_SKIP_SWIFT_GATE`, no `ARGO_GATE_CALLER`, no `bun run gate:report`, no `bun run warm`. A
-session runs `bun run quality` and `bun run test:hooks` on its final tree and that is the whole
-bar. `quality` is biome plus the duplication gate; running only biome leaves a duplication breach
-to be found by CI.
+**CI is the only gate**, and there is no push-time one. `.github/workflows/ci.yml` runs biome, the
+duplication gate and `bun run test:hooks` on Linux; a `macos-26` job packages `apps/desktop`,
+asserts the packaged `node-pty` and runs the shipped app (#1769) when the PR touches
+`apps/desktop`, the root manifest, the lockfile or `.github/`. A session runs `bun run quality` and
+`bun run test:hooks` on its final tree and that is the whole bar. `quality` is biome **plus** the
+duplication gate; biome alone leaves a duplication breach for CI.
 
-**`apps/macOS` is deprecated and verified by nothing.** Its source is still on disk, but its
-build, test, screenshot, specimen and release scripts are deleted and it is no longer a workspace
-package. Nothing compiles it, nothing tests it, and `/pixel-review` cannot render it. Do not open
-Swift work expecting a gate to catch you; if a Swift change is genuinely needed, say plainly in the
-PR body that it was checked by hand or not at all.
+**`apps/macOS` is deprecated and verified by nothing** — no build, test, screenshot or render.
+A Swift change says in the PR body that it was checked by hand, or not at all.
 
-**The cost claim that shaped all of this was wrong, and the correction is load-bearing** (#1758).
-#1340 removed a `macos-26` CI job because it "billed about 99% of this repo's Actions spend". That
-figure is the **gross** column of the billing page. The **billed** column is $0, every day, on the
-`Actions macOS 3-core` SKU, because standard GitHub-hosted runners are free and unlimited on public
-repositories and `argo` is public. Never quote the old number. `apps/desktop` runs a macOS job
-today on that basis (#1769); design around the two real limits instead, 5 concurrent macOS jobs on
-GitHub Free and no secrets on a fork PR — so a fork can build and read the fuse wire back, but
-cannot sign.
+**macOS runners are free** on public repos, `argo` included (#1758). The "99% of the Actions
+spend" figure that removed a `macos-26` job read the gross column; billed is $0. Never quote it.
+The real limits: 5 concurrent macOS jobs on GitHub Free, and no secrets on a fork PR.
 
 ### Landing
 
-**A lane never rebases to open a PR.** It opens its PR on the base it was cut from. This was
-written when a rebase meant paying the Swift gate again, lanes multiplied by merges, over a repo
-taking about ninety commits a day (#1377). The gate is gone, so the cost argument is gone with it,
-but the rule stands on its own: being behind the base is the normal state of a branch, not a defect
-in it.
+**Rebase onto the current base before opening a PR**, and gate it there. `/ship` owns the step.
+An out-of-date PR is reviewed against a tree nobody has and conflicts in the human's hands.
 
-**Merging is the human's, and nothing here does it for them** (#1577). `scripts/land.sh` used to
-rebase, gate and merge in one pass, and no step in it asked a person; it is gone. So the rebase
-onto the current default branch has no automatic home either — the open question in #1577 is
-where it goes.
+**Merging is the human's** (#1577). Nothing here does it for them.
 
-**What leaves the base has to say so.** `scripts/kept-the-tests.sh` and
-`scripts/undoes-the-base.sh` read a merged tree against the base and refuse one that drops a test
-the base has (`Removes-test: <name>`), deletes a file it has (`Removes-file: <path>`), or holds
-content the base has moved past (`Reverts-file: <path>`, or `*` for the whole change). One
-trailer line, in the commit that does it. A rebase that takes the pre-fix side of a file deletes
-the test that guarded the fix, and every suite is green afterwards (#1558). `land.sh` was their
-caller and is gone, so run them by hand before merging:
+**What leaves the base says so in a trailer**, one line in the commit that does it:
+`Removes-test: <name>`, `Removes-file: <path>`, `Reverts-file: <path>` (or `*`).
+`scripts/kept-the-tests.sh` and `scripts/undoes-the-base.sh` refuse an untrailered one, and
+nothing calls them now — run them before merging:
 `sh scripts/kept-the-tests.sh . origin/main HEAD`.
 
-Two lanes never own the same file, whatever the vocabulary split says. The arithmetic, the
-measurements, and which of them the retired gate invalidates: `docs/agents/landing.md`.
+Two lanes never own the same file. Why each of these, and the arithmetic behind them:
+`docs/agents/landing.md`.
 
 ## Session isolation
 

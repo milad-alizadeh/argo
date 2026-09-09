@@ -61,6 +61,11 @@ fails on the repo's ambient Node 22.10.0 with `ERR_REQUIRE_ESM`, because Electro
 ambient Node is below what Electron 44 requires. That is a decision, not a fix, and it belongs to
 the quality-gate ticket.
 
+> **Resolved, and no longer true of the tree.** #1751 chose 24.20.0 exactly and #1777 wired it:
+> there is now a root `.node-version`, `scripts/node-version-gate.mjs` enforces it at root
+> `preinstall` and before every Forge command, and CI reads the same file. The measurement above
+> stands as of 2026-09-08; the state of the repo it describes does not.
+
 Working recipe, after every `bun install`:
 
 ```sh

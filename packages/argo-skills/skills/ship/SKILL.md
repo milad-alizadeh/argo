@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Close out an implemented ticket: commit the work, gate it once on the base it was cut from, push, and open one PR that closes the ticket. Rebasing is the landing lane's job, not this one's. Run after the diff has been reviewed."
+description: "Close out an implemented ticket: commit the work, bring the branch onto the current base, gate it there, push, and open one PR that closes the ticket. Run after the diff has been reviewed."
 disable-model-invocation: true
 ---
 
@@ -22,20 +22,21 @@ Merging stays with the human.
 - **A conflict you cannot resolve from the diff** (below). An ordinary conflict is not one of
   these: you resolve that one yourself and carry on to the PR.
 
-## Do not rebase to open a PR
+## Ship onto the current base
 
-A ship run gates the branch **once**, on the base it was cut from, and pushes it there.
+A ship run brings the branch onto its base **first**, gates it there, and opens the PR on that.
 
-This used to rebase onto `origin/<base>` first, and that was the single most expensive habit in
-the repo. The gate is keyed to the push, so every rebase re-ran it — over a build the rebase had
-just made cold, because a replayed commit rewrites the mtime of every file it touches and llbuild
-invalidates on mtime. `main` took 91 commits on the day #1377 was written. With eight lanes open,
-each merge invalidated seven other bases, and the cost of the gate was lanes multiplied by
-merges rather than lanes plus merges. Every rebase but the last was work thrown away, because the
-branch was going to be rebased again before it landed.
+A PR opened on a stale base asks a reviewer to read a diff against a tree nobody has. Its checks
+pass on a merge nobody will make, and its conflicts surface at merge time instead — in the human's
+hands, which is the worst moment to find them. A branch that looks ready and cannot merge is not
+ready. Nobody wants an out-of-date PR.
 
-The rebase therefore does not happen here. A branch is rebased when it is about to be merged
-and not before, and merging is the human's (#1577). See `docs/agents/landing.md`.
+This used to say the opposite, and the reason it did is gone (#1377, #1758). Rebasing was
+expensive because the gate ran at push time: every replay rewrote the mtime of every file it
+touched, llbuild invalidated on mtime, and the whole Swift build ran again. With eight lanes open
+on a repo taking 91 commits a day, the cost was lanes multiplied by merges. **That gate no longer
+exists.** A rebase now costs a fetch and a replay, and the gates after it are biome, a duplication
+check and the hook suites — seconds, not a build.
 
 1. **Commit everything outstanding.** Anything the steps below change is committed the same way,
    before the push.
@@ -43,22 +44,26 @@ and not before, and merging is the human's (#1577). See `docs/agents/landing.md`
    (`gh pr view --json baseRefName -q .baseRefName`). Otherwise it is the branch this one was cut
    from: the repo default (`gh repo view --json defaultBranchRef -q .defaultBranchRef.name`),
    unless you stacked this branch on another ticket branch, which is then the base.
-3. `git fetch origin` — the whole remote, so the push below has a current remote-tracking ref.
-   **Do not rebase onto it.** Being behind the base is not a defect in a branch; it is the
-   normal state of one, and the landing lane is what resolves it.
-4. **Say the base in the PR body**, and the merge base you gated on
-   (`git merge-base HEAD origin/<base>`). That is what a reviewer needs to read the diff.
+3. `git fetch origin` — the whole remote, so the rebase and the push read a current ref.
+4. **`git rebase origin/<base>`.** Already up to date is the common answer and costs nothing.
+   When it conflicts, resolve with `resolving-merge-conflicts` — it is the method, and `ship` does
+   not carry a second one — then `git rebase --continue` to the end, never `--abort`. Name every
+   path that conflicted in the PR body, so a reviewer can find each resolution without reading the
+   reflog.
+5. **Re-run the gates after a rebase that moved a commit**, before the push. A replayed commit is
+   a tree nothing has checked, and "it was green before the rebase" is a statement about a
+   different tree.
+6. **Say the base in the PR body**, and the commit you rebased onto
+   (`git rev-parse origin/<base>`). That is what a reviewer needs to read the diff.
 
-### When GitHub says the PR cannot merge
+Merging stays the human's either way (#1577). What changes is that they are handed a branch that
+can actually merge.
 
-After the push, `gh pr view --json mergeable -q .mergeable` answers `CONFLICTING` for a branch
-whose conflict a person has to resolve. That is the one case where ship rebases: the landing lane
-cannot invent an answer either, and a PR nobody can merge is not shipped.
+### When GitHub still says the PR cannot merge
 
-Then, and only then: `git rebase origin/<base>`, resolve with `resolving-merge-conflicts` — it is
-the method, and `ship` does not carry a second one — `git rebase --continue` to the end, never
-`--abort`, re-run the gates, and push again with `--force-with-lease`. Name every path that
-conflicted in the PR body, so a reviewer can find each resolution without reading the reflog.
+After the push, `gh pr view --json mergeable -q .mergeable` should answer `MERGEABLE`. A
+`CONFLICTING` here means the base moved between the rebase and the push: fetch again, rebase
+again, re-run the gates, and push with `--force-with-lease`.
 
 ### The one conflict that stops the run
 
@@ -116,11 +121,10 @@ Each of these belongs in the PR body, and the ship continues past it.
 ## Then ship
 
 1. Commit what the steps above changed, with a message that states what changed and why.
-2. Push with `git push -u origin HEAD`. Nothing rewrote the commits, so this is a fast-forward
-   and needs no lease. `--force-with-lease` belongs to the one path that does rewrite them —
-   the `CONFLICTING` case above — and a bare `--force` belongs to none, because it drops a
-   teammate's push. A `stale info` rejection there means the remote branch moved since the
-   fetch: fetch again, rebase again, and push.
+2. Push with `git push -u origin HEAD`, adding `--force-with-lease` when the rebase moved a
+   commit that had already been pushed. Never a bare `--force`: it drops a teammate's push, and
+   the lease is the whole difference. A `stale info` rejection means the remote branch moved
+   since the fetch — fetch again, rebase again, re-run the gates, and push.
 3. **Run the PR title and body through the `simple-english` skill.** This holds for every PR,
    and it holds when the text already reads well. Draft the title and the body. Put both through
    the skill. Give `gh pr create` what it returns. The skill carries its own rules, so this step

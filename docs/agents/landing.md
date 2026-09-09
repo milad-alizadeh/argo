@@ -11,10 +11,13 @@
 > before merging: `sh scripts/kept-the-tests.sh . origin/main HEAD`. And two lanes never own the
 > same file, whatever the vocabulary split says.
 >
-> The rule that a lane does not rebase to open a PR also stands, but on its own footing now: being
-> behind the base is the normal state of a branch, not a defect in it.
+> **The rule that a lane does not rebase to open a PR is REVERSED as of 2026-09-09.** It was the
+> last thing standing on this arithmetic, and the arithmetic is gone: with no push-time gate, a
+> rebase costs a fetch and a replay. A lane now rebases onto the current base before it opens a PR
+> and gates it there, because an out-of-date PR is reviewed against a tree nobody has and saves its
+> conflicts for the human trying to merge it. See AGENTS.md → *Landing* and the `ship` skill.
 
-# Landing, and why a lane does not rebase
+# Landing, and the arithmetic a rebase used to cost
 
 Companion to `AGENTS.md` → *Quality gates* and *Session isolation*. It carries the arithmetic
 behind `scripts/land.sh` and the two habits that arithmetic changes.
@@ -54,12 +57,12 @@ Lanes plus merges, rather than lanes times merges.
 
 ## The two habits
 
-**A lane does not rebase to open a PR.** `/ship` gates once, on the base the branch was cut from,
-then pushes and opens the PR there — the lane itself does neither, and `/ship` is a separate
-invocation the human makes (AGENTS.md, **Pushing and pull requests**). Being behind the base is the
-normal state of a branch, not a defect in it. The exception is a PR GitHub reports as
-`CONFLICTING`, which is a decision only that branch's session has the context to make. The full
-rule is in the `ship` skill.
+**A lane does not rebase to open a PR.** ~~`/ship` gates once, on the base the branch was cut
+from, then pushes and opens the PR there.~~ **Reversed on 2026-09-09**, for the reason in the note
+at the top of this file: `/ship` rebases onto the current base, gates the branch there, and opens
+the PR on that. The lane itself still does neither the push nor the PR — `/ship` is a separate
+invocation the human makes (AGENTS.md, **Pushing and pull requests**). The full rule is in the
+`ship` skill.
 
 **Two lanes never own the same file.** Lanes are split by domain vocabulary, which is right for
 deciding what each lane is *for*, and useless for deciding what each lane may *touch*: the

@@ -5,11 +5,12 @@
   "private": true,
   "main": ".vite/build/main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
+    "start": "node ../../scripts/node-version-gate.mjs && electron-forge start",
+    "package": "node ../../scripts/node-version-gate.mjs && electron-forge package",
+    "make": "node ../../scripts/node-version-gate.mjs && electron-forge make",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "assert:packaged": "node scripts/assert-packaged-pty.mjs",
+    "prove:pty": "node ../../scripts/node-version-gate.mjs && node scripts/prove-packaged-pty.mjs",
+    "assert:packaged": "node ../../scripts/node-version-gate.mjs && node scripts/assert-packaged-pty.mjs",
     "test": "bun test"
   },
   "dependencies": {
