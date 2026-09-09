@@ -19,9 +19,9 @@ Four things were learned the expensive way and apply to whatever replaces it.
   starting one.
 - **A locked screen kills input, not capture.** Screenshots keep working and keystrokes go nowhere,
   so a suite fails in a way that looks like a bug in the app.
-- **Never hand-roll a load generator.** Use `sh scripts/load-burst.sh <workers> <seconds>`, which
-  burns CPU cores and makes no Sessions, and stop it with the `--reap <token>` it prints, never a
-  bare `pkill`. That script survives; it is not Swift-specific.
+- **Never hand-roll a load generator.** `load-burst.sh` is deleted, and whatever replaces it
+  keeps its two properties: it burns CPU cores while making no Sessions, so load never reaches the
+  thing under test as work, and it is stopped by a token it prints rather than a bare `pkill`.
 
 ## The trap worth restating for the Electron route
 

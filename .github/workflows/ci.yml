@@ -69,9 +69,9 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
-      # Guardrail-hook tests (worktree edit guard, cross-CLI hook projection, the worktree-gc
-      # sweep) live outside the turbo `test` pipeline — plain node scripts, not a workspace
-      # suite. #1758 retired the Swift tooling, so nothing verifies `apps/macOS` at all.
+      # Guardrail-hook tests (the publish guard, the worktree edit and naming guards, the shell
+      # command reader) live outside the turbo `test` pipeline — plain node scripts, not a
+      # workspace suite. They are what stands between a guard's prose and its behaviour.
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks

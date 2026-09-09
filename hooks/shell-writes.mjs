@@ -1,6 +1,6 @@
 // Which files a shell command line writes. Read by worktree-guard.mjs, which decides what to do
 // about them; this file only reads the command and answers with paths, so both halves stay
-// testable on their own (shell-writes.test.mjs, worktree-guard.test.mjs).
+// testable on their own.
 //
 // It reads what the shell can NAME. A program that writes as a side effect (`swift build`,
 // `bun install`) names no path and is not read here: this is about an agent authoring content,

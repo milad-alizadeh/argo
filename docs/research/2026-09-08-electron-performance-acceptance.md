@@ -1,5 +1,10 @@
 # What "good enough" is measured as, before Electron may retire the Swift app
 
+> **2026-09-09.** The instrument this note specifies, `scripts/frame-band.py`, is deleted, along
+> with the rest of the probe tooling. Every reduction rule below is still the acceptance bar; what
+> is gone is the thing that applied it. Read the arithmetic here as the spec for whatever replaces
+> it, not as a command you can run.
+
 **Date:** 2026-09-08 · **For:** [Define Electron performance and battery acceptance](https://github.com/milad-alizadeh/argo/issues/1736),
 under the migration map [cross-platform Electron desktop migration](https://github.com/milad-alizadeh/argo/issues/1730),
 sole open blocker on [Define staged cutover and macOS retirement acceptance](https://github.com/milad-alizadeh/argo/issues/1737) ·

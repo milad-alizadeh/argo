@@ -1,129 +1,101 @@
 # argo-skills
 
-Argo's own skills, plus a one-command scaffolder that installs them **and** a curated
-third-party bundle into any project — for Claude Code or any other agent.
+Argo's own skills, and the manifest that bundles them with a curated third-party set for any
+project, Claude Code or any other agent.
 
 ## What it is
 
-A thin wrapper over [`npx skills`](https://github.com/vercel-labs/skills). The repo-root
-`skills-lock.json` enumerates every skill Argo bundles — the third-party ones plus Argo's
-own (kept in this package's `skills/`) — and the scaffolder installs them from it, one
-`npx skills add` per source.
+Source, not a tool. The repo-root `skills-lock.json` enumerates every skill Argo bundles (the
+third-party ones plus Argo's own, kept in this package's `skills/`), and the
+[`skills`](https://github.com/vercel-labs/skills) CLI installs from it. This package used to ship
+a scaffolder of its own; it is gone, and everything it did beyond the install is now written down
+as steps in [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md) for an agent to follow.
+
+The one file left in `bin/` is `hooks-sync.mjs`, which projects the repo-root `hooks.json` into
+each harness. It is not an installer.
 
 ## Project-agnostic by design — set up per project
 
-This package is the **single source** for Argo's skills; it has no dependency on any
-particular project (including the Argo cockpit app that shares this monorepo). Every
-project — the cockpit and any other — is a plain **consumer**: it runs the scaffolder
-to install its own copy of the skills under `.claude/skills/` (and `.agents/skills/`),
-recorded in that project's `skills-lock.json`. Nothing here reaches into a consuming
-app, and the installed skills carry everything they need with them:
+This package is the **single source** for Argo's skills; it depends on no particular project,
+including the cockpit app that shares this monorepo. Every project is a plain **consumer**: it
+installs its own copy under `.claude/skills/` and `.agents/skills/`, recorded in that project's
+`skills-lock.json`. Nothing here reaches into a consuming app, and each skill is **self-contained**
+— supporting files such as `setup-quality-gates/templates/` live inside the skill folder and travel
+with it, so a skill behaves the same in any project without reading back into this package.
 
-- The scaffolder installs into the **current working directory**, so you point it at
-  whatever project you're setting up.
-- Each skill is **self-contained** — supporting files (e.g. `setup-quality-gates/templates/`)
-  live inside the skill folder and travel with it on install, so a skill works the
-  same in any project without reading back into this package.
+The Argo cockpit's own `.claude/skills/` are therefore *installed output* of that per-project flow,
+not source. The source is only ever here, and it distributes only via GitHub: even this monorepo
+installs its own skills with the same command, so an edit to one of Argo's skills needs a push to
+`main` before a reinstall sees it.
 
-The Argo cockpit's own `.claude/skills/` are therefore *installed output* of this
-per-project flow, not source. The source is only ever here — and it distributes
-only via GitHub: even this monorepo installs its own skills with the same npx
-command (push first, then reinstall).
-
-## Use it in a project
+## Install, in a project
 
 ```bash
-# from anywhere, inside the target project directory:
-npx github:milad-alizadeh/argo   # the only supported install path
+npx skills@latest add milad-alizadeh/argo
 ```
 
-**GitHub is the only install path, deliberately.** The manifest is the *repo root's*
-`skills-lock.json` — the same file that is Argo's own install record — so it sits outside this
-package and `files` ships no copy of it; duplicating it into the tarball would mean two
-manifests to keep in sync. An npm-published `argo-skills` would therefore have a `bin/` with
-nothing to install from, so the scaffolder fails on a missing manifest by naming the command
-above rather than pretending to work.
+**Run it interactively and answer both questions.** It asks which agents to install for, and then
+"Installation method". The second question is asked only when the chosen agents span more than one
+skills directory, and answering it is what makes the CLI write
+`.claude/skills/<name> -> ../../.agents/skills/<name>` itself. So pick claude-code **and** a
+universal agent such as codex; passing `--yes` suppresses the question, and the symlinks it would
+have built are then never built, so `.claude/skills/` stays empty.
 
-Preview without touching anything:
+That question is the whole reason a bespoke installer existed here. It no longer does, so the
+answer is a human's or an agent's, every time.
+
+Install a subset with `--skill`:
 
 ```bash
-argo-skills --dry-run
+npx skills@latest add milad-alizadeh/argo --skill design-to-code,ship
 ```
 
-Install a subset instead of the whole bundle:
+Entries the target project locked itself are kept, so a subset install into a non-empty project
+yields the union, not just the subset.
+
+## Update
 
 ```bash
-npx github:milad-alizadeh/argo --skill implement,code-review,tdd
+npx skills update --project --yes
 ```
 
-Options: `--dry-run`/`-n`, `--skill <names>` (comma- or space-separated subset; default is
-the whole manifest), `--hooks` (also install the guardrail hooks — see below).
+`--yes` is safe here and it is not on the add path: update reads the installed agent set off disk
+rather than asking, so Claude Code survives the refresh. It fetches each source's latest rather
+than a pinned revision, because Argo's lock entries carry no `ref`.
 
-`--global`/`-g` and `--project`/`-p` are **gone**: the manifest is a project lock, and
-`skills add --global` writes a different lock format in a different place, which is a
-second install path rather than an option on this one. Passing either flag exits with an
-error rather than quietly installing project-scoped.
+## Everything the install does not do
 
-### Why not `skills experimental_install`
+Installing skills is all `skills add` does. The rest of a consumer's setup is prose in
+[`setup-argo-skills`](skills/setup-argo-skills/SKILL.md), followed by an agent by hand: rescuing
+the consumer's own skills from a name collision before they are overwritten, seeding
+`.rtk/filters.toml`, copying `hooks.json` and the hooks it names and projecting them, adding the
+`.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
 
-`skills experimental_install` reads the very same lock and would collapse the fan-out to a
-single call. It is not used, for one reason: it hardcodes its agent list to
-`getUniversalAgents()` — every agent whose skills directory is `.agents/skills`. Claude
-Code's is `.claude/skills`, so it is not in that set and receives **nothing** (verified
-against `skills@1.5.21`: a full `experimental_install` into an empty project produced one
-entry per locked skill under `.agents/skills/` and no `.claude/` directory at all; `claude`
-2.1.220 has no `.agents/skills` code path). Passing `--agent` is the only way to reach Claude
-Code, and
-`experimental_install` accepts no agent argument. The moment it does, the per-source loop in
-`bin/scaffold.mjs` collapses into one call and nothing else changes.
+The guardrail hooks are hand-work today because they are not in this package at all: `hooks/` sits
+at the repository root, outside `packages/argo-skills/`, so `skills add` cannot carry them and
+`skills update` cannot move them forward. [ADR-0036](../../docs/adr/0036-the-bundle-arrives-on-one-transport.md)
+decides they move inside the bundle and arrive with it; that is #1810's work and is not built.
 
-The agent list therefore lives in `bin/scaffold.mjs` as `SKILL_AGENTS`; the vercel lock
-format has nowhere to put it, which is why the old manifest's `agents` array had to move
-into code. The hooks half has its own audience list in `hooks.json`'s `agents` key.
-
-## Guardrail hooks (opt-in)
-
-Skills are always installed; the **guardrail hooks are opt-in**, because they impose
-Argo's worktree discipline on the project (the edit guard blocks `apps/`+`packages/`
-edits outside a worktree, and the reaper assumes `.claude/worktrees/`). Add `--hooks` to
-also install them:
-
-```bash
-npx github:milad-alizadeh/argo --hooks
-```
-
-That copies the neutral `hooks.json` descriptor plus the scripts it invokes (and the modules
-they import) into the
-target, then projects the descriptor into each agent listed in its own `agents` key:
-`claude-code` → `.claude/settings.json`, `codex` → `.codex/hooks.json` (unknown agents are
-skipped with a warning). One source of truth per hook, a thin per-harness registration. See
-the repo's `hooks.json` and AGENTS.md "Cross-CLI guardrail hooks".
+**What does not change when they do**: installing them stays a separate yes. They impose Argo's
+worktree discipline on the project — the edit guard refuses an edit outside a worktree and the
+reaper assumes `.claude/worktrees/` — and that is a decision a consuming project makes, not a side
+effect of wanting the skills. See the repo root's `hooks.json` and AGENTS.md "Cross-CLI guardrail
+hooks".
 
 ## The manifest — `skills-lock.json`
 
 The repo-root `skills-lock.json` is the bundle. It is a standard vercel `skills` lock —
-`{ version, skills: { <name>: { source, sourceType, skillPath, computedHash } } }` — which
-means it is simultaneously the manifest Argo ships and the install record of Argo's own
-`.agents/skills/`. One file, no second format to keep in sync, and `skills list` /
-`skills update` work against it unchanged.
+`{ version, skills: { <name>: { source, sourceType, skillPath, computedHash } } }` — which makes it
+simultaneously the manifest Argo ships and the install record of Argo's own `.agents/skills/`. One
+file, no second format to keep in sync, and `skills list` / `skills update` work against it
+unchanged.
 
-It is **not a version pin.** Entries carry no `ref`, so a restore installs whatever each
-source's default branch holds today; `computedHash` is content identity, not a lock.
+It is **not a version pin.** Entries carry no `ref`, so a restore installs whatever each source's
+default branch holds today; `computedHash` is content identity, not a lock.
 
-### What a subset install leaves in the target
-
-The scaffolder writes no lock of its own, on either path — `skills add` writes the target's
-`skills-lock.json`, and for a subset that lock **is** the filtered manifest. Verified against
-`skills@1.5.21`: `--skill ship,tdd` (two sources) into an empty project produced a lock
-byte-identical to the manifest's two entries filtered down — `computedHash` included, because
-the hash is content-derived and source-independent (installing the same skill from
-`milad-alizadeh/argo` and from a local path yields the same hash). `skills list --json` reports
-both skills and `skills update --project` refreshes both against the emitted file. Emitting a
-filtered lock from the scaffolder would therefore write the same bytes `skills add` already
-writes, so it doesn't.
-
-One property that is *not* free: entries the target project locked itself are kept, so a subset
-install into a non-empty project yields the union, not just the subset.
+Nothing verifies the manifest without installing from it. There is no dry run, and the install is
+interactive, so an edit here is proved by running it in a checkout and reading what appeared under
+`.claude/skills`, never by a diff, since neither skills directory is tracked.
 
 ### Add a bundled skill
 
@@ -134,26 +106,28 @@ npx skills add mattpocock/skills --skill <name>   # writes the entry into skills
 git add skills-lock.json && git commit
 ```
 
-Same for one of Argo's own — edit it under `skills/`, push to `main`, then re-run the
-installer (the `milad-alizadeh/argo` source installs from GitHub, not from your checkout).
+Same for one of Argo's own — edit it under `skills/`, push to `main`, then reinstall.
+
+`skills add` only adds. Renaming or deleting a skill therefore leaves the old copy installed:
+delete it by hand from `.claude/skills/` and `.agents/skills/` as well as from the lock.
 
 ### Pick up newly-published upstream skills
 
-Nothing arrives on its own any more — there is no `"*"` wildcard in a lock. To sweep a
-source for everything it now publishes:
+Nothing arrives on its own — there is no `"*"` wildcard in a lock. To sweep a source for
+everything it now publishes:
 
 ```bash
 npx skills add mattpocock/skills --skill '*'   # re-resolves the whole source
 git diff skills-lock.json                      # review what appeared, then commit
 ```
 
-Sweeping is a decision you make when you want it — nothing watches upstream for you.
+Sweeping is a decision you make when you want it; nothing watches upstream for you.
 
 ## Argo's own skills
 
-Live under `skills/`, one `SKILL.md` per folder, and install from the `milad-alizadeh/argo`
-entries in the manifest. Add more by dropping another folder here (with any supporting files
-colocated inside it), pushing to `main`, then adding the name to the lock.
+Live under `skills/`, one `SKILL.md` per folder, and install from the `milad-alizadeh/argo` entries
+in the manifest. Add more by dropping another folder here, with any supporting files colocated
+inside it, pushing to `main`, then adding the name to the lock.
 
 - [`setup-quality-gates`](skills/setup-quality-gates/SKILL.md) — resolves each mechanical
   intent (function length, complexity, parameter count, type escape hatches, duplication, dead

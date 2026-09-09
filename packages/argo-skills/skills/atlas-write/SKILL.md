@@ -1,6 +1,6 @@
 ---
 name: atlas-write
-description: Generate a Project Atlas — a map of a codebase that teaches what each part does and how the parts reach each other, emitted as anchored nodes in a fixed format. Use when someone asks for an atlas, a map or a picture of a repository, or for a written explanation of how a project fits together.
+description: "Generate a Project Atlas: a map of a codebase that teaches what each part does and how the parts reach each other. Use when someone asks for an atlas or a map of a repository, or for an explanation of how a project fits together."
 ---
 
 # Atlas Write
@@ -123,7 +123,7 @@ One JSON file. One object per node, keyed by id:
   "id": "read",
   "kind": "part | flow | concept",
   "depth": 1,
-  "parent": "argo",
+  "parent": "root",
   "name": "Reading the record",
   "line": "One sentence a reader can repeat.",
   "short": ["…"],

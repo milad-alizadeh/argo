@@ -2,13 +2,12 @@
 
 Implementation work runs in a git worktree under `.claude/worktrees/`, never the shared main
 checkout — multiple agent sessions run concurrently, and isolating each unit of work on its own
-tree and branch keeps them from clobbering each other's files. A `PreToolUse` hook
-(`scripts/worktree-guard.mjs`) enforces it, blocking every agent change to the main checkout
-from outside a worktree, and a second one (`scripts/worktree-name-guard.mjs`) enforces the
-naming below at creation. This file is the *how* they cite — naming, resuming an
-interrupted worktree, recovering a deleted one. It applies to all implementation work, not just
-`/implement` runs, and is self-contained so it stands alone when the hooks copy it into a
-consumer project.
+tree and branch keeps them from clobbering each other's files. One `PreToolUse` hook
+(`hooks/worktree-guard.mjs`) enforces both halves: it blocks every agent change to the main
+checkout from outside a worktree, and it enforces the naming below at creation. This file is the
+*how* it cites: naming, resuming an interrupted worktree, recovering a deleted one. It applies to
+all implementation work, not just `/implement` runs, and is self-contained so it stands alone
+when the hooks copy it into a consumer project.
 
 ## Naming — one deterministic format
 
@@ -46,8 +45,9 @@ the numberless slug may not itself begin with a number, because `argo/901-naming
 
 ### Everything is guarded, and a write through the shell is a write
 
-`scripts/worktree-guard.mjs` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit` and
-`Bash`. From outside a worktree it refuses:
+`hooks/worktree-guard.mjs` is a `PreToolUse` hook on `Edit`, `Write`, `NotebookEdit`, `Bash` and
+`EnterWorktree`. Its `decideEdit()` half answers where the work runs. From outside a worktree it
+refuses:
 
 - an `Edit`, `Write` or `NotebookEdit` to **any** path in the repository — not a chosen part of
   it;
@@ -65,7 +65,7 @@ There is no unguarded corner left — a doc or config fix needs a worktree too. 
 
 Two things it deliberately does not do. It never fires for the human's own workflow, only for an
 agent (`CLAUDECODE`, or the `ARGO_HOOK_AGENT` the projection injects for Codex). And it allows a
-target it cannot resolve — one still holding a `$` or a backtick — for the reason the name guard
+target it cannot resolve — one still holding a `$` or a backtick — for the reason the naming half
 does: guessing at an expansion would deny work that may well be correct. A program that writes
 as a side effect (`swift build`, `bun install`) names no path and is not read.
 
@@ -74,8 +74,9 @@ A consumer whose agents must still edit part of their main checkout narrows the 
 
 ### The names are enforced, not merely documented
 
-`scripts/worktree-name-guard.mjs` is a `PreToolUse` hook on `Bash` and `EnterWorktree`. It
-refuses:
+The same hook's `decideName()` half answers which worktree it is, on `Bash` and `EnterWorktree`.
+The two were separate hooks until they were merged, and the merged matcher is the union of what
+each watched, so `EnterWorktree` still reaches the naming half. It refuses:
 
 - a worktree directory that is not `.claude/worktrees/ticket-<N>-<slug>`, from `git worktree add`;
 - an explicit `-b` branch that is not `argo/#<N>-<slug>`;
@@ -169,7 +170,7 @@ never something a sub-agent takes on its own.
 
 ## Reaping landed worktrees
 
-`bun run worktrees:gc` (`scripts/worktree-gc.sh`) removes only what is provably safe: PR merged,
+`bun run worktrees:gc` (`hooks/worktree-gc.sh`) removes only what is provably safe: PR merged,
 tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is reported and left
 alone. `--dry-run` reports without removing.
 
@@ -177,11 +178,11 @@ The same run sweeps two things that are not worktrees: the visual-review refs
 (`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, and the `design/<screen>`
 branches that carry a screen's explorable page (AGENTS.md → *Design work*). A design branch is
 keyed on its screen's **epic**, not on a pull request, because a design outlives every pull
-request built against it. Every refusal is a case in `scripts/worktree-gc.designs.test.mjs`: a
+request built against it. The refusals it makes: a
 `design/` branch no `.md` on `main` claims, a `.md` naming no epic, an unreadable file and a
 failed `gh` query all mean keep.
 
-`sh scripts/worktree-gc.sh --artifacts` is the other sweep and reaps no worktree at all. It
+`sh hooks/worktree-gc.sh --artifacts` is the other sweep and reaps no worktree at all. It
 deletes the build output inside every worktree — `apps/macOS/build` and `Packages/*/.build` —
 holding back only the ones built in the last 30 minutes. It needs no merged branch, because
 nothing it deletes is the only copy of anything. When #1377 measured it, that was 104 GB of the

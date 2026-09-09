@@ -6,7 +6,7 @@
 //
 // It nudges only while the session has written NO list, and at most MAX_NUDGES times, so a
 // session that keeps one is never told twice and a session that needs none is never nagged.
-// decide() is pure (no fs, no git) and unit-tested in task-list-nudge.test.mjs.
+// decide() is pure (no fs, no git).
 import {
   closeSync,
   existsSync,
@@ -27,7 +27,7 @@ import { toolCallsIn, writesSessionList } from './transcript-plans.mjs'
 const MAX_NUDGES = 3
 
 const NUDGE =
-  `Task tracking (Argo house rule). If this request needs three or more distinct steps, ` +
+  `Task tracking. If this request needs three or more distinct steps, ` +
   `edits across multiple files, or carries out a plan the user approved, write a live to-do ` +
   `list BEFORE the first edit — not as a summary afterwards. Claude Code: load the tools once ` +
   `with ToolSearch("select:TaskCreate,TaskUpdate"), then one TaskCreate per item and TaskUpdate ` +
@@ -35,11 +35,10 @@ const NUDGE =
   `item completed the moment it is done. Work the items in the order the list gives them: mark ` +
   `an item in_progress before you start it, so the list never jumps from item 1 to item 3. If ` +
   `the real order turns out to be different, reorder the list rather than skip an item. Split ` +
-  `the verification tail into one item each — the Swift gate, the full suite, the render, the ` +
+  `the verification tail into one item each — the gates, the test suite, the render, the ` +
   `code review, the review fixes — and never fold two gates, suites or reviews into one ` +
   `item: a subject that comma-lists what it covers is the shape to reject. Run the list to the ` +
-  `reviewed diff, so the last item completes when the work is proved. The push and the PR are ` +
-  `/ship's: never write an item that opens one. If the request is a lookup, a ` +
+  `reviewed diff, so the last item completes when the work is proved. If the request is a lookup, a ` +
   `single edit, or a conversation, write no list: a one-item list is noise.`
 
 /**

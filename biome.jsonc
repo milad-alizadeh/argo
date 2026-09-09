@@ -163,20 +163,6 @@
         }
       }
     },
-    // RATCHET: over the 150-line file ceiling. Split the file, then delete its line here.
-    {
-      "includes": [
-        // 167 lines: the scaffold wizard, one long sequence of prompts and file writes.
-        "packages/argo-skills/bin/scaffold.mjs"
-      ],
-      "linter": {
-        "rules": {
-          "style": {
-            "noExcessiveLinesPerFile": "off"
-          }
-        }
-      }
-    },
     // The renderer boundary, and the one override here that is a security line rather than a
     // cap. `src/preload.ts` says it: "The renderer never gets Node. It gets one narrow, named
     // surface." Nothing enforced that, so a renderer file could import `electron` or a Node
@@ -262,7 +248,7 @@
     },
     // KIND: repo tooling reads the ambient environment by design (CI vars, git env, TTY).
     {
-      "includes": ["scripts/**"],
+      "includes": ["scripts/**", "hooks/**"],
       "linter": {
         "rules": {
           "suspicious": {

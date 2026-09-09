@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2 # {{SWAP_FOR_YOUR_PM}}
+      - uses: {{SETUP_ACTION}} # your package manager's setup action
         with:
           bun-version: latest
-      - run: bun install --frozen-lockfile # {{SWAP_FOR_YOUR_PM}}
+      - run: {{INSTALL_COMMAND}} # a frozen/locked install, not a resolving one
       - name: Quality gates
-        working-directory: "{{WORKSPACE_DIR}}" # e.g. apps/desktop; "." for a single-package repo
-        run: bun run quality # {{SWAP_FOR_YOUR_PM}} — the script wired in step 6 of the skill
+        working-directory: "{{WORKSPACE_DIR}}" # e.g. packages/web; "." for a single-package repo
+        run: {{GATE_COMMAND}} # the one script wired in step 6 of the skill

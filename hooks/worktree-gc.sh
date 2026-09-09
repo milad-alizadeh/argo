@@ -13,7 +13,7 @@
 #              an ancestor of origin/<default>.
 #   clean    — no uncommitted or untracked changes.
 #   pushed   — no commits ahead of its upstream (an unpushed worktree is the only
-#              copy of the work; see the implement skill).
+#              copy of the work; see docs/agents/worktrees.md).
 #   quiet    — untouched for $QUIET_MINUTES, so a session still working in a
 #              just-merged worktree isn't pulled out from under it.
 #   not ours — never the worktree this script is running from.
@@ -25,15 +25,15 @@
 # a screen's explorable page (#1526), keyed on the epic named in the design `.md`.
 #
 # --artifacts is the other sweep, and it reaps no worktree at all. It deletes the BUILD
-# OUTPUT inside every worktree — `apps/macOS/build` and `Packages/*/.build` — which is
+# OUTPUT inside every worktree, at the paths `worktreeGc.artifactPaths` names, which is
 # regenerable by definition and is where the disk actually goes: 104 GB of the 106 GB under
 # .claude/worktrees on the day #1377 was written, against 9.1 GB of free space on the volume.
 # A near-full APFS volume slows every write the compiler makes, so this is a throughput
 # sweep as much as a disk one. It applies the quiet check and nothing else: a landed branch
 # is not required, because nothing here is the only copy of anything.
 #
-# Usage: sh scripts/worktree-gc.sh [--dry-run]
-#        sh scripts/worktree-gc.sh --artifacts [--dry-run]
+# Usage: sh hooks/worktree-gc.sh [--dry-run]
+#        sh hooks/worktree-gc.sh --artifacts [--dry-run]
 set -u
 
 QUIET_MINUTES=30
@@ -63,10 +63,30 @@ git_common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) 
 repo_root=$(dirname "$git_common")
 here=$(git rev-parse --show-toplevel)
 
+# The build-output paths are the project's, read from hooks.json (`worktreeGc.artifactPaths`,
+# glob patterns relative to each worktree). There is no default: a project that has not named
+# its build output has none this sweep can find, and reporting "0 swept" for that is the shape
+# of a gate that passes because nothing looked.
+#
+# The file is flattened to one line before the match: a formatter is free to break the array
+# across lines, and a line-based read of it then finds nothing and reports a clean zero.
+artifact_paths=$(
+  tr -d '\n' < "$repo_root/hooks.json" 2>/dev/null \
+    | sed -n 's/.*"artifactPaths"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' \
+    | tr -d '"' | tr ',' ' '
+)
+
 # --artifacts: the build-output sweep. It runs before anything that talks to the network,
 # because it needs neither a fetch nor `gh` — what it deletes is reproducible by running
 # the build again, so no signal about a branch could make it safer than it already is.
 if [ "$ARTIFACTS" = 1 ]; then
+  # No paths, no sweep, and say which. "0 swept" from an unconfigured project reads exactly
+  # like a clean one, and a project would keep filling its disk believing the sweep ran.
+  if [ -z "${artifact_paths# }" ]; then
+    echo "worktree-gc: no artifact paths configured — set worktreeGc.artifactPaths in hooks.json"
+    exit 0
+  fi
+
   swept=0
   held=0
   freed_kb=0
@@ -83,17 +103,17 @@ if [ "$ARTIFACTS" = 1 ]; then
     wt=${wt%/}
     name=${wt##*/}
 
-    # The build trees, never the worktree: Xcode's DerivedData for the app target, and one
-    # SPM scratch path per package.
+    # The build trees, never the worktree itself.
     #
     # They are collected as positional parameters rather than a space-joined string. This
     # list is the argument to `rm -rf`, and a string would be word-split on its way there —
     # so one worktree with a space in its path would delete two directories neither of which
     # was named (found in review).
     set --
-    [ -d "$wt/apps/macOS/build" ] && set -- "$wt/apps/macOS/build"
-    for scratch in "$wt"/apps/macOS/Packages/*/.build; do
-      [ -d "$scratch" ] && set -- "$@" "$scratch"
+    for pattern in $artifact_paths; do
+      for candidate in "$wt"/$pattern; do
+        [ -d "$candidate" ] && set -- "$@" "$candidate"
+      done
     done
     [ $# -gt 0 ] || continue
 

@@ -1,6 +1,6 @@
 ---
 name: design-to-code
-description: Build a screen from its approved design in docs/designs/, once per ticket. Use for any UI ticket whose screen has a design there, even when the user says "implement" or "build" without naming it; a screen built without its design loses the measurements the design carries.
+description: Build a screen from its approved design in docs/designs/, once per ticket. Use for any UI ticket whose screen has a design there, even when the user says "implement" or "build" without naming it.
 ---
 
 # Design To Code
@@ -92,7 +92,8 @@ re-judged or rejected with a cited rule.
 
 When this ticket was the last one against the design, set the `.md`'s front matter to
 `status: built` and record the commit. The page's branch has now stopped being an input to
-anything, so delete it — an allowlisted push, per AGENTS.md, **Pushing and pull requests**:
+anything, so delete it. This push removes a branch rather than publishing work, so it is not
+the work-branch push a project may reserve for its release skill:
 
 ```sh
 git push origin --delete design/<screen>
@@ -100,7 +101,7 @@ git push origin --delete design/<screen>
 
 **Write `explorable: gone` only after that delete succeeds.** The sweep finds a branch by the
 `explorable:` key that names it, so a `gone` written ahead of the delete strands the branch where
-`bun run worktrees:gc` can no longer see it — the exact case the sweep is there to catch. If the
+the branch sweep can no longer see it — the exact case the sweep is there to catch. If the
 delete fails, leave the key naming the branch and let the sweep take it when the epic closes.
 
 A shipped screen keeps no page. Re-opening the design re-bases it against the shipped app

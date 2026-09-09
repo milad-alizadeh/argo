@@ -42,9 +42,6 @@
     "packages/argo-skills": {
       "name": "argo-skills",
       "version": "0.1.0",
-      "bin": {
-        "argo-skills": "bin/scaffold.mjs",
-      },
     },
   },
   "trustedDependencies": [

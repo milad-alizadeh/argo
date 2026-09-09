@@ -11,7 +11,6 @@ One place, and it is CI. `.github/workflows/ci.yml` runs four steps on `ubuntu-l
 - `bun run format-and-lint` — biome, `--error-on-warnings`.
 - `bun run quality:types` — `turbo run typecheck`, because biome does not read types (#1733).
 - `bun run quality:duplication` — jscpd, whole-tree, because a linter reads one file at a time.
-- `bun run test:hooks` — every `scripts/*.test.mjs`, discovered from the directory.
 
 Nothing runs at push time. `.husky/pre-commit` still runs lint-staged; `.husky/pre-push` is gone.
 
@@ -57,9 +56,10 @@ resting on a nested ignore file two tools deep.
   deliberately **not** in lint-staged: that hook is staged-files-only, and a type error is a
   property of the whole program.
 
-  `scripts/typecheck-gate.test.mjs` is what stops it going quiet, and its header carries the
-  reason. One trap worth keeping even though its tripwire is gone: `turbo.json` carries no
-  comments. Turbo reads JSONC, but a `//` line in that file used to fail `test:hooks` with
+  Nothing stops it going quiet: the test that did went with the hook suite, so `quality:types`
+  dropping out of any of those three is caught by review or not at all. One trap worth keeping
+  even though its tripwire is gone: `turbo.json` carries no
+  comments. Turbo reads JSONC, but a `//` line in that file used to fail the hook suites with
   `Expected double-quoted property name in JSON`, because `scripts/gate-env.test.mjs` parsed it
   with `JSON.parse` at three call sites. #1758 deleted that suite along with the rest of the Swift
   gate, so nothing reads `turbo.json` from a suite today and a comment would now pass. The file
@@ -77,10 +77,10 @@ resting on a nested ignore file two tools deep.
   found the holes is why they are here. **`tsconfig.web.json` sets `"types": []`.** Without it the
   renderer inherits every package in the root `@types`, `node` among them, and
   `process.env.SOME_TOKEN` type-checks clean in the one process that must never hold a token — no
-  import statement for a specifier rule to see. **`scripts/typecheck-gate.test.mjs` asserts
-  `contextIsolation: true` and `nodeIntegration: false` in `src/main.ts`.** Those two values are
-  what make any Node reach from the renderer inert at runtime, and a one-word edit to either used
-  to pass every gate in the repository. `sandbox` stays `false` and is deliberately not asserted:
+  import statement for a specifier rule to see. **`contextIsolation: true` and `nodeIntegration: false` in
+  `src/main.ts` are asserted by nothing**, since the test that read them went with the hook suite.
+  Those two values are what make any Node reach from the renderer inert at runtime, and a one-word
+  edit to either passes every gate in the repository. `sandbox` stays `false` and is deliberately not asserted:
   the preload needs it, and changing it is a behaviour decision rather than a gate.
 
 Three intents from `setup-quality-gates` are **deferred**, each for a reason rather than an
@@ -90,7 +90,7 @@ oversight:
 |---|---|---|
 | Dead public surface (`knip`) | deferred | A new tool with its own config and a first-run ratchet. The workspace is four source files behind one preload bridge, so the gate would guard almost nothing today and the ratchet would be written against a tree about to be replaced. |
 | Import cycles and real layering (`dependency-cruiser`) | deferred | The biome override is **specifier spelling in one directory**, and that is all it is. It refuses two names and four glob groups, and one hop of indirection still walks through: a renderer file importing `../preload`, which itself imports `electron`, draws no diagnostic and pulls `electron` into the renderer bundle. Nothing reads the import graph, so cycles are unguarded too. The `"types": []` and the runtime assertions above are what actually stand behind the rule; a graph tool is the honest fix and wants its own ticket. |
-| Focused or skipped tests | n/a | `check-harness.mjs` has no focus or skip mechanism to ban — no `only`, no `skip` — and `apps/desktop` has no suite of its own yet. Nothing to gate until one of those changes. |
+| Focused or skipped tests | n/a | `apps/desktop` has no suite of its own yet. Nothing to gate until it has one. |
 
 Two more pieces of #1733 turned out not to belong in a commit at all.
 
@@ -100,11 +100,16 @@ merging it stops `bun install` on any machine not on
 below Electron 44's own floor of 22.12.0. A change to every contributor's setup earns its own
 deliberate merge.
 
-**The skill bundle is a property of a checkout, not of a commit.** `bun run scaffold` installs into
-`.claude/skills`, which this repository does not track, so running it inside a worktree changes
-nothing a pull request can carry. The manifest was verified instead: `bun run scaffold --dry-run`
-resolves 37 skills from 5 sources and exits 0. Run the real install in the checkout you work in,
-never expecting it in a diff.
+**The skill bundle is a property of a checkout, not of a commit.** The install writes
+`.claude/skills` and `.agents/skills`, which this repository does not track, so running it inside a
+worktree changes nothing a pull request can carry. Run it in the checkout you work in, never
+expecting it in a diff.
+
+**Nothing verifies the manifest any more.** `bun run scaffold --dry-run` used to resolve every
+locked source and exit 0; the bespoke installer is gone and `npx skills` offers no dry run, so a
+`skills-lock.json` edit is proved only by installing it and reading what appeared under
+`.claude/skills`. That install is interactive, so no gate can run it. Treat a manifest change as
+unverified until someone has installed from it by hand.
 
 The packaged acceptance test, `apps/desktop/scripts/prove-packaged-pty.mjs`, needs a Mac, a full
 Forge package and several minutes, so no local gate runs it. It now has a home: the
@@ -149,7 +154,7 @@ Three shapes get past the hook entirely, all of them knowingly accepted:
   ungated, and no manifest check can see a command that is only in a README.
 
 Four traps worth holding. The first two are proved by running the gate
-(`scripts/node-version-gate.test.mjs`); the third and fourth are read off the manifests
+(`scripts/node-version-gate.mjs`, which now has no test of its own); the third and fourth are read off the manifests
 (`node-version-pin.test.mjs`, `node-version-source.test.mjs`), because they are properties of the
 wiring rather than of the gate:
 

@@ -1,3 +1,8 @@
+---
+paths:
+  - "**"
+---
+
 # House Rules
 
 What no linter checks and a model does not do unprompted. Every cap, escape-hatch ban and

@@ -4,8 +4,8 @@ import Testing
 
 /// A report has to name the build that wrote it. Every worktree builds its own `Release/Argo.app`
 /// and they all carry the process name, so two reports of an A/B pair are identical in shape and
-/// nothing in either says which produced it — the crossing #1566 exists to stop, and the one
-/// `hang-sample.sh` already closed on the sampler side.
+/// nothing in either says which produced it — the crossing #1566 exists to stop, and the one the
+/// since-deleted `hang-sample.sh` had already closed on the sampler side.
 @Suite("Frame probe — a report names its own build")
 struct FrameProbeSourceTests {
     /// What a reader picks the two facts out of: the keys, nested the way the file nests them,
@@ -82,7 +82,7 @@ struct FrameProbeSourceTests {
 struct FrameProbeExecutablePathTests {
     /// The claim the whole ticket rests on, and the only one worth asserting here: the string the
     /// probe records for a process is the string `ps -o comm=` reports for that same process.
-    /// `hang-sample.sh` prints its target off `comm=` since #1560, so agreeing with `ps` IS
+    /// `hang-sample.sh` printed its target off `comm=` since #1560, so agreeing with `ps` IS
     /// agreeing with the sampler — and a shape check (absolute, resolves on disk) would instead
     /// assert a property of however this suite happened to be launched.
     @Test func `the path the probe records is the one ps reports for the same process`() throws {

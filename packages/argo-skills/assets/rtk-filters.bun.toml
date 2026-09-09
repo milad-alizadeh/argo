@@ -1,0 +1,47 @@
+# Bun/turbo RTK filters. Appended to `.rtk/filters.toml` by `setup-argo-skills` when the
+# project has a `bun.lock`. The format rules live in that file's header.
+
+[filters.bun-run]
+description = "Compact bun run output — strip turbo cache noise and per-test pass lines, keep failures"
+match_command = "^bun run (test|quality|format-and-lint|lint|build)\\b"
+strip_ansi = true
+filter_stderr = true
+strip_lines_matching = [
+  "^(\\S+:\\S+: )?\\s*$",
+  "cache (hit|miss|bypass)",
+  "[Pp]ackages? in scope",
+  "Running \\w+ in \\d+ packages",
+  "^\\s*Duration:\\s+",
+  "Remote caching (enabled|disabled)",
+  "^(\\S+:\\S+: )?Build complete!",
+  "(Test|Suite) [\"“].*[\"”].* passed after",
+  "started\\.$",
+  "^(\\S+:\\S+: )?[􀟈◇] ",
+  "Testing Library Version",
+  "Target Platform:",
+  "^(\\S+:\\S+: )?Building for debugging",
+  "^(\\S+:\\S+: )?\\[\\d+/\\d+\\]",
+  "^(\\S+:\\S+: )?Planning build",
+  "^(\\S+:\\S+: )?(Fetching|Fetched|Computing|Computed|Creating working copy|Working copy of|Resolved source packages) ",
+  "^(\\S+:\\S+: )?\\s*\\d+ \\|",
+  "^(\\S+:\\S+: )?\\s*\\|[\\s|`^~-]*$",
+  "^(\\S+:\\S+: )?\\s*:\\s*$",
+  "^(\\S+:\\S+: )?\\[#\\w+\\]: <https://",
+]
+tail_lines = 500
+on_empty = "(rtk: every line was filtered noise — read the tee log)"
+
+[[tests.bun-run]]
+name = "turbo noise stripped, summaries kept"
+input = """
+• Packages in scope: @my/app
+ cache bypass, force executing abc123
+
+@my/app:test: swift-test: Engine
+􁁛  Test "case" passed after 0.1 seconds.
+􁁛  Test run with 10 tests in 2 suites passed after 0.5 seconds.
+
+ Tasks:    1 successful, 1 total
+Duration: 6s
+"""
+expected = "@my/app:test: swift-test: Engine\n􁁛  Test run with 10 tests in 2 suites passed after 0.5 seconds.\n Tasks:    1 successful, 1 total"
