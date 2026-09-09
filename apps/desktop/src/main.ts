@@ -1,6 +1,9 @@
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { PROJECT_PROOF_STORE_ENV } from '../scripts/project-proof-protocol.mjs'
+import { attachProjectBridge } from './projects/bridge'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -15,12 +18,14 @@ declare const MAIN_WINDOW_VITE_NAME: string
 // the `lsof` call are split into a chunk the ordinary launch never touches. A static import would
 // put all of it on the path of every user who opens the app.
 const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
+const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
+if (projectProofStore) app.setPath('userData', projectProofStore)
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: !ACCEPTANCE_ENABLED,
+    show: !ACCEPTANCE_ENABLED && !projectProofStore,
     webPreferences: {
       // Forge's Vite plugin emits main and preload side by side in .vite/build.
       preload: path.join(__dirname, 'preload.js'),
@@ -30,10 +35,14 @@ function createWindow(): BrowserWindow {
     },
   })
 
+  const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+  const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
+  attachProjectBridge(window, { userData: app.getPath('userData'), rendererURL })
+
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
   } else {
-    void window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`))
+    void window.loadFile(rendererPath)
   }
 
   return window
