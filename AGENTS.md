@@ -130,3 +130,70 @@ repo's noisy entrypoints. Two silent traps: rtk reads that file from the working
 so a new run location needs a `.rtk` symlink back to the root, and the filters are inert until
 `rtk trust --yes`, re-run per checkout and after any edit. A review's input diff must be
 complete: `RTK_DISABLED=1 git diff`. Why: `docs/agents/rtk-filters.md`.
+
+## Writing style
+
+Before you create an issue, edit an issue body, or write a comment, run the `simple-english`
+skill on the title and body text. Do this every time, not only when the text reads badly —
+apply it before the first draft goes out, not as a later cleanup pass.
+
+## Labels
+
+Every issue is labelled in the `gh issue create` call. There is no unlabelled issue, and a bug
+report is no exception.
+
+- **One triage label, always**, from `docs/agents/triage-labels.md`: `ready-for-agent` when the
+  issue is specified well enough for an AFK agent to build it, `ready-for-human` when a person
+  must do the work, `needs-info` when the report is short of a fact only the reporter holds, and
+  `needs-triage` when you cannot tell. The fifth, `wontfix`, is a closing label, never a
+  create-time one.
+- **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
+  for behaviour that is new, `documentation` for docs, designs and ADRs.
+
+You know which triage label fits at the moment you write the body, so the create call is where it
+goes. An issue that lands unlabelled falls into `/triage`'s never-triaged bucket, and a person
+must read it again to learn what you already knew.
+
+## Screenshots
+
+A screenshot is evidence. It belongs in the tracker, not only in the session.
+
+- When you create an issue from a bug report, put the user's screenshot in the body under a
+  `## Screenshot` heading.
+- A PR that changes how a screen looks carries one screenshot per changed state. If the change
+  is a fix, carry the before image and the after image.
+
+`gh issue` and `gh pr` cannot attach a file. Publish the PNGs to a ref instead. Run this in the
+repo, with `shots` set to the directory that holds them:
+
+```sh
+shots=<dir>
+ref=refs/evidence/issue-<N>          # a PR instead: refs/pr-screenshots/<head branch, / as ->
+tree=$(for f in "$shots"/*.png; do
+  printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"
+done | git mktree)
+commit=$(git commit-tree "$tree" -m "evidence: $ref")
+git push --force origin "$commit:$ref"
+```
+
+No work branch and no pull request is involved in that push, so the `PreToolUse` guard that
+reserves both for `/ship` does not apply to it.
+
+Give every PNG a URL-safe name. An empty `$shots` writes the empty tree and pushes nothing you
+can link to, so make sure that the glob matched.
+
+Embed each one by a raw URL pinned to that commit:
+
+```markdown
+![empty state](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/empty-state.png)
+```
+
+The commit sits on no branch, so it never merges. The ref is the only thing that keeps the
+image reachable: while the ref lives, the URL resolves; delete the ref and the image goes 404.
+A PR screenshot is review-time evidence and its ref can go once the PR closes. An issue
+screenshot must outlive the issue, so leave `refs/evidence/*` alone.
+
+The raw URL renders on a public repo only. On a private repo, ask the user to drag the file
+into the body on github.com.
+
+You cannot read a pasted image as a file. Ask the user to save it and give you the path.
