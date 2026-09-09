@@ -172,7 +172,9 @@ the only remedy, and the filed issue is what makes somebody cut one.
 
 ### What a human has to set up first
 
-None of this is code, and the workflow fails loudly without it.
+None of this is code, and the workflow fails loudly without it. What distribution does until it
+exists is [ADR-0037](../../docs/adr/0037-without-a-developer-id-there-is-no-release.md), which
+proposes building from source and publishing nothing, and is not accepted yet.
 
 1. **A Developer ID Application certificate**, from an Apple Developer Program account
    (99 USD/year). Create it in the developer portal, then export it from Keychain Access as a

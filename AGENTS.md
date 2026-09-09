@@ -61,7 +61,8 @@ published release cannot be unpublished — GitHub freezes `draft` and `tag_name
 only removal and it burns the tag name forever — so `release-backstop.yml` runs on
 `release: [published]`, files an issue with the evidence and then deletes the release. The
 certificate, the App Store Connect key, the `release` Environment and the immutable-releases
-setting are the human's, and the checklist is in `apps/desktop/README.md`.
+setting are the human's, and the checklist is in `apps/desktop/README.md`. None of them exists
+yet; what distribution does in the meantime is ADR-0037, still proposed.
 
 **`apps/macOS` is deprecated and verified by nothing.** No build, test, screenshot or render. A
 Swift change says in the PR body that it was checked by hand, or not at all.
