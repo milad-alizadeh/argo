@@ -32,8 +32,7 @@ const literalRe = (literal) => literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 export function namingRules(config = {}) {
   const dir = config.dir || DEFAULTS.dir
   const prefix = config.branchPrefix || ''
-  const docs = config.docs || ''
-  const cite = docs ? ` Full rules: ${docs}.` : ''
+  const cite = config.docs ? ` Full rules: ${config.docs}.` : ''
   const named = Boolean(prefix)
   const tree = named ? 'ticket-<N>-<slug>' : '<name>'
 
@@ -43,7 +42,11 @@ export function namingRules(config = {}) {
     tree,
     // Namespaces that publish rather than carry work: a design page, an evidence branch. They
     // join to no ticket by construction, so the ticket-join rule below would refuse every one.
-    publish: config.publishBranches || DEFAULTS.publishBranches,
+    // The shape still applies inside the namespace, or `design/anything` is the way to dodge
+    // the whole rule — and `design/2024-refresh` is then a page the reaper reads as issue #2024.
+    publish: (config.publishBranches || DEFAULTS.publishBranches).map(
+      (p) => new RegExp(String.raw`^${literalRe(p)}(?:#\d+-${SLUG}|${NAMELESS})$`),
+    ),
     branchShape: named ? `${prefix}#<N>-<slug>` : '<branch>',
     dirRe: new RegExp(String.raw`^ticket-(?:\d+-${SLUG}|${NAMELESS})$`),
     branchRe: new RegExp(String.raw`^${literalRe(prefix)}(?:#\d+-${SLUG}|${NAMELESS})$`),
@@ -97,7 +100,7 @@ function checkDirectory(dir) {
   return ALLOW
 }
 
-const isPublish = (branch) => rules.publish.some((p) => branch.startsWith(p))
+const isPublish = (branch) => rules.publish.some((shape) => shape.test(branch))
 
 function checkBranch(branch) {
   if (!rules.named || unexpanded(branch) || rules.branchRe.test(branch)) return ALLOW

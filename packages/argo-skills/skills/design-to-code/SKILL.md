@@ -16,8 +16,12 @@ root of `design/#<N>-<screen>`, read without a checkout:
 
 ```sh
 git fetch origin 'design/#<N>-<screen>'
-git show 'design/#<N>-<screen>:design.html' > "$TMPDIR/<screen>.html"
+git show FETCH_HEAD:design.html > "$TMPDIR/<screen>.html"
 ```
+
+`FETCH_HEAD`, not the branch name: a fetch of one branch writes no local head, so
+`design/#<N>-<screen>` resolves to nothing and the failure reads exactly like a reaped branch.
+The page is self-contained, so that one file opens over `file://` as the design.
 
 A branch that is gone is the process working, not an input that is missing: the screen shipped
 and the sweep reaped it. The ticket is then the whole spec, which is why the measurements were
@@ -92,10 +96,15 @@ re-judged or rejected with a cited rule.
 
 ## 6. Close the design ticket
 
-When this build ticket was the last one against the design, **close the design ticket**, naming
-the commit that finished the screen. That one act retires both halves: the ticket's state now
-reads "shipped", and the sweep reaps `design/#<N>-<screen>` on its next run because the number in
-the branch name points at a closed issue.
+The build tickets are sub-issues of the design ticket, so "the last one" is a question for the
+tracker: no other sub-issue of `#<N>` is still open. When this one is the last, **close the
+design ticket**, naming the commit that finished the screen. That one act retires both halves:
+the ticket's state now reads "shipped", and the sweep reaps `design/#<N>-<screen>` on its next
+run because the number in the branch name points at a closed issue.
+
+**Close it after the PR merges, not before.** The sweep runs at the end of every session, and a
+design ticket closed while the PR is still in review takes the page with it, exactly when a
+review round asking for a pixel change would want it.
 
 Closing is the whole step: the branch carries its own expiry in its name, so nothing else has to
 be updated or remembered.

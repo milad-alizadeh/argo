@@ -68,6 +68,9 @@ test('a publish namespace joins to no ticket, so the naming rule lets it through
       .block,
     false,
   )
+  // The namespace exempts a branch from the ticket join, not from the shape. `design/2024-refresh`
+  // is the case that matters: the reaper would read it as issue #2024 and delete the page.
+  assert.equal(decideName(bash("git worktree add -b 'design/2024-refresh' x")).block, true)
   // A branch-create is only ours from inside a tree, so this half needs a cwd to be judged at all.
   const inTree = { ...bash("git switch -c 'design/#1730-shell'"), cwd: '.claude/worktrees/t-1' }
   assert.equal(decideName(inTree).block, false)

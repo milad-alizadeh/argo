@@ -136,7 +136,7 @@ under `docs/adr/`.
 | `cockpit-work-room.md` + `work-room/` | **Built Tickets-room design** (#609, under #607; re-based on the shipped room by #1304) | The room #376's shell had a tab for and nothing behind. The sidebar is NOT the backlog: it holds five views at 280 plus the Next-up hero, and the backlog moves into the deck as a 520pt disclosure tree with priority over its roots, the ticket beside it. **Each pane draws its own header** on one band in the window's title strip (#1242) — there is no window row — the query with its rails and its stated empty (#873), the `Closed` view flat and by last touched (#1075), one Liquid Glass material on every vessel, `Start` as one pill whose command segment is the skill picker (#899, #1242), the four room-level vacancies, and the Route re-skinned onto graphite/Ion with #334's geometry untouched. Fourteen state renders in `work-room/` are the spec, **each corrected against its own specimen** and named beside it in the doc; the explorable is gone (#1526); the doc carries the measurements, the frozen names and the one proposed role |
 | `cockpit-work-room.inventory.md` | Tickets-room build inventory | What each ticket's build actually extracted from that design, one row per component — #812 (the views sidebar, the flat backlog and the ticket), #815 (the fact strip, the Delivery chips and the one link list) and #817 (the Next-up hero), plus what stayed inline, the `sessionTitle` role it promoted, the three places the design's own names and counts do not match the contract, the six honesty calls #815 had to make where the explorable knew more than Swift can, and the three claims the hero refuses to make |
 | `cockpit-feed-ask.inventory.md` | Ask build inventory | What #712's build actually extracted from that design — the four frozen names, the held-answer value the settle rule forced out, and the keycap a second caller promoted — plus what stayed inline |
-| `cockpit-atlas.md` | **Approved Atlas design** (#650, under map #643) | The repository as a place: every file one volume, its ground one measure, its height a second and its light a third. The renderer is Metal — instanced boxes in an `MTKView`, picked with an id buffer. Two views on one camera, City and Treemap, and five promoted token families. **The one screen still being built**, so it is the one design whose explorable is live: `design/atlas`, which also carries the four variants it was chosen from and the data they read |
+| `cockpit-atlas.md` | **Approved Atlas design** (#650, under map #643) | The repository as a place: every file one volume, its ground one measure, its height a second and its light a third. The renderer is Metal — instanced boxes in an `MTKView`, picked with an id buffer. Two views on one camera, City and Treemap, and five promoted token families. Its explorable page was on `design/atlas`, with the four variants it was chosen from and the data they read. That branch is gone from origin; history keeps it |
 | `selection-accent.md` | **Where Ion Blue is spent** | The five placements and their two weights, the opaque selection ground (#922), the one weight every selected row wears (#1165) and why the asset is the only route to the loud half |
 | `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
@@ -160,12 +160,14 @@ to re-explore from, never a thing to build from.
 
 **Only the notes are here.** #1526 took every prototype page off `main`, with the data, the
 servers and the vendored libraries they read: what stays is one `.md` per study, which is the
-record of what the study answered. The Atlas set is the exception, because Atlas is still being
-built — its pages are on `design/atlas`.
+record of what the study answered. The Atlas set was the exception, on `design/atlas`; that branch
+is gone from origin too.
 
 A page listed as gone is gone from everywhere this repo controls; history keeps it. A page
-listed on an `argo/…` branch is on a **worktree branch, not a design branch**: nothing sweeps
-those, and equally nothing promises they survive — only `design/…` is keyed to an epic.
+listed on an `argo/…` branch is on a **worktree branch**: nothing sweeps those, and equally
+nothing promises they survive. The live process keys a `design/…` branch to a ticket rather than
+an epic (AGENTS.md, *Design work*), and no `design/…` branch from this archive is still on
+origin.
 
 | Note | Question it answered | Its page |
 |---|---|---|
@@ -177,7 +179,7 @@ those, and equally nothing promises they survive — only `design/…` is keyed 
 | `ticket-verbs-prototype.md` | Does every pane carry its own header? (#1242) — settled by `cockpit-work-room.md` | gone |
 | `start-picker-hero-prototype.md` | Does the Next-up hero get the skill picker? (#1244) — settled by `cockpit-work-room.md` | gone |
 | `turn-lane-prototype.md` | How do you get around a 400-Turn session? — thirteen variants | gone |
-| `atlas-holo.md`, `atlas-class.md`, `atlas-shell.md` | What does the Atlas look like, and how is it read? (#650) — settled by `cockpit-atlas.md` | `design/atlas` |
+| `atlas-holo.md`, `atlas-class.md`, `atlas-shell.md` | What does the Atlas look like, and how is it read? (#650) — settled by `cockpit-atlas.md` | gone (was `design/atlas`) |
 
 `atlas-snap-zoom.md` and `atlas-labels-prior-art.md` are reading, not studies: they have no page
 of their own and answer to the Atlas notes above.

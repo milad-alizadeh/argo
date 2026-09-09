@@ -21,8 +21,12 @@ Resolution order, first hit wins:
 
    ```sh
    git fetch origin 'design/#<N>-<screen>'
-   git show 'design/#<N>-<screen>:design.html' > "$TMPDIR/<screen>.html"
+   git show FETCH_HEAD:design.html > "$TMPDIR/<screen>.html"
    ```
+
+   `FETCH_HEAD`, not the branch name: fetching one branch writes no local head, so the branch
+   name resolves to nothing and the failure reads exactly like a reaped branch. The page is
+   self-contained, so that one file is the whole design.
 
    A branch that is gone means the screen shipped and its page was reaped. Judge against the
    state renders on the design ticket, which are the spec, and move on.
@@ -64,7 +68,7 @@ this skill runs before there is a PR: the call is the caller's, taken when they 
 
 Pass or fail, the final screenshots belong in the PR body so the human reviews pixels — and
 this skill runs before any PR exists. Publish them under a throwaway ref so they never merge,
-following `PR-EVIDENCE.md` in the `ship` skill, and hand the caller the pinned URLs with the
+following `PR-EVIDENCE.md` beside this file, and hand the caller the pinned URLs with the
 findings. `/ship` is what writes them into the body.
 
 Done when every final PNG has a URL pinned to that commit, and the caller has the list.

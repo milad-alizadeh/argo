@@ -1,5 +1,33 @@
 // The stdin/stdout half of a hook, shared by the guards in this directory and by the task-list nudge.
 // Each hook keeps its own pure decide(); this is the plumbing around it.
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+
+/** The project's own convention, read from the descriptor that travels with the hooks. Shared,
+ * because two guards now answer to the same `worktreeGuard` block, and a second copy of this
+ * reader is a second place for the key names to drift. Missing or malformed reads as `{}`, the
+ * unconfigured default every consumer starts on. */
+export function readWorktreeGuard(root) {
+  const descriptor = path.join(root, 'hooks.json')
+  if (!existsSync(descriptor)) return {}
+  try {
+    return JSON.parse(readFileSync(descriptor, 'utf8')).worktreeGuard ?? {}
+  } catch {
+    return {}
+  }
+}
+
+/** Where that descriptor lives. CLAUDE_PROJECT_DIR when the harness sets one, else the repo
+ * toplevel, so the same script registers under Codex without a rewrite. */
+export function resolveProjectDir(cwd) {
+  if (process.env.CLAUDE_PROJECT_DIR) return process.env.CLAUDE_PROJECT_DIR
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' }).trim()
+  } catch {
+    return cwd
+  }
+}
 
 /** The verdict a guard returns when it has nothing to say. Every guard here needs it, and
  * a literal in three call sites is one paste past the rule. */
@@ -9,6 +37,14 @@ export const ALLOW = { block: false }
  * The marker is Claude's own CLAUDECODE, or the ARGO_HOOK_AGENT the projection injects for
  * markerless harnesses (Codex). */
 export const underAgent = () => Boolean(process.env.CLAUDECODE || process.env.ARGO_HOOK_AGENT)
+
+/** The tool call a payload names, in one shape. Claude sends tool_name/tool_input; Codex sends
+ * toolName/toolInput. Shared because every guard here normalises the same two spellings, and a
+ * per-hook copy is a per-hook chance to normalise only one of them. */
+export const toolCall = (payload) => ({
+  toolName: payload.tool_name ?? payload.toolName,
+  toolInput: payload.tool_input ?? payload.toolInput ?? {},
+})
 
 /** The hook payload the harness pipes in, as text. Exported: every hook here reads the same one. */
 export async function readStdin() {

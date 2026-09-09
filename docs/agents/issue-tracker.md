@@ -16,6 +16,10 @@ report is no exception.
   create-time one.
 - **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
   for behaviour that is new, `documentation` for docs, designs and ADRs.
+- **`stale` is the one label added after create**, and only on a design ticket: it says the app
+  changed that screen without going through `prototype-to-design`. Whoever re-bases the design
+  removes it in the same change, so a `stale` label that outlives its re-base blocks every build
+  ticket against that design (`design-to-code`, step 1).
 
 You know which triage label fits at the moment you write the body, so the create call is where it
 goes. An issue that lands unlabelled falls into `/triage`'s never-triaged bucket, and a person

@@ -36,11 +36,16 @@
 // design: the project root comes from CLAUDE_PROJECT_DIR when present, else the git toplevel, so
 // the projection registers this same script under Codex without a rewrite.
 // The convention and what parses it: docs/agents/worktrees.md.
-import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ALLOW, runGuard, underAgent } from './hook-io.mjs'
+import {
+  ALLOW,
+  readWorktreeGuard,
+  resolveProjectDir,
+  runGuard,
+  toolCall,
+  underAgent,
+} from './hook-io.mjs'
 import { unexpanded } from './shell-commands.mjs'
 import { CURRENT_DIRECTORY, writeTargets } from './shell-writes.mjs'
 import { configureNaming, decideName } from './worktree-names.mjs'
@@ -158,33 +163,9 @@ export function decide({ toolName, toolInput = {}, cwd, projectDir, isAgent, roo
   })
 }
 
-// Read the guarded roots from the descriptor that travels with the hook, so a consumer
-// re-scopes the guard where they configure everything else about it.
-function readWorktreeGuard(root) {
-  const descriptor = path.join(root, 'hooks.json')
-  if (!existsSync(descriptor)) return {}
-  try {
-    return JSON.parse(readFileSync(descriptor, 'utf8')).worktreeGuard ?? {}
-  } catch {
-    return {}
-  }
-}
-
 function resolveRoots(config) {
   const roots = config?.roots
   return Array.isArray(roots) && roots.length ? roots : GUARDED_ROOTS
-}
-
-function resolveProjectDir(cwd) {
-  if (process.env.CLAUDE_PROJECT_DIR) return process.env.CLAUDE_PROJECT_DIR
-  try {
-    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
-      cwd,
-      encoding: 'utf8',
-    }).trim()
-  } catch {
-    return cwd
-  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -196,9 +177,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const config = readWorktreeGuard(projectDir)
     configureNaming(config)
     return decide({
-      // Claude sends tool_name/tool_input; Codex sends toolName/toolInput (camelCase).
-      toolName: payload.tool_name ?? payload.toolName,
-      toolInput: payload.tool_input ?? payload.toolInput ?? {},
+      ...toolCall(payload),
       cwd,
       projectDir,
       isAgent: underAgent(),

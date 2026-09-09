@@ -46,8 +46,9 @@ Three files under `docs/design/`, which every design page on a branch is built f
 - `design-template.html` from `templates/design-template.html`.
 - `kit.js`, seeded with one render function, since the template loads it.
 
-A design page carries its own copy of the kit when it is pushed, so a branch stays readable
-without a checkout of `main`.
+**A design page inlines both when it is pushed**, so `design.html` is one self-contained file.
+Its two readers pull that file out of the branch and open it over `file://`, where a link to a
+sibling is a silent 404 and the page renders untokenised with nothing saying so.
 
 Done when the three files exist and the template resolves every `var(--…)` it names.
 
@@ -116,8 +117,9 @@ the contract appears in the specimen (grep both, diff empty).
 Snapped jitter (≤1px) leaves existing designs untouched. When the bless deliberately moved
 values, every open design ticket now describes measurements the contract no longer holds:
 label each one `stale` and hand the mapping tables to the user. `prototype-to-design` re-bases
-a stale design when someone next works on it, which is where the translation belongs — doing it
-here re-renders screens nobody is building.
+a stale design when someone next works on it and removes the label there, which is where the
+translation belongs — doing it here re-renders screens nobody is building. Until it is removed,
+that label blocks every build ticket against the design.
 
 Closed design tickets are shipped screens and take no label: the app is the truth for those.
 

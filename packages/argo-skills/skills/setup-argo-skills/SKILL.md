@@ -6,6 +6,13 @@ disable-model-invocation: true
 
 # Setup Argo Skills
 
+**This skill writes the project's agent docs, so it answers to them.** Every document it drafts
+or edits — an `AGENTS.md` section, a `docs/` page, a template resolved into place — goes through
+the `writing-for-agents` skill first, and every line it puts in front of the user goes through
+`simple-english`. Neither ships in this bundle: they come from `mattpocock/skills` and
+`AminBlg/SimpleEnglish`. Check for each before Phase 2, offer to add the one that is missing, and
+say in the Phase 4 report which pass you could not run.
+
 ## Phase 1: install the skill bundle
 
 In this order, using the stock `skills` CLI and ordinary shell. Steps 5 and 6 read files out of
@@ -200,14 +207,15 @@ Done when the user has answered the one question.
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
 
-Four sections are not skills. Each is a file in `templates/`, appended to the project doc that
+Five sections are not skills. Each is a file in `templates/`, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
 any section of the same heading in place.
 
 | template | install when | how |
 |---|---|---|
 | `templates/task-tracking.md` | always | verbatim, naming only the harnesses this project uses |
-| `templates/writing-style.md` | always | verbatim; it binds every user-facing surface, not only a tracker |
+| `templates/subagent-models.md` | the project's harness lets a dispatch choose a model | verbatim; where it cannot, the section is a no-op and is skipped |
+| `templates/writing-style.md` | always | verbatim, minus any paragraph naming a skill the project has not installed: a rule pointing at a missing skill teaches a reader to ignore the section |
 | `templates/labels.md` | `docs/agents/issue-tracker.md` exists | **resolved, never verbatim** (below) |
 | `templates/screenshots.md` | `docs/agents/issue-tracker.md` exists | verbatim on GitHub; elsewhere append the two bullets and stop, since the rest is the GitHub publish method |
 

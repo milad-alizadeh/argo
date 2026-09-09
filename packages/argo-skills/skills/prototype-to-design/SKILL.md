@@ -70,13 +70,18 @@ screen, carrying:
 - **what the prototype exposed that a render will not show**: a fact the data revealed, a case
   that overflowed.
 
-Its number is `<N>` for the rest of this skill.
+Its number is `<N>` for the rest of this skill, and **every build ticket for this screen is
+opened as a sub-issue of it**. That makes the design ticket the index of its own build set, and
+it is how `design-to-code` step 6 answers "was this the last one?" — by asking the tracker rather
+than by anyone remembering.
 
 **The ticket's own state is the design's state**, so nothing has to be written down twice: open
 means agreed and not yet fully built, closed means the screen shipped and the branch is free to
 go. The one state the tracker cannot express is **stale** — the app changed this screen without
 coming through here — and that is a `stale` label on the ticket. A stale design is re-based
 before it is edited: screenshot the shipped screen, correct the design to match, then explore.
+**Remove the label in the same change that lands the re-base.** Nothing else removes it, and
+every build ticket against this design waits at `design-to-code` step 1 until it is gone.
 
 Done when the ticket exists and a reader who cannot open the page could still build from it.
 
@@ -88,11 +93,18 @@ from the design template and token mirror the project's design stack names
 
 - every value via `var(--token)` or a role class;
 - every meaningful region carries `data-component="PascalCaseName"`;
-- repeated shapes call a named render function in `kit.js`.
+- repeated shapes call a named render function from the project's kit.
+
+**`design.html` is self-contained**: inline the token mirror and the kit into it rather than
+linking them as siblings. Both readers of this branch pull that one file out and open it over
+`file://`, where a `<link>` or `<script src>` to a sibling is a silent 404 and the page renders
+untokenised — which `pixel-review` then judges as if it were the design.
 
 Push that branch holding `design.html` alone. A real branch, not a ref outside the branch
 namespace: a branch shows in the code host's UI, it clones, and `git switch` reaches it, where a
-bare ref wants a hand-written fetch refspec before anyone can read the design.
+bare ref wants a hand-written fetch refspec before anyone can read the design. The push is exempt
+from the guard that reserves pushing to `/ship`, because a design branch joins to no ticket and
+never merges.
 
 **The number in the branch name is what reaps it.** The sweep reads `#<N>` off the name and drops
 the branch once that ticket closes, so the name carries its own expiry and no file anywhere has

@@ -31,10 +31,18 @@
 // habit needs to be. AGENTS.md carries the rule itself, because a hook denies but cannot teach.
 //
 // Gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT for markerless harnesses like Codex)
-// so it never touches the human's own workflow. decide() is pure string logic (no fs, no git).
+// so it never touches the human's own workflow. decide() is pure string logic; the publish
+// namespaces it reads are set once by the entrypoint below, from the descriptor.
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ALLOW, runGuard, underAgent } from './hook-io.mjs'
+import {
+  ALLOW,
+  readWorktreeGuard,
+  resolveProjectDir,
+  runGuard,
+  toolCall,
+  underAgent,
+} from './hook-io.mjs'
 import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mjs'
 
 // The opt-out. An environment assignment rather than a flag, because it survives being placed in
@@ -66,6 +74,23 @@ function pushesNonBranch(refspec) {
 
 const DELETE_FLAGS = ['--delete', '-d']
 
+// Namespaces that publish rather than carry work, from `worktreeGuard.publishBranches` in the
+// same descriptor the naming guard reads. A design page's branch is the case: it joins to no
+// ticket, it never merges, and `/ship` has no step that pushes it, so a guard reserving the push
+// to `/ship` would leave the process with no way to publish at all. Unconfigured, this is empty
+// and every push is judged as work, which is the right default.
+let publishPrefixes = []
+export function configurePublish(config = {}) {
+  publishPrefixes = config.publishBranches || []
+  return publishPrefixes
+}
+
+/** True when a refspec's destination lands in a publish namespace. */
+function pushesPublishBranch(refspec) {
+  const destination = refspec.slice(refspec.lastIndexOf(':') + 1).replace(/^refs\/heads\//, '')
+  return publishPrefixes.some((prefix) => destination.startsWith(prefix))
+}
+
 /** @returns {{ block: boolean, reason?: string }} */
 function checkPush(args) {
   if (args.some((token) => DELETE_FLAGS.includes(token))) return ALLOW
@@ -73,8 +98,10 @@ function checkPush(args) {
   // operands[0] is the remote; everything after it is a refspec.
   const refspecs = operands.slice(1)
   if (refspecs.some(unexpanded)) return ALLOW
-  // Every refspec names something that is not a branch, so nothing here publishes work.
-  if (refspecs.length > 0 && refspecs.every(pushesNonBranch)) return ALLOW
+  // Every refspec names something that is not work: a ref outside `refs/heads/`, or a branch in
+  // a publish namespace.
+  const notWork = (refspec) => pushesNonBranch(refspec) || pushesPublishBranch(refspec)
+  if (refspecs.length > 0 && refspecs.every(notWork)) return ALLOW
   return refuse("This pushes a work branch, and pushing is `/ship`'s step.")
 }
 
@@ -111,12 +138,8 @@ export function decide({ toolName, toolInput = {}, isAgent }) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await runGuard((payload) =>
-    decide({
-      // Claude sends tool_name/tool_input; Codex sends toolName/toolInput (camelCase).
-      toolName: payload.tool_name ?? payload.toolName,
-      toolInput: payload.tool_input ?? payload.toolInput ?? {},
-      isAgent: underAgent(),
-    }),
-  )
+  await runGuard((payload) => {
+    configurePublish(readWorktreeGuard(resolveProjectDir(payload.cwd || process.cwd())))
+    return decide({ ...toolCall(payload), isAgent: underAgent() })
+  })
 }

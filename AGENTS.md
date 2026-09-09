@@ -98,14 +98,26 @@ Only read-only work may stay in the main checkout, and only while it stays read-
 through `Bash` counts as a change; the guard reads those too. Naming, resuming, recovery and the
 sub-agent rule: `docs/agents/worktrees.md`.
 
+## Subagents
+
+**A subagent's model is a decision per dispatch**, never inherited from this session, and a
+fan-out pays it once per agent. **Gathering** — search the tree, read files, report what they
+say — is recall, and takes the cheapest model that can hold the task. **Judging** — review a
+diff, weigh two designs, trace a bug through code that lies about itself — is inference, and
+takes the strongest available, because a cheap model here returns a confident, shallower answer
+and nothing in the output says so. A job that is both splits in two. Name the model and the
+reason when you report the dispatch.
+
 ## Cross-CLI guardrail hooks
 
 `hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hooks, projected per-harness.
 **Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json`
 and `.codex/hooks.json`; never hand-edit those blocks. The hooks carry no convention of their own:
-this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`, `docs`)
-and `worktreeGc.artifactPaths`. **Unset `branchPrefix` and the guard stops judging branch names
-at all**, so an edit that empties it silently retires the naming rule.
+this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`,
+`docs`, `publishBranches`) and `worktreeGc.artifactPaths`. **Unset `branchPrefix` and the guard
+stops judging branch names at all**, so an edit that empties it silently retires the naming
+rule. `publishBranches` is the other side of it: a namespace listed there joins to no ticket, so
+the naming guard and the push guard both let it through.
 
 ## Skill bundle
 
@@ -125,6 +137,10 @@ there is no third copy to drift from the other two, and a ticket whose branch is
 the whole spec.
 
 A UI ticket whose screen has a design ticket is built with `design-to-code`.
+
+**None of it is installed here yet**: no `docs/design-stack.md`, no `docs/design/` kit, and no
+render method (see *Visual verification*). The first design on `apps/desktop` runs
+`/setup-design-infra` before `/prototype`.
 
 **`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
 goes there.

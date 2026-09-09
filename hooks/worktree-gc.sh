@@ -180,6 +180,17 @@ list=$(mktemp) || exit 1
 trap 'rm -f "$list"' EXIT
 git -C "$repo_root" worktree list --porcelain > "$list"
 
+# The ticket a design branch expires on, or empty when the name carries none. Both sweeps below
+# read the same key off the same shape, and a second copy of this expression is a second place
+# for the two halves of one branch to disagree about whether it is reapable.
+#
+# The `#` is required, not optional: it is what makes the number a ticket. Without it
+# `design/2024-refresh` reads as issue #2024 and the sweep force-deletes the only copy of a page
+# against an issue that has nothing to do with it.
+design_ticket_of() {
+  printf '%s\n' "$1" | sed -n 's|^design/#\([0-9][0-9]*\)-.*|\1|p'
+}
+
 reaped=0
 kept=0
 
@@ -226,6 +237,14 @@ while IFS= read -r line; do
   if [ "$landed" = 0 ] && git -C "$repo_root" merge-base --is-ancestor \
     "$branch" "origin/$default_branch" 2>/dev/null; then
     landed=1
+  fi
+  # A design branch never merges: nothing on it lands on the default branch, so both tests above
+  # can only ever answer "no" and the local tree would be kept at every session end, forever. Its
+  # expiry is the ticket in its name, the same key the remote sweep reads.
+  design_ticket=$(design_ticket_of "$branch")
+  if [ "$landed" = 0 ] && [ -n "$design_ticket" ] && [ "$has_gh" = 1 ]; then
+    state=$(cd "$repo_root" && gh issue view "$design_ticket" --json state --jq .state 2>/dev/null) || state=""
+    [ "$state" = "CLOSED" ] && landed=1
   fi
   if [ "$landed" = 0 ]; then
     echo "  keep $name — $branch not merged into $default_branch"
@@ -320,7 +339,7 @@ if [ "$has_gh" = 1 ]; then
   set -f
   for branch in $design_heads; do
       [ -n "$branch" ] || continue
-      ticket=$(printf '%s\n' "$branch" | sed -n 's|^design/#\{0,1\}\([0-9][0-9]*\)-.*|\1|p')
+      ticket=$(design_ticket_of "$branch")
       if [ -z "$ticket" ]; then
         echo "  keep $branch — names no ticket"
         continue
