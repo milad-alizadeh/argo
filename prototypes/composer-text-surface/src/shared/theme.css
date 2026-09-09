@@ -1,0 +1,459 @@
+/* PROTOTYPE. Graphite, forced dark — the one theme Argo ships. Numbers from
+   ArgoComposerVessel.swift and GraphitePalette.swift so the density is the real one. */
+
+:root {
+  color-scheme: dark;
+
+  --ground-sunken: #191a1d;
+  --ground-base: #1e2024;
+  --ground-raised: #252729;
+  --ground-overlay: #2e3136;
+  --ground-hover: rgba(255, 255, 255, 0.045);
+  --ground-selected: rgba(255, 255, 255, 0.058);
+  --glass-tint: rgba(255, 255, 255, 0.06);
+
+  --text-primary: #f2f4f6;
+  --text-secondary: #a8aeb5;
+  --text-metadata: #929aa1;
+  --text-disabled: #4e545a;
+  --text-on-accent: #05070a;
+
+  --edge-hairline: rgba(255, 255, 255, 0.08);
+  --edge-subtle: rgba(255, 255, 255, 0.13);
+  --edge-strong: rgba(255, 255, 255, 0.22);
+  --edge-glass-rim: rgba(255, 255, 255, 0.3);
+
+  --accent: #3e9bff;
+  --accent-bright: #6fb6ff;
+  --attention: #e8b24a;
+  --failure: #f2555c;
+  --running: #46d3a8;
+
+  /* ArgoComposerVessel: body 13 at 1.5, six lines, then the field scrolls inside itself. */
+  --body-size: 13px;
+  --field-line-height: 19.5px;
+  --field-ceiling: 117px;
+  /* commandRowHeight: the machine face's line box plus snug either side. */
+  --row-height: 27px;
+  --section-height: 26px;
+  /* commandListCeiling: ten rows and one header. */
+  --list-ceiling: 296px;
+
+  --radius-popover: 10px;
+  --radius-vessel: 12px;
+
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --font-machine: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground-sunken);
+  color: var(--text-primary);
+  font: var(--body-size) / 1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- the deck the composer sits at the foot of ---- */
+
+.deck {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  height: 100vh;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--ground-base);
+}
+
+.feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 24px 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.feed-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+.feed-row .mark {
+  color: var(--text-metadata);
+  font: 11px / 1.6 var(--font-machine);
+  text-align: right;
+}
+
+.feed-row.sent .body {
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.feed-row .body code {
+  font-family: var(--font-machine);
+  color: var(--accent-bright);
+}
+
+/* ---- the vessel ---- */
+
+.vessel-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 24px 24px;
+  pointer-events: none;
+}
+
+.vessel {
+  position: relative;
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--ground-raised) 88%, transparent);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--edge-subtle);
+  border-radius: var(--radius-vessel);
+  padding: 10px 12px;
+}
+
+.vessel.dropping {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--glass-tint);
+  border: 1px solid var(--edge-hairline);
+  color: var(--text-secondary);
+  font-size: 11px;
+  max-width: 160px;
+}
+
+.chip button {
+  all: unset;
+  cursor: pointer;
+  color: var(--text-metadata);
+}
+
+/* The field's own box: one line at rest, six lines then it scrolls inside itself. */
+.field {
+  position: relative;
+  min-height: var(--field-line-height);
+  max-height: var(--field-ceiling);
+  overflow-y: auto;
+  font: var(--body-size) / var(--field-line-height) var(--font-body);
+  color: var(--text-primary);
+  caret-color: var(--text-primary);
+}
+
+.field .placeholder {
+  position: absolute;
+  inset: 0;
+  color: var(--text-disabled);
+  pointer-events: none;
+  line-height: var(--field-line-height);
+}
+
+/* The one substring the CLI will run as a command, and nothing else in the draft is ever this
+   colour (#1256). */
+.command-mark {
+  color: var(--accent);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.footer .spacer {
+  flex: 1;
+}
+
+.footer button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--edge-hairline);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.footer button:hover {
+  background: var(--ground-hover);
+  color: var(--text-primary);
+}
+
+.footer button.send {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--text-on-accent);
+}
+
+.footer button.send[disabled] {
+  background: transparent;
+  border-color: var(--edge-hairline);
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.footer .hint {
+  color: var(--text-metadata);
+  font-size: 11px;
+}
+
+/* ---- the menu ---- */
+
+.menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 420px;
+  max-width: 560px;
+  padding: 6px;
+  border-radius: var(--radius-popover);
+  background: color-mix(in srgb, var(--ground-overlay) 92%, transparent);
+  backdrop-filter: blur(30px);
+  border: 1px solid var(--edge-glass-rim);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+}
+
+.menu .status,
+.menu .zero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--row-height);
+  padding: 0 10px;
+  color: var(--text-metadata);
+  font-size: 11px;
+}
+
+.menu .status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-metadata);
+}
+
+.menu .status.failed .dot {
+  background: var(--failure);
+}
+
+.menu .status.waiting .dot {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.menu .zero .typed {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.menu .list {
+  max-height: var(--list-ceiling);
+  overflow-y: auto;
+}
+
+.menu .section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  height: var(--section-height);
+  padding: 8px 10px 4px;
+  color: var(--text-metadata);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.menu .section-label .detail {
+  color: var(--text-disabled);
+  letter-spacing: 0;
+}
+
+.menu .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--row-height);
+  padding: 0 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.menu .row.cursor {
+  background: var(--ground-selected);
+}
+
+.menu .row .lead {
+  font: 12px / 1 var(--font-machine);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.menu .row .lead .matched {
+  color: var(--accent);
+}
+
+.menu .row .detail {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu .row .detail.path {
+  direction: rtl;
+  text-align: left;
+  font-family: var(--font-machine);
+  color: var(--text-metadata);
+}
+
+.menu .row .badge {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--edge-hairline);
+  color: var(--text-metadata);
+  white-space: nowrap;
+}
+
+.menu .row .badge.attention {
+  color: var(--attention);
+  border-color: color-mix(in srgb, var(--attention) 40%, transparent);
+}
+
+/* ---- the readout ---- */
+
+.readout {
+  border-left: 1px solid var(--edge-hairline);
+  background: var(--ground-sunken);
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 11px;
+}
+
+.readout h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.readout h3 {
+  margin: 18px 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-metadata);
+}
+
+.readout dl {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.readout dt {
+  color: var(--text-metadata);
+}
+
+.readout dd {
+  margin: 0;
+  font-family: var(--font-machine);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.readout ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text-secondary);
+}
+
+.readout li {
+  margin-bottom: 3px;
+}
+
+.readout .dep {
+  color: var(--accent-bright);
+  font-family: var(--font-machine);
+}
+
+/* ---- the switcher: obviously not part of the design being judged ---- */
+
+.switcher {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #f2f4f6;
+  color: #111;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+.switcher button {
+  all: unset;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.switcher button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.switcher .label {
+  padding: 0 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}

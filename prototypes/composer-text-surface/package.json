@@ -1,0 +1,27 @@
+{
+  "name": "composer-text-surface-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5273 --strictPort",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.7.1",
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.35.0",
+    "@lexical/react": "^0.21.0",
+    "@lexical/utils": "^0.21.0",
+    "lexical": "^0.21.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "puppeteer-core": "^25.10.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}

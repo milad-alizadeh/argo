@@ -1,0 +1,4 @@
+node_modules
+dist
+# The harness writes these; the report is worth keeping by hand, the PNGs are not.
+shots

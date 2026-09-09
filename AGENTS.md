@@ -2,7 +2,7 @@
 
 Monorepo for the Argo skills/plugin **and** the Argo cockpit app. The cockpit is mid-migration:
 `apps/macOS` is the deprecated Swift app, kept for reference and verified by nothing, and
-`apps/desktop` is the Electron replacement being planned on #1730. Read by both Claude Code and Codex.
+`apps/desktop` is the Electron replacement being built on #1730. Read by both Claude Code and Codex.
 
 ## Agent skills
 

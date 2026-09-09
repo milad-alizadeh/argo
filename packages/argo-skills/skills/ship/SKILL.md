@@ -79,8 +79,9 @@ Nothing here is a reason to stop.
   fails to build. For UI work, look at the affected states; unit tests do not show you a screen.
 - **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
   per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
-  This repository currently renders nothing — the Swift app is deprecated and the Electron one is
-  not built yet — so nothing here has a screen to shoot; the rule stands for the day it does.
+  This repository renders nothing today — the Swift app is deprecated and `apps/desktop` has no
+  screenshot route yet — so a diff here rarely has a screen to shoot; the rule stands for the day
+  one does.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
 - **The ticket is still open.** `gh issue view <N> --json state,stateReason` — one request, and
