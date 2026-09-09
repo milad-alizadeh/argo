@@ -1,275 +1,48 @@
 # Quality gates — exemptions and the fail-open traps
 
 Companion to `AGENTS.md` → *Quality gates*. That section carries the rule; this one carries where
-an exemption goes, the forensics behind the two configs that **fail silently open**, and how to
-prove a change to them.
+an exemption goes, the forensics behind the config that **fails silently open**, and how to prove a
+change to it.
 
 ## What runs where
 
-`bun run quality` is biome, duplication and Swift. `quality:swift` (SwiftFormat in check mode,
-SwiftLint) needs a Mac, so it runs **at push time, not on CI**:
-`.husky/pre-push` calls `scripts/swift-gate.sh`, which runs `quality:swift`, the app build and the
-swift-testing suites, in that order, under `ARGO_REQUIRE_SWIFT_TOOLS=1`. A failing check refuses
-the push.
+One place, and it is CI. `.github/workflows/ci.yml` runs three steps on `ubuntu-latest`:
 
-The hook asks `gh` whether the pushed branch has an open pull request, and gates only when it
-does (#1577). A branch with none is work in progress that nobody is reading; the gate costs
-3m32s plus a build-slot wait whose worst case over 110 branches was 30m40s, and paying that on a
-scratch push buys nothing. The push that OPENS a PR is the gap that rule leaves, and `ship`
-fills it by running the gate itself before `gh pr create` — of which `ship` is the only caller,
-because nothing else opens a PR at all (AGENTS.md, **Pushing and pull requests**). A `gh` that
-is missing, unauthorised or offline gates rather than skips: a failed question is not an answer
-of "no PR". It was a `macos-26` CI job until #1340, where it was measured at about 99% of this
-repo's Actions bill for repeating, from a cold cache, what the author's Mac had already built.
+- `bun run format-and-lint` — biome, `--error-on-warnings`.
+- `bun run quality:duplication` — jscpd, whole-tree, because a linter reads one file at a time.
+- `bun run test:hooks` — every `scripts/*.test.mjs`, discovered from the directory.
 
-Two things follow from where it now runs, and both are load-bearing:
+Nothing runs at push time. `.husky/pre-commit` still runs lint-staged; `.husky/pre-push` is gone.
 
-- **It is scoped by `ci.yml`'s old pathspec**, kept character for character inside
-  `swift-gate.sh`, so a markdown-only or docs-only push skips the Swift work exactly as the CI
-  job did. `scripts/swift-gate.test.mjs` compares the two and fails if they drift.
-- **`core.hooksPath` is absolute into the main checkout**, so a push from any worktree runs the
-  main checkout's `.husky/pre-push`. The hook only gates anything once it is on `main`; the
-  script it calls is resolved from the pushing tree, so the checks are always of the pushed code.
-  Husky also exits 0 when the hook file is missing, which makes deleting it a silent pass —
-  `swift-gate.test.mjs` is the case that catches that.
+## What used to be here, and why it is not (#1758)
 
-Run the gate by hand any time with `sh scripts/swift-gate.sh`, and skip it for a deliberate
-work-in-progress push with `ARGO_SKIP_SWIFT_GATE=1 git push`.
+Most of this file described `scripts/swift-gate.sh` and the machinery it needed: the verdict cache
+keyed on the Swift tree, the machine-wide build-slot lock, the package-scope narrowing, the
+two-phase timing split, the `ARGO_GATE_CALLER` column and `bun run gate:report`. All of it is
+deleted, along with `apps/macOS/scripts`, because `apps/macOS` is deprecated in favour of the
+Electron app and there is no Swift tree left worth gating.
 
-## What the gate does before it does anything (#1377)
+Two things worth carrying forward when `apps/desktop` needs a gate of its own, because both were
+learned the expensive way:
 
-Three things happen ahead of the first command, and all three exist because eight lanes were
-running this gate against each other. The arithmetic and the measurements are in
-`docs/agents/landing.md`; what each one is, and how to turn it off:
+- **A gate is priced per tree, and a review changes the tree.** Verifying before the review buys
+  bytes nobody ships.
+- **A ratio gate passes by dilution.** jscpd goes green when un-cloned lines are added around a
+  clone, so read the clone count, not the percentage.
 
-1. **It asks whether this tree already passed.** `scripts/gate-cache.sh` keys a pass on the
-   content of `apps/macOS` and `scripts`, on `package.json` and `turbo.json`, on the toolchain
-   version, and on the package scope the run covered. A rebase that reproduces a gated tree
-   costs a hash lookup. It refuses to answer at all over a DIRTY tree, because HEAD's hash then
-   describes bytes that are not the ones on disk. `ARGO_GATE_CACHE=off` runs it regardless.
-2. **It takes one of two machine-wide build slots.** `scripts/build-lock.sh`. Every command in
-   the gate fans out to all cores, so unserialised lanes do not build in parallel, they build
-   each other slowly. `ARGO_BUILD_LOCK_SLOTS` raises the count on a bigger machine.
-
-   **The gate is not the only thing that takes one.** Every command that starts a Swift compiler
-   queues for a slot now, so a bare `bun run build`, `bun run test`, `bun run warm`,
-   `scripts/specimens.sh`, `scripts/screenshot.sh`, `scripts/record-figures.sh` or
-   `scripts/e2e-test.sh` can sit and wait with nothing on its output — that is the cap working,
-   not a hang, and it says so on stderr once a minute. Wiring only the push path left the
-   commands a lane spends its day on uncapped: six lanes on a twelve-core Mac reached load
-   average 137 with 65 concurrent `swift-frontend`, and not one lock directory on the disk.
-
-   A slot is held for a process TREE. The holder exports `ARGO_BUILD_LOCK_HELD_BY`, naming the
-   lock root and its pid, and a descendant queueing on that same root runs inside the slot
-   already paid for. Naming the root is what keeps `land.sh` honest: it holds a slot in a
-   landing pool of its own, and the gate it then runs still queues for a build slot like any
-   lane.
-3. **It works out which packages the change reaches.** `scripts/swift-scope.sh` reads the
-   `.package(path:)` edges and answers ALL for anything it cannot place. Only the SUITES are
-   scoped by it; the formatter, the linter and the app build stay whole.
-
-### The steps remember too
-
-The gate is not the only thing that runs these commands. An agent finishing a ticket runs the
-suites itself, and then `git push` fires the gate, which ran the same suites over the same bytes
-again — and the second run is the one a person waits on. So the memory is per STEP as well as
-per gate: whichever runs first records the verdict, and the other reads it.
-
-- `swift-test.sh` keys each package's suite on the content of `apps/macOS`, the configuration,
-  the toolchain and the **phase** (#1711). A **filtered** run — a caller's own `--filter` — is
-  never cached in either direction: it proves less than a phase, and it is asked for precisely
-  when somebody wants that suite run again.
-- `build.sh` keys the app build the same way, and believes a recorded pass **only when this
-  worktree's own app carries that key**. Two things have to hold, because the memory is the
-  machine's and the product is one checkout's. The app must still be there — `worktree-gc
-  --artifacts` deletes products, and a verdict is not a product — and it must be STAMPED with
-  the key, in `.argo-build-key` beside the bundle. Without the stamp, the lane that built a
-  tree left a verdict every other lane read as its own, and `bun run build` said "up to date"
-  over a binary days older than the source. The stamp is removed before `xcodebuild` and
-  written after it, so an interrupted build leaves a product no key claims. An `xcodebuild`
-  that exits 0 having written no app is a failure, not a pass.
-
-So the shape of a push after an agent has already run the suites is: the linters run, the build
-and the four suites do not, and the whole thing is under a minute.
-
-### Nothing the gate exports reaches a turbo task unless `turbo.json` says so (#1711)
-
-Turbo 2 runs in **strict** env mode. A task sees a default allowlist plus whatever the config
-declares and **nothing else**, so a variable `swift-gate.sh` exports before `bun run build` or
-`bun run test` is gone by the time the step reads it — silently, because a stripped variable
-looks exactly like one nobody set:
-
-- **`ARGO_REQUIRE_SWIFT_TOOLS`** stripped means a missing SwiftFormat SKIPS rather than fails,
-  and the gate reports success having checked nothing. That is the failure `swift-tool-guard.sh`
-  exists for, arriving through the config instead of the script.
-- **`ARGO_TEST_SCOPE`** stripped means the gate works out which packages a change reaches
-  (#1377), announces it, and then runs all of them anyway.
-- **`ARGO_GATE_CALLER`** stripped means every step row records `unknown`, and the split below
-  cannot say which step paid.
-
-All three were being stripped. They are in `globalPassThroughEnv` now — pass-through and not
-`env`, because each changes how a step behaves or what it records and none of them changes what
-it produces, so none belongs in turbo's cache hash. `scripts/gate-env.test.mjs` derives the list
-from the `export` lines themselves and fails when one is missing, because the list IS the bug.
-
-### The two phases a package's suites run in (#1711)
-
-`swift-test.sh` runs each package **twice**, and the split is the point rather than an
-optimisation:
-
-- **`correctness`** — everything but the timing suites, in parallel, as before.
-- **`cost`** — the suites that read a clock, alone, with `--no-parallel`.
-
-A budget measured in seconds reads the MACHINE as much as the code (`ArgoUITests/CostMeasure`),
-and the parallel run is the loudest thing on the machine: hundreds of correctness tests across
-every core, and a measurement taken inside that is taken against it. Two budgets failed the #1703
-lane three times over and passed alone in 6.8 seconds —
-`FeedRowShapeTests.measuring by shape costs less than measuring through one ruler` and
-`FeedRowsCompareCostTests.the same-reading test does not scale with the reading`.
-
-The set is **derived from the tree, never listed**: `apps/macOS/scripts/timing-suites.sh` prints
-the suites that CALL one of `CostMeasure`'s four clock helpers, which is why `FeedRowShapeTests`
-is in it and `MinimapCostTests`, whose budgets are counts, is not. What it prints is the suite's
-TYPE name, because that is what `swift test --filter` matches and the `@Suite("…")` display name
-is not (#1358). `scripts/timing-suites.test.mjs` is what holds it: the two suites above are in
-the set, every name it prints is a type that exists, and a clock helper is defined in one file
-per test target so the set cannot silently split.
-
-The three `*FigureRecording` harnesses land in the set too, because they read a clock. They are
-`.enabled(if:)` on `ARGO_RECORD_FIGURES` and `record-figures.sh` calls `swift test` directly, so
-in the gate they cost a skip: ArgoUI's cost phase reports 21 tests of the 30 it selects.
-
-A failure in either phase still fails the gate, and a failed phase records nothing — so a retry
-runs it again rather than reading a pass it never earned.
-
-### Measuring whether any of it worked
-
-Every run appends a row to `~/Library/Caches/argo-gate/metrics.tsv` (`scripts/metrics.sh`), and
-`bun run gate:report` turns the rows into the four numbers that matter: how often a run learned
-nothing, what that saved, whether a full run is getting slower, and how long anything queued for
-a build slot. It prints them against the baseline #1377 measured, so the claim stays checkable
-rather than remembered. `ARGO_METRICS=off` writes nothing; nothing reads the file back, so it can
-never change what the gate decides.
-
-Each row also carries **who asked and which phase ran** (#1711). `ARGO_GATE_CALLER` is one of
-five words, and anything else — an unset one included — records `unknown` rather than being
-invented:
-
-| Caller | Set by |
-|---|---|
-| `push` | `.husky/pre-push`, on the one push that has an open PR to gate |
-| `implement` | the `implement` skill, on its final reviewed tree |
-| `ship` | the `ship` skill, before `gh pr create` — expected to be a cache hit |
-| `review` | nothing automatic. A review agent runs no gate (`docs/agents/code-review.md`); the word exists so one that does shows up as itself rather than hiding under `unknown` |
-| `landing` | nothing automatic. `scripts/land.sh` is gone and the rebase-before-merge has no home yet (#1577) |
-
-The report then prints two tables the earlier one could not: full runs and cache hits **by caller
-and phase**, and the branches that paid for **more than one full gate**, each with the caller and
-cost of every run. `scripts/gate-columns.test.mjs` proves the columns, over rows `metrics.sh`
-itself wrote; `scripts/gate-callers.test.mjs` proves the tables read off them.
-
-None of these can make the gate pass something it would otherwise fail. The cache records
-only after every command has passed, the lock changes when work runs and never whether, and the
-scope widens to ALL in every case where it cannot see the whole picture. Each of those claims
-has a case in `scripts/gate-cache.test.mjs`, `scripts/build-lock.test.mjs` (with
-`build-lock-entrypoints.test.mjs` for which callers take a slot and
-`build-lock-inheritance.test.mjs` for how one passes down a process tree),
-`scripts/step-cache.test.mjs` and `scripts/swift-scope.test.mjs`, and each of those suites is
-written the same way round: what it proves is that a MISS still happens when one must.
-
-Linux CI runs biome, duplication and `test:hooks` — the only executable suite there, and the
-suite that gates the push-time gate. Pre-commit runs lint-staged: biome, then SwiftFormat and
-SwiftLint over staged Swift. The design-token scan that used to run beside them was removed with
-the boundary gate, so a raw constant outside `ArgoDesign` is now a review catch, not a refusal.
-
-`test:hooks` is `scripts/run-suites.mjs`, and its suites are **the directory, not a list**: every
-`scripts/*.test.mjs` runs, so a new suite is added by writing the file and nothing else. It runs
-them in a pool rather than in sequence, which took it from 101s to 21s on a 12-core machine
-(least-of-2, interleaved — almost none of the chain's time was work, it was suites waiting on
-subprocesses one at a time). It is fail-closed three ways
-— a non-zero exit, an empty directory, and a suite that exits 0 without printing the
-`all N checks passed` line that `check-harness.mjs` ends on.
-
-Nothing here is optimised by default: `bun run build` is Debug unless asked otherwise, and
-`swift-test.sh` takes no configuration at all, so every suite runs `-Onone`. What each
-configuration names, how to build the optimised app, and what that is worth:
-`docs/agents/build-configurations.md`.
-
-Running the suites optimised is how a seconds-side cost budget gets re-recorded against code the
-optimiser has seen (ADR-0028). It is deliberately not in the push gate: the counts are the half a
-debug build cannot get wrong, and they gate every push.
-
-One optimised run has a workflow of its own — `figures.yml`, on `macos-26`, on manual dispatch,
-running `apps/macOS/scripts/record-figures.sh` and uploading what it read. It re-records the seven
-seconds-side FIGURES in `ArgoUITests/PerfBudgets` and nothing else; the eight CPU quotients
-ADR-0028 names are gates, and they run in debug here on every push like every other count. **It is
-not a gate itself**, for the reason `PerfBudgets.figureMachine` gives, and the only thing it checks
-is the fold between its two arms — armed the day a quiet runner's figures land (#1024).
-
-Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
-so have no subject since ADR-0023. Dormant, but the per-file caps still apply to every tracked
-`.mjs`.
-
-## Why there is no `analyzer_rules:` in `.swiftlint.yml`
-
-SwiftLint has a second command. `analyze` runs the rules that read the compiler's view of a file
-rather than its text, and `lint` accepts the `analyzer_rules:` key and then ignores it — so
-`unused_import` sat in that config from #393 to #1043 having never run on one file in one build.
-Coverage in the config, nothing in the build, and green because nothing looked (#925, #1043).
-
-`swift-lint.sh` now refuses the key while nothing in `package.json`, `scripts/` or
-`.github/workflows/` runs `swiftlint analyze`, ahead of its tool guard so a machine without
-SwiftLint still fails on it. The condition is what RUNS the rules, not the key, so wiring `analyze`
-into a gate lifts the refusal with no second place to edit — and only an invocation lifts it, never
-a mention in a comment, which is otherwise the likeliest line in the tree to hold the command.
-
-Producing the compiler log it needs took three builds into fresh scratch paths, because this tree
-has three producers: `swift build --build-tests -v` in each package, and `xcodebuild` for the app
-target's own nine files. The run reported **495 violations**: 348 over the 1,122 source files of
-the app target and both packages, 77 in `ArgoEngine`'s tests, 70 in `ArgoUI`'s. It is still not
-wired, and these are the three reasons, each measured on that run:
-
-1. **It needs a from-scratch build.** `analyze` reads a log of the swiftc invocations, and only a
-   file the build actually COMPILED appears in one. Over restored build products `swift build -v`
-   prints no invocations at all, and SwiftLint answers a log missing a file by not analysing it:
-   `Found 0 violations, 0 serious in 0 files`, exit **0**. That is the `.jscpd.json` fail-open in
-   another tool — the analysed file count is the only signal, and never the exit code. So the CI
-   build cache is of no use to it and every run pays a cold build of both packages, their test
-   targets and the app, before the analysis starts.
-2. **`unused_import` is wrong often, and only a compiler says which time.** Acting on it in the
-   two test targets and rebuilding, 3 of the 77 files in `ArgoEngine` and **38 of the 67 in
-   `ArgoUI`** would no longer compile without the import it called unused — `Darwin` for
-   `clock_gettime`, `CoreGraphics` for `CGFloat`, `Foundation` for `realpath` and `URL`, `Testing`
-   for what `#expect` expands to. The rule does not see C interop, a macro's expansion, or a type
-   reached through a re-export. A gate that is wrong needs suppressing, nothing here may be
-   suppressed inline, and so its price is a standing exemption list for the tool's own bugs — a
-   ratchet that cannot descend, because the code is not what is wrong.
-3. **It is far slower than `lint`, on a whole extra macOS runner.** `lint` reads the whole tree in
-   seconds; `analyze` runs for tens of minutes over one package's share of it. Beside a cold build
-   that is the shape of cost `test:e2e` is kept off CI for, and it buys dead import lines.
-
-What the run found in the two test targets is fixed rather than banked: 104 imports across 101
-test files are gone, every removal proved by rebuilding both test targets. The 348 in
-`Sources` are **not** swept here — at that false-positive rate the sweep is a compile-check per
-file across a tree three other branches are editing, and it is a different piece of work from
-stopping the config claiming a gate. To measure again — build each package with
-`swift build --build-tests -v --scratch-path <fresh>` into a **fresh** scratch path, keep the
-output, then `swiftlint analyze --compiler-log-path <log>` from `apps/macOS`. Believe the file
-count it prints, not its exit code, and never pipe the run through `tail` — the report is one line
-per violation and a truncated tail reads as a smaller count, which cost this ticket a whole second
-pass. Compile-check every removal: an import can be load-bearing in a configuration the
-package build never touched.
+The cost premise that started it, that a `macos-26` CI job "billed about 99% of this repo's Actions
+spend", was a misreading of the gross column. The billed column was $0. See the header of
+`.github/workflows/ci.yml`.
 
 ## Where an exemption goes
 
-Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule doesn't
+Exemptions live in **two** files, each entry labelled **KIND** (permanent — the rule doesn't
 apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
-| `.swiftlint.yml` | the Swift caps, ratchets inline. The initializer cap is no longer checked by anything: SwiftLint cannot see an `init`, and the gate that applied the function cap to one was removed. The `# INIT: <file> <count> — <why>` lines under it are a record of the known widths, not a ratchet (#992) |
 
 Two rules have no linter and live in `rules/house.md` prose only: a cast standing in for a
 check, and the exhaustive construct over a closed set.
@@ -295,7 +68,7 @@ config file .jscpd.json line 1: expected value
 and exits non-zero, instead of quietly running unconfigured. **Dropping that flag restores the
 fail-open.**
 
-## Never prove either config by exit code
+## Never prove the config by exit code
 
 `jscpd … -t 0` exits **1 in both states** on this repo:
 

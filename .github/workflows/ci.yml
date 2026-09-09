@@ -1,22 +1,26 @@
 # The default gate for every PR: biome, the duplication gate and the guardrail-hook tests, on
-# Linux. That is the whole of it.
+# Linux. That is the whole of it, and for now it is the whole of the repo's verification.
 #
-# The Swift half — build, swift-testing, SwiftLint, SwiftFormat — used to be a `macos-26` job
-# here. It is now `.husky/pre-push`, which calls `scripts/swift-gate.sh` (#1340).
-# The reason is money, and the numbers were one-sided: GitHub bills a macOS runner at about ten
-# times a Linux one, and over one measured day that job took 228 minutes against 21 for
-# everything else on this workflow put together. It was about 99% of the bill, to repeat from a
-# cold cache what the author's own Mac had already built.
+# The history, because it was wrong and the correction matters (#1758). A `macos-26` job used to
+# build and test `apps/macOS` here. #1340 removed it on the grounds that it "billed about 99% of
+# this repo's Actions spend". That was read off the GROSS column of the billing page. The BILLED
+# column was $0, every day, and still is: the SKU is `Actions macOS 3-core`, a standard runner,
+# and GitHub's own reference says use of the standard hosted runners "is free and unlimited on
+# public repositories". `argo` is public. The 228 minutes were real; the money was not.
 #
-# The gate itself did not shrink. `scripts/swift-gate.sh` runs the same commands, in the
-# same order, under the same `ARGO_REQUIRE_SWIFT_TOOLS=1`, over the same pathspec this file's
-# `changes` job used to compute — and it BLOCKS THE PUSH, which is one step earlier than a red
-# CI run. `scripts/swift-gate.test.mjs` is the proof it fires, and it runs in the `check` job
-# below, so this workflow still gates the gate.
+# The gate that replaced it lived in `.husky/pre-push` and blocked every push on a branch with an
+# open PR. It is gone too, along with `scripts/swift-gate.sh` and the cache, build-lock and
+# metrics machinery built around it. The reason is not the correction above: it is that
+# `apps/macOS` is deprecated in favour of the Electron app, so there is no longer a Swift tree
+# worth gating. `apps/macOS` keeps its source and has no build tooling; nothing verifies it.
 #
-# What is genuinely lost, and is the accepted trade in #1340: nothing verifies the Swift tree on
-# a machine that is not the author's. With one contributor, all on macOS, that machine does not
-# exist. Bring the job back for `pull_request` only — never for `push` — the day it does.
+# When `apps/desktop` lands, its suites run here on `ubuntu-latest` for free, and `turbo run test`
+# reaches a workspace again. The parts that Linux cannot do — `codesign`, `notarytool`, the DMG
+# maker, and running the shipped arm64 artifact — need a macOS job, which is also free on the
+# standard runner. Two limits to design around rather than discover: GitHub Free allows 5
+# concurrent macOS jobs, and a fork PR gets no secrets, so it can build and read the fuse wire
+# back but cannot sign.
+#
 name: ci
 
 on:
@@ -57,11 +61,11 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
-      # Guardrail-hook tests (worktree edit guard, cross-CLI hook projection, and the push-time
-      # Swift gate) live outside the turbo `test` pipeline — plain node scripts, not a workspace
-      # suite. They are the only executable suite on Linux: retiring the Electron cockpit took
-      # the last TypeScript workspace with it, so `turbo run test` reaches nothing here and the
-      # Swift suites run at push time via `scripts/swift-gate.sh`.
+      # Guardrail-hook tests (worktree edit guard, cross-CLI hook projection, the worktree-gc
+      # sweep) live outside the turbo `test` pipeline — plain node scripts, not a workspace
+      # suite. They are the only executable suite in the repo: retiring the Electron cockpit took
+      # the last TypeScript workspace with it and #1758 took the Swift tooling, so `turbo run
+      # test` reaches nothing at all until `apps/desktop` lands.
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks

@@ -1,5 +1,12 @@
 # Designs
 
+> **Deprecated 2026-09-09 (#1758).** `apps/macOS` is no longer built, tested, linted or
+> rendered by anything: the push-time Swift gate, `apps/macOS/scripts` and the workspace entry
+> are deleted, and the Electron replacement is being planned on
+> [#1730](https://github.com/milad-alizadeh/argo/issues/1730). Every command below names a script
+> that no longer exists, and every design here targets the deprecated app. Read this file as a
+> record of what was designed, not as instructions. `apps/desktop` will need its own designs.
+
 The committed design set for the Argo cockpit: written specs, the approved visual target, and
 the renders the app itself produces.
 

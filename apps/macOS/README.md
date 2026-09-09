@@ -1,5 +1,11 @@
 # Argo — macOS
 
+> **Deprecated 2026-09-09 (#1758).** `apps/macOS` is no longer built, tested, linted or
+> rendered by anything: the push-time Swift gate, `apps/macOS/scripts` and the workspace entry
+> are deleted, and the Electron replacement is being planned on
+> [#1730](https://github.com/milad-alizadeh/argo/issues/1730). Every command below names a script
+> that no longer exists. Read this file as a record of how the app was built, not as instructions.
+
 The native Swift cockpit ([ADR-0022](../../docs/adr/0022-swift-native-macos-runtime.md), [#373](https://github.com/milad-alizadeh/argo/issues/373)). Replaces `apps/desktop`, which is frozen and deleted at the end of the migration.
 
 ## Layout

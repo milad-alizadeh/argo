@@ -1,3 +1,19 @@
+# Landing — the gate it was written around is gone
+
+> **2026-09-09 (#1758).** This file was written when a rebase meant paying the push-time Swift gate
+> again. That gate, `scripts/build-lock.sh`, `scripts/gate-cache.sh` and `bun run gate:report` are
+> all deleted, so the arithmetic below is history and the tooling column of its tables names files
+> that no longer exist.
+>
+> **Two things in it are still live and still matter.** `scripts/kept-the-tests.sh` and
+> `scripts/undoes-the-base.sh` read a merged tree against the base and refuse one that drops a test
+> the base has, deletes a file it has, or holds content the base has moved past. Run them by hand
+> before merging: `sh scripts/kept-the-tests.sh . origin/main HEAD`. And two lanes never own the
+> same file, whatever the vocabulary split says.
+>
+> The rule that a lane does not rebase to open a PR also stands, but on its own footing now: being
+> behind the base is the normal state of a branch, not a defect in it.
+
 # Landing, and why a lane does not rebase
 
 Companion to `AGENTS.md` → *Quality gates* and *Session isolation*. It carries the arithmetic

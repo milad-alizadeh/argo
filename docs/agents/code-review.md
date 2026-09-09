@@ -12,42 +12,36 @@ pastes into them, and it is below — `implement` step 2 carries the same words,
 ## One tree owns the expensive verification
 
 A gate is priced per tree. A review changes the tree, so a suite, a build or a gate run **before**
-the review is work over bytes nobody will ship — and the gate that matters, the one `ship` calls,
-misses its cache and pays in full.
+the review is work over bytes nobody will ship.
 
-The #1703 lane is the measurement. Every figure below is that one branch:
+The measurements that set this rule came from the #1703 lane, on the push-time Swift gate that
+#1758 deleted. They are kept because the shape is what matters, not the seconds: six minutes of
+package suites run before the review, four two-axis rounds spanning 51 minutes from the first
+verified commit to the last, and three full gates on one branch — each one paid because a review
+fix had moved the tree out from under the previous one.
 
-| What | Cost |
-|---|---|
-| Full package suites run before the review | ~6 minutes of measured step time |
-| Four two-axis review rounds, first verified commit to last | 51 minutes |
-| `ship`'s gate, missing the cache because review fixes moved the tree | 3m11s |
-| A conflict rebase's gate — a new tree, so honestly a new gate | 4m49s, on one unrelated timing failure |
-| Two retries of that gate | 80s on the same timing test, then 1m41s on a different one |
-
-Three full gates on one branch. The seven-day report read a 3-minute median, a 15-minute worst
-case and a 37% cache hit rate.
-
-So the order is fixed, and `implement` is where it is written: focused checks while building,
-**one** review, every finding fixed in **one** batch, the final commit, then the full gate once on
-that committed tree. `ship` calls the same gate and must find a whole-gate cache hit.
+The gate is cheap now (biome, jscpd and the hook suites, all on the reviewed tree), but the order
+stands and `implement` is where it is written: focused checks while building, **one** review,
+every finding fixed in **one** batch, the final commit, then the full gate once on that committed
+tree. `ship` runs the same two commands again before it opens the PR, because the tree may have
+moved.
 
 ## The read-only brief
 
 Every axis sub-agent prompt carries this, verbatim:
 
-> You are read-only. Do not run a build, a full test suite, `bun run quality`,
-> `bun run test`, or `sh scripts/swift-gate.sh`. Do not commit, push, or edit a file.
+> You are read-only. Do not run a build, a full test suite, `bun run quality` or
+> `bun run test`. Do not commit, push, or edit a file.
 > Read the diff and the files around it — that is what a review is.
 > You may run exactly ONE focused test, and only when you first state the uncertainty it will
-> resolve and the command names its package, as
-> `sh apps/macOS/scripts/swift-test.sh <Package> --filter <TypeName>`. If you cannot name what
-> the test would settle, do not run it: report the doubt as a finding instead.
+> resolve and the command names the one file or package it runs. If you cannot name what the
+> test would settle,
+> do not run it: report the doubt as a finding instead.
 
 Two things about the exception are load-bearing. It is **one** test, because a reviewer that runs
-two has started verifying rather than reviewing. And it must **name its package**, because
-`swift-test.sh` refuses a filter without one — an unfiltered run is the whole suite by another
-name, and `swift test --filter` exits 0 on a pattern that matched nothing (#1358).
+two has started verifying rather than reviewing. And it must **name what it runs** — a single
+`scripts/<name>.test.mjs`, not `bun run test:hooks` — because an unfiltered run is the whole suite
+by another name, and a filter that matched nothing can still exit 0 (#1358).
 
 A reviewer's doubt is a finding. It does not need a green test to be worth reporting, and the
 author is the one holding the context to settle it cheaply.
@@ -71,5 +65,5 @@ nothing further. It goes in the batch and it goes in the commit.
 
 `ship` runs no review and refuses no unreviewed diff: it writes "unreviewed" in the PR body and
 ships (`AGENTS.md`, **Code review**). So the review is `implement`'s step or it does not happen,
-and the gate `implement` runs on its final tree is what makes `ship`'s gate a cache lookup rather
-than a fourth full run.
+and the gate `implement` runs on its final tree is what makes the PR green before CI ever sees
+it.

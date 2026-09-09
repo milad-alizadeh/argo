@@ -1,9 +1,10 @@
 # House Rules
 
 What no linter checks and a model does not do unprompted. Every cap, escape-hatch ban and
-formatting rule is a build failure in `biome.jsonc` and `apps/macOS/.swiftlint.yml`, so
-none is restated here; when a gate fires, fix the code or ratchet the exemption where the
-config keeps it, never inline (`docs/agents/quality-gates.md`).
+formatting rule is a build failure in `biome.jsonc`, so none is restated here; when a gate
+fires, fix the code or ratchet the exemption where the config keeps it, never inline
+(`docs/agents/quality-gates.md`). `apps/macOS/.swiftlint.yml` is still on disk and nothing
+runs it: the Swift app is deprecated and gated by nothing (#1758).
 
 ## Code
 
