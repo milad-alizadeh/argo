@@ -3,7 +3,9 @@ import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { PROJECT_PROOF_STORE_ENV } from '../scripts/project-proof-protocol.mjs'
+import { SESSION_TRANSCRIPTS_ENV } from '../scripts/session-proof-protocol.mjs'
 import { attachProjectBridge } from './projects/bridge'
+import { attachSessionBridge } from './sessions/bridge'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -20,6 +22,15 @@ declare const MAIN_WINDOW_VITE_NAME: string
 const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
 const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 if (projectProofStore) app.setPath('userData', projectProofStore)
+
+// Claude writes one transcript per Session under this root, and Argo reads them without asking
+// any Project registry first (#1831). The override exists so a packaged proof reads an isolated
+// fixture tree rather than the machine's own Sessions.
+function transcriptsRoot(): string {
+  return (
+    process.env[SESSION_TRANSCRIPTS_ENV] ?? path.join(app.getPath('home'), '.claude', 'projects')
+  )
+}
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -38,6 +49,7 @@ function createWindow(): BrowserWindow {
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachProjectBridge(window, { userData: app.getPath('userData'), rendererURL })
+  attachSessionBridge(window, { transcriptsRoot: transcriptsRoot(), rendererURL })
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)

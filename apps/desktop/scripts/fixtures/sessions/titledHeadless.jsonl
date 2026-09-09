@@ -1,0 +1,5 @@
+{"type":"last-prompt","leafUuid":"t-root-1","sessionId":"titledHeadless"}
+{"type":"ai-title","aiTitle":"Summarised name"}
+{"type":"user","sessionId":"titledHeadless","entrypoint":"sdk-cli","cwd":"/Users/x/tree","gitBranch":"main","timestamp":"2026-07-22T10:00:01.000Z","uuid":"t-root-1","parentUuid":null,"message":{"role":"user","content":"\n\nRun the headless pass"}}
+{"type":"assistant","sessionId":"titledHeadless","entrypoint":"sdk-cli","cwd":"/Users/x/tree","gitBranch":"main","timestamp":"2026-07-22T10:00:05.000Z","uuid":"t-a-1","parentUuid":"t-root-1","message":{"role":"assistant","stop_reason":"end_turn","content":[{"type":"text","text":"Done"},{"type":"image","source":{"type":"base64"}}]}}
+{"type":"custom-title","customTitle":"The name a person typed"}

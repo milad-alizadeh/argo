@@ -1,0 +1,124 @@
+/* Feed */
+
+.feed {
+  min-width: 0;
+  min-height: 0;
+}
+
+.feed__column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* The measurement container of ADR-0033 rule 3. Under size containment it measures 0 px itself
+   and paints nothing, while every row inside keeps its real height. It reserves a scrollbar
+   gutter because the viewport below reserves one: where the platform draws a scrollbar that takes
+   layout width, a row measured at the full column width would be measured wider than it is ever
+   drawn, and every height read here would be a height for a line count the Feed never has. */
+.feed__measured {
+  content-visibility: hidden;
+  width: 100%;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+.feed__scroller,
+.feed__viewport {
+  min-height: 0;
+  height: 100%;
+}
+
+.feed__viewport {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.feed__content {
+  padding: var(--space) 0;
+}
+
+.feed-row {
+  padding: var(--space-tight) var(--space-wide);
+  /* Rule 8: selection is a layer, and prose is selectable text. */
+  user-select: text;
+}
+
+.feed-row__who {
+  display: block;
+  color: var(--ink-faint);
+  font-size: var(--type-small);
+}
+
+.feed-row__prose {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.feed-row__label {
+  display: block;
+  color: var(--ink-quiet);
+  font-size: var(--type-small);
+}
+
+.feed-row__code {
+  margin: var(--space-hair) 0 0;
+  padding: var(--space-tight);
+  border-radius: var(--radius-small);
+  background: var(--ground-raised);
+  font: var(--type-code) / var(--line-code) var(--family-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The one row shape with a stated arithmetic height. The two numbers it is made of are written
+   on the box by `FeedRowBody`, from the module that states the formula; nothing here restates
+   them. */
+.feed-row--unreadable {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-wide);
+}
+
+.feed-row__note {
+  color: var(--ink-warn);
+  font-size: var(--type-body);
+}
+
+/* Activity indicator: transform and opacity only, so it runs on the compositor. */
+
+.indicator {
+  display: grid;
+  gap: var(--space);
+  place-content: center;
+  place-items: center;
+  height: 100%;
+  color: var(--ink-quiet);
+}
+
+.indicator__pulse {
+  width: var(--space-wide);
+  height: var(--space-wide);
+  border-radius: var(--radius);
+  background: var(--ground-marked);
+  animation: pulse var(--pulse-duration) ease-in-out infinite;
+}
+
+.indicator__standing {
+  margin: 0;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

@@ -1,3 +1,8 @@
+import { hasKeys, isIdentifier, isRecord, requestIdentifier } from '../boundary'
+
+// Re-exported so the Project module keeps one contract face; the definitions are shared.
+export { hasKeys, isIdentifier, isRecord, requestIdentifier }
+
 export const PROJECT_OPEN_CHANNEL = 'argo:project:open'
 
 export type ProjectOpenRequest = {
@@ -39,27 +44,6 @@ export type ProjectOpenReply = ProjectOpened | ProjectError
 
 export function projectError(code: ProjectErrorCode, requestId: string | null): ProjectError {
   return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-export function isIdentifier(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length > 0 &&
-    value.length <= 256 &&
-    !/[\s\p{Cc}]/u.test(value)
-  )
-}
-
-export function requestIdentifier(value: unknown): string | null {
-  return isRecord(value) && isIdentifier(value.requestId) ? value.requestId : null
-}
-
-export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
-  return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
 }
 
 export function isProjectOpenRequest(value: unknown): value is ProjectOpenRequest {
