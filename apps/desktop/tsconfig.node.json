@@ -13,12 +13,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": [
-    "src/main.ts",
-    "src/preload.ts",
-    "forge.config.ts",
-    "vite.main.config.ts",
-    "vite.preload.config.ts",
-    "vite.renderer.config.ts"
-  ]
+  "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts"],
+  "exclude": ["src/renderer"]
 }

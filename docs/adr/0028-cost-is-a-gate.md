@@ -29,10 +29,9 @@ ADR-0022 moved this app to Swift for one reason, and
 [ADR-0023](./0023-the-electron-runtime-is-retired.md) restated it as settled: the runtime left
 because of what it cost per frame. Nothing in the tree has checked that claim since.
 
-`bun run quality` is biome, jscpd and `quality:swift` — SwiftFormat, SwiftLint,
-`swift-boundaries.sh`. Every one of them measures **shape**: a file over 150 lines, a function over
-50, an init over its parameter cap, a duplicated block, an illegal import, a fact missing from the
-projection. Not one measures **work**. A gate exists for a fact so cheap to check that arguing
+`bun run quality` is biome, `quality:types` and jscpd. Every one of them measures **shape**: a file
+over 150 lines, a function over 50, an init over its parameter cap, a duplicated block, an illegal
+import. Not one measures **work**. A gate exists for a fact so cheap to check that arguing
 about it in review would be silly; cost was left to review, and review cannot see it — a re-walk of
 the whole event stream per body reads like an accessor.
 

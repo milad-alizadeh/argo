@@ -13,8 +13,11 @@
 # `jscpd … -t 0` exits 1 whether the config loaded or not. Check the analysed file
 # count, or plant a clone pair in an ignored path and one outside it. See AGENTS.md.
 
-  **/node_modules/**, **/dist/**, **/out/**
-    KIND: not our source. Vendored and generated output.
+  **/node_modules/**, **/dist/**, **/out/**, **/.vite/**
+    KIND: not our source. Vendored and generated output. `.vite` is where Forge's
+    Vite plugin writes the packaged main and preload bundles; it was reaching this
+    list only through `apps/desktop/.gitignore` plus `gitignore: true`, which is a
+    nested file two tools deep to rest a gate on (#1733).
   **/*.stories.tsx
     KIND: declarative story catalogs — the duplication between stories IS the
     coverage. The line ceiling waives them for the same reason (biome.jsonc).

@@ -24,12 +24,25 @@ It packages with Forge, launches the real binary inside the `.app`, and asserts 
 loaded `node-pty`, opened a PTY that ran a shell, reported the architecture it was built for, and
 exited with code 0. `src/main.ts` holds the check itself behind `ARGO_PTY_SMOKE=1`.
 
+**The `node-pty` half of that is superseded and this script has not caught up.**
+[Prove the packaged Electron toolchain](https://github.com/milad-alizadeh/argo/issues/1743) found
+that Forge's dependency walker cannot reach `node-pty` from a Bun workspace install at all, so the
+assertion above cannot pass as written.
+[Choose cross-platform Session process hosts](https://github.com/milad-alizadeh/argo/issues/1749)
+and [Choose how apps/desktop gets an npm-shaped install](https://github.com/milad-alizadeh/argo/issues/1750)
+replaced it with a compiled Bun 1.4 `Bun.Terminal` helper, which does pass the same harness. This
+test is also in no quality gate, because it needs a Mac, a full package and several minutes;
+[where it runs](https://github.com/milad-alizadeh/argo/issues/1758) is the open ticket.
+
 ## Two things will bite you
 
 **Node must be 22.12 or newer.** Electron 44 declares `engines.node >= 22.12.0` and means it. Its
 installer is CommonJS and requires `@electron/get` v5, which is ESM-only, so on an older Node it
-dies with `ERR_REQUIRE_ESM`. The repo pins no Node version yet — that is an open question on the
-map.
+dies with `ERR_REQUIRE_ESM`. The repo still pins no Node version, but that is no longer an open
+question: [Pin a Node version for the repo](https://github.com/milad-alizadeh/argo/issues/1751)
+chose 24.20.0 exactly, in a root `.node-version`, and
+[implementing it](https://github.com/milad-alizadeh/argo/issues/1777) is the open ticket. Until
+that lands, nothing checks the Node you are on and this failure is the first thing you will see.
 
 **Electron 44 ships no `postinstall`.** `bun install` alone leaves you with no Electron binary at
 all. Install it explicitly afterwards:

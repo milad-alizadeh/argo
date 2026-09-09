@@ -42,7 +42,7 @@ The order is the whole of this skill, and nothing runs out of it.
    place the whole thing runs. In this repository that is two commands:
 
    ```
-   bun run quality          # biome, duplication
+   bun run quality          # biome, typecheck, duplication
    bun run test:hooks       # every scripts/*.test.mjs
    ```
 
