@@ -79,9 +79,9 @@ check('the brief allows exactly one focused test, and says what earns it', () =>
   const brief = quoted(read(CONTRACT))
   assert.match(brief, /exactly ONE focused test/)
   assert.match(brief, /state the uncertainty it will\s+resolve/)
-  // Naming the package is what makes the command safe: an unfiltered run is the whole suite by
+  // Naming what it runs is what makes the command safe: an unfiltered run is the whole suite by
   // another name.
-  assert.match(brief, /the command names its package/)
+  assert.match(brief, /the command names the one file or package it runs/)
   assert.match(brief, /If you cannot name what\s+the test would settle, do not run it/)
 })
 
@@ -105,8 +105,11 @@ check('both skills gate on exactly what CI runs, and name nothing deleted', () =
       `${skill} names a deleted gate`,
     )
   }
-  assert.match(read(IMPLEMENT), /bun run quality/)
-  assert.match(read(SHIP), /bun run format-and-lint/)
+  // Both must name the duplication gate, not biome alone: `bun run quality` is the pair, and a
+  // skill that ran only `format-and-lint` would leave a duplication breach for CI to find.
+  for (const skill of [IMPLEMENT, SHIP]) {
+    assert.match(read(skill), /bun run quality\b/, `${skill} does not run the whole gate`)
+  }
 })
 
 check('the repo rules point at the contract rather than restating it', () => {

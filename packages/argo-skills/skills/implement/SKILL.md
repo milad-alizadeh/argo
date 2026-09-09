@@ -10,9 +10,9 @@ Use /tdd where possible, at pre-agreed seams.
 
 **One tree owns the expensive verification, and it is the reviewed one.** A gate is priced per
 tree, and a review changes the tree — so a full suite, a full build or the project's gate run
-before the review is work over bytes nobody will ship, and the gate that matters misses its
-cache and pays again. On the #1703 lane that was six minutes of suites before the review and
-another 3m11s at ship, on a branch that paid three full gates. See `docs/agents/code-review.md`.
+before the review is work over bytes nobody will ship. The measurements that set this rule came
+from a Swift gate that is now deleted (#1758), and the rule outlived it: run the gate once, on
+the tree the review left behind. See `docs/agents/code-review.md`.
 
 The order is the whole of this skill, and nothing runs out of it.
 
@@ -26,7 +26,8 @@ The order is the whole of this skill, and nothing runs out of it.
    > `bun run test`. Do not commit, push, or edit a file.
    > Read the diff and the files around it — that is what a review is.
    > You may run exactly ONE focused test, and only when you first state the uncertainty it will
-   > resolve and the command names its package. If you cannot name what the test would settle,
+   > resolve and the command names the one file or package it runs. If you cannot name what the
+   > test would settle,
    > do not run it: report the doubt as a finding instead.
 
 3. **Fix every finding in one batch.** One pass over all of them, not one pass each.

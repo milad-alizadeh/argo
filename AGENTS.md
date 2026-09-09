@@ -1,12 +1,15 @@
 # Argo
 
-Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both Claude Code and Codex.
+Monorepo for the Argo skills/plugin **and** the Argo cockpit app. The cockpit is mid-migration:
+`apps/macOS` is the deprecated Swift app, kept for reference and verified by nothing, and
+`apps/desktop` is the Electron replacement being planned on #1730. Read by both Claude Code and Codex.
 
 ## Agent skills
 
 - **Issue tracker** — Issues and PRDs live in GitHub Issues on `milad-alizadeh/argo`, via the
   `gh` CLI. A screenshot goes in the issue body, and in the PR body when a screen
-  changes. See `docs/agents/issue-tracker.md`.
+  changes — when there is a screen to shoot, which right now there is not (#1758).
+  See `docs/agents/issue-tracker.md`.
 - **Triage labels** — five canonical triage roles, each label string equal to its name. Every
   issue is labelled in the `gh issue create` call, never afterwards. See
   `docs/agents/triage-labels.md`.
@@ -52,7 +55,7 @@ the task; a session that waits until it wants the list writes no list at all.
 separate invocation the caller makes** (#1648, #1669). A run ends at the reviewed diff, committed
 on its branch; what becomes of that branch is the human's next keystroke, not the run's last step.
 `/ship` carries the close-out nothing else runs — the sweep for `.only` and debug prints, the
-screenshots, the review findings written into the body
+screenshots if the diff has a screen, the review findings written into the body
 — and it carries what it cannot tick rather than stopping, an unreviewed diff included. So a run
 that opens its own PR does not route around a refusal; it opens one having done none of that.
 
@@ -72,7 +75,8 @@ The allowlist is `ALLOWED` in `scripts/pr-ownership.mjs`, per command, and
 House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
-- **All code** — `house.md`: what no linter checks and a model does not do unprompted. The
+- **All code** — `house.md`: what no linter checks and a model does not do unprompted. Its
+  reference to `.swiftlint.yml` is stale; nothing runs SwiftLint. The
   arithmetic (length, complexity, arity, escape hatches) is a gate, not prose: `biome.jsonc` is
   where those numbers live.
 - **Swift and the cockpit** (`apps/macOS`) — `swift.md` still describes the deprecated Swift app.
@@ -80,8 +84,9 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 ### Module boundaries
 
-`apps/macOS` is layered by its SPM target graph: a module imports only what its `Package.swift`
-declares, and the compiler refuses the rest. That is the whole of the enforcement. The shell gate
+`apps/macOS` was layered by its SPM target graph, and the compiler refused an undeclared import.
+**Nothing compiles it now** (#1758), so even that enforcement is gone and the section below is a
+record of the design rather than a live rule. The shell gate
 that used to check the rest — nine edges in `scripts/swift-boundaries.sh` — is gone, so what it
 carried is now convention, held by review rather than by exit code: the headless modules stay
 clear of SwiftUI and AppKit, `ArgoUI` does not import the dev-tool targets beside it, a design
@@ -93,15 +98,16 @@ ADR-0022, ADR-0027 and ADR-0030 hold the reasoning behind most of these;
 
 Every rule in `bun run quality` is an **error, never a warning**, and the caps live in
 `biome.jsonc`, not in prose. When a gate fires, fix it or ratchet it in the config: **never
-suppress inline, never raise a global cap.** The duplication config fails open when commented, so
-no gate is proved by exit code alone.
+suppress inline, never raise a global cap.** Both configs fail open when commented, so no gate is
+proved by exit code alone.
 
 **CI is the only gate, and it is Linux only** (#1758). `.github/workflows/ci.yml` runs biome, the
 duplication gate and `bun run test:hooks`. There is no push-time gate: `.husky/pre-push` is gone,
 and so are `scripts/swift-gate.sh` and the cache, build-lock and metrics machinery around it. No
 `ARGO_SKIP_SWIFT_GATE`, no `ARGO_GATE_CALLER`, no `bun run gate:report`, no `bun run warm`. A
-session runs `bun run format-and-lint` and `bun run test:hooks` on its final tree and that is the
-whole bar.
+session runs `bun run quality` and `bun run test:hooks` on its final tree and that is the whole
+bar. `quality` is biome plus the duplication gate; running only biome leaves a duplication breach
+to be found by CI.
 
 **`apps/macOS` is deprecated and verified by nothing.** Its source is still on disk, but its
 build, test, screenshot, specimen and release scripts are deleted and it is no longer a workspace
@@ -220,6 +226,11 @@ The route in full — `/prototype` explores variants, `prototype-to-design` appr
 it with a render, `design-to-code` builds it per ticket, `pixel-review` judges the pixels. This
 is a **repo rule, not a skill description**: which tickets take the design route depends on what
 is in `docs/designs/`, which no portable skill can know.
+
+**Nothing takes this route today** (#1758). Every design in `docs/designs/` is for `apps/macOS`,
+which is deprecated and built by no ticket, and `pixel-review` has no app to render: the scripts
+it drove are deleted. The route is written down for `apps/desktop`, which will need its own
+designs and its own renderer.
 
 **The design `.md` is on `main`; its explorable `.html` never is** (#1526). The page lives on the
 branch the `.md`'s front matter names — `explorable: design/<screen>` — and is read without a

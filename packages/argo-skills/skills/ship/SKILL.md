@@ -79,6 +79,8 @@ Nothing here is a reason to stop.
   fails to build. For UI work, look at the affected states; unit tests do not show you a screen.
 - **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
   per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
+  This repository currently renders nothing — the Swift app is deprecated and the Electron one is
+  not built yet — so nothing here has a screen to shoot; the rule stands for the day it does.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
 - **The ticket is still open.** `gh issue view <N> --json state,stateReason` — one request, and
@@ -125,11 +127,12 @@ Each of these belongs in the PR body, and the ship continues past it.
    every fact, and leave code, paths, error strings and `Closes #<N>` exactly as they are. If
    the skill is not installed, write short sentences in the active voice and change no
    identifier.
-4. **Run `bun run format-and-lint` and `bun run test:hooks` before opening the PR**, and open
+4. **Run `bun run quality` and `bun run test:hooks` before opening the PR**, and open
    nothing if either fails. There is no push-time hook any more (#1758): nothing checks a branch
    between the push in step 3 and CI's first run, so this is the last point at which a breach
-   costs one command instead of a red pull request. These two are exactly what CI runs, so a
-   green pair here means a green run there.
+   costs one command instead of a red pull request. `quality` is biome plus the duplication gate;
+   running only biome leaves a duplication breach for CI to find. These two are exactly what CI
+   runs, so a green pair here means a green run there.
 
    If `implement` already ran them on this same committed tree, say so in the PR body and run
    them again anyway — they take seconds, and the tree may have moved since.
@@ -145,7 +148,7 @@ Each of these belongs in the PR body, and the ship continues past it.
    Ready for review, with `Closes #<N>` in the body and everything the section above told you to
    carry. A ticket that closed while you worked takes `--draft` and no `Closes` line, for the
    reasons above. Skip this step and step 6 for a branch that already had a PR open — the push
-   updated it, and the hook gated it — and report that PR's URL.
+   updated it, and step 4 gated it — and report that PR's URL.
 
    **The body never reaches `gh` as an argument or on stdin.** Two shapes have each cost this
    repo a ship:

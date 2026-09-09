@@ -44,7 +44,6 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
 
-
 Two rules have no linter and live in `rules/house.md` prose only: a cast standing in for a
 check, and the exhaustive construct over a closed set.
 
