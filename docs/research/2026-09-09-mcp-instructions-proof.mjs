@@ -18,14 +18,14 @@
 import { appendFileSync } from 'node:fs'
 import readline from 'node:readline'
 
-const args = process.argv.slice(2)
+const commandArguments = process.argv.slice(2)
 
 function flagValue(name) {
-  return (args.find((a) => a.startsWith(`--${name}=`)) || '').split('=')[1]
+  return (commandArguments.find((argument) => argument.startsWith(`--${name}=`)) || '').split('=')[1]
 }
 
-const withInstructions = !args.includes('--no-instructions')
-const withTool = args.includes('--with-tool')
+const withInstructions = !commandArguments.includes('--no-instructions')
+const withTool = commandArguments.includes('--with-tool')
 const sentinel = flagValue('sentinel') || 'ARGO_PROOF_UNSET'
 const logPath = flagValue('log')
 
@@ -78,9 +78,6 @@ lineReader.on('line', (line) => {
       id: message.id,
       result: { content: [{ type: 'text', text: `marked ready (sentinel=${sentinel})` }] },
     })
-  } else if (message.method === 'ping') {
-    // exercised by neither trial; kept so an unanticipated keepalive doesn't hang the harness
-    send({ jsonrpc: '2.0', id: message.id, result: {} })
   } else if (message.id !== undefined) {
     send({
       jsonrpc: '2.0',

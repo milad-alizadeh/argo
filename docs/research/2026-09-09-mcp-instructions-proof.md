@@ -153,3 +153,5 @@ paragraph reserves for a failed route does not need to be built.
   ticket, the consumer of this result).
 - `docs/research/2026-09-09-mcp-instructions-proof.trials.txt` — every trial's raw, unedited
   server-side JSON-RPC log, captured by `--log=...`; finding 1 quotes one entry from it.
+
+The sibling `.trials.txt` file also preserves client completion fields for the original three positive trials, both negative controls, and the token trial. These fields record successful completion, replies, turn counts, and the reported model. The two later positive reruns retain server logs, but their temporary client JSON files were deleted.

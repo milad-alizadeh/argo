@@ -66,3 +66,159 @@
 <- {"jsonrpc":"2.0","method":"notifications/initialized"}
 <- {"method":"tools/list","jsonrpc":"2.0","id":1}
 -> {"jsonrpc":"2.0","id":1,"result":{"tools":[]}}
+
+## Client completion evidence
+# Selected fields from the original client JSON results follow each source filename.
+# Values are unchanged. Timing, session identifiers, and aggregate billing fields are omitted.
+# modelUsage retains the reported model and its usage fields.
+# Positive trials 4 and 5 retained server logs, but their temporary client JSON files were deleted.
+
+### Positive trial 1 -- run-tool-with.json
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "7 + 5 = 12.",
+  "num_turns": 3,
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 6,
+      "outputTokens": 143,
+      "cacheReadInputTokens": 44477,
+      "cacheCreationInputTokens": 7432,
+      "webSearchRequests": 0,
+      "costUSD": 0.10016350000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
+
+### Positive trial 2 -- run-tool-with-2.json
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "12 + 3 = 15.",
+  "num_turns": 3,
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 6,
+      "outputTokens": 143,
+      "cacheReadInputTokens": 47230,
+      "cacheCreationInputTokens": 4679,
+      "webSearchRequests": 0,
+      "costUSD": 0.07400999999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
+
+### Positive trial 3 -- run-tool-with-3.json
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "13 + 3 = 16.",
+  "num_turns": 3,
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 6,
+      "outputTokens": 143,
+      "cacheReadInputTokens": 47230,
+      "cacheCreationInputTokens": 4679,
+      "webSearchRequests": 0,
+      "costUSD": 0.07400999999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
+
+### Negative control 1 -- run-tool-without.json
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "12",
+  "num_turns": 1,
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 2,
+      "outputTokens": 3,
+      "cacheReadInputTokens": 12763,
+      "cacheCreationInputTokens": 4253,
+      "webSearchRequests": 0,
+      "costUSD": 0.0489965,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
+
+### Negative control 2 -- run-tool-without-2.json
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "24.",
+  "num_turns": 1,
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 2,
+      "outputTokens": 4,
+      "cacheReadInputTokens": 12763,
+      "cacheCreationInputTokens": 4253,
+      "webSearchRequests": 0,
+      "costUSD": 0.049021499999999996,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
+
+### Sentinel-echo trial -- run2.json
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "Hey, good to see you — what are we working on?",
+  "num_turns": 1,
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 2,
+      "outputTokens": 17,
+      "cacheReadInputTokens": 26961,
+      "cacheCreationInputTokens": 0,
+      "webSearchRequests": 0,
+      "costUSD": 0.013915499999999999,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
