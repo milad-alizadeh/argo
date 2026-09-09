@@ -1,0 +1,4 @@
+{"type": "last-prompt", "leafUuid": "s-root-1", "sessionId": "subagentTail"}
+{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-08-14T11:00:01.000Z", "uuid": "s-root-1", "parentUuid": null, "message": {"role": "user", "content": "Search the tree for every caller"}}
+{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-08-14T11:00:20.000Z", "uuid": "s-a-1", "parentUuid": "s-root-1", "message": {"role": "assistant", "stop_reason": "tool_use", "content": [{"type": "tool_use", "id": "call-task-1", "name": "Task", "input": {"prompt": "find the callers"}}]}}
+{"type": "assistant", "isSidechain": true, "cwd": "/Users/x/tree", "timestamp": "2026-08-14T11:00:44.000Z", "uuid": "s-side-1", "parentUuid": "s-a-1", "message": {"role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "Eleven callers, all in the same package."}]}}

@@ -1,36 +1,16 @@
 import assert from 'node:assert/strict'
-import { chmod, cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from './acceptance-protocol.mjs'
-import { PRODUCTION_FUSE_PROFILE, readFuseWire } from './fuse-profile.mjs'
-import { packagedApp } from './packaged-app.mjs'
+import { appExecutable, assertShippedFusesIntact, packagedTestCopy } from './packaged-test-copy.mjs'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol.mjs'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 
 async function prepare(root) {
-  const application = path.join(root, 'Argo.app')
-  await cp(packagedApp('arm64'), application, { recursive: true, verbatimSymlinks: true })
-  const copiedRoot = await realpath(application)
-  assert.equal(
-    (await realpath(pathToFuseFile(application))).startsWith(`${copiedRoot}${path.sep}`),
-    true,
-  )
-  await flipFuses(application, {
-    version: FuseVersion.V1,
-    ...PRODUCTION_FUSE_PROFILE,
-    [FuseV1Options.EnableNodeCliInspectArguments]: true,
-    resetAdHocDarwinSignature: true,
-    strictlyRequireAllFuses: true,
-  })
-  const changedFuses = (await readFuseWire(application)).filter((fuse) => !fuse.matches)
-  assert.deepEqual(
-    changedFuses.map((fuse) => fuse.fuse),
-    ['EnableNodeCliInspectArguments'],
-  )
+  const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
   const projectPath = path.join(root, 'example')
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
@@ -63,7 +43,11 @@ async function prove(application, fixture) {
       process: typeof window.process,
       methods: Object.keys(window.argo).sort(),
     })),
-    { node: 'undefined', process: 'undefined', methods: ['openProject', 'versions'] },
+    {
+      node: 'undefined',
+      process: 'undefined',
+      methods: ['listSessions', 'openProject', 'readSessionFeed', 'versions', 'zoomFactor'],
+    },
   )
   const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)
   assert.deepEqual(await invoke(request), {
@@ -93,16 +77,13 @@ try {
   const fixture = await prepare(root)
   const before = await readFile(fixture.registryPath, 'utf8')
   application = await electron.launch({
-    executablePath: path.join(fixture.application, 'Contents', 'MacOS', 'Argo'),
+    executablePath: appExecutable(fixture.application),
     env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
     timeout: 30_000,
   })
   await prove(application, fixture)
   assert.equal(await readFile(fixture.registryPath, 'utf8'), before)
-  assert.equal(
-    (await readFuseWire(packagedApp('arm64'))).every((fuse) => fuse.matches),
-    true,
-  )
+  await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
       ok: true,

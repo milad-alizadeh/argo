@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"o-root-1","sessionId":"worktreeOrigin"}
+{"type":"attachment","sessionId":"worktreeOrigin","session_id":"worktreeOrigin","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-08-26T09:00:00.000Z","uuid":"o-root-1","parentUuid":null}
+{"type":"user","sessionId":"worktreeOrigin","session_id":"worktreeOrigin","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-08-26T09:00:01.000Z","uuid":"o-user-1","parentUuid":"o-root-1","message":{"role":"user","content":"Build the relocation link"}}
+{"type":"assistant","sessionId":"worktreeOrigin","session_id":"worktreeOrigin","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-08-26T09:00:05.000Z","uuid":"o-asst-1","parentUuid":"o-user-1","message":{"role":"assistant","content":[{"type":"text","text":"Entering a worktree"}],"stop_reason":"end_turn"}}

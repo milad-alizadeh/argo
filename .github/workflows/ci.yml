@@ -229,3 +229,20 @@ jobs:
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
         run: node scripts/prove-project-contract.mjs
+
+      # Discovery with no Project registered, the Feed contract, the ADR-0033 measure pass and the
+      # renderer authority the Session bridge asserts for itself (#1831).
+      - name: Prove the Session Feed in a packaged test copy
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
+        working-directory: apps/desktop
+        run: node scripts/prove-session-feed.mjs --shots "$RUNNER_TEMP/session-feed-shots"
+
+      # The packaged screens themselves, kept for the run that drew them. A capture nobody can
+      # look at afterwards proves the proof ran, not what it saw.
+      - name: Keep the packaged Session Feed captures
+        if: ${{ always() && steps.touched.outputs.desktop == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: session-feed-shots
+          path: ${{ runner.temp }}/session-feed-shots
+          if-no-files-found: ignore
