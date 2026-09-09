@@ -1,7 +1,7 @@
 {
   "name": "@argo/desktop",
   "version": "0.1.0",
-  "description": "Argo cockpit on Electron. Scaffold under migration; the packaged node-pty smoke is its acceptance test.",
+  "description": "Argo cockpit on Electron. Scaffold under migration; a packaged node-pty acceptance run is its gate.",
   "private": true,
   "main": ".vite/build/main.js",
   "scripts": {
@@ -9,8 +9,6 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "prove:pty": "node scripts/prove-packaged-pty.mjs",
-    "install:production": "node scripts/production-install.mjs",
     "assert:packaged": "node scripts/assert-packaged-pty.mjs",
     "test": "bun test"
   },

@@ -12,17 +12,17 @@
 // The exec bit is restored here rather than trusted, because it is dropped by an install and
 // nothing downstream complains: `node-pty` ships a prebuilt `spawn-helper` that must be
 // executable, and a 0644 copy makes every `pty.spawn` fail SILENTLY — no error, no shell, an
-// empty terminal. The repo hit this before and fixed it at `4dce8404^:scripts/fix-pty-perms.mjs`.
+// empty terminal.
 // Restoring it is not the assertion; `assert-packaged-pty.mjs` reads the mode off the PACKAGED
 // binary, because a script that ran is not a bit that is set.
 import { spawnSync } from 'node:child_process'
-import { chmodSync, readdirSync, statSync } from 'node:fs'
+import { chmodSync, existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-export const desktopRoot = path.resolve(import.meta.dirname, '..')
+const desktopRoot = path.resolve(import.meta.dirname, '..')
 export const SPAWN_HELPER = 'spawn-helper'
-export const EXECUTABLE_MODE = 0o755
+const EXECUTABLE_MODE = 0o755
 
 // `npm ci` is the deterministic half: it deletes `node_modules` first and installs exactly what
 // `package-lock.json` names, so a packaged tree never depends on what a previous run left behind.
@@ -65,11 +65,21 @@ export function productionInstall() {
   if (installed.status !== 0)
     throw new Error(`npm ${NPM_ARGS.join(' ')} exited ${installed.status} in ${desktopRoot}`)
 
-  const helpers = restoreSpawnHelperMode(path.join(desktopRoot, 'node_modules'))
-  if (helpers.length === 0)
+  // Presence of node-pty is the real property; the helper is how it is read on darwin. node-pty
+  // ships a `spawn-helper` only in its darwin prebuilds, so on any other platform its absence says
+  // nothing and blaming the lockfile would send a reader to a file that is fine.
+  const nodePty = path.join(desktopRoot, 'node_modules', 'node-pty', 'package.json')
+  if (!existsSync(nodePty))
     throw new Error(
-      `the production install produced no ${SPAWN_HELPER}, so node-pty is not in the tree Forge ` +
-        `is about to walk. Check apps/desktop/package-lock.json.`,
+      `the production install left no node-pty at ${nodePty}, so it is not in the tree Forge is ` +
+        `about to walk. Check apps/desktop/package-lock.json.`,
+    )
+
+  const helpers = restoreSpawnHelperMode(path.join(desktopRoot, 'node_modules'))
+  if (helpers.length === 0 && process.platform === 'darwin')
+    throw new Error(
+      `node-pty is installed but ships no ${SPAWN_HELPER}, which every darwin build needs. ` +
+        `Check that prebuilds/darwin-* survived the install.`,
     )
   return helpers
 }

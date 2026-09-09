@@ -34,13 +34,20 @@ export async function startsAndSaysSomething(cwd: string): Promise<void> {
 
 // Input has to reach the shell as terminal input, not as a pipe write: a pipe would still run the
 // command, so the proof is the ECHO — the tty putting the typed characters back on the screen.
+//
+// Both halves are needed, and they have to be told apart. The line discipline echoes the typed
+// characters whether or not a shell is on the other end, so an echo assertion alone passes on a
+// pty pair whose child never execed — which is exactly the failure this whole file exists to
+// catch. So: assert the echo of the literal text, then assert the OUTPUT with a split marker the
+// echo can never contain.
 export async function echoesWhatIsTyped(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, [], cwd)
   try {
-    session.write('echo ARGO-TYPED')
-    await session.waitFor('echo ARGO-TYPED', CASE_TIMEOUT_MS)
+    const { command, needle } = marker('TYPED')
+    session.write(command)
+    await session.waitFor(command, CASE_TIMEOUT_MS)
     session.write('\n')
-    await session.waitFor('ARGO-TYPED\r\n', CASE_TIMEOUT_MS)
+    await session.waitFor(needle, CASE_TIMEOUT_MS)
   } finally {
     session.kill()
   }

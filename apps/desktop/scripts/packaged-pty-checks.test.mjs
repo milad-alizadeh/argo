@@ -1,23 +1,39 @@
-// The source tier of [#1769](https://github.com/milad-alizadeh/argo/issues/1769): everything
-// about the packaged PTY that can be judged without a Mac, a signing identity or a fifteen-minute
-// package. It runs in the ordinary Linux CI job, on every pull request.
-//
-// Two kinds of thing live here. The first is the configuration a hand edit can quietly undo —
-// the yauzl override, node-pty being a PRODUCTION dependency, the unpack glob, the fuse, the
-// hooks. The second is the checks themselves, exercised against fixture trees, because a check
-// that cannot fail is worth nothing and only a deliberate violation proves it fires.
+// The source tier of [#1769](https://github.com/milad-alizadeh/argo/issues/1769), first half: the
+// CONFIGURATION a hand edit can quietly undo — the yauzl override, node-pty being a production
+// dependency, the unpack glob, the fuse, the hooks, the protocol both sides of the Vite boundary
+// share. None of it needs a Mac, a signing identity or a fifteen-minute package, so it runs in the
+// ordinary Linux CI job on every pull request. The checks themselves are exercised against fixture
+// trees next door, in `packaged-pty-fixtures.test.mjs`.
 import { describe, expect, test } from 'bun:test'
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { archOf, nativeDirs, unpackedFailures } from './packaged-pty-checks.mjs'
+import { CYCLES, RESULT_PREFIX, SKIP_ENDURANCE_ENV } from './acceptance-protocol.mjs'
 
-const here = import.meta.dirname
-const desktopRoot = path.resolve(here, '..')
+const desktopRoot = path.resolve(import.meta.dirname, '..')
 const repoRoot = path.resolve(desktopRoot, '..', '..')
 
 const read = (file) => readFileSync(file, 'utf8')
 const json = (file) => JSON.parse(read(file))
+
+// Both ends of the app-to-driver protocol, across the Vite bundling boundary.
+const PROTOCOL_USERS = [
+  'src/main.ts',
+  'src/pty-acceptance.ts',
+  'scripts/prove-packaged-pty.mjs',
+  'scripts/packaged-app.mjs',
+]
+
+// A prerelease sorts BELOW its release under semver — 1.2.0-beta.15 < 1.2.0 — so the numeric
+// triple is compared and the prerelease suffix ignored. Both are acceptable here: the fix landed
+// in the 1.2.0 line and every build of it carries the fix.
+function atLeastVersion(version, floor) {
+  const parts = version.split('-')[0].split('.').map(Number)
+  for (const [index, minimum] of floor.entries()) {
+    if (parts[index] > minimum) return true
+    if (parts[index] < minimum) return false
+  }
+  return true
+}
 
 describe('the tree Forge is given', () => {
   // `--omit=dev` is what keeps the production install small. A node-pty that drifted into
@@ -38,23 +54,14 @@ describe('the tree Forge is given', () => {
     expect(lock.packages['node_modules/node-pty'].dev).toBeUndefined()
   })
 
-  // The endurance half of the #1749 boundary is a version gate on node-pty, and nothing but a
-  // measurement says so. Measured on this repo's arm64 Mac, 600 spawn/exit cycles of `/bin/sh -c
-  // 'exit 0'` with the exit awaited each time, descriptors counted with lsof:
-  //
-  //   node-pty 1.1.0 (`latest`)       FAILED at cycle 497, `posix_spawnp failed.`, +1492 fds
-  //   node-pty 1.2.0-beta.15 (`beta`) 600/600, +0 fds
-  //
-  // Three descriptors per terminal, one of them a `/dev/ptmx`, and `kill()` and `destroy()` change
-  // nothing — the read stream is destroyed but the CustomWriteStream over the SAME fd is not.
-  // `kern.tty.ptmx_max` is 511 on macOS, so on 1.1.0 a cockpit process can open about 500 PTYs in
-  // its whole lifetime however cleanly each one is closed. That is a hard ceiling on the thing
-  // #1791 chose node-pty to be, so the `beta` tag is the version that ships until the fix reaches
-  // `latest`. Downgrading to 1.1.0 turns the packaged endurance check red; this says why before
-  // anyone reads that as flake.
-  test('node-pty is pinned to the line whose descriptors stay flat', () => {
+  // node-pty leaks three descriptors per terminal before 1.2.0, against a 511 ptmx ceiling on
+  // macOS, so the packaged endurance check cannot pass on an older one. The measurement and the
+  // cause are in apps/desktop/README.md; this is the floor, expressed so that the upgrade the
+  // README describes — beta to stable — needs no edit here. A prefix match on `1.2.0-beta.` would
+  // have turned 1.2.0 final red on the day it shipped.
+  test('node-pty is at or above the release whose descriptors stay flat', () => {
     const manifest = json(path.join(desktopRoot, 'package.json'))
-    expect(manifest.dependencies['node-pty']).toStartWith('1.2.0-beta.')
+    expect(atLeastVersion(manifest.dependencies['node-pty'], [1, 2, 0])).toBe(true)
   })
 
   // forge#4277: Forge's `extract-zip` pulls a yauzl@2 that is broken on Node 24.16 and later, and
@@ -91,62 +98,27 @@ describe('forge.config.ts', () => {
   })
 })
 
-describe('the checks themselves', () => {
-  // node-pty requires the FIRST of these that holds pty.node and derives spawn-helper from that
-  // same directory. If node-pty ever reorders them, an assertion written against the old order
-  // checks a directory the app will not use — and still passes.
-  test('nativeDirs matches node-pty s own search order', () => {
-    const loader = read(path.join(repoRoot, 'node_modules', 'node-pty', 'lib', 'utils.js'))
-    expect(loader).toContain("['build/Release', 'build/Debug', \"prebuilds/\"")
-    expect(nativeDirs('arm64')).toEqual(['build/Release', 'build/Debug', 'prebuilds/darwin-arm64'])
+// The app is bundled by Vite out of src/ and the driver runs as plain node out of scripts/, so the
+// two never share a module at runtime. They share one at build time, and these assert that shape
+// reached both sides: a silent rename makes the driver report "the app printed no
+// ARGO_PTY_ACCEPTANCE line; node-pty may have failed to load" — naming the one thing that is fine.
+describe('the app-to-driver protocol', () => {
+  test('the prefix is a prefix, and both sides take it from one place', () => {
+    expect(RESULT_PREFIX).toBe('ARGO_PTY_ACCEPTANCE ')
+    expect(RESULT_PREFIX.endsWith(' ')).toBe(true)
   })
 
-  test('archOf reads the architecture out of Forge s output directory name', () => {
-    expect(archOf('/x/out/Argo-darwin-arm64')).toBe('arm64')
-    expect(archOf('/x/out/Argo-darwin-arm64/')).toBe('arm64')
-    expect(archOf('/x/out/Argo-linux-x64')).toBeNull()
-  })
-})
-
-// Fixture trees, so each failure mode is proved to fail rather than assumed to.
-function fixtureApp(mode) {
-  const appPath = path.join(mkdtempSync(path.join(tmpdir(), 'argo-pty-')), 'Argo.app')
-  const dir = path.join(
-    appPath,
-    'Contents/Resources/app.asar.unpacked/node_modules/node-pty/prebuilds/darwin-arm64',
-  )
-  mkdirSync(dir, { recursive: true })
-  writeFileSync(path.join(dir, 'pty.node'), 'binary')
-  if (mode !== 'no-helper') {
-    writeFileSync(path.join(dir, 'spawn-helper'), 'binary')
-    chmodSync(path.join(dir, 'spawn-helper'), mode === 'bad-mode' ? 0o644 : 0o755)
-  }
-  return appPath
-}
-
-describe('unpackedFailures', () => {
-  const chosen = 'prebuilds/darwin-arm64'
-
-  test('passes a complete, executable pair', () => {
-    expect(unpackedFailures(fixtureApp('good'), chosen)).toEqual([])
+  test('nothing in src or scripts spells a protocol string by hand', () => {
+    for (const file of PROTOCOL_USERS) {
+      const source = read(path.join(desktopRoot, file)).replaceAll(/^\s*\/\/.*$/gm, '')
+      expect(source).not.toContain(`'${SKIP_ENDURANCE_ENV}'`)
+      expect(source).not.toContain(`'${RESULT_PREFIX}'`)
+    }
   })
 
-  test('fails a spawn-helper that lost its executable bit', () => {
-    const failures = unpackedFailures(fixtureApp('bad-mode'), chosen)
-    expect(failures).toHaveLength(1)
-    expect(failures[0]).toContain('mode 644')
-  })
-
-  test('fails a spawn-helper that was left inside the asar', () => {
-    const failures = unpackedFailures(fixtureApp('no-helper'), chosen)
-    expect(failures).toHaveLength(1)
-    expect(failures[0]).toContain('is not an unpacked file')
-  })
-
-  // The trap that makes replicating node-pty's search order worth doing: `@electron/rebuild` can
-  // leave a build/Release that wins the search and holds no helper.
-  test('fails when the chosen directory is not the one that was unpacked', () => {
-    const failures = unpackedFailures(fixtureApp('good'), 'build/Release')
-    expect(failures).toHaveLength(2)
+  // The number IS the assertion: node-pty 1.1.0 dies around cycle 497 against a 511 ptmx ceiling,
+  // so a run that quietly did fewer has not tested the thing #1749 asked for.
+  test('the cycle count is the one #1749 names', () => {
+    expect(CYCLES).toBe(600)
   })
 })

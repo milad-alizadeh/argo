@@ -4,18 +4,22 @@
 // It writes a line rather than setting an exit code alone, because "which case failed" is the
 // thing a person needs and an exit code cannot carry it. The exit code is still the gate.
 import { app } from 'electron'
+import { RESULT_PREFIX, SKIP_ENDURANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { BEHAVIOUR_CASES } from './pty-cases'
 import { descriptorsStayFlat } from './pty-endurance'
 
-export const RESULT_PREFIX = 'ARGO_PTY_ACCEPTANCE '
+export { RESULT_PREFIX }
+
 // The endurance check is minutes of work on a busy machine and the behaviour cases are seconds,
-// so it is opt-out: every packaged build runs it, and a person debugging one case need not.
-const ENDURANCE_ENABLED = process.env.ARGO_PTY_SKIP_ENDURANCE !== '1'
+// so a person debugging one case can drop it. It is never silently absent: `endurance` says which
+// of the three things happened, and the driver refuses a 'skipped' it did not itself ask for.
+const ENDURANCE_ENABLED = process.env[SKIP_ENDURANCE_ENV] !== '1'
 
 export type AcceptanceResult = {
   ok: boolean
   cases: Record<string, string>
-  endurance: Record<string, number> | 'skipped'
+  /** The measurement, or `'skipped'`, or the reason it failed. Never a failure dressed as a skip. */
+  endurance: Record<string, number> | string
   packaged: boolean
   processArch: string
   electron: string
@@ -38,12 +42,13 @@ export async function runAcceptance(cwd: string): Promise<AcceptanceResult> {
     }
   }
 
-  let endurance: Record<string, number> | 'skipped' = 'skipped'
+  let endurance: Record<string, number> | string = 'skipped'
   if (ENDURANCE_ENABLED) {
     try {
       endurance = await descriptorsStayFlat(cwd)
     } catch (error) {
       cases.endurance = messageOf(error)
+      endurance = messageOf(error)
     }
   }
 
@@ -59,6 +64,11 @@ export async function runAcceptance(cwd: string): Promise<AcceptanceResult> {
   }
 }
 
-export function reportAcceptance(result: AcceptanceResult): void {
-  process.stdout.write(`${RESULT_PREFIX}${JSON.stringify(result)}\n`)
+// Awaits the flush. stdout is a pipe here, so the write is asynchronous and `app.exit(1)` does not
+// drain it — the failing run would still go red, but the per-case reason, which is the only thing
+// this line exists to carry, can be lost exactly when it is needed.
+export function reportAcceptance(result: AcceptanceResult): Promise<void> {
+  return new Promise((resolve) => {
+    process.stdout.write(`${RESULT_PREFIX}${JSON.stringify(result)}\n`, () => resolve())
+  })
 }

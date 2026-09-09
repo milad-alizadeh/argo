@@ -8,10 +8,11 @@ import type { ForgeConfig } from '@electron-forge/shared-types'
 import { assertPackagedPty } from './scripts/assert-packaged-pty.mjs'
 import { productionInstall } from './scripts/production-install.mjs'
 
-// Forge owns the whole desktop lifecycle: start, native rebuild, package, make, sign, publish.
-// Decision: "Choose the Electron desktop toolchain" (#1732). Every @electron-forge/* package and
-// Electron itself are pinned exactly, because Forge marks the Vite plugin experimental and
-// reserves breaking changes for a minor release.
+// Forge owns the whole desktop lifecycle: start, package, make, sign, publish. Not the native
+// rebuild — see `rebuildConfig` below, which turns it off. Decision: "Choose the Electron desktop
+// toolchain" (#1732). Every @electron-forge/* package and Electron itself are pinned exactly,
+// because Forge marks the Vite plugin experimental and reserves breaking changes for a minor
+// release.
 
 // What goes INTO the package. This list exists because the Vite plugin's default is
 // `(file) => !file.startsWith('/.vite')` — it copies the Vite output and nothing else, on the
@@ -22,16 +23,17 @@ import { productionInstall } from './scripts/production-install.mjs'
 // keeping the whole tree is the ordinary Electron shape, not a size regression.
 const KEPT_IN_PACKAGE = [/^\/\.vite($|\/)/, /^\/node_modules($|\/)/]
 
-// Dropped back out of that. `node-pty` ships prebuilt binaries for every platform it supports,
-// and the two Windows ones are 58 MB of an otherwise 5 MB tree — on a macOS-only build, in every
-// install and every full-download update. #1791 chose node-pty over the compiled Bun helper on
-// exactly this arithmetic, 400 KB against 62 MB, so carrying the Windows prebuilds would hand the
-// cost straight back. The build inputs go with them: sources, vendored deps and the node-gyp
+// Dropped back out of that. `node-pty` ships prebuilt binaries for every platform it supports, and
+// on a macOS-only build the Windows ones are dead weight in every install and every full-download
+// update. Measured on the pinned 1.2.0-beta.15: 26 MB installed, of which 23 MB is `prebuilds/`
+// and 23 MB of THAT is win32-arm64 and win32-x64. #1791 chose node-pty over the compiled Bun
+// helper on exactly this arithmetic, so carrying the Windows prebuilds would hand the cost
+// straight back. The build inputs go with them: sources, vendored deps and the node-gyp
 // scaffolding, none of which the app opens once the rebuild is off (see `rebuildConfig`).
 //
-// Both darwin prebuilds stay, at about 200 KB. Forge's `ignore` is asked about a file with no
+// Both darwin prebuilds stay, at about 210 KB. Forge's `ignore` is asked about a file with no
 // architecture in hand, so dropping the unused one would need this list to know something it
-// cannot see, and 64 KB is not worth a rule that guesses.
+// cannot see, and 72 KB is not worth a rule that guesses.
 const DROPPED_FROM_PACKAGE = [
   /^\/node_modules\/node-pty\/prebuilds\/(?!darwin-)/,
   /^\/node_modules\/node-pty\/(src|deps|third_party|scripts|bin|build)($|\/)/,
@@ -89,9 +91,8 @@ const config: ForgeConfig = {
       ],
       renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],
     }),
-    // Production hardening. The E2E package flavor is the only one that may re-enable
-    // EnableNodeCliInspectArguments, because Playwright's Electron launcher can time out
-    // without it; production gets a separate launch smoke instead.
+    // Production hardening. `scripts/prove-packaged-pty.mjs` launches the shipped binary with
+    // these fuses exactly as a user gets them, so nothing here is relaxed for testing.
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,

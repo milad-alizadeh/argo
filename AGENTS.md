@@ -101,8 +101,12 @@ Every rule in `bun run quality` is an **error, never a warning**, and the caps l
 suppress inline, never raise a global cap.** Both configs fail open when commented, so no gate is
 proved by exit code alone.
 
-**CI is the only gate, and it is Linux only** (#1758). `.github/workflows/ci.yml` runs biome, the
-duplication gate and `bun run test:hooks`. There is no push-time gate: `.husky/pre-push` is gone,
+**CI is the only gate.** `.github/workflows/ci.yml` runs biome, the
+duplication gate and `bun run test:hooks` on Linux, and a second job on `macos-26` that packages
+`apps/desktop` for arm64, asserts the packaged `node-pty`, and runs the shipped app's acceptance
+harness (#1769). That job runs only when the pull request touches `apps/desktop`, the root
+manifest, the lockfile or `.github/`, and its filter fails CLOSED: an unreadable base ref runs the
+job rather than skipping it. There is no push-time gate: `.husky/pre-push` is gone,
 and so are `scripts/swift-gate.sh` and the cache, build-lock and metrics machinery around it. No
 `ARGO_SKIP_SWIFT_GATE`, no `ARGO_GATE_CALLER`, no `bun run gate:report`, no `bun run warm`. A
 session runs `bun run quality` and `bun run test:hooks` on its final tree and that is the whole

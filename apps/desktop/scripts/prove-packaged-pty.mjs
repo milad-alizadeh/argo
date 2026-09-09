@@ -13,6 +13,7 @@
 // Usage: node scripts/prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance]
 import { existsSync } from 'node:fs'
 import process from 'node:process'
+import { ACCEPTANCE_ENV, SKIP_ENDURANCE_ENV } from './acceptance-protocol.mjs'
 import {
   appBinary,
   exitFailures,
@@ -25,17 +26,27 @@ import {
   SHIPPED_ARCHES,
 } from './packaged-app.mjs'
 
+// An unrecognised flag is an error, not a shrug. `--arch=x64` and a bare `--arch` both used to
+// fall through to the default and print `PASS arm64`, exit 0, for a run the operator believed
+// asked for something else.
 function parseArgs(argv) {
   const arches = []
   let skipPackage = false
   let skipEndurance = false
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--arch') arches.push(...(argv[i + 1] ?? '').split(',').filter(Boolean))
-    if (argv[i] === '--skip-package') skipPackage = true
-    if (argv[i] === '--skip-endurance') skipEndurance = true
+    if (argv[i] === '--arch') {
+      const named = (argv[i + 1] ?? '').split(',').filter(Boolean)
+      if (named.length === 0) throw new Error('--arch needs a value, like --arch arm64')
+      arches.push(...named)
+      i += 1
+    } else if (argv[i] === '--skip-package') skipPackage = true
+    else if (argv[i] === '--skip-endurance') skipEndurance = true
+    else throw new Error(`unrecognised argument ${argv[i]}. Usage: ${USAGE}`)
   }
   return { arches: arches.length > 0 ? arches : SHIPPED_ARCHES, skipPackage, skipEndurance }
 }
+
+const USAGE = 'prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance]'
 
 async function packageArch(arch) {
   const packaged = await run(forgeBinary(), ['package', '--arch', arch], {
@@ -66,12 +77,13 @@ async function proveArch(arch, { skipPackage, skipEndurance }) {
   const launched = await run(binary, [], {
     timeoutMs: LAUNCH_TIMEOUT_MS,
     env: {
-      ARGO_PTY_ACCEPTANCE: '1',
-      ...(skipEndurance ? { ARGO_PTY_SKIP_ENDURANCE: '1' } : {}),
+      [ACCEPTANCE_ENV]: '1',
+      // Set either way, so an ambient value cannot decide this for us.
+      [SKIP_ENDURANCE_ENV]: skipEndurance ? '1' : '0',
     },
   })
   const result = readResult(launched.stdout)
-  const failures = [...exitFailures(launched), ...resultFailures(result, arch)]
+  const failures = [...exitFailures(launched), ...resultFailures(result, arch, { skipEndurance })]
 
   return {
     arch,

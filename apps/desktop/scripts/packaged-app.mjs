@@ -4,8 +4,9 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { CYCLES, RESULT_PREFIX } from './acceptance-protocol.mjs'
 
-export const RESULT_PREFIX = 'ARGO_PTY_ACCEPTANCE '
+export { RESULT_PREFIX }
 // The endurance check is 600 spawn/exit cycles, so the launch budget is minutes, not seconds.
 export const LAUNCH_TIMEOUT_MS = 10 * 60_000
 export const PACKAGE_TIMEOUT_MS = 15 * 60_000
@@ -39,6 +40,12 @@ export function run(command, args, { timeoutMs, env }) {
     child.stderr.on('data', (chunk) => {
       stderr += chunk
     })
+    // A spawn that never starts emits 'error' and no 'close', so without this the promise would
+    // hang until the timeout and report a missing binary as a slow app.
+    child.on('error', (error) => {
+      clearTimeout(timer)
+      resolve({ code: null, signal: null, stdout, stderr: `${stderr}${error.message}\n`, timedOut })
+    })
     child.on('close', (code, signal) => {
       clearTimeout(timer)
       resolve({ code, signal, stdout, stderr, timedOut })
@@ -62,12 +69,12 @@ export function forgeBinary() {
 }
 
 // Forge names the output directory out/<app>-darwin-<arch>.
-export function appDirectory(arch) {
+function outputDirectory(arch) {
   return path.join(desktopRoot, 'out', `${APP_NAME}-darwin-${arch}`)
 }
 
 export function appBinary(arch) {
-  return path.join(appDirectory(arch), `${APP_NAME}.app`, 'Contents', 'MacOS', APP_NAME)
+  return path.join(outputDirectory(arch), `${APP_NAME}.app`, 'Contents', 'MacOS', APP_NAME)
 }
 
 export function readResult(stdout) {
@@ -90,14 +97,29 @@ export function exitFailures(launched) {
   return failures
 }
 
+// The endurance check reads an env var, and the app inherits this process's whole environment, so
+// an `ARGO_PTY_SKIP_ENDURANCE=1` left in a shell or set on a runner would drop the one check that
+// caught node-pty 1.1.0's leak — and the run would still print PASS. The driver knows whether it
+// asked to skip; anything else is a failure, including a run that quietly did fewer cycles.
+function enduranceFailures(endurance, skipEndurance) {
+  if (skipEndurance) return []
+  if (endurance === 'skipped')
+    return [`the endurance check was skipped, but this run did not ask to skip it`]
+  if (typeof endurance !== 'object' || endurance === null) return [`endurance: ${endurance}`]
+  if (endurance.cycles !== CYCLES)
+    return [`endurance ran ${endurance.cycles} cycles, expected ${CYCLES}`]
+  return []
+}
+
 // The app has to prove it was the packaged one, built for the architecture asked for, and that
 // every case of the acceptance boundary passed inside it.
-export function resultFailures(result, arch) {
+export function resultFailures(result, arch, { skipEndurance = false } = {}) {
   if (!result)
     return [`the app printed no ${RESULT_PREFIX.trim()} line; node-pty may have failed to load`]
   const failures = []
   for (const [name, outcome] of Object.entries(result.cases ?? {}))
     if (outcome !== 'pass') failures.push(`case ${name}: ${outcome}`)
+  failures.push(...enduranceFailures(result.endurance, skipEndurance))
   if (result.packaged !== true)
     failures.push('app.isPackaged was false, so this was not the packaged app')
   if (result.processArch !== arch)

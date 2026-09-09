@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { app, BrowserWindow } from 'electron'
-import { reportAcceptance, runAcceptance } from './pty-acceptance'
+import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -10,7 +10,11 @@ declare const MAIN_WINDOW_VITE_NAME: string
 // process behind this flag, because the only place its properties are true or false is inside the
 // packaged, signed app: behind the hardened runtime, the asar and the code signature. A dev-server
 // run proves none of it. `scripts/prove-packaged-pty.mjs` is what drives the packaged binary.
-const ACCEPTANCE_ENABLED = process.env.ARGO_PTY_ACCEPTANCE === '1'
+//
+// The harness is loaded by a DYNAMIC import, so the 600-cycle loop, the six behaviour cases and
+// the `lsof` call are split into a chunk the ordinary launch never touches. A static import would
+// put all of it on the path of every user who opens the app.
+const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -42,8 +46,9 @@ void app.whenReady().then(async () => {
 
   // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
   // case: the driver outside fails the build if the process does not go away on its own.
+  const { reportAcceptance, runAcceptance } = await import('./pty-acceptance')
   const result = await runAcceptance(app.getPath('home'))
-  reportAcceptance(result)
+  await reportAcceptance(result)
   if (result.ok) app.quit()
   else app.exit(1)
 })

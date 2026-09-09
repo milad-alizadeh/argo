@@ -33,10 +33,6 @@ export class PtySession {
     })
   }
 
-  get output(): string {
-    return this.buffer
-  }
-
   get exitCount(): number {
     return this.exits
   }
@@ -49,8 +45,8 @@ export class PtySession {
     this.child.resize(cols, rows)
   }
 
-  kill(signal?: string): void {
-    this.child.kill(signal)
+  kill(): void {
+    this.child.kill()
   }
 
   // Resolves when `needle` has appeared in everything the PTY has said so far, so a token that

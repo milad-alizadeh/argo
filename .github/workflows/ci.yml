@@ -1,26 +1,14 @@
-# The default gate for every PR: biome, the typecheck, the duplication gate and the
-# guardrail-hook tests, on Linux. That is the whole of it, and it is the whole of the repo's
-# verification.
+# Two tiers. `check` runs biome, the typecheck, the duplication gate and the guardrail-hook tests
+# on Linux for every PR. `desktop-artifact` packages `apps/desktop` for arm64 on macOS, asserts the
+# packaged `node-pty` and runs the shipped app (#1769) — only when the PR touches the desktop app,
+# the root manifest, the lockfile or `.github/`, and its filter fails CLOSED.
 #
-# The history, because it was wrong and the correction matters (#1758). A `macos-26` job used to
-# build and test `apps/macOS` here. #1340 removed it on the grounds that it "billed about 99% of
-# this repo's Actions spend". That was read off the GROSS column of the billing page. The BILLED
-# column was $0, every day, and still is: the SKU is `Actions macOS 3-core`, a standard runner,
-# and GitHub's own reference says use of the standard hosted runners "is free and unlimited on
-# public repositories". `argo` is public. The 228 minutes were real; the money was not.
+# The macOS job is free: standard GitHub-hosted runners are unlimited on public repositories, and
+# `argo` is public. The "99% of the Actions bill" figure that removed the previous macOS job read
+# the GROSS column; the BILLED column is $0. AGENTS.md holds that correction in full.
 #
-# The gate that replaced it lived in `.husky/pre-push` and blocked every push on a branch with an
-# open PR. It is gone too, along with `scripts/swift-gate.sh` and the cache, build-lock and
-# metrics machinery built around it. The reason is not the correction above: it is that
-# `apps/macOS` is deprecated in favour of the Electron app, so there is no longer a Swift tree
-# worth gating. `apps/macOS` keeps its source and has no build tooling; nothing verifies it.
-#
-# When `apps/desktop` lands, its suites run here on `ubuntu-latest` for free, and `turbo run test`
-# reaches a workspace again. The parts that Linux cannot do — `codesign`, `notarytool`, the DMG
-# maker, and running the shipped arm64 artifact — need a macOS job, which is also free on the
-# standard runner. Two limits to design around rather than discover: GitHub Free allows 5
-# concurrent macOS jobs, and a fork PR gets no secrets, so it can build and read the fuse wire
-# back but cannot sign.
+# Two limits to design around rather than discover: GitHub Free allows 5 concurrent macOS jobs, and
+# a fork PR gets no secrets — so it can build and read the fuse wire back, but cannot sign.
 #
 name: ci
 
@@ -106,15 +94,33 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Full history. The filter below needs a merge base, and a depth-1 clone has none: both
+          # sides are grafted shallow roots and `A...B` aborts with "no merge base".
+          fetch-depth: 0
 
       # A step-level filter rather than a workflow-level `paths:`, which would gate the Linux job
       # with it and leave a desktop-only pull request unlinted.
+      #
+      # It fails CLOSED, and that is the whole design of it. Written the obvious way — a pipeline
+      # inside an `if` — every failure mode writes `desktop=false` and skips the package, the
+      # assertion and the launch, and the job then reports GREEN having proved nothing. `bash -e`
+      # is suspended inside an `if` condition by definition, GitHub's default shell sets no
+      # `pipefail`, and grep on an empty stream exits 1. So the diff runs on its own line, under
+      # `set -euo pipefail`, where a broken filter turns the job red instead of quietly disarming
+      # it. The branch taken is printed either way, so a reader can tell "no desktop changes" from
+      # "the filter broke".
       - id: touched
+        shell: bash
         run: |
-          git fetch --no-tags --depth=1 origin "$BASE_REF"
-          if git diff --name-only "FETCH_HEAD...HEAD" | grep -qE '^(apps/desktop/|package\.json|bun\.lock|\.github/)'; then
+          set -euo pipefail
+          git fetch --no-tags origin "$BASE_REF"
+          changed=$(git diff --name-only "FETCH_HEAD...HEAD")
+          if grep -qE '^(apps/desktop/|package\.json|bun\.lock|\.github/)' <<<"$changed"; then
+            echo "the desktop app is touched by this pull request; the artifact tier runs"
             echo "desktop=true" >> "$GITHUB_OUTPUT"
           else
+            echo "no desktop files changed; the artifact tier is skipped deliberately"
             echo "desktop=false" >> "$GITHUB_OUTPUT"
           fi
         env:
@@ -132,9 +138,22 @@ jobs:
       # Forge dies on a missing one. `trustedDependencies` does not help: there is no script to
       # trust. Do NOT reach for `npx install-electron --no` — it deletes `node_modules/electron`
       # first and npx's own `--no` then refuses to reinstall it.
+      #
+      # Bun's linker decides whether the root or apps/desktop holds `electron`, so probe both
+      # rather than assume a layout — `forgeBinary()` in packaged-app.mjs makes the same point.
       - name: Install the Electron binary
         if: steps.touched.outputs.desktop == 'true'
-        run: node node_modules/electron/install.js
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in node_modules apps/desktop/node_modules; do
+            if [ -f "$root/electron/install.js" ]; then
+              node "$root/electron/install.js"
+              exit 0
+            fi
+          done
+          echo "no electron/install.js under node_modules or apps/desktop/node_modules" >&2
+          exit 1
 
       # `forge package` runs both hooks — the production npm install that gives flora-colossus an
       # npm-shaped tree to walk, and the postPackage assertion that refuses an app whose node-pty
@@ -147,8 +166,13 @@ jobs:
       # The same assertions again, standalone against the artifact on disk. This is the form a
       # downloaded release artifact would be checked in, and it keeps the checks honest if the
       # hook is ever detached from the config.
+      #
+      # `success()`, not `!cancelled()`: unlike the Linux gates, which are independent and worth
+      # running all of, these two are strictly downstream of the package. Running them after a
+      # failed package adds two red steps whose messages ("no app.asar", "no packaged binary")
+      # describe the symptom and bury the cause.
       - name: Assert the packaged app
-        if: ${{ !cancelled() && steps.touched.outputs.desktop == 'true' }}
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
         run: bun run assert:packaged out/Argo-darwin-arm64/Argo.app
 
@@ -156,6 +180,6 @@ jobs:
       # interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a
       # flat descriptor count.
       - name: Run the shipped app
-        if: ${{ !cancelled() && steps.touched.outputs.desktop == 'true' }}
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
         run: node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package

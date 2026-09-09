@@ -69,13 +69,21 @@ time:
 | `1.1.0` (`latest`) | **failed at cycle 497**, `posix_spawnp failed.` | +1492 |
 | `1.2.0-beta.15` (`beta`) | 600/600 | 0 |
 
-Calling `kill()` or `destroy()` changes nothing: the read stream is destroyed, but the
-`CustomWriteStream` opened over the same fd is not. `kern.tty.ptmx_max` is 511 on macOS, so on
-`1.1.0` a cockpit process can open about 500 PTYs in its entire lifetime however cleanly each one
-is closed — a hard ceiling on exactly what
+Calling `kill()` or `destroy()` changes nothing, and nothing you can do from JavaScript does: the
+JS layer is byte-for-byte equivalent between the two versions. The fix is entirely native, in
+`src/unix/pty.cc` — the beta closes every inherited descriptor at or above 3 in the child, sets
+close-on-exec, and closes the master on the error path and the slave in the parent. So do not go
+looking in `unixTerminal.js` for it.
+
+`kern.tty.ptmx_max` is 511 on macOS, so on `1.1.0` a cockpit process can open about 500 PTYs in
+its entire lifetime however cleanly each one is closed — a hard ceiling on exactly what
 [#1791](https://github.com/milad-alizadeh/argo/issues/1791) chose node-pty to be. The `beta` tag
-ships until the fix reaches `latest`. Downgrading turns the packaged endurance check red, and that
+ships until the fix reaches `latest`; the source tier accepts any node-pty at 1.2.0 or above, so
+the stable release needs no test edit. Downgrading turns the packaged endurance check red, and that
 is the check working.
+
+One behaviour change rides along with the fix: closing every inherited descriptor means a spawned
+CLI can no longer be handed one. Nothing in Argo does that today.
 
 ## Two things will bite you
 

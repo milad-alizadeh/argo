@@ -9,25 +9,34 @@
 // instrument rather than compared against an absolute number.
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { CYCLES } from '../scripts/acceptance-protocol.mjs'
 import { PtySession } from './pty-session'
 
 const execFileAsync = promisify(execFile)
 
-export const CYCLES = 600
+export { CYCLES }
 // Anything a PTY leaks, it leaks once per cycle, so a real leak lands near 600 and not near 8.
 // The allowance is for the descriptors the runtime itself opens while this runs.
 export const ALLOWED_GROWTH = 8
 const CYCLE_TIMEOUT_MS = 15_000
 const SETTLE_MS = 500
+// A leaking process holds thousands of descriptors, so the `after` reading is the large one. The
+// default 1 MB would clip exactly that side, and a clipped `after` against a complete `before`
+// reads as growth 0 — a leak reported as flat. Raised past anything `kern.tty.ptmx_max` allows.
+const LSOF_MAX_BUFFER = 64 * 1024 * 1024
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export async function openDescriptorCount(): Promise<number> {
-  // lsof exits 1 when some descriptor cannot be inspected, having still listed the rest, so the
-  // exit code is not the signal here — the output is.
-  const { stdout } = await execFileAsync('/usr/sbin/lsof', ['-p', String(process.pid)]).catch(
-    (error: { stdout?: string }) => ({ stdout: error.stdout ?? '' }),
-  )
+  // lsof exits 1 when some descriptor cannot be inspected, having still listed the rest — so its
+  // exit code is not the signal, the output is. Every OTHER way of failing has to stay fatal: a
+  // reading this silently truncates is a reading that reports a leak as flat.
+  const { stdout } = await execFileAsync('/usr/sbin/lsof', ['-p', String(process.pid)], {
+    maxBuffer: LSOF_MAX_BUFFER,
+  }).catch((error: { code?: number; stdout?: string }) => {
+    if (error.code === 1 && error.stdout) return { stdout: error.stdout }
+    throw error
+  })
   const lines = stdout.split('\n').filter((line) => line.trim().length > 0)
   if (lines.length === 0) throw new Error('lsof reported nothing, so no descriptor count was taken')
   return lines.length - 1 // the header

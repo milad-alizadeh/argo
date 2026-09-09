@@ -104,10 +104,11 @@ resolves 37 skills from 5 sources and exits 0. Run the real install in the check
 never expecting it in a diff.
 
 The packaged acceptance test, `apps/desktop/scripts/prove-packaged-pty.mjs`, needs a Mac, a full
-Forge package and several minutes, so it is in no gate here. #1758 answered where it should run —
-a macOS job, which is free on the standard runner — and the shape of that job is written in the
-header of `.github/workflows/ci.yml` rather than built yet. Note also that the script as written
-asserts `node-pty` loads, which #1749 and #1750 replaced with the compiled Bun helper.
+Forge package and several minutes, so no local gate runs it. It now has a home: the
+`desktop-artifact` job on `macos-26` in `.github/workflows/ci.yml`, free on the standard runner as
+#1758 established, gated on a path filter that fails closed. What it cannot cover is signing —
+`osxSign` is unconfigured until #1771 chooses the entitlements, and a re-signature can invalidate
+what the package proved, so `assert:packaged` has to run again after it once that lands.
 
 ## Where an exemption goes
 

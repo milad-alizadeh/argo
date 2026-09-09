@@ -11,7 +11,7 @@
 // So nothing here trusts the step that was supposed to produce the property. It reads the asar
 // header, stats the unpacked files, and reads the fuse wire back out of the shipped binary.
 
-import { statSync } from 'node:fs'
+import { closeSync, openSync, readSync, statSync } from 'node:fs'
 import path from 'node:path'
 import asar from '@electron/asar'
 import { FuseState, FuseV1Options, FuseVersion, getCurrentFuseWire } from '@electron/fuses'
@@ -19,6 +19,13 @@ import { FuseState, FuseV1Options, FuseVersion, getCurrentFuseWire } from '@elec
 const NODE_PTY = 'node_modules/node-pty'
 const HELPER = 'spawn-helper'
 const BINARY = 'pty.node'
+
+// What `npm ci --omit=dev` is expected to leave behind, and therefore the whole of what may ship.
+// `prune: false` hands the production install sole responsibility for keeping the package small,
+// and nothing else notices if it stops doing that: dropping `--omit=dev` would carry electron,
+// vite and the Forge toolchain into a signed app at exit code 0. #1791 chose node-pty on 400 KB
+// against 62 MB, so the size IS the decision. Add a name here when a real dependency arrives.
+const SHIPPABLE_MODULES = new Set(['node-pty', 'node-addon-api'])
 
 // node-pty's own search order, from `lib/utils.js`. It requires the FIRST of these that holds
 // `pty.node` and then derives `spawn-helper` from that same directory, rewriting `app.asar` to
@@ -30,17 +37,44 @@ export function nativeDirs(arch) {
   return ['build/Release', 'build/Debug', `prebuilds/darwin-${arch}`]
 }
 
-// `Argo-darwin-arm64` → `arm64`. Forge names the output directory, so this is its contract.
+// `Argo-darwin-arm64` → `arm64`. Forge names the output directory, so this is its contract — and
+// only Forge's own `out/` obeys it. An app in /Applications has no architecture in its path, which
+// is what `archOfBinary` is for.
 export function archOf(outputPath) {
   const match = /-darwin-([^/]+)$/.exec(outputPath.replace(/\/$/, ''))
   return match?.[1] ?? null
 }
 
-export function resourcesDir(appPath) {
+// Mach-O `cputype`, the second 32-bit word of the header. This is the reading that works on an app
+// the checker did not build — a downloaded release, or one already dragged to /Applications —
+// where the directory name says nothing.
+const MACH_O_MAGIC_64 = 0xfeedfacf
+const CPU_TYPE = new Map([
+  [0x0100000c, 'arm64'],
+  [0x01000007, 'x64'],
+])
+
+export function archOfBinary(appPath) {
+  const binary = executableIn(appPath)
+  if (!statOrNull(binary)?.isFile()) return null
+  const header = Buffer.alloc(8)
+  const handle = openSync(binary, 'r')
+  try {
+    if (readSync(handle, header, 0, 8, 0) < 8) return null
+  } finally {
+    closeSync(handle)
+  }
+  // A universal binary leads with the big-endian fat magic and holds several architectures, so no
+  // single answer is honest. #1745 ships arm64 alone, so that stays unsupported rather than guessed.
+  if (header.readUInt32LE(0) !== MACH_O_MAGIC_64) return null
+  return CPU_TYPE.get(header.readUInt32LE(4)) ?? null
+}
+
+function resourcesDir(appPath) {
   return path.join(appPath, 'Contents', 'Resources')
 }
 
-export function executableIn(appPath) {
+function executableIn(appPath) {
   return path.join(appPath, 'Contents', 'MacOS', path.basename(appPath, '.app'))
 }
 
@@ -58,7 +92,7 @@ function asarEntries(asarPath) {
   return new Set(asar.listPackage(asarPath).map((entry) => entry.replace(/^[\\/]/, '')))
 }
 
-export function presenceFailures(asarPath, arch) {
+function presenceFailures(asarPath, arch) {
   const entries = asarEntries(asarPath)
   if (!entries.has(`${NODE_PTY}/package.json`))
     return {
@@ -104,7 +138,7 @@ export function unpackedFailures(appPath, chosen) {
   return failures
 }
 
-export async function fuseFailures(appPath) {
+async function fuseFailures(appPath) {
   const binary = executableIn(appPath)
   if (!statOrNull(binary)) return [`no app executable at ${binary}`]
   const wire = await getCurrentFuseWire(binary, FuseVersion.V1)
@@ -118,6 +152,33 @@ export async function fuseFailures(appPath) {
   ]
 }
 
+// The other half of "the production install IS the pruning": that it pruned. Read off the same
+// asar listing, so it costs nothing.
+//
+// A package is its `package.json`, not its directory. `npm ci --omit=dev` removes the dev packages
+// but leaves the empty `@scope` directories they lived in, and those reach the asar — so counting
+// directories reports two dozen modules that ship no bytes.
+export function extraModuleNames(entries) {
+  const top = new Set()
+  for (const entry of entries) {
+    const parts = entry.split('/')
+    if (parts[0] !== 'node_modules' || parts[parts.length - 1] !== 'package.json') continue
+    if (parts.length === 3) top.add(parts[1])
+    else if (parts.length === 4 && parts[1].startsWith('@')) top.add(`${parts[1]}/${parts[2]}`)
+  }
+  return [...top].filter((name) => !SHIPPABLE_MODULES.has(name)).sort()
+}
+
+function extraModuleFailures(asarPath) {
+  const extra = extraModuleNames(asarEntries(asarPath))
+  if (extra.length === 0) return []
+  return [
+    `${extra.length} module(s) beyond the production dependencies are in the package: ` +
+      `${extra.slice(0, 10).join(', ')}. \`prune: false\` trusts the prePackage npm install to ` +
+      `have run with --omit=dev, and this says it did not.`,
+  ]
+}
+
 export async function packagedPtyFailures(appPath, arch) {
   if (!arch) return [`could not read an architecture out of ${appPath}`]
   const asarPath = path.join(resourcesDir(appPath), 'app.asar')
@@ -125,5 +186,5 @@ export async function packagedPtyFailures(appPath, arch) {
 
   const { failures, chosen } = presenceFailures(asarPath, arch)
   const found = chosen ? unpackedFailures(appPath, chosen) : []
-  return [...failures, ...found, ...(await fuseFailures(appPath))]
+  return [...failures, ...found, ...extraModuleFailures(asarPath), ...(await fuseFailures(appPath))]
 }
