@@ -213,3 +213,9 @@ entry basenames are the contract with `main` in `package.json` and the preload p
 `src/main.ts`.
 
 The renderer is a placeholder, not a design. Screens arrive per ticket from `docs/designs/`.
+## Portable integration proof
+
+The Project-opening contract and its proof are recorded in
+[`docs/portable-integration-contracts.md`](../../docs/portable-integration-contracts.md).
+The proof crosses the packaged renderer, preload, and main process with isolated storage.
+It does not import Swift data or complete the startup screen.

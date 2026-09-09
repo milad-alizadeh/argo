@@ -224,3 +224,8 @@ jobs:
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
         run: node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package
+
+      - name: Prove the Project contract in a packaged test copy
+        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
+        working-directory: apps/desktop
+        run: node scripts/prove-project-contract.mjs

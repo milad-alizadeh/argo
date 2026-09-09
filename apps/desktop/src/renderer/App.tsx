@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    argo: { versions: { electron: string; chrome: string } }
-  }
-}
-
 // A placeholder surface, not a design. The screens arrive per ticket from docs/designs/.
 export function App() {
   const { electron, chrome } = window.argo.versions
