@@ -107,11 +107,11 @@ resolves 37 skills from 5 sources and exits 0. Run the real install in the check
 never expecting it in a diff.
 
 The packaged acceptance test, `apps/desktop/scripts/prove-packaged-pty.mjs`, needs a Mac, a full
-Forge package and several minutes, so it is in no gate here. #1758 answered where it should run —
-a macOS job, which is free on the standard runner — and the shape of that job is written in the
-header of `.github/workflows/ci.yml` rather than built yet. Note also that the script as written
-asserts `node-pty` loads, which is right again: #1749 and #1750 had replaced it with a compiled
-Bun helper, and #1791 reversed that back to `node-pty`.
+Forge package and several minutes, so no local gate runs it. It now has a home: the
+`desktop-artifact` job on `macos-26` in `.github/workflows/ci.yml`, free on the standard runner as
+#1758 established, gated on a path filter that fails closed. What it cannot cover is signing — #1771 has chosen the
+entitlement set but `osxSign` is not wired to it, and a re-signature can invalidate what the
+package proved, so `assert:packaged` has to run again after it once that lands.
 
 ## The Node pin, and why it is a `preinstall` (#1777)
 

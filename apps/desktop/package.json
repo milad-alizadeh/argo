@@ -1,7 +1,7 @@
 {
   "name": "@argo/desktop",
   "version": "0.1.0",
-  "description": "Argo cockpit on Electron. Scaffold under migration; the packaged node-pty smoke is its acceptance test.",
+  "description": "Argo cockpit on Electron. Scaffold under migration; a packaged node-pty acceptance run is its gate.",
   "private": true,
   "main": ".vite/build/main.js",
   "scripts": {
@@ -9,10 +9,12 @@
     "package": "node ../../scripts/node-version-gate.mjs && electron-forge package",
     "make": "node ../../scripts/node-version-gate.mjs && electron-forge make",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "prove:pty": "node ../../scripts/node-version-gate.mjs && node scripts/prove-packaged-pty.mjs"
+    "prove:pty": "node ../../scripts/node-version-gate.mjs && node scripts/prove-packaged-pty.mjs",
+    "assert:packaged": "node ../../scripts/node-version-gate.mjs && node scripts/assert-packaged-pty.mjs",
+    "test": "bun test"
   },
   "dependencies": {
-    "node-pty": "1.1.0",
+    "node-pty": "1.2.0-beta.15",
     "node-addon-api": "7.1.1"
   },
   "devDependencies": {
@@ -23,6 +25,7 @@
     "@electron-forge/plugin-fuses": "7.11.2",
     "@electron-forge/plugin-vite": "7.11.2",
     "@electron-forge/shared-types": "7.11.2",
+    "@electron/asar": "3.4.1",
     "@electron/fuses": "2.1.3",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
@@ -32,6 +35,12 @@
     "react-dom": "19.2.1",
     "typescript": "5.9.3",
     "vite": "7.2.6"
+  },
+  "overrides": {
+    "yauzl": "3.3.1",
+    "@electron-forge/plugin-fuses": {
+      "@electron/fuses": "2.1.3"
+    }
   },
   "trustedDependencies": [
     "node-pty",
