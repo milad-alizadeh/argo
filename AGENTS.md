@@ -26,10 +26,13 @@ Everything here is a fact about this repository. Process belongs to the skill th
 - **Decisions** — `docs/adr/`. Nothing loads these either. Read the ones covering an area before
   changing it, and when your work contradicts one, **say so rather than quietly overriding it**:
   *Contradicts ADR-0026, but worth reopening because…*
-- **Before editing any file an agent reads**, including this one: `/writing-for-agents`.
-- **Before any text a person reads**: `/simple-english`. An issue title and body, a comment, a
-  close message, a PR title and body, and every question you put to the user, a grilling round
-  included. It runs on the draft, not as a cleanup pass afterwards.
+- Load `/writing-for-agents` immediately before you draft or materially edit instructions for
+  agents. This includes `AGENTS.md`, `CLAUDE.md`, `SKILL.md`, and similar files. Ordinary code edits
+  do not trigger it.
+- Load `/simple-english` immediately before you draft text for a person. This includes issue titles
+  and bodies, comments, close messages, PR titles and bodies, user questions, and grilling rounds.
+  Also load it for agent-facing Markdown that people will read. Ordinary implementation work and
+  progress commentary do not trigger it. Apply it while you draft, not as cleanup.
 
 ## Gates
 
