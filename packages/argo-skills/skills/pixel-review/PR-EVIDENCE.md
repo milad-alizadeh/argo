@@ -1,6 +1,7 @@
 # Publishing screenshots without committing them
 
-An allowlisted push — AGENTS.md, **Pushing and pull requests**.
+Not a work-branch push: the commit sits on no branch, and the ref lives outside `refs/heads`,
+so nothing here can merge.
 
 From the directory holding the PNGs (`$SHOTS`), write them to a commit that no branch
 carries, and push it to a ref:
@@ -26,8 +27,8 @@ Embed each with a raw URL pinned to that commit. It renders inline during review
 The ref is the only thing that keeps the image reachable. While it lives, the URL resolves;
 delete it and the image goes 404. Pick the namespace by how long the image must last:
 
-- `refs/pr-screenshots/<branch-slug>` — review-time evidence, as above. `bun run worktrees:gc`
-  deletes the ref once the PR closes.
+- `refs/pr-screenshots/<branch-slug>` — review-time evidence, as above. A branch sweep, where the
+  project installed one, deletes the ref once the PR closes.
 - `refs/evidence/issue-<N>` — a screenshot in an issue body. Nothing sweeps that namespace,
   because a closed bug report is where the picture matters most.
 

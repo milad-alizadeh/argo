@@ -65,7 +65,7 @@ public extension Hub {
 @MainActor
 private extension Hub {
     /// Whether the code host says this branch merged — the one fact nothing local can answer,
-    /// because a squash-merged branch is no ancestor of anything (`scripts/worktree-gc.sh`).
+    /// because a squash-merged branch is no ancestor of anything (`hooks/worktree-gc.sh`).
     ///
     /// A Binding that is unbound, broken or throwing answers `false`, and the worktree stays: a
     /// merge nobody could confirm is not a merge.

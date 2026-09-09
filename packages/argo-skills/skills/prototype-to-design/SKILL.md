@@ -95,7 +95,7 @@ matter:
 ```
 
 `explorable` names the branch, so `design-to-code` and `pixel-review` can find the page without
-being told; `epic` is what `worktrees:gc` keys the branch's deletion on. Neither reader needs a
+being told; `epic` is what the branch sweep, where the project installed one, keys the deletion on. Neither reader needs a
 checkout:
 
 ```sh

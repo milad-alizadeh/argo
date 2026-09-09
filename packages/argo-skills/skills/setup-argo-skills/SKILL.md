@@ -8,11 +8,177 @@ disable-model-invocation: true
 
 ## Phase 1: install the skill bundle
 
-Run `npx github:milad-alizadeh/argo` from the project root (`--dry-run` previews, `--help`
-lists the flags). If the project already has a `skills-lock.json`, this is an update: say so
-and continue.
+In this order, using the stock `skills` CLI and ordinary shell. Steps 5 and 6 read files out of
+the Argo repo itself, so fetch what they need with `curl` or a shallow clone when you reach
+them.
 
-Done when the scaffolder exits 0 and the lock delta is in the report.
+### 1. Rescue the skills this repo already owns
+
+`skills add` publishes a skill by replacing `<agent>/skills/<name>/` with a symlink into its
+vendored payload, so a directory the project already had under that name is deleted. Tracked in
+git is what separates the two populations: vendored payload lands in ignored directories, so
+anything git knows about under a skills directory is the project's own.
+
+Snapshot that set **before** installing:
+
+```sh
+git ls-files -z -- .claude/skills .agents/skills .cursor/skills .codex/skills > /tmp/owned-skills
+```
+
+After the install (step 2 or 3), restore every snapshotted path that is now missing. When an
+ancestor directory has become a symlink, `rm` that link first: a checkout through it writes into
+the vendored payload instead of the repo. Then `git checkout -- <path>`, which recovers the
+version in the index.
+
+Name every restored file to the user, loudly. The bundle ships a skill under the same name and
+theirs won by default, so they must rename one of the two and re-run. A silent restore leaves
+them believing the collision never happened, and the next `skills add` finds the same trap.
+
+Outside a git repo, skip this step. There is no way to tell the two populations apart there, and
+guessing restores files the project never had.
+
+### 2. First install
+
+Ask the **user** to run this from the project root, interactively:
+
+```sh
+npx skills@latest add milad-alizadeh/argo
+```
+
+They answer two wizard questions. At "Which agents do you want to install to?" they pick
+`claude-code` plus at least one universal agent (`codex`, `cursor`). At "Installation method"
+they pick Symlink, the recommended one. That pairing is what makes the CLI build
+`.claude/skills/<name> -> ../../.agents/skills/<name>` itself.
+
+Interactive matters. The method question is asked only when the chosen agents span more than one
+skills directory: agents that all share one directory get copy mode silently and Claude Code gets
+nothing, and `--yes` suppresses the question the same way. So this run is interactive and spans
+both directories, or Claude Code ends up with no skills.
+
+### 3. Repeat run, and update
+
+A project that already has a `skills-lock.json` updates instead of installing:
+
+```sh
+npx skills update --project --yes
+```
+
+It reads the installed agent set off disk (it prints, for example, `Updating for: Universal,
+Claude Code`), so `--yes` is safe here where it is not in step 2: a fresh non-interactive install
+drops Claude Code, an update cannot. It fetches the latest upstream content, not a pinned
+revision. A lock entry may carry a `ref` field, Argo's entries carry none, so the default branch
+is what resolves. `computedHash` is drift detection, not a pin.
+
+### 4. Prune what Argo deleted upstream
+
+Nothing removes a skill that has left the bundle, so it stays installed forever. List what the
+repo publishes now, and what the project's lock still holds from it:
+
+```sh
+gh api repos/milad-alizadeh/argo/contents/packages/argo-skills/skills --jq '.[].name'
+jq -r '.skills | to_entries[]
+  | select(.value.source == "milad-alizadeh/argo") | .key' skills-lock.json
+```
+
+Remove the names in the second list that are absent from the first:
+`npx skills remove -s <names>`. Report which ones went and why.
+
+### 5. Seed the rtk filters
+
+Give the project `.rtk/filters.toml` from Argo's template, and keep any existing file untouched:
+the consumer owns it after the first copy, and a re-run must not clobber filters they have edited
+and re-trusted.
+
+The template is a core file carrying the format rules and no filters, plus one sidecar per
+toolchain. Copy the core, then append **only** the sidecars whose toolchain the project actually
+has: a filter for a command the project never runs is dead weight nobody ever deletes.
+
+| sidecar | append when |
+| --- | --- |
+| `rtk-filters.swift.toml` | a `Package.swift` exists |
+| `rtk-filters.bun.toml` | a `bun.lock` exists |
+
+```sh
+base=https://raw.githubusercontent.com/milad-alizadeh/argo/main/packages/argo-skills/assets
+if [ ! -f .rtk/filters.toml ]; then
+  mkdir -p .rtk
+  curl -fsSL "$base/rtk-filters.toml" -o .rtk/filters.toml
+  test -f Package.swift && curl -fsSL "$base/rtk-filters.swift.toml" >> .rtk/filters.toml
+  test -f bun.lock && curl -fsSL "$base/rtk-filters.bun.toml" >> .rtk/filters.toml
+fi
+```
+
+Where the project's build or test command is noisy and has no sidecar here, say so in the report
+rather than writing a filter blind: a filter is only trustworthy once a fixture longer than its
+own cap proves it does not eat the errors, and that fixture comes from a real run.
+
+Tell the user the filters do nothing until they run `rtk trust --yes`, once per checkout and
+again after every edit. This is seeded on every install, not gated on the opt-in below, because
+an untrusted filter file changes no behaviour.
+
+### 6. Guardrail hooks, only when the user opts in
+
+The hooks impose a worktree discipline (one guard covering both where a change runs and what the
+worktree is named, plus the worktree reaper) on the project, and one that reserves pushing a work
+branch and opening a PR to `/ship`. Ask first and install nothing unless the answer is yes.
+
+Clone Argo shallowly, then copy these into the project's **git root**, keeping their paths.
+The git root, not the working directory: the projected commands resolve their scripts through
+`git rev-parse --show-toplevel`.
+
+| From the Argo clone | Why it is in the set |
+|---|---|
+| `hooks.json` | the neutral descriptor every projection is generated from |
+| the whole `hooks/` directory | every script the projected commands invoke, and nothing else: it holds only these hooks, so it is copied wholesale rather than picked over |
+| `docs/agents/worktrees.md` | the contract the deny message cites, and only when you set `worktreeGuard.docs` to point at it. A project that keeps its own convention document names that instead, and one that has no convention copies no doc |
+
+The set is lockstep with `hooks.json`: a command added there whose script is missing here
+projects a hook pointing at nothing.
+
+**Then set the project's convention in `hooks.json` before projecting anything.** The hooks
+carry none of their own, and the defaults are deliberately quiet rather than Argo's:
+
+| key | what it does | leave unset when |
+|---|---|---|
+| `worktreeGuard.roots` | narrows the edit guard, whose default is the whole repository | the whole repository is right |
+| `worktreeGuard.dir` | where worktrees live; defaults to `.claude/worktrees` | that default suits |
+| `worktreeGuard.branchPrefix` | turns branch-name checking ON, e.g. `argo/` | **the project has no branch convention. Unset, the guard judges no branch name at all, which is the right default: a guard that invented a convention would refuse every name the project already uses** |
+| `worktreeGuard.docs` | the path a refusal cites for the full rules | there is no such document; the refusal then cites nothing rather than a file the project does not have |
+| `worktreeGc.artifactPaths` | glob patterns, relative to each worktree, that the `--artifacts` sweep deletes | the project has no build output to sweep. Unset, that sweep finds nothing and says so, rather than reporting a clean zero |
+
+Read the project's own layout before filling these in. Copying Argo's values into a project that
+does not share them is the failure this table exists to prevent.
+
+Then project the descriptor per agent, from the project root:
+
+```sh
+node <argo-clone>/packages/argo-skills/bin/hooks-sync.mjs
+```
+
+It regenerates `.claude/settings.json` and `.codex/hooks.json`. Those blocks are generated, so
+every later change goes into `hooks.json` and through this command again.
+
+### 7. Ignore the payload, unless the repo commits its skills
+
+The install writes about a megabyte of vendored payload plus a symlink farm per harness, none of
+it the consumer's work and none of it theirs to review. Left out of `.gitignore` it lands as a
+wall of untracked files on their next `git status`, so add:
+
+```
+.claude/skills/
+.agents/skills/
+.cursor/skills/
+.codex/skills/
+```
+
+Add them **only when the step 1 snapshot came back empty**. A repo that deliberately commits its
+skills has no such line, and that is exactly the state a naive check reads as permission to add
+one, hiding every file they add there afterwards. Scope the lines to the skills subdirectory:
+`.agents/` alone would also swallow a consumer's own `.agents/rules/`.
+
+Done when the lock delta, any restored owned skills and the pruned names are all in hand for the
+Phase 4 report. The bundle's always-on cost is not counted here: `audit-agent-docs` prices skill
+frontmatter as one of its five costs, and Phase 2 dispatches it last for exactly that reason.
 
 ## Phase 2: the infra wizard
 
@@ -24,7 +190,7 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
 | Design infra and the token values | `setup-design-infra` | project has UI | 2 |
 | Always-on task tracking | this skill, below | always | 3 |
-| Guardrail hooks | scaffolder `--hooks` | user runs git worktrees | 4 |
+| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -34,121 +200,29 @@ Done when the user has answered the one question.
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
 
-**Task tracking** is a section, not a skill. Append it verbatim to the project doc that exists
-(`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), naming only the
-harnesses this project uses, replacing any existing `## Task tracking` section in place:
+Four sections are not skills. Each is a file in `templates/`, appended to the project doc that
+exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
+any section of the same heading in place.
 
-```markdown
-## Task tracking
+| template | install when | how |
+|---|---|---|
+| `templates/task-tracking.md` | always | verbatim, naming only the harnesses this project uses |
+| `templates/writing-style.md` | `docs/agents/issue-tracker.md` exists | verbatim |
+| `templates/labels.md` | `docs/agents/issue-tracker.md` exists | **resolved, never verbatim** (below) |
+| `templates/screenshots.md` | `docs/agents/issue-tracker.md` exists | verbatim on GitHub; elsewhere append the two bullets and stop, since the rest is the GitHub publish method |
 
-Maintain a live to-do list for any task with **three or more distinct steps**, edits across
-**multiple files**, or **a plan the user approved**. Claude Code: `TaskCreate` one call per item,
-then `TaskUpdate` for each status change — both are deferred, so load them once with
-`ToolSearch("select:TaskCreate,TaskUpdate")` before the first edit. Codex: `update_plan`.
+`docs/agents/issue-tracker.md` is written by `setup-matt-pocock-skills`, a vendored skill this
+project cannot edit in place, which is why these ride here instead.
 
-- Write the list **before the first edit**, not as a retrospective summary.
-- Exactly **one** item `in_progress` at a time; mark it `completed` the moment it is done.
-- Work the items **in the order the list gives them**, and mark an item `in_progress` **before**
-  starting it. If the real order turns out to be different, reorder rather than skip an item.
-- One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
-- Keep single-step edits, lookups, and conversational turns off the list.
-- **Split the verification tail into one item each**: the gates, the test suite, the render, the
-  code review, the review fixes. Only the ones the change needs, never two folded together.
-- **No item holds more than one gate, suite or review.** A subject that comma-lists what it
-  covers — "Verify: gates, render, review", "Full suites, quality gates, review, commit" — is
-  the shape to reject.
-- **The list runs to the reviewed diff**, so the last item completes when the work is proved.
-- **The push and the PR are `/ship`'s, and never an item you write yourself.** `/ship` is a
-  separate invocation the caller makes, and it carries the close-out nothing else runs.
-```
+**Labels carries `{{...}}` placeholders and no project's real label names.** Read the project's
+own set first (`gh label list`, the host's equivalent, or ask), and resolve every placeholder to
+a label that exists there. What travels is the shape, one triage label and one kind label, both
+applied in the create call. A tracker using `P1`/`P2`, or Linear states, gets labels that do not
+exist if the file is pasted unchanged, and creating an issue with a label the host does not know
+is an error, not a warning. Where the tracker has no label for a role, drop that clause rather
+than invent one; where no tracker is detected, skip the section.
 
-**Issue writing style** is a section, not a skill, and only applies when `docs/agents/issue-tracker.md`
-exists (written by `setup-matt-pocock-skills`, a vendored skill this project cannot edit in
-place). If that file exists, append this section verbatim, replacing any existing `## Writing
-style` section in place:
-
-```markdown
-## Writing style
-
-Before you create an issue, edit an issue body, or write a comment, run the `simple-english`
-skill on the title and body text. Do this every time, not only when the text reads badly —
-apply it before the first draft goes out, not as a later cleanup pass.
-```
-
-**Labels** is a section too, under the same condition: only when `docs/agents/issue-tracker.md`
-exists. Append it verbatim, replacing any existing `## Labels` section in place. The first bullet
-names four of the five triage labels that `docs/agents/triage-labels.md` maps, and
-`setup-matt-pocock-skills` is what writes that file — so if it is absent, run that skill first, or
-replace those names with whatever the host tracker uses.
-
-```markdown
-## Labels
-
-Every issue is labelled in the `gh issue create` call. There is no unlabelled issue, and a bug
-report is no exception.
-
-- **One triage label, always**, from `docs/agents/triage-labels.md`: `ready-for-agent` when the
-  issue is specified well enough for an AFK agent to build it, `ready-for-human` when a person
-  must do the work, `needs-info` when the report is short of a fact only the reporter holds, and
-  `needs-triage` when you cannot tell. The fifth, `wontfix`, is a closing label, never a
-  create-time one.
-- **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
-  for behaviour that is new, `documentation` for docs, designs and ADRs.
-
-You know which triage label fits at the moment you write the body, so the create call is where it
-goes. An issue that lands unlabelled falls into `/triage`'s never-triaged bucket, and a person
-must read it again to learn what you already knew.
-```
-
-**Screenshot evidence** is a section too, under the same condition: only when
-`docs/agents/issue-tracker.md` exists. Append it verbatim, replacing any existing
-`## Screenshots` section in place. The block is GitHub. If the code host is not GitHub, append
-the two bullets only and stop; the rest of the block is the GitHub publish method. The push
-inside it is Argo's own allowlisted one (AGENTS.md, **Pushing and pull requests**): it writes a
-commit that sits on no branch, and no work branch or pull request is involved.
-
-````markdown
-## Screenshots
-
-A screenshot is evidence. It belongs in the tracker, not only in the session.
-
-- When you create an issue from a bug report, put the user's screenshot in the body under a
-  `## Screenshot` heading.
-- A PR that changes how a screen looks carries one screenshot per changed state. If the change
-  is a fix, carry the before image and the after image.
-
-`gh issue` and `gh pr` cannot attach a file. Publish the PNGs to a ref instead. Run this in the
-repo, with `shots` set to the directory that holds them:
-
-```sh
-shots=<dir>
-ref=refs/evidence/issue-<N>          # a PR instead: refs/pr-screenshots/<head branch, / as ->
-tree=$(for f in "$shots"/*.png; do
-  printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"
-done | git mktree)
-commit=$(git commit-tree "$tree" -m "evidence: $ref")
-git push --force origin "$commit:$ref"
-```
-
-Give every PNG a URL-safe name. An empty `$shots` writes the empty tree and pushes nothing you
-can link to, so make sure that the glob matched.
-
-Embed each one by a raw URL pinned to that commit:
-
-```markdown
-![empty state](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/empty-state.png)
-```
-
-The commit sits on no branch, so it never merges. The ref is the only thing that keeps the
-image reachable: while the ref lives, the URL resolves; delete the ref and the image goes 404.
-A PR screenshot is review-time evidence and its ref can go once the PR closes. An issue
-screenshot must outlive the issue, so leave `refs/evidence/*` alone.
-
-The raw URL renders on a public repo only. On a private repo, ask the user to drag the file
-into the body on github.com.
-
-You cannot read a pasted image as a file. Ask the user to save it and give you the path.
-````
+Done when the installed Labels section has zero hits for `{{`.
 
 ## Phase 4: report
 

@@ -67,7 +67,10 @@ The rest did not survive and is not restated anywhere:
 - The quality gates that existed to check `apps/desktop`'s shape have no subject.
   The three placement gates come out of `quality` and pre-commit;
   [ADR-0021](./0021-placement-is-declared-per-module.md) is **dormant, not
-  withdrawn** — its scripts stay in `scripts/`, ship to consumers through
-  `scaffold.mjs --hooks`, and are rewired the day a TypeScript workspace returns.
+  withdrawn** — but its scripts are gone with the rest of `scripts/`, so
+  reinstating it the day a TypeScript workspace returns means writing them again
+  rather than rewiring them. The ADR is the specification for that. They were
+  shipped to consumers at the time by `scaffold.mjs --hooks`; that installer has
+  since been retired, and a consumer now copies the guardrail hooks by hand.
 - `docs/designs/` loses its HTML studies and CSS token contract for the same
   reason; `ArgoUI/Specimen/FoundationSpecimen.swift` is the living contract now.

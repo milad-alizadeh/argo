@@ -2,20 +2,20 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|NotebookEdit|Bash",
+        "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree",
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/worktree-guard.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\""
           }
         ]
       },
       {
-        "matcher": "Bash|EnterWorktree",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/worktree-name-guard.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/pr-ownership-guard.mjs\""
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/task-list-nudge.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/hooks/task-list-nudge.mjs\""
           }
         ]
       }
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/scripts/worktree-gc.sh\"",
+            "command": "sh \"$(git rev-parse --show-toplevel)/hooks/worktree-gc.sh\"",
             "timeout": 60,
             "statusMessage": "Reaping landed worktrees"
           }

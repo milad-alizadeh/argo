@@ -99,7 +99,22 @@ is silent is named as such and left to the user.
 
 Done when every section carries one of the three words.
 
-## 6. Re-measure
+## 6. Re-measure, in a new session
 
-Step 1 again, the same command. Report before, after, and the share of the 40k budget. If the after
-figure is not lower, say that rather than reporting the plan as the outcome.
+**The session that made the cuts cannot measure them.** Every pushed source is read once at
+session start: an edited agent file, a deleted skill and a changed output style all keep their
+old cost for the rest of the run, so a re-measure here reports the before figure twice and calls
+the second one after.
+
+Print the exact command and ask the user to run it in a new terminal, then paste `/context` from
+the session it opens:
+
+```
+cd <absolute path of the working tree you audited> && claude
+```
+
+Give the absolute path, resolved with `pwd`, not `.` or a repo-relative one: the audit often runs
+in a worktree, and a session started from the wrong tree reads a different set of files.
+
+Report before, after, and the share of the 40k budget. If the after figure is not lower, say that
+rather than reporting the plan as the outcome, and name what you expected to move.

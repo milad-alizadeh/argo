@@ -1,18 +1,11 @@
 {
   "name": "argo-skills",
   "version": "0.1.0",
-  "description": "Argo's own skills + a scaffolder that installs them and a curated third-party bundle into any project.",
+  "description": "Argo's own agent skills, the seed assets they install, and the cross-CLI hook projector.",
   "type": "module",
-  "bin": {
-    "argo-skills": "bin/scaffold.mjs"
-  },
   "files": [
+    "assets",
     "bin",
     "skills"
-  ],
-  "scripts": {
-    "start": "node bin/scaffold.mjs",
-    "lint": "node --check bin/scaffold.mjs",
-    "test": "node bin/scaffold.mjs --dry-run"
-  }
+  ]
 }

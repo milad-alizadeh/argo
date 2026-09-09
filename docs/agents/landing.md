@@ -5,10 +5,11 @@
 > all deleted, so the arithmetic below is history and the tooling column of its tables names files
 > that no longer exist.
 >
-> **Two things in it are still live and still matter.** `scripts/kept-the-tests.sh` and
-> `scripts/undoes-the-base.sh` read a merged tree against the base and refuse one that drops a test
-> the base has, deletes a file it has, or holds content the base has moved past. Run them by hand
-> before merging: `sh scripts/kept-the-tests.sh . origin/main HEAD`. And two lanes never own the
+> **The scripts are gone too.** `kept-the-tests.sh` and `undoes-the-base.sh` read a merged tree
+> against the base and refused one that dropped a test the base had, deleted a file it had, or held
+> content the base had moved past. Nothing does that now. **The rule outlives them**: a branch that
+> takes something away from the base declares it in a commit trailer, and a reviewer is what checks
+> for one. The trailers and what earns each are in the table below. And two lanes never own the
 > same file, whatever the vocabulary split says.
 >
 > **The rule that a lane does not rebase to open a PR is REVERSED as of 2026-09-09.** It was the
@@ -51,7 +52,7 @@ changed.
 | every worktree its own caches | a shared SPM cache and module cache; the scratch path stays per tree |
 | every lane rebases | `scripts/land.sh`: one serialized lane rebases, gates and merges |
 | an agent runs the suites, then the push runs them again | per-step verdicts in `gate-cache.sh`, read by `swift-test.sh` and `build.sh` |
-| 104 GB of build output | `sh scripts/worktree-gc.sh --artifacts` |
+| 104 GB of build output | `sh hooks/worktree-gc.sh --artifacts` |
 
 Lanes plus merges, rather than lanes times merges.
 
@@ -97,11 +98,11 @@ declares itself. Between the rebase and the gate, `land.sh` asks two scripts wha
 tree takes AWAY from the base, and anything they report leaves the branch for its lane unless one
 of its own commits names it in a trailer.
 
-| script | what it reads | trailer |
-| --- | --- | --- |
-| `kept-the-tests.sh` | a test name on the base that the merged tree does not have | `Removes-test: <name>` |
-| `undoes-the-base.sh` | a file on the base the merged tree deletes | `Removes-file: <path>` |
-| `undoes-the-base.sh` | a file whose content is a state the base has moved past | `Reverts-file: <path>` |
+| what the merged tree takes away from the base | trailer |
+| --- | --- |
+| a test name on the base that the merged tree does not have | `Removes-test: <name>` |
+| a file on the base the merged tree deletes | `Removes-file: <path>` |
+| a file whose content is a state the base has moved past | `Reverts-file: <path>` |
 
 ```
 Removes-test: a tail running inside the connect window reads as connected
@@ -116,9 +117,9 @@ fourteen minutes of Swift.
 
 ### What they do not read
 
-Run them by hand with `sh scripts/kept-the-tests.sh . origin/main HEAD`, **from a tree already
-rebased onto `origin/main`** — the comparison is tree against tree, so an un-rebased branch
-reports everything `main` has gained since the cut.
+They read **a tree already rebased onto `origin/main`** — the comparison was tree against tree, so
+an un-rebased branch reported everything `main` had gained since the cut. A reviewer looking for
+the same thing by hand compares the same two trees, and for the same reason.
 
 - A test whose name survives while its assertions are weakened, and a name the tree holds twice.
 - Any change that reaches `main` other than through `land.sh`.

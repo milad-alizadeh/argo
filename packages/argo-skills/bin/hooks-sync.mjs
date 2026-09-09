@@ -23,17 +23,30 @@ const HARNESSES = {
   codex: { target: '.codex/hooks.json', nativeAgentMarker: false },
 }
 
-// A group in an existing config is one of ours (regenerated on every sync) if its command
-// invokes one of these; anything else is the consumer's own hook and is preserved.
-// Every script hooks.json names belongs here: one missing entry reads our own hook as the
-// consumer's, so the sync preserves it AND appends a fresh copy, and the file grows a
-// duplicate per run. `scripts/hooks-sync.test.mjs` derives this list from hooks.json.
-const MANAGED_MARKERS = [
-  'worktree-guard.mjs',
-  'worktree-name-guard.mjs',
-  'worktree-gc.sh',
-  'task-list-nudge.mjs',
-]
+/**
+ * The script filenames that mark a hook group as ours, read off the descriptor rather than
+ * listed by hand.
+ *
+ * A group in an existing config is one of ours (regenerated on every sync) if its command
+ * invokes one of these; anything else is the consumer's own hook and is preserved. This was a
+ * hardcoded list, and every script hooks.json named had to be added to it: one missing entry
+ * read our own hook as the consumer's, so the sync preserved it AND appended a fresh copy, and
+ * the projection grew a duplicate on every run. A test kept the list honest, which meant the
+ * guarantee lasted exactly as long as the test did. Deriving the markers from the very commands
+ * the projection is built from removes the possibility rather than checking for it.
+ *
+ * The last path segment is the marker, so it survives the git-toplevel prefix in front of it and
+ * any relocation of the directory the scripts live in.
+ *
+ * @param {{ hooks?: Array<{ command?: string }> }} descriptor
+ * @returns {string[]}
+ */
+export function managedMarkers(descriptor) {
+  const markers = (descriptor.hooks ?? []).flatMap(
+    (entry) => entry.command?.match(/[\w.-]+\.(?:mjs|js|sh|py)/g) ?? [],
+  )
+  return [...new Set(markers)]
+}
 
 /**
  * Build one harness's hook block from the neutral descriptor. Pure — no IO.
@@ -75,14 +88,20 @@ export function project(descriptor, agentId) {
   return { known: true, target: harness.target, hooksBlock, warnings }
 }
 
-const isManaged = (group) =>
-  group.hooks?.some((h) => MANAGED_MARKERS.some((m) => h.command?.includes(m)))
+const isManaged = (group, markers) =>
+  group.hooks?.some((h) => markers.some((m) => h.command?.includes(m)))
 
-// Preserve the consumer's own hook groups; replace only ours (idempotent re-sync).
-export function mergeHooks(existing = {}, ours) {
+/**
+ * Preserve the consumer's own hook groups; replace only ours (idempotent re-sync).
+ * @param {object} existing the hooks block already in the consumer's config
+ * @param {object} ours the block just projected
+ * @param {string[]} markers from `managedMarkers()`, so what counts as ours is whatever the
+ *   descriptor names now rather than a list somebody has to remember to update
+ */
+export function mergeHooks(existing = {}, ours, markers = []) {
   const merged = {}
   for (const [event, groups] of Object.entries(existing)) {
-    const foreign = groups.filter((g) => !isManaged(g))
+    const foreign = groups.filter((g) => !isManaged(g, markers))
     if (foreign.length) merged[event] = foreign
   }
   for (const [event, groups] of Object.entries(ours)) {
@@ -93,7 +112,7 @@ export function mergeHooks(existing = {}, ours) {
 
 /**
  * Which harnesses a descriptor is projected into. Lives in hooks.json so the hook SSOT
- * carries its own audience; `scaffold.mjs` and `main()` below read it through here.
+ * carries its own audience; `main()` below reads it through here.
  * @param {{ agents?: string[] }} descriptor
  * @returns {string[]}
  */
@@ -141,7 +160,7 @@ export function sync({ root, descriptor, agents, dryRun = false, log = console.l
         )
       }
     }
-    file.hooks = mergeHooks(file.hooks, hooksBlock)
+    file.hooks = mergeHooks(file.hooks, hooksBlock, managedMarkers(descriptor))
 
     log(`  ${dryRun ? 'would write' : 'wrote'} ${target} (${agent})`)
     if (!dryRun) {

@@ -2,6 +2,14 @@
 
 Status: accepted · 2026-07-20
 
+> **2026-09-09 · Argo ships no implement skill of its own.**
+> `packages/argo-skills/skills/implement/` is deleted, because it duplicated the widely used
+> upstream skill and the one thing it added is moving to the Argo companion's MCP handshake
+> (#1730). The decision below is untouched and still stands: `/implement` is one ticket per fresh
+> context, serial, with the human as the serialization point. What changed is only that the
+> command now resolves to the upstream skill, so a reader looking for Argo's own copy of it will
+> not find one. The order such a run verifies in lives in `AGENTS.md` under **Gates**.
+
 ## Context
 
 `implement-fanout` fanned out DAG-independent tickets across worktrees — a build

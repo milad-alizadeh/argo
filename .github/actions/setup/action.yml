@@ -22,9 +22,9 @@ runs:
     # source for the pin (#1751), `scripts/node-version-gate.mjs` refuses any Node that does not
     # match it, and the root `preinstall` below runs that gate. A hard-coded version in this file
     # would make CI the one machine that installs on an unpinned Node and then fails the gate it
-    # just paid to reach. `scripts/node-version-source.test.mjs` is what fails if this line
-    # regresses — it refuses a hard-coded `node-version:` in ANY workflow or composite action,
-    # not just this one, and separately requires this file to name `.node-version`.
+    # just paid to reach. Nothing checks this line any more: the test that refused a hard-coded
+    # `node-version:` in ANY workflow or composite action went with the hook suite, so a literal
+    # version here is caught by review or not at all.
     - uses: actions/setup-node@v5
       with:
         node-version-file: .node-version

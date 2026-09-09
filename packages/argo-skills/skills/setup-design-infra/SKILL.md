@@ -1,6 +1,6 @@
 ---
 name: setup-design-infra
-description: Install the design-to-code machinery (token contract, docs/designs/ with a browser token mirror, the no-raw-values check, a render command, stack.md, the one-page design rule) and settle the token values from observed usage, blessed by the user; re-run as an audit of drift.
+description: "Install the design-to-code machinery: the token contract, docs/designs/, the no-raw-values check and a render command. Settles token values from observed usage, blessed by the user; re-run as an audit of drift."
 disable-model-invocation: true
 ---
 

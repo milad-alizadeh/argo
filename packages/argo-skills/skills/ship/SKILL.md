@@ -1,7 +1,6 @@
 ---
 name: ship
-description: "Close out an implemented ticket: commit the work, bring the branch onto the current base, gate it there, push, and open one PR that closes the ticket. Run after the diff has been reviewed."
-disable-model-invocation: true
+description: "Close out an implemented ticket: commit the work, bring the branch onto the current base, gate it there, push, and open one PR that closes the ticket. Use when the user asks to ship, raise a PR or open a pull request, and only after the diff has been reviewed."
 ---
 
 # Ship
@@ -9,8 +8,6 @@ disable-model-invocation: true
 A ship run ends in a PR URL, in one of the three stops below, or in a failure it names (step 7).
 It never ends in a question: anything you could not tick is written into the PR body, not handed
 back to the caller. It never ends in silence either.
-
-Merging stays with the human.
 
 ## The only three stops
 
@@ -31,12 +28,10 @@ pass on a merge nobody will make, and its conflicts surface at merge time instea
 hands, which is the worst moment to find them. A branch that looks ready and cannot merge is not
 ready. Nobody wants an out-of-date PR.
 
-This used to say the opposite, and the reason it did is gone (#1377, #1758). Rebasing was
-expensive because the gate ran at push time: every replay rewrote the mtime of every file it
-touched, llbuild invalidated on mtime, and the whole Swift build ran again. With eight lanes open
-on a repo taking 91 commits a day, the cost was lanes multiplied by merges. **That gate no longer
-exists.** A rebase now costs a fetch and a replay, and the gates after it are biome, a duplication
-check and the hook suites — seconds, not a build.
+With no push-time gate a rebase costs a fetch and a replay. **Where the project has an expensive
+one, weigh the replay against it** rather than rebasing by reflex: a replay rewrites the mtime of
+every file it touches, and a build system that invalidates on mtime then rebuilds everything,
+once per lane per merge.
 
 1. **Commit everything outstanding.** Anything the steps below change is committed the same way,
    before the push.
@@ -56,14 +51,13 @@ check and the hook suites — seconds, not a build.
 6. **Say the base in the PR body**, and the commit you rebased onto
    (`git rev-parse origin/<base>`). That is what a reviewer needs to read the diff.
 
-Merging stays the human's either way (#1577). What changes is that they are handed a branch that
-can actually merge.
+What changes is that the human is handed a branch that can actually merge.
 
 ### When GitHub still says the PR cannot merge
 
 After the push, `gh pr view --json mergeable -q .mergeable` should answer `MERGEABLE`. A
 `CONFLICTING` here means the base moved between the rebase and the push: fetch again, rebase
-again, re-run the gates, and push with `--force-with-lease`.
+again, re-run the gates, and push again with `ARGO_SHIP=1 git push --force-with-lease`.
 
 ### The one conflict that stops the run
 
@@ -83,17 +77,15 @@ Nothing here is a reason to stop.
 - **Gates.** Step 4 below is the one call. An edit that nothing ran is how a PR passes review and
   fails to build. For UI work, look at the affected states; unit tests do not show you a screen.
 - **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
-  per changed state. Publish and embed them per `docs/agents/issue-tracker.md`, Screenshots.
-  This repository renders nothing today — the Swift app is deprecated and `apps/desktop` has no
-  screenshot route yet — so a diff here rarely has a screen to shoot; the rule stands for the day
-  one does.
+  per changed state. Publish and embed them the way the project records; `pixel-review`'s
+  `PR-EVIDENCE.md` carries a recipe that needs no commit. Where the project renders nothing yet,
+  say so once and move on: the rule stands for the day it does.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
 - **The ticket is still open.** `gh issue view <N> --json state,stateReason` — one request, and
-  it belongs HERE rather than where the run first read the ticket, because the closure that
-  matters is the one that lands WHILE you work. #1619 was closed as already addressed by #1620
-  ninety minutes before the lane on it opened #1657, and that lane had read an open ticket at its
-  start: a check there would have caught nothing. What a closed ticket changes is below.
+  it belongs HERE rather than where the run first read the ticket. The closure that matters is the
+  one that lands WHILE you work, and a check at the start of the run cannot see it. What a closed
+  ticket changes is below.
 - **Review findings.** Fix each in the diff, or carry it.
 
 ## Carry, never block
@@ -120,11 +112,17 @@ Each of these belongs in the PR body, and the ship continues past it.
 
 ## Then ship
 
+**Every push and every `gh pr create` below carries the `ARGO_SHIP=1` prefix, exactly as
+written.** A `PreToolUse` hook denies both commands to an agent, because pushing a work branch
+and opening a pull request are this skill's step and nothing in a hook's payload names the skill
+that is running (#1669). The prefix is how this skill says it is the one running. Drop it and the
+command is refused, with the reason quoting this rule back at you. Put it on nothing else.
+
 1. Commit what the steps above changed, with a message that states what changed and why.
-2. Push with `git push -u origin HEAD`, adding `--force-with-lease` when the rebase moved a
-   commit that had already been pushed. Never a bare `--force`: it drops a teammate's push, and
-   the lease is the whole difference. A `stale info` rejection means the remote branch moved
-   since the fetch — fetch again, rebase again, re-run the gates, and push.
+2. Push with `ARGO_SHIP=1 git push -u origin HEAD`, adding `--force-with-lease` when the rebase
+   moved a commit that had already been pushed. Never a bare `--force`: it drops a teammate's
+   push, and the lease is the whole difference. A `stale info` rejection means the remote branch
+   moved since the fetch — fetch again, rebase again, re-run the gates, and push.
 3. **Run the PR title and body through the `simple-english` skill.** This holds for every PR,
    and it holds when the text already reads well. Draft the title and the body. Put both through
    the skill. Give `gh pr create` what it returns. The skill carries its own rules, so this step
@@ -132,22 +130,33 @@ Each of these belongs in the PR body, and the ship continues past it.
    every fact, and leave code, paths, error strings and `Closes #<N>` exactly as they are. If
    the skill is not installed, write short sentences in the active voice and change no
    identifier.
-4. **Run `bun run quality` and `bun run test:hooks` before opening the PR**, and open
-   nothing if either fails. There is no push-time hook any more (#1758): nothing checks a branch
-   between the push in step 3 and CI's first run, so this is the last point at which a breach
-   costs one command instead of a red pull request. `quality` is biome plus the duplication gate;
-   running only biome leaves a duplication breach for CI to find. These two are exactly what CI
-   runs, so a green pair here means a green run there.
+4. **Run the project's gate before opening the PR**, and open nothing if it fails. Resolve the
+   command in this order, and name the one you used in the PR body:
 
-   If `implement` already ran them on this same committed tree, say so in the PR body and run
-   them again anyway — they take seconds, and the tree may have moved since.
+   1. The **Rules and gates** section of the project doc (`AGENTS.md`, or `CLAUDE.md` where it
+      carries a body of its own), which names the single script that runs every gate.
+      `setup-quality-gates` writes that section, so a project it set up has the answer written
+      down rather than guessed at.
+   2. The manifest's own scripts, through whichever package manager the lockfile names:
+      `quality` if it exists, otherwise `lint` and the test script together.
+   3. **No gate found.** Say so in one line of the PR body and open the PR anyway. This skill
+      carries rather than blocks, and a project with no gate is not a reason to strand finished
+      work.
+
+   Run the whole gate rather than one half of it. Where the script is an aggregate, a single
+   linter is not a substitute: a duplication or type breach it never looked at is still there
+   for CI to find. Nothing checks a branch between the push in step 3 and CI's first run, so
+   this is the last point at which a breach costs one command instead of a red pull request.
+
+   If it already ran on this same committed tree, say so in the PR body and run it again anyway.
+   It takes seconds, and the tree may have moved since.
 5. **Open exactly one PR, and give `gh` the body from a file.** Put what step 3 returned on disk
    first, at a scratch path outside the repository so no commit can pick it up. Write it with
    your harness's file-writing tool; with only a shell, `cat > <path> <<'BODY'` is a plain
    redirection into a file and is fine. Then one command, and nothing computed inside it:
 
    ```
-   gh pr create --base <base> --title "<title>" --body-file <path>
+   ARGO_SHIP=1 gh pr create --base <base> --title "<title>" --body-file <path>
    ```
 
    Ready for review, with `Closes #<N>` in the body and everything the section above told you to

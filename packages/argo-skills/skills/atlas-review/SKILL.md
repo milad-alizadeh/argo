@@ -1,6 +1,6 @@
 ---
 name: atlas-review
-description: Fact-check a generated Project Atlas against the code it describes, marking each claim true, false or cannot-tell with a path and a line. Use after atlas-write emits a node, or when someone asks whether an atlas, a codebase map or generated architecture prose is still accurate.
+description: Fact-check a generated Project Atlas against the code it describes. Use after atlas-write emits a node, or when someone asks whether an atlas or generated architecture prose is still accurate.
 ---
 
 # Atlas Review

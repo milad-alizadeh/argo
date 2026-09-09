@@ -1,6 +1,6 @@
 ---
 name: setup-quality-gates
-description: Turn the house rules' mechanical intents (length, complexity, arity, escape hatches, duplication, dead exports, import boundaries, test hygiene) into error-level gates in the repo's own linter, wired to a script, pre-commit and CI, plus the one-page prose residue no linter can check.
+description: Turn the house rules' mechanical intents into error-level gates in the repo's own linter, wired to a script, pre-commit and CI, plus the one-page prose residue no linter can check.
 disable-model-invocation: true
 ---
 
@@ -88,36 +88,26 @@ Done when every intent has a verified rule name, or an n/a or prose-only verdict
 
 ## 4. The intents that need their own tool
 
-- **Duplication (10).** A copy-paste detector (`jscpd` reads every language here, Swift and
-  Rust included; `dupl` for Go, PMD-CPD on the JVM) with a minimum clone size, a threshold that exits non-zero, and ignores
-  for generated output, lockfiles, snapshots and vendored code.
-- **File length (11).** The linter's per-file rule where one exists (`file_length` in SwiftLint,
-  `max-lines` in ESLint); note what it counts, since a comment-skipping cap is looser than a raw
-  count. Otherwise copy `templates/file-length-check.mjs` verbatim (Node 22+ or Bun, present
-  wherever the skills installer ran) and run it with the source
-  globs and cap; record exemptions with `--exempt-from <file>`, one glob per line with a
-  reason, kind exemptions separate from ratchet debt.
-- **Dead public surface (12).** A whole-graph pass: `knip` for JS/TS, `deadcode` for Go,
-  `vulture` for Python, Periphery for Swift, detekt's `UnusedPrivateMember` plus the compiler's
-  unused warnings as errors on Kotlin; Rust's compiler already reports it, so n/a. Ratchet the first run.
-  knip's per-file ignore leaves that file unguarded for every future dead export, its
-  configuration hints will suggest deleting deliberate prospective ignores, and its `project`
-  globs are an enumerated scope: label each of those where it lives.
+Which tool, per ecosystem, is a lookup: `references/tools-by-language.md`, which also carries the
+trap each tool hides. What the tool must be made to do is here, and it is the same in every
+language.
+
+- **Duplication (10).** A minimum clone size, a threshold that exits non-zero, and ignores for
+  generated output, lockfiles, snapshots and vendored code.
+- **File length (11).** Prefer the linter's own per-file rule, and note what it counts: a
+  comment-skipping cap is looser than a raw count. Otherwise copy
+  `templates/file-length-check.mjs` verbatim (Node 22+ or Bun, present wherever the skills
+  installer ran) and run it with the source globs and cap. Record exemptions with
+  `--exempt-from <file>`, one glob per line with a reason, kind exemptions kept separate from
+  ratchet debt.
+- **Dead public surface (12).** A whole-graph pass, never a per-file one. Ratchet the first run.
 - **The import graph (13, 14).** Layering first (a `core` never imports a feature, a `client`
-  never imports `server`), privacy second, and privacy by the cheapest mechanism the ecosystem
-  has: a manifest `exports` field for a published package, an `internal/` folder (Go's compiler
-  enforces it; elsewhere one rule that forbids importing `internal/` from outside its parent),
-  a barrel only where one already exists, since a barrel costs cold start, HMR and tree-shaking.
-  Tools: `dependency-cruiser` for JS/TS, `import-linter` for Python, `go-arch-lint` or `depguard`
-  for Go, ArchUnit on the JVM, a grep over `import` lines for Swift and Kotlin, where the compiler
-  owns privacy. Go's compiler rejects cycles, so 14 is n/a there. On TypeScript set
-  `tsPreCompilationDeps: true`, since compilation erases `import type` and a deep type-only
-  import otherwise exits 0; prove it with a planted type-only deep import. A new module gets its
-  own rule, never a loosened pattern. Land 13 as a ratchet on any existing repo.
-- **Test hygiene (15).** `no-focused-tests` / `no-disabled-tests` from the test plugin
-  (`eslint-plugin-vitest`, `eslint-plugin-jest`, or the ecosystem's equivalent); n/a where the
-  ecosystem has no focus mechanism; on Swift Testing and XCTest, a grep for a focused trait or
-  a commented-out test is the tool.
+  never imports `server`), privacy second. A new module gets its own rule, never a loosened
+  pattern. Land 13 as a ratchet on any existing repo.
+- **Test hygiene (15).** Focused and skipped tests, committed, fail the build.
+
+Done when every intent from 10 to 15 has a tool wired or an n/a verdict naming what already
+enforces it.
 
 ## 5. Land it on an existing codebase: ratchet, never loosen
 
@@ -146,8 +136,11 @@ entry carries KIND or RATCHET plus a reason.
    already whole-repo; a hook red for a reason unrelated to your gates is fixed in its own
    commit when mechanical, otherwise reported as a blocker. No hooks here: wire CI and say
    pre-commit is unwired, without installing a hook framework as a side effect.
-3. **CI.** Copy `templates/quality-gates.yml`, swap the package-manager line, delete the
-   `{{SWAP_FOR_YOUR_PM}}` markers; or add the steps to an existing lint workflow.
+3. **CI.** Copy `templates/quality-gates.yml` and resolve `{{SETUP_ACTION}}`,
+   `{{INSTALL_COMMAND}}`, `{{WORKSPACE_DIR}}` and `{{GATE_COMMAND}}` against the toolchain step 1
+   detected; or add the steps to an existing lint workflow. The template names no package manager
+   of its own, so an unresolved placeholder fails the workflow rather than running someone else's
+   tool.
 4. **Prove it in all three contexts** and reconcile every difference: `references/three-contexts.md`.
 
 Done when the wired command's exit code is recorded from a clean shell, the hook and CI (or
@@ -168,12 +161,19 @@ it stays: does it change what a strong model does by default? Cut any that doesn
 nothing a linter could check.
 
 Then add a **Rules and gates** section to the project doc that exists (`AGENTS.md`; `CLAUDE.md`
-too only if it does not merely import `AGENTS.md`; never create a stub for the other): the
-script name, what it gates, every file holding exemptions (a duplication config's ignore list
-is one), that a new violation is fixed or ratcheted and never suppressed inline, and a pointer at
-`rules/house.md`. Claim only what fired: "dead code" only if intent 12 has a tool, "every
-rule an error" only after the warn count is zero. Grep the installed prose for `{{` and ship
-zero hits. Where the doc already carries a Rules section, replace it in place.
+too only if it does not merely import `AGENTS.md`; never create a stub for the other), replacing
+any Rules section already there in place. It carries five things:
+
+- **The gate as a runnable command**, backticked and complete with its package manager, on a line
+  of its own. Other skills read this section to learn how to gate this repo, and a bare script
+  name leaves them guessing at the runner.
+- **What it gates.** Claim only what fired: "dead code" only if intent 12 has a tool, "every rule
+  an error" only after the warn count is zero.
+- **Every file holding exemptions**, a duplication config's ignore list included.
+- **That a new violation is fixed or ratcheted**, never suppressed inline.
+- **A pointer at `rules/house.md`.**
+
+Grep the installed prose for `{{` and ship zero hits.
 
 ## 8. Report
 

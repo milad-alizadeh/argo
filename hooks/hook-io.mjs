@@ -1,5 +1,9 @@
-// The stdin/stdout half of a hook, shared by the guards in scripts/ and by the task-list nudge.
+// The stdin/stdout half of a hook, shared by the guards in this directory and by the task-list nudge.
 // Each hook keeps its own pure decide(); this is the plumbing around it.
+
+/** The verdict a guard returns when it has nothing to say. Every guard here needs it, and
+ * a literal in three call sites is one paste past the rule. */
+export const ALLOW = { block: false }
 
 /** True when a tool call is an agent's rather than the human's — guards never touch the human.
  * The marker is Claude's own CLAUDECODE, or the ARGO_HOOK_AGENT the projection injects for
@@ -16,7 +20,7 @@ export async function readStdin() {
 /**
  * Run one guard end to end. Never throws and never exits non-zero — a guard that wedges the
  * session is worse than the mistake it was watching for — so a bad payload OR a decide() that
- * throws both fail open. Asserted in hook-io.test.mjs.
+ * throws both fail open.
  * @param {(payload: object) => { block: boolean, reason?: string }} decideFromPayload
  */
 export async function runGuard(decideFromPayload) {

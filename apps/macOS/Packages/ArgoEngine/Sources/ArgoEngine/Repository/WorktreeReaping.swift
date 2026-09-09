@@ -2,7 +2,7 @@ import Foundation
 
 /// Whether one working tree may be removed, and why not where it may not (#1398).
 ///
-/// The rules follow `scripts/worktree-gc.sh`'s, restated over the readings Argo already holds
+/// The rules follow `hooks/worktree-gc.sh`'s, restated over the readings Argo already holds
 /// rather than over a second set of subprocesses: Argo's own linked worktree, nothing uncommitted,
 /// nothing unpushed, nobody else standing in it, and the branch landed. Every one of them is a
 /// reason NOT to remove, so an unread fact holds the worktree — the destructive branch is not the

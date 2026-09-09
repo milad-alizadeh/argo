@@ -8,9 +8,10 @@ import Foundation
 /// after #1544 and before #1566: the four percentiles are nested under `band`, and `passes` and
 /// `passCosts` are there. A file with a top-level `p50MS` predates both and has no pass counters at
 /// all. Nothing decodes any of them into this type — `FrameProbeReport` only ever encodes — so an
-/// older file is read by `frame-band.py`, which re-derives the band from `timestamps` rather than
-/// reading the percentiles at all, and reports an absent counter as absent rather than as a
-/// cockpit that never redrew.
+/// older file was read by `frame-band.py`, deleted with the rest of the probe tooling, which
+/// re-derived the band from `timestamps` rather than reading the percentiles at all and reported an
+/// absent counter as absent rather than as a cockpit that never redrew. Whatever reduces these
+/// files next does the same, for the same reason.
 struct FrameProbeSummary: Codable {
     /// Where the numbers came from, as against the numbers themselves.
     ///
