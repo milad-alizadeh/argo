@@ -21,6 +21,7 @@ import {
   forgeBinary,
   LAUNCH_TIMEOUT_MS,
   PACKAGE_TIMEOUT_MS,
+  packagedApp,
   readResult,
   resultFailures,
   run,
@@ -115,6 +116,7 @@ for (const arch of arches) {
   const outcome = await proveArch(arch, { skipPackage, skipEndurance })
   outcomes.push(outcome)
   process.stdout.write(`${outcome.ok ? 'PASS' : 'FAIL'} ${arch}\n`)
+  if (outcome.ok) process.stdout.write(`Artifact: ${packagedApp(arch)}\n`)
   if (outcome.result) process.stdout.write(`${JSON.stringify(outcome.result, null, 2)}\n`)
   for (const failure of outcome.failures) process.stdout.write(`  - ${failure}\n`)
   if (outcome.stderr) process.stdout.write(`--- stderr tail ---\n${outcome.stderr}\n`)

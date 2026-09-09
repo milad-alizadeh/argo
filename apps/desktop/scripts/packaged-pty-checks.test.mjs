@@ -77,6 +77,18 @@ describe('the tree Forge is given', () => {
   })
 })
 
+describe('the local release build', () => {
+  test('routes the root command through one uncached desktop task', () => {
+    const root = json(path.join(repoRoot, 'package.json'))
+    const desktop = json(path.join(desktopRoot, 'package.json'))
+    const turbo = json(path.join(repoRoot, 'turbo.json'))
+
+    expect(root.scripts['release:build']).toBe('turbo run release:build --filter=@argo/desktop')
+    expect(turbo.tasks['release:build']).toEqual({ cache: false, outputs: ['out/**'] })
+    expect(desktop.scripts['release:build']).toBe('bun run prove:pty --arch arm64')
+  })
+})
+
 describe('forge.config.ts', () => {
   const config = read(path.join(desktopRoot, 'forge.config.ts'))
 

@@ -10,6 +10,29 @@ Every `@electron-forge/*` package and Electron itself are pinned exactly, becaus
 Vite plugin experimental and reserves breaking changes for a minor release. Upgrade them as one
 reviewed unit.
 
+## Build a local release
+
+On an Apple silicon Mac, use the pinned Node version. Then run these commands from the repository
+root:
+
+```sh
+bun install
+bun run install:electron
+bun run release:build
+```
+
+The last command routes the desktop task through Turbo. Forge packages the arm64 app. The package
+hook checks its native PTY files. The command then launches the packaged app and runs the full PTY
+acceptance proof. A successful run prints the absolute path in this form:
+
+```text
+Artifact: /path/to/argo/apps/desktop/out/Argo-darwin-arm64/Argo.app
+```
+
+Open that `.app` from Finder, or run `open apps/desktop/out/Argo-darwin-arm64/Argo.app`. This app is
+a local test build, not a GitHub Release. macOS gives it an ad-hoc signature. It has no Developer
+ID signature or notarization, and it does not satisfy the release verdict. Do not distribute it.
+
 ## The acceptance test
 
 A working dev server proves nothing about the product. Everything that can break about a packaged
@@ -56,12 +79,10 @@ interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cy
 descriptor count.
 
 Only arm64 is proved. [#1745](https://github.com/milad-alizadeh/argo/issues/1745) ships arm64
-alone. It packages but does **not** sign: this repository holds no identity, and while
-[#1771](https://github.com/milad-alizadeh/argo/issues/1771) has now chosen the entitlement set —
-one `com.apple.security.cs.allow-jit` on the five executables that run V8, recorded in
-`docs/research/2026-09-09-electron-app-entitlements.md` — `osxSign` is not wired to it yet. When
-it is, the signing steps belong between the package and the launch, and `assert:packaged` must run
-**again** after them, because a re-signature can invalidate what the package proved.
+alone. A local package does not use Developer ID signing. The release workflow supplies the
+identity and applies the entitlement set that [#1771](https://github.com/milad-alizadeh/argo/issues/1771)
+chose. It runs `assert:packaged` again after signing because a new signature can invalidate the
+package proof.
 
 ### node-pty is pinned to the `beta` line, and it is the endurance check that pins it
 

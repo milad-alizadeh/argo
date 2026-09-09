@@ -7,6 +7,10 @@
       "env": ["ARGO_BUILD_CONFIGURATION"],
       "outputs": ["dist/**", "out/**"]
     },
+    "release:build": {
+      "cache": false,
+      "outputs": ["out/**"]
+    },
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
