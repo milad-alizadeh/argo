@@ -1,17 +1,20 @@
 // Locating, running and judging a PACKAGED Argo app. The driver that uses this is
-// prove-packaged-pty.mjs; the acceptance test it serves is #1743.
+// prove-packaged-pty.mjs; the boundary it asserts is #1749, run against node-pty by #1769.
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-export const RESULT_PREFIX = 'ARGO_PTY_SMOKE_RESULT '
-export const LAUNCH_TIMEOUT_MS = 60_000
+export const RESULT_PREFIX = 'ARGO_PTY_ACCEPTANCE '
+// The endurance check is 600 spawn/exit cycles, so the launch budget is minutes, not seconds.
+export const LAUNCH_TIMEOUT_MS = 10 * 60_000
 export const PACKAGE_TIMEOUT_MS = 15 * 60_000
 
-const APP_NAME = 'Argo'
-const EXECUTABLE = 'Argo'
-const EXPECTED_UNAME = { arm64: 'arm64', x64: 'x86_64' }
+export const APP_NAME = 'Argo'
+// One arm64 download for Apple silicon, and no Intel or universal build
+// ([#1745](https://github.com/milad-alizadeh/argo/issues/1745)). Proving an architecture nobody
+// downloads costs a second full package per run and answers nothing.
+export const SHIPPED_ARCHES = ['arm64']
 
 export const desktopRoot = path.resolve(import.meta.dirname, '..')
 
@@ -59,16 +62,12 @@ export function forgeBinary() {
 }
 
 // Forge names the output directory out/<app>-darwin-<arch>.
+export function appDirectory(arch) {
+  return path.join(desktopRoot, 'out', `${APP_NAME}-darwin-${arch}`)
+}
+
 export function appBinary(arch) {
-  return path.join(
-    desktopRoot,
-    'out',
-    `${APP_NAME}-darwin-${arch}`,
-    `${APP_NAME}.app`,
-    'Contents',
-    'MacOS',
-    EXECUTABLE,
-  )
+  return path.join(appDirectory(arch), `${APP_NAME}.app`, 'Contents', 'MacOS', APP_NAME)
 }
 
 export function readResult(stdout) {
@@ -81,7 +80,8 @@ export function readResult(stdout) {
   }
 }
 
-// A clean exit is code 0, no killing signal, and not our own timeout.
+// A clean exit is code 0, no killing signal, and not our own timeout. The app quitting on its own
+// after the cases is itself the app-shutdown case: a hang here is a failure, not a slow machine.
 export function exitFailures(launched) {
   const failures = []
   if (launched.timedOut) failures.push(`the app did not exit within ${LAUNCH_TIMEOUT_MS}ms`)
@@ -90,19 +90,17 @@ export function exitFailures(launched) {
   return failures
 }
 
-// The app has to prove it was the packaged one, built for the architecture asked for, and that a
-// real shell ran inside the PTY it opened.
+// The app has to prove it was the packaged one, built for the architecture asked for, and that
+// every case of the acceptance boundary passed inside it.
 export function resultFailures(result, arch) {
-  if (!result) return ['the app printed no smoke result; node-pty may have failed to load']
+  if (!result)
+    return [`the app printed no ${RESULT_PREFIX.trim()} line; node-pty may have failed to load`]
   const failures = []
-  if (result.ok !== true) failures.push(`the PTY check failed: ${result.error}`)
+  for (const [name, outcome] of Object.entries(result.cases ?? {}))
+    if (outcome !== 'pass') failures.push(`case ${name}: ${outcome}`)
   if (result.packaged !== true)
     failures.push('app.isPackaged was false, so this was not the packaged app')
   if (result.processArch !== arch)
     failures.push(`process.arch was ${result.processArch}, expected ${arch}`)
-  if (result.ptyUname !== EXPECTED_UNAME[arch])
-    failures.push(
-      `the shell inside the PTY reported ${result.ptyUname}, expected ${EXPECTED_UNAME[arch]}`,
-    )
   return failures
 }

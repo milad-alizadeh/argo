@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-// The acceptance test for the Electron toolchain decision (#1732), demanded by #1743:
+// The artifact tier of [#1769](https://github.com/milad-alizadeh/argo/issues/1769):
 //
-//   A PACKAGED macOS app, on arm64 AND x64, loads node-pty, opens a PTY, and exits cleanly.
+//   A PACKAGED macOS arm64 app loads node-pty and passes the whole #1749 acceptance boundary —
+//   start, input, output, resize, interrupt, exactly-once exit, crash cleanup, app shutdown, and
+//   600 spawn/exit cycles at a flat descriptor count.
 //
-// A working dev server is not that proof, so nothing here runs `forge start`. It packages each
-// architecture with Forge, launches the real binary inside the .app, and asserts on the JSON line
-// the main process writes plus the process exit code.
+// A working dev server is not that proof, so nothing here runs `forge start`. It packages with
+// Forge — whose `postPackage` hook has already refused an app with no working PTY before this
+// gets to launch anything — then runs the real binary inside the .app and reads the JSON line the
+// main process writes plus the process exit code.
 //
-// Usage: node scripts/prove-packaged-pty.mjs [--arch arm64,x64] [--skip-package]
+// Usage: node scripts/prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance]
 import { existsSync } from 'node:fs'
 import process from 'node:process'
 import {
@@ -19,16 +22,19 @@ import {
   readResult,
   resultFailures,
   run,
+  SHIPPED_ARCHES,
 } from './packaged-app.mjs'
 
 function parseArgs(argv) {
   const arches = []
   let skipPackage = false
+  let skipEndurance = false
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--arch') arches.push(...(argv[i + 1] ?? '').split(',').filter(Boolean))
     if (argv[i] === '--skip-package') skipPackage = true
+    if (argv[i] === '--skip-endurance') skipEndurance = true
   }
-  return { arches: arches.length > 0 ? arches : ['arm64', 'x64'], skipPackage }
+  return { arches: arches.length > 0 ? arches : SHIPPED_ARCHES, skipPackage, skipEndurance }
 }
 
 async function packageArch(arch) {
@@ -46,7 +52,7 @@ async function packageArch(arch) {
   }
 }
 
-async function proveArch(arch, { skipPackage }) {
+async function proveArch(arch, { skipPackage, skipEndurance }) {
   if (!skipPackage) {
     const failed = await packageArch(arch)
     if (failed) return failed
@@ -59,7 +65,10 @@ async function proveArch(arch, { skipPackage }) {
 
   const launched = await run(binary, [], {
     timeoutMs: LAUNCH_TIMEOUT_MS,
-    env: { ARGO_PTY_SMOKE: '1', ARGO_PTY_TOKEN: `argo-pty-${arch}-${Date.now()}` },
+    env: {
+      ARGO_PTY_ACCEPTANCE: '1',
+      ...(skipEndurance ? { ARGO_PTY_SKIP_ENDURANCE: '1' } : {}),
+    },
   })
   const result = readResult(launched.stdout)
   const failures = [...exitFailures(launched), ...resultFailures(result, arch)]
@@ -74,11 +83,11 @@ async function proveArch(arch, { skipPackage }) {
   }
 }
 
-const { arches, skipPackage } = parseArgs(process.argv.slice(2))
+const { arches, skipPackage, skipEndurance } = parseArgs(process.argv.slice(2))
 const outcomes = []
 for (const arch of arches) {
   process.stdout.write(`\n=== proving ${arch} ===\n`)
-  const outcome = await proveArch(arch, { skipPackage })
+  const outcome = await proveArch(arch, { skipPackage, skipEndurance })
   outcomes.push(outcome)
   process.stdout.write(`${outcome.ok ? 'PASS' : 'FAIL'} ${arch}\n`)
   if (outcome.result) process.stdout.write(`${JSON.stringify(outcome.result, null, 2)}\n`)
@@ -86,6 +95,6 @@ for (const arch of arches) {
   if (outcome.stderr) process.stdout.write(`--- stderr tail ---\n${outcome.stderr}\n`)
 }
 
-const proved = outcomes.length - outcomes.filter((outcome) => !outcome.ok).length
+const proved = outcomes.filter((outcome) => outcome.ok).length
 process.stdout.write(`\n${proved}/${outcomes.length} architectures proved\n`)
 process.exit(proved === outcomes.length ? 0 : 1)

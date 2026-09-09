@@ -11,8 +11,13 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    // The package-time scripts are plain `.mjs` on purpose: Forge's hooks and CI both run them
+    // with bare `node`, with no build step in front. `allowJs` lets `forge.config.ts` import
+    // them with inferred types instead of `any`; `checkJs` stays off, so they are read, not
+    // graded.
+    "allowJs": true
   },
-  "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts"],
+  "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts", "scripts/**/*.mjs"],
   "exclude": ["src/renderer"]
 }

@@ -70,13 +70,92 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
+      # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
+      # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
+      # node-pty being a production dependency, the unpack glob, the fuse value, the hooks being
+      # wired, and the checks themselves against fixture trees. The half that needs a Mac is the
+      # `desktop-artifact` job below.
+      - name: Workspace tests
+        if: ${{ !cancelled() }}
+        run: bun run test
+
       # Guardrail-hook tests (worktree edit guard, cross-CLI hook projection, the worktree-gc
       # sweep) live outside the turbo `test` pipeline — plain node scripts, not a workspace
-      # suite. They are the only suite this workflow RUNS: `turbo run test` is not invoked here
-      # at all, and it would not reach much if it were — `apps/desktop` declares no `test` script,
-      # so the only workspace answering it is `packages/argo-skills`, with a scaffold dry-run.
-      # `apps/desktop`'s types are covered by the Typecheck step above, and #1758 retired the
-      # Swift tooling, so nothing verifies `apps/macOS` at all.
+      # suite. #1758 retired the Swift tooling, so nothing verifies `apps/macOS` at all.
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks
+
+  # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
+  # read the fuse wire back out of the shipped binary, and RUN it. Everything #1769 asserts about
+  # the packaged PTY fails silently, so the only honest check is on the artifact itself.
+  #
+  # macOS runners are free on this public repository — the ~$50/day that removed the old Swift job
+  # was the gross column of the billing page, never the billed one. The limits that are real are 5
+  # concurrent macOS jobs on GitHub Free and no secrets on a fork pull request, which is why this
+  # is scoped to pull requests that touch the desktop app rather than to every push.
+  #
+  # It packages, it does not sign. `osxSign` is unconfigured until the entitlement set is chosen
+  # (#1771) and this repository holds no signing identity. When both arrive, the signing steps
+  # belong in this job between the package and the launch, and `assert:packaged` should run again
+  # after them: a re-signature can invalidate what the package proved.
+  desktop-artifact:
+    name: package · assert · run the shipped arm64 app
+    if: github.event_name == 'pull_request'
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      # A step-level filter rather than a workflow-level `paths:`, which would gate the Linux job
+      # with it and leave a desktop-only pull request unlinted.
+      - id: touched
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          if git diff --name-only "FETCH_HEAD...HEAD" | grep -qE '^(apps/desktop/|package\.json|bun\.lock|\.github/)'; then
+            echo "desktop=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "desktop=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          BASE_REF: ${{ github.base_ref }}
+
+      - if: steps.touched.outputs.desktop == 'true'
+        uses: ./.github/actions/setup
+        with:
+          # The version the repo ships on (#1751), not the Linux job's 22: the yauzl@2 hang the
+          # root override prevents only appears from Node 24.16 (forge#4277), so a gate on an
+          # older Node would never see the thing the override is there for.
+          node-version: "24.20.0"
+
+      # Electron 44 ships no `postinstall`, so `bun install` leaves no Electron binary at all and
+      # Forge dies on a missing one. `trustedDependencies` does not help: there is no script to
+      # trust. Do NOT reach for `npx install-electron --no` — it deletes `node_modules/electron`
+      # first and npx's own `--no` then refuses to reinstall it.
+      - name: Install the Electron binary
+        if: steps.touched.outputs.desktop == 'true'
+        run: node node_modules/electron/install.js
+
+      # `forge package` runs both hooks — the production npm install that gives flora-colossus an
+      # npm-shaped tree to walk, and the postPackage assertion that refuses an app whose node-pty
+      # is absent, packed inside the asar, or stripped of its spawn-helper exec bit.
+      - name: Package arm64
+        if: steps.touched.outputs.desktop == 'true'
+        working-directory: apps/desktop
+        run: bun run package --arch arm64
+
+      # The same assertions again, standalone against the artifact on disk. This is the form a
+      # downloaded release artifact would be checked in, and it keeps the checks honest if the
+      # hook is ever detached from the config.
+      - name: Assert the packaged app
+        if: ${{ !cancelled() && steps.touched.outputs.desktop == 'true' }}
+        working-directory: apps/desktop
+        run: bun run assert:packaged out/Argo-darwin-arm64/Argo.app
+
+      # The #1749 acceptance boundary, inside the shipped binary: start, input, output, resize,
+      # interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a
+      # flat descriptor count.
+      - name: Run the shipped app
+        if: ${{ !cancelled() && steps.touched.outputs.desktop == 'true' }}
+        working-directory: apps/desktop
+        run: node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package

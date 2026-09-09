@@ -12,27 +12,70 @@ reviewed unit.
 
 ## The acceptance test
 
-A working dev server proves nothing about the product. The gate is the **packaged** app:
+A working dev server proves nothing about the product. Everything that can break about a packaged
+`node-pty` breaks **silently** — a missing exec bit, a native module still inside the asar, a
+production install that produced nothing at all. None of them raise; they just make every
+`pty.spawn` fail. So the gate is the **packaged** app, and it runs in two tiers
+([#1769](https://github.com/milad-alizadeh/argo/issues/1769)).
+
+**The source tier** needs no Mac and runs on Linux CI as part of `bun run test`:
 
 ```sh
-node scripts/prove-packaged-pty.mjs            # both architectures
-node scripts/prove-packaged-pty.mjs --arch arm64
-node scripts/prove-packaged-pty.mjs --skip-package   # re-launch what is already in out/
+bun test        # from apps/desktop
 ```
 
-It packages with Forge, launches the real binary inside the `.app`, and asserts that the app
-loaded `node-pty`, opened a PTY that ran a shell, reported the architecture it was built for, and
-exited with code 0. `src/main.ts` holds the check itself behind `ARGO_PTY_SMOKE=1`.
+It reads the config rather than the artifact: node-pty is a production dependency, the second
+lockfile agrees with the manifest, the yauzl override is in place, the unpack glob covers the whole
+module, `OnlyLoadAppFromAsar` is on, both Forge hooks are wired, and the checks themselves pass
+against fixture trees.
 
-**The `node-pty` half of that is superseded and this script has not caught up.**
-[Prove the packaged Electron toolchain](https://github.com/milad-alizadeh/argo/issues/1743) found
-that Forge's dependency walker cannot reach `node-pty` from a Bun workspace install at all, so the
-assertion above cannot pass as written.
-[Choose cross-platform Session process hosts](https://github.com/milad-alizadeh/argo/issues/1749)
-and [Choose how apps/desktop gets an npm-shaped install](https://github.com/milad-alizadeh/argo/issues/1750)
-replaced it with a compiled Bun 1.4 `Bun.Terminal` helper, which does pass the same harness. This
-test is also in no quality gate, because it needs a Mac, a full package and several minutes;
-[where it runs](https://github.com/milad-alizadeh/argo/issues/1758) is the open ticket.
+**The artifact tier** needs a Mac, because it packages, reads the fuse wire out of the shipped
+binary and then runs it:
+
+```sh
+bun run package --arch arm64                       # the postPackage hook asserts on its own
+bun run assert:packaged out/Argo-darwin-arm64/Argo.app   # the same checks, standalone
+node scripts/prove-packaged-pty.mjs --arch arm64   # package, then launch and run acceptance
+node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package
+node scripts/prove-packaged-pty.mjs --arch arm64 --skip-endurance
+```
+
+`assert:packaged` is the same code `forge package` runs in its `postPackage` hook, so packaging
+already refuses an app whose `node-pty` is absent, packed inside the asar, or stripped of its
+`spawn-helper` exec bit. Running it standalone is the form a downloaded release artifact would be
+checked in, and it keeps the checks honest if the hook is ever detached from the config.
+
+`prove-packaged-pty.mjs` then launches the real binary inside the `.app` with
+`ARGO_PTY_ACCEPTANCE=1` and reads back one JSON line plus the exit code. It covers the
+[#1749](https://github.com/milad-alizadeh/argo/issues/1749) boundary: start, input, output, resize,
+interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a flat
+descriptor count.
+
+Only arm64 is proved. [#1745](https://github.com/milad-alizadeh/argo/issues/1745) ships arm64
+alone. It packages but does **not** sign: `osxSign` is unconfigured until the entitlement set is
+chosen ([#1771](https://github.com/milad-alizadeh/argo/issues/1771)) and this repository holds no
+identity. When both arrive, the signing steps belong between the package and the launch, and
+`assert:packaged` should run **again** after them, because a re-signature can invalidate what the
+package proved.
+
+### node-pty is pinned to the `beta` line, and it is the endurance check that pins it
+
+`node-pty@1.1.0` — the `latest` tag — leaks three file descriptors per terminal on macOS, one of
+them a `/dev/ptmx`. Measured here at 600 cycles of `/bin/sh -c 'exit 0'` with the exit awaited each
+time:
+
+| version | result | descriptor growth |
+| --- | --- | --- |
+| `1.1.0` (`latest`) | **failed at cycle 497**, `posix_spawnp failed.` | +1492 |
+| `1.2.0-beta.15` (`beta`) | 600/600 | 0 |
+
+Calling `kill()` or `destroy()` changes nothing: the read stream is destroyed, but the
+`CustomWriteStream` opened over the same fd is not. `kern.tty.ptmx_max` is 511 on macOS, so on
+`1.1.0` a cockpit process can open about 500 PTYs in its entire lifetime however cleanly each one
+is closed — a hard ceiling on exactly what
+[#1791](https://github.com/milad-alizadeh/argo/issues/1791) chose node-pty to be. The `beta` tag
+ships until the fix reaches `latest`. Downgrading turns the packaged endurance check red, and that
+is the check working.
 
 ## Two things will bite you
 

@@ -7,6 +7,14 @@ inputs:
       Write bun's module cache back. Exactly one job per workflow should do this:
       parallel writers race for the same key and all but one lose the reservation.
     default: "false"
+  node-version:
+    description: >-
+      The Node to install. The default is what the Linux gate has always used. The desktop
+      artifact job overrides it with the version the repo actually ships on, because the
+      yauzl@2 hang the root override exists to prevent only appears on Node 24.16 and later
+      (forge#4277) — a gate on an older Node would never see it. Pin #1751 lands as
+      `.node-version` in #1777, and this input becomes `node-version-file` then.
+    default: "22"
 
 runs:
   using: composite
@@ -19,7 +27,7 @@ runs:
     # without one rather than failing (vitest#7681).
     - uses: actions/setup-node@v5
       with:
-        node-version: "22"
+        node-version: ${{ inputs.node-version }}
 
     - id: cache-key
       shell: bash
