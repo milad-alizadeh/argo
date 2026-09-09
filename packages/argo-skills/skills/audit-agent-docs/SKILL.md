@@ -1,10 +1,10 @@
 ---
-name: audit-agent-context
-description: Price what every agent session loads before the first prompt, and cut it.
+name: audit-agent-docs
+description: Price a project's agent docs, pushed and pulled, and cut the bloat.
 disable-model-invocation: true
 ---
 
-# Audit Agent Context
+# Audit Agent Docs
 
 Report first, cut what the user accepts. Argue **spend**, never adherence: a smaller context file
 has not been shown to make an agent follow instructions better, and the claim is uncheckable here.
@@ -38,9 +38,9 @@ report, rather than cutting a live rule to reach a number.
 The meter prices the bill and leaves the line items unnamed: it says the memory files cost 12k,
 never which section of them was dead. Steps 2 to 5 are the reading.
 
-## 2. Inventory what is pushed
+## 2. Inventory the docs
 
-Work from `git rev-parse --show-toplevel`.
+Work from the repository root. The pushed tier first:
 
 | source | how to find it |
 | --- | --- |

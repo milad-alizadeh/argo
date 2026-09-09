@@ -25,7 +25,7 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Design infra and the token values | `setup-design-infra` | project has UI | 2 |
 | Always-on task tracking | this skill, below | always | 3 |
 | Guardrail hooks | scaffolder `--hooks` | user runs git worktrees | 4 |
-| Audit what every session loads | `audit-agent-context` | always | last, since every step above adds to the bill |
+| Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
 

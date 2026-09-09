@@ -7,10 +7,10 @@
       "skillPath": "skills/engineering/ask-matt/SKILL.md",
       "computedHash": "0cd14026efa0330083cbc7adf590976c162b60e02f696a8dcce96f0b4dab8a72"
     },
-    "audit-agent-context": {
+    "audit-agent-docs": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/audit-agent-context/SKILL.md",
+      "skillPath": "packages/argo-skills/skills/audit-agent-docs/SKILL.md",
       "computedHash": "a2afdc82649b2ed4847af2ea7297fd76e111f9e9b12f6edfb1eb4c7d83666b31"
     },
     "claude-handoff": {
