@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>#1793 · async Feed row height</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font: 13px/1.6 ui-monospace, SFMono-Regular, monospace;
+        background: #16181c;
+        color: #d6dae0;
+      }
+      h1 {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0 0 12px;
+      }
+      #log {
+        white-space: pre-wrap;
+        margin: 0;
+      }
+      /*
+        The measurement container the harness creates is `content-visibility: hidden`, which is
+        the sanctioned way to lay content out without showing it. It is left in the document
+        rather than hidden with `display: none`, which would destroy the boxes.
+      */
+      #measure-host {
+        position: absolute;
+        top: 0;
+        left: -10000px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>#1793 · rendering every mermaid diagram in a real transcript</h1>
+    <pre id="log"></pre>
+    <script type="module" src="/bundle.js"></script>
+  </body>
+</html>

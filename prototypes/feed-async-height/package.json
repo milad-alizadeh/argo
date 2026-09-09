@@ -1,0 +1,18 @@
+{
+  "name": "feed-async-height",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway measurement rig for argo#1793. Deliberately outside the workspaces glob.",
+  "scripts": {
+    "mine": "bun mine-corpus.ts",
+    "build": "bun build harness.ts --outfile bundle.js --target browser",
+    "serve": "bun serve.ts"
+  },
+  "dependencies": {
+    "mermaid": "^11.17.2",
+    "shiki": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2"
+  }
+}

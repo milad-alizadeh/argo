@@ -1,0 +1,7 @@
+# Mined from the user's own local Claude Code transcripts. The repo is public; this file
+# never leaves the machine and is never committed. Regenerate with `bun mine-corpus.ts`.
+corpus.json
+
+# Node modules for the harness (mermaid + a highlighter), installed locally by `bun install`.
+node_modules/
+bundle.js
