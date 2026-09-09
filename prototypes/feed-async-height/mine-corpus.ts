@@ -50,7 +50,8 @@ const hash = (s: string): string => {
  * disk that a later run reads back. Diagram sources are the least likely place for one, so
  * this is a seatbelt rather than the privacy story — the gitignore is that.
  */
-const SECRETISH = /(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY)/
+const LOOKS_LIKE_A_SECRET =
+  /(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY)/
 
 export type Block = {
   readonly id: string
@@ -115,7 +116,7 @@ function collect(): Block[] {
       }
       for (const text of textsOf(record)) {
         for (const { lang, source } of fences(text)) {
-          if (SECRETISH.test(source)) continue
+          if (LOOKS_LIKE_A_SECRET.test(source)) continue
           const id = `${lang || 'plain'}-${hash(source)}`
           const existing = byId.get(id)
           if (existing) {

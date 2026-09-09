@@ -25,10 +25,10 @@
 import mermaid from 'mermaid'
 import { createHighlighter } from 'shiki'
 import { failureArm, fontArm, highlightArm, imageArm, type Sample } from './async-arms'
+import { COLUMN_WIDTH, withMeasureBox } from './measure'
+import type { Block } from './mine-corpus'
 import { kindOf, type Score, score } from './predict'
 import { synthetics } from './synthetic'
-
-type Block = { id: string; lang: string; source: string; bytes: number; lines: number }
 
 /**
  * Five of the twelve mined diagrams carry `&gt;` where they mean `>`, so mermaid refuses them.
@@ -44,6 +44,13 @@ const ENTITIES: ReadonlyArray<[RegExp, string]> = [
   [/&#39;/g, "'"],
   [/&amp;/g, '&'],
 ]
+
+/**
+ * What the sweep needs of a mined block. The synthetic diagrams are built to the same shape
+ * without a transcript behind them, so this is `Block` minus its provenance rather than a
+ * second declaration of it.
+ */
+type Drawable = Pick<Block, 'id' | 'lang' | 'source' | 'bytes' | 'lines'>
 
 const unescapeHtml = (source: string): string =>
   ENTITIES.reduce((text, [pattern, char]) => text.replace(pattern, char), source)
@@ -63,7 +70,7 @@ async function parses(source: string): Promise<boolean> {
  * found nor unescaped is returned as-is, and fails in the sweep where it is recorded.
  */
 async function usableSource(
-  block: Block,
+  block: Drawable,
 ): Promise<{ source: string; htmlEscaped: boolean; unreadable: boolean }> {
   if (await parses(block.source)) {
     return { source: block.source, htmlEscaped: false, unreadable: false }
@@ -76,7 +83,6 @@ async function usableSource(
 }
 
 const REPEATS = 7
-const COLUMN_WIDTH = 600
 
 const median = (xs: number[]): number => {
   const s = [...xs].sort((a, b) => a - b)
@@ -132,8 +138,7 @@ type Rendered = {
  * One render-and-measure of one diagram, exactly as a whole-document pass would do it.
  *
  * The failure is caught HERE rather than around the sweep, because one unreadable diagram must
- * not take the other eleven with it — which is also the shape a real pass needs, and the first
- * version of this rig got wrong.
+ * not take the other eleven with it — which is also the shape a real pass needs.
  */
 async function renderOnce(host: HTMLElement, id: string, source: string): Promise<Rendered> {
   const t0 = performance.now()
@@ -153,27 +158,25 @@ async function renderOnce(host: HTMLElement, id: string, source: string): Promis
   }
   const t1 = performance.now()
 
-  const box = document.createElement('div')
-  box.style.width = `${COLUMN_WIDTH}px`
-  box.innerHTML = svg
-  host.append(box)
-  const rect = box.getBoundingClientRect()
-  const containerHeight = host.getBoundingClientRect().height
+  const drawn = await withMeasureBox(host, (box) => {
+    box.innerHTML = svg
+    const rect = box.getBoundingClientRect()
+    return { rect, containerHeight: host.getBoundingClientRect().height }
+  })
   const t2 = performance.now()
-  box.remove()
 
   return {
     timing: { render: t1 - t0, measure: t2 - t1 },
-    height: rect.height,
-    width: rect.width,
-    containerHeight,
+    height: drawn.rect.height,
+    width: drawn.rect.width,
+    containerHeight: drawn.containerHeight,
     error: null,
   }
 }
 
 async function mermaidArm(
   host: HTMLElement,
-  blocks: ReadonlyArray<Block & { nodes?: number; htmlEscaped?: boolean }>,
+  blocks: ReadonlyArray<Drawable & { nodes?: number; htmlEscaped?: boolean }>,
 ): Promise<DiagramResult[]> {
   const timings = new Map<string, Timing[]>()
   const geometry = new Map<string, { height: number; width: number; containerHeight: number }>()
@@ -213,7 +216,7 @@ async function mermaidArm(
 
   return blocks.map((block) => {
     const runs = timings.get(block.id) ?? [{ render: Number.NaN, measure: Number.NaN }]
-    const geo = geometry.get(block.id) ?? { height: 0, width: 0, containerHeight: 0 }
+    const drawn = geometry.get(block.id) ?? { height: 0, width: 0, containerHeight: 0 }
     return {
       parseError: errors.get(block.id) ?? null,
       htmlEscaped: Boolean((block as { htmlEscaped?: boolean }).htmlEscaped),
@@ -226,19 +229,19 @@ async function mermaidArm(
       renderMsLeast: Math.min(...runs.map((r) => r.render)),
       renderMsMedian: median(runs.map((r) => r.render)),
       measureMsLeast: Math.min(...runs.map((r) => r.measure)),
-      height: geo.height,
-      width: geo.width,
-      containerHeight: geo.containerHeight,
+      height: drawn.height,
+      width: drawn.width,
+      containerHeight: drawn.containerHeight,
     }
   })
 }
 
 /** A spread of the languages the corpus actually holds, capped so the arm stays a minute. */
-function highlightSample(blocks: Block[]): Block[] {
+function highlightSample(blocks: Drawable[]): Drawable[] {
   const wanted = ['ts', 'swift', 'json', 'bash', 'tsx']
   return wanted
     .map((lang) => blocks.filter((b) => b.lang === lang).sort((a, b) => b.bytes - a.bytes)[0])
-    .filter((b): b is Block => Boolean(b))
+    .filter((b): b is Drawable => Boolean(b))
 }
 
 /**
@@ -249,18 +252,18 @@ function highlightSample(blocks: Block[]): Block[] {
 const ASYNC_ONLY = new URLSearchParams(location.search).get('arms') === 'async'
 
 async function run(): Promise<void> {
-  const corpus: { blocks: Block[] } = await (await fetch('/corpus.json')).json()
+  const corpus: { blocks: Drawable[] } = await (await fetch('/corpus.json')).json()
   const mined = corpus.blocks.filter((b) => b.lang === 'mermaid')
   log(`corpus: ${corpus.blocks.length} blocks, ${mined.length} mermaid`)
 
   mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', suppressErrorRendering: false })
   const host = measureHost()
 
-  const diagrams: Array<Block & { htmlEscaped: boolean }> = []
+  const diagrams: Array<Drawable & { htmlEscaped: boolean }> = []
   let unreadable = 0
   for (const block of mined) {
-    const { source, htmlEscaped, unreadable: dead } = await usableSource(block)
-    if (dead) unreadable += 1
+    const { source, htmlEscaped, unreadable: beyondRepair } = await usableSource(block)
+    if (beyondRepair) unreadable += 1
     diagrams.push({ ...block, source, htmlEscaped })
   }
   const escaped = diagrams.filter((d) => d.htmlEscaped).length

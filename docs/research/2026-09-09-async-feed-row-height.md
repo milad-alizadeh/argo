@@ -9,10 +9,13 @@ The ticket set the terms: *"Most of this is a measurement, not a debate. Build t
 that renders the diagrams from a real transcript in a browser and time them. If the whole set
 renders in tens of milliseconds, the pass simply awaits them and rule 3 stands untouched."*
 
-**It is not tens of milliseconds.** Ten real diagrams cost 3 804 ms at their best and 5 392 ms
-typically, on one warm Chrome, with nothing else on the page. Half the ≤3 s budget for the whole
-4 800-record shape goes on a single diagram: the worst of the twelve costs 1 455 ms by itself. So
-the branch the ticket offered — await them and leave rule 3 alone — is closed, and the rest of this
+**It is not tens of milliseconds.** Ten real diagrams cost 2 990 ms summing each one's least time
+and 3 878 ms summing each one's median, on one warm Chrome with nothing else on the page. (Neither
+is a measured total: no run rendered the set end to end, and a sum of medians is not the median of
+a sum. They bracket it.) Between a quarter and a third of the ≤3 s budget for the whole
+4 800-record shape goes on a single diagram: the worst of the twelve costs 744 ms at its best and
+879 ms typically. So the
+branch the ticket offered — await them and leave rule 3 alone — is closed, and the rest of this
 document is about which of the remaining three doors to walk through.
 
 ## Inventory
@@ -20,7 +23,7 @@ document is about which of the remaining three doors to walk through.
 | Question the ticket asked | Where the answer is | Verdict |
 | --- | --- | --- |
 | Render cost of every mermaid diagram in a real transcript, worst and total | [Every diagram, timed](#every-diagram-timed) | Measured. Seconds, not milliseconds. |
-| How it scales with diagram size | [Scaling](#scaling) | Linear in node count, ~7 to 10 ms per node, shape-independent. |
+| How it scales with diagram size | [Scaling](#scaling) | Linear in node count, ~5 to 9 ms per node, shape-independent. |
 | Can a height be computed from source without rendering? | [Height without rendering](#height-without-rendering) | Yes if you own the layout engine — Argo already does, in Swift. No by predicting mermaid's output. |
 | Same numbers for a remote image | [The other async cases](#the-other-async-cases) | Not a cost, an unknown. Reserving the box removes it entirely. |
 | Same numbers for a late web font | [The other async cases](#the-other-async-cases) | Real reflow, size set by how far the fallback's metrics sit from the face's. |
@@ -53,20 +56,25 @@ recorded separately and excluded from that kind's warm statistics.
 **The measure happens where the contract says it happens** — inside a `content-visibility: hidden`
 container, which is the technique css-contain-2 §4.2 sanctions and which #1752 already chose.
 
+**Only the diagram sweep got that hygiene.** The image, font and highlighter arms run once each,
+with no repeats and no cold/warm split, because what they were built to establish is a height
+DELTA — does the box move, and by how much — not a time. Read their milliseconds as an order of
+magnitude and nothing finer; the deltas are the findings.
+
 ## Every diagram, timed
 
 | id | kind | source | drawn height | cold | warm least | warm median | measure |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `mermaid-fd84b1b1` | class | 3275 B / 145 lines | 267 px | — | 937 ms | 1455 ms | 13 ms |
-| `mermaid-c5d37259` (repaired) | class | 3359 B / 145 lines | 267 px | 1354 ms | 976 ms | 1204 ms | 15 ms |
-| `mermaid-ad19b64a` (repaired) | state | 2230 B / 44 lines | 496 px | — | 331 ms | 423 ms | 4 ms |
-| `mermaid-5e1be72e` | state | 2176 B / 44 lines | 496 px | 413 ms | 265 ms | 415 ms | 5 ms |
-| `mermaid-63dcd06d` (repaired) | flowchart | 1795 B / 49 lines | 2463 px | — | 276 ms | 388 ms | 7 ms |
-| `mermaid-66a87a3d` | flowchart | 1714 B / 49 lines | 2463 px | — | 218 ms | 386 ms | 5 ms |
-| `mermaid-bbcafff5` (repaired) | flowchart | 1688 B / 55 lines | 1294 px | — | 262 ms | 333 ms | 5 ms |
-| `mermaid-a339ff5b` (repaired) | flowchart | 3230 B / 53 lines | 366 px | — | 160 ms | 307 ms | 5 ms |
-| `mermaid-cdd2c469` | flowchart | 3155 B / 53 lines | 366 px | — | 173 ms | 242 ms | 4 ms |
-| `mermaid-409370ad` | flowchart | 1535 B / 55 lines | 1294 px | 391 ms | 207 ms | 240 ms | 5 ms |
+| `mermaid-fd84b1b1` | class | 3275 B / 145 lines | 267 px | — | 744 ms | 879 ms | 11 ms |
+| `mermaid-c5d37259` (repaired) | class | 3359 B / 145 lines | 267 px | 912 ms | 824 ms | 864 ms | 13 ms |
+| `mermaid-ad19b64a` (repaired) | state | 2230 B / 44 lines | 496 px | — | 242 ms | 407 ms | 4 ms |
+| `mermaid-63dcd06d` (repaired) | flowchart | 1795 B / 49 lines | 2463 px | — | 190 ms | 317 ms | 6 ms |
+| `mermaid-66a87a3d` | flowchart | 1714 B / 49 lines | 2463 px | — | 245 ms | 305 ms | 5 ms |
+| `mermaid-5e1be72e` | state | 2176 B / 44 lines | 496 px | 357 ms | 182 ms | 282 ms | 3 ms |
+| `mermaid-bbcafff5` (repaired) | flowchart | 1688 B / 55 lines | 1294 px | — | 157 ms | 243 ms | 5 ms |
+| `mermaid-a339ff5b` (repaired) | flowchart | 3230 B / 53 lines | 366 px | — | 127 ms | 199 ms | 5 ms |
+| `mermaid-cdd2c469` | flowchart | 3155 B / 53 lines | 366 px | — | 136 ms | 198 ms | 4 ms |
+| `mermaid-409370ad` | flowchart | 1535 B / 55 lines | 1294 px | 439 ms | 143 ms | 184 ms | 4 ms |
 | `mermaid-2019ae14` (unreadable) | sequence | 2266 B / 38 lines | 0 px | — | — | — | — |
 | `mermaid-e1e4daa1` (unreadable) | sequence | 2122 B / 38 lines | 0 px | — | — | — | — |
 
@@ -86,22 +94,22 @@ all about producing the thing to measure.
 
 | shape | nodes | source | drawn height | least | median | ms per node |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| chain | 5 | 140 B | 492 px | 48 ms | 78 ms | 9.6 |
-| fan | 5 | 141 B | 388 px | 47 ms | 120 ms | 9.4 |
-| chain | 10 | 300 B | 1012 px | 92 ms | 185 ms | 9.2 |
-| fan | 10 | 255 B | 385 px | 89 ms | 236 ms | 8.9 |
-| chain | 20 | 658 B | 2052 px | 153 ms | 178 ms | 7.7 |
-| fan | 20 | 504 B | 206 px | 141 ms | 166 ms | 7.1 |
-| chain | 40 | 1378 B | 4132 px | 313 ms | 402 ms | 7.8 |
-| fan | 40 | 1011 B | 104 px | 285 ms | 529 ms | 7.1 |
-| chain | 80 | 2818 B | 8292 px | 561 ms | 929 ms | 7.0 |
-| fan | 80 | 2024 B | 56 px | 551 ms | 817 ms | 6.9 |
-| chain | 160 | 5936 B | 16612 px | 1487 ms | 1684 ms | 9.3 |
-| fan | 160 | 4177 B | 30 px | 1408 ms | 1760 ms | 8.8 |
-| chain | 320 | 12336 B | 33252 px | 3290 ms | 3691 ms | 10.3 |
-| fan | 320 | 8657 B | 21 px | 3383 ms | 3749 ms | 10.6 |
+| chain | 5 | 140 B | 492 px | 35 ms | 42 ms | 7.1 |
+| fan | 5 | 141 B | 388 px | 39 ms | 44 ms | 7.7 |
+| chain | 10 | 300 B | 1012 px | 60 ms | 139 ms | 6.0 |
+| fan | 10 | 255 B | 385 px | 63 ms | 216 ms | 6.3 |
+| chain | 20 | 658 B | 2052 px | 119 ms | 315 ms | 6.0 |
+| fan | 20 | 504 B | 206 px | 114 ms | 128 ms | 5.7 |
+| chain | 40 | 1378 B | 4132 px | 212 ms | 232 ms | 5.3 |
+| fan | 40 | 1011 B | 104 px | 206 ms | 410 ms | 5.1 |
+| chain | 80 | 2818 B | 8292 px | 506 ms | 839 ms | 6.3 |
+| fan | 80 | 2024 B | 56 px | 414 ms | 847 ms | 5.2 |
+| chain | 160 | 5936 B | 16612 px | 1339 ms | 1552 ms | 8.4 |
+| fan | 160 | 4177 B | 30 px | 1140 ms | 1500 ms | 7.1 |
+| chain | 320 | 12336 B | 33252 px | 2924 ms | 3293 ms | 9.1 |
+| fan | 320 | 8657 B | 21 px | 2741 ms | 3084 ms | 8.6 |
 
-Cost is linear in node count at roughly 7 to 10 ms per node, and the two shapes agree. That
+Cost is linear in node count at roughly 5 to 9 ms per node, and the two shapes agree. That
 matters: `chain` grows the rank count while `fan` grows the widest rank, and dagre's ordering pass
 — the one with the worst complexity — has real work only in the second. Within this size range it
 does not separate them, so the cost is not the crossing-reduction pass and there is no size below
@@ -151,6 +159,13 @@ is written against exactly that. So the answer to the ticket's question is:
   reimplementing dagre and mermaid's text measurement to agree with them, and any version bump
   silently invalidates it.
 
+**One route between those two was not tried.** The ticket's phrase — "the same graph layout mermaid
+is already doing" — also reads as *calling* it: driving mermaid's own bundled `dagre-d3-es` over the
+parsed graph without ever producing SVG. That would inherit the constants and the text measure the
+predictor here has to guess at, so its accuracy is not this table's. What it costs is unmeasured,
+and the scaling numbers above suggest the layout IS the cost, so it is unlikely to be cheap. It is
+the first thing to measure if neither of the outer answers is acceptable.
+
 This reframes the migration question that #1752 left open. The choice is not "mermaid.js, awaited or
 framed". It is whether the DOM Feed hosts mermaid.js at all, or whether ArgoMermaid is ported.
 
@@ -158,14 +173,14 @@ framed". It is whether the DOM Feed hosts mermaid.js at all, or whether ArgoMerm
 
 | case | cost | what happened to the height |
 | --- | ---: | --- |
-| image, no reserved box | 219 ms | height at insert 21px, settled 125.5px |
-| image, box reserved | 297 ms | height at insert 125.5px, settled 125.5px |
-| late web font | 153 ms | fallback 64px → real face 77.5px, delta 13.5px |
-| highlight ts ts-85637ffe | 900 ms | plain 1998px → highlighted 1998px, delta 0.0px |
-| highlight swift swift-5cbac963 | 326 ms | plain 4014px → highlighted 4014px, delta 0.0px |
-| highlight json json-e51564d7 | 336 ms | plain 107604px → highlighted 107604px, delta 0.0px |
-| highlight bash bash-1b702c14 | 16 ms | plain 954px → highlighted 954px, delta 0.0px |
-| highlight tsx tsx-46b61ec6 | 350 ms | plain 954px → highlighted 954px, delta 0.0px |
+| image, no reserved box | 128 ms | height at insert 21px, settled 125.5px |
+| image, box reserved | 173 ms | height at insert 125.5px, settled 125.5px |
+| late web font | 143 ms | fallback 64px → real face 77.5px, delta 13.5px |
+| highlight ts ts-85637ffe | 483 ms | plain 1998px → highlighted 1998px, delta 0.0px |
+| highlight swift swift-5cbac963 | 270 ms | plain 4014px → highlighted 4014px, delta 0.0px |
+| highlight json json-e51564d7 | 349 ms | plain 107604px → highlighted 107604px, delta 0.0px |
+| highlight bash bash-1b702c14 | 24 ms | plain 954px → highlighted 954px, delta 0.0px |
+| highlight tsx tsx-46b61ec6 | 333 ms | plain 954px → highlighted 954px, delta 0.0px |
 
 **A remote image is not slow, it is unknown.** With no reserved box the element measures a bare line
 box at insert and jumps to the real size when the bytes land; with `width`/`height` set, the height
@@ -182,8 +197,13 @@ the document after the pass has declared it settled.
 
 **A highlighter is not a height case.** Five languages, plain `<pre>` against shiki's output at the
 same font and width: the height delta was 0 px every time. Highlighting recolours a fixed number of
-lines. The cost is real (up to 900 ms) but it is a cost the pass can pay after the first paint
-without moving anything.
+lines, which is the finding; one sample per language is enough to establish a zero.
+
+Its milliseconds are not, and should not be quoted as a per-block cost. The 483 ms worst is the
+**first** call in the run, on a 1 998 px TypeScript block, while a 107 604 px JSON block later in
+the same run cost 349 ms and a 954 px bash block cost 24 ms — that ordering says the number is
+mostly shiki's first-call initialisation, not the block. Either way the pass can pay it after the
+first paint without moving anything.
 
 ## A diagram that cannot render
 
@@ -230,7 +250,7 @@ costs its seconds; the frame only decides whether the document has to wait for t
 | --- | --- | --- | --- |
 | **Fixed frame, render after first paint** | Intact | A stable box that fills in a moment later, at a size the reader did not choose | Cheapest to build. Diagrams are scaled or scrolled inside a frame forever. |
 | **Port ArgoMermaid to TypeScript** | Intact | Natural size, settled before first draw, as today | A port of ~9 328 lines of Swift, and the eleven kinds' tests with it |
-| **Host mermaid.js and await it in the pass** | Broken | Natural size | 5 392 ms of blocked main thread for ten diagrams, before any prose is typeset |
+| **Host mermaid.js and await it in the pass** | Broken | Natural size | Seconds of blocked main thread for ten diagrams (2 990–3 878 ms measured), before any prose is typeset |
 
 The third door is the one the ticket hoped for and the numbers close.
 
@@ -269,5 +289,9 @@ Recorded because two of these produced numbers that looked publishable.
   so the engine is the same, but nothing here is pinned to the version Argo will ship.
 - **No cost for the whole pass.** This measures diagrams, not a Feed. What 459 rows of mixed shapes
   cost together is #1752's open ≤3 s gate, which still has no home.
+- **Two figures are not in the committed artefacts.** "3 308 distinct blocks" is the miner's
+  console output over `corpus.json`, which is gitignored, so it cannot be checked from this repo;
+  and the run recorded `mermaidVersion: "unknown"` because mermaid 11 does not expose one on its
+  default export, so "mermaid 11" rests on the lockfile rather than on the run.
 - **The port is unpriced.** "Port ArgoMermaid" is a line in a table, not an estimate. Nobody has
   looked at how much of those 9 328 lines is layout and how much is Swift ceremony.

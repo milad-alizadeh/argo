@@ -73,12 +73,12 @@ function edgesOf(source: string, pattern: RegExp): Array<[string, string]> {
  */
 function layering(edges: Array<[string, string]>): { ranks: number; widest: number } {
   if (edges.length === 0) return { ranks: 1, widest: 1 }
-  const preds = new Map<string, string[]>()
+  const incoming = new Map<string, string[]>()
   const nodes = new Set<string>()
   for (const [from, to] of edges) {
     nodes.add(from)
     nodes.add(to)
-    preds.set(to, [...(preds.get(to) ?? []), from])
+    incoming.set(to, [...(incoming.get(to) ?? []), from])
   }
   const rank = new Map<string, number>()
   const walk = (node: string, seen: Set<string>): number => {
@@ -87,7 +87,7 @@ function layering(edges: Array<[string, string]>): { ranks: number; widest: numb
     if (seen.has(node)) return 0
     seen.add(node)
     let deepest = -1
-    for (const from of preds.get(node) ?? []) deepest = Math.max(deepest, walk(from, seen))
+    for (const from of incoming.get(node) ?? []) deepest = Math.max(deepest, walk(from, seen))
     seen.delete(node)
     const value = deepest + 1
     rank.set(node, value)
@@ -162,19 +162,16 @@ function predictState(source: string): number {
  * The predicted SVG height in CSS pixels, or `null` where nothing here can read the source.
  * `null` is a real answer: it is the case the Feed would have to fall back on.
  */
+const PREDICTORS: Record<Kind, ((source: string) => number) | null> = {
+  flowchart: predictFlowchart,
+  sequence: predictSequence,
+  class: predictClass,
+  state: predictState,
+  unknown: null,
+}
+
 export function predict(source: string): number | null {
-  switch (kindOf(source)) {
-    case 'flowchart':
-      return predictFlowchart(source)
-    case 'sequence':
-      return predictSequence(source)
-    case 'class':
-      return predictClass(source)
-    case 'state':
-      return predictState(source)
-    default:
-      return null
-  }
+  return PREDICTORS[kindOf(source)]?.(source) ?? null
 }
 
 export type Score = {

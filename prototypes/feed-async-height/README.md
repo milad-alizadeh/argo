@@ -32,7 +32,10 @@ devtools will time out on it.
 | `predict.ts` | The source-only height predictor, and the score against what was drawn. |
 | `synthetic.ts` | Chain and fan flowcharts at seven sizes, for the scaling curve. |
 | `async-arms.ts` | Remote image, late web font, highlighter, and the failure case. |
+| `measure.ts` | The one column width, and the measurement box every arm shares. |
+| `png.ts` | Generates the image arm's fixture, so it cannot be a corrupt paste. |
 | `serve.ts` | Static host that can delay a response, and takes the results POST. |
+| `report.ts` | Renders `results.json` into the tables the research doc quotes. |
 | `results.json` | The committed run. Metrics only. |
 
 ## Why `corpus.json` is not committed

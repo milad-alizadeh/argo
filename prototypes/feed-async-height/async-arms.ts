@@ -21,13 +21,11 @@
  */
 
 import type { BundledLanguage, BundledTheme, HighlighterGeneric } from 'shiki'
+import { CODE_STYLE, COLUMN_WIDTH, forceLayout, withMeasureBox } from './measure'
 
 export type Sample = { readonly label: string; readonly ms: number; readonly note?: string }
 
 const now = (): number => performance.now()
-
-/** Layout is lazy; nothing is measured until something forces it. */
-const forceLayout = (el: HTMLElement): number => el.getBoundingClientRect().height
 
 /**
  * An image with no reserved box against the same image with one. The delay is served, not
@@ -36,32 +34,31 @@ const forceLayout = (el: HTMLElement): number => el.getBoundingClientRect().heig
 export async function imageArm(host: HTMLElement, delayMs: number): Promise<Sample[]> {
   const out: Sample[] = []
   for (const reserved of [false, true]) {
-    const box = document.createElement('div')
-    box.style.width = '600px'
-    host.append(box)
-    const img = document.createElement('img')
-    img.src = `/image.png?delay=${delayMs}&bust=${Math.random()}`
-    if (reserved) {
-      img.width = 240
-      img.height = 120
-      img.style.aspectRatio = '2 / 1'
-      img.style.width = '240px'
-      img.style.height = '120px'
-    }
-    const started = now()
-    box.append(img)
-    const atInsert = forceLayout(box)
-    await new Promise<void>((resolve) => {
-      img.addEventListener('load', () => resolve(), { once: true })
-      img.addEventListener('error', () => resolve(), { once: true })
+    const sample = await withMeasureBox(host, async (box) => {
+      const img = document.createElement('img')
+      img.src = `/image.png?delay=${delayMs}&bust=${Math.random()}`
+      if (reserved) {
+        img.width = 240
+        img.height = 120
+        img.style.aspectRatio = '2 / 1'
+        img.style.width = '240px'
+        img.style.height = '120px'
+      }
+      const started = now()
+      box.append(img)
+      const atInsert = forceLayout(box)
+      await new Promise<void>((resolve) => {
+        img.addEventListener('load', () => resolve(), { once: true })
+        img.addEventListener('error', () => resolve(), { once: true })
+      })
+      const settled = forceLayout(box)
+      return {
+        label: reserved ? 'image, box reserved' : 'image, no reserved box',
+        ms: now() - started,
+        note: `height at insert ${atInsert}px, settled ${settled}px`,
+      }
     })
-    const settled = forceLayout(box)
-    out.push({
-      label: reserved ? 'image, box reserved' : 'image, no reserved box',
-      ms: now() - started,
-      note: `height at insert ${atInsert}px, settled ${settled}px`,
-    })
-    box.remove()
+    out.push(sample)
   }
   return out
 }
@@ -71,11 +68,10 @@ export async function imageArm(host: HTMLElement, delayMs: number): Promise<Samp
  * loaded. The face is a real file served locally, so the delta is a genuine metric change
  * rather than a synthetic one.
  *
- * TWO THINGS THE FIRST VERSION GOT WRONG, and both made it report a zero delta while proving
- * nothing by it. It set `line-height: 1.5`, which pins every line box to a multiple of the font
- * SIZE and hides the face's metrics entirely — under it a block can only change height by
- * changing line COUNT. And it never checked that the face had applied, so a face that failed to
- * load looked exactly like one that changed nothing.
+ * `line-height: normal` is load-bearing: it is the only setting under which the arriving face's
+ * own metrics decide the height, rather than a multiple of the font SIZE. And the sample reports
+ * whether the face actually applied, because a face that failed to load measures exactly like
+ * one that changed nothing.
  */
 export async function fontArm(host: HTMLElement, delayMs: number): Promise<Sample[]> {
   const family = `Late${Math.floor(Math.random() * 1e9)}`
@@ -83,32 +79,29 @@ export async function fontArm(host: HTMLElement, delayMs: number): Promise<Sampl
   style.textContent = `@font-face { font-family: '${family}'; src: url('/font.ttf?delay=${delayMs}&bust=${Math.random()}'); font-display: swap; }`
   document.head.append(style)
 
-  const box = document.createElement('div')
-  // `line-height: normal` is the load-bearing part: it is the only setting under which the
-  // arriving face's own metrics decide the height, which is the thing being measured.
-  box.style.cssText = `width: 600px; font-family: '${family}', -apple-system, sans-serif; font-size: 14px; line-height: normal`
-  box.textContent = LOREM
-  host.append(box)
+  const sample = await withMeasureBox(host, async (box) => {
+    box.style.cssText = `width: ${COLUMN_WIDTH}px; font-family: '${family}', -apple-system, sans-serif; font-size: 14px; line-height: normal`
+    box.textContent = LOREM
 
-  const started = now()
-  const fallbackHeight = forceLayout(box)
-  await document.fonts.load(`14px '${family}'`)
-  await document.fonts.ready
-  const loadedMs = now() - started
-  const applied = document.fonts.check(`14px '${family}'`)
-  const settledHeight = forceLayout(box)
-  box.remove()
-  style.remove()
+    const started = now()
+    const fallbackHeight = forceLayout(box)
+    await document.fonts.load(`14px '${family}'`)
+    await document.fonts.ready
+    const loadedMs = now() - started
+    const applied = document.fonts.check(`14px '${family}'`)
+    const settledHeight = forceLayout(box)
 
-  return [
-    {
+    return {
       label: 'late web font',
       ms: loadedMs,
       note: !applied
         ? 'FACE NEVER APPLIED - this sample says nothing'
         : `fallback ${fallbackHeight}px → real face ${settledHeight}px, delta ${(settledHeight - fallbackHeight).toFixed(1)}px`,
-    },
-  ]
+    }
+  })
+  style.remove()
+
+  return [sample]
 }
 
 const LOREM =
@@ -128,35 +121,31 @@ export async function highlightArm(
 ): Promise<Sample[]> {
   const out: Sample[] = []
   for (const block of blocks) {
-    const box = document.createElement('div')
-    box.style.width = '600px'
-    host.append(box)
+    const sample = await withMeasureBox(host, (box) => {
+      const plain = document.createElement('pre')
+      plain.style.cssText = CODE_STYLE
+      plain.textContent = block.source
+      box.append(plain)
+      const plainHeight = forceLayout(box)
 
-    const plain = document.createElement('pre')
-    plain.style.cssText = 'margin:0; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap'
-    plain.textContent = block.source
-    box.append(plain)
-    const plainHeight = forceLayout(box)
+      const started = now()
+      const html = highlighter.codeToHtml(block.source, {
+        lang: block.lang as BundledLanguage,
+        theme: 'github-dark',
+      })
+      const highlightMs = now() - started
+      box.innerHTML = html
+      const pre = box.querySelector('pre')
+      if (pre) pre.style.cssText = CODE_STYLE
+      const litHeight = forceLayout(box)
 
-    const started = now()
-    const html = highlighter.codeToHtml(block.source, {
-      lang: block.lang as BundledLanguage,
-      theme: 'github-dark',
+      return {
+        label: `highlight ${block.lang} ${block.id}`,
+        ms: highlightMs,
+        note: `plain ${plainHeight}px → highlighted ${litHeight}px, delta ${(litHeight - plainHeight).toFixed(1)}px`,
+      }
     })
-    const highlightMs = now() - started
-    box.innerHTML = html
-    const pre = box.querySelector('pre')
-    if (pre) {
-      pre.style.cssText = 'margin:0; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap'
-    }
-    const litHeight = forceLayout(box)
-    box.remove()
-
-    out.push({
-      label: `highlight ${block.lang} ${block.id}`,
-      ms: highlightMs,
-      note: `plain ${plainHeight}px → highlighted ${litHeight}px, delta ${(litHeight - plainHeight).toFixed(1)}px`,
-    })
+    out.push(sample)
   }
   return out
 }
@@ -195,12 +184,10 @@ export async function failureArm(
 
   let heightIfDrawn: number | null = null
   if (svg) {
-    const box = document.createElement('div')
-    box.style.width = '600px'
-    box.innerHTML = svg
-    host.append(box)
-    heightIfDrawn = forceLayout(box)
-    box.remove()
+    heightIfDrawn = await withMeasureBox(host, (box) => {
+      box.innerHTML = svg
+      return forceLayout(box)
+    })
   }
   for (const el of Array.from(document.body.children)) {
     if (!before.has(el) && el !== host) el.remove()

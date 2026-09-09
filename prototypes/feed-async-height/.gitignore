@@ -5,3 +5,7 @@ corpus.json
 # Node modules for the harness (mermaid + a highlighter), installed locally by `bun install`.
 node_modules/
 bundle.js
+
+# An `?arms=async` run posts here instead of results.json, so a partial sweep never overwrites
+# the committed one. It is scratch: the doc quotes results.json.
+results-async.json
