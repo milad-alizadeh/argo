@@ -1,6 +1,6 @@
 # 0036 · A release publishes only on a verdict that names its bytes
 
-Status: accepted (#1805) · 2026-09-09
+Status: accepted (#1805) · 2026-09-09 · supersedes the draft-until-checks clause of #1746
 
 Binding on the `apps/desktop` release path, which does not exist yet: this is the contract it is
 built to. It **supersedes the draft-until-checks clause** of
@@ -23,8 +23,9 @@ apart, each half reads as a rule with no reason.
 ## Context
 
 **No GitHub mechanism gates a release publish.** This is the load-bearing fact, because every
-alternative design assumes a gate that does not exist. Each of these was checked and came back
-negative:
+alternative design assumes a gate that does not exist. Each of these was checked against GitHub's
+own documentation — `available-rules-for-rulesets`, `about-releases`, `immutable-releases`,
+`use-artifact-attestations` and `secure-use` — and came back negative:
 
 - **Rulesets** target refs. Their rule list never mentions releases.
 - **Required status checks** gate a change to a protected branch. A publish is not a ref change.
@@ -72,6 +73,11 @@ carry a passing verdict.
    builds, verifies, creates the release, attaches the artifacts and the verdict, and publishes
    when the verdict passes.
 
+   **A draft creates no tag** — that is the mechanism behind the guarantee, and it is measured
+   (#1804): a draft on a tag that does not exist is accepted and the ref appears only at publish.
+   So the workflow builds into a draft, and the tag comes into being in the same call that the
+   passing verdict authorises.
+
 2. **A failed verification leaves nothing behind**: no tag, no release, no assets. The failing
    verdict goes to the job summary and a workflow artifact, and the workflow run is the permanent
    record. A draft that exists to record a failure is a draft somebody can publish, which is the
@@ -114,8 +120,12 @@ carry a passing verdict.
    - Refused after publish: `tag_name`, and `draft` — `PATCH /repos/{owner}/{repo}/releases/{id}`
      with `draft: true` returns 422, `state cannot be changed when release is immutable`.
    - `DELETE /repos/{owner}/{repo}/releases/{id}` returns 204 and is the only removal GitHub
-     allows. Assets cannot be uploaded to or deleted from a published immutable release, so
-     asset-level tampering is closed.
+     allows. Assets cannot be uploaded to a published immutable release (422, `Cannot upload
+     assets to an immutable release.`) or deleted from one (422, `Cannot delete asset from an
+     immutable release`), so asset-level tampering is closed.
+   - **Publishing generates a release attestation**, verifiable with `gh release verify <tag>`.
+     That is GitHub attesting the release; rule 6's provenance attestation is Argo attesting the
+     build. Both are needed, because only the second names the workflow that produced the bytes.
    - **A delete spends the version number permanently.** The git tag ref survives the delete, a new
      release on that name is refused with `tag_name was used by an immutable release`, and deleting
      the tag ref does not free it.
@@ -158,9 +168,18 @@ carry a passing verdict.
 
    It runs in the Linux tier on **every** pull request with no path filter: the likeliest
    regression is a lockfile refresh, and a dependency bump may touch no `apps/desktop` file at all.
-   The macOS tier re-reads the same manifest off the signed app, because signing itself adds files
-   and the shipped bytes are the ones that matter. The result is one assertion inside the verdict,
-   not a standalone pass or fail.
+   The cheap tier can do this because Forge packages darwin arm64 on Linux — it cannot sign,
+   notarize or build the DMG there, but the asar entry list is plain JavaScript over the built app.
+   #1806 found what that costs: `@electron/fuses` re-signs an ad-hoc arm64 bundle through
+   `codesign`, so the plugin's `resetAdHocDarwinSignature` is narrowed to a darwin build host.
+
+   The macOS tier re-reads the same manifest off the app it packages, because signing adds files
+   and the shipped bytes are the ones that matter. Until `osxSign` is configured (#1771) nothing is
+   signed and the two readings agree; the tier exists for the reading it will take afterwards.
+
+   In the release path the result is **one assertion inside the verdict**, not a standalone pass or
+   fail. On a pull request today it is standalone, because nothing collects it yet: the collector
+   is the release workflow (#1807).
 
 10. **The signing identity lives in a GitHub Environment** used only by the release workflow, not
     in plain repository secrets that any workflow file a pull request adds could read. Environments
@@ -256,11 +275,3 @@ failure and not a normal path.
   the diff. That is the gate working.
 - `apps/macOS` is not covered. It is deprecated, gated by nothing, and has no release path of its
   own to supersede.
-
-## Sources
-
-Measured against a throwaway public repository under #1804, and read from source under #1809.
-Documentation consulted: `available-rules-for-rulesets`, `about-releases`, `immutable-releases`,
-`use-artifact-attestations`, `secure-use`. Source read:
-`https://github.com/electron/update.electronjs.org/blob/main/src/updates.ts`, and
-`https://www.electronjs.org/docs/latest/api/auto-updater`.
