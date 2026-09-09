@@ -1,3 +1,10 @@
+# Build configurations — historical
+
+> **2026-09-09 (#1758).** Every command this file describes is deleted. `apps/macOS/scripts` is
+> gone with the rest of the Swift tooling, `apps/macOS` is no longer a workspace package, and
+> nothing builds it. Kept as a record of how the Swift app was configured, for whoever ports its
+> behaviour to `apps/desktop`. Do not run anything below.
+
 # Build configurations — what each one names, and what release costs
 
 Companion to `AGENTS.md` → *Quality gates* and to

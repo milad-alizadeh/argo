@@ -1,15 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": [
-    "OPENAI_API_KEY",
-    "REALTIME_MODEL",
-    "ARGO_LIVE_CLI",
-    "ARGO_GATE_CALLER",
-    "ARGO_GATE_PHASE",
-    "ARGO_REQUIRE_SWIFT_TOOLS",
-    "ARGO_TEST_SCOPE",
-    "ARGO_BUILD_LOCK_HELD_BY"
-  ],
+  "globalPassThroughEnv": ["OPENAI_API_KEY", "REALTIME_MODEL", "ARGO_LIVE_CLI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -25,9 +16,6 @@
       "env": ["ARGO_TEST_CONFIGURATION"]
     },
     "test:e2e": {
-      "cache": false
-    },
-    "screenshot": {
       "cache": false
     },
     "dev": {

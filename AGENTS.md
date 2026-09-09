@@ -36,9 +36,9 @@ the task; a session that waits until it wants the list writes no list at all.
 - One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
 - Keep single-step edits, lookups, and conversational turns off the list — a one-item list is
   noise, and a list nobody needed teaches the next session to ignore lists.
-- **Split the verification tail into one item each**: the Swift gate, the full suite, the render,
-  the code review, the review fixes. Only the ones the change actually needs, but never two of
-  them folded together.
+- **Split the verification tail into one item each**: the lint gate, the hook suites, the code
+  review, the review fixes. Only the ones the change actually needs, but never two of them folded
+  together.
 - **No item holds more than one gate, suite or review.** A subject that comma-lists what it covers
   — "Verify: gates, render, pixel-review, code-review", "Full suites, quality gates, review,
   commit" — is the shape to reject (#1419).
@@ -51,8 +51,8 @@ the task; a session that waits until it wants the list writes no list at all.
 **No session pushes a work branch or opens a pull request. `/ship` does both, and `/ship` is a
 separate invocation the caller makes** (#1648, #1669). A run ends at the reviewed diff, committed
 on its branch; what becomes of that branch is the human's next keystroke, not the run's last step.
-`/ship` carries the close-out nothing else runs — the gate on the base the branch was cut from,
-the sweep for `.only` and debug prints, the screenshots, the review findings written into the body
+`/ship` carries the close-out nothing else runs — the sweep for `.only` and debug prints, the
+screenshots, the review findings written into the body
 — and it carries what it cannot tick rather than stopping, an unreviewed diff included. So a run
 that opens its own PR does not route around a refusal; it opens one having done none of that.
 
@@ -73,10 +73,10 @@ House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `house.md`: what no linter checks and a model does not do unprompted. The
-  arithmetic (length, complexity, arity, escape hatches) is a gate, not prose: `biome.jsonc`
-  and `.swiftlint.yml` are where those numbers live.
-- **Swift and the cockpit** (`apps/macOS`) — also `swift.md`: the Swift spelling, the views,
-  the token contract, rendering.
+  arithmetic (length, complexity, arity, escape hatches) is a gate, not prose: `biome.jsonc` is
+  where those numbers live.
+- **Swift and the cockpit** (`apps/macOS`) — `swift.md` still describes the deprecated Swift app.
+  Read it only to understand behaviour being ported to `apps/desktop`; nothing enforces it now.
 
 ### Module boundaries
 
@@ -92,45 +92,37 @@ ADR-0022, ADR-0027 and ADR-0030 hold the reasoning behind most of these;
 ### Quality gates
 
 Every rule in `bun run quality` is an **error, never a warning**, and the caps live in
-`biome.jsonc` and `.swiftlint.yml`, not in prose. When a gate fires, fix it or ratchet it in the
-config: **never suppress inline, never raise a global cap.** Two of the configs fail open when
-commented, so no gate is proved by exit code alone.
+`biome.jsonc`, not in prose. When a gate fires, fix it or ratchet it in the config: **never
+suppress inline, never raise a global cap.** The duplication config fails open when commented, so
+no gate is proved by exit code alone.
 
-**The Swift gate runs at push time, not on CI** — `.husky/pre-push` calls `scripts/swift-gate.sh`
-(`quality:swift`, the build, the swift-testing suites), and a failure refuses the push (#1340).
-Run it by hand with `sh scripts/swift-gate.sh`; skip it deliberately, and only for
-work in progress, with `ARGO_SKIP_SWIFT_GATE=1 git push`. CI is Linux only now, so **a green PR
-says nothing about Swift**: never read one as proof the app builds.
+**CI is the only gate, and it is Linux only** (#1758). `.github/workflows/ci.yml` runs biome, the
+duplication gate and `bun run test:hooks`. There is no push-time gate: `.husky/pre-push` is gone,
+and so are `scripts/swift-gate.sh` and the cache, build-lock and metrics machinery around it. No
+`ARGO_SKIP_SWIFT_GATE`, no `ARGO_GATE_CALLER`, no `bun run gate:report`, no `bun run warm`. A
+session runs `bun run format-and-lint` and `bun run test:hooks` on its final tree and that is the
+whole bar.
 
-**It fires for a branch with an open PR, not for every push** (#1577). A branch nobody is
-reading is work in progress, and the gate costs 3m32s plus the build-slot queue. So `ship` runs
-the gate itself before `gh pr create`, and every push after that is gated by the hook. Nothing
-reaches review ungated. Two consequences worth holding: a branch you pushed and never opened a
-PR for has been checked by nothing, and the first `gh pr create` on a branch is the moment its
-Swift is first proved.
+**`apps/macOS` is deprecated and verified by nothing.** Its source is still on disk, but its
+build, test, screenshot, specimen and release scripts are deleted and it is no longer a workspace
+package. Nothing compiles it, nothing tests it, and `/pixel-review` cannot render it. Do not open
+Swift work expecting a gate to catch you; if a Swift change is genuinely needed, say plainly in the
+PR body that it was checked by hand or not at all.
 
-**It runs once, on the final reviewed tree, and every caller names itself** (#1711). `implement`
-gates the tree it committed after fixing the review, `ship` reads that verdict back, and neither
-runs a full suite before the review — a gate is priced per tree, and a review changes the tree.
-Prefix the call with what asked for it — `ARGO_GATE_CALLER=implement`, `ship`, `push`, `review`
-or `landing` — so `bun run gate:report` can say which step paid; an unset one records `unknown`
-rather than being guessed. A branch that shows more than one full gate is named in that report,
-with the caller of each.
-
-**The timing budgets run in their own phase.** `swift-test.sh` runs each package twice — the
-correctness suites in parallel, then the suites that read a clock alone with `--no-parallel`.
-A budget measured in seconds reads the machine as much as the code, and the parallel run is the
-loudest thing on the machine. The set is derived from the tree, not listed:
-`apps/macOS/scripts/timing-suites.sh`.
-
-Where an exemption goes, why the hook only fires once it is on `main`, and the verification
-recipe: `docs/agents/quality-gates.md`.
+**The cost claim that shaped all of this was wrong, and the correction is load-bearing** (#1758).
+#1340 removed a `macos-26` CI job because it "billed about 99% of this repo's Actions spend". That
+figure is the **gross** column of the billing page. The **billed** column is $0, every day, on the
+`Actions macOS 3-core` SKU, because standard GitHub-hosted runners are free and unlimited on public
+repositories and `argo` is public. Never quote the old number. When `apps/desktop` needs CI, a
+macOS job is affordable; design around the two real limits instead, 5 concurrent macOS jobs on
+GitHub Free and no secrets on a fork PR.
 
 ### Landing
 
-**A lane never rebases to open a PR.** It gates once on the base it was cut from and opens its
-PR there. Rebasing per lane made the gate cost lanes multiplied by merges, and `main` takes about
-ninety commits a day (#1377). Being behind the base is the normal state of a branch, not a defect
+**A lane never rebases to open a PR.** It opens its PR on the base it was cut from. This was
+written when a rebase meant paying the Swift gate again, lanes multiplied by merges, over a repo
+taking about ninety commits a day (#1377). The gate is gone, so the cost argument is gone with it,
+but the rule stands on its own: being behind the base is the normal state of a branch, not a defect
 in it.
 
 **Merging is the human's, and nothing here does it for them** (#1577). `scripts/land.sh` used to
@@ -148,7 +140,7 @@ caller and is gone, so run them by hand before merging:
 `sh scripts/kept-the-tests.sh . origin/main HEAD`.
 
 Two lanes never own the same file, whatever the vocabulary split says. The arithmetic, the
-measurements and what the gate now does before its first command: `docs/agents/landing.md`.
+measurements, and which of them the retired gate invalidates: `docs/agents/landing.md`.
 
 ## Session isolation
 
@@ -170,12 +162,6 @@ Only read-only work (review, triage, Q&A) may stay in the main checkout, and onl
 read-only. A write through `Bash` — `cat > file`, `sed -i`, `cp` — counts as a change; the guard
 reads those too. Naming, resuming, recovery, the sub-agent rule and `bun run worktrees:gc`:
 `docs/agents/worktrees.md`.
-
-In a **new worktree that will touch Swift, run `bun run warm` first** — before reading the ticket,
-not before the tests. Each worktree gets its own `.build`, so the first `bun run test` in one pays
-about two and a half minutes of cold build against 43 seconds of actual suites (#1358). `warm`
-returns at once and builds behind you, so that cost lands during the reading instead of the
-waiting. It is safe to run twice and a no-op on a warm tree.
 
 ## Cross-CLI guardrail hooks
 
@@ -216,11 +202,10 @@ If no independent fresh context is reachable, **stop and report that** — do no
 yourself and present it as a review. Claude Code trap: agents spawned inside a `Workflow` have
 no `Agent` tool, so run implement directly, not nested in a Workflow.
 
-**A review agent is read-only, and one tree owns the expensive verification** (#1711). No axis
-runs a build, a full suite, `bun run quality` or the Swift gate: a review changes the tree, so
-anything the reviewer verifies is bytes nobody ships and the gate `ship` calls then pays in full.
-One focused test is the only exception, and only when the reviewer states the uncertainty it
-resolves and names its package. A complete axis runs a second time only for a **P0 or P1 fix that
+**A review agent is read-only** (#1711). No axis runs a build, a full suite or `bun run quality`:
+a review changes the tree, so anything the reviewer verifies is bytes nobody ships. One focused
+test is the only exception, and only when the reviewer states the uncertainty it resolves and names
+its package. A complete axis runs a second time only for a **P0 or P1 fix that
 changes behaviour that axis covers** — everything else gets one focused review of the changed
 hunks. The brief every axis prompt carries, and the measurements behind both rules:
 `docs/agents/code-review.md`.
@@ -245,13 +230,15 @@ listing showing no page is the rule working, not a design that is missing.
 
 ## Visual verification
 
-Nothing renders a view on CI, so **rendering is a thing YOU do**: run `/pixel-review` and look at
-the affected states before calling a visual change done. A screenshot needs Screen Recording
-permission or the PNG is silently blank. **An e2e run holds the real keyboard and mouse for its
-whole length: say so and wait before starting one.** **Never hand-roll a load generator; use `sh
-scripts/load-burst.sh <workers> <seconds>`**, which burns CPU cores and makes no Sessions, and stop
-it with the `--reap <token>` it prints, never a bare `pkill`. Commands and the specimen harness:
-`docs/agents/visual-verification.md`.
+**There is nothing to render right now** (#1758). `apps/macOS` lost its screenshot, specimen and
+e2e scripts with the rest of its tooling, so `/pixel-review` has no app to drive and
+`docs/agents/visual-verification.md` describes commands that no longer exist. `apps/desktop` will
+need its own rendering route, and choosing it is open work.
+
+Two rules that outlive the tooling and apply to whatever replaces it. **An e2e run holds the real
+keyboard and mouse for its whole length: say so and wait before starting one.** **Never hand-roll a
+load generator; use `sh scripts/load-burst.sh <workers> <seconds>`**, which burns CPU cores and
+makes no Sessions, and stop it with the `--reap <token>` it prints, never a bare `pkill`.
 
 ## Tooling (RTK)
 

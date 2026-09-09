@@ -1,6 +1,17 @@
 # 0028 · Cost is a gate, not a review note
 
-Status: accepted · 2026-08-29 · boundary edges withdrawn · 2026-09-06
+Status: superseded · 2026-08-29 · boundary edges withdrawn 2026-09-06 · gate removed 2026-09-09
+
+> **2026-09-09 — nothing runs these gates any more (#1758).** The cost suites and the figures in
+> `ArgoUITests/PerfBudgets.swift` were enforced by the push-time Swift gate. That gate, and all of
+> `apps/macOS/scripts`, is deleted: `apps/macOS` is deprecated in favour of the Electron app and is
+> now verified by nothing. The suites are still in the tree and no longer run.
+>
+> The principle survives the tooling and is the reason to keep reading this file. A budget that is
+> only a review note is not a budget. When `apps/desktop` gains a performance gate, it needs the
+> same property: a number, checked by something that exits non-zero. #1736 is where that is being
+> decided, and its one hard constraint is that the check runs on a named reference machine, never
+> on a shared CI runner.
 
 > **2026-09-06 — the edges are withdrawn; the cost suites stand.** This ADR asked for two things.
 > The edges 7-11 it proposed adding to `scripts/swift-boundaries.sh` were never built, and that

@@ -36,18 +36,17 @@ that committed tree. `ship` calls the same gate and must find a whole-gate cache
 
 Every axis sub-agent prompt carries this, verbatim:
 
-> You are read-only. Do not run a build, a full test suite, `bun run quality`,
-> `bun run test`, or `sh scripts/swift-gate.sh`. Do not commit, push, or edit a file.
+> You are read-only. Do not run a build, a full test suite, `bun run quality` or
+> `bun run test`. Do not commit, push, or edit a file.
 > Read the diff and the files around it — that is what a review is.
 > You may run exactly ONE focused test, and only when you first state the uncertainty it will
-> resolve and the command names its package, as
-> `sh apps/macOS/scripts/swift-test.sh <Package> --filter <TypeName>`. If you cannot name what
-> the test would settle, do not run it: report the doubt as a finding instead.
+> resolve and the command names its package. If you cannot name what the test would settle,
+> do not run it: report the doubt as a finding instead.
 
 Two things about the exception are load-bearing. It is **one** test, because a reviewer that runs
-two has started verifying rather than reviewing. And it must **name its package**, because
-`swift-test.sh` refuses a filter without one — an unfiltered run is the whole suite by another
-name, and `swift test --filter` exits 0 on a pattern that matched nothing (#1358).
+two has started verifying rather than reviewing. And it must **name its package**, because an
+unfiltered run is the whole suite by another name, and a filter that matched nothing can still exit
+0 (#1358).
 
 A reviewer's doubt is a finding. It does not need a green test to be worth reporting, and the
 author is the one holding the context to settle it cheaply.

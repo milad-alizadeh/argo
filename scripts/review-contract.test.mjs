@@ -69,13 +69,7 @@ check('every axis prompt carries the read-only brief, and it is one text', () =>
 
 check('the brief forbids each broad command by name', () => {
   const brief = quoted(read(CONTRACT))
-  for (const forbidden of [
-    'a build',
-    'a full test suite',
-    'bun run quality',
-    'bun run test',
-    'sh scripts/swift-gate.sh',
-  ]) {
+  for (const forbidden of ['a build', 'a full test suite', 'bun run quality', 'bun run test']) {
     assert.ok(brief.includes(forbidden), `the brief does not forbid ${forbidden}`)
   }
   assert.match(brief, /Do not commit, push, or edit a file/)
@@ -85,9 +79,9 @@ check('the brief allows exactly one focused test, and says what earns it', () =>
   const brief = quoted(read(CONTRACT))
   assert.match(brief, /exactly ONE focused test/)
   assert.match(brief, /state the uncertainty it will\s+resolve/)
-  // Naming the package is what makes the command safe: swift-test.sh refuses a filter without
-  // one, and an unfiltered run is the whole suite by another name.
-  assert.match(brief, /swift-test\.sh <Package> --filter <TypeName>/)
+  // Naming the package is what makes the command safe: an unfiltered run is the whole suite by
+  // another name.
+  assert.match(brief, /the command names its package/)
   assert.match(brief, /If you cannot name what\s+the test would settle, do not run it/)
 })
 
@@ -99,15 +93,20 @@ check('the contract says when a complete axis runs a second time', () => {
   assert.match(contract, /one focused review of the hunks that changed/)
 })
 
-check('both gate calls name their caller, so the report can tell them apart', () => {
-  assert.match(read(IMPLEMENT), /ARGO_GATE_CALLER=implement sh scripts\/swift-gate\.sh/)
-  assert.match(read(SHIP), /ARGO_GATE_CALLER=ship sh scripts\/swift-gate\.sh/)
-})
-
-check('ship expects a cache hit and treats a full run as something to report', () => {
-  const ship = read(SHIP)
-  assert.match(ship, /whole-gate cache hit, and a full run here is a finding/)
-  assert.match(ship, /worth a line in the PR body/)
+// #1758 deleted the push-time gate, so the only gate either skill can name is what CI runs. A
+// skill that still named `swift-gate.sh` would be telling a session to run a file that is gone.
+check('both skills gate on exactly what CI runs, and name nothing deleted', () => {
+  for (const skill of [IMPLEMENT, SHIP]) {
+    const text = read(skill)
+    assert.match(text, /bun run test:hooks/, `${skill} does not run the hook suites`)
+    assert.doesNotMatch(
+      text,
+      /swift-gate|ARGO_GATE_CALLER|ARGO_SKIP_SWIFT_GATE|gate:report/,
+      `${skill} names a deleted gate`,
+    )
+  }
+  assert.match(read(IMPLEMENT), /bun run quality/)
+  assert.match(read(SHIP), /bun run format-and-lint/)
 })
 
 check('the repo rules point at the contract rather than restating it', () => {
