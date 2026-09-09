@@ -56,9 +56,9 @@ refuses:
   `truncate`, `dd of=`, `patch`, and `apply_patch`.
 
 Both of those started narrower, and both holes were found by the same four files: they sat
-uncommitted in the main checkout while the guard was installed and passing (#1276). One was
-under `scripts/`, which `apps/**` and `packages/**` never covered; all four were written with
-`cat > file`, which no edit-tool matcher ever sees.
+uncommitted in the main checkout while the guard was installed and passing (#1276). One sat
+outside `apps/**` and `packages/**`, which was the whole scope at the time; all four were written
+with `cat > file`, which no edit-tool matcher ever sees.
 
 There is no unguarded corner left — a doc or config fix needs a worktree too. That is the point:
 "all of it except X" is what let the four files in, and X is only ever obvious in hindsight.
@@ -175,26 +175,34 @@ tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is r
 alone. `--dry-run` reports without removing.
 
 The same run sweeps two things that are not worktrees: the visual-review refs
-(`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, and the `design/<screen>`
-branches that carry a screen's explorable page (AGENTS.md → *Design work*). A design branch is
-keyed on its screen's **epic**, not on a pull request, because a design outlives every pull
-request built against it. The refusals it makes: a
-`design/` branch no `.md` on `main` claims, a `.md` naming no epic, an unreadable file and a
-failed `gh` query all mean keep.
+(`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, and the
+`design/#<N>-<screen>` branches that carry a screen's explorable page (AGENTS.md → *Design
+work*). **A design branch carries its own expiry in its name**: the sweep reads `#<N>` off the
+branch and drops it once that ticket closes, so no file anywhere has to record that the branch
+exists. It is keyed on a ticket rather than a pull request because a design outlives every pull
+request built against it. A branch whose name holds no number, and a failed `gh` query, both
+mean keep.
 
-`sh hooks/worktree-gc.sh --artifacts` is the other sweep and reaps no worktree at all. It
-deletes the build output inside every worktree — `apps/macOS/build` and `Packages/*/.build` —
-holding back only the ones built in the last 30 minutes. It needs no merged branch, because
-nothing it deletes is the only copy of anything. When #1377 measured it, that was 104 GB of the
-106 GB under `.claude/worktrees`, against 9.1 GB of free space on the volume, and a near-full
-APFS volume slows every write the compiler makes. Run it when the disk is tight, which on this
-machine is most weeks.
+`bun run worktrees:sweep` (`hooks/worktree-gc.sh --artifacts`) is the other sweep and reaps no
+worktree at all. It deletes the build output inside every worktree, holding back only the trees
+built in the last 30 minutes. It needs no merged branch, because nothing it deletes is the only
+copy of anything. Run it when the disk is tight, which on this machine is most weeks.
+
+**Which paths it deletes is the project's to name**, in `hooks.json` under
+`worktreeGc.artifactPaths`, and **an unnamed build output is one the sweep cannot find**. The
+script has no default and says so rather than reporting a clean zero, because "0 swept" from an
+unconfigured project reads exactly like a tidy one while the disk fills. Argo names the Electron
+outputs (`apps/desktop/.vite`, `apps/desktop/out`) and the Swift ones still on disk from the
+deprecated app. A new build tool means a new entry there, or the sweep silently stops covering it.
+
+The size is worth knowing because it decides how often you run this: when #1377 measured the
+Swift build, it was 104 GB of the 106 GB under `.claude/worktrees`, against 9.1 GB free, and a
+near-full APFS volume slows every write the compiler makes.
 
 ## One file has one lane
 
 Lanes are split by domain vocabulary, and that decides what a lane is *for*. It does not decide
-what a lane may *touch*: the vocabulary nearly all lives under `ArgoUI/Sources/ArgoUI/Shell/`, so
-two lanes split by term still meet in `CockpitView.swift` and conflict there. Split the file
-ownership too, and give one file one lane at a time. Of everything #1377 changed, this is the
-only part that removes a conflict rather than making it cheaper to recover from —
-`docs/agents/landing.md` is the rest.
+what a lane may *touch*: when #1377 measured this the vocabulary nearly all lived under one
+directory, so two lanes split by term still met in a single shell file and conflicted there.
+Split the file ownership too, and give one file one lane at a time. Of everything #1377 changed,
+this is the only part that removes a conflict rather than making it cheaper to recover from.

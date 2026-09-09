@@ -10,7 +10,7 @@
       "agentGated": true
     },
     {
-      "$comment": "PR ownership: `/ship` is the only skill that pushes a work branch or opens a pull request (#1669). A PreToolUse hook cannot tell which skill is running - Claude Code's payload carries no field naming the active skill and no environment variable does either - so this cannot deny \"unless the skill is ship\". It denies the action outright and takes an explicit opt-out instead: a command carrying the `ARGO_SHIP=1` environment prefix is allowed through, and `ship/SKILL.md` writes that prefix into the commands it tells the agent to run. The marker is part of the command line, so what claimed the exemption is visible in the transcript. A push that deletes a ref, or that targets a ref outside refs/heads/, is allowed unmarked: those are the evidence ref and the design-branch cleanup, neither of which is a work branch.",
+      "$comment": "PR ownership: `/ship` is the only skill that pushes a work branch or opens a pull request (#1669). A PreToolUse hook cannot tell which skill is running - Claude Code's payload carries no field naming the active skill and no environment variable does either - so this cannot deny \"unless the skill is ship\". It denies the action outright and takes an explicit opt-out instead: a command carrying the `ARGO_SHIP=1` environment prefix is allowed through, and `ship/SKILL.md` writes that prefix into the commands it tells the agent to run. The marker is part of the command line, so what claimed the exemption is visible in the transcript. Three shapes are allowed unmarked, none of them a work branch: a push that deletes a ref, a push targeting a ref outside refs/heads/ (the PNG evidence ref), and a push to a branch under one of `worktreeGuard.publishBranches` (the design page, which joins to no ticket and which `/ship` has no step for).",
       "event": "pre-tool",
       "matcher": "Bash",
       "command": "node \"$(git rev-parse --show-toplevel)/hooks/pr-ownership-guard.mjs\"",
@@ -33,9 +33,15 @@
     "roots": ["."],
     "dir": ".claude/worktrees",
     "branchPrefix": "argo/",
+    "publishBranches": ["design/"],
     "docs": "docs/agents/worktrees.md"
   },
   "worktreeGc": {
-    "artifactPaths": ["apps/macOS/build", "apps/macOS/Packages/*/.build"]
+    "artifactPaths": [
+      "apps/desktop/.vite",
+      "apps/desktop/out",
+      "apps/macOS/build",
+      "apps/macOS/Packages/*/.build"
+    ]
   }
 }

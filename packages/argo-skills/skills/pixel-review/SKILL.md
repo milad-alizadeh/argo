@@ -1,32 +1,35 @@
 ---
 name: pixel-review
-description: Judge a UI change by its pixels against the approved design, in a fresh context. Use after building UI work before the PR opens, or when the user asks for a screen to be checked visually.
+description: Judge a UI change by its pixels against the design ticket, in a fresh context. Use after building UI work before the PR opens, or when the user asks for a screen to be checked visually.
 ---
 
 # Pixel Review
 
 Applies when the working diff touches anything rendered: components, styles, isolated-state
-cases, approved designs, web source. If nothing renderable changed, say so and stop.
+cases, web source. If nothing renderable changed, say so and stop.
 
 ## 1. Render the affected states
 
 Resolution order, first hit wins:
 
-1. **Project-declared**: the render command in `docs/designs/stack.md`, or a "Visual
+1. **Project-declared**: the render command in `docs/design-stack.md`, or a "Visual
    verification" section in the project doc that spells out how to render states.
 2. **Storybook** (`.storybook/` exists): build it and screenshot each story of every
    component the diff touched.
-3. **Approved designs**: the `.md` in `docs/designs/` names its page's branch in front matter
-   as `explorable: design/<screen>`. Read it out without a checkout and screenshot the
-   `file://` URL:
+3. **The design's page**: the design ticket's branch holds it. Read it out without a checkout
+   and screenshot the `file://` URL:
 
    ```sh
-   git fetch origin design/<screen>
-   git show design/<screen>:docs/designs/<screen>.html > "$TMPDIR/<screen>.html"
+   git fetch origin 'design/#<N>-<screen>'
+   git show FETCH_HEAD:design.html > "$TMPDIR/<screen>.html"
    ```
 
-   When `explorable` reads `gone` the screen has shipped and there is no page to shoot — judge
-   against the state renders beside the `.md`, which are the spec, and move on.
+   `FETCH_HEAD`, not the branch name: fetching one branch writes no local head, so the branch
+   name resolves to nothing and the failure reads exactly like a reaped branch. The page is
+   self-contained, so that one file is the whole design.
+
+   A branch that is gone means the screen shipped and its page was reaped. Judge against the
+   state renders on the design ticket, which are the spec, and move on.
 4. **Dev server**: a `dev`/`start` script; launch it and navigate to the screens the ticket
    names.
 5. **Nothing renderable found**: report "visual verification unavailable" to the caller, for
@@ -44,7 +47,7 @@ Code: a separate agent via the `Agent` tool; other harnesses: a new session seed
 the inputs below). Its only inputs:
 
 - the ticket's acceptance criteria, or the user's spec, verbatim;
-- the approved design's render and the foundations specimen, if the project has them;
+- the design ticket's state renders and the foundations specimen, if the project has them;
 - the screenshots.
 
 The judge answers one question, do these pixels satisfy this spec, and returns pass/fail

@@ -2,9 +2,7 @@
 // free to change. The other half of the same rule, WHERE the work runs, is worktree-guard.mjs,
 // and that file is the hook. This one is a module it imports, not a second hook: there is one
 // hooks.json entry, on the union of the two matchers, and one command the projection invokes.
-// They were genuinely two hooks once, and a session that tripped one usually tripped the other
-// in its next call, which is why they were merged. The split here is a file-length one and
-// carries no behaviour of its own.
+// The split across two files is a file-length one and carries no behaviour of its own.
 //
 // Nothing about editing inside an existing tree is guarded here, so a tree already named
 // off-convention drains rather than breaks (#901). `EnterWorktree` cannot reach the convention by
@@ -25,15 +23,16 @@ const NAMELESS = '[a-z][a-z0-9]*(?:-[a-z0-9]+)*'
 // has none to enforce, and a guard that invented one would refuse every name that project
 // already uses. Unconfigured, this half checks only that a new tree lands under `dir`, which is
 // the edit guard's and the reaper's one real requirement.
-export const DEFAULTS = { dir: '.claude/worktrees', branchPrefix: '', docs: '' }
+// Only the keys with a non-empty default live here; `branchPrefix` and `docs` default to the
+// empty string at their one reader, which is what turns the naming half off.
+export const DEFAULTS = { dir: '.claude/worktrees', publishBranches: [] }
 
 const literalRe = (literal) => literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export function namingRules(config = {}) {
   const dir = config.dir || DEFAULTS.dir
   const prefix = config.branchPrefix || ''
-  const docs = config.docs || ''
-  const cite = docs ? ` Full rules: ${docs}.` : ''
+  const cite = config.docs ? ` Full rules: ${config.docs}.` : ''
   const named = Boolean(prefix)
   const tree = named ? 'ticket-<N>-<slug>' : '<name>'
 
@@ -41,6 +40,13 @@ export function namingRules(config = {}) {
     dir,
     named,
     tree,
+    // Namespaces that publish rather than carry work: a design page, an evidence branch. They
+    // join to no ticket by construction, so the ticket-join rule below would refuse every one.
+    // The shape still applies inside the namespace, or `design/anything` is the way to dodge
+    // the whole rule — and `design/2024-refresh` is then a page the reaper reads as issue #2024.
+    publish: (config.publishBranches || DEFAULTS.publishBranches).map(
+      (p) => new RegExp(String.raw`^${literalRe(p)}(?:#\d+-${SLUG}|${NAMELESS})$`),
+    ),
     branchShape: named ? `${prefix}#<N>-<slug>` : '<branch>',
     dirRe: new RegExp(String.raw`^ticket-(?:\d+-${SLUG}|${NAMELESS})$`),
     branchRe: new RegExp(String.raw`^${literalRe(prefix)}(?:#\d+-${SLUG}|${NAMELESS})$`),
@@ -94,8 +100,11 @@ function checkDirectory(dir) {
   return ALLOW
 }
 
+const isPublish = (branch) => rules.publish.some((shape) => shape.test(branch))
+
 function checkBranch(branch) {
   if (!rules.named || unexpanded(branch) || rules.branchRe.test(branch)) return ALLOW
+  if (isPublish(branch)) return ALLOW
   return refuseName(`"${branch}" is not a branch name this repo can join to a ticket.`)
 }
 
@@ -169,8 +178,9 @@ function checkAdd({ dir, branch }) {
   const directory = checkDirectory(dir)
   if (directory.block) return directory
   // The pair check joins two names through a shared stem, which only exists where the project
-  // declared the shape that produces one. Without a convention there is nothing to join.
-  if (!branch || !rules.named) return ALLOW
+  // declared the shape that produces one. Without a convention, and in a publish namespace whose
+  // branch carries no stem at all, there is nothing to join.
+  if (!branch || !rules.named || isPublish(branch)) return ALLOW
   const named = checkBranch(branch)
   return named.block || unexpanded(dir) || unexpanded(branch) ? named : checkPair(dir, branch)
 }

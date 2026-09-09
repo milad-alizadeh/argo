@@ -21,8 +21,8 @@
 # Anything failing a check is reported, never removed. --dry-run reports only.
 #
 # It also sweeps two kinds of remote ref that exist only for the life of something else: the
-# visual-review refs at the bottom of this file, and the `design/<screen>` branches that carry
-# a screen's explorable page (#1526), keyed on the epic named in the design `.md`.
+# visual-review refs at the bottom of this file, and the `design/#<N>-<screen>` branches that
+# carry a screen's explorable page, keyed on the ticket number in the branch name.
 #
 # --artifacts is the other sweep, and it reaps no worktree at all. It deletes the BUILD
 # OUTPUT inside every worktree, at the paths `worktreeGc.artifactPaths` names, which is
@@ -180,6 +180,17 @@ list=$(mktemp) || exit 1
 trap 'rm -f "$list"' EXIT
 git -C "$repo_root" worktree list --porcelain > "$list"
 
+# The ticket a design branch expires on, or empty when the name carries none. Both sweeps below
+# read the same key off the same shape, and a second copy of this expression is a second place
+# for the two halves of one branch to disagree about whether it is reapable.
+#
+# The `#` is required, not optional: it is what makes the number a ticket. Without it
+# `design/2024-refresh` reads as issue #2024 and the sweep force-deletes the only copy of a page
+# against an issue that has nothing to do with it.
+design_ticket_of() {
+  printf '%s\n' "$1" | sed -n 's|^design/#\([0-9][0-9]*\)-.*|\1|p'
+}
+
 reaped=0
 kept=0
 
@@ -226,6 +237,14 @@ while IFS= read -r line; do
   if [ "$landed" = 0 ] && git -C "$repo_root" merge-base --is-ancestor \
     "$branch" "origin/$default_branch" 2>/dev/null; then
     landed=1
+  fi
+  # A design branch never merges: nothing on it lands on the default branch, so both tests above
+  # can only ever answer "no" and the local tree would be kept at every session end, forever. Its
+  # expiry is the ticket in its name, the same key the remote sweep reads.
+  design_ticket=$(design_ticket_of "$branch")
+  if [ "$landed" = 0 ] && [ -n "$design_ticket" ] && [ "$has_gh" = 1 ]; then
+    state=$(cd "$repo_root" && gh issue view "$design_ticket" --json state --jq .state 2>/dev/null) || state=""
+    [ "$state" = "CLOSED" ] && landed=1
   fi
   if [ "$landed" = 0 ]; then
     echo "  keep $name — $branch not merged into $default_branch"
@@ -297,51 +316,42 @@ if [ "$has_gh" = 1 ]; then
     prune_refs=0
   fi
 
-  # The design branches, keyed on the screen's epic (#1526). The join runs from the design
-  # `.md` on the default branch, which is the only place holding both halves: `explorable:`
-  # names the branch, `epic:` names the issue. A branch no `.md` claims is never touched.
+  # The design branches, each carrying one screen's explorable page. The branch name holds its
+  # own key: `design/#<N>-<screen>` names the design ticket, so the sweep reads the number off
+  # the name and asks `gh` whether that issue is closed. Nothing on the default branch has to
+  # stay in step with the namespace for this to work, and a branch whose name carries no number
+  # is never touched.
   #
-  # A missing key, an unreadable file or a failed `gh` query all mean keep: the branch may be
-  # the only copy of a page a screen is still being built against.
+  # A failed `gh` query means keep: the branch may be the only copy of a page a screen is still
+  # being built against, and an unreachable host is not evidence that a ticket closed.
   #
-  # One `ls-remote` for the whole namespace rather than one per design: this runs on a
-  # session-end hook, and a round trip per `.md` is a round trip per design that has no
-  # branch at all.
+  # One `ls-remote` for the whole namespace: this runs on a session-end hook, where a round
+  # trip per branch is a round trip too many.
   design_heads=$(git -C "$repo_root" ls-remote --heads origin 'refs/heads/design/*' 2>/dev/null \
     | sed 's|.*refs/heads/||')
 
-  designs=$(git -C "$repo_root" ls-tree -r --name-only \
-    "origin/$default_branch" -- docs/designs 2>/dev/null | grep '\.md$')
-
-  # A path is not a word: split on newlines alone and turn globbing off, or a design whose
-  # name holds a space becomes two names that match nothing, and one holding `[` is expanded
-  # against the working directory. `read -d ''` would be the tidier form and is a bashism;
-  # this file is /bin/sh.
+  # A branch name is not a word: split on newlines alone and turn globbing off, or a name
+  # holding a space becomes two that match nothing, and one holding `[` is expanded against the
+  # working directory. `read -d ''` would be tidier and is a bashism; this file is /bin/sh.
   saved_ifs=$IFS
   IFS='
 '
   set -f
-  for design in $designs; do
-      # The front matter is an HTML comment at the top of the file; 20 lines is past it, and
-      # stopping there keeps a body mention of `epic:` out of the reading.
-      front=$(git -C "$repo_root" show "origin/$default_branch:$design" 2>/dev/null | head -20)
-      branch=$(printf '%s\n' "$front" | sed -n 's/.*explorable:[[:space:]]*\(design\/[A-Za-z0-9._-]*\).*/\1/p' | head -1)
+  for branch in $design_heads; do
       [ -n "$branch" ] || continue
-      printf '%s\n' "$design_heads" | grep -qxF "$branch" || continue
-
-      epic=$(printf '%s\n' "$front" | sed -n 's/.*epic:[[:space:]]*#\{0,1\}\([0-9][0-9]*\).*/\1/p' | head -1)
-      if [ -z "$epic" ]; then
-        echo "  keep $branch — $design names no epic"
+      ticket=$(design_ticket_of "$branch")
+      if [ -z "$ticket" ]; then
+        echo "  keep $branch — names no ticket"
         continue
       fi
 
-      state=$(cd "$repo_root" && gh issue view "$epic" --json state --jq .state 2>/dev/null) || state=""
+      state=$(cd "$repo_root" && gh issue view "$ticket" --json state --jq .state 2>/dev/null) || state=""
       if [ "$state" != "CLOSED" ]; then
-        echo "  keep $branch — epic #$epic is ${state:-unreadable}"
+        echo "  keep $branch — #$ticket is ${state:-unreadable}"
         continue
       fi
 
-      reap_remote "$branch" "epic #$epic closed"
+      reap_remote "$branch" "#$ticket closed"
   done
   set +f
   IFS=$saved_ifs

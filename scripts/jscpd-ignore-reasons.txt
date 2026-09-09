@@ -33,3 +33,7 @@
     KIND: the transcript fixtures ArgoEngine's tests read. They are copied from
     the Electron reader unchanged BECAUSE both readers must answer the same
     bytes; deduplicating them would retire the evidence that they agree.
+  **/Sources/ArgoFixtures/**
+    KIND: the Swift target that builds those fixtures into test data. Its
+    `TranscriptFixtures+*.swift` files are one repetitive literal per case by
+    design, and collapsing them would hide which case a test is reading.
