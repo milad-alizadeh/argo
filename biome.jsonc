@@ -177,6 +177,89 @@
         }
       }
     },
+    // The renderer boundary, and the one override here that is a security line rather than a
+    // cap. `src/preload.ts` says it: "The renderer never gets Node. It gets one narrow, named
+    // surface." Nothing enforced that, so a renderer file could import `electron` or a Node
+    // built-in and still pass every gate — and #1763 turns on the renderer never holding a
+    // token. The preload and the main process are deliberately NOT in scope: importing
+    // `electron` is their job.
+    //
+    // Type-only imports count. Biome's rule reads `import type` too, which matters because
+    // compilation erases it and a type-only reach across this boundary would otherwise be
+    // invisible.
+    {
+      "includes": ["apps/desktop/src/renderer/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "electron": "The renderer never imports electron. Expose a named surface from src/preload.ts and read it off window.",
+                  "node-pty": "A PTY belongs to the main process. The renderer talks to it over the preload bridge."
+                },
+                // Four groups, because the bare names above are only the spelling a first draft
+                // reaches for. A glob `*` does not cross a `/` in biome, so the subpath forms need
+                // saying separately: `node:fs/promises` is the modern spelling of the exact thing
+                // this rule exists to refuse, and `electron/renderer` is the documented entry a
+                // developer reaching for `ipcRenderer` writes first. The unprefixed built-ins are
+                // listed because `useNodejsImportProtocol`, which would otherwise normalise them
+                // into the `node:` form this rule sees, is `info` severity and its fix is unsafe —
+                // so `import cp from 'child_process'` survives both CI and lint-staged untouched.
+                "patterns": [
+                  {
+                    "group": ["node:*", "node:*/**"]
+                  },
+                  {
+                    "group": ["electron/**", "node-pty/**"]
+                  },
+                  {
+                    "group": ["@electron/remote", "@electron/remote/**", "electron-store"]
+                  },
+                  {
+                    "group": [
+                      "assert",
+                      "buffer",
+                      "child_process",
+                      "cluster",
+                      "crypto",
+                      "dgram",
+                      "dns",
+                      "fs",
+                      "fs/**",
+                      "http",
+                      "http2",
+                      "https",
+                      "inspector",
+                      "module",
+                      "net",
+                      "os",
+                      "path",
+                      "perf_hooks",
+                      "process",
+                      "readline",
+                      "repl",
+                      "stream",
+                      "stream/**",
+                      "timers",
+                      "timers/**",
+                      "tls",
+                      "tty",
+                      "util",
+                      "v8",
+                      "vm",
+                      "worker_threads",
+                      "zlib"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     // KIND: repo tooling reads the ambient environment by design (CI vars, git env, TTY).
     {
       "includes": ["scripts/**"],
