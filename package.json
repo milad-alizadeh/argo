@@ -16,6 +16,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "release:build": "turbo run release:build --filter=@argo/desktop",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
     "preinstall": "node scripts/node-version-gate.mjs",
