@@ -110,13 +110,18 @@ This proves protocol continuity. It does not prove crash recovery during a tool 
 ## Evidence and reproduction
 
 Run date: September 9, 2026. Host: macOS arm64. Node: 24.20.0. Codex: 0.147.0. Model: `gpt-5.6-sol`.
-The [probe](../../prototypes/codex-transport/prove.mjs) asserts behavior through the real CLI boundary named by #1826.
+The [probe](../../prototypes/codex-transport/prove.ts) asserts behavior through the real CLI boundary named by #1826.
 It uses a temporary Workspace, the existing sign-in, a read-only sandbox, and three bounded Turns.
 It does not control the keyboard or mouse.
 
 ```sh
-node prototypes/codex-transport/prove.mjs /absolute/path/to/codex gpt-5.6-sol
+node prototypes/codex-transport/prove.ts /absolute/path/to/codex gpt-5.6-sol
 ```
+
+The pinned Node runs the TypeScript source directly.
+Run `bun run typecheck:codex-transport` for its focused static check, included in the repository's `quality:types` gate.
+Run `bun run test:codex-transport` for local protocol-boundary tests, included in `bun run test`.
+Static types supplement the runtime envelope and payload validation.
 
 The probe prints its private raw transcript path.
 Each protocol wait expires after 45 seconds, and each process has an 8 MB transcript limit.
