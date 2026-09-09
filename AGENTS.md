@@ -1,18 +1,20 @@
 # Argo
 
 Monorepo for the Argo skills/plugin **and** the Argo cockpit app. The cockpit is mid-migration:
-`apps/macOS` is the deprecated Swift app, kept for reference and verified by nothing, and
-`apps/desktop` is the Electron replacement being built on #1730. Read by both Claude Code and Codex.
+`apps/macOS` is the deprecated Swift app, kept for reference, and `apps/desktop` is the Electron
+replacement being built on #1730. Read by both Claude Code and Codex.
 
 ## Agent skills
 
 - **Issue tracker** — Issues and PRDs live in GitHub Issues on `milad-alizadeh/argo`, via the
-  `gh` CLI. A screenshot goes in the issue body, and in the PR body when a screen
-  changes — when there is a screen to shoot, which right now there is not (#1758).
+  `gh` CLI. A screenshot goes in the issue body, and in the PR body when a screen changes.
   See `docs/agents/issue-tracker.md`.
 - **Triage labels** — five canonical triage roles, each label string equal to its name. Every
   issue is labelled in the `gh issue create` call, never afterwards. See
   `docs/agents/triage-labels.md`.
+- **Writing for agents** — `/writing-for-agents` before editing any file an agent reads. Its
+  own description covers skills, `AGENTS.md` and `CLAUDE.md`; here that extends to `rules/` and
+  `docs/agents/`.
 - **Domain docs** — single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See
   `docs/agents/domain.md`. The vocabulary is inlined under **Domain model** below. `CONTEXT.md`
   is now an index and the sections are files under `docs/domain/`, so read the one section you
@@ -51,48 +53,19 @@ the task; a session that waits until it wants the list writes no list at all.
 
 ## Pushing and pull requests
 
-**No session pushes a work branch or opens a pull request. `/ship` does both, and `/ship` is a
-separate invocation the caller makes** (#1648, #1669). A run ends at the reviewed diff, committed
-on its branch; what becomes of that branch is the human's next keystroke, not the run's last step.
-`/ship` carries the close-out nothing else runs — the sweep for `.only` and debug prints, the
-screenshots if the diff has a screen, the review findings written into the body
-— and it carries what it cannot tick rather than stopping, an unreviewed diff included. So a run
-that opens its own PR does not route around a refusal; it opens one having done none of that.
-
-Three files push something that is not a work branch, and they are the only exceptions:
-
-- **The evidence ref**, which publishes screenshots for a body `gh` cannot attach a file to. The
-  commit it pushes sits on no branch, so it never merges: `pixel-review/PR-EVIDENCE.md`, and the
-  same recipe in `setup-argo-skills`, which appends it to a consumer's doc.
-- **The design-branch delete** in `design-to-code` step 6, which drops `design/<screen>` once the
-  screen has shipped.
-
-The allowlist is `ALLOWED` in `scripts/pr-ownership.mjs`, per command, and
-`scripts/pr-ownership.test.mjs` fails when any other skill file names one of them.
+**`/ship` pushes the branch and opens the PR, and the caller invokes it** (#1648). A run ends at
+the reviewed diff, committed on its branch. `/ship` carries the close-out nothing else runs — the
+sweep for `.only` and debug prints, the rebase onto the current base, the review findings written
+into the body — and it carries what it cannot tick rather than stopping.
 
 ## Rules
 
 House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
-- **All code** — `house.md`: what no linter checks and a model does not do unprompted. Its
-  reference to `.swiftlint.yml` is stale; nothing runs SwiftLint. The
-  arithmetic (length, complexity, arity, escape hatches) is a gate, not prose: `biome.jsonc` is
-  where those numbers live.
-- **Swift and the cockpit** (`apps/macOS`) — `swift.md` still describes the deprecated Swift app.
-  Read it only to understand behaviour being ported to `apps/desktop`; nothing enforces it now.
-
-### Module boundaries
-
-`apps/macOS` was layered by its SPM target graph, and the compiler refused an undeclared import.
-**Nothing compiles it now** (#1758), so even that enforcement is gone and the section below is a
-record of the design rather than a live rule. The shell gate
-that used to check the rest — nine edges in `scripts/swift-boundaries.sh` — is gone, so what it
-carried is now convention, held by review rather than by exit code: the headless modules stay
-clear of SwiftUI and AppKit, `ArgoUI` does not import the dev-tool targets beside it, a design
-constant is declared in `ArgoDesign` and named once, and no view asks SwiftUI how tall a row is.
-ADR-0022, ADR-0027 and ADR-0030 hold the reasoning behind most of these;
-`apps/macOS/README.md` holds the dev-tool-target one.
+- **All code** — `house.md`: what no linter checks and a model does not do unprompted. The
+  arithmetic (length, complexity, arity, escape hatches) lives in `biome.jsonc`.
+- **Swift** (`apps/macOS`) — `swift.md`, read only for behaviour being ported to `apps/desktop`.
 
 ### Quality gates
 
@@ -104,9 +77,14 @@ proved by exit code alone.
 **CI is the only gate**, and there is no push-time one. `.github/workflows/ci.yml` runs biome, the
 duplication gate and `bun run test:hooks` on Linux; a `macos-26` job packages `apps/desktop`,
 asserts the packaged `node-pty` and runs the shipped app (#1769) when the PR touches
-`apps/desktop`, the root manifest, the lockfile or `.github/`. A session runs `bun run quality` and
-`bun run test:hooks` on its final tree and that is the whole bar. `quality` is biome **plus** the
+`apps/desktop`, the root manifest, the lockfile or `.github/`. `quality` is biome **plus** the
 duplication gate; biome alone leaves a duplication breach for CI.
+
+**Node is pinned to `.node-version` exactly**, and `scripts/node-version-gate.mjs` refuses any
+other from the root `preinstall` and from `bun run quality:node` (#1800). After switching Node,
+delete `node_modules` and reinstall — `node-pty` is a native addon bound to the ABI. A workflow or
+composite action reads `node-version-file: .node-version`; `scripts/node-version-source.test.mjs`
+fails on a literal version anywhere.
 
 **`apps/macOS` is deprecated and verified by nothing** — no build, test, screenshot or render.
 A Swift change says in the PR body that it was checked by hand, or not at all.
@@ -128,8 +106,7 @@ An out-of-date PR is reviewed against a tree nobody has and conflicts in the hum
 nothing calls them now — run them before merging:
 `sh scripts/kept-the-tests.sh . origin/main HEAD`.
 
-Two lanes never own the same file. Why each of these, and the arithmetic behind them:
-`docs/agents/landing.md`.
+Why each of these, and the arithmetic behind them: `docs/agents/landing.md`.
 
 ## Session isolation
 
@@ -167,8 +144,9 @@ projection grows a duplicate on every run. `test:hooks` fails when it isn't.
 
 ## Skill bundle
 
-A `/command` the user typed is **already loaded**; follow it directly and never call the `Skill`
-tool for it. `skills-lock.json` is the bundle manifest and this repo's install record; `bun run
+A `/command` the user typed arrives either as its **body** or as **the name alone**, and which one
+is visible decides the move: follow the body when it is there, call the `Skill` tool when only the
+name arrived. `skills-lock.json` is the bundle manifest and this repo's install record; `bun run
 scaffold` installs from it. `skills add` only adds, so renaming or deleting a skill means deleting
 the installed copy by hand, and editing one of Argo's own skills needs a push to `main` before a
 reinstall sees it. Add/sweep workflow: `packages/argo-skills/README.md`.
@@ -210,10 +188,8 @@ it with a render, `design-to-code` builds it per ticket, `pixel-review` judges t
 is a **repo rule, not a skill description**: which tickets take the design route depends on what
 is in `docs/designs/`, which no portable skill can know.
 
-**Nothing takes this route today** (#1758). Every design in `docs/designs/` is for `apps/macOS`,
-which is deprecated and built by no ticket, and `pixel-review` has no app to render: the scripts
-it drove are deleted. The route is written down for `apps/desktop`, which will need its own
-designs and its own renderer.
+**Nothing takes this route today** (#1758): every design in `docs/designs/` is for `apps/macOS`.
+It is written down for `apps/desktop`, which will need its own designs and its own renderer.
 
 **The design `.md` is on `main`; its explorable `.html` never is** (#1526). The page lives on the
 branch the `.md`'s front matter names — `explorable: design/<screen>` — and is read without a
@@ -224,12 +200,11 @@ listing showing no page is the rule working, not a design that is missing.
 
 ## Visual verification
 
-**There is nothing to render right now** (#1758). `apps/macOS` lost its screenshot, specimen and
-e2e scripts with the rest of its tooling, so `/pixel-review` has no app to drive and
-`docs/agents/visual-verification.md` describes commands that no longer exist. `apps/desktop` will
-need its own rendering route, and choosing it is open work.
+**There is nothing to render right now** (#1758), and
+`docs/agents/visual-verification.md` describes commands that no longer exist. Choosing
+`apps/desktop`'s rendering route is open work.
 
-Two rules that outlive the tooling and apply to whatever replaces it. **An e2e run holds the real
+Two rules outlive the tooling and apply to whatever replaces it. **An e2e run holds the real
 keyboard and mouse for its whole length: say so and wait before starting one.** **Never hand-roll a
 load generator; use `sh scripts/load-burst.sh <workers> <seconds>`**, which burns CPU cores and
 makes no Sessions, and stop it with the `--reap <token>` it prints, never a bare `pkill`.
@@ -245,55 +220,7 @@ complete: `RTK_DISABLED=1 git diff`. Why: `docs/agents/rtk-filters.md`.
 
 ## Domain model
 
-The full model lives under `docs/domain/`, one file per section, indexed by `CONTEXT.md` at
-the repo root. None of it is loaded into every session, because the whole model costs about
-8,200 tokens. Read the one section you need when you are changing the model, naming something
-new, or you need the exact rule behind a term. Swift comments cite it by section name, like
-`CONTEXT.md L1 · Binding`, and the index maps every one of those names to its file.
-
-The vocabulary below is the part every session needs. Use these words, never a synonym.
-
-**L1 · Organisation**
-
-- **Project** — one registered git repo, keyed by a stable id. The scope of one cockpit window.
-- **Account** — one authenticated identity with a provider. One grant, one token in the keychain.
-- **Binding** — a Project's use of one Account through one port, plus the provider-side scope.
-- **Ticket** — one unit of work owned by a provider. Argo stores the link, never the content.
-- **answer** — the resolved text of a decision ticket, held verbatim.
-- **Delivery** — the product in flight, derived per branch from git plus the code host.
-- **Person** — `me` or `other`.
-
-**L2 · Session**
-
-- **Session** — one logical resume-chain, and the root Agent. Stored as `managed` or `external`.
-- **orphaned** — a managed Session whose owning process is gone. Read-only until selected, which
-  resumes the chain in a fresh process and makes it `managed` again (ADR-0026).
-- **Entry** — how the process was started: `interactive` (a person at a terminal) or `headless`
-  (a program did, `claude -p`). DERIVED off the CLI's own `entrypoint`; anything absent or
-  unrecognised reads `interactive`, so an unknown word never folds a Session somebody is driving.
-- **Session status** — `starting · running · permission · asking · idle · stopped · ended ·
-  unknown`. `starting` is DIRECT and managed-only: Argo started the process and has not heard it
-  yet, and the child's first bytes on the PTY end the claim.
-- **Transcript file** — the physical per-file CLI record. Never itself called a Session.
-
-**Honesty tier** — a property of each rendered fact, not of a session.
-
-- **DIRECT** — Argo owns the fact. **DERIVED** — observed from outside Argo. **CONVENTION** —
-  arrived over the companion plugin.
-- **degrade-down** — ambiguity resolves to the lower tier or the quieter state, so Argo never
-  renders a false DIRECT.
-
-**L3 · Runtime tree**
-
-- **Agent** — a node in the execution tree. It is the root when `parentId` is null.
-- **Subagent** — a non-root Agent. **Turn** — one exchange, prompt in to stop reason out.
-- **Message** — what the agent said. **Thought** — what it reasoned. Both sit in one ordered sequence.
-- **Tool Call** — one observable action. Its **Result** is a `diff`, `output` or `media` value.
-- **Plan** — the agent's live to-do list. Session-scoped and replaced whole.
-- **Workspace** — the git working context. It holds `branch`, which is the join key.
-- **Compaction** — a marker where history was condensed. **Usage** — token, cost and context telemetry.
-
-**L4 · Delivery detail, Autonomy, Ports, Surfaces** — Diff, Review, Finding, Check, Outcome;
-Mode, Permission, Standing allow, Permission expiry, Gate; Ticket provider, Code host; Cockpit,
-Roster, Panels, Hub, Fold. Each is defined in its `CONTEXT.md` section: read it before naming,
-rendering or changing one of them.
+The model lives under `docs/domain/`, one file per section, indexed by `CONTEXT.md` at the repo
+root. Nothing loads it. Read the section you need before naming, rendering or changing a term, and
+use its words rather than a synonym. Code comments cite it by section name, like
+`CONTEXT.md L1 · Binding`, and the index maps every name to its file.
