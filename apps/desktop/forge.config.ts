@@ -95,6 +95,13 @@ const config: ForgeConfig = {
     // these fuses exactly as a user gets them, so nothing here is relaxed for testing.
     new FusesPlugin({
       version: FuseVersion.V1,
+      // The plugin computes this true for an unsigned darwin bundle and then shells out to
+      // `codesign`, so a darwin arm64 package dies inside @electron/fuses on a machine that has
+      // none. The ad-hoc re-signature only matters to an app that will be RUN, and the shipped one
+      // is built on a Mac, so narrowing it to darwin costs the release nothing and lets CI's Linux
+      // tier read the manifest off the architecture that ships (#1806). Our config is spread after
+      // the plugin's computed value, so this wins.
+      resetAdHocDarwinSignature: process.platform === 'darwin',
       [FuseV1Options.RunAsNode]: false,
       [FuseV1Options.EnableCookieEncryption]: false,
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,

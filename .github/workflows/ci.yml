@@ -85,13 +85,11 @@ jobs:
       # manifest reads. This job needs no `Install the Electron binary` step, unlike the macOS one
       # below: a cross-platform target is never the local `node_modules/electron`, so
       # @electron/packager downloads the darwin zip through @electron/get itself. Verified by
-      # packaging in a node:24.20.0 container.
+      # packaging in a Linux container on the pinned Node.
       #
-      # x64, not the shipped arm64, and that is forced: @electron/fuses re-signs an ad-hoc darwin
-      # arm64 bundle through `codesign`, so arm64 packaging dies on a machine that has none. x64
-      # takes neither branch, and the manifest does not notice, because `DROPPED_FROM_PACKAGE` in
-      # forge.config.ts keeps BOTH darwin prebuilds whatever architecture is asked for. A test in
-      # `package-manifest.test.mjs` holds that invariant; the macOS job reads the shipped arm64.
+      # arm64: the architecture that actually ships, so both tiers read one package shape. It
+      # packages off darwin only because `resetAdHocDarwinSignature` is narrowed to darwin in
+      # forge.config.ts, which is where the reason for it is written down.
       #
       # This job's `name:` is `main`'s required status check, matched literally, and renaming it
       # strands every open pull request on a check that never reports (#1733). So the name still
@@ -100,7 +98,7 @@ jobs:
         name: Package for darwin
         if: ${{ !cancelled() }}
         working-directory: apps/desktop
-        run: bun run package --platform darwin --arch x64
+        run: bun run package --platform darwin --arch arm64
 
       # Gated on the package step alone, not `success()`: every gate above runs even after an
       # earlier one fails, so a lint error must not take the manifest verdict with it. What this
@@ -108,7 +106,7 @@ jobs:
       - name: Package manifest
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         working-directory: apps/desktop
-        run: bun run desktop:manifest out/Argo-darwin-x64/Argo.app
+        run: bun run desktop:manifest out/Argo-darwin-arm64/Argo.app
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and RUN it. Everything #1769 asserts about

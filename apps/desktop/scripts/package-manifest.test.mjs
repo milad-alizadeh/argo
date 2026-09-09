@@ -64,20 +64,6 @@ describe('the manifest schema', () => {
   test('accepts the checked-in manifest', () => {
     expect(readCheckedInManifest(MANIFEST_PATH).failures).toEqual([])
   })
-
-  // CI reads this manifest off a darwin-x64 package on Linux and off the shipped darwin-arm64 one
-  // on macOS, and both compare against this one file. That only holds while every architecture
-  // named in it is named in both halves — which is what `DROPPED_FROM_PACKAGE` in forge.config.ts
-  // delivers today, keeping both darwin prebuilds whatever architecture is asked for. Narrow it to
-  // the built architecture and the Linux tier starts failing on a package that is perfectly fine.
-  test.each(SECTIONS)('names both darwin architectures or neither in %s', (section) => {
-    const entries = readCheckedInManifest(MANIFEST_PATH).manifest[section]
-    const partners = { 'darwin-arm64': 'darwin-x64', 'darwin-x64': 'darwin-arm64' }
-    for (const entry of entries)
-      for (const [architecture, partner] of Object.entries(partners))
-        if (entry.includes(architecture))
-          expect(entries).toContain(entry.replace(architecture, partner))
-  })
 })
 
 describe('comparing a package against the manifest', () => {
