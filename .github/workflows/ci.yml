@@ -1,5 +1,6 @@
-# The default gate for every PR: biome, the duplication gate and the guardrail-hook tests, on
-# Linux. That is the whole of it, and for now it is the whole of the repo's verification.
+# The default gate for every PR: biome, the typecheck, the duplication gate and the
+# guardrail-hook tests, on Linux. That is the whole of it, and it is the whole of the repo's
+# verification.
 #
 # The history, because it was wrong and the correction matters (#1758). A `macos-26` job used to
 # build and test `apps/macOS` here. #1340 removed it on the grounds that it "billed about 99% of
@@ -39,7 +40,7 @@ permissions:
 
 jobs:
   check:
-    name: lint · duplication · hook tests
+    name: lint · types · duplication · hook tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -54,6 +55,14 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
+      # Biome does not type-check, so this is the gate that reads types. `apps/desktop` landed
+      # with a `typecheck` script no caller ran, which meant a type error in the Electron app
+      # was caught by nothing (#1733). `tsc --noEmit` needs no Mac and no packaging, so it
+      # belongs here rather than at push time.
+      - name: Typecheck
+        if: ${{ !cancelled() }}
+        run: bun run quality:types
+
       # The one cap biome can't express: duplication is whole-tree, and a linter reads one
       # file at a time. Its own step so a breach doesn't hide the hook tests' output
       # (see AGENTS.md "Quality gates").
@@ -63,9 +72,11 @@ jobs:
 
       # Guardrail-hook tests (worktree edit guard, cross-CLI hook projection, the worktree-gc
       # sweep) live outside the turbo `test` pipeline — plain node scripts, not a workspace
-      # suite. They are the only executable suite in the repo: retiring the Electron cockpit took
-      # the last TypeScript workspace with it and #1758 took the Swift tooling, so `turbo run
-      # test` reaches nothing at all until `apps/desktop` lands.
+      # suite. They are the only suite this workflow RUNS: `turbo run test` is not invoked here
+      # at all, and it would not reach much if it were — `apps/desktop` declares no `test` script,
+      # so the only workspace answering it is `packages/argo-skills`, with a scaffold dry-run.
+      # `apps/desktop`'s types are covered by the Typecheck step above, and #1758 retired the
+      # Swift tooling, so nothing verifies `apps/macOS` at all.
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks

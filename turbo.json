@@ -7,6 +7,9 @@
       "env": ["ARGO_BUILD_CONFIGURATION"],
       "outputs": ["dist/**", "out/**"]
     },
+    "typecheck": {
+      "dependsOn": ["^typecheck"]
+    },
     "//#format-and-lint": {},
     "//#format-and-lint:fix": {
       "cache": false
