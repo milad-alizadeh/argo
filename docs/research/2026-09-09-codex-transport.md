@@ -1,9 +1,14 @@
 # Codex transport and composer delivery
 
 Ticket: [#1826](https://github.com/milad-alizadeh/argo/issues/1826), within [#1824](https://github.com/milad-alizadeh/argo/issues/1824).
-Status: proposed resolution, with a passing live protocol proof. Human agreement is pending.
+Status: accepted September 9, 2026, with a passing live protocol proof.
 
-## Proposed resolution
+Milad approved this resolution after confirming that images also travel through the same JSON-RPC request connection.
+His answer was “Okay, let's do it.”
+The approval covers pipe transport, text-only chips, image inputs, separate file-path references, and the corrected capability probe described below.
+The approval was relayed from voice task `01a0882d-499e-7850-85aa-68a7b68a25c0`.
+
+## Resolution
 
 Keep one owned `codex app-server --listen stdio://` process per managed Codex Session.
 The Electron main process uses `node:child_process.spawn` with separate stdin, stdout, and stderr pipes.
