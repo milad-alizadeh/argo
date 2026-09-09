@@ -49,26 +49,28 @@ const APP_NAME = 'Argo'
 // because whether the plugin merges with this list or overwrites it is not a promise it makes.
 const UNPACK_GLOB = '**/node_modules/node-pty/**'
 
-const config: ForgeConfig = {
-  packagerConfig: {
-    // ASAR is required by the two integrity fuses below.
-    asar: { unpack: UNPACK_GLOB },
-    // The production install IS the pruning, so there is nothing left for Forge to prune. Leaving
-    // `prune` on makes `flora-colossus` walk the dev tree to decide what to drop, and it then
-    // fails outright on the dev packages `--omit=dev` never installed. Turning it off also
-    // sidesteps the walker defect that made this whole shape necessary (flora-colossus#44,
-    // forge#4188): nothing walks, so nothing walks wrongly. What ships is exactly what
-    // `package-lock.json` names under `dependencies` — node-pty and node-addon-api, about 400 KB.
-    prune: false,
-    name: APP_NAME,
-    appBundleId: 'tech.trili.argo.desktop',
-    icon: 'assets/icon',
-    ignore: (file) => {
-      if (!file) return false
-      if (!KEPT_IN_PACKAGE.some((kept) => kept.test(file))) return true
-      return DROPPED_FROM_PACKAGE.some((dropped) => dropped.test(file))
-    },
+const packagerConfig: NonNullable<ForgeConfig['packagerConfig']> = {
+  // ASAR is required by the two integrity fuses below.
+  asar: { unpack: UNPACK_GLOB },
+  // The production install IS the pruning, so there is nothing left for Forge to prune. Leaving
+  // `prune` on makes `flora-colossus` walk the dev tree to decide what to drop, and it then
+  // fails outright on the dev packages `--omit=dev` never installed. Turning it off also
+  // sidesteps the walker defect that made this whole shape necessary (flora-colossus#44,
+  // forge#4188): nothing walks, so nothing walks wrongly. What ships is exactly what
+  // `package-lock.json` names under `dependencies` — node-pty and node-addon-api, about 400 KB.
+  prune: false,
+  name: APP_NAME,
+  appBundleId: 'tech.trili.argo.desktop',
+  icon: 'assets/icon',
+  ignore: (file) => {
+    if (!file) return false
+    if (!KEPT_IN_PACKAGE.some((kept) => kept.test(file))) return true
+    return DROPPED_FROM_PACKAGE.some((dropped) => dropped.test(file))
   },
+}
+
+const config: ForgeConfig = {
+  packagerConfig,
   // Nothing to rebuild. `node-pty`'s prebuilt binaries are N-API, so they are ABI-stable across
   // Node and Electron releases and do not need recompiling per Electron upgrade — #1790 loaded
   // one and forked a PTY on Electron 44.2.0 with `@electron/rebuild` never invoked. Leaving the
@@ -95,13 +97,18 @@ const config: ForgeConfig = {
     // these fuses exactly as a user gets them, so nothing here is relaxed for testing.
     new FusesPlugin({
       version: FuseVersion.V1,
-      // The plugin computes this true for an unsigned darwin bundle and then shells out to
-      // `codesign`, so a darwin arm64 package dies inside @electron/fuses on a machine that has
-      // none. The ad-hoc re-signature only matters to an app that will be RUN, and the shipped one
-      // is built on a Mac, so narrowing it to darwin costs the release nothing and lets CI's Linux
-      // tier read the manifest off the architecture that ships (#1806). Our config is spread after
-      // the plugin's computed value, so this wins.
-      resetAdHocDarwinSignature: process.platform === 'darwin',
+      // The plugin computes this itself as `!osxSign && applePlatform && arch === 'arm64'`, then
+      // spreads our config over the result, so this line replaces it outright. It restates the
+      // `osxSign` half rather than dropping it: forcing the re-signature on once #1771 configures
+      // signing would lay an ad-hoc signature over the real one. What it adds is the BUILD host.
+      // The re-signature shells out to `codesign`, which no Linux machine has, so a darwin package
+      // died inside @electron/fuses reading `stderr` off a spawn that never ran; an ad-hoc
+      // signature only matters to an app that will be RUN, and the shipped one is built on a Mac,
+      // so this costs the release nothing and lets CI's Linux tier read the manifest off the
+      // architecture that ships (#1806). The arch half is gone because Forge asks for this config
+      // before it knows the target, and an ad-hoc re-signature of a darwin x64 bundle is
+      // unnecessary rather than wrong — nothing here builds one.
+      resetAdHocDarwinSignature: process.platform === 'darwin' && !packagerConfig.osxSign,
       [FuseV1Options.RunAsNode]: false,
       [FuseV1Options.EnableCookieEncryption]: false,
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
