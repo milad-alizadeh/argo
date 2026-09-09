@@ -1,6 +1,14 @@
 # 0030 · Geometry is settled before it is shown
 
-Status: accepted · 2026-09-03
+Status: accepted 2026-09-03 · superseded for `apps/desktop` by
+[ADR-0033](./0033-dom-geometry-is-settled-before-it-is-shown.md) (#1795)
+
+> **Scoped to `apps/macOS`, which is deprecated.** This file is the record of the Swift app, and
+> stays authoritative for the Swift code and doc comments that cite it. It is not the contract the
+> app now being built answers to: ADR-0033 restates these eight rules for a DOM, and its rules win
+> wherever the two differ. The Swift spellings here — `FeedRowMeasure`, `CTFrame`,
+> `NSHostingController.sizeThatFits`, `FeedShapeHeight`, `heightOfRow` — name nothing in
+> `apps/desktop`.
 
 Binding on `apps/macOS`. Extends [ADR-0029](./0029-a-feed-opens-at-its-tail.md) and supersedes
 [ADR-0028](./0028-cost-is-a-gate.md) Rule 5 (one table re-keyed by `FeedReading`). Decided in a
