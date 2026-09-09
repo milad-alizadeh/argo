@@ -124,6 +124,11 @@
           },
           "style": {
             "noExcessiveLinesPerFile": "off"
+          },
+          // A prototype's whole question can be the element this rule tells you to replace:
+          // #1754 weighs a contenteditable against a textarea, and the rule answers it by fiat.
+          "a11y": {
+            "useSemanticElements": "off"
           }
         }
       }
