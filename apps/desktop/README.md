@@ -140,6 +140,70 @@ Bun's `trustedDependencies` is read from the **root** `package.json` only. The c
 package is inert. Without the root entries, `fs-xattr` and `macos-alias` never build and the DMG
 maker fails.
 
+## Releasing
+
+One workflow, `.github/workflows/release.yml`, run by hand: **Actions → release desktop → Run
+workflow**, with the version as its only input (`1.2.0`, no `v`). It signs, notarizes, makes the
+DMG and the ZIP, writes **one `release-verdict.json`**, and publishes only if that verdict passes.
+The contract is [ADR-0036](../../docs/adr/0036-a-release-publishes-only-on-a-verdict-that-names-its-bytes.md),
+decided in [Decide what refuses a desktop publish, and what the artifact check asserts](https://github.com/milad-alizadeh/argo/issues/1788)
+and built in [Publish a desktop release only on a passing release verdict](https://github.com/milad-alizadeh/argo/issues/1807).
+
+The verdict is a single document holding every assertion any tier makes about the build, keyed to
+the SHA-256 of every artifact it judged: signing and notarization, the nine fuses read back off the
+shipped binary, the entitlements `codesign` reports per signed path, the packaged-PTY acceptance
+run, the package manifest, and the one asset `update.electronjs.org` will match. It ships as a
+release asset, so the release carries its own evidence. `scripts/release-verdict.mjs` builds it and
+`scripts/write-release-verdict.mjs` is the CLI (`bun run desktop:verdict`).
+
+Why a verdict rather than a chain of green steps: a check that never ran has to be as loud as one
+that ran and failed. Every assertion is an entry in one file, so "the check is missing" is a single
+readable state instead of an absent report nobody notices.
+
+**A published release cannot be unpublished.** GitHub's immutable releases freeze `draft` and
+`tag_name` at publish, so `DELETE` is the only removal and it burns that tag name forever. That is
+why the gate is before the publish and the whole publish is two steps: create the release as a
+draft, then flip it. `.github/workflows/release-backstop.yml` is the compensating action for a
+release that got out anyway — on `release: [published]` it re-reads the verdict off the assets,
+**files an issue carrying the evidence, and then deletes the release**, in that order, because the
+delete destroys the evidence. It is not a prevention: a client that already staged the update
+installs it regardless, since that install path touches no network. Publishing a higher version is
+the only remedy, and the filed issue is what makes somebody cut one.
+
+### What a human has to set up first
+
+None of this is code, and the workflow fails loudly without it.
+
+1. **A Developer ID Application certificate**, from an Apple Developer Program account
+   (99 USD/year). Create it in the developer portal, then export it from Keychain Access as a
+   `.p12` with a password, and base64 it: `base64 -i cert.p12 | pbcopy`.
+2. **An App Store Connect API key** for notarization, at Users and Access → Integrations, with the
+   *Developer* role. Download the `.p8` **once** — Apple will not serve it again — and base64 it
+   the same way. Note the Key ID and the Issuer ID off the same page.
+3. **A GitHub Environment named `release`** (Settings → Environments). The workflow declares
+   `environment: release`, so adding required reviewers there is what puts a human approval in
+   front of every publish. Its six secrets:
+
+   | Secret | What it holds |
+   | --- | --- |
+   | `MACOS_CERTIFICATE_P12` | base64 of the `.p12` |
+   | `MACOS_CERTIFICATE_PASSWORD` | the password used on export |
+   | `MACOS_SIGNING_IDENTITY` | the identity string, e.g. `Developer ID Application: Name (TEAMID)` |
+   | `APPLE_API_KEY_P8` | base64 of the `.p8` |
+   | `APPLE_API_KEY_ID` | the Key ID |
+   | `APPLE_API_ISSUER` | the Issuer ID |
+
+4. **Turn on immutable releases** — Settings → General → Releases. There is no API for this
+   setting, so nothing here can check it before the fact; the workflow reads the per-release
+   `immutable` boolean back after publishing and warns in the job summary if it is false.
+5. **A `CHANGELOG.md` in this directory**, whose `## <version>` heading the workflow reads for the
+   release notes. `/release-argo` ([#1808](https://github.com/milad-alizadeh/argo/issues/1808))
+   writes it; until then, by hand.
+
+Everything else stays working without any of it: signing is driven by the environment, so a Linux
+CI job or a fork pull request still packages, and its verdict simply records `signed: false` — a
+different verdict rather than an absent one.
+
 ## Layout
 
 `src/main.ts` and `src/preload.ts` are flat files on purpose. Forge's Vite plugin emits both

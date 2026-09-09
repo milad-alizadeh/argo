@@ -73,8 +73,12 @@ function outputDirectory(arch) {
   return path.join(desktopRoot, 'out', `${APP_NAME}-darwin-${arch}`)
 }
 
+export function packagedApp(arch) {
+  return path.join(outputDirectory(arch), `${APP_NAME}.app`)
+}
+
 export function appBinary(arch) {
-  return path.join(outputDirectory(arch), `${APP_NAME}.app`, 'Contents', 'MacOS', APP_NAME)
+  return path.join(packagedApp(arch), 'Contents', 'MacOS', APP_NAME)
 }
 
 export function readResult(stdout) {

@@ -1,0 +1,120 @@
+# The compensating action for a release that exists and should never have been produced (ADR-0036,
+# #1809). It is not a prevention: nothing native gates a publish, so the automatic verdict in
+# `release.yml` stays the gate and this covers the case where the gate itself was broken or
+# bypassed.
+#
+# It files an issue and then deletes the release, in that order, because the delete destroys the
+# evidence. The filed issue is the load-bearing half. A staged update cannot be recalled at all —
+# once a client has emitted `update-downloaded`, the install path touches no network — so the only
+# remedy is publishing a higher version, and the issue is what makes somebody cut one.
+#
+# `PATCH ... draft: true` is impossible on a published immutable release (422, `state cannot be
+# changed when release is immutable`), proved on a throwaway repository under #1804. DELETE is the
+# only compensating action GitHub allows, and it spends the version number forever.
+#
+# No loop risk: an event triggered by `GITHUB_TOKEN` starts no new workflow run.
+#
+name: release backstop
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: audit the published release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      RELEASE_ID: ${{ github.event.release.id }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      - id: audit
+        name: Read the verdict off the release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/assets"
+          # A release with no assets at all downloads nothing and is not an error here: it is the
+          # `verdict missing` case, which is exactly what this workflow exists to catch.
+          gh release download "$TAG" --dir "$RUNNER_TEMP/assets" --clobber || true
+          node apps/desktop/scripts/audit-release.mjs "$RUNNER_TEMP/assets" > "$RUNNER_TEMP/audit.json"
+          {
+            echo "case=$(jq -r .case "$RUNNER_TEMP/audit.json")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Report a release that is gated
+        if: steps.audit.outputs.case == 'passed'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### $TAG carries a passing verdict"
+            echo
+            echo "Nothing to do. The verdict covers every asset on the release."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The evidence, before the delete removes it. It names which of the two cases it hit and
+      # carries the release id, the tag now burned, the verdict's SHA-256 set and the verdict
+      # document itself when there was one.
+      - id: file
+        name: File the issue
+        if: steps.audit.outputs.case != 'passed'
+        shell: bash
+        run: |
+          set -euo pipefail
+          audit="$RUNNER_TEMP/audit.json"
+          body="$RUNNER_TEMP/issue.md"
+          {
+            echo "\`$TAG\` was published without a passing release verdict, so it has been deleted."
+            echo
+            echo "**Case:** $(jq -r .case "$audit")"
+            echo "**Release id:** $RELEASE_ID"
+            echo "**Tag now burned:** \`$TAG\` — GitHub refuses this tag name for every later release, even after the tag ref is deleted. Release the next unused patch."
+            echo "**Run:** $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "### Why it was refused"
+            echo
+            jq -r '.reasons[] | "- \(.)"' "$audit"
+            echo
+            echo "### The assets, by SHA-256"
+            echo
+            jq -r '.digests[] | "- `\(.sha256)`  \(.name)"' "$audit"
+            echo
+            echo "### The verdict"
+            echo
+            echo '```json'
+            jq -r 'if .verdict == null then "no release-verdict.json was on the release" else (.verdict | tojson) end' "$audit"
+            echo '```'
+            echo
+            echo "A client that already staged this update installs it regardless: the install path touches no network. Publishing a higher version is the only remedy."
+          } > "$body"
+          cat "$body" >> "$GITHUB_STEP_SUMMARY"
+          gh issue create \
+            --title "Release $TAG published without a passing verdict" \
+            --label bug \
+            --label ready-for-human \
+            --body-file "$body"
+
+      # Delete rather than mark. Flipping `prerelease: true` does take a release off the feed, but
+      # it leaves the bad bytes on a URL that still serves them; delete does both, in the same time,
+      # because both are bounded by the same 15-minute feed cache.
+      - name: Delete the release
+        if: steps.audit.outputs.case != 'passed'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The tag ref survives a release delete and the name stays burned either way, so removing
+          # it would only hide which numbers are spent.
+          gh release delete "$TAG" --yes
+          echo "deleted $TAG"

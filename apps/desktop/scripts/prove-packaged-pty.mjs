@@ -11,7 +11,8 @@
 // main process writes plus the process exit code.
 //
 // Usage: node scripts/prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance]
-import { existsSync } from 'node:fs'
+//                                            [--json <file>]
+import { existsSync, writeFileSync } from 'node:fs'
 import process from 'node:process'
 import { ACCEPTANCE_ENV, SKIP_ENDURANCE_ENV } from './acceptance-protocol.mjs'
 import {
@@ -26,27 +27,39 @@ import {
   SHIPPED_ARCHES,
 } from './packaged-app.mjs'
 
-// An unrecognised flag is an error, not a shrug. `--arch=x64` and a bare `--arch` both used to
-// fall through to the default and print `PASS arm64`, exit 0, for a run the operator believed
-// asked for something else.
-function parseArgs(argv) {
-  const arches = []
-  let skipPackage = false
-  let skipEndurance = false
-  for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--arch') {
-      const named = (argv[i + 1] ?? '').split(',').filter(Boolean)
-      if (named.length === 0) throw new Error('--arch needs a value, like --arch arm64')
-      arches.push(...named)
-      i += 1
-    } else if (argv[i] === '--skip-package') skipPackage = true
-    else if (argv[i] === '--skip-endurance') skipEndurance = true
-    else throw new Error(`unrecognised argument ${argv[i]}. Usage: ${USAGE}`)
-  }
-  return { arches: arches.length > 0 ? arches : SHIPPED_ARCHES, skipPackage, skipEndurance }
+// A flag with no value is an error, not a shrug: a bare `--arch` used to fall through to the
+// default and print `PASS arm64`, exit 0, for a run the operator believed asked for something else.
+function valueAfter(argv, i, hint) {
+  const value = argv[i + 1]
+  if (!value || value.startsWith('--')) throw new Error(hint)
+  return value
 }
 
-const USAGE = 'prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance]'
+// An unrecognised flag is an error for the same reason, `--arch=x64` included.
+function parseArgs(argv) {
+  const arches = []
+  const parsed = { skipPackage: false, skipEndurance: false, json: null }
+  for (let i = 0; i < argv.length; i += 1) {
+    const flag = argv[i]
+    if (flag === '--skip-package') parsed.skipPackage = true
+    else if (flag === '--skip-endurance') parsed.skipEndurance = true
+    else if (flag === '--arch') {
+      arches.push(
+        ...valueAfter(argv, i, '--arch needs a value, like --arch arm64')
+          .split(',')
+          .filter(Boolean),
+      )
+      i += 1
+    } else if (flag === '--json') {
+      parsed.json = valueAfter(argv, i, '--json needs a path, like --json out/acceptance.json')
+      i += 1
+    } else throw new Error(`unrecognised argument ${flag}. Usage: ${USAGE}`)
+  }
+  return { ...parsed, arches: arches.length > 0 ? arches : SHIPPED_ARCHES }
+}
+
+const USAGE =
+  'prove-packaged-pty.mjs [--arch arm64] [--skip-package] [--skip-endurance] [--json <file>]'
 
 async function packageArch(arch) {
   const packaged = await run(forgeBinary(), ['package', '--arch', arch], {
@@ -95,7 +108,7 @@ async function proveArch(arch, { skipPackage, skipEndurance }) {
   }
 }
 
-const { arches, skipPackage, skipEndurance } = parseArgs(process.argv.slice(2))
+const { arches, skipPackage, skipEndurance, json } = parseArgs(process.argv.slice(2))
 const outcomes = []
 for (const arch of arches) {
   process.stdout.write(`\n=== proving ${arch} ===\n`)
@@ -106,6 +119,10 @@ for (const arch of arches) {
   for (const failure of outcome.failures) process.stdout.write(`  - ${failure}\n`)
   if (outcome.stderr) process.stdout.write(`--- stderr tail ---\n${outcome.stderr}\n`)
 }
+
+// Written whether the run passed or failed: the release verdict reads this file, and a failing
+// acceptance run has to reach the verdict as a failing assertion rather than as a missing one.
+if (json) writeFileSync(json, `${JSON.stringify(outcomes, null, 2)}\n`)
 
 const proved = outcomes.filter((outcome) => outcome.ok).length
 process.stdout.write(`\n${proved}/${outcomes.length} architectures proved\n`)
