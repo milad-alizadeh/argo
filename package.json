@@ -2,10 +2,12 @@
   "name": "argo",
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
+    "@types/node": "24.13.3",
     "husky": "^9.1.7",
     "jscpd": "^5.0.12",
     "lint-staged": "^17.1.0",
-    "turbo": "^2.3.3"
+    "turbo": "^2.3.3",
+    "typescript": "5.9.3"
   },
   "packageManager": "bun@1.3.3",
   "overrides": {
@@ -21,8 +23,10 @@
     "quality": "bun run quality:node && bun run format-and-lint && bun run quality:types && bun run quality:duplication",
     "quality:node": "node scripts/node-version-gate.mjs",
     "quality:duplication": "jscpd --config .jscpd.json apps packages scripts hooks",
-    "quality:types": "turbo run typecheck",
-    "test": "turbo run test",
+    "quality:types": "turbo run typecheck && bun run typecheck:codex-transport",
+    "typecheck:codex-transport": "tsc --noEmit -p prototypes/codex-transport/tsconfig.json",
+    "test": "turbo run test && bun run test:codex-transport",
+    "test:codex-transport": "node --test prototypes/codex-transport/channel.test.ts",
     "test:hooks": "node --test 'hooks/*.test.mjs'",
     "worktrees:gc": "sh hooks/worktree-gc.sh",
     "worktrees:sweep": "sh hooks/worktree-gc.sh --artifacts",
