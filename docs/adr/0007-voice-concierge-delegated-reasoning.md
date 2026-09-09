@@ -49,3 +49,48 @@
 **What is unaffected.** The return-path work is the differentiator and none of it is absorbed: the fidelity contract ([#192](https://github.com/milad-alizadeh/argo/issues/192)), the brevity-vs-fidelity guard ([#199](https://github.com/milad-alizadeh/argo/issues/199)), its measured dials ([#203](https://github.com/milad-alizadeh/argo/issues/203)), activation and posture C ([#194](https://github.com/milad-alizadeh/argo/issues/194)), and answer-injection ([#198](https://github.com/milad-alizadeh/argo/issues/198)) all still apply. ~~They govern *what the spoken line says*, which is independent of who synthesizes it.~~ **That reasoning is void — see consequence #5.** The hosted model does not merely synthesize; it re-writes, so "what the line says" and "who speaks it" are not separable on this leg. The decisions survive, but their **binding site moves**: they become the contract in `session.instructions` and the rubric the return path is evaluated against ([#224](https://github.com/milad-alizadeh/argo/issues/224)), rather than rules enforced in-path on our own output. What v1 does drop is the local **TTS stage**: the hosted audio model synthesizes internally, so the Kokoro/Chatterbox question is v2-only.
 
 **v2 re-entry gate.** On-device returns when an open model clears **RTF < 1 at a coherent quantization on the target Mac** *and* the stock-checkpoint injection-coherence test passes. Until both hold, local full duplex is not a candidate — and the second test is cheap, needs a CUDA box rather than a Mac, and governs Moshi as much as PersonaPlex.
+
+---
+
+## Amendment — 2026-09-09: the audio leg runs on the subscription
+
+**The concierge/router split and the hosted-audio decision above are both unchanged.** What changes is
+**consequence #1**: the audio leg is no longer metered.
+
+**What was proved.** A live two-way voice conversation ran against `codex app-server` on the ChatGPT
+sign-in, with no API key present and none sent. The session reported `authMethod: chatgpt`, the peer
+connection reached `connected`, the assistant's audio came back on the media track, and both sides printed
+as transcripts. Method, recipe and traps:
+[`docs/research/2026-09-09-codex-realtime-voice-on-the-subscription.md`](../research/2026-09-09-codex-realtime-voice-on-the-subscription.md),
+with the demo client beside it.
+
+**Why it works.** Codex's realtime API-key gate is **per transport, not per feature**. `realtime_api_key()`
+in `codex-rs/core/src/realtime_conversation.rs` has one call site, the `Websocket` arm; the `Webrtc` and
+`ExistingCall` arms send no key and authenticate with the Codex session. This is
+[ADR-0024](./0024-session-drive-port-two-adapters.md)'s finding again — **Codex splits its billing on the
+credential, not on the surface** — reaching a surface that is not a Session.
+
+**Consequence #1 is superseded.** *"The audio leg is metered, roughly $0.02–0.05 per active minute"* holds
+only for the public Realtime API over its own transport. On this route the whole interaction, audio
+included, draws on the ChatGPT subscription, so the repo-wide constraint in AGENTS.md and
+[ADR-0031](./0031-the-backlog-question-runs-on-codex-exec.md) is met rather than excepted. Codex issues
+#37619 and #40792 show the quota that binds instead: voice stops at **Codex usage limits**, which is the
+subscription's own ceiling.
+
+**Consequence #2 is unaffected.** Audio still leaves the machine. That is the argument for the v2 on-device
+target and it is untouched by who pays.
+
+**Consequences #4 and #5 are re-confirmed, not lifted.** `thread/realtime/appendSpeech` looked like the
+verbatim channel [#221](https://github.com/milad-alizadeh/argo/issues/221) found absent. It is not one.
+Sent `The build is green, but only for the parser tests.`, the session spoke *"Good news: the build is green
+for the parser tests"* — the marker lost and the meaning inverted. Sent `Please say out loud: the build is
+green.`, it spoke *"The build is green"*, dropping the instruction: the text is **obeyed as a prompt, not
+read as a script**. So the fidelity contract stays in `session.instructions`, exactly where
+[#222](https://github.com/milad-alizadeh/argo/issues/222) put it. Four lines, default handoff mode, v3; the
+three `codexResponseHandoffMode` values are untested.
+
+**What it costs instead.** The price moves from the meter to the build. Argo would carry a **WebRTC client
+in Swift**, drive the app-server socket [ADR-0024](./0024-session-drive-port-two-adapters.md) already uses,
+and depend on a feature whose flag reads *under development* and whose key gate carries a TODO calling
+itself temporary. The gate arrived in codex-cli 0.108.0 and was absent at 0.107.0, so the route is one
+release away from moving in either direction.
