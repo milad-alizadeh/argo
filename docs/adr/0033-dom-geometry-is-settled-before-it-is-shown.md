@@ -1,6 +1,7 @@
 # 0033 · DOM geometry is settled before it is shown
 
-Status: accepted (#1795) · 2026-09-09
+Status: accepted (#1795) · 2026-09-09 · rule 3 amended by
+[ADR-0035](./0035-awaiting-a-row-costs-what-its-renderer-costs.md)
 
 Binding on `apps/desktop`, which does not exist yet: this is the contract it is built to. It
 restates [ADR-0030](./0030-geometry-is-settled-before-it-is-shown.md) for a DOM Feed and
@@ -16,8 +17,9 @@ settled in the resolution of
 [Decide the Feed's list primitive, and whether ADR-0030 survives the DOM](https://github.com/milad-alizadeh/argo/issues/1752),
 and this file is where the repo keeps it. The one addition is rule 3's async answer, asked by
 [Decide how an async-rendered Feed row gets a final height](https://github.com/milad-alizadeh/argo/issues/1793)
-and **recorded here**: the ticket is where the question is stated, and this ADR is the only place
-the answer exists.
+and **recorded here**, as amended by
+[ADR-0035](./0035-awaiting-a-row-costs-what-its-renderer-costs.md): the ticket is where the
+question is stated, and these two files are where the answer lives.
 
 ## Context
 
@@ -103,6 +105,18 @@ change on the path from the anchor node to the scroller.
    not that the cockpit freezes. `scheduler.yield()` ships in Chromium 152, the tree Electron 44
    pins, so a chunked pass that keeps the window responsive satisfies this rule exactly as a
    blocking one does.
+
+   **Amended by [ADR-0035](./0035-awaiting-a-row-costs-what-its-renderer-costs.md)**, which prices
+   the await against a real corpus and changes three things in this rule: a code block is not
+   highlighted first, because highlighting moves no height; an image reserves its box rather than
+   being awaited; and a mermaid fence that fails to render is drawn as its own source in a code
+   block rather than falling to the `unreadable` formula. It also adds two requirements on the same
+   pass: the Feed's served prose face must be metric-matched to its fallback, or a face arriving
+   after the pass moves a settled paragraph; and the measurement container itself measures 0 px
+   under size containment, so only the inner element may be read. **The mermaid await above is not
+   confirmed by that measurement — it is reopened by it.** It stands as written and is known to cost
+   2 990 to 3 878 ms for ten real diagrams; which of ADR-0035's three doors replaces it is the
+   product call #1793 reserves.
 
 4. **Kept decks stay at 6, LRU, and heights stay for every Session opened this launch.** The cap
    is a stored setting, not a constant in a component: it is the DOM successor to the Swift app's
@@ -208,6 +222,9 @@ make it.
 - Rule 3's await makes the pass's length a function of the slowest asynchronous row in the
   reading, and mermaid's render cost is unmeasured. #1793 asked for that measurement; it is now
   the pass's cost, not a separate question about one row shape.
+  **[ADR-0035](./0035-awaiting-a-row-costs-what-its-renderer-costs.md) has since measured it**: ten
+  real diagrams cost between 2 990 ms and 3 878 ms, and the worst single one 744 ms at its best and
+  879 ms typically. That is what rule 3's freedom to chunk now has to buy.
 - **The height store is keyed on all three invalidators, not on width alone**: `(Session, width,
   font, zoom)` for the launch. Rule 6 names the set, and a two-part key cannot notice the other
   two, so a cached height that outlives a font or zoom change would be a defect the key itself
