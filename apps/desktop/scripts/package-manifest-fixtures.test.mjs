@@ -110,6 +110,21 @@ describe('the assertion the release verdict carries', () => {
     }
   })
 
+  // The case the ticket's cited `outputPaths.length === 0` guard exists for: nothing was packaged.
+  // It has to leave the same record as a package that read wrong, not a stack trace and no
+  // assertion at all.
+  test('fails when the package cannot be read', async () => {
+    const fixture = await fixtureWithItsOwnManifest()
+    try {
+      rmSync(fixture.resources, { recursive: true })
+      const assertion = packageManifestAssertion(fixture.appPath, fixture.manifestPath)
+      expect(assertion.passed).toBe(false)
+      expect(assertion.differences[0]).toContain('nothing was read')
+    } finally {
+      fixture.dispose()
+    }
+  })
+
   test('fails when the manifest itself cannot be read', async () => {
     const fixture = await fixtureApp()
     try {

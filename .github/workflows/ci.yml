@@ -80,32 +80,33 @@ jobs:
       # manifest's likeliest regression is a lockfile refresh, and a dependency bump may touch no
       # `apps/desktop` file at all, so the filter the macOS job carries would be wrong here.
       #
-      # Forge packages for darwin on Linux: @electron/packager downloads the darwin Electron zip
-      # and the asar entry list is plain JavaScript over the built app. Nothing here signs,
-      # notarizes or builds the DMG, and none of that is what the manifest reads. The macOS job
-      # re-reads the same manifest off the app it packages, because signing itself adds files.
+      # Forge packages for darwin on Linux, and the asar entry list is plain JavaScript over the
+      # built app. Nothing here signs, notarizes or builds the DMG, and none of that is what the
+      # manifest reads. This job needs no `Install the Electron binary` step, unlike the macOS one
+      # below: a cross-platform target is never the local `node_modules/electron`, so
+      # @electron/packager downloads the darwin zip through @electron/get itself. Verified by
+      # packaging in a node:24.20.0 container.
       #
-      # x64, not the shipped arm64, and that is forced. `@electron/fuses` re-signs an ad-hoc
-      # darwin arm64 bundle after flipping the fuses, shells out to `codesign`, and on a machine
-      # with no `codesign` reads `stderr` off a spawn that never ran: `forge package --platform
-      # darwin --arch arm64` dies on Linux with "Cannot read properties of undefined (reading
-      # 'toString')". x64 takes neither branch. The manifest does not notice the difference,
-      # because `DROPPED_FROM_PACKAGE` in forge.config.ts keeps BOTH darwin prebuilds whatever
-      # architecture is asked for — Forge's `ignore` is handed a file with no architecture in hand.
-      # So the two readings are the same list, and the macOS job below reads the shipped arm64 one.
+      # x64, not the shipped arm64, and that is forced: @electron/fuses re-signs an ad-hoc darwin
+      # arm64 bundle through `codesign`, so arm64 packaging dies on a machine that has none. x64
+      # takes neither branch, and the manifest does not notice, because `DROPPED_FROM_PACKAGE` in
+      # forge.config.ts keeps BOTH darwin prebuilds whatever architecture is asked for. A test in
+      # `package-manifest.test.mjs` holds that invariant; the macOS job reads the shipped arm64.
       #
       # This job's `name:` is `main`'s required status check, matched literally, and renaming it
       # strands every open pull request on a check that never reports (#1733). So the name still
       # says what it said before this step arrived.
-      - name: Package for darwin
+      - id: package
+        name: Package for darwin
         if: ${{ !cancelled() }}
         working-directory: apps/desktop
         run: bun run package --platform darwin --arch x64
 
-      # `success()`, not `!cancelled()`: this is strictly downstream of the package above, and
-      # running it after a failed one reports "no Contents/Resources" over the real cause.
+      # Gated on the package step alone, not `success()`: every gate above runs even after an
+      # earlier one fails, so a lint error must not take the manifest verdict with it. What this
+      # cannot survive is a failed package, which reports "no Contents/Resources" over the cause.
       - name: Package manifest
-        if: ${{ success() }}
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         working-directory: apps/desktop
         run: bun run desktop:manifest out/Argo-darwin-x64/Argo.app
 

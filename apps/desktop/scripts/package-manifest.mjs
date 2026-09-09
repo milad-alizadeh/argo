@@ -15,7 +15,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
-import asar from '@electron/asar'
+import { asarEntryList, resourcesDir } from './packaged-pty-checks.mjs'
 
 export const MANIFEST_PATH = path.resolve(import.meta.dirname, '..', 'package-manifest.json')
 
@@ -41,10 +41,6 @@ export function normalisedEntry(entry) {
   return entry.replace(CONTENT_HASH, '-[hash]$1')
 }
 
-function resourcesDirectory(appPath) {
-  return path.join(appPath, 'Contents', 'Resources')
-}
-
 // Every file under `root`, as a path relative to it with forward slashes. Directories are not
 // listed: an empty one ships nothing, and a directory that holds a file is named by that file.
 function filesUnder(root, prefix = '') {
@@ -65,17 +61,10 @@ function existingDirectory(target) {
   }
 }
 
-// The asar's own entry list, directories included. That is the list the ticket names, and an asar
-// carries a real directory record, so a new directory is a difference worth showing.
-function asarEntries(appPath) {
-  const asarPath = path.join(resourcesDirectory(appPath), ASAR)
-  return asar.listPackage(asarPath).map((entry) => entry.replace(/^[\\/]/, ''))
-}
-
 // Anything under Contents/Resources that is neither the asar nor the unpacked tree: Forge's
 // `extraResource` copies land here, and so would a signing artifact left behind.
 function extraResourceFiles(appPath) {
-  const resources = resourcesDirectory(appPath)
+  const resources = resourcesDir(appPath)
   const files = []
   for (const entry of readdirSync(resources, { withFileTypes: true })) {
     if (entry.name === ASAR || entry.name === UNPACKED) continue
@@ -85,13 +74,15 @@ function extraResourceFiles(appPath) {
   return files
 }
 
+// The asar entry list keeps its directories: an asar carries a real directory record, so a new
+// directory in it is a difference worth showing. The two filesystem readings list files alone.
 export function readPackagedManifest(appPath) {
-  const resources = resourcesDirectory(appPath)
+  const resources = resourcesDir(appPath)
   if (!existingDirectory(resources))
     throw new Error(`no Contents/Resources under ${appPath}, so nothing was read`)
   const unpacked = path.join(resources, UNPACKED)
   return {
-    asar: asarEntries(appPath).map(normalisedEntry).sort(),
+    asar: asarEntryList(path.join(resources, ASAR)).map(normalisedEntry).sort(),
     unpacked: existingDirectory(unpacked) ? filesUnder(unpacked).sort() : [],
     extraResources: extraResourceFiles(appPath).sort(),
   }
@@ -146,9 +137,24 @@ export function manifestDifferences(expected, actual) {
 // The one assertion the release verdict carries for the package contents (#1788). It is a value
 // rather than an exit code, so the verdict holds what was compared and not merely that something
 // passed; the callers turn it into an exit code themselves.
+//
+// Nothing here throws, including an app that was never packaged. A check that never ran must be
+// as loud as one that ran and failed, and a stack trace with no assertion behind it is a silence.
 export function packageManifestAssertion(appPath, manifestPath = MANIFEST_PATH) {
+  const refused = (differences) => ({
+    name: 'packageManifest',
+    passed: false,
+    appPath,
+    differences,
+  })
   const { manifest, failures } = readCheckedInManifest(manifestPath)
-  if (!manifest) return { name: 'packageManifest', passed: false, appPath, differences: failures }
-  const differences = manifestDifferences(manifest, readPackagedManifest(appPath))
+  if (!manifest) return refused(failures)
+  let packaged
+  try {
+    packaged = readPackagedManifest(appPath)
+  } catch (error) {
+    return refused([error.message])
+  }
+  const differences = manifestDifferences(manifest, packaged)
   return { name: 'packageManifest', passed: differences.length === 0, appPath, differences }
 }

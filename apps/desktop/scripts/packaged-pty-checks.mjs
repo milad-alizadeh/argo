@@ -70,7 +70,7 @@ export function archOfBinary(appPath) {
   return CPU_TYPE.get(header.readUInt32LE(4)) ?? null
 }
 
-function resourcesDir(appPath) {
+export function resourcesDir(appPath) {
   return path.join(appPath, 'Contents', 'Resources')
 }
 
@@ -87,9 +87,15 @@ function statOrNull(target) {
 }
 
 // The asar header lists unpacked entries too, so this answers "is node-pty in the package at
-// all", which is the question Forge's silent walker failure makes necessary.
+// all", which is the question Forge's silent walker failure makes necessary. `listPackage` leads
+// every entry with a separator; stripping it is a fact about @electron/asar, and #1806 reads the
+// same list to compare it against the checked-in manifest, so it is stated once here.
+export function asarEntryList(asarPath) {
+  return asar.listPackage(asarPath).map((entry) => entry.replace(/^[\\/]/, ''))
+}
+
 function asarEntries(asarPath) {
-  return new Set(asar.listPackage(asarPath).map((entry) => entry.replace(/^[\\/]/, '')))
+  return new Set(asarEntryList(asarPath))
 }
 
 function presenceFailures(asarPath, arch) {
