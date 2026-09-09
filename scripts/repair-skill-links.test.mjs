@@ -10,6 +10,7 @@ import {
   readlinkSync,
   rmSync,
   symlinkSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -66,7 +67,11 @@ check('preserves a same-named symlink with a different target', () => {
   const skill = installBrokenSkill(root, 'shared')
   const nested = path.join(skill, 'shared')
   const payload = path.join(root, 'payload')
-  rmSync(nested)
+  // `unlinkSync`, never `rmSync`: `nested` is the self-link the repair exists to remove, so
+  // resolving it is ELOOP. Node 23.5.0's `rmSync` follows before it unlinks and returns having
+  // deleted nothing, and the `symlinkSync` below then fails EEXIST — a green test on 24.20.0 and
+  // a red one here, for a reason that has nothing to do with what is under test.
+  unlinkSync(nested)
   mkdirSync(payload)
   symlinkSync(payload, nested)
 

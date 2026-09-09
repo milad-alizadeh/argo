@@ -123,9 +123,10 @@ PR body that it was checked by hand or not at all.
 #1340 removed a `macos-26` CI job because it "billed about 99% of this repo's Actions spend". That
 figure is the **gross** column of the billing page. The **billed** column is $0, every day, on the
 `Actions macOS 3-core` SKU, because standard GitHub-hosted runners are free and unlimited on public
-repositories and `argo` is public. Never quote the old number. When `apps/desktop` needs CI, a
-macOS job is affordable; design around the two real limits instead, 5 concurrent macOS jobs on
-GitHub Free and no secrets on a fork PR.
+repositories and `argo` is public. Never quote the old number. `apps/desktop` runs a macOS job
+today on that basis (#1769); design around the two real limits instead, 5 concurrent macOS jobs on
+GitHub Free and no secrets on a fork PR — so a fork can build and read the fuse wire back, but
+cannot sign.
 
 ### Landing
 
