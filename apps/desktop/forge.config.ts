@@ -1,4 +1,4 @@
-import { FuseV1Options, FuseVersion } from '@electron/fuses'
+import { FuseVersion } from '@electron/fuses'
 import { MakerDMG } from '@electron-forge/maker-dmg'
 import { MakerZIP } from '@electron-forge/maker-zip'
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives'
@@ -6,6 +6,8 @@ import { FusesPlugin } from '@electron-forge/plugin-fuses'
 import { VitePlugin } from '@electron-forge/plugin-vite'
 import type { ForgeConfig } from '@electron-forge/shared-types'
 import { assertPackagedPty } from './scripts/assert-packaged-pty.mjs'
+import { entitlementsPlistFor } from './scripts/entitlements.mjs'
+import { PRODUCTION_FUSE_PROFILE } from './scripts/fuse-profile.mjs'
 import { productionInstall } from './scripts/production-install.mjs'
 
 // Forge owns the whole desktop lifecycle: start, package, make, sign, publish. Not the native
@@ -49,6 +51,17 @@ const APP_NAME = 'Argo'
 // because whether the plugin merges with this list or overwrites it is not a promise it makes.
 const UNPACK_GLOB = '**/node_modules/node-pty/**'
 
+// Signing and notarization are driven by the environment, because a package with no identity has
+// to keep working: CI's Linux tier reads the manifest off an unsigned darwin package (#1806), and
+// a fork pull request receives no secrets at all. What that build produces is a verdict recording
+// `signed: false`, which the release path refuses — a different verdict rather than an absent one
+// (ADR-0036 rule 5). The release workflow is the only caller that sets these.
+const signingIdentity = process.env.ARGO_SIGNING_IDENTITY
+const signingKeychain = process.env.ARGO_SIGNING_KEYCHAIN
+const notarizeApiKey = process.env.ARGO_NOTARIZE_API_KEY
+const notarizeApiKeyId = process.env.ARGO_NOTARIZE_API_KEY_ID
+const notarizeApiIssuer = process.env.ARGO_NOTARIZE_API_ISSUER
+
 const packagerConfig: NonNullable<ForgeConfig['packagerConfig']> = {
   // ASAR is required by the two integrity fuses below.
   asar: { unpack: UNPACK_GLOB },
@@ -67,6 +80,30 @@ const packagerConfig: NonNullable<ForgeConfig['packagerConfig']> = {
     if (!KEPT_IN_PACKAGE.some((kept) => kept.test(file))) return true
     return DROPPED_FROM_PACKAGE.some((dropped) => dropped.test(file))
   },
+  ...(signingIdentity
+    ? {
+        osxSign: {
+          identity: signingIdentity,
+          ...(signingKeychain ? { keychain: signingKeychain } : {}),
+          // Total over every path the walk yields. `entitlementsPlistFor` ends in an
+          // unconditional return for the reason spelled out there: a path with no answer takes
+          // @electron/osx-sign's own wide default plist, which is the widening #1771 exists to
+          // stop. Returning `entitlements` alone keeps `hardenedRuntime: true` from the defaults.
+          optionsForFile: (filePath: string) => ({
+            entitlements: entitlementsPlistFor(filePath, APP_NAME),
+          }),
+        },
+      }
+    : {}),
+  ...(notarizeApiKey && notarizeApiKeyId && notarizeApiIssuer
+    ? {
+        osxNotarize: {
+          appleApiKey: notarizeApiKey,
+          appleApiKeyId: notarizeApiKeyId,
+          appleApiIssuer: notarizeApiIssuer,
+        },
+      }
+    : {}),
 }
 
 const config: ForgeConfig = {
@@ -109,12 +146,12 @@ const config: ForgeConfig = {
       // before it knows the target, and an ad-hoc re-signature of a darwin x64 bundle is
       // unnecessary rather than wrong — nothing here builds one.
       resetAdHocDarwinSignature: process.platform === 'darwin' && !packagerConfig.osxSign,
-      [FuseV1Options.RunAsNode]: false,
-      [FuseV1Options.EnableCookieEncryption]: false,
-      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
-      [FuseV1Options.EnableNodeCliInspectArguments]: false,
-      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-      [FuseV1Options.OnlyLoadAppFromAsar]: true,
+      // All nine named, and `strictlyRequireAllFuses` refuses a build that leaves one to inherit.
+      // #1757 wrote the profile out fuse by fuse for this: an Electron upgrade that adds a fuse
+      // must be a decision here rather than a default that arrives quietly. The three that keep
+      // their default value are named for the same reason.
+      strictlyRequireAllFuses: true,
+      ...PRODUCTION_FUSE_PROFILE,
     }),
   ],
   hooks: {

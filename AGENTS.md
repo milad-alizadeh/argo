@@ -40,6 +40,15 @@ composite action reads `node-version-file: .node-version`, and nothing now check
 that failed on a literal version anywhere went with the hook suite, so a hard-coded version in a
 workflow is caught by review or not at all.
 
+**A desktop release publishes only on a passing verdict** (#1807, ADR-0036). `release.yml` is
+`workflow_dispatch` only, signs and notarizes, writes one `release-verdict.json` naming the SHA-256
+of every artifact it judged, and creates the release as a draft that a later step flips. A
+published release cannot be unpublished — GitHub freezes `draft` and `tag_name`, so `DELETE` is the
+only removal and it burns the tag name forever — so `release-backstop.yml` runs on
+`release: [published]`, files an issue with the evidence and then deletes the release. The
+certificate, the App Store Connect key, the `release` Environment and the immutable-releases
+setting are the human's, and the checklist is in `apps/desktop/README.md`.
+
 **`apps/macOS` is deprecated and verified by nothing.** No build, test, screenshot or render. A
 Swift change says in the PR body that it was checked by hand, or not at all.
 

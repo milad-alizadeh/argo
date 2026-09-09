@@ -7,7 +7,9 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { FuseV1Options } from '@electron/fuses'
 import { CYCLES, RESULT_PREFIX, SKIP_ENDURANCE_ENV } from './acceptance-protocol.mjs'
+import { PRODUCTION_FUSE_PROFILE } from './fuse-profile.mjs'
 
 const desktopRoot = path.resolve(import.meta.dirname, '..')
 const repoRoot = path.resolve(desktopRoot, '..', '..')
@@ -85,8 +87,12 @@ describe('forge.config.ts', () => {
     expect(config).toContain("'**/node_modules/node-pty/**'")
   })
 
+  // The fuse values moved out to `fuse-profile.mjs` under #1807, so that the config and the
+  // release verdict's read-back name the same nine fuses once. This asserts the value where it now
+  // lives, and that the config still spreads it — a profile nothing reads is not a fuse setting.
   test('keeps OnlyLoadAppFromAsar on', () => {
-    expect(config).toContain('[FuseV1Options.OnlyLoadAppFromAsar]: true')
+    expect(PRODUCTION_FUSE_PROFILE[FuseV1Options.OnlyLoadAppFromAsar]).toBe(true)
+    expect(config).toContain('...PRODUCTION_FUSE_PROFILE')
   })
 
   // The checks are only a gate while they are on the path every artifact takes.

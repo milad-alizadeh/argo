@@ -1,0 +1,295 @@
+# The whole release path for `apps/desktop`, and the only thing that publishes one (ADR-0036,
+# #1807). Nothing hand-publishes, because nothing native gates a publish: rulesets target refs,
+# required status checks gate a protected-branch change, and environment rules gate a job. None of
+# them sees the draft-to-published transition. What is left is a positive artifact, so this
+# workflow publishes only on a `release-verdict.json` that names the bytes it judged.
+#
+# A dispatch rather than a tag push. A tag is permanent, and a failed build would leave one
+# pointing at bytes that never shipped; a draft creates no tag, so the ref appears in the same call
+# that the passing verdict authorises. A failure leaves no tag, no release and no assets, and the
+# workflow run is the permanent record.
+#
+# The macOS runner is free: standard GitHub-hosted runners are unlimited on public repositories,
+# and `argo` is public. AGENTS.md holds that correction in full.
+#
+name: release desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without a leading v (for example 1.2.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # One release at a time. Two runs racing would both try to claim the same tag name, and a burned
+  # name cannot be reused by the loser.
+  group: release-desktop
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: build · verify · publish
+    runs-on: macos-26
+    timeout-minutes: 60
+    # The signing certificate, its password and the notarization credentials live here rather than
+    # in plain repository secrets, which any workflow file a pull request adds could read.
+    environment: release
+    permissions:
+      contents: write
+      # The provenance attestation. `attestations: write` is not grantable on a fork pull request
+      # run, which is what makes the fork boundary structural rather than conventional.
+      id-token: write
+      attestations: write
+    env:
+      TAG: v${{ inputs.version }}
+      # Every artifact the release carries, gathered in one place so the verdict, the attestation
+      # and the upload all name the same set.
+      RELEASE_DIR: apps/desktop/out/release
+    steps:
+      - uses: actions/checkout@v5
+
+      # Before anything is built. A tag that already exists means the version is spent — either it
+      # shipped, or an immutable release on that name was deleted and GitHub refuses the name
+      # forever. Both need a different number, and finding that out after a 40-minute build and a
+      # notarization round trip is finding it out too late.
+      - name: Refuse a version that is already spent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$VERSION' is not a semantic version. update.electronjs.org skips a release whose tag is not valid semver." >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            echo "::error::$TAG already exists. A tag name used by an immutable release is refused forever, even after the tag ref is deleted; release the next unused patch instead." >&2
+            exit 1
+          fi
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+
+      # Also before anything is built. The notes are a committed changelog entry, which is what
+      # lets a release be rebuilt without retyping them; `/release-argo` (#1808) writes it.
+      - name: Read the release notes
+        shell: bash
+        run: node apps/desktop/scripts/changelog-entry.mjs "$VERSION" > "$RUNNER_TEMP/release-notes.md"
+        env:
+          VERSION: ${{ inputs.version }}
+
+      - uses: ./.github/actions/setup
+
+      # Electron 44 ships no `postinstall`, so `bun install` leaves no Electron binary at all.
+      # Bun's linker decides whether the root or apps/desktop holds `electron`, so probe both.
+      - name: Install the Electron binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in node_modules apps/desktop/node_modules; do
+            if [ -f "$root/electron/install.js" ]; then
+              node "$root/electron/install.js"
+              exit 0
+            fi
+          done
+          echo "no electron/install.js under node_modules or apps/desktop/node_modules" >&2
+          exit 1
+
+      # A keychain of this job's own, so the certificate never touches the login keychain and dies
+      # with the runner. `set-key-partition-list` is what stops codesign blocking on a UI prompt
+      # that nobody is there to answer.
+      - name: Import the signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/argo-signing.keychain-db"
+          password="$(openssl rand -base64 24)"
+          echo "ARGO_SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          rm -f "$RUNNER_TEMP/certificate.p12"
+        env:
+          CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+
+      # notarytool reads the App Store Connect key off disk, so it has to be a file rather than an
+      # environment variable.
+      - name: Write the notarization key
+        shell: bash
+        run: |
+          set -euo pipefail
+          key="$RUNNER_TEMP/notarize.p8"
+          printf '%s' "$NOTARIZE_KEY" | base64 --decode > "$key"
+          chmod 600 "$key"
+          echo "ARGO_NOTARIZE_API_KEY=$key" >> "$GITHUB_ENV"
+        env:
+          NOTARIZE_KEY: ${{ secrets.APPLE_API_KEY_P8 }}
+
+      # `forge make` packages, signs, notarizes, staples and then builds the DMG and the ZIP.
+      # Signing is driven by the environment: `forge.config.ts` wires `osxSign` and `osxNotarize`
+      # only when these are set, so every other caller keeps packaging unsigned.
+      - name: Make the signed, notarized arm64 release
+        working-directory: apps/desktop
+        run: bun run make --arch arm64
+        env:
+          ARGO_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          ARGO_NOTARIZE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ARGO_NOTARIZE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+
+      # Again, against the signed app. The `postPackage` hook ran before anything signed, and a
+      # re-signature can invalidate what the package proved.
+      - name: Assert the signed app
+        working-directory: apps/desktop
+        run: bun run assert:packaged out/Argo-darwin-arm64/Argo.app
+
+      # The #1749 acceptance boundary inside the shipped, signed binary. `--json` writes the
+      # outcomes for the verdict to read, so a failing run reaches it as a failing assertion rather
+      # than as a missing one.
+      - name: Run the signed app
+        working-directory: apps/desktop
+        run: node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package --json out/packaged-pty-acceptance.json
+
+      # Forge's makers write into a tree whose shape is theirs, not ours. Gathering the two
+      # artifacts into one directory first means the verdict, the attestation and the upload cannot
+      # disagree about what this release is. Exactly one of each: two ZIPs would leave which bytes
+      # a user receives up to GitHub's list order, and the verdict refuses that too.
+      - name: Gather the artifacts
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+          zips=(out/make/**/*.zip)
+          dmgs=(out/make/**/*.dmg)
+          if [ ${#zips[@]} -ne 1 ] || [ ${#dmgs[@]} -ne 1 ]; then
+            echo "::error::expected one ZIP and one DMG under out/make; found ${#zips[@]} and ${#dmgs[@]}." >&2
+            exit 1
+          fi
+          mkdir -p out/release
+          cp "${zips[0]}" "${dmgs[0]}" out/release/
+          ls -l out/release
+
+      # Every assertion, in one document, keyed to the SHA-256 of every artifact it judged: the
+      # fuse wire (#1757), the entitlements read-back (#1771), the acceptance run (#1769), the
+      # package manifest (#1806), `signed` and `notarized` as explicit booleans, and the updater's
+      # asset-name rule. The publish below reads `passed` off this and nothing else.
+      - name: Write the release verdict
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun run desktop:verdict --version "$VERSION" \
+            --acceptance out/packaged-pty-acceptance.json \
+            --out out/release-verdict.json \
+            out/release/*
+        env:
+          VERSION: ${{ inputs.version }}
+
+      # The verdict goes to the job summary and a workflow artifact whether it passed or failed.
+      # A failing run leaves no release behind, so this is the whole record of it.
+      - name: Record the verdict
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          verdict=apps/desktop/out/release-verdict.json
+          if [ ! -f "$verdict" ]; then
+            echo "### No release verdict was written" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "### Release verdict for $TAG"
+            echo
+            echo '```json'
+            cat "$verdict"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the verdict on the run
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: release-verdict-${{ inputs.version }}
+          path: apps/desktop/out/release-verdict.json
+          if-no-files-found: warn
+
+      # Argo attesting the build. GitHub's own release attestation, which publishing generates, is
+      # a different claim: only this one names the workflow that produced the bytes. Verification
+      # pins `--signer-workflow` and `--source-ref`, never `--repo` alone, which answers only "some
+      # workflow in this repository".
+      - name: Attest the artifacts
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: ${{ env.RELEASE_DIR }}/*
+
+      # Only now, and only on a passing verdict. A draft is invisible to `update.electronjs.org`,
+      # which filters drafts in its own source, and it creates no tag — so everything up to the
+      # publish below is retractable at no cost to a user.
+      - name: Draft the release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            --draft \
+            --target "$GITHUB_SHA" \
+            --title "Argo $VERSION" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            apps/desktop/out/release-verdict.json \
+            "$RELEASE_DIR"/*
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+
+      # The publish, which is also what creates the tag.
+      - name: Publish
+        shell: bash
+        run: gh release edit "$TAG" --draft=false
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Immutability is a repository setting that no API exposes, so the only assertable form is
+      # the per-release boolean — the release this job just made, not the repository it made it in.
+      # A release that came out mutable means the setting is off and the verdict's hash list is
+      # true-at-the-time rather than permanently true.
+      - name: Read the release back
+        shell: bash
+        run: |
+          set -euo pipefail
+          immutable=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq .immutable)
+          echo "immutable=$immutable"
+          if [ "$immutable" != "true" ]; then
+            echo "::warning::$TAG is not immutable. Turn on Settings → General → Releases → immutable releases; no API and no ruleset can set it." >&2
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # A draft that outlives a failed run is a draft somebody can publish, which is the hole this
+      # whole design closes. It carries no tag, so deleting it leaves nothing behind and spends no
+      # version number.
+      - name: Delete the draft a failure left behind
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null | grep -q true; then
+            gh release delete "$TAG" --yes
+            echo "deleted the draft $TAG"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Remove the signing keychain
+        if: always()
+        shell: bash
+        run: |
+          security list-keychains -d user -s login.keychain-db || true
+          rm -f "$ARGO_SIGNING_KEYCHAIN" "$ARGO_NOTARIZE_API_KEY"

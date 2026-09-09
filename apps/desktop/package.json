@@ -12,6 +12,7 @@
     "prove:pty": "node ../../scripts/node-version-gate.mjs && node scripts/prove-packaged-pty.mjs",
     "assert:packaged": "node ../../scripts/node-version-gate.mjs && node scripts/assert-packaged-pty.mjs",
     "desktop:manifest": "node ../../scripts/node-version-gate.mjs && node scripts/desktop-manifest.mjs",
+    "desktop:verdict": "node ../../scripts/node-version-gate.mjs && node scripts/write-release-verdict.mjs",
     "test": "bun test"
   },
   "dependencies": {
