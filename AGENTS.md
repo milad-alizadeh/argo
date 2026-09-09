@@ -12,11 +12,13 @@ Everything here is a fact about this repository. Process belongs to the skill th
   screenshot goes in the issue body, and in the PR body when a screen changes. Every issue is
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
+  Before triage, read `docs/agents/triage-labels.md`.
 - **House engineering rules** — `rules/`. **Nothing loads these for you.** Before your first
   edit, read the one whose `paths:` frontmatter matches what you are about to touch: `house.md`
   matches everything, `swift.md` only `apps/macOS/**/*.swift`. The arithmetic behind them is
   `biome.jsonc`, not prose.
-- **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`. Nothing loads it. Read the one
+- **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
+  Before domain exploration, read `docs/agents/domain.md`. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.
   Code comments cite it as `CONTEXT.md L1 · Binding`. Change a term only after
   `docs/domain/rationale.md`. A concept the model does not name is a signal: either the name is
@@ -30,6 +32,8 @@ Everything here is a fact about this repository. Process belongs to the skill th
   included. It runs on the draft, not as a cleanup pass afterwards.
 
 ## Gates
+
+Before code review, read `docs/agents/code-review.md` for repository references and focused-test boundaries.
 
 **CI is the only gate**, and there is no push-time one. `.github/workflows/ci.yml` names every
 step it runs on Linux and `bun run quality` is the local subset; read the step list there, never
