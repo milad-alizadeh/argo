@@ -1,6 +1,7 @@
 // One composer direction after the blind UX and visual reviews selected the single-surface layout.
 import {
   ArrowRight,
+  ArrowDown,
   ArrowUp,
   Bot,
   BrainCircuit,
@@ -9,14 +10,14 @@ import {
   CircleGauge,
   Command,
   CornerDownRight,
-  Ellipsis,
   File,
   Folder,
-  Gauge,
+  CalendarClock,
   GripVertical,
   Info,
   Mic,
   Paperclip,
+  Pencil,
   Plus,
   RotateCcw,
   ShieldCheck,
@@ -79,6 +80,7 @@ import { Progress } from '@/renderer/components/ui/progress'
 
 type HarnessKey = 'codex' | 'claude'
 type VariantKey = 'A' | 'B' | 'C' | 'D' | 'E'
+type ContextPreview = 'smart' | 'warning' | 'dumb'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
 
@@ -97,6 +99,7 @@ type ComposerState = {
   effort: string
   permission: string
   attachments: string[]
+  contextPreview: ContextPreview
 }
 
 type StateProps = {
@@ -188,8 +191,7 @@ function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; c
 }
 
 function contextPercentage(state: ComposerState) {
-  const context = HARNESSES[state.harness].context
-  return Math.round((context.used / context.total) * 100)
+  return { smart: 14, warning: 30, dumb: 74 }[state.contextPreview]
 }
 
 function contextZone(percentage: number) {
@@ -432,6 +434,7 @@ function ContextPopover({
   const smartZonePercentage = 20
   const zone = contextZone(percentage)
   const contextStatus = zone.label
+  const used = Math.round(context.total * percentage / 100)
   const claudeComposition = [
     { label: 'Conversation', value: '86k', percentage: 71 },
     { label: 'System prompt', value: '16k', percentage: 13 },
@@ -455,79 +458,95 @@ function ContextPopover({
         ) : <Info className="size-4" />}
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[28rem] gap-4 p-4">
-        <PopoverHeader>
-          <PopoverTitle className="flex items-center gap-2">
-            Context health
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
-          </PopoverTitle>
-          <PopoverDescription>
-            Current context compared with the working smart-zone target.
-          </PopoverDescription>
-        </PopoverHeader>
-
-        <div className="rounded-xl border p-3">
-          <div className="flex items-end justify-between">
-            <div>
-              <div className="text-xs font-medium text-muted-foreground">Active context</div>
-              <div className="mt-1 text-xl font-semibold tabular-nums">
-                {(context.used / 1000).toFixed(0)}k <span className="text-sm font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k</span>
+        {meterStyle === 'gradient' ? (
+          <>
+            <PopoverHeader>
+              <PopoverTitle className="flex items-center gap-2">
+                Why context quality changes
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
+              </PopoverTitle>
+              <PopoverDescription>Capacity and useful attention are not the same measurement.</PopoverDescription>
+            </PopoverHeader>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3">
+                <div className="text-xs font-semibold">Smart Zone</div>
+                <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                  Early context is focused. The model can weigh instructions and recent decisions more reliably.
+                </p>
+              </div>
+              <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-3">
+                <div className="text-xs font-semibold">Dumb Zone</div>
+                <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                  More history still fits, but noise and stale decisions can weaken attention before the window is full.
+                </p>
               </div>
             </div>
-            <div className="text-right text-xs">
-              <div className="font-medium">Smart Zone ~{smartZonePercentage}%</div>
-              <div className="text-muted-foreground">Current · {percentage}% used</div>
-            </div>
-          </div>
-          <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
-            <div
-              className={`absolute inset-y-0 left-0 ${meterStyle === 'gradient' ? 'bg-gradient-to-r from-emerald-500 via-amber-400 to-red-500' : zone.fill}`}
-              style={{ width: `${percentage}%` }}
-            />
-            <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${smartZonePercentage}%` }} />
-          </div>
-          <p className="mt-2 text-xs leading-4 text-muted-foreground">
-            This session is in the {contextStatus}. Compact or hand off before starting another substantial phase.
-          </p>
-        </div>
-
-        {meterStyle === 'solid' ? (
-          <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20%</span>
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
-          </div>
-        ) : null}
-
-        {state.harness === 'claude' ? (
-          <div className="grid gap-2">
-            <div className="flex items-center">
-              <span className="text-xs font-semibold">What is loaded</span>
-              <span className="ml-auto text-[10px] text-muted-foreground">Sample /context · 35k static load</span>
-            </div>
-            {claudeComposition.map((item) => (
-              <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2 text-xs">
-                <span className="text-muted-foreground">{item.label}</span>
-                <Progress value={item.percentage} className="h-1.5" />
-                <span className="text-right tabular-nums">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        <p className="text-[10px] leading-4 text-muted-foreground">
-          The 20% boundary is a workflow target, not a model guarantee.
-        </p>
-        {percentage >= 70 && appearance === 'compact' && (
-          <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
-            <p className="text-xs text-muted-foreground">
-              Compact this task before the next large change.
+            <p className="rounded-lg bg-muted/60 p-3 text-xs leading-4 text-muted-foreground">
+              The shorthand comes from context-engineering discussions by Dex Horthy and was later documented by Matt Pocock. We use 20% as a working target, not a model guarantee.
             </p>
+          </>
+        ) : (
+          <>
+            <PopoverHeader>
+              <PopoverTitle className="flex items-center gap-2">
+                Context health
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
+              </PopoverTitle>
+              <PopoverDescription>Current context compared with the working smart-zone target.</PopoverDescription>
+            </PopoverHeader>
+            <div className="rounded-xl border p-3">
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground">Active context</div>
+                  <div className="mt-1 text-xl font-semibold tabular-nums">
+                    {(used / 1000).toFixed(0)}k <span className="text-sm font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k</span>
+                  </div>
+                </div>
+                <div className="text-right text-xs">
+                  <div className="font-medium">Smart Zone ~{smartZonePercentage}%</div>
+                  <div className="text-muted-foreground">Current · {percentage}% used</div>
+                </div>
+              </div>
+              <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
+                <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
+                <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${smartZonePercentage}%` }} />
+              </div>
+              <p className="mt-2 text-xs leading-4 text-muted-foreground">
+                This session is in the {contextStatus}. Compact or hand off before starting another substantial phase.
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20%</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
+            </div>
+            {state.harness === 'claude' ? (
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <span className="text-xs font-semibold">What is loaded</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Sample /context · 35k static load</span>
+                </div>
+                {claudeComposition.map((item) => (
+                  <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <Progress value={item.percentage} className="h-1.5" />
+                    <span className="text-right tabular-nums">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <p className="text-[10px] leading-4 text-muted-foreground">The 20% boundary is a workflow target, not a model guarantee.</p>
+          </>
+        )}
+        {meterStyle === 'solid' && percentage >= 70 && appearance === 'compact' ? (
+          <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
+            <p className="text-xs text-muted-foreground">Compact this task before the next large change.</p>
             <div className="ml-auto flex shrink-0 gap-2">
               <Button size="sm"><RotateCcw />Compact</Button>
               <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
             </div>
           </div>
-        )}
+        ) : null}
       </PopoverContent>
     </Popover>
   )
@@ -536,7 +555,7 @@ function ContextPopover({
 function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' | 'footer' | 'attached' }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
-  const used = `${(context.used / 1000).toFixed(0)}k`
+  const used = `${(context.total * percentage / 100 / 1000).toFixed(0)}k`
   const zone = contextZone(percentage)
   const status = zone.label
 
@@ -571,27 +590,26 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
 
   if (layout === 'attached') {
     return (
-      <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-muted/40 px-4 pb-2.5 pt-3 shadow-md shadow-foreground/10">
+      <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-background px-4 py-3 shadow-md shadow-foreground/10">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
-          <div className="flex items-center gap-1 text-xs font-semibold">
-            Context · {status} · {percentage}%
-            <ContextPopover state={state} appearance="details" meterStyle="gradient" />
-          </div>
-          <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
+          <div className="text-xs font-semibold">Context · {status}</div>
         </div>
-        <div className="min-w-28 flex-1">
-          <div className="relative h-2 overflow-hidden rounded-full bg-background">
-            <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 via-amber-400 to-red-500"
-              style={{ width: `${percentage}%` }}
-            />
+        <div className="relative min-w-28 flex-1 pt-4">
+          <span className="absolute top-0 -translate-x-1/2 text-[10px] font-medium text-foreground" style={{ left: '20%' }}>
+            Smart Zone ~20%
+          </span>
+          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]" />
+            <div className="absolute inset-y-0 right-0 bg-muted" style={{ width: `${100 - percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
-        <div className="shrink-0 text-xs tabular-nums">
+        <div className="flex shrink-0 items-center gap-1 text-xs tabular-nums">
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
+          <span className="font-medium">· {percentage}%</span>
+          <ContextPopover state={state} appearance="details" meterStyle="gradient" />
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
           <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
@@ -656,6 +674,29 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
   )
 }
 
+function ContextPreviewControl({ state, setState }: StateProps) {
+  const options: { key: ContextPreview; label: string; active: string }[] = [
+    { key: 'smart', label: 'Smart', active: 'bg-emerald-500 text-white' },
+    { key: 'warning', label: 'Nearing', active: 'bg-amber-400 text-black' },
+    { key: 'dumb', label: 'Dumb', active: 'bg-red-500 text-white' },
+  ]
+  return (
+    <div className="fixed right-3 bottom-3 z-50 flex items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur">
+      <span className="px-2 text-[10px] font-medium text-muted-foreground">Context state</span>
+      {options.map((option) => (
+        <button
+          key={option.key}
+          type="button"
+          onClick={() => setState({ ...state, contextPreview: option.key })}
+          className={`rounded-full px-2.5 py-1.5 text-[10px] font-medium ${state.contextPreview === option.key ? option.active : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function VariantSwitcher({ variant }: { variant: VariantKey }) {
   const variants: { key: VariantKey; label: string }[] = [
     { key: 'A', label: 'Popover' },
@@ -689,20 +730,43 @@ function QueuePreview({
   layout,
   onSteer,
   onRemove,
+  onEdit,
+  onReorder,
 }: {
   messages: QueuedMessage[]
-  layout: 'attached' | 'inline' | 'floating' | 'integrated'
+  layout: 'attached' | 'inline' | 'floating' | 'integrated' | 'stacked'
   onSteer: (message: QueuedMessage) => void
   onRemove: (id: string) => void
+  onEdit: (message: QueuedMessage) => void
+  onReorder: (sourceId: string, targetId: string) => void
 }) {
   const message = messages[0]
   if (!message) return null
-  if (layout === 'integrated') {
+  const stacked = layout === 'integrated' || layout === 'floating' || layout === 'stacked'
+  if (stacked) {
+    const shell = {
+      integrated: 'border-b bg-background',
+      floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
+      stacked: 'mb-2 overflow-hidden rounded-xl border bg-background shadow-sm',
+      attached: '',
+      inline: '',
+    }[layout]
     return (
-      <div className="divide-y border-b bg-muted/20">
-        {messages.map((queuedMessage) => (
-          <div key={queuedMessage.id} className="flex min-h-11 items-center gap-2 px-3 py-2">
-            <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
+      <div className={shell}>
+        {layout !== 'integrated' ? (
+          <div className="border-b px-3 py-2 text-[11px] font-medium text-muted-foreground">{messages.length} queued messages</div>
+        ) : null}
+        <div className="divide-y">
+        {messages.map((queuedMessage, index) => (
+          <div
+            key={queuedMessage.id}
+            draggable
+            onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
+            className="flex min-h-11 cursor-grab items-center gap-2 px-3 py-2 active:cursor-grabbing"
+          >
+            <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
             <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(queuedMessage)}>
@@ -711,11 +775,19 @@ function QueuePreview({
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => onRemove(queuedMessage.id)}>
               <Trash2 />
             </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={`More actions for queued message: ${queuedMessage.text}`}>
-              <Ellipsis />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} />}>
+                <Pencil />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(queuedMessage)}><Pencil />Edit message</DropdownMenuItem>
+                <DropdownMenuItem disabled={index === 0} onClick={() => onReorder(queuedMessage.id, messages[index - 1]?.id ?? queuedMessage.id)}><ArrowUp />Move up</DropdownMenuItem>
+                <DropdownMenuItem disabled={index === messages.length - 1} onClick={() => onReorder(queuedMessage.id, messages[index + 1]?.id ?? queuedMessage.id)}><ArrowDown />Move down</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ))}
+        </div>
       </div>
     )
   }
@@ -738,9 +810,7 @@ function QueuePreview({
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove queued message" onClick={() => onRemove(message.id)}>
         <Trash2 />
       </Button>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label="More queue actions">
-        <Ellipsis />
-      </Button>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit queued message" onClick={() => onEdit(message)}><Pencil /></Button>
     </div>
   )
 }
@@ -751,8 +821,8 @@ function UsagePopover({ state }: { state: ComposerState }) {
   return (
     <Popover>
       <PopoverTrigger render={<InputGroupButton variant="ghost" className="gap-1.5 px-2 text-foreground" />}>
-        <Gauge className="size-4" />
-        <span className="text-xs font-medium">Usage</span>
+        <CalendarClock className="size-4" />
+        <span className="text-xs font-medium">Plan</span>
         <span className="text-xs tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
@@ -825,6 +895,7 @@ export function ComposerPrototype() {
     effort: HARNESSES.codex.efforts[1] ?? '',
     permission: HARNESSES.codex.permissions[2]?.label ?? '',
     attachments: ['$frontend-design'],
+    contextPreview: 'dumb',
   })
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
@@ -840,6 +911,22 @@ export function ComposerPrototype() {
   }
   const removeQueuedMessage = (id: string) => {
     setQueuedMessages(queuedMessages.filter((item) => item.id !== id))
+  }
+  const editQueuedMessage = (message: QueuedMessage) => {
+    setDraft(message.text)
+  }
+  const reorderQueuedMessage = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return
+    const sourceIndex = queuedMessages.findIndex((item) => item.id === sourceId)
+    const targetIndex = queuedMessages.findIndex((item) => item.id === targetId)
+    if (sourceIndex < 0 || targetIndex < 0) return
+    const nextMessages = [...queuedMessages]
+    const sourceMessage = nextMessages[sourceIndex]
+    const targetMessage = nextMessages[targetIndex]
+    if (!sourceMessage || !targetMessage) return
+    nextMessages[sourceIndex] = targetMessage
+    nextMessages[targetIndex] = sourceMessage
+    setQueuedMessages(nextMessages)
   }
 
   const send = () => {
@@ -865,11 +952,16 @@ export function ComposerPrototype() {
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
         {variant === 'C' && <div className="mx-auto w-full max-w-4xl"><ContextSurface state={state} layout="dock" /></div>}
         {variant === 'A' && (
-          <QueuePreview messages={queuedMessages} layout="attached" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />
+          <QueuePreview messages={queuedMessages} layout="attached" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
         )}
         {variant === 'C' && (
           <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />
+            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
+          </div>
+        )}
+        {variant === 'E' && (
+          <div className="mx-auto w-full max-w-4xl">
+            <QueuePreview messages={queuedMessages} layout="stacked" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
           </div>
         )}
         <form
@@ -880,8 +972,8 @@ export function ComposerPrototype() {
           }}
         >
           <InputGroup className="relative overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
-            {variant === 'B' && <QueuePreview messages={queuedMessages} layout="inline" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />}
-            {variant === 'D' && <QueuePreview messages={queuedMessages} layout="integrated" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />}
+            {variant === 'B' && <QueuePreview messages={queuedMessages} layout="inline" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />}
+            {variant === 'D' && <QueuePreview messages={queuedMessages} layout="integrated" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />}
             <ReferenceStrip state={state} setState={setState} />
             <InputGroupTextarea
               aria-label="Message"
@@ -934,6 +1026,7 @@ export function ComposerPrototype() {
         )}
       </div>
       <VariantSwitcher variant={variant} />
+      {variant === 'E' ? <ContextPreviewControl state={state} setState={setState} /> : null}
     </main>
   )
 }
