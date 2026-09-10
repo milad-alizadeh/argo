@@ -1236,12 +1236,12 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
           <form
-            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_svg]:!size-4"
+            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_svg]:!size-4"
             onSubmit={(event) => {
               event.preventDefault()
               send()
@@ -1299,7 +1299,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/40 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/40 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
