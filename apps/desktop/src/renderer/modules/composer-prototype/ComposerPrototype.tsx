@@ -913,7 +913,9 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
 function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 mx-auto w-full max-w-4xl">
-      <div className="relative z-10 rounded-2xl [&>*]:!border-border/40">{children}</div>
+      <div className="relative z-10 rounded-2xl [&>*]:!border-border/40 [&_button]:!text-sm [&_button]:!font-normal [&_span]:!text-sm [&_span]:!font-normal">
+        {children}
+      </div>
     </div>
   )
 }
@@ -1234,7 +1236,7 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-sm">
+      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-sm [&_button]:!text-sm [&_button]:!font-normal [&_span]:!text-sm [&_span]:!font-normal">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
@@ -1297,7 +1299,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/40 [&>*]:!px-4 [&>*]:!shadow-sm">
+      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/40 [&>*]:!px-4 [&>*]:!shadow-sm [&_button]:!text-sm [&_button]:!font-normal [&_span]:!text-sm [&_span]:!font-normal">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
