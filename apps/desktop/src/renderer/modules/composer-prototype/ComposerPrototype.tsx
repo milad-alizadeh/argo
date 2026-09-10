@@ -440,7 +440,7 @@ function PrototypeChrome({
           >
             <span className="min-w-0 max-w-72 text-right leading-tight">
               <span className="block truncate text-(length:--text-control) text-muted-foreground">
-                You: “Keep the composer fixed and make the feed richer.”
+                “Keep the composer fixed and make the feed richer.”
               </span>
               <span className="block truncate text-(length:--text-control) font-medium text-foreground">
                 I’m updating the prototype now.
