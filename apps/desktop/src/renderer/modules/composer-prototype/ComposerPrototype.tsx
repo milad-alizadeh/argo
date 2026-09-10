@@ -678,7 +678,7 @@ function ContextSurface({
 
   if (layout === 'attached') {
     return (
-      <div className="flex items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
+      <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
         {usagePlacement === 'start' ? <div className="shrink-0 border-r pr-3"><UsagePopover state={state} /></div> : null}
         <Layers3 className={`size-4 shrink-0 ${tone === 'color' ? zone.text : 'text-foreground'}`} />
         <div className="shrink-0">
