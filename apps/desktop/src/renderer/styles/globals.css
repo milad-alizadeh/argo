@@ -2,13 +2,12 @@
 @import "../tokens.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   /* The cockpit's own scale, frozen by the shell design (#1896). Every one of these is reached by
      name from a component; a measurement written at a call site is the thing this block prevents. */
   --text-title: 20px;

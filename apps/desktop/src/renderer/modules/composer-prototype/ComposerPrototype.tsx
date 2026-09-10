@@ -1,6 +1,5 @@
-// Three Argo composer directions, switchable with ?variant=A, on the existing cockpit (#1258).
+// One composer direction after the blind UX and visual reviews selected the single-surface layout.
 import {
-  ArrowLeft,
   ArrowRight,
   ArrowUp,
   Bot,
@@ -12,17 +11,15 @@ import {
   File,
   Folder,
   Gauge,
-  Hexagon,
   Mic,
   Paperclip,
   Plus,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
   WandSparkles,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Attachment,
   AttachmentAction,
@@ -33,7 +30,6 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
-import { Badge } from '@/renderer/components/ui/badge'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -53,9 +49,8 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
-  InputGroupText,
 } from '@/renderer/components/ui/input-group'
-import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/marker'
+import { Marker, MarkerContent } from '@/renderer/components/ui/marker'
 import {
   Message,
   MessageContent,
@@ -79,10 +74,8 @@ import {
   PopoverTrigger,
 } from '@/renderer/components/ui/popover'
 import { Progress } from '@/renderer/components/ui/progress'
-import { Separator } from '@/renderer/components/ui/separator'
 
 type HarnessKey = 'codex' | 'claude'
-type VariantKey = 'A' | 'B' | 'C'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 
 type HarnessDefinition = {
@@ -143,12 +136,6 @@ const HARNESSES: Record<HarnessKey, HarnessDefinition> = {
   },
 }
 
-const VARIANTS: Record<VariantKey, string> = {
-  A: 'Context rail',
-  B: 'Control ledger',
-  C: 'Split instrument',
-}
-
 const INITIAL_MESSAGES: MessageRow[] = [
   {
     id: 'turn-1',
@@ -158,22 +145,29 @@ const INITIAL_MESSAGES: MessageRow[] = [
   {
     id: 'turn-2',
     role: 'assistant',
-    text: 'The seam is context. The composer needs to show what the next instruction will cost, which harness will run it, and when this task needs a clean handoff.',
+    text: 'The composer now treats execution setup, context capacity, and account usage as separate decisions. Each has one stable home.',
   },
   {
     id: 'checkpoint',
     role: 'marker',
-    text: 'Composer prototype · context at 74%',
+    text: 'Run setup changed to Codex',
   },
   {
     id: 'turn-3',
     role: 'assistant',
-    text: 'I have separated writing from orchestration. The input stays calm; the context rail and run controls explain the execution environment without competing with the message.',
+    text: 'The next instruction will run with GPT-5.6 Sol at medium effort. Full access is active.',
   },
 ]
 
-function HarnessIcon({ harness, className }: { harness: HarnessKey; className?: string }) {
-  return harness === 'codex' ? <Hexagon className={className} /> : <Sparkles className={className} />
+function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; className?: string }) {
+  const lightSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude-code.svg'
+  const darkSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude-code-dark.svg'
+  return (
+    <span className={`relative inline-flex shrink-0 overflow-hidden rounded-sm ${className}`}>
+      <img src={lightSource} alt="" className="size-full object-contain dark:hidden" />
+      <img src={darkSource} alt="" className="hidden size-full object-contain dark:block" />
+    </span>
+  )
 }
 
 function contextPercentage(state: ComposerState) {
@@ -201,7 +195,6 @@ function AddContextMenu({ state, setState }: StateProps) {
     if (state.attachments.includes(reference)) return
     setState({ ...state, attachments: [...state.attachments, reference] })
   }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -234,48 +227,43 @@ function AddContextMenu({ state, setState }: StateProps) {
   )
 }
 
-function HarnessItems({ state, setState }: StateProps) {
-  return (
-    <>
-      {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => (
-        <DropdownMenuItem key={harness} onClick={() => setState(selectHarness(state, harness))}>
-          <HarnessIcon harness={harness} />
-          {HARNESSES[harness].label}
-          <SelectionMark active={state.harness === harness} />
-        </DropdownMenuItem>
-      ))}
-    </>
-  )
-}
-
-function RunMenu({ state, setState, label = 'Run setup' }: StateProps & { label?: string }) {
+function RunSetupMenu({ state, setState }: StateProps) {
   const definition = HARNESSES[state.harness]
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="max-w-64" aria-label="Choose run setup" />}
+        render={<InputGroupButton variant="ghost" className="max-w-80 text-foreground" aria-label="Choose run setup" />}
       >
-        <HarnessIcon harness={state.harness} />
-        <span className="truncate">{label === 'Run setup' ? state.model : label}</span>
-        <ChevronDown />
+        <HarnessLogo harness={state.harness} />
+        <span>{definition.label}</span>
+        <span className="text-muted-foreground">/</span>
+        <span>{state.model}</span>
+        <span className="text-muted-foreground">/</span>
+        <span>{state.effort}</span>
+        <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" side="top" className="w-80">
+      <DropdownMenuContent align="start" side="top" className="w-80">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Run setup</DropdownMenuLabel>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <HarnessIcon harness={state.harness} />
+              <HarnessLogo harness={state.harness} />
               Harness
               <span className="ml-auto text-muted-foreground">{definition.label}</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-52">
-              <HarnessItems state={state} setState={setState} />
+            <DropdownMenuSubContent className="w-56">
+              {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => (
+                <DropdownMenuItem key={harness} onClick={() => setState(selectHarness(state, harness))}>
+                  <HarnessLogo harness={harness} />
+                  {HARNESSES[harness].label}
+                  <SelectionMark active={state.harness === harness} />
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <Bot />
-              Model
+              <Bot />Model
               <span className="ml-auto text-muted-foreground">{state.model}</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-52">
@@ -288,8 +276,7 @@ function RunMenu({ state, setState, label = 'Run setup' }: StateProps & { label?
           </DropdownMenuSub>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <BrainCircuit />
-              Effort
+              <BrainCircuit />Effort
               <span className="ml-auto text-muted-foreground">{state.effort}</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-44">
@@ -301,33 +288,38 @@ function RunMenu({ state, setState, label = 'Run setup' }: StateProps & { label?
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <ShieldCheck />
-            Permission
-            <span className="ml-auto text-muted-foreground">{state.permission}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-72">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>{definition.label}</DropdownMenuLabel>
-              {definition.permissions.map((permission) => (
-                <DropdownMenuItem
-                  key={permission.label}
-                  className="items-start py-2"
-                  onClick={() => setState({ ...state, permission: permission.label })}
-                >
-                  <ShieldCheck className="mt-0.5" />
-                  <span className="grid gap-0.5">
-                    <span>{permission.label}</span>
-                    <span className="text-xs text-muted-foreground">{permission.detail}</span>
-                  </span>
-                  <SelectionMark active={state.permission === permission.label} />
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function PermissionMenu({ state, setState }: StateProps) {
+  const definition = HARNESSES[state.harness]
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<InputGroupButton variant="ghost" className="text-foreground" aria-label="Choose permission mode" />}
+      >
+        <ShieldCheck />{state.permission}<ChevronDown className="text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" side="top" className="w-80">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{definition.label} permissions</DropdownMenuLabel>
+          {definition.permissions.map((permission) => (
+            <DropdownMenuItem
+              key={permission.label}
+              className="items-start py-2"
+              onClick={() => setState({ ...state, permission: permission.label })}
+            >
+              <ShieldCheck className="mt-0.5" />
+              <span className="grid gap-0.5">
+                <span>{permission.label}</span>
+                <span className="text-xs text-muted-foreground">{permission.detail}</span>
+              </span>
+              <SelectionMark active={state.permission === permission.label} />
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -363,72 +355,62 @@ function ReferenceStrip({ state, setState }: StateProps) {
   )
 }
 
-function ContextActions() {
-  return (
-    <div className="flex gap-1">
-      <Button variant="outline" size="sm"><RotateCcw />Compact</Button>
-      <Button variant="secondary" size="sm"><ArrowRight />Handoff</Button>
-    </div>
-  )
-}
-
-function UsagePanel({ state }: { state: ComposerState }) {
-  const definition = HARNESSES[state.harness]
-  return (
-    <div className="grid gap-4">
-      <div className="flex items-center gap-2">
-        <Gauge className="size-4 text-muted-foreground" />
-        <div>
-          <p className="text-sm font-medium">{definition.label} usage</p>
-          <p className="text-xs text-muted-foreground">Reported by the active harness</p>
-        </div>
-      </div>
-      {definition.usage.map((item) => (
-        <div key={item.label} className="grid gap-1.5">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm">{item.label}</span>
-            <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>
-            <span className="w-8 text-right text-xs tabular-nums">{item.percentage}%</span>
-          </div>
-          <Progress value={item.percentage} />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function CapacityPopover({ state, compact = false }: { state: ComposerState; compact?: boolean }) {
-  const definition = HARNESSES[state.harness]
+function ContextPopover({ state }: { state: ComposerState }) {
+  const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   return (
     <Popover>
       <PopoverTrigger
-        render={
-          <InputGroupButton
-            variant={percentage >= 70 ? 'secondary' : 'ghost'}
-            aria-label="View context and usage"
-          />
-        }
+        render={<InputGroupButton variant={percentage >= 70 ? 'secondary' : 'ghost'} className="text-foreground" />}
       >
-        <CircleGauge />
-        <span>{compact ? `${percentage}%` : `${definition.context.used / 1000}k of ${definition.context.total / 1000}k`}</span>
+        <CircleGauge />Context {percentage}%
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
-          <PopoverTitle>Task capacity</PopoverTitle>
+          <PopoverTitle>Context window</PopoverTitle>
           <PopoverDescription>
-            {definition.context.used / 1000}k of {definition.context.total / 1000}k tokens used
+            {(context.used / 1000).toFixed(0)}k of {(context.total / 1000).toFixed(0)}k tokens used · {percentage}%
           </PopoverDescription>
         </PopoverHeader>
         <Progress value={percentage} />
         {percentage >= 70 && (
-          <div className="flex items-center justify-between gap-4 rounded-lg bg-muted p-3">
-            <p className="text-xs text-muted-foreground">Make room before the next large change.</p>
-            <ContextActions />
+          <div className="grid gap-3 rounded-lg bg-muted p-3">
+            <p className="text-xs text-muted-foreground">
+              Compact this task before the next large change.
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm"><RotateCcw />Compact</Button>
+              {percentage >= 90 && <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>}
+            </div>
           </div>
         )}
-        <Separator />
-        <UsagePanel state={state} />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function UsagePopover({ state }: { state: ComposerState }) {
+  const definition = HARNESSES[state.harness]
+  return (
+    <Popover>
+      <PopoverTrigger render={<InputGroupButton variant="ghost" className="text-foreground" />}>
+        <Gauge />Usage
+      </PopoverTrigger>
+      <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
+        <PopoverHeader>
+          <PopoverTitle>{definition.label} usage</PopoverTitle>
+          <PopoverDescription>Limits reported by the active harness</PopoverDescription>
+        </PopoverHeader>
+        {definition.usage.map((item) => (
+          <div key={item.label} className="grid gap-1.5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm font-medium">{item.label}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>
+              <span className="w-8 text-right text-xs tabular-nums">{item.percentage}%</span>
+            </div>
+            <Progress value={item.percentage} />
+          </div>
+        ))}
       </PopoverContent>
     </Popover>
   )
@@ -436,12 +418,7 @@ function CapacityPopover({ state, compact = false }: { state: ComposerState; com
 
 function TranscriptRow({ message }: { message: MessageRow }) {
   if (message.role === 'marker') {
-    return (
-      <Marker variant="separator">
-        <MarkerIcon><CircleGauge /></MarkerIcon>
-        <MarkerContent>{message.text}</MarkerContent>
-      </Marker>
-    )
+    return <Marker variant="separator"><MarkerContent>{message.text}</MarkerContent></Marker>
   }
   const isUser = message.role === 'user'
   return (
@@ -480,229 +457,7 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
   )
 }
 
-type ComposerProps = StateProps & {
-  draft: string
-  setDraft: (draft: string) => void
-  isListening: boolean
-  setIsListening: (listening: boolean) => void
-  send: () => void
-}
-
-function MessageBox({
-  state,
-  setState,
-  draft,
-  setDraft,
-  isListening,
-  setIsListening,
-  send,
-  children,
-  className = '',
-}: ComposerProps & { children?: React.ReactNode; className?: string }) {
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault()
-        send()
-      }}
-      className={className}
-    >
-      <InputGroup className="overflow-hidden rounded-xl bg-background shadow-lg shadow-foreground/5">
-        <ReferenceStrip state={state} setState={setState} />
-        <InputGroupTextarea
-          aria-label="Message"
-          placeholder="Direct the next move…"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          className="min-h-24 px-4 py-3 text-sm leading-6"
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault()
-              send()
-            }
-          }}
-        />
-        {children}
-        <InputGroupAddon align="block-end" className="gap-1 border-t bg-muted/30 px-2.5 py-2">
-          <AddContextMenu state={state} setState={setState} />
-          <RunMenu state={state} setState={setState} />
-          <InputGroupText className="hidden text-xs lg:flex">
-            <ShieldCheck className="size-3.5" />{state.permission}
-          </InputGroupText>
-          <div className="ml-auto flex items-center gap-1">
-            <CapacityPopover state={state} compact />
-            <InputGroupButton
-              size="icon-sm"
-              variant={isListening ? 'secondary' : 'ghost'}
-              aria-label={isListening ? 'Stop listening' : 'Use microphone'}
-              onClick={() => setIsListening(!isListening)}
-            >
-              <Mic />
-            </InputGroupButton>
-            <InputGroupButton
-              type="submit"
-              size="icon-sm"
-              variant="default"
-              aria-label="Send message"
-              disabled={draft.trim().length === 0}
-              className="rounded-full"
-            >
-              <ArrowUp />
-            </InputGroupButton>
-          </div>
-        </InputGroupAddon>
-      </InputGroup>
-    </form>
-  )
-}
-
-function ContextRail({ state }: { state: ComposerState }) {
-  const definition = HARNESSES[state.harness]
-  const percentage = contextPercentage(state)
-  return (
-    <div className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 px-1">
-      <span className="text-xs font-medium">Context</span>
-      <div className="relative">
-        <Progress value={percentage} className="[&_[data-slot=progress-track]]:h-1.5" />
-        <span className="absolute top-1/2 left-3/4 h-3 w-px -translate-y-1/2 bg-background" />
-      </div>
-      <span className="text-xs tabular-nums text-muted-foreground">
-        {definition.context.used / 1000}k / {definition.context.total / 1000}k
-      </span>
-    </div>
-  )
-}
-
-function VariantA(props: ComposerProps) {
-  return (
-    <div className="mx-auto grid w-full max-w-4xl gap-2 px-8 pb-20">
-      <ContextRail state={props.state} />
-      <MessageBox {...props} />
-      <div className="flex items-center justify-between px-1">
-        <span className="text-xs text-muted-foreground">
-          Compact becomes available at 70%. Handoff becomes recommended at 90%.
-        </span>
-        {contextPercentage(props.state) >= 70 && <ContextActions />}
-      </div>
-    </div>
-  )
-}
-
-function LedgerCell({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Bot }) {
-  return (
-    <div className="grid min-w-0 grid-cols-[auto_1fr] items-center gap-x-2 border-r px-3 last:border-r-0">
-      <Icon className="row-span-2 size-4 text-muted-foreground" />
-      <span className="truncate text-sm font-medium">{value}</span>
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
-  )
-}
-
-function VariantB(props: ComposerProps) {
-  const definition = HARNESSES[props.state.harness]
-  return (
-    <div className="mx-auto w-full max-w-5xl px-8 pb-20">
-      <div className="overflow-hidden rounded-xl border bg-background shadow-lg shadow-foreground/5">
-        <div className="grid grid-cols-2 border-b bg-muted/30 sm:grid-cols-4">
-          <LedgerCell label="Harness" value={definition.label} icon={Hexagon} />
-          <LedgerCell label="Model" value={props.state.model} icon={Bot} />
-          <LedgerCell label="Effort" value={props.state.effort} icon={BrainCircuit} />
-          <LedgerCell label="Permission" value={props.state.permission} icon={ShieldCheck} />
-        </div>
-        <MessageBox {...props} className="[&_[data-slot=input-group]]:rounded-none [&_[data-slot=input-group]]:border-0 [&_[data-slot=input-group]]:shadow-none">
-          <div className="px-3 pb-2">
-            <ContextRail state={props.state} />
-          </div>
-        </MessageBox>
-      </div>
-    </div>
-  )
-}
-
-function VariantC(props: ComposerProps) {
-  const definition = HARNESSES[props.state.harness]
-  const percentage = contextPercentage(props.state)
-  return (
-    <div className="mx-auto grid w-full max-w-5xl gap-2 px-8 pb-20 md:grid-cols-[1fr_15rem]">
-      <MessageBox {...props} />
-      <aside className="flex flex-col rounded-xl border bg-background p-3 shadow-lg shadow-foreground/5">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium">{definition.label}</p>
-            <p className="text-xs text-muted-foreground">{props.state.model}</p>
-          </div>
-          <HarnessIcon harness={props.state.harness} className="size-5" />
-        </div>
-        <div className="grid gap-1">
-          <span className="text-lg font-medium tabular-nums">{percentage}%</span>
-          <span className="text-xs text-muted-foreground">Context occupied</span>
-          <Progress value={percentage} className="mt-1" />
-        </div>
-        <Separator className="my-4" />
-        <div className="grid gap-2 text-xs">
-          <div className="flex justify-between"><span className="text-muted-foreground">Effort</span><span>{props.state.effort}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Permission</span><span>{props.state.permission}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">References</span><span>{props.state.attachments.length}</span></div>
-        </div>
-        <div className="mt-auto pt-4">
-          <Popover>
-            <PopoverTrigger render={<Button variant="outline" size="sm" className="w-full" />}>
-              <Gauge />Usage
-            </PopoverTrigger>
-            <PopoverContent side="top" align="end" className="w-96 p-4">
-              <UsagePanel state={props.state} />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </aside>
-    </div>
-  )
-}
-
-function PrototypeSwitcher({
-  variant,
-  changeVariant,
-}: {
-  variant: VariantKey
-  changeVariant: (variant: VariantKey) => void
-}) {
-  const keys: VariantKey[] = ['A', 'B', 'C']
-  const move = (direction: number) => {
-    const index = keys.indexOf(variant)
-    changeVariant(keys[(index + direction + keys.length) % keys.length] ?? 'A')
-  }
-  return (
-    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full bg-foreground p-1 text-background shadow-xl">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="text-background hover:bg-background/15 hover:text-background"
-        aria-label="Previous variant"
-        onClick={() => move(-1)}
-      >
-        <ArrowLeft />
-      </Button>
-      <span className="min-w-40 px-2 text-center text-xs font-medium">{variant} · {VARIANTS[variant]}</span>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="text-background hover:bg-background/15 hover:text-background"
-        aria-label="Next variant"
-        onClick={() => move(1)}
-      >
-        <ArrowRight />
-      </Button>
-    </div>
-  )
-}
-
-function variantFromURL(): VariantKey {
-  const value = new URLSearchParams(window.location.search).get('variant')
-  return value === 'B' || value === 'C' ? value : 'A'
-}
-
 export function ComposerPrototype() {
-  const [variant, setVariant] = useState<VariantKey>(variantFromURL)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -714,27 +469,6 @@ export function ComposerPrototype() {
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
 
-  const changeVariant = useCallback((next: VariantKey) => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('variant', next)
-    window.history.replaceState(null, '', url)
-    setVariant(next)
-  }, [])
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.matches('input, textarea, [contenteditable]')) return
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-      const keys: VariantKey[] = ['A', 'B', 'C']
-      const index = keys.indexOf(variant)
-      const direction = event.key === 'ArrowRight' ? 1 : -1
-      changeVariant(keys[(index + direction + keys.length) % keys.length] ?? 'A')
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [changeVariant, variant])
-
   const send = () => {
     const text = draft.trim()
     if (!text) return
@@ -744,46 +478,71 @@ export function ComposerPrototype() {
       {
         id: `turn-${messages.length + 2}`,
         role: 'assistant',
-        text: 'The prototype received this instruction. In the product, the selected harness would begin the run here.',
+        text: `${HARNESSES[state.harness].label} received the instruction with ${state.model} at ${state.effort.toLowerCase()} effort.`,
       },
     ])
     setDraft('')
   }
 
-  const composerProps: ComposerProps = {
-    state,
-    setState,
-    draft,
-    setDraft,
-    isListening,
-    setIsListening,
-    send,
-  }
-
   return (
-    <main
-      className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
-      data-prototype="composer"
-      data-variant={variant}
-    >
-      <header className="flex h-12 shrink-0 items-center border-b px-5">
-        <div>
-          <h1 className="text-lg font-medium">Composer study</h1>
-          <p className="text-xs text-muted-foreground">Harness-aware task control</p>
-        </div>
-        <Badge variant="outline" className="ml-auto">
-          <HarnessIcon harness={state.harness} />{HARNESSES[state.harness].label}
-        </Badge>
-      </header>
+    <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background" data-prototype="composer">
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
       </div>
-      <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent pt-8">
-        {variant === 'A' && <VariantA {...composerProps} />}
-        {variant === 'B' && <VariantB {...composerProps} />}
-        {variant === 'C' && <VariantC {...composerProps} />}
+      <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
+        <form
+          className="mx-auto w-full max-w-4xl"
+          onSubmit={(event) => {
+            event.preventDefault()
+            send()
+          }}
+        >
+          <InputGroup className="overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
+            <ReferenceStrip state={state} setState={setState} />
+            <InputGroupTextarea
+              aria-label="Message"
+              placeholder="Direct the next move…"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              className="min-h-20 px-4 py-3 text-sm leading-6"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault()
+                  send()
+                }
+              }}
+            />
+            <InputGroupAddon align="block-end" className="gap-1 border-t bg-muted/20 px-2.5 py-2">
+              <AddContextMenu state={state} setState={setState} />
+              <RunSetupMenu state={state} setState={setState} />
+              <PermissionMenu state={state} setState={setState} />
+              <div className="ml-auto flex items-center gap-1">
+                <ContextPopover state={state} />
+                <UsagePopover state={state} />
+                <InputGroupButton
+                  size="icon-sm"
+                  variant={isListening ? 'secondary' : 'ghost'}
+                  className="text-foreground"
+                  aria-label={isListening ? 'Stop listening' : 'Use microphone'}
+                  onClick={() => setIsListening(!isListening)}
+                >
+                  <Mic />
+                </InputGroupButton>
+                <InputGroupButton
+                  type="submit"
+                  size="icon-sm"
+                  variant="default"
+                  aria-label="Send message"
+                  disabled={draft.trim().length === 0}
+                  className="rounded-full"
+                >
+                  <ArrowUp />
+                </InputGroupButton>
+              </div>
+            </InputGroupAddon>
+          </InputGroup>
+        </form>
       </div>
-      <PrototypeSwitcher variant={variant} changeVariant={changeVariant} />
     </main>
   )
 }
