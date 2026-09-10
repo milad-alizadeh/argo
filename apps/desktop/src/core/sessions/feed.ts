@@ -1,17 +1,19 @@
 import type { SessionChain } from './chains'
-import { UNREADABLE_ROW, type SessionFeedRow, unreadableRowHeight } from './models'
+import { type SessionFeedRow, UNREADABLE_ROW, unreadableRowHeight } from './models'
 import type { TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
 
 function rowsOfRecord(record: TranscriptRecord, position: string): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
-  if (record.kind === 'compaction') return [{ shape: 'marker', id: `marker:${position}`, marker: 'compacted' }]
+  if (record.kind === 'compaction')
+    return [{ shape: 'marker', id: `marker:${position}`, marker: 'compacted' }]
   if (record.kind !== 'message' || record.sidechain) return []
   return record.blocks.map((block, index) => {
     const id = `${record.uuid}:${index}`
     if (block.shape === 'prose') return { shape: 'prose', id, role: record.role, text: block.text }
-    if (block.shape === 'thought') return { shape: 'thought', id, role: record.role, text: block.text }
+    if (block.shape === 'thought')
+      return { shape: 'thought', id, role: record.role, text: block.text }
     if (block.shape === 'marker') return { shape: 'marker', id, marker: block.marker }
     return { shape: 'source', id, role: record.role, label: block.label, source: block.source }
   })
@@ -30,7 +32,9 @@ function withoutRepeatedBreaks(rows: SessionFeedRow[]): SessionFeedRow[] {
 export function projectFeed(chain: SessionChain): SessionFeedRow[] {
   return withoutRepeatedBreaks(
     chain.files.flatMap((file, fileIndex) =>
-      file.records.flatMap((record, recordIndex) => rowsOfRecord(record, `${fileIndex}:${recordIndex}`)),
+      file.records.flatMap((record, recordIndex) =>
+        rowsOfRecord(record, `${fileIndex}:${recordIndex}`),
+      ),
     ),
   )
 }
