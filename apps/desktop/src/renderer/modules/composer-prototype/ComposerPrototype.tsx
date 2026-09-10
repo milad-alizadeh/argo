@@ -892,21 +892,27 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
 
 function AnimatedHeight({ children }: { children: ReactNode }) {
   const frameRef = useRef<HTMLDivElement>(null)
+  const clipRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<Animation | null>(null)
 
   useEffect(() => {
     const frame = frameRef.current
+    const clip = clipRef.current
     const content = contentRef.current
-    if (!(frame && content)) return
+    if (!(frame && clip && content)) return
 
     let previousHeight = content.getBoundingClientRect().height
     const observer = new ResizeObserver(() => {
       const nextHeight = content.getBoundingClientRect().height
       if (Math.abs(nextHeight - previousHeight) < 1) return
 
+      const startHeight = animationRef.current
+        ? frame.getBoundingClientRect().height
+        : previousHeight
       animationRef.current?.cancel()
-      const startHeight = frame.getBoundingClientRect().height
+      clip.style.height = '100%'
+      clip.style.overflow = 'clip'
       frame.style.height = `${nextHeight}px`
       animationRef.current = frame.animate(
         [{ height: `${startHeight}px` }, { height: `${nextHeight}px` }],
@@ -914,6 +920,9 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
       )
       animationRef.current.onfinish = () => {
         frame.style.height = 'auto'
+        clip.style.height = 'auto'
+        clip.style.overflow = 'visible'
+        animationRef.current = null
       }
       previousHeight = nextHeight
     })
@@ -928,7 +937,9 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div ref={frameRef} className="relative z-10 mx-auto w-full max-w-4xl">
       <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-background shadow-[0_10px_28px_-16px_rgba(0,0,0,0.28)]" />
-      <div ref={contentRef} className="relative z-10">{children}</div>
+      <div ref={clipRef} className="relative z-10 rounded-2xl">
+        <div ref={contentRef}>{children}</div>
+      </div>
     </div>
   )
 }
