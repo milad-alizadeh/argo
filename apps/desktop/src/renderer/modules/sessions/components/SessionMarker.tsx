@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { type DelegationReading, readDelegation } from '../../../../core/sessions/delegation'
 import type { Session } from '../types'
 
@@ -25,7 +27,7 @@ function SubagentDots({ reading }: { reading: DelegationReading }) {
         {/* Out of the flow and centred on the column, so the figure costs the title not one
             point of its width: the count is the rarest thing on the row and the title the widest. */}
         {running > CEILING ? (
-          <span className="absolute top-full left-1/2 mt-hair -translate-x-1/2 font-mono text-[9px] whitespace-nowrap text-faint">
+          <span className="absolute top-full left-1/2 mt-hair -translate-x-1/2 font-mono text-tally whitespace-nowrap text-faint">
             +{running - CEILING}
           </span>
         ) : null}
@@ -34,7 +36,7 @@ function SubagentDots({ reading }: { reading: DelegationReading }) {
   }
   // An open delegation Argo cannot resolve (#1076): an outline, and never a number.
   if (reading.unresolved > 0) {
-    return <span className={`${PIP} rounded-full shadow-[inset_0_0_0_1px_var(--color-off)]`} />
+    return <span className={`${PIP} rounded-full shadow-state-outline`} />
   }
   // Delegated, and every one is home. A dash, because an outline is already spoken for by the
   // unknown state. Delegated nothing draws nothing.
@@ -42,16 +44,35 @@ function SubagentDots({ reading }: { reading: DelegationReading }) {
   return null
 }
 
+// What the dots under the state say, in words. The column is marks alone, so without this the
+// delegation reading reaches a screen reader through nothing at all (AGENTS.md · Accessible names).
+function DelegationFact({ reading }: { reading: DelegationReading }) {
+  const { t } = useTranslation()
+  if (!reading.known) return null
+  const running = reading.running.length
+  if (running > 0)
+    return <span className="sr-only">{t('row.delegationRunning', { count: running })}</span>
+  if (reading.unresolved > 0) {
+    return <span className="sr-only">{t('rail.unresolved', { count: reading.unresolved })}</span>
+  }
+  if (reading.finished > 0) return <span className="sr-only">{t('row.delegationFinished')}</span>
+  return null
+}
+
 // The leading column: the Session's state, and under it what runs beneath the Session. It is
 // the machinery's column, and nothing else on the row claims it.
 export function SessionMarker({ session }: { session: Session }) {
+  const reading = readDelegation(session.status, session.delegations)
   return (
-    <span
-      aria-hidden="true"
-      className="relative flex w-(--size-state-dot) flex-none flex-col items-center gap-[3px] pt-dot-inset"
-    >
-      <SessionStateDot status={session.status} />
-      <SubagentDots reading={readDelegation(session.status, session.delegations)} />
-    </span>
+    <>
+      <span
+        aria-hidden="true"
+        className="relative flex w-(--size-state-dot) flex-none flex-col items-center gap-[3px] pt-dot-inset"
+      >
+        <SessionStateDot status={session.status} />
+        <SubagentDots reading={reading} />
+      </span>
+      <DelegationFact reading={reading} />
+    </>
   )
 }

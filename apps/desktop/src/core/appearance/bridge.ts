@@ -3,6 +3,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type BrowserWindow, nativeTheme } from 'electron'
+import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import {
   APPEARANCE_CHANGED_CHANNEL,
   APPEARANCE_CHANNEL,
@@ -51,12 +52,10 @@ export type AppearanceStorage = { userData: string; rendererURL: string }
 export function attachAppearanceBridge(window: BrowserWindow, storage: AppearanceStorage): void {
   const { userData, rendererURL } = storage
   window.webContents.ipc.handle(APPEARANCE_CHANNEL, async (event, chosen: unknown) => {
-    // The same authority check the Project bridge performs: a frame that is not the window's own
-    // trusted document changes nothing, and reads back the state rather than an error, because the
-    // appearance is not a secret.
-    const trusted =
-      event.senderFrame === window.webContents.mainFrame && event.senderFrame?.url === rendererURL
-    if (trusted && isAppearance(chosen)) {
+    // The same authority check the Project bridge performs, through the same function: a frame that
+    // is not the window's own trusted document changes nothing, and reads back the state rather
+    // than an error, because the appearance is not a secret.
+    if (isTrustedRendererFrame(event, window, rendererURL) && isAppearance(chosen)) {
       nativeTheme.themeSource = chosen
       await writeAppearance(userData, chosen)
     }

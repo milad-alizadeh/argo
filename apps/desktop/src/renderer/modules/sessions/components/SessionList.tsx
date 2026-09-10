@@ -1,6 +1,8 @@
 import { type KeyboardEvent, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { matchesChord, ROSTER_MOVES, SHORTCUTS } from '@/core/commands/shortcuts'
+
 import type { Session, SessionId } from '../types'
 
 import { SessionListItem } from './SessionListItem'
@@ -19,11 +21,27 @@ type SessionListProps = {
 // the Feed following; Enter or Space on a focused row selects it, which is what a button does
 // anyway. Selection never moves focus, so choosing a Session leaves the reader where they were
 // and the Feed's own scroller is the next Tab stop.
+// The chords themselves are in the one shortcut table (#1786); what each one does to the focused
+// index is here, keyed by the command the table declares.
 const MOVES: Record<string, (index: number, last: number) => number> = {
-  ArrowDown: (index, last) => Math.min(index + 1, last),
-  ArrowUp: (index) => Math.max(index - 1, 0),
-  Home: () => 0,
-  End: (_index, last) => last,
+  [ROSTER_MOVES.next]: (index, last) => Math.min(index + 1, last),
+  [ROSTER_MOVES.previous]: (index) => Math.max(index - 1, 0),
+  [ROSTER_MOVES.first]: () => 0,
+  [ROSTER_MOVES.last]: (_index, last) => last,
+}
+
+function rosterMove(event: KeyboardEvent<HTMLUListElement>) {
+  const pressed = {
+    key: event.key,
+    meta: event.metaKey,
+    ctrl: event.ctrlKey,
+    shift: event.shiftKey,
+    alt: event.altKey,
+  }
+  const hit = SHORTCUTS.find(
+    (entry) => entry.scope === 'element' && matchesChord(entry.chord, pressed),
+  )
+  return hit ? MOVES[hit.command] : undefined
 }
 
 export function SessionList({ sessions, selectedSessionId, label, onSelect }: SessionListProps) {
@@ -34,7 +52,7 @@ export function SessionList({ sessions, selectedSessionId, label, onSelect }: Se
   const [focusedSessionId, setFocusedSessionId] = useState<SessionId | null>(null)
 
   const move = (event: KeyboardEvent<HTMLUListElement>) => {
-    const step = MOVES[event.key]
+    const step = rosterMove(event)
     if (step === undefined) return
     const rows = [...(list.current?.querySelectorAll('button') ?? [])]
     const index = rows.indexOf(document.activeElement as HTMLButtonElement)

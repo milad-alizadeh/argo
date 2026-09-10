@@ -1,8 +1,8 @@
 /* The Sessions surface's own inks and scale. The inks below are the approved design's, and the
    design is graphite: it has no light appearance. The app offers one (#1820), so the block after
    `@theme` gives each ink a light value. Those values are not the design's; they are chosen here
-   to keep the same order of contrast on the shadcn light grounds. Read `rules/desktop.md` ·
-   Appearance before extending either. */
+   to keep the same order of contrast on the shadcn light grounds. Read `AGENTS.md` · Appearance
+   before extending either. */
 @theme {
   /* Transcribed from the approved roster row design (#1310, `cockpit-roster-row.html`) and the
      Session layout prototype beside it. Only the inks are the design's: every ground the Sessions
@@ -68,6 +68,14 @@
      in the Session's own column. */
   --size-subagent-dot: 4px;
   --size-plan-bar: 3px;
+  /* The count under a stack of Subagent dots: the one figure on the row smaller than `--text-badge`,
+     because it is texture the eye only reads when it stops on the column. */
+  --text-tally: 9px;
+  /* The two marks a state dot is drawn with. The running dot glows in its own ink, and a state
+     Argo cannot place is an outline in the disabled ink: both are reached by name so neither
+     restates a colour the block above already holds. */
+  --shadow-state-glow: 0 0 6px color-mix(in srgb, var(--color-active) 50%, transparent);
+  --shadow-state-outline: inset 0 0 0 1px var(--color-off);
 }
 
 /* The light appearance of the inks above. `useAppearance` puts `.dark` on the root element, so a

@@ -12,7 +12,14 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { desktopRoot } from '../../../../scripts/packaged-app.mjs'
-import { chooseThen, show, waitForCockpit, waitForDeck } from './cockpit-driver'
+import {
+  chooseThen,
+  clickMenuItem,
+  show,
+  stubChooser,
+  waitForCockpit,
+  waitForDeck,
+} from './cockpit-driver'
 import { launch, prepare } from './project-proof-fixture'
 
 const VIEWPORT = { width: 1200, height: 800 }
@@ -90,8 +97,11 @@ try {
       const names = await capture(run, 'empty')
       await chooseThen(run, fixture.beta, { button: 'Open Project…', state: 'selected' })
       names.push(...(await capture(run, 'selected')))
-      await chooseThen(run, fixture.plain, {
-        button: 'Open another Project…',
+      // With a Project open the deck belongs to the surfaces, so the chooser is reached the only
+      // way a reader can reach it there: the File menu item.
+      await stubChooser(run.application, [fixture.plain])
+      await clickMenuItem(run, 'Open Project…', {
+        accelerator: 'CmdOrCtrl+O',
         state: 'not-a-repository',
       })
       names.push(...(await capture(run, 'not-a-repository')))

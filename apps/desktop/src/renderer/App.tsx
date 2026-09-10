@@ -14,12 +14,13 @@ import { CockpitShell } from './modules/cockpit/components/CockpitShell'
 import { Sidebar } from './modules/cockpit/components/Sidebar'
 import { useCommands } from './modules/cockpit/hooks/useCommands'
 import { ProjectDeck } from './modules/projects/components/ProjectDeck'
+import { ProjectRefusal } from './modules/projects/components/ProjectRefusal'
 import { type Cockpit, useProjects } from './modules/projects/hooks/useProjects'
 import './i18n/config'
 
 function destinationFromHash(): Destination {
   const path = window.location.hash.slice(1)
-  return DESTINATIONS.find((candidate) => path === `/${candidate.toLowerCase()}`) ?? 'Projects'
+  return DESTINATIONS.find((candidate) => path === `/${candidate.toLowerCase()}`) ?? 'Sessions'
 }
 
 function destinationHash(destination: Destination): string {
@@ -60,6 +61,11 @@ export function App() {
     ),
   )
 
+  // A Project is the window's subject, so until one is open there is no sidebar: nothing is yet
+  // there for a surface to be about, and the deck takes the window. A folder turned away while a
+  // Project is open leaves that Project standing, so its refusal has nowhere in the deck to land
+  // and takes a band of its own above the surfaces.
+  const open = cockpit.status === 'selected'
   return (
     <CockpitShell
       chrome={
@@ -67,7 +73,8 @@ export function App() {
           <AppearanceControl appearance={appearance} onChange={chooseAppearance} />
         </ChromeBar>
       }
-      sidebar={<Sidebar destination={destination} onNavigate={navigate} />}
+      notice={open && cockpit.message ? <ProjectRefusal message={cockpit.message} /> : undefined}
+      sidebar={open ? <Sidebar destination={destination} onNavigate={navigate} /> : undefined}
       deck={<ProjectDeck destination={destination} cockpit={cockpit} actions={actions} />}
     />
   )

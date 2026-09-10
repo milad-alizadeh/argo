@@ -44,7 +44,7 @@ export function deckHeading(page) {
 }
 
 export function refusal(page) {
-  return page.textContent('[data-component="ProjectRefusal"] [data-slot="alert-title"]')
+  return page.textContent('[data-component="ProjectRefusal"] [data-slot="item-title"]')
 }
 
 export function subject(page) {

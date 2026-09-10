@@ -10,9 +10,9 @@ import { Spinner } from '../../../components/ui/spinner'
 //
 // The spinner turns on its wrapper and not on itself (ADR-0033 · The activity indicator): the
 // animation has to keep running through the blocked main thread of the pass, so it is a transform
-// on an HTML box the compositor owns, and never an animated SVG. The label shimmers the way the
-// docs' "Thinking" marker does; that one is a paint, so it may pause through the pass while the
-// spinner beside it keeps turning.
+// on an HTML box the compositor owns, and never an animated SVG. The label stands still: the
+// docs draw their "Thinking" marker with a shimmer, and this app has no such paint, so the
+// turning spinner is the whole signal that the pass is running.
 export function SessionActivityIndicator({ label, busy }: { label: string; busy: boolean }) {
   return (
     <div className="feed__content feed__standing">
@@ -32,7 +32,7 @@ export function SessionActivityIndicator({ label, busy }: { label: string; busy:
               <CircleAlertIcon />
             </MarkerIcon>
           )}
-          <MarkerContent className={busy ? 'shimmer' : undefined}>{label}</MarkerContent>
+          <MarkerContent>{label}</MarkerContent>
         </Marker>
       </div>
     </div>

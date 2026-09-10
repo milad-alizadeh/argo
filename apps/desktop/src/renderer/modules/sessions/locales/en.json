@@ -36,7 +36,10 @@
     "activity": "Ran {{tool}} {{target}}",
     "activityBare": "Ran {{tool}}",
     "ago": "{{age}} ago",
-    "plan": "{{completed}} of {{total}} done"
+    "plan": "{{completed}} of {{total}} done",
+    "delegationRunning_one": "One Subagent running",
+    "delegationRunning_other": "{{count}} Subagents running",
+    "delegationFinished": "Every delegation finished"
   },
   "facts": {
     "placeUnknown": "working directory unknown"
