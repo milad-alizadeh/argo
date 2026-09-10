@@ -599,7 +599,7 @@ function PrototypeSessionRoster({
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-card">
-      <div className="flex h-12 shrink-0 items-center border-b border-border/60 px-3">
+      <div className="flex h-12 shrink-0 items-center px-3">
         <h1 className="text-sm font-semibold">Sessions</h1>
         <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="New Session">
           <Plus />
@@ -671,7 +671,10 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
-          <span className="shrink-0 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Running</span>
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+            Running
+          </span>
         </div>
         <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
           <GitBranch />
