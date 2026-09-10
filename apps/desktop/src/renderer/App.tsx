@@ -13,6 +13,7 @@ import { ChromeBar } from './modules/cockpit/components/ChromeBar'
 import { CockpitShell } from './modules/cockpit/components/CockpitShell'
 import { Sidebar } from './modules/cockpit/components/Sidebar'
 import { useCommands } from './modules/cockpit/hooks/useCommands'
+import { ComposerPrototype } from './modules/composer-prototype/ComposerPrototype'
 import { ProjectDeck } from './modules/projects/components/ProjectDeck'
 import { ProjectRefusal } from './modules/projects/components/ProjectRefusal'
 import { type Cockpit, useProjects } from './modules/projects/hooks/useProjects'
@@ -35,6 +36,9 @@ export function App() {
   const [appearance, chooseAppearance] = useAppearance()
   const [cockpit, actions] = useProjects()
   const [destination, setDestination] = useState(destinationFromHash)
+  const showsComposerPrototype =
+    (import.meta as ImportMeta & { env: Record<string, string | undefined> }).env
+      .VITE_COMPOSER_PROTOTYPE === '1'
   const navigate = useCallback((nextDestination: Destination) => {
     window.location.hash = destinationHash(nextDestination)
     setDestination(nextDestination)
@@ -75,7 +79,13 @@ export function App() {
       }
       notice={open && cockpit.message ? <ProjectRefusal message={cockpit.message} /> : undefined}
       sidebar={open ? <Sidebar destination={destination} onNavigate={navigate} /> : undefined}
-      deck={<ProjectDeck destination={destination} cockpit={cockpit} actions={actions} />}
+      deck={
+        showsComposerPrototype ? (
+          <ComposerPrototype />
+        ) : (
+          <ProjectDeck destination={destination} cockpit={cockpit} actions={actions} />
+        )
+      }
     />
   )
 }
