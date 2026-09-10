@@ -50,7 +50,20 @@ async function prove(application, fixture) {
     {
       node: 'undefined',
       process: 'undefined',
-      methods: ['listSessions', 'openProject', 'readSessionFeed', 'versions', 'zoomFactor'],
+      methods: [
+        'getAppearance',
+        'listProjects',
+        'listSessions',
+        'onAppearanceChanged',
+        'onCommand',
+        'openProject',
+        'readSessionFeed',
+        'registerProject',
+        'relocateProject',
+        'setAppearance',
+        'versions',
+        'zoomFactor',
+      ],
     },
   )
   const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)
