@@ -2,9 +2,10 @@
 // contract over the real preload, and the ADR-0033 geometry rule that a row is measured in a
 // hidden container before it is drawn. A dev-server run proves none of it.
 //
-// `--shots <dir>` writes the packaged visual evidence. CI passes it and keeps the captures as an
-// artifact, so the screens a change draws are evidence every run produces rather than evidence
-// somebody remembered to produce by hand.
+// `--shots <dir>` writes the packaged screens for a person who wants to look at them. Nothing in
+// CI passes it any more, and the PNG files are disposable: point it at a temporary directory and
+// delete them (#1910). The screens a reviewer reads are the Storybook site, and the contract this
+// file asserts is read out of the DOM, so no assertion here depends on a pixel.
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'

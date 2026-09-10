@@ -9,7 +9,8 @@ Everything here is a fact about this repository. Process belongs to the skill th
 ## Where things are written down
 
 - **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A
-  screenshot goes in the issue body, and in the PR body when a screen changes. Every issue is
+  screenshot reaches a body only when a person drags it in; an agent writes a Storybook link
+  instead, and keeps its own captures in a temp dir. Every issue is
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
   Before triage, read `docs/agents/triage-labels.md`.
@@ -154,8 +155,15 @@ goes there.
 
 ## Visual verification
 
-**The render commands are `docs/design-stack.md`'s last two rows**, one for a design page and one
-for the packaged app; `apps/desktop/README.md` says what each writes.
+**A component is reviewed on the Storybook site, and a screen is reviewed by running a render
+command.** The site is built from `main` by `.github/workflows/storybook-pages.yml` and served at
+`https://milad-alizadeh.github.io/argo/`; `ci.yml`'s `storybook` job rebuilds it on every pull
+request as the gate and comments the stories that pull request touches (#1910). The render
+commands are `docs/design-stack.md`'s last rows, and `apps/desktop/README.md` says what each
+writes.
+
+**Every capture is disposable**: a temp dir, looked at, deleted. No gate takes a screenshot and no
+ref holds one, because a PNG in a git object carries no version.
 `docs/agents/visual-verification.md` describes `apps/macOS` commands that no longer exist.
 
 One rule outlives the tooling: **an e2e run holds the real keyboard and mouse for its whole

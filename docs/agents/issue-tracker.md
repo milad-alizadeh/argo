@@ -31,21 +31,25 @@ A screenshot is evidence. It belongs in the tracker, not only in the session.
 
 - When you create an issue from a bug report, put the user's screenshot in the body under a
   `## Screenshot` heading.
-- A PR that changes how a screen looks carries one screenshot per changed state. If the change
-  is a fix, carry the before image and the after image.
+- A PR that changes how a screen looks names every changed state, and says where each is seen:
+  the Storybook story, or the render command. If the change is a fix, describe the before as well
+  as the after.
 
-`gh issue` and `gh pr` cannot attach a file. Publish the PNGs to a ref instead, then embed a raw
-URL pinned to that commit. The recipe is in
-`packages/argo-skills/skills/pixel-review/PR-EVIDENCE.md`; use it for both cases. The namespace
-differs, because the lifetime does:
+**Two routes, and an agent has one of them.** `gh issue` and `gh pr` cannot attach a file, so the
+image reaches GitHub one of two ways:
 
-- `refs/pr-screenshots/<branch-slug>` for a PR. `bun run worktrees:gc` deletes the ref once the
-  PR closes, and the image then goes 404. This is review-time evidence.
-- `refs/evidence/issue-<N>` for an issue. Nothing sweeps that namespace, because a closed bug
-  report is where the picture matters most.
+- **A person drags the file into the body on github.com.** GitHub hosts it on its own CDN, dated
+  and outside the repository. This is the route for a bug report's screenshot and for a design
+  ticket's state renders, and it is the only route that puts a PNG in a body. Ask for it.
+- **An agent writes a link.** For a component, the Storybook story on the site
+  `.github/workflows/storybook-pages.yml` publishes; otherwise the render command and the state
+  names, so a reader draws it themselves.
 
-The raw URL renders on a public repo only. On a private repo, ask the user to drag the file into
-the body on github.com.
+An agent's own screenshots are **disposable**: a temp dir, judged, deleted. A PNG in a git object
+has no version, so a later reader cannot tell whether it shows the code beside it or the code it
+replaced. That is why nothing writes `refs/pr-screenshots/*` or `refs/evidence/*` any more (#1910)
+and why no workflow uploads a capture. The `refs/evidence/*` commits that already exist stay:
+they back images in closed issue bodies, and deleting one 404s a picture in the tracker.
 
 You cannot read a pasted image as a file. Ask the user to save it and give you the path.
 

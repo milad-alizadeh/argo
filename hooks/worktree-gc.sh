@@ -277,11 +277,13 @@ while IFS= read -r line; do
   fi
 done < "$list"
 
-# Prune stale visual-review refs on the remote. pixel-review publishes screenshots to
-# refs/pr-screenshots/<slug> (slug = head branch with / → -), and the CI baselines job to
-# refs/visual-baselines/pr-N. Both are ephemeral: once the PR is gone, so is their purpose.
-# refs/evidence/* is a third namespace and is deliberately NOT swept: it holds
-# screenshots embedded in issue bodies, which must outlive the issue.
+# Prune stale visual-review refs on the remote. Nothing writes these namespaces any more (#1910):
+# pixel-review's captures are disposable and no workflow uploads one. This sweep stays for the
+# leftovers, which are real — refs/pr-screenshots/<slug> (slug = head branch with / → -) from the
+# old pixel-review recipe, and refs/visual-baselines/pr-N from the retired baselines job. Both were
+# ephemeral: once the PR is gone, so is their purpose.
+# refs/evidence/* is a third namespace and is deliberately NOT swept: those commits still back the
+# images embedded in closed issue bodies, and deleting one 404s a picture in the tracker.
 # Reap them on the same provably-safe footing as worktrees — but only with gh to say which
 # PRs are still open. Without it, or if the query fails, never delete: incomplete info is
 # not a reason to reap.

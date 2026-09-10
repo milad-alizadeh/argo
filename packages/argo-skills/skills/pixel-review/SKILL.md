@@ -38,6 +38,10 @@ Resolution order, first hit wins:
 Use `scripts/screenshot-states.mjs` if the project has it; otherwise drive headless Chromium
 inline with a fixed viewport and animations disabled.
 
+Every render is **disposable**: it lives in a temp dir, it is judged in step 2, and step 4 deletes
+it. A picture that outlives the review has no version, so a later reader cannot tell whether it
+shows the code beside it or the code it replaced.
+
 Done when there is one PNG per affected state, named after the state, in a temp dir.
 
 ## 2. Judge with fresh eyes
@@ -64,11 +68,18 @@ failing after that: stop, and hand the unresolved findings back to the caller. S
 is a fundamental miss (wrong layout, missing states). That is an input to how the PR opens, and
 this skill runs before there is a PR: the call is the caller's, taken when they run `/ship`.
 
-## 4. Hand the evidence to `/ship`
+## 4. Hand the verdict to `/ship`
 
-Pass or fail, the final screenshots belong in the PR body so the human reviews pixels — and
-this skill runs before any PR exists. Publish them under a throwaway ref so they never merge,
-following `PR-EVIDENCE.md` beside this file, and hand the caller the pinned URLs with the
-findings. `/ship` is what writes them into the body.
+Delete the temp dir and hand the caller words: the verdict, the findings that survived step 3,
+and, per affected component, where the reviewer sees it live. That last one is whichever the
+project has:
 
-Done when every final PNG has a URL pinned to that commit, and the caller has the list.
+- **A hosted component site** (`docs/design-stack.md` names one here): the deep link per
+  component. It tracks the default branch, so say that a state this branch adds appears there
+  after the merge.
+- **A render command**: the command and the state names, for the reviewer to run.
+
+`/ship` writes what you hand back into the PR body.
+
+Done when the caller has the verdict, the findings, and one link or command per affected
+component, and the temp dir is gone.

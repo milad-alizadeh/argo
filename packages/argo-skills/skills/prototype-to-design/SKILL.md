@@ -121,9 +121,10 @@ be thrown away:
 - **The component names.** Copy every `data-component` value onto the ticket. They become
   component files and ticket titles, and they are frozen from here.
 - **The state renders.** Screenshot the page per the project's render method, one PNG per state,
-  and attach them under a `## States` heading using the project's durable evidence namespace
-  (`refs/evidence/issue-<N>`, per its issue conventions). Say which commit on the branch each
-  render came from: a render nobody can tie to a version of the page is a picture, not a spec.
+  and ask the user to drag them into the ticket body under a `## States` heading. That is the one
+  route that reaches a body, per the project's screenshot method. Give the commit on the branch
+  each render came from: a render nobody can tie to a version of the page is a picture, not a
+  spec.
 
 Done when the ticket carries every frozen name, one PNG per state, and the commit they were
 taken from.
