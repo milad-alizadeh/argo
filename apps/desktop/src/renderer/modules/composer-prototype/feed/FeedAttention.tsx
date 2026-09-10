@@ -1,7 +1,13 @@
-import { Check, ChevronRight, ShieldQuestion } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, ShieldQuestion } from 'lucide-react'
 import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/renderer/components/ui/dropdown-menu'
 import {
   Questionnaire,
   QuestionnaireChoice,
@@ -144,15 +150,24 @@ export function FeedPermission() {
         <Button variant="outline" className="text-control" onClick={() => setDecision('denied')}>
           Deny
         </Button>
-        <Button
-          className="bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80"
-          onClick={() => setDecision('allowed')}
-        >
-          Allow
-        </Button>
-        <Button variant="outline" className="text-control" onClick={() => setDecision('similar')}>
-          Allow similar
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button className="gap-1 bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80" />
+            }
+          >
+            Allow
+            <ChevronDown />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="top" className="w-48">
+            <DropdownMenuItem className="text-control" onClick={() => setDecision('allowed')}>
+              Allow this command
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-control" onClick={() => setDecision('similar')}>
+              Allow similar commands
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </section>
   )
