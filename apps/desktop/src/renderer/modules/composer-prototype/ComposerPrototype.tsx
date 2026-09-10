@@ -115,6 +115,7 @@ import {
   SessionFeedPrototype,
 } from './SessionFeedPrototype'
 import {
+  restoreWidthAfterFullscreenSnap,
   SESSION_PANE_MIN_WIDTH,
   shouldCloseSessionInspector,
   shouldFullscreenSessionInspector,
@@ -1804,6 +1805,14 @@ export function ComposerPrototype() {
   const handleSessionConversationResize = (conversationWidth: number, previousWidth: number) => {
     if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
     if (shouldFullscreenSessionInspector(conversationWidth, previousWidth)) {
+      const inspectorWidthAtSnap = sessionInspectorPanel.current?.getSize().inPixels ?? 0
+      const restoreWidth = restoreWidthAfterFullscreenSnap({
+        currentRestoreWidth: sessionInspectorRestoreSize.current,
+        feedWidthAtSnap: conversationWidth,
+        inspectorWidthAtSnap,
+      })
+      sessionInspectorRestoreSize.current = restoreWidth
+      setSessionInspectorContentWidth(restoreWidth)
       sessionSidebarFullscreenState.current = true
       setSessionSidebarFullscreen(true)
     }
