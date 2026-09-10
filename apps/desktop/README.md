@@ -10,6 +10,13 @@ Every `@electron-forge/*` package and Electron itself are pinned exactly, becaus
 Vite plugin experimental and reserves breaking changes for a minor release. Upgrade them as one
 reviewed unit.
 
+## Visual design infra
+
+- Design stack: `docs/designs/stack.md`
+- Design rules: `rules/design.md`
+- Storybook: `cd apps/desktop && bun run storybook`
+- Render one PNG: `cd apps/desktop && bun run design:render`
+
 ## Build a local release
 
 On an Apple silicon Mac, use the pinned Node version. Then run these commands from the repository

@@ -7,6 +7,14 @@
 > that no longer exists, and every design here targets the deprecated app. Read this file as a
 > record of what was designed, not as instructions. `apps/desktop` will need its own designs.
 
+## `apps/desktop` design infrastructure
+
+- `docs/designs/stack.md`
+- `rules/design.md`
+- `apps/desktop/.storybook/`
+- `docs/designs/design-template.html`
+- `docs/designs/kit.js`
+
 The committed design set for the Argo cockpit: written specs, the approved visual target, and
 the renders the app itself produces.
 
