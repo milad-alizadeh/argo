@@ -312,7 +312,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
+        render={<InputGroupButton variant="ghost" className="-ml-6 max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
       >
         <IconLabel icon={<HarnessLogo harness={state.harness} className="size-3.5" />}>
           <span className="inline-flex items-center gap-1.5">
