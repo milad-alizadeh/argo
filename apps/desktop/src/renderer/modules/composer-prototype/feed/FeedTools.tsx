@@ -66,7 +66,7 @@ function ToolGroup({
     <details className="group rounded-lg border bg-card open:pb-1">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-control">
         <ChevronRight className="!size-(--size-icon-inline) text-muted-foreground group-open:rotate-90" />
-        <span className="font-medium">{title}</span>
+        <span className="text-(length:--text-body) font-medium">{title}</span>
         <span className="ml-auto text-muted-foreground">{rows.length} tool calls</span>
       </summary>
       <div className="mx-2 border-t pt-1">
@@ -90,15 +90,15 @@ export function FeedToolGroups({ onOpen }: { onOpen: FeedEvidenceAction }) {
 
 export function FeedPendingCall({ mode = 'running' }: { mode?: 'running' | 'thinking' }) {
   return (
-    <Marker className="py-2 text-control" role="status">
+    <Marker className="py-2 text-(length:--text-body)" role="status">
       <MarkerIcon>
-        <LoaderCircle className="!size-(--size-icon-inline) motion-safe:animate-spin" />
+        <LoaderCircle className="!size-(--size-icon-control) motion-safe:animate-spin" />
       </MarkerIcon>
       <MarkerContent>
         <span className="font-medium">{mode === 'thinking' ? 'Thinking' : 'Running'}</span>
         <span className="ml-1 text-foreground">the attachment stress check</span>
       </MarkerContent>
-      <span className="ml-auto text-muted-foreground">12s</span>
+      <span className="ml-auto text-(length:--text-control) text-muted-foreground">12s</span>
     </Marker>
   )
 }

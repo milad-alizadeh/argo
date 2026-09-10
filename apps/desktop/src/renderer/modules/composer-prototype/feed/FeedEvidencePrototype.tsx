@@ -73,7 +73,7 @@ function InspectorSection({
       >
         <EvidenceKindIcon kind={evidence.kind} />
         <span className="min-w-0 flex-1 truncate text-control font-medium">{evidence.title}</span>
-        <span className="text-[9px]">{evidenceLabel(evidence.kind)}</span>
+        <span className="text-(length:--text-control)">{evidenceLabel(evidence.kind)}</span>
       </header>
       <div className="space-y-4 p-4">
         <p className="break-words text-control leading-relaxed text-muted-foreground">
@@ -126,7 +126,7 @@ export function FeedEvidencePrototype({
       <header className="flex items-center gap-2 border-b px-3 py-2">
         <EvidenceKindIcon kind={activeEvidence.kind} />
         <div className="min-w-0 flex-1">
-          <p className="text-[9px] text-muted-foreground">
+          <p className="text-(length:--text-control) text-muted-foreground">
             Inspector · {evidenceLabel(activeEvidence.kind)}
           </p>
           <h2 className="truncate text-control font-medium">{activeEvidence.title}</h2>
