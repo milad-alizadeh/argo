@@ -433,14 +433,23 @@ function PrototypeChrome({
               <Button
                 variant="ghost"
                 size="sm"
-                className="relative ml-auto gap-2 px-2"
+                className="ml-auto gap-2 px-2"
                 aria-label="Open Concierge chat"
               />
             }
           >
-            <ConciergeOrb compact />
-            <span className="font-medium">Concierge</span>
-            <span className="absolute top-0.5 left-7 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+            <span className="min-w-0 max-w-72 text-right leading-tight">
+              <span className="block truncate text-(length:--text-control) text-muted-foreground">
+                You: “Keep the composer fixed and make the feed richer.”
+              </span>
+              <span className="block truncate text-(length:--text-control) font-medium text-foreground">
+                I’m updating the prototype now.
+              </span>
+            </span>
+            <span className="relative shrink-0">
+              <ConciergeOrb compact />
+              <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+            </span>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-72 gap-3 p-3">
             <PopoverHeader>
