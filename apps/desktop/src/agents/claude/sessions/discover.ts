@@ -6,7 +6,7 @@ import path from 'node:path'
 import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
-} from '../../../core/sessions/discover-transcript-sessions'
+} from '@/core/sessions/discover-transcript-sessions'
 import { parseTranscriptLine } from './records'
 
 // How many transcript files one Roster pass reads, most recently written first. Measured on a

@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { StorybookConfig } from '@storybook/react-vite'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -14,6 +15,12 @@ const config: StorybookConfig = {
     ...viteConfig,
     base,
     plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
+    resolve: {
+      ...viteConfig.resolve,
+      alias: {
+        '@': path.resolve(import.meta.dirname, '../src'),
+      },
+    },
   }),
 }
 

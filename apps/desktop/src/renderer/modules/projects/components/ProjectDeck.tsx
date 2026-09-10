@@ -1,5 +1,5 @@
 // The working surface: the window ground, no edge of its own (ADR-0038).
-import type { Destination } from '../../../../core/commands/shortcuts'
+import type { Destination } from '@/core/commands/shortcuts'
 import { SessionsScreen } from '../../sessions/screens/SessionsScreen'
 import type { Cockpit, ProjectActions } from '../hooks/useProjects'
 import { EmptyPane, LINE, RefusedPane, SelectedPane, TITLE } from './ProjectPanes'

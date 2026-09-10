@@ -1,7 +1,7 @@
-import type { SessionReader } from '../../../core/sessions/bridge'
-import type { SessionFeedReply, SessionListReply } from '../../../core/sessions/contract'
-import { projectFeed } from '../../../core/sessions/feed'
-import { createTranscriptSessionReader } from '../../../core/sessions/read-transcript-sessions'
+import type { SessionReader } from '@/core/sessions/bridge'
+import type { SessionFeedReply, SessionListReply } from '@/core/sessions/contract'
+import { projectFeed } from '@/core/sessions/feed'
+import { createTranscriptSessionReader } from '@/core/sessions/read-transcript-sessions'
 import { discoverSessions, readSessionFiles } from './discover'
 
 export function createCodexSessionReader(root: string): SessionReader {

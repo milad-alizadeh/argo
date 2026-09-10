@@ -1,5 +1,5 @@
-import { isRecord } from '../../../boundary'
-import type { TranscriptRecord } from '../../../core/sessions/transcript'
+import { isRecord } from '@/boundary'
+import type { TranscriptRecord } from '@/core/sessions/transcript'
 
 function textBlocks(value: unknown) {
   if (!Array.isArray(value)) return []

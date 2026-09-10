@@ -1,6 +1,6 @@
 // System, Light and Dark (#1820). The control shows the choice, not the resolution, so System
 // stays selected while the operating system moves the window between the other two.
-import { APPEARANCES, type Appearance, isAppearance } from '../../../../core/appearance/appearance'
+import { APPEARANCES, type Appearance, isAppearance } from '@/core/appearance/appearance'
 import { ToggleGroup, ToggleGroupItem } from '../../../components/ui/toggle-group'
 
 const LABELS: Record<Appearance, string> = { system: 'System', light: 'Light', dark: 'Dark' }

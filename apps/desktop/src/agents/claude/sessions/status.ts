@@ -1,1 +1,1 @@
-export * from '../../../core/sessions/status'
+export * from '@/core/sessions/status'

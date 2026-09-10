@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionClient } from '../../../core/sessions/client.ts'
+import { createSessionClient } from '@/core/sessions/client.ts'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
 const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: 'session-a' }

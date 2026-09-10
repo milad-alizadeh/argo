@@ -2,7 +2,7 @@ import {
   readTranscriptFile as read,
   type TranscriptFile,
   withoutBlocks,
-} from '../../../core/sessions/transcript'
+} from '@/core/sessions/transcript'
 import { parseTranscriptLine } from './records'
 
 export type { TranscriptFile }
