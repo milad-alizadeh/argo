@@ -2,10 +2,6 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
-import {
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from './agents/claude/session-fake-driver/session-proof-protocol'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
 import { windowBackground } from './core/appearance/appearance'
@@ -19,6 +15,10 @@ import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachSessionBridge } from './core/sessions/bridge'
 import { combineSessionReaders } from './core/sessions/combine-readers'
+import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CODEX_TRANSCRIPTS_ENV,
+} from './core/sessions/proof-protocol'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined

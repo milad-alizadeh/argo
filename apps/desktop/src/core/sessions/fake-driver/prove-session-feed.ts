@@ -16,14 +16,11 @@ import {
   appExecutable,
   assertShippedFusesIntact,
   packagedTestCopy,
-} from '../../../core/desktop-proof/packaged-test-copy'
-import { PROJECT_PROOF_STORE_ENV } from '../../../core/projects/fake-driver/project-proof-protocol'
+} from '../../desktop-proof/packaged-test-copy'
+import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
+import { SESSION_CLAUDE_TRANSCRIPTS_ENV, SESSION_CODEX_TRANSCRIPTS_ENV } from '../proof-protocol'
 import { proveCodexFeed, proveRendererAuthority } from './session-feed-cases'
 import { CODEX_FIXTURES, writeFixtureTree } from './session-fixture-files'
-import {
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from './session-proof-protocol'
 import { proveContract } from './session-roster-cases'
 
 const FIXTURES = [
