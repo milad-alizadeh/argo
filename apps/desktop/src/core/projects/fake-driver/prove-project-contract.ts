@@ -16,7 +16,7 @@ const request = { version: 1, type: 'project.open', requestId: 'open-1', project
 async function prepare(root) {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
-  const projectPath = path.join(root, 'example')
+  const projectPath = path.join(userData, 'example')
   await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
   await mkdir(projectPath)
   const registryPath = path.join(userData, 'portable-v1', 'projects.json')
