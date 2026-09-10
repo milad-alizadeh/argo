@@ -122,9 +122,9 @@ extension AtlasContractSpecimen {
 
 /// One cord weight, drawn at the alpha and the width the map strokes it at (#1160).
 ///
-/// A view of its own rather than a function returning one, which is the shape
-/// `apps/macOS/AGENTS.md` asks for — and it takes the weight rather than two numbers, so the sheet
-/// cannot come to show a cord the map does not draw.
+/// A view of its own rather than a function returning one, which is the shape `rules/swift.md`
+/// asks for — and it takes the weight rather than two numbers, so the sheet cannot come to show a
+/// cord the map does not draw.
 private struct AtlasCordStroke: View {
     let weight: AtlasCordWeight
     let ink: ArgoColor

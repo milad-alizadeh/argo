@@ -32,7 +32,7 @@ public struct CockpitActions {
     public struct Tickets {
         /// The two provider-port writes a ticket that already exists or does not yet exist can
         /// raise — grouped apart from the reads below and `startSession` beside them (4-parameter
-        /// init cap, .swiftlint.yml).
+        /// init cap, rules/house.md).
         public var writes = Writes()
         /// Start a Session ON one ticket, on the rung the row names, opening on the prompt the
         /// ticket asks for (#899). The seed carries the number, which is what makes the Session

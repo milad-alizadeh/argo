@@ -91,7 +91,7 @@ package struct TicketsChromeIntents {
             /// Binding does not declare the `.closure` write at all.
             ///
             /// ABSENCE folded into one optional rather than a separate flag beside it (4-parameter
-            /// init cap, .swiftlint.yml): a Binding that never offers the write has no honest
+            /// init cap, rules/house.md): a Binding that never offers the write has no honest
             /// answer for "is this ticket open or closed" EITHER, because nothing here may draw a
             /// control that takes a press and does nothing (#872).
             var current: TicketClosure?

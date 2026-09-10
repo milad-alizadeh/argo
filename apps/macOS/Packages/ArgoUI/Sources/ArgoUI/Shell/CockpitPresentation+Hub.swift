@@ -128,7 +128,7 @@ extension CockpitPresentation.Session {
     /// Each fact below also lands on the slot of its own name, unless a `renamed:` line here says
     /// otherwise (ADR-0027, amended by #755).
     ///
-    /// renamed: location <- cwd — "Names are words" (root AGENTS.md).
+    /// renamed: location <- cwd — "Names are words, not abbreviations" (rules/house.md).
     /// renamed: submittedTurn <- unansweredTurn — the engine names the WINDOW, because what it
     /// owns is a claim that ends (`HubSession.unansweredTurn`); the projection names the ACT,
     /// beside `lostTurn`, which is the other answer about the same Turn Argo typed (#1278).

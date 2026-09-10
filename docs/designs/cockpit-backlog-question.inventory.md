@@ -40,7 +40,7 @@ strings under the reader when the prose lands.
 
 | value | where | why there |
 |---|---|---|
-| `ArgoTicketsChrome.askWidth` | beside the surface | a measure is not a token (`apps/macOS/AGENTS.md`). A CEILING; `askWidth(inPaneOf:)` is `min(268, what the pane affords)`, floored at `searchWidth` |
+| `ArgoTicketsChrome.askWidth` | beside the surface | a measure is not a token (`rules/swift.md`). A CEILING; `askWidth(inPaneOf:)` is `min(268, what the pane affords)`, floored at `searchWidth` |
 | `BacklogAskWait.barWidth` / `.barHeight` / `.runShare` | beside the surface | same rule. `40 × 2` is the design's; the run is the share the prototype's keyframes travel |
 | `ArgoSymbol.askBacklog` | `ArgoDesign` | a mark is the contract's. Shares `skill`'s glyph the way `newTicket` shares `newSession`'s — the two never appear in one surface |
 | `SearchFieldLine.Look` / `.Lead` | `ArgoUI/Shell/` | the shared field line's own, since both of this app's search fields take it |

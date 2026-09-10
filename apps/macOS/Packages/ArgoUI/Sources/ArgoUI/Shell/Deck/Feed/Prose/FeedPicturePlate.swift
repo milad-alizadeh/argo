@@ -35,7 +35,7 @@ enum FeedPictureShowing {
 /// whichever of the three states it was handed inside.
 ///
 /// Split from `FeedMarkdownPicture` so each state has a render of its own — a state drawn only
-/// behind a live fetch is a state nobody has looked at (`apps/macOS/AGENTS.md`, Rendering).
+/// behind a live fetch is a state nobody has looked at (`rules/swift.md`, Rendering).
 struct FeedPicturePlate: View {
     @Environment(\.argo) private var argo
     @Environment(\.openURL) private var open

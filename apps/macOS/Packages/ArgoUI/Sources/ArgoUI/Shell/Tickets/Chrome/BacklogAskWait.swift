@@ -67,8 +67,8 @@ struct BacklogAskWait: View {
         travelled ? Self.barWidth : -Self.barWidth * Self.runShare
     }
 
-    /// The bar's own measurements, beside the surface per `apps/macOS/AGENTS.md`: a measure is not
-    /// a token. `40 × 2` is what the design names, and the run is the share of it the prototype's
+    /// The bar's own measurements, beside the surface per `rules/swift.md`: a measure is not a
+    /// token. `40 × 2` is what the design names, and the run is the share of it the prototype's
     /// keyframes travel.
     static let barWidth: CGFloat = 40
     static let barHeight: CGFloat = 2

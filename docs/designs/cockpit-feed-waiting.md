@@ -232,8 +232,8 @@ The four periods below are **edits to existing roles**, not promotions.
 2. **`ArgoWaitAge.all`** — re-based to 1.2 / 1.8 / 2.4 / 3.1. The glows are untouched, so the
    ladder's *shape* is exactly what #615 approved.
 
-That is all. The plinth's own measures are a surface's, not the contract's (`apps/macOS/AGENTS.md`),
-so they live beside `FeedWaitPlinth` and promote nothing. Both changes above are edits to existing
+That is all. The plinth's own measures are a surface's, not the contract's (`rules/swift.md`), so
+they live beside `FeedWaitPlinth` and promote nothing. Both changes above are edits to existing
 roles rather than new ones, so no `all` array grows and `VisualContractTests`' `Mirror` assertion
 is unaffected.
 

@@ -2,7 +2,7 @@ import ArgoDesign
 import SwiftUI
 
 /// What the searchable ticket picker is measured at (#1231). Beside the surface, per
-/// `apps/macOS/AGENTS.md`: a measure is not a token.
+/// `rules/swift.md`: a measure is not a token.
 ///
 /// The whole point of the ticket is that these numbers do not move with the backlog. A picker
 /// measured off its content filled almost the window height once the backlog passed a hundred
