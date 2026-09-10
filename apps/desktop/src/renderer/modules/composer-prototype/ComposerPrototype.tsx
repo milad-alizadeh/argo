@@ -2131,7 +2131,7 @@ export function ComposerPrototype() {
                 }}
               >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
+          <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 dark:bg-background ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <div className="flex min-h-20 items-start px-4 py-3 pr-28">
