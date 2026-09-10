@@ -127,7 +127,9 @@ sub-agent rule: `docs/agents/worktrees.md`.
 **A subagent's model is a decision per dispatch**, never inherited from this session, and a
 fan-out pays it once per agent. **The dispatching session's own model is the ceiling**: a
 subagent never runs a stronger model than the session that dispatches it, only the same model or
-a cheaper one the task can hold. Name the model and the reason when you report the dispatch.
+a cheaper one the task can hold. For example, Sol can dispatch Sol or a cheaper model, but it
+cannot dispatch Astra. This keeps a cheap parent from turning an overestimated task into an
+expensive fan-out. Name the model and the reason when you report the dispatch.
 
 ## Cross-CLI guardrail hooks
 
