@@ -733,7 +733,10 @@ function ContextPopover({
           />
           <div className="flex items-end">
             <label className="grid w-1/2 gap-1 text-[10px] text-muted-foreground">
-              Compact at
+              <span className="flex justify-between">
+                <span>Compact at</span>
+                <span>{autoCompactThresholdPercentage}% of total</span>
+              </span>
               <span className="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs text-foreground">
                 <input
                   type="number"
