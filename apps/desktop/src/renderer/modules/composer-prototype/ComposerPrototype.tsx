@@ -386,9 +386,18 @@ function RunSetupMenu({ state, setState }: StateProps) {
               }}
               className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground"
             />
-            <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-              {definition.efforts.map((effort) => (
-                <span key={effort} className={state.effort === effort ? 'font-semibold text-foreground' : ''}>{effort}</span>
+            <div className="relative mt-2 h-4 text-[10px] text-muted-foreground">
+              {definition.efforts.map((effort, index) => (
+                <span
+                  key={effort}
+                  className={`absolute whitespace-nowrap ${state.effort === effort ? 'font-semibold text-foreground' : ''}`}
+                  style={{
+                    left: `${(index / Math.max(1, definition.efforts.length - 1)) * 100}%`,
+                    transform: index === 0 ? 'none' : index === definition.efforts.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)',
+                  }}
+                >
+                  {effort}
+                </span>
               ))}
             </div>
           </div>
