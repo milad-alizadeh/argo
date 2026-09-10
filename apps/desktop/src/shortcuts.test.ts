@@ -8,7 +8,7 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
   SHORTCUTS,
-} from '../src/shortcuts.ts'
+} from './shortcuts'
 
 const pressed = (key, modifiers = {}) => ({
   key,

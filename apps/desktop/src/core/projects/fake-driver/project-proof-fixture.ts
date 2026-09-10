@@ -8,10 +8,10 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
 import { _electron as electron } from 'playwright-core'
-import { ACCEPTANCE_ENV } from './acceptance-protocol.mjs'
-import { PRODUCTION_FUSE_PROFILE, readFuseWire } from './fuse-profile.mjs'
-import { packagedApp } from './packaged-app.mjs'
-import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol.mjs'
+import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
+import { PRODUCTION_FUSE_PROFILE, readFuseWire } from '../../../scripts/fuse-profile.mjs'
+import { packagedApp } from '../../../scripts/packaged-app.mjs'
+import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const run = promisify(execFile)
 

@@ -6,7 +6,7 @@ import {
   DEFAULT_APPEARANCE,
   isAppearanceState,
   windowBackground,
-} from '../src/appearance/appearance.ts'
+} from './appearance'
 
 const client = (invoke) => createAppearanceClient(invoke, () => {})
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createProjectClient } from '../src/projects/client.ts'
+import { createProjectClient } from './client'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 const opened = {

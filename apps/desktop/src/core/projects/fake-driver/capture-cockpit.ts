@@ -11,9 +11,9 @@ import { mkdir, mkdtemp, realpath, rename, rm, writeFile } from 'node:fs/promise
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { chooseThen, show, waitForCockpit, waitForDeck } from './cockpit-driver.mjs'
-import { desktopRoot } from './packaged-app.mjs'
-import { launch, prepare } from './project-proof-fixture.mjs'
+import { chooseThen, show, waitForCockpit, waitForDeck } from './cockpit-driver'
+import { desktopRoot } from '../../../scripts/packaged-app.mjs'
+import { launch, prepare } from './project-proof-fixture'
 
 const VIEWPORT = { width: 1200, height: 800 }
 const APPEARANCES = ['light', 'dark']

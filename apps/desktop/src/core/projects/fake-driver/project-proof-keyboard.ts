@@ -2,7 +2,7 @@
 // cockpit. Keys are dispatched into the renderer over the debugging protocol, so the run never
 // takes the real keyboard.
 import assert from 'node:assert/strict'
-import { deckState, waitForDeck } from './cockpit-driver.mjs'
+import { deckState, waitForDeck } from './cockpit-driver'
 
 // A bound on the walk, so a ring that never closes fails as a count rather than as a hang.
 const TAB_LIMIT = 24

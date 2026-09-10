@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { EMPTY_REGISTRY, readRegistry, toSummary, writeRegistry } from '../src/projects/registry.ts'
+import { EMPTY_REGISTRY, readRegistry, toSummary, writeRegistry } from './registry'
 
 async function store(context, content) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-registry-'))
