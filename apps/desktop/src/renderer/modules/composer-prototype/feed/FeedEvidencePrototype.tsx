@@ -1,64 +1,7 @@
-import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@/renderer/components/ui/button'
 import { FEED_INSPECTOR_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
-import { EvidenceBody, EvidenceKindIcon } from './FeedEvidenceBody'
+import { EvidenceBody } from './FeedEvidenceBody'
 import { CopyFeedContent } from './FeedPrimitives'
-
-function ExpandedEvidence({
-  evidence,
-  onClose,
-}: {
-  evidence: FeedPrototypeEvidence
-  onClose: () => void
-}) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const [closing, setClosing] = useState(false)
-  useEffect(() => {
-    dialog.current?.showModal()
-  }, [])
-
-  const closeExpanded = () => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      dialog.current?.close()
-      return
-    }
-    setClosing(true)
-  }
-
-  return (
-    <dialog
-      ref={dialog}
-      onClose={onClose}
-      onCancel={(event) => {
-        event.preventDefault()
-        closeExpanded()
-      }}
-      onAnimationEnd={() => {
-        if (closing) dialog.current?.close()
-      }}
-      className={`fixed inset-4 m-auto max-h-full w-full max-w-4xl overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-xl backdrop:bg-background/80 motion-safe:duration-200 ${closing ? 'motion-safe:animate-out motion-safe:fade-out motion-safe:zoom-out-95' : 'motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95'}`}
-      aria-label={evidence.title}
-    >
-      <div className="flex items-center gap-2 border-b px-4 py-3">
-        <EvidenceKindIcon kind={evidence.kind} />
-        <h2 className="min-w-0 flex-1 truncate text-body font-medium">{evidence.title}</h2>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Close expanded view"
-          onClick={closeExpanded}
-        >
-          <X className="!size-(--size-icon-control)" />
-        </Button>
-      </div>
-      <div className="max-h-160 overflow-auto p-6">
-        <EvidenceBody evidence={evidence} />
-      </div>
-      <p className="border-t px-4 py-3 text-control text-muted-foreground">{evidence.detail}</p>
-    </dialog>
-  )
-}
 
 function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
   return (
@@ -76,13 +19,9 @@ function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
 export function FeedEvidencePrototype({
   evidence,
   onActiveEvidenceChange,
-  expanded,
-  onExpandedChange,
 }: {
   evidence: FeedPrototypeEvidence
   onActiveEvidenceChange: (evidenceId: string) => void
-  expanded: boolean
-  onExpandedChange: (expanded: boolean) => void
 }) {
   const showsToolSequence = FEED_INSPECTOR_EVIDENCE.some((item) => item.id === evidence.id)
   const items = showsToolSequence ? FEED_INSPECTOR_EVIDENCE : [evidence]
@@ -131,9 +70,6 @@ export function FeedEvidencePrototype({
         <span>{activeEvidence.status === 'failed' ? 'Failed' : 'Recorded result'}</span>
         <CopyFeedContent text={activeEvidence.source} />
       </footer>
-      {expanded ? (
-        <ExpandedEvidence evidence={activeEvidence} onClose={() => onExpandedChange(false)} />
-      ) : null}
     </section>
   )
 }
