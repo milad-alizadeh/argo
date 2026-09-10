@@ -17,7 +17,11 @@ Three properties of the wiring are not readable off those files:
 - **Each of biome and jscpd reads a different amount of the tree.** Biome reads one file at a
   time and cannot see a clone spanning two, so biome alone leaves a duplication breach for CI.
   Biome also does not read types, which is why the typecheck is a step of its own (#1733).
-- **Nothing runs at push time.** `.husky/pre-commit` runs lint-staged; `.husky/pre-push` is gone.
+- **Nothing runs at commit time either, and nothing at push time.** There is no git hook left:
+  husky, lint-staged and `.husky/` are gone (#1911). The pre-commit hook had spent months calling
+  a script #1828 deleted, so every commit failed on it and every session passed `--no-verify`,
+  which skipped the lint it did carry as well. A staged-files subset of a check CI runs over the
+  whole tree buys nothing and costs a gate that fails open the moment one flag is typed.
 - **CI never runs `quality:node`.** The pin reaches CI through `node-version-file:` and the root
   `preinstall`, so a mismatch fails the install rather than a gate, and the failure names the
   install rather than the Node.
@@ -38,11 +42,10 @@ Two shapes cost this repo real time and apply to whatever gates `apps/desktop` n
 already, and `quality:duplication` scans `apps`. Three things sit outside that, and each is
 thinner than it looks.
 
-**The typecheck is a step of its own and is not in lint-staged.** Biome does not read types, so a
-file `tsc` rejects passes biome. lint-staged is staged-files-only, and a type error is a property
-of the whole program rather than of a file, so it belongs in `quality` and in CI instead.
-**Nothing asserts that `quality:types` is still wired into either**, so a step dropped from
-`package.json` or `ci.yml` is caught by review or not at all.
+**The typecheck is a step of its own.** Biome does not read types, so a file `tsc` rejects passes
+biome, and a type error is a property of the whole program rather than of a file. That is why it
+lives in `quality` and in CI. **Nothing asserts that `quality:types` is still wired into either**,
+so a step dropped from `package.json` or `ci.yml` is caught by review or not at all.
 
 **`turbo.json` must carry no comments.** Turbo itself reads JSONC and would accept them; the file
 stays comment-free by convention, with nothing enforcing it.

@@ -192,7 +192,7 @@
                 // developer reaching for `ipcRenderer` writes first. The unprefixed built-ins are
                 // listed because `useNodejsImportProtocol`, which would otherwise normalise them
                 // into the `node:` form this rule sees, is `info` severity and its fix is unsafe —
-                // so `import cp from 'child_process'` survives both CI and lint-staged untouched.
+                // so `import cp from 'child_process'` reaches CI untouched.
                 "patterns": [
                   {
                     "group": ["node:*", "node:*/**"]
