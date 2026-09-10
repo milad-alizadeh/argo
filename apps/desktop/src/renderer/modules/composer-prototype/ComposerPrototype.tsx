@@ -520,7 +520,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="relative h-16 w-48 shrink-0 select-none border-border/60 px-2" size="xs">
+              <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 select-none border-border/60 py-1.5 pr-9 pl-2" size="xs">
                 <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
                     <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
@@ -528,8 +528,8 @@ function ReferenceStrip({ state, setState }: StateProps) {
                     <File className="size-6" />
                   )}
                 </AttachmentMedia>
-                <AttachmentContent className="min-w-0">
-                  <AttachmentTitle className="block truncate">{fileTitle(reference)}</AttachmentTitle>
+                <AttachmentContent className="min-w-0 max-w-32 overflow-hidden">
+                  <AttachmentTitle className="block overflow-hidden text-ellipsis whitespace-nowrap">{fileTitle(reference)}</AttachmentTitle>
                   <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
                 </AttachmentContent>
                 <AttachmentActions className="absolute top-1.5 right-1.5">
