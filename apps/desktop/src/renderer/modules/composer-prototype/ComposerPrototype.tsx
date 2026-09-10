@@ -39,9 +39,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/renderer/components/ui/dropdown-menu'
 import {
@@ -229,6 +226,7 @@ function AddContextMenu({ state, setState }: StateProps) {
 
 function RunSetupMenu({ state, setState }: StateProps) {
   const definition = HARNESSES[state.harness]
+  const effortIndex = Math.max(0, definition.efforts.indexOf(state.effort))
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -242,52 +240,83 @@ function RunSetupMenu({ state, setState }: StateProps) {
         <span>{state.effort}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-80">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Run setup</DropdownMenuLabel>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <HarnessLogo harness={state.harness} />
-              Harness
-              <span className="ml-auto text-muted-foreground">{definition.label}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-56">
-              {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => (
-                <DropdownMenuItem key={harness} onClick={() => setState(selectHarness(state, harness))}>
+      <DropdownMenuContent align="start" side="top" className="w-[25rem] overflow-hidden p-0">
+        <div className="border-b px-4 pb-3 pt-4">
+          <div className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Run setup
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Harness">
+            {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => {
+              const active = state.harness === harness
+              return (
+                <button
+                  key={harness}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setState(selectHarness(state, harness))}
+                  className={`flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+                    active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
                   <HarnessLogo harness={harness} />
                   {HARNESSES[harness].label}
-                  <SelectionMark active={state.harness === harness} />
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Bot />Model
-              <span className="ml-auto text-muted-foreground">{state.model}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-52">
-              {definition.models.map((model) => (
-                <DropdownMenuItem key={model} onClick={() => setState({ ...state, model })}>
-                  {model}<SelectionMark active={state.model === model} />
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <BrainCircuit />Effort
-              <span className="ml-auto text-muted-foreground">{state.effort}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-44">
-              {definition.efforts.map((effort) => (
-                <DropdownMenuItem key={effort} onClick={() => setState({ ...state, effort })}>
-                  {effort}<SelectionMark active={state.effort === effort} />
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        </DropdownMenuGroup>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[1fr_9rem]">
+          <div className="border-r p-3">
+            <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">Model</div>
+            <div className="space-y-1" role="listbox" aria-label="Model">
+              {definition.models.map((model) => {
+                const active = state.model === model
+                return (
+                  <button
+                    key={model}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => setState({ ...state, model })}
+                    className={`flex h-9 w-full items-center rounded-md px-2.5 text-left text-sm transition-colors ${
+                      active ? 'bg-foreground text-background' : 'hover:bg-muted'
+                    }`}
+                  >
+                    <span>{model}</span>
+                    {active ? <Check className="ml-auto size-4" /> : null}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col p-3">
+            <div className="text-xs font-medium text-muted-foreground">Effort</div>
+            <div className="mt-3 text-sm font-semibold">{state.effort}</div>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(0, definition.efforts.length - 1)}
+              step={1}
+              value={effortIndex}
+              aria-label="Effort"
+              onChange={(event) => {
+                const effort = definition.efforts[Number(event.currentTarget.value)]
+                if (effort) setState({ ...state, effort })
+              }}
+              className="mt-4 h-1.5 w-full cursor-pointer accent-foreground"
+            />
+            <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
+              <span>{definition.efforts[0]}</span>
+              <span>{definition.efforts.at(-1)}</span>
+            </div>
+            <p className="mt-auto pt-5 text-xs leading-4 text-muted-foreground">
+              Higher effort spends more time reasoning before acting.
+            </p>
+          </div>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   )
