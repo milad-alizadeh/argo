@@ -558,10 +558,6 @@ function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; labe
 function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar: boolean; onToggleSidebar: () => void }) {
   return (
     <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
-      <div className="relative shrink-0">
-        <HarnessLogo harness="codex" />
-        <span className="absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
-      </div>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
@@ -570,8 +566,6 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
         <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
           <GitBranch />
           <span className="truncate">argo/#1258-composer-prototype</span>
-          <span>·</span>
-          <span className="shrink-0">Codex</span>
           <span>·</span>
           <a
             href="https://github.com/milad-alizadeh/argo/issues/1258"
