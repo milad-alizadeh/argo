@@ -1,18 +1,20 @@
 // One composer direction after the blind UX and visual reviews selected the single-surface layout.
 import {
+  Archive,
   ArrowRight,
   ArrowUp,
   Bot,
-  BrainCircuit,
-  CircleHelp,
   Check,
   ChevronDown,
   CircleGauge,
+  CircleHelp,
   Command,
   CornerDownRight,
   File,
   FileCheck2,
   Folder,
+  FolderGit2,
+  GitBranch,
   GitFork,
   GripVertical,
   Hand,
@@ -21,14 +23,19 @@ import {
   ListTodo,
   Mic,
   Minimize2,
+  MoreHorizontal,
+  PanelLeftClose,
   Paperclip,
   Pencil,
   Plus,
   Route,
+  Search,
   ShieldAlert,
   ShieldCheck,
-  Unlock,
+  SquareTerminal,
+  Ticket,
   Trash2,
+  Unlock,
   WandSparkles,
   X,
 } from 'lucide-react'
@@ -232,12 +239,222 @@ const INITIAL_MESSAGES: MessageRow[] = [
   },
 ]
 
+type PrototypeSession = {
+  id: string
+  title: string
+  harness: HarnessKey
+  status: 'running' | 'waiting' | 'idle'
+  detail: string
+  updated: string
+}
+
+const PROTOTYPE_SESSIONS: PrototypeSession[] = [
+  {
+    id: 'session-design',
+    title: 'Continue Session design from composer',
+    harness: 'codex',
+    status: 'running',
+    detail: 'argo/#1258-composer-prototype',
+    updated: 'now',
+  },
+  {
+    id: 'roster-feed',
+    title: 'Restore the Session roster feed',
+    harness: 'claude',
+    status: 'waiting',
+    detail: 'ticket-1907-restore-roster-feed',
+    updated: '12m',
+  },
+  {
+    id: 'release-verdict',
+    title: 'Verify the release verdict guard',
+    harness: 'codex',
+    status: 'idle',
+    detail: 'argo/#1807-release-verdict',
+    updated: '48m',
+  },
+  {
+    id: 'adapter-contract',
+    title: 'Settle the Codex Session adapter contract',
+    harness: 'claude',
+    status: 'idle',
+    detail: 'argo/#1764-codex-adapter',
+    updated: '2h',
+  },
+]
+
 function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; className?: string }) {
   const source = harness === 'codex' ? '/prototype-assets/openai-mono.svg' : '/prototype-assets/claude-mono.svg'
   return (
     <span className={`relative inline-flex !size-4 shrink-0 ${className}`}>
       <img src={source} alt="" className="size-full object-contain dark:invert" />
     </span>
+  )
+}
+
+function PrototypeChrome() {
+  return (
+    <header className="flex h-11 shrink-0 items-center border-b border-border/60 bg-background px-3">
+      <div className="w-16 shrink-0" aria-hidden="true" />
+      <div className="flex min-w-0 items-center gap-2 text-xs">
+        <span className="font-semibold">Argo</span>
+        <span className="text-muted-foreground">/</span>
+        <span className="truncate text-muted-foreground">argo</span>
+      </div>
+      <div className="ml-auto flex items-center gap-1">
+        <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs text-muted-foreground">
+          <Search /> Search
+        </Button>
+        <Button variant="ghost" size="icon-sm" aria-label="Toggle sidebar">
+          <PanelLeftClose />
+        </Button>
+      </div>
+    </header>
+  )
+}
+
+const RAIL_ITEMS = [
+  { label: 'Sessions', icon: <Bot />, active: true },
+  { label: 'Tickets', icon: <Ticket />, active: false },
+  { label: 'Atlas', icon: <Route />, active: false },
+  { label: 'Files', icon: <FolderGit2 />, active: false },
+]
+
+function PrototypeRail() {
+  return (
+    <nav aria-label="Argo" className="flex min-h-0 flex-col items-center border-r border-border/60 bg-muted/35 py-3 max-md:hidden">
+      <div className="mb-4 grid size-8 place-items-center rounded-lg bg-foreground text-xs font-semibold text-background">A</div>
+      <div className="flex flex-col gap-1">
+        {RAIL_ITEMS.map((item) => (
+          <Tooltip key={item.label}>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  aria-label={item.label}
+                  aria-current={item.active ? 'page' : undefined}
+                  className={`grid size-9 place-items-center rounded-lg transition-colors ${
+                    item.active
+                      ? 'bg-background text-foreground shadow-sm ring-1 ring-border/70'
+                      : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
+                  }`}
+                />
+              }
+            >
+              {item.icon}
+            </TooltipTrigger>
+            <TooltipContent side="right">{item.label}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+      <div className="mt-auto">
+        <Tooltip>
+          <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
+            <Archive />
+          </TooltipTrigger>
+          <TooltipContent side="right">Archive</TooltipContent>
+        </Tooltip>
+      </div>
+    </nav>
+  )
+}
+
+const STATUS_STYLES: Record<PrototypeSession['status'], string> = {
+  running: 'bg-emerald-500',
+  waiting: 'bg-amber-400',
+  idle: 'bg-muted-foreground/45',
+}
+
+function PrototypeSessionRoster() {
+  return (
+    <aside className="flex min-h-0 flex-col border-r border-border/60 bg-card max-xl:hidden">
+      <div className="flex h-12 shrink-0 items-center border-b border-border/60 px-3">
+        <h1 className="text-sm font-semibold">Sessions</h1>
+        <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="New Session">
+          <Plus />
+        </Button>
+      </div>
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex h-8 items-center gap-2 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-muted-foreground">
+          <Search />
+          <span>Find a Session</span>
+          <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-[10px]">⌘K</span>
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+        <div className="px-2 py-2 text-[11px] font-medium text-muted-foreground">Current project</div>
+        <div className="space-y-1">
+          {PROTOTYPE_SESSIONS.map((session) => {
+            const selected = session.id === 'session-design'
+            return (
+              <button
+                key={session.id}
+                type="button"
+                aria-current={selected ? 'page' : undefined}
+                className={`group w-full rounded-lg px-2.5 py-2.5 text-left transition-colors ${
+                  selected ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                }`}
+              >
+                <span className="flex items-start gap-2">
+                  <span className="relative mt-0.5 shrink-0">
+                    <HarnessLogo harness={session.harness} />
+                    <span className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium text-foreground">{session.title}</span>
+                    <span className="mt-1 flex items-center gap-1.5 text-[10px]">
+                      <span className="min-w-0 flex-1 truncate">{session.detail}</span>
+                      <span className="shrink-0 tabular-nums">{session.updated}</span>
+                    </span>
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div className="border-t border-border/60 p-3">
+        <button type="button" className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+          <span className="grid size-6 place-items-center rounded-md border border-border/60 bg-background text-[10px] font-semibold">MA</span>
+          <span className="min-w-0 flex-1 truncate">milad</span>
+          <MoreHorizontal />
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+function PrototypeSessionHeader() {
+  return (
+    <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
+      <div className="relative shrink-0">
+        <HarnessLogo harness="codex" />
+        <span className="absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
+          <span className="shrink-0 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Running</span>
+        </div>
+        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+          <GitBranch />
+          <span className="truncate">argo/#1258-composer-prototype</span>
+          <span>·</span>
+          <span className="shrink-0">Codex</span>
+        </div>
+      </div>
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
+          <Ticket /> #1258
+        </Button>
+        <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
+          <SquareTerminal /> Terminal
+        </Button>
+        <Button variant="ghost" size="icon-sm" aria-label="More Session actions">
+          <MoreHorizontal />
+        </Button>
+      </div>
+    </header>
   )
 }
 
@@ -1261,15 +1478,20 @@ export function ComposerPrototype() {
   }
 
   return (
-    <main
-      className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
-      data-prototype="composer"
-      onPointerDownCapture={() => setKeyboardFocus(false)}
-      onKeyDownCapture={(event) => {
-        if (event.key === 'Tab') setKeyboardFocus(true)
-      }}
-    >
-      <style>{`
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
+      <PrototypeChrome />
+      <div className="grid min-h-0 flex-1 grid-cols-[3.5rem_17.5rem_minmax(0,1fr)] max-xl:grid-cols-[3.5rem_minmax(0,1fr)] max-md:grid-cols-1">
+        <PrototypeRail />
+        <PrototypeSessionRoster />
+        <main
+          className="relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+          data-prototype="composer"
+          onPointerDownCapture={() => setKeyboardFocus(false)}
+          onKeyDownCapture={(event) => {
+            if (event.key === 'Tab') setKeyboardFocus(true)
+          }}
+        >
+          <style>{`
         main svg,
         main img {
           inline-size: 1rem !important;
@@ -1299,21 +1521,22 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
       `}</style>
-      <div className="min-h-0 flex-1">
-        <Transcript messages={messages} />
-      </div>
-      <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+          <PrototypeSessionHeader />
+          <div className="min-h-0 flex-1">
+            <Transcript messages={messages} />
+          </div>
+          <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-6 pt-6 pb-8">
+            <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
-        </div>
-        <AnimatedHeight>
-          <form
-            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0"
-            onSubmit={(event) => {
-              event.preventDefault()
-              send()
-            }}
-          >
+            </div>
+            <AnimatedHeight>
+              <form
+                className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  send()
+                }}
+              >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
           <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
@@ -1366,14 +1589,16 @@ export function ComposerPrototype() {
               </div>
             </InputGroupAddon>
           </InputGroup>
-          </form>
-        </AnimatedHeight>
-      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-0.5rem)] max-w-[calc(56rem-0.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
-          <ContextSurface state={state} layout="attached" />
-        </div>
+              </form>
+            </AnimatedHeight>
+            <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-0.5rem)] max-w-[calc(56rem-0.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+              <ContextSurface state={state} layout="attached" />
+            </div>
+          </div>
+          <ContextPreviewControl state={state} setState={setState} />
+          <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
+        </main>
       </div>
-      <ContextPreviewControl state={state} setState={setState} />
-      <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
-    </main>
+    </div>
   )
 }
