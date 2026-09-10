@@ -222,8 +222,8 @@ function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; c
   const darkSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude.ico'
   return (
     <span className={`relative inline-flex shrink-0 overflow-hidden rounded-sm ${className}`}>
-      <img src={lightSource} alt="" className="size-full object-contain dark:hidden" />
-      <img src={darkSource} alt="" className="hidden size-full object-contain dark:block" />
+      <img src={lightSource} alt="" className={`size-full object-contain dark:hidden ${harness === 'codex' ? 'scale-[1.18]' : 'scale-[0.82]'}`} />
+      <img src={darkSource} alt="" className={`hidden size-full object-contain dark:block ${harness === 'codex' ? 'scale-[1.18]' : 'scale-[0.82]'}`} />
     </span>
   )
 }
