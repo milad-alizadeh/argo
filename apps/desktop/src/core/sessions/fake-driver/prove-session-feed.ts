@@ -133,8 +133,8 @@ try {
     return reading
   }
   await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
-  await ran(['codex-feed'], () => proveCodexFeed(page))
   await ran(['empty-state', 'session-activity'], () => proveSessionsScreen(page, application))
+  await ran(['codex-feed'], () => proveCodexFeed(page))
   await ran(['codex-reread'], () =>
     proveCodexReread(page, fixture.codexTranscripts, growCodexTranscript),
   )
