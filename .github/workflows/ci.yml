@@ -1,9 +1,10 @@
-# Two tiers. `check` runs biome, the typecheck, the duplication gate, the guardrail-hook tests and
+# Three tiers. `check` runs biome, the typecheck, the duplication gate, the guardrail-hook tests and
 # the packaged-contents manifest (#1806) on Linux for every PR — the manifest with no path filter,
 # because a lockfile refresh can change what ships without touching an `apps/desktop` file.
 # `desktop-artifact` packages `apps/desktop` for arm64 on macOS, asserts the
 # packaged `node-pty` and runs the shipped app (#1769) — only when the PR touches the desktop app,
-# the root manifest, the lockfile or `.github/`, and its filter fails CLOSED.
+# the root manifest, the lockfile or `.github/`, and its filter fails CLOSED. `storybook` builds
+# the component site on Linux and comments the stories a pull request touches (#1910).
 #
 # The macOS job is free: standard GitHub-hosted runners are unlimited on public repositories, and
 # `argo` is public. The "99% of the Actions bill" figure that removed the previous macOS job read
@@ -242,14 +243,98 @@ jobs:
       - name: Prove the Session Feed in a packaged test copy
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
-        run: bun run prove:session -- --shots "$RUNNER_TEMP/session-feed-shots"
+        # No `--shots`. The driver can still write PNG files for a person reading them on their own
+        # machine, but nothing in CI takes a screenshot any more (#1910): the assertions above read
+        # the DOM, and the pixels are reviewed on the Storybook site the `storybook` job builds.
+        run: bun run prove:session
 
-      # The packaged screens themselves, kept for the run that drew them. A capture nobody can
-      # look at afterwards proves the proof ran, not what it saw.
-      - name: Keep the packaged Session Feed captures
-        if: ${{ always() && steps.touched.outputs.desktop == 'true' }}
-        uses: actions/upload-artifact@v4
+  # The visual tier (#1910). It replaced a screenshot gate: CI used to drive the packaged app with
+  # `--shots` and keep the PNG files as an artifact, which proved that a capture ran rather than
+  # what it showed, and nobody downloaded them. What a reviewer can use is the component itself, in
+  # every state a story declares, on a site they can click.
+  #
+  # Two things happen here. The build is the gate: a story that stops compiling, or a token a
+  # component reads and the theme no longer defines, fails this step. The comment is the evidence:
+  # the site is served from `main` by `storybook-pages.yml`, so a pull request gets deep links to
+  # the stories of the components its own diff touches rather than a preview of itself.
+  #
+  # `pull-requests: write` is why this is a separate job rather than a step in `check`: the token
+  # there is read-only and must stay that way.
+  storybook:
+    name: storybook build · story links
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
         with:
-          name: session-feed-shots
-          path: ${{ runner.temp }}/session-feed-shots
-          if-no-files-found: ignore
+          # The comment needs a merge base to diff against, and a depth-1 clone has none.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+
+      # No `STORYBOOK_BASE` here. This build is never served, so the default root base is right,
+      # and leaving it unset keeps the gate reading the same configuration a local build does.
+      - name: Build Storybook
+        working-directory: apps/desktop
+        run: bun run storybook:build
+
+      # Written to a file rather than piped onward, so a skipped comment step still leaves the
+      # links in the job summary.
+      - id: links
+        name: Collect the story links for this pull request
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$BASE_REF"
+          git diff --name-only "FETCH_HEAD...HEAD" > "$RUNNER_TEMP/changed.txt"
+          node apps/desktop/scripts/storybook-story-links.mjs \
+            --index apps/desktop/storybook-static/index.json \
+            --base "$SITE" \
+            --changed "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/story-links.md"
+          if [ -s "$RUNNER_TEMP/story-links.md" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            cat "$RUNNER_TEMP/story-links.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no story covers a component this pull request touches"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          SITE: https://milad-alizadeh.github.io/argo/
+
+      # One comment per pull request, edited in place on every push. A marker line identifies it,
+      # because `gh pr comment --edit-last` edits whatever this author wrote last and would take
+      # over an unrelated comment. A fork pull request gets a read-only token, so it is skipped
+      # rather than left to fail; the links are in the job summary either way.
+      - name: Comment the story links
+        # Folded onto one line by `>-`: a block scalar that keeps its newlines is a string GitHub
+        # then has to parse as an expression, and the failure mode is a step that never runs.
+        if: >-
+          ${{ github.event_name == 'pull_request'
+          && steps.links.outputs.found == 'true'
+          && github.event.pull_request.head.repo.full_name == github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          marker='<!-- storybook-story-links -->'
+          { echo "$marker"; cat "$RUNNER_TEMP/story-links.md"; } > "$RUNNER_TEMP/comment.md"
+          # One id per line, then the first line: `--paginate` applies `--jq` once per page, so a
+          # long thread prints a match per page. Trimmed in the shell rather than through `head`,
+          # which closes the pipe early and turns `pipefail` into a failed step.
+          matches=$(gh api "repos/$REPO/issues/$NUMBER/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id")
+          existing=${matches%%$'\n'*}
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" \
+              -F "body=@$RUNNER_TEMP/comment.md" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$NUMBER/comments" \
+              -F "body=@$RUNNER_TEMP/comment.md" > /dev/null
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}

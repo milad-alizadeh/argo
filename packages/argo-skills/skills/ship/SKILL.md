@@ -76,10 +76,10 @@ Nothing here is a reason to stop.
 
 - **Gates.** Step 4 below is the one call. An edit that nothing ran is how a PR passes review and
   fails to build. For UI work, look at the affected states; unit tests do not show you a screen.
-- **Screenshots.** If the diff changes how a screen looks, the PR body carries one screenshot
-  per changed state. Publish and embed them the way the project records; `pixel-review`'s
-  `PR-EVIDENCE.md` carries a recipe that needs no commit. Where the project renders nothing yet,
-  say so once and move on: the rule stands for the day it does.
+- **Screens.** If the diff changes how a screen looks, the PR body names every changed state and
+  says where the reviewer sees each one: a hosted component story, or the project's render
+  command. `pixel-review` hands you exactly that list. An agent publishes no PNG; the project's
+  screenshot method is what it records, and where it records none, say so once and move on.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
 - **The ticket is still open.** `gh issue view <N> --json state,stateReason` — one request, and

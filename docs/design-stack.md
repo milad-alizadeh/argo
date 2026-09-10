@@ -14,14 +14,24 @@ archive.
   registry ships is added with `npx shadcn@latest add <name>`. A shape it does not ship composes
   the ones it does. `bun run quality:components` refuses a second component library, because the
   primitive under `ui/` is fixed by `components.json` (#1767).
-- **Isolated-state mechanism** — the shipped screen renders its own state name into
-  `data-state` on the deck, and the packaged capture drives the app into each one. A new state
-  costs a name on that attribute and one step in `apps/desktop/scripts/capture-cockpit.mjs`.
-  There is no story runner and no specimen app: the app under test is the app.
+- **Isolated-state mechanism** — two of them, and they answer different questions. A **story**
+  under `apps/desktop/src/renderer/**/*.stories.tsx` holds one component in one state, and is
+  what a reviewer clicks. The **shipped screen** renders its own state name into `data-state` on
+  the deck and the packaged capture drives the app into each one, which is the only way to see
+  the real preload, the real main process and the real window. A new component state costs a
+  story; a new screen state costs a name on that attribute and one step in the capture driver.
+- **Browse the components** — `https://milad-alizadeh.github.io/argo/`, built from `main` by
+  `.github/workflows/storybook-pages.yml`. A story id is stable, so
+  `?path=/story/<component>--<state>` is a durable link to one state.
+  `cd apps/desktop && bun run storybook` serves the same thing from the working tree.
 - **Render a state** — a design page: `bun run render:design -- <page.html> <out-dir> <state>…`,
   where a state is the page's URL fragment and `:light` selects the light appearance. The shipped
   screen: `bun run capture:cockpit`, output `apps/desktop/out/cockpit-captures`, one PNG per state
   and appearance.
+
+**Every PNG either command writes is disposable.** Look at it and delete it. No gate reads one and
+no ref holds one (#1910): the reviewable artifact is the story, and the machine-checkable one is
+the DOM assertion the packaged proofs make.
 
 Both renderers show the window: Chromium throttles a hidden one and the capture comes back
 unpainted. Neither takes the real keyboard or the real mouse.

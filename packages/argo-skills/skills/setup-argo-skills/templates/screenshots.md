@@ -4,40 +4,19 @@ A screenshot is evidence. It belongs in the tracker, not only in the session.
 
 - When you create an issue from a bug report, put the user's screenshot in the body under a
   `## Screenshot` heading.
-- A PR that changes how a screen looks carries one screenshot per changed state. If the change
-  is a fix, carry the before image and the after image.
+- A PR that changes how a screen looks names every changed state, and says where each is seen:
+  the hosted component story, or the render command. If the change is a fix, describe the before
+  as well as the after.
 
-`gh issue` and `gh pr` cannot attach a file. Publish the PNGs to a ref instead. Run this in the
-repo, with `shots` set to the directory that holds them:
+**Two routes, and an agent has one of them.** `gh issue` and `gh pr` cannot attach a file, so the
+image reaches GitHub one of two ways:
 
-```sh
-shots=<dir>
-ref=refs/evidence/issue-<N>          # a PR instead: refs/pr-screenshots/<head branch, / as ->
-tree=$(for f in "$shots"/*.png; do
-  printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"
-done | git mktree)
-commit=$(git commit-tree "$tree" -m "evidence: $ref")
-git push --force origin "$commit:$ref"
-```
+- **A person drags the file into the body on github.com.** GitHub hosts it on its own CDN, dated
+  and outside the repository. This is the route for a bug report's screenshot and for a design
+  ticket's state renders, and it is the only route that puts a PNG in a body. Ask for it.
+- **An agent writes a link.** A hosted component site gives one deep link per component;
+  otherwise give the render command and the state names, so a reader draws it themselves.
 
-That push writes a commit sitting on no branch: no work branch and no pull request is involved,
-so a guard that reserves those for a ship skill does not apply to it.
-
-Give every PNG a URL-safe name. An empty `$shots` writes the empty tree and pushes nothing you
-can link to, so make sure that the glob matched.
-
-Embed each one by a raw URL pinned to that commit:
-
-```markdown
-![empty state](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/empty-state.png)
-```
-
-The commit sits on no branch, so it never merges. The ref is the only thing that keeps the
-image reachable: while the ref lives, the URL resolves; delete the ref and the image goes 404.
-A PR screenshot is review-time evidence and its ref can go once the PR closes. An issue
-screenshot must outlive the issue, so leave `refs/evidence/*` alone.
-
-The raw URL renders on a public repo only. On a private repo, ask the user to drag the file
-into the body on github.com.
-
-You cannot read a pasted image as a file. Ask the user to save it and give you the path.
+An agent's own screenshots are **disposable**: a temp dir, judged, deleted. A PNG in a git object
+has no version, so a later reader cannot tell whether it shows the code beside it or the code it
+replaced.

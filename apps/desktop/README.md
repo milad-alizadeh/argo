@@ -12,10 +12,17 @@ reviewed unit.
 
 ## Visual design infra
 
-- Design stack: `docs/designs/stack.md`
-- Design rules: `rules/design.md`
-- Storybook: `cd apps/desktop && bun run storybook`
+- Design stack: `docs/design-stack.md`
+- Design rules: `rules/desktop.md`
+- Components, live: <https://milad-alizadeh.github.io/argo/>, built from `main` by
+  `.github/workflows/storybook-pages.yml`. `?path=/story/<component>--<state>` links one state.
+- Components, locally: `cd apps/desktop && bun run storybook`
+- Build the site: `cd apps/desktop && bun run storybook:build`, output `storybook-static`. Set
+  `STORYBOOK_BASE=/argo/` only when the output will be served from that path.
 - Render one PNG: `cd apps/desktop && bun run design:render`
+
+Every PNG these commands write is disposable. Look at it and delete it: no gate reads one and no
+ref holds one ([#1910](https://github.com/milad-alizadeh/argo/issues/1910)).
 
 ## Build a local release
 

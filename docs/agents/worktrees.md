@@ -174,8 +174,9 @@ never something a sub-agent takes on its own.
 tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is reported and left
 alone. `--dry-run` reports without removing.
 
-The same run sweeps two things that are not worktrees: the visual-review refs
-(`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, and the
+The same run sweeps two things that are not worktrees: the leftover visual-review refs
+(`refs/pr-screenshots/*`, `refs/visual-baselines/*`) off a closed PR, which nothing writes any
+more (#1910) and which the sweep exists to finish clearing, and the
 `design/#<N>-<screen>` branches that carry a screen's explorable page (AGENTS.md → *Design
 work*). **A design branch carries its own expiry in its name**: the sweep reads `#<N>` off the
 branch and drops it once that ticket closes, so no file anywhere has to record that the branch

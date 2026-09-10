@@ -5,9 +5,10 @@ This file described `/pixel-review`'s route into the Swift cockpit: `screenshot.
 them. All of it is deleted (#1758), because `apps/macOS` is deprecated in favour of the Electron app
 and its tooling went with it.
 
-**So there is nothing to render.** `/pixel-review` has no app to drive. A UI ticket cannot be proved
-by pixels until `apps/desktop` provides a rendering route, and choosing that route is open work on
-the migration map.
+**The Electron route now exists**, and `docs/design-stack.md` is where it is written down: a
+Storybook site for a component, `bun run capture:cockpit` for the packaged screen, and a design
+page for a screen that has a design ticket. What that route deliberately does not have is a
+committed picture. Every capture is disposable, no gate reads one, and no ref holds one (#1910).
 
 ## What outlives the tooling
 
