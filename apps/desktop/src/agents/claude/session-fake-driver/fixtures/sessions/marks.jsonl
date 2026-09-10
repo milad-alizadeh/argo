@@ -1,0 +1,7 @@
+{"type": "user", "cwd": "/Users/x/marks", "timestamp": "2026-07-22T09:00:00.000Z", "uuid": "m-1", "parentUuid": null, "message": {"role": "user", "content": "open the pull request"}}
+{"type": "assistant", "cwd": "/Users/x/marks", "timestamp": "2026-07-22T09:00:02.000Z", "uuid": "m-a-1", "parentUuid": "m-1", "message": {"role": "assistant", "stop_reason": "tool_use", "content": [{"type": "text", "text": "Opening it."}]}}
+{"type": "user", "cwd": "/Users/x/marks", "timestamp": "2026-07-22T09:00:03.000Z", "uuid": "m-2", "parentUuid": "m-a-1", "message": {"role": "user", "content": [{"type": "text", "text": "[Request interrupted by user for tool use]"}]}}
+{"type": "pr-link", "sessionId": "s-marks", "prNumber": 1301, "prUrl": "https://github.com/x/marks/pull/1301", "prRepository": "x/marks", "timestamp": "2026-07-22T09:00:04.000Z"}
+{"type": "system", "subtype": "compact_boundary", "content": "Conversation compacted", "cwd": "/Users/x/marks", "timestamp": "2026-07-22T09:00:05.000Z", "uuid": "m-c", "parentUuid": null, "logicalParentUuid": "m-2"}
+{"type": "pr-link", "sessionId": "s-marks", "prNumber": 1312, "prUrl": "https://github.com/x/marks/pull/1312", "timestamp": "2026-07-22T09:00:06.000Z"}
+{"type": "user", "cwd": "/Users/x/marks", "timestamp": "2026-07-22T09:00:07.000Z", "uuid": "m-3", "parentUuid": "m-c", "message": {"role": "user", "content": "carry on"}}

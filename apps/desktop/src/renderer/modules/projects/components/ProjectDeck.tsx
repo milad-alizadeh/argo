@@ -42,13 +42,35 @@ function SurfacePane({ destination }: { destination: Destination }) {
 }
 
 function destinationPane({ destination, cockpit, actions }: DeckProps) {
-  if (destination === 'Sessions') return <SessionsScreen />
   if (destination === 'Projects') return <ProjectPane cockpit={cockpit} actions={actions} />
   return <SurfacePane destination={destination} />
 }
 
 export function ProjectDeck(props: DeckProps) {
-  const { cockpit } = props
+  const { cockpit, destination } = props
+  // Sessions is a screen rather than a pane: it owns two scroll boxes of its own and its own
+  // edges, and its Feed measures rows at the width it is given (ADR-0033 rule 3). So it is handed
+  // the whole deck, undivided and unpadded. The reading column and the page padding below are for
+  // the prose surfaces, and a screen drawn inside them would be measured at 640px in the middle of
+  // a window twice that wide.
+  //
+  // The one column is `minmax(0, 1fr)` and the screen is `min-w-0`, so the deck's width is the
+  // window's and never the widest row's: an `auto` column grows to its content, and the Feed then
+  // measures at the grown width, writes it on, and grows the column again. The deck is also the
+  // containing block of anything positioned inside it, so a visually hidden label cannot escape a
+  // pane's scroll box and make the whole window scroll.
+  if (destination === 'Sessions') {
+    return (
+      <main
+        data-component="ProjectDeck"
+        className="relative grid min-h-0 grid-cols-1 overflow-hidden bg-background"
+      >
+        <div data-state={stateName(props)} className="min-h-0 min-w-0">
+          <SessionsScreen />
+        </div>
+      </main>
+    )
+  }
   return (
     <main data-component="ProjectDeck" className="overflow-auto bg-background p-8">
       <div

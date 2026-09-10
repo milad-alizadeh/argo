@@ -1,15 +1,83 @@
+/* The Sessions surface's own inks and scale. The inks below are the approved design's, and the
+   design is graphite: it has no light appearance. The app offers one (#1820), so the block after
+   `@theme` gives each ink a light value. Those values are not the design's; they are chosen here
+   to keep the same order of contrast on the shadcn light grounds. Read `rules/desktop.md` ·
+   Appearance before extending either. */
 @theme {
-  --color-canvas: #101315;
-  --color-panel: #171c20;
-  --color-panel-raised: #20272c;
-  --color-rule: #344047;
-  --color-ink: #edf2f3;
-  --color-muted: #9eabb1;
-  --color-active: #9de5cf;
-  --color-warn: #f4c46a;
-  --color-danger: #ef8e88;
+  /* Transcribed from the approved roster row design (#1310, `cockpit-roster-row.html`) and the
+     Session layout prototype beside it. Only the inks are the design's: every ground the Sessions
+     surface stands on (the panes, a selected row, a row under the pointer, the hairline between
+     two panes) is a shadcn token from `globals.css`, so the surfaces follow the appearance. */
+  --color-ink: #f2f4f6;
+  /* Two steps down from --color-ink. `quiet` is a fact the reader may want; `faint` is one that
+     is true but not what they came for: a working directory, a branch, a status word beside a
+     Session name. Neither is named `muted`, because `globals.css` gives `--color-muted` the
+     shadcn surface meaning and the later declaration would win. */
+  --color-quiet: #a8aeb5;
+  --color-faint: #929aa1;
+  /* The design's `text.disabled`: the outline of a state Argo cannot place. */
+  --color-off: #4e545a;
+  /* The four state inks a state dot is drawn in. `active` is running and `warn` is attention; the
+     idle ink has its own name because `faint` is text and this is a mark. */
+  --color-active: #46d3a8;
+  --color-idle: #868e96;
+  --color-warn: #e8b24a;
+  --color-danger: #f2555c;
+  /* The Plan's inks (`cockpit-roster-row.html` · PlanBar). The accent and not the running ink,
+     because the Plan is the Session's progress rather than its state. `plan-doing` is the one
+     item in progress; `plan-still` is the fill of a Plan that stopped moving, banked rather than
+     grey so a finished Plan never reads as one nobody started. */
+  --color-plan: #3e9bff;
+  --color-plan-doing: #6fb6ff;
+  --color-plan-still: #2f5c89;
+  --color-plan-track: rgb(255 255 255 / 0.13);
+  /* The pull request's own state, in GitHub's hues (roster-row-signals.html `--pr-*`). */
+  --color-pr-open: #3fb950;
+  --color-pr-merged: #a371f7;
+  --color-pr-closed: #f85149;
+  --color-pr-draft: #8b949e;
   --font-sans: "Avenir Next", "Helvetica Neue", sans-serif;
   --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
-  --sessions-grid-columns: minmax(17rem, 26rem) minmax(0, 1fr);
-  --sessions-mobile-grid-rows: minmax(14rem, 40vh) minmax(0, 1fr);
+  --text-code: 12px;
+  /* rowMeta and badge, the two rungs under the row title. The title itself is `--text-body`. */
+  --text-meta: 11px;
+  --text-badge: 10px;
+  /* The pane eyebrows (`Sessions`, `Background Agents`) and the rail's chip labels, from the
+     layout prototype. */
+  --text-eyebrow: 10.5px;
+  --text-chip: 11.5px;
+  --leading-body: 20px;
+  --leading-code: 18px;
+  /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
+     reaches these through var() for properties no utility expresses, and the Roster reaches the
+     same numbers as `gap-tight` and the rest. Named `--space-*` they would still be valid CSS
+     and every utility built on them would silently do nothing. */
+  --spacing-hair: 2px;
+  --spacing-tight: 6px;
+  --spacing-snug: 12px;
+  --spacing-wide: 20px;
+  --radius-row: 6px;
+  /* The height of a pane head, the Roster's and the Feed's alike, so the two heads meet on one
+     line across the handle between them. */
+  --size-pane-head: 46px;
+  /* The state dot sits on the title's optical centre: half of what the title's line box has left
+     over once the dot is in it. Derived, never nudged, so it follows the type scale. */
+  --size-state-dot: 6px;
+  --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
+  /* Half the state dot: what runs under a Session is drawn smaller than the Session's own state,
+     in the Session's own column. */
+  --size-subagent-dot: 4px;
+  --size-plan-bar: 3px;
+}
+
+/* The light appearance of the inks above. `useAppearance` puts `.dark` on the root element, so a
+   root without it is light. Text inks read the shadcn foregrounds, so a row title and a pane
+   title are one ink. The state, Plan and PR hues are the design's exact values in both
+   appearances; only the Plan track, a white wash that vanishes on white, is restated. */
+:root:not(.dark) {
+  --color-ink: var(--foreground);
+  --color-quiet: oklch(0.44 0 0);
+  --color-faint: var(--muted-foreground);
+  --color-off: oklch(0.72 0 0);
+  --color-plan-track: rgb(0 0 0 / 0.1);
 }

@@ -9,6 +9,13 @@ import {
   type SessionTitle,
   TITLE_SOURCES,
 } from './models'
+import {
+  readActivity,
+  readDelegations,
+  readPlan,
+  readShellCommands,
+  readTurnStartedAt,
+} from './signals'
 import { readExternalStatus } from './status'
 import type { TranscriptMessage } from './transcript'
 
@@ -60,6 +67,19 @@ function readChainEntry(messages: TranscriptMessage[]): SessionEntry {
     : 'interactive'
 }
 
+// The newest link wins: a Session that opened a second pull request is working on that one now.
+// Only a Claude transcript carries a `pull-request` record today; a chain that never does simply
+// reads no pull request, which is the correct answer for every other CLI too.
+function readPullRequest(chain: SessionChain) {
+  const links = chain.files.flatMap((file) =>
+    file.records.filter((record) => record.kind === 'pull-request'),
+  )
+  const newest = links.at(-1)
+  return newest === undefined
+    ? null
+    : { number: newest.number, url: newest.url, repository: newest.repository }
+}
+
 export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
   const messages = chainMessages(chain)
   const stamps = messages.flatMap((message) =>
@@ -80,5 +100,15 @@ export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow
         : stamps.reduce((latest, stamp) => (stamp > latest ? stamp : latest)),
     unreadableLines: chain.files.reduce((total, file) => total + file.unreadableLines, 0),
     originUnread: chain.originUnread,
+    turnStartedAt: readTurnStartedAt(messages),
+    activity: readActivity(messages),
+    plan: readPlan(messages),
+    delegations: readDelegations(messages),
+    shell: readShellCommands(messages),
+    pullRequest: readPullRequest(chain),
+    // Whether the reader archived this Session is not a transcript fact: it comes from the
+    // Claude desktop app's own store, joined in by `agents/claude/sessions/discover.ts` after
+    // this projection runs. Every other caller — Codex included — reads false.
+    archived: false,
   }
 }

@@ -29,6 +29,17 @@ test('reads a block it cannot draw as its own type and its own JSON', async () =
   assert.equal(JSON.parse(reply.blocks[1].source).source.type, 'base64')
 })
 
+// A thinking block is a Thought, never a Message. One with no text field is not a Thought Argo
+// can read, so it falls back to its own source like any other block it cannot draw.
+test('reads a thinking block as a Thought, and a malformed one as source', () => {
+  const line = (content) =>
+    JSON.stringify({ type: 'assistant', uuid: 'a', message: { role: 'assistant', content } })
+  const read = parseTranscriptLine(line([{ type: 'thinking', thinking: '' }]))
+  assert.deepEqual(read.blocks, [{ shape: 'thought', text: '' }])
+  const malformed = parseTranscriptLine(line([{ type: 'thinking' }]))
+  assert.equal(malformed.blocks[0].shape, 'source')
+})
+
 test('reads the entry word and the two title sources', async () => {
   const file = await fixtureFile('titledHeadless')
   const messages = file.records.filter((record) => record.kind === 'message')
@@ -62,6 +73,22 @@ test('skips bookkeeping records and reads a resume link', () => {
     kind: 'link',
     leafUuid: 'a-1',
   })
+})
+
+test('reads a pull-request link, a compaction and an interrupt', () => {
+  const link = '{"type":"pr-link","prNumber":7,"prUrl":"https://h/pull/7","prRepository":"o/r"}'
+  assert.deepEqual(parseTranscriptLine(link), {
+    kind: 'pull-request',
+    number: 7,
+    url: 'https://h/pull/7',
+    repository: 'o/r',
+  })
+  assert.equal(parseTranscriptLine('{"type":"pr-link","prNumber":"7","prUrl":"u"}'), null)
+  const boundary = '{"type":"system","subtype":"compact_boundary","uuid":"c-1","parentUuid":null}'
+  assert.deepEqual(parseTranscriptLine(boundary), { kind: 'compaction', uuid: 'c-1' })
+  const stop =
+    '{"type":"user","uuid":"u-1","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user]"}]}}'
+  assert.deepEqual(parseTranscriptLine(stop).blocks, [{ shape: 'marker', marker: 'interrupted' }])
 })
 
 test('refuses a message record with no identity', () => {

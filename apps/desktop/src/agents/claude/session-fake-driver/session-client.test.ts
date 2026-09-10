@@ -52,6 +52,7 @@ test('refuses a reply that is not one of the shapes this contract holds', async 
     { ...listed, filesRead: '3' },
     { ...read, rows: [{ shape: 'prose', id: 'a:0', role: 'narrator', text: 'x' }] },
     { ...read, rows: [{ shape: 'unfamiliar', id: 'a:0' }] },
+    { ...read, rows: [{ shape: 'thought', id: 'a:0', role: 'assistant', text: 'x' }] },
     undefined,
     'a reply',
   ]

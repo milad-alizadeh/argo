@@ -7,6 +7,7 @@ import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
 } from '@/core/sessions/discover-transcript-sessions'
+import { readArchivedSessions } from './archive'
 import { parseTranscriptLine } from './records'
 
 // How many transcript files one Roster pass reads, most recently written first. Measured on a
@@ -34,4 +35,20 @@ const reader = createTranscriptDiscoverer({
   parse: parseTranscriptLine,
 })
 
-export const { discoverSessions, readSessionFiles } = reader
+export const { readSessionFiles } = reader
+
+// A Session the archive store names is joined by its stable id or by any id it retired: a resume
+// can move a Session's id forward, and the store still names whichever id was current when the
+// reader archived it.
+export async function discoverSessions(root: string, archiveRoot?: string): Promise<Discovery> {
+  const discovery = await reader.discoverSessions(root)
+  if (archiveRoot === undefined) return discovery
+  const archived = await readArchivedSessions(archiveRoot)
+  return {
+    ...discovery,
+    rows: discovery.rows.map((row) => ({
+      ...row,
+      archived: archived.has(row.id) || row.retiredIds.some((id) => archived.has(id)),
+    })),
+  }
+}

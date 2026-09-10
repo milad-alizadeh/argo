@@ -16,6 +16,7 @@ import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-pro
 import { attachSessionBridge } from './core/sessions/bridge'
 import { combineSessionReaders } from './core/sessions/combine-readers'
 import {
+  SESSION_CLAUDE_ARCHIVE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from './core/sessions/proof-protocol'
@@ -57,6 +58,22 @@ function codexTranscriptsRoot(): string {
   )
 }
 
+// The Claude desktop app's own store, read for its archive flag alone (`sessions/archive.ts`). It
+// sits under the app's support folder, and a machine without that app has no folder there: the
+// reading degrades to no archived Sessions rather than to a failure.
+function claudeArchiveRoot(): string {
+  return (
+    process.env[SESSION_CLAUDE_ARCHIVE_ENV] ??
+    path.join(
+      app.getPath('home'),
+      'Library',
+      'Application Support',
+      'Claude',
+      'claude-code-sessions',
+    )
+  )
+}
+
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
   const window = new BrowserWindow({
@@ -84,7 +101,10 @@ function createWindow(): BrowserWindow {
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
     reader: combineSessionReaders([
-      createClaudeSessionReader(claudeTranscriptsRoot()),
+      createClaudeSessionReader({
+        transcripts: claudeTranscriptsRoot(),
+        archive: claudeArchiveRoot(),
+      }),
       createCodexSessionReader(codexTranscriptsRoot()),
     ]),
     rendererURL,

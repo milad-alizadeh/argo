@@ -1,38 +1,36 @@
-// Projecting a stitched chain into the rows the Feed draws. Records are transcript lines; rows
-// are what the Feed draws, and the two counts differ (ADR-0033 · Context).
-
 import type { SessionChain } from './chains'
-import type { SessionFeedRow as FeedRow } from './models'
+import { UNREADABLE_ROW, type SessionFeedRow, unreadableRowHeight } from './models'
 import type { TranscriptRecord } from './transcript'
 
-export type { FeedRow }
+export { UNREADABLE_ROW, unreadableRowHeight }
 
-// The stated height formula for the one row shape Blink does not lay out from content
-// (ADR-0033 rule 1). Drawn height is `padding * 2 + lineHeight`, and the packaged proof asserts
-// the formula equals the drawn box.
-export const UNREADABLE_ROW = { paddingBlock: 8, lineHeight: 20 }
-
-export function unreadableRowHeight(): number {
-  return UNREADABLE_ROW.paddingBlock * 2 + UNREADABLE_ROW.lineHeight
-}
-
-function rowsOfRecord(record: TranscriptRecord, position: string): FeedRow[] {
+function rowsOfRecord(record: TranscriptRecord, position: string): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
-  // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
-  // than drawing another agent's work as the reader's own (see `chainMessages`).
+  if (record.kind === 'compaction') return [{ shape: 'marker', id: `marker:${position}`, marker: 'compacted' }]
   if (record.kind !== 'message' || record.sidechain) return []
   return record.blocks.map((block, index) => {
     const id = `${record.uuid}:${index}`
-    return block.shape === 'prose'
-      ? { shape: 'prose', id, role: record.role, text: block.text }
-      : { shape: 'source', id, role: record.role, label: block.label, source: block.source }
+    if (block.shape === 'prose') return { shape: 'prose', id, role: record.role, text: block.text }
+    if (block.shape === 'thought') return { shape: 'thought', id, role: record.role, text: block.text }
+    if (block.shape === 'marker') return { shape: 'marker', id, marker: block.marker }
+    return { shape: 'source', id, role: record.role, label: block.label, source: block.source }
   })
 }
 
-export function projectFeed(chain: SessionChain): FeedRow[] {
-  return chain.files.flatMap((file, fileIndex) =>
-    file.records.flatMap((record, recordIndex) =>
-      rowsOfRecord(record, `${fileIndex}:${recordIndex}`),
+// A run of damaged lines is one break in the history, not one per line. The transcript can hold
+// dozens in a row, and a row each turns a Feed into a wall of the same sentence, which says no more
+// than the first one does (#1907). So consecutive damaged lines are drawn as a single row; the
+// count is deliberately not said, because a reader can do nothing with it.
+function withoutRepeatedBreaks(rows: SessionFeedRow[]): SessionFeedRow[] {
+  return rows.filter(
+    (row, index) => row.shape !== 'unreadable' || rows[index - 1]?.shape !== 'unreadable',
+  )
+}
+
+export function projectFeed(chain: SessionChain): SessionFeedRow[] {
+  return withoutRepeatedBreaks(
+    chain.files.flatMap((file, fileIndex) =>
+      file.records.flatMap((record, recordIndex) => rowsOfRecord(record, `${fileIndex}:${recordIndex}`)),
     ),
   )
 }
