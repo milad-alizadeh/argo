@@ -1,1 +1,1 @@
-export * from '../../../core/sessions/feed'
+export * from '@/core/sessions/feed'

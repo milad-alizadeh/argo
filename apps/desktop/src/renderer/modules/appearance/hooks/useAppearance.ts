@@ -5,7 +5,7 @@ import {
   type Appearance,
   type AppearanceState,
   DEFAULT_APPEARANCE,
-} from '../../../../core/appearance/appearance'
+} from '@/core/appearance/appearance'
 
 const INITIAL: AppearanceState = { appearance: DEFAULT_APPEARANCE, dark: true }
 

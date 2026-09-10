@@ -3,7 +3,7 @@ import type {
   SessionFeedRequest,
   SessionListRequest,
   SessionsListed,
-} from '../../../core/sessions/contract'
+} from '@/core/sessions/contract'
 
 export type {
   SessionFeedRead as SessionFeed,

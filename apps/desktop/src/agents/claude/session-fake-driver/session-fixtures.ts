@@ -3,10 +3,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import {
-  fixtureLines,
-  writeFixtureTree,
-} from '../../../core/sessions/fake-driver/session-fixture-files'
+import { fixtureLines, writeFixtureTree } from '@/core/sessions/fake-driver/session-fixture-files'
 import { readTranscriptFile } from '../sessions/transcript-file.ts'
 
 export async function fixtureFile(name) {

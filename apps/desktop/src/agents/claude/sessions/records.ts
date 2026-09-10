@@ -2,13 +2,9 @@
 // else. Grounded on the records real transcripts under `~/.claude/projects` carry today: `user`,
 // `assistant`, `last-prompt`, `ai-title`, `custom-title`. Every other `type` is bookkeeping this
 // slice does not draw, and is skipped rather than guessed at.
-import { isRecord } from '../../../boundary'
-import { SESSION_ENTRIES, type SessionEntry } from '../../../core/sessions/models'
-import type {
-  ContentBlock,
-  TranscriptMessage,
-  TranscriptRecord,
-} from '../../../core/sessions/transcript'
+import { isRecord } from '@/boundary'
+import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
+import type { ContentBlock, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
 
 export type { ContentBlock, SessionEntry, TranscriptMessage, TranscriptRecord }
 // CONTEXT.md L2 · Entry, the closed set. Written once and derived from, like every other
