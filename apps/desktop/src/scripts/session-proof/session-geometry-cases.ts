@@ -2,7 +2,7 @@
 // hands the Feed, the one row shape whose height is arithmetic, and the cache that keeps a second
 // open from measuring again.
 import assert from 'node:assert/strict'
-import { openSession } from './session-roster-cases.mjs'
+import { openSession } from './session-roster-cases'
 
 // ADR-0033: every row is laid out in a `content-visibility: hidden` container in the visible
 // renderer, and the container itself contributes no height. Both are read off the shipped DOM.

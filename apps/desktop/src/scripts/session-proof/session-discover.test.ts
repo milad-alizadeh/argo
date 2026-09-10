@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { appendFile, chmod, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { listSessions, readFeed } from '../src/sessions/read-sessions.ts'
-import { writeFixtureTree } from './session-fixture-files.mjs'
-import { fixtureRoot } from './session-fixtures.mjs'
+import { listSessions, readFeed } from '../sessions/read-sessions.ts'
+import { writeFixtureTree } from './session-fixture-files'
+import { fixtureRoot } from './session-fixtures'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
 const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: 'resumeParent' }
