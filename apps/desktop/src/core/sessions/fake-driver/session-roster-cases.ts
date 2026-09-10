@@ -21,9 +21,9 @@ export async function proveContract(page) {
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
     'askPending',
     'externalBasic',
-    'rollout-codexParent',
     'prose',
     'resumeParent',
+    'rollout-codexParent',
     'strandedResume',
     'unparseableBody',
   ])
