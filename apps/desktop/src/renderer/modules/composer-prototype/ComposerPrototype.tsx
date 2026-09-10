@@ -487,7 +487,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
   }, [state.attachments])
 
   return (
-    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-[3.25rem]' : 'h-0'}`}>
+    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-16' : 'h-0'}`}>
       <div>
         <AttachmentGroup className="w-full px-3 pt-3">
           {renderedAttachments.map((reference) => (
@@ -913,7 +913,7 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
 function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 mx-auto w-full max-w-4xl">
-      <div className="relative z-10 rounded-2xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal">
+      <div className="relative z-10 rounded-2xl [&>*]:!border-border/40 [&_button]:!font-normal [&_span]:!font-normal">
         {children}
       </div>
     </div>
@@ -1236,12 +1236,12 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal">
+      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
           <form
-            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-sm"
+            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_svg]:!size-4"
             onSubmit={(event) => {
               event.preventDefault()
               send()
@@ -1299,7 +1299,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/40 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal">
+      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/40 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
