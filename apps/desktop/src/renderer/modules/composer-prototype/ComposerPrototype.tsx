@@ -413,19 +413,14 @@ function RunSetupMenu({ state, setState }: StateProps) {
   )
 }
 
-const PERMISSION_ICONS: Record<string, typeof ShieldCheck> = {
-  'Ask first': CircleHelp,
-  'Approve safely': ShieldCheck,
-  'Full access': Unlock,
-  Auto: WandSparkles,
-  Manual: Hand,
-  'Accept edits': FileCheck2,
-  Plan: ListTodo,
-  Bypass: ShieldAlert,
+const PERMISSION_ICONS: Record<HarnessKey, (typeof ShieldCheck)[]> = {
+  codex: [CircleHelp, ShieldCheck, Unlock],
+  claude: [WandSparkles, Hand, FileCheck2, ListTodo, ShieldAlert],
 }
 
-function PermissionIcon({ permission, className }: { permission: string; className?: string }) {
-  const Icon = PERMISSION_ICONS[permission] ?? ShieldCheck
+function PermissionIcon({ harness, permission, className }: { harness: HarnessKey; permission: string; className?: string }) {
+  const permissionIndex = HARNESSES[harness].permissions.findIndex((item) => item.label === permission)
+  const Icon = PERMISSION_ICONS[harness][permissionIndex] ?? ShieldCheck
   return <Icon className={className} />
 }
 
@@ -436,7 +431,7 @@ function PermissionMenu({ state, setState }: StateProps) {
       <DropdownMenuTrigger
         render={<InputGroupButton variant="ghost" className="text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
       >
-        <PermissionIcon permission={state.permission} />{state.permission}<ChevronDown className="text-muted-foreground" />
+        <PermissionIcon harness={state.harness} permission={state.permission} />{state.permission}<ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
@@ -447,7 +442,7 @@ function PermissionMenu({ state, setState }: StateProps) {
               className="items-start rounded-md px-2 py-1.5"
               onClick={() => setState({ ...state, permission: permission.label })}
             >
-              <PermissionIcon permission={permission.label} className="mt-0.5 size-3.5" />
+              <PermissionIcon harness={state.harness} permission={permission.label} className="mt-0.5 size-3.5" />
               <span className="grid gap-0.5">
                 <span className="text-[13px] font-medium">{permission.label}</span>
                 <span className="text-[11px] leading-4 text-muted-foreground">{permission.detail}</span>
