@@ -682,14 +682,12 @@ function PrototypeSessionHeader({
         </Button>
       ) : null}
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
+        <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
+        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1.5 font-medium">
             <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
             Running
           </span>
-        </div>
-        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
           <GitBranch />
           <span className="truncate">argo/#1258-composer-prototype</span>
           <span>·</span>
