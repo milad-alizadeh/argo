@@ -1743,7 +1743,9 @@ export function ComposerPrototype() {
   const sessionSidebarFullscreenState = useRef(false)
   const sessionInspectorElement = useRef<HTMLDivElement>(null)
   const sessionInspectorRestoreSize = useRef(248)
+  const sessionInspectorResizeAnimation = useRef(false)
   const sidebarAnimationTimer = useRef<number | null>(null)
+  const [sessionInspectorContentWidth, setSessionInspectorContentWidth] = useState(248)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1784,14 +1786,16 @@ export function ComposerPrototype() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (sidebarAnimationTimer.current !== null)
       window.clearTimeout(sidebarAnimationTimer.current)
+    sessionInspectorResizeAnimation.current = true
     if (!reduceMotion) panelElement?.classList.add('session-inspector-transition')
     resize()
     if (!reduceMotion) {
       sidebarAnimationTimer.current = window.setTimeout(() => {
         panelElement?.classList.remove('session-inspector-transition')
+        sessionInspectorResizeAnimation.current = false
         sidebarAnimationTimer.current = null
       }, 240)
-    }
+    } else sessionInspectorResizeAnimation.current = false
   }
 
   const setSessionSidebarVisible = (visible: boolean) => {
@@ -1829,7 +1833,10 @@ export function ComposerPrototype() {
       setSessionSidebarFullscreen(true)
       return
     }
-    if (sidebarWidth > 0) sessionInspectorRestoreSize.current = sidebarWidth
+    if (sidebarWidth > 0 && !sessionInspectorResizeAnimation.current) {
+      sessionInspectorRestoreSize.current = sidebarWidth
+      setSessionInspectorContentWidth(sidebarWidth)
+    }
   }
 
   const openFeedEvidence = (evidence: FeedPrototypeEvidence) => {
@@ -1997,6 +2004,15 @@ export function ComposerPrototype() {
               <PanelRight />
             </Button>
           </div>
+          {sessionSidebarFullscreen ? (
+            <div className="min-h-0 flex-1 overflow-hidden bg-background motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
+              <SessionWorkSidebar
+                evidence={feedEvidence}
+                onActiveEvidenceChange={setActiveFeedEvidenceId}
+                onShowActivity={showSessionActivity}
+              />
+            </div>
+          ) : (
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
           <ResizablePanel
             id="session-conversation"
@@ -2101,7 +2117,7 @@ export function ComposerPrototype() {
             elementRef={sessionInspectorElement}
             collapsible
             collapsedSize={0}
-            defaultSize={248}
+            defaultSize={sessionInspectorRestoreSize.current}
             minSize={216}
             maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
@@ -2111,7 +2127,11 @@ export function ComposerPrototype() {
             }}
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
-            <div aria-hidden={!showSessionSidebar} className="h-full min-h-0 min-w-[248px]">
+            <div
+              aria-hidden={!showSessionSidebar}
+              className="h-full min-h-0 shrink-0"
+              style={{ width: sessionInspectorContentWidth }}
+            >
                 <SessionWorkSidebar
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
@@ -2120,15 +2140,7 @@ export function ComposerPrototype() {
             </div>
           </ResizablePanel>
           </ResizablePanelGroup>
-          {sessionSidebarFullscreen ? (
-            <div className="absolute inset-0 z-40 overflow-hidden bg-background motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
-              <SessionWorkSidebar
-                evidence={feedEvidence}
-                onActiveEvidenceChange={setActiveFeedEvidenceId}
-                onShowActivity={showSessionActivity}
-              />
-            </div>
-          ) : null}
+          )}
           {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
         </main>
         </ResizablePanel>
