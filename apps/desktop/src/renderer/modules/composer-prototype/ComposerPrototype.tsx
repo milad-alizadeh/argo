@@ -1789,7 +1789,7 @@ export function ComposerPrototype() {
             }
           />
         </ResizablePanel>
-        <ResizableHandle withHandle className="z-30" />
+        <ResizableHandle className="z-30" />
         <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
         <main
           className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
@@ -1921,7 +1921,7 @@ export function ComposerPrototype() {
           </ResizablePanel>
           {showSessionSidebar ? (
             <>
-              <ResizableHandle withHandle className="z-30" />
+              <ResizableHandle className="z-30" />
               <ResizablePanel
                 id="session-inspector"
                 defaultSize={248}
