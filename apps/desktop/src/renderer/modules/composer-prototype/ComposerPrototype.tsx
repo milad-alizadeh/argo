@@ -1,7 +1,6 @@
 // One composer direction after the blind UX and visual reviews selected the single-surface layout.
 import {
   Archive,
-  ArrowRight,
   ArrowUp,
   Bot,
   Check,
@@ -1187,6 +1186,11 @@ function ContextPopover({
   const zone = contextZone(percentage)
   const contextStatus = zone.label
   const used = Math.round(context.total * percentage / 100)
+  const meterFill = {
+    solid: zone.fill,
+    gradient: 'bg-[linear-gradient(90deg,var(--color-emerald-500),var(--color-amber-400),var(--color-red-500))]',
+    grayscale: 'bg-foreground/70',
+  }[meterStyle]
   const claudeComposition = [
     { label: 'Conversation', value: '86k', percentage: 71 },
     { label: 'System prompt', value: '16k', percentage: 13 },
@@ -1209,95 +1213,53 @@ function ContextPopover({
           </>
         ) : <Info className="size-4" />}
       </PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-[28rem] gap-4 p-4">
-        {meterStyle !== 'solid' ? (
-          <>
-            <PopoverHeader>
-              <PopoverTitle className="flex items-center gap-2">
-                What is the context window?
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
-              </PopoverTitle>
-              <PopoverDescription>
-                Everything the model can consider for its next response: instructions, tools, files, and conversation. As it fills, relevant details compete with old context.
-              </PopoverDescription>
-            </PopoverHeader>
-            <div className="border-y py-4">
-              <div className={`h-1.5 rounded-full ${meterStyle === 'grayscale' ? 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900' : 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]'}`} />
-              <div className="mt-3 grid grid-cols-[1fr_auto_1fr] gap-3">
-                <div>
-                  <div className="text-xs font-semibold">Smart Zone · {smartZonePercentage}% · {formatTokenCount(smartZoneTokens)}</div>
-                  <p className="mt-1 text-xs leading-4 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
-                </div>
-                <ArrowRight className="mt-1 size-4 text-muted-foreground" />
-                <div className="text-right">
-                  <div className="text-xs font-semibold">Dumb Zone</div>
-                  <p className="mt-1 text-xs leading-4 text-muted-foreground">History still fits, but noise and stale decisions weaken attention.</p>
-                </div>
-              </div>
+      <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
+        <PopoverHeader className="gap-1">
+          <PopoverTitle>Context window</PopoverTitle>
+          <PopoverDescription className="text-(length:--text-control) leading-relaxed">
+            Instructions, files, tools, and conversation available to the model.
+          </PopoverDescription>
+        </PopoverHeader>
+        <div className="grid gap-2.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-xl font-semibold tabular-nums">
+              {(used / 1000).toFixed(0)}k <span className="text-(length:--text-body) font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k tokens</span>
             </div>
-            <p className="text-[10px] leading-4 text-muted-foreground">
-              “Smart Zone” and “Dumb Zone” are context-engineering shorthand associated with Dex Horthy and documented by Matt Pocock. Our {smartZonePercentage}% · {formatTokenCount(smartZoneTokens)} boundary is a working target, not a model guarantee.
-            </p>
-          </>
-        ) : (
-          <>
-            <PopoverHeader>
-              <PopoverTitle className="flex items-center gap-2">
-                Context health
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
-              </PopoverTitle>
-              <PopoverDescription>Current context compared with the working smart-zone target.</PopoverDescription>
-            </PopoverHeader>
-            <div className="rounded-xl border p-3">
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-xs font-medium text-muted-foreground">Active context</div>
-                  <div className="mt-1 text-xl font-semibold tabular-nums">
-                    {(used / 1000).toFixed(0)}k <span className="text-sm font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k</span>
-                  </div>
-                </div>
-                <div className="text-right text-xs">
-                  <div className="font-medium">Smart Zone ~{smartZonePercentage}% · {formatTokenCount(smartZoneTokens)}</div>
-                  <div className="text-muted-foreground">Current · {percentage}% · {formatTokenCount(used)}</div>
-                </div>
-              </div>
-              <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
-                <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
-                <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${smartZonePercentage}%` }} />
-              </div>
-              <p className="mt-2 text-xs leading-4 text-muted-foreground">
-                This session is in the {contextStatus}. Compact or hand off before starting another substantial phase.
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20% · 0–{formatTokenCount(smartZoneTokens)}</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40% · {formatTokenCount(smartZoneTokens)}–{formatTokenCount(context.total * 0.4)}</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+ · {formatTokenCount(context.total * 0.4)}+</span>
-            </div>
-            <p className="text-[10px] leading-4 text-muted-foreground">The 20% boundary is a workflow target, not a model guarantee.</p>
-          </>
-        )}
-        {state.harness === 'claude' ? (
-          <div className="grid gap-2 border-t pt-4">
-            <div className="flex items-center">
-              <span className="text-xs font-semibold">What is loaded</span>
-              <span className="ml-auto text-[10px] text-muted-foreground">Sample /context · 35k static load</span>
-            </div>
-            {claudeComposition.map((item) => (
-              <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2 text-xs">
-                <span className="text-muted-foreground">{item.label}</span>
-                <Progress value={item.percentage} className="h-1.5" />
-                <span className="text-right tabular-nums">{item.value}</span>
-              </div>
-            ))}
+            <span className={`text-(length:--text-control) font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
           </div>
+          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className={`absolute inset-y-0 left-0 ${meterFill}`}
+              style={{ width: `${percentage}%` }}
+            />
+            <div className="absolute inset-y-0 w-px bg-background/80" style={{ left: `${smartZonePercentage}%` }} />
+          </div>
+          <div className="flex justify-between text-(length:--text-control) text-muted-foreground">
+            <span>Working target · {formatTokenCount(smartZoneTokens)}</span>
+            <span>Current · {formatTokenCount(used)}</span>
+          </div>
+          <p className="text-(length:--text-body) leading-relaxed text-muted-foreground">
+            At this level, older context can compete with the current task. Compact before starting another substantial phase.
+          </p>
+        </div>
+        {state.harness === 'claude' ? (
+          <details className="group text-(length:--text-control)">
+            <summary className="cursor-pointer font-medium">Loaded context</summary>
+            <div className="mt-2 grid gap-2">
+              {claudeComposition.map((item) => (
+                <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2">
+                  <span className="text-muted-foreground">{item.label}</span>
+                  <Progress value={item.percentage} className="h-1.5" />
+                  <span className="text-right tabular-nums">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </details>
         ) : null}
-        <div className="grid gap-3 border-t pt-4">
-          <div>
-            <div className="text-xs font-semibold">Auto-compact</div>
-            <p className="mt-1 text-xs leading-4 text-muted-foreground">
-              Compact when the context reaches the threshold. Total context: {formatTokenCount(context.total)}.
-            </p>
+        <div className="grid gap-2.5 border-t pt-3">
+          <div className="flex items-center justify-between gap-3 text-(length:--text-control)">
+            <span className="font-semibold">Auto-compact</span>
+            <span className="text-muted-foreground">At {autoCompactThresholdPercentage}% of total</span>
           </div>
           <input
             type="range"
@@ -1313,13 +1275,9 @@ function ContextPopover({
             aria-label="Auto-compact threshold"
             className="h-1.5 w-full cursor-pointer accent-foreground"
           />
-          <div className="flex items-end">
-            <label className="grid w-1/2 gap-1 text-[10px] text-muted-foreground">
-              <span className="flex justify-between">
-                <span>Compact at</span>
-                <span>{autoCompactThresholdPercentage}% of total</span>
-              </span>
-              <span className="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs text-foreground">
+          <label className="flex items-center justify-between gap-3 text-(length:--text-control) text-muted-foreground">
+            <span>Threshold</span>
+            <span className="flex w-40 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-foreground">
                 <input
                   type="number"
                   min={Math.round(context.total * 0.4)}
@@ -1335,19 +1293,9 @@ function ContextPopover({
                   className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
                 />
                 <span className="shrink-0 text-muted-foreground">tokens</span>
-              </span>
-            </label>
-          </div>
+            </span>
+          </label>
         </div>
-        {meterStyle === 'solid' && percentage >= 70 && appearance === 'compact' ? (
-          <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
-            <p className="text-xs text-muted-foreground">Compact this task before the next large change.</p>
-            <div className="ml-auto flex shrink-0 gap-2">
-              <Button size="sm"><Minimize2 />Compact</Button>
-              <Button variant="outline" size="sm"><GitFork />Handoff</Button>
-            </div>
-          </div>
-        ) : null}
       </PopoverContent>
     </Popover>
   )
