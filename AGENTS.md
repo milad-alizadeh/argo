@@ -14,10 +14,10 @@ Everything here is a fact about this repository. Process belongs to the skill th
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
   Before triage, read `docs/agents/triage-labels.md`.
-- **House engineering rules** — `rules/`. **Nothing loads these for you.** Before your first
-  edit, read the one whose `paths:` frontmatter matches what you are about to touch: `house.md`
-  matches everything, `desktop.md` only `apps/desktop/**`, `swift.md` only
-  `apps/macOS/**/*.swift`. The arithmetic behind them is `biome.jsonc`, not prose.
+- **House engineering rules** — `rules/`. Before your first edit, read the one whose `paths:`
+  frontmatter matches what you are about to touch. `hooks/rules-guard.mjs` reads that frontmatter
+  and denies your first write under each rule file until you have, so the read is a round trip you
+  pay either way. The arithmetic behind them is `biome.jsonc`, not prose.
 - **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
   Before domain exploration, read `docs/agents/domain.md`. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.
@@ -121,14 +121,16 @@ reason when you report the dispatch.
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hooks, projected per-harness.
+`hooks.json` (repo root) is the neutral SSOT for the five cross-CLI hooks, projected per-harness.
 **Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json`
 and `.codex/hooks.json`; never hand-edit those blocks. The hooks carry no convention of their own:
 this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`,
-`docs`, `publishBranches`) and `worktreeGc.artifactPaths`. **Unset `branchPrefix` and the guard
-stops judging branch names at all**, so an edit that empties it silently retires the naming
-rule. `publishBranches` is the other side of it: a namespace listed there joins to no ticket, so
-the naming guard and the push guard both let it through.
+`docs`, `publishBranches`), `rulesGuard` (`dir`, `docs`) and `worktreeGc.artifactPaths`. **Unset
+`branchPrefix` and the guard stops judging branch names at all**, so an edit that empties it
+silently retires the naming rule. `publishBranches` is the other side of it: a namespace listed
+there joins to no ticket, so the naming guard and the push guard both let it through. `rulesGuard`
+fails the same way: point `dir` at a directory holding no `paths:` frontmatter and every house
+rule goes unenforced with the hook still installed and still exiting 0.
 
 ## Skill bundle
 

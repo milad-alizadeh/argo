@@ -4,19 +4,22 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-/** The project's own convention, read from the descriptor that travels with the hooks. Shared,
- * because two guards now answer to the same `worktreeGuard` block, and a second copy of this
- * reader is a second place for the key names to drift. Missing or malformed reads as `{}`, the
- * unconfigured default every consumer starts on. */
-export function readWorktreeGuard(root) {
+/** One guard's own configuration block, read from the descriptor that travels with the hooks.
+ * Shared, because three guards now read a top-level block out of the same file, and a copy of
+ * this reader per guard is a place for the key names to drift. Missing or malformed reads as
+ * `{}`, the unconfigured default every consumer starts on. */
+export function readGuardConfig(root, key) {
   const descriptor = path.join(root, 'hooks.json')
   if (!existsSync(descriptor)) return {}
   try {
-    return JSON.parse(readFileSync(descriptor, 'utf8')).worktreeGuard ?? {}
+    return JSON.parse(readFileSync(descriptor, 'utf8'))[key] ?? {}
   } catch {
     return {}
   }
 }
+
+/** The `worktreeGuard` block, which two guards answer to. */
+export const readWorktreeGuard = (root) => readGuardConfig(root, 'worktreeGuard')
 
 /** Where that descriptor lives. CLAUDE_PROJECT_DIR when the harness sets one, else the repo
  * toplevel, so the same script registers under Codex without a rewrite. */
