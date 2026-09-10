@@ -12,6 +12,9 @@ if [ -n "$CLAUDECODE" ] && [ -z "$ARGO_MAIN_COMMIT" ] \
 fi
 # --- end session isolation ---
 
+# --- design-token contract: keep design constants named ---
+bun run check:design-tokens
+
 bunx lint-staged
 
 # --- quality gates: the caps lint can't express (installed by setup-quality-gates) ---

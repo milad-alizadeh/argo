@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- A design speaks only tokens (var(--token)) and roles (data-component). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DESIGN — desktop app screen</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <style>
+      .panel {
+        background: var(--color-surface);
+        border: var(--size-border-thin) solid var(--color-border);
+        border-radius: var(--radius-card);
+        margin: var(--space-gutter);
+        padding: var(--space-inset);
+      }
+
+      .panel h2 {
+        margin: 0;
+        font-family: var(--font-family);
+        font-size: var(--typography-title-size);
+        line-height: var(--typography-title-line-height);
+        font-weight: var(--typography-title-weight);
+        letter-spacing: var(--typography-title-tracking);
+        color: var(--color-text);
+      }
+
+      .panel p {
+        margin: var(--space-stack) 0 0;
+        font-family: var(--font-family);
+        font-size: var(--typography-body-size);
+        line-height: var(--typography-body-line-height);
+        font-weight: var(--typography-body-weight);
+        letter-spacing: var(--typography-body-tracking);
+        color: var(--color-text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main data-component="DesignScreen">
+      <section class="panel" data-component="DesignPanel">
+        <h2>Argo desktop</h2>
+        <p data-component="DesignCopy">The desktop shell reads tokens for all constants.</p>
+      </section>
+    </main>
+    <script src="./kit.js"></script>
+  </body>
+</html>
