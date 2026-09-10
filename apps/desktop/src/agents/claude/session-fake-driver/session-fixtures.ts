@@ -7,7 +7,10 @@ import { readTranscriptFile } from '../sessions/transcript-file.ts'
 import { fixtureLines, writeFixtureTree } from './session-fixture-files'
 
 export async function fixtureFile(name) {
-  return readTranscriptFile(`/fixtures/${name}.jsonl`, `${name}.jsonl`, await fixtureLines(name))
+  return readTranscriptFile(`/fixtures/${name}.jsonl`, {
+    fileName: `${name}.jsonl`,
+    lines: await fixtureLines(name),
+  })
 }
 
 export async function fixtureFiles(names) {
@@ -17,5 +20,5 @@ export async function fixtureFiles(names) {
 export async function fixtureRoot(context, names, directory = 'project-one') {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-sessions-'))
   context.after(() => rm(root, { recursive: true, force: true }))
-  return writeFixtureTree(root, names, directory)
+  return writeFixtureTree(root, names, { directory })
 }

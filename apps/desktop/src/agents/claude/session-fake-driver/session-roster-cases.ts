@@ -6,15 +6,22 @@ import assert from 'node:assert/strict'
 // from a page that navigated away, and two spellings of it would prove two different things.
 export const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
 const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: 'resumeChild' }
+const codexFeed = {
+  version: 1,
+  type: 'session.feed',
+  requestId: 'codex-feed-1',
+  sessionId: 'rollout-codexChild',
+}
 
 export async function proveContract(page) {
   const list = await page.evaluate((value) => window.argo.listSessions(value), listing)
   assert.equal(list.type, 'session.listed')
-  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 7, read: 7 })
-  // Six Sessions from seven files, discovered without one registered Project.
+  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 9, read: 9 })
+  // Seven Sessions from nine files, discovered without one registered Project.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
     'askPending',
     'externalBasic',
+    'rollout-codexParent',
     'prose',
     'resumeParent',
     'strandedResume',
@@ -31,6 +38,9 @@ export async function proveContract(page) {
   const read = await page.evaluate((value) => window.argo.readSessionFeed(value), feed)
   assert.equal(read.chainId, 'resumeParent')
   assert.equal(read.rows.length, 4)
+  const codexRead = await page.evaluate((value) => window.argo.readSessionFeed(value), codexFeed)
+  assert.equal(codexRead.chainId, 'rollout-codexParent')
+  assert.equal(codexRead.rows.length, 4)
   const missing = await page.evaluate((value) => window.argo.readSessionFeed(value), {
     ...feed,
     sessionId: 'not-a-session',

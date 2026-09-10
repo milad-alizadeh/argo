@@ -2,8 +2,12 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
-import { SESSION_TRANSCRIPTS_ENV } from './agents/claude/session-fake-driver/session-proof-protocol'
+import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CODEX_TRANSCRIPTS_ENV,
+} from './agents/claude/session-fake-driver/session-proof-protocol'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
 import { windowBackground } from './core/appearance/appearance'
 import {
   applyStoredAppearance,
@@ -14,6 +18,7 @@ import { installMenu } from './core/commands/menu'
 import { attachProjectBridge } from './core/projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachSessionBridge } from './core/sessions/bridge'
+import { combineSessionReaders } from './core/sessions/combine-readers'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -38,9 +43,17 @@ const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
-function transcriptsRoot(): string {
+function claudeTranscriptsRoot(): string {
   return (
-    process.env[SESSION_TRANSCRIPTS_ENV] ?? path.join(app.getPath('home'), '.claude', 'projects')
+    process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] ??
+    path.join(app.getPath('home'), '.claude', 'projects')
+  )
+}
+
+function codexTranscriptsRoot(): string {
+  return (
+    process.env[SESSION_CODEX_TRANSCRIPTS_ENV] ??
+    path.join(app.getPath('home'), '.codex', 'sessions')
   )
 }
 
@@ -70,7 +83,10 @@ function createWindow(): BrowserWindow {
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
-    reader: createClaudeSessionReader(transcriptsRoot()),
+    reader: combineSessionReaders([
+      createClaudeSessionReader(claudeTranscriptsRoot()),
+      createCodexSessionReader(codexTranscriptsRoot()),
+    ]),
     rendererURL,
   })
   attachAppearanceBridge(window, { userData, rendererURL })

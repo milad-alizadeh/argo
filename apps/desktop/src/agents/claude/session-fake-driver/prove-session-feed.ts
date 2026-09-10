@@ -18,9 +18,12 @@ import {
   packagedTestCopy,
 } from '../../../core/desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../../core/projects/fake-driver/project-proof-protocol'
-import { proveRendererAuthority } from './session-feed-cases'
-import { writeFixtureTree } from './session-fixture-files'
-import { SESSION_TRANSCRIPTS_ENV } from './session-proof-protocol'
+import { proveCodexFeed, proveRendererAuthority } from './session-feed-cases'
+import { CODEX_FIXTURES, writeFixtureTree } from './session-fixture-files'
+import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CODEX_TRANSCRIPTS_ENV,
+} from './session-proof-protocol'
 import { proveContract } from './session-roster-cases'
 
 const FIXTURES = [
@@ -34,17 +37,23 @@ const FIXTURES = [
   // file cap stops short of its origin. Its row has to say so.
   'strandedResume',
 ]
+const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 
 const shotsIndex = process.argv.indexOf('--shots')
 const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
-  const transcripts = path.join(root, 'transcripts')
-  await writeFixtureTree(transcripts, FIXTURES)
+  const claudeTranscripts = path.join(root, 'claude-transcripts')
+  const codexTranscripts = path.join(root, 'codex-transcripts')
+  await writeFixtureTree(claudeTranscripts, FIXTURES)
+  await writeFixtureTree(codexTranscripts, CODEX_FIXTURE_NAMES, {
+    directory: '2026/09/10',
+    fixtures: CODEX_FIXTURES,
+  })
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
-  return { application, transcripts, userData }
+  return { application, claudeTranscripts, codexTranscripts, userData }
 }
 
 // The packaged visual evidence. The window is shown from here rather than by the app, so every
@@ -64,7 +73,7 @@ async function proveSessionsScreen(page, application) {
     sessions: document.querySelectorAll('nav[aria-label="Sessions"] button').length,
     message: document.querySelector('[data-component="SessionsEmptyState"] p')?.textContent,
   }))
-  assert.equal(empty.sessions, 6)
+  assert.equal(empty.sessions, 7)
   assert.equal(empty.message, 'Select a session to read its terminal activity.')
   await capture(page, application, 'sessions-empty.png')
 
@@ -88,7 +97,8 @@ try {
     executablePath: appExecutable(fixture.application),
     env: {
       ...process.env,
-      [SESSION_TRANSCRIPTS_ENV]: fixture.transcripts,
+      [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
+      [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
     },
@@ -107,6 +117,7 @@ try {
     return reading
   }
   await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
+  await ran(['codex-feed'], () => proveCodexFeed(page))
   await ran(['empty-state', 'session-activity'], () => proveSessionsScreen(page, application))
   await ran(['renderer-authority'], () => proveRendererAuthority(page, application))
   await assertShippedFusesIntact()

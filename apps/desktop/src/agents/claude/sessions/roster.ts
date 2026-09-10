@@ -60,7 +60,7 @@ function readChainEntry(messages: TranscriptMessage[]): SessionEntry {
     : 'interactive'
 }
 
-export function projectRosterRow(chain: SessionChain): RosterRow {
+export function projectRosterRow(chain: SessionChain, cli = 'claude'): RosterRow {
   const messages = chainMessages(chain)
   const stamps = messages.flatMap((message) =>
     message.timestamp === null ? [] : [message.timestamp],
@@ -68,7 +68,7 @@ export function projectRosterRow(chain: SessionChain): RosterRow {
   return {
     id: chain.id,
     retiredIds: chain.retiredIds,
-    cli: 'claude',
+    cli,
     posture: 'external',
     title: readTitle(chain),
     status: readExternalStatus(messages),
