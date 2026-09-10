@@ -32,7 +32,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import {
   Attachment,
   AttachmentAction,
@@ -87,8 +87,8 @@ import { Progress } from '@/renderer/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
 
 type HarnessKey = 'codex' | 'claude'
-type VariantKey = 'E' | 'F'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
+type ContextTone = 'color' | 'grayscale'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
 
@@ -113,6 +113,15 @@ type ComposerState = {
 type StateProps = {
   state: ComposerState
   setState: (state: ComposerState) => void
+}
+
+function IconLabel({ icon, children, className = '' }: { icon: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium leading-none [&>svg]:!size-3.5 [&>svg]:shrink-0 ${className}`}>
+      {icon}
+      <span className="leading-none">{children}</span>
+    </span>
+  )
 }
 
 const HARNESSES: Record<HarnessKey, HarnessDefinition> = {
@@ -307,12 +316,15 @@ function RunSetupMenu({ state, setState }: StateProps) {
       <DropdownMenuTrigger
         render={<InputGroupButton variant="ghost" className="max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
       >
-        <HarnessLogo harness={state.harness} />
-        <span>{definition.label}</span>
-        <span className="text-muted-foreground">·</span>
-        <span>{state.model}</span>
-        <span className="text-muted-foreground">·</span>
-        <span>{state.effort}</span>
+        <IconLabel icon={<HarnessLogo harness={state.harness} className="size-3.5" />}>
+          <span className="inline-flex items-center gap-1.5">
+            {definition.label}
+            <span className="text-muted-foreground">·</span>
+            {state.model}
+            <span className="text-muted-foreground">·</span>
+            {state.effort}
+          </span>
+        </IconLabel>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] overflow-hidden p-0">
@@ -331,8 +343,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
                     active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <HarnessLogo harness={harness} />
-                  {HARNESSES[harness].label}
+                  <IconLabel icon={<HarnessLogo harness={harness} className="size-3.5" />}>{HARNESSES[harness].label}</IconLabel>
                 </button>
               )
             })}
@@ -431,7 +442,8 @@ function PermissionMenu({ state, setState }: StateProps) {
       <DropdownMenuTrigger
         render={<InputGroupButton variant="ghost" className="text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
       >
-        <PermissionIcon harness={state.harness} permission={state.permission} />{state.permission}<ChevronDown className="text-muted-foreground" />
+        <IconLabel icon={<PermissionIcon harness={state.harness} permission={state.permission} />}>{state.permission}</IconLabel>
+        <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
@@ -662,12 +674,10 @@ function ContextSurface({
   state,
   layout,
   tone = 'color',
-  usagePlacement = 'start',
 }: {
   state: ComposerState
   layout: 'inline' | 'dock' | 'footer' | 'attached'
   tone?: 'color' | 'grayscale'
-  usagePlacement?: 'start' | 'end'
 }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
@@ -707,11 +717,8 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
-        {usagePlacement === 'start' ? <div className="shrink-0 border-r pr-3"><UsagePopover state={state} /></div> : null}
-        <Layers3 className={`size-4 shrink-0 ${tone === 'color' ? zone.text : 'text-foreground'}`} />
-        <div className="shrink-0">
-          <div className="text-xs font-medium text-foreground">Context · {status}</div>
-        </div>
+        <div className="shrink-0 border-r pr-3"><UsagePopover state={state} /></div>
+        <IconLabel icon={<Layers3 className={tone === 'color' ? zone.text : 'text-foreground'} />}>Context · {status}</IconLabel>
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
@@ -736,10 +743,9 @@ function ContextSurface({
           <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <Button variant="secondary" size="sm" className="text-xs font-medium"><Minimize2 />Compact</Button>
-          <Button variant="outline" size="sm" className="text-xs font-medium"><GitFork />Handoff</Button>
+          <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
+          <Button variant="outline" size="sm"><IconLabel icon={<GitFork />}>Handoff</IconLabel></Button>
         </div>
-        {usagePlacement === 'end' ? <div className="shrink-0 border-l pl-3"><UsagePopover state={state} /></div> : null}
       </div>
     )
   }
@@ -822,25 +828,28 @@ function ContextPreviewControl({ state, setState }: StateProps) {
   )
 }
 
-function VariantSwitcher({ variant }: { variant: VariantKey }) {
-  const variants: { key: VariantKey; label: string }[] = [
-    { key: 'E', label: 'Floating queue · color' },
-    { key: 'F', label: 'Attached queue · mono' },
+function ContextToneSwitcher({
+  tone,
+  onChange,
+}: {
+  tone: ContextTone
+  onChange: (tone: ContextTone) => void
+}) {
+  const options: { key: ContextTone; label: string }[] = [
+    { key: 'color', label: 'Color' },
+    { key: 'grayscale', label: 'Grayscale' },
   ]
   return (
-    <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Prototype variants">
-      {variants.map((item) => (
+    <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Context bar style">
+      <span className="px-2 text-[10px] font-medium text-muted-foreground">Context bar</span>
+      {options.map((item) => (
         <button
           key={item.key}
           type="button"
-          onClick={() => {
-            const url = new URL(window.location.href)
-            url.searchParams.set('variant', item.key)
-            window.location.href = url.toString()
-          }}
-          className={`rounded-full px-3 py-1.5 text-xs ${variant === item.key ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
+          onClick={() => onChange(item.key)}
+          className={`rounded-full px-3 py-1.5 text-xs ${tone === item.key ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
         >
-          {item.key} · {item.label}
+          {item.label}
         </button>
       ))}
     </nav>
@@ -902,7 +911,7 @@ function QueuePreview({
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
             <Button type="button" variant="ghost" size="sm" onClick={() => animatePop(queuedMessage, () => onSteer(queuedMessage))}>
-              <Route className="size-3.5" />Steer
+              <IconLabel icon={<Route />}>Steer</IconLabel>
             </Button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => animatePop(queuedMessage, () => onRemove(queuedMessage.id))}>
               <Trash2 className="size-3.5" />
@@ -930,7 +939,7 @@ function QueuePreview({
       </span>
       <span className="min-w-0 flex-1 truncate text-xs">{message.text}</span>
       <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
-        <Route className="size-3.5" />Steer
+        <IconLabel icon={<Route />}>Steer</IconLabel>
       </Button>
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove queued message" onClick={() => onRemove(message.id)}>
         <Trash2 className="size-3.5" />
@@ -951,11 +960,12 @@ function TaskPlanPopover() {
   return (
     <Popover>
       <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full bg-background/90 px-2.5 text-xs font-medium shadow-sm" aria-label="Open task plan" />}>
-        <svg viewBox="0 0 20 20" className="size-4 -rotate-90" aria-hidden="true">
-          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
-          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="60 100" />
-        </svg>
-        <span className="text-xs font-medium">Step 3/5</span>
+        <IconLabel icon={(
+          <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
+            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
+            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="60 100" />
+          </svg>
+        )}>Step 3/5</IconLabel>
       </PopoverTrigger>
       <PopoverContent align="start" side="top" className="w-80 gap-3 p-3">
         <PopoverHeader>
@@ -984,9 +994,9 @@ function UsagePopover({ state }: { state: ComposerState }) {
   return (
     <Popover>
       <PopoverTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 px-2 text-xs font-medium text-foreground" />}>
-        <CircleGauge className="size-4" />
-        <span className="text-xs font-medium">Usage</span>
-        <span className="text-xs tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
+        <IconLabel icon={<CircleGauge />}>
+          Usage <span className="tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
+        </IconLabel>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
@@ -1050,8 +1060,6 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
 }
 
 export function ComposerPrototype() {
-  const requestedVariant = new URLSearchParams(window.location.search).get('variant')
-  const variant: VariantKey = requestedVariant === 'F' ? 'F' : 'E'
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1060,6 +1068,7 @@ export function ComposerPrototype() {
     attachments: ['$frontend-design'],
     contextPreview: 'dumb',
   })
+  const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
@@ -1149,16 +1158,9 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-        {variant === 'E' && (
-          <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
-          </div>
-        )}
-        {variant === 'F' && (
-          <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
-          </div>
-        )}
+        <div className="mx-auto w-full max-w-4xl">
+          <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
+        </div>
         <form
           className="relative z-10 mx-auto w-full max-w-4xl"
           onSubmit={(event) => {
@@ -1217,20 +1219,12 @@ export function ComposerPrototype() {
             </InputGroupAddon>
           </InputGroup>
         </form>
-        {(variant === 'E' || variant === 'F') && (
-          <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)]">
-            <ContextSurface
-              state={state}
-              layout="attached"
-              tone={variant === 'F' ? 'grayscale' : 'color'}
-              usagePlacement={variant === 'E' ? 'start' : 'end'}
-            />
-          </div>
-        )}
+        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)]">
+          <ContextSurface state={state} layout="attached" tone={contextTone} />
+        </div>
       </div>
-      {(variant === 'E' || variant === 'F') && <ContextPreviewControl state={state} setState={setState} />}
-      <VariantSwitcher variant={variant} />
-      {variant === 'E' ? <ContextPreviewControl state={state} setState={setState} /> : null}
+      <ContextPreviewControl state={state} setState={setState} />
+      <ContextToneSwitcher tone={contextTone} onChange={setContextTone} />
     </main>
   )
 }
