@@ -4,9 +4,15 @@
 import assert from 'node:assert/strict'
 import { cp, realpath } from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
 import { PRODUCTION_FUSE_PROFILE, readFuseWire } from '../../../scripts/fuse-profile.mjs'
-import { packagedApp } from '../../../scripts/packaged-app.mjs'
+
+function packagedApp(arch: string) {
+  // This module is bundled into generated fake drivers. Resolve from the package script's stable
+  // working directory rather than `import.meta.dirname`, which becomes that driver's directory.
+  return path.join(process.cwd(), 'out', `Argo-darwin-${arch}`, 'Argo.app')
+}
 
 export async function packagedTestCopy(root: string, arch = 'arm64') {
   const application = path.join(root, 'Argo.app')
