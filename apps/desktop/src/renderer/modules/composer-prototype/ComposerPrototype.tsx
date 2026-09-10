@@ -295,9 +295,6 @@ function AddContextMenu({ state, setState }: StateProps) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => add('$frontend-design')}>
-          <WandSparkles />Skill
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => add('/prototype')}>
           <Command />Command
         </DropdownMenuItem>
@@ -312,7 +309,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="-ml-6 max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
+        render={<InputGroupButton variant="ghost" className="max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
       >
         <IconLabel icon={<HarnessLogo harness={state.harness} className="size-3.5" />}>
           <span className="inline-flex items-center gap-1.5">
@@ -466,20 +463,6 @@ function PermissionMenu({ state, setState }: StateProps) {
   )
 }
 
-function SkillReferenceIcon() {
-  return (
-    <svg aria-hidden="true" className="size-5 shrink-0" fill="none" viewBox="0 0 24 24">
-      <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
-      <path d="m4.5 7.75 7.5 4.3 7.5-4.3M12 12.05V21" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
-    </svg>
-  )
-}
-
-function referenceLabel(reference: string) {
-  const label = reference.replace(/^\$/, '').replaceAll('-', ' ')
-  return `${label.charAt(0).toUpperCase()}${label.slice(1)}`
-}
-
 function fileType(reference: string) {
   const separator = reference.lastIndexOf('.')
   if (separator < 1 || separator === reference.length - 1) return 'File'
@@ -510,7 +493,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
   return (
     <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-16' : 'h-0'}`}>
       <div>
-        <AttachmentGroup className="w-full select-none px-3 pt-3">
+        <AttachmentGroup className="w-full select-none px-4 pt-3">
           {renderedAttachments.map((reference) => {
             const remove = () =>
               setState({
@@ -518,9 +501,20 @@ function ReferenceStrip({ state, setState }: StateProps) {
                 attachments: state.attachments.filter((item) => item !== reference),
               })
 
+            const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
               <Attachment key={reference} className="h-12 select-none border-border/60 px-2" size="xs">
-                <AttachmentMedia className="size-10 rounded-lg bg-muted"><File className="size-5" /></AttachmentMedia>
+                <AttachmentMedia className="size-10 overflow-hidden rounded-lg bg-muted">
+                  {isImage ? (
+                    <div aria-hidden="true" className="relative size-full bg-gradient-to-br from-sky-100 via-white to-neutral-200">
+                      <div className="absolute inset-x-1.5 top-1.5 h-1 rounded-full bg-sky-500/60" />
+                      <div className="absolute inset-x-1.5 top-3.5 h-1 rounded-full bg-neutral-400/50" />
+                      <div className="absolute right-1.5 bottom-1.5 left-1.5 h-3 rounded-sm bg-neutral-700/20" />
+                    </div>
+                  ) : (
+                    <File className="size-5" />
+                  )}
+                </AttachmentMedia>
                 <AttachmentContent>
                   <AttachmentTitle>{reference}</AttachmentTitle>
                   <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
@@ -535,22 +529,6 @@ function ReferenceStrip({ state, setState }: StateProps) {
           })}
         </AttachmentGroup>
       </div>
-    </div>
-  )
-}
-
-function InlineSkillReferences({ state }: { state: ComposerState }) {
-  const skills = state.attachments.filter((reference) => reference.startsWith('$'))
-  if (skills.length === 0) return null
-
-  return (
-    <div className="flex h-6 shrink-0 select-none items-center gap-2">
-      {skills.map((reference) => (
-        <span key={reference} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-blue-600">
-          <SkillReferenceIcon />
-          {referenceLabel(reference)}
-        </span>
-      ))}
     </div>
   )
 }
@@ -774,7 +752,7 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
-        <div className="shrink-0 border-r border-border/60 pr-3"><UsagePopover state={state} /></div>
+        <div className="shrink-0 border-r border-border/60 pr-4"><UsagePopover state={state} /></div>
         <IconLabel icon={<Layers3 className={tone === 'color' ? zone.text : 'text-foreground'} />}>Context · {status}</IconLabel>
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
@@ -799,7 +777,7 @@ function ContextSurface({
           <span className="font-medium">· {percentage}%</span>
           <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
         </div>
-        <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border/60 pl-3">
+        <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border/60 pl-4">
           <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
           <Button variant="outline" size="sm"><IconLabel icon={<GitFork />}>Handoff</IconLabel></Button>
         </div>
@@ -992,7 +970,7 @@ function QueuePreview({
     const shell = {
       integrated: 'border-b bg-background',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      'attached-stack': 'relative z-0 mx-auto -mb-2 w-[calc(100%-2rem)] overflow-hidden rounded-t-xl border bg-background pb-2 shadow-lg shadow-foreground/10',
+      'attached-stack': 'relative z-0 mx-auto -mb-2 w-[calc(100%-0.5rem)] overflow-hidden rounded-t-xl border bg-background pb-2 shadow-lg shadow-foreground/10',
       attached: '',
       inline: '',
     }[layout]
@@ -1006,7 +984,7 @@ function QueuePreview({
             onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className={`flex h-11 cursor-grab items-center gap-2 overflow-hidden px-3 active:cursor-grabbing ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
+            className={`flex h-11 cursor-grab items-center gap-2 overflow-hidden px-4 active:cursor-grabbing ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
@@ -1166,7 +1144,7 @@ export function ComposerPrototype() {
     model: HARNESSES.codex.models[0] ?? '',
     effort: HARNESSES.codex.efforts[1] ?? '',
     permission: HARNESSES.codex.permissions[2]?.label ?? '',
-    attachments: ['$frontend-design'],
+    attachments: ['composer-study.png', 'ComposerPrototype.tsx'],
     contextPreview: 'dumb',
   })
   const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
@@ -1286,10 +1264,9 @@ export function ComposerPrototype() {
           >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
           <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
-            <div className="absolute top-3 right-3 z-20"><TaskPlanPopover /></div>
+            <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
-            <div className="flex min-h-20 items-start gap-2 px-4 py-3 pr-28">
-              <InlineSkillReferences state={state} />
+            <div className="flex min-h-20 items-start px-4 py-3 pr-28">
               <InputGroupTextarea
                 aria-label="Message"
                 placeholder="Direct the next move…"
@@ -1310,7 +1287,7 @@ export function ComposerPrototype() {
                 }}
               />
             </div>
-            <InputGroupAddon align="block-end" className="gap-1 bg-background px-2.5 py-2">
+            <InputGroupAddon align="block-end" className="gap-2 bg-background px-4 py-2">
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
               <div className="ml-auto flex items-center gap-1">
@@ -1339,7 +1316,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-0.5rem)] max-w-[calc(56rem-0.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
