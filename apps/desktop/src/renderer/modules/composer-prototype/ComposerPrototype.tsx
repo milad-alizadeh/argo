@@ -403,27 +403,104 @@ function ReferenceStrip({ state, setState }: StateProps) {
 function ContextPopover({ state }: { state: ComposerState }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
+  const focusLimit = 40_000
+  const focusPercentage = Math.round((focusLimit / context.total) * 100)
+  const contextStatus = percentage <= focusPercentage ? 'Smart zone' : 'Attention risk'
+  const claudeComposition = [
+    { label: 'Conversation', value: '78k', percentage: 64 },
+    { label: 'System prompt', value: '18k', percentage: 15 },
+    { label: 'MCP tools', value: '11k', percentage: 9 },
+    { label: 'Memory files', value: '8k', percentage: 7 },
+    { label: 'Skills', value: '6k', percentage: 5 },
+  ]
   return (
     <Popover>
       <PopoverTrigger
-        render={<InputGroupButton variant={percentage >= 70 ? 'secondary' : 'ghost'} className="text-foreground" />}
+        render={<InputGroupButton variant="secondary" className="h-auto gap-2 px-2.5 py-1.5 text-foreground" />}
       >
-        <CircleGauge />Context {percentage}%
+        <CircleGauge className="size-4" />
+        <span className="grid text-left leading-none">
+          <span className="text-xs font-semibold">Context health</span>
+          <span className="mt-1 text-[10px] font-normal text-muted-foreground">{contextStatus} · {percentage}% capacity</span>
+        </span>
       </PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
+      <PopoverContent align="end" side="top" className="w-[28rem] gap-4 p-4">
         <PopoverHeader>
-          <PopoverTitle>Context window</PopoverTitle>
+          <PopoverTitle className="flex items-center gap-2">
+            Context health
+            <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">{contextStatus}</span>
+          </PopoverTitle>
           <PopoverDescription>
-            {(context.used / 1000).toFixed(0)}k of {(context.total / 1000).toFixed(0)}k tokens used · {percentage}%
+            Attention quality and hard capacity are related, but they are not the same measurement.
           </PopoverDescription>
         </PopoverHeader>
-        <Progress value={percentage} />
+
+        <div className="rounded-xl border p-3">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-xs font-medium text-muted-foreground">Active context</div>
+              <div className="mt-1 text-xl font-semibold tabular-nums">
+                {(context.used / 1000).toFixed(0)}k <span className="text-sm font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k</span>
+              </div>
+            </div>
+            <div className="text-right text-xs text-muted-foreground">
+              <div>{percentage}% hard capacity</div>
+              <div>Smart zone ≈ first {focusPercentage}%</div>
+            </div>
+          </div>
+          <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
+            <div className="absolute inset-y-0 left-0 bg-foreground" style={{ width: `${focusPercentage}%` }} />
+            <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${percentage}%` }} />
+          </div>
+          <div className="mt-2 flex text-[10px] text-muted-foreground">
+            <span>Fresh</span>
+            <span className="ml-auto">Compaction limit</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-foreground p-3 text-background">
+            <div className="text-xs font-semibold">Smart zone</div>
+            <p className="mt-1 text-xs leading-4 text-background/65">Fresh, focused context is best for new decisions and complex edits.</p>
+          </div>
+          <div className="rounded-lg bg-muted p-3">
+            <div className="text-xs font-semibold">Dumb zone</div>
+            <p className="mt-1 text-xs leading-4 text-muted-foreground">Accumulated history can dilute attention long before the window is full.</p>
+          </div>
+        </div>
+
+        {state.harness === 'claude' ? (
+          <div className="grid gap-2">
+            <div className="flex items-center">
+              <span className="text-xs font-semibold">What is loaded</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">Reported by Claude /context</span>
+            </div>
+            {claudeComposition.map((item) => (
+              <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2 text-xs">
+                <span className="text-muted-foreground">{item.label}</span>
+                <Progress value={item.percentage} className="h-1.5" />
+                <span className="text-right tabular-nums">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed p-3">
+            <div className="text-xs font-semibold">Composition unavailable in Codex</div>
+            <p className="mt-1 text-xs leading-4 text-muted-foreground">
+              Codex reports capacity and manages compaction, but does not expose a Claude-style category breakdown.
+            </p>
+          </div>
+        )}
+
+        <p className="text-[10px] leading-4 text-muted-foreground">
+          Smart and dumb zones are workflow heuristics, not guarantees about model intelligence.
+        </p>
         {percentage >= 70 && (
-          <div className="grid gap-3 rounded-lg bg-muted p-3">
+          <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
             <p className="text-xs text-muted-foreground">
               Compact this task before the next large change.
             </p>
-            <div className="flex gap-2">
+            <div className="ml-auto flex shrink-0 gap-2">
               <Button size="sm"><RotateCcw />Compact</Button>
               {percentage >= 90 && <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>}
             </div>
@@ -436,15 +513,27 @@ function ContextPopover({ state }: { state: ComposerState }) {
 
 function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
+  const glanceItems = definition.usage.slice(0, 2)
   return (
     <Popover>
-      <PopoverTrigger render={<InputGroupButton variant="ghost" className="text-foreground" />}>
-        <Gauge />Usage
+      <PopoverTrigger render={<InputGroupButton variant="ghost" className="h-auto gap-2 px-2 py-1 text-foreground" />}>
+        <Gauge className="size-4" />
+        <span className="grid min-w-28 gap-1 text-left">
+          <span className="text-[10px] font-medium leading-none text-muted-foreground">Plan usage</span>
+          <span className="flex gap-2">
+            {glanceItems.map((item) => (
+              <span key={item.label} className="grid flex-1 gap-0.5">
+                <span className="flex text-[9px] leading-none"><span className="truncate">{item.label.replace(', all models', '')}</span><span className="ml-auto tabular-nums">{item.percentage}%</span></span>
+                <span className="h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full bg-foreground" style={{ width: `${item.percentage}%` }} /></span>
+              </span>
+            ))}
+          </span>
+        </span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
-          <PopoverTitle>{definition.label} usage</PopoverTitle>
-          <PopoverDescription>Limits reported by the active harness</PopoverDescription>
+          <PopoverTitle>{definition.label} plan usage</PopoverTitle>
+          <PopoverDescription>Account allowance, separate from context health</PopoverDescription>
         </PopoverHeader>
         {definition.usage.map((item) => (
           <div key={item.label} className="grid gap-1.5">
