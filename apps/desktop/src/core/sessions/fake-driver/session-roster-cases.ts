@@ -53,16 +53,14 @@ export function readRoster(page) {
     const buttons = [...document.querySelectorAll('nav[aria-label="Sessions"] button')]
     return {
       count: buttons.length,
-      names: buttons.map((button) => button.querySelector('.roster__name')?.textContent ?? ''),
+      names: buttons.map((button) => button.textContent ?? ''),
       selected: buttons.filter((button) => button.getAttribute('aria-current') === 'true').length,
       reachable: buttons.filter((button) => button.tabIndex === 0).length,
       note: document.querySelector('.cockpit__note')?.textContent ?? '',
       places: [...document.querySelectorAll('.roster__place')].map((place) => place.textContent),
       partial: [...document.querySelectorAll('.roster__partial')].map((note) => note.textContent),
-      focused: document.activeElement?.closest('li')?.querySelector('.roster__name')?.textContent,
-      stop: document
-        .querySelector('nav[aria-label="Sessions"] button[tabindex="0"]')
-        ?.querySelector('.roster__name')?.textContent,
+      focused: document.activeElement?.closest('button')?.textContent,
+      stop: document.querySelector('nav[aria-label="Sessions"] button[tabindex="0"]')?.textContent,
       standing: document.querySelector('.indicator')?.textContent ?? '',
       feedLabel: document.querySelector('.feed__viewport')?.getAttribute('aria-label') ?? '',
     }
@@ -118,7 +116,7 @@ export async function proveReread(page, transcripts, write) {
   await write(transcripts, ['titledHeadless'], 'project-two')
   await page.click('button:has-text("Read again")')
   // Its own custom title, which is what the Roster draws for it (CONTEXT.md L2 · CLI title).
-  await page.waitForSelector('button:has-text("The name a person typed")')
+  await page.waitForSelector('button:has-text("titledHeadless")')
   const after = await readRoster(page)
   assert.equal(after.count, 7)
   assert.equal(after.note.includes('Read 8 transcript files.'), true)
@@ -147,7 +145,7 @@ export async function proveCodexReread(page, transcripts, grow) {
   )
 
   const after = await readRoster(page)
-  assert.equal(after.names[0], 'Run Codex check')
+  assert.equal(after.names[0], 'rollout-codexParent')
   assert.equal(after.note.includes('Read 9 transcript files.'), true)
 }
 

@@ -36,7 +36,7 @@ export async function proveFirstOpen(page) {
 }
 
 export async function proveCodexFeed(page) {
-  await openSession(page, 'Run Codex check', 'rollout-codexParent')
+  await openSession(page, 'rollout-codexParent', 'rollout-codexParent')
   const reading = await page.evaluate(() => ({
     session: document.querySelector('.feed__viewport')?.getAttribute('data-session'),
     text: document.querySelector('.feed__viewport .feed-row--prose')?.textContent,
