@@ -405,13 +405,8 @@ function ReferenceStrip({ state, setState }: StateProps) {
 function ContextPopover({ state, appearance = 'compact' }: { state: ComposerState; appearance?: 'compact' | 'details' }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
-  const riskStart = 125_000
-  const riskEnd = 150_000
-  const riskStartPercentage = Math.round((riskStart / context.total) * 100)
-  const riskWidthPercentage = Math.round(((riskEnd - riskStart) / context.total) * 100)
-  const contextStatus = context.used < riskStart
-    ? 'Within working zone'
-    : context.used <= riskEnd ? 'Near attention-risk boundary' : 'Attention risk'
+  const smartZonePercentage = 20
+  const contextStatus = percentage <= smartZonePercentage ? 'Smart Zone' : 'Dumb Zone'
   const claudeComposition = [
     { label: 'Conversation', value: '86k', percentage: 71 },
     { label: 'System prompt', value: '16k', percentage: 13 },
@@ -429,10 +424,8 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
         {appearance === 'compact' ? (
           <>
             <CircleGauge className="size-4" />
-            <span className="grid text-left leading-none">
-              <span className="text-xs font-semibold">Context health</span>
-              <span className="mt-1 text-[10px] font-normal text-muted-foreground">{contextStatus} · {percentage}% used</span>
-            </span>
+            <span className="text-xs font-semibold">{contextStatus}</span>
+            <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
           </>
         ) : 'Details'}
       </PopoverTrigger>
@@ -443,7 +436,7 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
             <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">{contextStatus}</span>
           </PopoverTitle>
           <PopoverDescription>
-            Prototype session data with a debated frontier-model risk band.
+            Current context compared with the working smart-zone target.
           </PopoverDescription>
         </PopoverHeader>
 
@@ -456,19 +449,16 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
               </div>
             </div>
             <div className="text-right text-xs">
-              <div className="font-medium">Observed risk band ~125–150k</div>
+              <div className="font-medium">Smart Zone ~{smartZonePercentage}%</div>
               <div className="text-muted-foreground">Current · {percentage}% used</div>
             </div>
           </div>
           <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
             <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
-            <div
-              className="absolute inset-y-0 border-x border-foreground bg-foreground/10"
-              style={{ left: `${riskStartPercentage}%`, width: `${riskWidthPercentage}%` }}
-            />
+            <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${smartZonePercentage}%` }} />
           </div>
           <p className="mt-2 text-xs leading-4 text-muted-foreground">
-            Degradation has no fixed cliff. Matt Pocock currently cites roughly 125–150k for frontier models, while noting that it is debated.
+            This session is in the {contextStatus}. Compact or hand off before starting another substantial phase.
           </p>
         </div>
 
@@ -489,7 +479,7 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
         ) : null}
 
         <p className="text-[10px] leading-4 text-muted-foreground">
-          Risk range is guidance, not a model or harness guarantee.
+          The 20% boundary is a workflow target, not a model guarantee.
         </p>
         {percentage >= 70 && appearance === 'compact' && (
           <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
@@ -511,7 +501,7 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const used = `${(context.used / 1000).toFixed(0)}k`
-  const status = context.used < 125_000 ? 'Within working zone' : context.used <= 150_000 ? 'Near risk boundary' : 'Attention risk'
+  const status = percentage <= 20 ? 'Smart Zone' : 'Dumb Zone'
 
   if (layout === 'footer') {
     return (
@@ -519,12 +509,12 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
         <CircleGauge className="size-4 shrink-0" />
         <div className="shrink-0">
           <div className="text-xs font-semibold">Context · {status}</div>
-          <div className="text-[10px] text-muted-foreground">Observed risk ~125–150k · debated</div>
+          <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
             <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
-            <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
+            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
         <div className="shrink-0 text-xs tabular-nums">
@@ -555,7 +545,7 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
           <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
           <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
         </div>
-        <div className="mt-1.5 text-[10px] text-muted-foreground">Observed risk ~125–150k</div>
+        <div className="mt-1.5 text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         <div className="mt-auto flex items-center gap-1">
           <ContextPopover state={state} appearance="details" />
           <Button variant="secondary" size="sm" className="px-2"><RotateCcw />Compact</Button>
@@ -571,12 +561,12 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
         <CircleGauge className="size-4 shrink-0" />
         <div className="shrink-0">
           <div className="text-xs font-semibold">Context · {status}</div>
-          <div className="text-[10px] text-muted-foreground">Observed risk ~125–150k · debated</div>
+          <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-24 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
             <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
-            <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
+            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
         <div className="shrink-0 text-right text-xs tabular-nums">
@@ -620,22 +610,13 @@ function VariantSwitcher({ variant }: { variant: VariantKey }) {
 
 function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
-  const glanceItems = definition.usage.slice(0, 2)
+  const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
   return (
     <Popover>
-      <PopoverTrigger render={<InputGroupButton variant="ghost" className="h-auto gap-2 px-2 py-1 text-foreground" />}>
+      <PopoverTrigger render={<InputGroupButton variant="ghost" className="gap-1.5 px-2 text-foreground" />}>
         <Gauge className="size-4" />
-        <span className="grid min-w-36 gap-1 text-left">
-          <span className="text-xs font-medium leading-none text-muted-foreground">Plan usage</span>
-          <span className="flex gap-2">
-            {glanceItems.map((item) => (
-              <span key={item.label} className="grid flex-1 gap-0.5">
-                <span className="flex gap-1 text-[10px] leading-none"><span className="truncate">{item.label.replace(', all models', '')}</span><span className="ml-auto tabular-nums">{item.percentage}% used</span></span>
-                <span className="h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full bg-foreground" style={{ width: `${item.percentage}%` }} /></span>
-              </span>
-            ))}
-          </span>
-        </span>
+        <span className="text-xs font-medium">Usage</span>
+        <span className="text-xs tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
