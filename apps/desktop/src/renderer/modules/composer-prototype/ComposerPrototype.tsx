@@ -46,7 +46,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 import {
   Attachment,
@@ -701,13 +701,13 @@ function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; labe
 
 function PrototypeSessionHeader({
   showSidebar,
-  canExpandResult,
-  onExpandResult,
+  sidebarFullscreen,
+  onToggleSidebarFullscreen,
   onToggleSidebar,
 }: {
   showSidebar: boolean
-  canExpandResult: boolean
-  onExpandResult: () => void
+  sidebarFullscreen: boolean
+  onToggleSidebarFullscreen: () => void
   onToggleSidebar: () => void
 }) {
   return (
@@ -734,21 +734,21 @@ function PrototypeSessionHeader({
           </a>
         </div>
       </div>
-      <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 xl:flex">
+      <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 @[52rem]:flex">
         <HeaderSignal icon={<GitFork />} label="Pull request" value="#1931 · Draft" tone="text-violet-600 dark:text-violet-400" />
         <HeaderSignal icon={<Check />} label="Implementation" value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
         <HeaderSignal icon={<FileCheck2 />} label="Code review" value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        {showSidebar && canExpandResult ? (
+        {showSidebar ? (
           <Button
             variant="ghost"
             size="icon-sm"
             className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-1"
-            aria-label="Expand active result"
-            onClick={onExpandResult}
+            aria-label={sidebarFullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+            onClick={onToggleSidebarFullscreen}
           >
-            <Expand />
+            {sidebarFullscreen ? <Minimize2 /> : <Expand />}
           </Button>
         ) : null}
         <Button variant={showSidebar ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle Session sidebar" onClick={onToggleSidebar}>
@@ -762,21 +762,15 @@ function PrototypeSessionHeader({
 function SessionWorkSidebar({
   evidence,
   onActiveEvidenceChange,
-  expandedEvidence,
-  onExpandedEvidenceChange,
 }: {
   evidence: FeedPrototypeEvidence | null
   onActiveEvidenceChange: (evidenceId: string) => void
-  expandedEvidence: boolean
-  onExpandedEvidenceChange: (expanded: boolean) => void
 }) {
   if (evidence)
     return (
       <FeedEvidencePrototype
         evidence={evidence}
         onActiveEvidenceChange={onActiveEvidenceChange}
-        expanded={expandedEvidence}
-        onExpandedChange={onExpandedEvidenceChange}
       />
     )
   return (
@@ -1737,9 +1731,10 @@ export function ComposerPrototype() {
   const [theme, setTheme] = useState<ThemeMode>(initialTheme)
   const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
-  const [expandedFeedEvidence, setExpandedFeedEvidence] = useState(false)
+  const [sessionSidebarFullscreen, setSessionSidebarFullscreen] = useState(false)
   const sessionInspectorPanel = usePanelRef()
   const sessionInspectorElement = useRef<HTMLDivElement>(null)
+  const sessionInspectorRestoreSize = useRef(248)
   const sidebarAnimationTimer = useRef<number | null>(null)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
@@ -1763,13 +1758,6 @@ export function ComposerPrototype() {
   const [latestQueuedId, setLatestQueuedId] = useState<string | null>(null)
   const [isQueueAnimating, setIsQueueAnimating] = useState(false)
 
-  const openFeedEvidence = useCallback((evidence: FeedPrototypeEvidence) => {
-    setFeedEvidence({ ...evidence })
-    setActiveFeedEvidenceId(evidence.id)
-    setExpandedFeedEvidence(false)
-    setShowSessionSidebar(true)
-  }, [])
-
   useEffect(() => {
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && systemDark))
@@ -1783,22 +1771,50 @@ export function ComposerPrototype() {
     [],
   )
 
-  const setSessionSidebarVisible = (visible: boolean) => {
+  const animateSessionInspector = (resize: () => void) => {
     const panelElement = sessionInspectorElement.current
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (sidebarAnimationTimer.current !== null)
       window.clearTimeout(sidebarAnimationTimer.current)
     if (!reduceMotion) panelElement?.classList.add('session-inspector-transition')
-    if (visible) sessionInspectorPanel.current?.expand()
-    else sessionInspectorPanel.current?.collapse()
-    setExpandedFeedEvidence(false)
-    setShowSessionSidebar(visible)
+    resize()
     if (!reduceMotion) {
       sidebarAnimationTimer.current = window.setTimeout(() => {
         panelElement?.classList.remove('session-inspector-transition')
         sidebarAnimationTimer.current = null
       }, 240)
     }
+  }
+
+  const setSessionSidebarVisible = (visible: boolean) => {
+    animateSessionInspector(() => {
+      if (visible) sessionInspectorPanel.current?.expand()
+      else {
+        if (sessionSidebarFullscreen)
+          sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
+        sessionInspectorPanel.current?.collapse()
+      }
+    })
+    setSessionSidebarFullscreen(false)
+    setShowSessionSidebar(visible)
+  }
+
+  const toggleSessionSidebarFullscreen = () => {
+    animateSessionInspector(() => {
+      if (sessionSidebarFullscreen) {
+        sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
+      } else {
+        sessionInspectorRestoreSize.current = sessionInspectorPanel.current?.getSize().inPixels ?? 248
+        sessionInspectorPanel.current?.resize('100%')
+      }
+    })
+    setSessionSidebarFullscreen((fullscreen) => !fullscreen)
+  }
+
+  const openFeedEvidence = (evidence: FeedPrototypeEvidence) => {
+    setFeedEvidence({ ...evidence })
+    setActiveFeedEvidenceId(evidence.id)
+    if (!showSessionSidebar) setSessionSidebarVisible(true)
   }
 
   const steerQueuedMessage = (message: QueuedMessage) => {
@@ -1925,19 +1941,19 @@ export function ComposerPrototype() {
           transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
         }
           `}</style>
-          <PrototypeSessionHeader
-            showSidebar={showSessionSidebar}
-            canExpandResult={feedEvidence !== null}
-            onExpandResult={() => setExpandedFeedEvidence(true)}
-            onToggleSidebar={() => setSessionSidebarVisible(!showSessionSidebar)}
-          />
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
           <ResizablePanel
             id="session-conversation"
             minSize={320}
             className="flex h-full min-h-0 overflow-hidden"
           >
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
+          <PrototypeSessionHeader
+            showSidebar={showSessionSidebar}
+            sidebarFullscreen={sessionSidebarFullscreen}
+            onToggleSidebarFullscreen={toggleSessionSidebarFullscreen}
+            onToggleSidebar={() => setSessionSidebarVisible(!showSessionSidebar)}
+          />
           <div className="min-h-0 flex-1">
             <Transcript
               messages={messages}
@@ -2032,7 +2048,7 @@ export function ComposerPrototype() {
             collapsedSize={0}
             defaultSize={248}
             minSize={216}
-            maxSize={720}
+            maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
@@ -2040,8 +2056,6 @@ export function ComposerPrototype() {
                 <SessionWorkSidebar
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
-                  expandedEvidence={expandedFeedEvidence}
-                  onExpandedEvidenceChange={setExpandedFeedEvidence}
                 />
             </div>
           </ResizablePanel>
