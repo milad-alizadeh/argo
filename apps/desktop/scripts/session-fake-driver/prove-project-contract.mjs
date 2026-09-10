@@ -1,4 +1,4 @@
-// src/scripts/session-proof/prove-project-contract.ts
+// src/scripts/session-fake-driver/prove-project-contract.ts
 import assert2 from "node:assert/strict";
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -8,7 +8,7 @@ import { _electron as electron } from "playwright-core";
 // scripts/acceptance-protocol.mjs
 var ACCEPTANCE_ENV = "ARGO_PTY_ACCEPTANCE";
 
-// src/scripts/session-proof/packaged-test-copy.ts
+// src/scripts/session-fake-driver/packaged-test-copy.ts
 import assert from "node:assert/strict";
 import { cp, realpath } from "node:fs/promises";
 import path2 from "node:path";
@@ -59,7 +59,7 @@ function packagedApp(arch) {
   return path.join(outputDirectory(arch), `${APP_NAME}.app`);
 }
 
-// src/scripts/session-proof/packaged-test-copy.ts
+// src/scripts/session-fake-driver/packaged-test-copy.ts
 async function packagedTestCopy(root, arch = "arm64") {
   const application = path2.join(root, "Argo.app");
   await cp(packagedApp(arch), application, { recursive: true, verbatimSymlinks: true });
@@ -83,10 +83,10 @@ function appExecutable(application) {
   return path2.join(application, "Contents", "MacOS", "Argo");
 }
 
-// src/scripts/session-proof/project-proof-protocol.ts
+// src/scripts/session-fake-driver/project-proof-protocol.ts
 var PROJECT_PROOF_STORE_ENV = "ARGO_PROJECT_PROOF_STORE";
 
-// src/scripts/session-proof/prove-project-contract.ts
+// src/scripts/session-fake-driver/prove-project-contract.ts
 var request = { version: 1, type: "project.open", requestId: "open-1", projectId: "project-1" };
 async function prepare(root) {
   const application = await packagedTestCopy(root);
