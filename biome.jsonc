@@ -64,11 +64,11 @@
         "noTsIgnore": "error"
       },
       "style": {
-        // The 150-line per-file ceiling (rules/house.md). Counts LINES OF CODE:
+        // The 150-line per-file ceiling (AGENTS.md). Counts LINES OF CODE:
         // blank lines are skipped by the option, and comment lines are not counted by the
         // rule at all — a heavily-commented file is judged on the code you must hold in
         // your head, not on how far it scrolls. That is a statement about this linter, not
-        // a comment budget; rules/house.md sets that.
+        // a comment budget; AGENTS.md sets that.
         "noExcessiveLinesPerFile": {
           "level": "error",
           "options": {

@@ -114,7 +114,8 @@ so does CI, with SwiftFormat in `--check` mode rather than rewriting.
 | Duplication | `jscpd`, Swift included | `.jscpd.json` |
 
 The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
-TypeScript. `rules/swift.md` is the prose half: how Swift spells `rules/house.md`, plus the views.
+TypeScript. `apps/macOS/AGENTS.md` is the prose half: how Swift spells the house rules in the root
+`AGENTS.md`, plus the views.
 
 Boundaries are readable off imports and declarations alone, so they held as gates for a while;
 the script that checked them is gone and they are conventions again: **ArgoEngine** never
@@ -145,8 +146,8 @@ the window, which is every surface and so no single one.
 bun run screenshot --filter=@argo/macos -- out/cockpit.png
 ```
 
-Builds, launches, and captures the window. See AGENTS.md ("Visual verification") for what it
-does about an already-running instance, and why that matters.
+Builds, launches, and captures the window. See `docs/agents/visual-verification.md` for what
+it does about an already-running instance, and why that matters.
 
 ## End-to-end tests
 

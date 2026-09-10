@@ -28,7 +28,7 @@ let package = Package(
         // modules in the product's build and under `xcodebuild`.
         .package(path: "../ArgoAtlas"),
         // Syntax highlighting: highlight.js under a SwiftUI surface, MIT. A grammar per language is
-        // a solved problem and not one to hand-roll (`rules/house.md`), and this one ships
+        // a solved problem and not one to hand-roll, and this one ships
         // Xcode's own theme, which is the theme the panel wants.
         .package(url: "https://github.com/appstefan/HighlightSwift.git", from: "1.1.0"),
     ],

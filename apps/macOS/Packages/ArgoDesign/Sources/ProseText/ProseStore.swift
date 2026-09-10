@@ -18,8 +18,8 @@ import Synchronization
 ///
 /// A `Mutex` and not a lock beside a `nonisolated(unsafe)` field: a mutex OWNS the state it
 /// guards, so the guarantee is the compiler's rather than a promise nothing checks
-/// (`rules/swift-style.md`). It is `~Copyable` for the same reason, which is why every store here
-/// is a `let` rather than a value anything hands around.
+/// (`apps/macOS/AGENTS.md`). It is `~Copyable` for the same reason, which is why every store
+/// here is a `let` rather than a value anything hands around.
 ///
 /// `Value: Sendable` follows from that, and it is what draws the line around WHICH readings can be
 /// kept here: a mutex may only hand out state that is allowed to cross a thread, and a `CTLine` is

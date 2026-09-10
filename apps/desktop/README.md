@@ -16,7 +16,7 @@ Run the app against the dev server with `bun run dev` from the repository root. 
 ## Visual design infra
 
 - Design stack: `docs/design-stack.md`
-- Design rules: `rules/desktop.md`
+- Design rules: `apps/desktop/AGENTS.md`
 - Components, live: <https://milad-alizadeh.github.io/argo/>, built from `main` by
   `.github/workflows/storybook-pages.yml`. `?path=/story/<component>--<state>` links one state.
 - Components, locally: `bun run storybook` from the repository root
@@ -258,7 +258,7 @@ The renderer is the cockpit shell: a chrome band, a sidebar of five destinations
 `src/renderer/modules/` contains the maintained domain components and hooks. The frame and the surfaces are
 [ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md), the design workflow is
 [`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
-[`rules/desktop.md`](../../rules/desktop.md).
+[`apps/desktop/AGENTS.md`](AGENTS.md).
 
 ## Portable integration proof
 

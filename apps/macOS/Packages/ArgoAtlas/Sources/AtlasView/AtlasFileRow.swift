@@ -9,7 +9,7 @@ import SwiftUI
 /// of a folder is the telling one and a path clipped from the right loses exactly that.
 ///
 /// A `Button`, because selecting a row is an action and a shape with a tap gesture is a control
-/// that can look right and fire nothing (`rules/swift.md`).
+/// that can look right and fire nothing (`apps/macOS/AGENTS.md`).
 struct AtlasFileRow: View {
     @Environment(\.argo) private var argo
 

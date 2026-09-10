@@ -1,4 +1,4 @@
-# SwiftLint — the arithmetic half of rules/swift.md and rules/house.md, as a
+# SwiftLint — the arithmetic half of apps/macOS/AGENTS.md and the root AGENTS.md, as a
 # build failure. Every rule here is an ERROR: a warning is a note nobody reads, and the
 # caps are the rules. Exemptions are ratchets, listed at the bottom with a reason.
 #
@@ -32,7 +32,7 @@ excluded:
 # `scripts/swift-lint.sh` fails on the key otherwise. What the rule reported when it was finally
 # run (495 violations, and wrong often enough that only a rebuild says which): quality-gates.md.
 
-# --- the caps (rules/house.md points here) ---
+# --- the caps ---
 
 file_length:
   # 150 code lines is the house ceiling. SwiftLint can skip comment-only lines but has no
@@ -59,7 +59,7 @@ closure_body_length:
   # The same 50 as a function body, deliberately. A SwiftUI `body` IS a closure, so a tighter
   # cap here would hold view code to a stricter ceiling than the JSX it is the counterpart of
   # — and biome gates that at 50. The fix when it fires is the same either way: the nested
-  # layers are subviews (rules/swift.md, "a body is a composition").
+  # layers are subviews (apps/macOS/AGENTS.md, "a body is a composition").
   error: 50
   warning: 50
 
@@ -236,7 +236,7 @@ identifier_name:
     error: 50
   allowed_symbols: ["_"]
   # EXEMPTION pr, ci — #258, 2026-08-27. `CONTEXT.md` L4 spells two of the five lifecycle nodes
-  # exactly this way, and rules/house.md exempts a domain's own acronyms from the min length.
+  # exactly this way, and the root AGENTS.md exempts a domain's own acronyms from the min length.
   excluded: [id, x, y, to, at, on, up, pr, ci]
 
 type_name:
@@ -245,7 +245,7 @@ type_name:
   max_length:
     error: 50
 
-# --- the escape hatches (rules/swift.md) ---
+# --- the escape hatches (apps/macOS/AGENTS.md) ---
 
 opt_in_rules:
   - force_unwrapping
@@ -285,15 +285,14 @@ disabled_rules:
   # SwiftFormat owns wrapping and blank lines; two formatters disagreeing is a loop.
   - opening_brace
   - trailing_comma
-  # `todo` is a warning-shaped rule in an errors-only config, and rules/house.md already
-  # says where a TODO may live.
+  # `todo` is a warning-shaped rule in an errors-only config.
   - todo
 
 custom_rules:
   unchecked_sendable:
     name: "@unchecked Sendable"
     regex: '@unchecked\s+Sendable'
-    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (rules/swift.md)."
+    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (apps/macOS/AGENTS.md)."
     severity: error
 
   swiftlint_disable:

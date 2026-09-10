@@ -1,17 +1,11 @@
----
-paths:
-  - "apps/desktop/**"
----
-
 # Desktop Rules
 
 What no linter checks about `apps/desktop`. The surfaces themselves are
-[ADR-0038](../docs/adr/0038-the-desktop-cockpit-is-opaque.md), and the caps are `biome.jsonc`.
+[ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md), and the caps are `biome.jsonc`.
 
 ## Tokens (#1912)
 
-`docs/design-stack.md` names the token contract, and these are the rules for writing to it. They
-lived in a `rules/design.md` naming a different file as the contract until #1912.
+`docs/design-stack.md` names the token contract, and these are the rules for writing to it.
 
 - A visual constant is reached by name. The contract is the only place a raw value lives, and a
   measurement at a call site is what `scripts/check-design-tokens.sh` reports.

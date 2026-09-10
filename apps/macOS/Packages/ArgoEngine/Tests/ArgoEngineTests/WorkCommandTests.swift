@@ -80,9 +80,8 @@ struct WorkCommandTests {
         #expect(WorkCommand.resolving(Self.ticket(labels), designs: Self.designs) == nil)
     }
 
-    /// Rule 1 before rule 5, which is the repo rule `AGENTS.md` states: a UI ticket whose screen
-    /// has
-    /// a design is never built with `implement`.
+    /// Rule 1 before rule 5, which is the repo rule the root `AGENTS.md` states: a UI ticket whose
+    /// screen has a design is never built with `implement`.
     @Test func `a named screen with a design outranks the build label beside it`() {
         #expect(
             WorkCommand.resolving(

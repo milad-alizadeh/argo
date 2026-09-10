@@ -12,7 +12,7 @@ import Foundation
 /// extension is file-scoped, so a shard spelling its own would be invisible to its siblings.
 package enum TranscriptFixtures {
     /// A Plan event from the pairs a fixture actually cares about — the text and where each item
-    /// got to. Hoisted on the third caller (`rules/house.md`): two specimens and two suites were
+    /// got to. Hoisted on the third caller (root `AGENTS.md`): two specimens and two suites were
     /// spelling the same `map` into `PlanEntry`, so a field on `PlanEntry` was four edits.
     package static func plan(_ entries: [(String, PlanEntryStatus)]) -> TranscriptEvent {
         .plan(Plan(entries: entries.map { PlanEntry(text: $0.0, status: $0.1) }))

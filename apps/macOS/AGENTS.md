@@ -1,17 +1,13 @@
----
-paths:
-  - "apps/macOS/**/*.swift"
----
-
 # Swift and the Cockpit
 
-How Swift spells `house.md`, plus the rules the cockpit's contract adds. The escape hatches
-(`!`, `try!`, `as!`, implicitly unwrapped optionals, `@unchecked Sendable`,
-`swiftlint:disable`) and the caps are SwiftLint errors. The package layering, the token
-contract and the row-height rule are conventions now, and **nothing here builds, tests or renders
-the app at all**, so the compiler and a reviewer are the only things holding any of it
-(AGENTS.md → *Gates*). What it was built with and what its optimisation was worth, for whoever
-ports the behaviour to `apps/desktop`: `docs/agents/build-configurations.md`.
+How Swift spells the house rules in the root `AGENTS.md`, plus the rules the cockpit's
+contract adds. The escape hatches (`!`, `try!`, `as!`, implicitly unwrapped optionals,
+`@unchecked Sendable`, `swiftlint:disable`) and the caps are SwiftLint errors. The package
+layering, the token contract and the row-height rule are conventions now, and **nothing here
+builds, tests or renders the app at all**, so the compiler and a reviewer are the only things
+holding any of it (root `AGENTS.md` → *Gates*). What it was built with and what its
+optimisation was worth, for whoever ports the behaviour to `apps/desktop`:
+`docs/agents/build-configurations.md`.
 
 ## Swift
 

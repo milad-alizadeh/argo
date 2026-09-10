@@ -4,7 +4,7 @@ import Foundation
 ///
 /// A hover is the one state a render cannot reach by itself: nothing in a screenshot holds a
 /// pointer over anything, and a state with no render is a state nobody has looked at
-/// (`rules/swift.md`). So a preview and a specimen say it out loud instead.
+/// (`apps/macOS/AGENTS.md`). So a preview and a specimen say it out loud instead.
 package enum MinimapNaming: Equatable {
     /// None. What the lane is whenever no pointer is on it, which is nearly always.
     case nothing

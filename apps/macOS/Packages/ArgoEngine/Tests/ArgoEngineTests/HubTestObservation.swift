@@ -139,7 +139,7 @@ func hubLiveObservation(
 ///
 /// Shared rather than restated. Three suites about a claim of Argo's own — the submitted Turn, the
 /// lost Turn, the interrupted Turn — wanted these same five lines, which is where a helper hoists
-/// (`rules/house.md`).
+/// (root `AGENTS.md`).
 @MainActor
 @discardableResult
 func hubFirstRecords(
