@@ -6,7 +6,7 @@
 // artifact, so the screens a change draws are evidence every run produces rather than evidence
 // somebody remembered to produce by hand.
 import assert from 'node:assert/strict'
-import { appendFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
@@ -17,22 +17,10 @@ import {
   packagedTestCopy,
 } from '../../../core/desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../../core/projects/fake-driver/project-proof-protocol'
-import {
-  proveFirstOpen,
-  proveNoMislabelledFeed,
-  proveNoUnmeasuredRow,
-  proveRendererAuthority,
-} from './session-feed-cases'
-import { fixturePath, writeFixtureTree } from './session-fixture-files'
-import {
-  proveDamagedSession,
-  proveGeometry,
-  proveGrownSession,
-  proveOwnedHeights,
-  proveRepeatOpening,
-} from './session-geometry-cases'
+import { proveRendererAuthority } from './session-feed-cases'
+import { writeFixtureTree } from './session-fixture-files'
 import { SESSION_TRANSCRIPTS_ENV } from './session-proof-protocol'
-import { proveContract, proveReread, proveRoster } from './session-roster-cases'
+import { proveContract } from './session-roster-cases'
 
 const FIXTURES = [
   'resumeParent',
@@ -48,26 +36,6 @@ const FIXTURES = [
 
 const shotsIndex = process.argv.indexOf('--shots')
 const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
-
-// One more turn on a Session already measured, written the way the CLI writes one: appended to
-// the file it belongs to.
-const GROWN_TURN = `${JSON.stringify({
-  type: 'assistant',
-  cwd: '/Users/x/stranded',
-  gitBranch: 'main',
-  timestamp: '2026-08-20T09:30:00.000Z',
-  uuid: 'sr-asst-2',
-  parentUuid: 'sr-asst-1',
-  message: {
-    role: 'assistant',
-    stop_reason: 'end_turn',
-    content: [{ type: 'text', text: 'And one more turn, written while Argo was looking.' }],
-  },
-})}\n`
-
-async function growStranded(transcripts) {
-  await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
-}
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
@@ -86,6 +54,27 @@ async function capture(page, application, name) {
   await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show())
   await page.waitForTimeout(400)
   await page.screenshot({ path: path.join(shots, name) })
+}
+
+async function proveSessionsScreen(page, application) {
+  await page.waitForSelector('nav[aria-label="Sessions"] button')
+  const empty = await page.evaluate(() => ({
+    sessions: document.querySelectorAll('nav[aria-label="Sessions"] button').length,
+    message: document.querySelector('main p')?.textContent,
+  }))
+  assert.equal(empty.sessions, 6)
+  assert.equal(empty.message, 'Select a session to read its terminal activity.')
+  await capture(page, application, 'sessions-empty.png')
+
+  await page.click('button:has-text("askPending")')
+  await page.waitForSelector('[aria-label="Session activity"] article')
+  const selected = await page.evaluate(() => ({
+    activityRows: document.querySelectorAll('[aria-label="Session activity"] article').length,
+    empty: document.querySelector('main p')?.textContent ?? '',
+  }))
+  assert.equal(selected.activityRows > 0, true)
+  assert.equal(selected.empty, '')
+  await capture(page, application, 'session-activity.png')
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
@@ -116,38 +105,13 @@ try {
     return reading
   }
   await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
-  const roster = await ran(['roster-focus', 'partial-chain'], () => proveRoster(page))
-  const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
-  await capture(page, application, 'roster-and-feed.png')
-  await ran(['damaged-session'], () => proveDamagedSession(page))
-  await capture(page, application, 'damaged-session.png')
-  const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>
-    proveFirstOpen(page),
-  )
-  await capture(page, application, 'feed-at-the-tail.png')
-  const owned = await ran(['owned-heights', 'settled-font'], () => proveOwnedHeights(page))
-  await ran(['repeat-opening'], () => proveRepeatOpening(page))
-  await ran(['no-mislabelled-feed'], () => proveNoMislabelledFeed(page))
-  await ran(['no-unmeasured-row'], () => proveNoUnmeasuredRow(page))
-  await ran(['roster-reread'], () => proveReread(page, fixture.transcripts, writeFixtureTree))
-  await ran(['grown-session'], () => proveGrownSession(page, fixture.transcripts, growStranded))
-  await capture(page, application, 'roster-read-again.png')
+  await ran(['empty-state', 'session-activity'], () => proveSessionsScreen(page, application))
   await ran(['renderer-authority'], () => proveRendererAuthority(page, application))
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
       ok: true,
       packaged: true,
-      sessions: roster.count,
-      measuredRows: geometry.rowHeights.length,
-      ownedRows: owned.rows,
-      // First-draw evidence for #1863, read off the shipped app rather than a dev server, for the
-      // first open of the `prose` fixture. Two numbers because one cannot answer both questions:
-      // `measureMs` is the pass itself, and `settleMs` is what the reader waited, which carries
-      // the three warm frames and the font wait as well. Reporting only the second would report a
-      // fixed floor of about three frames as if it were the cost of laying out this Feed.
-      measureMs: firstOpen.measureMs,
-      settleMs: firstOpen.settleMs,
       cases,
     }),
   )
