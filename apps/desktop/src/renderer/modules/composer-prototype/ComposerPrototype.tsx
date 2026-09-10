@@ -1401,7 +1401,9 @@ function ContextSurface({
         <div className="shrink-0 @[36rem]:hidden">
           <ContextPopover state={state} appearance="progress" meterStyle="grayscale" />
         </div>
-        <IconLabel icon={<Layers3 />} className={`hidden @[36rem]:inline-flex ${contextAlert ? 'text-red-600' : 'text-foreground'}`}>Context</IconLabel>
+        <div className="hidden @[36rem]:block">
+          <IconLabel icon={<Layers3 />} className={contextAlert ? 'text-red-600' : 'text-foreground'}>Context</IconLabel>
+        </div>
         <TooltipProvider>
         <div className="relative hidden min-w-28 flex-1 @[36rem]:block">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
