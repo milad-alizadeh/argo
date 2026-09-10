@@ -2,12 +2,15 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { windowBackground } from './core/appearance/appearance'
-import { applyStoredAppearance, attachAppearanceBridge, readAppearance } from './core/appearance/bridge'
+import {
+  applyStoredAppearance,
+  attachAppearanceBridge,
+  readAppearance,
+} from './core/appearance/bridge'
 import { installMenu } from './core/commands/menu'
 import { attachProjectBridge } from './core/projects/bridge'
-import { SESSION_TRANSCRIPTS_ENV } from './agents/claude/session-fake-driver/session-proof-protocol'
-import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachSessionBridge } from './core/sessions/bridge'
 

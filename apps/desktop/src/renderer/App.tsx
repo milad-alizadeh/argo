@@ -19,9 +19,7 @@ import './i18n/config'
 
 function destinationFromHash(): Destination {
   const path = window.location.hash.slice(1)
-  return (
-    DESTINATIONS.find((candidate) => path === `/${candidate.toLowerCase()}`) ?? 'Projects'
-  )
+  return DESTINATIONS.find((candidate) => path === `/${candidate.toLowerCase()}`) ?? 'Projects'
 }
 
 function destinationHash(destination: Destination): string {

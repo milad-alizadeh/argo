@@ -2,7 +2,11 @@
 // set (src/projects/messages.ts), so one settle turns any reply into the next screen and the
 // renderer never assembles storage out of a sequence of replies.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { type ProjectError, type ProjectErrorCode, projectError } from '../../../../core/projects/contract'
+import {
+  type ProjectError,
+  type ProjectErrorCode,
+  projectError,
+} from '../../../../core/projects/contract'
 import type { ProjectListReply, ProjectSummary } from '../../../../core/projects/messages'
 import { listRequest, openRequest, registerRequest, relocateRequest } from '../lib/requests'
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { type BrowserWindow, dialog } from 'electron'
-import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { isRecord, requestIdentifier } from '../../boundary'
+import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { PROJECT_CHANNEL, projectError } from './contract'
 import { listProjects } from './list-projects'
 import { openProject } from './open-project'

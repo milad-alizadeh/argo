@@ -1,3 +1,4 @@
+import { requestIdentifier } from '../../boundary'
 import {
   isProjectErrorMessage,
   isProjectOpenReply,
@@ -6,7 +7,6 @@ import {
   type ProjectOpenRequest,
   projectError,
 } from './contract'
-import { requestIdentifier } from '../../boundary'
 import {
   isProjectCancelled,
   isProjectListed,
