@@ -91,9 +91,9 @@ function QuestionnaireChoice({
       <span
         aria-hidden="true"
         data-slot="questionnaire-choice-indicator"
-        className="pointer-events-none relative mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-input group-data-checked/questionnaire-choice:border-primary group-data-checked/questionnaire-choice:bg-primary group-data-checked/questionnaire-choice:text-primary-foreground dark:bg-input/30"
+        className="pointer-events-none relative mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-input group-data-checked/questionnaire-choice:border-foreground group-data-checked/questionnaire-choice:bg-background dark:bg-input/30 dark:group-data-checked/questionnaire-choice:bg-background"
       >
-        <span className="hidden size-2 rounded-full bg-primary-foreground group-data-checked/questionnaire-choice:block" />
+        <span className="hidden size-2 rounded-full bg-foreground group-data-checked/questionnaire-choice:block" />
         <CheckIcon className="hidden size-3.5" />
       </span>
       <QuestionnairePrimitive.ChoiceLabel
