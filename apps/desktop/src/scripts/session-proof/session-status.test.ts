@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '../src/sessions/chains.ts'
-import { projectRosterRow } from '../src/sessions/roster.ts'
-import { fixtureFiles } from './session-fixtures.mjs'
+import { stitchChains } from '../sessions/chains.ts'
+import { projectRosterRow } from '../sessions/roster.ts'
+import { fixtureFiles } from './session-fixtures'
 
 async function rowOf(names) {
   return projectRosterRow(stitchChains(await fixtureFiles(names))[0])

@@ -3,8 +3,8 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { readTranscriptFile } from '../src/sessions/transcript-file.ts'
-import { fixtureLines, writeFixtureTree } from './session-fixture-files.mjs'
+import { readTranscriptFile } from '../sessions/transcript-file.ts'
+import { fixtureLines, writeFixtureTree } from './session-fixture-files'
 
 export async function fixtureFile(name) {
   return readTranscriptFile(`/fixtures/${name}.jsonl`, `${name}.jsonl`, await fixtureLines(name))

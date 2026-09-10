@@ -4,7 +4,7 @@
 // under this app's path filter in CI. `askPending`, `titledHeadless`, `prose`, `subagentTail` and
 // `strandedResume` are new, for readings the copied set does not reach.
 //
-// Kept apart from `session-fixtures.mjs` because the packaged proof runs under node, which cannot
+// Kept apart from `session-fixtures` because the packaged proof runs under node, which cannot
 // resolve the extensionless TypeScript imports that file reaches for.
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'

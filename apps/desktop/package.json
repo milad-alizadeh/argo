@@ -13,8 +13,10 @@
     "design:render": "node scripts/render-desktop-state.mjs",
     "release:build": "bun run prove:pty --arch arm64",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "build:session-scripts": "bun build src/scripts/session-proof/prove-project-contract.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/prove-project-contract.mjs && bun build src/scripts/session-proof/prove-session-feed.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/prove-session-feed.mjs",
     "prove:pty": "node ../../scripts/node-version-gate.mjs && node scripts/prove-packaged-pty.mjs",
-    "prove:session": "node ../../scripts/node-version-gate.mjs && node scripts/prove-session-feed.mjs",
+    "prove:project-contract": "node ../../scripts/node-version-gate.mjs && bun run build:session-scripts && node scripts/prove-project-contract.mjs",
+    "prove:session": "node ../../scripts/node-version-gate.mjs && bun run build:session-scripts && node scripts/prove-session-feed.mjs",
     "assert:packaged": "node ../../scripts/node-version-gate.mjs && node scripts/assert-packaged-pty.mjs",
     "desktop:manifest": "node ../../scripts/node-version-gate.mjs && node scripts/desktop-manifest.mjs",
     "desktop:verdict": "node ../../scripts/node-version-gate.mjs && node scripts/write-release-verdict.mjs",
@@ -22,7 +24,9 @@
   },
   "dependencies": {
     "node-pty": "1.2.0-beta.15",
-    "node-addon-api": "7.1.1"
+    "node-addon-api": "7.1.1",
+    "react-router": "^7.13.1",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@electron-forge/cli": "7.11.2",
@@ -37,6 +41,7 @@
     "@storybook/addon-essentials": "8.6.14",
     "@storybook/react-vite": "8.6.14",
     "@shadcn/react": "0.3.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
@@ -45,6 +50,7 @@
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "storybook": "8.6.14",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
     "vite": "7.2.6"
   },

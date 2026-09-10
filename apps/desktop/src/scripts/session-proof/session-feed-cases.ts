@@ -2,7 +2,7 @@
 // never carries one Session's rows under another's name, and the renderer authority the Session
 // bridge asserts for itself.
 import assert from 'node:assert/strict'
-import { listing, openSession } from './session-roster-cases.mjs'
+import { listing, openSession } from './session-roster-cases'
 
 // The three things a reader does with a Feed on the first open: it stands at the tail, it says
 // which Session it is showing, and its prose can be selected with a mouse.
