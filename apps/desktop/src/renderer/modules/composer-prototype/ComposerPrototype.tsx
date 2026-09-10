@@ -32,7 +32,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import {
   Attachment,
   AttachmentAction,
@@ -467,32 +467,54 @@ function PermissionMenu({ state, setState }: StateProps) {
 }
 
 function ReferenceStrip({ state, setState }: StateProps) {
-  if (state.attachments.length === 0) return null
+  const [renderedAttachments, setRenderedAttachments] = useState(state.attachments)
+  const [expanded, setExpanded] = useState(state.attachments.length > 0)
+
+  useEffect(() => {
+    let frame = 0
+    let timeout = 0
+    if (state.attachments.length > 0) {
+      setRenderedAttachments(state.attachments)
+      frame = window.requestAnimationFrame(() => setExpanded(true))
+    } else {
+      setExpanded(false)
+      timeout = window.setTimeout(() => setRenderedAttachments([]), 280)
+    }
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [state.attachments])
+
   return (
-    <AttachmentGroup className="w-full px-3 pt-3">
-      {state.attachments.map((reference) => (
-        <Attachment key={reference} size="xs">
-          <AttachmentMedia><File /></AttachmentMedia>
-          <AttachmentContent>
-            <AttachmentTitle>{reference}</AttachmentTitle>
-            <AttachmentDescription>Task context</AttachmentDescription>
-          </AttachmentContent>
-          <AttachmentActions>
-            <AttachmentAction
-              aria-label={`Remove ${reference}`}
-              onClick={() =>
-                setState({
-                  ...state,
-                  attachments: state.attachments.filter((item) => item !== reference),
-                })
-              }
-            >
-              <X />
-            </AttachmentAction>
-          </AttachmentActions>
-        </Attachment>
-      ))}
-    </AttachmentGroup>
+    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-[3.25rem]' : 'h-0'}`}>
+      <div>
+        <AttachmentGroup className="w-full px-3 pt-3">
+          {renderedAttachments.map((reference) => (
+            <Attachment key={reference} size="xs">
+              <AttachmentMedia><File /></AttachmentMedia>
+              <AttachmentContent>
+                <AttachmentTitle>{reference}</AttachmentTitle>
+                <AttachmentDescription>Task context</AttachmentDescription>
+              </AttachmentContent>
+              <AttachmentActions>
+                <AttachmentAction
+                  aria-label={`Remove ${reference}`}
+                  onClick={() =>
+                    setState({
+                      ...state,
+                      attachments: state.attachments.filter((item) => item !== reference),
+                    })
+                  }
+                >
+                  <X />
+                </AttachmentAction>
+              </AttachmentActions>
+            </Attachment>
+          ))}
+        </AttachmentGroup>
+      </div>
+    </div>
   )
 }
 
@@ -889,71 +911,10 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
 }
 
 function AnimatedHeight({ children }: { children: ReactNode }) {
-  const frameRef = useRef<HTMLDivElement>(null)
-  const clipRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const animationRef = useRef<Animation | null>(null)
-  const surfaceAnimationRef = useRef<Animation | null>(null)
-
-  useEffect(() => {
-    const frame = frameRef.current
-    const clip = clipRef.current
-    const content = contentRef.current
-    const surface = content?.firstElementChild?.firstElementChild
-    if (!(frame && clip && content && surface instanceof HTMLElement)) return
-
-    let previousHeight = content.getBoundingClientRect().height
-    const observer = new ResizeObserver(() => {
-      const nextHeight = content.getBoundingClientRect().height
-      if (Math.abs(nextHeight - previousHeight) < 1) return
-
-      const startHeight = animationRef.current
-        ? frame.getBoundingClientRect().height
-        : previousHeight
-      const surfaceStartHeight = surfaceAnimationRef.current
-        ? surface.getBoundingClientRect().height
-        : previousHeight
-      animationRef.current?.cancel()
-      surfaceAnimationRef.current?.cancel()
-      clip.style.height = '100%'
-      clip.style.overflow = 'clip'
-      frame.style.height = `${nextHeight}px`
-      surface.style.height = `${nextHeight}px`
-      animationRef.current = frame.animate(
-        [{ height: `${startHeight}px` }, { height: `${nextHeight}px` }],
-        { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' },
-      )
-      surfaceAnimationRef.current = surface.animate(
-        [{ height: `${surfaceStartHeight}px` }, { height: `${nextHeight}px` }],
-        { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' },
-      )
-      animationRef.current.onfinish = () => {
-        frame.style.height = 'auto'
-        clip.style.height = 'auto'
-        clip.style.overflow = 'visible'
-        animationRef.current = null
-      }
-      surfaceAnimationRef.current.onfinish = () => {
-        surface.style.height = 'auto'
-        surfaceAnimationRef.current = null
-      }
-      previousHeight = nextHeight
-    })
-
-    observer.observe(content)
-    return () => {
-      observer.disconnect()
-      animationRef.current?.cancel()
-      surfaceAnimationRef.current?.cancel()
-    }
-  }, [])
-
   return (
-    <div ref={frameRef} className="relative z-10 mx-auto w-full max-w-4xl">
+    <div className="relative z-10 mx-auto w-full max-w-4xl">
       <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-background shadow-[0_12px_34px_-15px_rgba(0,0,0,0.32)]" />
-      <div ref={clipRef} className="relative z-10 rounded-2xl">
-        <div ref={contentRef}>{children}</div>
-      </div>
+      <div className="relative z-10 rounded-2xl">{children}</div>
     </div>
   )
 }
