@@ -594,6 +594,7 @@ function ContextPopover({
   appearance?: 'compact' | 'details'
   meterStyle?: 'solid' | 'gradient' | 'grayscale'
 }) {
+  const [autoCompactThreshold, setAutoCompactThreshold] = useState(80)
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const smartZonePercentage = 20
@@ -687,24 +688,47 @@ function ContextPopover({
               <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
               <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
             </div>
-            {state.harness === 'claude' ? (
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <span className="text-xs font-semibold">What is loaded</span>
-                  <span className="ml-auto text-[10px] text-muted-foreground">Sample /context · 35k static load</span>
-                </div>
-                {claudeComposition.map((item) => (
-                  <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">{item.label}</span>
-                    <Progress value={item.percentage} className="h-1.5" />
-                    <span className="text-right tabular-nums">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
             <p className="text-[10px] leading-4 text-muted-foreground">The 20% boundary is a workflow target, not a model guarantee.</p>
           </>
         )}
+        {state.harness === 'claude' ? (
+          <div className="grid gap-2 border-t pt-4">
+            <div className="flex items-center">
+              <span className="text-xs font-semibold">What is loaded</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">Sample /context · 35k static load</span>
+            </div>
+            {claudeComposition.map((item) => (
+              <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2 text-xs">
+                <span className="text-muted-foreground">{item.label}</span>
+                <Progress value={item.percentage} className="h-1.5" />
+                <span className="text-right tabular-nums">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <div className="grid gap-3 border-t pt-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs font-semibold">Auto-compact</div>
+              <p className="mt-1 text-xs leading-4 text-muted-foreground">Compact before the context window reaches this level.</p>
+            </div>
+            <span className="shrink-0 text-xs font-medium tabular-nums">{autoCompactThreshold}%</span>
+          </div>
+          <input
+            type="range"
+            min="40"
+            max="95"
+            step="5"
+            value={autoCompactThreshold}
+            onChange={(event) => setAutoCompactThreshold(Number(event.target.value))}
+            aria-label="Auto-compact threshold"
+            className="h-1.5 w-full cursor-pointer accent-foreground"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Earlier · 40%</span>
+            <span>Later · 95%</span>
+          </div>
+        </div>
         {meterStyle === 'solid' && percentage >= 70 && appearance === 'compact' ? (
           <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
             <p className="text-xs text-muted-foreground">Compact this task before the next large change.</p>
