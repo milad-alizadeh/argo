@@ -43,7 +43,7 @@ const FIXTURES = [
 ]
 
 const shotsIndex = process.argv.indexOf('--shots')
-const shots = shotsIndex === -1 ? null : process.argv[shotsIndex + 1] ?? null
+const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
 
 // One more turn on a Session already measured, written the way the CLI writes one: appended to
 // the file it belongs to.
@@ -85,7 +85,7 @@ async function capture(page, application, name) {
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
-let application
+let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
   const fixture = await prepare(root)

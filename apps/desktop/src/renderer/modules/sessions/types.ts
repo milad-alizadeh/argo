@@ -5,7 +5,12 @@ import type {
   SessionsListed,
 } from '../../../sessions/contract'
 
-export type { SessionFeedRequest, SessionListRequest, SessionFeedRead as SessionFeed, SessionsListed }
+export type {
+  SessionFeedRead as SessionFeed,
+  SessionFeedRequest,
+  SessionListRequest,
+  SessionsListed,
+}
 
 export type Session = SessionsListed['sessions'][number]
 export type SessionId = Session['id']

@@ -2,9 +2,9 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { attachProjectBridge } from './projects/bridge'
 import { PROJECT_PROOF_STORE_ENV } from './scripts/session-proof/project-proof-protocol'
 import { SESSION_TRANSCRIPTS_ENV } from './scripts/session-proof/session-proof-protocol'
-import { attachProjectBridge } from './projects/bridge'
 import { attachSessionBridge } from './sessions/bridge'
 
 // Forge's Vite plugin injects these for each configured renderer.

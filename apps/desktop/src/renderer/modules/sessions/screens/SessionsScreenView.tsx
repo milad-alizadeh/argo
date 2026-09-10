@@ -1,7 +1,6 @@
-import type { Session, SessionFeed as SessionFeedData, SessionId } from '../types'
-
 import { SessionFeed } from '../components/SessionFeed'
 import { SessionRoster } from '../components/SessionRoster'
+import type { Session, SessionFeed as SessionFeedData, SessionId } from '../types'
 
 type SessionsScreenViewProps = {
   sessions: readonly Session[]
@@ -10,11 +9,22 @@ type SessionsScreenViewProps = {
   onSelect: (sessionId: SessionId) => void
 }
 
-export function SessionsScreenView({ sessions, selectedSessionId, feed, onSelect }: SessionsScreenViewProps) {
+export function SessionsScreenView({
+  sessions,
+  selectedSessionId,
+  feed,
+  onSelect,
+}: SessionsScreenViewProps) {
   return (
-    <main className="grid h-dvh min-h-0 grid-cols-[minmax(17rem,26rem)_minmax(0,1fr)] bg-canvas max-md:grid-cols-1 max-md:grid-rows-[minmax(14rem,40vh)_minmax(0,1fr)]">
-      <SessionRoster onSelect={onSelect} selectedSessionId={selectedSessionId} sessions={sessions} />
-      <div className="min-h-0 overflow-y-auto"><SessionFeed error={null} feed={feed} /></div>
+    <main className="grid h-dvh min-h-0 grid-cols-[var(--sessions-grid-columns)] bg-canvas max-md:grid-cols-1 max-md:grid-rows-[var(--sessions-mobile-grid-rows)]">
+      <SessionRoster
+        onSelect={onSelect}
+        selectedSessionId={selectedSessionId}
+        sessions={sessions}
+      />
+      <div className="min-h-0 overflow-y-auto">
+        <SessionFeed error={null} feed={feed} />
+      </div>
     </main>
   )
 }

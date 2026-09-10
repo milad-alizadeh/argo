@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
-
-import { feedRowStory } from './stories.fixtures'
 import { SessionFeedRow } from './SessionFeedRow'
+import { feedRowStory } from './stories.fixtures'
 
 const meta: Meta<typeof SessionFeedRow> = {
   title: 'Sessions/SessionFeedRow',

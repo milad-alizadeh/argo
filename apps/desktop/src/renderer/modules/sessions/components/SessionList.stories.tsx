@@ -11,4 +11,6 @@ const meta: Meta<typeof SessionList> = {
 export default meta
 type Story = StoryObj<typeof SessionList>
 
-export const Empty: Story = { args: { sessions: [], selectedSessionId: null, onSelect: () => undefined } }
+export const Empty: Story = {
+  args: { sessions: [], selectedSessionId: null, onSelect: () => undefined },
+}

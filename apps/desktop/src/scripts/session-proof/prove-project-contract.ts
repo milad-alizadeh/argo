@@ -72,7 +72,7 @@ async function prove(application, fixture) {
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
-let application
+let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 try {
   const fixture = await prepare(root)
   const before = await readFile(fixture.registryPath, 'utf8')
