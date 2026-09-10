@@ -1,0 +1,16 @@
+{
+  "navigationLabel": "Sessions",
+  "activityLabel": "Session activity",
+  "title": "Sessions",
+  "subtitle": "Claude terminal activity",
+  "selectSession": "Select a session to read its terminal activity.",
+  "emptyFeed": "This session has no terminal activity yet.",
+  "loading": "Reading Claude sessions...",
+  "status": {
+    "active": "Active",
+    "idle": "Idle",
+    "waiting": "Waiting",
+    "failed": "Failed",
+    "unknown": "Unknown status: {{status}}"
+  }
+}
