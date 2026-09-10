@@ -65,6 +65,7 @@ export function FeedEvidencePrototype({
         {items.map((item) => (
           <InspectorSection key={item.id} evidence={item} />
         ))}
+        {showsToolSequence && <div aria-hidden="true" className="h-[calc(100%-3rem)]" />}
       </div>
       <footer className="flex items-center justify-between border-t px-3 py-2 text-control text-muted-foreground">
         <span>{activeEvidence.status === 'failed' ? 'Failed' : 'Recorded result'}</span>
