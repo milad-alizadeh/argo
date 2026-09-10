@@ -36,7 +36,7 @@
   --color-pr-merged: #a371f7;
   --color-pr-closed: #f85149;
   --color-pr-draft: #8b949e;
-  --font-sans: "Avenir Next", "Helvetica Neue", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
   --text-code: 12px;
   /* rowMeta and badge, the two rungs under the row title. The title itself is `--text-body`. */
