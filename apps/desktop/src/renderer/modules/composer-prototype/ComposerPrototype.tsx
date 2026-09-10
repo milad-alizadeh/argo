@@ -926,8 +926,8 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <div ref={frameRef} className="relative z-10">
-      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-background shadow-[0_14px_40px_-18px_rgba(0,0,0,0.32)]" />
+    <div ref={frameRef} className="relative z-10 mx-auto w-full max-w-4xl">
+      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-background shadow-[0_10px_28px_-16px_rgba(0,0,0,0.28)]" />
       <div ref={contentRef} className="relative z-10">{children}</div>
     </div>
   )
