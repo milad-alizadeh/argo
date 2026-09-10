@@ -3,9 +3,11 @@ import {
   Archive,
   ArrowRight,
   ArrowUp,
+  AudioWaveform,
   Bot,
   Check,
   ChevronDown,
+  CircleDot,
   CircleGauge,
   CircleHelp,
   Command,
@@ -23,16 +25,19 @@ import {
   ListTodo,
   Mic,
   Minimize2,
+  Monitor,
+  Moon,
   MoreHorizontal,
-  PanelLeftClose,
+  PanelRight,
   Paperclip,
   Pencil,
   Plus,
   Route,
   Search,
+  Settings,
   ShieldAlert,
   ShieldCheck,
-  SquareTerminal,
+  Sun,
   Ticket,
   Trash2,
   Unlock,
@@ -58,6 +63,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/renderer/components/ui/dropdown-menu'
@@ -92,6 +99,11 @@ import {
 } from '@/renderer/components/ui/popover'
 import { Progress } from '@/renderer/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
+import {
+  FeedEvidencePrototype,
+  type FeedPrototypeEvidence,
+  SessionFeedPrototype,
+} from './SessionFeedPrototype'
 
 type HarnessKey = 'codex' | 'claude'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
@@ -216,37 +228,20 @@ function insertComposerSuggestion(draft: string, suggestion: ComposerSuggestion)
   return draft.replace(/(^|\s)([/@])([^\s]*)$/, `$1${suggestion.value} `)
 }
 
-const INITIAL_MESSAGES: MessageRow[] = [
-  {
-    id: 'turn-1',
-    role: 'user',
-    text: 'Find the seam between the session transcript and the command composer.',
-  },
-  {
-    id: 'turn-2',
-    role: 'assistant',
-    text: 'The composer now treats execution setup, context capacity, and account usage as separate decisions. Each has one stable home.',
-  },
-  {
-    id: 'checkpoint',
-    role: 'marker',
-    text: 'Run setup changed to Codex',
-  },
-  {
-    id: 'turn-3',
-    role: 'assistant',
-    text: 'The next instruction will run with GPT-5.6 Sol at medium effort. Full access is active.',
-  },
-]
-
 type PrototypeSession = {
   id: string
   title: string
   harness: HarnessKey
   status: 'running' | 'waiting' | 'idle'
-  detail: string
+  activity: string
+  ticket: number
+  pullRequest: { number: number; state: 'open' | 'draft' | 'merged' }
+  subagents: number
   updated: string
 }
+
+type ThemeMode = 'system' | 'light' | 'dark'
+type ConciergePlacement = 'header' | 'floating' | 'off'
 
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   {
@@ -254,7 +249,10 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     title: 'Continue Session design from composer',
     harness: 'codex',
     status: 'running',
-    detail: 'argo/#1258-composer-prototype',
+    activity: 'Editing the Session shell',
+    ticket: 1258,
+    pullRequest: { number: 1931, state: 'draft' },
+    subagents: 3,
     updated: 'now',
   },
   {
@@ -262,7 +260,10 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     title: 'Restore the Session roster feed',
     harness: 'claude',
     status: 'waiting',
-    detail: 'ticket-1907-restore-roster-feed',
+    activity: 'Waiting for review',
+    ticket: 1907,
+    pullRequest: { number: 1925, state: 'merged' },
+    subagents: 0,
     updated: '12m',
   },
   {
@@ -270,7 +271,10 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     title: 'Verify the release verdict guard',
     harness: 'codex',
     status: 'idle',
-    detail: 'argo/#1807-release-verdict',
+    activity: 'Packaged proof complete',
+    ticket: 1807,
+    pullRequest: { number: 1918, state: 'open' },
+    subagents: 1,
     updated: '48m',
   },
   {
@@ -278,7 +282,10 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     title: 'Settle the Codex Session adapter contract',
     harness: 'claude',
     status: 'idle',
-    detail: 'argo/#1764-codex-adapter',
+    activity: 'Reading adapter fixtures',
+    ticket: 1764,
+    pullRequest: { number: 1911, state: 'draft' },
+    subagents: 2,
     updated: '2h',
   },
 ]
@@ -286,29 +293,55 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
 function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; className?: string }) {
   const source = harness === 'codex' ? '/prototype-assets/openai-mono.svg' : '/prototype-assets/claude-mono.svg'
   return (
-    <span className={`relative inline-flex !size-4 shrink-0 ${className}`}>
+    <span className={`relative inline-flex shrink-0 ${className}`}>
       <img src={source} alt="" className="size-full object-contain dark:invert" />
     </span>
   )
 }
 
-function PrototypeChrome() {
+const PROJECTS = ['argo', 'fresco', 'posthog']
+
+function ConciergeOrb({ compact = false }: { compact?: boolean }) {
   return (
-    <header className="flex h-11 shrink-0 items-center border-b border-border/60 bg-background px-3">
-      <div className="w-16 shrink-0" aria-hidden="true" />
-      <div className="flex min-w-0 items-center gap-2 text-xs">
-        <span className="font-semibold">Argo</span>
-        <span className="text-muted-foreground">/</span>
-        <span className="truncate text-muted-foreground">argo</span>
-      </div>
-      <div className="ml-auto flex items-center gap-1">
-        <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs text-muted-foreground">
-          <Search /> Search
-        </Button>
-        <Button variant="ghost" size="icon-sm" aria-label="Toggle sidebar">
-          <PanelLeftClose />
-        </Button>
-      </div>
+    <span
+      aria-hidden="true"
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-foreground ${compact ? 'size-7' : 'size-11'}`}
+    >
+      <span className="absolute inset-[12%] rounded-full bg-[radial-gradient(circle_at_35%_30%,var(--background),transparent_35%),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
+      <span className="absolute inset-[30%] rounded-full border border-background/70" />
+    </span>
+  )
+}
+
+function ProjectSwitcher({ project, onProjectChange }: { project: string; onProjectChange: (project: string) => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="max-w-56 gap-2 px-2" />}>
+        <span className="grid size-5 place-items-center rounded bg-foreground text-[9px] font-semibold text-background">{project.slice(0, 1).toUpperCase()}</span>
+        <span className="truncate font-medium">{project}</span>
+        <ChevronDown className="text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-64">
+        <DropdownMenuLabel>Projects</DropdownMenuLabel>
+        {PROJECTS.map((item) => (
+          <DropdownMenuItem key={item} onClick={() => onProjectChange(item)}>
+            <FolderGit2 />
+            <span className="flex-1">{item}</span>
+            {item === project ? <Check /> : null}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem><Plus />Open another Project…</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function PrototypeChrome({ project, onProjectChange }: { project: string; onProjectChange: (project: string) => void }) {
+  return (
+    <header className="flex h-11 shrink-0 items-center border-b border-border/60 bg-muted/35 pr-3 pl-[4.5rem]">
+      <ProjectSwitcher project={project} onProjectChange={onProjectChange} />
+      <span className="ml-auto text-[10px] text-muted-foreground">3 Projects available</span>
     </header>
   )
 }
@@ -320,11 +353,35 @@ const RAIL_ITEMS = [
   { label: 'Files', icon: <FolderGit2 />, active: false },
 ]
 
-function PrototypeRail() {
+function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
-    <nav aria-label="Argo" className="flex min-h-0 flex-col items-center border-r border-border/60 bg-muted/35 py-3 max-md:hidden">
-      <div className="mb-4 grid size-8 place-items-center rounded-lg bg-foreground text-xs font-semibold text-background">A</div>
-      <div className="flex flex-col gap-1">
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<button type="button" aria-label="Settings" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
+        <Settings />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="end" className="w-56">
+        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={theme} onValueChange={(value) => onThemeChange(value as ThemeMode)}>
+          <DropdownMenuRadioItem value="system"><Monitor />System</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="light"><Sun />Light</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark"><Moon />Dark</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Concierge</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={concierge} onValueChange={(value) => onConciergeChange(value as ConciergePlacement)}>
+          <DropdownMenuRadioItem value="header">In Session header</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="floating">Floating companion</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
+  return (
+    <nav aria-label="Main navigation" className="flex min-h-0 flex-col items-center border-r border-border/60 bg-muted/35 py-4 max-md:hidden">
+      <div className="flex flex-col gap-3">
         {RAIL_ITEMS.map((item) => (
           <Tooltip key={item.label}>
             <TooltipTrigger
@@ -347,13 +404,14 @@ function PrototypeRail() {
           </Tooltip>
         ))}
       </div>
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-3">
         <Tooltip>
           <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
             <Archive />
           </TooltipTrigger>
           <TooltipContent side="right">Archive</TooltipContent>
         </Tooltip>
+        <SettingsMenu theme={theme} onThemeChange={onThemeChange} concierge={concierge} onConciergeChange={onConciergeChange} />
       </div>
     </nav>
   )
@@ -365,6 +423,12 @@ const STATUS_STYLES: Record<PrototypeSession['status'], string> = {
   idle: 'bg-muted-foreground/45',
 }
 
+const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], string> = {
+  open: 'text-emerald-600 dark:text-emerald-400',
+  draft: '',
+  merged: 'text-violet-600 dark:text-violet-400',
+}
+
 function PrototypeSessionRoster() {
   return (
     <aside className="flex min-h-0 flex-col border-r border-border/60 bg-card max-xl:hidden">
@@ -374,8 +438,8 @@ function PrototypeSessionRoster() {
           <Plus />
         </Button>
       </div>
-      <div className="px-3 pt-3 pb-2">
-        <div className="flex h-8 items-center gap-2 rounded-lg border border-border/60 bg-background px-2.5 text-xs text-muted-foreground">
+      <div className="px-3 pt-2 pb-1.5">
+        <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-[11px] text-muted-foreground [&_svg]:size-3.5">
           <Search />
           <span>Find a Session</span>
           <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-[10px]">⌘K</span>
@@ -391,20 +455,23 @@ function PrototypeSessionRoster() {
                 key={session.id}
                 type="button"
                 aria-current={selected ? 'page' : undefined}
-                className={`group w-full rounded-lg px-2.5 py-2.5 text-left transition-colors ${
+                className={`group w-full rounded-lg px-2 py-2 text-left transition-colors ${
                   selected ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                 }`}
               >
                 <span className="flex items-start gap-2">
                   <span className="relative mt-0.5 shrink-0">
-                    <HarnessLogo harness={session.harness} />
+                    <HarnessLogo harness={session.harness} className="size-3.5" />
                     <span className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-foreground">{session.title}</span>
-                    <span className="mt-1 flex items-center gap-1.5 text-[10px]">
-                      <span className="min-w-0 flex-1 truncate">{session.detail}</span>
-                      <span className="shrink-0 tabular-nums">{session.updated}</span>
+                    <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{session.activity}</span>
+                    <span className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground [&_svg]:size-3">
+                      <span className="inline-flex items-center gap-1"><Ticket />#{session.ticket}</span>
+                      <span className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}><GitFork />#{session.pullRequest.number} {session.pullRequest.state}</span>
+                      {session.subagents > 0 ? <span className="inline-flex items-center gap-1"><Bot />{session.subagents}</span> : null}
+                      <span className="ml-auto shrink-0 tabular-nums">{session.updated}</span>
                     </span>
                   </span>
                 </span>
@@ -424,7 +491,20 @@ function PrototypeSessionRoster() {
   )
 }
 
-function PrototypeSessionHeader() {
+function HeaderConcierge() {
+  return (
+    <button type="button" className="mx-auto flex min-w-0 max-w-sm items-center gap-2 rounded-full border border-border/60 bg-muted/40 py-1 pr-3 pl-1 text-left hover:bg-muted">
+      <ConciergeOrb compact />
+      <span className="min-w-0">
+        <span className="block truncate text-[10px] font-medium">Concierge is listening</span>
+        <span className="block truncate text-[10px] text-muted-foreground">“Show every feed state in one conversation…”</span>
+      </span>
+      <AudioWaveform className="text-muted-foreground" />
+    </button>
+  )
+}
+
+function PrototypeSessionHeader({ showSidebar, onToggleSidebar, concierge }: { showSidebar: boolean; onToggleSidebar: () => void; concierge: ConciergePlacement }) {
   return (
     <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
       <div className="relative shrink-0">
@@ -443,18 +523,68 @@ function PrototypeSessionHeader() {
           <span className="shrink-0">Codex</span>
         </div>
       </div>
+      {concierge === 'header' ? <HeaderConcierge /> : <span className="flex-1" />}
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
           <Ticket /> #1258
         </Button>
-        <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
-          <SquareTerminal /> Terminal
-        </Button>
-        <Button variant="ghost" size="icon-sm" aria-label="More Session actions">
-          <MoreHorizontal />
+        <Button variant={showSidebar ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle Session sidebar" onClick={onToggleSidebar}>
+          <PanelRight />
         </Button>
       </div>
     </header>
+  )
+}
+
+function SessionWorkSidebar({ evidence, onCloseEvidence }: { evidence: FeedPrototypeEvidence | null; onCloseEvidence: () => void }) {
+  if (evidence) return <FeedEvidencePrototype evidence={evidence} onClose={onCloseEvidence} />
+  return (
+    <aside className="w-60 shrink-0 overflow-y-auto border-l border-border/60 bg-muted/20 p-3 max-2xl:w-52 max-lg:hidden">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-xs font-semibold">Running under this Session</h3>
+        <span className="text-[10px] text-muted-foreground">4 live</span>
+      </div>
+      <div className="space-y-1">
+        {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
+          <button key={label} type="button" className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-muted">
+            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[11px] font-medium">{label}</span>
+              <span className="block text-[10px] text-muted-foreground">Subagent {index + 1} · running</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="my-3 h-px bg-border/60" />
+      <h3 className="mb-2 text-xs font-semibold">Shell · 1</h3>
+      <button type="button" className="flex w-full items-start gap-2 rounded-lg bg-muted/60 p-2 text-left">
+        <CircleDot className="mt-0.5 text-emerald-500" />
+        <span className="min-w-0">
+          <span className="block truncate font-mono text-[10px]">bun run dev</span>
+          <span className="mt-0.5 block text-[10px] text-muted-foreground">Vite · port 5191</span>
+        </span>
+      </button>
+      <button type="button" className="mt-3 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground">
+        <ChevronDown /> 6 finished
+      </button>
+    </aside>
+  )
+}
+
+function FloatingConcierge({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute right-5 bottom-5 z-40 flex items-end gap-2">
+      <div className="max-w-72 rounded-xl border border-border/60 bg-popover p-3 shadow-xl">
+        <div className="flex items-center gap-2 text-xs font-medium">Concierge <span className="size-1.5 rounded-full bg-emerald-500" /></div>
+        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
+        <p className="mt-1 text-[11px] leading-4">I’m updating the prototype now.</p>
+      </div>
+      <button type="button" aria-label="Open Concierge" className="relative rounded-full border border-border/60 bg-background p-1 shadow-xl">
+        <ConciergeOrb />
+        <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-destructive text-[9px] text-destructive-foreground">2</span>
+      </button>
+      <button type="button" aria-label="Disable floating Concierge" onClick={onClose} className="absolute -top-2 -right-2 grid size-5 place-items-center rounded-full border bg-background text-muted-foreground shadow"><X /></button>
+    </div>
   )
 }
 
@@ -1384,12 +1514,13 @@ function TranscriptRow({ message }: { message: MessageRow }) {
   )
 }
 
-function Transcript({ messages }: { messages: MessageRow[] }) {
+function Transcript({ messages, onOpenEvidence }: { messages: MessageRow[]; onOpenEvidence: (evidence: FeedPrototypeEvidence) => void }) {
   return (
     <MessageScrollerProvider defaultScrollPosition="end">
       <MessageScroller>
         <MessageScrollerViewport>
           <MessageScrollerContent className="mx-auto w-full max-w-3xl px-8 py-10">
+            <SessionFeedPrototype onOpenEvidence={onOpenEvidence} />
             {messages.map((message) => (
               <MessageScrollerItem
                 key={message.id}
@@ -1407,7 +1538,21 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
   )
 }
 
+function initialTheme(): ThemeMode {
+  const theme = new URLSearchParams(window.location.search).get('theme')
+  return theme === 'light' || theme === 'dark' ? theme : 'system'
+}
+
+function initialConcierge(): ConciergePlacement {
+  const concierge = new URLSearchParams(window.location.search).get('concierge')
+  return concierge === 'floating' || concierge === 'off' ? concierge : 'header'
+}
+
 export function ComposerPrototype() {
+  const [project, setProject] = useState('argo')
+  const [theme, setTheme] = useState<ThemeMode>(initialTheme)
+  const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
+  const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1418,7 +1563,8 @@ export function ComposerPrototype() {
     usagePreview: 'normal',
   })
   const [showAlignmentGrid, setShowAlignmentGrid] = useState(false)
-  const [messages, setMessages] = useState(INITIAL_MESSAGES)
+  const [messages, setMessages] = useState<MessageRow[]>([])
+  const [feedEvidence, setFeedEvidence] = useState<FeedPrototypeEvidence | null>(null)
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
   const [keyboardFocus, setKeyboardFocus] = useState(false)
@@ -1428,6 +1574,11 @@ export function ComposerPrototype() {
   ])
   const [latestQueuedId, setLatestQueuedId] = useState<string | null>(null)
   const [isQueueAnimating, setIsQueueAnimating] = useState(false)
+
+  useEffect(() => {
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && systemDark))
+  }, [theme])
 
   const steerQueuedMessage = (message: QueuedMessage) => {
     setDraft(message.text)
@@ -1478,10 +1629,11 @@ export function ComposerPrototype() {
   }
 
   return (
-    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
-      <PrototypeChrome />
-      <div className="grid min-h-0 flex-1 grid-cols-[3.5rem_17.5rem_minmax(0,1fr)] max-xl:grid-cols-[3.5rem_minmax(0,1fr)] max-md:grid-cols-1">
-        <PrototypeRail />
+    <div className="h-dvh min-h-0 overflow-hidden bg-muted/50 p-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
+      <PrototypeChrome project={project} onProjectChange={setProject} />
+      <div className="grid min-h-0 flex-1 grid-cols-[3.75rem_17.5rem_minmax(0,1fr)] max-xl:grid-cols-[3.75rem_minmax(0,1fr)] max-md:grid-cols-1">
+        <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
         <PrototypeSessionRoster />
         <main
           className="relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
@@ -1521,9 +1673,14 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
       `}</style>
-          <PrototypeSessionHeader />
+          <PrototypeSessionHeader showSidebar={showSessionSidebar} onToggleSidebar={() => setShowSessionSidebar((visible) => !visible)} concierge={concierge} />
+          <div className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
-            <Transcript messages={messages} />
+            <Transcript messages={messages} onOpenEvidence={(evidence) => {
+              setFeedEvidence(evidence)
+              setShowSessionSidebar(true)
+            }} />
           </div>
           <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-6 pt-6 pb-8">
             <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
@@ -1595,9 +1752,14 @@ export function ComposerPrototype() {
               <ContextSurface state={state} layout="attached" />
             </div>
           </div>
+          </div>
+          {showSessionSidebar ? <SessionWorkSidebar evidence={feedEvidence} onCloseEvidence={() => setFeedEvidence(null)} /> : null}
+          </div>
+          {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
           <ContextPreviewControl state={state} setState={setState} />
           <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
         </main>
+      </div>
       </div>
     </div>
   )
