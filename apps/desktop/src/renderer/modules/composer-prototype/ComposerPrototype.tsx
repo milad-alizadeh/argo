@@ -865,17 +865,17 @@ function QueuePreview({
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
             <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(queuedMessage)}>
-              <Route />Steer
+              <Route className="size-3.5" />Steer
             </Button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => onRemove(queuedMessage.id)}>
-              <Trash2 />
+              <Trash2 className="size-3.5" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} />}>
-                <Pencil />
+                <Pencil className="size-3.5" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(queuedMessage)}><Pencil />Edit message</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(queuedMessage)}><Pencil className="size-3.5" />Edit message</DropdownMenuItem>
                 <DropdownMenuItem disabled={index === 0} onClick={() => onReorder(queuedMessage.id, messages[index - 1]?.id ?? queuedMessage.id)}><ArrowUp />Move up</DropdownMenuItem>
                 <DropdownMenuItem disabled={index === messages.length - 1} onClick={() => onReorder(queuedMessage.id, messages[index + 1]?.id ?? queuedMessage.id)}><ArrowDown />Move down</DropdownMenuItem>
               </DropdownMenuContent>
@@ -900,12 +900,12 @@ function QueuePreview({
       </span>
       <span className="min-w-0 flex-1 truncate text-xs">{message.text}</span>
       <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
-        <Route />Steer
+        <Route className="size-3.5" />Steer
       </Button>
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove queued message" onClick={() => onRemove(message.id)}>
-        <Trash2 />
+        <Trash2 className="size-3.5" />
       </Button>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit queued message" onClick={() => onEdit(message)}><Pencil /></Button>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit queued message" onClick={() => onEdit(message)}><Pencil className="size-3.5" /></Button>
     </div>
   )
 }
