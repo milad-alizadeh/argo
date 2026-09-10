@@ -14,6 +14,7 @@ import {
   Folder,
   Gauge,
   GripVertical,
+  Info,
   Mic,
   Paperclip,
   Plus,
@@ -435,7 +436,7 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
       <PopoverTrigger
         render={appearance === 'compact'
           ? <InputGroupButton variant="secondary" className="h-auto gap-2 px-2.5 py-1.5 text-foreground" />
-          : <Button variant="ghost" size="sm" />}
+          : <Button variant="ghost" size="icon" className="size-7" aria-label="Context details" />}
       >
         {appearance === 'compact' ? (
           <>
@@ -443,7 +444,7 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
             <span className="text-xs font-semibold">{contextStatus}</span>
             <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
           </>
-        ) : 'Details'}
+        ) : <Info className="size-4" />}
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[28rem] gap-4 p-4">
         <PopoverHeader>
@@ -531,7 +532,10 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
       <div className="flex items-center gap-3 border-t bg-muted/10 px-3 py-2.5">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
-          <div className="text-xs font-semibold">Context · {status}</div>
+          <div className="flex items-center gap-1 text-xs font-semibold">
+            Context · {status}
+            <ContextPopover state={state} appearance="details" />
+          </div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
@@ -545,7 +549,6 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <ContextPopover state={state} appearance="details" />
           <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
           <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
         </div>
@@ -558,7 +561,10 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
       <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-muted/40 px-4 pb-2.5 pt-3 shadow-md shadow-foreground/10">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
-          <div className="text-xs font-semibold">{status} · {percentage}%</div>
+          <div className="flex items-center gap-1 text-xs font-semibold">
+            Context · {status} · {percentage}%
+            <ContextPopover state={state} appearance="details" />
+          </div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
@@ -572,7 +578,6 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
           <span className="text-muted-foreground"> / 200k</span>
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <ContextPopover state={state} appearance="details" />
           <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
           <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
         </div>
@@ -585,7 +590,10 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
       <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-background p-3">
         <div className="flex items-center gap-2">
         <CircleGauge className={`size-4 ${zone.text}`} />
-          <span className="text-xs font-semibold">Context</span>
+          <span className="flex items-center gap-1 text-xs font-semibold">
+            Context
+            <ContextPopover state={state} appearance="details" />
+          </span>
           <span className="ml-auto text-xs tabular-nums">{percentage}% used</span>
         </div>
         <div className="mt-3 text-lg font-semibold tabular-nums">
@@ -597,7 +605,6 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
         </div>
         <div className="mt-1.5 text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         <div className="mt-auto flex items-center gap-1">
-          <ContextPopover state={state} appearance="details" />
           <Button variant="secondary" size="sm" className="px-2"><RotateCcw />Compact</Button>
           <Button variant="outline" size="sm" className="px-2"><ArrowRight />Handoff</Button>
         </div>
@@ -610,7 +617,10 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
       <div className="flex items-center gap-3">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
-          <div className="text-xs font-semibold">Context · {status}</div>
+          <div className="flex items-center gap-1 text-xs font-semibold">
+            Context · {status}
+            <ContextPopover state={state} appearance="details" />
+          </div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-24 flex-1">
@@ -623,7 +633,6 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
-        <ContextPopover state={state} appearance="details" />
         <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
         <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
       </div>
@@ -855,7 +864,6 @@ export function ComposerPrototype() {
           }}
         >
           <InputGroup className="relative overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
-            {variant === 'B' && <ContextSurface state={state} layout="inline" />}
             {variant === 'B' && <QueuePreview messages={queuedMessages} layout="inline" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />}
             {variant === 'D' && <QueuePreview messages={queuedMessages} layout="integrated" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />}
             <ReferenceStrip state={state} setState={setState} />
@@ -864,7 +872,7 @@ export function ComposerPrototype() {
               placeholder="Direct the next move…"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              className={`min-h-20 px-4 py-3 text-sm leading-6 ${variant === 'B' ? 'pr-76' : ''}`}
+              className="min-h-20 px-4 py-3 text-sm leading-6"
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault()
@@ -900,7 +908,7 @@ export function ComposerPrototype() {
                 </InputGroupButton>
               </div>
             </InputGroupAddon>
-            {variant === 'D' && <ContextSurface state={state} layout="footer" />}
+            {(variant === 'B' || variant === 'D') && <ContextSurface state={state} layout="footer" />}
           </InputGroup>
         </form>
         {variant === 'E' && (
