@@ -1,4 +1,4 @@
-import { requestIdentifier } from '../boundary'
+import { requestIdentifier } from '../../boundary'
 import {
   type SessionFeedReply,
   type SessionFeedRequest,

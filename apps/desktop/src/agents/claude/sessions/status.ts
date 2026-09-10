@@ -7,21 +7,15 @@
 // which this slice does not observe, so an open Turn reads `unknown`. `starting`, `permission`
 // and `ended` are managed-only or need an exit Argo witnessed, and no external posture has one.
 import type { TranscriptMessage } from './records'
+import {
+  SESSION_STATUSES,
+  type SessionStatus,
+} from '../../../core/sessions/models'
 
 // The closed set, written once. The type is derived from it rather than restated beside it, so a
 // status added here reaches the boundary check and the drawn word without a second edit.
-export const SESSION_STATUSES = [
-  'starting',
-  'running',
-  'permission',
-  'asking',
-  'idle',
-  'stopped',
-  'ended',
-  'unknown',
-] as const
-
-export type SessionStatus = (typeof SESSION_STATUSES)[number]
+export { SESSION_STATUSES }
+export type { SessionStatus }
 
 const ENDED_TURN = 'end_turn'
 const STOPPED_REASONS = ['max_tokens', 'max_turn_requests', 'refusal']

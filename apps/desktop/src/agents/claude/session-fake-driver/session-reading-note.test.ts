@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { counted, noteOnReading } from '../../sessions/reading-note.ts'
+import { counted, noteOnReading } from '../sessions/reading-note.ts'
 
 test('says only what it read when it reached every file', () => {
   assert.equal(

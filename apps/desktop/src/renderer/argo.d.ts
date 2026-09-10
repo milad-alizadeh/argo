@@ -1,5 +1,5 @@
 import type { ProjectClient } from '../projects/client'
-import type { SessionClient } from '../sessions/client'
+import type { SessionClient } from '../core/sessions/client'
 
 declare global {
   interface Window {

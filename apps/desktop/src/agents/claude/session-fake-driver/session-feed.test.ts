@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '../../sessions/chains.ts'
-import { projectFeed, UNREADABLE_ROW, unreadableRowHeight } from '../../sessions/feed.ts'
+import { stitchChains } from '../sessions/chains.ts'
+import { projectFeed, UNREADABLE_ROW, unreadableRowHeight } from '../sessions/feed.ts'
 import { fixtureFiles } from './session-fixtures'
 
 async function feedOf(names) {

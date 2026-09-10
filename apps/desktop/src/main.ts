@@ -2,10 +2,11 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { SESSION_TRANSCRIPTS_ENV } from './agents/claude/session-fake-driver/session-proof-protocol'
+import { attachSessionBridge } from './core/sessions/bridge'
+import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachProjectBridge } from './projects/bridge'
-import { PROJECT_PROOF_STORE_ENV } from './scripts/session-proof/project-proof-protocol'
-import { SESSION_TRANSCRIPTS_ENV } from './scripts/session-proof/session-proof-protocol'
-import { attachSessionBridge } from './sessions/bridge'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -49,7 +50,10 @@ function createWindow(): BrowserWindow {
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachProjectBridge(window, { userData: app.getPath('userData'), rendererURL })
-  attachSessionBridge(window, { transcriptsRoot: transcriptsRoot(), rendererURL })
+  attachSessionBridge(window, {
+    reader: createClaudeSessionReader(transcriptsRoot()),
+    rendererURL,
+  })
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)

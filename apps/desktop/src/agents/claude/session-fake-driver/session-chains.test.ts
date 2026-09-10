@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '../../sessions/chains.ts'
+import { stitchChains } from '../sessions/chains.ts'
 import { fixtureFiles } from './session-fixtures'
 
 async function chainsOf(names) {

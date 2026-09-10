@@ -19,5 +19,5 @@
     "allowJs": true
   },
   "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts", "scripts/**/*.mjs"],
-  "exclude": ["src/renderer", "src/scripts/session-fake-driver"]
+  "exclude": ["src/renderer", "src/core/projects/fake-driver", "src/agents/claude/session-fake-driver"]
 }

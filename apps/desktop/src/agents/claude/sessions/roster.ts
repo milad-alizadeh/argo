@@ -1,39 +1,24 @@
 // Projecting one stitched chain into the row the Roster draws. A throwaway projection rebuilt
 // from the transcripts every launch (ADR-0004, ADR-0008); nothing here is stored.
 import type { SessionChain } from './chains'
-import type { SessionEntry, TranscriptMessage } from './records'
-import { readExternalStatus, type SessionStatus } from './status'
+import type { TranscriptMessage } from './records'
+import { readExternalStatus } from './status'
+import {
+  SESSION_POSTURES,
+  TITLE_SOURCES,
+  type SessionEntry,
+  type SessionRosterRow as RosterRow,
+  type SessionStatus,
+  type SessionTitle,
+} from '../../../core/sessions/models'
 
 // The `managed | external` axis with `orphaned`, its third posture, beside it (CONTEXT.md L2).
 // This slice discovers Sessions from transcripts alone: it owns no PTY and reads no ownership
 // record, so every row it projects is `external`. Telling `orphaned` from `external` needs the
 // durable record of past ownership that a managed slice writes, and inventing one here would be
 // a false DIRECT.
-export const SESSION_POSTURES = ['managed', 'external', 'orphaned'] as const
-
-export type SessionPosture = (typeof SESSION_POSTURES)[number]
-
-// Argo's own derived name is `first-prompt`, and it ranks below both of the CLI's.
-export const TITLE_SOURCES = ['custom', 'summarised', 'first-prompt'] as const
-
-export type SessionTitle = { text: string; source: (typeof TITLE_SOURCES)[number] }
-
-export type RosterRow = {
-  id: string
-  retiredIds: string[]
-  cli: 'claude'
-  posture: SessionPosture
-  title: SessionTitle | null
-  status: SessionStatus
-  entry: SessionEntry
-  cwd: string | null
-  branch: string | null
-  updatedAt: string | null
-  unreadableLines: number
-  // This Session resumes one Argo did not read, so its history begins mid-work and its id is a
-  // retired one standing in for an origin outside the pass.
-  originUnread: boolean
-}
+export { SESSION_POSTURES, TITLE_SOURCES }
+export type { RosterRow, SessionTitle }
 
 // A subagent's records are dropped here rather than read as the Session's own. Its turn ends when
 // the subagent stops, and reading that as the Session stopping would state a fact about work that

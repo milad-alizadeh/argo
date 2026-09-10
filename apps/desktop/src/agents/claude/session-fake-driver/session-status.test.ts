@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '../../sessions/chains.ts'
-import { projectRosterRow } from '../../sessions/roster.ts'
+import { stitchChains } from '../sessions/chains.ts'
+import { projectRosterRow } from '../sessions/roster.ts'
 import { fixtureFiles } from './session-fixtures'
 
 async function rowOf(names) {
