@@ -46,8 +46,9 @@ export function FeedEvidencePrototype({
   const selectVisibleEvidence = () => {
     if (!scrollArea.current) return
     let visibleId = items[0]?.id ?? evidence.id
+    const scrollAreaTop = scrollArea.current.getBoundingClientRect().top
     for (const section of scrollArea.current.querySelectorAll<HTMLElement>('[data-evidence-id]')) {
-      if (section.offsetTop <= scrollArea.current.scrollTop + 48)
+      if (section.getBoundingClientRect().top <= scrollAreaTop + 48)
         visibleId = section.dataset.evidenceId ?? visibleId
     }
     if (visibleId !== activeId) {
