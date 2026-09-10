@@ -122,6 +122,7 @@ type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: str
 type QueuedMessage = { id: string; text: string }
 
 const SESSION_PANE_MIN_WIDTH = 216
+const SESSION_PANE_SNAP_TOLERANCE = 8
 
 type HarnessDefinition = {
   label: string
@@ -1841,7 +1842,11 @@ export function ComposerPrototype() {
   const handleSessionSidebarResize = (sidebarWidth: number, previousWidth: number) => {
     if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
     const conversationWidth = sessionConversationPanel.current?.getSize().inPixels
-    if (conversationWidth !== undefined && conversationWidth <= SESSION_PANE_MIN_WIDTH && sidebarWidth > previousWidth) {
+    if (
+      conversationWidth !== undefined
+      && conversationWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE
+      && sidebarWidth > previousWidth
+    ) {
       sessionSidebarFullscreenState.current = true
       setSessionSidebarFullscreen(true)
       return
