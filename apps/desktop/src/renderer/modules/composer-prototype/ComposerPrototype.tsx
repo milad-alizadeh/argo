@@ -239,6 +239,7 @@ function AddContextMenu({ state, setState }: StateProps) {
 
 function RunSetupMenu({ state, setState }: StateProps) {
   const definition = HARNESSES[state.harness]
+  const effortIndex = Math.max(0, definition.efforts.indexOf(state.effort))
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -276,8 +277,8 @@ function RunSetupMenu({ state, setState }: StateProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_10.5rem]">
-          <div className="border-r p-3">
+        <div>
+          <div className="p-3">
             <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">Model</div>
             <div className="space-y-1" role="listbox" aria-label="Model">
               {definition.models.map((model) => {
@@ -306,31 +307,32 @@ function RunSetupMenu({ state, setState }: StateProps) {
             </div>
           </div>
 
-          <div className="flex flex-col p-3">
-            <div className="pb-2 text-xs font-medium text-muted-foreground">Effort</div>
-            <div className="space-y-1" role="listbox" aria-label="Effort">
-              {definition.efforts.map((effort) => {
-                const active = state.effort === effort
-                return (
-                  <button
-                    key={effort}
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    onClick={() => setState({ ...state, effort })}
-                    className={`flex h-8 w-full items-center rounded-md px-2 text-left text-sm transition-colors ${
-                      active ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <span className={`mr-2 size-1.5 rounded-full ${active ? 'bg-foreground' : 'bg-border'}`} />
-                    {effort}
-                  </button>
-                )
-              })}
+          <div className="border-t p-3">
+            <div className="flex items-center">
+              <div>
+                <div className="text-xs font-medium text-muted-foreground">Effort</div>
+                <div className="mt-1 text-sm font-semibold">{state.effort}</div>
+              </div>
+              <span className="ml-auto max-w-52 text-right text-xs leading-4 text-muted-foreground">
+                More effort trades speed for deeper reasoning.
+              </span>
             </div>
-            <p className="mt-auto border-t pt-3 text-xs leading-4 text-muted-foreground">
-              More effort trades speed for deeper reasoning.
-            </p>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(0, definition.efforts.length - 1)}
+              step={1}
+              value={effortIndex}
+              aria-label="Effort"
+              onChange={(event) => {
+                const effort = definition.efforts[Number(event.currentTarget.value)]
+                if (effort) setState({ ...state, effort })
+              }}
+              className="mt-3 h-1.5 w-full cursor-pointer accent-foreground"
+            />
+            <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
+              {definition.efforts.map((effort) => <span key={effort}>{effort}</span>)}
+            </div>
           </div>
         </div>
       </DropdownMenuContent>
