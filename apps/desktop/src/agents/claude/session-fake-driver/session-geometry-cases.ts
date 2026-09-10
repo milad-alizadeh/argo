@@ -2,7 +2,10 @@
 // hands the Feed, the one row shape whose height is arithmetic, and the cache that keeps a second
 // open from measuring again.
 import assert from 'node:assert/strict'
-import { openSession } from '@/core/sessions/fake-driver/session-roster-cases'
+// A relative path, not `@/`: `bun build --packages=external` in the version `package.json` pins
+// treats every bare specifier as a package, so a `@/` import here leaves the driver bundle asking
+// Node for a package named `@/core` and the packaged proof dies before it opens a window.
+import { openSession } from '../../../core/sessions/fake-driver/session-roster-cases'
 
 // ADR-0033: every row is laid out in a `content-visibility: hidden` container in the visible
 // renderer, and the container itself contributes no height. Both are read off the shipped DOM.
