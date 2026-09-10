@@ -1,4 +1,8 @@
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../../components/ui/resizable'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '../../../components/ui/resizable'
 
 import { AgentsRail } from '../components/AgentsRail'
 import { SessionDeckHead } from '../components/SessionDeckHead'

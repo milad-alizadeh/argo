@@ -1,0 +1,106 @@
+// The fixture half of the packaged Session proof: the disk state `prove-session-feed.ts` launches
+// the app against, and the two mutations that prove a re-read reaches the file system rather than
+// a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
+import { appendFile, mkdir } from 'node:fs/promises'
+import path from 'node:path'
+import { packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
+import {
+  CODEX_FIXTURES,
+  fixturePath,
+  writeArchiveStore,
+  writeFixtureTree,
+} from './session-fixture-files'
+
+export const FIXTURES = [
+  'resumeParent',
+  'resumeChild',
+  'externalBasic',
+  'unparseableBody',
+  'askPending',
+  'prose',
+  // Resumes a leaf that is in no file here, which is what a chain looks like when the Roster's
+  // file cap stops short of its origin. Its row has to say so.
+  'strandedResume',
+  // Archived in the desktop app's store below, so the Roster has to keep it out of the list and
+  // in the Archived section at its foot.
+  'plannedWork',
+]
+export const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
+
+// The Sessions the fixture store says the reader archived.
+const ARCHIVED = ['plannedWork']
+
+const shotsIndex = process.argv.indexOf('--shots')
+export const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
+
+// One more turn on a Session already measured, written the way the CLI writes one: appended to
+// the file it belongs to.
+const GROWN_TURN = `${JSON.stringify({
+  type: 'assistant',
+  cwd: '/Users/x/stranded',
+  gitBranch: 'main',
+  timestamp: '2026-08-20T09:30:00.000Z',
+  uuid: 'sr-asst-2',
+  parentUuid: 'sr-asst-1',
+  message: {
+    role: 'assistant',
+    stop_reason: 'end_turn',
+    content: [{ type: 'text', text: 'And one more turn, written while Argo was looking.' }],
+  },
+})}\n`
+
+export async function growStranded(transcripts) {
+  await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
+}
+
+export async function prepare(root) {
+  const application = await packagedTestCopy(root)
+  const claudeTranscripts = path.join(root, 'claude-transcripts')
+  const codexTranscripts = path.join(root, 'codex-transcripts')
+  await writeFixtureTree(claudeTranscripts, FIXTURES)
+  await writeFixtureTree(codexTranscripts, CODEX_FIXTURE_NAMES, {
+    directory: '2026/09/10',
+    fixtures: CODEX_FIXTURES,
+  })
+  const archive = path.join(root, 'archive')
+  await writeArchiveStore(archive, ARCHIVED)
+  const userData = path.join(root, 'userData')
+  await mkdir(userData, { recursive: true })
+  return { application, claudeTranscripts, codexTranscripts, archive, userData }
+}
+
+export async function growCodexTranscript(transcripts) {
+  await appendFile(
+    path.join(transcripts, '2026', '09', '10', 'rollout-codexParent.jsonl'),
+    `${JSON.stringify({
+      timestamp: '2099-01-01T00:00:00.000Z',
+      type: 'event_msg',
+      payload: {
+        type: 'agent_message',
+        thread_id: 'rollout-codexParent',
+        item: {
+          type: 'AgentMessage',
+          id: 'live-codex-message',
+          content: [{ type: 'text', text: 'The Codex transcript changed while Argo was open.' }],
+        },
+      },
+    })}\n`,
+  )
+}
+
+// The packaged visual evidence. The window is shown from here rather than by the app, so every
+// contract case above still runs against the same hidden window the other proofs use.
+export async function capture(page, application, name) {
+  if (shots === null) return
+  await mkdir(shots, { recursive: true })
+  await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show())
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: path.join(shots, name) })
+}
+
+// The cockpit opens on Projects, so the Sessions screen is reached the way a reader reaches it.
+// Everything below reads the Roster and the Feed off that screen.
+export async function openSessionsScreen(page) {
+  await page.click('nav[aria-label="Surfaces"] button:has-text("Sessions")')
+  await page.waitForSelector('nav[aria-label="Sessions"] button')
+}

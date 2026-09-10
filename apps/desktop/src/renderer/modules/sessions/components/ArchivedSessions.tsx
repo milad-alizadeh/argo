@@ -2,7 +2,11 @@ import { ChevronRightIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../../../components/ui/collapsible'
 
 import type { Session, SessionId } from '../types'
 
