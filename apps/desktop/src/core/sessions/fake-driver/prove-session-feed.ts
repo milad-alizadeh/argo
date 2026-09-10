@@ -7,7 +7,7 @@
 // delete them (#1910). The screens a reviewer reads are the Storybook site, and the contract this
 // file asserts is read out of the DOM, so no assertion here depends on a pixel.
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
@@ -21,7 +21,7 @@ import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proo
 import { SESSION_CLAUDE_TRANSCRIPTS_ENV, SESSION_CODEX_TRANSCRIPTS_ENV } from '../proof-protocol'
 import { proveCodexFeed, proveRendererAuthority } from './session-feed-cases'
 import { CODEX_FIXTURES, writeFixtureTree } from './session-fixture-files'
-import { proveContract } from './session-roster-cases'
+import { proveCodexReread, proveContract } from './session-roster-cases'
 
 const FIXTURES = [
   'resumeParent',
@@ -51,6 +51,25 @@ async function prepare(root) {
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
   return { application, claudeTranscripts, codexTranscripts, userData }
+}
+
+async function growCodexTranscript(transcripts) {
+  await appendFile(
+    path.join(transcripts, '2026', '09', '10', 'rollout-codexParent.jsonl'),
+    `${JSON.stringify({
+      timestamp: '2099-01-01T00:00:00.000Z',
+      type: 'event_msg',
+      payload: {
+        type: 'agent_message',
+        thread_id: 'rollout-codexParent',
+        item: {
+          type: 'AgentMessage',
+          id: 'live-codex-message',
+          content: [{ type: 'text', text: 'The Codex transcript changed while Argo was open.' }],
+        },
+      },
+    })}\n`,
+  )
 }
 
 // The packaged visual evidence. The window is shown from here rather than by the app, so every
@@ -116,6 +135,9 @@ try {
   await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
   await ran(['codex-feed'], () => proveCodexFeed(page))
   await ran(['empty-state', 'session-activity'], () => proveSessionsScreen(page, application))
+  await ran(['codex-reread'], () =>
+    proveCodexReread(page, fixture.codexTranscripts, growCodexTranscript),
+  )
   await ran(['renderer-authority'], () => proveRendererAuthority(page, application))
   await assertShippedFusesIntact()
   console.log(
