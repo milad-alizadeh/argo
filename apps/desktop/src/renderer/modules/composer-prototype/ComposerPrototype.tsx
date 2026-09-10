@@ -117,7 +117,7 @@ type StateProps = {
 
 function IconLabel({ icon, children, className = '' }: { icon: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium leading-none [&>svg]:!size-3.5 [&>svg]:shrink-0 ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium leading-none [&>img]:!size-4 [&>img]:shrink-0 [&>svg]:!size-4 [&>svg]:shrink-0 ${className}`}>
       {icon}
       <span className="leading-none">{children}</span>
     </span>
@@ -1216,6 +1216,12 @@ export function ComposerPrototype() {
       }}
     >
       <style>{`
+        main svg,
+        main img {
+          inline-size: 1rem !important;
+          block-size: 1rem !important;
+          flex: none;
+        }
         @keyframes composer-queue-enter {
           from { height: 0; transform: translateY(44px); }
           to { height: 44px; transform: translateY(0); }
