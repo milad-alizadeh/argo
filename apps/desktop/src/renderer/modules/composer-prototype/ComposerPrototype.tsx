@@ -732,8 +732,6 @@ function ContextSurface({
   const zone = contextZone(percentage)
   const status = zone.label
   const contextAlert = state.contextPreview === 'dumb'
-  const usagePercentage = state.usagePreview === 'high' ? 94 : 54
-  const usageAlert = usagePercentage >= 90
 
   if (layout === 'footer') {
     return (
@@ -767,13 +765,7 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
-        <div className="shrink-0 border-r border-border/60 pr-4">
-          <button type="button" className={usageAlert ? 'text-red-600' : 'text-foreground'}>
-            <IconLabel icon={<CircleGauge />}>
-              Usage <span className={usageAlert ? 'text-red-600' : 'text-muted-foreground'}>{usagePercentage}%</span>
-            </IconLabel>
-          </button>
-        </div>
+        <div className="shrink-0 border-r border-border/60 pr-4"><UsagePopover state={state} /></div>
         <IconLabel icon={<Layers3 />} className={contextAlert ? 'text-red-600' : 'text-foreground'}>Context</IconLabel>
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
@@ -1073,11 +1065,13 @@ function TaskPlanPopover() {
 function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
   const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
+  const primaryUsagePercentage = state.usagePreview === 'high' ? 94 : primaryUsage.percentage
+  const usageAlert = primaryUsagePercentage >= 90
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 px-2 text-xs font-medium text-foreground" />}>
+      <PopoverTrigger render={<Button variant="ghost" size="sm" className={`gap-1.5 px-2 text-xs font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} />}>
         <IconLabel icon={<CircleGauge />}>
-          Usage <span className="tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
+          Usage <span className={`tabular-nums ${usageAlert ? 'text-red-600' : 'text-muted-foreground'}`}>{primaryUsagePercentage}%</span>
         </IconLabel>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
@@ -1085,16 +1079,19 @@ function UsagePopover({ state }: { state: ComposerState }) {
           <PopoverTitle>{definition.label} plan usage</PopoverTitle>
           <PopoverDescription>Account allowance, separate from context health</PopoverDescription>
         </PopoverHeader>
-        {definition.usage.map((item) => (
-          <div key={item.label} className="grid gap-1.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium">{item.label}</span>
-              <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>
-              <span className="w-8 text-right text-xs tabular-nums">{item.percentage}%</span>
+        {definition.usage.map((item) => {
+          const percentage = item === primaryUsage ? primaryUsagePercentage : item.percentage
+          return (
+            <div key={item.label} className="grid gap-1.5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-medium">{item.label}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>
+                <span className="w-8 text-right text-xs tabular-nums">{percentage}%</span>
+              </div>
+              <Progress value={percentage} />
             </div>
-            <Progress value={item.percentage} />
-          </div>
-        ))}
+          )
+        })}
       </PopoverContent>
     </Popover>
   )
