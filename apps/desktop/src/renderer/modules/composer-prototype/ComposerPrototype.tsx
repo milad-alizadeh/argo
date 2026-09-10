@@ -529,8 +529,8 @@ function ReferenceStrip({ state, setState }: StateProps) {
                     <File className="size-6" />
                   )}
                 </AttachmentMedia>
-                <AttachmentContent className="min-w-0 max-w-32 overflow-hidden">
-                  <AttachmentTitle className="block overflow-hidden text-ellipsis whitespace-nowrap">{fileTitle(reference)}</AttachmentTitle>
+                <AttachmentContent className="!min-w-0 !max-w-28 overflow-hidden pr-6">
+                  <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap">{fileTitle(reference)}</AttachmentTitle>
                   <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
                 </AttachmentContent>
                 <AttachmentActions className="absolute top-1.5 right-1.5">
