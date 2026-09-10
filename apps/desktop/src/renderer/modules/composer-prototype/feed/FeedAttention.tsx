@@ -31,6 +31,15 @@ const CONCIERGE_QUESTION = {
   ],
 } as const
 
+const PERMISSION_COMMAND =
+  'bun install --frozen-lockfile && bun run typecheck && bun run test --filter composer'
+type PermissionDecision = 'pending' | 'allowed' | 'similar' | 'denied'
+const PERMISSION_DECISION_LABELS: Record<Exclude<PermissionDecision, 'pending'>, string> = {
+  allowed: 'Allowed this command',
+  similar: 'Allowed similar commands',
+  denied: 'Denied this command',
+}
+
 export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   const [selection, setSelection] = useState('roster')
   const [answer, setAnswer] = useState('')
@@ -103,31 +112,35 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
 }
 
 export function FeedPermission() {
-  const [decision, setDecision] = useState<'pending' | 'allowed' | 'denied'>('pending')
+  const [decision, setDecision] = useState<PermissionDecision>('pending')
   if (decision !== 'pending')
     return (
       <div className="flex items-center gap-2 text-control text-muted-foreground">
         <ShieldQuestion className="!size-(--size-icon-inline)" />
-        {decision === 'allowed' ? 'Allowed this command once' : 'Denied this command'}
+        {PERMISSION_DECISION_LABELS[decision]}
       </div>
     )
   return (
     <section
-      className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-lg shadow-foreground/5"
+      className="space-y-2 rounded-lg border bg-card px-3 py-2.5 shadow-lg shadow-foreground/5"
       aria-labelledby="feed-permission-title"
       data-component="FeedPermission"
     >
-      <ShieldQuestion className="!size-(--size-icon-control)" />
-      <div className="min-w-0 flex-1">
-        <h3 id="feed-permission-title" className="text-control font-medium">
-          Allow this command?
-        </h3>
-        <p className="truncate text-(length:--text-control) text-muted-foreground">
-          Installs Project dependencies and may access the network.
-        </p>
+      <div className="flex items-start gap-2">
+        <ShieldQuestion className="mt-0.5 !size-(--size-icon-control)" />
+        <div className="min-w-0 flex-1">
+          <h3 id="feed-permission-title" className="text-control font-medium">
+            Allow this command?
+          </h3>
+          <p className="text-(length:--text-control) text-muted-foreground">
+            Installs Project dependencies, runs local checks, and may access the network.
+          </p>
+        </div>
       </div>
-      <code className="rounded-md bg-muted px-2 py-1 font-mono text-control">bun install</code>
-      <div className="flex gap-1">
+      <pre className="max-h-20 overflow-auto rounded-md bg-muted px-3 py-2 font-mono text-(length:--text-control) leading-relaxed">
+        <code>{PERMISSION_COMMAND}</code>
+      </pre>
+      <div className="flex justify-end gap-1">
         <Button variant="outline" className="text-control" onClick={() => setDecision('denied')}>
           Deny
         </Button>
@@ -135,7 +148,10 @@ export function FeedPermission() {
           className="bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80"
           onClick={() => setDecision('allowed')}
         >
-          Allow once
+          Allow
+        </Button>
+        <Button variant="outline" className="text-control" onClick={() => setDecision('similar')}>
+          Allow similar
         </Button>
       </div>
     </section>
