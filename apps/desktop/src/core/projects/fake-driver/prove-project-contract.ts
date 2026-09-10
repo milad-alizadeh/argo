@@ -54,6 +54,7 @@ async function prove(application, fixture) {
     },
   )
   const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)
+  assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
   assert.deepEqual(await invoke(request), {
     version: 1,
     type: 'project.opened',
