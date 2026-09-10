@@ -9,11 +9,10 @@
 
 ## `apps/desktop` design infrastructure
 
-- `docs/designs/stack.md`
-- `rules/design.md`
-- `apps/desktop/.storybook/`
-- `docs/designs/design-template.html`
-- `docs/designs/kit.js`
+None of it is in this folder. `docs/design-stack.md` names the token contract, the `docs/design/`
+kit, where components live and the render commands, and `rules/desktop.md` holds the design prose
+no check enforces. This folder listed its own copies of both until #1912, and each named a file
+that had moved.
 
 The committed design set for the Argo cockpit: written specs, the approved visual target, and
 the renders the app itself produces.
