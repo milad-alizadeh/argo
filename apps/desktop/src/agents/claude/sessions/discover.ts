@@ -52,7 +52,7 @@ export async function readLines(filePath: string): Promise<string[]> {
 
 async function readFile(file: { path: string; name: string }): Promise<TranscriptFile | null> {
   try {
-    return readTranscriptFile(file.path, file.name, await readLines(file.path))
+    return readTranscriptFile(file.path, { fileName: file.name, lines: await readLines(file.path) })
   } catch {
     return null
   }
@@ -108,7 +108,7 @@ async function summarise(root: string) {
 
 export async function discoverSessions(root: string): Promise<Discovery> {
   const { found, files, unreadable } = await summarise(root)
-  const rows = stitchChains(files).map(projectRosterRow)
+  const rows = stitchChains(files).map((chain) => projectRosterRow(chain))
   rows.sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
   return {
     rows,

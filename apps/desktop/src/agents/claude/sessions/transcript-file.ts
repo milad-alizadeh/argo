@@ -49,10 +49,21 @@ function readOpeningPrompt(records: TranscriptRecord[]): string | null {
 
 // `sessionId` is read off the file NAME, not off a record: a file whose every line is damaged
 // still names a Session, and the CLI names the file for the Session it opened.
-export function readTranscriptFile(path: string, fileName: string, lines: Iterable<string>) {
+export function readTranscriptFile(
+  path: string,
+  {
+    fileName,
+    lines,
+    parse = parseTranscriptLine,
+  }: {
+    fileName: string
+    lines: Iterable<string>
+    parse?: (line: string) => TranscriptRecord | null
+  },
+) {
   const records: TranscriptRecord[] = []
   for (const line of lines) {
-    const record = parseTranscriptLine(line)
+    const record = parse(line)
     if (record !== null) records.push(record)
   }
   const message = firstOf(records, 'message')

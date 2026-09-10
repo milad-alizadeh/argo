@@ -22,8 +22,18 @@ const FIXTURES = path.join(
   'sessions',
 )
 
-export async function fixtureLines(name) {
-  const text = await readFile(path.join(FIXTURES, `${name}.jsonl`), 'utf8')
+export const CODEX_FIXTURES = path.join(
+  process.cwd(),
+  'src',
+  'agents',
+  'codex',
+  'session-fake-driver',
+  'fixtures',
+  'sessions',
+)
+
+export async function fixtureLines(name, fixtures = FIXTURES) {
+  const text = await readFile(path.join(fixtures, `${name}.jsonl`), 'utf8')
   return text.split('\n').filter((line) => line.length > 0)
 }
 
@@ -38,13 +48,14 @@ export function fixturePath(root, name) {
   return path.join(root, PROJECT, `${name}.jsonl`)
 }
 
-export async function writeFixtureTree(root, names, directory = PROJECT) {
+export async function writeFixtureTree(root, names, options = {}) {
+  const { directory = PROJECT, fixtures = FIXTURES } = options
   const inside = path.join(root, directory)
   await mkdir(inside, { recursive: true })
   for (const name of names) {
     await writeFile(
       path.join(inside, `${name}.jsonl`),
-      `${(await fixtureLines(name)).join('\n')}\n`,
+      `${(await fixtureLines(name, fixtures)).join('\n')}\n`,
     )
   }
   return root

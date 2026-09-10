@@ -35,6 +35,19 @@ Everything here is a fact about this repository. Process belongs to the skill th
   Also load it for agent-facing Markdown that people will read. Ordinary implementation work and
   progress commentary do not trigger it. Apply it while you draft, not as cleanup.
 
+## Desktop Session adapters
+
+Before changing desktop Session observation, transcript discovery, or a CLI parser, read
+`docs/adr/0021-placement-is-declared-per-module.md` and
+`docs/adr/0024-session-drive-port-two-adapters.md`. A CLI owns one adapter under
+`apps/desktop/src/agents/<cli>/`: its filesystem layout, parser, fixtures, and proof cases live
+there. Shared Session code holds only the IPC contract and projections. Register an adapter once;
+do not branch on a CLI or filename in shared code.
+
+`apps/desktop/scripts/` holds generated output and runtime wrappers. Product behavior and proof
+sources are TypeScript under `apps/desktop/src/`; the package build generates runnable `.mjs`
+drivers. Do not add product behavior to `scripts/`.
+
 ## Gates
 
 Before code review, read `docs/agents/code-review.md` for repository references and focused-test boundaries.

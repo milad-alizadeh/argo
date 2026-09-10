@@ -81,7 +81,7 @@ test('every command ship/SKILL.md tells the agent to run survives its own guard'
         .filter((line) => /^(?:\w+=\S+\s+)*gh pr create\b/.test(line)),
     )
 
-  assert.ok(commands.length >= 3, `expected the push and PR commands, found ${commands.length}`)
+  assert.ok(commands.length >= 2, `expected the push and PR commands, found ${commands.length}`)
   for (const command of commands) {
     assert.equal(
       decidePublish(bash(command)).block,

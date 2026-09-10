@@ -35,6 +35,16 @@ export async function proveFirstOpen(page) {
   return reading
 }
 
+export async function proveCodexFeed(page) {
+  await openSession(page, 'Run Codex check', 'rollout-codexParent')
+  const reading = await page.evaluate(() => ({
+    session: document.querySelector('.feed__viewport')?.getAttribute('data-session'),
+    text: document.querySelector('.feed__viewport .feed-row--prose')?.textContent,
+  }))
+  assert.equal(reading.session, 'rollout-codexParent')
+  assert.equal(reading.text?.includes('Run Codex check'), true)
+}
+
 // Every animation frame from now until the Feed has stood on `target` for a few of them. The
 // renderer reaches a commit carrying a newly chosen Session's rows before the effects behind them
 // have run, so a frame-by-frame sample across a switch is the only place that window is visible.

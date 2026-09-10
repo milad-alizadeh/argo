@@ -54,7 +54,7 @@ const PR_SUBCOMMANDS = ['create', 'new']
 
 const HOW =
   `Opening the PR is \`/ship\`'s step, and only its own: it carries the close-out nothing else ` +
-  `runs, the sweep for \`.only\` and debug prints, the rebase onto the current base, and the ` +
+  `runs, the sweep for \`.only\` and debug prints, the merge from the current base, and the ` +
   `review findings written into the body. Finish on the branch with the work committed and let ` +
   `the caller invoke \`/ship\`. If you ARE \`/ship\`, prefix the command with ${SHIP_MARKER}: ` +
   `that marker is how this hook is told, because nothing in a hook's payload names the skill ` +

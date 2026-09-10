@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Close out an implemented ticket: commit the work, bring the branch onto the current base, gate it there, push, and open one PR that closes the ticket. Use when the user asks to ship, raise a PR or open a pull request, and only after the diff has been reviewed."
+description: "Close out an implemented ticket: commit the work, merge the current base into the branch, gate it there, push, and open one PR that closes the ticket. Use when the user asks to ship, raise a PR or open a pull request, and only after the diff has been reviewed."
 ---
 
 # Ship
@@ -21,17 +21,12 @@ back to the caller. It never ends in silence either.
 
 ## Ship onto the current base
 
-A ship run brings the branch onto its base **first**, gates it there, and opens the PR on that.
+A ship run merges its current base **first**, gates the merged branch, and opens the PR on that.
 
 A PR opened on a stale base asks a reviewer to read a diff against a tree nobody has. Its checks
 pass on a merge nobody will make, and its conflicts surface at merge time instead — in the human's
 hands, which is the worst moment to find them. A branch that looks ready and cannot merge is not
 ready. Nobody wants an out-of-date PR.
-
-With no push-time gate a rebase costs a fetch and a replay. **Where the project has an expensive
-one, weigh the replay against it** rather than rebasing by reflex: a replay rewrites the mtime of
-every file it touches, and a build system that invalidates on mtime then rebuilds everything,
-once per lane per merge.
 
 1. **Commit everything outstanding.** Anything the steps below change is committed the same way,
    before the push.
@@ -39,31 +34,34 @@ once per lane per merge.
    (`gh pr view --json baseRefName -q .baseRefName`). Otherwise it is the branch this one was cut
    from: the repo default (`gh repo view --json defaultBranchRef -q .defaultBranchRef.name`),
    unless you stacked this branch on another ticket branch, which is then the base.
-3. `git fetch origin` — the whole remote, so the rebase and the push read a current ref.
-4. **`git rebase origin/<base>`.** Already up to date is the common answer and costs nothing.
+3. `git fetch origin` — the whole remote, so the merge and the push read a current ref.
+4. **`git merge origin/<base>`.** Already up to date is the common answer and costs nothing.
    When it conflicts, resolve with `resolving-merge-conflicts` — it is the method, and `ship` does
-   not carry a second one — then `git rebase --continue` to the end, never `--abort`. Name every
+   not carry a second one — then `git merge --continue` to the end. Name every
    path that conflicted in the PR body, so a reviewer can find each resolution without reading the
    reflog.
-5. **Re-run the gates after a rebase that moved a commit**, before the push. A replayed commit is
-   a tree nothing has checked, and "it was green before the rebase" is a statement about a
+5. **Re-run the gates after a merge that created a commit**, before the push. The merged tree is
+   a tree nothing has checked, and "it was green before the merge" is a statement about a
    different tree.
-6. **Say the base in the PR body**, and the commit you rebased onto
+6. **Say the base in the PR body**, and the commit you merged
    (`git rev-parse origin/<base>`). That is what a reviewer needs to read the diff.
+
+   If `git diff --quiet origin/<base>...HEAD` now succeeds, the work already landed. Do not push
+   or create a PR. Report the landing commit and stop.
 
 What changes is that the human is handed a branch that can actually merge.
 
 ### When GitHub still says the PR cannot merge
 
 After the push, `gh pr view --json mergeable -q .mergeable` should answer `MERGEABLE`. A
-`CONFLICTING` here means the base moved between the rebase and the push: fetch again, rebase
-again, re-run the gates, and push again with `ARGO_SHIP=1 git push --force-with-lease`.
+`CONFLICTING` here means the base moved between the merge and the push: fetch again, merge again,
+re-run the gates, and push again with `ARGO_SHIP=1 git push`.
 
 ### The one conflict that stops the run
 
 Both sides changed the **same behaviour** for different reasons, and nothing you can read says
 which behaviour is wanted now — not the two commit messages, not the tickets they close, not the
-PRs behind them. Picking a side there is inventing the answer. Leave the rebase where it stands,
+PRs behind them. Picking a side there is inventing the answer. Leave the merge where it stands,
 report `git diff --name-only --diff-filter=U`, and name the file and the decision it needs.
 
 That is the whole test, and it is about intent. Difficulty is not the test and size is not the
@@ -119,10 +117,8 @@ that is running (#1669). The prefix is how this skill says it is the one running
 command is refused, with the reason quoting this rule back at you. Put it on nothing else.
 
 1. Commit what the steps above changed, with a message that states what changed and why.
-2. Push with `ARGO_SHIP=1 git push -u origin HEAD`, adding `--force-with-lease` when the rebase
-   moved a commit that had already been pushed. Never a bare `--force`: it drops a teammate's
-   push, and the lease is the whole difference. A `stale info` rejection means the remote branch
-   moved since the fetch — fetch again, rebase again, re-run the gates, and push.
+2. Push with `ARGO_SHIP=1 git push -u origin HEAD`. A rejection means the remote branch moved
+   since the fetch — fetch again, merge again, re-run the gates, and push.
 3. **Run the PR title and body through the `simple-english` skill.** This holds for every PR,
    and it holds when the text already reads well. Draft the title and the body. Put both through
    the skill. Give `gh pr create` what it returns. The skill carries its own rules, so this step
@@ -197,8 +193,8 @@ command is refused, with the reason quoting this rule back at you. Put it on not
    `gh pr checks <url> --watch --interval 10`. Do not report the PR as shipped while a required
    check is pending. A failed repository check is work still on the branch: inspect its failed
    run with `gh run view <run-id> --log-failed`, fix the cause in the current worktree, commit,
-   run the project gate again, push with `ARGO_SHIP=1 git push` (adding `--force-with-lease` only
-   when required), and watch the new run. Repeat until the required checks pass.
+   run the project gate again, push with `ARGO_SHIP=1 git push`, and watch the new run. Repeat
+   until the required checks pass.
 
    A GitHub outage, runner network failure, missing secret, or unavailable external service is
    not a code failure to guess at. Re-run the affected check once when GitHub permits it. If it
