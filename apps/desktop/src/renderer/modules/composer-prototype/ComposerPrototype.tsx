@@ -381,7 +381,10 @@ function RunSetupMenu({ state, setState }: StateProps) {
                 const effort = definition.efforts[Number(event.currentTarget.value)]
                 if (effort) setState({ ...state, effort })
               }}
-              className="mt-3 h-1.5 w-full cursor-pointer accent-foreground"
+              style={{
+                background: `linear-gradient(to right, var(--foreground) 0%, var(--foreground) ${(effortIndex / Math.max(1, definition.efforts.length - 1)) * 100}%, var(--muted) ${(effortIndex / Math.max(1, definition.efforts.length - 1)) * 100}%, var(--muted) 100%)`,
+              }}
+              className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground"
             />
             <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
               {definition.efforts.map((effort) => (
@@ -404,19 +407,19 @@ function PermissionMenu({ state, setState }: StateProps) {
       >
         <ShieldCheck />{state.permission}<ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-80">
+      <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>{definition.label} permissions</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground">{definition.label} permissions</DropdownMenuLabel>
           {definition.permissions.map((permission) => (
             <DropdownMenuItem
               key={permission.label}
-              className="items-start py-2"
+              className="items-start rounded-md px-2 py-1.5"
               onClick={() => setState({ ...state, permission: permission.label })}
             >
-              <ShieldCheck className="mt-0.5" />
+              <ShieldCheck className="mt-0.5 size-3.5" />
               <span className="grid gap-0.5">
-                <span>{permission.label}</span>
-                <span className="text-xs text-muted-foreground">{permission.detail}</span>
+                <span className="text-[13px] font-medium">{permission.label}</span>
+                <span className="text-[11px] leading-4 text-muted-foreground">{permission.detail}</span>
               </span>
               <SelectionMark active={state.permission === permission.label} />
             </DropdownMenuItem>
