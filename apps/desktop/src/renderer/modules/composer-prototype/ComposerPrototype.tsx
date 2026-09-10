@@ -530,7 +530,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
             }
 
             return (
-              <Attachment key={reference} className="h-12 select-none px-2" size="xs">
+              <Attachment key={reference} className="h-12 select-none border-border/60 px-2" size="xs">
                 <AttachmentMedia className="size-10 rounded-lg bg-muted"><File className="size-5" /></AttachmentMedia>
                 <AttachmentContent>
                   <AttachmentTitle>{reference}</AttachmentTitle>
@@ -769,7 +769,7 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
-        <div className="shrink-0 border-r pr-3"><UsagePopover state={state} /></div>
+        <div className="shrink-0 border-r border-border/60 pr-3"><UsagePopover state={state} /></div>
         <IconLabel icon={<Layers3 className={tone === 'color' ? zone.text : 'text-foreground'} />}>Context · {status}</IconLabel>
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
@@ -794,7 +794,7 @@ function ContextSurface({
           <span className="font-medium">· {percentage}%</span>
           <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
         </div>
-        <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
+        <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border/60 pl-3">
           <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
           <Button variant="outline" size="sm"><IconLabel icon={<GitFork />}>Handoff</IconLabel></Button>
         </div>
@@ -945,7 +945,7 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
 function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 mx-auto w-full max-w-4xl">
-      <div className="relative z-10 rounded-2xl [&>*]:!border-border/60 [&_*]:!border-border/60 [&_button]:!font-normal [&_span]:!font-normal">
+      <div className="relative z-10 rounded-2xl [&>*]:!border-border/60 [&_button]:!font-normal [&_span]:!font-normal">
         {children}
       </div>
     </div>
@@ -993,7 +993,7 @@ function QueuePreview({
     }[layout]
     return (
       <div className={shell}>
-        <div className="divide-y">
+        <div className="divide-y divide-border/60">
         {messages.map((queuedMessage) => (
           <div
             key={queuedMessage.id}
@@ -1268,12 +1268,12 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_*]:!border-border/60 [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+      <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
           <form
-            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_*]:!border-border/60 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0"
+            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0"
             onSubmit={(event) => {
               event.preventDefault()
               send()
@@ -1331,7 +1331,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_*]:!border-border/60 [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+      <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
