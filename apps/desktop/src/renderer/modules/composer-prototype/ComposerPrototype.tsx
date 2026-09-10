@@ -1774,6 +1774,7 @@ export function ComposerPrototype() {
 
   const toggleSessionSidebarFullscreen = () => {
     const nextFullscreen = !sessionSidebarFullscreenState.current
+    sessionSidebarFullscreenState.current = nextFullscreen
     animateSessionInspector(() => {
       if (!nextFullscreen) {
         sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
@@ -1782,7 +1783,6 @@ export function ComposerPrototype() {
         sessionInspectorPanel.current?.resize('100%')
       }
     })
-    sessionSidebarFullscreenState.current = nextFullscreen
     setSessionSidebarFullscreen(nextFullscreen)
   }
 
@@ -2064,7 +2064,10 @@ export function ComposerPrototype() {
             minSize={216}
             maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
-            onResize={(size) => snapSessionSidebarFullscreen(size.inPixels)}
+            onResize={(size, _id, previousSize) => {
+              if (previousSize && previousSize.inPixels > 0 && size.inPixels > previousSize.inPixels)
+                snapSessionSidebarFullscreen(size.inPixels)
+            }}
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
             <div aria-hidden={!showSessionSidebar} className="h-full min-h-0">
