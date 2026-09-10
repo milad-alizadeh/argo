@@ -533,7 +533,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
                   <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap">{fileTitle(reference)}</AttachmentTitle>
                   <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
                 </AttachmentContent>
-                <AttachmentActions className="absolute top-1 right-2">
+                <AttachmentActions className="absolute top-0 right-0">
                   <AttachmentAction aria-label={`Remove ${reference}`} onClick={remove}>
                     <X />
                   </AttachmentAction>
