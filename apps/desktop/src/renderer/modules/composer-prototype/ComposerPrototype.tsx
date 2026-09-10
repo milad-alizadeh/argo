@@ -514,7 +514,7 @@ function PrototypeSessionRoster({ concierge, onConciergeChange }: { concierge: C
                 }`}
               >
                 <span className="flex items-start gap-2">
-                  <span className="relative mt-0.5 shrink-0">
+                  <span className="relative flex h-4 shrink-0 items-center">
                     <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
                     <span className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`} />
                   </span>
