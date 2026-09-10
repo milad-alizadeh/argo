@@ -509,9 +509,9 @@ function ReferenceStrip({ state, setState }: StateProps) {
   }, [state.attachments])
 
   return (
-    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-20' : 'h-0'}`}>
+    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-[4.5rem]' : 'h-0'}`}>
       <div>
-        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap overflow-x-auto select-none px-4 py-2">
+        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap overflow-x-auto select-none px-4 py-1">
           {renderedAttachments.map((reference) => {
             const remove = () =>
               setState({
@@ -521,7 +521,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 select-none border-border/60 py-1 pr-9 pl-2" size="xs">
+              <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border/60 py-1 pr-9 pl-2" size="xs">
                 <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
                     <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
@@ -529,11 +529,11 @@ function ReferenceStrip({ state, setState }: StateProps) {
                     <File className="size-6" />
                   )}
                 </AttachmentMedia>
-                <AttachmentContent className="!min-w-0 !max-w-28 overflow-hidden pr-6">
+                <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">
                   <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap">{fileTitle(reference)}</AttachmentTitle>
                   <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
                 </AttachmentContent>
-                <AttachmentActions className="absolute top-2.5 right-2">
+                <AttachmentActions className="absolute top-1 right-2">
                   <AttachmentAction aria-label={`Remove ${reference}`} onClick={remove}>
                     <X />
                   </AttachmentAction>
