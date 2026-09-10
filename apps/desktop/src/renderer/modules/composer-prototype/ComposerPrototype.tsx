@@ -39,6 +39,7 @@ import { Button } from '@/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -209,16 +210,18 @@ function AddContextMenu({ state, setState }: StateProps) {
         <Plus />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-60">
-        <DropdownMenuLabel>Add context</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => add('composer-study.png')}>
-          <Paperclip />Attachment
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => add('ComposerPrototype.tsx')}>
-          <File />File reference
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => add('apps/desktop')}>
-          <Folder />Folder reference
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Add context</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => add('composer-study.png')}>
+            <Paperclip />Attachment
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => add('ComposerPrototype.tsx')}>
+            <File />File reference
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => add('apps/desktop')}>
+            <Folder />Folder reference
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => add('$frontend-design')}>
           <WandSparkles />Skill
@@ -257,45 +260,47 @@ function RunMenu({ state, setState, label = 'Run setup' }: StateProps & { label?
         <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side="top" className="w-80">
-        <DropdownMenuLabel>Run setup</DropdownMenuLabel>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <HarnessIcon harness={state.harness} />
-            Harness
-            <span className="ml-auto text-muted-foreground">{definition.label}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-52">
-            <HarnessItems state={state} setState={setState} />
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Bot />
-            Model
-            <span className="ml-auto text-muted-foreground">{state.model}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-52">
-            {definition.models.map((model) => (
-              <DropdownMenuItem key={model} onClick={() => setState({ ...state, model })}>
-                {model}<SelectionMark active={state.model === model} />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <BrainCircuit />
-            Effort
-            <span className="ml-auto text-muted-foreground">{state.effort}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-44">
-            {definition.efforts.map((effort) => (
-              <DropdownMenuItem key={effort} onClick={() => setState({ ...state, effort })}>
-                {effort}<SelectionMark active={state.effort === effort} />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Run setup</DropdownMenuLabel>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <HarnessIcon harness={state.harness} />
+              Harness
+              <span className="ml-auto text-muted-foreground">{definition.label}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52">
+              <HarnessItems state={state} setState={setState} />
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Bot />
+              Model
+              <span className="ml-auto text-muted-foreground">{state.model}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52">
+              {definition.models.map((model) => (
+                <DropdownMenuItem key={model} onClick={() => setState({ ...state, model })}>
+                  {model}<SelectionMark active={state.model === model} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <BrainCircuit />
+              Effort
+              <span className="ml-auto text-muted-foreground">{state.effort}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-44">
+              {definition.efforts.map((effort) => (
+                <DropdownMenuItem key={effort} onClick={() => setState({ ...state, effort })}>
+                  {effort}<SelectionMark active={state.effort === effort} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
@@ -304,21 +309,23 @@ function RunMenu({ state, setState, label = 'Run setup' }: StateProps & { label?
             <span className="ml-auto text-muted-foreground">{state.permission}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-72">
-            <DropdownMenuLabel>{definition.label}</DropdownMenuLabel>
-            {definition.permissions.map((permission) => (
-              <DropdownMenuItem
-                key={permission.label}
-                className="items-start py-2"
-                onClick={() => setState({ ...state, permission: permission.label })}
-              >
-                <ShieldCheck className="mt-0.5" />
-                <span className="grid gap-0.5">
-                  <span>{permission.label}</span>
-                  <span className="text-xs text-muted-foreground">{permission.detail}</span>
-                </span>
-                <SelectionMark active={state.permission === permission.label} />
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{definition.label}</DropdownMenuLabel>
+              {definition.permissions.map((permission) => (
+                <DropdownMenuItem
+                  key={permission.label}
+                  className="items-start py-2"
+                  onClick={() => setState({ ...state, permission: permission.label })}
+                >
+                  <ShieldCheck className="mt-0.5" />
+                  <span className="grid gap-0.5">
+                    <span>{permission.label}</span>
+                    <span className="text-xs text-muted-foreground">{permission.detail}</span>
+                  </span>
+                  <SelectionMark active={state.permission === permission.label} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
       </DropdownMenuContent>
