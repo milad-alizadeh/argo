@@ -1,6 +1,8 @@
 node_modules/
 .turbo/
 dist/
+apps/desktop/storybook-static/
+docs/designs/renders/
 *.log
 .DS_Store
 

@@ -3,9 +3,9 @@ import path from 'node:path'
 
 import { chromium } from 'playwright-core'
 
-const story = process.env.STORYBOOK_STATE ?? 'desktop-app-surface--default'
+const story = process.env.STORYBOOK_STATE ?? 'desktop-appsurface--default'
 const storybookUrl = process.env.STORYBOOK_URL ?? 'http://127.0.0.1:6006'
-const outputDir = path.resolve(process.cwd(), 'docs/designs/renders')
+const outputDir = path.resolve(process.cwd(), '../../docs/designs/renders')
 const outFile = path.resolve(outputDir, 'app-surface.png')
 
 await mkdir(outputDir, { recursive: true })
@@ -18,7 +18,7 @@ try {
     colorScheme: 'dark',
   })
 
-  await page.goto(`${storybookUrl}/iframe.html?id=${story}`, { waitUntil: 'networkidle' })
+  await page.goto(`${storybookUrl}/iframe.html?id=${story}`, { waitUntil: 'domcontentloaded' })
   await page.waitForSelector('[data-component="AppSurface"]', { timeout: 10000 })
 
   await page.addStyleTag({
