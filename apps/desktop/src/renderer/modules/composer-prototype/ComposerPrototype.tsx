@@ -73,6 +73,7 @@ import {
 import { Progress } from '@/renderer/components/ui/progress'
 
 type HarnessKey = 'codex' | 'claude'
+type VariantKey = 'A' | 'B' | 'C'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 
 type HarnessDefinition = {
@@ -309,11 +310,8 @@ function RunSetupMenu({ state, setState }: StateProps) {
 
           <div className="border-t p-3">
             <div className="flex items-center">
-              <div>
-                <div className="text-xs font-medium text-muted-foreground">Effort</div>
-                <div className="mt-1 text-sm font-semibold">{state.effort}</div>
-              </div>
-              <span className="ml-auto max-w-52 text-right text-xs leading-4 text-muted-foreground">
+              <div className="text-xs font-medium text-muted-foreground">Effort</div>
+              <span className="ml-auto text-[10px] text-muted-foreground">
                 More effort trades speed for deeper reasoning.
               </span>
             </div>
@@ -331,7 +329,9 @@ function RunSetupMenu({ state, setState }: StateProps) {
               className="mt-3 h-1.5 w-full cursor-pointer accent-foreground"
             />
             <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-              {definition.efforts.map((effort) => <span key={effort}>{effort}</span>)}
+              {definition.efforts.map((effort) => (
+                <span key={effort} className={state.effort === effort ? 'font-semibold text-foreground' : ''}>{effort}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -402,12 +402,12 @@ function ReferenceStrip({ state, setState }: StateProps) {
   )
 }
 
-function ContextPopover({ state }: { state: ComposerState }) {
+function ContextPopover({ state, appearance = 'compact' }: { state: ComposerState; appearance?: 'compact' | 'details' }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const focusLimit = 40_000
   const focusPercentage = Math.round((focusLimit / context.total) * 100)
-  const contextStatus = percentage <= focusPercentage ? 'Smart zone' : 'Attention risk'
+  const contextStatus = context.used <= focusLimit ? 'In suggested smart zone' : 'Beyond suggested smart zone'
   const claudeComposition = [
     { label: 'Conversation', value: '78k', percentage: 64 },
     { label: 'System prompt', value: '18k', percentage: 15 },
@@ -418,13 +418,19 @@ function ContextPopover({ state }: { state: ComposerState }) {
   return (
     <Popover>
       <PopoverTrigger
-        render={<InputGroupButton variant="secondary" className="h-auto gap-2 px-2.5 py-1.5 text-foreground" />}
+        render={appearance === 'compact'
+          ? <InputGroupButton variant="secondary" className="h-auto gap-2 px-2.5 py-1.5 text-foreground" />
+          : <Button variant="ghost" size="sm" />}
       >
-        <CircleGauge className="size-4" />
-        <span className="grid text-left leading-none">
-          <span className="text-xs font-semibold">Context health</span>
-          <span className="mt-1 text-[10px] font-normal text-muted-foreground">{contextStatus} · {percentage}% capacity</span>
-        </span>
+        {appearance === 'compact' ? (
+          <>
+            <CircleGauge className="size-4" />
+            <span className="grid text-left leading-none">
+              <span className="text-xs font-semibold">Context health</span>
+              <span className="mt-1 text-[10px] font-normal text-muted-foreground">{contextStatus} · {percentage}% used</span>
+            </span>
+          </>
+        ) : 'Details'}
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[28rem] gap-4 p-4">
         <PopoverHeader>
@@ -433,7 +439,7 @@ function ContextPopover({ state }: { state: ComposerState }) {
             <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">{contextStatus}</span>
           </PopoverTitle>
           <PopoverDescription>
-            Attention quality and hard capacity are related, but they are not the same measurement.
+            40k focus heuristic within a 200k context window.
           </PopoverDescription>
         </PopoverHeader>
 
@@ -445,30 +451,18 @@ function ContextPopover({ state }: { state: ComposerState }) {
                 {(context.used / 1000).toFixed(0)}k <span className="text-sm font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k</span>
               </div>
             </div>
-            <div className="text-right text-xs text-muted-foreground">
-              <div>{percentage}% hard capacity</div>
-              <div>Smart zone ≈ first {focusPercentage}%</div>
+            <div className="text-right text-xs">
+              <div className="font-medium">Suggested smart zone ~{(focusLimit / 1000).toFixed(0)}k</div>
+              <div className="text-muted-foreground">Current · {percentage}% used</div>
             </div>
           </div>
           <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
-            <div className="absolute inset-y-0 left-0 bg-foreground" style={{ width: `${focusPercentage}%` }} />
-            <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${percentage}%` }} />
+            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${focusPercentage}%` }} />
           </div>
-          <div className="mt-2 flex text-[10px] text-muted-foreground">
-            <span>Fresh</span>
-            <span className="ml-auto">Compaction limit</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-foreground p-3 text-background">
-            <div className="text-xs font-semibold">Smart zone</div>
-            <p className="mt-1 text-xs leading-4 text-background/65">Fresh, focused context is best for new decisions and complex edits.</p>
-          </div>
-          <div className="rounded-lg bg-muted p-3">
-            <div className="text-xs font-semibold">Dumb zone</div>
-            <p className="mt-1 text-xs leading-4 text-muted-foreground">Accumulated history can dilute attention long before the window is full.</p>
-          </div>
+          <p className="mt-2 text-xs leading-4 text-muted-foreground">
+            Current context is {((context.used - focusLimit) / 1000).toFixed(0)}k beyond the smart-zone heuristic.
+          </p>
         </div>
 
         {state.harness === 'claude' ? (
@@ -485,31 +479,106 @@ function ContextPopover({ state }: { state: ComposerState }) {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="rounded-lg border border-dashed p-3">
-            <div className="text-xs font-semibold">Composition unavailable in Codex</div>
-            <p className="mt-1 text-xs leading-4 text-muted-foreground">
-              Codex reports capacity and manages compaction, but does not expose a Claude-style category breakdown.
-            </p>
-          </div>
-        )}
+        ) : null}
 
         <p className="text-[10px] leading-4 text-muted-foreground">
-          Smart and dumb zones are workflow heuristics, not guarantees about model intelligence.
+          A workflow heuristic, not a performance guarantee.
         </p>
-        {percentage >= 70 && (
+        {percentage >= 70 && appearance === 'compact' && (
           <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
             <p className="text-xs text-muted-foreground">
               Compact this task before the next large change.
             </p>
             <div className="ml-auto flex shrink-0 gap-2">
               <Button size="sm"><RotateCcw />Compact</Button>
-              {percentage >= 90 && <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>}
+              <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
             </div>
           </div>
         )}
       </PopoverContent>
     </Popover>
+  )
+}
+
+function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' }) {
+  const context = HARNESSES[state.harness].context
+  const percentage = contextPercentage(state)
+  const used = `${(context.used / 1000).toFixed(0)}k`
+
+  if (layout === 'inline') {
+    return (
+      <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-background p-3">
+        <div className="flex items-center gap-2">
+          <CircleGauge className="size-4" />
+          <span className="text-xs font-semibold">Context</span>
+          <span className="ml-auto text-xs tabular-nums">{percentage}% used</span>
+        </div>
+        <div className="mt-3 text-lg font-semibold tabular-nums">
+          {used} <span className="text-xs font-normal text-muted-foreground">/ 200k total</span>
+        </div>
+        <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-muted">
+          <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+          <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+        </div>
+        <div className="mt-1.5 text-[10px] text-muted-foreground">Suggested smart zone ~40k</div>
+        <div className="mt-auto flex items-center gap-1">
+          <ContextPopover state={state} appearance="details" />
+          <Button variant="secondary" size="sm" className="px-2"><RotateCcw />Compact</Button>
+          <Button variant="outline" size="sm" className="px-2"><ArrowRight />Handoff</Button>
+        </div>
+      </aside>
+    )
+  }
+
+  return (
+    <div className="mb-2 rounded-xl border bg-background px-4 py-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <CircleGauge className="size-4 shrink-0" />
+        <div className="shrink-0">
+          <div className="text-xs font-semibold">Context · Beyond suggested smart zone</div>
+          <div className="text-[10px] text-muted-foreground">Suggested smart zone ~40k</div>
+        </div>
+        <div className="min-w-24 flex-1">
+          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+          </div>
+        </div>
+        <div className="shrink-0 text-right text-xs tabular-nums">
+          <span className="font-semibold">{used}</span>
+          <span className="text-muted-foreground"> / 200k total</span>
+        </div>
+        <ContextPopover state={state} appearance="details" />
+        <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
+        <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+      </div>
+    </div>
+  )
+}
+
+function VariantSwitcher({ variant }: { variant: VariantKey }) {
+  const variants: { key: VariantKey; label: string }[] = [
+    { key: 'A', label: 'Popover' },
+    { key: 'B', label: 'Side rail' },
+    { key: 'C', label: 'Dock' },
+  ]
+  return (
+    <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Prototype variants">
+      {variants.map((item) => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={() => {
+            const url = new URL(window.location.href)
+            url.searchParams.set('variant', item.key)
+            window.location.href = url.toString()
+          }}
+          className={`rounded-full px-3 py-1.5 text-xs ${variant === item.key ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          {item.key} · {item.label}
+        </button>
+      ))}
+    </nav>
   )
 }
 
@@ -520,12 +589,12 @@ function UsagePopover({ state }: { state: ComposerState }) {
     <Popover>
       <PopoverTrigger render={<InputGroupButton variant="ghost" className="h-auto gap-2 px-2 py-1 text-foreground" />}>
         <Gauge className="size-4" />
-        <span className="grid min-w-28 gap-1 text-left">
-          <span className="text-[10px] font-medium leading-none text-muted-foreground">Plan usage</span>
+        <span className="grid min-w-36 gap-1 text-left">
+          <span className="text-xs font-medium leading-none text-muted-foreground">Plan usage</span>
           <span className="flex gap-2">
             {glanceItems.map((item) => (
               <span key={item.label} className="grid flex-1 gap-0.5">
-                <span className="flex text-[9px] leading-none"><span className="truncate">{item.label.replace(', all models', '')}</span><span className="ml-auto tabular-nums">{item.percentage}%</span></span>
+                <span className="flex gap-1 text-[10px] leading-none"><span className="truncate">{item.label.replace(', all models', '')}</span><span className="ml-auto tabular-nums">{item.percentage}% used</span></span>
                 <span className="h-1 overflow-hidden rounded-full bg-muted"><span className="block h-full bg-foreground" style={{ width: `${item.percentage}%` }} /></span>
               </span>
             ))}
@@ -594,6 +663,8 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
 }
 
 export function ComposerPrototype() {
+  const requestedVariant = new URLSearchParams(window.location.search).get('variant')
+  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' ? requestedVariant : 'A'
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -626,6 +697,7 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
+        {variant === 'C' && <div className="mx-auto w-full max-w-4xl"><ContextSurface state={state} layout="dock" /></div>}
         <form
           className="mx-auto w-full max-w-4xl"
           onSubmit={(event) => {
@@ -633,14 +705,15 @@ export function ComposerPrototype() {
             send()
           }}
         >
-          <InputGroup className="overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
+          <InputGroup className="relative overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
+            {variant === 'B' && <ContextSurface state={state} layout="inline" />}
             <ReferenceStrip state={state} setState={setState} />
             <InputGroupTextarea
               aria-label="Message"
               placeholder="Direct the next move…"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              className="min-h-20 px-4 py-3 text-sm leading-6"
+              className={`min-h-20 px-4 py-3 text-sm leading-6 ${variant === 'B' ? 'pr-76' : ''}`}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault()
@@ -653,7 +726,7 @@ export function ComposerPrototype() {
               <RunSetupMenu state={state} setState={setState} />
               <PermissionMenu state={state} setState={setState} />
               <div className="ml-auto flex items-center gap-1">
-                <ContextPopover state={state} />
+                {variant === 'A' && <ContextPopover state={state} />}
                 <UsagePopover state={state} />
                 <InputGroupButton
                   size="icon-sm"
@@ -679,6 +752,7 @@ export function ComposerPrototype() {
           </InputGroup>
         </form>
       </div>
+      <VariantSwitcher variant={variant} />
     </main>
   )
 }
