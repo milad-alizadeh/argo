@@ -5,7 +5,7 @@ description: "Close out an implemented ticket: commit the work, bring the branch
 
 # Ship
 
-A ship run ends in a PR URL, in one of the three stops below, or in a failure it names (step 7).
+A ship run ends in a PR URL with passing CI, in one of the three stops below, or in a failure it names (step 7).
 It never ends in a question: anything you could not tick is written into the PR body, not handed
 back to the caller. It never ends in silence either.
 
@@ -193,5 +193,16 @@ command is refused, with the reason quoting this rule back at you. Put it on not
    say three things — the exit code, the error text whole, and the command you ran — and report
    the branch as pushed and the PR as unopened. A turn that ends on a failed `gh pr create`
    having said nothing is indistinguishable from a run that never started (#1659).
-8. Report the PR URL. Merging is the human's, and nothing in this repo does it for them
-   (#1577).
+8. **Watch CI to a verdict.** After the PR exists or its existing branch has been pushed, run
+   `gh pr checks <url> --watch --interval 10`. Do not report the PR as shipped while a required
+   check is pending. A failed repository check is work still on the branch: inspect its failed
+   run with `gh run view <run-id> --log-failed`, fix the cause in the current worktree, commit,
+   run the project gate again, push with `ARGO_SHIP=1 git push` (adding `--force-with-lease` only
+   when required), and watch the new run. Repeat until the required checks pass.
+
+   A GitHub outage, runner network failure, missing secret, or unavailable external service is
+   not a code failure to guess at. Re-run the affected check once when GitHub permits it. If it
+   fails again for that external reason, report the PR URL and name the check, evidence, and
+   external block. Do not call that CI passing.
+9. Report the PR URL and its CI verdict. Merging is the human's, and nothing in this repo does it
+   for them (#1577).
