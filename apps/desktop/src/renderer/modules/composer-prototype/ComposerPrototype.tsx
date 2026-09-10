@@ -470,9 +470,14 @@ function fileType(reference: string) {
 }
 
 function imageSource(reference: string) {
-  return reference === 'workspace.jpg'
-    ? 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=160&q=80'
-    : `/${reference}`
+  return reference === 'workspace.jpg' ? '/prototype-assets/workspace.jpg' : `/${reference}`
+}
+
+function initialAttachments() {
+  if (new URLSearchParams(window.location.search).get('test') !== 'attachments-10') {
+    return ['workspace.jpg', 'ComposerPrototype.tsx']
+  }
+  return ['workspace.jpg', 'ComposerPrototype.tsx', 'queue.ts', 'context.tsx', 'permissions.ts', 'models.json', 'notes.md', 'layout.css', 'tokens.ts', 'README.md']
 }
 
 function ReferenceStrip({ state, setState }: StateProps) {
@@ -497,9 +502,9 @@ function ReferenceStrip({ state, setState }: StateProps) {
   }, [state.attachments])
 
   return (
-    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-16' : 'h-0'}`}>
+    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-20' : 'h-0'}`}>
       <div>
-        <AttachmentGroup className="w-full select-none px-4 pt-3">
+        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap overflow-x-auto select-none px-4 pt-3 pb-1">
           {renderedAttachments.map((reference) => {
             const remove = () =>
               setState({
@@ -509,12 +514,12 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="h-12 select-none border-border/60 px-2" size="xs">
-                <AttachmentMedia className="size-10 overflow-hidden rounded-lg bg-muted">
+              <Attachment key={reference} className="h-16 min-w-52 shrink-0 select-none border-border/60 px-2" size="xs">
+                <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
-                    <img alt="" className="size-full object-cover" src={imageSource(reference)} />
+                    <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
                   ) : (
-                    <File className="size-5" />
+                    <File className="size-6" />
                   )}
                 </AttachmentMedia>
                 <AttachmentContent>
@@ -1146,7 +1151,7 @@ export function ComposerPrototype() {
     model: HARNESSES.codex.models[0] ?? '',
     effort: HARNESSES.codex.efforts[1] ?? '',
     permission: HARNESSES.codex.permissions[2]?.label ?? '',
-    attachments: ['workspace.jpg', 'ComposerPrototype.tsx'],
+    attachments: initialAttachments(),
     contextPreview: 'dumb',
   })
   const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
