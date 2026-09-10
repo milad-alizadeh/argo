@@ -1,7 +1,6 @@
 // One composer direction after the blind UX and visual reviews selected the single-surface layout.
 import {
   ArrowRight,
-  ArrowDown,
   ArrowUp,
   Bot,
   BrainCircuit,
@@ -870,16 +869,9 @@ function QueuePreview({
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => onRemove(queuedMessage.id)}>
               <Trash2 className="size-3.5" />
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} />}>
-                <Pencil className="size-3.5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(queuedMessage)}><Pencil className="size-3.5" />Edit message</DropdownMenuItem>
-                <DropdownMenuItem disabled={index === 0} onClick={() => onReorder(queuedMessage.id, messages[index - 1]?.id ?? queuedMessage.id)}><ArrowUp />Move up</DropdownMenuItem>
-                <DropdownMenuItem disabled={index === messages.length - 1} onClick={() => onReorder(queuedMessage.id, messages[index + 1]?.id ?? queuedMessage.id)}><ArrowDown />Move down</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} onClick={() => onEdit(queuedMessage)}>
+              <Pencil className="size-3.5" />
+            </Button>
           </div>
         ))}
         </div>
