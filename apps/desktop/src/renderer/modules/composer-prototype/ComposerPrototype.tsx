@@ -1248,19 +1248,14 @@ export function ComposerPrototype() {
           flex: none;
         }
         @keyframes composer-queue-enter {
-          from { height: 0; transform: translateY(44px); }
-          to { height: 44px; transform: translateY(0); }
-        }
-        @keyframes composer-queue-lift {
-          from { transform: translateY(44px); }
-          to { transform: translateY(0); }
+          from { height: 0; }
+          to { height: 44px; }
         }
         @keyframes composer-queue-exit {
-          from { height: 44px; transform: translateY(0); }
-          to { height: 0; transform: translateY(-44px); }
+          from { height: 44px; }
+          to { height: 0; }
         }
         .composer-queue-enter { animation: composer-queue-enter 320ms cubic-bezier(.2,.8,.2,1) both; }
-        .composer-queue-lift { animation: composer-queue-lift 320ms cubic-bezier(.2,.8,.2,1) both; }
         .composer-queue-exit { animation: composer-queue-exit 280ms cubic-bezier(.4,0,.2,1) both; }
         .composer-queue-enter,
         .composer-queue-lift,
