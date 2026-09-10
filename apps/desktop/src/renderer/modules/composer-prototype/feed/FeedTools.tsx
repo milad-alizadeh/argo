@@ -2,9 +2,9 @@ import {
   BookOpen,
   Check,
   ChevronRight,
-  Circle,
   FilePenLine,
   Globe,
+  LoaderCircle,
   PanelRightOpen,
   Search,
   SquareTerminal,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { Button } from '@/renderer/components/ui/button'
+import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/marker'
 import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
 
 type ToolRow = {
@@ -79,49 +80,40 @@ function ToolGroup({
 
 export function FeedToolGroups({ onOpen }: { onOpen: FeedEvidenceAction }) {
   return (
-    <div className="space-y-2" data-component="FeedToolGroups">
-      <ToolGroup title="Searched, read and checked the contract" rows={READS} onOpen={onOpen} />
-      <ToolGroup title="Updated the composer and ran checks" rows={WORK} onOpen={onOpen} />
-    </div>
+    <ToolGroup
+      title="Searched, edited and verified the Session"
+      rows={[...READS, ...WORK]}
+      onOpen={onOpen}
+    />
   )
 }
 
-export function FeedPendingCall() {
+export function FeedPendingCall({ mode = 'running' }: { mode?: 'running' | 'thinking' }) {
   return (
-    <div className="flex items-center gap-2 py-2 text-control" role="status">
-      <Circle className="!size-(--size-icon-inline) motion-safe:animate-pulse" />
-      <span>Running the attachment stress check</span>
+    <Marker className="py-2 text-control" role="status">
+      <MarkerIcon>
+        <LoaderCircle className="!size-(--size-icon-inline) motion-safe:animate-spin" />
+      </MarkerIcon>
+      <MarkerContent>
+        <span className="font-medium">{mode === 'thinking' ? 'Thinking' : 'Running'}</span>
+        <span className="ml-1 text-foreground">the attachment stress check</span>
+      </MarkerContent>
       <span className="ml-auto text-muted-foreground">12s</span>
-    </div>
+    </Marker>
   )
 }
 
 export function FeedMutationExamples({ onOpen }: { onOpen: FeedEvidenceAction }) {
-  const mutations = [
-    'Created AttachmentTray.tsx',
-    'Moved queue.ts to the Session module',
-    'Deleted the unused draft helper',
+  const mutations: ToolRow[] = [
+    { label: 'Created AttachmentTray.tsx', evidence: 'diff', icon: FilePenLine },
+    { label: 'Moved queue.ts to the Session module', evidence: 'diff', icon: FilePenLine },
+    { label: 'Deleted the unused draft helper', evidence: 'diff', icon: FilePenLine },
+    { label: 'Called an unclassified tool', evidence: 'mcp', icon: Wrench },
+    { label: 'Ran bun run preview', evidence: 'failed', icon: SquareTerminal, detail: 'Exit 1' },
   ]
   return (
-    <div className="space-y-1">
-      {mutations.map((label) => (
-        <FeedToolLine
-          key={label}
-          row={{ label, evidence: 'diff', icon: FilePenLine }}
-          onOpen={(evidence) =>
-            onOpen({
-              ...evidence,
-              title: label,
-              source: 'The recorded call completed successfully.',
-              kind: 'output',
-            })
-          }
-        />
-      ))}
-      <FeedToolLine
-        row={{ label: 'Called an unclassified tool', evidence: 'mcp', icon: Wrench }}
-        onOpen={onOpen}
-      />
+    <div className="space-y-2">
+      <ToolGroup title="Changed files and checked the preview" rows={mutations} onOpen={onOpen} />
       <div className="flex items-center gap-2 px-2 py-2 text-control text-muted-foreground">
         <Check className="!size-(--size-icon-inline)" />
         Returned from layout review<span className="ml-auto">38s</span>

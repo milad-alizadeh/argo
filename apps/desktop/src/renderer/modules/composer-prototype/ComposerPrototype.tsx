@@ -22,6 +22,7 @@ import {
   Info,
   Layers3,
   ListTodo,
+  Map as MapIcon,
   Mic,
   Minimize2,
   Monitor,
@@ -97,6 +98,7 @@ import {
 } from '@/renderer/components/ui/popover'
 import { Progress } from '@/renderer/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
+import { FeedPermission } from './feed/FeedAttention'
 import {
   FeedEvidencePrototype,
   type FeedPrototypeEvidence,
@@ -347,7 +349,7 @@ function PrototypeChrome({ project, onProjectChange }: { project: string; onProj
 const RAIL_ITEMS = [
   { label: 'Sessions', icon: <Bot />, active: true },
   { label: 'Tickets', icon: <Ticket />, active: false },
-  { label: 'Atlas', icon: <Route />, active: false },
+  { label: 'Atlas', icon: <MapIcon />, active: false },
   { label: 'Files', icon: <FolderGit2 />, active: false },
 ]
 
@@ -432,7 +434,7 @@ function RosterConcierge({ onFloat }: { onFloat: () => void }) {
 
 function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
-    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 py-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
+    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 pt-2 pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
       <div className="flex flex-col gap-3">
         {RAIL_ITEMS.map((item) => (
           <Tooltip key={item.label}>
@@ -541,9 +543,21 @@ function PrototypeSessionRoster({ concierge, onConciergeChange }: { concierge: C
   )
 }
 
+function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; label: string; value: string; tone?: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-1.5 px-2.5 py-1.5">
+      <span className="text-muted-foreground [&_svg]:size-(--size-icon-inline)">{icon}</span>
+      <span className="min-w-0">
+        <span className="block text-[9px] leading-none text-muted-foreground">{label}</span>
+        <span className={`mt-1 block truncate text-[10px] leading-none font-medium ${tone}`}>{value}</span>
+      </span>
+    </span>
+  )
+}
+
 function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar: boolean; onToggleSidebar: () => void }) {
   return (
-    <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
+    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
       <div className="relative shrink-0">
         <HarnessLogo harness="codex" />
         <span className="absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
@@ -553,18 +567,21 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
           <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
           <span className="shrink-0 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Running</span>
         </div>
-        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
           <GitBranch />
           <span className="truncate">argo/#1258-composer-prototype</span>
           <span>·</span>
           <span className="shrink-0">Codex</span>
+          <span>·</span>
+          <span className="inline-flex shrink-0 items-center gap-1"><Ticket />#1258</span>
         </div>
       </div>
-      <span className="flex-1" />
-      <div className="ml-auto flex shrink-0 items-center gap-1">
-        <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
-          <Ticket /> #1258
-        </Button>
+      <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 xl:flex">
+        <HeaderSignal icon={<GitFork />} label="Pull request" value="#1931 · Draft" tone="text-violet-600 dark:text-violet-400" />
+        <HeaderSignal icon={<Check />} label="Implementation" value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
+        <HeaderSignal icon={<FileCheck2 />} label="Code review" value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
         <Button variant={showSidebar ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle Session sidebar" onClick={onToggleSidebar}>
           <PanelRight />
         </Button>
@@ -1652,6 +1669,9 @@ export function ComposerPrototype() {
             }} />
           </div>
           <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-6 pt-6 pb-8">
+            <div className="mx-auto mb-2 w-full max-w-4xl">
+              <FeedPermission />
+            </div>
             <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
             </div>
