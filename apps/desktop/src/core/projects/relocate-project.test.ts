@@ -7,7 +7,7 @@ import {
   registerElsewhere,
   relocate,
   repository,
-} from '../core/projects/fake-driver/registration-fixture'
+} from './fake-driver/registration-fixture'
 import { registerProject, relocateProject } from './register-project'
 
 test('relocating moves the path and keeps the identity', async (context) => {
