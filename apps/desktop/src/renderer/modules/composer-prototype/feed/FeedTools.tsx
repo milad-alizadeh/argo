@@ -66,11 +66,13 @@ export function FeedToolLine({
 
 function ToolGroup({
   title,
+  activity,
   rows,
   onOpen,
   activeEvidenceId,
 }: {
   title: string
+  activity: string
   rows: ToolRow[]
   onOpen: FeedEvidenceAction
   activeEvidenceId: string | null
@@ -80,7 +82,7 @@ function ToolGroup({
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-control">
         <ChevronRight className="!size-(--size-icon-inline) text-muted-foreground group-open:rotate-90" />
         <span className="text-(length:--text-body) font-medium">{title}</span>
-        <span className="ml-auto text-muted-foreground">{rows.length} tool calls</span>
+        <span className="ml-auto text-muted-foreground">{activity}</span>
       </summary>
       <div className="mx-2 border-t pt-1">
         {rows.map((row) => (
@@ -106,6 +108,7 @@ export function FeedToolGroups({
   return (
     <ToolGroup
       title="Searched, edited and verified the Session"
+      activity="6 tool calls"
       rows={[...READS, ...WORK]}
       onOpen={onOpen}
       activeEvidenceId={activeEvidenceId}
@@ -150,6 +153,7 @@ export function FeedMutationExamples({
     <div className="space-y-2">
       <ToolGroup
         title="Changed files and checked the preview"
+        activity="Ran 2 commands"
         rows={mutations}
         onOpen={onOpen}
         activeEvidenceId={activeEvidenceId}
