@@ -29,10 +29,8 @@ import {
   Minimize2,
   Monitor,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
+  PanelLeft,
+  PanelRight,
   Paperclip,
   Pencil,
   Plus,
@@ -630,7 +628,7 @@ function PrototypeSessionRoster({
             <Plus />
           </Button>
           <Button variant="ghost" size="icon-sm" aria-label="Collapse Sessions sidebar" onClick={onCollapse}>
-            <PanelLeftClose />
+            <PanelLeft />
           </Button>
         </div>
       </div>
@@ -731,7 +729,7 @@ function PrototypeSessionHeader({
           aria-label="Open Sessions sidebar"
           onClick={onOpenRoster}
         >
-          <PanelLeftOpen />
+          <PanelLeft />
         </Button>
       ) : null}
       <div className="min-w-0">
@@ -1984,7 +1982,7 @@ export function ComposerPrototype() {
               aria-label={showSessionSidebar ? 'Collapse Session inspector' : 'Open Session inspector'}
               onClick={() => setSessionSidebarVisible(!showSessionSidebar)}
             >
-              {showSessionSidebar ? <PanelRightClose /> : <PanelRightOpen />}
+              <PanelRight />
             </Button>
           </div>
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
