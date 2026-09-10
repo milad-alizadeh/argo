@@ -718,13 +718,17 @@ function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; labe
 
 function PrototypeSessionHeader({
   showRoster,
+  showInspector,
   onOpenRoster,
+  onOpenInspector,
 }: {
   showRoster: boolean
+  showInspector: boolean
   onOpenRoster: () => void
+  onOpenInspector: () => void
 }) {
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 pr-20">
+    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -763,6 +767,17 @@ function PrototypeSessionHeader({
         <HeaderSignal icon={<Check />} label="Implementation" value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
         <HeaderSignal icon={<FileCheck2 />} label="Code review" value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
       </div>
+      {!showInspector ? (
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          className="shrink-0 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-1"
+          aria-label="Open Session inspector"
+          onClick={onOpenInspector}
+        >
+          <PanelRight />
+        </Button>
+      ) : null}
     </header>
   )
 }
@@ -788,6 +803,7 @@ function SessionWorkSidebar({
         <Button
           variant="ghost"
           size="icon-sm"
+          className="motion-safe:animate-in motion-safe:fade-in motion-safe:delay-100 motion-safe:duration-200"
           aria-label={fullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
           onClick={onToggleFullscreen}
         >
@@ -2029,18 +2045,6 @@ export function ComposerPrototype() {
           transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
         }
           `}</style>
-          {!showSessionSidebar ? (
-            <div className="absolute top-3 right-3 z-50">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Open Session inspector"
-              onClick={() => setSessionSidebarVisible(true)}
-            >
-              <PanelRight />
-            </Button>
-            </div>
-          ) : null}
           {sessionSidebarFullscreen ? (
             <div className="min-h-0 flex-1 overflow-hidden bg-background motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
               <SessionWorkSidebar
@@ -2070,7 +2074,9 @@ export function ComposerPrototype() {
           >
           <PrototypeSessionHeader
             showRoster={showSessionRoster}
+            showInspector={showSessionSidebar}
             onOpenRoster={() => setSessionRosterVisible(true)}
+            onOpenInspector={() => setSessionSidebarVisible(true)}
           />
           <div className="min-h-0 flex-1">
             <Transcript
