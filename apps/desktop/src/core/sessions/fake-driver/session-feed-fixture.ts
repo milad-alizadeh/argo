@@ -1,8 +1,10 @@
 // The fixture half of the packaged Session proof: the disk state `prove-session-feed.ts` launches
 // the app against, and the two mutations that prove a re-read reaches the file system rather than
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
-import { appendFile, mkdir } from 'node:fs/promises'
+import { execFile } from 'node:child_process'
+import { appendFile, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { promisify } from 'node:util'
 import { packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import {
   CODEX_FIXTURES,
@@ -49,6 +51,28 @@ const GROWN_TURN = `${JSON.stringify({
   },
 })}\n`
 
+const git = promisify(execFile)
+
+// A Project is the window's subject: with none open the cockpit shows the gate and no surface is
+// reachable, so the proof registers one before it launches. The folder is a real repository
+// because opening a Project is what proves it is one.
+async function selectedProject(root) {
+  const projectPath = path.join(root, 'project')
+  await mkdir(projectPath, { recursive: true })
+  await git('git', ['-C', projectPath, 'init', '--quiet'])
+  const userData = path.join(root, 'userData')
+  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  await writeFile(
+    path.join(userData, 'portable-v1', 'projects.json'),
+    `${JSON.stringify({
+      version: 1,
+      projects: [{ id: 'project-1', path: projectPath }],
+      selectedId: 'project-1',
+    })}\n`,
+  )
+  return { userData, projectPath }
+}
+
 export async function growStranded(transcripts) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
 }
@@ -64,9 +88,8 @@ export async function prepare(root) {
   })
   const archive = path.join(root, 'archive')
   await writeArchiveStore(archive, ARCHIVED)
-  const userData = path.join(root, 'userData')
-  await mkdir(userData, { recursive: true })
-  return { application, claudeTranscripts, codexTranscripts, archive, userData }
+  const { userData, projectPath } = await selectedProject(root)
+  return { application, claudeTranscripts, codexTranscripts, archive, userData, projectPath }
 }
 
 export async function growCodexTranscript(transcripts) {
@@ -98,8 +121,9 @@ export async function capture(page, application, name) {
   await page.screenshot({ path: path.join(shots, name) })
 }
 
-// The cockpit opens on Projects, so the Sessions screen is reached the way a reader reaches it.
-// Everything below reads the Roster and the Feed off that screen.
+// The sidebar exists because the fixture opened a Project, and Sessions is reached through it
+// rather than by assuming the opening destination. Everything below reads the Roster and the Feed
+// off that screen.
 export async function openSessionsScreen(page) {
   await page.click('nav[aria-label="Surfaces"] button:has-text("Sessions")')
   await page.waitForSelector('nav[aria-label="Sessions"] button')

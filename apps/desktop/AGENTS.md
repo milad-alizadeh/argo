@@ -46,8 +46,8 @@ and nothing reports it.
 
 ## Shortcuts (#1786)
 
-One table: `src/shortcuts.ts`. Every chord in the app is an entry there, and every entry says
-where it fires.
+One table: `src/core/commands/shortcuts.ts`. Every chord in the app is an entry there, and every
+entry says where it fires.
 
 | Scope | Where it fires |
 | --- | --- |

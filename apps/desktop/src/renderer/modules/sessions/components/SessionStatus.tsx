@@ -21,7 +21,7 @@ export function SessionStateDot({ status }: { status: SessionStatusValue }) {
   return (
     <span
       aria-hidden="true"
-      className="size-(--size-state-dot) flex-none rounded-full data-[ink=attention]:bg-warn data-[ink=idle]:bg-idle data-[ink=running]:bg-active data-[ink=running]:shadow-[0_0_6px_rgb(70_211_168/0.5)] data-[ink=unknown]:shadow-[inset_0_0_0_1px_var(--color-off)]"
+      className="size-(--size-state-dot) flex-none rounded-full data-[ink=attention]:bg-warn data-[ink=idle]:bg-idle data-[ink=running]:bg-active data-[ink=running]:shadow-state-glow data-[ink=unknown]:shadow-state-outline"
       data-ink={INK[status]}
     />
   )

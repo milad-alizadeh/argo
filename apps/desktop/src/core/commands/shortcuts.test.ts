@@ -7,6 +7,7 @@ import {
   menuTemplate,
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
+  ROSTER_MOVES,
   SHORTCUTS,
 } from './shortcuts'
 
@@ -52,6 +53,18 @@ test('registration is reachable from the menu', () => {
       scope: 'menu',
     },
   )
+})
+
+test('the Roster movement chords fire on one element', () => {
+  for (const command of Object.values(ROSTER_MOVES)) {
+    const found = SHORTCUTS.find((entry) => entry.command === command)
+    assert.equal(found?.scope, 'element')
+  }
+})
+
+test('a plain chord refuses a modifier', () => {
+  assert.equal(matchesChord('ArrowDown', pressed('ArrowDown')), true)
+  assert.equal(matchesChord('ArrowDown', pressed('ArrowDown', { meta: true })), false)
 })
 
 test('a chord matches on either platform modifier', () => {

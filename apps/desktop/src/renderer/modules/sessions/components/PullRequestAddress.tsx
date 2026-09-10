@@ -59,6 +59,9 @@ export function PullRequestAddress({ pullRequest, state }: PullRequestAddressPro
       title={pullRequest.url}
     >
       <PullRequestGlyph merged={state === 'merged'} />#{pullRequest.number}
+      {/* The address is a mark rather than a control, so the URL it stands for is in text and
+          not in the tooltip alone (AGENTS.md · Accessible names). */}
+      <span className="sr-only">{pullRequest.url}</span>
     </span>
   )
 }

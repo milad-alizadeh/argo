@@ -3,13 +3,23 @@
 // `shortcuts.test.mjs` proves the table holds no chord twice and that the built menu takes every
 // accelerator from it.
 
-// The working surfaces of the cockpit, in sidebar order. Code is a placeholder in this slice and
-// stays in the table, because a destination that is not reachable is a destination nobody notices
-// is missing.
-export const DESTINATIONS = ['Projects', 'Sessions', 'Tickets', 'Atlas', 'Code'] as const
+// The working surfaces of the cockpit, in sidebar order. The Project is not one of them: it is the
+// window's subject, and the surfaces are what a reader does inside it. Code is a placeholder in
+// this slice and stays in the table, because a destination that is not reachable is a destination
+// nobody notices is missing.
+export const DESTINATIONS = ['Sessions', 'Tickets', 'Atlas', 'Code'] as const
 export type Destination = (typeof DESTINATIONS)[number]
 
 export const REGISTER_PROJECT_COMMAND = 'project.register'
+
+// Moving focus down the Roster. These are chords on one element rather than on the window: they
+// fire only while a row holds focus, so a reader typing anywhere else keeps their arrow keys.
+export const ROSTER_MOVES = {
+  next: 'roster.next',
+  previous: 'roster.previous',
+  first: 'roster.first',
+  last: 'roster.last',
+} as const
 
 // The channel a menu item's command travels on, declared here with the table it comes from.
 export const COMMAND_CHANNEL = 'argo:command'
@@ -33,6 +43,10 @@ export const SHORTCUTS: readonly Shortcut[] = [
     chord: `CmdOrCtrl+${index + 1}`,
     scope: 'window' as const,
   })),
+  { command: ROSTER_MOVES.next, label: 'Next Session', chord: 'ArrowDown', scope: 'element' },
+  { command: ROSTER_MOVES.previous, label: 'Previous Session', chord: 'ArrowUp', scope: 'element' },
+  { command: ROSTER_MOVES.first, label: 'First Session', chord: 'Home', scope: 'element' },
+  { command: ROSTER_MOVES.last, label: 'Last Session', chord: 'End', scope: 'element' },
 ]
 
 // The template is plain data so that the table's rule can be proved without Electron. `src/menu.ts`
