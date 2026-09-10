@@ -1221,6 +1221,12 @@ export function ComposerPrototype() {
         .composer-queue-enter { animation: composer-queue-enter 320ms cubic-bezier(.2,.8,.2,1) both; }
         .composer-queue-lift { animation: composer-queue-lift 320ms cubic-bezier(.2,.8,.2,1) both; }
         .composer-queue-exit { animation: composer-queue-exit 280ms cubic-bezier(.4,0,.2,1) both; }
+        .composer-queue-enter,
+        .composer-queue-lift,
+        .composer-queue-exit {
+          position: relative;
+          background: var(--background);
+        }
       `}</style>
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
