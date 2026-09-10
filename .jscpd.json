@@ -11,8 +11,6 @@
     "**/dist/**",
     "**/out/**",
     "**/.vite/**",
-    "apps/desktop/scripts/session-fake-driver/prove-project-contract.mjs",
-    "apps/desktop/scripts/session-fake-driver/prove-session-feed.mjs",
     "**/*.stories.tsx",
     "prototypes/**",
     "**/skills/**/templates/**",

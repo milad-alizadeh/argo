@@ -25,11 +25,6 @@
       "!**/*.xcassets",
       "!**/ArgoEngine/Companion/Plugin",
       "!**/ArgoFixtures/Fixtures",
-      // The Session proof drivers are TypeScript source. Bun writes these two runnable bundles
-      // for Forge and CI, so formatting or linting the output would report copied implementation
-      // code instead of the source module that owns it.
-      "!apps/desktop/scripts/session-fake-driver/prove-project-contract.mjs",
-      "!apps/desktop/scripts/session-fake-driver/prove-session-feed.mjs"
     ]
   },
   "formatter": {
