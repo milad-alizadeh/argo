@@ -16,8 +16,12 @@ export function useSessions(selectedSessionId: SessionId | null) {
 
   const refreshRoster = useCallback(async () => {
     try {
-      const roster = await window.argo.listSessions({ version: 1, type: 'session.list', requestId: 'sessions-screen' })
-      setReading((current) => ({ ...current, roster, rosterError: null }))
+      const reply = await window.argo.listSessions({ version: 1, type: 'session.list', requestId: 'sessions-screen' })
+      if (reply.type === 'session.error') {
+        setReading((current) => ({ ...current, rosterError: reply.message }))
+        return
+      }
+      setReading((current) => ({ ...current, roster: reply, rosterError: null }))
     } catch (error) {
       setReading((current) => ({ ...current, rosterError: error instanceof Error ? error.message : 'Unable to list sessions.' }))
     }
@@ -33,7 +37,14 @@ export function useSessions(selectedSessionId: SessionId | null) {
 
     let active = true
     void window.argo.readSessionFeed({ version: 1, type: 'session.feed', requestId: 'sessions-feed', sessionId: selectedSessionId })
-      .then((feed) => { if (active) setReading((current) => ({ ...current, feed, feedError: null })) })
+      .then((reply) => {
+        if (!active) return
+        if (reply.type === 'session.error') {
+          setReading((current) => ({ ...current, feedError: reply.message }))
+          return
+        }
+        setReading((current) => ({ ...current, feed: reply, feedError: null }))
+      })
       .catch((error: unknown) => {
         if (active) setReading((current) => ({ ...current, feedError: error instanceof Error ? error.message : 'Unable to read this session.' }))
       })
