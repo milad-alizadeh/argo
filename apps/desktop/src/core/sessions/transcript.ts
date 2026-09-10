@@ -1,8 +1,16 @@
-import type { SessionEntry } from './models'
+import type { FeedMarker, SessionEntry } from './models'
 
 export type ContentBlock =
   | { shape: 'prose'; text: string }
+  // A `thinking` block, which the domain calls a Thought and never a Message (CONTEXT.md L3 ·
+  // Thought). The CLI writes most of them with the text withheld, so an empty one is ordinary.
+  | { shape: 'thought'; text: string }
+  | { shape: 'marker'; marker: FeedMarker }
+  // The honest fallback for content this Feed cannot draw richly yet: the block's own `type`
+  // verbatim as the label, and its own JSON as the source. Nothing is summarised or dropped.
   | { shape: 'source'; label: string; source: string }
+
+export type ToolCall = { id: string; name: string; input: Record<string, unknown> }
 
 export type TranscriptMessage = {
   kind: 'message'
@@ -17,7 +25,7 @@ export type TranscriptMessage = {
   entry: SessionEntry
   stopReason: string | null
   blocks: ContentBlock[]
-  toolCalls: { id: string; name: string }[]
+  toolCalls: ToolCall[]
   answeredCalls: string[]
 }
 
@@ -26,6 +34,10 @@ export type TranscriptRecord =
   | { kind: 'link'; leafUuid: string }
   | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
   | { kind: 'trace'; uuid: string }
+  // The CLI's `pr-link` record: a pull request this Session opened or was pointed at.
+  | { kind: 'pull-request'; number: number; url: string; repository: string | null }
+  // The CLI's `compact_boundary` system record: the point where history was condensed.
+  | { kind: 'compaction'; uuid: string }
   | { kind: 'unreadable'; line: string }
 
 export type TranscriptFile = {

@@ -1,12 +1,18 @@
 // One JSONL line of a Claude transcript, parsed into the shapes this slice reads and nothing
 // else. Grounded on the records real transcripts under `~/.claude/projects` carry today: `user`,
-// `assistant`, `last-prompt`, `ai-title`, `custom-title`. Every other `type` is bookkeeping this
-// slice does not draw, and is skipped rather than guessed at.
+// `assistant`, `last-prompt`, `ai-title`, `custom-title`, `pr-link`, and the `compact_boundary`
+// system record. Every other `type` is bookkeeping this slice does not draw, and is skipped rather
+// than guessed at.
 import { isRecord } from '@/boundary'
 import { SESSION_ENTRIES, type SessionEntry } from '@/core/sessions/models'
-import type { ContentBlock, TranscriptMessage, TranscriptRecord } from '@/core/sessions/transcript'
+import type {
+  ContentBlock,
+  ToolCall,
+  TranscriptMessage,
+  TranscriptRecord,
+} from '@/core/sessions/transcript'
 
-export type { ContentBlock, SessionEntry, TranscriptMessage, TranscriptRecord }
+export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 // CONTEXT.md L2 · Entry, the closed set. Written once and derived from, like every other
 // vocabulary this slice reads.
 export { SESSION_ENTRIES }
@@ -22,9 +28,18 @@ function readEntry(value: unknown): SessionEntry {
     : 'interactive'
 }
 
+// The text the CLI writes as the person's own prompt when they stop a Turn. It is the CLI's
+// punctuation, not something the person typed, so it is read as a marker and never as a prompt.
+const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
+
 function readBlock(value: unknown): ContentBlock {
   if (isRecord(value) && value.type === 'text' && typeof value.text === 'string') {
-    return { shape: 'prose', text: value.text }
+    return INTERRUPTED.test(value.text)
+      ? { shape: 'marker', marker: 'interrupted' }
+      : { shape: 'prose', text: value.text }
+  }
+  if (isRecord(value) && value.type === 'thinking' && typeof value.thinking === 'string') {
+    return { shape: 'thought', text: value.thinking }
   }
   const label = isRecord(value) && typeof value.type === 'string' ? value.type : 'unfamiliar'
   return { shape: 'source', label, source: JSON.stringify(value, null, 2) ?? String(value) }
@@ -36,14 +51,14 @@ function readBlocks(content: unknown): ContentBlock[] {
   return content.map(readBlock)
 }
 
-function readToolCalls(content: unknown) {
+function readToolCalls(content: unknown): ToolCall[] {
   if (!Array.isArray(content)) return []
   return content.flatMap((block: unknown) =>
     isRecord(block) &&
     block.type === 'tool_use' &&
     typeof block.id === 'string' &&
     typeof block.name === 'string'
-      ? [{ id: block.id, name: block.name }]
+      ? [{ id: block.id, name: block.name, input: isRecord(block.input) ? block.input : {} }]
       : [],
   )
 }
@@ -94,6 +109,28 @@ function readTitle(record: Record<string, unknown>): TranscriptRecord | null {
   return null
 }
 
+// The two bookkeeping records a reading draws from: the pull request the CLI linked the Session
+// to, and the point where it condensed the history.
+function readMark(record: Record<string, unknown>): TranscriptRecord | null {
+  if (
+    record.type === 'pr-link' &&
+    Number.isInteger(record.prNumber) &&
+    typeof record.prUrl === 'string'
+  ) {
+    const repository = typeof record.prRepository === 'string' ? record.prRepository : null
+    return {
+      kind: 'pull-request',
+      number: record.prNumber as number,
+      url: record.prUrl,
+      repository,
+    }
+  }
+  if (record.subtype === 'compact_boundary' && typeof record.uuid === 'string') {
+    return { kind: 'compaction', uuid: record.uuid }
+  }
+  return null
+}
+
 export function parseTranscriptLine(line: string): TranscriptRecord | null {
   if (line.trim().length === 0) return null
   let value: unknown
@@ -109,7 +146,7 @@ export function parseTranscriptLine(line: string): TranscriptRecord | null {
   if (value.type === 'last-prompt' && typeof value.leafUuid === 'string') {
     return { kind: 'link', leafUuid: value.leafUuid }
   }
-  const title = readTitle(value)
-  if (title !== null) return title
+  const read = readTitle(value) ?? readMark(value)
+  if (read !== null) return read
   return typeof value.uuid === 'string' ? { kind: 'trace', uuid: value.uuid } : null
 }

@@ -18,10 +18,30 @@ import {
   packagedTestCopy,
 } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
-import { SESSION_CLAUDE_TRANSCRIPTS_ENV, SESSION_CODEX_TRANSCRIPTS_ENV } from '../proof-protocol'
-import { proveCodexFeed, proveRendererAuthority } from './session-feed-cases'
-import { CODEX_FIXTURES, writeFixtureTree } from './session-fixture-files'
-import { proveCodexReread, proveContract } from './session-roster-cases'
+import { SESSION_CLAUDE_ARCHIVE_ENV, SESSION_CLAUDE_TRANSCRIPTS_ENV, SESSION_CODEX_TRANSCRIPTS_ENV } from '../proof-protocol'
+import {
+  proveCodexFeed,
+  proveFirstOpen,
+  proveNoMislabelledFeed,
+  proveNoUnmeasuredRow,
+  proveRendererAuthority,
+} from './session-feed-cases'
+import { CODEX_FIXTURES, fixturePath, writeArchiveStore, writeFixtureTree } from './session-fixture-files'
+import {
+  proveDamagedSession,
+  proveGeometry,
+  proveGrownSession,
+  proveOwnedHeights,
+  proveRepeatOpening,
+} from '../../../agents/claude/session-fake-driver/session-geometry-cases'
+import { provePaneDrag, proveWindowHoldsStill } from '../../../agents/claude/session-fake-driver/session-pane-cases'
+import {
+  proveArchive,
+  proveCodexReread,
+  proveContract,
+  proveReread,
+  proveRoster,
+} from './session-roster-cases'
 
 const FIXTURES = [
   'resumeParent',
@@ -33,11 +53,37 @@ const FIXTURES = [
   // Resumes a leaf that is in no file here, which is what a chain looks like when the Roster's
   // file cap stops short of its origin. Its row has to say so.
   'strandedResume',
+  // Archived in the desktop app's store below, so the Roster has to keep it out of the list and
+  // in the Archived section at its foot.
+  'plannedWork',
 ]
 const CODEX_FIXTURE_NAMES = ['rollout-codexParent', 'rollout-codexChild']
 
+// The Sessions the fixture store says the reader archived.
+const ARCHIVED = ['plannedWork']
+
 const shotsIndex = process.argv.indexOf('--shots')
 const shots = shotsIndex === -1 ? null : (process.argv[shotsIndex + 1] ?? null)
+
+// One more turn on a Session already measured, written the way the CLI writes one: appended to
+// the file it belongs to.
+const GROWN_TURN = `${JSON.stringify({
+  type: 'assistant',
+  cwd: '/Users/x/stranded',
+  gitBranch: 'main',
+  timestamp: '2026-08-20T09:30:00.000Z',
+  uuid: 'sr-asst-2',
+  parentUuid: 'sr-asst-1',
+  message: {
+    role: 'assistant',
+    stop_reason: 'end_turn',
+    content: [{ type: 'text', text: 'And one more turn, written while Argo was looking.' }],
+  },
+})}\n`
+
+async function growStranded(transcripts) {
+  await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
+}
 
 async function prepare(root) {
   const application = await packagedTestCopy(root)
@@ -48,9 +94,11 @@ async function prepare(root) {
     directory: '2026/09/10',
     fixtures: CODEX_FIXTURES,
   })
+  const archive = path.join(root, 'archive')
+  await writeArchiveStore(archive, ARCHIVED)
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
-  return { application, claudeTranscripts, codexTranscripts, userData }
+  return { application, claudeTranscripts, codexTranscripts, archive, userData }
 }
 
 async function growCodexTranscript(transcripts) {
@@ -82,26 +130,11 @@ async function capture(page, application, name) {
   await page.screenshot({ path: path.join(shots, name) })
 }
 
-async function proveSessionsScreen(page, application) {
+// The cockpit opens on Projects, so the Sessions screen is reached the way a reader reaches it.
+// Everything below reads the Roster and the Feed off that screen.
+async function openSessionsScreen(page) {
   await page.click('nav[aria-label="Surfaces"] button:has-text("Sessions")')
   await page.waitForSelector('nav[aria-label="Sessions"] button')
-  const empty = await page.evaluate(() => ({
-    sessions: document.querySelectorAll('nav[aria-label="Sessions"] button').length,
-    message: document.querySelector('[data-component="SessionsEmptyState"] p')?.textContent,
-  }))
-  assert.equal(empty.sessions, 7)
-  assert.equal(empty.message, 'Select a session to read its terminal activity.')
-  await capture(page, application, 'sessions-empty.png')
-
-  await page.click('button:has-text("askPending")')
-  await page.waitForSelector('[aria-label="Session activity"] article')
-  const selected = await page.evaluate(() => ({
-    activityRows: document.querySelectorAll('[aria-label="Session activity"] article').length,
-    empty: document.querySelector('[data-component="SessionsEmptyState"] p')?.textContent ?? '',
-  }))
-  assert.equal(selected.activityRows > 0, true)
-  assert.equal(selected.empty, '')
-  await capture(page, application, 'session-activity.png')
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
@@ -115,6 +148,7 @@ try {
       ...process.env,
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
       [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
+      [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
     },
@@ -133,8 +167,32 @@ try {
     return reading
   }
   await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
-  await ran(['empty-state', 'session-activity'], () => proveSessionsScreen(page, application))
+  await openSessionsScreen(page)
+  const roster = await ran(['roster-focus', 'archive-section'], () => proveRoster(page))
+  const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
+  await capture(page, application, 'roster-and-feed.png')
+  await ran(['damaged-session'], () => proveDamagedSession(page))
+  await capture(page, application, 'damaged-session.png')
+  const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>
+    proveFirstOpen(page),
+  )
+  await capture(page, application, 'feed-at-the-tail.png')
+  const owned = await ran(['owned-heights', 'settled-font'], () => proveOwnedHeights(page))
+  await ran(['pane-drag'], () => provePaneDrag(page))
+  await ran(['window-holds-still'], () => proveWindowHoldsStill(page))
+  await ran(['repeat-opening'], () => proveRepeatOpening(page))
+  await ran(['no-mislabelled-feed'], () => proveNoMislabelledFeed(page))
+  await ran(['no-unmeasured-row'], () => proveNoUnmeasuredRow(page))
   await ran(['codex-feed'], () => proveCodexFeed(page))
+  await ran(['roster-reread'], () =>
+    proveReread(page, fixture.claudeTranscripts, writeFixtureTree),
+  )
+  await ran(['grown-session'], () =>
+    proveGrownSession(page, fixture.claudeTranscripts, growStranded),
+  )
+  await capture(page, application, 'roster-read-again.png')
+  await ran(['archived-sessions'], () => proveArchive(page))
+  await capture(page, application, 'roster-archived.png')
   await ran(['codex-reread'], () =>
     proveCodexReread(page, fixture.codexTranscripts, growCodexTranscript),
   )
@@ -144,6 +202,16 @@ try {
     JSON.stringify({
       ok: true,
       packaged: true,
+      sessions: roster.count,
+      measuredRows: geometry.rowHeights.length,
+      ownedRows: owned.rows,
+      // First-draw evidence for #1863, read off the shipped app rather than a dev server, for the
+      // first open of the `prose` fixture. Two numbers because one cannot answer both questions:
+      // `measureMs` is the pass itself, and `settleMs` is what the reader waited, which carries
+      // the three warm frames and the font wait as well. Reporting only the second would report a
+      // fixed floor of about three frames as if it were the cost of laying out this Feed.
+      measureMs: firstOpen.measureMs,
+      settleMs: firstOpen.settleMs,
       cases,
     }),
   )

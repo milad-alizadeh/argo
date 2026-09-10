@@ -1,0 +1,86 @@
+/* The Feed's own geometry. These properties are here rather than in utility classes because they
+   are the ones no utility expresses and the ones ADR-0033 is written about: the measurement
+   container's containment, the gutter both scroll boxes reserve, and the padding a measured row
+   is measured with. Every value is read from a token. */
+
+.feed {
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.feed__column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* The measurement container of ADR-0033 rule 3. Under size containment it measures 0 px itself
+   and paints nothing, while every row inside keeps its real height. It reserves a scrollbar
+   gutter because the viewport below reserves one: where the platform draws a scrollbar that takes
+   layout width, a row measured at the full column width would be measured wider than it is ever
+   drawn, and every height read here would be a height for a line count the Feed never has. */
+.feed__measured {
+  content-visibility: hidden;
+  width: 100%;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+.feed__scroller,
+.feed__viewport {
+  min-height: 0;
+  height: 100%;
+}
+
+.feed__viewport {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.feed__content {
+  padding: var(--spacing-snug) 0;
+}
+
+.feed-row {
+  padding: var(--spacing-tight) var(--spacing-wide);
+  /* The body rung the Roster's titles are set in. Stated here rather than inherited, because the
+     measurement container and the viewport must lay a row out in the same size. */
+  font-size: var(--text-body);
+  /* Rule 8: selection is a layer, and prose is selectable text. */
+  user-select: text;
+}
+
+/* A prompt sits at the trailing edge. The bubble itself is shadcn's Bubble; this only places it. */
+.feed-row--prose[data-role="user"] {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-snug);
+}
+
+.feed-row__label {
+  display: block;
+  color: var(--color-quiet);
+  font: var(--text-meta) var(--font-mono);
+}
+
+.feed-row__code {
+  margin: var(--spacing-hair) 0 0;
+  padding: var(--spacing-tight);
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+  color: var(--color-ink);
+  font: var(--text-code) / var(--leading-code) var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The one row shape with a stated arithmetic height. The two numbers it is made of are written
+   on the box by `SessionFeedRow`, from the module that states the formula; nothing here restates
+   them. */
+.feed-row--unreadable {
+  display: flex;
+  align-items: center;
+}

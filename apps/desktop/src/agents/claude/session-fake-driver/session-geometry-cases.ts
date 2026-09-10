@@ -2,7 +2,7 @@
 // hands the Feed, the one row shape whose height is arithmetic, and the cache that keeps a second
 // open from measuring again.
 import assert from 'node:assert/strict'
-import { openSession } from './session-roster-cases'
+import { openSession } from '@/core/sessions/fake-driver/session-roster-cases'
 
 // ADR-0033: every row is laid out in a `content-visibility: hidden` container in the visible
 // renderer, and the container itself contributes no height. Both are read off the shipped DOM.
@@ -36,9 +36,11 @@ export async function proveDamagedSession(page) {
       height: row.offsetHeight,
     })),
   )
-  assert.equal(rows.length, 5)
+  // Five damaged lines in a row, drawn as one break in the history rather than five copies of
+  // the same sentence (#1907).
+  assert.equal(rows.length, 1)
   assert.deepEqual([...new Set(rows.map((row) => row.unreadable))], [true])
-  assert.deepEqual([...new Set(rows.map((row) => row.height))], [36])
+  assert.deepEqual([...new Set(rows.map((row) => row.height))], [44])
 }
 
 // ADR-0033 · Consequences: the Argo-owned module "supplies every row height". The proof of that

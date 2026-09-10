@@ -9,17 +9,23 @@ export function SessionsScreen() {
   const { t } = useTranslation()
   const selectedSessionId = useSessionsStore((state) => state.selectedSessionId)
   const selectSession = useSessionsStore((state) => state.selectSession)
-  const { feed, feedError, refreshRoster, roster, rosterError } = useSessions(selectedSessionId)
-  if (rosterError !== null) return <SessionsEmptyState message={rosterError} />
-  if (roster === null) return <SessionsEmptyState message={t('loading')} />
-  if (feedError !== null) return <SessionsEmptyState message={feedError} />
+  const { feed, feedError, roster, rosterError, reread } = useSessions(selectedSessionId)
+
+  // A pass that failed replaces nothing. The reading on hand is older than the reader asked for
+  // and the Roster head says so, but a Roster and a Feed they can still read beat an error page
+  // whose only way back — the button that asks for another pass — is on the page it replaced. So
+  // the only state that stands alone is having no reading at all.
+  if (roster === null) return <SessionsEmptyState title={rosterError ?? t('loading')} />
+
   return (
     <SessionsScreenView
       feed={feed}
-      onRefresh={refreshRoster}
+      failure={rosterError}
+      onReread={reread}
       onSelect={selectSession}
       selectedSessionId={selectedSessionId}
       sessions={roster.sessions}
+      feedFailure={feedError}
     />
   )
 }

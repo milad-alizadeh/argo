@@ -1,8 +1,9 @@
 // The transcript fixture files themselves, reachable from plain node. Ten came from the
 // deprecated `apps/macOS` engine's suite, which recorded the record shapes real Claude
 // transcripts carry; they are owned here so this app's tests survive that app's removal and run
-// under this app's path filter in CI. `askPending`, `titledHeadless`, `prose`, `subagentTail` and
-// `strandedResume` are new, for readings the copied set does not reach.
+// under this app's path filter in CI. `askPending`, `titledHeadless`, `prose`, `subagentTail`,
+// `strandedResume`, `plannedWork`, `marks` and `shellRunning` are new, for readings the copied set
+// does not reach.
 //
 // Kept apart from `session-fixtures` because the packaged proof runs under node, which cannot
 // resolve the extensionless TypeScript imports that file reaches for.
@@ -56,6 +57,22 @@ export async function writeFixtureTree(root, names, options = {}) {
     await writeFile(
       path.join(inside, `${name}.jsonl`),
       `${(await fixtureLines(name, fixtures)).join('\n')}\n`,
+    )
+  }
+  return root
+}
+
+// The Claude desktop app's own Session store, shaped the way that app writes one: a JSON file per
+// Session two directories down, naming the CLI Session in `cliSessionId` and carrying its own
+// `isArchived`. Argo reads the flag and writes nothing back, so a fixture store is all the proof
+// needs to show an archived Session in the Roster's Archived section.
+export async function writeArchiveStore(root, names) {
+  const inside = path.join(root, 'workspace-one', PROJECT)
+  await mkdir(inside, { recursive: true })
+  for (const name of names) {
+    await writeFile(
+      path.join(inside, `local_${name}.json`),
+      `${JSON.stringify({ sessionId: `desktop-${name}`, cliSessionId: name, isArchived: true })}\n`,
     )
   }
   return root

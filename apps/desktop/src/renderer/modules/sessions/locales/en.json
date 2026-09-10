@@ -1,17 +1,54 @@
 {
   "navigationLabel": "Sessions",
-  "activityLabel": "Session activity",
   "title": "Sessions",
   "subtitle": "CLI terminal activity",
+  "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
-  "selectSession": "Select a session to read its terminal activity.",
-  "emptyFeed": "This session has no terminal activity yet.",
-  "loading": "Reading sessions...",
-  "status": {
-    "active": "Active",
-    "idle": "Idle",
-    "waiting": "Waiting",
-    "failed": "Failed",
-    "unknown": "Unknown status: {{status}}"
+  "reading": "Reading this Session",
+  "feedLabel": "Session Feed",
+  "historyLabel": "Session history",
+  "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
+  "archived": "Archived",
+  "empty": {
+    "unselected": {
+      "title": "No Session selected",
+      "description": "Select a Session on the left to read its history."
+    },
+    "blank": {
+      "title": "Nothing said yet",
+      "description": "This Session has a transcript, and there is nothing in it to show."
+    },
+    "roster": {
+      "title": "No Sessions on this machine",
+      "description": "Argo lists a Session here as soon as a CLI writes one."
+    },
+    "archived": {
+      "title": "Nothing archived",
+      "description": "A Session you archive moves in here."
+    }
+  },
+  "marks": {
+    "thought": "Thought",
+    "compacted": "Conversation compacted",
+    "interrupted": "Interrupted"
+  },
+  "row": {
+    "activity": "Ran {{tool}} {{target}}",
+    "activityBare": "Ran {{tool}}",
+    "ago": "{{age}} ago",
+    "plan": "{{completed}} of {{total}} done"
+  },
+  "facts": {
+    "placeUnknown": "working directory unknown"
+  },
+  "rail": {
+    "agents": "Background agents {{count}}",
+    "agentsUnknown": "Background agents",
+    "shell": "Shell {{count}}",
+    "shellBare": "a command with no text",
+    "subagent": "Subagent {{index}}",
+    "finished": "{{count}} finished",
+    "unresolved_one": "One delegation, unresolved",
+    "unresolved_other": "{{count}} delegations, unresolved"
   }
 }

@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
-import { appendFile, chmod, utimes } from 'node:fs/promises'
+import { appendFile, chmod, mkdtemp, rm, utimes } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { listSessions, readFeed } from '../sessions/read-sessions.ts'
-import { writeFixtureTree } from './session-fixture-files'
+import { writeArchiveStore, writeFixtureTree } from './session-fixture-files'
 import { fixtureRoot } from './session-fixtures'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
@@ -20,6 +21,26 @@ test('discovers Sessions with no Project registration and states what it read', 
     'externalBasic',
     'resumeParent',
   ])
+})
+
+// The archive flag is the Claude desktop app's own, read out of that app's store and joined on
+// the CLI Session id. A Session archived under an id it has since retired stays archived, and a
+// store that is not there at all is no archived Sessions rather than a failure.
+test('reads the archive flag from the desktop store, under any id the Session answered to', async (context) => {
+  const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
+  const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
+  context.after(() => rm(store, { recursive: true, force: true }))
+  await writeArchiveStore(store, ['resumeChild'])
+  const reply = await listSessions(listing, root, store)
+  assert.deepEqual(reply.sessions.map((session) => [session.id, session.archived]).sort(), [
+    ['externalBasic', false],
+    ['resumeParent', true],
+  ])
+  const noStore = await listSessions(listing, root, `${store}/absent`)
+  assert.deepEqual(
+    noStore.sessions.filter((session) => session.archived),
+    [],
+  )
 })
 
 test('puts the Session touched last at the top of the Roster', async (context) => {
