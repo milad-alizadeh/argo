@@ -57,6 +57,7 @@ async function capture(page, application, name) {
 }
 
 async function proveSessionsScreen(page, application) {
+  await page.click('nav[aria-label="Surfaces"] button:has-text("Sessions")')
   await page.waitForSelector('nav[aria-label="Sessions"] button')
   const empty = await page.evaluate(() => ({
     sessions: document.querySelectorAll('nav[aria-label="Sessions"] button').length,
