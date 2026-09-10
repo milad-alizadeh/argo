@@ -29,6 +29,8 @@ import {
   Minimize2,
   Monitor,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelRight,
   Paperclip,
   Pencil,
@@ -603,10 +605,12 @@ function PrototypeSessionRoster({
   concierge,
   onConciergeChange,
   visibleProjects,
+  onCollapse,
 }: {
   concierge: ConciergePlacement
   onConciergeChange: (placement: ConciergePlacement) => void
   visibleProjects: ProjectKey[]
+  onCollapse: () => void
 }) {
   const [expandedProjects, setExpandedProjects] = useState<ProjectKey[]>(PROJECTS)
 
@@ -614,9 +618,14 @@ function PrototypeSessionRoster({
     <aside className="flex h-full min-h-0 w-full flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center px-3">
         <h1 className="text-sm font-semibold">Sessions</h1>
-        <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="New Session">
-          <Plus />
-        </Button>
+        <div className="ml-auto flex items-center gap-1">
+          <Button variant="ghost" size="icon-sm" aria-label="New Session">
+            <Plus />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Collapse Sessions sidebar" onClick={onCollapse}>
+            <PanelLeftClose />
+          </Button>
+        </div>
       </div>
       <div className="px-3 pt-2 pb-1.5">
         <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-[11px] text-muted-foreground [&_svg]:size-(--size-icon-inline)">
@@ -699,18 +708,25 @@ function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; labe
 }
 
 function PrototypeSessionHeader({
-  showSidebar,
-  sidebarFullscreen,
-  onToggleSidebarFullscreen,
-  onToggleSidebar,
+  showRoster,
+  onOpenRoster,
 }: {
-  showSidebar: boolean
-  sidebarFullscreen: boolean
-  onToggleSidebarFullscreen: () => void
-  onToggleSidebar: () => void
+  showRoster: boolean
+  onOpenRoster: () => void
 }) {
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
+    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4 pr-20">
+      {!showRoster ? (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-1"
+          aria-label="Open Sessions sidebar"
+          onClick={onOpenRoster}
+        >
+          <PanelLeftOpen />
+        </Button>
+      ) : null}
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
@@ -737,22 +753,6 @@ function PrototypeSessionHeader({
         <HeaderSignal icon={<GitFork />} label="Pull request" value="#1931 · Draft" tone="text-violet-600 dark:text-violet-400" />
         <HeaderSignal icon={<Check />} label="Implementation" value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
         <HeaderSignal icon={<FileCheck2 />} label="Code review" value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {showSidebar ? (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-1"
-            aria-label={sidebarFullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
-            onClick={onToggleSidebarFullscreen}
-          >
-            {sidebarFullscreen ? <Minimize2 /> : <Expand />}
-          </Button>
-        ) : null}
-        <Button variant={showSidebar ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle Session sidebar" onClick={onToggleSidebar}>
-          <PanelRight />
-        </Button>
       </div>
     </header>
   )
@@ -1688,8 +1688,10 @@ export function ComposerPrototype() {
   const [visibleProjects, setVisibleProjects] = useState<ProjectKey[]>(PROJECTS)
   const [theme, setTheme] = useState<ThemeMode>(initialTheme)
   const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
+  const [showSessionRoster, setShowSessionRoster] = useState(true)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [sessionSidebarFullscreen, setSessionSidebarFullscreen] = useState(false)
+  const sessionRosterPanel = usePanelRef()
   const sessionInspectorPanel = usePanelRef()
   const sessionInspectorElement = useRef<HTMLDivElement>(null)
   const sessionInspectorRestoreSize = useRef(248)
@@ -1755,6 +1757,12 @@ export function ComposerPrototype() {
     })
     setSessionSidebarFullscreen(false)
     setShowSessionSidebar(visible)
+  }
+
+  const setSessionRosterVisible = (visible: boolean) => {
+    if (visible) sessionRosterPanel.current?.expand()
+    else sessionRosterPanel.current?.collapse()
+    setShowSessionRoster(visible)
   }
 
   const toggleSessionSidebarFullscreen = () => {
@@ -1844,6 +1852,9 @@ export function ComposerPrototype() {
         >
         <ResizablePanel
           id="session-roster"
+          panelRef={sessionRosterPanel}
+          collapsible
+          collapsedSize={0}
           defaultSize={280}
           minSize={224}
           maxSize={400}
@@ -1854,9 +1865,13 @@ export function ComposerPrototype() {
             concierge={concierge}
             onConciergeChange={setConcierge}
             visibleProjects={visibleProjects}
+            onCollapse={() => setSessionRosterVisible(false)}
           />
         </ResizablePanel>
-        <ResizableHandle className="z-30" />
+        <ResizableHandle
+          disabled={!showSessionRoster}
+          className={`z-30 motion-safe:transition-opacity motion-safe:duration-200 ${showSessionRoster ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        />
         <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
         <main
           className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
@@ -1899,6 +1914,26 @@ export function ComposerPrototype() {
           transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
         }
           `}</style>
+          <div className="absolute top-3 right-3 z-50 flex items-center gap-1">
+            {showSessionSidebar ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={sessionSidebarFullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+                onClick={toggleSessionSidebarFullscreen}
+              >
+                {sessionSidebarFullscreen ? <Minimize2 /> : <Expand />}
+              </Button>
+            ) : null}
+            <Button
+              variant={showSessionSidebar ? 'secondary' : 'ghost'}
+              size="icon-sm"
+              aria-label="Toggle Session sidebar"
+              onClick={() => setSessionSidebarVisible(!showSessionSidebar)}
+            >
+              <PanelRight />
+            </Button>
+          </div>
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
           <ResizablePanel
             id="session-conversation"
@@ -1907,10 +1942,8 @@ export function ComposerPrototype() {
           >
           <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
           <PrototypeSessionHeader
-            showSidebar={showSessionSidebar}
-            sidebarFullscreen={sessionSidebarFullscreen}
-            onToggleSidebarFullscreen={toggleSessionSidebarFullscreen}
-            onToggleSidebar={() => setSessionSidebarVisible(!showSessionSidebar)}
+            showRoster={showSessionRoster}
+            onOpenRoster={() => setSessionRosterVisible(true)}
           />
           <div className="min-h-0 flex-1">
             <Transcript
