@@ -1,25 +1,9 @@
-import { Expand, PanelRightClose, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_INSPECTOR_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 import { EvidenceBody, EvidenceKindIcon } from './FeedEvidenceBody'
 import { CopyFeedContent } from './FeedPrimitives'
-
-function evidenceLabel(kind: FeedPrototypeEvidence['kind']) {
-  switch (kind) {
-    case 'code':
-    case 'diff':
-      return 'File change'
-    case 'output':
-      return 'Command output'
-    case 'document':
-      return 'Source'
-    case 'diagram':
-      return 'Diagram'
-    case 'image':
-      return 'Image'
-  }
-}
 
 function ExpandedEvidence({
   evidence,
@@ -59,41 +43,9 @@ function ExpandedEvidence({
   )
 }
 
-function InspectorSection({
-  evidence,
-  active,
-  onExpand,
-  onClose,
-}: {
-  evidence: FeedPrototypeEvidence
-  active: boolean
-  onExpand: () => void
-  onClose: () => void
-}) {
+function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
   return (
     <section data-evidence-id={evidence.id} className="min-h-[45%] border-b border-border/60">
-      <header
-        className={`sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-2 backdrop-blur ${active ? 'bg-muted text-foreground' : 'bg-card/95 text-muted-foreground'}`}
-      >
-        <EvidenceKindIcon kind={evidence.kind} />
-        <span className="min-w-0 flex-1 truncate text-control font-medium">{evidence.title}</span>
-        <span className="text-(length:--text-control)">{evidenceLabel(evidence.kind)}</span>
-        {active ? (
-          <>
-            <Button size="icon-sm" variant="ghost" aria-label="Expand result" onClick={onExpand}>
-              <Expand />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label="Close result sidebar"
-              onClick={onClose}
-            >
-              <PanelRightClose />
-            </Button>
-          </>
-        ) : null}
-      </header>
       <div className="space-y-4 p-4">
         <p className="break-words text-control leading-relaxed text-muted-foreground">
           {evidence.detail}
@@ -106,17 +58,18 @@ function InspectorSection({
 
 export function FeedEvidencePrototype({
   evidence,
-  onClose,
   onActiveEvidenceChange,
+  expanded,
+  onExpandedChange,
 }: {
   evidence: FeedPrototypeEvidence
-  onClose: () => void
   onActiveEvidenceChange: (evidenceId: string) => void
+  expanded: boolean
+  onExpandedChange: (expanded: boolean) => void
 }) {
   const showsToolSequence = FEED_INSPECTOR_EVIDENCE.some((item) => item.id === evidence.id)
   const items = showsToolSequence ? FEED_INSPECTOR_EVIDENCE : [evidence]
   const [activeId, setActiveId] = useState(evidence.id)
-  const [expanded, setExpanded] = useState(false)
   const scrollArea = useRef<HTMLDivElement>(null)
   const activeEvidence = items.find((item) => item.id === activeId) ?? evidence
 
@@ -154,13 +107,7 @@ export function FeedEvidencePrototype({
         className="min-h-0 flex-1 overflow-y-auto"
       >
         {items.map((item) => (
-          <InspectorSection
-            key={item.id}
-            evidence={item}
-            active={item.id === activeId}
-            onExpand={() => setExpanded(true)}
-            onClose={onClose}
-          />
+          <InspectorSection key={item.id} evidence={item} />
         ))}
       </div>
       <footer className="flex items-center justify-between border-t px-3 py-2 text-control text-muted-foreground">
@@ -168,7 +115,7 @@ export function FeedEvidencePrototype({
         <CopyFeedContent text={activeEvidence.source} />
       </footer>
       {expanded ? (
-        <ExpandedEvidence evidence={activeEvidence} onClose={() => setExpanded(false)} />
+        <ExpandedEvidence evidence={activeEvidence} onClose={() => onExpandedChange(false)} />
       ) : null}
     </section>
   )
