@@ -861,11 +861,20 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
     <>
       {visible ? (
         <div className="pointer-events-none fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(14,165,233,0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(14,165,233,0.08)_1px,transparent_1px)] [background-size:8px_8px]" />
-          <div className="relative mx-auto grid h-full w-[calc(100%-4rem)] max-w-4xl grid-cols-12 border-x border-sky-500/80">
-            {Array.from({ length: 12 }, (_, index) => (
-              <span key={index} className="border-l border-sky-500/25 first:border-l-0" />
-            ))}
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(14,165,233,0.10)_1px,transparent_1px)] [background-size:100%_8px]" />
+          <div className="relative mx-auto h-full w-[calc(100%-4rem)] max-w-4xl border-x border-sky-500/90">
+            <div className="grid h-full grid-cols-12 gap-6">
+              {Array.from({ length: 12 }, (_, index) => (
+                <span key={index} className="border-x border-sky-500/25 bg-sky-500/[0.045]" />
+              ))}
+            </div>
+            <div className="absolute inset-y-0 left-4 border-l border-amber-500/90" />
+            <div className="absolute inset-y-0 right-4 border-r border-amber-500/90" />
+            <div className="absolute top-3 left-0 flex items-center gap-3 text-[10px] font-medium">
+              <span className="bg-sky-500 px-1.5 py-0.5 text-white">Composer edge</span>
+              <span className="bg-amber-400 px-1.5 py-0.5 text-black">Context inset 16px</span>
+              <span className="bg-background/90 px-1.5 py-0.5 text-sky-700">12 columns · 24px gutters · 8px baseline</span>
+            </div>
           </div>
         </div>
       ) : null}
