@@ -4,52 +4,13 @@
 // slice does not draw, and is skipped rather than guessed at.
 import { isRecord } from '../../../boundary'
 import { SESSION_ENTRIES, type SessionEntry } from '../../../core/sessions/models'
+import type {
+  ContentBlock,
+  TranscriptMessage,
+  TranscriptRecord,
+} from '../../../core/sessions/transcript'
 
-export type ContentBlock =
-  | { shape: 'prose'; text: string }
-  // The honest fallback for content this Feed cannot draw richly yet: the block's own `type`
-  // verbatim as the label, and its own JSON as the source. Nothing is summarised or dropped.
-  | { shape: 'source'; label: string; source: string }
-
-export type TranscriptMessage = {
-  kind: 'message'
-  uuid: string
-  parentUuid: string | null
-  // The snake_case `session_id`, which names the chain's ORIGIN rather than the file's own
-  // Session (CONTEXT.md L2 · Transcript file). Absent on most records, which is why it is a
-  // fallback for stitching and never the key.
-  originSessionId: string | null
-  role: 'user' | 'assistant'
-  // A record written by a subagent's own turn rather than by this Session's. The CLI nests these;
-  // Argo neither draws them as the Session's history nor reads their stop reason as its status,
-  // because a subagent finishing is not this Session finishing.
-  sidechain: boolean
-  cwd: string | null
-  branch: string | null
-  timestamp: string | null
-  entry: SessionEntry
-  stopReason: string | null
-  blocks: ContentBlock[]
-  // The two block facts the status reading needs by name rather than as drawn source: which
-  // tools this record called, and which earlier calls it answered.
-  toolCalls: { id: string; name: string }[]
-  answeredCalls: string[]
-}
-
-export type TranscriptRecord =
-  | TranscriptMessage
-  | { kind: 'link'; leafUuid: string }
-  | { kind: 'title'; title: string; source: 'custom' | 'summarised' }
-  // A record this slice draws nothing from, kept for its uuid alone. A file names records of
-  // types Argo does not read — attachments among them — and a resume can be opened on one of
-  // them. Dropping the line entirely loses the only fact that tells a file which opened on its
-  // own first record from one that opened on another file's last.
-  | { kind: 'trace'; uuid: string }
-  // A line that is not JSON, or a message record with no identity. Kept rather than dropped so
-  // the Feed can say a record was unreadable instead of quietly shortening the history.
-  | { kind: 'unreadable'; line: string }
-
-export type { SessionEntry }
+export type { ContentBlock, SessionEntry, TranscriptMessage, TranscriptRecord }
 // CONTEXT.md L2 · Entry, the closed set. Written once and derived from, like every other
 // vocabulary this slice reads.
 export { SESSION_ENTRIES }

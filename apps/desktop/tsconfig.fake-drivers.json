@@ -19,6 +19,7 @@
     "src/core/projects/fake-driver/**/*.ts",
     "src/core/sessions/fake-driver/**/*.ts",
     "src/agents/claude/session-fake-driver/**/*.ts",
+    "src/agents/codex/session-fake-driver/**/*.ts",
     "src/core/appearance/**/*.test.ts",
     "src/core/projects/**/*.test.ts",
     "src/core/commands/**/*.test.ts"

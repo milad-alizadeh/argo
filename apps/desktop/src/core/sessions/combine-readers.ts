@@ -20,7 +20,9 @@ function combineLists(replies: SessionListReply[]): SessionListReply {
     version: 1,
     type: 'session.listed',
     requestId: first.requestId,
-    sessions: successful.flatMap((reply) => reply.sessions),
+    sessions: successful
+      .flatMap((reply) => reply.sessions)
+      .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')),
     filesFound: successful.reduce((total, reply) => total + reply.filesFound, 0),
     filesRead: successful.reduce((total, reply) => total + reply.filesRead, 0),
     filesUnreadable: successful.reduce((total, reply) => total + reply.filesUnreadable, 0),

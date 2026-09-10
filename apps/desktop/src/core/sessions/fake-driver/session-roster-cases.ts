@@ -53,6 +53,7 @@ export function readRoster(page) {
     const buttons = [...document.querySelectorAll('nav[aria-label="Sessions"] button')]
     return {
       count: buttons.length,
+      names: buttons.map((button) => button.querySelector('.roster__name')?.textContent ?? ''),
       selected: buttons.filter((button) => button.getAttribute('aria-current') === 'true').length,
       reachable: buttons.filter((button) => button.tabIndex === 0).length,
       note: document.querySelector('.cockpit__note')?.textContent ?? '',
@@ -121,6 +122,33 @@ export async function proveReread(page, transcripts, write) {
   const after = await readRoster(page)
   assert.equal(after.count, 7)
   assert.equal(after.note.includes('Read 8 transcript files.'), true)
+}
+
+// Codex records do not watch themselves either. This is deliberately a mutation of the existing
+// Codex file rather than a fresh fixture: a later record must replace the cached summary after
+// the reader requests a pass, and the shared Roster must order it by that new evidence.
+export async function proveCodexReread(page, transcripts, grow) {
+  const before = await page.evaluate((value) => window.argo.listSessions(value), listing)
+  const previous = before.sessions.find((session) => session.id === 'rollout-codexParent')
+  assert.notEqual(previous, undefined)
+
+  await grow(transcripts)
+  await page.click('button:has-text("Read again")')
+  await page.waitForFunction(
+    async ({ request, updatedAt }) => {
+      const listed = await window.argo.listSessions(request)
+      return (
+        listed.type === 'session.listed' &&
+        listed.sessions.find((session) => session.id === 'rollout-codexParent')?.updatedAt !==
+          updatedAt
+      )
+    },
+    { request: listing, updatedAt: previous.updatedAt },
+  )
+
+  const after = await readRoster(page)
+  assert.equal(after.names[0], 'Run Codex check')
+  assert.equal(after.note.includes('Read 9 transcript files.'), true)
 }
 
 // The wait is keyed to the Session id, not to "some row exists": the Feed the reader is leaving
