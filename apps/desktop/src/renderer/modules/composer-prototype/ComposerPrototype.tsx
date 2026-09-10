@@ -893,12 +893,14 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
   const clipRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<Animation | null>(null)
+  const surfaceAnimationRef = useRef<Animation | null>(null)
 
   useEffect(() => {
     const frame = frameRef.current
     const clip = clipRef.current
     const content = contentRef.current
-    if (!(frame && clip && content)) return
+    const surface = content?.firstElementChild?.firstElementChild
+    if (!(frame && clip && content && surface instanceof HTMLElement)) return
 
     let previousHeight = content.getBoundingClientRect().height
     const observer = new ResizeObserver(() => {
@@ -908,12 +910,21 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
       const startHeight = animationRef.current
         ? frame.getBoundingClientRect().height
         : previousHeight
+      const surfaceStartHeight = surfaceAnimationRef.current
+        ? surface.getBoundingClientRect().height
+        : previousHeight
       animationRef.current?.cancel()
+      surfaceAnimationRef.current?.cancel()
       clip.style.height = '100%'
       clip.style.overflow = 'clip'
       frame.style.height = `${nextHeight}px`
+      surface.style.height = `${nextHeight}px`
       animationRef.current = frame.animate(
         [{ height: `${startHeight}px` }, { height: `${nextHeight}px` }],
+        { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' },
+      )
+      surfaceAnimationRef.current = surface.animate(
+        [{ height: `${surfaceStartHeight}px` }, { height: `${nextHeight}px` }],
         { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' },
       )
       animationRef.current.onfinish = () => {
@@ -922,6 +933,10 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
         clip.style.overflow = 'visible'
         animationRef.current = null
       }
+      surfaceAnimationRef.current.onfinish = () => {
+        surface.style.height = 'auto'
+        surfaceAnimationRef.current = null
+      }
       previousHeight = nextHeight
     })
 
@@ -929,6 +944,7 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
     return () => {
       observer.disconnect()
       animationRef.current?.cancel()
+      surfaceAnimationRef.current?.cancel()
     }
   }, [])
 
