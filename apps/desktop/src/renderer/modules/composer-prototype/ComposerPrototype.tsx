@@ -469,6 +469,12 @@ function fileType(reference: string) {
   return `${reference.slice(separator + 1).toUpperCase()} file`
 }
 
+function fileTitle(reference: string) {
+  const name = reference.split('/').at(-1) ?? reference
+  const separator = name.lastIndexOf('.')
+  return separator > 0 ? name.slice(0, separator) : name
+}
+
 function imageSource(reference: string) {
   return reference === 'workspace.jpg' ? '/prototype-assets/workspace.jpg' : `/${reference}`
 }
@@ -514,7 +520,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="h-16 min-w-52 shrink-0 select-none border-border/60 px-2" size="xs">
+              <Attachment key={reference} className="h-16 w-48 shrink-0 select-none border-border/60 px-2" size="xs">
                 <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
                     <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
@@ -522,8 +528,8 @@ function ReferenceStrip({ state, setState }: StateProps) {
                     <File className="size-6" />
                   )}
                 </AttachmentMedia>
-                <AttachmentContent>
-                  <AttachmentTitle>{reference}</AttachmentTitle>
+                <AttachmentContent className="min-w-0">
+                  <AttachmentTitle className="block truncate">{fileTitle(reference)}</AttachmentTitle>
                   <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
                 </AttachmentContent>
                 <AttachmentActions>
