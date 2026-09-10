@@ -126,22 +126,15 @@ export async function proveReread(page, transcripts, write) {
 // Codex file rather than a fresh fixture: a later record must replace the cached summary after
 // the reader requests a pass, and the shared Roster must order it by that new evidence.
 export async function proveCodexReread(page, transcripts, grow) {
-  const before = await page.evaluate((value) => window.argo.listSessions(value), listing)
-  const previous = before.sessions.find((session) => session.id === 'rollout-codexParent')
-  assert.notEqual(previous, undefined)
+  const before = await readRoster(page)
+  assert.notEqual(before.names[0], 'rollout-codexParent')
 
   await grow(transcripts)
   await page.click('button:has-text("Read again")')
   await page.waitForFunction(
-    async ({ request, updatedAt }) => {
-      const listed = await window.argo.listSessions(request)
-      return (
-        listed.type === 'session.listed' &&
-        listed.sessions.find((session) => session.id === 'rollout-codexParent')?.updatedAt !==
-          updatedAt
-      )
-    },
-    { request: listing, updatedAt: previous.updatedAt },
+    () =>
+      document.querySelector('nav[aria-label="Sessions"] button')?.textContent ===
+      'rollout-codexParent',
   )
 
   const after = await readRoster(page)
