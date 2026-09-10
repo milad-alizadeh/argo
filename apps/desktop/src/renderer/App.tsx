@@ -31,13 +31,19 @@ function subject(cockpit: Cockpit): string {
   return cockpit.project ? `— ${cockpit.project.name}` : '— no Project open'
 }
 
+const SHOWS_COMPOSER_PROTOTYPE =
+  (import.meta as ImportMeta & { env: Record<string, string | undefined> }).env
+    .VITE_COMPOSER_PROTOTYPE === '1'
+
 export function App() {
+  if (SHOWS_COMPOSER_PROTOTYPE) return <ComposerPrototype />
+  return <CockpitApp />
+}
+
+function CockpitApp() {
   const [appearance, chooseAppearance] = useAppearance()
   const [cockpit, actions] = useProjects()
   const [destination, setDestination] = useState(destinationFromHash)
-  const showsComposerPrototype =
-    (import.meta as ImportMeta & { env: Record<string, string | undefined> }).env
-      .VITE_COMPOSER_PROTOTYPE === '1'
   const navigate = useCallback((nextDestination: Destination) => {
     window.location.hash = destinationHash(nextDestination)
     setDestination(nextDestination)
@@ -72,13 +78,7 @@ export function App() {
         </ChromeBar>
       }
       sidebar={<Sidebar destination={destination} onNavigate={navigate} />}
-      deck={
-        showsComposerPrototype ? (
-          <ComposerPrototype />
-        ) : (
-          <ProjectDeck destination={destination} cockpit={cockpit} actions={actions} />
-        )
-      }
+      deck={<ProjectDeck destination={destination} cockpit={cockpit} actions={actions} />}
     />
   )
 }
