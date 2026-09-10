@@ -26,7 +26,7 @@ function ImageTile({
           className="h-28 w-full object-cover"
         />
         <span className="absolute right-2 bottom-2 rounded-md border bg-popover p-1 text-popover-foreground">
-          <Expand className="size-3.5" />
+          <Expand className="!size-(--size-icon-inline)" />
         </span>
       </button>
       <figcaption className="space-y-0.5 px-2 py-2 text-control">
@@ -50,7 +50,7 @@ export function FeedMissingImage() {
   return (
     <figure className="overflow-hidden rounded-lg border bg-card">
       <div className="flex h-28 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
-        <ImageOff className="size-5" />
+        <ImageOff className="!size-(--size-icon-control)" />
         <p className="text-control">Image unavailable</p>
       </div>
       <figcaption className="px-3 py-2 text-control text-muted-foreground">
@@ -75,7 +75,7 @@ export function FeedAttachedImage({ onOpen }: { onOpen: FeedEvidenceAction }) {
         className="size-10 rounded-sm object-cover"
       />
       <span>workspace-reference.jpg</span>
-      <Expand className="ml-2 size-3.5 text-muted-foreground" />
+      <Expand className="ml-2 !size-(--size-icon-inline) text-muted-foreground" />
     </button>
   )
 }

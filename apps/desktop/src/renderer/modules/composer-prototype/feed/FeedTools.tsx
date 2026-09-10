@@ -44,10 +44,10 @@ export function FeedToolLine({ row, onOpen }: { row: ToolRow; onOpen: FeedEviden
       onClick={() => onOpen(evidence)}
       className="h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal"
     >
-      <row.icon className="size-3.5 text-muted-foreground" />
+      <row.icon className="!size-(--size-icon-inline) text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
       {row.detail && <span className="ml-auto shrink-0 text-muted-foreground">{row.detail}</span>}
-      <PanelRightOpen className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
+      <PanelRightOpen className="ml-auto !size-(--size-icon-inline) shrink-0 text-muted-foreground" />
     </Button>
   )
 }
@@ -64,7 +64,7 @@ function ToolGroup({
   return (
     <details className="group rounded-lg border bg-card open:pb-1">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-control">
-        <ChevronRight className="size-3.5 text-muted-foreground group-open:rotate-90" />
+        <ChevronRight className="!size-(--size-icon-inline) text-muted-foreground group-open:rotate-90" />
         <span className="font-medium">{title}</span>
         <span className="ml-auto text-muted-foreground">{rows.length} tool calls</span>
       </summary>
@@ -89,7 +89,7 @@ export function FeedToolGroups({ onOpen }: { onOpen: FeedEvidenceAction }) {
 export function FeedPendingCall() {
   return (
     <div className="flex items-center gap-2 py-2 text-control" role="status">
-      <Circle className="size-3.5 motion-safe:animate-pulse" />
+      <Circle className="!size-(--size-icon-inline) motion-safe:animate-pulse" />
       <span>Running the attachment stress check</span>
       <span className="ml-auto text-muted-foreground">12s</span>
     </div>
@@ -123,7 +123,7 @@ export function FeedMutationExamples({ onOpen }: { onOpen: FeedEvidenceAction })
         onOpen={onOpen}
       />
       <div className="flex items-center gap-2 px-2 py-2 text-control text-muted-foreground">
-        <Check className="size-3.5" />
+        <Check className="!size-(--size-icon-inline)" />
         Returned from layout review<span className="ml-auto">38s</span>
       </div>
     </div>
@@ -146,7 +146,7 @@ export function FeedEvidenceLink({
       onClick={() => onOpen(evidence)}
     >
       {children}
-      <PanelRightOpen className="size-3" />
+      <PanelRightOpen className="!size-(--size-icon-inline)" />
     </button>
   )
 }

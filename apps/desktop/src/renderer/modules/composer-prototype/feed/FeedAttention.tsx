@@ -16,7 +16,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   if (submitted)
     return (
       <div className="flex items-center gap-2 text-control text-muted-foreground">
-        <Check className="size-3.5" />
+        <Check className="!size-(--size-icon-inline)" />
         Answered: {answer || options.find((option) => option.id === selection)?.title}
       </div>
     )
@@ -85,7 +85,7 @@ export function FeedPermission() {
   if (decision !== 'pending')
     return (
       <div className="flex items-center gap-2 text-control text-muted-foreground">
-        <ShieldQuestion className="size-3.5" />
+        <ShieldQuestion className="!size-(--size-icon-inline)" />
         {decision === 'allowed' ? 'Allowed this command once' : 'Denied this command'}
       </div>
     )
@@ -96,7 +96,7 @@ export function FeedPermission() {
       data-component="FeedPermission"
     >
       <div className="flex items-center gap-2">
-        <ShieldQuestion className="size-4" />
+        <ShieldQuestion className="!size-(--size-icon-control)" />
         <h3 id="feed-permission-title" className="text-body font-medium">
           Allow this command?
         </h3>
@@ -123,7 +123,8 @@ export function FeedUnreadable() {
   return (
     <details className="group rounded-lg border bg-card">
       <summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-control">
-        <ChevronRight className="size-3.5 group-open:rotate-90" />2 records could not be read
+        <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />2 records could
+        not be read
         <span className="ml-auto text-muted-foreground">View source</span>
       </summary>
       <pre className="max-h-40 overflow-auto border-t p-3 font-mono text-control">
@@ -138,7 +139,7 @@ export function FeedUnreadable() {
 export function FeedExpiredPermission() {
   return (
     <Alert variant="destructive">
-      <ShieldQuestion />
+      <ShieldQuestion className="!size-(--size-icon-control)" />
       <AlertTitle className="text-control">Permission expired</AlertTitle>
       <AlertDescription className="text-control">
         The command was denied because no answer arrived.

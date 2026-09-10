@@ -76,7 +76,7 @@ function ExpandedEvidence({
           aria-label="Close expanded view"
           onClick={() => dialog.current?.close()}
         >
-          <X />
+          <X className="!size-(--size-icon-control)" />
         </Button>
       </div>
       <div className="max-h-160 overflow-auto p-6">
@@ -102,7 +102,7 @@ export function FeedEvidencePrototype({
       data-component="FeedEvidence"
     >
       <header className="flex items-center gap-2 border-b px-3 py-2">
-        <FileCode className="size-4 shrink-0 text-muted-foreground" />
+        <FileCode className="!size-(--size-icon-control) shrink-0 text-muted-foreground" />
         <h2 className="min-w-0 flex-1 truncate text-body font-medium">{evidence.title}</h2>
         <Button
           size="icon-sm"
@@ -110,10 +110,10 @@ export function FeedEvidencePrototype({
           aria-label="Expand result"
           onClick={() => setExpanded(true)}
         >
-          <Expand />
+          <Expand className="!size-(--size-icon-control)" />
         </Button>
         <Button size="icon-sm" variant="ghost" aria-label="Close result sidebar" onClick={onClose}>
-          <PanelRightClose />
+          <PanelRightClose className="!size-(--size-icon-control)" />
         </Button>
       </header>
       <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">

@@ -290,7 +290,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   },
 ]
 
-function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; className?: string }) {
+function HarnessLogo({ harness, className = 'size-(--size-icon-control)' }: { harness: HarnessKey; className?: string }) {
   const source = harness === 'codex' ? '/prototype-assets/openai-mono.svg' : '/prototype-assets/claude-mono.svg'
   return (
     <span className={`relative inline-flex shrink-0 ${className}`}>
@@ -380,7 +380,7 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
 
 function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
-    <nav aria-label="Main navigation" className="flex min-h-0 flex-col items-center border-r border-border/60 bg-muted/35 py-4 max-md:hidden">
+    <nav aria-label="Main navigation" className="flex min-h-0 flex-col items-center border-r border-border/60 bg-muted/35 py-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
       <div className="flex flex-col gap-3">
         {RAIL_ITEMS.map((item) => (
           <Tooltip key={item.label}>
@@ -439,7 +439,7 @@ function PrototypeSessionRoster() {
         </Button>
       </div>
       <div className="px-3 pt-2 pb-1.5">
-        <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-[11px] text-muted-foreground [&_svg]:size-3.5">
+        <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-[11px] text-muted-foreground [&_svg]:size-(--size-icon-inline)">
           <Search />
           <span>Find a Session</span>
           <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-[10px]">⌘K</span>
@@ -461,13 +461,13 @@ function PrototypeSessionRoster() {
               >
                 <span className="flex items-start gap-2">
                   <span className="relative mt-0.5 shrink-0">
-                    <HarnessLogo harness={session.harness} className="size-3.5" />
+                    <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
                     <span className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-foreground">{session.title}</span>
                     <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{session.activity}</span>
-                    <span className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground [&_svg]:size-3">
+                    <span className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
                       <span className="inline-flex items-center gap-1"><Ticket />#{session.ticket}</span>
                       <span className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}><GitFork />#{session.pullRequest.number} {session.pullRequest.state}</span>
                       {session.subagents > 0 ? <span className="inline-flex items-center gap-1"><Bot />{session.subagents}</span> : null}

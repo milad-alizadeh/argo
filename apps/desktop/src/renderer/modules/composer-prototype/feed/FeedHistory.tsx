@@ -26,12 +26,12 @@ export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
         className="h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal text-destructive"
         onClick={() => onOpen(FEED_EVIDENCE.failed)}
       >
-        <SquareTerminal className="size-3.5" />
+        <SquareTerminal className="!size-(--size-icon-inline)" />
         Ran bun run preview<span className="ml-auto">Failed · Exit 1</span>
       </Button>
       <FeedBoundary>Interrupted</FeedBoundary>
       <div className="flex items-center gap-2 text-control text-muted-foreground">
-        <CircleAlert className="size-3.5" />
+        <CircleAlert className="!size-(--size-icon-inline)" />
         The process started, but has not produced output.
       </div>
       <FeedBoundary>Resumed after waiting 24s</FeedBoundary>
@@ -51,7 +51,7 @@ export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
         }
       >
         Handed off to Continue Session layout
-        <ArrowUpRight className="size-3.5" />
+        <ArrowUpRight className="!size-(--size-icon-inline)" />
       </button>
       <FeedBoundary>
         <span className="sr-only">Turn ended</span>
@@ -64,7 +64,7 @@ export function FeedAdditionalStates({ onOpen }: { onOpen: FeedEvidenceAction })
   return (
     <details className="group border-t pt-4" data-component="FeedAdditionalStates">
       <summary className="flex cursor-pointer list-none items-center gap-2 text-control text-muted-foreground">
-        <ChevronRight className="size-3.5 group-open:rotate-90" />
+        <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />
         More feed states
         <span className="ml-auto">Questions, permissions, history and failures</span>
       </summary>

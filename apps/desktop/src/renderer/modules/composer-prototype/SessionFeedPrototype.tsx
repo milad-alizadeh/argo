@@ -31,13 +31,13 @@ export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedE
           className="h-auto justify-start gap-2 px-0 text-control font-normal text-muted-foreground"
           onClick={() => onOpenEvidence(FEED_EVIDENCE.skill)}
         >
-          <Sparkles className="size-3.5" />
+          <Sparkles className="!size-(--size-icon-inline)" />
           Loaded prototype
-          <BookOpen className="size-3.5" />
+          <BookOpen className="!size-(--size-icon-inline)" />
         </Button>
         <details className="group text-control text-muted-foreground">
           <summary className="flex cursor-pointer list-none items-center gap-2">
-            <ChevronRight className="size-3.5 group-open:rotate-90" />
+            <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />
             Reasoning
           </summary>
           <p className="mt-2 border-l pl-4 leading-relaxed">
@@ -47,7 +47,7 @@ export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedE
           </p>
         </details>
         <div className="flex items-center gap-2 text-control text-muted-foreground">
-          <GitFork className="size-3.5" />
+          <GitFork className="!size-(--size-icon-inline)" />
           <span>Delegated layout review and feed coverage</span>
           <span className="ml-auto">2 subagents</span>
         </div>
