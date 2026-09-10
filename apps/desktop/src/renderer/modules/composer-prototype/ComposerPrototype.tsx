@@ -1,6 +1,7 @@
 // One composer direction after the blind UX and visual reviews selected the single-surface layout.
 import {
   Archive,
+  ArrowLeft,
   ArrowUp,
   Bot,
   Check,
@@ -766,16 +767,33 @@ function PrototypeSessionHeader({
 function SessionWorkSidebar({
   evidence,
   onActiveEvidenceChange,
+  onShowActivity,
 }: {
   evidence: FeedPrototypeEvidence | null
   onActiveEvidenceChange: (evidenceId: string) => void
+  onShowActivity: () => void
 }) {
   if (evidence)
     return (
-      <FeedEvidencePrototype
-        evidence={evidence}
-        onActiveEvidenceChange={onActiveEvidenceChange}
-      />
+      <aside className="flex h-full min-h-0 w-full flex-col bg-card">
+        <header className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-start"
+            onClick={onShowActivity}
+          >
+            <ArrowLeft />
+            Session activity
+          </Button>
+        </header>
+        <div className="min-h-0 flex-1">
+          <FeedEvidencePrototype
+            evidence={evidence}
+            onActiveEvidenceChange={onActiveEvidenceChange}
+          />
+        </div>
+      </aside>
     )
   return (
     <aside className="h-full w-full overflow-y-auto bg-muted/20 p-3">
@@ -1820,6 +1838,11 @@ export function ComposerPrototype() {
     if (!showSessionSidebar) setSessionSidebarVisible(true)
   }
 
+  const showSessionActivity = () => {
+    setFeedEvidence(null)
+    setActiveFeedEvidenceId(null)
+  }
+
   const steerQueuedMessage = (message: QueuedMessage) => {
     setDraft(message.text)
     setQueuedMessages(queuedMessages.filter((item) => item.id !== message.id))
@@ -2092,6 +2115,7 @@ export function ComposerPrototype() {
                 <SessionWorkSidebar
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
+                  onShowActivity={showSessionActivity}
                 />
             </div>
           </ResizablePanel>
@@ -2101,6 +2125,7 @@ export function ComposerPrototype() {
               <SessionWorkSidebar
                 evidence={feedEvidence}
                 onActiveEvidenceChange={setActiveFeedEvidenceId}
+                onShowActivity={showSessionActivity}
               />
             </div>
           ) : null}
