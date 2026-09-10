@@ -37,6 +37,11 @@ export async function proveFirstOpen(page) {
 
 export async function proveCodexFeed(page) {
   await openSession(page, 'rollout-codexParent', 'rollout-codexParent')
+  await page.waitForFunction(() =>
+    document
+      .querySelector('[aria-label="Session activity"]')
+      ?.textContent?.includes('Run Codex check'),
+  )
   const reading = await page.evaluate(() => {
     const prose = document.querySelector('[aria-label="Session activity"] pre')
     const range = document.createRange()
