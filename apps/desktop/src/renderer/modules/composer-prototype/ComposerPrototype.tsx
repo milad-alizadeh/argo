@@ -122,7 +122,7 @@ type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: str
 type QueuedMessage = { id: string; text: string }
 
 const SESSION_PANE_MIN_WIDTH = 216
-const SESSION_PANE_SNAP_TOLERANCE = 8
+const SESSION_PANE_SNAP_TOLERANCE = 24
 
 type HarnessDefinition = {
   label: string
