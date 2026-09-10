@@ -31,7 +31,8 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  PanelRight,
+  PanelRightClose,
+  PanelRightOpen,
   Paperclip,
   Pencil,
   Plus,
@@ -1980,10 +1981,10 @@ export function ComposerPrototype() {
             <Button
               variant={showSessionSidebar ? 'secondary' : 'ghost'}
               size="icon-sm"
-              aria-label="Toggle Session sidebar"
+              aria-label={showSessionSidebar ? 'Collapse Session inspector' : 'Open Session inspector'}
               onClick={() => setSessionSidebarVisible(!showSessionSidebar)}
             >
-              <PanelRight />
+              {showSessionSidebar ? <PanelRightClose /> : <PanelRightOpen />}
             </Button>
           </div>
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
