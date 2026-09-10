@@ -88,7 +88,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/rend
 
 type HarnessKey = 'codex' | 'claude'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
-type ContextTone = 'color' | 'grayscale'
 type UsagePreview = 'normal' | 'high'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
@@ -723,11 +722,9 @@ function ContextPopover({
 function ContextSurface({
   state,
   layout,
-  tone = 'color',
 }: {
   state: ComposerState
   layout: 'inline' | 'dock' | 'footer' | 'attached'
-  tone?: 'color' | 'grayscale'
 }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
@@ -781,7 +778,7 @@ function ContextSurface({
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-0 ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : tone === 'color' ? 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} />
+            <div className={`absolute inset-0 ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} />
             <div className="absolute inset-y-0 right-0 bg-muted" style={{ width: `${100 - percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
             <Tooltip>
@@ -799,7 +796,7 @@ function ContextSurface({
           <span className="font-medium text-foreground">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
-          <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
+          <ContextPopover state={state} appearance="details" meterStyle="grayscale" />
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border/60 pl-4">
           <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
@@ -895,34 +892,6 @@ function ContextPreviewControl({ state, setState }: StateProps) {
         </button>
       ))}
     </div>
-  )
-}
-
-function ContextToneSwitcher({
-  tone,
-  onChange,
-}: {
-  tone: ContextTone
-  onChange: (tone: ContextTone) => void
-}) {
-  const options: { key: ContextTone; label: string }[] = [
-    { key: 'color', label: 'Color' },
-    { key: 'grayscale', label: 'Grayscale' },
-  ]
-  return (
-    <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Context bar style">
-      <span className="px-2 text-[10px] font-medium text-muted-foreground">Context bar</span>
-      {options.map((item) => (
-        <button
-          key={item.key}
-          type="button"
-          onClick={() => onChange(item.key)}
-          className={`rounded-full px-3 py-1.5 text-xs ${tone === item.key ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          {item.label}
-        </button>
-      ))}
-    </nav>
   )
 }
 
@@ -1183,7 +1152,6 @@ export function ComposerPrototype() {
     contextPreview: 'dumb',
     usagePreview: 'normal',
   })
-  const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
   const [showAlignmentGrid, setShowAlignmentGrid] = useState(false)
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
@@ -1353,11 +1321,10 @@ export function ComposerPrototype() {
           </form>
         </AnimatedHeight>
       <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-0.5rem)] max-w-[calc(56rem-0.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
-          <ContextSurface state={state} layout="attached" tone={contextTone} />
+          <ContextSurface state={state} layout="attached" />
         </div>
       </div>
       <ContextPreviewControl state={state} setState={setState} />
-      <ContextToneSwitcher tone={contextTone} onChange={setContextTone} />
       <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
     </main>
   )
