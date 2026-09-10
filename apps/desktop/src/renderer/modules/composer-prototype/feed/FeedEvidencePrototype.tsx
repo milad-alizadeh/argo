@@ -107,9 +107,11 @@ function InspectorSection({
 export function FeedEvidencePrototype({
   evidence,
   onClose,
+  onActiveEvidenceChange,
 }: {
   evidence: FeedPrototypeEvidence
   onClose: () => void
+  onActiveEvidenceChange: (evidenceId: string) => void
 }) {
   const showsToolSequence = FEED_INSPECTOR_EVIDENCE.some((item) => item.id === evidence.id)
   const items = showsToolSequence ? FEED_INSPECTOR_EVIDENCE : [evidence]
@@ -120,11 +122,12 @@ export function FeedEvidencePrototype({
 
   useEffect(() => {
     setActiveId(evidence.id)
+    onActiveEvidenceChange(evidence.id)
     const target = scrollArea.current?.querySelector<HTMLElement>(
       `[data-evidence-id="${evidence.id}"]`,
     )
     target?.scrollIntoView({ block: 'start' })
-  }, [evidence])
+  }, [evidence, onActiveEvidenceChange])
 
   const selectVisibleEvidence = () => {
     if (!scrollArea.current) return
@@ -133,7 +136,10 @@ export function FeedEvidencePrototype({
       if (section.offsetTop <= scrollArea.current.scrollTop + 48)
         visibleId = section.dataset.evidenceId ?? visibleId
     }
-    setActiveId(visibleId)
+    if (visibleId !== activeId) {
+      setActiveId(visibleId)
+      onActiveEvidenceChange(visibleId)
+    }
   }
 
   return (

@@ -6,7 +6,13 @@ import { FeedMissingImage } from './FeedImages'
 import { FeedBoundary, FeedCode, FeedPrompt } from './FeedPrimitives'
 import { FeedMutationExamples } from './FeedTools'
 
-export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
+export function FeedHistory({
+  onOpen,
+  activeEvidenceId,
+}: {
+  onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
   return (
     <div className="space-y-5" data-component="FeedHistoryStates">
       <FeedPrompt submitted>Keep the draft intact when I switch Projects.</FeedPrompt>
@@ -14,7 +20,7 @@ export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
       <FeedUnreadable />
       <FeedBoundary>Context compacted</FeedBoundary>
       <FeedBoundary>Model changed to Sonnet · Effort high</FeedBoundary>
-      <FeedMutationExamples onOpen={onOpen} />
+      <FeedMutationExamples onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
       <FeedBoundary>Interrupted</FeedBoundary>
       <div className="flex items-center gap-2 text-control text-muted-foreground">
         <CircleAlert className="!size-(--size-icon-inline)" />
@@ -46,13 +52,19 @@ export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
   )
 }
 
-export function FeedAdditionalStates({ onOpen }: { onOpen: FeedEvidenceAction }) {
+export function FeedAdditionalStates({
+  onOpen,
+  activeEvidenceId,
+}: {
+  onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
   return (
     <div className="space-y-6 border-t pt-6" data-component="FeedAdditionalStates">
       <FeedQuestion />
       <FeedQuestion readOnly />
       <FeedExpiredPermission />
-      <FeedHistory onOpen={onOpen} />
+      <FeedHistory onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
       <FeedMissingImage />
       <FeedDiagramState loading />
       <FeedDiagramState />

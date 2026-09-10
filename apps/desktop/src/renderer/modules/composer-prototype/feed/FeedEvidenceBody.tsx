@@ -26,6 +26,39 @@ function DiffLine({ line }: { line: string }) {
   return <span className={`block min-w-fit ${tone}`}>{line || ' '}</span>
 }
 
+function RenderedMarkdown({ source }: { source: string }) {
+  return (
+    <div className="space-y-4 text-body leading-relaxed">
+      {source.split('\n\n').map((block) => {
+        if (block.startsWith('# ')) {
+          return (
+            <h2 key={block} className="text-sm font-semibold">
+              {block.slice(2)}
+            </h2>
+          )
+        }
+        if (block.startsWith('## ')) {
+          return (
+            <h3 key={block} className="text-body font-semibold">
+              {block.slice(3)}
+            </h3>
+          )
+        }
+        if (block.startsWith('- ')) {
+          return (
+            <ul key={block} className="list-disc space-y-1 pl-5">
+              {block.split('\n').map((line) => (
+                <li key={line}>{line.slice(2)}</li>
+              ))}
+            </ul>
+          )
+        }
+        return <p key={block}>{block}</p>
+      })}
+    </div>
+  )
+}
+
 export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) {
   switch (evidence.kind) {
     case 'image':
@@ -53,7 +86,7 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
         </pre>
       )
     case 'document':
-      return <div className="whitespace-pre-wrap text-body leading-relaxed">{evidence.source}</div>
+      return <RenderedMarkdown source={evidence.source} />
     case 'code':
       return (
         <pre className="overflow-x-auto font-mono text-control leading-relaxed">

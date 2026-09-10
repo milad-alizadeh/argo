@@ -10,7 +10,38 @@ import { FeedPendingCall, FeedToolGroups } from './feed/FeedTools'
 export type { FeedPrototypeEvidence } from './feed/evidence'
 export { FeedEvidencePrototype } from './feed/FeedEvidencePrototype'
 
-export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedEvidenceAction }) {
+function FeedSkillInvocation({
+  onOpen,
+  activeEvidenceId,
+}: {
+  onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
+  const evidence = FEED_EVIDENCE.skill
+  const active = activeEvidenceId === evidence.id
+  return (
+    <Button
+      variant="ghost"
+      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+      aria-current={active ? 'location' : undefined}
+      data-feed-evidence-id={evidence.id}
+      onClick={() => onOpen(evidence)}
+    >
+      <Sparkles className="!size-(--size-icon-inline)" />
+      <span>Skill invoked</span>
+      <span className="font-medium text-foreground">{evidence.title}</span>
+      <BookOpen className="ml-auto !size-(--size-icon-inline)" />
+    </Button>
+  )
+}
+
+export function SessionFeedPrototype({
+  onOpenEvidence,
+  activeEvidenceId,
+}: {
+  onOpenEvidence: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
   return (
     <div className="min-w-0 space-y-6 text-body" data-component="SessionFeedPrototype">
       <FeedBoundary>Today · 10:42</FeedBoundary>
@@ -26,15 +57,7 @@ export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedE
           I’ll connect the composer to the surrounding Session and check the rich content at the
           same time.
         </p>
-        <Button
-          variant="ghost"
-          className="h-auto justify-start gap-2 px-0 text-(length:--text-control) font-normal text-muted-foreground"
-          onClick={() => onOpenEvidence(FEED_EVIDENCE.skill)}
-        >
-          <Sparkles className="!size-(--size-icon-inline)" />
-          Loaded prototype
-          <BookOpen className="!size-(--size-icon-inline)" />
-        </Button>
+        <FeedSkillInvocation onOpen={onOpenEvidence} activeEvidenceId={activeEvidenceId} />
         <details className="group text-control text-muted-foreground">
           <summary className="flex cursor-pointer list-none items-center gap-2">
             <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />
@@ -51,10 +74,10 @@ export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedE
           <span>Delegated layout review and feed coverage</span>
           <span className="ml-auto">2 subagents</span>
         </div>
-        <FeedToolGroups onOpen={onOpenEvidence} />
+        <FeedToolGroups onOpen={onOpenEvidence} activeEvidenceId={activeEvidenceId} />
       </FeedTurn>
       <FeedRichContent onOpen={onOpenEvidence} />
-      <FeedAdditionalStates onOpen={onOpenEvidence} />
+      <FeedAdditionalStates onOpen={onOpenEvidence} activeEvidenceId={activeEvidenceId} />
       <FeedBoundary>
         <span className="sr-only">Turn ended</span>
       </FeedBoundary>

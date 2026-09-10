@@ -37,13 +37,24 @@ const WORK: ToolRow[] = [
   { label: 'Called github.get_issue', evidence: 'mcp', icon: Wrench },
 ]
 
-export function FeedToolLine({ row, onOpen }: { row: ToolRow; onOpen: FeedEvidenceAction }) {
+export function FeedToolLine({
+  row,
+  onOpen,
+  activeEvidenceId,
+}: {
+  row: ToolRow
+  onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
   const evidence = FEED_EVIDENCE[row.evidence]
+  const active = activeEvidenceId === evidence.id
   return (
     <Button
       variant="ghost"
       onClick={() => onOpen(evidence)}
-      className="h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal"
+      aria-current={active ? 'location' : undefined}
+      data-feed-evidence-id={evidence.id}
+      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal ${active ? 'bg-muted text-foreground' : ''}`}
     >
       <row.icon className="!size-(--size-icon-inline) text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
@@ -57,10 +68,12 @@ function ToolGroup({
   title,
   rows,
   onOpen,
+  activeEvidenceId,
 }: {
   title: string
   rows: ToolRow[]
   onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
 }) {
   return (
     <details className="group rounded-lg border bg-card open:pb-1">
@@ -71,19 +84,31 @@ function ToolGroup({
       </summary>
       <div className="mx-2 border-t pt-1">
         {rows.map((row) => (
-          <FeedToolLine key={row.label} row={row} onOpen={onOpen} />
+          <FeedToolLine
+            key={row.label}
+            row={row}
+            onOpen={onOpen}
+            activeEvidenceId={activeEvidenceId}
+          />
         ))}
       </div>
     </details>
   )
 }
 
-export function FeedToolGroups({ onOpen }: { onOpen: FeedEvidenceAction }) {
+export function FeedToolGroups({
+  onOpen,
+  activeEvidenceId,
+}: {
+  onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
   return (
     <ToolGroup
       title="Searched, edited and verified the Session"
       rows={[...READS, ...WORK]}
       onOpen={onOpen}
+      activeEvidenceId={activeEvidenceId}
     />
   )
 }
@@ -103,17 +128,32 @@ export function FeedPendingCall({ mode = 'running' }: { mode?: 'running' | 'thin
   )
 }
 
-export function FeedMutationExamples({ onOpen }: { onOpen: FeedEvidenceAction }) {
+export function FeedMutationExamples({
+  onOpen,
+  activeEvidenceId,
+}: {
+  onOpen: FeedEvidenceAction
+  activeEvidenceId: string | null
+}) {
   const mutations: ToolRow[] = [
-    { label: 'Created AttachmentTray.tsx', evidence: 'diff', icon: FilePenLine },
-    { label: 'Moved queue.ts to the Session module', evidence: 'diff', icon: FilePenLine },
-    { label: 'Deleted the unused draft helper', evidence: 'diff', icon: FilePenLine },
+    {
+      label: 'Created AttachmentTray.tsx',
+      evidence: 'createdAttachmentTray',
+      icon: FilePenLine,
+    },
+    { label: 'Moved queue.ts to the Session module', evidence: 'movedQueue', icon: FilePenLine },
+    { label: 'Deleted the unused draft helper', evidence: 'deletedDraft', icon: FilePenLine },
     { label: 'Called an unclassified tool', evidence: 'mcp', icon: Wrench },
     { label: 'Ran bun run preview', evidence: 'failed', icon: SquareTerminal, detail: 'Exit 1' },
   ]
   return (
     <div className="space-y-2">
-      <ToolGroup title="Changed files and checked the preview" rows={mutations} onOpen={onOpen} />
+      <ToolGroup
+        title="Changed files and checked the preview"
+        rows={mutations}
+        onOpen={onOpen}
+        activeEvidenceId={activeEvidenceId}
+      />
       <div className="flex items-center gap-2 px-2 py-2 text-control text-muted-foreground">
         <Check className="!size-(--size-icon-inline)" />
         Returned from layout review<span className="ml-auto">38s</span>

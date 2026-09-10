@@ -43,7 +43,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import {
   Attachment,
   AttachmentAction,
@@ -701,8 +701,23 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
   )
 }
 
-function SessionWorkSidebar({ evidence, onCloseEvidence }: { evidence: FeedPrototypeEvidence | null; onCloseEvidence: () => void }) {
-  if (evidence) return <FeedEvidencePrototype evidence={evidence} onClose={onCloseEvidence} />
+function SessionWorkSidebar({
+  evidence,
+  onActiveEvidenceChange,
+  onCloseEvidence,
+}: {
+  evidence: FeedPrototypeEvidence | null
+  onActiveEvidenceChange: (evidenceId: string) => void
+  onCloseEvidence: () => void
+}) {
+  if (evidence)
+    return (
+      <FeedEvidencePrototype
+        evidence={evidence}
+        onActiveEvidenceChange={onActiveEvidenceChange}
+        onClose={onCloseEvidence}
+      />
+    )
   return (
     <aside className="h-full w-full overflow-y-auto bg-muted/20 p-3">
       <div className="mb-3 flex items-center justify-between">
@@ -1611,13 +1626,24 @@ function TranscriptRow({ message }: { message: MessageRow }) {
   )
 }
 
-function Transcript({ messages, onOpenEvidence }: { messages: MessageRow[]; onOpenEvidence: (evidence: FeedPrototypeEvidence) => void }) {
+function Transcript({
+  messages,
+  activeEvidenceId,
+  onOpenEvidence,
+}: {
+  messages: MessageRow[]
+  activeEvidenceId: string | null
+  onOpenEvidence: (evidence: FeedPrototypeEvidence) => void
+}) {
   return (
     <MessageScrollerProvider defaultScrollPosition="end">
       <MessageScroller>
         <MessageScrollerViewport>
           <MessageScrollerContent className="mx-auto w-full max-w-3xl px-8 py-10">
-            <SessionFeedPrototype onOpenEvidence={onOpenEvidence} />
+            <SessionFeedPrototype
+              onOpenEvidence={onOpenEvidence}
+              activeEvidenceId={activeEvidenceId}
+            />
             {messages.map((message) => (
               <MessageScrollerItem
                 key={message.id}
@@ -1661,6 +1687,7 @@ export function ComposerPrototype() {
   })
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [feedEvidence, setFeedEvidence] = useState<FeedPrototypeEvidence | null>(null)
+  const [activeFeedEvidenceId, setActiveFeedEvidenceId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
   const [keyboardFocus, setKeyboardFocus] = useState(false)
@@ -1670,6 +1697,12 @@ export function ComposerPrototype() {
   ])
   const [latestQueuedId, setLatestQueuedId] = useState<string | null>(null)
   const [isQueueAnimating, setIsQueueAnimating] = useState(false)
+
+  const openFeedEvidence = useCallback((evidence: FeedPrototypeEvidence) => {
+    setFeedEvidence({ ...evidence })
+    setActiveFeedEvidenceId(evidence.id)
+    setShowSessionSidebar(true)
+  }, [])
 
   useEffect(() => {
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -1806,10 +1839,11 @@ export function ComposerPrototype() {
           >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
-            <Transcript messages={messages} onOpenEvidence={(evidence) => {
-              setFeedEvidence(evidence)
-              setShowSessionSidebar(true)
-            }} />
+            <Transcript
+              messages={messages}
+              activeEvidenceId={activeFeedEvidenceId}
+              onOpenEvidence={openFeedEvidence}
+            />
           </div>
           <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-6 pt-6 pb-8">
             <div className="mx-auto mb-2 w-full max-w-4xl">
@@ -1897,7 +1931,14 @@ export function ComposerPrototype() {
                 groupResizeBehavior="preserve-pixel-size"
                 className="h-full min-h-0 overflow-hidden"
               >
-                <SessionWorkSidebar evidence={feedEvidence} onCloseEvidence={() => setFeedEvidence(null)} />
+                <SessionWorkSidebar
+                  evidence={feedEvidence}
+                  onActiveEvidenceChange={setActiveFeedEvidenceId}
+                  onCloseEvidence={() => {
+                    setFeedEvidence(null)
+                    setActiveFeedEvidenceId(null)
+                  }}
+                />
               </ResizablePanel>
             </>
           ) : null}
