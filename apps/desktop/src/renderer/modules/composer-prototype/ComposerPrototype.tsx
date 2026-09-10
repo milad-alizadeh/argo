@@ -1803,6 +1803,7 @@ export function ComposerPrototype() {
   const sessionSidebarFullscreenState = useRef(false)
   const sessionInspectorElement = useRef<HTMLDivElement>(null)
   const sessionInspectorRestoreSize = useRef(248)
+  const sessionInspectorCollapsePending = useRef(false)
   const sessionInspectorResizeAnimation = useRef(false)
   const sidebarAnimationTimer = useRef<number | null>(null)
   const [sessionInspectorContentWidth, setSessionInspectorContentWidth] = useState(248)
@@ -1898,7 +1899,11 @@ export function ComposerPrototype() {
   const handleSessionSidebarResize = (sidebarWidth: number, previousSidebarWidth: number) => {
     if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
     if (shouldCloseSessionInspector(sidebarWidth, previousSidebarWidth)) {
-      setSessionSidebarVisible(false)
+      sessionInspectorCollapsePending.current = true
+      sessionSidebarVisibleState.current = false
+      sessionSidebarFullscreenState.current = false
+      setSessionSidebarFullscreen(false)
+      setShowSessionSidebar(false)
       return
     }
     if (sidebarWidth > 0 && !sessionInspectorResizeAnimation.current)
@@ -1906,6 +1911,11 @@ export function ComposerPrototype() {
   }
 
   const rememberCompletedSessionSplit = (isUserInteraction: boolean) => {
+    if (sessionInspectorCollapsePending.current) {
+      sessionInspectorCollapsePending.current = false
+      animateSessionInspector(() => sessionInspectorPanel.current?.collapse())
+      return
+    }
     if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
     const feedWidth = sessionConversationPanel.current?.getSize().inPixels ?? 0
     const inspectorWidth = sessionInspectorPanel.current?.getSize().inPixels ?? 0
