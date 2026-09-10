@@ -114,15 +114,18 @@ import {
   type FeedPrototypeEvidence,
   SessionFeedPrototype,
 } from './SessionFeedPrototype'
+import {
+  SESSION_PANE_MIN_WIDTH,
+  shouldCloseSessionInspector,
+  shouldFullscreenSessionInspector,
+  shouldRememberSessionInspectorWidth,
+} from './sessionPaneResize'
 
 type HarnessKey = 'codex' | 'claude'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
 type UsagePreview = 'normal' | 'high'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
-
-const SESSION_PANE_MIN_WIDTH = 216
-const SESSION_PANE_SNAP_TOLERANCE = 24
 
 type HarnessDefinition = {
   label: string
@@ -1796,6 +1799,7 @@ export function ComposerPrototype() {
   const sessionRosterRestoreSize = useRef(280)
   const sessionConversationPanel = usePanelRef()
   const sessionInspectorPanel = usePanelRef()
+  const sessionSidebarVisibleState = useRef(true)
   const sessionSidebarFullscreenState = useRef(false)
   const sessionInspectorElement = useRef<HTMLDivElement>(null)
   const sessionInspectorRestoreSize = useRef(248)
@@ -1855,8 +1859,12 @@ export function ComposerPrototype() {
   }
 
   const setSessionSidebarVisible = (visible: boolean) => {
+    sessionSidebarVisibleState.current = visible
     animateSessionInspector(() => {
-      if (visible) sessionInspectorPanel.current?.expand()
+      if (visible) {
+        setSessionInspectorContentWidth(sessionInspectorRestoreSize.current)
+        sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
+      }
       else sessionInspectorPanel.current?.collapse()
     })
     sessionSidebarFullscreenState.current = false
@@ -1875,29 +1883,35 @@ export function ComposerPrototype() {
 
   const toggleSessionSidebarFullscreen = () => {
     const nextFullscreen = !sessionSidebarFullscreenState.current
-    if (nextFullscreen)
-      sessionInspectorRestoreSize.current = sessionInspectorPanel.current?.getSize().inPixels ?? sessionInspectorRestoreSize.current
     sessionSidebarFullscreenState.current = nextFullscreen
     setSessionSidebarFullscreen(nextFullscreen)
   }
 
   const handleSessionConversationResize = (conversationWidth: number, previousWidth: number) => {
-    if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
-    if (
-      conversationWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE
-      && conversationWidth < previousWidth
-    ) {
+    if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
+    if (shouldFullscreenSessionInspector(conversationWidth, previousWidth)) {
       sessionSidebarFullscreenState.current = true
       setSessionSidebarFullscreen(true)
     }
   }
 
-  const handleSessionSidebarResize = (sidebarWidth: number) => {
-    if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
-    if (sidebarWidth > 0 && !sessionInspectorResizeAnimation.current) {
-      sessionInspectorRestoreSize.current = sidebarWidth
-      setSessionInspectorContentWidth(sidebarWidth)
+  const handleSessionSidebarResize = (sidebarWidth: number, previousSidebarWidth: number) => {
+    if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
+    if (shouldCloseSessionInspector(sidebarWidth, previousSidebarWidth)) {
+      setSessionSidebarVisible(false)
+      return
     }
+    if (sidebarWidth > 0 && !sessionInspectorResizeAnimation.current)
+      setSessionInspectorContentWidth(sidebarWidth)
+  }
+
+  const rememberCompletedSessionSplit = (isUserInteraction: boolean) => {
+    if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
+    const feedWidth = sessionConversationPanel.current?.getSize().inPixels ?? 0
+    const inspectorWidth = sessionInspectorPanel.current?.getSize().inPixels ?? 0
+    if (!shouldRememberSessionInspectorWidth({ feedWidth, inspectorWidth, isUserInteraction })) return
+    sessionInspectorRestoreSize.current = inspectorWidth
+    setSessionInspectorContentWidth(inspectorWidth)
   }
 
   const openFeedEvidence = (evidence: FeedPrototypeEvidence) => {
@@ -2057,7 +2071,13 @@ export function ComposerPrototype() {
               />
             </div>
           ) : (
-          <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
+          <ResizablePanelGroup
+            orientation="horizontal"
+            className="min-h-0 flex-1"
+            onLayoutChanged={(_layout, metadata) =>
+              rememberCompletedSessionSplit(metadata.isUserInteraction)
+            }
+          >
           <ResizablePanel
             id="session-conversation"
             panelRef={sessionConversationPanel}
@@ -2176,7 +2196,7 @@ export function ComposerPrototype() {
             groupResizeBehavior="preserve-pixel-size"
             onResize={(size, _id, previousSize) => {
               if (previousSize?.inPixels !== undefined && previousSize.inPixels > 0)
-                handleSessionSidebarResize(size.inPixels)
+                handleSessionSidebarResize(size.inPixels, previousSize.inPixels)
             }}
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
