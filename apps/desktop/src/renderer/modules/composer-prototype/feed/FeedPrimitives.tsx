@@ -55,7 +55,11 @@ export function CopyFeedContent({ text }: { text: string }) {
   }
   return (
     <Button size="xs" variant="ghost" className="text-control text-muted-foreground" onClick={copy}>
-      {state === 'copied' ? <Check /> : <Copy />}
+      {state === 'copied' ? (
+        <Check className="!size-(--size-icon-inline)" />
+      ) : (
+        <Copy className="!size-(--size-icon-inline)" />
+      )}
       {labels[state]}
     </Button>
   )

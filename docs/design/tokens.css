@@ -78,6 +78,9 @@
   --size-chrome-bar: 52px;
   --size-sidebar: 240px;
   --size-deck: 640px;
+  --size-icon-metadata: 12px;
+  --size-icon-inline: 14px;
+  --size-icon-control: 16px;
   --inset-traffic-lights: 84px;
   --radius-xs: calc(var(--radius) * 0.3);
   --radius-sm: calc(var(--radius) * 0.6);

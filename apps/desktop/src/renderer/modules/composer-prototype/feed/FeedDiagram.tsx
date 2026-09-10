@@ -21,11 +21,11 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
       aria-label="Draft and attachments go to the Session driver, which routes to Claude through a PTY or Codex through JSON-RPC. Both return activity to the Feed."
     >
       <div className="rounded-lg border bg-card px-4 py-2">Draft + attachments</div>
-      <ArrowDown className="size-4 text-muted-foreground" />
+      <ArrowDown className="!size-(--size-icon-inline) text-muted-foreground" />
       <div className="rounded-lg border bg-card px-4 py-2 font-medium">Session driver</div>
       <div className="flex w-full justify-evenly text-muted-foreground">
-        <ArrowDownLeft className="size-4" />
-        <ArrowDownRight className="size-4" />
+        <ArrowDownLeft className="!size-(--size-icon-inline)" />
+        <ArrowDownRight className="!size-(--size-icon-inline)" />
       </div>
       <div className="flex w-full justify-center gap-4">
         <div className="rounded-lg border bg-card px-3 py-2">
@@ -36,8 +36,8 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
         </div>
       </div>
       <div className="flex w-full justify-evenly text-muted-foreground">
-        <ArrowDownRight className="size-4" />
-        <ArrowDownLeft className="size-4" />
+        <ArrowDownRight className="!size-(--size-icon-inline)" />
+        <ArrowDownLeft className="!size-(--size-icon-inline)" />
       </div>
       <div className="rounded-lg border bg-muted px-5 py-2 font-medium">Feed</div>
     </div>
@@ -75,7 +75,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
             aria-label="Zoom diagram out"
             onClick={() => setScale(Math.max(50, scale - 25))}
           >
-            <Minus />
+            <Minus className="!size-(--size-icon-control)" />
           </Button>
           <span className="min-w-10 text-center tabular-nums">{scale}%</span>
           <Button
@@ -84,7 +84,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
             aria-label="Zoom diagram in"
             onClick={() => setScale(Math.min(200, scale + 25))}
           >
-            <Plus />
+            <Plus className="!size-(--size-icon-control)" />
           </Button>
           <Button
             size="icon-xs"
@@ -92,7 +92,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
             aria-label="Fit diagram"
             onClick={() => setScale(100)}
           >
-            <Maximize />
+            <Maximize className="!size-(--size-icon-control)" />
           </Button>
           <Button
             size="icon-xs"
@@ -100,7 +100,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
             aria-label="Expand diagram in sidebar"
             onClick={() => onOpen(FEED_EVIDENCE.diagram)}
           >
-            <Expand />
+            <Expand className="!size-(--size-icon-control)" />
           </Button>
         </div>
       </div>
