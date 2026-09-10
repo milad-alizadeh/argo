@@ -284,7 +284,7 @@ function AddContextMenu({ state, setState }: StateProps) {
       <DropdownMenuContent align="start" side="top" className="w-60">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Add context</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => add('codex.png')}>
+          <DropdownMenuItem onClick={() => add('workspace.jpg')}>
             <Paperclip />Attachment
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => add('ComposerPrototype.tsx')}>
@@ -470,7 +470,9 @@ function fileType(reference: string) {
 }
 
 function imageSource(reference: string) {
-  return reference === 'codex.png' ? '/prototype-assets/codex.png' : `/${reference}`
+  return reference === 'workspace.jpg'
+    ? 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=160&q=80'
+    : `/${reference}`
 }
 
 function ReferenceStrip({ state, setState }: StateProps) {
@@ -1144,7 +1146,7 @@ export function ComposerPrototype() {
     model: HARNESSES.codex.models[0] ?? '',
     effort: HARNESSES.codex.efforts[1] ?? '',
     permission: HARNESSES.codex.permissions[2]?.label ?? '',
-    attachments: ['codex.png', 'ComposerPrototype.tsx'],
+    attachments: ['workspace.jpg', 'ComposerPrototype.tsx'],
     contextPreview: 'dumb',
   })
   const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
