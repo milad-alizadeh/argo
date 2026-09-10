@@ -1,9 +1,6 @@
-import { hasKeys, isIdentifier, isRecord, requestIdentifier } from '../boundary'
-
-// Re-exported so the Project module keeps one contract face; the definitions are shared.
-export { hasKeys, isIdentifier, isRecord, requestIdentifier }
-
-export const PROJECT_OPEN_CHANNEL = 'argo:project:open'
+// One channel carries every Project action. The action is a field of the message, never a channel
+// the renderer picks, so the bridge has one entry point to validate.
+export const PROJECT_CHANNEL = 'argo:project'
 
 export type ProjectOpenRequest = {
   version: 1
@@ -30,6 +27,10 @@ export const PROJECT_ERRORS = {
   'storage-unavailable': 'Argo cannot access the Project registry.',
   'invalid-response': 'Argo received an invalid Project response.',
   'connection-lost': 'The connection to Argo was lost.',
+  'not-a-repository': 'That folder is not a git repository.',
+  'already-registered': 'Another Project is already registered at that folder.',
+  'git-unavailable': 'Argo cannot run git on this computer.',
+  'storage-not-written': 'Argo could not save the Project registry.',
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS
@@ -46,39 +47,75 @@ export function projectError(code: ProjectErrorCode, requestId: string | null): 
   return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }
 }
 
-export function isProjectOpenRequest(value: unknown): value is ProjectOpenRequest {
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+export function isIdentifier(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= 256 &&
+    !/[\s\p{Cc}]/u.test(value)
+  )
+}
+
+export function requestIdentifier(value: unknown): string | null {
+  return isRecord(value) && isIdentifier(value.requestId) ? value.requestId : null
+}
+
+export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
+  return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
+}
+
+// Every action shares one shape: version 1, a named type, a request ID, and zero or more further
+// identifier fields. Extra fields are refused rather than ignored, so a request cannot smuggle a
+// path or a channel past the guard.
+export function isAction(value: unknown, type: string, identifiers: string[] = []): boolean {
   return (
     isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'projectId']) &&
+    hasKeys(value, ['version', 'type', 'requestId', ...identifiers]) &&
     value.version === 1 &&
-    value.type === 'project.open' &&
+    value.type === type &&
     isIdentifier(value.requestId) &&
-    isIdentifier(value.projectId)
+    identifiers.every((key) => isIdentifier(value[key]))
+  )
+}
+
+export function isProjectOpenRequest(value: unknown): value is ProjectOpenRequest {
+  return isAction(value, 'project.open', ['projectId'])
+}
+
+export function isProjectOpened(value: unknown): value is ProjectOpened {
+  return (
+    isRecord(value) &&
+    value.version === 1 &&
+    value.type === 'project.opened' &&
+    hasKeys(value, ['version', 'type', 'requestId', 'project']) &&
+    isIdentifier(value.requestId) &&
+    isRecord(value.project) &&
+    hasKeys(value.project, ['id', 'name']) &&
+    isIdentifier(value.project.id) &&
+    typeof value.project.name === 'string' &&
+    value.project.name.length > 0
+  )
+}
+
+// The error text has to be one of the table's own strings, so a reply cannot carry a message the
+// main process assembled from an exception.
+export function isProjectErrorMessage(value: unknown): value is ProjectError {
+  return (
+    isRecord(value) &&
+    value.version === 1 &&
+    value.type === 'project.error' &&
+    hasKeys(value, ['version', 'type', 'requestId', 'code', 'message']) &&
+    (value.requestId === null || isIdentifier(value.requestId)) &&
+    Object.entries(PROJECT_ERRORS).some(
+      ([code, message]) => value.code === code && value.message === message,
+    )
   )
 }
 
 export function isProjectOpenReply(value: unknown): value is ProjectOpenReply {
-  if (!isRecord(value) || value.version !== 1) return false
-  switch (value.type) {
-    case 'project.opened':
-      return (
-        hasKeys(value, ['version', 'type', 'requestId', 'project']) &&
-        isIdentifier(value.requestId) &&
-        isRecord(value.project) &&
-        hasKeys(value.project, ['id', 'name']) &&
-        isIdentifier(value.project.id) &&
-        typeof value.project.name === 'string' &&
-        value.project.name.length > 0
-      )
-    case 'project.error':
-      return (
-        hasKeys(value, ['version', 'type', 'requestId', 'code', 'message']) &&
-        (value.requestId === null || isIdentifier(value.requestId)) &&
-        Object.entries(PROJECT_ERRORS).some(
-          ([code, message]) => value.code === code && value.message === message,
-        )
-      )
-    default:
-      return false
-  }
+  return isProjectOpened(value) || isProjectErrorMessage(value)
 }

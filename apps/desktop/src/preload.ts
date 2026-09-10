@@ -1,19 +1,45 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
+import {
+  APPEARANCE_CHANGED_CHANNEL,
+  APPEARANCE_CHANNEL,
+  createAppearanceClient,
+} from './appearance/appearance'
+import { createProjectClient } from './projects/client'
+import { PROJECT_CHANNEL } from './projects/contract'
 import { createSessionClient } from './core/sessions/client'
 import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL } from './core/sessions/contract'
-import { createProjectClient } from './projects/client'
-import { PROJECT_OPEN_CHANNEL } from './projects/contract'
+import { COMMAND_CHANNEL } from './shortcuts'
 
 const SESSION_CHANNELS = { list: SESSION_LIST_CHANNEL, feed: SESSION_FEED_CHANNEL }
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
-  ...createProjectClient((request) => ipcRenderer.invoke(PROJECT_OPEN_CHANNEL, request)),
+  ...createProjectClient((request) => ipcRenderer.invoke(PROJECT_CHANNEL, request)),
   ...createSessionClient((operation, request) =>
     ipcRenderer.invoke(SESSION_CHANNELS[operation], request),
   ),
-  // The renderer owns every Feed height, and zoom is one of the three things that invalidate a
-  // cached one (ADR-0033 rule 6). Only this side can read it, so it is exposed by name.
+  ...createAppearanceClient(
+    (appearance) => ipcRenderer.invoke(APPEARANCE_CHANNEL, appearance),
+    (listener) => {
+      const forward = (_event: unknown, state: unknown) => listener(state)
+      ipcRenderer.on(APPEARANCE_CHANGED_CHANNEL, forward)
+      return () => {
+        ipcRenderer.off(APPEARANCE_CHANGED_CHANNEL, forward)
+      }
+    },
+  ),
+  // A menu item names a command and nothing else, so the renderer runs the same action the
+  // on-screen control runs. The disposer is what keeps a remounted component from opening the
+  // folder chooser twice.
+  onCommand(listener: (command: string) => void) {
+    const forward = (_event: unknown, command: unknown) => {
+      if (typeof command === 'string') listener(command)
+    }
+    ipcRenderer.on(COMMAND_CHANNEL, forward)
+    return () => {
+      ipcRenderer.off(COMMAND_CHANNEL, forward)
+    }
+  },
   zoomFactor: () => webFrame.getZoomFactor(),
   versions: {
     electron: process.versions.electron,

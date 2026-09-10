@@ -1,4 +1,10 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
+  // The renderer's `@/…` alias, mirrored in `vite.renderer.config.ts` and read by the shadcn
+  // generator out of this file. `tsconfig.web.json` carries it again because a solution file's
+  // options do not reach a referenced project.
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/renderer/*"] }
+  }
 }

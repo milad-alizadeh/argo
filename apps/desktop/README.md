@@ -242,10 +242,40 @@ targets into `.vite/build` and names each output after its entry file, so two en
 entry basenames are the contract with `main` in `package.json` and the preload path in
 `src/main.ts`.
 
-The renderer is a placeholder, not a design. Screens arrive per ticket from `docs/designs/`.
+The renderer is the cockpit shell: a chrome band, a sidebar of five destinations, and one deck.
+`src/renderer/components/ui/` is written by the shadcn CLI and is never hand-edited;
+`src/renderer/components/` is written here and composes it. The frame and the surfaces are
+[ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md), the design workflow is
+[`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
+[`rules/desktop.md`](../../rules/desktop.md).
+
 ## Portable integration proof
 
 The Project-opening contract and its proof are recorded in
 [`docs/portable-integration-contracts.md`](../../docs/portable-integration-contracts.md).
 The proof crosses the packaged renderer, preload, and main process with isolated storage.
-It does not import Swift data or complete the startup screen.
+It does not import Swift data.
+
+Package arm64 first; all three commands run the copy, never the app you have installed.
+
+| Command | What it produces |
+| --- | --- |
+| `bun run prove:project` | The verdict for the Project workflow, naming every case, as JSON. |
+| `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
+| `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
+
+The proof keeps its window hidden. The other two show it, because Chromium throttles a hidden
+window and both a capture and a frame reading taken from one measure the throttle. None of the
+three holds the real keyboard or the real mouse.
+
+## Performance evidence
+
+`bun run measure:cockpit` launches the packaged app five times and reports the median, which is
+the FAIL line [#1736](https://github.com/milad-alizadeh/argo/issues/1736) set. An idle cockpit
+schedules no work, so an idle `requestAnimationFrame` delta is the display's own period and cannot
+read below it. The budget is therefore taken from the display the run used, and the reading is
+compared against 1.5 times it, the ratio #1736's 12.5 ms holds to its 120 Hz reference panel.
+
+Only a run on the 120 Hz reference panel is judged. Anywhere else the `verdict` field reads
+`unjudged`, the command exits zero, and `withinCeiling` carries the comparison for the reader.
+The judged run is still the human's to make on the reference Mac.

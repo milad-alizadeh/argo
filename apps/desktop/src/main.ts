@@ -1,12 +1,15 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { windowBackground } from './appearance/appearance'
+import { applyStoredAppearance, attachAppearanceBridge, readAppearance } from './appearance/bridge'
+import { installMenu } from './menu'
+import { attachProjectBridge } from './projects/bridge'
 import { SESSION_TRANSCRIPTS_ENV } from './agents/claude/session-fake-driver/session-proof-protocol'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
 import { attachSessionBridge } from './core/sessions/bridge'
-import { attachProjectBridge } from './projects/bridge'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -21,23 +24,29 @@ declare const MAIN_WINDOW_VITE_NAME: string
 // the `lsof` call are split into a chunk the ordinary launch never touches. A static import would
 // put all of it on the path of every user who opens the app.
 const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
-const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
-if (projectProofStore) app.setPath('userData', projectProofStore)
 
-// Claude writes one transcript per Session under this root, and Argo reads them without asking
-// any Project registry first (#1831). The override exists so a packaged proof reads an isolated
-// fixture tree rather than the machine's own Sessions.
-function transcriptsRoot(): string {
-  return (
-    process.env[SESSION_TRANSCRIPTS_ENV] ?? path.join(app.getPath('home'), '.claude', 'projects')
-  )
-}
+// The Project proof (#1825, extended by #1828) drives the SHIPPED app against its own application
+// data, for the same reason the acceptance harness above lives here: a registry write is only
+// proved inside the packaged, signed app, and a proof that wrote the real registry would be a
+// proof nobody could run twice. It ships as one `app.setPath` and one `show`, and it is read from
+// an absolute path so that a stray or empty value cannot silently move a person's Projects.
+const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
+const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
+if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
 function createWindow(): BrowserWindow {
+  const userData = app.getPath('userData')
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
-    show: !ACCEPTANCE_ENABLED && !projectProofStore,
+    show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
+    // ADR-0038: the chrome bar is a full width band and the traffic lights are inset into it, so
+    // the frame keeps the native controls and gives up the native title bar.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 18 },
+    // The window paints before the renderer does. Without this it paints white, which is a flash
+    // of the wrong appearance on every launch into the dark one.
+    backgroundColor: windowBackground(nativeTheme.shouldUseDarkColors),
     webPreferences: {
       // Forge's Vite plugin emits main and preload side by side in .vite/build.
       preload: path.join(__dirname, 'preload.js'),
@@ -49,11 +58,13 @@ function createWindow(): BrowserWindow {
 
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
-  attachProjectBridge(window, { userData: app.getPath('userData'), rendererURL })
+  attachProjectBridge(window, { userData, rendererURL })
   attachSessionBridge(window, {
     reader: createClaudeSessionReader(transcriptsRoot()),
     rendererURL,
   })
+  attachAppearanceBridge(window, { userData, rendererURL })
+  installMenu(window)
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
@@ -65,6 +76,9 @@ function createWindow(): BrowserWindow {
 }
 
 void app.whenReady().then(async () => {
+  // The stored choice is applied before the first window exists, so the frame is never drawn in
+  // one appearance and corrected into the other.
+  applyStoredAppearance(await readAppearance(app.getPath('userData')))
   createWindow()
 
   if (!ACCEPTANCE_ENABLED) return

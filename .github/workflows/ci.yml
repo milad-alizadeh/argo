@@ -60,6 +60,13 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
+      # The shadcn primitive base (#1767). `components.json` records what the generator was told;
+      # this step reads what the components under the alias actually import, which is the only
+      # place a pasted Radix component shows up before its focus behaviour does.
+      - name: Component base gate
+        if: ${{ !cancelled() }}
+        run: bun run quality:components
+
       # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
       # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
       # node-pty being a production dependency, the unpack glob, the fuse value, the hooks being
