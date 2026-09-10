@@ -355,7 +355,6 @@ function ConciergeOrb({ compact = false }: { compact?: boolean }) {
       className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-foreground ${compact ? 'size-7' : 'size-11'}`}
     >
       <span className="absolute inset-[12%] rounded-full bg-[radial-gradient(circle_at_35%_30%,var(--background),transparent_35%),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
-      <span className="absolute inset-[30%] rounded-full border border-background/70" />
     </span>
   )
 }
