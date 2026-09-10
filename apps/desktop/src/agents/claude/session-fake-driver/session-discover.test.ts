@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { appendFile, chmod, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { listSessions, readFeed } from '../../sessions/read-sessions.ts'
+import { listSessions, readFeed } from '../sessions/read-sessions.ts'
 import { writeFixtureTree } from './session-fixture-files'
 import { fixtureRoot } from './session-fixtures'
 

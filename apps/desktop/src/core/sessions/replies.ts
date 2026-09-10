@@ -1,16 +1,14 @@
 // Parsing a reply back into a known shape at the renderer's edge. The main process built these
 // values, but the renderer's own boundary is the bridge, so it reads them the same way it reads
 // anything from outside: once, into a shape, before anything draws them.
-import { hasKeys, isIdentifier, isRecord } from '../boundary'
+import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import {
   isSessionError,
   type SessionFeedReply,
   type SessionListReply,
   type SessionsListed,
 } from './contract'
-import { SESSION_ENTRIES } from './records'
-import { SESSION_POSTURES, TITLE_SOURCES } from './roster'
-import { SESSION_STATUSES } from './status'
+import { SESSION_ENTRIES, SESSION_POSTURES, SESSION_STATUSES, TITLE_SOURCES } from './models'
 
 // The closed sets are the domain's own, imported rather than copied: a check against a second
 // list would pass a value the type refuses, or refuse one it allows, and nothing would say which.
@@ -43,7 +41,7 @@ function isRosterRow(value: unknown): boolean {
     hasKeys(value, [...keys, 'updatedAt', 'unreadableLines', 'originUnread']) &&
     isIdentifier(value.id) &&
     isStringArray(value.retiredIds) &&
-    value.cli === 'claude' &&
+    isIdentifier(value.cli) &&
     isMember(SESSION_POSTURES, value.posture) &&
     isTitle(value.title) &&
     isMember(SESSION_STATUSES, value.status) &&

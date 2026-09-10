@@ -15,5 +15,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/scripts/session-fake-driver/**/*.ts"]
+  "include": ["src/core/projects/fake-driver/**/*.ts", "src/agents/claude/session-fake-driver/**/*.ts"]
 }

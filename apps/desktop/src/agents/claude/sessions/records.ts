@@ -2,7 +2,8 @@
 // else. Grounded on the records real transcripts under `~/.claude/projects` carry today: `user`,
 // `assistant`, `last-prompt`, `ai-title`, `custom-title`. Every other `type` is bookkeeping this
 // slice does not draw, and is skipped rather than guessed at.
-import { isRecord } from '../boundary'
+import { isRecord } from '../../../boundary'
+import { SESSION_ENTRIES, type SessionEntry } from '../../../core/sessions/models'
 
 export type ContentBlock =
   | { shape: 'prose'; text: string }
@@ -50,9 +51,8 @@ export type TranscriptRecord =
 
 // CONTEXT.md L2 · Entry, the closed set. Written once and derived from, like every other
 // vocabulary this slice reads.
-export const SESSION_ENTRIES = ['interactive', 'headless'] as const
-
-export type SessionEntry = (typeof SESSION_ENTRIES)[number]
+export { SESSION_ENTRIES }
+export type { SessionEntry }
 
 const HEADLESS_ENTRYPOINTS = ['sdk-cli']
 

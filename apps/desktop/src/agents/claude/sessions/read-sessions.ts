@@ -1,13 +1,14 @@
 // The two main-process actions behind the Session contract. Everything they touch is read-only:
 // this slice observes transcripts and writes nothing back to them.
-import { isRecord } from '../boundary'
+import { isRecord } from '../../../boundary'
+import type { SessionReader } from '../../../core/sessions/bridge'
 import {
   isSessionFeedRequest,
   isSessionListRequest,
   type SessionFeedReply,
   type SessionListReply,
   sessionError,
-} from './contract'
+} from '../../../core/sessions/contract'
 import { discoverSessions, readSessionFiles } from './discover'
 import { projectFeed } from './feed'
 
@@ -58,5 +59,12 @@ export async function readFeed(value: unknown, root: string): Promise<SessionFee
     }
   } catch (error) {
     return sessionError(readFailure(error), value.requestId)
+  }
+}
+
+export function createClaudeSessionReader(root: string): SessionReader {
+  return {
+    listSessions: (request) => listSessions(request, root),
+    readSessionFeed: (request) => readFeed(request, root),
   }
 }

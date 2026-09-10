@@ -1,13 +1,17 @@
 import type { BrowserWindow } from 'electron'
-import { requestIdentifier } from '../boundary'
+import { requestIdentifier } from '../../boundary'
 import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL, sessionError } from './contract'
-import { listSessions, readFeed } from './read-sessions'
+
+export type SessionReader = {
+  listSessions(request: unknown): Promise<unknown>
+  readSessionFeed(request: unknown): Promise<unknown>
+}
 
 // The same renderer authority the Project bridge asserts: the main frame of this window, on the
 // renderer URL this app loaded. A page that navigated away holds no Session.
 export function attachSessionBridge(
   window: BrowserWindow,
-  storage: { transcriptsRoot: string; rendererURL: string },
+  storage: { reader: SessionReader; rendererURL: string },
 ): void {
   const answer = (channel: string, read: (request: unknown, root: string) => Promise<unknown>) => {
     window.webContents.ipc.handle(channel, (event, request: unknown) => {
@@ -17,9 +21,9 @@ export function attachSessionBridge(
       ) {
         return sessionError('access-denied', requestIdentifier(request))
       }
-      return read(request, storage.transcriptsRoot)
+      return read(request)
     })
   }
-  answer(SESSION_LIST_CHANNEL, listSessions)
-  answer(SESSION_FEED_CHANNEL, readFeed)
+  answer(SESSION_LIST_CHANNEL, storage.reader.listSessions)
+  answer(SESSION_FEED_CHANNEL, storage.reader.readSessionFeed)
 }

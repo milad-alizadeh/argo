@@ -2,16 +2,9 @@
 // are what the Feed draws, and the two counts differ (ADR-0033 · Context).
 import type { SessionChain } from './chains'
 import type { TranscriptRecord } from './records'
+import type { SessionFeedRow as FeedRow } from '../../../core/sessions/models'
 
-export type FeedRow =
-  // Laid out by Blink at the real column width, and drawn by the layout that measured it.
-  | { shape: 'prose'; id: string; role: 'user' | 'assistant'; text: string }
-  // The honest source fallback for content this Feed does not draw richly yet. The label is the
-  // block's own type verbatim, the body is its own JSON, and neither is summarised.
-  | { shape: 'source'; id: string; role: 'user' | 'assistant'; label: string; source: string }
-  // A transcript line Argo could not read. Drawn rather than dropped, so a damaged file reads as
-  // damaged instead of as a shorter Session. Its height is arithmetic; see UNREADABLE_ROW.
-  | { shape: 'unreadable'; id: string }
+export type { FeedRow }
 
 // The stated height formula for the one row shape Blink does not lay out from content
 // (ADR-0033 rule 1). Drawn height is `padding * 2 + lineHeight`, and the packaged proof asserts

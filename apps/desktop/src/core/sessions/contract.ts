@@ -1,8 +1,7 @@
 // The two operations the renderer holds for observed Sessions, and the shapes both sides parse.
 // Named operations only: the renderer never receives the IPC object or picks a channel.
-import { hasKeys, isIdentifier, isRecord } from '../boundary'
-import type { FeedRow } from './feed'
-import type { RosterRow } from './roster'
+import { hasKeys, isIdentifier, isRecord } from '../../boundary'
+import type { SessionFeedRow, SessionRosterRow } from './models'
 
 export const SESSION_LIST_CHANNEL = 'argo:session:list'
 export const SESSION_FEED_CHANNEL = 'argo:session:feed'
@@ -19,7 +18,7 @@ export type SessionsListed = {
   version: 1
   type: 'session.listed'
   requestId: string
-  sessions: RosterRow[]
+  sessions: SessionRosterRow[]
   // What the pass reached, stated rather than implied. A Roster that read 200 of 1,055 files
   // says so; one that silently showed 200 rows would read as the whole machine.
   filesFound: number
@@ -37,7 +36,7 @@ export type SessionFeedRead = {
   // the id asked for (CONTEXT.md L2 · retired id). The renderer keys on the id it asked for; this
   // is here so a caller can tell that the two differ, and it is what the proofs assert against.
   chainId: string
-  rows: FeedRow[]
+  rows: SessionFeedRow[]
 }
 
 export const SESSION_ERRORS = {

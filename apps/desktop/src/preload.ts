@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron'
 import { createProjectClient } from './projects/client'
 import { PROJECT_OPEN_CHANNEL } from './projects/contract'
-import { createSessionClient } from './sessions/client'
-import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL } from './sessions/contract'
+import { createSessionClient } from './core/sessions/client'
+import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL } from './core/sessions/contract'
 
 const SESSION_CHANNELS = { list: SESSION_LIST_CHANNEL, feed: SESSION_FEED_CHANNEL }
 
