@@ -89,6 +89,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/rend
 type HarnessKey = 'codex' | 'claude'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
 type ContextTone = 'color' | 'grayscale'
+type UsagePreview = 'normal' | 'high'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
 
@@ -108,6 +109,7 @@ type ComposerState = {
   permission: string
   attachments: string[]
   contextPreview: ContextPreview
+  usagePreview: UsagePreview
 }
 
 type StateProps = {
@@ -732,6 +734,9 @@ function ContextSurface({
   const used = `${(context.total * percentage / 100 / 1000).toFixed(0)}k`
   const zone = contextZone(percentage)
   const status = zone.label
+  const contextAlert = state.contextPreview === 'dumb'
+  const usagePercentage = state.usagePreview === 'high' ? 94 : 54
+  const usageAlert = usagePercentage >= 90
 
   if (layout === 'footer') {
     return (
@@ -765,8 +770,14 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
-        <div className="shrink-0 border-r border-border/60 pr-4"><UsagePopover state={state} /></div>
-        <IconLabel icon={<Layers3 className={tone === 'color' ? zone.text : 'text-foreground'} />}>Context · {status}</IconLabel>
+        <div className="shrink-0 border-r border-border/60 pr-4">
+          <button type="button" className={usageAlert ? 'text-red-600' : 'text-foreground'}>
+            <IconLabel icon={<CircleGauge />}>
+              Usage <span className={usageAlert ? 'text-red-600' : 'text-muted-foreground'}>{usagePercentage}%</span>
+            </IconLabel>
+          </button>
+        </div>
+        <IconLabel icon={<Layers3 />} className={contextAlert ? 'text-red-600' : 'text-foreground'}>Context</IconLabel>
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
@@ -870,6 +881,17 @@ function ContextPreviewControl({ state, setState }: StateProps) {
           className={`rounded-full px-2.5 py-1.5 text-[10px] font-medium ${state.contextPreview === option.key ? option.active : 'text-muted-foreground hover:text-foreground'}`}
         >
           {option.label}
+        </button>
+      ))}
+      <span className="ml-1 border-l border-border/60 px-2 text-[10px] font-medium text-muted-foreground">Usage</span>
+      {(['normal', 'high'] as const).map((usagePreview) => (
+        <button
+          key={usagePreview}
+          type="button"
+          onClick={() => setState({ ...state, usagePreview })}
+          className={`rounded-full px-2.5 py-1.5 text-[10px] font-medium ${state.usagePreview === usagePreview ? usagePreview === 'high' ? 'bg-red-500 text-white' : 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          {usagePreview === 'high' ? '94%' : '54%'}
         </button>
       ))}
     </div>
@@ -1159,6 +1181,7 @@ export function ComposerPrototype() {
     permission: HARNESSES.codex.permissions[2]?.label ?? '',
     attachments: initialAttachments(),
     contextPreview: 'dumb',
+    usagePreview: 'normal',
   })
   const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
   const [showAlignmentGrid, setShowAlignmentGrid] = useState(false)
