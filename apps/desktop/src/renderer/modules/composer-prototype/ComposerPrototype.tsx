@@ -32,7 +32,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import {
   Attachment,
   AttachmentAction,
@@ -881,6 +881,48 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
   )
 }
 
+function AnimatedHeight({ children }: { children: ReactNode }) {
+  const frameRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const animationRef = useRef<Animation | null>(null)
+
+  useEffect(() => {
+    const frame = frameRef.current
+    const content = contentRef.current
+    if (!(frame && content)) return
+
+    let previousHeight = content.getBoundingClientRect().height
+    const observer = new ResizeObserver(() => {
+      const nextHeight = content.getBoundingClientRect().height
+      if (Math.abs(nextHeight - previousHeight) < 1) return
+
+      animationRef.current?.cancel()
+      const startHeight = frame.getBoundingClientRect().height
+      frame.style.height = `${nextHeight}px`
+      animationRef.current = frame.animate(
+        [{ height: `${startHeight}px` }, { height: `${nextHeight}px` }],
+        { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' },
+      )
+      animationRef.current.onfinish = () => {
+        frame.style.height = 'auto'
+      }
+      previousHeight = nextHeight
+    })
+
+    observer.observe(content)
+    return () => {
+      observer.disconnect()
+      animationRef.current?.cancel()
+    }
+  }, [])
+
+  return (
+    <div ref={frameRef} className="overflow-clip">
+      <div ref={contentRef}>{children}</div>
+    </div>
+  )
+}
+
 function QueuePreview({
   messages,
   layout,
@@ -1187,13 +1229,14 @@ export function ComposerPrototype() {
         <div className="mx-auto w-full max-w-4xl drop-shadow-[0_-5px_8px_rgba(0,0,0,0.07)] [&>*]:!shadow-none">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
-        <form
-          className="relative z-10 mx-auto w-full max-w-4xl"
-          onSubmit={(event) => {
-            event.preventDefault()
-            send()
-          }}
-        >
+        <AnimatedHeight>
+          <form
+            className="relative z-10 mx-auto w-full max-w-4xl"
+            onSubmit={(event) => {
+              event.preventDefault()
+              send()
+            }}
+          >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
           <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-3 right-3 z-20"><TaskPlanPopover /></div>
@@ -1244,7 +1287,8 @@ export function ComposerPrototype() {
               </div>
             </InputGroupAddon>
           </InputGroup>
-        </form>
+          </form>
+        </AnimatedHeight>
         <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] drop-shadow-[0_5px_8px_rgba(0,0,0,0.07)] [&>*]:!shadow-none">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
