@@ -1,90 +1,96 @@
 import { Check, ChevronRight, ShieldQuestion } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
-import { Textarea } from '@/renderer/components/ui/textarea'
+import {
+  Questionnaire,
+  QuestionnaireChoice,
+  QuestionnaireChoiceDescription,
+  QuestionnaireChoices,
+  QuestionnaireDescription,
+  QuestionnaireInput,
+  QuestionnaireItem,
+  QuestionnaireSubmit,
+  QuestionnaireTitle,
+} from '@/renderer/components/ui/questionnaire'
 
-export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
-  const titleId = useId()
-  const [selection, setSelection] = useState('rail')
-  const [answer, setAnswer] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const options = [
+const CONCIERGE_QUESTION = {
+  name: 'concierge-placement',
+  required: true,
+  choices: [
     {
-      id: 'rail',
-      title: 'In the app rail',
+      value: 'rail',
+      label: 'In the app rail',
       detail: 'Keep the global chat available across Projects.',
     },
     {
-      id: 'floating',
-      title: 'Floating companion',
+      value: 'floating',
+      label: 'Floating companion',
       detail: 'Keep it available when the app is not frontmost.',
     },
-  ]
+  ],
+} as const
+
+export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
+  const [selection, setSelection] = useState('rail')
+  const [answer, setAnswer] = useState('')
+  const [submitted, setSubmitted] = useState(false)
   if (submitted)
     return (
       <div className="flex items-center gap-2 text-control text-muted-foreground">
         <Check className="!size-(--size-icon-inline)" />
-        Answered: {answer || options.find((option) => option.id === selection)?.title}
+        Answered:{' '}
+        {answer || CONCIERGE_QUESTION.choices.find((choice) => choice.value === selection)?.label}
       </div>
     )
   return (
-    <section
-      className="space-y-3 rounded-lg border bg-card p-4"
-      aria-labelledby={titleId}
+    <Questionnaire
+      items={[CONCIERGE_QUESTION]}
+      className="rounded-lg border bg-card p-4"
       data-component="FeedStructuredQuestion"
+      onSubmit={(event) => {
+        event.preventDefault()
+        setSubmitted(true)
+      }}
     >
-      <div>
-        <p className="text-control text-muted-foreground">
-          {readOnly ? 'Question in external Session' : 'Your input is needed'}
-        </p>
-        <h3 id={titleId} className="mt-1 text-body font-medium">
-          Where should Concierge subtitles appear?
-        </h3>
-      </div>
-      <fieldset className="space-y-2" disabled={readOnly}>
-        <legend className="sr-only">Subtitle placement</legend>
-        {options.map((option) => (
-          <label
-            key={option.id}
-            className="flex cursor-pointer items-start gap-2 rounded-lg border p-3 has-checked:bg-muted"
-          >
-            <input
-              type="radio"
-              name={titleId}
-              value={option.id}
-              checked={selection === option.id}
-              onChange={() => setSelection(option.id)}
-              className="mt-1 accent-primary"
-            />
-            <span>
-              <span className="block text-body">{option.title}</span>
-              <span className="block text-control text-muted-foreground">{option.detail}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-      {readOnly ? (
-        <p className="text-control text-muted-foreground">
-          Reply in the CLI. This Session is read-only.
-        </p>
-      ) : (
-        <>
-          <Textarea
+      <p className="text-control text-muted-foreground">
+        {readOnly ? 'Question in external Session' : 'Your input is needed'}
+      </p>
+      <QuestionnaireItem name={CONCIERGE_QUESTION.name} required={CONCIERGE_QUESTION.required}>
+        <QuestionnaireTitle>Where should Concierge subtitles appear?</QuestionnaireTitle>
+        <QuestionnaireDescription>
+          {readOnly
+            ? 'Reply in the CLI. This Session is read-only.'
+            : 'Choose a placement or write another answer.'}
+        </QuestionnaireDescription>
+        <QuestionnaireChoices>
+          {CONCIERGE_QUESTION.choices.map((choice) => (
+            <QuestionnaireChoice
+              key={choice.value}
+              value={choice.value}
+              disabled={readOnly}
+              checked={selection === choice.value}
+              onChange={() => setSelection(choice.value)}
+            >
+              <span className="font-medium">{choice.label}</span>
+              <QuestionnaireChoiceDescription>{choice.detail}</QuestionnaireChoiceDescription>
+            </QuestionnaireChoice>
+          ))}
+          <QuestionnaireInput
             aria-label="Write another answer"
             placeholder="Or write another answer…"
             value={answer}
+            disabled={readOnly}
             onChange={(event) => setAnswer(event.target.value)}
-            className="min-h-16 text-body"
           />
-          <div className="flex justify-end">
-            <Button className="text-control" onClick={() => setSubmitted(true)}>
-              Send answer
-            </Button>
-          </div>
-        </>
+        </QuestionnaireChoices>
+      </QuestionnaireItem>
+      {readOnly ? null : (
+        <div className="flex justify-end">
+          <QuestionnaireSubmit className="text-control">Send answer</QuestionnaireSubmit>
+        </div>
       )}
-    </section>
+    </Questionnaire>
   )
 }
 
