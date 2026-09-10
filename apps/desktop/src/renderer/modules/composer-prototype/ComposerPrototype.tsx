@@ -12,14 +12,16 @@ import {
   CornerDownRight,
   File,
   Folder,
+  GitFork,
   GripVertical,
   Info,
   Layers3,
   Mic,
+  Minimize2,
   Paperclip,
   Pencil,
   Plus,
-  RotateCcw,
+  Route,
   ShieldCheck,
   Trash2,
   WandSparkles,
@@ -618,8 +620,8 @@ function ContextPopover({
           <div className="flex items-center gap-3 rounded-lg bg-muted p-3">
             <p className="text-xs text-muted-foreground">Compact this task before the next large change.</p>
             <div className="ml-auto flex shrink-0 gap-2">
-              <Button size="sm"><RotateCcw />Compact</Button>
-              <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+              <Button size="sm"><Minimize2 />Compact</Button>
+              <Button variant="outline" size="sm"><GitFork />Handoff</Button>
             </div>
           </div>
         ) : null}
@@ -632,10 +634,12 @@ function ContextSurface({
   state,
   layout,
   tone = 'color',
+  usagePlacement = 'start',
 }: {
   state: ComposerState
   layout: 'inline' | 'dock' | 'footer' | 'attached'
   tone?: 'color' | 'grayscale'
+  usagePlacement?: 'start' | 'end'
 }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
@@ -665,8 +669,8 @@ function ContextSurface({
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
-          <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+          <Button variant="secondary" size="sm"><Minimize2 />Compact</Button>
+          <Button variant="outline" size="sm"><GitFork />Handoff</Button>
         </div>
       </div>
     )
@@ -675,6 +679,7 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
+        {usagePlacement === 'start' ? <div className="shrink-0 border-r pr-3"><UsagePopover state={state} /></div> : null}
         <Layers3 className={`size-4 shrink-0 ${tone === 'color' ? zone.text : 'text-foreground'}`} />
         <div className="shrink-0">
           <div className="text-xs font-medium text-foreground">Context · {status}</div>
@@ -703,9 +708,10 @@ function ContextSurface({
           <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <Button variant="secondary" size="sm" className="text-xs font-medium"><RotateCcw />Compact</Button>
-          <Button variant="outline" size="sm" className="text-xs font-medium"><ArrowRight />Handoff</Button>
+          <Button variant="secondary" size="sm" className="text-xs font-medium"><Minimize2 />Compact</Button>
+          <Button variant="outline" size="sm" className="text-xs font-medium"><GitFork />Handoff</Button>
         </div>
+        {usagePlacement === 'end' ? <div className="shrink-0 border-l pl-3"><UsagePopover state={state} /></div> : null}
       </div>
     )
   }
@@ -730,8 +736,8 @@ function ContextSurface({
         </div>
         <div className="mt-1.5 text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         <div className="mt-auto flex items-center gap-1">
-          <Button variant="secondary" size="sm" className="px-2"><RotateCcw />Compact</Button>
-          <Button variant="outline" size="sm" className="px-2"><ArrowRight />Handoff</Button>
+          <Button variant="secondary" size="sm" className="px-2"><Minimize2 />Compact</Button>
+          <Button variant="outline" size="sm" className="px-2"><GitFork />Handoff</Button>
         </div>
       </aside>
     )
@@ -758,8 +764,8 @@ function ContextSurface({
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
-        <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
-        <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+        <Button variant="secondary" size="sm"><Minimize2 />Compact</Button>
+        <Button variant="outline" size="sm"><GitFork />Handoff</Button>
       </div>
     </div>
   )
@@ -835,15 +841,12 @@ function QueuePreview({
     const shell = {
       integrated: 'border-b bg-background',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      'attached-stack': 'relative z-0 mx-auto -mb-2 w-[calc(100%-2rem)] overflow-hidden rounded-t-xl border bg-background shadow-lg shadow-foreground/10',
+      'attached-stack': 'relative z-0 mx-auto -mb-2 w-[calc(100%-2rem)] overflow-hidden rounded-t-xl border bg-background pb-2 shadow-lg shadow-foreground/10',
       attached: '',
       inline: '',
     }[layout]
     return (
       <div className={shell}>
-        {layout !== 'integrated' ? (
-          <div className="border-b px-3 py-2 text-[11px] font-medium text-muted-foreground">{messages.length} queued messages</div>
-        ) : null}
         <div className="divide-y">
         {messages.map((queuedMessage, index) => (
           <div
@@ -852,13 +855,13 @@ function QueuePreview({
             onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className="flex min-h-11 cursor-grab items-center gap-2 px-3 py-2 active:cursor-grabbing"
+            className="flex h-11 cursor-grab items-center gap-2 px-3 active:cursor-grabbing"
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
             <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(queuedMessage)}>
-              <ArrowRight />Steer
+              <Route />Steer
             </Button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => onRemove(queuedMessage.id)}>
               <Trash2 />
@@ -893,7 +896,7 @@ function QueuePreview({
       </span>
       <span className="min-w-0 flex-1 truncate text-xs">{message.text}</span>
       <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
-        <ArrowRight />Steer
+        <Route />Steer
       </Button>
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove queued message" onClick={() => onRemove(message.id)}>
         <Trash2 />
@@ -918,18 +921,18 @@ function TaskPlanPopover() {
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="60 100" />
         </svg>
-        <span className="text-xs font-medium">Step 3/5</span>
+        <span className="text-xs font-medium">Plan</span>
       </PopoverTrigger>
       <PopoverContent align="start" side="top" className="w-80 gap-3 p-3">
         <PopoverHeader>
-          <PopoverTitle>Task plan</PopoverTitle>
-          <PopoverDescription>3 of 5 · Polishing the selected composer direction</PopoverDescription>
+          <PopoverTitle>Plan</PopoverTitle>
         </PopoverHeader>
         <Progress value={60} className="h-1.5" />
         <div className="grid gap-1">
           {steps.map((step, index) => (
             <div key={step.label} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${step.status === 'current' ? 'bg-muted font-medium' : ''}`}>
-              <span className={`flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
+              <span className={`relative flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
+                {step.status === 'current' ? <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40" /> : null}
                 {step.status === 'done' ? <Check className="size-3" /> : index + 1}
               </span>
               <span className={step.status === 'upcoming' ? 'text-muted-foreground' : ''}>{step.label}</span>
@@ -946,7 +949,7 @@ function UsagePopover({ state }: { state: ComposerState }) {
   const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
   return (
     <Popover>
-      <PopoverTrigger render={<InputGroupButton variant="ghost" className="gap-1.5 px-2 text-foreground" />}>
+      <PopoverTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 px-2 text-xs font-medium text-foreground" />}>
         <CircleGauge className="size-4" />
         <span className="text-xs font-medium">Usage</span>
         <span className="text-xs tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
@@ -1026,6 +1029,7 @@ export function ComposerPrototype() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
   const [queuedMessages, setQueuedMessages] = useState<QueuedMessage[]>([
     { id: 'queued-1', text: 'Update the empty state, then verify the composer at compact widths.' },
     { id: 'queued-2', text: 'Capture the selected direction for implementation.' },
@@ -1071,7 +1075,14 @@ export function ComposerPrototype() {
   }
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background" data-prototype="composer">
+    <main
+      className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background"
+      data-prototype="composer"
+      onPointerDownCapture={() => setKeyboardFocus(false)}
+      onKeyDownCapture={(event) => {
+        if (event.key === 'Tab') setKeyboardFocus(true)
+      }}
+    >
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
       </div>
@@ -1094,7 +1105,7 @@ export function ComposerPrototype() {
           }}
         >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className="relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10">
+          <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-3 right-3 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <InputGroupTextarea
@@ -1116,12 +1127,11 @@ export function ComposerPrototype() {
                 }
               }}
             />
-            <InputGroupAddon align="block-end" className="gap-1 bg-muted/20 px-2.5 py-2">
+            <InputGroupAddon align="block-end" className="gap-1 bg-background px-2.5 py-2">
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
-              <PermissionMenu state={state} setState={setState} />
               <div className="ml-auto flex items-center gap-1">
-                <UsagePopover state={state} />
+                <PermissionMenu state={state} setState={setState} />
                 <InputGroupButton
                   size="icon-sm"
                   variant={isListening ? 'secondary' : 'ghost'}
@@ -1147,7 +1157,12 @@ export function ComposerPrototype() {
         </form>
         {(variant === 'E' || variant === 'F') && (
           <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)]">
-            <ContextSurface state={state} layout="attached" tone={variant === 'F' ? 'grayscale' : 'color'} />
+            <ContextSurface
+              state={state}
+              layout="attached"
+              tone={variant === 'F' ? 'grayscale' : 'color'}
+              usagePlacement={variant === 'E' ? 'start' : 'end'}
+            />
           </div>
         )}
       </div>
