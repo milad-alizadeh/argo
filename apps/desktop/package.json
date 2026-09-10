@@ -23,12 +23,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "i18next": "^26.4.2",
     "node-addon-api": "7.1.1",
-    "node-pty": "1.2.0-beta.15",
-    "react-i18next": "^17.0.13",
-    "react-router": "^7.13.1",
-    "zustand": "^5.0.11"
+    "node-pty": "1.2.0-beta.15"
   },
   "devDependencies": {
     "@electron-forge/cli": "7.11.2",
@@ -47,13 +43,17 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
     "electron": "44.2.0",
+    "i18next": "^26.4.2",
     "playwright-core": "1.63.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "react-i18next": "^17.0.13",
+    "react-router": "^7.13.1",
     "storybook": "^10.6.0",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
-    "vite": "7.2.6"
+    "vite": "7.2.6",
+    "zustand": "^5.0.11"
   },
   "overrides": {
     "yauzl": "3.3.1",
