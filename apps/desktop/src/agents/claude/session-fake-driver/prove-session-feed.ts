@@ -61,7 +61,7 @@ async function proveSessionsScreen(page, application) {
   await page.waitForSelector('nav[aria-label="Sessions"] button')
   const empty = await page.evaluate(() => ({
     sessions: document.querySelectorAll('nav[aria-label="Sessions"] button').length,
-    message: document.querySelector('main > div p')?.textContent,
+    message: document.querySelector('[data-component="SessionsEmptyState"] p')?.textContent,
   }))
   assert.equal(empty.sessions, 6)
   assert.equal(empty.message, 'Select a session to read its terminal activity.')
@@ -71,7 +71,7 @@ async function proveSessionsScreen(page, application) {
   await page.waitForSelector('[aria-label="Session activity"] article')
   const selected = await page.evaluate(() => ({
     activityRows: document.querySelectorAll('[aria-label="Session activity"] article').length,
-    empty: document.querySelector('main > div p')?.textContent ?? '',
+    empty: document.querySelector('[data-component="SessionsEmptyState"] p')?.textContent ?? '',
   }))
   assert.equal(selected.activityRows > 0, true)
   assert.equal(selected.empty, '')
