@@ -232,12 +232,10 @@ const INITIAL_MESSAGES: MessageRow[] = [
 ]
 
 function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; className?: string }) {
-  const lightSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude.ico'
-  const darkSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude.ico'
+  const source = harness === 'codex' ? '/prototype-assets/openai-mono.svg' : '/prototype-assets/claude-mono.svg'
   return (
-    <span className={`relative inline-flex shrink-0 overflow-hidden rounded-sm ${className}`}>
-      <img src={lightSource} alt="" className={`size-full object-contain dark:hidden ${harness === 'codex' ? 'scale-[1.18]' : 'scale-[0.82]'}`} />
-      <img src={darkSource} alt="" className={`hidden size-full object-contain dark:block ${harness === 'codex' ? 'scale-[1.18]' : 'scale-[0.82]'}`} />
+    <span className={`relative inline-flex !size-4 shrink-0 ${className}`}>
+      <img src={source} alt="" className="size-full object-contain dark:invert" />
     </span>
   )
 }
