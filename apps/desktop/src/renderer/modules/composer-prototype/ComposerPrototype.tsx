@@ -133,6 +133,19 @@ const HARNESSES: Record<HarnessKey, HarnessDefinition> = {
   },
 }
 
+const MODEL_DESCRIPTIONS: Record<HarnessKey, Record<string, string>> = {
+  codex: {
+    'GPT-5.6 Sol': 'Best for complex coding and deep reasoning',
+    'GPT-5.6 Terra': 'Balanced for everyday implementation',
+    'GPT-5.6 Luna': 'Fast for focused edits and iteration',
+  },
+  claude: {
+    'Opus 5': 'Most capable for architecture and hard problems',
+    'Sonnet 5': 'Balanced for daily coding and review',
+    'Haiku 4.5': 'Fast for small changes and quick answers',
+  },
+}
+
 const INITIAL_MESSAGES: MessageRow[] = [
   {
     id: 'turn-1',
@@ -226,7 +239,6 @@ function AddContextMenu({ state, setState }: StateProps) {
 
 function RunSetupMenu({ state, setState }: StateProps) {
   const definition = HARNESSES[state.harness]
-  const effortIndex = Math.max(0, definition.efforts.indexOf(state.effort))
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -241,11 +253,8 @@ function RunSetupMenu({ state, setState }: StateProps) {
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[25rem] overflow-hidden p-0">
-        <div className="border-b px-4 pb-3 pt-4">
-          <div className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Run setup
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Harness">
+        <div className="border-b p-2.5">
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Harness">
             {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => {
               const active = state.harness === harness
               return (
@@ -267,7 +276,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_9rem]">
+        <div className="grid grid-cols-[1fr_10.5rem]">
           <div className="border-r p-3">
             <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">Model</div>
             <div className="space-y-1" role="listbox" aria-label="Model">
@@ -280,11 +289,16 @@ function RunSetupMenu({ state, setState }: StateProps) {
                     role="option"
                     aria-selected={active}
                     onClick={() => setState({ ...state, model })}
-                    className={`flex h-9 w-full items-center rounded-md px-2.5 text-left text-sm transition-colors ${
+                    className={`flex min-h-14 w-full items-center rounded-md px-2.5 py-2 text-left transition-colors ${
                       active ? 'bg-foreground text-background' : 'hover:bg-muted'
                     }`}
                   >
-                    <span>{model}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">{model}</span>
+                      <span className={`mt-0.5 block text-xs leading-4 ${active ? 'text-background/65' : 'text-muted-foreground'}`}>
+                        {MODEL_DESCRIPTIONS[state.harness][model]}
+                      </span>
+                    </span>
                     {active ? <Check className="ml-auto size-4" /> : null}
                   </button>
                 )
@@ -293,27 +307,29 @@ function RunSetupMenu({ state, setState }: StateProps) {
           </div>
 
           <div className="flex flex-col p-3">
-            <div className="text-xs font-medium text-muted-foreground">Effort</div>
-            <div className="mt-3 text-sm font-semibold">{state.effort}</div>
-            <input
-              type="range"
-              min={0}
-              max={Math.max(0, definition.efforts.length - 1)}
-              step={1}
-              value={effortIndex}
-              aria-label="Effort"
-              onChange={(event) => {
-                const effort = definition.efforts[Number(event.currentTarget.value)]
-                if (effort) setState({ ...state, effort })
-              }}
-              className="mt-4 h-1.5 w-full cursor-pointer accent-foreground"
-            />
-            <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-              <span>{definition.efforts[0]}</span>
-              <span>{definition.efforts.at(-1)}</span>
+            <div className="pb-2 text-xs font-medium text-muted-foreground">Effort</div>
+            <div className="space-y-1" role="listbox" aria-label="Effort">
+              {definition.efforts.map((effort) => {
+                const active = state.effort === effort
+                return (
+                  <button
+                    key={effort}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => setState({ ...state, effort })}
+                    className={`flex h-8 w-full items-center rounded-md px-2 text-left text-sm transition-colors ${
+                      active ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <span className={`mr-2 size-1.5 rounded-full ${active ? 'bg-foreground' : 'bg-border'}`} />
+                    {effort}
+                  </button>
+                )
+              })}
             </div>
-            <p className="mt-auto pt-5 text-xs leading-4 text-muted-foreground">
-              Higher effort spends more time reasoning before acting.
+            <p className="mt-auto border-t pt-3 text-xs leading-4 text-muted-foreground">
+              More effort trades speed for deeper reasoning.
             </p>
           </div>
         </div>
