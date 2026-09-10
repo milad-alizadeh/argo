@@ -1,24 +1,24 @@
 // Projecting one stitched chain into the row the Roster draws. A throwaway projection rebuilt
 // from the transcripts every launch (ADR-0004, ADR-0008); nothing here is stored.
+
+import {
+  type SessionRosterRow as RosterRow,
+  SESSION_POSTURES,
+  type SessionEntry,
+  type SessionTitle,
+  TITLE_SOURCES,
+} from '../../../core/sessions/models'
 import type { SessionChain } from './chains'
 import type { TranscriptMessage } from './records'
 import { readExternalStatus } from './status'
-import {
-  SESSION_POSTURES,
-  TITLE_SOURCES,
-  type SessionEntry,
-  type SessionRosterRow as RosterRow,
-  type SessionStatus,
-  type SessionTitle,
-} from '../../../core/sessions/models'
 
+export type { RosterRow, SessionTitle }
 // The `managed | external` axis with `orphaned`, its third posture, beside it (CONTEXT.md L2).
 // This slice discovers Sessions from transcripts alone: it owns no PTY and reads no ownership
 // record, so every row it projects is `external`. Telling `orphaned` from `external` needs the
 // durable record of past ownership that a managed slice writes, and inventing one here would be
 // a false DIRECT.
 export { SESSION_POSTURES, TITLE_SOURCES }
-export type { RosterRow, SessionTitle }
 
 // A subagent's records are dropped here rather than read as the Session's own. Its turn ends when
 // the subagent stops, and reading that as the Session stopping would state a fact about work that

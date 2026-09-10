@@ -11,7 +11,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
-import { appExecutable, assertShippedFusesIntact, packagedTestCopy } from '../../../core/desktop-proof/packaged-test-copy'
+import {
+  appExecutable,
+  assertShippedFusesIntact,
+  packagedTestCopy,
+} from '../../../core/desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../../core/projects/fake-driver/project-proof-protocol'
 import {
   proveFirstOpen,

@@ -2,11 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 type SessionStatusProps = { status: string }
 
-type SessionStatusKey =
-  | 'status.active'
-  | 'status.failed'
-  | 'status.idle'
-  | 'status.waiting'
+type SessionStatusKey = 'status.active' | 'status.failed' | 'status.idle' | 'status.waiting'
 
 const statusStyles: Record<string, string> = {
   active: 'bg-active text-canvas',

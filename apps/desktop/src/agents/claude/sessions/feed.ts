@@ -1,8 +1,9 @@
 // Projecting a stitched chain into the rows the Feed draws. Records are transcript lines; rows
 // are what the Feed draws, and the two counts differ (ADR-0033 · Context).
+
+import type { SessionFeedRow as FeedRow } from '../../../core/sessions/models'
 import type { SessionChain } from './chains'
 import type { TranscriptRecord } from './records'
-import type { SessionFeedRow as FeedRow } from '../../../core/sessions/models'
 
 export type { FeedRow }
 

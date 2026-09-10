@@ -8,7 +8,7 @@ import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron
 import { PRODUCTION_FUSE_PROFILE, readFuseWire } from '../../../scripts/fuse-profile.mjs'
 import { packagedApp } from '../../../scripts/packaged-app.mjs'
 
-export async function packagedTestCopy(root, arch = 'arm64') {
+export async function packagedTestCopy(root: string, arch = 'arm64') {
   const application = path.join(root, 'Argo.app')
   await cp(packagedApp(arch), application, { recursive: true, verbatimSymlinks: true })
   const copiedRoot = await realpath(application)
@@ -40,6 +40,6 @@ export async function assertShippedFusesIntact(arch = 'arm64') {
   )
 }
 
-export function appExecutable(application) {
+export function appExecutable(application: string) {
   return path.join(application, 'Contents', 'MacOS', 'Argo')
 }

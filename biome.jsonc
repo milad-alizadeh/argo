@@ -24,7 +24,7 @@
       "!**/*.xcodeproj",
       "!**/*.xcassets",
       "!**/ArgoEngine/Companion/Plugin",
-      "!**/ArgoFixtures/Fixtures",
+      "!**/ArgoFixtures/Fixtures"
     ]
   },
   "formatter": {

@@ -3,8 +3,12 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
-import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mjs'
-import { appExecutable, assertShippedFusesIntact, packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
+import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
+import {
+  appExecutable,
+  assertShippedFusesIntact,
+  packagedTestCopy,
+} from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }

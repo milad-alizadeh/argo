@@ -2,10 +2,10 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
-import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { SESSION_TRANSCRIPTS_ENV } from './agents/claude/session-fake-driver/session-proof-protocol'
-import { attachSessionBridge } from './core/sessions/bridge'
+import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-proof-protocol'
+import { attachSessionBridge } from './core/sessions/bridge'
 import { attachProjectBridge } from './projects/bridge'
 
 // Forge's Vite plugin injects these for each configured renderer.
