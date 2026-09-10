@@ -1243,12 +1243,18 @@ export function ComposerPrototype() {
           position: relative;
           background: var(--background);
         }
+        .composer-queue-stack [draggable='true'] { position: relative; z-index: 1; }
+        .composer-queue-stack [draggable='true']:nth-child(1) { z-index: 10; }
+        .composer-queue-stack [draggable='true']:nth-child(2) { z-index: 9; }
+        .composer-queue-stack [draggable='true']:nth-child(3) { z-index: 8; }
+        .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
+        .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
       `}</style>
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-        <div className="mx-auto w-full max-w-4xl [&>*]:!shadow-sm">
+        <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!shadow-sm">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
