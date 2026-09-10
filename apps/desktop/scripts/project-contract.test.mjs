@@ -3,7 +3,7 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { openProject } from '../src/projects/open-project.ts'
+import { openProject } from '../src/core/projects/open-project.ts'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 

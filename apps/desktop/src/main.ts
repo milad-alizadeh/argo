@@ -2,6 +2,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, nativeTheme } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
+import { SESSION_TRANSCRIPTS_ENV } from './agents/claude/session-fake-driver/session-proof-protocol'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
 import { windowBackground } from './core/appearance/appearance'
 import {
@@ -36,6 +37,12 @@ const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
 const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
+
+function transcriptsRoot(): string {
+  return (
+    process.env[SESSION_TRANSCRIPTS_ENV] ?? path.join(app.getPath('home'), '.claude', 'projects')
+  )
+}
 
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
