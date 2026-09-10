@@ -849,6 +849,18 @@ function QueuePreview({
   latestQueuedId?: string | null
   isAdding?: boolean
 }) {
+  const [exitingMessage, setExitingMessage] = useState<{ id: string; index: number } | null>(null)
+  const [settlingFromIndex, setSettlingFromIndex] = useState<number | null>(null)
+  const animatePop = (queuedMessage: QueuedMessage, index: number, action: () => void) => {
+    if (exitingMessage) return
+    setExitingMessage({ id: queuedMessage.id, index })
+    window.setTimeout(() => {
+      action()
+      setExitingMessage(null)
+      setSettlingFromIndex(index)
+      window.setTimeout(() => setSettlingFromIndex(null), 280)
+    }, 220)
+  }
   const message = messages[0]
   if (!message) return null
   const stacked = layout === 'integrated' || layout === 'floating' || layout === 'attached-stack'
@@ -870,15 +882,15 @@ function QueuePreview({
             onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className={`flex h-11 cursor-grab items-center gap-2 px-3 active:cursor-grabbing ${isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
+            className={`flex h-11 cursor-grab items-center gap-2 px-3 active:cursor-grabbing ${exitingMessage?.id === queuedMessage.id ? 'composer-queue-exit' : settlingFromIndex !== null && index >= settlingFromIndex ? 'composer-queue-settle' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(queuedMessage)}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => animatePop(queuedMessage, index, () => onSteer(queuedMessage))}>
               <Route className="size-3.5" />Steer
             </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => onRemove(queuedMessage.id)}>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => animatePop(queuedMessage, index, () => onRemove(queuedMessage.id))}>
               <Trash2 className="size-3.5" />
             </Button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} onClick={() => onEdit(queuedMessage)}>
@@ -1111,8 +1123,18 @@ export function ComposerPrototype() {
           from { transform: translateY(44px); }
           to { transform: translateY(0); }
         }
+        @keyframes composer-queue-exit {
+          from { opacity: 1; transform: scale(1); }
+          to { opacity: 0; transform: scale(.985); }
+        }
+        @keyframes composer-queue-settle {
+          from { transform: translateY(44px); }
+          to { transform: translateY(0); }
+        }
         .composer-queue-enter { animation: composer-queue-enter 320ms cubic-bezier(.2,.8,.2,1) both; }
         .composer-queue-lift { animation: composer-queue-lift 320ms cubic-bezier(.2,.8,.2,1) both; }
+        .composer-queue-exit { animation: composer-queue-exit 220ms ease-in both; }
+        .composer-queue-settle { animation: composer-queue-settle 260ms cubic-bezier(.2,.8,.2,1) both; }
       `}</style>
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
