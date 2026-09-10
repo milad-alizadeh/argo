@@ -926,8 +926,9 @@ function AnimatedHeight({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <div ref={frameRef} className="overflow-clip">
-      <div ref={contentRef}>{children}</div>
+    <div ref={frameRef} className="relative z-10">
+      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-background shadow-[0_14px_40px_-18px_rgba(0,0,0,0.32)]" />
+      <div ref={contentRef} className="relative z-10">{children}</div>
     </div>
   )
 }
@@ -1241,12 +1242,12 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-        <div className="mx-auto w-full max-w-4xl drop-shadow-[0_-5px_8px_rgba(0,0,0,0.07)] [&>*]:!shadow-none">
+        <div className="mx-auto w-full max-w-4xl [&>*]:!shadow-sm">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
           <form
-            className="relative z-10 mx-auto w-full max-w-4xl"
+            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-sm"
             onSubmit={(event) => {
               event.preventDefault()
               send()
@@ -1304,7 +1305,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] drop-shadow-[0_5px_8px_rgba(0,0,0,0.07)] [&>*]:!shadow-none">
+        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!shadow-sm">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
