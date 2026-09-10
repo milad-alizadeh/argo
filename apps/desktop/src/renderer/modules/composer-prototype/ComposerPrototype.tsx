@@ -12,9 +12,10 @@ import {
   CornerDownRight,
   File,
   Folder,
-  CalendarClock,
   GripVertical,
   Info,
+  Layers3,
+  ListChecks,
   Mic,
   Paperclip,
   Pencil,
@@ -77,9 +78,10 @@ import {
   PopoverTrigger,
 } from '@/renderer/components/ui/popover'
 import { Progress } from '@/renderer/components/ui/progress'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
 
 type HarnessKey = 'codex' | 'claude'
-type VariantKey = 'A' | 'B' | 'C' | 'D' | 'E'
+type VariantKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
@@ -427,7 +429,7 @@ function ContextPopover({
 }: {
   state: ComposerState
   appearance?: 'compact' | 'details'
-  meterStyle?: 'solid' | 'gradient'
+  meterStyle?: 'solid' | 'gradient' | 'grayscale'
 }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
@@ -451,38 +453,40 @@ function ContextPopover({
       >
         {appearance === 'compact' ? (
           <>
-            <CircleGauge className="size-4" />
+            <Layers3 className="size-4" />
             <span className="text-xs font-semibold">{contextStatus}</span>
             <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
           </>
         ) : <Info className="size-4" />}
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[28rem] gap-4 p-4">
-        {meterStyle === 'gradient' ? (
+        {meterStyle !== 'solid' ? (
           <>
             <PopoverHeader>
               <PopoverTitle className="flex items-center gap-2">
-                Why context quality changes
+                What is the context window?
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
               </PopoverTitle>
-              <PopoverDescription>Capacity and useful attention are not the same measurement.</PopoverDescription>
+              <PopoverDescription>
+                Everything the model can consider for its next response: instructions, tools, files, and conversation. As it fills, relevant details compete with old context.
+              </PopoverDescription>
             </PopoverHeader>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-3">
-                <div className="text-xs font-semibold">Smart Zone</div>
-                <p className="mt-1 text-xs leading-4 text-muted-foreground">
-                  Early context is focused. The model can weigh instructions and recent decisions more reliably.
-                </p>
-              </div>
-              <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-3">
-                <div className="text-xs font-semibold">Dumb Zone</div>
-                <p className="mt-1 text-xs leading-4 text-muted-foreground">
-                  More history still fits, but noise and stale decisions can weaken attention before the window is full.
-                </p>
+            <div className="border-y py-4">
+              <div className={`h-1.5 rounded-full ${meterStyle === 'grayscale' ? 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900' : 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]'}`} />
+              <div className="mt-3 grid grid-cols-[1fr_auto_1fr] gap-3">
+                <div>
+                  <div className="text-xs font-semibold">Smart Zone</div>
+                  <p className="mt-1 text-xs leading-4 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
+                </div>
+                <ArrowRight className="mt-1 size-4 text-muted-foreground" />
+                <div className="text-right">
+                  <div className="text-xs font-semibold">Dumb Zone</div>
+                  <p className="mt-1 text-xs leading-4 text-muted-foreground">History still fits, but noise and stale decisions weaken attention.</p>
+                </div>
               </div>
             </div>
-            <p className="rounded-lg bg-muted/60 p-3 text-xs leading-4 text-muted-foreground">
-              The shorthand comes from context-engineering discussions by Dex Horthy and was later documented by Matt Pocock. We use 20% as a working target, not a model guarantee.
+            <p className="text-[10px] leading-4 text-muted-foreground">
+              “Smart Zone” and “Dumb Zone” are context-engineering shorthand associated with Dex Horthy and documented by Matt Pocock. Our 20% boundary is a working target, not a model guarantee.
             </p>
           </>
         ) : (
@@ -552,7 +556,15 @@ function ContextPopover({
   )
 }
 
-function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' | 'footer' | 'attached' }) {
+function ContextSurface({
+  state,
+  layout,
+  tone = 'color',
+}: {
+  state: ComposerState
+  layout: 'inline' | 'dock' | 'footer' | 'attached'
+  tone?: 'color' | 'grayscale'
+}) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const used = `${(context.total * percentage / 100 / 1000).toFixed(0)}k`
@@ -590,26 +602,33 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
 
   if (layout === 'attached') {
     return (
-      <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-background px-4 py-3 shadow-md shadow-foreground/10">
-        <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
+      <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-background px-4 py-2 shadow-md shadow-foreground/10">
+        <Layers3 className={`size-4 shrink-0 ${tone === 'color' ? zone.text : 'text-foreground'}`} />
         <div className="shrink-0">
           <div className="text-xs font-semibold">Context · {status}</div>
         </div>
-        <div className="relative min-w-28 flex-1 pt-4">
-          <span className="absolute top-0 -translate-x-1/2 text-[10px] font-medium text-foreground" style={{ left: '20%' }}>
-            Smart Zone ~20%
-          </span>
+        <TooltipProvider>
+        <div className="relative min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]" />
+            <div className={`absolute inset-0 ${tone === 'color' ? 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} />
             <div className="absolute inset-y-0 right-0 bg-muted" style={{ width: `${100 - percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+            <Tooltip>
+              <TooltipTrigger render={<button type="button" className="absolute inset-y-0 left-0 w-1/5" aria-label="About the Smart Zone" />} />
+              <TooltipContent>Smart Zone · focused working context, roughly the first 20%</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger render={<button type="button" className="absolute inset-y-0 right-0 w-4/5" aria-label="About the Dumb Zone" />} />
+              <TooltipContent>Dumb Zone · more history fits, but useful attention can weaken</TooltipContent>
+            </Tooltip>
           </div>
         </div>
+        </TooltipProvider>
         <div className="flex shrink-0 items-center gap-1 text-xs tabular-nums">
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
-          <ContextPopover state={state} appearance="details" meterStyle="gradient" />
+          <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
           <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
@@ -704,6 +723,7 @@ function VariantSwitcher({ variant }: { variant: VariantKey }) {
     { key: 'C', label: 'Dock' },
     { key: 'D', label: 'Footer bar' },
     { key: 'E', label: 'Attached' },
+    { key: 'F', label: 'Attached mono' },
   ]
   return (
     <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Prototype variants">
@@ -734,7 +754,7 @@ function QueuePreview({
   onReorder,
 }: {
   messages: QueuedMessage[]
-  layout: 'attached' | 'inline' | 'floating' | 'integrated' | 'stacked'
+  layout: 'attached' | 'inline' | 'floating' | 'integrated' | 'attached-stack'
   onSteer: (message: QueuedMessage) => void
   onRemove: (id: string) => void
   onEdit: (message: QueuedMessage) => void
@@ -742,12 +762,12 @@ function QueuePreview({
 }) {
   const message = messages[0]
   if (!message) return null
-  const stacked = layout === 'integrated' || layout === 'floating' || layout === 'stacked'
+  const stacked = layout === 'integrated' || layout === 'floating' || layout === 'attached-stack'
   if (stacked) {
     const shell = {
       integrated: 'border-b bg-background',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      stacked: 'mb-2 overflow-hidden rounded-xl border bg-background shadow-sm',
+      'attached-stack': 'relative z-20 mx-auto -mb-px w-[calc(100%-1.5rem)] overflow-hidden rounded-t-xl border bg-background shadow-sm',
       attached: '',
       inline: '',
     }[layout]
@@ -815,14 +835,49 @@ function QueuePreview({
   )
 }
 
+function TaskPlanPopover() {
+  const steps = [
+    { label: 'Map composer information', status: 'done' },
+    { label: 'Choose the base layout', status: 'done' },
+    { label: 'Polish context and queue states', status: 'current' },
+    { label: 'Review compact widths', status: 'upcoming' },
+    { label: 'Prepare implementation handoff', status: 'upcoming' },
+  ] as const
+  return (
+    <Popover>
+      <PopoverTrigger render={<InputGroupButton variant="ghost" className="gap-1.5 text-foreground" aria-label="Open task plan" />}>
+        <ListChecks className="size-4" />
+        <span className="text-xs font-medium">Step 3/5</span>
+      </PopoverTrigger>
+      <PopoverContent align="start" side="top" className="w-80 gap-3 p-3">
+        <PopoverHeader>
+          <PopoverTitle>Task plan</PopoverTitle>
+          <PopoverDescription>3 of 5 · Polishing the selected composer direction</PopoverDescription>
+        </PopoverHeader>
+        <Progress value={60} className="h-1.5" />
+        <div className="grid gap-1">
+          {steps.map((step, index) => (
+            <div key={step.label} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${step.status === 'current' ? 'bg-muted font-medium' : ''}`}>
+              <span className={`flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
+                {step.status === 'done' ? <Check className="size-3" /> : index + 1}
+              </span>
+              <span className={step.status === 'upcoming' ? 'text-muted-foreground' : ''}>{step.label}</span>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
   const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
   return (
     <Popover>
       <PopoverTrigger render={<InputGroupButton variant="ghost" className="gap-1.5 px-2 text-foreground" />}>
-        <CalendarClock className="size-4" />
-        <span className="text-xs font-medium">Plan</span>
+        <CircleGauge className="size-4" />
+        <span className="text-xs font-medium">Usage</span>
         <span className="text-xs tabular-nums text-muted-foreground">{primaryUsage.percentage}%</span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
@@ -888,7 +943,7 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
 
 export function ComposerPrototype() {
   const requestedVariant = new URLSearchParams(window.location.search).get('variant')
-  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' || requestedVariant === 'D' || requestedVariant === 'E' ? requestedVariant : 'A'
+  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' || requestedVariant === 'D' || requestedVariant === 'E' || requestedVariant === 'F' ? requestedVariant : 'A'
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -961,7 +1016,12 @@ export function ComposerPrototype() {
         )}
         {variant === 'E' && (
           <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="stacked" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
+            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
+          </div>
+        )}
+        {variant === 'F' && (
+          <div className="mx-auto w-full max-w-4xl">
+            <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
           </div>
         )}
         <form
@@ -992,6 +1052,7 @@ export function ComposerPrototype() {
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
               <PermissionMenu state={state} setState={setState} />
+              <TaskPlanPopover />
               <div className="ml-auto flex items-center gap-1">
                 {variant === 'A' && <ContextPopover state={state} />}
                 <UsagePopover state={state} />
@@ -1019,12 +1080,13 @@ export function ComposerPrototype() {
             {(variant === 'B' || variant === 'D') && <ContextSurface state={state} layout="footer" />}
           </InputGroup>
         </form>
-        {variant === 'E' && (
+        {(variant === 'E' || variant === 'F') && (
           <div className="relative z-0 mx-auto -mt-px w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]">
-            <ContextSurface state={state} layout="attached" />
+            <ContextSurface state={state} layout="attached" tone={variant === 'F' ? 'grayscale' : 'color'} />
           </div>
         )}
       </div>
+      {(variant === 'E' || variant === 'F') && <ContextPreviewControl state={state} setState={setState} />}
       <VariantSwitcher variant={variant} />
       {variant === 'E' ? <ContextPreviewControl state={state} setState={setState} /> : null}
     </main>
