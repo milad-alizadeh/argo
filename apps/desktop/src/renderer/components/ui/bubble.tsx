@@ -35,9 +35,7 @@ const bubbleVariants = cva(
           '*:data-[slot=bubble-content]:bg-destructive/10 *:data-[slot=bubble-content]:text-destructive dark:*:data-[slot=bubble-content]:bg-destructive/20 [&>[data-slot=bubble-content]:is(button,a):hover]:bg-destructive/20 dark:[&>[data-slot=bubble-content]:is(button,a):hover]:bg-destructive/30',
       },
     },
-    defaultVariants: {
-      variant: 'default',
-    },
+    defaultVariants: { variant: 'default' },
   },
 )
 
@@ -47,9 +45,7 @@ function Bubble({
   className,
   ...props
 }: React.ComponentProps<'div'> &
-  VariantProps<typeof bubbleVariants> & {
-    align?: 'start' | 'end'
-  }) {
+  VariantProps<typeof bubbleVariants> & { align?: 'start' | 'end' }) {
   return (
     <div
       data-slot="bubble"
@@ -74,9 +70,7 @@ function BubbleContent({ className, render, ...props }: useRender.ComponentProps
       props,
     ),
     render,
-    state: {
-      slot: 'bubble-content',
-    },
+    state: { slot: 'bubble-content' },
   })
 }
 
@@ -84,19 +78,10 @@ const bubbleReactionsVariants = cva(
   'absolute z-10 flex w-fit shrink-0 items-center justify-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-sm ring-3 ring-card has-[button]:p-0',
   {
     variants: {
-      side: {
-        top: 'top-0 -translate-y-3/4',
-        bottom: 'bottom-0 translate-y-3/4',
-      },
-      align: {
-        start: 'left-3',
-        end: 'right-3',
-      },
+      side: { top: 'top-0 -translate-y-3/4', bottom: 'bottom-0 translate-y-3/4' },
+      align: { start: 'left-3', end: 'right-3' },
     },
-    defaultVariants: {
-      side: 'bottom',
-      align: 'end',
-    },
+    defaultVariants: { side: 'bottom', align: 'end' },
   },
 )
 
@@ -105,10 +90,7 @@ function BubbleReactions({
   align = 'end',
   className,
   ...props
-}: React.ComponentProps<'div'> & {
-  align?: 'start' | 'end'
-  side?: 'top' | 'bottom'
-}) {
+}: React.ComponentProps<'div'> & { align?: 'start' | 'end'; side?: 'top' | 'bottom' }) {
   return (
     <div
       data-slot="bubble-reactions"
