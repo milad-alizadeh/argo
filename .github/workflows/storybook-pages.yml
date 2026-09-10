@@ -45,7 +45,7 @@ jobs:
         working-directory: apps/desktop
         env:
           STORYBOOK_BASE: /argo/
-        run: bun run storybook:build
+        run: bun run build:storybook
 
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5

@@ -1,31 +1,40 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".node-version", "package.json", "turbo.json"],
   "globalPassThroughEnv": ["OPENAI_API_KEY", "REALTIME_MODEL", "ARGO_LIVE_CLI"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "env": ["ARGO_BUILD_CONFIGURATION"],
-      "outputs": ["dist/**", "out/**"]
-    },
-    "release:build": {
       "cache": false,
       "outputs": ["out/**"]
     },
-    "typecheck": {
-      "dependsOn": ["^typecheck"]
+    "build:storybook": {
+      "env": ["STORYBOOK_BASE"],
+      "inputs": [
+        ".storybook/**",
+        "src/renderer/**",
+        "src/core/**",
+        "index.html",
+        "components.json",
+        "vite.renderer.config.ts",
+        "tsconfig*.json",
+        "package.json"
+      ],
+      "outputs": ["storybook-static/**"]
     },
-    "//#format-and-lint": {},
-    "//#format-and-lint:fix": {
-      "cache": false
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["src/**", "scripts/**/*.mjs", "*.config.ts", "tsconfig*.json", "package.json"],
+      "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"],
-      "env": ["ARGO_TEST_CONFIGURATION"]
-    },
-    "test:e2e": {
-      "cache": false
+      "inputs": ["$TURBO_DEFAULT$", "!README.md"],
+      "outputs": []
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "storybook": {
       "cache": false,
       "persistent": true
     }
