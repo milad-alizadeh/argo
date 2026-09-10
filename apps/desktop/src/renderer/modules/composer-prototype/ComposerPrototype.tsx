@@ -1216,8 +1216,8 @@ function ContextPopover({
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>
-          <PopoverDescription className="text-(length:--text-control) leading-relaxed">
-            Instructions, files, tools, and conversation available to the model.
+          <PopoverDescription className="text-(length:--text-body) leading-relaxed">
+            The working memory for the next response: instructions, tools, files, and conversation. As it fills, new information competes with older details.
           </PopoverDescription>
         </PopoverHeader>
         <div className="grid gap-2.5">
@@ -1225,7 +1225,7 @@ function ContextPopover({
             <div className="text-xl font-semibold tabular-nums">
               {(used / 1000).toFixed(0)}k <span className="text-(length:--text-body) font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k tokens</span>
             </div>
-            <span className={`text-(length:--text-control) font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
+            <span className={`text-(length:--text-body) font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
           </div>
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
             <div
@@ -1234,16 +1234,26 @@ function ContextPopover({
             />
             <div className="absolute inset-y-0 w-px bg-background/80" style={{ left: `${smartZonePercentage}%` }} />
           </div>
-          <div className="flex justify-between text-(length:--text-control) text-muted-foreground">
+          <div className="flex justify-between text-(length:--text-body) text-muted-foreground">
             <span>Working target · {formatTokenCount(smartZoneTokens)}</span>
             <span>Current · {formatTokenCount(used)}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 p-3 text-(length:--text-body) leading-relaxed">
+            <div>
+              <div className="font-semibold text-foreground">Smart Zone · 0–20%</div>
+              <p className="mt-1 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
+            </div>
+            <div>
+              <div className="font-semibold text-foreground">Dumb Zone · 40%+</div>
+              <p className="mt-1 text-muted-foreground">History still fits, but noise and stale decisions weaken attention.</p>
+            </div>
           </div>
           <p className="text-(length:--text-body) leading-relaxed text-muted-foreground">
             At this level, older context can compete with the current task. Compact before starting another substantial phase.
           </p>
         </div>
         {state.harness === 'claude' ? (
-          <details className="group text-(length:--text-control)">
+          <details className="group text-(length:--text-body)">
             <summary className="cursor-pointer font-medium">Loaded context</summary>
             <div className="mt-2 grid gap-2">
               {claudeComposition.map((item) => (
@@ -1257,7 +1267,7 @@ function ContextPopover({
           </details>
         ) : null}
         <div className="grid gap-2.5 border-t pt-3">
-          <div className="flex items-center justify-between gap-3 text-(length:--text-control)">
+          <div className="flex items-center justify-between gap-3 text-(length:--text-body)">
             <span className="font-semibold">Auto-compact</span>
             <span className="text-muted-foreground">At {autoCompactThresholdPercentage}% of total</span>
           </div>
@@ -1275,7 +1285,7 @@ function ContextPopover({
             aria-label="Auto-compact threshold"
             className="h-1.5 w-full cursor-pointer accent-foreground"
           />
-          <label className="flex items-center justify-between gap-3 text-(length:--text-control) text-muted-foreground">
+          <label className="flex items-center justify-between gap-3 text-(length:--text-body) text-muted-foreground">
             <span>Threshold</span>
             <span className="flex w-40 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-foreground">
                 <input
