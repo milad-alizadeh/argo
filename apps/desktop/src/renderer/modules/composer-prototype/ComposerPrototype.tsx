@@ -928,7 +928,7 @@ function TaskPlanPopover() {
           {steps.map((step, index) => (
             <div key={step.label} className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${step.status === 'current' ? 'bg-muted font-medium' : ''}`}>
               <span className={`relative flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
-                {step.status === 'current' ? <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40" /> : null}
+                {step.status === 'current' ? <span className="absolute inset-0 animate-pulse rounded-full bg-foreground/10" /> : null}
                 {step.status === 'done' ? <Check className="size-3" /> : index + 1}
               </span>
               <span className={step.status === 'upcoming' ? 'text-muted-foreground' : ''}>{step.label}</span>
