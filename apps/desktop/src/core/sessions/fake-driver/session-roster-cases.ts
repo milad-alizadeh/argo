@@ -104,7 +104,7 @@ async function readPlaces(page, count) {
 export async function proveRoster(page) {
   await page.waitForSelector('nav[aria-label="Sessions"] button')
   const first = await readRoster(page)
-  assert.equal(first.count, 6)
+  assert.equal(first.count, 7)
   // Nothing is chosen until a reader chooses it, and the Feed says so rather than showing one
   // Session's history under no name.
   assert.equal(first.selected, 0)
@@ -154,9 +154,9 @@ export async function proveReread(page, transcripts, write) {
   await write(transcripts, ['titledHeadless'], { directory: 'project-two' })
   await page.click('button[aria-label="Read again"]')
   // Its own custom title, which is what the Roster draws for it (CONTEXT.md L2 · CLI title).
-  await page.waitForSelector('button:has-text("titledHeadless")')
+  await page.waitForSelector('button:has-text("The name a person typed")')
   const after = await readRoster(page)
-  assert.equal(after.count, 7)
+  assert.equal(after.count, 8)
 }
 
 // The archive is a section a reader opens, and the Session inside it is the one the desktop app's
@@ -168,7 +168,7 @@ export async function proveArchive(page) {
   const open = await readRoster(page)
   assert.equal(open.archivedRows, 1)
   // Opening the section moved nothing out of the list above it.
-  assert.equal(open.count, 7)
+  assert.equal(open.count, 8)
   // The chevron turns with the section. The open state lives on the trigger, so an icon styled off
   // its own element would sit still through every open and no row count would notice. Waited for
   // rather than read once: the turn is a transition, so the first frame after the click is still
@@ -184,24 +184,25 @@ export async function proveArchive(page) {
 // the reader requests a pass, and the shared Roster must order it by that new evidence.
 export async function proveCodexReread(page, transcripts, grow) {
   const before = await readRoster(page)
-  assert.notEqual(before.names[0], 'rollout-codexParent')
+  assert.notEqual(before.names[0], 'Run Codex check')
 
   await grow(transcripts)
-  await page.click('button:has-text("Read again")')
+  await page.click('button[aria-label="Read again"]')
   await page.waitForFunction(
     () =>
-      document.querySelector('nav[aria-label="Sessions"] button')?.textContent ===
-      'rollout-codexParent',
+      document
+        .querySelector('nav[aria-label="Sessions"] button')
+        ?.textContent?.includes('Run Codex check') ?? false,
   )
 
   const after = await readRoster(page)
-  assert.equal(after.names[0], 'rollout-codexParent')
-  assert.equal(after.count, 7)
+  assert.equal(after.names[0].includes('Run Codex check'), true)
+  assert.equal(after.count, 8)
 }
 
 // The wait is keyed to the Session id, not to "some row exists": the Feed the reader is leaving
 // still has rows on screen the moment the click lands, and waiting on those waits for nothing.
-export async function openSession(page, name, _sessionId) {
+export async function openSession(page, name, sessionId) {
   await page.click(`button:has-text(${JSON.stringify(name)})`)
-  await page.waitForSelector('[aria-label="Session activity"] article')
+  await page.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
 }

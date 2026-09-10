@@ -36,14 +36,16 @@ export async function proveFirstOpen(page) {
 }
 
 export async function proveCodexFeed(page) {
-  await openSession(page, 'rollout-codexParent', 'rollout-codexParent')
+  // The button reads the Session's title, which falls back to its first prompt when nothing
+  // named it (CONTEXT.md · Session title): the fixture's opening line, not its id.
+  await openSession(page, 'Run Codex check', 'rollout-codexParent')
   await page.waitForFunction(() =>
     document
-      .querySelector('[aria-label="Session activity"]')
+      .querySelector('[aria-label="Session history"]')
       ?.textContent?.includes('Run Codex check'),
   )
   const reading = await page.evaluate(() => {
-    const prose = document.querySelector('[aria-label="Session activity"] pre')
+    const prose = document.querySelector('[aria-label="Session history"] .feed-row--prose')
     const range = document.createRange()
     if (prose !== null) range.selectNodeContents(prose)
     window.getSelection().removeAllRanges()
