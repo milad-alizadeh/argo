@@ -573,7 +573,14 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
           <span>·</span>
           <span className="shrink-0">Codex</span>
           <span>·</span>
-          <span className="inline-flex shrink-0 items-center gap-1"><Ticket />#1258</span>
+          <a
+            href="https://github.com/milad-alizadeh/argo/issues/1258"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 hover:text-foreground hover:underline"
+          >
+            <Ticket />#1258
+          </a>
         </div>
       </div>
       <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 xl:flex">
@@ -1672,7 +1679,7 @@ export function ComposerPrototype() {
             <div className="mx-auto mb-2 w-full max-w-4xl">
               <FeedPermission />
             </div>
-            <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+            <div className="composer-queue-stack mx-auto w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
             </div>
             <AnimatedHeight>
@@ -1737,7 +1744,7 @@ export function ComposerPrototype() {
           </InputGroup>
               </form>
             </AnimatedHeight>
-            <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-0.5rem)] max-w-[calc(56rem-0.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+            <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
               <ContextSurface state={state} layout="attached" />
             </div>
           </div>

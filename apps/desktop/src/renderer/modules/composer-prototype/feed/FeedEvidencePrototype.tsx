@@ -119,7 +119,7 @@ export function FeedEvidencePrototype({
 
   return (
     <section
-      className="flex h-full min-h-0 flex-col bg-card"
+      className="flex h-full min-h-0 w-80 shrink-0 flex-col border-l border-border/60 bg-card max-2xl:w-72 max-lg:hidden"
       aria-label="Command and file inspector"
       data-component="FeedEvidence"
     >
