@@ -1681,7 +1681,11 @@ export function ComposerPrototype() {
           `}</style>
           <PrototypeSessionHeader showSidebar={showSessionSidebar} onToggleSidebar={() => setShowSessionSidebar((visible) => !visible)} />
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-          <ResizablePanel id="session-conversation" minSize={480} className="h-full min-h-0 overflow-hidden">
+          <ResizablePanel
+            id="session-conversation"
+            minSize={480}
+            className="flex h-full min-h-0 overflow-hidden"
+          >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
             <Transcript messages={messages} onOpenEvidence={(evidence) => {
