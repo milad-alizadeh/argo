@@ -1,7 +1,7 @@
 // An anchored surface, so a hairline and no shadow (ADR-0038). The refusal says what happened and
 // carries the action that answers it, when there is one.
 import type { ReactNode } from 'react'
-import { Alert, AlertTitle } from './ui/alert'
+import { Alert, AlertTitle } from '../../../components/ui/alert'
 
 export function ProjectRefusal({ message, children }: { message: string; children?: ReactNode }) {
   return (

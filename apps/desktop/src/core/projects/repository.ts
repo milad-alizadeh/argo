@@ -3,7 +3,8 @@
 import { execFile } from 'node:child_process'
 import { realpath } from 'node:fs/promises'
 import { promisify } from 'node:util'
-import { isRecord, type ProjectErrorCode } from './contract'
+import { isRecord } from '../../boundary'
+import { type ProjectErrorCode } from './contract'
 
 const run = promisify(execFile)
 

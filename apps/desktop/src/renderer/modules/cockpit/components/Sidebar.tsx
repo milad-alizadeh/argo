@@ -1,7 +1,7 @@
 // The card ground with one hairline on its trailing edge (ADR-0038). Every working surface is a
 // row here, Code included, because a destination nobody can reach is a destination nobody notices
 // is missing.
-import { DESTINATIONS, type Destination } from '../../shortcuts'
+import { DESTINATIONS, type Destination } from '../../../../core/commands/shortcuts'
 import { NavigationRow } from './NavigationRow'
 
 export function Sidebar({

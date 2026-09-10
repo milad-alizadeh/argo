@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { listProjects } from './list-projects'
 import { registerProject, relocateProject } from './register-project'
-import { fixture, list, register, registerElsewhere, repository } from '../core/projects/fake-driver/registration-fixture'
+import { fixture, list, register, registerElsewhere, repository } from './fake-driver/registration-fixture'
 
 test('registering a folder creates one Project, selects it and writes it down', async (context) => {
   const setup = await fixture(context)

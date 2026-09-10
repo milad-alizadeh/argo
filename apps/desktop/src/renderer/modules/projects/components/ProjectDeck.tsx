@@ -1,8 +1,8 @@
 // The working surface: the window ground, no edge of its own (ADR-0038).
-import type { Destination } from '../../shortcuts'
+import type { Destination } from '../../../../core/commands/shortcuts'
 import type { Cockpit, ProjectActions } from '../hooks/useProjects'
 import { EmptyPane, LINE, RefusedPane, SelectedPane, TITLE } from './ProjectPanes'
-import { SessionsScreen } from '../modules/sessions/screens/SessionsScreen'
+import { SessionsScreen } from '../../sessions/screens/SessionsScreen'
 
 type DeckProps = { destination: Destination; cockpit: Cockpit; actions: ProjectActions }
 

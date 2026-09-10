@@ -1,6 +1,6 @@
 // Selection is the ground alone: no leading accent rule (#1896). The glyph is a mark, not a
 // control, so it carries no name of its own and the row's label names the row (#1784).
-import { Button } from './ui/button'
+import { Button } from '../../../components/ui/button'
 
 const ROW =
   'w-full justify-start gap-2 rounded-md px-2 text-body text-muted-foreground aria-[current=page]:bg-muted aria-[current=page]:text-foreground'
