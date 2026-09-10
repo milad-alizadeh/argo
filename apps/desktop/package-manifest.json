@@ -9,6 +9,7 @@
     ".vite/renderer",
     ".vite/renderer/main_window",
     ".vite/renderer/main_window/assets",
+    ".vite/renderer/main_window/assets/index-[hash].css",
     ".vite/renderer/main_window/assets/index-[hash].js",
     ".vite/renderer/main_window/index.html",
     "node_modules",
