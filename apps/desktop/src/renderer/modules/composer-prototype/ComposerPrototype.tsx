@@ -826,6 +826,8 @@ function QueuePreview({
   onRemove,
   onEdit,
   onReorder,
+  latestQueuedId,
+  isAdding,
 }: {
   messages: QueuedMessage[]
   layout: 'attached' | 'inline' | 'floating' | 'integrated' | 'attached-stack'
@@ -833,6 +835,8 @@ function QueuePreview({
   onRemove: (id: string) => void
   onEdit: (message: QueuedMessage) => void
   onReorder: (sourceId: string, targetId: string) => void
+  latestQueuedId?: string | null
+  isAdding?: boolean
 }) {
   const message = messages[0]
   if (!message) return null
@@ -855,7 +859,7 @@ function QueuePreview({
             onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className="flex h-11 cursor-grab items-center gap-2 px-3 active:cursor-grabbing"
+            className={`flex h-11 cursor-grab items-center gap-2 px-3 active:cursor-grabbing ${isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
@@ -1034,6 +1038,8 @@ export function ComposerPrototype() {
     { id: 'queued-1', text: 'Update the empty state, then verify the composer at compact widths.' },
     { id: 'queued-2', text: 'Capture the selected direction for implementation.' },
   ])
+  const [latestQueuedId, setLatestQueuedId] = useState<string | null>(null)
+  const [isQueueAnimating, setIsQueueAnimating] = useState(false)
 
   const steerQueuedMessage = (message: QueuedMessage) => {
     setDraft(message.text)
@@ -1062,6 +1068,15 @@ export function ComposerPrototype() {
   const send = () => {
     const text = draft.trim()
     if (!text) return
+    if (queuedMessages.length > 0) {
+      const queuedMessage = { id: `queued-${Date.now()}`, text }
+      setQueuedMessages([...queuedMessages, queuedMessage])
+      setLatestQueuedId(queuedMessage.id)
+      setIsQueueAnimating(true)
+      window.setTimeout(() => setIsQueueAnimating(false), 340)
+      setDraft('')
+      return
+    }
     setMessages([
       ...messages,
       { id: `turn-${messages.length + 1}`, role: 'user', text },
@@ -1083,18 +1098,30 @@ export function ComposerPrototype() {
         if (event.key === 'Tab') setKeyboardFocus(true)
       }}
     >
+      <style>{`
+        @keyframes composer-queue-enter {
+          from { opacity: 0; transform: translateY(44px) scale(.985); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes composer-queue-lift {
+          from { transform: translateY(44px); }
+          to { transform: translateY(0); }
+        }
+        .composer-queue-enter { animation: composer-queue-enter 320ms cubic-bezier(.2,.8,.2,1) both; }
+        .composer-queue-lift { animation: composer-queue-lift 320ms cubic-bezier(.2,.8,.2,1) both; }
+      `}</style>
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
         {variant === 'E' && (
           <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
+            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
           </div>
         )}
         {variant === 'F' && (
           <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
+            <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
           </div>
         )}
         <form
