@@ -10,7 +10,8 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": { "@/*": ["./src/renderer/*"] }
   },
   "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx"]
 }

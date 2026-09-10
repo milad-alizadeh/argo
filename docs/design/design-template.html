@@ -1,0 +1,45 @@
+<!doctype html>
+<!-- A design speaks only tokens (var(--token)) and names every region with data-component;
+     repeated shapes are kit.js render functions. Rules: rules/design.md -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DESIGN — screen name</title>
+    <link rel="stylesheet" href="../../node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="./tokens.css" />
+    <style>
+      /* Page-local layout only. Colour, radius and type come from the mirrored contract. */
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font-family: 'Geist Variable', system-ui, sans-serif;
+      }
+      [data-component='ExamplePanel'] {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+      }
+      [data-component='ExamplePanel'] h2 {
+        margin: 0;
+        color: var(--muted-foreground);
+        font-size: 0.75rem;
+      }
+    </style>
+  </head>
+  <body class="dark">
+    <main data-component="ExampleScreen">
+      <section data-component="ExamplePanel">
+        <h2>Section label</h2>
+        <p>Row copy uses the contract's ramp — no bespoke sizes.</p>
+      </section>
+    </main>
+    <script src="./kit.js"></script>
+    <script>
+      document
+        .querySelector('[data-component="ExampleScreen"]')
+        .append(designKit.navigationRow({ label: 'Projects', selected: true }))
+    </script>
+  </body>
+</html>

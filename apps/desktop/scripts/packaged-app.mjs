@@ -68,6 +68,23 @@ export function forgeBinary() {
   return found
 }
 
+// The Electron binary this app pins, for a driver that needs a browser rather than the packaged
+// app. Bun's linker decides which node_modules holds it, so probe both — same reason as
+// `forgeBinary()` above.
+export function electronBinary() {
+  const candidates = [
+    path.join(desktopRoot, 'node_modules', 'electron', 'dist', 'Electron.app'),
+    path.join(desktopRoot, '..', '..', 'node_modules', 'electron', 'dist', 'Electron.app'),
+  ].map((bundle) => path.join(bundle, 'Contents', 'MacOS', 'Electron'))
+  const found = candidates.find((candidate) => existsSync(candidate))
+  if (!found)
+    throw new Error(
+      `no Electron binary found. Run \`bun run install:electron\` from the repository root. ` +
+        `Looked in:\n  ${candidates.join('\n  ')}`,
+    )
+  return found
+}
+
 // Forge names the output directory out/<app>-darwin-<arch>.
 function outputDirectory(arch) {
   return path.join(desktopRoot, 'out', `${APP_NAME}-darwin-${arch}`)

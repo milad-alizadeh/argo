@@ -15,8 +15,8 @@ Everything here is a fact about this repository. Process belongs to the skill th
   Before triage, read `docs/agents/triage-labels.md`.
 - **House engineering rules** — `rules/`. **Nothing loads these for you.** Before your first
   edit, read the one whose `paths:` frontmatter matches what you are about to touch: `house.md`
-  matches everything, `swift.md` only `apps/macOS/**/*.swift`. The arithmetic behind them is
-  `biome.jsonc`, not prose.
+  matches everything, `desktop.md` only `apps/desktop/**`, `swift.md` only
+  `apps/macOS/**/*.swift`. The arithmetic behind them is `biome.jsonc`, not prose.
 - **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
   Before domain exploration, read `docs/agents/domain.md`. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.
@@ -146,20 +146,21 @@ the whole spec.
 
 A UI ticket whose screen has a design ticket is built with `design-to-code`.
 
-**None of it is installed here yet**: no `docs/design-stack.md`, no `docs/design/` kit, and no
-render method (see *Visual verification*). The first design on `apps/desktop` runs
-`/setup-design-infra` before `/prototype`.
+`docs/design-stack.md` is the stack: the token contract, the `docs/design/` kit, where components
+live, and the render commands. Every design skill reads it rather than guessing a framework.
 
 **`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
 goes there.
 
 ## Visual verification
 
-**There is nothing to render right now** (#1758), and `docs/agents/visual-verification.md`
-describes commands that no longer exist. Choosing `apps/desktop`'s rendering route is open work.
+**The render commands are `docs/design-stack.md`'s last two rows**, one for a design page and one
+for the packaged app; `apps/desktop/README.md` says what each writes.
+`docs/agents/visual-verification.md` describes `apps/macOS` commands that no longer exist.
 
 One rule outlives the tooling: **an e2e run holds the real keyboard and mouse for its whole
-length, so say so and wait before starting one.**
+length, so say so and wait before starting one.** The desktop render commands do not: every key
+and click they send goes into the renderer over the debugging protocol.
 
 ## Tooling (RTK)
 

@@ -41,8 +41,9 @@ ports the behaviour to `apps/desktop`: `docs/agents/build-configurations.md`.
 - **Reach for the platform control** (`Menu`, `Popover`, `Table`, `Divider`) before a bespoke
   one, and restyle it through the contract.
 - **Every control is a real control** (`Button`, `Menu`, `Picker`, `TextField`), never a shape
-  with `onTapGesture`. Full Keyboard Access is the contract and the app builds no ring of its
-  own (#718); `.focusable()` is for a key the control would not otherwise get, named at the
+  with `onTapGesture`. Full Keyboard Access is the contract and no control builds a ring of its
+  own (#718, corrected by #1785: the app draws one shared `ArgoFocusRing` and a control never
+  draws a second); `.focusable()` is for a key the control would not otherwise get, named at the
   call; a focusable that can show focus draws `argoFocusRing`; a command with a platform
   convention is bound to its key and lives in a `Commands` menu unless it is anchored to a
   control on screen.
