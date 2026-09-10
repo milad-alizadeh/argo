@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { requestIdentifier } from '../../boundary'
 import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL, sessionError } from './contract'
 
@@ -15,10 +16,7 @@ export function attachSessionBridge(
 ): void {
   const answer = (channel: string, read: (request: unknown) => Promise<unknown>) => {
     window.webContents.ipc.handle(channel, (event, request: unknown) => {
-      if (
-        event.senderFrame !== window.webContents.mainFrame ||
-        event.senderFrame?.url !== storage.rendererURL
-      ) {
+      if (!isTrustedRendererFrame(event, window, storage.rendererURL)) {
         return sessionError('access-denied', requestIdentifier(request))
       }
       return read(request)
