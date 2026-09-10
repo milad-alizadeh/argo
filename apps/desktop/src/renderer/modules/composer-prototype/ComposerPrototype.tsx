@@ -487,14 +487,15 @@ function fileType(reference: string) {
 }
 
 function ReferenceStrip({ state, setState }: StateProps) {
-  const [renderedAttachments, setRenderedAttachments] = useState(state.attachments)
-  const [expanded, setExpanded] = useState(state.attachments.length > 0)
+  const [renderedAttachments, setRenderedAttachments] = useState(() => state.attachments.filter((reference) => !reference.startsWith('$')))
+  const [expanded, setExpanded] = useState(renderedAttachments.length > 0)
 
   useEffect(() => {
     let frame = 0
     let timeout = 0
-    if (state.attachments.length > 0) {
-      setRenderedAttachments(state.attachments)
+    const attachments = state.attachments.filter((reference) => !reference.startsWith('$'))
+    if (attachments.length > 0) {
+      setRenderedAttachments(attachments)
       frame = window.requestAnimationFrame(() => setExpanded(true))
     } else {
       setExpanded(false)
@@ -517,18 +518,6 @@ function ReferenceStrip({ state, setState }: StateProps) {
                 attachments: state.attachments.filter((item) => item !== reference),
               })
 
-            if (reference.startsWith('$')) {
-              return (
-                <div key={reference} className="flex h-10 items-center gap-2 px-2 text-sm text-blue-600">
-                  <SkillReferenceIcon />
-                  <span className="font-medium">{referenceLabel(reference)}</span>
-                  <AttachmentAction aria-label={`Remove ${reference}`} className="ml-1 text-muted-foreground" onClick={remove}>
-                    <X />
-                  </AttachmentAction>
-                </div>
-              )
-            }
-
             return (
               <Attachment key={reference} className="h-12 select-none border-border/60 px-2" size="xs">
                 <AttachmentMedia className="size-10 rounded-lg bg-muted"><File className="size-5" /></AttachmentMedia>
@@ -546,6 +535,22 @@ function ReferenceStrip({ state, setState }: StateProps) {
           })}
         </AttachmentGroup>
       </div>
+    </div>
+  )
+}
+
+function InlineSkillReferences({ state }: { state: ComposerState }) {
+  const skills = state.attachments.filter((reference) => reference.startsWith('$'))
+  if (skills.length === 0) return null
+
+  return (
+    <div className="flex h-6 shrink-0 select-none items-center gap-2">
+      {skills.map((reference) => (
+        <span key={reference} className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-blue-600">
+          <SkillReferenceIcon />
+          {referenceLabel(reference)}
+        </span>
+      ))}
     </div>
   )
 }
@@ -1283,25 +1288,28 @@ export function ComposerPrototype() {
           <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-3 right-3 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
-            <InputGroupTextarea
-              aria-label="Message"
-              placeholder="Direct the next move…"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              className="min-h-20 px-4 py-3 pr-28 text-sm leading-6 selection:bg-muted-foreground/25 selection:text-foreground"
-              onKeyDown={(event) => {
-                const suggestions = composerSuggestions(draft)
-                if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
-                  event.preventDefault()
-                  setDraft(insertComposerSuggestion(draft, suggestions[0]))
-                  return
-                }
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault()
-                  send()
-                }
-              }}
-            />
+            <div className="flex min-h-20 items-start gap-2 px-4 py-3 pr-28">
+              <InlineSkillReferences state={state} />
+              <InputGroupTextarea
+                aria-label="Message"
+                placeholder="Direct the next move…"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                className="!min-h-0 flex-1 !px-0 !py-0 text-sm leading-6 selection:bg-muted-foreground/25 selection:text-foreground"
+                onKeyDown={(event) => {
+                  const suggestions = composerSuggestions(draft)
+                  if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
+                    event.preventDefault()
+                    setDraft(insertComposerSuggestion(draft, suggestions[0]))
+                    return
+                  }
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault()
+                    send()
+                  }
+                }}
+              />
+            </div>
             <InputGroupAddon align="block-end" className="gap-1 bg-background px-2.5 py-2">
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
