@@ -73,7 +73,7 @@ import {
 import { Progress } from '@/renderer/components/ui/progress'
 
 type HarnessKey = 'codex' | 'claude'
-type VariantKey = 'A' | 'B' | 'C' | 'D'
+type VariantKey = 'A' | 'B' | 'C' | 'D' | 'E'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 
 type HarnessDefinition = {
@@ -497,7 +497,7 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
   )
 }
 
-function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' | 'footer' }) {
+function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' | 'footer' | 'attached' }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const used = `${(context.used / 1000).toFixed(0)}k`
@@ -520,6 +520,33 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
         <div className="shrink-0 text-xs tabular-nums">
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k total</span>
+        </div>
+        <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
+          <ContextPopover state={state} appearance="details" />
+          <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
+          <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (layout === 'attached') {
+    return (
+      <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-muted/40 px-4 pb-2.5 pt-3 shadow-md shadow-foreground/10">
+        <CircleGauge className="size-4 shrink-0" />
+        <div className="shrink-0">
+          <div className="text-xs font-semibold">{status} · {percentage}%</div>
+          <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
+        </div>
+        <div className="min-w-28 flex-1">
+          <div className="relative h-2 overflow-hidden rounded-full bg-background">
+            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+          </div>
+        </div>
+        <div className="shrink-0 text-xs tabular-nums">
+          <span className="font-semibold">{used}</span>
+          <span className="text-muted-foreground"> / 200k</span>
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
           <ContextPopover state={state} appearance="details" />
@@ -587,6 +614,7 @@ function VariantSwitcher({ variant }: { variant: VariantKey }) {
     { key: 'B', label: 'Side rail' },
     { key: 'C', label: 'Dock' },
     { key: 'D', label: 'Footer bar' },
+    { key: 'E', label: 'Attached' },
   ]
   return (
     <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Prototype variants">
@@ -681,7 +709,7 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
 
 export function ComposerPrototype() {
   const requestedVariant = new URLSearchParams(window.location.search).get('variant')
-  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' || requestedVariant === 'D' ? requestedVariant : 'A'
+  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' || requestedVariant === 'D' || requestedVariant === 'E' ? requestedVariant : 'A'
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -769,6 +797,11 @@ export function ComposerPrototype() {
             {variant === 'D' && <ContextSurface state={state} layout="footer" />}
           </InputGroup>
         </form>
+        {variant === 'E' && (
+          <div className="relative z-0 mx-auto -mt-px w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]">
+            <ContextSurface state={state} layout="attached" />
+          </div>
+        )}
       </div>
       <VariantSwitcher variant={variant} />
     </main>
