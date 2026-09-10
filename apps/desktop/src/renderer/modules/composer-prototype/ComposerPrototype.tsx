@@ -1278,74 +1278,6 @@ function ContextSurface({
   )
 }
 
-function ContextPreviewControl({ state, setState }: StateProps) {
-  const options: { key: ContextPreview; label: string; active: string }[] = [
-    { key: 'smart', label: 'Smart', active: 'bg-emerald-500 text-white' },
-    { key: 'warning', label: 'Nearing', active: 'bg-amber-400 text-black' },
-    { key: 'dumb', label: 'Dumb', active: 'bg-red-500 text-white' },
-  ]
-  return (
-    <div className="fixed right-3 bottom-3 z-50 flex items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur">
-      <span className="px-2 text-[10px] font-medium text-muted-foreground">Context state</span>
-      {options.map((option) => (
-        <button
-          key={option.key}
-          type="button"
-          onClick={() => setState({ ...state, contextPreview: option.key })}
-          className={`rounded-full px-2.5 py-1.5 text-[10px] font-medium ${state.contextPreview === option.key ? option.active : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          {option.label}
-        </button>
-      ))}
-      <span className="ml-1 border-l border-border/60 px-2 text-[10px] font-medium text-muted-foreground">Usage</span>
-      {(['normal', 'high'] as const).map((usagePreview) => (
-        <button
-          key={usagePreview}
-          type="button"
-          onClick={() => setState({ ...state, usagePreview })}
-          className={`rounded-full px-2.5 py-1.5 text-[10px] font-medium ${state.usagePreview === usagePreview ? usagePreview === 'high' ? 'bg-red-500 text-white' : 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          {usagePreview === 'high' ? '94%' : '54%'}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
-  return (
-    <>
-      {visible ? (
-        <div className="pointer-events-none fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(14,165,233,0.10)_1px,transparent_1px)] [background-size:100%_8px]" />
-          <div className="relative mx-auto h-full w-[calc(100%-4rem)] max-w-4xl border-x border-sky-500/90">
-            <div className="grid h-full grid-cols-12 gap-6">
-              {Array.from({ length: 12 }, (_, index) => (
-                <span key={index} className="border-x border-sky-500/25 bg-sky-500/[0.045]" />
-              ))}
-            </div>
-            <div className="absolute inset-y-0 left-4 border-l border-amber-500/90" />
-            <div className="absolute inset-y-0 right-4 border-r border-amber-500/90" />
-            <div className="absolute top-3 left-0 flex items-center gap-3 text-[10px] font-medium">
-              <span className="bg-sky-500 px-1.5 py-0.5 text-white">Composer edge</span>
-              <span className="bg-amber-400 px-1.5 py-0.5 text-black">Context inset 16px</span>
-              <span className="bg-background/90 px-1.5 py-0.5 text-sky-700">12 columns · 24px gutters · 8px baseline</span>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      <button
-        type="button"
-        aria-pressed={visible}
-        onClick={onToggle}
-        className={`fixed bottom-3 left-3 z-[70] rounded-full border px-3 py-2 text-xs font-medium shadow-sm backdrop-blur ${visible ? 'bg-sky-500 text-white' : 'bg-background/95 text-muted-foreground hover:text-foreground'}`}
-      >
-        Grid {visible ? 'on' : 'off'}
-      </button>
-    </>
-  )
-}
-
 function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 mx-auto w-full max-w-4xl">
@@ -1589,7 +1521,6 @@ export function ComposerPrototype() {
     contextPreview: 'dumb',
     usagePreview: 'normal',
   })
-  const [showAlignmentGrid, setShowAlignmentGrid] = useState(false)
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [feedEvidence, setFeedEvidence] = useState<FeedPrototypeEvidence | null>(null)
   const [draft, setDraft] = useState('')
@@ -1784,8 +1715,6 @@ export function ComposerPrototype() {
           {showSessionSidebar ? <SessionWorkSidebar evidence={feedEvidence} onCloseEvidence={() => setFeedEvidence(null)} /> : null}
           </div>
           {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
-          <ContextPreviewControl state={state} setState={setState} />
-          <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
         </main>
         </div>
       </div>
