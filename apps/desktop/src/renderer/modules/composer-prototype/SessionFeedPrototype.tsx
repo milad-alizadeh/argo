@@ -28,7 +28,7 @@ export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedE
         </p>
         <Button
           variant="ghost"
-          className="h-auto justify-start gap-2 px-0 text-control font-normal text-muted-foreground"
+          className="h-auto justify-start gap-2 px-0 text-(length:--text-control) font-normal text-muted-foreground"
           onClick={() => onOpenEvidence(FEED_EVIDENCE.skill)}
         >
           <Sparkles className="!size-(--size-icon-inline)" />

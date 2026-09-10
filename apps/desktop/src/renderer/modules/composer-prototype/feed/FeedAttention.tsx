@@ -53,12 +53,14 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
         setSubmitted(true)
       }}
     >
-      <p className="text-control text-muted-foreground">
+      <p className="text-(length:--text-control) text-muted-foreground">
         {readOnly ? 'Question in external Session' : 'Your input is needed'}
       </p>
       <QuestionnaireItem name={CONCIERGE_QUESTION.name} required={CONCIERGE_QUESTION.required}>
-        <QuestionnaireTitle>Where should Concierge subtitles appear?</QuestionnaireTitle>
-        <QuestionnaireDescription>
+        <QuestionnaireTitle className="text-(length:--text-body)">
+          Where should Concierge subtitles appear?
+        </QuestionnaireTitle>
+        <QuestionnaireDescription className="text-(length:--text-control)">
           {readOnly
             ? 'Reply in the CLI. This Session is read-only.'
             : 'Choose a placement or write another answer.'}
@@ -68,12 +70,15 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
             <QuestionnaireChoice
               key={choice.value}
               value={choice.value}
+              className="min-h-10 py-2 text-(length:--text-body)"
               disabled={readOnly}
               checked={selection === choice.value}
               onChange={() => setSelection(choice.value)}
             >
               <span className="font-medium">{choice.label}</span>
-              <QuestionnaireChoiceDescription>{choice.detail}</QuestionnaireChoiceDescription>
+              <QuestionnaireChoiceDescription className="text-(length:--text-control)">
+                {choice.detail}
+              </QuestionnaireChoiceDescription>
             </QuestionnaireChoice>
           ))}
           <QuestionnaireInput
@@ -81,13 +86,14 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
             placeholder="Or write another answer…"
             value={answer}
             disabled={readOnly}
+            className="min-h-10 text-(length:--text-body) md:text-(length:--text-body)"
             onChange={(event) => setAnswer(event.target.value)}
           />
         </QuestionnaireChoices>
       </QuestionnaireItem>
       {readOnly ? null : (
         <div className="flex justify-end">
-          <QuestionnaireSubmit className="bg-foreground text-control text-background hover:bg-foreground/80">
+          <QuestionnaireSubmit className="bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80">
             Send answer
           </QuestionnaireSubmit>
         </div>
@@ -116,7 +122,7 @@ export function FeedPermission() {
         <h3 id="feed-permission-title" className="text-control font-medium">
           Allow this command?
         </h3>
-        <p className="truncate text-[10px] text-muted-foreground">
+        <p className="truncate text-(length:--text-control) text-muted-foreground">
           Installs Project dependencies and may access the network.
         </p>
       </div>
@@ -126,7 +132,7 @@ export function FeedPermission() {
           Deny
         </Button>
         <Button
-          className="bg-foreground text-control text-background hover:bg-foreground/80"
+          className="bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80"
           onClick={() => setDecision('allowed')}
         >
           Allow once
