@@ -89,8 +89,35 @@ export const FEED_EVIDENCE = {
     title: 'prototype',
     kind: 'document',
     source:
-      'Explore the composer in its Session.\n\nKeep the draft, attachments and run controls together. Use the existing token contract and inspect every requested state. This is a disposable prototype.',
+      '# prototype\n\nExplore the composer in its Session.\n\n## Instructions\n\n- Keep the draft, attachments and run controls together.\n- Use the existing token contract.\n- Inspect every requested state.\n- Treat this as a disposable prototype.',
     detail: 'Skill loaded · Instructions supplied to this Session',
+  },
+  createdAttachmentTray: {
+    id: 'created-attachment-tray',
+    title: 'AttachmentTray.tsx',
+    kind: 'diff',
+    source:
+      '@@ New attachment tray @@\n+ export function AttachmentTray({ files }) {\n+   return <div className="flex gap-2 overflow-x-auto">{files.map(renderAttachment)}</div>\n+ }',
+    detail: 'Recorded file creation · AttachmentTray.tsx',
+    status: 'succeeded',
+  },
+  movedQueue: {
+    id: 'moved-queue',
+    title: 'queue.ts',
+    kind: 'diff',
+    source:
+      '@@ Move queue to Session module @@\n- import { queue } from "@/renderer/queue"\n+ import { queue } from "@/renderer/modules/sessions/queue"',
+    detail: 'Recorded file move · queue.ts',
+    status: 'succeeded',
+  },
+  deletedDraft: {
+    id: 'deleted-draft',
+    title: 'draft.ts',
+    kind: 'diff',
+    source:
+      '@@ Remove unused draft helper @@\n- export function restoreDraft(sessionId: string) {\n-   return localStorage.getItem("draft:" + sessionId)\n- }',
+    detail: 'Recorded deletion · draft.ts',
+    status: 'succeeded',
   },
   failed: {
     id: 'failed',
@@ -126,5 +153,8 @@ export const FEED_INSPECTOR_EVIDENCE: FeedPrototypeEvidence[] = [
   FEED_EVIDENCE.diff,
   FEED_EVIDENCE.tests,
   FEED_EVIDENCE.mcp,
+  FEED_EVIDENCE.createdAttachmentTray,
+  FEED_EVIDENCE.movedQueue,
+  FEED_EVIDENCE.deletedDraft,
   FEED_EVIDENCE.failed,
 ]
