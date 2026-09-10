@@ -337,7 +337,7 @@ function ProjectSwitcher({ project, onProjectChange }: { project: string; onProj
 
 function PrototypeChrome({ project, onProjectChange }: { project: string; onProjectChange: (project: string) => void }) {
   return (
-    <header className="flex h-11 shrink-0 items-center border-b border-border/60 bg-muted/35 pr-3 pl-[4.5rem]">
+    <header className="flex h-11 shrink-0 items-center bg-muted/50 pr-3 pl-[4.5rem]">
       <ProjectSwitcher project={project} onProjectChange={onProjectChange} />
       <span className="ml-auto text-[10px] text-muted-foreground">3 Projects available</span>
     </header>
@@ -426,7 +426,7 @@ function RailConcierge({ onFloat }: { onFloat: () => void }) {
 
 function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
-    <nav aria-label="Main navigation" className="flex min-h-0 flex-col items-center border-r border-border/60 bg-muted/35 py-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
+    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 py-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
       <div className="flex flex-col gap-3">
         {RAIL_ITEMS.map((item) => (
           <Tooltip key={item.label}>
@@ -1656,11 +1656,12 @@ export function ComposerPrototype() {
   }
 
   return (
-    <div className="h-dvh min-h-0 overflow-hidden bg-muted/50 p-2">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
+    <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/50">
       <PrototypeChrome project={project} onProjectChange={setProject} />
-      <div className="grid min-h-0 flex-1 grid-cols-[3.75rem_17.5rem_minmax(0,1fr)] max-xl:grid-cols-[3.75rem_minmax(0,1fr)] max-md:grid-cols-1">
+      <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[17.5rem_minmax(0,1fr)] overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background max-xl:grid-cols-[minmax(0,1fr)]">
         <PrototypeSessionRoster />
         <main
           className="relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
@@ -1786,6 +1787,7 @@ export function ComposerPrototype() {
           <ContextPreviewControl state={state} setState={setState} />
           <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
         </main>
+        </div>
       </div>
       </div>
     </div>
