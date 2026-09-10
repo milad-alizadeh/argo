@@ -121,6 +121,8 @@ type UsagePreview = 'normal' | 'high'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
 
+const SESSION_PANE_MIN_WIDTH = 216
+
 type HarnessDefinition = {
   label: string
   models: string[]
@@ -1828,7 +1830,7 @@ export function ComposerPrototype() {
   const handleSessionSidebarResize = (sidebarWidth: number, previousWidth: number) => {
     if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
     const conversationWidth = sessionConversationPanel.current?.getSize().inPixels
-    if (conversationWidth !== undefined && conversationWidth <= 320 && sidebarWidth > previousWidth) {
+    if (conversationWidth !== undefined && conversationWidth <= SESSION_PANE_MIN_WIDTH && sidebarWidth > previousWidth) {
       sessionSidebarFullscreenState.current = true
       setSessionSidebarFullscreen(true)
       return
@@ -2017,10 +2019,13 @@ export function ComposerPrototype() {
           <ResizablePanel
             id="session-conversation"
             panelRef={sessionConversationPanel}
-            minSize={320}
+            minSize={SESSION_PANE_MIN_WIDTH}
             className="flex h-full min-h-0 overflow-hidden"
           >
-          <div className="@container flex min-h-0 min-w-[320px] flex-1 flex-col">
+          <div
+            className="@container flex min-h-0 flex-1 flex-col"
+            style={{ minWidth: SESSION_PANE_MIN_WIDTH }}
+          >
           <PrototypeSessionHeader
             showRoster={showSessionRoster}
             onOpenRoster={() => setSessionRosterVisible(true)}
@@ -2118,7 +2123,7 @@ export function ComposerPrototype() {
             collapsible
             collapsedSize={0}
             defaultSize={sessionInspectorRestoreSize.current}
-            minSize={216}
+            minSize={SESSION_PANE_MIN_WIDTH}
             maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
             onResize={(size, _id, previousSize) => {
