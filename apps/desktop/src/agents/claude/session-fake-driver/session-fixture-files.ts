@@ -8,9 +8,19 @@
 // resolve the extensionless TypeScript imports that file reaches for.
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import process from 'node:process'
 
-const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'sessions')
+// Bun folds this module into a generated driver. The package script always starts in
+// `apps/desktop`, which remains stable after that relocation.
+const FIXTURES = path.join(
+  process.cwd(),
+  'src',
+  'agents',
+  'claude',
+  'session-fake-driver',
+  'fixtures',
+  'sessions',
+)
 
 export async function fixtureLines(name) {
   const text = await readFile(path.join(FIXTURES, `${name}.jsonl`), 'utf8')
