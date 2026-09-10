@@ -1,8 +1,8 @@
 // The three Project panes of the deck, in the measurements the design ticket froze (#1896).
 import type { ReactNode } from 'react'
-import type { ProjectSummary } from '../../projects/messages'
+import type { ProjectSummary } from '../../../../core/projects/messages'
 import { ProjectRefusal } from './ProjectRefusal'
-import { Button } from './ui/button'
+import { Button } from '../../../components/ui/button'
 
 export const TITLE = 'text-title font-semibold'
 export const LINE = 'text-body text-muted-foreground'

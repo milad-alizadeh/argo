@@ -47,27 +47,6 @@ export function projectError(code: ProjectErrorCode, requestId: string | null): 
   return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }
 }
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-export function isIdentifier(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length > 0 &&
-    value.length <= 256 &&
-    !/[\s\p{Cc}]/u.test(value)
-  )
-}
-
-export function requestIdentifier(value: unknown): string | null {
-  return isRecord(value) && isIdentifier(value.requestId) ? value.requestId : null
-}
-
-export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
-  return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
-}
-
 // Every action shares one shape: version 1, a named type, a request ID, and zero or more further
 // identifier fields. Extra fields are refused rather than ignored, so a request cannot smuggle a
 // path or a channel past the guard.
@@ -119,3 +98,4 @@ export function isProjectErrorMessage(value: unknown): value is ProjectError {
 export function isProjectOpenReply(value: unknown): value is ProjectOpenReply {
   return isProjectOpened(value) || isProjectErrorMessage(value)
 }
+import { hasKeys, isIdentifier, isRecord, requestIdentifier } from '../../boundary'

@@ -1,5 +1,5 @@
-import type { AppearanceClient } from '../appearance/appearance'
-import type { ProjectClient } from '../projects/client'
+import type { AppearanceClient } from '../core/appearance/appearance'
+import type { ProjectClient } from '../core/projects/client'
 import type { SessionClient } from '../core/sessions/client'
 
 declare global {

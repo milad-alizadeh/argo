@@ -1,7 +1,8 @@
 // The three actions #1828 adds to the version 1 Project contract, beside the `project.open` that
 // #1825 settled. Version 1 gains actions and never changes a message it already defines, so a
 // `project.open` exchange is byte-identical to the one the accepted proof asserts.
-import { hasKeys, isAction, isIdentifier, isRecord, type ProjectError } from './contract'
+import { hasKeys, isIdentifier, isRecord } from '../../boundary'
+import { isAction, type ProjectError } from './contract'
 
 // A Project as the cockpit draws it: the stable ID, the folder name, and the path, which is a
 // mutable attribute of the identity rather than the identity itself (CONTEXT.md · Project).

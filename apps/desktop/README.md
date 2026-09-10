@@ -244,7 +244,7 @@ entry basenames are the contract with `main` in `package.json` and the preload p
 
 The renderer is the cockpit shell: a chrome band, a sidebar of five destinations, and one deck.
 `src/renderer/components/ui/` is written by the shadcn CLI and is never hand-edited;
-`src/renderer/components/` is written here and composes it. The frame and the surfaces are
+`src/renderer/modules/` contains the maintained domain components and hooks. The frame and the surfaces are
 [ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md), the design workflow is
 [`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
 [`rules/desktop.md`](../../rules/desktop.md).
@@ -260,7 +260,7 @@ Package arm64 first; all three commands run the copy, never the app you have ins
 
 | Command | What it produces |
 | --- | --- |
-| `bun run prove:project` | The verdict for the Project workflow, naming every case, as JSON. |
+| `bun run prove:project-contract` | The verdict for the Project workflow, naming every case, as JSON. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 

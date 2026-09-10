@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { isIdentifier, isRecord } from './contract'
+import { isIdentifier, isRecord } from '../../boundary'
 import type { ProjectListed, ProjectSummary } from './messages'
 
 // A registration is `{id, path}` and whatever else the file already held. Another portable client
