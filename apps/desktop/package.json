@@ -46,6 +46,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
+    "class-variance-authority": "^0.7.1",
     "cn": "^0.2.6",
     "electron": "44.2.0",
     "i18next": "^26.4.2",
