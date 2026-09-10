@@ -10,15 +10,19 @@ Every `@electron-forge/*` package and Electron itself are pinned exactly, becaus
 Vite plugin experimental and reserves breaking changes for a minor release. Upgrade them as one
 reviewed unit.
 
+Run the app against the dev server with `bun run dev` from the repository root. That is Forge's
+`start`, so it holds the terminal until you quit the app.
+
 ## Visual design infra
 
 - Design stack: `docs/design-stack.md`
 - Design rules: `rules/desktop.md`
 - Components, live: <https://milad-alizadeh.github.io/argo/>, built from `main` by
   `.github/workflows/storybook-pages.yml`. `?path=/story/<component>--<state>` links one state.
-- Components, locally: `cd apps/desktop && bun run storybook`
-- Build the site: `cd apps/desktop && bun run storybook:build`, output `storybook-static`. Set
-  `STORYBOOK_BASE=/argo/` only when the output will be served from that path.
+- Components, locally: `bun run storybook` from the repository root
+- Build the site: `bun run build:storybook` from the repository root, output
+  `apps/desktop/storybook-static`. Set `STORYBOOK_BASE=/argo/` only when the output will be
+  served from that path.
 - Render one PNG: `cd apps/desktop && bun run design:render`
 
 Every PNG these commands write is disposable. Look at it and delete it: no gate reads one and no
@@ -32,7 +36,7 @@ root:
 ```sh
 bun install
 bun run install:electron
-bun run release:build
+bun run build
 ```
 
 The last command routes the desktop task through Turbo. Forge packages the arm64 app. The package

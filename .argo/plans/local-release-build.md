@@ -18,7 +18,7 @@ criteria:
     evidence: "test:apps/desktop/scripts/packaged-pty-checks.test.mjs"
   - id: RELEASE-BUILD-2
     check: "The local release command packages and runs the shipped app, then prints its absolute path."
-    evidence: "cmd:bun run release:build"
+    evidence: "cmd:bun run build"
   - id: RELEASE-BUILD-3
     check: "The repository quality gate remains green."
     evidence: "cmd:bun run quality"

@@ -41,6 +41,24 @@ jobs:
         with:
           save-cache: "true"
 
+      # Turbo's remote cache, backed by this repository's own Actions cache. The action runs a
+      # cache server on localhost for the life of the job and exports TURBO_API, TURBO_TOKEN and
+      # TURBO_TEAM at it, so `turbo run` restores a task it has already judged instead of running
+      # it again.
+      #
+      # It has to sit above the first `turbo run` step, which is the typecheck.
+      #
+      # What it can and cannot do follows the Actions cache's own scoping, the same rule the bun
+      # cache above lives under: a cache written on a pull request is readable only by that pull
+      # request, so the wins are a re-push to the same branch and a pull request restoring what a
+      # `main` run wrote. A first push on a fresh branch after a `main` run that touched the same
+      # files is the case this is for; the first run of all is still a full run, and should be.
+      #
+      # The budget is 10 GB per repository, shared with the bun module cache, and GitHub evicts
+      # the least recently used entry rather than failing a write.
+      - name: Turbo remote cache
+        uses: rharkor/caching-for-turbo@v2.5.1
+
       # Each gate runs even after an earlier one fails, so a PR gets every
       # verdict in one push instead of one round trip per breach.
       - name: Lint and format
@@ -278,7 +296,7 @@ jobs:
       # and leaving it unset keeps the gate reading the same configuration a local build does.
       - name: Build Storybook
         working-directory: apps/desktop
-        run: bun run storybook:build
+        run: bun run build:storybook
 
       # Written to a file rather than piped onward, so a skipped comment step still leaves the
       # links in the job summary.

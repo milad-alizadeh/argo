@@ -5,7 +5,7 @@
 // ordinary Linux CI job on every pull request. The checks themselves are exercised against fixture
 // trees next door, in `packaged-pty-fixtures.test.mjs`.
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { FuseV1Options } from '@electron/fuses'
 import { CYCLES, RESULT_PREFIX, SKIP_ENDURANCE_ENV } from './acceptance-protocol.mjs'
@@ -77,15 +77,114 @@ describe('the tree Forge is given', () => {
   })
 })
 
-describe('the local release build', () => {
-  test('routes the root command through one uncached desktop task', () => {
-    const root = json(path.join(repoRoot, 'package.json'))
-    const desktop = json(path.join(desktopRoot, 'package.json'))
-    const turbo = json(path.join(repoRoot, 'turbo.json'))
+describe('the root command surface', () => {
+  const root = () => json(path.join(repoRoot, 'package.json'))
+  const desktop = () => json(path.join(desktopRoot, 'package.json'))
+  const turbo = () => json(path.join(repoRoot, 'turbo.json'))
 
-    expect(root.scripts['release:build']).toBe('turbo run release:build --filter=@argo/desktop')
-    expect(turbo.tasks['release:build']).toEqual({ cache: false, outputs: ['out/**'] })
-    expect(desktop.scripts['release:build']).toBe('bun run prove:pty --arch arm64')
+  test('routes the release build through one uncached desktop task', () => {
+    expect(root().scripts.build).toBe('turbo run build --filter=@argo/desktop')
+    expect(turbo().tasks.build).toEqual({ cache: false, outputs: ['out/**'] })
+    expect(desktop().scripts.build).toBe('bun run prove:pty --arch arm64')
+  })
+
+  // Forge holds the terminal for the life of the app, and so does the Storybook server, so
+  // Turbo has to be told or it reports the task as one that finished. The exact shape also keeps
+  // `interactive` out: under the default stream UI, turbo 2.10 refuses to start such a task at all.
+  test('runs the app and Storybook as persistent tasks', () => {
+    expect(root().scripts.dev).toBe('turbo run dev')
+    expect(root().scripts.storybook).toBe('turbo run storybook')
+    expect(turbo().tasks.dev).toEqual({ cache: false, persistent: true })
+    expect(turbo().tasks.storybook).toEqual({ cache: false, persistent: true })
+    expect(desktop().scripts.dev).toContain('electron-forge start')
+    expect(desktop().scripts.storybook).toBe('storybook dev -p 6006')
+  })
+
+  // Without the link `electron-forge start` cannot find Electron; why is the script's own header.
+  test('links the hoisted Electron before Forge starts', () => {
+    const dev = desktop().scripts.dev
+    // A bare index comparison would pass on a missing link script, whose -1 sorts first.
+    const linked = dev.indexOf('scripts/link-hoisted-electron.mjs')
+    expect(linked).toBeGreaterThan(-1)
+    expect(linked).toBeLessThan(dev.indexOf('electron-forge start'))
+    expect(existsSync(path.join(desktopRoot, 'scripts', 'link-hoisted-electron.mjs'))).toBe(true)
+  })
+
+  test('builds the Storybook site into its own output directory', () => {
+    expect(root().scripts['build:storybook']).toBe('turbo run build:storybook')
+    expect(turbo().tasks['build:storybook'].outputs).toEqual(['storybook-static/**'])
+    expect(desktop().scripts['build:storybook']).toBe('storybook build')
+  })
+})
+
+// `turbo.json` carries no comments, because this file parses it with `JSON.parse` and turbo's own
+// tolerance for them is not shared. So the reasoning behind each cache decision lives here, next
+// to the assertion that holds it.
+describe('what turbo caches', () => {
+  const turbo = () => json(path.join(repoRoot, 'turbo.json'))
+  const cached = (task) => turbo().tasks[task].cache !== false
+
+  // The release task packages the app and then RUNS it for 600 spawn/exit cycles. A cache entry
+  // is a claim that the work need not happen, and no earlier machine's green run is evidence that
+  // THIS machine's artifact starts, so the one task whose whole point is execution stays uncached.
+  // The two persistent servers are uncached for the ordinary reason: they never finish.
+  test('caches every task except the release proof and the two servers', () => {
+    expect(cached('build')).toBe(false)
+    expect(cached('dev')).toBe(false)
+    expect(cached('storybook')).toBe(false)
+    expect(cached('typecheck')).toBe(true)
+    expect(cached('test')).toBe(true)
+    expect(cached('build:storybook')).toBe(true)
+  })
+
+  // A package's default input set stops at its own directory, so these assertions — which read
+  // the ROOT manifest — are invisible to the hash of the task that runs them. Without the root
+  // `package.json` in `globalDependencies`, renaming a root script would be judged by a cache
+  // entry that never saw the rename, and `bun run test` would report a pass for the old names.
+  // `.node-version` is here because every task shells through the version gate first, and
+  // `turbo.json` because the assertions in this very block read it: turbo folds in only the
+  // running task's own resolved definition, so an edit to `tasks.dev` is otherwise unhashed.
+  test('hashes the files that decide a task without being read by it', () => {
+    expect(turbo().globalDependencies).toContain('package.json')
+    expect(turbo().globalDependencies).toContain('.node-version')
+    expect(turbo().globalDependencies).toContain('turbo.json')
+  })
+
+  // The renderer imports values, not only types, from `src/core` (`SHORTCUTS`, `DESTINATIONS`,
+  // `APPEARANCES`), so that code lands in the built site. A hand-listed input set naming
+  // `src/renderer` alone serves a stale site for a `src/core` edit.
+  test('hashes the core code the built site carries', () => {
+    expect(turbo().tasks['build:storybook'].inputs).toContain('src/core/**')
+  })
+
+  // `.storybook/main.ts` reads `STORYBOOK_BASE` into every asset URL. Turbo's strict env mode hands
+  // a task only the variables it declares, and hashes only those, so an undeclared base is dropped
+  // from the build and a root-based site can be restored for a `/argo/` one.
+  test('passes and hashes the base the site is served from', () => {
+    expect(turbo().tasks['build:storybook'].env).toContain('STORYBOOK_BASE')
+  })
+
+  // `tsc --noEmit` and `bun test` write nothing, and a task with no declared outputs is a task
+  // whose cache entry turbo cannot describe. The empty array is the statement, not an omission.
+  test('says out loud that the verdict tasks emit nothing', () => {
+    expect(turbo().tasks.typecheck.outputs).toEqual([])
+    expect(turbo().tasks.test.outputs).toEqual([])
+  })
+
+  // `build` is the release proof, so a `^build` edge puts a fifteen-minute package and a
+  // 600-cycle app run in front of whatever declared it. Such an edge is inert only while nothing
+  // depends on `@argo/desktop`; this refuses it instead of relying on that.
+  test('keeps the release proof out of every other task graph', () => {
+    for (const [name, task] of Object.entries(turbo().tasks))
+      expect(task.dependsOn ?? [], `${name} depends on the release build`).not.toContain('^build')
+  })
+
+  // The suite reads its own fixtures, `forge.config.ts`, `package-manifest.json` and both
+  // lockfiles. An input list that named them would go stale the first time a test read one more
+  // file, and a stale list is a cache that serves a pass for code it never hashed. So `test`
+  // narrows the default set rather than replacing it.
+  test('narrows the test inputs without hand-listing them', () => {
+    expect(turbo().tasks.test.inputs[0]).toBe('$TURBO_DEFAULT$')
   })
 })
 
