@@ -8,6 +8,20 @@ paths:
 What no linter checks about `apps/desktop`. The surfaces themselves are
 [ADR-0038](../docs/adr/0038-the-desktop-cockpit-is-opaque.md), and the caps are `biome.jsonc`.
 
+## Tokens (#1912)
+
+`docs/design-stack.md` names the token contract, and these are the rules for writing to it. They
+lived in a `rules/design.md` naming a different file as the contract until #1912.
+
+- A visual constant is reached by name. The contract is the only place a raw value lives, and a
+  measurement at a call site is what `scripts/check-design-tokens.sh` reports.
+- A value the contract does not hold yet is added there first, and then read by name. Promoting a
+  component to shared comes after that, never with the value still inline.
+- A token is named for its role, not its value, with one small role set per family. `--text-body`
+  survives a change of size; `--text-13` does not.
+- Every string the reader sees takes a typography role.
+- A screen is a thin container: it resolves state and hands a pure render surface the result.
+
 ## Accessible names (#1784)
 
 The Swift app said this with 57 `.help` sites. A web tooltip is silent to a screen reader, so

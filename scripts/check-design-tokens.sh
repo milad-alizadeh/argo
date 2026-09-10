@@ -39,7 +39,7 @@ if [ -n "$findings" ]; then
   printf '%s\n\n' "$findings"
   count=$(printf '%s\n' "$findings" | wc -l | tr -d ' ')
   echo "check:design-tokens — $count design constant(s) outside the token contract."
-  echo "Fix: snap to an existing token or promote a named one (rules/design.md)."
+  echo "Fix: snap to an existing token or promote a named one (rules/desktop.md)."
   exit 1
 fi
 
