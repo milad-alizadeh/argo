@@ -97,6 +97,11 @@ import {
   PopoverTrigger,
 } from '@/renderer/components/ui/popover'
 import { Progress } from '@/renderer/components/ui/progress'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/renderer/components/ui/resizable'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
 import { FeedPermission } from './feed/FeedAttention'
 import {
@@ -485,7 +490,7 @@ const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], stri
 
 function PrototypeSessionRoster({ concierge, onConciergeChange }: { concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
-    <aside className="flex min-h-0 flex-col border-r border-border/60 bg-card max-xl:hidden">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center border-b border-border/60 px-3">
         <h1 className="text-sm font-semibold">Sessions</h1>
         <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="New Session">
@@ -594,7 +599,7 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
 function SessionWorkSidebar({ evidence, onCloseEvidence }: { evidence: FeedPrototypeEvidence | null; onCloseEvidence: () => void }) {
   if (evidence) return <FeedEvidencePrototype evidence={evidence} onClose={onCloseEvidence} />
   return (
-    <aside className="w-60 shrink-0 overflow-y-auto border-l border-border/60 bg-muted/20 p-3 max-2xl:w-52 max-lg:hidden">
+    <aside className="h-full w-full overflow-y-auto bg-muted/20 p-3">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-xs font-semibold">Running under this Session</h3>
         <span className="text-[10px] text-muted-foreground">4 live</span>
@@ -1620,10 +1625,24 @@ export function ComposerPrototype() {
       <PrototypeChrome project={project} onProjectChange={setProject} />
       <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[17.5rem_minmax(0,1fr)] overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background max-xl:grid-cols-[minmax(0,1fr)]">
-        <PrototypeSessionRoster concierge={concierge} onConciergeChange={setConcierge} />
+        <ResizablePanelGroup
+          orientation="horizontal"
+          className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background"
+        >
+        <ResizablePanel
+          id="session-roster"
+          defaultSize={280}
+          minSize={224}
+          maxSize={400}
+          groupResizeBehavior="preserve-pixel-size"
+          className="h-full min-h-0 overflow-hidden"
+        >
+          <PrototypeSessionRoster concierge={concierge} onConciergeChange={setConcierge} />
+        </ResizablePanel>
+        <ResizableHandle withHandle className="z-30" />
+        <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
         <main
-          className="relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+          className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
           data-prototype="composer"
           onPointerDownCapture={() => setKeyboardFocus(false)}
           onKeyDownCapture={(event) => {
@@ -1659,9 +1678,10 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(3) { z-index: 8; }
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
-      `}</style>
+          `}</style>
           <PrototypeSessionHeader showSidebar={showSessionSidebar} onToggleSidebar={() => setShowSessionSidebar((visible) => !visible)} />
-          <div className="flex min-h-0 flex-1">
+          <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
+          <ResizablePanel id="session-conversation" minSize={480} className="h-full min-h-0 overflow-hidden">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
             <Transcript messages={messages} onOpenEvidence={(evidence) => {
@@ -1743,11 +1763,27 @@ export function ComposerPrototype() {
             </div>
           </div>
           </div>
-          {showSessionSidebar ? <SessionWorkSidebar evidence={feedEvidence} onCloseEvidence={() => setFeedEvidence(null)} /> : null}
-          </div>
+          </ResizablePanel>
+          {showSessionSidebar ? (
+            <>
+              <ResizableHandle withHandle className="z-30" />
+              <ResizablePanel
+                id="session-inspector"
+                defaultSize={248}
+                minSize={216}
+                maxSize={400}
+                groupResizeBehavior="preserve-pixel-size"
+                className="h-full min-h-0 overflow-hidden"
+              >
+                <SessionWorkSidebar evidence={feedEvidence} onCloseEvidence={() => setFeedEvidence(null)} />
+              </ResizablePanel>
+            </>
+          ) : null}
+          </ResizablePanelGroup>
           {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
         </main>
-        </div>
+        </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
       </div>
     </div>
