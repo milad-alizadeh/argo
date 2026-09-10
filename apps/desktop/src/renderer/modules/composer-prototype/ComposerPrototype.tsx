@@ -374,7 +374,7 @@ function ProjectManager({
         <span className="text-muted-foreground">{visibleProjects.length}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel>Visible in Sessions</DropdownMenuLabel>
         {PROJECTS.map((item) => (
           <DropdownMenuItem
@@ -395,6 +395,23 @@ function ProjectManager({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+function PrototypeChrome({
+  visibleProjects,
+  onVisibilityChange,
+}: {
+  visibleProjects: ProjectKey[]
+  onVisibilityChange: (project: ProjectKey, visible: boolean) => void
+}) {
+  return (
+    <header className="flex h-11 shrink-0 items-center bg-muted/50 pl-[4.5rem]">
+      <ProjectManager
+        visibleProjects={visibleProjects}
+        onVisibilityChange={onVisibilityChange}
+      />
+    </header>
   )
 }
 
@@ -585,12 +602,10 @@ function PrototypeSessionRoster({
   concierge,
   onConciergeChange,
   visibleProjects,
-  onProjectVisibilityChange,
 }: {
   concierge: ConciergePlacement
   onConciergeChange: (placement: ConciergePlacement) => void
   visibleProjects: ProjectKey[]
-  onProjectVisibilityChange: (project: ProjectKey, visible: boolean) => void
 }) {
   const [expandedProjects, setExpandedProjects] = useState<ProjectKey[]>(PROJECTS)
 
@@ -598,15 +613,9 @@ function PrototypeSessionRoster({
     <aside className="flex h-full min-h-0 w-full flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center px-3">
         <h1 className="text-sm font-semibold">Sessions</h1>
-        <div className="ml-auto flex items-center gap-1">
-          <ProjectManager
-            visibleProjects={visibleProjects}
-            onVisibilityChange={onProjectVisibilityChange}
-          />
-          <Button variant="ghost" size="icon-sm" aria-label="New Session">
-            <Plus />
-          </Button>
-        </div>
+        <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label="New Session">
+          <Plus />
+        </Button>
       </div>
       <div className="px-3 pt-2 pb-1.5">
         <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-[11px] text-muted-foreground [&_svg]:size-(--size-icon-inline)">
@@ -1786,6 +1795,16 @@ export function ComposerPrototype() {
   return (
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/50">
+        <PrototypeChrome
+          visibleProjects={visibleProjects}
+          onVisibilityChange={(project, visible) =>
+            setVisibleProjects((current) =>
+              visible
+                ? [...new Set([...current, project])]
+                : current.filter((item) => item !== project),
+            )
+          }
+        />
       <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
         <ResizablePanelGroup
@@ -1804,13 +1823,6 @@ export function ComposerPrototype() {
             concierge={concierge}
             onConciergeChange={setConcierge}
             visibleProjects={visibleProjects}
-            onProjectVisibilityChange={(project, visible) =>
-              setVisibleProjects((current) =>
-                visible
-                  ? [...new Set([...current, project])]
-                  : current.filter((item) => item !== project),
-              )
-            }
           />
         </ResizablePanel>
         <ResizableHandle className="z-30" />
