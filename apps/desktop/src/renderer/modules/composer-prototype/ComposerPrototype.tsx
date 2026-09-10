@@ -1779,11 +1779,7 @@ export function ComposerPrototype() {
   const setSessionSidebarVisible = (visible: boolean) => {
     animateSessionInspector(() => {
       if (visible) sessionInspectorPanel.current?.expand()
-      else {
-        if (sessionSidebarFullscreen)
-          sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
-        sessionInspectorPanel.current?.collapse()
-      }
+      else sessionInspectorPanel.current?.collapse()
     })
     sessionSidebarFullscreenState.current = false
     setSessionSidebarFullscreen(false)
@@ -1801,15 +1797,9 @@ export function ComposerPrototype() {
 
   const toggleSessionSidebarFullscreen = () => {
     const nextFullscreen = !sessionSidebarFullscreenState.current
+    if (nextFullscreen)
+      sessionInspectorRestoreSize.current = sessionInspectorPanel.current?.getSize().inPixels ?? sessionInspectorRestoreSize.current
     sessionSidebarFullscreenState.current = nextFullscreen
-    animateSessionInspector(() => {
-      if (!nextFullscreen) {
-        sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
-      } else {
-        sessionInspectorRestoreSize.current = sessionInspectorPanel.current?.getSize().inPixels ?? 248
-        sessionInspectorPanel.current?.resize('100%')
-      }
-    })
     setSessionSidebarFullscreen(nextFullscreen)
   }
 
@@ -1819,7 +1809,6 @@ export function ComposerPrototype() {
     if (conversationWidth !== undefined && conversationWidth <= 320 && sidebarWidth > previousWidth) {
       sessionSidebarFullscreenState.current = true
       setSessionSidebarFullscreen(true)
-      window.requestAnimationFrame(() => sessionInspectorPanel.current?.resize('100%'))
       return
     }
     if (sidebarWidth > 0) sessionInspectorRestoreSize.current = sidebarWidth
@@ -1989,7 +1978,7 @@ export function ComposerPrototype() {
           <ResizablePanel
             id="session-conversation"
             panelRef={sessionConversationPanel}
-            minSize={0}
+            minSize={320}
             className="flex h-full min-h-0 overflow-hidden"
           >
           <div className="@container flex min-h-0 min-w-[320px] flex-1 flex-col">
@@ -2107,6 +2096,14 @@ export function ComposerPrototype() {
             </div>
           </ResizablePanel>
           </ResizablePanelGroup>
+          {sessionSidebarFullscreen ? (
+            <div className="absolute inset-0 z-40 overflow-hidden bg-background motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
+              <SessionWorkSidebar
+                evidence={feedEvidence}
+                onActiveEvidenceChange={setActiveFeedEvidenceId}
+              />
+            </div>
+          ) : null}
           {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
         </main>
         </ResizablePanel>
