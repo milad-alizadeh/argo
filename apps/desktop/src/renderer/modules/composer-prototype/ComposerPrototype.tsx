@@ -258,7 +258,7 @@ type PrototypeSession = {
 }
 
 type ThemeMode = 'system' | 'light' | 'dark'
-type ConciergePlacement = 'roster' | 'floating' | 'off'
+type ConciergePlacement = 'header' | 'off'
 type ProjectKey = 'argo' | 'fresco' | 'posthog'
 
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
@@ -360,11 +360,11 @@ function ConciergeOrb({ compact = false }: { compact?: boolean }) {
 }
 
 function ProjectManager({
-  visibleProjects,
-  onVisibilityChange,
+  currentProject,
+  onProjectChange,
 }: {
-  visibleProjects: ProjectKey[]
-  onVisibilityChange: (project: ProjectKey, visible: boolean) => void
+  currentProject: ProjectKey
+  onProjectChange: (project: ProjectKey) => void
 }) {
   return (
     <DropdownMenu>
@@ -374,33 +374,34 @@ function ProjectManager({
             variant="ghost"
             size="sm"
             className="gap-1.5 px-2"
-            aria-label={`${visibleProjects.length} visible Projects`}
+            aria-label={`Current Project: ${currentProject}`}
           />
         }
       >
         <FolderKanban />
-        <span className="truncate font-medium">Projects</span>
-        <span className="text-muted-foreground">{visibleProjects.length}</span>
+        <span className="truncate font-medium">{currentProject}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>Visible in Sessions</DropdownMenuLabel>
-        {PROJECTS.map((item) => (
-          <DropdownMenuItem
-            key={item}
-            onClick={() => onVisibilityChange(item, !visibleProjects.includes(item))}
-          >
-            <FolderKanban />
-            <span className="flex-1">{item}</span>
-            {visibleProjects.includes(item) ? <Check /> : null}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
+          {PROJECTS.map((item) => (
+            <DropdownMenuItem
+              key={item}
+              onClick={() => onProjectChange(item)}
+            >
+              <FolderKanban />
+              <span className="flex-1">{item}</span>
+              {currentProject === item ? <Check /> : null}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <Plus />Open another Project…
+          <Settings />Project settings…
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Settings />Manage Projects…
+          <Plus />Add Project…
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -408,18 +409,59 @@ function ProjectManager({
 }
 
 function PrototypeChrome({
-  visibleProjects,
-  onVisibilityChange,
+  currentProject,
+  onProjectChange,
+  concierge,
+  onConciergeChange,
 }: {
-  visibleProjects: ProjectKey[]
-  onVisibilityChange: (project: ProjectKey, visible: boolean) => void
+  currentProject: ProjectKey
+  onProjectChange: (project: ProjectKey) => void
+  concierge: ConciergePlacement
+  onConciergeChange: (placement: ConciergePlacement) => void
 }) {
   return (
-    <header className="flex h-11 shrink-0 items-center bg-muted/50 pl-[4.5rem]">
+    <header className="flex h-11 shrink-0 items-center bg-muted/50 px-3 pl-[4.5rem]">
       <ProjectManager
-        visibleProjects={visibleProjects}
-        onVisibilityChange={onVisibilityChange}
+        currentProject={currentProject}
+        onProjectChange={onProjectChange}
       />
+      {concierge === 'header' ? (
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative ml-auto gap-2 px-2"
+                aria-label="Open Concierge chat"
+              />
+            }
+          >
+            <ConciergeOrb compact />
+            <span className="font-medium">Concierge</span>
+            <span className="absolute top-0.5 left-7 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72 gap-3 p-3">
+            <PopoverHeader>
+              <PopoverTitle className="flex items-center gap-2 text-xs">
+                Concierge
+                <span className="ml-auto inline-flex items-center gap-1 text-(length:--text-control) font-normal text-muted-foreground">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />Listening
+                </span>
+              </PopoverTitle>
+              <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
+            </PopoverHeader>
+            <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-(length:--text-body) leading-relaxed">
+              <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
+              <p>I’m updating the prototype now.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1">Open chat</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => onConciergeChange('off')}>Hide</Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : null}
     </header>
   )
 }
@@ -456,61 +498,11 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Concierge</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={concierge} onValueChange={(value) => onConciergeChange(value as ConciergePlacement)}>
-          <DropdownMenuRadioItem value="roster">Below Session list</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="floating">Floating companion</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="header">Top bar</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-function RosterConcierge({ onFloat }: { onFloat: () => void }) {
-  return (
-    <Popover>
-      <PopoverTrigger
-        render={
-          <button
-            type="button"
-            aria-label="Open Concierge chat"
-            className="flex w-full items-center gap-2 rounded-lg p-2 text-left hover:bg-muted"
-          />
-        }
-      >
-        <span className="relative shrink-0">
-          <ConciergeOrb compact />
-          <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
-        </span>
-        <span className="min-w-0">
-          <span className="block text-(length:--text-control) font-medium">
-            Concierge is listening
-          </span>
-          <span className="block truncate text-(length:--text-control) text-muted-foreground">
-            “Show every feed state in one conversation…”
-          </span>
-        </span>
-      </PopoverTrigger>
-      <PopoverContent side="right" align="end" className="w-72 gap-3 p-3">
-        <PopoverHeader>
-          <PopoverTitle className="flex items-center gap-2 text-xs">
-            <ConciergeOrb compact />
-            Concierge
-            <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground">
-              <span className="size-1.5 rounded-full bg-emerald-500" />Global voice chat
-            </span>
-          </PopoverTitle>
-          <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
-        </PopoverHeader>
-        <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-(length:--text-body) leading-relaxed">
-          <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
-          <p>I’m updating the prototype now.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" className="flex-1">Open chat</Button>
-          <Button type="button" variant="outline" size="sm" onClick={onFloat}>Float</Button>
-        </div>
-      </PopoverContent>
-    </Popover>
   )
 }
 
@@ -614,17 +606,13 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
 }
 
 function PrototypeSessionRoster({
-  concierge,
-  onConciergeChange,
-  visibleProjects,
+  currentProject,
   onCollapse,
 }: {
-  concierge: ConciergePlacement
-  onConciergeChange: (placement: ConciergePlacement) => void
-  visibleProjects: ProjectKey[]
+  currentProject: ProjectKey
   onCollapse: () => void
 }) {
-  const [expandedProjects, setExpandedProjects] = useState<ProjectKey[]>(PROJECTS)
+  const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-card">
@@ -647,62 +635,12 @@ function PrototypeSessionRoster({
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        {visibleProjects.map((project) => {
-          const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === project)
-          const expanded = expandedProjects.includes(project)
-          return (
-            <section key={project} className="pb-2">
-              <div className="flex items-center gap-1.5 px-2 py-2 text-(length:--text-control) font-medium text-muted-foreground">
-                <button
-                  type="button"
-                  aria-expanded={expanded}
-                  aria-controls={`project-sessions-${project}`}
-                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left hover:text-foreground"
-                  onClick={() =>
-                    setExpandedProjects((current) =>
-                      expanded
-                        ? current.filter((item) => item !== project)
-                        : [...current, project],
-                    )
-                  }
-                >
-                  <ChevronRight
-                    className={`size-(--size-icon-inline) transition-transform ${expanded ? 'rotate-90' : ''}`}
-                  />
-                  <FolderKanban className="size-(--size-icon-inline)" />
-                  <span className="truncate text-foreground">{project}</span>
-                  <span>{sessions.length}</span>
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="ml-auto"
-                  aria-label={`New Session in ${project}`}
-                >
-                  <Plus />
-                </Button>
-              </div>
-              {expanded ? (
-                <div id={`project-sessions-${project}`} className="space-y-1">
-                  {sessions.map((session) => (
-                    <SessionRosterRow key={session.id} session={session} />
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          )
-        })}
-        {visibleProjects.length === 0 ? (
-          <p className="px-2 py-6 text-center text-control text-muted-foreground">
-            Choose Projects from the top bar to show their Sessions.
-          </p>
-        ) : null}
-      </div>
-      {concierge === 'roster' ? (
-        <div className="shrink-0 border-t border-border/60 p-2">
-          <RosterConcierge onFloat={() => onConciergeChange('floating')} />
+        <div className="space-y-1 pt-1">
+          {sessions.map((session) => (
+            <SessionRosterRow key={session.id} session={session} />
+          ))}
         </div>
-      ) : null}
+      </div>
     </aside>
   )
 }
@@ -877,29 +815,6 @@ function SessionWorkSidebar({
         </div>
       )}
     </aside>
-  )
-}
-
-function FloatingConcierge({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="absolute right-5 bottom-5 z-40 flex items-end gap-2">
-      <div className="max-w-72 rounded-xl border border-border/60 bg-popover p-3 shadow-xl">
-        <div className="flex items-center gap-2 text-(length:--text-control) font-medium">
-          Concierge <span className="size-1.5 rounded-full bg-emerald-500" />
-        </div>
-        <p className="mt-1 text-(length:--text-body) leading-relaxed text-muted-foreground">
-          You: “Keep the composer fixed and make the feed richer.”
-        </p>
-        <p className="mt-1 text-(length:--text-body) leading-relaxed">
-          I’m updating the prototype now.
-        </p>
-      </div>
-      <button type="button" aria-label="Open Concierge" className="relative rounded-full border border-border/60 bg-background p-1 shadow-xl">
-        <ConciergeOrb />
-        <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-destructive text-[9px] text-destructive-foreground">2</span>
-      </button>
-      <button type="button" aria-label="Disable floating Concierge" onClick={onClose} className="absolute -top-2 -right-2 grid size-5 place-items-center rounded-full border bg-background text-muted-foreground shadow"><X /></button>
-    </div>
   )
 }
 
@@ -1785,11 +1700,11 @@ function initialTheme(): ThemeMode {
 
 function initialConcierge(): ConciergePlacement {
   const concierge = new URLSearchParams(window.location.search).get('concierge')
-  return concierge === 'floating' || concierge === 'off' ? concierge : 'roster'
+  return concierge === 'off' ? 'off' : 'header'
 }
 
 export function ComposerPrototype() {
-  const [visibleProjects, setVisibleProjects] = useState<ProjectKey[]>(PROJECTS)
+  const [currentProject, setCurrentProject] = useState<ProjectKey>('argo')
   const [theme, setTheme] = useState<ThemeMode>(initialTheme)
   const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
   const [showSessionRoster, setShowSessionRoster] = useState(true)
@@ -1987,14 +1902,10 @@ export function ComposerPrototype() {
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/50">
         <PrototypeChrome
-          visibleProjects={visibleProjects}
-          onVisibilityChange={(project, visible) =>
-            setVisibleProjects((current) =>
-              visible
-                ? [...new Set([...current, project])]
-                : current.filter((item) => item !== project),
-            )
-          }
+          currentProject={currentProject}
+          onProjectChange={setCurrentProject}
+          concierge={concierge}
+          onConciergeChange={setConcierge}
         />
       <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
@@ -2017,9 +1928,7 @@ export function ComposerPrototype() {
           className="h-full min-h-0 overflow-hidden"
         >
           <PrototypeSessionRoster
-            concierge={concierge}
-            onConciergeChange={setConcierge}
-            visibleProjects={visibleProjects}
+            currentProject={currentProject}
             onCollapse={() => setSessionRosterVisible(false)}
           />
         </ResizablePanel>
@@ -2227,7 +2136,6 @@ export function ComposerPrototype() {
           </ResizablePanel>
           </ResizablePanelGroup>
           )}
-          {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
         </main>
         </ResizablePanel>
         </ResizablePanelGroup>
