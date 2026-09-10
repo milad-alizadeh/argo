@@ -418,7 +418,15 @@ function ReferenceStrip({ state, setState }: StateProps) {
   )
 }
 
-function ContextPopover({ state, appearance = 'compact' }: { state: ComposerState; appearance?: 'compact' | 'details' }) {
+function ContextPopover({
+  state,
+  appearance = 'compact',
+  meterStyle = 'solid',
+}: {
+  state: ComposerState
+  appearance?: 'compact' | 'details'
+  meterStyle?: 'solid' | 'gradient'
+}) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const smartZonePercentage = 20
@@ -471,7 +479,10 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
             </div>
           </div>
           <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
+            <div
+              className={`absolute inset-y-0 left-0 ${meterStyle === 'gradient' ? 'bg-gradient-to-r from-emerald-500 via-amber-400 to-red-500' : zone.fill}`}
+              style={{ width: `${percentage}%` }}
+            />
             <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${smartZonePercentage}%` }} />
           </div>
           <p className="mt-2 text-xs leading-4 text-muted-foreground">
@@ -479,11 +490,13 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
           </p>
         </div>
 
-        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20%</span>
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
-          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
-        </div>
+        {meterStyle === 'solid' ? (
+          <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20%</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
+          </div>
+        ) : null}
 
         {state.harness === 'claude' ? (
           <div className="grid gap-2">
@@ -563,13 +576,16 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
         <div className="shrink-0">
           <div className="flex items-center gap-1 text-xs font-semibold">
             Context · {status} · {percentage}%
-            <ContextPopover state={state} appearance="details" />
+            <ContextPopover state={state} appearance="details" meterStyle="gradient" />
           </div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-background">
-            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
+            <div
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 via-amber-400 to-red-500"
+              style={{ width: `${percentage}%` }}
+            />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
