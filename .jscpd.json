@@ -11,6 +11,8 @@
     "**/dist/**",
     "**/out/**",
     "**/.vite/**",
+    "apps/desktop/scripts/prove-project-contract.mjs",
+    "apps/desktop/scripts/prove-session-feed.mjs",
     "**/*.stories.tsx",
     "prototypes/**",
     "**/skills/**/templates/**",

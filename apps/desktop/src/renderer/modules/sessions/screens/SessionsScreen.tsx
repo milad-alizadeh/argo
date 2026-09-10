@@ -10,5 +10,12 @@ export function SessionsScreen() {
   if (rosterError !== null) return <SessionsEmptyState message={rosterError} />
   if (roster === null) return <SessionsEmptyState message="Reading Claude sessions..." />
   if (feedError !== null) return <SessionsEmptyState message={feedError} />
-  return <SessionsScreenView feed={feed} onSelect={selectSession} selectedSessionId={selectedSessionId} sessions={roster.sessions} />
+  return (
+    <SessionsScreenView
+      feed={feed}
+      onSelect={selectSession}
+      selectedSessionId={selectedSessionId}
+      sessions={roster.sessions}
+    />
+  )
 }

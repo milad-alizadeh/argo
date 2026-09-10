@@ -1,0 +1,15 @@
+@theme {
+  --color-canvas: #101315;
+  --color-panel: #171c20;
+  --color-panel-raised: #20272c;
+  --color-rule: #344047;
+  --color-ink: #edf2f3;
+  --color-muted: #9eabb1;
+  --color-active: #9de5cf;
+  --color-warn: #f4c46a;
+  --color-danger: #ef8e88;
+  --font-sans: "Avenir Next", "Helvetica Neue", sans-serif;
+  --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --sessions-grid-columns: minmax(17rem, 26rem) minmax(0, 1fr);
+  --sessions-mobile-grid-rows: minmax(14rem, 40vh) minmax(0, 1fr);
+}

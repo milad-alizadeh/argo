@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
-
-import { sessionStory } from './stories.fixtures'
 import { SessionListItem } from './SessionListItem'
+import { sessionStory } from './stories.fixtures'
 
 const meta: Meta<typeof SessionListItem> = {
   title: 'Sessions/SessionListItem',
@@ -12,5 +11,9 @@ const meta: Meta<typeof SessionListItem> = {
 export default meta
 type Story = StoryObj<typeof SessionListItem>
 
-export const Default: Story = { args: { session: sessionStory, selected: false, onSelect: () => undefined } }
-export const Selected: Story = { args: { session: sessionStory, selected: true, onSelect: () => undefined } }
+export const Default: Story = {
+  args: { session: sessionStory, selected: false, onSelect: () => undefined },
+}
+export const Selected: Story = {
+  args: { session: sessionStory, selected: true, onSelect: () => undefined },
+}

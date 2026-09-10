@@ -8,5 +8,11 @@ const statusStyles: Record<string, string> = {
 }
 
 export function SessionStatus({ status }: SessionStatusProps) {
-  return <span className={`rounded-full px-2 py-0.5 font-mono text-[0.65rem] tracking-wide ${statusStyles[status] ?? 'bg-rule text-ink'}`}>{status}</span>
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 font-mono text-xs tracking-wide ${statusStyles[status] ?? 'bg-rule text-ink'}`}
+    >
+      {status}
+    </span>
+  )
 }

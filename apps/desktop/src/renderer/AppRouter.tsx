@@ -1,4 +1,4 @@
-import { Navigate, RouterProvider, createHashRouter } from 'react-router'
+import { createHashRouter, Navigate, RouterProvider } from 'react-router'
 
 import { SessionsScreen } from './modules/sessions/screens/SessionsScreen'
 
