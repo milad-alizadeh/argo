@@ -926,18 +926,17 @@ function RunSetupMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
+        render={<InputGroupButton variant="ghost" className="max-w-80 shrink-0 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
       >
-        <IconLabel icon={<HarnessLogo harness={state.harness} className="size-3.5" />}>
-          <span className="inline-flex items-center gap-1.5">
-            {definition.label}
-            <span className="text-muted-foreground">·</span>
-            {state.model}
-            <span className="text-muted-foreground">·</span>
-            {state.effort}
-          </span>
-        </IconLabel>
-        <ChevronDown className="text-muted-foreground" />
+        <HarnessLogo harness={state.harness} className="size-3.5" />
+        <span className="hidden items-center gap-1.5 @[36rem]:inline-flex">
+          {definition.label}
+          <span className="text-muted-foreground">·</span>
+          {state.model}
+          <span className="text-muted-foreground">·</span>
+          {state.effort}
+        </span>
+        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] overflow-hidden p-0">
         <div className="border-b p-2">
@@ -1052,10 +1051,11 @@ function PermissionMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
+        render={<InputGroupButton variant="ghost" className="shrink-0 text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
       >
-        <IconLabel icon={<PermissionIcon harness={state.harness} permission={state.permission} />}>{state.permission}</IconLabel>
-        <ChevronDown className="text-muted-foreground" />
+        <PermissionIcon harness={state.harness} permission={state.permission} />
+        <span className="hidden @[36rem]:inline">{state.permission}</span>
+        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
@@ -1207,7 +1207,7 @@ function ContextPopover({
   meterStyle = 'solid',
 }: {
   state: ComposerState
-  appearance?: 'compact' | 'details'
+  appearance?: 'compact' | 'details' | 'progress'
   meterStyle?: 'solid' | 'gradient' | 'grayscale'
 }) {
   const context = HARNESSES[state.harness].context
@@ -1238,7 +1238,7 @@ function ContextPopover({
       <PopoverTrigger
         render={appearance === 'compact'
           ? <InputGroupButton variant="secondary" className="h-auto gap-2 px-2.5 py-1.5 text-foreground" />
-          : <Button variant="ghost" size="icon" className="size-7" aria-label="Context details" />}
+          : <Button variant="ghost" size="icon" className="size-7" aria-label={appearance === 'progress' ? `Context ${percentage}%` : 'Context details'} />}
       >
         {appearance === 'compact' ? (
           <>
@@ -1246,6 +1246,11 @@ function ContextPopover({
             <span className="text-xs font-semibold">{contextStatus}</span>
             <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
           </>
+        ) : appearance === 'progress' ? (
+          <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
+            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
+            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
+          </svg>
         ) : <Info className="size-4" />}
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
@@ -1391,11 +1396,14 @@ function ContextSurface({
 
   if (layout === 'attached') {
     return (
-      <div className="flex select-none items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
-        <div className="shrink-0 border-r border-border/60 pr-4"><UsagePopover state={state} /></div>
-        <IconLabel icon={<Layers3 />} className={contextAlert ? 'text-red-600' : 'text-foreground'}>Context</IconLabel>
+      <div className="flex select-none items-center gap-2 rounded-b-xl border bg-background px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[36rem]:gap-3 @[36rem]:px-4">
+        <div className="shrink-0 @[36rem]:border-r @[36rem]:border-border/60 @[36rem]:pr-4"><UsagePopover state={state} collapseAtNarrow /></div>
+        <div className="shrink-0 @[36rem]:hidden">
+          <ContextPopover state={state} appearance="progress" meterStyle="grayscale" />
+        </div>
+        <IconLabel icon={<Layers3 />} className={`hidden @[36rem]:inline-flex ${contextAlert ? 'text-red-600' : 'text-foreground'}`}>Context</IconLabel>
         <TooltipProvider>
-        <div className="relative min-w-28 flex-1">
+        <div className="relative hidden min-w-28 flex-1 @[36rem]:block">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
             <div className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
@@ -1410,13 +1418,13 @@ function ContextSurface({
           </div>
         </div>
         </TooltipProvider>
-        <div className="flex shrink-0 items-center gap-1 text-xs tabular-nums">
+        <div className="hidden shrink-0 items-center gap-1 text-xs tabular-nums @[36rem]:flex">
           <span className="font-medium text-foreground">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
           <ContextPopover state={state} appearance="details" meterStyle="grayscale" />
         </div>
-        <div className="ml-1 flex shrink-0 items-center gap-1 border-l border-border/60 pl-4">
+        <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[36rem]:flex">
           <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
           <Button variant="outline" size="sm"><IconLabel icon={<GitFork />}>Handoff</IconLabel></Button>
         </div>
@@ -1621,17 +1629,18 @@ function TaskPlanPopover() {
   )
 }
 
-function UsagePopover({ state }: { state: ComposerState }) {
+function UsagePopover({ state, collapseAtNarrow = false }: { state: ComposerState; collapseAtNarrow?: boolean }) {
   const definition = HARNESSES[state.harness]
   const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
   const primaryUsagePercentage = state.usagePreview === 'high' ? 94 : primaryUsage.percentage
   const usageAlert = primaryUsagePercentage >= 90
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="sm" className={`gap-1.5 px-2 text-xs font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} />}>
-        <IconLabel icon={<CircleGauge />}>
+      <PopoverTrigger render={<Button variant="ghost" size="sm" className={`shrink-0 gap-1.5 px-2 text-xs font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} aria-label={`Usage ${primaryUsagePercentage}%`} />}>
+        <CircleGauge />
+        <span className={collapseAtNarrow ? 'hidden items-center gap-1 @[36rem]:inline-flex' : 'inline-flex items-center gap-1'}>
           Usage <span className={`tabular-nums ${usageAlert ? 'text-red-600' : 'text-muted-foreground'}`}>{primaryUsagePercentage}%</span>
-        </IconLabel>
+        </span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
@@ -2077,7 +2086,7 @@ export function ComposerPrototype() {
                 }}
               />
             </div>
-            <InputGroupAddon align="block-end" className="gap-2 bg-background px-4 py-2">
+            <InputGroupAddon align="block-end" className="gap-1 bg-background px-2 py-2 @[36rem]:gap-2 @[36rem]:px-4">
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
               <div className="ml-auto flex items-center gap-1">
@@ -2097,7 +2106,7 @@ export function ComposerPrototype() {
                   variant="default"
                   aria-label="Send message"
                   aria-disabled={draft.trim().length === 0}
-                  className={`rounded-full ${draft.trim().length === 0 ? 'opacity-50' : ''}`}
+                  className={`shrink-0 rounded-full ${draft.trim().length === 0 ? 'opacity-50' : ''}`}
                 >
                   <ArrowUp />
                 </InputGroupButton>
