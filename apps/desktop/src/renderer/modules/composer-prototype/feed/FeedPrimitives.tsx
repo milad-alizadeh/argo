@@ -123,15 +123,15 @@ export function HighlightedCode({ source }: { source: string }) {
   )
 }
 
-export function FeedCode({ source, language = 'tsx' }: { source: string; language?: string }) {
+export function FeedCode({ source, language }: { source: string; language?: string }) {
   return (
     <figure className="min-w-0 overflow-hidden rounded-lg border bg-card">
       <figcaption className="flex items-center justify-between border-b px-3 py-1.5 text-control text-muted-foreground">
         <span
           role="img"
           className="grid size-6 place-items-center rounded-md bg-sky-500/10 text-sky-700 dark:text-sky-300"
-          aria-label={`${language} file`}
-          title={`${language} file`}
+          aria-label={language ? `${language} file` : 'Code file'}
+          title={language ? `${language} file` : undefined}
         >
           <FileCode2 className="!size-(--size-icon-inline)" />
         </span>
