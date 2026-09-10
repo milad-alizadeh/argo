@@ -2,10 +2,11 @@
   "navigationLabel": "Sessions",
   "activityLabel": "Session activity",
   "title": "Sessions",
-  "subtitle": "Claude terminal activity",
+  "subtitle": "CLI terminal activity",
+  "readAgain": "Read again",
   "selectSession": "Select a session to read its terminal activity.",
   "emptyFeed": "This session has no terminal activity yet.",
-  "loading": "Reading Claude sessions...",
+  "loading": "Reading sessions...",
   "status": {
     "active": "Active",
     "idle": "Idle",

@@ -37,12 +37,19 @@ export async function proveFirstOpen(page) {
 
 export async function proveCodexFeed(page) {
   await openSession(page, 'rollout-codexParent', 'rollout-codexParent')
-  const reading = await page.evaluate(() => ({
-    session: document.querySelector('.feed__viewport')?.getAttribute('data-session'),
-    text: document.querySelector('.feed__viewport .feed-row--prose')?.textContent,
-  }))
-  assert.equal(reading.session, 'rollout-codexParent')
+  const reading = await page.evaluate(() => {
+    const prose = document.querySelector('[aria-label="Session activity"] pre')
+    const range = document.createRange()
+    if (prose !== null) range.selectNodeContents(prose)
+    window.getSelection().removeAllRanges()
+    window.getSelection().addRange(range)
+    return {
+      text: prose?.textContent,
+      userSelect: prose === null ? '' : getComputedStyle(prose).userSelect,
+    }
+  })
   assert.equal(reading.text?.includes('Run Codex check'), true)
+  assert.notEqual(reading.userSelect, 'none')
 }
 
 // Every animation frame from now until the Feed has stood on `target` for a few of them. The
