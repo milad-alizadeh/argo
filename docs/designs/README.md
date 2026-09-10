@@ -10,9 +10,9 @@
 ## `apps/desktop` design infrastructure
 
 None of it is in this folder. `docs/design-stack.md` names the token contract, the `docs/design/`
-kit, where components live and the render commands, and `rules/desktop.md` holds the design prose
-no check enforces. This folder listed its own copies of both until #1912, and each named a file
-that had moved.
+kit, where components live and the render commands, and `apps/desktop/AGENTS.md` holds the design
+prose no check enforces. This folder listed its own copies of both until #1912, and each named a
+file that had moved.
 
 The committed design set for the Argo cockpit: written specs, the approved visual target, and
 the renders the app itself produces.
@@ -26,7 +26,7 @@ the renders the app itself produces.
 `apps/macOS/Packages/ArgoDesign/Sources/ArgoDesign/` **is** the contract: the colour
 roles, Apple's macOS type scale, spacing, radii, elevation and motion, each a value with a
 documented reason. Tokens only — the shared views drawn with them are `ArgoAtoms`, and a
-surface's own measures live in that surface's directory under `Shell/` (`rules/swift.md`). `ArgoUI/Specimen/ContractSpecimen.swift` is the
+surface's own measures live in that surface's directory under `Shell/` (`apps/macOS/AGENTS.md`). `ArgoUI/Specimen/ContractSpecimen.swift` is the
 contract's living specimen — every role enumerated on the surfaces it is read against:
 
 ```sh
@@ -35,7 +35,7 @@ cd apps/macOS && ARGO_SPECIMEN=contract sh scripts/screenshot.sh out.png
 
 It replaces the deleted `foundations.html`, and it is good at that job for the same reason the
 page was: it renders the real tokens rather than a copy, so it cannot drift. It is the one
-non-disposable design artifact (`rules/swift.md`).
+non-disposable design artifact (`apps/macOS/AGENTS.md`).
 
 **It cannot go partial, either.** Each role group's `all` array is what the specimen iterates,
 and a `Mirror`-based assertion in `VisualContractTests` fails the build if a stored role is

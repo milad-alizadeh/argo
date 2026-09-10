@@ -603,7 +603,7 @@ and **`Sidebar` does not wrap Radix**.
   — the decision this note amends.
 - `docs/adr/0029-a-feed-opens-at-its-tail.md`, `docs/adr/0030-geometry-is-settled-before-it-is-shown.md`
   — the Feed's contract, rules 4, 5 and 7 in particular.
-- `rules/swift.md` — "Tokens only", and Full Keyboard Access as the contract.
+- `apps/macOS/AGENTS.md` — "Tokens only", and Full Keyboard Access as the contract.
 - `apps/desktop/package.json` — React **19.2.1**, Electron 44.2.0, Vite 7.2.6. **No `components.json`,
   no Tailwind, no shadcn component installed anywhere in the tree**; `src/renderer/App.tsx` is a
   placeholder. Nothing has been committed to a foundation yet.

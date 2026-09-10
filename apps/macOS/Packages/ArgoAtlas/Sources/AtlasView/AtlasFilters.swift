@@ -56,7 +56,7 @@ public struct AtlasFilters: View {
 /// One filter: what it is called, what it does, and the switch that sets it.
 ///
 /// The platform's own switch: a boolean is a switch, and a shape with a tap gesture is a control
-/// that can look right and fire nothing (`rules/swift.md`).
+/// that can look right and fire nothing (`apps/macOS/AGENTS.md`).
 private struct AtlasFilterSwitch: View {
     let label: String
     let help: String

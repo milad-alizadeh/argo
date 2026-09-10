@@ -3,7 +3,7 @@
 public extension ArgoPalette {
     /// The quietest voice, spelled once. It is `text.tertiary` AND the ink every inferred label on
     /// the map is drawn in (#1142) — two roles, one value, and a literal written twice is a value
-    /// that drifts on whichever of the two is edited first (`rules/house.md`).
+    /// that drifts on whichever of the two is edited first (root `AGENTS.md`).
     private static let quietestVoice = ArgoColor(hex: 0x929AA1)
 
     static let graphite = ArgoPalette(

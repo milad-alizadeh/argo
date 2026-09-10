@@ -36,4 +36,4 @@ the DOM assertion the packaged proofs make.
 Both renderers show the window: Chromium throttles a hidden one and the capture comes back
 unpainted. Neither takes the real keyboard or the real mouse.
 
-The design prose no check enforces is `rules/desktop.md`.
+The design prose no check enforces is `apps/desktop/AGENTS.md`.

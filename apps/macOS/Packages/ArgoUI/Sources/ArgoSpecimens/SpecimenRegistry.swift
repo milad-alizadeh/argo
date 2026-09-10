@@ -3,10 +3,10 @@ import SwiftUI
 
 /// The named states the render harness can put on screen, one per launch.
 ///
-/// `#Preview` is the story (`rules/swift.md`), but only Xcode can draw one. This registry addresses
-/// the same states by a name the command line can pass, so a state can be rendered to a PNG without
-/// a human driving the app into it — impossible for most of them, since the app launched against an
-/// ordinary checkout shows no Sessions.
+/// `#Preview` is the story (`apps/macOS/AGENTS.md`), but only Xcode can draw one. This registry
+/// addresses the same states by a name the command line can pass, so a state can be rendered to a
+/// PNG without a human driving the app into it — impossible for most of them, since the app
+/// launched against an ordinary checkout shows no Sessions.
 ///
 /// Add an entry to one of the subject files and it is renderable, and it is renderable ONLY there:
 /// `scripts/specimens.sh` asks the app for the list rather than parsing this source.

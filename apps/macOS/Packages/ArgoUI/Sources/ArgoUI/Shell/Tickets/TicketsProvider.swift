@@ -10,7 +10,7 @@ package struct TicketsProvider: Sendable, Equatable {
     /// The account the Binding authenticated as.
     let account: String
     /// How the Binding's connection is doing — both facts off the one health read, so they can
-    /// never be constructed to disagree (rules/house.md, 4-parameter init cap).
+    /// never be constructed to disagree (.swiftlint.yml, 4-parameter init cap).
     let connection: Connection
     /// Whether this adapter declares the `.closure` write (#1333) — read here rather than asked of
     /// a Binding at the seam, because the surface takes no Binding either: it is a fact about the

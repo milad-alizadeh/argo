@@ -68,7 +68,7 @@ extension AtlasContractSpecimen {
     /// one word on it, and a rim is an edge with nothing on it at all.
     ///
     /// Derived, so no reflected list can catch a rung going undrawn — `ladder` is the catalogue
-    /// this reads, and drawing it by hand is the gate (`rules/swift.md`).
+    /// this reads, and drawing it by hand is the gate (`apps/macOS/AGENTS.md`).
     var ladder: some View {
         section("Accent ladder — one hue at the three weights a tint is laid down at") {
             HStack(spacing: ArgoSpacing.loose) {

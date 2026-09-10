@@ -60,7 +60,7 @@ struct TicketStartTests {
     }
 
     /// Rule 1 needs the tree, so the same press on a ticket naming a screen with a design sends the
-    /// design route instead — `AGENTS.md`'s rule, taken rather than guessed.
+    /// design route instead — the root `AGENTS.md`'s rule, taken rather than guessed.
     @Test func `a ticket naming a designed screen starts on the design route`() async {
         let spawn = Spawn()
 

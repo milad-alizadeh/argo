@@ -79,8 +79,8 @@ export function useProjects(): [Cockpit, ProjectActions] {
     void run(() => window.argo.listProjects(listRequest()))
   }, [run])
 
-  // The menu item, the chord and the deck's own control are one action (rules/desktop.md), so what
-  // a refused Project offers on screen is what the chord does.
+  // The menu item, the chord and the deck's own control are one action (apps/desktop/AGENTS.md), so
+  // what a refused Project offers on screen is what the chord does.
   const open = useCallback(() => {
     const { status, project } = latest.current
     if (status === 'refused' && project) {

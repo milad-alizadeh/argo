@@ -6,7 +6,7 @@ public extension CockpitPresentation.Session.Chain {
     /// (#755, #1327): a handoff running, the ones that failed, and the one that landed are three
     /// readings of the one act. Its own file, beside `CockpitPresentation+SessionValues.swift`
     /// rather than nested in it, for the reason every split there is: the house caps a file at 175
-    /// lines and raises the number for no file (`rules/swift.md`).
+    /// lines and raises the number for no file (`apps/macOS/AGENTS.md`).
     ///
     /// Each field keeps the engine's own name for its fact, on the same ground the rest of `Chain`
     /// does (ADR-0027).
