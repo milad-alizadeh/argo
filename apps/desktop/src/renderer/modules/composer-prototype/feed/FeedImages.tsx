@@ -76,14 +76,11 @@ export function FeedImages() {
 
 export function FeedMissingImage() {
   return (
-    <figure className="flex aspect-4/3 w-52 flex-col overflow-hidden rounded-lg border bg-card">
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
+    <figure className="aspect-4/3 w-52 overflow-hidden rounded-lg border bg-card">
+      <div className="flex h-full flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
         <ImageOff className="!size-(--size-icon-control)" />
         <p className="text-control">Image unavailable</p>
       </div>
-      <figcaption className="px-3 py-2 text-control text-muted-foreground">
-        The transcript kept the image reference, but no image bytes are available.
-      </figcaption>
     </figure>
   )
 }

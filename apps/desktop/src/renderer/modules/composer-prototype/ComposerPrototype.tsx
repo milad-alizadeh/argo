@@ -235,6 +235,7 @@ function insertComposerSuggestion(draft: string, suggestion: ComposerSuggestion)
 
 type PrototypeSession = {
   id: string
+  project: ProjectKey
   title: string
   harness: HarnessKey
   status: 'running' | 'waiting' | 'idle'
@@ -247,10 +248,12 @@ type PrototypeSession = {
 
 type ThemeMode = 'system' | 'light' | 'dark'
 type ConciergePlacement = 'roster' | 'floating' | 'off'
+type ProjectKey = 'argo' | 'fresco' | 'posthog'
 
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   {
     id: 'session-design',
+    project: 'argo',
     title: 'Continue Session design from composer',
     harness: 'codex',
     status: 'running',
@@ -262,6 +265,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   },
   {
     id: 'roster-feed',
+    project: 'argo',
     title: 'Restore the Session roster feed',
     harness: 'claude',
     status: 'waiting',
@@ -273,6 +277,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   },
   {
     id: 'release-verdict',
+    project: 'argo',
     title: 'Verify the release verdict guard',
     harness: 'codex',
     status: 'idle',
@@ -284,6 +289,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   },
   {
     id: 'adapter-contract',
+    project: 'argo',
     title: 'Settle the Codex Session adapter contract',
     harness: 'claude',
     status: 'idle',
@@ -292,6 +298,30 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     pullRequest: { number: 1911, state: 'draft' },
     subagents: 2,
     updated: '2h',
+  },
+  {
+    id: 'fresco-crop-controls',
+    project: 'fresco',
+    title: 'Polish image crop controls',
+    harness: 'codex',
+    status: 'waiting',
+    activity: 'Waiting for visual review',
+    ticket: 482,
+    pullRequest: { number: 503, state: 'draft' },
+    subagents: 1,
+    updated: '26m',
+  },
+  {
+    id: 'posthog-replay-gap',
+    project: 'posthog',
+    title: 'Trace the replay ingestion gap',
+    harness: 'claude',
+    status: 'idle',
+    activity: 'Reading pipeline evidence',
+    ticket: 29341,
+    pullRequest: { number: 29402, state: 'open' },
+    subagents: 2,
+    updated: '1h',
   },
 ]
 
@@ -304,7 +334,7 @@ function HarnessLogo({ harness, className = 'size-(--size-icon-control)' }: { ha
   )
 }
 
-const PROJECTS = ['argo', 'fresco', 'posthog']
+const PROJECTS: ProjectKey[] = ['argo', 'fresco', 'posthog']
 
 function ConciergeOrb({ compact = false }: { compact?: boolean }) {
   return (
@@ -318,35 +348,59 @@ function ConciergeOrb({ compact = false }: { compact?: boolean }) {
   )
 }
 
-function ProjectSwitcher({ project, onProjectChange }: { project: string; onProjectChange: (project: string) => void }) {
+function ProjectManager({
+  visibleProjects,
+  onVisibilityChange,
+}: {
+  visibleProjects: ProjectKey[]
+  onVisibilityChange: (project: ProjectKey, visible: boolean) => void
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="max-w-56 gap-2 px-2" />}>
-        <span className="grid size-5 place-items-center rounded bg-foreground text-[9px] font-semibold text-background">{project.slice(0, 1).toUpperCase()}</span>
-        <span className="truncate font-medium">{project}</span>
+        <FolderGit2 />
+        <span className="truncate font-medium">Projects</span>
+        <span className="rounded-full bg-muted px-1.5 text-[10px]">{visibleProjects.length}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel>Projects</DropdownMenuLabel>
+        <DropdownMenuLabel>Visible in Sessions</DropdownMenuLabel>
         {PROJECTS.map((item) => (
-          <DropdownMenuItem key={item} onClick={() => onProjectChange(item)}>
+          <DropdownMenuItem
+            key={item}
+            onClick={() => onVisibilityChange(item, !visibleProjects.includes(item))}
+          >
             <FolderGit2 />
             <span className="flex-1">{item}</span>
-            {item === project ? <Check /> : null}
+            {visibleProjects.includes(item) ? <Check /> : null}
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem><Plus />Open another Project…</DropdownMenuItem>
+        <DropdownMenuItem>
+          <Plus />Open another Project…
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Settings />Manage Projects…
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-function PrototypeChrome({ project, onProjectChange }: { project: string; onProjectChange: (project: string) => void }) {
+function PrototypeChrome({
+  visibleProjects,
+  onVisibilityChange,
+}: {
+  visibleProjects: ProjectKey[]
+  onVisibilityChange: (project: ProjectKey, visible: boolean) => void
+}) {
   return (
     <header className="flex h-11 shrink-0 items-center bg-muted/50 pr-3 pl-[4.5rem]">
-      <ProjectSwitcher project={project} onProjectChange={onProjectChange} />
-      <span className="ml-auto text-[10px] text-muted-foreground">3 Projects available</span>
+      <ProjectManager
+        visibleProjects={visibleProjects}
+        onVisibilityChange={onVisibilityChange}
+      />
+      <span className="ml-auto text-[10px] text-muted-foreground">Sessions across visible Projects</span>
     </header>
   )
 }
@@ -488,7 +542,61 @@ const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], stri
   merged: 'text-violet-600 dark:text-violet-400',
 }
 
-function PrototypeSessionRoster({ concierge, onConciergeChange }: { concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
+function SessionRosterRow({ session }: { session: PrototypeSession }) {
+  const selected = session.id === 'session-design'
+  return (
+    <button
+      type="button"
+      aria-current={selected ? 'page' : undefined}
+      className={`group w-full rounded-lg px-2 py-2 text-left transition-colors ${
+        selected
+          ? 'bg-muted text-foreground'
+          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+      }`}
+    >
+      <span className="flex items-start gap-2">
+        <span className="relative flex h-4 shrink-0 items-center">
+          <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
+          <span
+            className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`}
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium text-foreground">{session.title}</span>
+          <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+            {session.activity}
+          </span>
+          <span className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
+            <span className="inline-flex items-center gap-1">
+              <Ticket />#{session.ticket}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
+            >
+              <GitFork />#{session.pullRequest.number} {session.pullRequest.state}
+            </span>
+            {session.subagents > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                <Bot />{session.subagents}
+              </span>
+            ) : null}
+            <span className="ml-auto shrink-0 tabular-nums">{session.updated}</span>
+          </span>
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function PrototypeSessionRoster({
+  concierge,
+  onConciergeChange,
+  visibleProjects,
+}: {
+  concierge: ConciergePlacement
+  onConciergeChange: (placement: ConciergePlacement) => void
+  visibleProjects: ProjectKey[]
+}) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center border-b border-border/60 px-3">
@@ -505,39 +613,36 @@ function PrototypeSessionRoster({ concierge, onConciergeChange }: { concierge: C
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        <div className="px-2 py-2 text-[11px] font-medium text-muted-foreground">Current project</div>
-        <div className="space-y-1">
-          {PROTOTYPE_SESSIONS.map((session) => {
-            const selected = session.id === 'session-design'
-            return (
-              <button
-                key={session.id}
-                type="button"
-                aria-current={selected ? 'page' : undefined}
-                className={`group w-full rounded-lg px-2 py-2 text-left transition-colors ${
-                  selected ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                }`}
-              >
-                <span className="flex items-start gap-2">
-                  <span className="relative flex h-4 shrink-0 items-center">
-                    <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
-                    <span className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium text-foreground">{session.title}</span>
-                    <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{session.activity}</span>
-                    <span className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
-                      <span className="inline-flex items-center gap-1"><Ticket />#{session.ticket}</span>
-                      <span className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}><GitFork />#{session.pullRequest.number} {session.pullRequest.state}</span>
-                      {session.subagents > 0 ? <span className="inline-flex items-center gap-1"><Bot />{session.subagents}</span> : null}
-                      <span className="ml-auto shrink-0 tabular-nums">{session.updated}</span>
-                    </span>
-                  </span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        {visibleProjects.map((project) => {
+          const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === project)
+          return (
+            <section key={project} className="pb-2">
+              <div className="flex items-center gap-1.5 px-2 py-2 text-[11px] font-medium text-muted-foreground">
+                <FolderGit2 className="size-(--size-icon-inline)" />
+                <span className="truncate text-foreground">{project}</span>
+                <span>{sessions.length}</span>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="ml-auto"
+                  aria-label={`New Session in ${project}`}
+                >
+                  <Plus />
+                </Button>
+              </div>
+              <div className="space-y-1">
+                {sessions.map((session) => (
+                  <SessionRosterRow key={session.id} session={session} />
+                ))}
+              </div>
+            </section>
+          )
+        })}
+        {visibleProjects.length === 0 ? (
+          <p className="px-2 py-6 text-center text-control text-muted-foreground">
+            Choose Projects from the top bar to show their Sessions.
+          </p>
+        ) : null}
       </div>
       {concierge === 'roster' ? (
         <div className="shrink-0 border-t border-border/60 p-2">
@@ -1541,7 +1646,7 @@ function initialConcierge(): ConciergePlacement {
 }
 
 export function ComposerPrototype() {
-  const [project, setProject] = useState('argo')
+  const [visibleProjects, setVisibleProjects] = useState<ProjectKey[]>(PROJECTS)
   const [theme, setTheme] = useState<ThemeMode>(initialTheme)
   const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
@@ -1622,7 +1727,16 @@ export function ComposerPrototype() {
   return (
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/50">
-      <PrototypeChrome project={project} onProjectChange={setProject} />
+        <PrototypeChrome
+          visibleProjects={visibleProjects}
+          onVisibilityChange={(project, visible) =>
+            setVisibleProjects((current) =>
+              visible
+                ? [...new Set([...current, project])]
+                : current.filter((item) => item !== project),
+            )
+          }
+        />
       <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
         <ResizablePanelGroup
@@ -1637,7 +1751,11 @@ export function ComposerPrototype() {
           groupResizeBehavior="preserve-pixel-size"
           className="h-full min-h-0 overflow-hidden"
         >
-          <PrototypeSessionRoster concierge={concierge} onConciergeChange={setConcierge} />
+          <PrototypeSessionRoster
+            concierge={concierge}
+            onConciergeChange={setConcierge}
+            visibleProjects={visibleProjects}
+          />
         </ResizablePanel>
         <ResizableHandle withHandle className="z-30" />
         <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
