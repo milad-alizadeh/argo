@@ -1839,18 +1839,19 @@ export function ComposerPrototype() {
     setSessionSidebarFullscreen(nextFullscreen)
   }
 
-  const handleSessionSidebarResize = (sidebarWidth: number, previousWidth: number) => {
+  const handleSessionConversationResize = (conversationWidth: number, previousWidth: number) => {
     if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
-    const conversationWidth = sessionConversationPanel.current?.getSize().inPixels
     if (
-      conversationWidth !== undefined
-      && conversationWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE
-      && sidebarWidth > previousWidth
+      conversationWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE
+      && conversationWidth < previousWidth
     ) {
       sessionSidebarFullscreenState.current = true
       setSessionSidebarFullscreen(true)
-      return
     }
+  }
+
+  const handleSessionSidebarResize = (sidebarWidth: number) => {
+    if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
     if (sidebarWidth > 0 && !sessionInspectorResizeAnimation.current) {
       sessionInspectorRestoreSize.current = sidebarWidth
       setSessionInspectorContentWidth(sidebarWidth)
@@ -2036,6 +2037,10 @@ export function ComposerPrototype() {
             id="session-conversation"
             panelRef={sessionConversationPanel}
             minSize={SESSION_PANE_MIN_WIDTH}
+            onResize={(size, _id, previousSize) => {
+              if (previousSize?.inPixels !== undefined)
+                handleSessionConversationResize(size.inPixels, previousSize.inPixels)
+            }}
             className="flex h-full min-h-0 overflow-hidden"
           >
           <div
@@ -2144,7 +2149,7 @@ export function ComposerPrototype() {
             groupResizeBehavior="preserve-pixel-size"
             onResize={(size, _id, previousSize) => {
               if (previousSize?.inPixels !== undefined && previousSize.inPixels > 0)
-                handleSessionSidebarResize(size.inPixels, previousSize.inPixels)
+                handleSessionSidebarResize(size.inPixels)
             }}
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
