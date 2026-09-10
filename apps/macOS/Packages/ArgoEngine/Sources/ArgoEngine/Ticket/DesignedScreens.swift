@@ -3,13 +3,13 @@ import Foundation
 /// Which screens one Project has settled a design for, named the way a Ticket names them (#899).
 ///
 /// This is the tree half of the command mapping's rule 1 — a UI Ticket whose screen has a design is
-/// built with `design-to-code` and never with `implement` (root `AGENTS.md`, the design route).
-/// No label can carry that fact, because it is a property of the checkout and not of the Ticket.
+/// built with `design-to-code` and never with `implement` (`AGENTS.md`, the design route). No label
+/// can carry that fact, because it is a property of the checkout rather than of the Ticket.
 ///
 /// Nothing is cached, for `SkillCatalog`'s reason: a design landed while the app is open is in the
 /// very next answer.
 public struct DesignedScreens {
-    /// Where a settled design lives, relative to the Project's root (`apps/macOS/AGENTS.md`).
+    /// Where a settled design lives, relative to the Project's root (`rules/swift.md`).
     static let folder = "docs/designs"
     /// What a study's file name begins with. The studies here are all of one app's cockpit, so the
     /// prefix is what separates a screen's study from the index and the reference shots beside it.

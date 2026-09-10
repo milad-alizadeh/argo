@@ -14,11 +14,10 @@ Everything here is a fact about this repository. Process belongs to the skill th
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
   Before triage, read `docs/agents/triage-labels.md`.
-- **House engineering rules** — *House rules* below, for every path. An app adds its own in
-  its `AGENTS.md` (`apps/desktop/`, `apps/macOS/`): **read it before your first edit there.**
-  Claude Code loads it when it reads a file there, and Codex only when started inside it. Rules
-  for another directory go in an `AGENTS.md` there, beside a `CLAUDE.md` holding only
-  `@AGENTS.md`.
+- **House engineering rules** — *House rules* below, for every path. `apps/desktop` adds its own
+  in `apps/desktop/AGENTS.md`: **read it before your first edit there.** Claude Code loads it
+  when it reads a file there, and Codex only when started inside it. Rules for another directory
+  go in an `AGENTS.md` there, beside a `CLAUDE.md` holding only `@AGENTS.md`.
 - **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
   Before domain exploration, read `docs/agents/domain.md`. Read the one
   section you need before naming or changing a term, and use its words rather than a synonym.

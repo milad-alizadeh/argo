@@ -321,7 +321,7 @@ row of controls is gone, and the field goes with it.
 
 ## The measurements the tickets must carry
 
-Surface measures, not tokens — per `apps/macOS/AGENTS.md` they live beside the surface, not in
+Surface measures, not tokens — per `rules/swift.md` they live beside the surface, not in
 `ArgoDesign`.
 
 | Measure | Value | Where it goes | Why |

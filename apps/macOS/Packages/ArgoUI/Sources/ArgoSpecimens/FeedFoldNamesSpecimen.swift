@@ -60,7 +60,7 @@ struct FeedFoldNamesSpecimen: View {
     ///
     /// `if case` twice rather than a `switch` with a `default:`: `FeedRow.Content` is this
     /// package's own enum, and a `default:` there would swallow a twelfth kind silently
-    /// (`apps/macOS/AGENTS.md`).
+    /// (`rules/swift.md`).
     private static let fold: (any FeedFolded)? = FeedProjection.previewCallRows
         .compactMap { row -> (any FeedFolded)? in
             if case let .survey(survey) = row.content {

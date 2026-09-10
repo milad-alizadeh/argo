@@ -57,7 +57,7 @@ enum SessionsRoomReadingCache {
         let submittedTurn: String?
 
         /// Whether there IS such a Turn — derived here rather than compared at each reader, so the
-        /// sentinel is spelled once (root `AGENTS.md`, one source of truth).
+        /// sentinel is spelled once (`rules/house.md`, one source of truth).
         var hasUnansweredTurn: Bool {
             submittedTurn != nil
         }

@@ -93,7 +93,7 @@ package struct BacklogSearchField: View {
 }
 
 // Empty, which is the state every render of this room shows and the one the 210 was measured
-// against — a typed TERM is the same field at the same width (`apps/macOS/AGENTS.md`, coverage).
+// against — a typed TERM is the same field at the same width (`rules/swift.md`, coverage).
 #Preview("Backlog search field") {
     @Previewable @State var query = ""
 

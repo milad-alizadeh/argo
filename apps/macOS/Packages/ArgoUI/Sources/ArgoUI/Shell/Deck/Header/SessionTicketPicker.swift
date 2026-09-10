@@ -14,7 +14,7 @@ import SwiftUI
 /// draft, so its menu must not take focus, while this one is opened for typing and nothing else.
 ///
 /// A `View` taking its data as a parameter rather than a `@ViewBuilder` on the caller
-/// (`apps/macOS/AGENTS.md` — Views): the offering is what this draws, so it is what it takes.
+/// (`rules/swift.md` — Views): the offering is what this draws, so it is what it takes.
 package struct SessionTicketPicker: View {
     let linking: SessionTicketLinking
     /// Close the surface this stands in. Called on a pick and on Escape alike — a picker that

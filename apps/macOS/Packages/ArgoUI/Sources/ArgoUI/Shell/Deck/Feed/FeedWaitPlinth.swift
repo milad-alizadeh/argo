@@ -120,9 +120,8 @@ struct FeedWaitPlinth: View {
             .frame(height: ArgoStroke.indicator + ArgoElevation.bloom.blur * 2)
     }
 
-    /// The plinth's own measures. Beside the view rather than in `ArgoDesign`
-    /// (`apps/macOS/AGENTS.md`): these are one surface's arithmetic, and the design promotes no
-    /// token for them.
+    /// The plinth's own measures. Beside the view rather than in `ArgoDesign` (`rules/swift.md`):
+    /// these are one surface's arithmetic, and the design promotes no token for them.
     enum Measures {
         /// Above and below the words.
         static let insetY: CGFloat = ArgoSpacing.base

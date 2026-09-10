@@ -47,7 +47,7 @@ extension FeedProjection {
         for (index, event) in events.enumerated() {
             // A `where` clause leaves a `switch` inexhaustive whatever it lists, so the two arms
             // are read as predicates rather than as cases — which is the open condition `if`
-            // is for (root AGENTS.md). `runFact(of:)` above is the exhaustive one.
+            // is for (rules/house.md). `runFact(of:)` above is the exhaustive one.
             guard let fact = runFact(of: event) else { continue }
             if case .model = fact, !seenModel {
                 seenModel = true
