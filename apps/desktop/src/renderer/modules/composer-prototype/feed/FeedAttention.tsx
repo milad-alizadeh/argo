@@ -6,12 +6,20 @@ import { Textarea } from '@/renderer/components/ui/textarea'
 
 export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   const titleId = useId()
-  const [selection, setSelection] = useState('header')
+  const [selection, setSelection] = useState('rail')
   const [answer, setAnswer] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const options = [
-    { id: 'header', title: 'In the header', detail: 'Keep subtitles beside the active Session.' },
-    { id: 'footer', title: 'At the bottom', detail: 'Keep voice controls close to the composer.' },
+    {
+      id: 'rail',
+      title: 'In the app rail',
+      detail: 'Keep the global chat available across Projects.',
+    },
+    {
+      id: 'floating',
+      title: 'Floating companion',
+      detail: 'Keep it available when the app is not frontmost.',
+    },
   ]
   if (submitted)
     return (

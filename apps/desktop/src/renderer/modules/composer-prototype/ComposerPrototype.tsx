@@ -3,7 +3,6 @@ import {
   Archive,
   ArrowRight,
   ArrowUp,
-  AudioWaveform,
   Bot,
   Check,
   ChevronDown,
@@ -27,7 +26,6 @@ import {
   Minimize2,
   Monitor,
   Moon,
-  MoreHorizontal,
   PanelRight,
   Paperclip,
   Pencil,
@@ -241,7 +239,7 @@ type PrototypeSession = {
 }
 
 type ThemeMode = 'system' | 'light' | 'dark'
-type ConciergePlacement = 'header' | 'floating' | 'off'
+type ConciergePlacement = 'rail' | 'floating' | 'off'
 
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   {
@@ -360,6 +358,15 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
         <Settings />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-56">
+        <DropdownMenuLabel>Account</DropdownMenuLabel>
+        <DropdownMenuItem className="gap-2 py-2">
+          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-background text-[10px] font-semibold">MA</span>
+          <span className="min-w-0">
+            <span className="block truncate text-xs font-medium">milad</span>
+            <span className="block text-[10px] text-muted-foreground">Account settings</span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Appearance</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={theme} onValueChange={(value) => onThemeChange(value as ThemeMode)}>
           <DropdownMenuRadioItem value="system"><Monitor />System</DropdownMenuRadioItem>
@@ -369,12 +376,51 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Concierge</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={concierge} onValueChange={(value) => onConciergeChange(value as ConciergePlacement)}>
-          <DropdownMenuRadioItem value="header">In Session header</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="rail">In app rail</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="floating">Floating companion</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+function RailConcierge({ onFloat }: { onFloat: () => void }) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            aria-label="Open Concierge chat"
+            className="relative grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground"
+          />
+        }
+      >
+        <ConciergeOrb compact />
+        <span className="absolute top-0.5 right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+      </PopoverTrigger>
+      <PopoverContent side="right" align="end" className="w-72 gap-3 p-3">
+        <PopoverHeader>
+          <PopoverTitle className="flex items-center gap-2 text-xs">
+            <ConciergeOrb compact />
+            Concierge
+            <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-emerald-500" />Global voice chat
+            </span>
+          </PopoverTitle>
+          <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
+        </PopoverHeader>
+        <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-[11px] leading-4">
+          <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
+          <p>I’m updating the prototype now.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" className="flex-1">Open chat</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onFloat}>Float</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -405,6 +451,7 @@ function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: {
         ))}
       </div>
       <div className="mt-auto flex flex-col gap-3">
+        {concierge === 'rail' ? <RailConcierge onFloat={() => onConciergeChange('floating')} /> : null}
         <Tooltip>
           <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
             <Archive />
@@ -480,31 +527,11 @@ function PrototypeSessionRoster() {
           })}
         </div>
       </div>
-      <div className="border-t border-border/60 p-3">
-        <button type="button" className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
-          <span className="grid size-6 place-items-center rounded-md border border-border/60 bg-background text-[10px] font-semibold">MA</span>
-          <span className="min-w-0 flex-1 truncate">milad</span>
-          <MoreHorizontal />
-        </button>
-      </div>
     </aside>
   )
 }
 
-function HeaderConcierge() {
-  return (
-    <button type="button" className="mx-auto flex min-w-0 max-w-sm items-center gap-2 rounded-full border border-border/60 bg-muted/40 py-1 pr-3 pl-1 text-left hover:bg-muted">
-      <ConciergeOrb compact />
-      <span className="min-w-0">
-        <span className="block truncate text-[10px] font-medium">Concierge is listening</span>
-        <span className="block truncate text-[10px] text-muted-foreground">“Show every feed state in one conversation…”</span>
-      </span>
-      <AudioWaveform className="text-muted-foreground" />
-    </button>
-  )
-}
-
-function PrototypeSessionHeader({ showSidebar, onToggleSidebar, concierge }: { showSidebar: boolean; onToggleSidebar: () => void; concierge: ConciergePlacement }) {
+function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar: boolean; onToggleSidebar: () => void }) {
   return (
     <header className="flex min-h-12 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
       <div className="relative shrink-0">
@@ -523,7 +550,7 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar, concierge }: { s
           <span className="shrink-0">Codex</span>
         </div>
       </div>
-      {concierge === 'header' ? <HeaderConcierge /> : <span className="flex-1" />}
+      <span className="flex-1" />
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
           <Ticket /> #1258
@@ -1545,7 +1572,7 @@ function initialTheme(): ThemeMode {
 
 function initialConcierge(): ConciergePlacement {
   const concierge = new URLSearchParams(window.location.search).get('concierge')
-  return concierge === 'floating' || concierge === 'off' ? concierge : 'header'
+  return concierge === 'floating' || concierge === 'off' ? concierge : 'rail'
 }
 
 export function ComposerPrototype() {
@@ -1673,7 +1700,7 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
       `}</style>
-          <PrototypeSessionHeader showSidebar={showSessionSidebar} onToggleSidebar={() => setShowSessionSidebar((visible) => !visible)} concierge={concierge} />
+          <PrototypeSessionHeader showSidebar={showSessionSidebar} onToggleSidebar={() => setShowSessionSidebar((visible) => !visible)} />
           <div className="flex min-h-0 flex-1">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="min-h-0 flex-1">
