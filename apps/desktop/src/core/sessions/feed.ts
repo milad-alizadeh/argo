@@ -7,13 +7,14 @@ export { UNREADABLE_ROW, unreadableRowHeight }
 function rowsOfRecord(record: TranscriptRecord, position: string): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
   if (record.kind === 'compaction')
-    return [{ shape: 'marker', id: `marker:${position}`, marker: 'compacted' }]
+    return [{ shape: 'marker', id: `${record.uuid}:compacted`, marker: 'compacted' }]
+  // A subagent's turn is not this Session's history. The CLI nests it; Argo leaves it out rather
+  // than drawing another agent's work as the reader's own (see `chainMessages`).
   if (record.kind !== 'message' || record.sidechain) return []
   return record.blocks.map((block, index) => {
     const id = `${record.uuid}:${index}`
     if (block.shape === 'prose') return { shape: 'prose', id, role: record.role, text: block.text }
-    if (block.shape === 'thought')
-      return { shape: 'thought', id, role: record.role, text: block.text }
+    if (block.shape === 'thought') return { shape: 'thought', id, text: block.text }
     if (block.shape === 'marker') return { shape: 'marker', id, marker: block.marker }
     return { shape: 'source', id, role: record.role, label: block.label, source: block.source }
   })
