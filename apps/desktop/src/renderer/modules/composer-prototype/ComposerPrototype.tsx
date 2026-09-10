@@ -622,7 +622,7 @@ function PrototypeSessionRoster({
   const [expandedProjects, setExpandedProjects] = useState<ProjectKey[]>(PROJECTS)
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-card">
+    <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center px-3">
         <h1 className="text-sm font-semibold">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
@@ -1994,7 +1994,7 @@ export function ComposerPrototype() {
             minSize={0}
             className="flex h-full min-h-0 overflow-hidden"
           >
-          <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="@container flex min-h-0 min-w-[320px] flex-1 flex-col">
           <PrototypeSessionHeader
             showRoster={showSessionRoster}
             onOpenRoster={() => setSessionRosterVisible(true)}
@@ -2101,7 +2101,7 @@ export function ComposerPrototype() {
             }}
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
-            <div aria-hidden={!showSessionSidebar} className="h-full min-h-0">
+            <div aria-hidden={!showSessionSidebar} className="h-full min-h-0 min-w-[248px]">
                 <SessionWorkSidebar
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
