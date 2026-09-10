@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFile, writeFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import { registerProject, relocateProject } from './register-project'
 import {
   fixture,
   register,
@@ -9,6 +8,7 @@ import {
   relocate,
   repository,
 } from '../core/projects/fake-driver/registration-fixture'
+import { registerProject, relocateProject } from './register-project'
 
 test('relocating moves the path and keeps the identity', async (context) => {
   const setup = await fixture(context)

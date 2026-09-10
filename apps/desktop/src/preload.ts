@@ -4,11 +4,11 @@ import {
   APPEARANCE_CHANNEL,
   createAppearanceClient,
 } from './core/appearance/appearance'
+import { COMMAND_CHANNEL } from './core/commands/shortcuts'
 import { createProjectClient } from './core/projects/client'
 import { PROJECT_CHANNEL } from './core/projects/contract'
 import { createSessionClient } from './core/sessions/client'
 import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL } from './core/sessions/contract'
-import { COMMAND_CHANNEL } from './core/commands/shortcuts'
 
 const SESSION_CHANNELS = { list: SESSION_LIST_CHANNEL, feed: SESSION_FEED_CHANNEL }
 

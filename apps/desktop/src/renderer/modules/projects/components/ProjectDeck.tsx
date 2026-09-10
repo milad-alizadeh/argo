@@ -1,8 +1,8 @@
 // The working surface: the window ground, no edge of its own (ADR-0038).
 import type { Destination } from '../../../../core/commands/shortcuts'
+import { SessionsScreen } from '../../sessions/screens/SessionsScreen'
 import type { Cockpit, ProjectActions } from '../hooks/useProjects'
 import { EmptyPane, LINE, RefusedPane, SelectedPane, TITLE } from './ProjectPanes'
-import { SessionsScreen } from '../../sessions/screens/SessionsScreen'
 
 type DeckProps = { destination: Destination; cockpit: Cockpit; actions: ProjectActions }
 
@@ -41,8 +41,14 @@ function SurfacePane({ destination }: { destination: Destination }) {
   )
 }
 
+function destinationPane({ destination, cockpit, actions }: DeckProps) {
+  if (destination === 'Sessions') return <SessionsScreen />
+  if (destination === 'Projects') return <ProjectPane cockpit={cockpit} actions={actions} />
+  return <SurfacePane destination={destination} />
+}
+
 export function ProjectDeck(props: DeckProps) {
-  const { destination, cockpit, actions } = props
+  const { cockpit } = props
   return (
     <main data-component="ProjectDeck" className="overflow-auto bg-background p-8">
       <div
@@ -50,13 +56,7 @@ export function ProjectDeck(props: DeckProps) {
         className="flex max-w-[var(--size-deck)] flex-col items-start gap-2"
         aria-busy={cockpit.busy}
       >
-        {destination === 'Sessions' ? (
-          <SessionsScreen />
-        ) : destination === 'Projects' ? (
-          <ProjectPane cockpit={cockpit} actions={actions} />
-        ) : (
-          <SurfacePane destination={destination} />
-        )}
+        {destinationPane(props)}
       </div>
     </main>
   )

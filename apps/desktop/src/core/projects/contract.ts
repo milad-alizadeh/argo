@@ -1,3 +1,5 @@
+import { hasKeys, isIdentifier, isRecord } from '../../boundary'
+
 // One channel carries every Project action. The action is a field of the message, never a channel
 // the renderer picks, so the bridge has one entry point to validate.
 export const PROJECT_CHANNEL = 'argo:project'
@@ -98,4 +100,3 @@ export function isProjectErrorMessage(value: unknown): value is ProjectError {
 export function isProjectOpenReply(value: unknown): value is ProjectOpenReply {
   return isProjectOpened(value) || isProjectErrorMessage(value)
 }
-import { hasKeys, isIdentifier, isRecord, requestIdentifier } from '../../boundary'
