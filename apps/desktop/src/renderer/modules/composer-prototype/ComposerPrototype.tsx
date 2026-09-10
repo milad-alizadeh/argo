@@ -715,10 +715,20 @@ function ContextPopover({
             <div>
               <div className="text-xs font-semibold">Auto-compact</div>
               <p className="mt-1 text-xs leading-4 text-muted-foreground">
-                Compact before the context window reaches this level. {state.harness === 'codex' ? 'Codex saves the token value.' : 'Claude saves the percentage.'}
+                Compact when the current context reaches the threshold.
               </p>
             </div>
-            <span className="shrink-0 text-xs font-medium tabular-nums">{autoCompactThresholdPercentage}% · {formatTokenCount(autoCompactThresholdTokens)}</span>
+            <span className="shrink-0 text-xs font-medium tabular-nums">At {formatTokenCount(autoCompactThresholdTokens)}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 px-3 py-2 text-xs">
+            <div>
+              <span className="text-muted-foreground">Current</span>
+              <span className="ml-2 font-medium tabular-nums">{formatTokenCount(used)}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-muted-foreground">Total</span>
+              <span className="ml-2 font-medium tabular-nums">{formatTokenCount(context.total)}</span>
+            </div>
           </div>
           <input
             type="range"
@@ -734,9 +744,9 @@ function ContextPopover({
             aria-label="Auto-compact threshold"
             className="h-1.5 w-full cursor-pointer accent-foreground"
           />
-          <div className="flex items-end gap-3">
-            <label className="grid flex-1 gap-1 text-[10px] text-muted-foreground">
-              Exact threshold
+          <div className="flex items-end">
+            <label className="grid w-1/2 gap-1 text-[10px] text-muted-foreground">
+              Compact at
               <span className="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs text-foreground">
                 <input
                   type="number"
@@ -755,10 +765,6 @@ function ContextPopover({
                 <span className="shrink-0 text-muted-foreground">tokens</span>
               </span>
             </label>
-            <div className="flex flex-1 justify-between pb-2 text-[10px] text-muted-foreground">
-              <span>40% · {formatTokenCount(context.total * 0.4)}</span>
-              <span>95% · {formatTokenCount(context.total * 0.95)}</span>
-            </div>
           </div>
         </div>
         {meterStyle === 'solid' && percentage >= 70 && appearance === 'compact' ? (
