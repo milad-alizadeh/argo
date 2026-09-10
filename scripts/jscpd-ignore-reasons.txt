@@ -18,10 +18,6 @@
     Vite plugin writes the packaged main and preload bundles; it was reaching this
     list only through `apps/desktop/.gitignore` plus `gitignore: true`, which is a
     nested file two tools deep to rest a gate on (#1733).
-  apps/desktop/scripts/session-fake-driver/prove-project-contract.mjs, apps/desktop/scripts/session-fake-driver/prove-session-feed.mjs
-    KIND: generated runnable proof bundles. Their TypeScript source is under
-    `apps/desktop/src/scripts/session-fake-driver/`, so a clone in the bundle is output, not a second
-    implementation.
   **/*.stories.tsx
     KIND: declarative story catalogs — the duplication between stories IS the
     coverage. The line ceiling waives them for the same reason (biome.jsonc).

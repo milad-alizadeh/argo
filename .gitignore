@@ -2,6 +2,7 @@ node_modules/
 .turbo/
 dist/
 apps/desktop/storybook-static/
+apps/desktop/scripts/session-fake-driver/
 docs/designs/renders/
 *.log
 .DS_Store
