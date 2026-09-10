@@ -73,7 +73,7 @@ import {
 import { Progress } from '@/renderer/components/ui/progress'
 
 type HarnessKey = 'codex' | 'claude'
-type VariantKey = 'A' | 'B' | 'C'
+type VariantKey = 'A' | 'B' | 'C' | 'D'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 
 type HarnessDefinition = {
@@ -507,11 +507,38 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
   )
 }
 
-function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' }) {
+function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inline' | 'dock' | 'footer' }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const used = `${(context.used / 1000).toFixed(0)}k`
   const status = context.used < 125_000 ? 'Within working zone' : context.used <= 150_000 ? 'Near risk boundary' : 'Attention risk'
+
+  if (layout === 'footer') {
+    return (
+      <div className="flex items-center gap-3 border-t bg-muted/10 px-3 py-2.5">
+        <CircleGauge className="size-4 shrink-0" />
+        <div className="shrink-0">
+          <div className="text-xs font-semibold">Context · {status}</div>
+          <div className="text-[10px] text-muted-foreground">Observed risk ~125–150k · debated</div>
+        </div>
+        <div className="min-w-28 flex-1">
+          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
+          </div>
+        </div>
+        <div className="shrink-0 text-xs tabular-nums">
+          <span className="font-semibold">{used}</span>
+          <span className="text-muted-foreground"> / 200k total</span>
+        </div>
+        <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
+          <ContextPopover state={state} appearance="details" />
+          <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
+          <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+        </div>
+      </div>
+    )
+  }
 
   if (layout === 'inline') {
     return (
@@ -569,6 +596,7 @@ function VariantSwitcher({ variant }: { variant: VariantKey }) {
     { key: 'A', label: 'Popover' },
     { key: 'B', label: 'Side rail' },
     { key: 'C', label: 'Dock' },
+    { key: 'D', label: 'Footer bar' },
   ]
   return (
     <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Prototype variants">
@@ -672,7 +700,7 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
 
 export function ComposerPrototype() {
   const requestedVariant = new URLSearchParams(window.location.search).get('variant')
-  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' ? requestedVariant : 'A'
+  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' || requestedVariant === 'D' ? requestedVariant : 'A'
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -757,6 +785,7 @@ export function ComposerPrototype() {
                 </InputGroupButton>
               </div>
             </InputGroupAddon>
+            {variant === 'D' && <ContextSurface state={state} layout="footer" />}
           </InputGroup>
         </form>
       </div>
