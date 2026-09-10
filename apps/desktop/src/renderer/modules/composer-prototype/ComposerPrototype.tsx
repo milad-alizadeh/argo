@@ -856,6 +856,31 @@ function ContextToneSwitcher({
   )
 }
 
+function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
+  return (
+    <>
+      {visible ? (
+        <div className="pointer-events-none fixed inset-0 z-[60]">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(14,165,233,0.10)_1px,transparent_1px),linear-gradient(to_bottom,rgba(14,165,233,0.08)_1px,transparent_1px)] [background-size:8px_8px]" />
+          <div className="relative mx-auto grid h-full w-[calc(100%-4rem)] max-w-4xl grid-cols-12 border-x border-sky-500/80">
+            {Array.from({ length: 12 }, (_, index) => (
+              <span key={index} className="border-l border-sky-500/25 first:border-l-0" />
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <button
+        type="button"
+        aria-pressed={visible}
+        onClick={onToggle}
+        className={`fixed bottom-3 left-3 z-[70] rounded-full border px-3 py-2 text-xs font-medium shadow-sm backdrop-blur ${visible ? 'bg-sky-500 text-white' : 'bg-background/95 text-muted-foreground hover:text-foreground'}`}
+      >
+        Grid {visible ? 'on' : 'off'}
+      </button>
+    </>
+  )
+}
+
 function QueuePreview({
   messages,
   layout,
@@ -1069,6 +1094,7 @@ export function ComposerPrototype() {
     contextPreview: 'dumb',
   })
   const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
+  const [showAlignmentGrid, setShowAlignmentGrid] = useState(false)
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
@@ -1225,6 +1251,7 @@ export function ComposerPrototype() {
       </div>
       <ContextPreviewControl state={state} setState={setState} />
       <ContextToneSwitcher tone={contextTone} onChange={setContextTone} />
+      <AlignmentGrid visible={showAlignmentGrid} onToggle={() => setShowAlignmentGrid((visible) => !visible)} />
     </main>
   )
 }
