@@ -62,9 +62,13 @@ function ExpandedEvidence({
 function InspectorSection({
   evidence,
   active,
+  onExpand,
+  onClose,
 }: {
   evidence: FeedPrototypeEvidence
   active: boolean
+  onExpand: () => void
+  onClose: () => void
 }) {
   return (
     <section data-evidence-id={evidence.id} className="min-h-[45%] border-b border-border/60">
@@ -74,6 +78,21 @@ function InspectorSection({
         <EvidenceKindIcon kind={evidence.kind} />
         <span className="min-w-0 flex-1 truncate text-control font-medium">{evidence.title}</span>
         <span className="text-(length:--text-control)">{evidenceLabel(evidence.kind)}</span>
+        {active ? (
+          <>
+            <Button size="icon-sm" variant="ghost" aria-label="Expand result" onClick={onExpand}>
+              <Expand />
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Close result sidebar"
+              onClick={onClose}
+            >
+              <PanelRightClose />
+            </Button>
+          </>
+        ) : null}
       </header>
       <div className="space-y-4 p-4">
         <p className="break-words text-control leading-relaxed text-muted-foreground">
@@ -123,33 +142,19 @@ export function FeedEvidencePrototype({
       aria-label="Command and file inspector"
       data-component="FeedEvidence"
     >
-      <header className="flex items-center gap-2 border-b px-3 py-2">
-        <EvidenceKindIcon kind={activeEvidence.kind} />
-        <div className="min-w-0 flex-1">
-          <p className="text-(length:--text-control) text-muted-foreground">
-            Inspector · {evidenceLabel(activeEvidence.kind)}
-          </p>
-          <h2 className="truncate text-control font-medium">{activeEvidence.title}</h2>
-        </div>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Expand result"
-          onClick={() => setExpanded(true)}
-        >
-          <Expand />
-        </Button>
-        <Button size="icon-sm" variant="ghost" aria-label="Close result sidebar" onClick={onClose}>
-          <PanelRightClose />
-        </Button>
-      </header>
       <div
         ref={scrollArea}
         onScroll={selectVisibleEvidence}
         className="min-h-0 flex-1 overflow-y-auto"
       >
         {items.map((item) => (
-          <InspectorSection key={item.id} evidence={item} active={item.id === activeId} />
+          <InspectorSection
+            key={item.id}
+            evidence={item}
+            active={item.id === activeId}
+            onExpand={() => setExpanded(true)}
+            onClose={onClose}
+          />
         ))}
       </div>
       <footer className="flex items-center justify-between border-t px-3 py-2 text-control text-muted-foreground">
