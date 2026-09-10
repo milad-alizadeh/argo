@@ -19,5 +19,5 @@
     "allowJs": true
   },
   "include": ["src/**/*.ts", "*.config.ts", "forge.config.ts", "scripts/**/*.mjs"],
-  "exclude": ["src/renderer"]
+  "exclude": ["src/renderer", "src/scripts/session-proof"]
 }

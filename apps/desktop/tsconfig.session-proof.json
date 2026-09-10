@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    // The proof drivers serialize browser closures through Playwright. Their assertions execute
+    // against packaged runtime fixtures, so Bun builds them while the strict node and web
+    // projects typecheck application code and shared contracts.
+    "noCheck": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": ["src/scripts/session-proof/**/*.ts"]
+}

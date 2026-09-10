@@ -42,9 +42,8 @@ const FIXTURES = [
   'strandedResume',
 ]
 
-const shots = process.argv.includes('--shots')
-  ? process.argv[process.argv.indexOf('--shots') + 1]
-  : null
+const shotsIndex = process.argv.indexOf('--shots')
+const shots = shotsIndex === -1 ? null : process.argv[shotsIndex + 1] ?? null
 
 // One more turn on a Session already measured, written the way the CLI writes one: appended to
 // the file it belongs to.

@@ -12,7 +12,7 @@
     "storybook:build": "storybook build",
     "design:render": "node scripts/render-desktop-state.mjs",
     "release:build": "bun run prove:pty --arch arm64",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.session-proof.json",
     "build:session-scripts": "bun build src/scripts/session-proof/prove-project-contract.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/prove-project-contract.mjs && bun build src/scripts/session-proof/prove-session-feed.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/prove-session-feed.mjs",
     "prove:pty": "node ../../scripts/node-version-gate.mjs && node scripts/prove-packaged-pty.mjs",
     "prove:project-contract": "node ../../scripts/node-version-gate.mjs && bun run build:session-scripts && node scripts/prove-project-contract.mjs",
