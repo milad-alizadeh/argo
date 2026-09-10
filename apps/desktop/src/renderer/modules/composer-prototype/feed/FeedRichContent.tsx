@@ -22,10 +22,10 @@ export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
       <FeedDiagram onOpen={onOpen} />
       <FeedResultsTable />
       <p className="text-body leading-relaxed">
-        Here is the attached reference beside the current file. Each image keeps its source label
-        when you inspect it.
+        Here is the attached reference beside the current file. The gallery keeps one row height
+        while each image retains its own proportions.
       </p>
-      <FeedImages onOpen={onOpen} />
+      <FeedImages />
       <blockquote className="border-l-2 pl-4 text-body leading-relaxed text-muted-foreground">
         “Keep the active Session and its work visible while composing.”
       </blockquote>

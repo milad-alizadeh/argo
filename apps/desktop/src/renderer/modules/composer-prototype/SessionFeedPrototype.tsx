@@ -19,7 +19,7 @@ export function SessionFeedPrototype({ onOpenEvidence }: { onOpenEvidence: FeedE
           Bring the composer into the Session. Keep the roster, subagents and their shell visible,
           and use this image to check attachments.
         </p>
-        <FeedAttachedImage onOpen={onOpenEvidence} />
+        <FeedAttachedImage />
       </FeedPrompt>
       <FeedTurn>
         <p className="leading-relaxed">

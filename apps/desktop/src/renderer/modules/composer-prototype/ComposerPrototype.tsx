@@ -239,7 +239,7 @@ type PrototypeSession = {
 }
 
 type ThemeMode = 'system' | 'light' | 'dark'
-type ConciergePlacement = 'rail' | 'floating' | 'off'
+type ConciergePlacement = 'roster' | 'floating' | 'off'
 
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   {
@@ -376,7 +376,7 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Concierge</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={concierge} onValueChange={(value) => onConciergeChange(value as ConciergePlacement)}>
-          <DropdownMenuRadioItem value="rail">In app rail</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="roster">Below Session list</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="floating">Floating companion</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
@@ -385,7 +385,7 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
   )
 }
 
-function RailConcierge({ onFloat }: { onFloat: () => void }) {
+function RosterConcierge({ onFloat }: { onFloat: () => void }) {
   return (
     <Popover>
       <PopoverTrigger
@@ -393,12 +393,18 @@ function RailConcierge({ onFloat }: { onFloat: () => void }) {
           <button
             type="button"
             aria-label="Open Concierge chat"
-            className="relative grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded-lg p-2 text-left hover:bg-muted"
           />
         }
       >
-        <ConciergeOrb compact />
-        <span className="absolute top-0.5 right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+        <span className="relative shrink-0">
+          <ConciergeOrb compact />
+          <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[10px] font-medium">Concierge is listening</span>
+          <span className="block truncate text-[10px] text-muted-foreground">“Show every feed state in one conversation…”</span>
+        </span>
       </PopoverTrigger>
       <PopoverContent side="right" align="end" className="w-72 gap-3 p-3">
         <PopoverHeader>
@@ -451,7 +457,6 @@ function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: {
         ))}
       </div>
       <div className="mt-auto flex flex-col gap-3">
-        {concierge === 'rail' ? <RailConcierge onFloat={() => onConciergeChange('floating')} /> : null}
         <Tooltip>
           <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
             <Archive />
@@ -476,7 +481,7 @@ const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], stri
   merged: 'text-violet-600 dark:text-violet-400',
 }
 
-function PrototypeSessionRoster() {
+function PrototypeSessionRoster({ concierge, onConciergeChange }: { concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
     <aside className="flex min-h-0 flex-col border-r border-border/60 bg-card max-xl:hidden">
       <div className="flex h-12 shrink-0 items-center border-b border-border/60 px-3">
@@ -527,6 +532,11 @@ function PrototypeSessionRoster() {
           })}
         </div>
       </div>
+      {concierge === 'roster' ? (
+        <div className="shrink-0 border-t border-border/60 p-2">
+          <RosterConcierge onFloat={() => onConciergeChange('floating')} />
+        </div>
+      ) : null}
     </aside>
   )
 }
@@ -1504,7 +1514,7 @@ function initialTheme(): ThemeMode {
 
 function initialConcierge(): ConciergePlacement {
   const concierge = new URLSearchParams(window.location.search).get('concierge')
-  return concierge === 'floating' || concierge === 'off' ? concierge : 'rail'
+  return concierge === 'floating' || concierge === 'off' ? concierge : 'roster'
 }
 
 export function ComposerPrototype() {
@@ -1593,7 +1603,7 @@ export function ComposerPrototype() {
       <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
         <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[17.5rem_minmax(0,1fr)] overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background max-xl:grid-cols-[minmax(0,1fr)]">
-        <PrototypeSessionRoster />
+        <PrototypeSessionRoster concierge={concierge} onConciergeChange={setConcierge} />
         <main
           className="relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
           data-prototype="composer"

@@ -19,9 +19,9 @@ const CONCIERGE_QUESTION = {
   required: true,
   choices: [
     {
-      value: 'rail',
-      label: 'In the app rail',
-      detail: 'Keep the global chat available across Projects.',
+      value: 'roster',
+      label: 'Below the Session list',
+      detail: 'Show the orb and live subtitles together.',
     },
     {
       value: 'floating',
@@ -32,7 +32,7 @@ const CONCIERGE_QUESTION = {
 } as const
 
 export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
-  const [selection, setSelection] = useState('rail')
+  const [selection, setSelection] = useState('roster')
   const [answer, setAnswer] = useState('')
   const [submitted, setSubmitted] = useState(false)
   if (submitted)
