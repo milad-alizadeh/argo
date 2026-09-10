@@ -771,66 +771,92 @@ function SessionWorkSidebar({
   evidence,
   onActiveEvidenceChange,
   onShowActivity,
+  fullscreen,
+  onToggleFullscreen,
+  onClose,
 }: {
   evidence: FeedPrototypeEvidence | null
   onActiveEvidenceChange: (evidenceId: string) => void
   onShowActivity: () => void
+  fullscreen: boolean
+  onToggleFullscreen: () => void
+  onClose: () => void
 }) {
-  if (evidence)
-    return (
-      <aside className="flex h-full min-h-0 w-full flex-col bg-card">
-        <header className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="justify-start"
-            onClick={onShowActivity}
-          >
-            <ArrowLeft />
-            Session activity
-          </Button>
-        </header>
-        <div className="min-h-0 flex-1">
-          <FeedEvidencePrototype
-            evidence={evidence}
-            onActiveEvidenceChange={onActiveEvidenceChange}
-          />
-        </div>
-      </aside>
-    )
   return (
-    <aside className="h-full w-full overflow-y-auto bg-muted/20 p-3">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-(length:--text-control) font-semibold">Running under this Session</h3>
-        <span className="text-(length:--text-control) text-muted-foreground">4 live</span>
-      </div>
-      <div className="space-y-1">
-        {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
-          <button key={label} type="button" className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-muted">
-            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-emerald-500" />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-(length:--text-body) font-medium">{label}</span>
-              <span className="block text-(length:--text-control) text-muted-foreground">
-                Subagent {index + 1} · running
+    <aside className="flex h-full min-h-0 w-full flex-col bg-muted/20">
+      <header className="flex h-14 shrink-0 items-center justify-end gap-1 border-b border-border/60 bg-background px-3">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={fullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+          onClick={onToggleFullscreen}
+        >
+          {fullscreen ? <Minimize2 /> : <Expand />}
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          aria-label="Collapse Session inspector"
+          onClick={onClose}
+        >
+          <PanelRight />
+        </Button>
+      </header>
+      {evidence ? (
+        <div className="flex min-h-0 flex-1 flex-col bg-card">
+          <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="justify-start"
+              onClick={onShowActivity}
+            >
+              <ArrowLeft />
+              Session activity
+            </Button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <FeedEvidencePrototype
+              evidence={evidence}
+              onActiveEvidenceChange={onActiveEvidenceChange}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-(length:--text-control) font-semibold">Running under this Session</h3>
+            <span className="text-(length:--text-control) text-muted-foreground">4 live</span>
+          </div>
+          <div className="space-y-1">
+            {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
+              <button key={label} type="button" className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-muted">
+                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-(length:--text-body) font-medium">{label}</span>
+                  <span className="block text-(length:--text-control) text-muted-foreground">
+                    Subagent {index + 1} · running
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="my-3 h-px bg-border/60" />
+          <h3 className="mb-2 text-(length:--text-control) font-semibold">Shell · 1</h3>
+          <button type="button" className="flex w-full items-start gap-2 rounded-lg bg-muted/60 p-2 text-left">
+            <CircleDot className="mt-0.5 text-emerald-500" />
+            <span className="min-w-0">
+              <span className="block truncate font-mono text-(length:--text-control)">bun run dev</span>
+              <span className="mt-0.5 block text-(length:--text-control) text-muted-foreground">
+                Vite · port 5191
               </span>
             </span>
           </button>
-        ))}
-      </div>
-      <div className="my-3 h-px bg-border/60" />
-      <h3 className="mb-2 text-(length:--text-control) font-semibold">Shell · 1</h3>
-      <button type="button" className="flex w-full items-start gap-2 rounded-lg bg-muted/60 p-2 text-left">
-        <CircleDot className="mt-0.5 text-emerald-500" />
-        <span className="min-w-0">
-          <span className="block truncate font-mono text-(length:--text-control)">bun run dev</span>
-          <span className="mt-0.5 block text-(length:--text-control) text-muted-foreground">
-            Vite · port 5191
-          </span>
-        </span>
-      </button>
-      <button type="button" className="mt-3 flex items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground">
-        <ChevronDown /> 6 finished
-      </button>
+          <button type="button" className="mt-3 flex items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground">
+            <ChevronDown /> 6 finished
+          </button>
+        </div>
+      )}
     </aside>
   )
 }
@@ -2003,32 +2029,27 @@ export function ComposerPrototype() {
           transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
         }
           `}</style>
-          <div className="absolute top-3 right-3 z-50 flex items-center gap-1">
-            {showSessionSidebar ? (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={sessionSidebarFullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
-                onClick={toggleSessionSidebarFullscreen}
-              >
-                {sessionSidebarFullscreen ? <Minimize2 /> : <Expand />}
-              </Button>
-            ) : null}
+          {!showSessionSidebar ? (
+            <div className="absolute top-3 right-3 z-50">
             <Button
-              variant={showSessionSidebar ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="icon-sm"
-              aria-label={showSessionSidebar ? 'Collapse Session inspector' : 'Open Session inspector'}
-              onClick={() => setSessionSidebarVisible(!showSessionSidebar)}
+              aria-label="Open Session inspector"
+              onClick={() => setSessionSidebarVisible(true)}
             >
               <PanelRight />
             </Button>
-          </div>
+            </div>
+          ) : null}
           {sessionSidebarFullscreen ? (
             <div className="min-h-0 flex-1 overflow-hidden bg-background motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
               <SessionWorkSidebar
                 evidence={feedEvidence}
                 onActiveEvidenceChange={setActiveFeedEvidenceId}
                 onShowActivity={showSessionActivity}
+                fullscreen
+                onToggleFullscreen={toggleSessionSidebarFullscreen}
+                onClose={() => setSessionSidebarVisible(false)}
               />
             </div>
           ) : (
@@ -2162,6 +2183,9 @@ export function ComposerPrototype() {
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
                   onShowActivity={showSessionActivity}
+                  fullscreen={false}
+                  onToggleFullscreen={toggleSessionSidebarFullscreen}
+                  onClose={() => setSessionSidebarVisible(false)}
                 />
             </div>
           </ResizablePanel>
