@@ -7,6 +7,7 @@ type SessionsScreenViewProps = {
   selectedSessionId: SessionId | null
   feed: SessionFeedData | null
   onSelect: (sessionId: SessionId) => void
+  onRefresh: () => void
 }
 
 export function SessionsScreenView({
@@ -14,11 +15,13 @@ export function SessionsScreenView({
   selectedSessionId,
   feed,
   onSelect,
+  onRefresh,
 }: SessionsScreenViewProps) {
   return (
     <main className="grid h-dvh min-h-0 grid-cols-[var(--sessions-grid-columns)] bg-canvas max-md:grid-cols-1 max-md:grid-rows-[var(--sessions-mobile-grid-rows)]">
       <SessionRoster
         onSelect={onSelect}
+        onRefresh={onRefresh}
         selectedSessionId={selectedSessionId}
         sessions={sessions}
       />
