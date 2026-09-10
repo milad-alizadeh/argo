@@ -12,6 +12,7 @@ import {
   CircleHelp,
   Command,
   CornerDownRight,
+  Expand,
   File,
   FileCheck2,
   Folder,
@@ -697,7 +698,17 @@ function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; labe
   )
 }
 
-function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar: boolean; onToggleSidebar: () => void }) {
+function PrototypeSessionHeader({
+  showSidebar,
+  canExpandResult,
+  onExpandResult,
+  onToggleSidebar,
+}: {
+  showSidebar: boolean
+  canExpandResult: boolean
+  onExpandResult: () => void
+  onToggleSidebar: () => void
+}) {
   return (
     <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
       <div className="min-w-0">
@@ -728,6 +739,17 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
         <HeaderSignal icon={<FileCheck2 />} label="Code review" value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        {showSidebar && canExpandResult ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-1"
+            aria-label="Expand active result"
+            onClick={onExpandResult}
+          >
+            <Expand />
+          </Button>
+        ) : null}
         <Button variant={showSidebar ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Toggle Session sidebar" onClick={onToggleSidebar}>
           <PanelRight />
         </Button>
@@ -739,18 +761,21 @@ function PrototypeSessionHeader({ showSidebar, onToggleSidebar }: { showSidebar:
 function SessionWorkSidebar({
   evidence,
   onActiveEvidenceChange,
-  onCloseEvidence,
+  expandedEvidence,
+  onExpandedEvidenceChange,
 }: {
   evidence: FeedPrototypeEvidence | null
   onActiveEvidenceChange: (evidenceId: string) => void
-  onCloseEvidence: () => void
+  expandedEvidence: boolean
+  onExpandedEvidenceChange: (expanded: boolean) => void
 }) {
   if (evidence)
     return (
       <FeedEvidencePrototype
         evidence={evidence}
         onActiveEvidenceChange={onActiveEvidenceChange}
-        onClose={onCloseEvidence}
+        expanded={expandedEvidence}
+        onExpandedChange={onExpandedEvidenceChange}
       />
     )
   return (
@@ -1711,6 +1736,7 @@ export function ComposerPrototype() {
   const [theme, setTheme] = useState<ThemeMode>(initialTheme)
   const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
+  const [expandedFeedEvidence, setExpandedFeedEvidence] = useState(false)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1736,6 +1762,7 @@ export function ComposerPrototype() {
   const openFeedEvidence = useCallback((evidence: FeedPrototypeEvidence) => {
     setFeedEvidence({ ...evidence })
     setActiveFeedEvidenceId(evidence.id)
+    setExpandedFeedEvidence(false)
     setShowSessionSidebar(true)
   }, [])
 
@@ -1865,11 +1892,19 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
           `}</style>
-          <PrototypeSessionHeader showSidebar={showSessionSidebar} onToggleSidebar={() => setShowSessionSidebar((visible) => !visible)} />
+          <PrototypeSessionHeader
+            showSidebar={showSessionSidebar}
+            canExpandResult={feedEvidence !== null}
+            onExpandResult={() => setExpandedFeedEvidence(true)}
+            onToggleSidebar={() => {
+              setExpandedFeedEvidence(false)
+              setShowSessionSidebar((visible) => !visible)
+            }}
+          />
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
           <ResizablePanel
             id="session-conversation"
-            minSize={480}
+            minSize={320}
             className="flex h-full min-h-0 overflow-hidden"
           >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -1962,17 +1997,15 @@ export function ComposerPrototype() {
                 id="session-inspector"
                 defaultSize={248}
                 minSize={216}
-                maxSize={400}
+                maxSize={720}
                 groupResizeBehavior="preserve-pixel-size"
                 className="h-full min-h-0 overflow-hidden"
               >
                 <SessionWorkSidebar
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
-                  onCloseEvidence={() => {
-                    setFeedEvidence(null)
-                    setActiveFeedEvidenceId(null)
-                  }}
+                  expandedEvidence={expandedFeedEvidence}
+                  onExpandedEvidenceChange={setExpandedFeedEvidence}
                 />
               </ResizablePanel>
             </>
