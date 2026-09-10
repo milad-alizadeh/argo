@@ -13,6 +13,7 @@ import {
   File,
   Folder,
   Gauge,
+  GripVertical,
   Mic,
   Paperclip,
   Plus,
@@ -653,11 +654,33 @@ function QueuePreview({
 }) {
   const message = messages[0]
   if (!message) return null
+  if (layout === 'integrated') {
+    return (
+      <div className="divide-y border-b bg-muted/20">
+        {messages.map((queuedMessage) => (
+          <div key={queuedMessage.id} className="flex min-h-11 items-center gap-2 px-3 py-2">
+            <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
+            <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(queuedMessage)}>
+              <ArrowRight />Steer
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => onRemove(queuedMessage.id)}>
+              <Trash2 />
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label={`More actions for queued message: ${queuedMessage.text}`}>
+              <Ellipsis />
+            </Button>
+          </div>
+        ))}
+      </div>
+    )
+  }
   const shell = {
     attached: 'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-muted/40 px-3 pb-4 pt-2.5 shadow-sm',
     inline: 'mr-72 flex border-b bg-muted/20 px-3 py-2',
     floating: 'mb-2 ml-auto w-3/4 rounded-lg border bg-background px-3 py-2 shadow-sm',
-    integrated: 'flex border-b bg-muted/20 px-3 py-2',
+    integrated: '',
   }[layout]
   return (
     <div className={`${shell} flex items-center gap-2`}>
