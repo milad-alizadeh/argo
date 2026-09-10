@@ -778,8 +778,7 @@ function ContextSurface({
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-0 ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} />
-            <div className="absolute inset-y-0 right-0 bg-muted" style={{ width: `${100 - percentage}%` }} />
+            <div className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
             <Tooltip>
               <TooltipTrigger render={<button type="button" className="absolute inset-y-0 left-0 w-1/5" aria-label="About the Smart Zone" />} />
