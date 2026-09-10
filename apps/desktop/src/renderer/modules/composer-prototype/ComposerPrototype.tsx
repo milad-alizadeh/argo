@@ -925,11 +925,11 @@ function TaskPlanPopover() {
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="60 100" />
         </svg>
-        <span className="text-xs font-medium">Plan</span>
+        <span className="text-xs font-medium">Step 3/5</span>
       </PopoverTrigger>
       <PopoverContent align="start" side="top" className="w-80 gap-3 p-3">
         <PopoverHeader>
-          <PopoverTitle>Plan</PopoverTitle>
+          <PopoverTitle>Step 3/5</PopoverTitle>
         </PopoverHeader>
         <Progress value={60} className="h-1.5" />
         <div className="grid gap-1">
