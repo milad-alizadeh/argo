@@ -913,7 +913,6 @@ function AlignmentGrid({ visible, onToggle }: { visible: boolean; onToggle: () =
 function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 mx-auto w-full max-w-4xl">
-      <div aria-hidden="true" className="absolute inset-0 rounded-2xl bg-background shadow-[0_12px_34px_-15px_rgba(0,0,0,0.32)]" />
       <div className="relative z-10 rounded-2xl">{children}</div>
     </div>
   )
@@ -1235,7 +1234,7 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-        <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!shadow-md">
+        <div className="composer-queue-stack mx-auto w-full max-w-4xl [&>*]:!shadow-sm">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <AnimatedHeight>
@@ -1298,7 +1297,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!px-4 [&>*]:!shadow-md">
+        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!px-4 [&>*]:!shadow-sm">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
