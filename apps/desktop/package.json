@@ -6,6 +6,7 @@
   "main": ".vite/build/main.js",
   "scripts": {
     "dev": "node ../../scripts/node-version-gate.mjs && node scripts/link-hoisted-electron.mjs && electron-forge start",
+    "prototype:composer": "VITE_COMPOSER_PROTOTYPE=1 node ../../scripts/node-version-gate.mjs && node scripts/link-hoisted-electron.mjs && electron-forge start",
     "package": "node ../../scripts/node-version-gate.mjs && electron-forge package",
     "make": "node ../../scripts/node-version-gate.mjs && electron-forge make",
     "storybook": "storybook dev -p 6006",
