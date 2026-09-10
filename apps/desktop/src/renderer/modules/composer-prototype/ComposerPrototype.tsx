@@ -177,8 +177,8 @@ const INITIAL_MESSAGES: MessageRow[] = [
 ]
 
 function HarnessLogo({ harness, className = 'size-4' }: { harness: HarnessKey; className?: string }) {
-  const lightSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude-code.svg'
-  const darkSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude-code-dark.svg'
+  const lightSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude.ico'
+  const darkSource = harness === 'codex' ? '/prototype-assets/codex.png' : '/prototype-assets/claude.ico'
   return (
     <span className={`relative inline-flex shrink-0 overflow-hidden rounded-sm ${className}`}>
       <img src={lightSource} alt="" className="size-full object-contain dark:hidden" />
@@ -270,8 +270,8 @@ function RunSetupMenu({ state, setState }: StateProps) {
         <span>{state.effort}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-[25rem] overflow-hidden p-0">
-        <div className="border-b p-2.5">
+      <DropdownMenuContent align="start" side="top" className="w-[23rem] overflow-hidden p-0">
+        <div className="border-b p-2">
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Harness">
             {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => {
               const active = state.harness === harness
@@ -282,7 +282,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setState(selectHarness(state, harness))}
-                  className={`flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
+                  className={`flex h-8 items-center justify-center gap-2 rounded-md px-3 text-xs font-medium transition-colors ${
                     active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -295,9 +295,9 @@ function RunSetupMenu({ state, setState }: StateProps) {
         </div>
 
         <div>
-          <div className="p-3">
-            <div className="px-1 pb-2 text-xs font-medium text-muted-foreground">Model</div>
-            <div className="space-y-1" role="listbox" aria-label="Model">
+          <div className="p-2.5">
+            <div className="px-1 pb-1.5 text-[11px] font-medium text-muted-foreground">Model</div>
+            <div className="space-y-0.5" role="listbox" aria-label="Model">
               {definition.models.map((model) => {
                 const active = state.model === model
                 return (
@@ -307,13 +307,13 @@ function RunSetupMenu({ state, setState }: StateProps) {
                     role="option"
                     aria-selected={active}
                     onClick={() => setState({ ...state, model })}
-                    className={`flex min-h-14 w-full items-center rounded-md px-2.5 py-2 text-left transition-colors ${
+                    className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors ${
                       active ? 'bg-foreground text-background' : 'hover:bg-muted'
                     }`}
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium">{model}</span>
-                      <span className={`mt-0.5 block text-xs leading-4 ${active ? 'text-background/65' : 'text-muted-foreground'}`}>
+                      <span className="block text-[13px] font-medium">{model}</span>
+                      <span className={`mt-0.5 block text-[11px] leading-4 ${active ? 'text-background/65' : 'text-muted-foreground'}`}>
                         {MODEL_DESCRIPTIONS[state.harness][model]}
                       </span>
                     </span>
@@ -324,7 +324,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
             </div>
           </div>
 
-          <div className="border-t p-3">
+          <div className="border-t p-2.5">
             <div className="flex items-center">
               <div className="text-xs font-medium text-muted-foreground">Effort</div>
               <span className="ml-auto text-[10px] text-muted-foreground">
