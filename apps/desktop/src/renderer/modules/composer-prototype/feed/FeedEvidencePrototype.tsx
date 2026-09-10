@@ -126,7 +126,7 @@ export function FeedEvidencePrototype({
     const target = scrollArea.current?.querySelector<HTMLElement>(
       `[data-evidence-id="${evidence.id}"]`,
     )
-    target?.scrollIntoView({ block: 'start' })
+    if (scrollArea.current && target) scrollArea.current.scrollTop = target.offsetTop
   }, [evidence, onActiveEvidenceChange])
 
   const selectVisibleEvidence = () => {
