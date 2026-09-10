@@ -6,6 +6,7 @@ import {
   Bot,
   Check,
   ChevronDown,
+  ChevronRight,
   CircleDot,
   CircleGauge,
   CircleHelp,
@@ -15,6 +16,7 @@ import {
   FileCheck2,
   Folder,
   FolderGit2,
+  FolderKanban,
   GitBranch,
   GitFork,
   GripVertical,
@@ -367,7 +369,7 @@ function ProjectManager({
           />
         }
       >
-        <FolderGit2 />
+        <FolderKanban />
         <span className="truncate font-medium">Projects</span>
         <span className="text-muted-foreground">{visibleProjects.length}</span>
         <ChevronDown className="text-muted-foreground" />
@@ -379,7 +381,7 @@ function ProjectManager({
             key={item}
             onClick={() => onVisibilityChange(item, !visibleProjects.includes(item))}
           >
-            <FolderGit2 />
+            <FolderKanban />
             <span className="flex-1">{item}</span>
             {visibleProjects.includes(item) ? <Check /> : null}
           </DropdownMenuItem>
@@ -590,6 +592,8 @@ function PrototypeSessionRoster({
   visibleProjects: ProjectKey[]
   onProjectVisibilityChange: (project: ProjectKey, visible: boolean) => void
 }) {
+  const [expandedProjects, setExpandedProjects] = useState<ProjectKey[]>(PROJECTS)
+
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center px-3">
@@ -614,12 +618,30 @@ function PrototypeSessionRoster({
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {visibleProjects.map((project) => {
           const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === project)
+          const expanded = expandedProjects.includes(project)
           return (
             <section key={project} className="pb-2">
               <div className="flex items-center gap-1.5 px-2 py-2 text-[11px] font-medium text-muted-foreground">
-                <FolderGit2 className="size-(--size-icon-inline)" />
-                <span className="truncate text-foreground">{project}</span>
-                <span>{sessions.length}</span>
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={`project-sessions-${project}`}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left hover:text-foreground"
+                  onClick={() =>
+                    setExpandedProjects((current) =>
+                      expanded
+                        ? current.filter((item) => item !== project)
+                        : [...current, project],
+                    )
+                  }
+                >
+                  <ChevronRight
+                    className={`size-(--size-icon-inline) transition-transform ${expanded ? 'rotate-90' : ''}`}
+                  />
+                  <FolderKanban className="size-(--size-icon-inline)" />
+                  <span className="truncate text-foreground">{project}</span>
+                  <span>{sessions.length}</span>
+                </button>
                 <Button
                   variant="ghost"
                   size="icon-xs"
@@ -629,11 +651,13 @@ function PrototypeSessionRoster({
                   <Plus />
                 </Button>
               </div>
-              <div className="space-y-1">
-                {sessions.map((session) => (
-                  <SessionRosterRow key={session.id} session={session} />
-                ))}
-              </div>
+              {expanded ? (
+                <div id={`project-sessions-${project}`} className="space-y-1">
+                  {sessions.map((session) => (
+                    <SessionRosterRow key={session.id} session={session} />
+                  ))}
+                </div>
+              ) : null}
             </section>
           )
         })}
