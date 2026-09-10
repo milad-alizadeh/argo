@@ -466,6 +466,26 @@ function PermissionMenu({ state, setState }: StateProps) {
   )
 }
 
+function SkillReferenceIcon() {
+  return (
+    <svg aria-hidden="true" className="size-5 shrink-0" fill="none" viewBox="0 0 24 24">
+      <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+      <path d="m4.5 7.75 7.5 4.3 7.5-4.3M12 12.05V21" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+function referenceLabel(reference: string) {
+  const label = reference.replace(/^\$/, '').replaceAll('-', ' ')
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}`
+}
+
+function fileType(reference: string) {
+  const separator = reference.lastIndexOf('.')
+  if (separator < 1 || separator === reference.length - 1) return 'File'
+  return `${reference.slice(separator + 1).toUpperCase()} file`
+}
+
 function ReferenceStrip({ state, setState }: StateProps) {
   const [renderedAttachments, setRenderedAttachments] = useState(state.attachments)
   const [expanded, setExpanded] = useState(state.attachments.length > 0)
@@ -489,29 +509,41 @@ function ReferenceStrip({ state, setState }: StateProps) {
   return (
     <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-16' : 'h-0'}`}>
       <div>
-        <AttachmentGroup className="w-full px-3 pt-3">
-          {renderedAttachments.map((reference) => (
-            <Attachment key={reference} size="xs">
-              <AttachmentMedia><File /></AttachmentMedia>
-              <AttachmentContent>
-                <AttachmentTitle>{reference}</AttachmentTitle>
-                <AttachmentDescription>Task context</AttachmentDescription>
-              </AttachmentContent>
-              <AttachmentActions>
-                <AttachmentAction
-                  aria-label={`Remove ${reference}`}
-                  onClick={() =>
-                    setState({
-                      ...state,
-                      attachments: state.attachments.filter((item) => item !== reference),
-                    })
-                  }
-                >
-                  <X />
-                </AttachmentAction>
-              </AttachmentActions>
-            </Attachment>
-          ))}
+        <AttachmentGroup className="w-full select-none px-3 pt-3">
+          {renderedAttachments.map((reference) => {
+            const remove = () =>
+              setState({
+                ...state,
+                attachments: state.attachments.filter((item) => item !== reference),
+              })
+
+            if (reference.startsWith('$')) {
+              return (
+                <div key={reference} className="flex h-10 items-center gap-2 px-2 text-sm text-blue-600">
+                  <SkillReferenceIcon />
+                  <span className="font-medium">{referenceLabel(reference)}</span>
+                  <AttachmentAction aria-label={`Remove ${reference}`} className="ml-1 text-muted-foreground" onClick={remove}>
+                    <X />
+                  </AttachmentAction>
+                </div>
+              )
+            }
+
+            return (
+              <Attachment key={reference} className="h-12 select-none px-2" size="xs">
+                <AttachmentMedia className="size-10 rounded-lg bg-muted"><File className="size-5" /></AttachmentMedia>
+                <AttachmentContent>
+                  <AttachmentTitle>{reference}</AttachmentTitle>
+                  <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
+                </AttachmentContent>
+                <AttachmentActions>
+                  <AttachmentAction aria-label={`Remove ${reference}`} onClick={remove}>
+                    <X />
+                  </AttachmentAction>
+                </AttachmentActions>
+              </Attachment>
+            )
+          })}
         </AttachmentGroup>
       </div>
     </div>
@@ -1241,7 +1273,7 @@ export function ComposerPrototype() {
         </div>
         <AnimatedHeight>
           <form
-            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_*]:!border-border/60 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0 [&_svg]:!size-4"
+            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_*]:!border-border/60 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0"
             onSubmit={(event) => {
               event.preventDefault()
               send()
@@ -1256,7 +1288,7 @@ export function ComposerPrototype() {
               placeholder="Direct the next move…"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              className="min-h-20 px-4 py-3 pr-28 text-sm leading-6"
+              className="min-h-20 px-4 py-3 pr-28 text-sm leading-6 selection:bg-muted-foreground/25 selection:text-foreground"
               onKeyDown={(event) => {
                 const suggestions = composerSuggestions(draft)
                 if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
