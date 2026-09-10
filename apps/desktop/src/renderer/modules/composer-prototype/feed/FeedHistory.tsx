@@ -1,12 +1,6 @@
-import { ArrowUpRight, CircleAlert, SquareTerminal } from 'lucide-react'
-import { Button } from '@/renderer/components/ui/button'
-import { FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
-import {
-  FeedExpiredPermission,
-  FeedPermission,
-  FeedQuestion,
-  FeedUnreadable,
-} from './FeedAttention'
+import { ArrowUpRight, CircleAlert } from 'lucide-react'
+import type { FeedEvidenceAction } from './evidence'
+import { FeedExpiredPermission, FeedQuestion, FeedUnreadable } from './FeedAttention'
 import { FeedDiagramState } from './FeedDiagram'
 import { FeedMissingImage } from './FeedImages'
 import { FeedBoundary, FeedCode, FeedPrompt } from './FeedPrimitives'
@@ -21,14 +15,6 @@ export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
       <FeedBoundary>Context compacted</FeedBoundary>
       <FeedBoundary>Model changed to Sonnet · Effort high</FeedBoundary>
       <FeedMutationExamples onOpen={onOpen} />
-      <Button
-        variant="ghost"
-        className="h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal text-destructive"
-        onClick={() => onOpen(FEED_EVIDENCE.failed)}
-      >
-        <SquareTerminal className="!size-(--size-icon-inline)" />
-        Ran bun run preview<span className="ml-auto">Failed · Exit 1</span>
-      </Button>
       <FeedBoundary>Interrupted</FeedBoundary>
       <div className="flex items-center gap-2 text-control text-muted-foreground">
         <CircleAlert className="!size-(--size-icon-inline)" />
@@ -64,7 +50,6 @@ export function FeedAdditionalStates({ onOpen }: { onOpen: FeedEvidenceAction })
   return (
     <div className="space-y-6 border-t pt-6" data-component="FeedAdditionalStates">
       <FeedQuestion />
-      <FeedPermission />
       <FeedQuestion readOnly />
       <FeedExpiredPermission />
       <FeedHistory onOpen={onOpen} />

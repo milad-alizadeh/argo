@@ -118,3 +118,13 @@ export const FEED_EVIDENCE = {
     detail: 'MCP tool result · GitHub',
   },
 } satisfies Record<string, FeedPrototypeEvidence>
+
+export const FEED_INSPECTOR_EVIDENCE: FeedPrototypeEvidence[] = [
+  FEED_EVIDENCE.search,
+  FEED_EVIDENCE.source,
+  FEED_EVIDENCE.fetched,
+  FEED_EVIDENCE.diff,
+  FEED_EVIDENCE.tests,
+  FEED_EVIDENCE.mcp,
+  FEED_EVIDENCE.failed,
+]

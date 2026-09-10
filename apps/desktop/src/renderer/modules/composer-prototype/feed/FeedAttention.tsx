@@ -87,7 +87,9 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
       </QuestionnaireItem>
       {readOnly ? null : (
         <div className="flex justify-end">
-          <QuestionnaireSubmit className="text-control">Send answer</QuestionnaireSubmit>
+          <QuestionnaireSubmit className="bg-foreground text-control text-background hover:bg-foreground/80">
+            Send answer
+          </QuestionnaireSubmit>
         </div>
       )}
     </Questionnaire>
@@ -105,27 +107,28 @@ export function FeedPermission() {
     )
   return (
     <section
-      className="space-y-3 rounded-lg border bg-card p-4"
+      className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-lg shadow-foreground/5"
       aria-labelledby="feed-permission-title"
       data-component="FeedPermission"
     >
-      <div className="flex items-center gap-2">
-        <ShieldQuestion className="!size-(--size-icon-control)" />
-        <h3 id="feed-permission-title" className="text-body font-medium">
+      <ShieldQuestion className="!size-(--size-icon-control)" />
+      <div className="min-w-0 flex-1">
+        <h3 id="feed-permission-title" className="text-control font-medium">
           Allow this command?
         </h3>
+        <p className="truncate text-[10px] text-muted-foreground">
+          Installs Project dependencies and may access the network.
+        </p>
       </div>
-      <pre className="overflow-auto rounded-md bg-muted p-3 font-mono text-control">
-        bun install
-      </pre>
-      <p className="text-control text-muted-foreground">
-        The command will install this Project’s dependencies and may access the network.
-      </p>
-      <div className="flex justify-end gap-2">
+      <code className="rounded-md bg-muted px-2 py-1 font-mono text-control">bun install</code>
+      <div className="flex gap-1">
         <Button variant="outline" className="text-control" onClick={() => setDecision('denied')}>
           Deny
         </Button>
-        <Button className="text-control" onClick={() => setDecision('allowed')}>
+        <Button
+          className="bg-foreground text-control text-background hover:bg-foreground/80"
+          onClick={() => setDecision('allowed')}
+        >
           Allow once
         </Button>
       </div>
