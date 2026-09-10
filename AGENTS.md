@@ -125,12 +125,9 @@ sub-agent rule: `docs/agents/worktrees.md`.
 ## Subagents
 
 **A subagent's model is a decision per dispatch**, never inherited from this session, and a
-fan-out pays it once per agent. **Gathering** — search the tree, read files, report what they
-say — is recall, and takes the cheapest model that can hold the task. **Judging** — review a
-diff, weigh two designs, trace a bug through code that lies about itself — is inference, and
-takes the strongest available, because a cheap model here returns a confident, shallower answer
-and nothing in the output says so. A job that is both splits in two. Name the model and the
-reason when you report the dispatch.
+fan-out pays it once per agent. **The dispatching session's own model is the ceiling**: a
+subagent never runs a stronger model than the session that dispatches it, only the same model or
+a cheaper one the task can hold. Name the model and the reason when you report the dispatch.
 
 ## Cross-CLI guardrail hooks
 
