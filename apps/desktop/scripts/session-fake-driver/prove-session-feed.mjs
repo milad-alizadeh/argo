@@ -1,4 +1,4 @@
-// src/scripts/session-proof/prove-session-feed.ts
+// src/scripts/session-fake-driver/prove-session-feed.ts
 import assert5 from "node:assert/strict";
 import { appendFile, mkdir as mkdir2, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
@@ -8,7 +8,7 @@ import { _electron as electron } from "playwright-core";
 // scripts/acceptance-protocol.mjs
 var ACCEPTANCE_ENV = "ARGO_PTY_ACCEPTANCE";
 
-// src/scripts/session-proof/packaged-test-copy.ts
+// src/scripts/session-fake-driver/packaged-test-copy.ts
 import assert from "node:assert/strict";
 import { cp, realpath } from "node:fs/promises";
 import path2 from "node:path";
@@ -59,7 +59,7 @@ function packagedApp(arch) {
   return path.join(outputDirectory(arch), `${APP_NAME}.app`);
 }
 
-// src/scripts/session-proof/packaged-test-copy.ts
+// src/scripts/session-fake-driver/packaged-test-copy.ts
 async function packagedTestCopy(root, arch = "arm64") {
   const application = path2.join(root, "Argo.app");
   await cp(packagedApp(arch), application, { recursive: true, verbatimSymlinks: true });
@@ -83,13 +83,13 @@ function appExecutable(application) {
   return path2.join(application, "Contents", "MacOS", "Argo");
 }
 
-// src/scripts/session-proof/project-proof-protocol.ts
+// src/scripts/session-fake-driver/project-proof-protocol.ts
 var PROJECT_PROOF_STORE_ENV = "ARGO_PROJECT_PROOF_STORE";
 
-// src/scripts/session-proof/session-feed-cases.ts
+// src/scripts/session-fake-driver/session-feed-cases.ts
 import assert3 from "node:assert/strict";
 
-// src/scripts/session-proof/session-roster-cases.ts
+// src/scripts/session-fake-driver/session-roster-cases.ts
 import assert2 from "node:assert/strict";
 var listing = { version: 1, type: "session.list", requestId: "list-1" };
 var feed = { version: 1, type: "session.feed", requestId: "feed-1", sessionId: "resumeChild" };
@@ -175,7 +175,7 @@ async function openSession(page, name, sessionId) {
   await page.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`);
 }
 
-// src/scripts/session-proof/session-feed-cases.ts
+// src/scripts/session-fake-driver/session-feed-cases.ts
 async function proveFirstOpen(page) {
   await openSession(page, "read this file", "prose");
   const reading = await page.evaluate(() => {
@@ -247,7 +247,7 @@ async function proveRendererAuthority(page, application) {
   assert3.equal(reply.code, "access-denied");
 }
 
-// src/scripts/session-proof/session-fixture-files.ts
+// src/scripts/session-fake-driver/session-fixture-files.ts
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path3 from "node:path";
 import { fileURLToPath } from "node:url";
@@ -272,7 +272,7 @@ async function writeFixtureTree(root, names, directory = PROJECT) {
   return root;
 }
 
-// src/scripts/session-proof/session-geometry-cases.ts
+// src/scripts/session-fake-driver/session-geometry-cases.ts
 import assert4 from "node:assert/strict";
 async function proveGeometry(page) {
   await page.waitForFunction(() => document.querySelectorAll("[data-feed-row]").length > 0);
@@ -346,10 +346,10 @@ async function proveGrownSession(page, transcripts, grow) {
   assert4.deepEqual(rows.filter((row) => row.stated === ""), []);
 }
 
-// src/scripts/session-proof/session-proof-protocol.ts
+// src/scripts/session-fake-driver/session-proof-protocol.ts
 var SESSION_TRANSCRIPTS_ENV = "ARGO_CLAUDE_TRANSCRIPTS";
 
-// src/scripts/session-proof/prove-session-feed.ts
+// src/scripts/session-fake-driver/prove-session-feed.ts
 var FIXTURES2 = [
   "resumeParent",
   "resumeChild",
@@ -359,7 +359,8 @@ var FIXTURES2 = [
   "prose",
   "strandedResume"
 ];
-var shots = process.argv.includes("--shots") ? process.argv[process.argv.indexOf("--shots") + 1] : null;
+var shotsIndex = process.argv.indexOf("--shots");
+var shots = shotsIndex === -1 ? null : process.argv[shotsIndex + 1] ?? null;
 var GROWN_TURN = `${JSON.stringify({
   type: "assistant",
   cwd: "/Users/x/stranded",

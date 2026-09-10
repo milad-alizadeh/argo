@@ -15,5 +15,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/scripts/session-proof/**/*.ts"]
+  "include": ["src/scripts/session-fake-driver/**/*.ts"]
 }
