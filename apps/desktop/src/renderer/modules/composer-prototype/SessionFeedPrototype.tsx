@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight, GitFork, Sparkles } from 'lucide-react'
+import { ChevronRight, GitFork, Sparkles } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './feed/evidence'
 import { FeedAdditionalStates } from './feed/FeedHistory'
@@ -22,15 +22,15 @@ function FeedSkillInvocation({
   return (
     <Button
       variant="ghost"
-      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+      className={`h-8 w-fit max-w-full justify-start gap-1.5 px-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
       onClick={() => onOpen(evidence)}
     >
       <Sparkles className="!size-(--size-icon-inline)" />
-      <span>Skill invoked</span>
-      <span className="font-medium text-foreground">{evidence.title}</span>
-      <BookOpen className="ml-auto !size-(--size-icon-inline)" />
+      <span className="shrink-0">Skill invoked</span>
+      <span className="min-w-0 truncate font-medium text-foreground">{evidence.title}</span>
+      <ChevronRight className="!size-(--size-icon-inline) shrink-0" />
     </Button>
   )
 }
