@@ -13,14 +13,31 @@ function ExpandedEvidence({
   onClose: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const [closing, setClosing] = useState(false)
   useEffect(() => {
     dialog.current?.showModal()
   }, [])
+
+  const closeExpanded = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      dialog.current?.close()
+      return
+    }
+    setClosing(true)
+  }
+
   return (
     <dialog
       ref={dialog}
       onClose={onClose}
-      className="fixed inset-4 m-auto max-h-full w-full max-w-4xl overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-xl backdrop:bg-background/80"
+      onCancel={(event) => {
+        event.preventDefault()
+        closeExpanded()
+      }}
+      onAnimationEnd={() => {
+        if (closing) dialog.current?.close()
+      }}
+      className={`fixed inset-4 m-auto max-h-full w-full max-w-4xl overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-xl backdrop:bg-background/80 motion-safe:duration-200 ${closing ? 'motion-safe:animate-out motion-safe:fade-out motion-safe:zoom-out-95' : 'motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95'}`}
       aria-label={evidence.title}
     >
       <div className="flex items-center gap-2 border-b px-4 py-3">
@@ -30,7 +47,7 @@ function ExpandedEvidence({
           size="icon-sm"
           variant="ghost"
           aria-label="Close expanded view"
-          onClick={() => dialog.current?.close()}
+          onClick={closeExpanded}
         >
           <X className="!size-(--size-icon-control)" />
         </Button>

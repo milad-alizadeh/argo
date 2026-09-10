@@ -46,7 +46,8 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { usePanelRef } from 'react-resizable-panels'
 import {
   Attachment,
   AttachmentAction,
@@ -1737,6 +1738,9 @@ export function ComposerPrototype() {
   const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [expandedFeedEvidence, setExpandedFeedEvidence] = useState(false)
+  const sessionInspectorPanel = usePanelRef()
+  const sessionInspectorElement = useRef<HTMLDivElement>(null)
+  const sidebarAnimationTimer = useRef<number | null>(null)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1770,6 +1774,32 @@ export function ComposerPrototype() {
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && systemDark))
   }, [theme])
+
+  useEffect(
+    () => () => {
+      if (sidebarAnimationTimer.current !== null)
+        window.clearTimeout(sidebarAnimationTimer.current)
+    },
+    [],
+  )
+
+  const setSessionSidebarVisible = (visible: boolean) => {
+    const panelElement = sessionInspectorElement.current
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (sidebarAnimationTimer.current !== null)
+      window.clearTimeout(sidebarAnimationTimer.current)
+    if (!reduceMotion) panelElement?.classList.add('session-inspector-transition')
+    if (visible) sessionInspectorPanel.current?.expand()
+    else sessionInspectorPanel.current?.collapse()
+    setExpandedFeedEvidence(false)
+    setShowSessionSidebar(visible)
+    if (!reduceMotion) {
+      sidebarAnimationTimer.current = window.setTimeout(() => {
+        panelElement?.classList.remove('session-inspector-transition')
+        sidebarAnimationTimer.current = null
+      }, 240)
+    }
+  }
 
   const steerQueuedMessage = (message: QueuedMessage) => {
     setDraft(message.text)
@@ -1891,15 +1921,15 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(3) { z-index: 8; }
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
+        .session-inspector-transition {
+          transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
+        }
           `}</style>
           <PrototypeSessionHeader
             showSidebar={showSessionSidebar}
             canExpandResult={feedEvidence !== null}
             onExpandResult={() => setExpandedFeedEvidence(true)}
-            onToggleSidebar={() => {
-              setExpandedFeedEvidence(false)
-              setShowSessionSidebar((visible) => !visible)
-            }}
+            onToggleSidebar={() => setSessionSidebarVisible(!showSessionSidebar)}
           />
           <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
           <ResizablePanel
@@ -1990,26 +2020,31 @@ export function ComposerPrototype() {
           </div>
           </div>
           </ResizablePanel>
-          {showSessionSidebar ? (
-            <>
-              <ResizableHandle className="z-30" />
-              <ResizablePanel
-                id="session-inspector"
-                defaultSize={248}
-                minSize={216}
-                maxSize={720}
-                groupResizeBehavior="preserve-pixel-size"
-                className="h-full min-h-0 overflow-hidden"
-              >
+          <ResizableHandle
+            disabled={!showSessionSidebar}
+            className={`z-30 motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          />
+          <ResizablePanel
+            id="session-inspector"
+            panelRef={sessionInspectorPanel}
+            elementRef={sessionInspectorElement}
+            collapsible
+            collapsedSize={0}
+            defaultSize={248}
+            minSize={216}
+            maxSize={720}
+            groupResizeBehavior="preserve-pixel-size"
+            className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          >
+            <div aria-hidden={!showSessionSidebar} className="h-full min-h-0">
                 <SessionWorkSidebar
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
                   expandedEvidence={expandedFeedEvidence}
                   onExpandedEvidenceChange={setExpandedFeedEvidence}
                 />
-              </ResizablePanel>
-            </>
-          ) : null}
+            </div>
+          </ResizablePanel>
           </ResizablePanelGroup>
           {concierge === 'floating' ? <FloatingConcierge onClose={() => setConcierge('off')} /> : null}
         </main>
