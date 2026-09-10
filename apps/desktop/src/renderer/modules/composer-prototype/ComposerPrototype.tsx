@@ -191,6 +191,16 @@ function contextPercentage(state: ComposerState) {
   return Math.round((context.used / context.total) * 100)
 }
 
+function contextZone(percentage: number) {
+  if (percentage <= 20) {
+    return { label: 'Smart Zone', badge: 'bg-emerald-600 text-white', fill: 'bg-emerald-500', text: 'text-emerald-600', dot: 'bg-emerald-500' }
+  }
+  if (percentage <= 40) {
+    return { label: 'Nearing Dumb Zone', badge: 'bg-amber-400 text-amber-950', fill: 'bg-amber-400', text: 'text-amber-600', dot: 'bg-amber-400' }
+  }
+  return { label: 'Dumb Zone', badge: 'bg-red-600 text-white', fill: 'bg-red-500', text: 'text-red-600', dot: 'bg-red-500' }
+}
+
 function selectHarness(state: ComposerState, harness: HarnessKey): ComposerState {
   const definition = HARNESSES[harness]
   return {
@@ -411,7 +421,8 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const smartZonePercentage = 20
-  const contextStatus = percentage <= smartZonePercentage ? 'Smart Zone' : 'Dumb Zone'
+  const zone = contextZone(percentage)
+  const contextStatus = zone.label
   const claudeComposition = [
     { label: 'Conversation', value: '86k', percentage: 71 },
     { label: 'System prompt', value: '16k', percentage: 13 },
@@ -438,7 +449,7 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
         <PopoverHeader>
           <PopoverTitle className="flex items-center gap-2">
             Context health
-            <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">{contextStatus}</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${zone.badge}`}>{contextStatus}</span>
           </PopoverTitle>
           <PopoverDescription>
             Current context compared with the working smart-zone target.
@@ -459,12 +470,18 @@ function ContextPopover({ state, appearance = 'compact' }: { state: ComposerStat
             </div>
           </div>
           <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
-            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-3px] w-0.5 bg-foreground" style={{ left: `${smartZonePercentage}%` }} />
           </div>
           <p className="mt-2 text-xs leading-4 text-muted-foreground">
             This session is in the {contextStatus}. Compact or hand off before starting another substantial phase.
           </p>
+        </div>
+
+        <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20%</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
+          <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
         </div>
 
         {state.harness === 'claude' ? (
@@ -506,19 +523,20 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
   const used = `${(context.used / 1000).toFixed(0)}k`
-  const status = percentage <= 20 ? 'Smart Zone' : 'Dumb Zone'
+  const zone = contextZone(percentage)
+  const status = zone.label
 
   if (layout === 'footer') {
     return (
       <div className="flex items-center gap-3 border-t bg-muted/10 px-3 py-2.5">
-        <CircleGauge className="size-4 shrink-0" />
+        <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
           <div className="text-xs font-semibold">Context · {status}</div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
@@ -538,14 +556,14 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
   if (layout === 'attached') {
     return (
       <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-muted/40 px-4 pb-2.5 pt-3 shadow-md shadow-foreground/10">
-        <CircleGauge className="size-4 shrink-0" />
+        <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
           <div className="text-xs font-semibold">{status} · {percentage}%</div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-background">
-            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
@@ -566,7 +584,7 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
     return (
       <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-background p-3">
         <div className="flex items-center gap-2">
-          <CircleGauge className="size-4" />
+        <CircleGauge className={`size-4 ${zone.text}`} />
           <span className="text-xs font-semibold">Context</span>
           <span className="ml-auto text-xs tabular-nums">{percentage}% used</span>
         </div>
@@ -574,7 +592,7 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
           {used} <span className="text-xs font-normal text-muted-foreground">/ 200k total</span>
         </div>
         <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+          <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
           <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
         </div>
         <div className="mt-1.5 text-[10px] text-muted-foreground">Smart Zone ~20%</div>
@@ -590,14 +608,14 @@ function ContextSurface({ state, layout }: { state: ComposerState; layout: 'inli
   return (
     <div className="mb-2 rounded-xl border bg-background px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3">
-        <CircleGauge className="size-4 shrink-0" />
+        <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
           <div className="text-xs font-semibold">Context · {status}</div>
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-24 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className="absolute inset-y-0 left-0 bg-foreground/30" style={{ width: `${percentage}%` }} />
+            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
