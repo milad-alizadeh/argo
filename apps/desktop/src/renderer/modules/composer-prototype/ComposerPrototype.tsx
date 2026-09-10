@@ -594,10 +594,14 @@ function ContextPopover({
   appearance?: 'compact' | 'details'
   meterStyle?: 'solid' | 'gradient' | 'grayscale'
 }) {
-  const [autoCompactThreshold, setAutoCompactThreshold] = useState(80)
   const context = HARNESSES[state.harness].context
+  const [autoCompactThresholdTokens, setAutoCompactThresholdTokens] = useState(Math.round(context.total * 0.8))
+  const [autoCompactThresholdInput, setAutoCompactThresholdInput] = useState(String(Math.round(context.total * 0.8)))
   const percentage = contextPercentage(state)
   const smartZonePercentage = 20
+  const smartZoneTokens = Math.round(context.total * smartZonePercentage / 100)
+  const autoCompactThresholdPercentage = Math.round(autoCompactThresholdTokens / context.total * 100)
+  const formatTokenCount = (tokens: number) => `${Math.round(tokens / 1000)}k tokens`
   const zone = contextZone(percentage)
   const contextStatus = zone.label
   const used = Math.round(context.total * percentage / 100)
@@ -639,7 +643,7 @@ function ContextPopover({
               <div className={`h-1.5 rounded-full ${meterStyle === 'grayscale' ? 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900' : 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]'}`} />
               <div className="mt-3 grid grid-cols-[1fr_auto_1fr] gap-3">
                 <div>
-                  <div className="text-xs font-semibold">Smart Zone</div>
+                  <div className="text-xs font-semibold">Smart Zone · {smartZonePercentage}% · {formatTokenCount(smartZoneTokens)}</div>
                   <p className="mt-1 text-xs leading-4 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
                 </div>
                 <ArrowRight className="mt-1 size-4 text-muted-foreground" />
@@ -650,7 +654,7 @@ function ContextPopover({
               </div>
             </div>
             <p className="text-[10px] leading-4 text-muted-foreground">
-              “Smart Zone” and “Dumb Zone” are context-engineering shorthand associated with Dex Horthy and documented by Matt Pocock. Our 20% boundary is a working target, not a model guarantee.
+              “Smart Zone” and “Dumb Zone” are context-engineering shorthand associated with Dex Horthy and documented by Matt Pocock. Our {smartZonePercentage}% · {formatTokenCount(smartZoneTokens)} boundary is a working target, not a model guarantee.
             </p>
           </>
         ) : (
@@ -671,8 +675,8 @@ function ContextPopover({
                   </div>
                 </div>
                 <div className="text-right text-xs">
-                  <div className="font-medium">Smart Zone ~{smartZonePercentage}%</div>
-                  <div className="text-muted-foreground">Current · {percentage}% used</div>
+                  <div className="font-medium">Smart Zone ~{smartZonePercentage}% · {formatTokenCount(smartZoneTokens)}</div>
+                  <div className="text-muted-foreground">Current · {percentage}% · {formatTokenCount(used)}</div>
                 </div>
               </div>
               <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-muted">
@@ -684,9 +688,9 @@ function ContextPopover({
               </p>
             </div>
             <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20%</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40%</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Smart · 0–20% · 0–{formatTokenCount(smartZoneTokens)}</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-400" />Nearing dumb · 20–40% · {formatTokenCount(smartZoneTokens)}–{formatTokenCount(context.total * 0.4)}</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />Dumb · 40%+ · {formatTokenCount(context.total * 0.4)}+</span>
             </div>
             <p className="text-[10px] leading-4 text-muted-foreground">The 20% boundary is a workflow target, not a model guarantee.</p>
           </>
@@ -710,23 +714,51 @@ function ContextPopover({
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-xs font-semibold">Auto-compact</div>
-              <p className="mt-1 text-xs leading-4 text-muted-foreground">Compact before the context window reaches this level.</p>
+              <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                Compact before the context window reaches this level. {state.harness === 'codex' ? 'Codex saves the token value.' : 'Claude saves the percentage.'}
+              </p>
             </div>
-            <span className="shrink-0 text-xs font-medium tabular-nums">{autoCompactThreshold}%</span>
+            <span className="shrink-0 text-xs font-medium tabular-nums">{autoCompactThresholdPercentage}% · {formatTokenCount(autoCompactThresholdTokens)}</span>
           </div>
           <input
             type="range"
             min="40"
             max="95"
             step="5"
-            value={autoCompactThreshold}
-            onChange={(event) => setAutoCompactThreshold(Number(event.target.value))}
+            value={autoCompactThresholdPercentage}
+            onChange={(event) => {
+              const tokens = Math.round(context.total * Number(event.target.value) / 100)
+              setAutoCompactThresholdTokens(tokens)
+              setAutoCompactThresholdInput(String(tokens))
+            }}
             aria-label="Auto-compact threshold"
             className="h-1.5 w-full cursor-pointer accent-foreground"
           />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>Earlier · 40%</span>
-            <span>Later · 95%</span>
+          <div className="flex items-end gap-3">
+            <label className="grid flex-1 gap-1 text-[10px] text-muted-foreground">
+              Exact threshold
+              <span className="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs text-foreground">
+                <input
+                  type="number"
+                  min={Math.round(context.total * 0.4)}
+                  max={Math.round(context.total * 0.95)}
+                  step="1000"
+                  value={autoCompactThresholdInput}
+                  onChange={(event) => setAutoCompactThresholdInput(event.target.value)}
+                  onBlur={() => {
+                    const tokens = Math.min(Math.round(context.total * 0.95), Math.max(Math.round(context.total * 0.4), Number(autoCompactThresholdInput) || autoCompactThresholdTokens))
+                    setAutoCompactThresholdTokens(tokens)
+                    setAutoCompactThresholdInput(String(tokens))
+                  }}
+                  className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
+                />
+                <span className="shrink-0 text-muted-foreground">tokens</span>
+              </span>
+            </label>
+            <div className="flex flex-1 justify-between pb-2 text-[10px] text-muted-foreground">
+              <span>40% · {formatTokenCount(context.total * 0.4)}</span>
+              <span>95% · {formatTokenCount(context.total * 0.95)}</span>
+            </div>
           </div>
         </div>
         {meterStyle === 'solid' && percentage >= 70 && appearance === 'compact' ? (
