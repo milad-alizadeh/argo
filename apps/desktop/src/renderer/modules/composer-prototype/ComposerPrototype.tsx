@@ -493,7 +493,7 @@ function RosterConcierge({ onFloat }: { onFloat: () => void }) {
 
 function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
   return (
-    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 pt-2 pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
+    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
       <div className="flex flex-col gap-3">
         {RAIL_ITEMS.map((item) => (
           <Tooltip key={item.label}>
