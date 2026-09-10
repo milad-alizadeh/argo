@@ -144,7 +144,7 @@ export function FeedMutationExamples({
     { label: 'Moved queue.ts to the Session module', evidence: 'movedQueue', icon: FilePenLine },
     { label: 'Deleted the unused draft helper', evidence: 'deletedDraft', icon: FilePenLine },
     { label: 'Called an unclassified tool', evidence: 'mcp', icon: Wrench },
-    { label: 'Ran bun run preview', evidence: 'failed', icon: SquareTerminal, detail: 'Exit 1' },
+    { label: 'Ran bun run preview', evidence: 'failed', icon: SquareTerminal },
   ]
   return (
     <div className="space-y-2">
