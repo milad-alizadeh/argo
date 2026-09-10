@@ -12,7 +12,4 @@ const meta: Meta<typeof SessionFeed> = {
 export default meta
 type Story = StoryObj<typeof SessionFeed>
 
-export const NoSelection: Story = { args: { feed: null, error: null } }
-export const Empty: Story = { args: { feed: { rows: [] } as typeof feedStory, error: null } }
 export const Populated: Story = { args: { feed: feedStory, error: null } }
-export const Failure: Story = { args: { feed: null, error: 'Unable to read this session.' } }
