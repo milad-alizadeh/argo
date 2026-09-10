@@ -32,7 +32,7 @@ function RenderedMarkdown({ source }: { source: string }) {
       {source.split('\n\n').map((block) => {
         if (block.startsWith('# ')) {
           return (
-            <h2 key={block} className="text-sm font-semibold">
+            <h2 key={block} className="text-(length:--text-body) font-semibold">
               {block.slice(2)}
             </h2>
           )

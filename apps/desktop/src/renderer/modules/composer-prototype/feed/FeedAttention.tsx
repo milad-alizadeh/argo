@@ -129,7 +129,7 @@ export function FeedPermission() {
       <div className="flex items-start gap-2">
         <ShieldQuestion className="mt-0.5 !size-(--size-icon-control)" />
         <div className="min-w-0 flex-1">
-          <h3 id="feed-permission-title" className="text-control font-medium">
+          <h3 id="feed-permission-title" className="text-(length:--text-body) font-medium">
             Allow this command?
           </h3>
           <p className="text-(length:--text-control) text-muted-foreground">

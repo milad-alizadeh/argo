@@ -476,8 +476,12 @@ function RosterConcierge({ onFloat }: { onFloat: () => void }) {
           <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
         </span>
         <span className="min-w-0">
-          <span className="block text-[10px] font-medium">Concierge is listening</span>
-          <span className="block truncate text-[10px] text-muted-foreground">“Show every feed state in one conversation…”</span>
+          <span className="block text-(length:--text-control) font-medium">
+            Concierge is listening
+          </span>
+          <span className="block truncate text-(length:--text-control) text-muted-foreground">
+            “Show every feed state in one conversation…”
+          </span>
         </span>
       </PopoverTrigger>
       <PopoverContent side="right" align="end" className="w-72 gap-3 p-3">
@@ -491,7 +495,7 @@ function RosterConcierge({ onFloat }: { onFloat: () => void }) {
           </PopoverTitle>
           <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
         </PopoverHeader>
-        <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-[11px] leading-4">
+        <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-(length:--text-body) leading-relaxed">
           <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
           <p>I’m updating the prototype now.</p>
         </div>
@@ -575,11 +579,13 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs font-medium text-foreground">{session.title}</span>
-          <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+          <span className="block truncate text-(length:--text-body) font-medium text-foreground">
+            {session.title}
+          </span>
+          <span className="mt-0.5 block truncate text-(length:--text-control) text-muted-foreground">
             {session.activity}
           </span>
-          <span className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
+          <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="inline-flex items-center gap-1">
               <Ticket />#{session.ticket}
             </span>
@@ -628,10 +634,10 @@ function PrototypeSessionRoster({
         </div>
       </div>
       <div className="px-3 pt-2 pb-1.5">
-        <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-[11px] text-muted-foreground [&_svg]:size-(--size-icon-inline)">
+        <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-inline)">
           <Search />
           <span>Find a Session</span>
-          <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-[10px]">⌘K</span>
+          <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-(length:--text-control)">⌘K</span>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
@@ -640,7 +646,7 @@ function PrototypeSessionRoster({
           const expanded = expandedProjects.includes(project)
           return (
             <section key={project} className="pb-2">
-              <div className="flex items-center gap-1.5 px-2 py-2 text-[11px] font-medium text-muted-foreground">
+              <div className="flex items-center gap-1.5 px-2 py-2 text-(length:--text-control) font-medium text-muted-foreground">
                 <button
                   type="button"
                   aria-expanded={expanded}
@@ -775,30 +781,34 @@ function SessionWorkSidebar({
   return (
     <aside className="h-full w-full overflow-y-auto bg-muted/20 p-3">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-xs font-semibold">Running under this Session</h3>
-        <span className="text-[10px] text-muted-foreground">4 live</span>
+        <h3 className="text-(length:--text-control) font-semibold">Running under this Session</h3>
+        <span className="text-(length:--text-control) text-muted-foreground">4 live</span>
       </div>
       <div className="space-y-1">
         {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
           <button key={label} type="button" className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-muted">
             <span className="mt-1 size-1.5 shrink-0 rounded-full bg-emerald-500" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[11px] font-medium">{label}</span>
-              <span className="block text-[10px] text-muted-foreground">Subagent {index + 1} · running</span>
+              <span className="block truncate text-(length:--text-body) font-medium">{label}</span>
+              <span className="block text-(length:--text-control) text-muted-foreground">
+                Subagent {index + 1} · running
+              </span>
             </span>
           </button>
         ))}
       </div>
       <div className="my-3 h-px bg-border/60" />
-      <h3 className="mb-2 text-xs font-semibold">Shell · 1</h3>
+      <h3 className="mb-2 text-(length:--text-control) font-semibold">Shell · 1</h3>
       <button type="button" className="flex w-full items-start gap-2 rounded-lg bg-muted/60 p-2 text-left">
         <CircleDot className="mt-0.5 text-emerald-500" />
         <span className="min-w-0">
-          <span className="block truncate font-mono text-[10px]">bun run dev</span>
-          <span className="mt-0.5 block text-[10px] text-muted-foreground">Vite · port 5191</span>
+          <span className="block truncate font-mono text-(length:--text-control)">bun run dev</span>
+          <span className="mt-0.5 block text-(length:--text-control) text-muted-foreground">
+            Vite · port 5191
+          </span>
         </span>
       </button>
-      <button type="button" className="mt-3 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground">
+      <button type="button" className="mt-3 flex items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground">
         <ChevronDown /> 6 finished
       </button>
     </aside>
@@ -809,9 +819,15 @@ function FloatingConcierge({ onClose }: { onClose: () => void }) {
   return (
     <div className="absolute right-5 bottom-5 z-40 flex items-end gap-2">
       <div className="max-w-72 rounded-xl border border-border/60 bg-popover p-3 shadow-xl">
-        <div className="flex items-center gap-2 text-xs font-medium">Concierge <span className="size-1.5 rounded-full bg-emerald-500" /></div>
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
-        <p className="mt-1 text-[11px] leading-4">I’m updating the prototype now.</p>
+        <div className="flex items-center gap-2 text-(length:--text-control) font-medium">
+          Concierge <span className="size-1.5 rounded-full bg-emerald-500" />
+        </div>
+        <p className="mt-1 text-(length:--text-body) leading-relaxed text-muted-foreground">
+          You: “Keep the composer fixed and make the feed richer.”
+        </p>
+        <p className="mt-1 text-(length:--text-body) leading-relaxed">
+          I’m updating the prototype now.
+        </p>
       </div>
       <button type="button" aria-label="Open Concierge" className="relative rounded-full border border-border/60 bg-background p-1 shadow-xl">
         <ConciergeOrb />
@@ -1623,17 +1639,29 @@ function UsagePopover({ state }: { state: ComposerState }) {
 
 function TranscriptRow({ message }: { message: MessageRow }) {
   if (message.role === 'marker') {
-    return <Marker variant="separator"><MarkerContent>{message.text}</MarkerContent></Marker>
+    return (
+      <Marker variant="separator" className="text-(length:--text-control)">
+        <MarkerContent>{message.text}</MarkerContent>
+      </Marker>
+    )
   }
   const isUser = message.role === 'user'
   return (
-    <Message align={isUser ? 'end' : 'start'}>
+    <Message align={isUser ? 'end' : 'start'} className="text-(length:--text-body)">
       <MessageContent>
-        <MessageHeader>{isUser ? 'You' : 'Argo'}</MessageHeader>
+        <MessageHeader className="text-(length:--text-control)">
+          {isUser ? 'You' : 'Argo'}
+        </MessageHeader>
         <Bubble variant={isUser ? 'secondary' : 'ghost'} align={isUser ? 'end' : 'start'}>
-          <BubbleContent>{message.text}</BubbleContent>
+          <BubbleContent className="text-(length:--text-body) leading-relaxed">
+            {message.text}
+          </BubbleContent>
         </Bubble>
-        {!isUser && <MessageFooter>Read from Session · now</MessageFooter>}
+        {!isUser && (
+          <MessageFooter className="text-(length:--text-control)">
+            Read from Session · now
+          </MessageFooter>
+        )}
       </MessageContent>
     </Message>
   )

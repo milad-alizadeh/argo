@@ -22,7 +22,7 @@ function FeedSkillInvocation({
   return (
     <Button
       variant="ghost"
-      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
       onClick={() => onOpen(evidence)}
@@ -58,18 +58,18 @@ export function SessionFeedPrototype({
           same time.
         </p>
         <FeedSkillInvocation onOpen={onOpenEvidence} activeEvidenceId={activeEvidenceId} />
-        <details className="group text-control text-muted-foreground">
-          <summary className="flex cursor-pointer list-none items-center gap-2">
+        <details className="group text-muted-foreground">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-(length:--text-control)">
             <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />
             Reasoning
           </summary>
-          <p className="mt-2 border-l pl-4 leading-relaxed">
+          <p className="mt-2 border-l pl-4 text-(length:--text-body) leading-relaxed">
             The roster provides context for switching Sessions. Results can use the existing
             sidebar, so the conversation keeps a stable reading width. The approved composer already
             establishes the bottom edge.
           </p>
         </details>
-        <div className="flex items-center gap-2 text-control text-muted-foreground">
+        <div className="flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
           <GitFork className="!size-(--size-icon-inline)" />
           <span>Delegated layout review and feed coverage</span>
           <span className="ml-auto">2 subagents</span>
