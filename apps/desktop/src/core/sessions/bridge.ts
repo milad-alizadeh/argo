@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron'
-import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { requestIdentifier } from '../../boundary'
+import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL, sessionError } from './contract'
 
 export type SessionReader = {
