@@ -35,7 +35,12 @@ export function FeedEvidencePrototype({
     const target = scrollArea.current?.querySelector<HTMLElement>(
       `[data-evidence-id="${evidence.id}"]`,
     )
-    if (scrollArea.current && target) scrollArea.current.scrollTop = target.offsetTop
+    if (scrollArea.current && target) {
+      const scrollTop = scrollArea.current.scrollTop
+      const scrollAreaTop = scrollArea.current.getBoundingClientRect().top
+      const targetTop = target.getBoundingClientRect().top
+      scrollArea.current.scrollTop = scrollTop + targetTop - scrollAreaTop
+    }
   }, [evidence, onActiveEvidenceChange])
 
   const selectVisibleEvidence = () => {
