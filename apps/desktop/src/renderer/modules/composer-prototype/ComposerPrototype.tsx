@@ -1814,14 +1814,16 @@ export function ComposerPrototype() {
     setSessionSidebarFullscreen(nextFullscreen)
   }
 
-  const snapSessionSidebarFullscreen = (sidebarWidth: number) => {
+  const handleSessionSidebarResize = (sidebarWidth: number, previousWidth: number) => {
     if (sessionSidebarFullscreenState.current || !showSessionSidebar) return
     const conversationWidth = sessionConversationPanel.current?.getSize().inPixels
-    if (conversationWidth === undefined || conversationWidth > 320) return
-    sessionInspectorRestoreSize.current = sidebarWidth
-    sessionSidebarFullscreenState.current = true
-    setSessionSidebarFullscreen(true)
-    window.requestAnimationFrame(() => sessionInspectorPanel.current?.resize('100%'))
+    if (conversationWidth !== undefined && conversationWidth <= 320 && sidebarWidth > previousWidth) {
+      sessionSidebarFullscreenState.current = true
+      setSessionSidebarFullscreen(true)
+      window.requestAnimationFrame(() => sessionInspectorPanel.current?.resize('100%'))
+      return
+    }
+    if (sidebarWidth > 0) sessionInspectorRestoreSize.current = sidebarWidth
   }
 
   const openFeedEvidence = (evidence: FeedPrototypeEvidence) => {
@@ -1988,7 +1990,7 @@ export function ComposerPrototype() {
           <ResizablePanel
             id="session-conversation"
             panelRef={sessionConversationPanel}
-            minSize={320}
+            minSize={0}
             className="flex h-full min-h-0 overflow-hidden"
           >
           <div className="@container flex min-h-0 min-w-0 flex-1 flex-col">
@@ -2093,8 +2095,8 @@ export function ComposerPrototype() {
             maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
             onResize={(size, _id, previousSize) => {
-              if (previousSize && previousSize.inPixels > 0 && size.inPixels > previousSize.inPixels)
-                snapSessionSidebarFullscreen(size.inPixels)
+              if (previousSize?.inPixels !== undefined && previousSize.inPixels > 0)
+                handleSessionSidebarResize(size.inPixels, previousSize.inPixels)
             }}
             className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
