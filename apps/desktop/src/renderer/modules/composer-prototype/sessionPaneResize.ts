@@ -10,6 +10,18 @@ export const shouldCloseSessionInspector = (inspectorWidth: number, previousInsp
 export const shouldFullscreenSessionInspector = (feedWidth: number, previousFeedWidth: number) =>
   reachedSnapEdge(feedWidth, previousFeedWidth)
 
+export const restoreWidthAfterFullscreenSnap = ({
+  currentRestoreWidth,
+  feedWidthAtSnap,
+  inspectorWidthAtSnap,
+}: {
+  currentRestoreWidth: number
+  feedWidthAtSnap: number
+  inspectorWidthAtSnap: number
+}) => inspectorWidthAtSnap > SESSION_PANE_MIN_WIDTH
+  ? feedWidthAtSnap + inspectorWidthAtSnap - SESSION_PANE_MIN_WIDTH
+  : currentRestoreWidth
+
 export const shouldRememberSessionInspectorWidth = ({
   feedWidth,
   inspectorWidth,

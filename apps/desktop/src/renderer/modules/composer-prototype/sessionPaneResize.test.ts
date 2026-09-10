@@ -1,10 +1,22 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  restoreWidthAfterFullscreenSnap,
   shouldCloseSessionInspector,
   shouldFullscreenSessionInspector,
   shouldRememberSessionInspectorWidth,
 } from './sessionPaneResize'
+
+test('closing after a left snap reopens with the feed at its minimum width', () => {
+  assert.equal(
+    restoreWidthAfterFullscreenSnap({
+      currentRestoreWidth: 248,
+      feedWidthAtSnap: 232,
+      inspectorWidthAtSnap: 768,
+    }),
+    784,
+  )
+})
 
 test('dragging the inspector to its minimum snaps it closed in the same gesture', () => {
   assert.equal(shouldCloseSessionInspector(216, 224), true)
