@@ -54,7 +54,7 @@ export function FeedToolLine({
       onClick={() => onOpen(evidence)}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
-      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-control font-normal ${active ? 'bg-muted text-foreground' : ''}`}
+      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : ''}`}
     >
       <row.icon className="!size-(--size-icon-inline) text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
