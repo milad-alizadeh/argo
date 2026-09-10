@@ -39,7 +39,8 @@ Everything here is a fact about this repository. Process belongs to the skill th
 
 Before code review, read `docs/agents/code-review.md` for repository references and focused-test boundaries.
 
-**CI is the only gate**, and there is no push-time one. `.github/workflows/ci.yml` names every
+**CI is the only gate.** There is no git hook: no pre-push, and no pre-commit since #1911 took
+husky and lint-staged out. `.github/workflows/ci.yml` names every
 step it runs on Linux and `bun run quality` is the local subset; read the step list there, never
 a copy of it. `quality` is wider than biome, so biome alone leaves a typecheck or a duplication
 breach for CI. A `macos-26` job packages `apps/desktop`, asserts the packaged `node-pty` and runs
@@ -104,7 +105,8 @@ branch `worktree-<name>` and its `name` cannot hold a `#`, so no tree it creates
 `argo/#<N>-<slug>` and `/ship` cannot write `Closes #<N>` off one (#1684).
 
 Only read-only work may stay in the main checkout, and only while it stays read-only. A write
-through `Bash` counts as a change; the guard reads those too. Naming, resuming, recovery and the
+through `Bash` counts as a change, and so does a commit: the guard reads both, and a deliberate
+main-checkout commit says so with an `ARGO_MAIN_COMMIT=1` prefix (#1911). Naming, resuming, recovery and the
 sub-agent rule: `docs/agents/worktrees.md`.
 
 ## Subagents

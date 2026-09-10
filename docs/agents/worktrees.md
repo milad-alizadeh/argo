@@ -53,7 +53,13 @@ refuses:
   it;
 - a `Bash` command that names a file it writes: a `>` or `>>` redirection (a `cat > file <<EOF`
   heredoc included), `tee`, `sed -i`, `cp`, `mv`, `ln`, `install`, `rm`, `rmdir`, `touch`,
-  `truncate`, `dd of=`, `patch`, and `apply_patch`.
+  `truncate`, `dd of=`, `patch`, and `apply_patch`;
+- a `git commit` run from the main checkout, which lands on whatever branch and index another
+  session is using there. It names no file, so the write list above never sees it. This was a
+  husky `pre-commit` hook until #1911, and it moved here because a `PreToolUse` hook is asked
+  before the command runs while a `pre-commit` hook is skipped by `--no-verify`. The one
+  deliberate main-checkout commit the process has — `skills-lock.json` after a reinstall — says
+  so with an `ARGO_MAIN_COMMIT=1` prefix, the same shape as `/ship`'s `ARGO_SHIP=1`.
 
 Both of those started narrower, and both holes were found by the same four files: they sat
 uncommitted in the main checkout while the guard was installed and passing (#1276). One sat

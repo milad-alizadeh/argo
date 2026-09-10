@@ -5,7 +5,7 @@
 // the first usually trips the second in its next call:
 //
 //   - WHERE the work happens. Every agent change to this repo must run in a worktree, never the
-//     shared main checkout. `decideEdit()` below.
+//     shared main checkout — a write, and the commit that lands it. `decideEdit()` below.
 //   - WHICH worktree it is. A tree is named at creation, the one moment the name is still free
 //     to change. `decideName()`, in worktree-names.mjs, which this file imports.
 //
@@ -46,7 +46,7 @@ import {
   toolCall,
   underAgent,
 } from './hook-io.mjs'
-import { unexpanded } from './shell-commands.mjs'
+import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mjs'
 import { CURRENT_DIRECTORY, writeTargets } from './shell-writes.mjs'
 import { configureNaming, decideName } from './worktree-names.mjs'
 
@@ -107,6 +107,38 @@ function checkBashWrites({ command, cwd, root, roots }) {
   return ALLOW
 }
 
+// The commit is the second way work lands in the shared checkout, and the write half above
+// cannot see it: `git commit` names no file, so `writeTargets` returns nothing to judge. This
+// ran as a husky `pre-commit` hook until #1911 removed husky, and it belongs here instead, for
+// the reason the write half does: a `PreToolUse` hook is asked before the command runs, while a
+// `pre-commit` hook is skipped by the `--no-verify` any session can pass. What it prevents is a
+// commit onto whatever branch and index another session is using in the shared checkout.
+//
+// The override is an environment prefix, read off the command line the way `ARGO_SHIP=1` is, for
+// the deliberate main-checkout commit the process does have: `skills-lock.json` after a reinstall.
+const MAIN_COMMIT_MARKER = 'ARGO_MAIN_COMMIT=1'
+
+function checkGitCommit({ command, cwd, root, roots }) {
+  if (!guarded({ abs: cwd, root, roots })) return ALLOW
+  for (const segment of segments(command)) {
+    const { prefix, name, args } = invocation(tokenize(segment))
+    if (prefix.includes(MAIN_COMMIT_MARKER)) continue
+    if (name !== 'git' || afterGitOptions(args)[0] !== 'commit') continue
+    return {
+      block: true,
+      reason:
+        `This commits from the shared main checkout, where it would land on whatever branch and ` +
+        `index another session is using. Commit inside a worktree, on a ticket branch — ` +
+        `git worktree add -b argo/#<N>-<slug> .claude/worktrees/ticket-<N>-<slug> — then enter ` +
+        `it by path (Claude Code: EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }; ` +
+        `other harnesses: cd). For a deliberate main-checkout commit, such as skills-lock.json ` +
+        `after a reinstall, prefix the command with ${MAIN_COMMIT_MARKER}. ` +
+        `Naming, resuming, and recovery: docs/agents/worktrees.md.`,
+    }
+  }
+  return ALLOW
+}
+
 /**
  * WHERE: is this change being made outside a worktree?
  * @param {{ toolName?: string, filePath?: string, command?: string, cwd?: string,
@@ -127,6 +159,8 @@ export function decideEdit({
   const root = projectDir || base
 
   if (typeof command === 'string' && (!toolName || toolName === 'Bash')) {
+    const committing = checkGitCommit({ command, cwd: base, root, roots })
+    if (committing.block) return committing
     return checkBashWrites({ command, cwd: base, root, roots })
   }
   if (!filePath) return ALLOW

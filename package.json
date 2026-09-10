@@ -3,9 +3,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
     "@types/node": "24.13.3",
-    "husky": "^9.1.7",
     "jscpd": "^5.0.12",
-    "lint-staged": "^17.1.0",
     "turbo": "^2.3.3",
     "typescript": "5.9.3"
   },
@@ -22,7 +20,6 @@
     "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mjs",
     "install:electron": "node scripts/node-version-gate.mjs && node node_modules/electron/install.js",
     "preinstall": "node scripts/node-version-gate.mjs",
-    "prepare": "husky",
     "quality": "bun run quality:node && bun run format-and-lint && bun run quality:types && bun run quality:duplication && bun run quality:components",
     "quality:components": "node apps/desktop/scripts/check-component-base.mjs",
     "quality:duplication": "jscpd --config .jscpd.json apps packages scripts hooks",
