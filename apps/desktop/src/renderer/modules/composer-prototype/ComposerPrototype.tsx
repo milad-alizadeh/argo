@@ -866,17 +866,14 @@ function QueuePreview({
   latestQueuedId?: string | null
   isAdding?: boolean
 }) {
-  const [exitingMessage, setExitingMessage] = useState<{ id: string; index: number } | null>(null)
-  const [settlingFromIndex, setSettlingFromIndex] = useState<number | null>(null)
-  const animatePop = (queuedMessage: QueuedMessage, index: number, action: () => void) => {
-    if (exitingMessage) return
-    setExitingMessage({ id: queuedMessage.id, index })
+  const [exitingMessageId, setExitingMessageId] = useState<string | null>(null)
+  const animatePop = (queuedMessage: QueuedMessage, action: () => void) => {
+    if (exitingMessageId) return
+    setExitingMessageId(queuedMessage.id)
     window.setTimeout(() => {
       action()
-      setExitingMessage(null)
-      setSettlingFromIndex(index)
-      window.setTimeout(() => setSettlingFromIndex(null), 280)
-    }, 220)
+      setExitingMessageId(null)
+    }, 280)
   }
   const message = messages[0]
   if (!message) return null
@@ -892,22 +889,22 @@ function QueuePreview({
     return (
       <div className={shell}>
         <div className="divide-y">
-        {messages.map((queuedMessage, index) => (
+        {messages.map((queuedMessage) => (
           <div
             key={queuedMessage.id}
             draggable
             onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className={`flex h-11 cursor-grab items-center gap-2 px-3 active:cursor-grabbing ${exitingMessage?.id === queuedMessage.id ? 'composer-queue-exit' : settlingFromIndex !== null && index >= settlingFromIndex ? 'composer-queue-settle' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
+            className={`flex h-11 cursor-grab items-center gap-2 overflow-hidden px-3 active:cursor-grabbing ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => animatePop(queuedMessage, index, () => onSteer(queuedMessage))}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => animatePop(queuedMessage, () => onSteer(queuedMessage))}>
               <Route className="size-3.5" />Steer
             </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => animatePop(queuedMessage, index, () => onRemove(queuedMessage.id))}>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => animatePop(queuedMessage, () => onRemove(queuedMessage.id))}>
               <Trash2 className="size-3.5" />
             </Button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} onClick={() => onEdit(queuedMessage)}>
@@ -1133,25 +1130,20 @@ export function ComposerPrototype() {
     >
       <style>{`
         @keyframes composer-queue-enter {
-          from { opacity: 0; transform: translateY(44px) scale(.985); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+          from { height: 0; transform: translateY(44px); }
+          to { height: 44px; transform: translateY(0); }
         }
         @keyframes composer-queue-lift {
           from { transform: translateY(44px); }
           to { transform: translateY(0); }
         }
         @keyframes composer-queue-exit {
-          from { opacity: 1; transform: scale(1); }
-          to { opacity: 0; transform: scale(.985); }
-        }
-        @keyframes composer-queue-settle {
-          from { transform: translateY(44px); }
-          to { transform: translateY(0); }
+          from { height: 44px; transform: translateY(0); }
+          to { height: 0; transform: translateY(-44px); }
         }
         .composer-queue-enter { animation: composer-queue-enter 320ms cubic-bezier(.2,.8,.2,1) both; }
         .composer-queue-lift { animation: composer-queue-lift 320ms cubic-bezier(.2,.8,.2,1) both; }
-        .composer-queue-exit { animation: composer-queue-exit 220ms ease-in both; }
-        .composer-queue-settle { animation: composer-queue-settle 260ms cubic-bezier(.2,.8,.2,1) both; }
+        .composer-queue-exit { animation: composer-queue-exit 280ms cubic-bezier(.4,0,.2,1) both; }
       `}</style>
       <div className="min-h-0 flex-1">
         <Transcript messages={messages} />
