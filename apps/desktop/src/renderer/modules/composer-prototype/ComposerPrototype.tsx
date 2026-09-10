@@ -1305,7 +1305,7 @@ export function ComposerPrototype() {
           </InputGroup>
           </form>
         </AnimatedHeight>
-        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!shadow-sm">
+        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] [&>*]:!px-4 [&>*]:!shadow-sm">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
