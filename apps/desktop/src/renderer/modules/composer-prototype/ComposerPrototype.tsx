@@ -781,7 +781,7 @@ function ContextSurface({
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-0 ${tone === 'color' ? 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} />
+            <div className={`absolute inset-0 ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : tone === 'color' ? 'bg-[linear-gradient(90deg,var(--color-emerald-500)_0%,var(--color-amber-400)_20%,var(--color-red-500)_40%,var(--color-red-500)_100%)]' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} />
             <div className="absolute inset-y-0 right-0 bg-muted" style={{ width: `${100 - percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
             <Tooltip>
