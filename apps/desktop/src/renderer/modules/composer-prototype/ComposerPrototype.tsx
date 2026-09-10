@@ -674,7 +674,7 @@ function ContextSurface({
 
   if (layout === 'attached') {
     return (
-      <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-background px-4 py-2 shadow-md shadow-foreground/10">
+      <div className="flex items-center gap-3 rounded-b-xl border bg-background px-4 pb-2 pt-4 shadow-lg shadow-foreground/10">
         <Layers3 className={`size-4 shrink-0 ${tone === 'color' ? zone.text : 'text-foreground'}`} />
         <div className="shrink-0">
           <div className="text-xs font-medium text-foreground">Context · {status}</div>
@@ -835,7 +835,7 @@ function QueuePreview({
     const shell = {
       integrated: 'border-b bg-background',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      'attached-stack': 'relative z-20 mx-auto -mb-px w-[calc(100%-1.5rem)] overflow-hidden rounded-t-xl border bg-background shadow-sm',
+      'attached-stack': 'relative z-0 mx-auto -mb-2 w-[calc(100%-2rem)] overflow-hidden rounded-t-xl border bg-background shadow-lg shadow-foreground/10',
       attached: '',
       inline: '',
     }[layout]
@@ -1094,7 +1094,7 @@ export function ComposerPrototype() {
           }}
         >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className="relative overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
+          <InputGroup className="relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10">
             <div className="absolute top-3 right-3 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <InputGroupTextarea
@@ -1116,7 +1116,7 @@ export function ComposerPrototype() {
                 }
               }}
             />
-            <InputGroupAddon align="block-end" className="gap-1 border-t bg-muted/20 px-2.5 py-2">
+            <InputGroupAddon align="block-end" className="gap-1 bg-muted/20 px-2.5 py-2">
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
               <PermissionMenu state={state} setState={setState} />
@@ -1146,7 +1146,7 @@ export function ComposerPrototype() {
           </InputGroup>
         </form>
         {(variant === 'E' || variant === 'F') && (
-          <div className="relative z-0 mx-auto -mt-px w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]">
+          <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)]">
             <ContextSurface state={state} layout="attached" tone={variant === 'F' ? 'grayscale' : 'color'} />
           </div>
         )}
