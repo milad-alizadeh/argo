@@ -6,16 +6,14 @@
 // than a gap: corroborating an open Turn externally needs process-match plus mtime liveness,
 // which this slice does not observe, so an open Turn reads `unknown`. `starting`, `permission`
 // and `ended` are managed-only or need an exit Argo witnessed, and no external posture has one.
-import type { TranscriptMessage } from './records'
-import {
-  SESSION_STATUSES,
-  type SessionStatus,
-} from '../../../core/sessions/models'
 
+import { SESSION_STATUSES, type SessionStatus } from '../../../core/sessions/models'
+import type { TranscriptMessage } from './records'
+
+export type { SessionStatus }
 // The closed set, written once. The type is derived from it rather than restated beside it, so a
 // status added here reaches the boundary check and the drawn word without a second edit.
 export { SESSION_STATUSES }
-export type { SessionStatus }
 
 const ENDED_TURN = 'end_turn'
 const STOPPED_REASONS = ['max_tokens', 'max_turn_requests', 'refusal']

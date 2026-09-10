@@ -49,10 +49,10 @@ export type TranscriptRecord =
   // the Feed can say a record was unreadable instead of quietly shortening the history.
   | { kind: 'unreadable'; line: string }
 
+export type { SessionEntry }
 // CONTEXT.md L2 · Entry, the closed set. Written once and derived from, like every other
 // vocabulary this slice reads.
 export { SESSION_ENTRIES }
-export type { SessionEntry }
 
 const HEADLESS_ENTRYPOINTS = ['sdk-cli']
 

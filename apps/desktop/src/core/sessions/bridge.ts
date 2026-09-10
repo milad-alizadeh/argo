@@ -13,7 +13,7 @@ export function attachSessionBridge(
   window: BrowserWindow,
   storage: { reader: SessionReader; rendererURL: string },
 ): void {
-  const answer = (channel: string, read: (request: unknown, root: string) => Promise<unknown>) => {
+  const answer = (channel: string, read: (request: unknown) => Promise<unknown>) => {
     window.webContents.ipc.handle(channel, (event, request: unknown) => {
       if (
         event.senderFrame !== window.webContents.mainFrame ||
