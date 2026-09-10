@@ -284,7 +284,7 @@ function AddContextMenu({ state, setState }: StateProps) {
       <DropdownMenuContent align="start" side="top" className="w-60">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Add context</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => add('composer-study.png')}>
+          <DropdownMenuItem onClick={() => add('codex.png')}>
             <Paperclip />Attachment
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => add('ComposerPrototype.tsx')}>
@@ -469,6 +469,10 @@ function fileType(reference: string) {
   return `${reference.slice(separator + 1).toUpperCase()} file`
 }
 
+function imageSource(reference: string) {
+  return reference === 'codex.png' ? '/prototype-assets/codex.png' : `/${reference}`
+}
+
 function ReferenceStrip({ state, setState }: StateProps) {
   const [renderedAttachments, setRenderedAttachments] = useState(() => state.attachments.filter((reference) => !reference.startsWith('$')))
   const [expanded, setExpanded] = useState(renderedAttachments.length > 0)
@@ -506,11 +510,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
               <Attachment key={reference} className="h-12 select-none border-border/60 px-2" size="xs">
                 <AttachmentMedia className="size-10 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
-                    <div aria-hidden="true" className="relative size-full bg-gradient-to-br from-sky-100 via-white to-neutral-200">
-                      <div className="absolute inset-x-1.5 top-1.5 h-1 rounded-full bg-sky-500/60" />
-                      <div className="absolute inset-x-1.5 top-3.5 h-1 rounded-full bg-neutral-400/50" />
-                      <div className="absolute right-1.5 bottom-1.5 left-1.5 h-3 rounded-sm bg-neutral-700/20" />
-                    </div>
+                    <img alt="" className="size-full object-cover" src={imageSource(reference)} />
                   ) : (
                     <File className="size-5" />
                   )}
@@ -1144,7 +1144,7 @@ export function ComposerPrototype() {
     model: HARNESSES.codex.models[0] ?? '',
     effort: HARNESSES.codex.efforts[1] ?? '',
     permission: HARNESSES.codex.permissions[2]?.label ?? '',
-    attachments: ['composer-study.png', 'ComposerPrototype.tsx'],
+    attachments: ['codex.png', 'ComposerPrototype.tsx'],
     contextPreview: 'dumb',
   })
   const [contextTone, setContextTone] = useState<ContextTone>('grayscale')
