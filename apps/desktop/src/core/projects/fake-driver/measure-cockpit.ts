@@ -20,9 +20,9 @@ import { mkdtemp, realpath, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { chooseThen, show, waitForCockpit } from './cockpit-driver.mjs'
-import { firstPaint, frameDeltas, median, percentile, processLoad } from './cockpit-metrics.mjs'
-import { launch, prepare } from './project-proof-fixture.mjs'
+import { chooseThen, show, waitForCockpit } from './cockpit-driver'
+import { firstPaint, frameDeltas, median, percentile, processLoad } from './cockpit-metrics'
+import { launch, prepare } from './project-proof-fixture'
 
 const RUNS = Number(process.argv[2] ?? 5)
 if (!Number.isInteger(RUNS) || RUNS < 1) {

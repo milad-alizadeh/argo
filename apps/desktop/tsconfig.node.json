@@ -22,6 +22,9 @@
   "exclude": [
     "src/renderer",
     "src/core/projects/fake-driver",
-    "src/agents/claude/session-fake-driver"
+    "src/agents/claude/session-fake-driver",
+    "src/appearance/**/*.test.ts",
+    "src/projects/**/*.test.ts",
+    "src/shortcuts.test.ts"
   ]
 }

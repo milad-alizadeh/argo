@@ -17,6 +17,9 @@
   },
   "include": [
     "src/core/projects/fake-driver/**/*.ts",
-    "src/agents/claude/session-fake-driver/**/*.ts"
+    "src/agents/claude/session-fake-driver/**/*.ts",
+    "src/appearance/**/*.test.ts",
+    "src/projects/**/*.test.ts",
+    "src/shortcuts.test.ts"
   ]
 }

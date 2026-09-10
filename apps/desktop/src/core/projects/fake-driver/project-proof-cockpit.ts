@@ -13,7 +13,7 @@ import {
   stubChooser,
   subject,
   waitForDeck,
-} from './cockpit-driver.mjs'
+} from './cockpit-driver'
 
 // One launch of the cockpit: the app, its window, and the fixture both are running against.
 export const readStore = async (run) => JSON.parse(await readFile(run.fixture.registryPath, 'utf8'))
