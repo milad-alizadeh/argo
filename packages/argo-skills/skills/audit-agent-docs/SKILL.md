@@ -44,14 +44,15 @@ Work from the repository root. The pushed tier first:
 
 | source | how to find it |
 | --- | --- |
-| Root agent file | `CLAUDE.md`, `AGENTS.md`, and any other root file the harness reads |
+| Root agent file | `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, and any other root file the harness reads |
 | Its `@`-import chain | every `@path` line, **resolved transitively**: an import pastes the whole file into every request |
+| Unscoped rule | every `.claude/rules/**/*.md` with no `paths:` frontmatter: Claude Code loads it at launch |
 | Output style | the one `.claude/settings.json` names in `outputStyle` |
-| Skill frontmatter | `name` + `description` of every installed skill, deduped across skills directories |
+| Skill frontmatter | `name` + `description` of every installed skill, deduped across skills directories by resolved path, so a symlink counts once |
 | Memory index | the always-on index file, never the memories behind it |
 
-Then the pull tier, since its bloat is paid per task: `rules/`, `docs/agents/`, and any context
-file in a directory the harness walks.
+Then the pull tier, since its bloat is paid per task: `.claude/rules/` files that carry `paths:`,
+`docs/agents/`, and any context file in a directory the harness walks.
 
 Done when every source has a byte count and a tier.
 
