@@ -15,7 +15,6 @@ import {
   GripVertical,
   Info,
   Layers3,
-  ListChecks,
   Mic,
   Paperclip,
   Pencil,
@@ -81,7 +80,7 @@ import { Progress } from '@/renderer/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
 
 type HarnessKey = 'codex' | 'claude'
-type VariantKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+type VariantKey = 'E' | 'F'
 type ContextPreview = 'smart' | 'warning' | 'dumb'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
 type QueuedMessage = { id: string; text: string }
@@ -156,6 +155,41 @@ const MODEL_DESCRIPTIONS: Record<HarnessKey, Record<string, string>> = {
     'Sonnet 5': 'Balanced for daily coding and review',
     'Haiku 4.5': 'Fast for small changes and quick answers',
   },
+}
+
+type ComposerSuggestion = {
+  label: string
+  value: string
+  detail: string
+  kind: 'skill' | 'command' | 'file' | 'folder'
+  frequent?: boolean
+}
+
+const SLASH_SUGGESTIONS: ComposerSuggestion[] = [
+  { label: 'Grill Me', value: '/grill-me', detail: 'Pressure-test the brief before building', kind: 'skill', frequent: true },
+  { label: 'Implement', value: '/implement', detail: 'Build an approved ticket', kind: 'skill', frequent: true },
+  { label: 'Fast', value: '/fast', detail: 'Prefer speed and lighter reasoning', kind: 'command', frequent: true },
+  { label: 'Prototype', value: '/prototype', detail: 'Explore a throwaway interface direction', kind: 'skill' },
+  { label: 'Compact', value: '/compact', detail: 'Compress the current task context', kind: 'command' },
+]
+
+const MENTION_SUGGESTIONS: ComposerSuggestion[] = [
+  { label: 'ComposerPrototype.tsx', value: '@ComposerPrototype.tsx', detail: 'Recently edited file', kind: 'file', frequent: true },
+  { label: 'apps/desktop', value: '@apps/desktop', detail: 'Current project folder', kind: 'folder', frequent: true },
+  { label: '$frontend-design', value: '@$frontend-design', detail: 'Frequently used skill', kind: 'skill', frequent: true },
+  { label: 'AGENTS.md', value: '@AGENTS.md', detail: 'Repository instructions', kind: 'file' },
+]
+
+function composerSuggestions(draft: string) {
+  const match = draft.match(/(^|\s)([/@])([^\s]*)$/)
+  if (!match) return []
+  const query = (match[3] ?? '').toLowerCase()
+  const source = match[2] === '/' ? SLASH_SUGGESTIONS : MENTION_SUGGESTIONS
+  return source.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query))
+}
+
+function insertComposerSuggestion(draft: string, suggestion: ComposerSuggestion) {
+  return draft.replace(/(^|\s)([/@])([^\s]*)$/, `$1${suggestion.value} `)
 }
 
 const INITIAL_MESSAGES: MessageRow[] = [
@@ -264,13 +298,13 @@ function RunSetupMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="max-w-80 text-foreground" aria-label="Choose run setup" />}
+        render={<InputGroupButton variant="ghost" className="max-w-80 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
       >
         <HarnessLogo harness={state.harness} />
         <span>{definition.label}</span>
-        <span className="text-muted-foreground">/</span>
+        <span className="text-muted-foreground">·</span>
         <span>{state.model}</span>
-        <span className="text-muted-foreground">/</span>
+        <span className="text-muted-foreground">·</span>
         <span>{state.effort}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -365,7 +399,7 @@ function PermissionMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="text-foreground" aria-label="Choose permission mode" />}
+        render={<InputGroupButton variant="ghost" className="text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
       >
         <ShieldCheck />{state.permission}<ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -419,6 +453,44 @@ function ReferenceStrip({ state, setState }: StateProps) {
         </Attachment>
       ))}
     </AttachmentGroup>
+  )
+}
+
+function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (value: string) => void }) {
+  const suggestions = composerSuggestions(draft)
+  if (suggestions.length === 0) return null
+  const isCommand = draft.match(/(^|\s)\/[^\s]*$/)
+  return (
+    <div className="absolute bottom-full left-0 z-40 mb-2 w-[30rem] overflow-hidden rounded-xl border bg-background shadow-xl">
+      <div className="flex items-center border-b px-3 py-2">
+        <span className="text-[11px] font-medium text-muted-foreground">{isCommand ? 'Skills and commands' : 'Files, folders, and skills'}</span>
+        <span className="ml-auto text-[10px] text-muted-foreground">Enter to insert</span>
+      </div>
+      <div className="p-1.5">
+        {suggestions.map((suggestion, index) => {
+          const SuggestionIcon = suggestion.kind === 'file' ? File : suggestion.kind === 'folder' ? Folder : suggestion.kind === 'command' ? Command : WandSparkles
+          return (
+            <button
+              key={suggestion.value}
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => onSelect(insertComposerSuggestion(draft, suggestion))}
+              className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left ${index === 0 ? 'bg-muted' : 'hover:bg-muted/70'}`}
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-background"><SuggestionIcon className="size-3.5" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2 text-xs font-medium">
+                  {suggestion.label}
+                  {suggestion.frequent ? <span className="rounded-full bg-foreground px-1.5 py-0.5 text-[9px] font-medium text-background">Most used</span> : null}
+                </span>
+                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{suggestion.detail}</span>
+              </span>
+              <span className="text-[10px] capitalize text-muted-foreground">{suggestion.kind}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -605,7 +677,7 @@ function ContextSurface({
       <div className="flex items-center gap-3 rounded-b-xl border border-t-0 bg-background px-4 py-2 shadow-md shadow-foreground/10">
         <Layers3 className={`size-4 shrink-0 ${tone === 'color' ? zone.text : 'text-foreground'}`} />
         <div className="shrink-0">
-          <div className="text-xs font-semibold">Context · {status}</div>
+          <div className="text-xs font-medium text-foreground">Context · {status}</div>
         </div>
         <TooltipProvider>
         <div className="relative min-w-28 flex-1">
@@ -615,24 +687,24 @@ function ContextSurface({
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
             <Tooltip>
               <TooltipTrigger render={<button type="button" className="absolute inset-y-0 left-0 w-1/5" aria-label="About the Smart Zone" />} />
-              <TooltipContent>Smart Zone · focused working context, roughly the first 20%</TooltipContent>
+              <TooltipContent className="max-w-none whitespace-nowrap">Smart · focused context</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger render={<button type="button" className="absolute inset-y-0 right-0 w-4/5" aria-label="About the Dumb Zone" />} />
-              <TooltipContent>Dumb Zone · more history fits, but useful attention can weaken</TooltipContent>
+              <TooltipContent className="max-w-none whitespace-nowrap">Dumb · attention can weaken</TooltipContent>
             </Tooltip>
           </div>
         </div>
         </TooltipProvider>
         <div className="flex shrink-0 items-center gap-1 text-xs tabular-nums">
-          <span className="font-semibold">{used}</span>
+          <span className="font-medium text-foreground">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
           <ContextPopover state={state} appearance="details" meterStyle={tone === 'color' ? 'gradient' : 'grayscale'} />
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <Button variant="secondary" size="sm"><RotateCcw />Compact</Button>
-          <Button variant="outline" size="sm"><ArrowRight />Handoff</Button>
+          <Button variant="secondary" size="sm" className="text-xs font-medium"><RotateCcw />Compact</Button>
+          <Button variant="outline" size="sm" className="text-xs font-medium"><ArrowRight />Handoff</Button>
         </div>
       </div>
     )
@@ -718,12 +790,8 @@ function ContextPreviewControl({ state, setState }: StateProps) {
 
 function VariantSwitcher({ variant }: { variant: VariantKey }) {
   const variants: { key: VariantKey; label: string }[] = [
-    { key: 'A', label: 'Popover' },
-    { key: 'B', label: 'Side rail' },
-    { key: 'C', label: 'Dock' },
-    { key: 'D', label: 'Footer bar' },
-    { key: 'E', label: 'Attached' },
-    { key: 'F', label: 'Attached mono' },
+    { key: 'E', label: 'Floating queue · color' },
+    { key: 'F', label: 'Attached queue · mono' },
   ]
   return (
     <nav className="fixed bottom-3 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur" aria-label="Prototype variants">
@@ -845,8 +913,11 @@ function TaskPlanPopover() {
   ] as const
   return (
     <Popover>
-      <PopoverTrigger render={<InputGroupButton variant="ghost" className="gap-1.5 text-foreground" aria-label="Open task plan" />}>
-        <ListChecks className="size-4" />
+      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full bg-background/90 px-2.5 text-xs font-medium shadow-sm" aria-label="Open task plan" />}>
+        <svg viewBox="0 0 20 20" className="size-4 -rotate-90" aria-hidden="true">
+          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
+          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="60 100" />
+        </svg>
         <span className="text-xs font-medium">Step 3/5</span>
       </PopoverTrigger>
       <PopoverContent align="start" side="top" className="w-80 gap-3 p-3">
@@ -943,7 +1014,7 @@ function Transcript({ messages }: { messages: MessageRow[] }) {
 
 export function ComposerPrototype() {
   const requestedVariant = new URLSearchParams(window.location.search).get('variant')
-  const variant: VariantKey = requestedVariant === 'B' || requestedVariant === 'C' || requestedVariant === 'D' || requestedVariant === 'E' || requestedVariant === 'F' ? requestedVariant : 'A'
+  const variant: VariantKey = requestedVariant === 'F' ? 'F' : 'E'
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1005,15 +1076,6 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-        {variant === 'C' && <div className="mx-auto w-full max-w-4xl"><ContextSurface state={state} layout="dock" /></div>}
-        {variant === 'A' && (
-          <QueuePreview messages={queuedMessages} layout="attached" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
-        )}
-        {variant === 'C' && (
-          <div className="mx-auto w-full max-w-4xl">
-            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
-          </div>
-        )}
         {variant === 'E' && (
           <div className="mx-auto w-full max-w-4xl">
             <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />
@@ -1031,17 +1093,23 @@ export function ComposerPrototype() {
             send()
           }}
         >
+          <ComposerAutocomplete draft={draft} onSelect={setDraft} />
           <InputGroup className="relative overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
-            {variant === 'B' && <QueuePreview messages={queuedMessages} layout="inline" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />}
-            {variant === 'D' && <QueuePreview messages={queuedMessages} layout="integrated" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} />}
+            <div className="absolute top-3 right-3 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <InputGroupTextarea
               aria-label="Message"
               placeholder="Direct the next move…"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              className="min-h-20 px-4 py-3 text-sm leading-6"
+              className="min-h-20 px-4 py-3 pr-28 text-sm leading-6"
               onKeyDown={(event) => {
+                const suggestions = composerSuggestions(draft)
+                if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
+                  event.preventDefault()
+                  setDraft(insertComposerSuggestion(draft, suggestions[0]))
+                  return
+                }
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault()
                   send()
@@ -1052,9 +1120,7 @@ export function ComposerPrototype() {
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
               <PermissionMenu state={state} setState={setState} />
-              <TaskPlanPopover />
               <div className="ml-auto flex items-center gap-1">
-                {variant === 'A' && <ContextPopover state={state} />}
                 <UsagePopover state={state} />
                 <InputGroupButton
                   size="icon-sm"
@@ -1070,14 +1136,13 @@ export function ComposerPrototype() {
                   size="icon-sm"
                   variant="default"
                   aria-label="Send message"
-                  disabled={draft.trim().length === 0}
-                  className="rounded-full"
+                  aria-disabled={draft.trim().length === 0}
+                  className={`rounded-full ${draft.trim().length === 0 ? 'opacity-50' : ''}`}
                 >
                   <ArrowUp />
                 </InputGroupButton>
               </div>
             </InputGroupAddon>
-            {(variant === 'B' || variant === 'D') && <ContextSurface state={state} layout="footer" />}
           </InputGroup>
         </form>
         {(variant === 'E' || variant === 'F') && (
