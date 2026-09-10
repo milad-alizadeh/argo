@@ -6,7 +6,7 @@
 set -u
 
 sourceDirectories="apps/desktop/src"
-excludedFiles="apps/desktop/src/renderer/tokens.css docs/designs/tokens.css apps/desktop/src/renderer/designs/tokens.css"
+excludedFiles="tokens.css"
 allowlistPath="$(dirname "$0")/design-tokens-allow.txt"
 
 excludeArguments=""
