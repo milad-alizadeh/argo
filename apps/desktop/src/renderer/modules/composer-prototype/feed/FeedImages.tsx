@@ -1,47 +1,75 @@
 import { Expand, ImageOff } from 'lucide-react'
-import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@/renderer/components/ui/dialog'
+import { FEED_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 
-function ImageTile({
+function ImageLightbox({
   evidence,
-  onOpen,
-  current = false,
+  compact = false,
 }: {
   evidence: FeedPrototypeEvidence
-  onOpen: FeedEvidenceAction
-  current?: boolean
+  compact?: boolean
 }) {
   return (
-    <figure className="min-w-0 overflow-hidden rounded-lg border bg-card">
-      <button
-        type="button"
-        onClick={() => onOpen(evidence)}
-        className="group relative block w-full"
-        aria-label={`Inspect ${evidence.title}${current ? ', current file' : ', embedded image'}`}
+    <Dialog>
+      <DialogTrigger
+        render={
+          <button
+            type="button"
+            className={
+              compact
+                ? 'mt-3 flex items-center gap-2 rounded-md border bg-background p-1.5 text-control'
+                : 'group relative h-full shrink-0 overflow-hidden rounded-lg border bg-card'
+            }
+            aria-label={`Open ${evidence.title} in lightbox`}
+          />
+        }
       >
         <img
           src={evidence.source}
           width={320}
           height={213}
           alt="Two people reviewing work on a laptop"
-          className="h-28 w-full object-cover"
+          className={
+            compact ? '!size-10 rounded-sm object-cover' : '!h-full !w-auto max-w-none object-cover'
+          }
         />
-        <span className="absolute right-2 bottom-2 rounded-md border bg-popover p-1 text-popover-foreground">
+        {compact ? <span>{evidence.title}</span> : null}
+        <span
+          className={
+            compact
+              ? 'ml-2 text-muted-foreground'
+              : 'absolute right-2 bottom-2 rounded-md border bg-popover/90 p-1 text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100'
+          }
+        >
           <Expand className="!size-(--size-icon-inline)" />
         </span>
-      </button>
-      <figcaption className="space-y-0.5 px-2 py-2 text-control">
-        <p className="truncate">{evidence.title}</p>
-        <p className="text-muted-foreground">{current ? 'Current file' : 'Embedded image'}</p>
-      </figcaption>
-    </figure>
+      </DialogTrigger>
+      <DialogContent className="w-fit max-w-[calc(100dvw-3rem)] bg-black/95 p-2 ring-white/15 sm:max-w-[calc(100dvw-3rem)]">
+        <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
+        <DialogDescription className="sr-only">Full-size image preview</DialogDescription>
+        <img
+          src={evidence.source}
+          width={1280}
+          height={852}
+          alt="Two people reviewing work on a laptop"
+          className="max-h-[calc(100dvh-4rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-contain"
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
 
-export function FeedImages({ onOpen }: { onOpen: FeedEvidenceAction }) {
+export function FeedImages() {
   return (
-    <div className="grid grid-cols-2 gap-2" data-component="FeedGallery">
-      <ImageTile evidence={FEED_EVIDENCE.image} onOpen={onOpen} />
-      <ImageTile evidence={FEED_EVIDENCE.currentImage} onOpen={onOpen} current />
+    <div className="flex h-40 gap-2 overflow-x-auto" data-component="FeedGallery">
+      <ImageLightbox evidence={FEED_EVIDENCE.image} />
+      <ImageLightbox evidence={FEED_EVIDENCE.currentImage} />
     </div>
   )
 }
@@ -60,22 +88,6 @@ export function FeedMissingImage() {
   )
 }
 
-export function FeedAttachedImage({ onOpen }: { onOpen: FeedEvidenceAction }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(FEED_EVIDENCE.image)}
-      className="mt-3 flex items-center gap-2 rounded-md border bg-background p-1.5 text-control"
-    >
-      <img
-        src={FEED_EVIDENCE.image.source}
-        width={320}
-        height={213}
-        alt="Two people reviewing work on a laptop"
-        className="size-10 rounded-sm object-cover"
-      />
-      <span>workspace-reference.jpg</span>
-      <Expand className="ml-2 !size-(--size-icon-inline) text-muted-foreground" />
-    </button>
-  )
+export function FeedAttachedImage() {
+  return <ImageLightbox evidence={FEED_EVIDENCE.image} compact />
 }

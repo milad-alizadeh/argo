@@ -1,4 +1,4 @@
-import { ArrowUpRight, ChevronRight, CircleAlert, SquareTerminal } from 'lucide-react'
+import { ArrowUpRight, CircleAlert, SquareTerminal } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
 import {
@@ -62,26 +62,19 @@ export function FeedHistory({ onOpen }: { onOpen: FeedEvidenceAction }) {
 
 export function FeedAdditionalStates({ onOpen }: { onOpen: FeedEvidenceAction }) {
   return (
-    <details className="group border-t pt-4" data-component="FeedAdditionalStates">
-      <summary className="flex cursor-pointer list-none items-center gap-2 text-control text-muted-foreground">
-        <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />
-        More feed states
-        <span className="ml-auto">Questions, permissions, history and failures</span>
-      </summary>
-      <div className="space-y-6 pt-6">
-        <FeedQuestion />
-        <FeedPermission />
-        <FeedQuestion readOnly />
-        <FeedExpiredPermission />
-        <FeedHistory onOpen={onOpen} />
-        <FeedMissingImage />
-        <FeedDiagramState loading />
-        <FeedDiagramState />
-        <FeedCode
-          language="Unrecognized language · plain text"
-          source={'session demo {\n  posture = observed\n  unknown_value = preserved\n}'}
-        />
-      </div>
-    </details>
+    <div className="space-y-6 border-t pt-6" data-component="FeedAdditionalStates">
+      <FeedQuestion />
+      <FeedPermission />
+      <FeedQuestion readOnly />
+      <FeedExpiredPermission />
+      <FeedHistory onOpen={onOpen} />
+      <FeedMissingImage />
+      <FeedDiagramState loading />
+      <FeedDiagramState />
+      <FeedCode
+        language="Unrecognized language · plain text"
+        source={'session demo {\n  posture = observed\n  unknown_value = preserved\n}'}
+      />
+    </div>
   )
 }
