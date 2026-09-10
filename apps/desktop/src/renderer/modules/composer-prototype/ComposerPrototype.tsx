@@ -711,24 +711,11 @@ function ContextPopover({
           </div>
         ) : null}
         <div className="grid gap-3 border-t pt-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-xs font-semibold">Auto-compact</div>
-              <p className="mt-1 text-xs leading-4 text-muted-foreground">
-                Compact when the current context reaches the threshold.
-              </p>
-            </div>
-            <span className="shrink-0 text-xs font-medium tabular-nums">At {formatTokenCount(autoCompactThresholdTokens)}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 px-3 py-2 text-xs">
-            <div>
-              <span className="text-muted-foreground">Current</span>
-              <span className="ml-2 font-medium tabular-nums">{formatTokenCount(used)}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-muted-foreground">Total</span>
-              <span className="ml-2 font-medium tabular-nums">{formatTokenCount(context.total)}</span>
-            </div>
+          <div>
+            <div className="text-xs font-semibold">Auto-compact</div>
+            <p className="mt-1 text-xs leading-4 text-muted-foreground">
+              Compact when the context reaches the threshold. Total context: {formatTokenCount(context.total)}.
+            </p>
           </div>
           <input
             type="range"
