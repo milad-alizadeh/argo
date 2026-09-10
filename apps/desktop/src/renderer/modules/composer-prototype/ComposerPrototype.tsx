@@ -1993,7 +1993,7 @@ export function ComposerPrototype() {
               onOpenEvidence={openFeedEvidence}
             />
           </div>
-          <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-6 pt-6 pb-8">
+          <div className="relative shrink-0 bg-background px-6 pt-6 pb-8">
             <div className="mx-auto mb-2 w-full max-w-4xl">
               <FeedPermission />
             </div>
