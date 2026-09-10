@@ -144,6 +144,13 @@ export const FEED_EVIDENCE = {
       '{\n  "number": 1838,\n  "title": "Start and continue a managed Claude Session",\n  "state": "open"\n}',
     detail: 'MCP tool result · GitHub',
   },
+  unclassified: {
+    id: 'unclassified',
+    title: 'Unclassified tool result',
+    kind: 'output',
+    source: '{\n  "result": "Tool completed without structured metadata."\n}',
+    detail: 'Recorded tool result · Unclassified',
+  },
 } satisfies Record<string, FeedPrototypeEvidence>
 
 export const FEED_INSPECTOR_EVIDENCE: FeedPrototypeEvidence[] = [
@@ -156,5 +163,6 @@ export const FEED_INSPECTOR_EVIDENCE: FeedPrototypeEvidence[] = [
   FEED_EVIDENCE.createdAttachmentTray,
   FEED_EVIDENCE.movedQueue,
   FEED_EVIDENCE.deletedDraft,
+  FEED_EVIDENCE.unclassified,
   FEED_EVIDENCE.failed,
 ]
