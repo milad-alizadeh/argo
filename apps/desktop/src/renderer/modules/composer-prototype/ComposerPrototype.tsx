@@ -4,24 +4,30 @@ import {
   ArrowUp,
   Bot,
   BrainCircuit,
+  CircleHelp,
   Check,
   ChevronDown,
   CircleGauge,
   Command,
   CornerDownRight,
   File,
+  FileCheck2,
   Folder,
   GitFork,
   GripVertical,
+  Hand,
   Info,
   Layers3,
+  ListTodo,
   Mic,
   Minimize2,
   Paperclip,
   Pencil,
   Plus,
   Route,
+  ShieldAlert,
   ShieldCheck,
+  Unlock,
   Trash2,
   WandSparkles,
   X,
@@ -407,6 +413,22 @@ function RunSetupMenu({ state, setState }: StateProps) {
   )
 }
 
+const PERMISSION_ICONS: Record<string, typeof ShieldCheck> = {
+  'Ask first': CircleHelp,
+  'Approve safely': ShieldCheck,
+  'Full access': Unlock,
+  Auto: WandSparkles,
+  Manual: Hand,
+  'Accept edits': FileCheck2,
+  Plan: ListTodo,
+  Bypass: ShieldAlert,
+}
+
+function PermissionIcon({ permission, className }: { permission: string; className?: string }) {
+  const Icon = PERMISSION_ICONS[permission] ?? ShieldCheck
+  return <Icon className={className} />
+}
+
 function PermissionMenu({ state, setState }: StateProps) {
   const definition = HARNESSES[state.harness]
   return (
@@ -414,7 +436,7 @@ function PermissionMenu({ state, setState }: StateProps) {
       <DropdownMenuTrigger
         render={<InputGroupButton variant="ghost" className="text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
       >
-        <ShieldCheck />{state.permission}<ChevronDown className="text-muted-foreground" />
+        <PermissionIcon permission={state.permission} />{state.permission}<ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
@@ -425,7 +447,7 @@ function PermissionMenu({ state, setState }: StateProps) {
               className="items-start rounded-md px-2 py-1.5"
               onClick={() => setState({ ...state, permission: permission.label })}
             >
-              <ShieldCheck className="mt-0.5 size-3.5" />
+              <PermissionIcon permission={permission.label} className="mt-0.5 size-3.5" />
               <span className="grid gap-0.5">
                 <span className="text-[13px] font-medium">{permission.label}</span>
                 <span className="text-[11px] leading-4 text-muted-foreground">{permission.detail}</span>
