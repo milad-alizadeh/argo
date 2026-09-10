@@ -1241,7 +1241,7 @@ export function ComposerPrototype() {
         </div>
         <AnimatedHeight>
           <form
-            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_svg]:!size-4"
+            className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/40 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.24)] [&_svg]:!size-4"
             onSubmit={(event) => {
               event.preventDefault()
               send()
