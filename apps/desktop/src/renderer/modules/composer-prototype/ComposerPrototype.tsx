@@ -1158,7 +1158,7 @@ export function ComposerPrototype() {
         <Transcript messages={messages} />
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
-        <div className="mx-auto w-full max-w-4xl">
+        <div className="mx-auto w-full max-w-4xl drop-shadow-[0_-5px_8px_rgba(0,0,0,0.07)] [&>*]:!shadow-none">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
         </div>
         <form
@@ -1219,7 +1219,7 @@ export function ComposerPrototype() {
             </InputGroupAddon>
           </InputGroup>
         </form>
-        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)]">
+        <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-2rem)] max-w-[calc(56rem-2rem)] drop-shadow-[0_5px_8px_rgba(0,0,0,0.07)] [&>*]:!shadow-none">
           <ContextSurface state={state} layout="attached" tone={contextTone} />
         </div>
       </div>
