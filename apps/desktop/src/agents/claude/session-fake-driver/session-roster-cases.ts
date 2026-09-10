@@ -10,12 +10,11 @@ const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId:
 export async function proveContract(page) {
   const list = await page.evaluate((value) => window.argo.listSessions(value), listing)
   assert.equal(list.type, 'session.listed')
-  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 9, read: 9 })
-  // Seven Sessions from nine files, including one Codex chain.
+  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 7, read: 7 })
+  // Six Sessions from seven files, discovered without one registered Project.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
     'askPending',
     'externalBasic',
-    'rollout-codexParent',
     'prose',
     'resumeParent',
     'strandedResume',
@@ -62,14 +61,14 @@ export function readRoster(page) {
 export async function proveRoster(page) {
   await page.waitForSelector('nav[aria-label="Sessions"] button')
   const first = await readRoster(page)
-  assert.equal(first.count, 7)
+  assert.equal(first.count, 6)
   // Nothing is chosen until a reader chooses it, and the Feed says so rather than showing one
   // Session's history under no name.
   assert.equal(first.selected, 0)
   assert.equal(first.standing, 'Choose a Session to read its history.')
   // One stop for the whole list, arrows inside it: the roving tabindex a list of rows needs.
   assert.equal(first.reachable, 1)
-  assert.equal(first.note.includes('Read 9 transcript files.'), true)
+  assert.equal(first.note.includes('Read 7 transcript files.'), true)
   // The partial chain says so on its own row, in a sentence a reader can actually read to the end.
   assert.deepEqual(first.partial, ['continues a Session Argo did not read'])
   // A path is drawn as itself. The rule that truncates it from the start must not also move the
@@ -110,8 +109,8 @@ export async function proveReread(page, transcripts, write) {
   // Its own custom title, which is what the Roster draws for it (CONTEXT.md L2 · CLI title).
   await page.waitForSelector('button:has-text("The name a person typed")')
   const after = await readRoster(page)
-  assert.equal(after.count, 8)
-  assert.equal(after.note.includes('Read 10 transcript files.'), true)
+  assert.equal(after.count, 7)
+  assert.equal(after.note.includes('Read 8 transcript files.'), true)
 }
 
 // The wait is keyed to the Session id, not to "some row exists": the Feed the reader is leaving
