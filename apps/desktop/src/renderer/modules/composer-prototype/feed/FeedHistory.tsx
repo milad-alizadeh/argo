@@ -56,10 +56,7 @@ export function FeedAdditionalStates({ onOpen }: { onOpen: FeedEvidenceAction })
       <FeedMissingImage />
       <FeedDiagramState loading />
       <FeedDiagramState />
-      <FeedCode
-        language="Unrecognized language · plain text"
-        source={'session demo {\n  posture = observed\n  unknown_value = preserved\n}'}
-      />
+      <FeedCode source={'session demo {\n  posture = observed\n  unknown_value = preserved\n}'} />
     </div>
   )
 }

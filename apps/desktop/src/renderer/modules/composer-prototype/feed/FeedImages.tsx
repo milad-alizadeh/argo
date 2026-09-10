@@ -76,8 +76,8 @@ export function FeedImages() {
 
 export function FeedMissingImage() {
   return (
-    <figure className="overflow-hidden rounded-lg border bg-card">
-      <div className="flex h-28 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
+    <figure className="flex aspect-4/3 w-52 flex-col overflow-hidden rounded-lg border bg-card">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
         <ImageOff className="!size-(--size-icon-control)" />
         <p className="text-control">Image unavailable</p>
       </div>
