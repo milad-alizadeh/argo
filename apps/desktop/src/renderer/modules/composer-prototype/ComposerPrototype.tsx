@@ -8,6 +8,8 @@ import {
   ChevronDown,
   CircleGauge,
   Command,
+  CornerDownRight,
+  Ellipsis,
   File,
   Folder,
   Gauge,
@@ -16,6 +18,7 @@ import {
   Plus,
   RotateCcw,
   ShieldCheck,
+  Trash2,
   WandSparkles,
   X,
 } from 'lucide-react'
@@ -75,6 +78,7 @@ import { Progress } from '@/renderer/components/ui/progress'
 type HarnessKey = 'codex' | 'claude'
 type VariantKey = 'A' | 'B' | 'C' | 'D' | 'E'
 type MessageRow = { id: string; role: 'user' | 'assistant' | 'marker'; text: string }
+type QueuedMessage = { id: string; text: string }
 
 type HarnessDefinition = {
   label: string
@@ -636,6 +640,45 @@ function VariantSwitcher({ variant }: { variant: VariantKey }) {
   )
 }
 
+function QueuePreview({
+  messages,
+  layout,
+  onSteer,
+  onRemove,
+}: {
+  messages: QueuedMessage[]
+  layout: 'attached' | 'inline' | 'floating' | 'integrated'
+  onSteer: (message: QueuedMessage) => void
+  onRemove: (id: string) => void
+}) {
+  const message = messages[0]
+  if (!message) return null
+  const shell = {
+    attached: 'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-muted/40 px-3 pb-4 pt-2.5 shadow-sm',
+    inline: 'mr-72 flex border-b bg-muted/20 px-3 py-2',
+    floating: 'mb-2 ml-auto w-3/4 rounded-lg border bg-background px-3 py-2 shadow-sm',
+    integrated: 'flex border-b bg-muted/20 px-3 py-2',
+  }[layout]
+  return (
+    <div className={`${shell} flex items-center gap-2`}>
+      <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
+      <span className="shrink-0 rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">
+        {messages.length} queued
+      </span>
+      <span className="min-w-0 flex-1 truncate text-xs">{message.text}</span>
+      <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
+        <ArrowRight />Steer
+      </Button>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove queued message" onClick={() => onRemove(message.id)}>
+        <Trash2 />
+      </Button>
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="More queue actions">
+        <Ellipsis />
+      </Button>
+    </div>
+  )
+}
+
 function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
   const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
@@ -720,6 +763,18 @@ export function ComposerPrototype() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
   const [isListening, setIsListening] = useState(false)
+  const [queuedMessages, setQueuedMessages] = useState<QueuedMessage[]>([
+    { id: 'queued-1', text: 'Update the empty state, then verify the composer at compact widths.' },
+    { id: 'queued-2', text: 'Capture the selected direction for implementation.' },
+  ])
+
+  const steerQueuedMessage = (message: QueuedMessage) => {
+    setDraft(message.text)
+    setQueuedMessages(queuedMessages.filter((item) => item.id !== message.id))
+  }
+  const removeQueuedMessage = (id: string) => {
+    setQueuedMessages(queuedMessages.filter((item) => item.id !== id))
+  }
 
   const send = () => {
     const text = draft.trim()
@@ -743,8 +798,16 @@ export function ComposerPrototype() {
       </div>
       <div className="relative shrink-0 bg-gradient-to-t from-background via-background to-transparent px-8 pt-8 pb-12">
         {variant === 'C' && <div className="mx-auto w-full max-w-4xl"><ContextSurface state={state} layout="dock" /></div>}
+        {variant === 'A' && (
+          <QueuePreview messages={queuedMessages} layout="attached" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />
+        )}
+        {variant === 'C' && (
+          <div className="mx-auto w-full max-w-4xl">
+            <QueuePreview messages={queuedMessages} layout="floating" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />
+          </div>
+        )}
         <form
-          className="mx-auto w-full max-w-4xl"
+          className="relative z-10 mx-auto w-full max-w-4xl"
           onSubmit={(event) => {
             event.preventDefault()
             send()
@@ -752,6 +815,8 @@ export function ComposerPrototype() {
         >
           <InputGroup className="relative overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10">
             {variant === 'B' && <ContextSurface state={state} layout="inline" />}
+            {variant === 'B' && <QueuePreview messages={queuedMessages} layout="inline" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />}
+            {variant === 'D' && <QueuePreview messages={queuedMessages} layout="integrated" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} />}
             <ReferenceStrip state={state} setState={setState} />
             <InputGroupTextarea
               aria-label="Message"
