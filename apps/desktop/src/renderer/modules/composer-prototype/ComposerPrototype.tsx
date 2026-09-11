@@ -593,7 +593,7 @@ function PrototypeRail({
           </div>
         ) : null}
       </div>
-      <div className="flex flex-col items-center gap-2">
+      <div className="-mt-px flex flex-col items-center gap-2">
         {RAIL_ITEMS.map((item) => (
           <div key={item.label} className="flex flex-col items-center gap-1 text-[10px] leading-none">
             <button
@@ -752,7 +752,7 @@ function PrototypeSessionRoster({
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border bg-background">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border bg-background">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="text-sm font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
