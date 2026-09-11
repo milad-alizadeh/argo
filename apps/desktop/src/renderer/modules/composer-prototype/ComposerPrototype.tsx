@@ -824,7 +824,7 @@ function PrototypeSessionHeader({
   onOpenSidebar: () => void
 }) {
   return (
-    <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
+    <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -876,7 +876,7 @@ function PrototypeSessionHeader({
         <Button
           variant="secondary"
           size="icon-sm"
-          className="translate-x-px"
+          className="translate-x-1.25"
           aria-label="Open Session inspector"
           onClick={onOpenSidebar}
         >
@@ -1687,7 +1687,7 @@ function QueuePreview({
     const shell = {
       integrated: 'border-b bg-background',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      'attached-stack': 'relative z-0 mx-auto -mb-2 w-[calc(100%-0.5rem)] overflow-hidden rounded-t-xl border bg-background/90 pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
+      'attached-stack': 'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border bg-background/90 pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
       attached: '',
       inline: '',
     }[layout]
@@ -1879,7 +1879,7 @@ function Transcript({
     <MessageScrollerProvider defaultScrollPosition="end">
       <MessageScroller>
         <MessageScrollerViewport>
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl px-8 py-10">
+          <MessageScrollerContent className="mx-auto w-full max-w-4xl px-4 py-10">
             <SessionFeedPrototype
               onOpenEvidence={onOpenEvidence}
               activeEvidenceId={activeEvidenceId}
@@ -2142,14 +2142,14 @@ export function ComposerPrototype() {
               onOpenEvidence={openFeedEvidence}
             />
           </div>
-          <div className="relative shrink-0 bg-background px-6 pt-6 pb-8">
-            <div className="pointer-events-none absolute inset-x-6 bottom-full z-20 -mb-6">
-              <div className="pointer-events-auto mx-auto mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]">
-                <div className="mx-auto w-[calc(100%-0.5rem)]">
+          <div className="relative shrink-0 bg-background px-4 pt-6 pb-8">
+            <div className="pointer-events-none absolute inset-x-4 bottom-full z-20 -mb-6">
+              <div className="pointer-events-auto mx-auto mb-2 w-full max-w-4xl">
+                <div className="mx-auto w-full">
                   <FeedPermission />
                 </div>
               </div>
-              <div className="composer-queue-stack pointer-events-auto mx-auto w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
+              <div className="composer-queue-stack pointer-events-auto mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
                 <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
               </div>
             </div>
