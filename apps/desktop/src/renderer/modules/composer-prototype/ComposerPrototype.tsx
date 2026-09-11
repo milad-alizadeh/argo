@@ -617,7 +617,7 @@ function PrototypeRail({
           </div>
         ))}
       </div>
-      <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center">
+      <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center pb-1">
         <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
       </div>
     </nav>
