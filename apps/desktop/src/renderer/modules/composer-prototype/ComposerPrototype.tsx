@@ -1879,7 +1879,7 @@ function Transcript({
     <MessageScrollerProvider defaultScrollPosition="end">
       <MessageScroller>
         <MessageScrollerViewport>
-          <MessageScrollerContent className="mx-auto w-full max-w-4xl px-4 py-10">
+          <MessageScrollerContent className="mx-auto w-full max-w-4xl px-4 pt-10 pb-72">
             <SessionFeedPrototype
               onOpenEvidence={onOpenEvidence}
               activeEvidenceId={activeEvidenceId}
