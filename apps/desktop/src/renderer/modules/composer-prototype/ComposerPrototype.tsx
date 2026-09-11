@@ -2013,7 +2013,7 @@ export function ComposerPrototype() {
           <div
             aria-hidden={!showSessionRoster}
             className="h-full min-h-0 shrink-0"
-            style={{ width: sessionRosterContentWidth }}
+            style={{ width: sessionRosterContentWidth, contain: 'inline-size' }}
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
@@ -2098,7 +2098,7 @@ export function ComposerPrototype() {
           >
           <div
             className="@container flex min-h-0 flex-1 flex-col"
-            style={{ minWidth: SESSION_PANE_MIN_WIDTH }}
+            style={{ minWidth: SESSION_PANE_MIN_WIDTH, contain: 'inline-size' }}
           >
           <PrototypeSessionHeader
             showRoster={showSessionRoster}
@@ -2211,7 +2211,7 @@ export function ComposerPrototype() {
             <div
               aria-hidden={!showSessionSidebar}
               className="h-full min-h-0 shrink-0"
-              style={{ width: sessionInspectorContentWidth }}
+              style={{ width: sessionInspectorContentWidth, contain: 'inline-size' }}
             >
                 <SessionWorkSidebar
                   evidence={feedEvidence}
