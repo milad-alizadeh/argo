@@ -25,7 +25,6 @@ type ToolRowDetail =
   | { kind: 'text'; value: string }
   | { added: string; kind: 'diff'; removed: string }
 type ToolSection = {
-  title: string
   rows: ToolRow[]
 }
 
@@ -117,13 +116,8 @@ function ToolGroup({
         <ChevronRight className="!size-(--size-icon-inline) shrink-0 text-muted-foreground group-open:rotate-90" />
       </summary>
       <div className="mx-2 space-y-1 border-t pt-1">
-        {sections.map((section) => (
-          <div key={section.title}>
-            {sections.length > 1 ? (
-              <p className="px-2 pt-2 text-(length:--text-control) font-medium text-muted-foreground">
-                {section.title}
-              </p>
-            ) : null}
+        {sections.map((section, index) => (
+          <div key={section.rows[0]?.label ?? index}>
             {section.rows.map((row) => (
               <FeedToolLine
                 key={row.label}
@@ -150,9 +144,9 @@ export function FeedToolGroups({
     <ToolGroup
       title="Ran 2 commands · Created 2 files · Edited 1 file"
       sections={[
-        { title: 'Ran 2 commands', rows: COMMANDS },
-        { title: 'Created 2 files', rows: CREATED_FILES },
-        { title: 'Edited 1 file', rows: EDITED_FILES },
+        { rows: COMMANDS },
+        { rows: CREATED_FILES },
+        { rows: EDITED_FILES },
       ]}
       onOpen={onOpen}
       activeEvidenceId={activeEvidenceId}
@@ -197,7 +191,7 @@ export function FeedMutationExamples({
     <div className="space-y-2">
       <ToolGroup
         title="Ran 2 commands · Changed 3 files"
-        sections={[{ title: 'Activity', rows: mutations }]}
+        sections={[{ rows: mutations }]}
         onOpen={onOpen}
         activeEvidenceId={activeEvidenceId}
       />
