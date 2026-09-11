@@ -909,13 +909,7 @@ function SessionWorkSidebar({
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-3">
-        {!evidence ? (
-          <>
-            <h3 className="min-w-0 flex-1 truncate text-(length:--text-control) font-semibold">Running under this Session</h3>
-            <span className="mr-2 shrink-0 text-(length:--text-control) text-muted-foreground">4 live</span>
-          </>
-        ) : <div className="flex-1" />}
+      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-end border-b border-border/60 bg-sidebar px-3">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -954,6 +948,7 @@ function SessionWorkSidebar({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <h3 className="mb-2 text-(length:--text-control) font-semibold">Background Agents · 5</h3>
           <div className="space-y-1">
             {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
               <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-muted">
