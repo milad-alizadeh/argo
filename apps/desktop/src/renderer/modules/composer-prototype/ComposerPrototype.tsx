@@ -510,9 +510,18 @@ const RAIL_ITEMS = [
 function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<button type="button" aria-label="Settings" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
-        <Settings />
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DropdownMenuTrigger
+              render={<button type="button" aria-label="Settings" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
+            >
+              <Settings />
+            </DropdownMenuTrigger>
+          }
+        />
+        <TooltipContent side="right">Settings</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>Account</DropdownMenuLabel>
         <DropdownMenuItem className="gap-2 py-2">
@@ -537,38 +546,40 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
 function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
     <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
-      <div className="flex flex-col gap-3">
-        {RAIL_ITEMS.map((item) => (
-          <Tooltip key={item.label}>
-            <TooltipTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label={item.label}
-                  aria-current={item.active ? 'page' : undefined}
-                  className={`grid size-9 place-items-center rounded-lg transition-colors ${
-                    item.active
-                      ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
-                      : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
-                  }`}
-                />
-              }
-            >
-              {item.icon}
+      <TooltipProvider>
+        <div className="flex flex-col gap-3">
+          {RAIL_ITEMS.map((item) => (
+            <Tooltip key={item.label}>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label={item.label}
+                    aria-current={item.active ? 'page' : undefined}
+                    className={`grid size-9 place-items-center rounded-lg transition-colors ${
+                      item.active
+                        ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
+                        : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
+                    }`}
+                  />
+                }
+              >
+                {item.icon}
+              </TooltipTrigger>
+              <TooltipContent side="right">{item.label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+        <div className="mt-auto flex flex-col gap-3">
+          <Tooltip>
+            <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
+              <Archive />
             </TooltipTrigger>
-            <TooltipContent side="right">{item.label}</TooltipContent>
+            <TooltipContent side="right">Archive</TooltipContent>
           </Tooltip>
-        ))}
-      </div>
-      <div className="mt-auto flex flex-col gap-3">
-        <Tooltip>
-          <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
-            <Archive />
-          </TooltipTrigger>
-          <TooltipContent side="right">Archive</TooltipContent>
-        </Tooltip>
-        <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
-      </div>
+          <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
+        </div>
+      </TooltipProvider>
     </nav>
   )
 }
