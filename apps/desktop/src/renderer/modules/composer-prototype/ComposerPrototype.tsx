@@ -2061,7 +2061,7 @@ export function ComposerPrototype() {
           collapsedSize={0}
           defaultSize={SESSION_ROSTER_MIN_WIDTH}
           minSize={SESSION_ROSTER_MIN_WIDTH}
-          maxSize={400}
+          maxSize={460}
           groupResizeBehavior="preserve-pixel-size"
           onResize={(size) => handleSessionRosterResize(size.inPixels)}
           className={`h-full min-h-0 overflow-hidden ${showSessionRoster ? '' : 'pointer-events-none'}`}
