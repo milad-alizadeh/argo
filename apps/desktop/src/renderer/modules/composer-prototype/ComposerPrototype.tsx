@@ -121,7 +121,9 @@ import {
   paneContentVisibilityClass,
   SESSION_FEED_MIN_WIDTH,
   SESSION_INSPECTOR_MIN_WIDTH,
+  SESSION_NAVIGATION_RAIL_WIDTH,
   SESSION_ROSTER_COLLAPSE_MEDIA,
+  SESSION_ROSTER_MAX_WIDTH,
   SESSION_ROSTER_MIN_WIDTH,
 } from './sessionPaneResize'
 
@@ -582,7 +584,8 @@ function PrototypeRail({
   return (
     <nav
       aria-label="Main navigation"
-      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-transparent [&_svg]:size-(--size-icon-control)"
+      className="flex min-h-0 shrink-0 flex-col items-center bg-transparent [&_svg]:size-(--size-icon-control)"
+      style={{ width: SESSION_NAVIGATION_RAIL_WIDTH }}
     >
       <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0">
         {!showsNativeTrafficLights ? (
@@ -1966,7 +1969,7 @@ export function ComposerPrototype() {
   }, [sessionRosterPanel.current?.collapse])
 
   const handleSessionRosterResize = (rosterWidth: number) => {
-    setShowSessionRoster(rosterWidth > 0)
+    setShowSessionRoster(rosterWidth > SESSION_NAVIGATION_RAIL_WIDTH)
   }
 
   const toggleSessionSidebarFullscreen = () => {
@@ -2042,12 +2045,8 @@ export function ComposerPrototype() {
   }
 
   return (
-    <div className="h-dvh min-h-0 overflow-hidden bg-sidebar-shell">
+    <div className="h-dvh min-h-0 overflow-hidden bg-background">
       <div className="flex h-full min-h-0 overflow-hidden">
-        <PrototypeRail
-          theme={theme}
-          onThemeChange={setTheme}
-        />
         <ResizablePanelGroup
           orientation="horizontal"
           className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border/60 bg-background"
@@ -2056,24 +2055,30 @@ export function ComposerPrototype() {
           id="session-roster"
           panelRef={sessionRosterPanel}
           collapsible
-          collapsedSize={0}
-          defaultSize={SESSION_ROSTER_MIN_WIDTH}
-          minSize={SESSION_ROSTER_MIN_WIDTH}
-          maxSize={460}
+          collapsedSize={SESSION_NAVIGATION_RAIL_WIDTH}
+          defaultSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MIN_WIDTH}
+          minSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MIN_WIDTH}
+          maxSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MAX_WIDTH}
           groupResizeBehavior="preserve-pixel-size"
           onResize={(size) => handleSessionRosterResize(size.inPixels)}
-          className={`h-full min-h-0 overflow-hidden ${showSessionRoster ? '' : 'pointer-events-none'}`}
+          className="h-full min-h-0 overflow-hidden"
         >
-          <div
-            aria-hidden={!showSessionRoster}
-            className="h-full min-h-0 w-full"
-            style={{ contain: 'inline-size' }}
-          >
-            <PrototypeSessionRoster
-              currentProject={currentProject}
-              onProjectChange={setCurrentProject}
-              onCollapse={() => setSessionRosterVisible(false)}
+          <div className="flex h-full min-h-0 w-full bg-sidebar-shell">
+            <PrototypeRail
+              theme={theme}
+              onThemeChange={setTheme}
             />
+            <div
+              aria-hidden={!showSessionRoster}
+              className={`h-full min-h-0 min-w-84 flex-1 ${paneContentVisibilityClass(showSessionRoster)}`}
+              style={{ contain: 'inline-size' }}
+            >
+              <PrototypeSessionRoster
+                currentProject={currentProject}
+                onProjectChange={setCurrentProject}
+                onCollapse={() => setSessionRosterVisible(false)}
+              />
+            </div>
           </div>
         </ResizablePanel>
         <ResizableHandle className="z-30 bg-border/60" />
