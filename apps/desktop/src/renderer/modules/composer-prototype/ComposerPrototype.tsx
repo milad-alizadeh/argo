@@ -1712,7 +1712,7 @@ function QueuePreview({
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 flex-1 truncate type-meta">{queuedMessage.text}</span>
+            <span className="min-w-0 flex-1 truncate type-body">{queuedMessage.text}</span>
             <Button
               type="button"
               variant="ghost"
@@ -1748,7 +1748,7 @@ function QueuePreview({
       <span className="shrink-0 rounded-full bg-foreground px-2 py-0.5 type-meta font-medium text-background">
         {messages.length} queued
       </span>
-      <span className="min-w-0 flex-1 truncate type-meta">{message.text}</span>
+      <span className="min-w-0 flex-1 truncate type-body">{message.text}</span>
       <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
         <IconLabel icon={<Route />}>Steer</IconLabel>
       </Button>
