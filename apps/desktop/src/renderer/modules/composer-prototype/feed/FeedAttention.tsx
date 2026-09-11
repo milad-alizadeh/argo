@@ -128,7 +128,7 @@ export function FeedPermission() {
     )
   return (
     <section
-      className="space-y-2 rounded-lg border bg-card px-3 py-2.5 shadow-lg shadow-foreground/5"
+      className="space-y-2 rounded-lg border bg-card/90 px-3 py-2.5 shadow-lg shadow-foreground/5 backdrop-blur-sm"
       aria-labelledby="feed-permission-title"
       data-component="FeedPermission"
     >
