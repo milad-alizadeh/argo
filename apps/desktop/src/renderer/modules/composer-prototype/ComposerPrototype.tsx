@@ -381,7 +381,7 @@ function RosterConcierge() {
   const mutedControlClass = 'relative after:absolute after:h-px after:w-4 after:rotate-45 after:bg-current'
 
   return (
-    <div className="shrink-0 p-3">
+    <div className="h-(--size-bottom-status) shrink-0 p-3">
       <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-2">
         <a
           href="#/concierge"
@@ -542,9 +542,9 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<button type="button" aria-label="Settings" className="group flex w-16 flex-col items-center gap-1 text-[10px] leading-none text-muted-foreground hover:text-foreground" />}
+        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-2 text-(length:--text-control) leading-none text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
       >
-        <span className="grid size-8 place-items-center rounded-lg group-hover:bg-background/70">
+        <span className="grid size-6 place-items-center">
           <Settings />
         </span>
         <span>Settings</span>
@@ -582,7 +582,7 @@ function PrototypeRail({
   return (
     <nav
       aria-label="Main navigation"
-      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-sidebar pb-3 [&_svg]:size-(--size-icon-control)"
+      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-sidebar [&_svg]:size-(--size-icon-control)"
     >
       <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0">
         {!showsNativeTrafficLights ? (
@@ -617,7 +617,7 @@ function PrototypeRail({
           </div>
         ))}
       </div>
-      <div className="mt-auto flex flex-col items-center gap-1">
+      <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center">
         <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
       </div>
     </nav>
