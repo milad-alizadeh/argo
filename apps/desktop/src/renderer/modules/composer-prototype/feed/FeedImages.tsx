@@ -84,8 +84,8 @@ function ImageLightbox({
             type="button"
             className={
               compact
-                ? 'mt-3 flex items-center gap-2 rounded-md border bg-background p-1.5 text-left text-control'
-                : `group relative h-full shrink-0 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`
+                ? 'mt-3 flex items-center gap-2 rounded-md border bg-surface-raised p-1.5 text-left text-control'
+                : `group relative h-full shrink-0 overflow-hidden border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`
             }
             aria-label={`Open ${evidence.title} in lightbox`}
             onPointerDown={transition.captureSourceBounds}
@@ -107,7 +107,7 @@ function ImageLightbox({
           className={
             compact
               ? 'ml-2 text-muted-foreground'
-              : 'absolute right-2 bottom-2 rounded-md border bg-popover/90 p-1 text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100'
+              : 'absolute right-2 bottom-2 rounded-md border bg-surface-raised p-1 text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100'
           }
         >
           <Expand className="!size-(--size-icon-inline)" />
@@ -129,8 +129,8 @@ export function FeedImages() {
 
 export function FeedMissingImage() {
   return (
-    <figure className={`aspect-4/3 w-52 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
-      <div className="flex h-full flex-col items-center justify-center gap-2 bg-card text-muted-foreground">
+    <figure className={`aspect-4/3 w-52 overflow-hidden border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}>
+      <div className="flex h-full flex-col items-center justify-center gap-2 bg-surface-raised text-muted-foreground">
         <ImageOff className="!size-(--size-icon-control)" />
         <p className="text-control">Image unavailable</p>
       </div>

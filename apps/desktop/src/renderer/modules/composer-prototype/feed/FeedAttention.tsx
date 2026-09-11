@@ -62,7 +62,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   return (
     <Questionnaire
       items={[CONCIERGE_QUESTION]}
-      className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`}
+      className={`${FEED_CARD_RADIUS_CLASS} border bg-surface-raised p-4`}
       data-component="FeedStructuredQuestion"
       onSubmit={(event) => {
         event.preventDefault()
@@ -129,7 +129,7 @@ export function FeedPermission() {
     )
   return (
     <section
-      className={`space-y-2 border bg-card/90 px-3 py-2.5 shadow-lg shadow-foreground/5 backdrop-blur-sm ${FEED_CARD_RADIUS_CLASS}`}
+      className={`space-y-2 border bg-surface-raised px-3 py-2.5 shadow-lg shadow-foreground/5 backdrop-blur-sm ${FEED_CARD_RADIUS_CLASS}`}
       aria-labelledby="feed-permission-title"
       data-component="FeedPermission"
     >
@@ -144,7 +144,7 @@ export function FeedPermission() {
           </p>
         </div>
       </div>
-      <pre className="max-h-20 overflow-auto rounded-md bg-muted px-3 py-2 font-mono text-(length:--text-control) leading-relaxed">
+      <pre className="max-h-20 overflow-auto rounded-md bg-surface-inset px-3 py-2 font-mono text-(length:--text-control) leading-relaxed">
         <code>{PERMISSION_COMMAND}</code>
       </pre>
       <div className="flex justify-end gap-1">
@@ -184,7 +184,7 @@ export function FeedPermission() {
 
 export function FeedUnreadable() {
   return (
-    <details className={`group border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
+    <details className={`group border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}>
       <summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-control">
         <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />2 records could
         not be read

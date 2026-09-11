@@ -35,6 +35,13 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-shell: var(--sidebar-shell);
   --color-sidebar: var(--sidebar);
+  /* Prototype surfaces form one ordered stack. Components name their elevation instead of
+     mixing semantic grays with opacity, which would create untracked intermediate shades. */
+  --color-surface-shell: var(--sidebar-shell);
+  --color-surface-panel: var(--sidebar);
+  --color-surface-canvas: var(--background);
+  --color-surface-raised: var(--card);
+  --color-surface-inset: var(--muted);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
