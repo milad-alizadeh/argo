@@ -774,7 +774,7 @@ function PrototypeSessionHeader({
         </div>
       </div>
       <div
-        className={`ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 ${showSidebar ? 'mr-20' : 'mr-10'}`}
+        className={`ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 ${showSidebar ? '' : 'mr-10'}`}
       >
         <HeaderSignal
           icon={<GitPullRequestCreate />}
