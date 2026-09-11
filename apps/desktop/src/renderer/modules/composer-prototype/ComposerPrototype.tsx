@@ -1361,8 +1361,8 @@ function ContextPopover({
       <Button
         variant="ghost"
         size="sm"
-        className="gap-1.5 px-2 text-xs font-medium"
-        aria-label={`Context ${percentage}%`}
+        className={`gap-1.5 px-2 text-xs font-medium ${zone.text}`}
+        aria-label={`Context ${formatTokenCount(used)} of ${formatTokenCount(context.total)}, ${percentage}%`}
       />
     ),
   }[appearance]
@@ -1381,7 +1381,9 @@ function ContextPopover({
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
         </svg>
-        <span>Context {percentage}%</span>
+        <span className="tabular-nums">
+          Context {(used / 1000).toFixed(0)}k / {(context.total / 1000).toFixed(0)}k · {percentage}%
+        </span>
       </>
     ),
   }[appearance]
@@ -1568,6 +1570,14 @@ function ContextSurface({
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
           <ContextPopover state={state} appearance="details" meterStyle="grayscale" />
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[50rem]:hidden">
+          <Button variant="secondary" size="icon-sm" aria-label="Compact context">
+            <Minimize2 />
+          </Button>
+          <Button variant="outline" size="icon-sm" aria-label="Handoff Session">
+            <GitFork />
+          </Button>
         </div>
         <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[50rem]:flex">
           <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
