@@ -770,7 +770,7 @@ function PrototypeSessionRoster({
         onCollapse={onCollapse}
       />
       <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-sidebar">
-        <div className="flex h-14 shrink-0 items-center px-3">
+        <div className="flex h-14 shrink-0 items-center bg-background px-3">
           <h1 className="px-2 type-heading font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
             <Button variant="ghost" size="icon-sm" aria-label="New Session">
@@ -925,7 +925,7 @@ function SessionWorkSidebar({
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-end border-b border-border/60 bg-sidebar px-3">
+      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-end border-b border-border/60 bg-background px-3">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -947,7 +947,7 @@ function SessionWorkSidebar({
       </div>
       {evidence ? (
         <div className="flex min-h-0 flex-1 flex-col bg-sidebar">
-          <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
+          <div className="flex h-11 shrink-0 items-center border-b border-border/60 bg-background px-2">
             <Button
               variant="ghost"
               size="sm"
