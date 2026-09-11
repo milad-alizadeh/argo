@@ -257,6 +257,7 @@ type PrototypeSession = {
   ticket: number
   pullRequest: { number: number; state: 'open' | 'draft' | 'merged' }
   subagents: number
+  plan: { completed: number; total: number }
   nonCachedTokens: number
   updated: string
 }
@@ -264,20 +265,23 @@ type PrototypeSession = {
 type ThemeMode = 'system' | 'light' | 'dark'
 type ProjectKey = 'argo' | 'fresco' | 'posthog'
 
+const ACTIVE_PROTOTYPE_SESSION: PrototypeSession = {
+  id: 'session-design',
+  project: 'argo',
+  title: 'Continue Session design from composer',
+  harness: 'codex',
+  status: 'running',
+  activity: 'Editing the Session shell',
+  ticket: 1258,
+  pullRequest: { number: 1931, state: 'draft' },
+  subagents: 3,
+  plan: { completed: 2, total: 5 },
+  nonCachedTokens: 148_000,
+  updated: 'now',
+}
+
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
-  {
-    id: 'session-design',
-    project: 'argo',
-    title: 'Continue Session design from composer',
-    harness: 'codex',
-    status: 'running',
-    activity: 'Editing the Session shell',
-    ticket: 1258,
-    pullRequest: { number: 1931, state: 'draft' },
-    subagents: 3,
-    nonCachedTokens: 148_000,
-    updated: 'now',
-  },
+  ACTIVE_PROTOTYPE_SESSION,
   {
     id: 'roster-feed',
     project: 'argo',
@@ -288,6 +292,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1907,
     pullRequest: { number: 1925, state: 'merged' },
     subagents: 0,
+    plan: { completed: 4, total: 5 },
     nonCachedTokens: 74_000,
     updated: '12m',
   },
@@ -301,6 +306,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1807,
     pullRequest: { number: 1918, state: 'open' },
     subagents: 1,
+    plan: { completed: 5, total: 5 },
     nonCachedTokens: 41_000,
     updated: '48m',
   },
@@ -314,6 +320,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1764,
     pullRequest: { number: 1911, state: 'draft' },
     subagents: 2,
+    plan: { completed: 2, total: 5 },
     nonCachedTokens: 96_000,
     updated: '2h',
   },
@@ -327,6 +334,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 482,
     pullRequest: { number: 503, state: 'draft' },
     subagents: 1,
+    plan: { completed: 3, total: 5 },
     nonCachedTokens: 52_000,
     updated: '26m',
   },
@@ -340,6 +348,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 29341,
     pullRequest: { number: 29402, state: 'open' },
     subagents: 2,
+    plan: { completed: 1, total: 4 },
     nonCachedTokens: 187_000,
     updated: '1h',
   },
@@ -608,8 +617,36 @@ const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], stri
 
 const formatSessionTokens = (tokens: number) => `${Math.round(tokens / 1000)}k tokens`
 
+function sessionPlanStepTone(session: PrototypeSession, step: number) {
+  if (step < session.plan.completed) {
+    return session.status === 'running' ? 'bg-foreground/70' : 'bg-muted-foreground/50'
+  }
+  if (step === session.plan.completed && session.status === 'running') {
+    return 'bg-foreground'
+  }
+  return 'bg-border'
+}
+
+function SessionPlanBar({ session }: { session: PrototypeSession }) {
+  const steps = Array.from({ length: session.plan.total }, (_, index) => index)
+  return (
+    <span
+      className="flex h-1 w-16 shrink-0 gap-px"
+      role="img"
+      aria-label={`${session.plan.completed} of ${session.plan.total} steps completed`}
+    >
+      {steps.map((step) => (
+        <span
+          key={step}
+          className={`min-w-0 flex-1 rounded-full ${sessionPlanStepTone(session, step)}`}
+        />
+      ))}
+    </span>
+  )
+}
+
 function SessionRosterRow({ session }: { session: PrototypeSession }) {
-  const selected = session.id === 'session-design'
+  const selected = session.id === ACTIVE_PROTOTYPE_SESSION.id
   return (
     <button
       type="button"
@@ -635,27 +672,23 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
             <span className="min-w-0 flex-1 truncate">{session.activity}</span>
           </span>
           <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
-            <span className="inline-flex items-center gap-1">
-              <Ticket />#{session.ticket}
-            </span>
-            <span
-              className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
-            >
-              <GitFork />#{session.pullRequest.number}
-              <span className="sr-only"> {session.pullRequest.state}</span>
-            </span>
-            {session.subagents > 0 ? (
+            <span className="shrink-0 tabular-nums">{session.updated}</span>
+            <SessionPlanBar session={session} />
+            <span className="ml-auto inline-flex min-w-0 items-center gap-2">
               <span className="inline-flex items-center gap-1">
-                <Bot />{session.subagents}
+                <Ticket />#{session.ticket}
               </span>
-            ) : null}
-            <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 tabular-nums">
-              <span>{session.updated}</span>
-              <span aria-hidden="true">·</span>
-              <span>
-                {formatSessionTokens(session.nonCachedTokens)}
-                <span className="sr-only"> excluding cache</span>
+              <span
+                className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
+              >
+                <GitFork />#{session.pullRequest.number}
+                <span className="sr-only"> {session.pullRequest.state}</span>
               </span>
+              {session.subagents > 0 ? (
+                <span className="inline-flex items-center gap-1">
+                  <Bot />{session.subagents}
+                </span>
+              ) : null}
             </span>
           </span>
         </span>
@@ -783,6 +816,11 @@ function PrototypeSessionHeader({
           >
             <Ticket />#1258
           </a>
+          <span className="h-3 w-px shrink-0 bg-border/60" aria-hidden="true" />
+          <span className="shrink-0 tabular-nums">
+            {formatSessionTokens(ACTIVE_PROTOTYPE_SESSION.nonCachedTokens)}
+            <span className="sr-only"> excluding cache</span>
+          </span>
         </div>
       </div>
       <TooltipProvider>
