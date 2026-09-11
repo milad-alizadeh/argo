@@ -930,7 +930,7 @@ function SessionWorkSidebar({
           <Button
             variant="ghost"
             size="sm"
-            className="justify-start type-label"
+            className="justify-start p-0 type-label"
             onClick={onShowActivity}
           >
             <ArrowLeft />
@@ -1265,7 +1265,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
   }, [state.attachments])
 
   return (
-    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-(--size-composer-reference-strip)' : 'h-0'}`}>
+    <div className={`w-full overflow-hidden transition-[height] duration-standard ease-emphasized will-change-[height] ${expanded ? 'h-(--size-composer-reference-strip)' : 'h-0'}`}>
       <div>
         <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) select-none p-(--spacing-composer-attachment-gutter)">
           {renderedAttachments.map((reference) => {

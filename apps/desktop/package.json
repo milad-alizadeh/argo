@@ -11,7 +11,7 @@
     "make": "node ../../scripts/node-version-gate.mjs && electron-forge make",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
-    "design:render": "node scripts/render-desktop-state.mjs",
+    "design:render": "electron scripts/render-design-page.mjs",
     "build": "bun run prove:pty --arch arm64",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.fake-drivers.json",
     "build:fake-drivers": "bun build src/core/projects/fake-driver/prove-project-contract.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/project-fake-driver/prove-project-contract.mjs && bun build src/core/projects/fake-driver/capture-cockpit.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/project-fake-driver/capture-cockpit.mjs && bun build src/core/projects/fake-driver/measure-cockpit.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/project-fake-driver/measure-cockpit.mjs && bun build src/core/sessions/fake-driver/prove-session-feed.ts --target=node --format=esm --packages=external --external=playwright-core --external=chromium-bidi --outfile=scripts/session-fake-driver/prove-session-feed.mjs",

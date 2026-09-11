@@ -4,36 +4,50 @@
   .type-title.type-title {
     font-size: var(--text-title);
     line-height: var(--text-title--line-height);
+    font-weight: var(--text-title-weight);
+    letter-spacing: var(--text-title-tracking);
   }
 
   .type-heading.type-heading {
     font-size: var(--text-heading);
     line-height: var(--text-heading--line-height);
+    font-weight: var(--text-heading-weight);
+    letter-spacing: var(--text-heading-tracking);
   }
 
   .type-body.type-body {
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
+    font-weight: var(--text-body-weight);
+    letter-spacing: var(--text-body-tracking);
   }
 
   .type-prose.type-prose {
     font-size: var(--text-prose);
     line-height: var(--text-prose--line-height);
+    font-weight: var(--text-prose-weight);
+    letter-spacing: var(--text-prose-tracking);
   }
 
   .type-label.type-label {
     font-size: var(--text-label);
     line-height: var(--text-label--line-height);
+    font-weight: var(--text-label-weight);
+    letter-spacing: var(--text-label-tracking);
   }
 
   .type-meta.type-meta {
     font-size: var(--text-meta);
     line-height: var(--text-meta--line-height);
+    font-weight: var(--text-meta-weight);
+    letter-spacing: var(--text-meta-tracking);
   }
 
   .type-code.type-code,
   .type-code-content :is(code, pre) {
     font-size: var(--text-code);
     line-height: var(--text-code--line-height);
+    font-weight: var(--text-code-weight);
+    letter-spacing: var(--text-code-tracking);
   }
 }

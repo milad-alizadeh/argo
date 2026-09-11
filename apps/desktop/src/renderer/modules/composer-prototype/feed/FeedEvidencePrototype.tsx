@@ -4,7 +4,7 @@ import { EvidenceBody } from './FeedEvidenceBody'
 
 function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
   return (
-    <section data-evidence-id={evidence.id} className="min-h-[45%] border-b border-border/60">
+    <section data-evidence-id={evidence.id} className="border-b border-border/60">
       <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
         <p className="break-words type-meta text-muted-foreground">{evidence.detail}</p>
       </header>

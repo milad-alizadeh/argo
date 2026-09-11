@@ -16,6 +16,7 @@
     "build": "turbo run build --filter=@argo/desktop",
     "build:storybook": "turbo run build:storybook",
     "design:tokens": "node scripts/design-token-mirror.mjs",
+    "render:design": "./node_modules/.bin/electron apps/desktop/scripts/render-design-page.mjs",
     "dev": "turbo run dev",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",

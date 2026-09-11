@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Argo design foundations</title>
+    <link rel="stylesheet" href="../../node_modules/@fontsource-variable/geist/index.css" />
+    <link rel="stylesheet" href="./tokens.css" />
+    <style>
+      body {
+        margin: var(--space-0);
+        background: var(--background);
+        color: var(--foreground);
+        font-family: 'Geist Variable', system-ui, sans-serif;
+      }
+
+      main {
+        display: grid;
+        gap: var(--space-8);
+        max-width: var(--size-deck);
+        margin: var(--space-0) auto;
+        padding: var(--space-8);
+      }
+
+      section {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      h1,
+      h2,
+      p {
+        margin: var(--space-0);
+      }
+
+      .token-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(var(--space-0), 1fr));
+        gap: var(--space-2);
+      }
+
+      .swatch,
+      .space-row,
+      .shape,
+      .motion-row {
+        background: var(--card);
+        border-radius: var(--radius-lg);
+      }
+
+      .swatch {
+        display: grid;
+        min-height: var(--space-10);
+        padding: var(--space-2);
+        align-content: end;
+      }
+
+      .gray-0 { background: var(--gray-0); color: var(--gray-11); }
+      .gray-1 { background: var(--gray-1); color: var(--gray-11); }
+      .gray-2 { background: var(--gray-2); color: var(--gray-11); }
+      .gray-3 { background: var(--gray-3); color: var(--gray-11); }
+      .gray-4 { background: var(--gray-4); color: var(--gray-11); }
+      .gray-5 { background: var(--gray-5); color: var(--gray-11); }
+      .gray-6 { background: var(--gray-6); color: var(--gray-0); }
+      .gray-7 { background: var(--gray-7); color: var(--gray-0); }
+      .gray-8 { background: var(--gray-8); color: var(--gray-0); }
+      .gray-9 { background: var(--gray-9); color: var(--gray-0); }
+      .gray-10 { background: var(--gray-10); color: var(--gray-0); }
+      .gray-11 { background: var(--gray-11); color: var(--gray-0); }
+
+      .type-list,
+      .space-list,
+      .shape-list,
+      .motion-list {
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      .type-row,
+      .space-row,
+      .motion-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-3);
+      }
+
+      .space-measure {
+        height: var(--space-2);
+        background: var(--foreground);
+        border-radius: var(--radius-full);
+      }
+
+      .shape-list {
+        grid-template-columns: repeat(4, minmax(var(--space-0), 1fr));
+      }
+
+      .shape {
+        min-height: var(--space-10);
+        padding: var(--space-3);
+      }
+
+      .motion-dot {
+        width: var(--space-4);
+        height: var(--space-4);
+        border-radius: var(--radius-full);
+        background: var(--primary);
+        animation: drift var(--duration-standard) var(--ease-emphasized) infinite alternate;
+      }
+
+      @keyframes drift {
+        to { transform: translateX(var(--space-6)); }
+      }
+    </style>
+  </head>
+  <body class="dark">
+    <main data-component="FoundationsScreen">
+      <section data-component="TypeFoundation">
+        <h1 class="type-title">Foundations</h1>
+        <div class="type-list">
+          <p class="type-title">Title — --text-title</p>
+          <p class="type-heading">Heading — --text-heading</p>
+          <p class="type-body">Body — --text-body</p>
+          <p class="type-prose">Prose — --text-prose</p>
+          <p class="type-label">Label — --text-label</p>
+          <p class="type-meta">Meta — --text-meta</p>
+          <p class="type-code">Code — --text-code</p>
+        </div>
+      </section>
+
+      <section data-component="ColorFoundation">
+        <h2 class="type-heading">Gray ramp</h2>
+        <div class="token-grid">
+          <div class="swatch gray-0 type-meta">--gray-0</div><div class="swatch gray-1 type-meta">--gray-1</div><div class="swatch gray-2 type-meta">--gray-2</div><div class="swatch gray-3 type-meta">--gray-3</div>
+          <div class="swatch gray-4 type-meta">--gray-4</div><div class="swatch gray-5 type-meta">--gray-5</div><div class="swatch gray-6 type-meta">--gray-6</div><div class="swatch gray-7 type-meta">--gray-7</div>
+          <div class="swatch gray-8 type-meta">--gray-8</div><div class="swatch gray-9 type-meta">--gray-9</div><div class="swatch gray-10 type-meta">--gray-10</div><div class="swatch gray-11 type-meta">--gray-11</div>
+        </div>
+      </section>
+
+      <section data-component="SpacingFoundation">
+        <h2 class="type-heading">Space scale</h2>
+        <div class="space-list">
+          <div class="space-row type-meta"><span>--space-0</span><span class="space-measure" style="width: var(--space-0)"></span></div>
+          <div class="space-row type-meta"><span>--space-0-5</span><span class="space-measure" style="width: var(--space-0-5)"></span></div>
+          <div class="space-row type-meta"><span>--space-1</span><span class="space-measure" style="width: var(--space-1)"></span></div>
+          <div class="space-row type-meta"><span>--space-1-5</span><span class="space-measure" style="width: var(--space-1-5)"></span></div>
+          <div class="space-row type-meta"><span>--space-2</span><span class="space-measure" style="width: var(--space-2)"></span></div>
+          <div class="space-row type-meta"><span>--space-2-5</span><span class="space-measure" style="width: var(--space-2-5)"></span></div>
+          <div class="space-row type-meta"><span>--space-3</span><span class="space-measure" style="width: var(--space-3)"></span></div>
+          <div class="space-row type-meta"><span>--space-4</span><span class="space-measure" style="width: var(--space-4)"></span></div>
+          <div class="space-row type-meta"><span>--space-5</span><span class="space-measure" style="width: var(--space-5)"></span></div>
+          <div class="space-row type-meta"><span>--space-6</span><span class="space-measure" style="width: var(--space-6)"></span></div>
+          <div class="space-row type-meta"><span>--space-8</span><span class="space-measure" style="width: var(--space-8)"></span></div>
+          <div class="space-row type-meta"><span>--space-10</span><span class="space-measure" style="width: var(--space-10)"></span></div>
+        </div>
+      </section>
+
+      <section data-component="ShapeFoundation">
+        <h2 class="type-heading">Radius aliases</h2>
+        <div class="shape-list type-meta">
+          <div class="shape" style="border-radius: var(--radius-sm)">--radius-sm</div>
+          <div class="shape" style="border-radius: var(--radius-md)">--radius-md</div>
+          <div class="shape" style="border-radius: var(--radius-lg)">--radius-lg</div>
+          <div class="shape" style="border-radius: var(--radius-xl)">--radius-xl</div>
+        </div>
+      </section>
+
+      <section data-component="MotionFoundation">
+        <h2 class="type-heading">Motion</h2>
+        <div class="motion-list">
+          <div class="motion-row type-meta"><span>--duration-instant</span><span>--ease-emphasized</span></div>
+          <div class="motion-row"><span class="type-meta">--duration-standard</span><span class="motion-dot"></span></div>
+        </div>
+      </section>
+    </main>
+    <script>
+      if (location.search.includes('light')) document.body.classList.remove('dark')
+    </script>
+  </body>
+</html>
