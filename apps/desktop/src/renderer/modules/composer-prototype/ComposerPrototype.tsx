@@ -259,6 +259,7 @@ type PrototypeSession = {
   ticket: number
   pullRequest: { number: number; state: 'open' | 'draft' | 'merged' }
   subagents: number
+  nonCachedTokens: number
   updated: string
 }
 
@@ -276,6 +277,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1258,
     pullRequest: { number: 1931, state: 'draft' },
     subagents: 3,
+    nonCachedTokens: 148_000,
     updated: 'now',
   },
   {
@@ -288,6 +290,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1907,
     pullRequest: { number: 1925, state: 'merged' },
     subagents: 0,
+    nonCachedTokens: 74_000,
     updated: '12m',
   },
   {
@@ -300,6 +303,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1807,
     pullRequest: { number: 1918, state: 'open' },
     subagents: 1,
+    nonCachedTokens: 41_000,
     updated: '48m',
   },
   {
@@ -312,6 +316,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 1764,
     pullRequest: { number: 1911, state: 'draft' },
     subagents: 2,
+    nonCachedTokens: 96_000,
     updated: '2h',
   },
   {
@@ -324,6 +329,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 482,
     pullRequest: { number: 503, state: 'draft' },
     subagents: 1,
+    nonCachedTokens: 52_000,
     updated: '26m',
   },
   {
@@ -336,6 +342,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     ticket: 29341,
     pullRequest: { number: 29402, state: 'open' },
     subagents: 2,
+    nonCachedTokens: 187_000,
     updated: '1h',
   },
 ]
@@ -595,6 +602,8 @@ const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], stri
   merged: 'text-violet-600 dark:text-violet-400',
 }
 
+const formatSessionTokens = (tokens: number) => `${Math.round(tokens / 1000)}k tokens`
+
 function SessionRosterRow({ session }: { session: PrototypeSession }) {
   const selected = session.id === 'session-design'
   return (
@@ -618,8 +627,15 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           <span className="block truncate text-(length:--text-body) font-medium text-foreground">
             {session.title}
           </span>
-          <span className="mt-0.5 block truncate text-(length:--text-control) text-muted-foreground">
-            {session.activity}
+          <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate">{session.activity}</span>
+            <span
+              className="inline-flex shrink-0 items-center gap-1 tabular-nums [&_svg]:size-(--size-icon-metadata)"
+            >
+              <CircleGauge />
+              {formatSessionTokens(session.nonCachedTokens)}
+              <span className="sr-only"> excluding cache</span>
+            </span>
           </span>
           <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="inline-flex items-center gap-1">
