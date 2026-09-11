@@ -501,9 +501,11 @@ function ProjectManager({
 function PrototypeProjectHeader({
   currentProject,
   onProjectChange,
+  onCollapse,
 }: {
   currentProject: ProjectKey
   onProjectChange: (project: ProjectKey) => void
+  onCollapse: () => void
 }) {
   return (
     <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center bg-sidebar px-3">
@@ -513,6 +515,15 @@ function PrototypeProjectHeader({
           onProjectChange={onProjectChange}
         />
       </div>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="no-drag-region ml-auto"
+        aria-label="Collapse Sessions sidebar"
+        onClick={onCollapse}
+      >
+        <PanelLeft />
+      </Button>
     </header>
   )
 }
@@ -741,46 +752,52 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
 
 function PrototypeSessionRoster({
   currentProject,
+  onProjectChange,
   onCollapse,
 }: {
   currentProject: ProjectKey
+  onProjectChange: (project: ProjectKey) => void
   onCollapse: () => void
 }) {
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
-      <div className="flex h-14 shrink-0 items-center px-3">
-        <h1 className="text-sm font-medium">Sessions</h1>
-        <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" aria-label="New Session">
-            <Plus />
-          </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button variant="ghost" size="icon-sm" aria-label="Find a Session" />
-                }
-              >
-                <Search />
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Find a Session · ⌘K</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button variant="ghost" size="icon-sm" aria-label="Collapse Sessions sidebar" onClick={onCollapse}>
-            <PanelLeft />
-          </Button>
+      <PrototypeProjectHeader
+        currentProject={currentProject}
+        onProjectChange={onProjectChange}
+        onCollapse={onCollapse}
+      />
+      <div className="flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border bg-background">
+        <div className="flex h-14 shrink-0 items-center px-3">
+          <h1 className="text-sm font-medium">Sessions</h1>
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="icon-sm" aria-label="New Session">
+              <Plus />
+            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button variant="ghost" size="icon-sm" aria-label="Find a Session" />
+                  }
+                >
+                  <Search />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Find a Session · ⌘K</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-        <div className="space-y-1 pt-1">
-          {sessions.map((session) => (
-            <SessionRosterRow key={session.id} session={session} />
-          ))}
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+          <div className="space-y-1 pt-1">
+            {sessions.map((session) => (
+              <SessionRosterRow key={session.id} session={session} />
+            ))}
+          </div>
         </div>
+        <RosterConcierge />
       </div>
-      <RosterConcierge />
     </aside>
   )
 }
@@ -2053,15 +2070,9 @@ export function ComposerPrototype() {
           theme={theme}
           onThemeChange={setTheme}
         />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <PrototypeProjectHeader
-          currentProject={currentProject}
-          onProjectChange={setCurrentProject}
-        />
-        <div className="min-h-0 min-w-0 flex-1">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 overflow-hidden rounded-tl-xl border-r border-b border-border bg-background"
+          className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
@@ -2082,6 +2093,7 @@ export function ComposerPrototype() {
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
+              onProjectChange={setCurrentProject}
               onCollapse={() => setSessionRosterVisible(false)}
             />
           </div>
@@ -2258,8 +2270,6 @@ export function ComposerPrototype() {
         </main>
         </ResizablePanel>
         </ResizablePanelGroup>
-        </div>
-        </div>
       </div>
     </div>
   )
