@@ -1279,7 +1279,7 @@ function ContextPopover({
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
         </svg>
-        <span>Context</span>
+        <span>Context {percentage}%</span>
       </>
     ),
   }[appearance]
