@@ -423,7 +423,7 @@ function PrototypeChrome({
   const [speakerMuted, setSpeakerMuted] = useState(false)
 
   return (
-    <header className="flex h-11 shrink-0 items-center bg-muted/50 px-3 pl-14">
+    <header className="flex h-11 shrink-0 items-center bg-muted/50 px-3 pl-16">
       <ProjectManager
         currentProject={currentProject}
         onProjectChange={onProjectChange}
