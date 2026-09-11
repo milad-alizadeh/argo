@@ -1368,6 +1368,9 @@ function ContextSurface({
   const zone = contextZone(percentage)
   const status = zone.label
   const contextAlert = state.contextPreview === 'dumb'
+  const contextStateDescription = contextAlert
+    ? 'Dumb zone. Context is crowded and performance may degrade.'
+    : 'Context has capacity. Performance should remain stable.'
 
   if (layout === 'footer') {
     return (
@@ -1410,18 +1413,21 @@ function ContextSurface({
         </div>
         <TooltipProvider>
         <div className="relative hidden min-w-28 flex-1 @[36rem]:block">
-          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} style={{ width: `${percentage}%` }} />
-            <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
-            <Tooltip>
-              <TooltipTrigger render={<button type="button" className="absolute inset-y-0 left-0 w-1/5" aria-label="About the Smart Zone" />} />
-              <TooltipContent className="max-w-none whitespace-nowrap">Smart · focused context</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger render={<button type="button" className="absolute inset-y-0 right-0 w-4/5" aria-label="About the Dumb Zone" />} />
-              <TooltipContent className="max-w-none whitespace-nowrap">Dumb · attention can weaken</TooltipContent>
-            </Tooltip>
-          </div>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
+                  aria-label={contextStateDescription}
+                >
+                  <span className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} style={{ width: `${percentage}%` }} />
+                  <span className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
+                </button>
+              }
+            />
+            <TooltipContent className="max-w-none whitespace-nowrap">{contextStateDescription}</TooltipContent>
+          </Tooltip>
         </div>
         </TooltipProvider>
         <div className="hidden shrink-0 items-center gap-1 text-xs tabular-nums @[36rem]:flex">
