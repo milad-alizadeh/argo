@@ -542,7 +542,7 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-2 text-(length:--text-control) leading-none text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
+        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-1 text-(length:--text-control) leading-none text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
       >
         <span className="grid size-6 place-items-center">
           <Settings />
