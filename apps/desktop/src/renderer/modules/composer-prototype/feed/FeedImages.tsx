@@ -84,8 +84,8 @@ function ImageLightbox({
             type="button"
             className={
               compact
-                ? 'mt-3 flex items-center gap-2 rounded-md border bg-surface-raised p-1.5 text-left type-meta'
-                : `group relative h-full shrink-0 overflow-hidden border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`
+                ? 'mt-3 flex cursor-pointer items-center gap-2 rounded-md border bg-surface-raised p-1.5 text-left type-meta'
+                : `relative h-full shrink-0 cursor-pointer overflow-hidden border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`
             }
             aria-label={`Open ${evidence.title} in lightbox`}
             onPointerDown={transition.captureSourceBounds}
@@ -103,15 +103,11 @@ function ImageLightbox({
           }
         />
         {compact ? <span className="min-w-0 flex-1 text-left">{evidence.title}</span> : null}
-        <span
-          className={
-            compact
-              ? 'ml-2 text-muted-foreground'
-              : 'absolute right-2 bottom-2 rounded-md border bg-surface-raised p-1 text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100'
-          }
-        >
-          <Expand className="!size-(--size-icon-inline)" />
-        </span>
+        {compact ? (
+          <span className="ml-2 text-muted-foreground">
+            <Expand className="!size-(--size-icon-inline)" />
+          </span>
+        ) : null}
       </DialogTrigger>
       <LightboxContent evidence={evidence} transition={transition} />
     </Dialog>
