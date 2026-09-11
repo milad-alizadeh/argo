@@ -4,8 +4,8 @@ export const SESSION_PANE_SNAP_TOLERANCE = 24
 const reachedSnapEdge = (width: number, previousWidth: number) =>
   width <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE && width < previousWidth
 
-export const shouldCloseSessionInspector = (inspectorWidth: number, previousInspectorWidth: number) =>
-  inspectorWidth > 0 && reachedSnapEdge(inspectorWidth, previousInspectorWidth)
+export const shouldCollapseSessionPane = (paneWidth: number, previousPaneWidth: number) =>
+  paneWidth > 0 && reachedSnapEdge(paneWidth, previousPaneWidth)
 
 export const shouldFullscreenSessionInspector = (feedWidth: number, previousFeedWidth: number) =>
   reachedSnapEdge(feedWidth, previousFeedWidth)
