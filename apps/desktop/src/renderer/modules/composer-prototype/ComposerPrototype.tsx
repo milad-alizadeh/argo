@@ -254,16 +254,17 @@ type PrototypeSession = {
   harness: HarnessKey
   status: 'running' | 'waiting' | 'idle'
   activity: string
-  ticket: number
-  pullRequest: { number: number; state: 'open' | 'draft' | 'merged' }
+  ticket?: number
+  pullRequest?: { number: number; state: PullRequestState }
   subagents: number
-  plan: { completed: number; total: number }
+  plan?: { completed: number; total: number }
   nonCachedTokens: number
   updated: string
 }
 
 type ThemeMode = 'system' | 'light' | 'dark'
 type ProjectKey = 'argo' | 'fresco' | 'posthog'
+type PullRequestState = 'open' | 'draft' | 'merged'
 
 const ACTIVE_PROTOTYPE_SESSION: PrototypeSession = {
   id: 'session-design',
@@ -273,7 +274,6 @@ const ACTIVE_PROTOTYPE_SESSION: PrototypeSession = {
   status: 'running',
   activity: 'Editing the Session shell',
   ticket: 1258,
-  pullRequest: { number: 1931, state: 'draft' },
   subagents: 3,
   plan: { completed: 2, total: 5 },
   nonCachedTokens: 148_000,
@@ -317,10 +317,7 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
     harness: 'claude',
     status: 'idle',
     activity: 'Reading adapter fixtures',
-    ticket: 1764,
-    pullRequest: { number: 1911, state: 'draft' },
     subagents: 2,
-    plan: { completed: 2, total: 5 },
     nonCachedTokens: 96_000,
     updated: '2h',
   },
@@ -609,13 +606,13 @@ const STATUS_STYLES: Record<PrototypeSession['status'], string> = {
   idle: 'bg-muted-foreground/45',
 }
 
-const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], string> = {
+const PULL_REQUEST_STYLES: Record<PullRequestState, string> = {
   open: 'text-emerald-600 dark:text-emerald-400',
   draft: '',
   merged: 'text-violet-600 dark:text-violet-400',
 }
 
-const PULL_REQUEST_STATE_LABELS: Record<PrototypeSession['pullRequest']['state'], string> = {
+const PULL_REQUEST_STATE_LABELS: Record<PullRequestState, string> = {
   open: 'Open',
   draft: 'Draft',
   merged: 'Merged',
@@ -624,22 +621,26 @@ const PULL_REQUEST_STATE_LABELS: Record<PrototypeSession['pullRequest']['state']
 const formatSessionTokens = (tokens: number) => `${Math.round(tokens / 1000)}k tokens`
 
 function sessionPlanStepTone(session: PrototypeSession, step: number) {
-  if (step < session.plan.completed) {
+  const plan = session.plan
+  if (!plan) return 'bg-border'
+  if (step < plan.completed) {
     return session.status === 'running' ? 'bg-foreground/70' : 'bg-muted-foreground/50'
   }
-  if (step === session.plan.completed && session.status === 'running') {
+  if (step === plan.completed && session.status === 'running') {
     return 'bg-foreground'
   }
   return 'bg-border'
 }
 
 function SessionPlanBar({ session }: { session: PrototypeSession }) {
-  const steps = Array.from({ length: session.plan.total }, (_, index) => index)
+  const plan = session.plan
+  if (!plan) return <span className="h-1 w-16 shrink-0" aria-hidden="true" />
+  const steps = Array.from({ length: plan.total }, (_, index) => index)
   return (
     <span
       className="flex h-1 w-16 shrink-0 gap-px"
       role="img"
-      aria-label={`${session.plan.completed} of ${session.plan.total} steps completed`}
+      aria-label={`${plan.completed} of ${plan.total} steps completed`}
     >
       {steps.map((step) => (
         <span
@@ -690,13 +691,17 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
             <span className="min-w-0 flex-1 truncate">{session.activity}</span>
           </span>
-          <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
+          <span className="mt-1 grid grid-cols-[2rem_4rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="shrink-0 tabular-nums">{session.updated}</span>
             <SessionPlanBar session={session} />
-            <span className="ml-auto inline-flex min-w-0 items-center gap-2">
+            {session.ticket ? (
               <span className="inline-flex items-center gap-1">
                 <Ticket />#{session.ticket}
               </span>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            {session.pullRequest ? (
               <span
                 className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
                 title={`${PULL_REQUEST_STATE_LABELS[session.pullRequest.state]} pull request #${session.pullRequest.number}`}
@@ -704,7 +709,9 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
                 <GitFork />#{session.pullRequest.number}
                 <span className="sr-only"> {session.pullRequest.state}</span>
               </span>
-            </span>
+            ) : (
+              <span aria-hidden="true" />
+            )}
           </span>
         </span>
       </span>
@@ -724,12 +731,7 @@ function PrototypeSessionRoster({
   return (
     <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-sidebar">
       <div className="flex h-14 shrink-0 items-center px-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-medium">Sessions</h1>
-          <p className="mt-1 truncate text-(length:--text-control) text-muted-foreground">
-            {sessions.length} Sessions
-          </p>
-        </div>
+        <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
