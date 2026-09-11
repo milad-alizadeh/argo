@@ -383,14 +383,14 @@ function RosterConcierge() {
         <a
           href="#/concierge"
           aria-label="Open Concierge chat"
-          className="relative mt-2 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="relative mt-2 -ml-2 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <ConciergeOrb />
           <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">
             2
           </span>
         </a>
-        <div className="min-w-0 flex-1">
+        <div className="ml-2 min-w-0 flex-1">
           <a href="#/concierge" className="block min-w-0 leading-tight">
             <span className="block truncate text-(length:--text-control) text-muted-foreground">
               “Keep the composer fixed and make the feed richer.”
@@ -1252,7 +1252,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
   return (
     <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-[4.5rem]' : 'h-0'}`}>
       <div>
-        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap overflow-x-auto select-none px-4 py-1">
+        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap overflow-x-auto select-none px-6 py-1">
           {renderedAttachments.map((reference) => {
             const remove = () =>
               setState({
@@ -2214,7 +2214,7 @@ export function ComposerPrototype() {
           </InputGroup>
               </form>
             </AnimatedHeight>
-            <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
+            <div className="relative z-0 mx-auto -mt-2 w-full max-w-4xl [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
               <ContextSurface state={state} layout="attached" />
             </div>
           </div>
