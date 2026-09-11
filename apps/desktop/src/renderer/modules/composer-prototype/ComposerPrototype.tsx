@@ -682,16 +682,21 @@ function PrototypeSessionRoster({
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
           </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button variant="ghost" size="icon-sm" aria-label="Find a Session" />
+                }
+              >
+                <Search />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Find a Session · ⌘K</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button variant="ghost" size="icon-sm" aria-label="Collapse Sessions sidebar" onClick={onCollapse}>
             <PanelLeft />
           </Button>
-        </div>
-      </div>
-      <div className="px-3 pt-2 pb-1.5">
-        <div className="flex h-7 items-center gap-2 rounded-md border border-input bg-background px-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-inline)">
-          <Search />
-          <span>Find a Session</span>
-          <span className="ml-auto inline-flex h-5 items-center rounded border border-border/60 px-1.5 text-(length:--text-control)">⌘K</span>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
