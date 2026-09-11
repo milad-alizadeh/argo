@@ -6,7 +6,6 @@ import {
   Bot,
   Check,
   ChevronDown,
-  CircleDot,
   CircleGauge,
   CircleHelp,
   Command,
@@ -843,26 +842,22 @@ function SessionWorkSidebar({
           </div>
           <div className="space-y-1">
             {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
-              <button key={label} type="button" className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-muted">
-                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-(length:--text-body) font-medium">{label}</span>
-                  <span className="block text-(length:--text-control) text-muted-foreground">
-                    Subagent {index + 1} · running
-                  </span>
+              <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-muted">
+                <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span className="truncate text-(length:--text-body) font-medium">{label}</span>
+                <span className="col-start-2 text-(length:--text-control) text-muted-foreground">
+                  Subagent {index + 1} · running
                 </span>
               </button>
             ))}
           </div>
           <div className="my-3 h-px bg-border/60" />
           <h3 className="mb-2 text-(length:--text-control) font-semibold">Shell · 1</h3>
-          <button type="button" className="flex w-full items-start gap-2 rounded-lg bg-muted/60 p-2 text-left">
-            <CircleDot className="mt-0.5 text-emerald-500" />
-            <span className="min-w-0">
-              <span className="block truncate font-mono text-(length:--text-control)">bun run dev</span>
-              <span className="mt-0.5 block text-(length:--text-control) text-muted-foreground">
-                Vite · port 5191
-              </span>
+          <button type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg bg-muted/60 p-2 text-left">
+            <span className="size-2 rounded-full border border-emerald-500" />
+            <span className="truncate font-mono text-(length:--text-control)">bun run dev</span>
+            <span className="col-start-2 mt-0.5 text-(length:--text-control) text-muted-foreground">
+              Vite · port 5191
             </span>
           </button>
           <button type="button" className="mt-3 flex items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground">
