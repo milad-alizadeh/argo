@@ -1770,7 +1770,7 @@ function TaskPlanPopover() {
   ] as const
   return (
     <Popover>
-      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full bg-surface-raised px-2.5 text-xs font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
+      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full !bg-surface-raised px-2.5 text-xs font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
         <IconLabel icon={(
           <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
             <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
@@ -2165,7 +2165,7 @@ export function ComposerPrototype() {
                 }}
               >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className={`relative z-20 overflow-hidden rounded-xl bg-surface-raised shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
+          <InputGroup className={`relative z-20 overflow-hidden rounded-xl !bg-surface-raised shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">

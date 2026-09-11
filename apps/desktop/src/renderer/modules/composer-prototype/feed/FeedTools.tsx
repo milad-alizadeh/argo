@@ -13,7 +13,7 @@ import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/mark
 import { SessionDisclosure } from '../SessionDisclosure'
 import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
 
-export const FEED_DISCLOSURE_SURFACE_CLASS = 'bg-surface-raised transition-colors hover:bg-surface-inset'
+export const FEED_DISCLOSURE_SURFACE_CLASS = '!bg-surface-raised transition-colors hover:!bg-surface-inset'
 
 type ToolRow = {
   label: string
