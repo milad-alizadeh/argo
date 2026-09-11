@@ -634,10 +634,6 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           </span>
           <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
             <span className="min-w-0 flex-1 truncate">{session.activity}</span>
-            <span className="shrink-0 tabular-nums">
-              {formatSessionTokens(session.nonCachedTokens)}
-              <span className="sr-only"> excluding cache</span>
-            </span>
           </span>
           <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="inline-flex items-center gap-1">
@@ -646,14 +642,22 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
             <span
               className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
             >
-              <GitFork />#{session.pullRequest.number} {session.pullRequest.state}
+              <GitFork />#{session.pullRequest.number}
+              <span className="sr-only"> {session.pullRequest.state}</span>
             </span>
             {session.subagents > 0 ? (
               <span className="inline-flex items-center gap-1">
                 <Bot />{session.subagents}
               </span>
             ) : null}
-            <span className="ml-auto shrink-0 tabular-nums">{session.updated}</span>
+            <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 tabular-nums">
+              <span>{session.updated}</span>
+              <span aria-hidden="true">·</span>
+              <span>
+                {formatSessionTokens(session.nonCachedTokens)}
+                <span className="sr-only"> excluding cache</span>
+              </span>
+            </span>
           </span>
         </span>
       </span>
