@@ -20,6 +20,8 @@ import {
   FolderKanban,
   GitBranch,
   GitFork,
+  GitPullRequest,
+  GitPullRequestCreate,
   GripVertical,
   Hand,
   Info,
@@ -671,14 +673,26 @@ function PrototypeSessionRoster({
   )
 }
 
-function HeaderSignal({ icon, value, tone = '' }: { icon: ReactNode; value: string; tone?: string }) {
+function HeaderSignal({
+  icon,
+  value,
+  tone = '',
+  onClick,
+}: {
+  icon: ReactNode
+  value: string
+  tone?: string
+  onClick: () => void
+}) {
   return (
-    <span
-      className={`flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-(length:--text-control) leading-none font-medium ${tone}`}
+    <button
+      type="button"
+      className={`flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-(length:--text-control) leading-none font-medium hover:bg-accent/70 focus-visible:bg-accent ${tone}`}
+      onClick={onClick}
     >
       <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
       <span className="truncate">{value}</span>
-    </span>
+    </button>
   )
 }
 
@@ -689,6 +703,8 @@ function PrototypeSessionHeader({
   showRoster: boolean
   onOpenRoster: () => void
 }) {
+  const [pullRequestCreated, setPullRequestCreated] = useState(false)
+
   return (
     <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-24 pl-4">
       {!showRoster ? (
@@ -722,9 +738,20 @@ function PrototypeSessionHeader({
         </div>
       </div>
       <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 @[52rem]:flex">
-        <HeaderSignal icon={<GitFork />} value="#1931 · Draft" tone="text-violet-600 dark:text-violet-400" />
-        <HeaderSignal icon={<Check />} value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
-        <HeaderSignal icon={<MessageSquareCode />} value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
+        <HeaderSignal
+          icon={pullRequestCreated ? <GitPullRequest /> : <GitPullRequestCreate />}
+          value={pullRequestCreated ? '#1931 · Open PR' : 'Create PR'}
+          tone={pullRequestCreated
+            ? 'text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300'
+            : 'text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300'}
+          onClick={() => setPullRequestCreated(true)}
+        />
+        <HeaderSignal
+          icon={<MessageSquareCode />}
+          value="Not reviewed"
+          tone="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+          onClick={() => undefined}
+        />
       </div>
     </header>
   )
