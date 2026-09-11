@@ -116,6 +116,7 @@ import {
   type FeedPrototypeEvidence,
   SessionFeedPrototype,
 } from './SessionFeedPrototype'
+import { SessionDisclosure } from './SessionDisclosure'
 import {
   paneContentVisibilityClass,
   SESSION_FEED_MIN_WIDTH,
@@ -772,16 +773,11 @@ function PrototypeSessionRoster({
             {sessions.map((session) => (
               <SessionRosterRow key={session.id} session={session} />
             ))}
-            <details className="group/archive border-t pt-2">
-              <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-(length:--text-control) font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground [&::-webkit-details-marker]:hidden">
-                <Archive className="size-(--size-icon-metadata)" />
-                <span>Archive</span>
-                <ChevronDown className="ml-auto size-(--size-icon-metadata) transition-transform group-open/archive:rotate-180" />
-              </summary>
+            <SessionDisclosure icon={<Archive />} label="Archive" separated>
               <p className="px-7 py-2 text-(length:--text-control) text-muted-foreground">
                 No archived Sessions
               </p>
-            </details>
+            </SessionDisclosure>
           </div>
         </div>
         <RosterConcierge />

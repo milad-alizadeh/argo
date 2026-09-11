@@ -1,6 +1,5 @@
 import {
   Check,
-  ChevronRight,
   FilePenLine,
   LoaderCircle,
   PanelRightOpen,
@@ -11,6 +10,7 @@ import {
 import type { ComponentType } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/marker'
+import { SessionDisclosure } from '../SessionDisclosure'
 import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
 
 export const FEED_DISCLOSURE_SURFACE_CLASS = 'bg-card transition-colors hover:bg-muted'
@@ -108,14 +108,8 @@ function ToolGroup({
   activeEvidenceId: string | null
 }) {
   return (
-    <details className="group rounded-lg border open:pb-1">
-      <summary
-        className={`flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2.5 text-control ${FEED_DISCLOSURE_SURFACE_CLASS}`}
-      >
-        <span className="min-w-0 text-(length:--text-body) font-medium">{title}</span>
-        <ChevronRight className="!size-(--size-icon-inline) shrink-0 text-muted-foreground group-open:rotate-90" />
-      </summary>
-      <div className="mx-2 space-y-1 border-t pt-1">
+    <SessionDisclosure icon={<SquareTerminal />} label={title}>
+      <div className="ml-6 space-y-1 pb-1">
         {sections.map((section, index) => (
           <div key={section.rows[0]?.label ?? index}>
             {section.rows.map((row) => (
@@ -129,7 +123,7 @@ function ToolGroup({
           </div>
         ))}
       </div>
-    </details>
+    </SessionDisclosure>
   )
 }
 
