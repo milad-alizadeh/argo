@@ -697,13 +697,15 @@ function HeaderSignal({
 
 function PrototypeSessionHeader({
   showRoster,
+  showSidebar,
   onOpenRoster,
 }: {
   showRoster: boolean
+  showSidebar: boolean
   onOpenRoster: () => void
 }) {
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-24 pl-4">
+    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -734,7 +736,9 @@ function PrototypeSessionHeader({
           </a>
         </div>
       </div>
-      <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 @[52rem]:flex">
+      <div
+        className={`ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 @[52rem]:flex ${showSidebar ? 'mr-20' : 'mr-10'}`}
+      >
         <HeaderSignal
           icon={<GitPullRequestCreate />}
           value="Create PR"
@@ -1954,6 +1958,7 @@ export function ComposerPrototype() {
           >
           <PrototypeSessionHeader
             showRoster={showSessionRoster}
+            showSidebar={showSessionSidebar}
             onOpenRoster={() => setSessionRosterVisible(true)}
           />
           <div className="min-h-0 flex-1">
