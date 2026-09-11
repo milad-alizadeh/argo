@@ -100,19 +100,19 @@ const SHAPES: Record<DeckScreen, { frame: string; pane: string }> = {
 }
 
 function deckScreen(destination: Destination, cockpit: Cockpit): DeckScreen {
-  switch (destination) {
-    case 'Sessions':
-      return 'sessions'
-    case 'Tickets':
-    case 'Atlas':
-    case 'Code':
-      switch (cockpit.status) {
-        case 'selected':
+  switch (cockpit.status) {
+    case 'loading':
+    case 'empty':
+    case 'refused':
+      return 'gate'
+    case 'selected':
+      switch (destination) {
+        case 'Sessions':
+          return 'sessions'
+        case 'Tickets':
+        case 'Atlas':
+        case 'Code':
           return 'prose'
-        case 'loading':
-        case 'empty':
-        case 'refused':
-          return 'gate'
       }
   }
 }
