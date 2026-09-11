@@ -689,17 +689,13 @@ function HeaderSignal({ icon, value, tone = '' }: { icon: ReactNode; value: stri
 
 function PrototypeSessionHeader({
   showRoster,
-  showInspector,
   onOpenRoster,
-  onOpenInspector,
 }: {
   showRoster: boolean
-  showInspector: boolean
   onOpenRoster: () => void
-  onOpenInspector: () => void
 }) {
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
+    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-24 pl-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -736,17 +732,6 @@ function PrototypeSessionHeader({
         <HeaderSignal icon={<Check />} value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
         <HeaderSignal icon={<MessageSquareCode />} value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
       </div>
-      {!showInspector ? (
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          className="shrink-0 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-1"
-          aria-label="Open Session inspector"
-          onClick={onOpenInspector}
-        >
-          <PanelRight />
-        </Button>
-      ) : null}
     </header>
   )
 }
@@ -755,38 +740,14 @@ function SessionWorkSidebar({
   evidence,
   onActiveEvidenceChange,
   onShowActivity,
-  fullscreen,
-  onToggleFullscreen,
-  onClose,
 }: {
   evidence: FeedPrototypeEvidence | null
   onActiveEvidenceChange: (evidenceId: string) => void
   onShowActivity: () => void
-  fullscreen: boolean
-  onToggleFullscreen: () => void
-  onClose: () => void
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-muted/20">
-      <header className="flex h-14 shrink-0 items-center justify-end gap-1 border-b border-border/60 bg-background px-3">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="motion-safe:animate-in motion-safe:fade-in motion-safe:delay-100 motion-safe:duration-200"
-          aria-label={fullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
-          onClick={onToggleFullscreen}
-        >
-          {fullscreen ? <Minimize2 /> : <Expand />}
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label="Collapse Session inspector"
-          onClick={onClose}
-        >
-          <PanelRight />
-        </Button>
-      </header>
+      <div className="h-14 shrink-0 border-b border-border/60 bg-background" aria-hidden="true" />
       {evidence ? (
         <div className="flex min-h-0 flex-1 flex-col bg-card">
           <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
@@ -1738,6 +1699,7 @@ export function ComposerPrototype() {
   const [showSessionRoster, setShowSessionRoster] = useState(true)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [sessionSidebarFullscreen, setSessionSidebarFullscreen] = useState(false)
+  const [showSessionInspectorExpand, setShowSessionInspectorExpand] = useState(true)
   const sessionRosterPanel = usePanelRef()
   const sessionRosterElement = useRef<HTMLDivElement>(null)
   const sessionRosterRestoreSize = useRef(280)
@@ -1792,7 +1754,7 @@ export function ComposerPrototype() {
     [],
   )
 
-  const animateSessionInspector = (resize: () => void) => {
+  const animateSessionInspector = (resize: () => void, onFinished?: () => void) => {
     const panelElement = sessionInspectorElement.current
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (sidebarAnimationTimer.current !== null)
@@ -1805,8 +1767,12 @@ export function ComposerPrototype() {
         panelElement?.classList.remove('session-pane-transition')
         sessionInspectorResizeAnimation.current = false
         sidebarAnimationTimer.current = null
+        onFinished?.()
       }, 240)
-    } else sessionInspectorResizeAnimation.current = false
+    } else {
+      sessionInspectorResizeAnimation.current = false
+      onFinished?.()
+    }
   }
 
   const animateSessionRoster = (resize: () => void) => {
@@ -1831,12 +1797,17 @@ export function ComposerPrototype() {
     const deferCollapse = shouldDeferSessionInspectorCollapse({ visible, fullscreen: wasFullscreen })
     sessionSidebarVisibleState.current = visible
     if (visible) {
-      animateSessionInspector(() => {
-        setSessionInspectorContentWidth(sessionInspectorRestoreSize.current)
-        sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
-      })
+      setShowSessionInspectorExpand(false)
+      animateSessionInspector(
+        () => {
+          setSessionInspectorContentWidth(sessionInspectorRestoreSize.current)
+          sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
+        },
+        () => setShowSessionInspectorExpand(true),
+      )
     } else if (deferCollapse) sessionInspectorCollapseAfterMount.current = true
     else animateSessionInspector(() => sessionInspectorPanel.current?.collapse())
+    if (!visible) setShowSessionInspectorExpand(false)
     sessionSidebarFullscreenState.current = false
     setSessionSidebarFullscreen(false)
     setShowSessionSidebar(visible)
@@ -2076,15 +2047,32 @@ export function ComposerPrototype() {
           transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
         }
           `}</style>
+          {showSessionSidebar && showSessionInspectorExpand ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="pointer-events-auto absolute top-3 right-12 z-50 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
+              aria-label={sessionSidebarFullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+              onClick={toggleSessionSidebarFullscreen}
+            >
+              {sessionSidebarFullscreen ? <Minimize2 /> : <Expand />}
+            </Button>
+          ) : null}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            className="pointer-events-auto absolute top-3 right-3 z-50"
+            aria-label={showSessionSidebar ? 'Collapse Session inspector' : 'Open Session inspector'}
+            onClick={() => setSessionSidebarVisible(!showSessionSidebar)}
+          >
+            <PanelRight />
+          </Button>
           {sessionSidebarFullscreen ? (
             <div className="min-h-0 flex-1 overflow-hidden bg-background motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
               <SessionWorkSidebar
                 evidence={feedEvidence}
                 onActiveEvidenceChange={setActiveFeedEvidenceId}
                 onShowActivity={showSessionActivity}
-                fullscreen
-                onToggleFullscreen={toggleSessionSidebarFullscreen}
-                onClose={() => setSessionSidebarVisible(false)}
               />
             </div>
           ) : (
@@ -2111,9 +2099,7 @@ export function ComposerPrototype() {
           >
           <PrototypeSessionHeader
             showRoster={showSessionRoster}
-            showInspector={showSessionSidebar}
             onOpenRoster={() => setSessionRosterVisible(true)}
-            onOpenInspector={() => setSessionSidebarVisible(true)}
           />
           <div className="min-h-0 flex-1">
             <Transcript
@@ -2228,9 +2214,6 @@ export function ComposerPrototype() {
                   evidence={feedEvidence}
                   onActiveEvidenceChange={setActiveFeedEvidenceId}
                   onShowActivity={showSessionActivity}
-                  fullscreen={false}
-                  onToggleFullscreen={toggleSessionSidebarFullscreen}
-                  onClose={() => setSessionSidebarVisible(false)}
                 />
             </div>
           </ResizablePanel>
