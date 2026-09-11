@@ -1,7 +1,6 @@
-import { Check, FilePenLine, PanelRightOpen, Search, SquareTerminal, Wrench } from 'lucide-react'
+import { Check, FilePenLine, Search, SquareTerminal, TerminalIcon, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { TaskItem } from '@/components/ai-elements/task'
-import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
 import { FeedDisclosure } from './FeedDisclosure'
 
@@ -71,18 +70,17 @@ export function FeedToolLine({
   const evidence = FEED_EVIDENCE[row.evidence]
   const active = activeEvidenceId === evidence.id
   return (
-    <Button
-      variant="ghost"
+    <button
+      type="button"
       onClick={() => onOpen(evidence)}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
-      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-(length:--text-control) font-normal ${active ? 'bg-surface-inset text-foreground' : ''}`}
+      className={`flex w-full items-center gap-2 py-2 text-left text-(length:--text-control) text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
     >
-      <row.icon className="!size-(--size-icon-inline) text-muted-foreground" />
+      <row.icon className="!size-(--size-icon-inline) shrink-0 text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
       {row.detail && <ToolRowDetail detail={row.detail} />}
-      <PanelRightOpen className="ml-auto !size-(--size-icon-inline) shrink-0 text-muted-foreground" />
-    </Button>
+    </button>
   )
 }
 
@@ -98,7 +96,7 @@ function ToolGroup({
   activeEvidenceId: string | null
 }) {
   return (
-    <FeedDisclosure icon={SquareTerminal} label={title}>
+    <FeedDisclosure icon={TerminalIcon} label={title}>
       {sections.flatMap((section) =>
         section.rows.map((row) => (
           <TaskItem key={row.label} className="text-(length:--text-control)">

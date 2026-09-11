@@ -23,7 +23,9 @@ export function FeedDisclosure({
         <span className="min-w-0 truncate">{label}</span>
         <ChevronDownIcon className="!size-(--size-icon-inline) transition-transform group-data-[state=open]:rotate-180" />
       </TaskTrigger>
-      <TaskContent className="[&>div]:mt-2 [&>div]:space-y-2">{children}</TaskContent>
+      <TaskContent className="[&>div]:mt-2 [&>div]:ml-1.5 [&>div]:space-y-2">
+        {children}
+      </TaskContent>
     </Task>
   )
 }
