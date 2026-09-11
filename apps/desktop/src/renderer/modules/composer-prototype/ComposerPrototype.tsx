@@ -582,7 +582,7 @@ function PrototypeRail({
   return (
     <nav
       aria-label="Main navigation"
-      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-sidebar [&_svg]:size-(--size-icon-control)"
+      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-sidebar-rail [&_svg]:size-(--size-icon-control)"
     >
       <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0">
         {!showsNativeTrafficLights ? (
@@ -747,7 +747,7 @@ function PrototypeSessionRoster({
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-background">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-sidebar">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="px-2 text-sm font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
