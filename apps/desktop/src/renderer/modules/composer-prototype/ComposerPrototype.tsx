@@ -812,10 +812,10 @@ function SessionWorkSidebar({
   onShowActivity: () => void
 }) {
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-muted/20">
-      <div className="h-14 shrink-0 border-b border-border/60 bg-background" aria-hidden="true" />
+    <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
+      <div className="h-14 shrink-0 border-b border-border/60 bg-sidebar" aria-hidden="true" />
       {evidence ? (
-        <div className="flex min-h-0 flex-1 flex-col bg-card">
+        <div className="flex min-h-0 flex-1 flex-col bg-sidebar">
           <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
             <Button
               variant="ghost"

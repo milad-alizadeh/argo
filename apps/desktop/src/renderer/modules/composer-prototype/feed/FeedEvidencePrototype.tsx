@@ -54,7 +54,7 @@ export function FeedEvidencePrototype({
 
   return (
     <section
-      className="flex h-full min-h-0 w-full flex-col bg-card"
+      className="flex h-full min-h-0 w-full flex-col bg-sidebar"
       aria-label="Command and file inspector"
       data-component="FeedEvidence"
     >
