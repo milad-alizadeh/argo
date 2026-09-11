@@ -2114,8 +2114,10 @@ export function ComposerPrototype() {
             />
           </div>
           <div className="relative shrink-0 bg-background px-6 pt-6 pb-8">
-            <div className="mx-auto mb-2 w-full max-w-4xl">
-              <FeedPermission />
+            <div className="mx-auto mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]">
+              <div className="mx-auto w-[calc(100%-0.5rem)]">
+                <FeedPermission />
+              </div>
             </div>
             <div className="composer-queue-stack mx-auto w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
