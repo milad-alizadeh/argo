@@ -1,5 +1,6 @@
-import { Check, ChevronDown, ChevronRight, ShieldQuestion } from 'lucide-react'
+import { Check, ChevronDown, FileWarning, ShieldQuestion } from 'lucide-react'
 import { useState } from 'react'
+import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -172,18 +173,21 @@ export function FeedPermission() {
 
 export function FeedUnreadable() {
   return (
-    <details className={`group border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 p-3 type-label">
-        <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />2 records could
-        not be read
-        <span className="ml-auto text-muted-foreground">View source</span>
-      </summary>
-      <pre className="max-h-40 overflow-auto border-t p-3 font-mono type-code">
-        {
-          '{"type":"assistant","message":\n[record ends unexpectedly]\n\nThe next readable record continues below.'
-        }
-      </pre>
-    </details>
+    <CollapsibleText
+      icon={FileWarning}
+      title={
+        <>
+          2 records could not be read <span className="ml-2">View source</span>
+        </>
+      }
+      content={
+        <pre className="max-h-40 overflow-auto font-mono type-code">
+          {
+            '{"type":"assistant","message":\n[record ends unexpectedly]\n\nThe next readable record continues below.'
+          }
+        </pre>
+      }
+    />
   )
 }
 
