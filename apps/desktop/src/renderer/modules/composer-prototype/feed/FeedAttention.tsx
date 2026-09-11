@@ -19,6 +19,7 @@ import {
   QuestionnaireSubmit,
   QuestionnaireTitle,
 } from '@/renderer/components/ui/questionnaire'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 
 const CONCIERGE_QUESTION = {
   name: 'concierge-placement',
@@ -61,7 +62,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   return (
     <Questionnaire
       items={[CONCIERGE_QUESTION]}
-      className="rounded-lg border bg-card p-4"
+      className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`}
       data-component="FeedStructuredQuestion"
       onSubmit={(event) => {
         event.preventDefault()
@@ -128,7 +129,7 @@ export function FeedPermission() {
     )
   return (
     <section
-      className="space-y-2 rounded-lg border bg-card/90 px-3 py-2.5 shadow-lg shadow-foreground/5 backdrop-blur-sm"
+      className={`space-y-2 border bg-card/90 px-3 py-2.5 shadow-lg shadow-foreground/5 backdrop-blur-sm ${FEED_CARD_RADIUS_CLASS}`}
       aria-labelledby="feed-permission-title"
       data-component="FeedPermission"
     >
@@ -183,7 +184,7 @@ export function FeedPermission() {
 
 export function FeedUnreadable() {
   return (
-    <details className="group rounded-lg border bg-card">
+    <details className={`group border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
       <summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-control">
         <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />2 records could
         not be read
@@ -200,7 +201,7 @@ export function FeedUnreadable() {
 
 export function FeedExpiredPermission() {
   return (
-    <Alert variant="destructive">
+    <Alert variant="destructive" className={FEED_CARD_RADIUS_CLASS}>
       <ShieldQuestion className="!size-(--size-icon-control)" />
       <AlertTitle className="text-control">Permission expired</AlertTitle>
       <AlertDescription className="text-control">
