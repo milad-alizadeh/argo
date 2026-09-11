@@ -593,7 +593,7 @@ function PrototypeRail({
           </div>
         ) : null}
       </div>
-      <div className="flex flex-col items-center gap-2 pt-3">
+      <div className="flex flex-col items-center gap-2">
         {RAIL_ITEMS.map((item) => (
           <div key={item.label} className="flex flex-col items-center gap-1 text-[10px] leading-none">
             <button
