@@ -120,11 +120,10 @@ import {
 import {
   restoreWidthAfterFullscreenSnap,
   SESSION_PANE_MIN_WIDTH,
-  SESSION_PANE_SNAP_TOLERANCE,
-  shouldCollapseSessionPane,
+  SESSION_PANE_SNAP_WIDTH,
   shouldDeferSessionInspectorCollapse,
-  shouldFullscreenSessionInspector,
   shouldRememberSessionInspectorWidth,
+  shouldSnapSessionPane,
 } from './sessionPaneResize'
 
 type HarnessKey = 'codex' | 'claude'
@@ -1853,19 +1852,19 @@ export function ComposerPrototype() {
 
   const handleSessionRosterResize = (rosterWidth: number, previousRosterWidth: number) => {
     if (!showSessionRoster) return
-    if (shouldCollapseSessionPane(rosterWidth, previousRosterWidth)) {
+    if (shouldSnapSessionPane(rosterWidth, previousRosterWidth)) {
       setShowSessionRoster(false)
       animateSessionRoster(() => sessionRosterPanel.current?.collapse())
       return
     }
     if (rosterWidth > 0 && !sessionRosterResizeAnimation.current)
-      setSessionRosterContentWidth(rosterWidth)
+      setSessionRosterContentWidth(Math.max(rosterWidth, SESSION_PANE_MIN_WIDTH))
   }
 
   const rememberCompletedSessionRosterSplit = (isUserInteraction: boolean) => {
     if (!showSessionRoster || !isUserInteraction) return
     const rosterWidth = sessionRosterPanel.current?.getSize().inPixels ?? 0
-    if (rosterWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE) return
+    if (rosterWidth <= SESSION_PANE_SNAP_WIDTH) return
     sessionRosterRestoreSize.current = rosterWidth
     setSessionRosterContentWidth(rosterWidth)
   }
@@ -1878,7 +1877,7 @@ export function ComposerPrototype() {
 
   const handleSessionConversationResize = (conversationWidth: number, previousWidth: number) => {
     if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
-    if (shouldFullscreenSessionInspector(conversationWidth, previousWidth)) {
+    if (shouldSnapSessionPane(conversationWidth, previousWidth)) {
       const inspectorWidthAtSnap = sessionInspectorPanel.current?.getSize().inPixels ?? 0
       const restoreWidth = restoreWidthAfterFullscreenSnap({
         currentRestoreWidth: sessionInspectorRestoreSize.current,
@@ -1894,7 +1893,7 @@ export function ComposerPrototype() {
 
   const handleSessionSidebarResize = (sidebarWidth: number, previousSidebarWidth: number) => {
     if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
-    if (shouldCollapseSessionPane(sidebarWidth, previousSidebarWidth)) {
+    if (shouldSnapSessionPane(sidebarWidth, previousSidebarWidth)) {
       sessionInspectorCollapsePending.current = true
       sessionSidebarVisibleState.current = false
       sessionSidebarFullscreenState.current = false
@@ -1903,7 +1902,7 @@ export function ComposerPrototype() {
       return
     }
     if (sidebarWidth > 0 && !sessionInspectorResizeAnimation.current)
-      setSessionInspectorContentWidth(sidebarWidth)
+      setSessionInspectorContentWidth(Math.max(sidebarWidth, SESSION_PANE_MIN_WIDTH))
   }
 
   const rememberCompletedSessionSplit = (isUserInteraction: boolean) => {
@@ -2002,7 +2001,7 @@ export function ComposerPrototype() {
           collapsible
           collapsedSize={0}
           defaultSize={280}
-          minSize={SESSION_PANE_MIN_WIDTH}
+          minSize={SESSION_PANE_SNAP_WIDTH}
           maxSize={400}
           groupResizeBehavior="preserve-pixel-size"
           onResize={(size, _id, previousSize) => {
@@ -2090,7 +2089,7 @@ export function ComposerPrototype() {
           <ResizablePanel
             id="session-conversation"
             panelRef={sessionConversationPanel}
-            minSize={SESSION_PANE_MIN_WIDTH}
+            minSize={SESSION_PANE_SNAP_WIDTH}
             onResize={(size, _id, previousSize) => {
               if (previousSize?.inPixels !== undefined)
                 handleSessionConversationResize(size.inPixels, previousSize.inPixels)
@@ -2200,7 +2199,7 @@ export function ComposerPrototype() {
             collapsible
             collapsedSize={0}
             defaultSize={sessionInspectorRestoreSize.current}
-            minSize={SESSION_PANE_MIN_WIDTH}
+            minSize={SESSION_PANE_SNAP_WIDTH}
             maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
             onResize={(size, _id, previousSize) => {
