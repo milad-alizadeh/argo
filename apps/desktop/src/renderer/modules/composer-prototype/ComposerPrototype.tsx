@@ -664,24 +664,11 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
       }`}
     >
       <span className="flex items-start gap-2">
-        <span className="flex w-4 shrink-0 flex-col items-center gap-0.5">
-          <span className="relative flex h-5 items-center">
-            <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
-            <span
-              className={`absolute -right-0.5 bottom-0 size-1.5 rounded-full ring-2 ring-sidebar ${STATUS_STYLES[session.status]}`}
-            />
-          </span>
-          {session.subagents > 0 ? (
-            <span
-              className="flex flex-col items-center gap-0.5"
-              role="img"
-              aria-label={`${session.subagents} running subagents`}
-            >
-              {Array.from({ length: Math.min(session.subagents, 5) }, (_, index) => (
-                <span key={index} className="size-0.75 rounded-full bg-emerald-500" />
-              ))}
-            </span>
-          ) : null}
+        <span className="relative flex h-5 w-4 shrink-0 items-center">
+          <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
+          <span
+            className={`absolute -right-0.5 bottom-0 size-1.5 rounded-full ring-2 ring-sidebar ${STATUS_STYLES[session.status]}`}
+          />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-(length:--text-body) leading-5 font-medium text-foreground">
@@ -707,6 +694,11 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
                 <span className="sr-only"> {session.pullRequest.state}</span>
               </span>
             ) : null}
+            {session.subagents > 0 ? (
+              <span className="inline-flex items-center gap-1" title={`${session.subagents} subagents`}>
+                <Bot />{session.subagents}
+              </span>
+            ) : null}
           </span>
         </span>
       </span>
@@ -724,7 +716,7 @@ function PrototypeSessionRoster({
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
-    <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-sidebar">
+    <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
       <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
