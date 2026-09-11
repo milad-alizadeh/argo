@@ -801,11 +801,9 @@ function PrototypeSessionHeader({
 
 function SessionWorkSidebar({
   evidence,
-  onActiveEvidenceChange,
   onShowActivity,
 }: {
   evidence: FeedPrototypeEvidence | null
-  onActiveEvidenceChange: (evidenceId: string) => void
   onShowActivity: () => void
 }) {
   return (
@@ -825,10 +823,7 @@ function SessionWorkSidebar({
             </Button>
           </div>
           <div className="min-h-0 flex-1">
-            <FeedEvidencePrototype
-              evidence={evidence}
-              onActiveEvidenceChange={onActiveEvidenceChange}
-            />
+            <FeedEvidencePrototype evidence={evidence} />
           </div>
         </div>
       ) : (
@@ -2149,7 +2144,6 @@ export function ComposerPrototype() {
             >
                 <SessionWorkSidebar
                   evidence={feedEvidence}
-                  onActiveEvidenceChange={setActiveFeedEvidenceId}
                   onShowActivity={showSessionActivity}
                 />
             </div>
