@@ -548,7 +548,7 @@ function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChan
                   aria-current={item.active ? 'page' : undefined}
                   className={`grid size-9 place-items-center rounded-lg transition-colors ${
                     item.active
-                      ? 'bg-background text-foreground shadow-sm ring-1 ring-border/70'
+                      ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
                       : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
                   }`}
                 />
