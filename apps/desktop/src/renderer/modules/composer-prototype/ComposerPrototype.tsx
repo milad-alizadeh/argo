@@ -2141,13 +2141,13 @@ export function ComposerPrototype() {
             />
           </div>
           <div className="relative shrink-0 bg-background px-4 pt-6 pb-8">
-            <div className="pointer-events-none absolute inset-x-4 bottom-full z-20 -mb-6">
-              <div className={`pointer-events-auto mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}>
+            <div className="pointer-events-none absolute inset-x-4 bottom-full -mb-6">
+              <div className={`pointer-events-auto relative z-20 mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}>
                 <div className="mx-auto w-full">
                   <FeedPermission />
                 </div>
               </div>
-              <div className={`composer-queue-stack pointer-events-auto mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}>
+              <div className={`composer-queue-stack pointer-events-auto relative z-0 mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}>
                 <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
               </div>
             </div>

@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from '@/renderer/components/ui/dialog'
 import { FEED_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 import { useImageLightboxTransition } from './imageLightboxTransition'
 
 function LightboxContent({
@@ -84,7 +85,7 @@ function ImageLightbox({
             className={
               compact
                 ? 'mt-3 flex items-center gap-2 rounded-md border bg-background p-1.5 text-left text-control'
-                : 'group relative h-full shrink-0 overflow-hidden rounded-lg border bg-card'
+                : `group relative h-full shrink-0 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`
             }
             aria-label={`Open ${evidence.title} in lightbox`}
             onPointerDown={transition.captureSourceBounds}
@@ -128,7 +129,7 @@ export function FeedImages() {
 
 export function FeedMissingImage() {
   return (
-    <figure className="aspect-4/3 w-52 overflow-hidden rounded-lg border bg-card">
+    <figure className={`aspect-4/3 w-52 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-card text-muted-foreground">
         <ImageOff className="!size-(--size-icon-control)" />
         <p className="text-control">Image unavailable</p>

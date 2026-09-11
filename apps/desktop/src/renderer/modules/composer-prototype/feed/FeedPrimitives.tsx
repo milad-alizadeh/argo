@@ -5,6 +5,7 @@ import { Button } from '@/renderer/components/ui/button'
 import { Marker, MarkerContent } from '@/renderer/components/ui/marker'
 import { Message, MessageContent, MessageHeader } from '@/renderer/components/ui/message'
 import { CodeLanguageIcon, codeLanguageLabel, detectCodeLanguage } from './CodeLanguageIcon'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 
 export function FeedBoundary({ children }: { children: ReactNode }) {
   return (
@@ -128,7 +129,7 @@ export function FeedCode({ source, language }: { source: string; language?: stri
   const detectedLanguage = detectCodeLanguage(source, language)
   const languageLabel = codeLanguageLabel(detectedLanguage)
   return (
-    <figure className="min-w-0 overflow-hidden rounded-lg border bg-card">
+    <figure className={`min-w-0 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
       <figcaption className="flex items-center justify-between border-b px-3 py-1.5 text-control text-muted-foreground">
         <span
           role="img"

@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction, MERMAID_SOURCE } from './evidence'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 
 export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
   return (
@@ -51,7 +52,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
   const [scale, setScale] = useState(100)
   return (
     <figure
-      className="overflow-hidden rounded-lg border border-border bg-card"
+      className={`overflow-hidden border border-border bg-card ${FEED_CARD_RADIUS_CLASS}`}
       data-component="FeedMermaid"
     >
       <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 text-control">
@@ -115,7 +116,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
 
 export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
   return (
-    <figure className="overflow-hidden rounded-lg border border-border bg-card">
+    <figure className={`overflow-hidden border border-border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
       <figcaption className="border-b border-border/60 px-3 py-2 text-control">
         Mermaid · {loading ? 'Loading' : 'Could not render'}
       </figcaption>

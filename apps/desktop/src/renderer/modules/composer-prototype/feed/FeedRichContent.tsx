@@ -2,6 +2,7 @@ import { COMPOSER_CODE, FEED_EVIDENCE, type FeedEvidenceAction } from './evidenc
 import { FeedDiagram } from './FeedDiagram'
 import { FeedImages } from './FeedImages'
 import { FeedCode, FeedTurn } from './FeedPrimitives'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 import { FeedEvidenceLink } from './FeedTools'
 
 export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
@@ -84,7 +85,7 @@ function FeedResultsTable() {
     { case: 'Narrow window', result: 'Controls stay visible', status: 'Passed' },
   ]
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className={`overflow-x-auto border ${FEED_CARD_RADIUS_CLASS}`}>
       <table className="w-full text-left text-control">
         <caption className="sr-only">Composer layout checks</caption>
         <thead className="bg-muted">
