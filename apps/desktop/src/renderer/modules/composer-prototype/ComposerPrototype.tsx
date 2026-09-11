@@ -503,7 +503,7 @@ function PrototypeChrome({
   onProjectChange: (project: ProjectKey) => void
 }) {
   return (
-    <header className="flex h-11 shrink-0 items-center bg-muted/50 px-3 pl-16">
+    <header className="flex h-11 shrink-0 items-center px-3 pl-16">
       <ProjectManager
         currentProject={currentProject}
         onProjectChange={onProjectChange}
@@ -557,7 +557,7 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
 
 function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
-    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
+    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
       <TooltipProvider>
         <div className="flex flex-col gap-3">
           {RAIL_ITEMS.map((item) => (
@@ -1900,7 +1900,7 @@ export function ComposerPrototype() {
 
   return (
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/50">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <PrototypeChrome
           currentProject={currentProject}
           onProjectChange={setCurrentProject}
