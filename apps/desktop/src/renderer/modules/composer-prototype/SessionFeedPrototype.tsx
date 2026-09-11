@@ -21,8 +21,8 @@ function FeedSkillInvocation({
   const active = activeEvidenceId === evidence.id
   return (
     <Button
-      variant="ghost"
-      className={`h-8 w-fit max-w-full justify-start gap-1.5 px-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+      variant="outline"
+      className={`h-8 w-fit max-w-full justify-start gap-1.5 px-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : 'bg-card text-muted-foreground'}`}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
       onClick={() => onOpen(evidence)}
