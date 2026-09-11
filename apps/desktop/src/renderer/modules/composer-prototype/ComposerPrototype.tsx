@@ -26,6 +26,7 @@ import {
   Layers3,
   ListTodo,
   Map as MapIcon,
+  MessageSquareCode,
   Mic,
   MicOff,
   Minimize2,
@@ -672,14 +673,13 @@ function PrototypeSessionRoster({
   )
 }
 
-function HeaderSignal({ icon, label, value, tone = '' }: { icon: ReactNode; label: string; value: string; tone?: string }) {
+function HeaderSignal({ icon, value, tone = '' }: { icon: ReactNode; value: string; tone?: string }) {
   return (
-    <span className="flex min-w-0 items-center gap-1.5 px-2.5 py-1.5">
-      <span className="text-muted-foreground [&_svg]:size-(--size-icon-inline)">{icon}</span>
-      <span className="min-w-0">
-        <span className="block text-[9px] leading-none text-muted-foreground">{label}</span>
-        <span className={`mt-1 block truncate text-[10px] leading-none font-medium ${tone}`}>{value}</span>
-      </span>
+    <span
+      className={`flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-(length:--text-control) leading-none font-medium ${tone}`}
+    >
+      <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
+      <span className="truncate">{value}</span>
     </span>
   )
 }
@@ -729,9 +729,9 @@ function PrototypeSessionHeader({
         </div>
       </div>
       <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 @[52rem]:flex">
-        <HeaderSignal icon={<GitFork />} label="Pull request" value="#1931 · Draft" tone="text-violet-600 dark:text-violet-400" />
-        <HeaderSignal icon={<Check />} label="Implementation" value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
-        <HeaderSignal icon={<FileCheck2 />} label="Code review" value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
+        <HeaderSignal icon={<GitFork />} value="#1931 · Draft" tone="text-violet-600 dark:text-violet-400" />
+        <HeaderSignal icon={<Check />} value="Ready for PR" tone="text-emerald-600 dark:text-emerald-400" />
+        <HeaderSignal icon={<MessageSquareCode />} value="Not reviewed" tone="text-amber-600 dark:text-amber-400" />
       </div>
       {!showInspector ? (
         <Button
