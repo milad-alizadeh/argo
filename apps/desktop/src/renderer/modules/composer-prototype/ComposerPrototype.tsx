@@ -20,7 +20,6 @@ import {
   FolderKanban,
   GitBranch,
   GitFork,
-  GitPullRequest,
   GitPullRequestCreate,
   GripVertical,
   Hand,
@@ -703,8 +702,6 @@ function PrototypeSessionHeader({
   showRoster: boolean
   onOpenRoster: () => void
 }) {
-  const [pullRequestCreated, setPullRequestCreated] = useState(false)
-
   return (
     <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-24 pl-4">
       {!showRoster ? (
@@ -739,12 +736,10 @@ function PrototypeSessionHeader({
       </div>
       <div className="ml-auto hidden shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 @[52rem]:flex">
         <HeaderSignal
-          icon={pullRequestCreated ? <GitPullRequest /> : <GitPullRequestCreate />}
-          value={pullRequestCreated ? '#1931 · Open PR' : 'Create PR'}
-          tone={pullRequestCreated
-            ? 'text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300'
-            : 'text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300'}
-          onClick={() => setPullRequestCreated(true)}
+          icon={<GitPullRequestCreate />}
+          value="Create PR"
+          tone="text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+          onClick={() => undefined}
         />
         <HeaderSignal
           icon={<MessageSquareCode />}
