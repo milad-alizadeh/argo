@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  paneContentVisibilityClass,
   restoreWidthAfterFullscreenSnap,
   shouldDeferSessionInspectorCollapse,
   shouldRememberSessionInspectorWidth,
   shouldSnapSessionPane,
 } from './sessionPaneResize'
+
+test('a snapped pane keeps its fixed-width content visible until clipping closes it', () => {
+  assert.equal(paneContentVisibilityClass(false), 'pointer-events-none')
+})
 
 test('closing after a left snap reopens with the feed at its minimum width', () => {
   assert.equal(

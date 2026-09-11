@@ -2,6 +2,8 @@ export const SESSION_PANE_MIN_WIDTH = 216
 export const SESSION_PANE_SNAP_OFFSET = 24
 export const SESSION_PANE_SNAP_WIDTH = SESSION_PANE_MIN_WIDTH - SESSION_PANE_SNAP_OFFSET
 
+export const paneContentVisibilityClass = (visible: boolean) => visible ? '' : 'pointer-events-none'
+
 export const shouldSnapSessionPane = (width: number, previousWidth: number) =>
   width > 0 && width <= SESSION_PANE_SNAP_WIDTH && width < previousWidth
 
