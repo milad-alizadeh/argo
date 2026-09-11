@@ -434,74 +434,68 @@ function PrototypeChrome({
         currentProject={currentProject}
         onProjectChange={onProjectChange}
       />
-      <Popover>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto gap-2 px-2"
-              aria-label="Open Concierge chat"
-            />
-          }
-        >
-          <span className="min-w-0 max-w-72 text-right leading-tight">
-            <span className="block truncate text-(length:--text-control) text-muted-foreground">
-              “Keep the composer fixed and make the feed richer.”
-            </span>
-            <span className="block truncate text-(length:--text-control) font-medium text-foreground">
-              I’m updating the prototype now.
-            </span>
-          </span>
-          <span className="relative shrink-0">
-            <ConciergeOrb compact />
-            <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">2</span>
-          </span>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-72 gap-3 p-3">
-          <PopoverHeader>
-            <PopoverTitle className="flex items-center gap-2 text-xs">
-              Concierge
-              <span className="ml-auto inline-flex items-center gap-1 text-(length:--text-control) font-normal text-muted-foreground">
-                <span
-                  className={`size-1.5 rounded-full ${microphoneMuted ? 'bg-muted-foreground' : 'bg-emerald-500'}`}
+      <div className="ml-auto flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-pressed={microphoneMuted}
+                  aria-label={microphoneMuted ? 'Unmute Concierge microphone' : 'Mute Concierge microphone'}
+                  onClick={() => setMicrophoneMuted(!microphoneMuted)}
                 />
-                {microphoneMuted ? 'Mic muted' : 'Listening'}
-              </span>
-            </PopoverTitle>
-            <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
-          </PopoverHeader>
-          <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-(length:--text-body) leading-relaxed">
-            <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
-            <p>I’m updating the prototype now.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant={microphoneMuted ? 'secondary' : 'outline'}
-              size="sm"
-              aria-pressed={microphoneMuted}
-              onClick={() => setMicrophoneMuted(!microphoneMuted)}
+              }
             >
               {microphoneMuted ? <MicOff /> : <Mic />}
-              {microphoneMuted ? 'Mic muted' : 'Mute mic'}
-            </Button>
-            <Button
-              type="button"
-              variant={speakerMuted ? 'secondary' : 'outline'}
-              size="sm"
-              aria-pressed={speakerMuted}
-              onClick={() => setSpeakerMuted(!speakerMuted)}
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {microphoneMuted ? 'Unmute microphone' : 'Mute microphone'}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-pressed={speakerMuted}
+                  aria-label={speakerMuted ? 'Unmute Concierge sound' : 'Mute Concierge sound'}
+                  onClick={() => setSpeakerMuted(!speakerMuted)}
+                />
+              }
             >
               {speakerMuted ? <VolumeX /> : <Volume2 />}
-              {speakerMuted ? 'Sound muted' : 'Mute sound'}
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" className="flex-1">Open chat</Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {speakerMuted ? 'Unmute sound' : 'Mute sound'}
+            </TooltipContent>
+          </Tooltip>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 px-2"
+            aria-label="Open Concierge chat"
+            render={<a href="#/concierge" />}
+          >
+            <span className="min-w-0 max-w-72 text-right leading-tight">
+              <span className="block truncate text-(length:--text-control) text-muted-foreground">
+                “Keep the composer fixed and make the feed richer.”
+              </span>
+              <span className="block truncate text-(length:--text-control) font-medium text-foreground">
+                I’m updating the prototype now.
+              </span>
+            </span>
+            <span className="relative shrink-0">
+              <ConciergeOrb compact />
+              <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">2</span>
+            </span>
+          </Button>
+        </TooltipProvider>
+      </div>
     </header>
   )
 }
