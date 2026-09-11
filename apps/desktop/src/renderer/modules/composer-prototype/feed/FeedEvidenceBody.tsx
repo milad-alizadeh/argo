@@ -9,6 +9,7 @@ import {
 import type { FeedPrototypeEvidence } from './evidence'
 import { DiagramDrawing } from './FeedDiagram'
 import { FeedCode } from './FeedPrimitives'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 
 export function EvidenceKindIcon({ kind }: { kind: FeedPrototypeEvidence['kind'] }) {
   switch (kind) {
@@ -98,7 +99,11 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
       return <FeedCode source={evidence.source} />
     case 'output':
       return (
-        <Terminal output={evidence.source} aria-label={evidence.title}>
+        <Terminal
+          output={evidence.source}
+          aria-label={evidence.title}
+          className={FEED_CARD_RADIUS_CLASS}
+        >
           <TerminalHeader>
             <TerminalTitle className="type-meta" />
             <TerminalCopyButton />

@@ -468,7 +468,7 @@ function ProjectManager({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 px-2 type-label"
+            className="gap-1.5 px-2 type-body"
             aria-label={`Current Project: ${currentProject}`}
           />
         }
@@ -2087,9 +2087,7 @@ export function ComposerPrototype() {
           className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-canvas"
           data-prototype="composer"
           onPointerDownCapture={() => setKeyboardFocus(false)}
-          onKeyDownCapture={(event) => {
-            if (event.key === 'Tab') setKeyboardFocus(true)
-          }}
+          onKeyDownCapture={() => setKeyboardFocus(true)}
         >
           <style>{`
         @keyframes composer-queue-enter {
@@ -2165,7 +2163,7 @@ export function ComposerPrototype() {
                 }}
               >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className={`relative z-20 overflow-hidden rounded-xl !bg-surface-raised shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
+          <InputGroup className={`relative z-20 overflow-hidden rounded-xl !bg-surface-raised shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : '[&:has(textarea:focus-visible)]:!border-input [&:has(textarea:focus-visible)]:!ring-0'}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">

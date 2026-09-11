@@ -12,6 +12,7 @@ import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Marker, MarkerContent } from '@/renderer/components/ui/marker'
 import { Message, MessageContent, MessageHeader } from '@/renderer/components/ui/message'
 import { CodeLanguageIcon, codeLanguageLabel, detectCodeLanguage } from './CodeLanguageIcon'
+import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 
 export function FeedBoundary({ children }: { children: ReactNode }) {
   return (
@@ -59,7 +60,7 @@ export function FeedCode({ source, language }: { source: string; language?: stri
     <CodeBlock
       code={source}
       language={highlightedLanguage}
-      className="type-code-content min-w-0 bg-surface-raised"
+      className={`type-code-content min-w-0 bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}
     >
       <CodeBlockHeader className="bg-surface-inset type-meta">
         <CodeBlockTitle>

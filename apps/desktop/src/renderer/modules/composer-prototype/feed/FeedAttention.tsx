@@ -141,7 +141,7 @@ export function FeedPermission() {
         </Button>
         <div className="inline-flex overflow-hidden rounded-lg">
           <Button
-            className="rounded-r-none bg-foreground type-label text-background hover:bg-foreground/80"
+            className="rounded-r-none border-r-0 bg-foreground type-label text-background hover:bg-foreground/80"
             onClick={() => setResolved(true)}
           >
             Allow
