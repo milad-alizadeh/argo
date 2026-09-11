@@ -1599,13 +1599,21 @@ function QueuePreview({
               event.dataTransfer.dropEffect = 'move'
             }}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className={`flex h-11 cursor-grab items-center gap-2 overflow-hidden px-4 active:cursor-grabbing ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
+            className={`flex h-11 cursor-grab items-center gap-1 overflow-hidden px-2 active:cursor-grabbing @[36rem]:gap-2 @[36rem]:px-4 ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
-            <Button type="button" variant="ghost" size="sm" onClick={() => animatePop(queuedMessage, () => onSteer(queuedMessage))}>
-              <IconLabel icon={<Route />}>Steer</IconLabel>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="size-7 px-0 @[36rem]:w-auto @[36rem]:px-2.5"
+              aria-label={`Steer queued message: ${queuedMessage.text}`}
+              onClick={() => animatePop(queuedMessage, () => onSteer(queuedMessage))}
+            >
+              <Route className="size-3.5" />
+              <span className="hidden @[36rem]:inline">Steer</span>
             </Button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => animatePop(queuedMessage, () => onRemove(queuedMessage.id))}>
               <Trash2 className="size-3.5" />
