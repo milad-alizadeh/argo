@@ -509,21 +509,21 @@ function PrototypeProjectHeader({
 }) {
   return (
     <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center bg-sidebar px-3">
-      <div className="no-drag-region">
-        <ProjectManager
-          currentProject={currentProject}
-          onProjectChange={onProjectChange}
-        />
-      </div>
       <Button
         variant="ghost"
         size="icon-sm"
-        className="no-drag-region ml-auto"
+        className="no-drag-region"
         aria-label="Collapse Sessions sidebar"
         onClick={onCollapse}
       >
         <PanelLeft />
       </Button>
+      <div className="no-drag-region ml-auto">
+        <ProjectManager
+          currentProject={currentProject}
+          onProjectChange={onProjectChange}
+        />
+      </div>
     </header>
   )
 }
