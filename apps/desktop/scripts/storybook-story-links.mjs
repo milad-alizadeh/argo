@@ -4,10 +4,11 @@
 //
 // The link set is read out of `index.json`, the manifest `storybook build` writes beside the site.
 // A story id is stable (it is derived from the story's title and export name), so a link computed
-// from a pull-request build still resolves on the deployed one. It resolves to nothing only when
-// the story is brand new, and that is the one case a reader can diagnose from the link itself.
+// from a pull-request build resolves on the deployed one when that story already exists on main.
+// New stories are named without a link until the next main deployment contains them.
 //
-// Usage: node scripts/storybook-story-links.mjs --index <index.json> --base <site url> \
+// Usage: node scripts/storybook-story-links.mjs --index <index.json> --deployed-index <index.json> \
+//          --base <site url> \
 //          --changed <file of newline-separated repository-relative paths>
 import { readFile } from 'node:fs/promises'
 import process from 'node:process'
@@ -56,23 +57,32 @@ function storiesFor(index, changed) {
   return grouped
 }
 
-export function comment(index, changed, base) {
+export function comment(index, changed, { base, deployedIndex = index }) {
   const grouped = storiesFor(index, changed)
   if (grouped.size === 0) return ''
   const site = base.replace(/\/$/, '')
+  const deployedStories = new Set(
+    Object.values(deployedIndex.entries ?? {})
+      .filter((entry) => entry.type === 'story')
+      .map((entry) => entry.id),
+  )
   const lines = [...grouped]
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([title, stories]) => {
       const links = stories
         .sort((left, right) => left.name.localeCompare(right.name))
-        .map((story) => `[${story.name}](${site}/?path=/story/${story.id})`)
+        .map((story) =>
+          deployedStories.has(story.id)
+            ? `[${story.name}](${site}/?path=/story/${story.id})`
+            : `\`${story.name}\` (available after merge)`,
+        )
       return `- **${title}** — ${links.join(', ')}`
     })
   return [
     '## Storybook',
     '',
-    `The site tracks \`main\`, at ${site}. These stories cover the components this pull request`,
-    'touches, so a state this pull request adds appears there after it merges.',
+    `The site tracks \`main\`, at ${site}. Links below point to stories already deployed there;`,
+    'new stories are named without a link until this pull request merges and deploys.',
     '',
     ...lines,
     '',
@@ -83,10 +93,13 @@ export function comment(index, changed, base) {
 // running and exiting the test process.
 if (import.meta.main) {
   const indexPath = option('index')
+  const deployedIndexPath = option('deployed-index')
   const base = option('base')
   const changedPath = option('changed')
-  if (!indexPath || !base || !changedPath) {
-    process.stderr.write('usage: --index <index.json> --base <site url> --changed <file>\n')
+  if (!indexPath || !deployedIndexPath || !base || !changedPath) {
+    process.stderr.write(
+      'usage: --index <index.json> --deployed-index <index.json> --base <site url> --changed <file>\n',
+    )
     process.exit(2)
   }
 
@@ -95,5 +108,6 @@ if (import.meta.main) {
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
   const index = JSON.parse(await readFile(indexPath, 'utf8'))
-  process.stdout.write(comment(index, changed, base))
+  const deployedIndex = JSON.parse(await readFile(deployedIndexPath, 'utf8'))
+  process.stdout.write(comment(index, changed, { base, deployedIndex }))
 }

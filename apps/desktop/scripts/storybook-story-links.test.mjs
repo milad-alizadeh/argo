@@ -39,7 +39,7 @@ const SITE = 'https://milad-alizadeh.github.io/argo/'
 const FEED = ['apps/desktop/src/renderer/modules/sessions/components/SessionFeed.tsx']
 
 test('links every story of a changed component, and no other component', () => {
-  const body = comment(INDEX, FEED, SITE)
+  const body = comment(INDEX, FEED, { base: SITE })
   assert.equal(
     body.includes(
       '[Default](https://milad-alizadeh.github.io/argo/?path=/story/sessions-sessionfeed--default)',
@@ -56,17 +56,37 @@ test('links every story of a changed component, and no other component', () => {
 })
 
 test('a docs entry is not a story and carries no link', () => {
-  assert.equal(comment(INDEX, FEED, SITE).includes('sessions-sessionfeed--docs'), false)
+  assert.equal(comment(INDEX, FEED, { base: SITE }).includes('sessions-sessionfeed--docs'), false)
 })
 
 test('a changed story file counts as a change to its own component', () => {
   const changed = [
     'apps/desktop/src/renderer/modules/sessions/components/SessionStatus.stories.tsx',
   ]
-  assert.equal(comment(INDEX, changed, SITE).includes('sessions-sessionstatus--running'), true)
+  assert.equal(
+    comment(INDEX, changed, { base: SITE }).includes('sessions-sessionstatus--running'),
+    true,
+  )
+})
+
+test('a story missing from the deployed site is named without a dead link', () => {
+  const deployed = {
+    entries: {
+      'sessions-sessionfeed--default': INDEX.entries['sessions-sessionfeed--default'],
+    },
+  }
+  const body = comment(INDEX, FEED, { base: SITE, deployedIndex: deployed })
+  assert.equal(
+    body.includes(
+      '[Default](https://milad-alizadeh.github.io/argo/?path=/story/sessions-sessionfeed--default)',
+    ),
+    true,
+  )
+  assert.equal(body.includes('`Empty` (available after merge)'), true)
+  assert.equal(body.includes('/story/sessions-sessionfeed--empty'), false)
 })
 
 test('a file no story covers produces no comment at all', () => {
-  assert.equal(comment(INDEX, ['apps/desktop/src/core/appearance/bridge.ts'], SITE), '')
-  assert.equal(comment(INDEX, [], SITE), '')
+  assert.equal(comment(INDEX, ['apps/desktop/src/core/appearance/bridge.ts'], { base: SITE }), '')
+  assert.equal(comment(INDEX, [], { base: SITE }), '')
 })
