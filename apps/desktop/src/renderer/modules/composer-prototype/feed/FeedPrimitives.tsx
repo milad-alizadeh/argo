@@ -42,7 +42,7 @@ export function FeedPrompt({
         <MessageHeader className="type-meta">
           You{submitted ? ' · Sending to Session…' : ''}
         </MessageHeader>
-        <Bubble variant="muted" className="max-w-full bg-surface-inset sm:max-w-4/5">
+        <Bubble variant="muted" className="max-w-full sm:max-w-4/5">
           <BubbleContent className="type-prose">{children}</BubbleContent>
         </Bubble>
       </MessageContent>
