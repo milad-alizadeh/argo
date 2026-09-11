@@ -38,13 +38,16 @@ import {
   proveRendererAuthority,
 } from './session-feed-cases'
 import {
+  appendProse,
   capture,
   growCodexTranscript,
   growStranded,
   openSessionsScreen,
   prepare,
+  streamProse,
 } from './session-feed-fixture'
 import { writeFixtureTree } from './session-fixture-files'
+import { proveLiveFeed } from './session-live-feed-cases'
 import {
   proveArchive,
   proveCodexReread,
@@ -94,11 +97,18 @@ try {
   )
   await capture(page, application, 'feed-at-the-tail.png')
   const owned = await ran(['owned-heights', 'settled-font'], () => proveOwnedHeights(page))
-  await ran(['pane-drag'], () => provePaneDrag(page))
+  const pane = await ran(['pane-drag'], () => provePaneDrag(page))
   await ran(['window-holds-still'], () => proveWindowHoldsStill(page))
   await ran(['repeat-opening'], () => proveRepeatOpening(page))
   await ran(['no-mislabelled-feed'], () => proveNoMislabelledFeed(page))
   await ran(['no-unmeasured-row'], () => proveNoUnmeasuredRow(page))
+  const live = await ran(['live-feed-anchor', 'kept-feed'], () =>
+    proveLiveFeed(page, {
+      append: appendProse,
+      stream: streamProse,
+      transcripts: fixture.claudeTranscripts,
+    }),
+  )
   await ran(['codex-feed'], () => proveCodexFeed(page))
   await ran(['roster-reread'], () => proveReread(page, fixture.claudeTranscripts, writeFixtureTree))
   await ran(['grown-session'], () =>
@@ -126,6 +136,8 @@ try {
       // fixed floor of about three frames as if it were the cost of laying out this Feed.
       measureMs: firstOpen.measureMs,
       settleMs: firstOpen.settleMs,
+      pane,
+      live,
       cases,
     }),
   )

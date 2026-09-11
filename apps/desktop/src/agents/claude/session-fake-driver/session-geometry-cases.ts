@@ -34,7 +34,11 @@ export async function proveGeometry(page) {
 export async function proveDamagedSession(page) {
   await openSession(page, 'unparseableBody', 'unparseableBody')
   const rows = await page.evaluate(() =>
-    [...document.querySelectorAll('.feed__measured [data-feed-row]')].map((row) => ({
+    [
+      ...document.querySelectorAll(
+        '.feed__document[data-active="true"] .feed__measured [data-feed-row]',
+      ),
+    ].map((row) => ({
       unreadable: row.classList.contains('feed-row--unreadable'),
       height: row.offsetHeight,
     })),
@@ -56,6 +60,7 @@ export async function proveDamagedSession(page) {
 // Read off whichever Session is open, so it costs no second measure pass of its own.
 export async function proveOwnedHeights(page) {
   const rows = await page.evaluate(() => {
+    const active = '.feed__document[data-active="true"]'
     const boxesIn = (root) =>
       [...document.querySelectorAll(`${root} [data-feed-row]`)].map((row) => {
         const box = row.getBoundingClientRect()
@@ -67,14 +72,14 @@ export async function proveOwnedHeights(page) {
         }
       })
     return {
-      measured: boxesIn('.feed__measured'),
-      shown: boxesIn('.feed__viewport'),
+      measured: boxesIn(`${active} .feed__measured`),
+      shown: boxesIn(`${active} .feed__viewport`),
       // Rule 6 keys a cached height on the font as well as the width, and the key holds the CSS
       // `font` shorthand. Blink returns `''` for that shorthand wherever it cannot collapse the
       // longhands into one, and a key carrying an empty string invalidates on nothing: every
       // reading would look alike and a font change would hand back heights measured in the old
       // face. Nothing else in this proof would notice, so it is asserted here.
-      font: getComputedStyle(document.querySelector('.feed__measured')).font,
+      font: getComputedStyle(document.querySelector(`${active} .feed__measured`)).font,
     }
   })
   assert.equal(rows.font.length > 0, true)
@@ -97,8 +102,12 @@ export async function proveRepeatOpening(page) {
   await openSession(page, 'Pick the ink', 'askPending')
   await openSession(page, 'read this file', 'prose')
   const again = await page.evaluate(() => ({
-    measureMs: Number(document.querySelector('.feed').dataset.measureMs),
-    settleMs: Number(document.querySelector('.feed').dataset.settleMs),
+    measureMs: Number(
+      document.querySelector('.feed__document[data-active="true"]').dataset.measureMs,
+    ),
+    settleMs: Number(
+      document.querySelector('.feed__document[data-active="true"]').dataset.settleMs,
+    ),
   }))
   assert.deepEqual(again, { measureMs: 0, settleMs: 0 })
 }

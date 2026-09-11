@@ -1,7 +1,13 @@
 import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import type { SessionChain } from './chains'
-import { isSessionFeedRequest, isSessionListRequest, sessionError } from './contract'
+import {
+  isSessionFeedRequest,
+  isSessionListRequest,
+  type SessionFeedRequest,
+  sessionError,
+} from './contract'
+import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
 import type { SessionFeedRow, SessionRosterRow } from './models'
 
 type Discovery = {
@@ -29,7 +35,39 @@ function readFailure(error: unknown) {
   return 'internal-error'
 }
 
+type FeedReadOptions = {
+  source: TranscriptSessionSource
+  feeds: Map<string, HeldFeed>
+  revisions: { next: number }
+  value: SessionFeedRequest
+}
+
+async function readFeed({ source, feeds, revisions, value }: FeedReadOptions) {
+  const held = feeds.get(value.sessionId)
+  const cached = await cachedReply(value, held)
+  if (cached !== null) {
+    if (held !== undefined) keepFeed(feeds, value.sessionId, held)
+    return cached
+  }
+  const stable = await stableChain(source, value.sessionId, held?.paths ?? [])
+  if (stable === null) return sessionError('missing-session', value.requestId)
+  const { chain, stamps } = stable
+  const rows = source.projectFeed(chain)
+  const revision = `feed-${++revisions.next}`
+  const next = {
+    chainId: chain.id,
+    paths: chain.files.map((file) => file.path),
+    rows,
+    revision,
+    stamps,
+  }
+  keepFeed(feeds, value.sessionId, next)
+  return feedReply(value, next)
+}
+
 export function createTranscriptSessionReader(source: TranscriptSessionSource): SessionReader {
+  const feeds = new Map<string, HeldFeed>()
+  const revisions = { next: 0 }
   return {
     async listSessions(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
@@ -53,16 +91,7 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       if (!isSessionFeedRequest(value)) return sessionError('invalid-request', null)
       try {
-        const chain = await source.readSessionFiles(value.sessionId)
-        if (chain === null) return sessionError('missing-session', value.requestId)
-        return {
-          version: 1,
-          type: 'session.feed.read',
-          requestId: value.requestId,
-          sessionId: value.sessionId,
-          chainId: chain.id,
-          rows: source.projectFeed(chain),
-        }
+        return await readFeed({ source, feeds, revisions, value })
       } catch (error) {
         return sessionError(readFailure(error), value.requestId)
       }

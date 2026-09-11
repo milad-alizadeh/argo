@@ -2,7 +2,7 @@
 // the app against, and the two mutations that prove a re-read reaches the file system rather than
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
 import { execFile } from 'node:child_process'
-import { appendFile, mkdir, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
@@ -75,6 +75,35 @@ async function selectedProject(root) {
 
 export async function growStranded(transcripts) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), GROWN_TURN)
+}
+
+export async function appendProse(transcripts, uuid, text) {
+  await appendFile(
+    fixturePath(transcripts, 'prose'),
+    `${JSON.stringify({
+      type: 'assistant',
+      cwd: '/Users/x/prose',
+      timestamp: '2026-07-21T09:31:00.000Z',
+      uuid,
+      parentUuid: 'p-turn-3',
+      message: {
+        role: 'assistant',
+        stop_reason: 'end_turn',
+        content: [{ type: 'text', text }],
+      },
+    })}\n`,
+  )
+}
+
+// Claude can add to a message while its Turn is still running. The projected row keeps its id,
+// but its prose and height change, which is the live Result case ADR-0033 rule 5 calls out.
+export async function streamProse(transcripts, text) {
+  const transcript = fixturePath(transcripts, 'prose')
+  const before = await readFile(transcript, 'utf8')
+  await writeFile(
+    transcript,
+    before.replace(/"text":"(?:[^"\\]|\\.)*"/, `"text":${JSON.stringify(text)}`),
+  )
 }
 
 export async function prepare(root) {

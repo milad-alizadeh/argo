@@ -86,6 +86,7 @@ export function SessionsScreenView({
                   <SessionFeed
                     failure={feedFailure}
                     feed={feed}
+                    sessionId={selectedSessionId}
                     selected={selectedSessionId !== null}
                   />
                 </ResizablePanel>

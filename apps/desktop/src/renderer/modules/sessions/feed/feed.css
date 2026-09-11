@@ -4,9 +4,21 @@
    is measured with. Every value is read from a token. */
 
 .feed {
+  position: relative;
   height: 100%;
   min-width: 0;
   min-height: 0;
+}
+
+.feed__document {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.feed__document[data-active="false"] {
+  content-visibility: hidden;
 }
 
 .feed__column {
@@ -42,6 +54,7 @@
 
 .feed__content {
   padding: var(--spacing-snug) 0;
+  overflow-anchor: none;
 }
 
 .feed-row {
