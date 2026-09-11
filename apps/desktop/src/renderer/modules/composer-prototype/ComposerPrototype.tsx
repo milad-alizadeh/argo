@@ -615,12 +615,6 @@ function PrototypeRail({
         ))}
       </div>
       <div className="mt-auto flex flex-col items-center gap-1">
-        <button type="button" aria-label="Archive" className="group flex w-16 flex-col items-center gap-1 text-[10px] leading-none text-muted-foreground hover:text-foreground">
-          <span className="grid size-8 place-items-center rounded-lg group-hover:bg-background/70">
-            <Archive />
-          </span>
-          <span>Archive</span>
-        </button>
         <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
       </div>
     </nav>
@@ -776,6 +770,16 @@ function PrototypeSessionRoster({
             {sessions.map((session) => (
               <SessionRosterRow key={session.id} session={session} />
             ))}
+            <details className="group/archive border-t pt-2">
+              <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-(length:--text-control) font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground [&::-webkit-details-marker]:hidden">
+                <Archive className="size-(--size-icon-metadata)" />
+                <span>Archive</span>
+                <ChevronDown className="ml-auto size-(--size-icon-metadata) transition-transform group-open/archive:rotate-180" />
+              </summary>
+              <p className="px-7 py-2 text-(length:--text-control) text-muted-foreground">
+                No archived Sessions
+              </p>
+            </details>
           </div>
         </div>
         <RosterConcierge />
