@@ -9,7 +9,6 @@ import {
 
 type TransitionState = {
   closing: boolean
-  destination: ImageBounds | null
   opening: boolean
   source: ImageBounds | null
 }
@@ -32,11 +31,9 @@ function useCloseTransition(options: CloseTransitionOptions) {
     )
     const source =
       options.sourceRef.current?.getBoundingClientRect() ?? options.stateRef.current.source
-    const destination = options.stateRef.current.destination
-    if (!elements || !source || !destination || prefersReducedMotion())
-      return options.setOpen(false)
+    if (!elements || !source || prefersReducedMotion()) return options.setOpen(false)
     options.stateRef.current.closing = true
-    await closeToSource(elements, source, destination)
+    await closeToSource(elements, source)
     options.setOpen(false)
     options.stateRef.current.closing = false
   }, [options])
@@ -50,7 +47,6 @@ export function useImageLightboxTransition() {
   const controlsRef = useRef<HTMLDivElement>(null)
   const stateRef = useRef<TransitionState>({
     closing: false,
-    destination: null,
     opening: false,
     source: null,
   })
@@ -73,7 +69,7 @@ export function useImageLightboxTransition() {
       const source = stateRef.current.source
       if (!elements || !source) return
       stateRef.current.opening = true
-      stateRef.current.destination = openFromSource(elements, source)
+      openFromSource(elements, source)
     },
     [open],
   )
