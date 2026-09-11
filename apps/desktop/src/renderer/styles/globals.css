@@ -33,6 +33,13 @@
   --size-icon-metadata: 12px;
   --size-icon-inline: 14px;
   --size-icon-control: 16px;
+  --spacing-composer-attachment-gutter: 12px;
+  --size-composer-attachment: 64px;
+  --size-composer-reference-strip: calc(
+    var(--size-composer-attachment) +
+    2 *
+    var(--spacing-composer-attachment-gutter)
+  );
   --size-traffic-light: 12px;
   --inset-traffic-light-control: 18px;
   --inset-traffic-lights: 84px;

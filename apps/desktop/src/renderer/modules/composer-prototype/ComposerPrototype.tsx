@@ -540,16 +540,42 @@ const RAIL_ITEMS = [
   { label: 'Files', icon: <FolderGit2 />, active: false },
 ]
 
+const NAVIGATION_ICON_BUTTON_CLASS = 'group flex flex-col items-center gap-1 type-label'
+
+function NavigationIcon({
+  active = false,
+  icon,
+  label,
+}: {
+  active?: boolean
+  icon: ReactNode
+  label: string
+}) {
+  return (
+    <>
+      <span
+        className={`grid size-9 place-items-center rounded-lg transition-colors ${
+          active
+            ? 'bg-surface-raised text-foreground shadow-sm ring-1 ring-border/70'
+            : 'text-muted-foreground group-hover:bg-surface-panel group-hover:text-foreground'
+        }`}
+      >
+        {icon}
+      </span>
+      <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+        {label}
+      </span>
+    </>
+  )
+}
+
 function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-1 type-label text-muted-foreground hover:bg-surface-panel hover:text-foreground" />}
+        render={<button type="button" aria-label="Settings" className={NAVIGATION_ICON_BUTTON_CLASS} />}
       >
-        <span className="grid size-6 place-items-center">
-          <Settings />
-        </span>
-        <span>Settings</span>
+        <NavigationIcon icon={<Settings />} label="Settings" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>Account</DropdownMenuLabel>
@@ -601,23 +627,15 @@ function PrototypeRail({
       </div>
       <div className="-mt-px flex flex-col items-center gap-2">
         {RAIL_ITEMS.map((item) => (
-          <div key={item.label} className="flex flex-col items-center gap-1 type-label">
-            <button
-              type="button"
-              aria-label={item.label}
-              aria-current={item.active ? 'page' : undefined}
-              className={`grid size-9 place-items-center rounded-lg transition-colors ${
-                item.active
-                  ? 'bg-surface-raised text-foreground shadow-sm ring-1 ring-border/70'
-                  : 'text-muted-foreground hover:bg-surface-panel hover:text-foreground'
-              }`}
-            >
-              {item.icon}
-            </button>
-            <span className={item.active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-              {item.label}
-            </span>
-          </div>
+          <button
+            key={item.label}
+            type="button"
+            aria-label={item.label}
+            aria-current={item.active ? 'page' : undefined}
+            className={NAVIGATION_ICON_BUTTON_CLASS}
+          >
+            <NavigationIcon {...item} />
+          </button>
         ))}
       </div>
       <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center pb-1">
@@ -1240,9 +1258,9 @@ function ReferenceStrip({ state, setState }: StateProps) {
   }, [state.attachments])
 
   return (
-    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-[4.5rem]' : 'h-0'}`}>
+    <div className={`w-full overflow-hidden transition-[height] duration-300 ease-[cubic-bezier(.2,.8,.2,1)] will-change-[height] ${expanded ? 'h-(--size-composer-reference-strip)' : 'h-0'}`}>
       <div>
-        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap overflow-x-auto scroll-px-4 select-none px-4 py-1">
+        <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) select-none p-(--spacing-composer-attachment-gutter)">
           {renderedAttachments.map((reference) => {
             const remove = () =>
               setState({
@@ -1252,7 +1270,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border py-1 pr-9 pl-2" size="xs">
+              <Attachment key={reference} className="relative h-(--size-composer-attachment) w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border py-1 pr-9 pl-2" size="xs">
                 <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-surface-inset">
                   {isImage ? (
                     <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
