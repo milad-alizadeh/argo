@@ -93,7 +93,7 @@ function FeedResultsTable() {
     <div className={`overflow-x-auto border ${FEED_CARD_RADIUS_CLASS}`}>
       <table className="w-full text-left type-body">
         <caption className="sr-only">Composer layout checks</caption>
-        <thead className="bg-surface-inset">
+        <thead className="bg-muted">
           <tr>
             {['Case', 'Behavior', 'Result'].map((title) => (
               <th key={title} className="px-3 py-2 font-medium">

@@ -23,9 +23,9 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
       style={{ transform: `scale(${scale / 100})` }}
       aria-label="Draft and attachments go to the Session driver, which routes to Claude through a PTY or Codex through JSON-RPC. Both return activity to the Feed."
     >
-      <div className="rounded-lg border bg-surface-raised px-4 py-2">Draft + attachments</div>
+      <div className="rounded-lg border bg-card px-4 py-2">Draft + attachments</div>
       <ArrowDown className="!size-(--size-icon-inline) text-muted-foreground" />
-      <div className="rounded-lg border bg-surface-raised px-4 py-2 font-medium">
+      <div className="rounded-lg border bg-card px-4 py-2 font-medium">
         Session driver
       </div>
       <div className="flex w-full justify-evenly text-muted-foreground">
@@ -33,10 +33,10 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
         <ArrowDownRight className="!size-(--size-icon-inline)" />
       </div>
       <div className="flex w-full justify-center gap-4">
-        <div className="rounded-lg border bg-surface-raised px-3 py-2">
+        <div className="rounded-lg border bg-card px-3 py-2">
           Claude <span className="text-muted-foreground">PTY</span>
         </div>
-        <div className="rounded-lg border bg-surface-raised px-3 py-2">
+        <div className="rounded-lg border bg-card px-3 py-2">
           Codex <span className="text-muted-foreground">JSON-RPC</span>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
         <ArrowDownRight className="!size-(--size-icon-inline)" />
         <ArrowDownLeft className="!size-(--size-icon-inline)" />
       </div>
-      <div className="rounded-lg border bg-surface-inset px-5 py-2 font-medium">Feed</div>
+      <div className="rounded-lg border bg-muted px-5 py-2 font-medium">Feed</div>
     </div>
   )
 }
@@ -54,7 +54,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
   const [scale, setScale] = useState(100)
   return (
     <figure
-      className={`overflow-hidden border border-border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}
+      className={`overflow-hidden border border-border bg-card ${FEED_CARD_RADIUS_CLASS}`}
       data-component="FeedMermaid"
     >
       <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 type-label">
@@ -76,7 +76,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
             <DiagramDrawing scale={scale} />
           )}
         </div>
-        <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border bg-surface-raised p-1 type-meta">
+        <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border bg-card p-1 type-meta">
           <Button
             size="icon-xs"
             variant="ghost"
@@ -119,7 +119,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
 export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
   return (
     <figure
-      className={`overflow-hidden border border-border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}
+      className={`overflow-hidden border border-border bg-card ${FEED_CARD_RADIUS_CLASS}`}
     >
       <figcaption className="border-b border-border/60 px-3 py-2 type-label">
         Mermaid · {loading ? 'Loading' : 'Could not render'}

@@ -64,9 +64,9 @@ export function FeedCode({ source, language }: { source: string; language?: stri
     <CodeBlock
       code={source}
       language={highlightedLanguage}
-      className={`type-code-content min-w-0 bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}
+      className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
     >
-      <CodeBlockHeader className="bg-surface-inset type-meta">
+      <CodeBlockHeader className="bg-muted type-meta">
         <CodeBlockTitle>
           <span role="img" aria-label={`${languageLabel} file`}>
             <CodeLanguageIcon language={detectedLanguage} />

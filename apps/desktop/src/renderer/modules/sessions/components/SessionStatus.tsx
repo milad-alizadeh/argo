@@ -5,10 +5,10 @@ type SessionStatusProps = { status: string }
 type SessionStatusKey = 'status.active' | 'status.failed' | 'status.idle' | 'status.waiting'
 
 const statusStyles: Record<string, string> = {
-  active: 'bg-active text-canvas',
-  idle: 'bg-muted text-canvas',
-  waiting: 'bg-warn text-canvas',
-  failed: 'bg-danger text-canvas',
+  active: 'bg-active text-background',
+  idle: 'bg-muted text-background',
+  waiting: 'bg-warn text-background',
+  failed: 'bg-danger text-background',
 }
 
 const statusKeys: Record<string, SessionStatusKey> = {
@@ -24,7 +24,7 @@ export function SessionStatus({ status }: SessionStatusProps) {
 
   return (
     <span
-      className={`rounded-full px-2 py-0.5 font-mono type-label tracking-wide ${statusStyles[status] ?? 'bg-rule text-ink'}`}
+      className={`rounded-full px-2 py-0.5 font-mono type-label tracking-wide ${statusStyles[status] ?? 'bg-border text-foreground'}`}
     >
       {statusKey === undefined ? t('status.unknown', { status }) : t(statusKey)}
     </span>

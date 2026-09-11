@@ -29,7 +29,7 @@ export function EvidenceKindIcon({ kind }: { kind: FeedPrototypeEvidence['kind']
 
 function DiffLine({ line }: { line: string }) {
   let tone = 'text-foreground'
-  if (line.startsWith('+')) tone = 'bg-surface-inset font-medium text-foreground'
+  if (line.startsWith('+')) tone = 'bg-muted font-medium text-foreground'
   if (line.startsWith('-')) tone = 'bg-destructive/10 text-destructive'
   return <span className={`block min-w-fit ${tone}`}>{line || ' '}</span>
 }
@@ -81,7 +81,7 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
       )
     case 'diagram':
       return (
-        <div className="overflow-auto rounded-lg border bg-surface-raised">
+        <div className="overflow-auto rounded-lg border bg-card">
           <DiagramDrawing />
         </div>
       )
