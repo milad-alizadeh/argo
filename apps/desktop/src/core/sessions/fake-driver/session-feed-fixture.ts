@@ -1,7 +1,7 @@
 // The fixture half of the packaged Session proof: the disk state `prove-session-feed.ts` launches
 // the app against, and the two mutations that prove a re-read reaches the file system rather than
 // a cache. Split out of that file to stay under the per-file line ceiling (AGENTS.md).
-import { appendFile, mkdir } from 'node:fs/promises'
+import { appendFile, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import {
@@ -66,6 +66,17 @@ export async function prepare(root) {
   await writeArchiveStore(archive, ARCHIVED)
   const userData = path.join(root, 'userData')
   await mkdir(userData, { recursive: true })
+  const project = path.join(root, 'project')
+  await mkdir(project)
+  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  await writeFile(
+    path.join(userData, 'portable-v1', 'projects.json'),
+    JSON.stringify({
+      version: 1,
+      projects: [{ id: 'session-proof-project', path: project, bindings: [] }],
+      selectedId: 'session-proof-project',
+    }),
+  )
   return { application, claudeTranscripts, codexTranscripts, archive, userData }
 }
 
@@ -98,8 +109,8 @@ export async function capture(page, application, name) {
   await page.screenshot({ path: path.join(shots, name) })
 }
 
-// Sessions is the first useful surface when no Project is registered: transcript discovery needs
-// no Project, and the default route reaches its Roster without first registering a folder.
+// Transcript discovery needs no Project, but the shell keeps every working surface behind the
+// selected Project gate. `prepare` supplies the smallest valid registry entry for the UI proof.
 export async function openSessionsScreen(page) {
   await page.waitForSelector('nav[aria-label="Sessions"] button')
 }
