@@ -825,17 +825,17 @@ function PrototypeSessionHeader({
 }) {
   return (
     <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
-      {!showRoster ? (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="-ml-1.25"
-          aria-label="Open Sessions sidebar"
-          onClick={onOpenRoster}
-        >
-          <PanelLeft />
-        </Button>
-      ) : null}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className={`-ml-1.25 ${showRoster ? 'pointer-events-none invisible' : ''}`}
+        aria-label="Open Sessions sidebar"
+        aria-hidden={showRoster}
+        tabIndex={showRoster ? -1 : undefined}
+        onClick={onOpenRoster}
+      >
+        <PanelLeft />
+      </Button>
       <div className="min-w-0 flex-1 overflow-hidden">
         <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
         <div className="mt-1 flex min-w-0 items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
@@ -872,16 +872,17 @@ function PrototypeSessionHeader({
           />
         </div>
       </TooltipProvider>
-      {!showSidebar ? (
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label="Open Session inspector"
-          onClick={onOpenSidebar}
-        >
-          <PanelRight />
-        </Button>
-      ) : null}
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        className={showSidebar ? 'pointer-events-none invisible' : undefined}
+        aria-label="Open Session inspector"
+        aria-hidden={showSidebar}
+        tabIndex={showSidebar ? -1 : undefined}
+        onClick={onOpenSidebar}
+      >
+        <PanelRight />
+      </Button>
     </header>
   )
 }
