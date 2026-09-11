@@ -30,10 +30,8 @@ import {
   Minimize2,
   Monitor,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
+  PanelLeft,
+  PanelRight,
   Paperclip,
   Pencil,
   Plus,
@@ -503,11 +501,9 @@ function ProjectManager({
 function PrototypeProjectHeader({
   currentProject,
   onProjectChange,
-  onCollapse,
 }: {
   currentProject: ProjectKey
   onProjectChange: (project: ProjectKey) => void
-  onCollapse: () => void
 }) {
   return (
     <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center bg-sidebar px-3">
@@ -517,15 +513,6 @@ function PrototypeProjectHeader({
           onProjectChange={onProjectChange}
         />
       </div>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="no-drag-region ml-auto"
-        aria-label="Collapse Sessions sidebar"
-        onClick={onCollapse}
-      >
-        <PanelLeftClose />
-      </Button>
     </header>
   )
 }
@@ -754,22 +741,15 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
 
 function PrototypeSessionRoster({
   currentProject,
-  onProjectChange,
   onCollapse,
 }: {
   currentProject: ProjectKey
-  onProjectChange: (project: ProjectKey) => void
   onCollapse: () => void
 }) {
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
-      <PrototypeProjectHeader
-        currentProject={currentProject}
-        onProjectChange={onProjectChange}
-        onCollapse={onCollapse}
-      />
       <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
@@ -788,6 +768,9 @@ function PrototypeSessionRoster({
               <TooltipContent side="bottom">Find a Session · ⌘K</TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          <Button variant="ghost" size="icon-sm" aria-label="Collapse Sessions sidebar" onClick={onCollapse}>
+            <PanelLeft />
+          </Button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
@@ -853,7 +836,7 @@ function PrototypeSessionHeader({
           aria-label="Open Sessions sidebar"
           onClick={onOpenRoster}
         >
-          <PanelLeftOpen />
+          <PanelLeft />
         </Button>
       ) : null}
       <div className="min-w-0 flex-1 overflow-hidden">
@@ -909,7 +892,7 @@ function PrototypeSessionHeader({
           aria-label="Open Session inspector"
           onClick={onOpenSidebar}
         >
-          <PanelRightOpen />
+          <PanelRight />
         </Button>
       ) : null}
     </header>
@@ -946,7 +929,7 @@ function SessionWorkSidebar({
           aria-label="Collapse Session inspector"
           onClick={onCollapse}
         >
-          <PanelRightClose />
+          <PanelRight />
         </Button>
       </div>
       {evidence ? (
@@ -2070,6 +2053,11 @@ export function ComposerPrototype() {
           theme={theme}
           onThemeChange={setTheme}
         />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <PrototypeProjectHeader
+          currentProject={currentProject}
+          onProjectChange={setCurrentProject}
+        />
         <div className="min-h-0 min-w-0 flex-1">
         <ResizablePanelGroup
           orientation="horizontal"
@@ -2094,7 +2082,6 @@ export function ComposerPrototype() {
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
-              onProjectChange={setCurrentProject}
               onCollapse={() => setSessionRosterVisible(false)}
             />
           </div>
@@ -2271,6 +2258,7 @@ export function ComposerPrototype() {
         </main>
         </ResizablePanel>
         </ResizablePanelGroup>
+        </div>
         </div>
       </div>
     </div>
