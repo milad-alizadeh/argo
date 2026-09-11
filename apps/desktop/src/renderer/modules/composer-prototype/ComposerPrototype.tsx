@@ -682,7 +682,7 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
       aria-current={selected ? 'page' : undefined}
       className={`group w-full rounded-lg px-2 py-2 text-left transition-colors ${
         selected
-          ? 'bg-muted text-foreground'
+          ? 'bg-sidebar-shell text-foreground'
           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
       }`}
     >
@@ -747,7 +747,7 @@ function PrototypeSessionRoster({
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-transparent">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-sidebar">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="px-2 text-sm font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
@@ -2042,7 +2042,7 @@ export function ComposerPrototype() {
   }
 
   return (
-    <div className="h-dvh min-h-0 overflow-hidden bg-sidebar">
+    <div className="h-dvh min-h-0 overflow-hidden bg-sidebar-shell">
       <div className="flex h-full min-h-0 overflow-hidden">
         <PrototypeRail
           theme={theme}
