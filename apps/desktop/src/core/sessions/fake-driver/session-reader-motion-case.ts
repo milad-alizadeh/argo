@@ -73,7 +73,7 @@ export async function proveReaderMotion({ page, fixture, outerRevision, visibleR
     await page.waitForTimeout(200)
     const afterMotion = await offsetOf(page, chosen.anchor)
     assert.equal(Math.abs(afterMotion - chosen.offset) <= 1, true)
-    return afterMotion - chosen.offset
+    return { anchor: chosen.anchor, motion: afterMotion - chosen.offset, offset: chosen.offset }
   } finally {
     await motion.stop()
   }

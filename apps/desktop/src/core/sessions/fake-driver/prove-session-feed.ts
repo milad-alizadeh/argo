@@ -57,6 +57,7 @@ import {
 } from './session-roster-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
+const SESSION_VIEWPORT = { width: 1440, height: 860 }
 let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
@@ -75,6 +76,13 @@ try {
   })
   const page = await application.firstWindow()
   page.setDefaultTimeout(30_000)
+  await application.evaluate(({ BrowserWindow }, viewport) => {
+    BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
+  }, SESSION_VIEWPORT)
+  await page.waitForFunction(
+    (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
+    SESSION_VIEWPORT,
+  )
   await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   // Each case names itself as it passes, so the list printed below is what ran rather than a list

@@ -52,6 +52,8 @@ function useFeed(sessionId: SessionId | null) {
     if (sessionId === null) return
     let live = true
     let timer: number | null = null
+    // The first read needs rows because its prior revision can outlive an evicted kept document.
+    revisions.current.delete(sessionId)
     setFeed(null)
     setFeedError(null)
     const read = async () => {

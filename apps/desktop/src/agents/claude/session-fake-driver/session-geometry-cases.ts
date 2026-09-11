@@ -121,16 +121,27 @@ export async function proveRepeatOpening(page) {
 export async function proveGrownSession(page, transcripts, grow) {
   await openSession(page, 'carry on from where we left it', 'strandedResume')
   const before = await page.evaluate(
-    () => document.querySelectorAll('.feed__viewport [data-feed-row]').length,
+    () =>
+      document.querySelectorAll(
+        '.feed__document[data-active="true"] .feed__viewport [data-feed-row]',
+      ).length,
   )
   await grow(transcripts)
   await openSession(page, 'Refactor the auth module', 'externalBasic')
   await openSession(page, 'carry on from where we left it', 'strandedResume')
+  await page.waitForFunction(
+    (expected) =>
+      document.querySelectorAll(
+        '.feed__document[data-active="true"] .feed__viewport [data-feed-row]',
+      ).length === expected,
+    before + 1,
+  )
   const rows = await page.evaluate(() =>
-    [...document.querySelectorAll('.feed__viewport [data-feed-row]')].map((row) => ({
-      id: row.dataset.feedRow,
-      stated: row.style.height,
-    })),
+    [
+      ...document.querySelectorAll(
+        '.feed__document[data-active="true"] .feed__viewport [data-feed-row]',
+      ),
+    ].map((row) => ({ id: row.dataset.feedRow, stated: row.style.height })),
   )
   assert.equal(rows.length, before + 1)
   assert.deepEqual(

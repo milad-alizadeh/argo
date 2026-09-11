@@ -7,6 +7,15 @@
   "reading": "Reading this Session",
   "feedLabel": "Session Feed",
   "historyLabel": "Session history",
+  "composer": {
+    "unavailable": {
+      "label": "Session input",
+      "observed": "Read-only. Session input is not available in this build.",
+      "read-only": "Read-only. Argo did not start this Session.",
+      "orphaned": "This Session is disconnected.",
+      "ended": "This Session ended. There is nothing left to send."
+    }
+  },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
   "archived": "Archived",
   "empty": {

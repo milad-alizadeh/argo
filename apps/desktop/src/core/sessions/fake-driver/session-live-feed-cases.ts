@@ -10,6 +10,8 @@ type LiveFixture = {
   stream: (transcripts: string, text: string) => Promise<void>
 }
 
+const LIVE_REVISION_TIMEOUT_MS = 5_000
+
 async function fixedRow(page) {
   return page.evaluate(() => {
     const viewport = document.querySelector('.feed__viewport')
@@ -36,11 +38,15 @@ async function offsetOf(page, anchor) {
 }
 
 async function waitForRevision(page, previous) {
-  await page.waitForFunction((revision) => {
-    return (
-      document.querySelector('.feed__document[data-active="true"]')?.dataset.revision !== revision
-    )
-  }, previous)
+  await page.waitForFunction(
+    (revision) => {
+      return (
+        document.querySelector('.feed__document[data-active="true"]')?.dataset.revision !== revision
+      )
+    },
+    previous,
+    { timeout: LIVE_REVISION_TIMEOUT_MS },
+  )
 }
 
 async function tailReading(page) {
@@ -53,6 +59,17 @@ async function tailReading(page) {
       ).length,
     }
   })
+}
+
+async function waitForRowCount(page, count) {
+  await page.waitForFunction(
+    (expected) =>
+      document.querySelectorAll(
+        '.feed__document[data-active="true"] .feed__viewport [data-feed-row]',
+      ).length === expected,
+    count,
+    { timeout: LIVE_REVISION_TIMEOUT_MS },
+  )
 }
 
 async function proveTail(page, fixture: LiveFixture, before) {
@@ -72,9 +89,7 @@ async function proveTail(page, fixture: LiveFixture, before) {
     'p-live-2',
     'The second streamed update followed at the tail.',
   )
-  await page.waitForFunction((count) => {
-    return document.querySelectorAll('.feed__viewport [data-feed-row]').length === count + 2
-  }, before.rows)
+  await waitForRowCount(page, before.rows + 2)
   const tail = await tailReading(page)
   assert.equal(tail.fromTail <= 1, true)
   assert.equal(tail.unstated, 0)
@@ -103,28 +118,26 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
   const outerRevision = await page.evaluate(
     () => document.querySelector('.feed__document[data-active="true"]')?.dataset.revision,
   )
-  const scrollingMotion = await proveReaderMotion({ page, fixture, outerRevision, visibleRevision })
+  const readerAnchor = await proveReaderMotion({ page, fixture, outerRevision, visibleRevision })
 
   await fixture.append(fixture.transcripts, 'p-live-1', 'The first streamed update arrived.')
-  await page.waitForFunction((count) => {
-    return document.querySelectorAll('.feed__viewport [data-feed-row]').length === count + 1
-  }, before.rows)
-  const held = await offsetOf(page, before.anchor)
-  assert.equal(Math.abs(held - before.offset) <= 1, true)
+  await waitForRowCount(page, before.rows + 1)
+  const held = await offsetOf(page, readerAnchor.anchor)
+  assert.equal(Math.abs(held - readerAnchor.offset) <= 1, true)
 
   await openSession(page, 'Refactor the auth module', 'externalBasic')
   await openSession(page, 'read this file', 'prose')
-  const kept = await offsetOf(page, before.anchor)
-  assert.equal(Math.abs(kept - before.offset) <= 1, true)
+  const kept = await offsetOf(page, readerAnchor.anchor)
+  assert.equal(Math.abs(kept - readerAnchor.offset) <= 1, true)
 
   const { tail, streamed: streamedTail } = await proveTail(page, fixture, before)
   return {
     anchoredOffset: held,
-    anchoredBefore: before.offset,
+    anchoredBefore: readerAnchor.offset,
     anchoredMotion: streamed - before.offset,
     fromTail: tail.fromTail,
-    keptMotion: kept - before.offset,
-    scrollingMotion,
+    keptMotion: kept - readerAnchor.offset,
+    scrollingMotion: readerAnchor.motion,
     streamedTailMotion: streamedTail.fromTail,
   }
 }

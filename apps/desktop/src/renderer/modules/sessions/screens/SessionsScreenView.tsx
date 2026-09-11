@@ -5,6 +5,7 @@ import {
 } from '../../../components/ui/resizable'
 
 import { AgentsRail } from '../components/AgentsRail'
+import { ComposerUnavailable, deriveComposerAvailability } from '../components/ComposerUnavailable'
 import { SessionDeckHead } from '../components/SessionDeckHead'
 import { SessionFeed } from '../components/SessionFeed'
 import { SessionRoster } from '../components/SessionRoster'
@@ -26,9 +27,8 @@ type SessionsScreenViewProps = {
 // ArgoLayout `sidebar-w`). A drag moves it between the two bounds. The pane keeps its pixel width
 // when the window changes size, so a wider window widens the Feed and not the list of Sessions.
 const ROSTER = { defaultSize: 320, minSize: 240, maxSize: 480 }
-// The Agents rail's width, from the same layout (`deck-body`'s first column). Its chips are one
-// line each, so it can go narrower than the Roster before a label stops saying anything.
-const RAIL = { defaultSize: 220, minSize: 160, maxSize: 360 }
+// The approved Session inspector begins at its readable width and may grow beside the Feed.
+const INSPECTOR = { defaultSize: 248, minSize: 240, maxSize: '100%' }
 // Narrower than this and a Feed row is a column of single words.
 const FEED_MIN = 320
 
@@ -42,10 +42,7 @@ export function SessionsScreenView({
   onReread,
 }: SessionsScreenViewProps) {
   const selected = sessions.find((session) => session.id === selectedSessionId) ?? null
-  // The rail is for the work running under the selected Session, so a Session running none of it
-  // gives its whole deck body to the Feed rather than keeping an empty column beside it.
-  const working =
-    selected !== null && (selected.delegations.length > 0 || selected.shell.length > 0)
+  const composerAvailability = deriveComposerAvailability(selected)
 
   return (
     // The Roster and the Feed are two panes with a drag handle between them, and each one owns its
@@ -66,33 +63,37 @@ export function SessionsScreenView({
           />
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel id="deck" minSize={RAIL.minSize + FEED_MIN}>
-          <div className="flex h-full min-h-0 flex-col">
-            <SessionDeckHead session={selected} />
-            {/* The deck body: the Agents rail and the Feed, a second pair with its own handle,
-                so a reader who wants the Feed wider can take it from the rail and not only from
-                the Roster. */}
-            <div className="min-h-0 flex-1">
-              <ResizablePanelGroup id="deck-body" orientation="horizontal">
-                {working ? (
-                  <>
-                    <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="agents" {...RAIL}>
-                      <AgentsRail session={selected} />
-                    </ResizablePanel>
-                    <ResizableHandle />
-                  </>
-                ) : null}
-                <ResizablePanel id="feed" minSize={FEED_MIN}>
+        <ResizablePanel id="deck" minSize={INSPECTOR.minSize + FEED_MIN}>
+          <ResizablePanelGroup id="session-workspace" orientation="horizontal">
+            <ResizablePanel id="feed" minSize={FEED_MIN}>
+              <div className="flex h-full min-h-0 flex-col bg-background">
+                <SessionDeckHead session={selected} />
+                <div className="min-h-0 flex-1">
                   <SessionFeed
                     failure={feedFailure}
                     feed={feed}
                     sessionId={selectedSessionId}
                     selected={selectedSessionId !== null}
                   />
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            </div>
-          </div>
+                </div>
+                {composerAvailability === null ? null : (
+                  <ComposerUnavailable availability={composerAvailability} />
+                )}
+              </div>
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel
+              groupResizeBehavior="preserve-pixel-size"
+              id="session-inspector"
+              {...INSPECTOR}
+            >
+              {selected === null ? (
+                <aside className="h-full bg-sidebar" />
+              ) : (
+                <AgentsRail session={selected} />
+              )}
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
     </main>
