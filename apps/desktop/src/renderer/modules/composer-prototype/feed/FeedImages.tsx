@@ -25,7 +25,7 @@ function ImageLightbox({
             type="button"
             className={
               compact
-                ? 'mt-3 flex items-center gap-2 rounded-md border bg-background p-1.5 text-control'
+                ? 'mt-3 flex items-center gap-2 rounded-md border bg-background p-1.5 text-left text-control'
                 : 'group relative h-full shrink-0 overflow-hidden rounded-lg border bg-card'
             }
             aria-label={`Open ${evidence.title} in lightbox`}
@@ -41,7 +41,7 @@ function ImageLightbox({
             compact ? '!size-10 rounded-sm object-cover' : '!h-full !w-auto max-w-none object-cover'
           }
         />
-        {compact ? <span>{evidence.title}</span> : null}
+        {compact ? <span className="min-w-0 flex-1 text-left">{evidence.title}</span> : null}
         <span
           className={
             compact
