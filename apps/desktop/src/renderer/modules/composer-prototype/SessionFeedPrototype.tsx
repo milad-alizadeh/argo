@@ -61,7 +61,7 @@ export function SessionFeedPrototype({
             </p>
           }
         />
-        <div className="flex items-center gap-2 type-meta text-muted-foreground">
+        <div className="flex items-center gap-2 type-body text-muted-foreground">
           <GitFork className="!size-(--size-icon-inline)" />
           <span>Delegated layout review and feed coverage</span>
           <span className="ml-auto">2 subagents</span>
