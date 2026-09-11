@@ -380,7 +380,7 @@ function RosterConcierge() {
         <a
           href="#/concierge"
           aria-label="Open Concierge chat"
-          className="relative shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="relative mt-2 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <ConciergeOrb />
           <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">
