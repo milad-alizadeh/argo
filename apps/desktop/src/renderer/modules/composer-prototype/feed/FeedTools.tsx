@@ -143,11 +143,7 @@ export function FeedToolGroups({
   return (
     <ToolGroup
       title="Ran 2 commands · Created 2 files · Edited 1 file"
-      sections={[
-        { rows: COMMANDS },
-        { rows: CREATED_FILES },
-        { rows: EDITED_FILES },
-      ]}
+      sections={[{ rows: COMMANDS }, { rows: CREATED_FILES }, { rows: EDITED_FILES }]}
       onOpen={onOpen}
       activeEvidenceId={activeEvidenceId}
     />
