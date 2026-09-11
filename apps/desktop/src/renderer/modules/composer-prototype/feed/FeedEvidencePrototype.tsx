@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FEED_INSPECTOR_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 import { EvidenceBody } from './FeedEvidenceBody'
-import { CopyFeedContent } from './FeedPrimitives'
 
 function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
   return (
@@ -27,7 +26,6 @@ export function FeedEvidencePrototype({
   const items = showsToolSequence ? FEED_INSPECTOR_EVIDENCE : [evidence]
   const [activeId, setActiveId] = useState(evidence.id)
   const scrollArea = useRef<HTMLDivElement>(null)
-  const activeEvidence = items.find((item) => item.id === activeId) ?? evidence
 
   useEffect(() => {
     setActiveId(evidence.id)
@@ -73,10 +71,6 @@ export function FeedEvidencePrototype({
         ))}
         {showsToolSequence && <div aria-hidden="true" className="h-[calc(100%-3rem)]" />}
       </div>
-      <footer className="flex items-center justify-between border-t px-3 py-2 text-control text-muted-foreground">
-        <span>{activeEvidence.status === 'failed' ? 'Failed' : 'Recorded result'}</span>
-        <CopyFeedContent text={activeEvidence.source} />
-      </footer>
     </section>
   )
 }
