@@ -511,7 +511,7 @@ function PrototypeProjectHeader({
   onCollapse: () => void
 }) {
   return (
-    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center bg-sidebar px-3">
+    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center bg-transparent px-3">
       <Button
         variant="ghost"
         size="icon-sm"
@@ -582,7 +582,7 @@ function PrototypeRail({
   return (
     <nav
       aria-label="Main navigation"
-      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-sidebar-rail [&_svg]:size-(--size-icon-control)"
+      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-transparent [&_svg]:size-(--size-icon-control)"
     >
       <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0">
         {!showsNativeTrafficLights ? (
@@ -741,13 +741,13 @@ function PrototypeSessionRoster({
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
-    <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
+    <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-transparent">
       <PrototypeProjectHeader
         currentProject={currentProject}
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-sidebar">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-transparent">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="px-2 text-sm font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
@@ -2042,7 +2042,7 @@ export function ComposerPrototype() {
   }
 
   return (
-    <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
+    <div className="h-dvh min-h-0 overflow-hidden bg-sidebar">
       <div className="flex h-full min-h-0 overflow-hidden">
         <PrototypeRail
           theme={theme}
