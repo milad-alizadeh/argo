@@ -498,23 +498,6 @@ function ProjectManager({
   )
 }
 
-function PrototypeChrome({
-  currentProject,
-  onProjectChange,
-}: {
-  currentProject: ProjectKey
-  onProjectChange: (project: ProjectKey) => void
-}) {
-  return (
-    <header className="flex h-11 shrink-0 items-center px-3 pl-16">
-      <ProjectManager
-        currentProject={currentProject}
-        onProjectChange={onProjectChange}
-      />
-    </header>
-  )
-}
-
 const RAIL_ITEMS = [
   { label: 'Sessions', icon: <Bot />, active: true },
   { label: 'Tickets', icon: <Ticket />, active: false },
@@ -708,9 +691,11 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
 
 function PrototypeSessionRoster({
   currentProject,
+  onProjectChange,
   onCollapse,
 }: {
   currentProject: ProjectKey
+  onProjectChange: (project: ProjectKey) => void
   onCollapse: () => void
 }) {
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
@@ -720,6 +705,10 @@ function PrototypeSessionRoster({
       <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
+          <ProjectManager
+            currentProject={currentProject}
+            onProjectChange={onProjectChange}
+          />
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
           </Button>
@@ -1980,12 +1969,7 @@ export function ComposerPrototype() {
 
   return (
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <PrototypeChrome
-          currentProject={currentProject}
-          onProjectChange={setCurrentProject}
-        />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex h-full min-h-0 overflow-hidden">
         <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <div className="min-h-0 min-w-0 flex-1 pr-0.75 pb-1">
         <ResizablePanelGroup
@@ -2011,6 +1995,7 @@ export function ComposerPrototype() {
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
+              onProjectChange={setCurrentProject}
               onCollapse={() => setSessionRosterVisible(false)}
             />
           </div>
@@ -2204,7 +2189,6 @@ export function ComposerPrototype() {
         </ResizablePanel>
         </ResizablePanelGroup>
         </div>
-      </div>
       </div>
     </div>
   )
