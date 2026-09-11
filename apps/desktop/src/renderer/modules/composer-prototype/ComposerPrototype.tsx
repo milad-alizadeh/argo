@@ -1685,7 +1685,7 @@ function QueuePreview({
     const shell = {
       integrated: 'border-b bg-background',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      'attached-stack': 'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border bg-background/90 pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
+      'attached-stack': 'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border border-b-0 bg-background/90 pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
       attached: '',
       inline: '',
     }[layout]
@@ -2140,8 +2140,8 @@ export function ComposerPrototype() {
               onOpenEvidence={openFeedEvidence}
             />
           </div>
-          <div className="relative shrink-0 bg-background px-4 pt-6 pb-8">
-            <div className="pointer-events-none absolute inset-x-4 bottom-full -mb-6">
+          <div className="relative isolate shrink-0 bg-background px-4 pt-6 pb-8">
+            <div className="pointer-events-none absolute inset-x-4 bottom-full z-0 -mb-6">
               <div className={`pointer-events-auto relative z-20 mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}>
                 <div className="mx-auto w-full">
                   <FeedPermission />
