@@ -5,7 +5,12 @@ import { SessionsScreen } from '../../sessions/screens/SessionsScreen'
 import type { Cockpit, ProjectActions } from '../hooks/useProjects'
 import { EmptyPane, LINE, RefusedPane, TITLE } from './ProjectPanes'
 
-type DeckProps = { destination: Destination; cockpit: Cockpit; actions: ProjectActions }
+type DeckProps = {
+  destination: Destination
+  cockpit: Cockpit
+  actions: ProjectActions
+  projectHeader?: ReactNode
+}
 
 // The names the design ticket froze, so a state render is found by the name the design shows. The
 // name is the Project's, never the destination's: the Project is what the deck is standing on, and
@@ -68,7 +73,7 @@ function SurfacePane({ destination }: { destination: Destination }) {
 // One `<main>` and one state element for every screen the deck can be, at the same place in the
 // tree. A live driver watches that element for the busy window a press opens and closes, and an
 // element replaced between the press and the reply is an observer attached to a detached node.
-export function ProjectDeck({ destination, cockpit, actions }: DeckProps) {
+export function ProjectDeck({ destination, cockpit, actions, projectHeader }: DeckProps) {
   const screen = deckScreen(destination, cockpit)
   const shape = SHAPES[screen]
   return (
@@ -79,6 +84,7 @@ export function ProjectDeck({ destination, cockpit, actions }: DeckProps) {
           destination={destination}
           cockpit={cockpit}
           onOpen={actions.open}
+          projectHeader={projectHeader}
         />
       </div>
     </main>
@@ -116,13 +122,15 @@ function DeckPane({
   destination,
   cockpit,
   onOpen,
+  projectHeader,
 }: {
   screen: DeckScreen
   destination: Destination
   cockpit: Cockpit
   onOpen: () => void
+  projectHeader?: ReactNode
 }) {
   if (screen === 'gate') return gatePane(cockpit, onOpen)
-  if (screen === 'sessions') return <SessionsScreen />
+  if (screen === 'sessions') return <SessionsScreen projectHeader={projectHeader} />
   return <SurfacePane destination={destination} />
 }

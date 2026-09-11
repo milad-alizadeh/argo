@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -20,14 +21,15 @@ type SessionsScreenViewProps = {
   feedFailure: string | null
   onSelect: (sessionId: SessionId) => void
   onReread: () => void
+  projectHeader?: ReactNode
 }
 
 // The Roster's width in pixels, from the approved layout (`roster-row-signals-prototype.html` ·
 // ArgoLayout `sidebar-w`). A drag moves it between the two bounds. The pane keeps its pixel width
 // when the window changes size, so a wider window widens the Feed and not the list of Sessions.
 const ROSTER = { defaultSize: 320, minSize: 240, maxSize: 480 }
-// The Agents rail's width, from the same layout (`deck-body`'s first column). Its chips are one
-// line each, so it can go narrower than the Roster before a label stops saying anything.
+// The inspector's width, from the same layout. Its chips are one line each, so it can go narrower
+// than the Roster before a label stops saying anything.
 const RAIL = { defaultSize: 220, minSize: 160, maxSize: 360 }
 // Narrower than this and a Feed row is a column of single words.
 const FEED_MIN = 320
@@ -40,6 +42,7 @@ export function SessionsScreenView({
   feedFailure,
   onSelect,
   onReread,
+  projectHeader,
 }: SessionsScreenViewProps) {
   const selected = sessions.find((session) => session.id === selectedSessionId) ?? null
   // The rail is for the work running under the selected Session, so a Session running none of it
@@ -57,42 +60,32 @@ export function SessionsScreenView({
     <main className="h-full min-h-0 bg-background">
       <ResizablePanelGroup id="sessions" orientation="horizontal">
         <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="roster" {...ROSTER}>
-          <SessionRoster
-            failure={failure}
-            onReread={onReread}
-            onSelect={onSelect}
-            selectedSessionId={selectedSessionId}
-            sessions={sessions}
-          />
-        </ResizablePanel>
-        <ResizableHandle />
-        <ResizablePanel id="deck" minSize={RAIL.minSize + FEED_MIN}>
           <div className="flex h-full min-h-0 flex-col">
-            <SessionDeckHead session={selected} />
-            {/* The deck body: the Agents rail and the Feed, a second pair with its own handle,
-                so a reader who wants the Feed wider can take it from the rail and not only from
-                the Roster. */}
-            <div className="min-h-0 flex-1">
-              <ResizablePanelGroup id="deck-body" orientation="horizontal">
-                {working ? (
-                  <>
-                    <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="agents" {...RAIL}>
-                      <AgentsRail session={selected} />
-                    </ResizablePanel>
-                    <ResizableHandle />
-                  </>
-                ) : null}
-                <ResizablePanel id="feed" minSize={FEED_MIN}>
-                  <SessionFeed
-                    failure={feedFailure}
-                    feed={feed}
-                    selected={selectedSessionId !== null}
-                  />
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            </div>
+            {projectHeader}
+            <SessionRoster
+              failure={failure}
+              onReread={onReread}
+              onSelect={onSelect}
+              selectedSessionId={selectedSessionId}
+              sessions={sessions}
+            />
           </div>
         </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel id="deck" minSize={FEED_MIN}>
+          <div className="flex h-full min-h-0 flex-col">
+            <SessionDeckHead session={selected} />
+            <SessionFeed failure={feedFailure} feed={feed} selected={selectedSessionId !== null} />
+          </div>
+        </ResizablePanel>
+        {working ? (
+          <>
+            <ResizableHandle />
+            <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="inspector" {...RAIL}>
+              <AgentsRail session={selected} />
+            </ResizablePanel>
+          </>
+        ) : null}
       </ResizablePanelGroup>
     </main>
   )

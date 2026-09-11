@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SessionsEmptyState } from '../components/SessionsEmptyState'
@@ -5,7 +6,7 @@ import { useSessions } from '../hooks/useSessions'
 import { useSessionsStore } from '../state/useSessionsStore'
 import { SessionsScreenView } from './SessionsScreenView'
 
-export function SessionsScreen() {
+export function SessionsScreen({ projectHeader }: { projectHeader?: ReactNode }) {
   const { t } = useTranslation()
   const selectedSessionId = useSessionsStore((state) => state.selectedSessionId)
   const selectSession = useSessionsStore((state) => state.selectSession)
@@ -23,6 +24,7 @@ export function SessionsScreen() {
       failure={rosterError}
       onReread={reread}
       onSelect={selectSession}
+      projectHeader={projectHeader}
       selectedSessionId={selectedSessionId}
       sessions={roster.sessions}
       feedFailure={feedError}

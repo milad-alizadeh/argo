@@ -7,15 +7,10 @@ import {
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '../core/commands/shortcuts'
-import { AppearanceControl } from './modules/appearance/components/AppearanceControl'
 import { useAppearance } from './modules/appearance/hooks/useAppearance'
-import { ChromeBar } from './modules/cockpit/components/ChromeBar'
-import { CockpitShell } from './modules/cockpit/components/CockpitShell'
-import { Sidebar } from './modules/cockpit/components/Sidebar'
+import { CockpitSurface } from './modules/cockpit/components/CockpitSurface'
 import { useCommands } from './modules/cockpit/hooks/useCommands'
-import { ProjectDeck } from './modules/projects/components/ProjectDeck'
-import { ProjectRefusal } from './modules/projects/components/ProjectRefusal'
-import { type Cockpit, useProjects } from './modules/projects/hooks/useProjects'
+import { useProjects } from './modules/projects/hooks/useProjects'
 import './i18n/config'
 
 function destinationFromHash(): Destination {
@@ -25,10 +20,6 @@ function destinationFromHash(): Destination {
 
 function destinationHash(destination: Destination): string {
   return `#/${destination.toLowerCase()}`
-}
-
-function subject(cockpit: Cockpit): string {
-  return cockpit.project ? `— ${cockpit.project.name}` : '— no Project open'
 }
 
 export function App() {
@@ -61,21 +52,14 @@ export function App() {
     ),
   )
 
-  // A Project is the window's subject, so until one is open there is no sidebar: nothing is yet
-  // there for a surface to be about, and the deck takes the window. A folder turned away while a
-  // Project is open leaves that Project standing, so its refusal has nowhere in the deck to land
-  // and takes a band of its own above the surfaces.
-  const open = cockpit.status === 'selected'
   return (
-    <CockpitShell
-      chrome={
-        <ChromeBar subject={subject(cockpit)}>
-          <AppearanceControl appearance={appearance} onChange={chooseAppearance} />
-        </ChromeBar>
-      }
-      notice={open && cockpit.message ? <ProjectRefusal message={cockpit.message} /> : undefined}
-      sidebar={open ? <Sidebar destination={destination} onNavigate={navigate} /> : undefined}
-      deck={<ProjectDeck destination={destination} cockpit={cockpit} actions={actions} />}
+    <CockpitSurface
+      actions={actions}
+      appearance={appearance}
+      chooseAppearance={chooseAppearance}
+      cockpit={cockpit}
+      destination={destination}
+      navigate={navigate}
     />
   )
 }
