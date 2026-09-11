@@ -119,6 +119,7 @@ import {
   SESSION_PANE_MIN_WIDTH,
   SESSION_PANE_SNAP_TOLERANCE,
   shouldCollapseSessionPane,
+  shouldDeferSessionInspectorCollapse,
   shouldFullscreenSessionInspector,
   shouldRememberSessionInspectorWidth,
 } from './sessionPaneResize'
@@ -1808,13 +1809,14 @@ export function ComposerPrototype() {
 
   const setSessionSidebarVisible = (visible: boolean) => {
     const wasFullscreen = sessionSidebarFullscreenState.current
+    const deferCollapse = shouldDeferSessionInspectorCollapse({ visible, fullscreen: wasFullscreen })
     sessionSidebarVisibleState.current = visible
     if (visible) {
       animateSessionInspector(() => {
         setSessionInspectorContentWidth(sessionInspectorRestoreSize.current)
         sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
       })
-    } else if (wasFullscreen) sessionInspectorCollapseAfterMount.current = true
+    } else if (deferCollapse) sessionInspectorCollapseAfterMount.current = true
     else animateSessionInspector(() => sessionInspectorPanel.current?.collapse())
     sessionSidebarFullscreenState.current = false
     setSessionSidebarFullscreen(false)
