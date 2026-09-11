@@ -32,6 +32,7 @@ import {
   Moon,
   PanelLeft,
   PanelRight,
+  PanelRightClose,
   Paperclip,
   Pencil,
   Plus,
@@ -898,7 +899,7 @@ function SessionWorkSidebar({
           aria-label="Collapse Session inspector"
           onClick={onCollapse}
         >
-          <PanelRight />
+          <PanelRightClose />
         </Button>
       </div>
       {evidence ? (
