@@ -692,6 +692,7 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           </span>
           <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="shrink-0 tabular-nums">{session.updated}</span>
+            <SessionPlanBar session={session} />
             {session.ticket ? (
               <span className="inline-flex items-center gap-1">
                 <Ticket />#{session.ticket}
@@ -706,8 +707,6 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
                 <span className="sr-only"> {session.pullRequest.state}</span>
               </span>
             ) : null}
-            <span className="min-w-0 flex-1" aria-hidden="true" />
-            <SessionPlanBar session={session} />
           </span>
         </span>
       </span>
