@@ -18,6 +18,37 @@ function option(name) {
   return at === -1 ? null : (process.argv[at + 1] ?? null)
 }
 
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+export function parseIndex(text, source) {
+  let value
+  try {
+    value = JSON.parse(text)
+  } catch (error) {
+    throw new Error(`${source}: invalid JSON (${error.message})`)
+  }
+  if (!isRecord(value) || !isRecord(value.entries)) {
+    throw new Error(`${source}: expected an object with an entries object`)
+  }
+  for (const [key, entry] of Object.entries(value.entries)) {
+    if (!isRecord(entry) || typeof entry.type !== 'string') {
+      throw new Error(`${source}: entry ${key} must have an object value with a type`)
+    }
+    if (
+      entry.type === 'story' &&
+      (typeof entry.id !== 'string' ||
+        typeof entry.name !== 'string' ||
+        typeof entry.title !== 'string' ||
+        typeof entry.importPath !== 'string')
+    ) {
+      throw new Error(`${source}: story entry ${key} is missing id, name, title, or importPath`)
+    }
+  }
+  return value
+}
+
 // Both sides of the comparison lose their extension and any leading `./` or `../`: `importPath` is
 // written relative to Storybook's own root and a changed path is relative to the repository root,
 // so only the tail they share can be matched.
@@ -107,7 +138,7 @@ if (import.meta.main) {
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
-  const index = JSON.parse(await readFile(indexPath, 'utf8'))
-  const deployedIndex = JSON.parse(await readFile(deployedIndexPath, 'utf8'))
+  const index = parseIndex(await readFile(indexPath, 'utf8'), indexPath)
+  const deployedIndex = parseIndex(await readFile(deployedIndexPath, 'utf8'), deployedIndexPath)
   process.stdout.write(comment(index, changed, { base, deployedIndex }))
 }

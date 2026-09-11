@@ -4,7 +4,7 @@
 // story, and a changed file no story covers.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { comment } from './storybook-story-links.mjs'
+import { comment, parseIndex } from './storybook-story-links.mjs'
 
 const story = (id, name, file) => ({
   type: 'story',
@@ -89,4 +89,19 @@ test('a story missing from the deployed site is named without a dead link', () =
 test('a file no story covers produces no comment at all', () => {
   assert.equal(comment(INDEX, ['apps/desktop/src/core/appearance/bridge.ts'], { base: SITE }), '')
   assert.equal(comment(INDEX, [], { base: SITE }), '')
+})
+
+test('manifest parsing rejects malformed JSON with its source', () => {
+  assert.throws(() => parseIndex('{', 'deployed index'), /deployed index: invalid JSON/)
+})
+
+test('manifest parsing rejects malformed entries before link generation', () => {
+  assert.throws(
+    () =>
+      parseIndex(
+        JSON.stringify({ entries: { broken: { type: 'story', id: 'broken' } } }),
+        'deployed index',
+      ),
+    /deployed index: story entry broken is missing id, name, title, or importPath/,
+  )
 })
