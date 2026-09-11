@@ -1,7 +1,8 @@
 import { FileCode2, FileText, ImageIcon, SquareTerminal, Workflow } from 'lucide-react'
+import { Terminal } from '@/components/ai-elements/terminal'
 import type { FeedPrototypeEvidence } from './evidence'
 import { DiagramDrawing } from './FeedDiagram'
-import { HighlightedCode } from './FeedPrimitives'
+import { FeedCode } from './FeedPrimitives'
 
 export function EvidenceKindIcon({ kind }: { kind: FeedPrototypeEvidence['kind'] }) {
   switch (kind) {
@@ -73,7 +74,7 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
       )
     case 'diagram':
       return (
-      <div className="overflow-auto rounded-lg border bg-surface-raised">
+        <div className="overflow-auto rounded-lg border bg-surface-raised">
           <DiagramDrawing />
         </div>
       )
@@ -88,16 +89,14 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
     case 'document':
       return <RenderedMarkdown source={evidence.source} />
     case 'code':
-      return (
-        <pre className="overflow-x-auto font-mono text-control leading-relaxed">
-          <HighlightedCode source={evidence.source} />
-        </pre>
-      )
+      return <FeedCode source={evidence.source} />
     case 'output':
       return (
-        <pre className="overflow-x-auto font-mono text-control leading-relaxed">
-          <code>{evidence.source}</code>
-        </pre>
+        <Terminal
+          output={evidence.source}
+          className="[&_*]:text-(length:--text-control)"
+          aria-label={evidence.title}
+        />
       )
   }
 }

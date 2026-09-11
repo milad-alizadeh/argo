@@ -1,19 +1,11 @@
-import {
-  Check,
-  FilePenLine,
-  LoaderCircle,
-  PanelRightOpen,
-  Search,
-  SquareTerminal,
-  Wrench,
-} from 'lucide-react'
+import { Check, FilePenLine, PanelRightOpen, Search, SquareTerminal, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { Task, TaskContent, TaskItem, TaskTrigger } from '@/components/ai-elements/task'
 import { Button } from '@/renderer/components/ui/button'
-import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/marker'
-import { SessionDisclosure } from '../SessionDisclosure'
-import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
+import { FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
 
-export const FEED_DISCLOSURE_SURFACE_CLASS = '!bg-surface-raised transition-colors hover:!bg-surface-inset'
+export const FEED_DISCLOSURE_SURFACE_CLASS =
+  '!bg-surface-raised transition-colors hover:!bg-surface-inset'
 
 type ToolRow = {
   label: string
@@ -108,22 +100,21 @@ function ToolGroup({
   activeEvidenceId: string | null
 }) {
   return (
-    <SessionDisclosure icon={<SquareTerminal />} label={title}>
-      <div className="ml-6 space-y-1 pb-1">
-        {sections.map((section, index) => (
-          <div key={section.rows[0]?.label ?? index}>
-            {section.rows.map((row) => (
-              <FeedToolLine
-                key={row.label}
-                row={row}
-                onOpen={onOpen}
-                activeEvidenceId={activeEvidenceId}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </SessionDisclosure>
+    <Task defaultOpen={false} className="mb-0">
+      <TaskTrigger
+        title={title}
+        className="w-full rounded-lg px-2 py-2 text-(length:--text-control) hover:bg-surface-inset [&>div]:text-(length:--text-control)"
+      />
+      <TaskContent className="[&>div]:mt-2 [&>div]:space-y-1">
+        {sections.flatMap((section) =>
+          section.rows.map((row) => (
+            <TaskItem key={row.label} className="text-(length:--text-control)">
+              <FeedToolLine row={row} onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
+            </TaskItem>
+          )),
+        )}
+      </TaskContent>
+    </Task>
   )
 }
 
@@ -141,21 +132,6 @@ export function FeedToolGroups({
       onOpen={onOpen}
       activeEvidenceId={activeEvidenceId}
     />
-  )
-}
-
-export function FeedPendingCall({ mode = 'running' }: { mode?: 'running' | 'thinking' }) {
-  return (
-    <Marker className="py-2 text-(length:--text-body)" role="status">
-      <MarkerIcon>
-        <LoaderCircle className="!size-(--size-icon-control) motion-safe:animate-spin" />
-      </MarkerIcon>
-      <MarkerContent>
-        <span className="font-medium">{mode === 'thinking' ? 'Thinking' : 'Running'}</span>
-        <span className="ml-1 text-foreground">the attachment stress check</span>
-      </MarkerContent>
-      <span className="ml-auto text-(length:--text-control) text-muted-foreground">12s</span>
-    </Marker>
   )
 }
 
@@ -190,26 +166,5 @@ export function FeedMutationExamples({
         Returned from layout review<span className="ml-auto">38s</span>
       </div>
     </div>
-  )
-}
-
-export function FeedEvidenceLink({
-  evidence,
-  onOpen,
-  children,
-}: {
-  evidence: FeedPrototypeEvidence
-  onOpen: FeedEvidenceAction
-  children: string
-}) {
-  return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 underline decoration-border underline-offset-4 hover:decoration-foreground"
-      onClick={() => onOpen(evidence)}
-    >
-      {children}
-      <PanelRightOpen className="!size-(--size-icon-inline)" />
-    </button>
   )
 }

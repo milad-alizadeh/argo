@@ -1,9 +1,9 @@
 import { COMPOSER_CODE, FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
 import { FeedDiagram } from './FeedDiagram'
+import { FeedEvidenceLink } from './FeedEvidenceLink'
 import { FeedImages } from './FeedImages'
 import { FeedCode, FeedTurn } from './FeedPrimitives'
 import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
-import { FeedEvidenceLink } from './FeedTools'
 
 export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
   return (
@@ -88,7 +88,7 @@ function FeedResultsTable() {
     <div className={`overflow-x-auto border ${FEED_CARD_RADIUS_CLASS}`}>
       <table className="w-full text-left text-control">
         <caption className="sr-only">Composer layout checks</caption>
-          <thead className="bg-surface-inset">
+        <thead className="bg-surface-inset">
           <tr>
             {['Case', 'Behavior', 'Result'].map((title) => (
               <th key={title} className="px-3 py-2 font-medium">
