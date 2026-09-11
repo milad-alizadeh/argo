@@ -2,6 +2,7 @@
 @import "../tokens.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./cockpit-base.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -11,9 +12,20 @@
   /* The cockpit's own scale, frozen by the shell design (#1896). Every one of these is reached by
      name from a component; a measurement written at a call site is the thing this block prevents. */
   --text-title: 20px;
+  --text-heading: 14px;
   --text-body: 13px;
   --text-control: 12px;
   --size-chrome-bar: 52px;
+  --size-navigation-rail: 88px;
+  --size-navigation-item: 36px;
+  --size-navigation-control: 28px;
+  --size-icon-control: 16px;
+  --size-session-roster: 336px;
+  --size-session-inspector: 240px;
+  --spacing-shell-tight: 4px;
+  --spacing-shell-item: 8px;
+  --spacing-shell-gutter: 12px;
+  --spacing-shell-inset: 16px;
   --size-sidebar: 240px;
   --size-deck: 640px;
   --inset-traffic-lights: 84px;
@@ -125,33 +137,4 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-  /* The one root ring (#1785). A shadcn component sets `outline-none` and draws its own from the
-     same `--ring`, and a utility layer beats this base rule, so the two never stack. Everything
-     shadcn does not draw lands here rather than showing no keyboard cursor at all. */
-  :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-  }
-}
-@layer components {
-  /* A frameless window is dragged by the page, and the appearance control inside the band is not
-     part of the handle. `titleBarStyle: 'hiddenInset'` in src/main.ts is the other half. */
-  .drag-region {
-    -webkit-app-region: drag;
-  }
-  .no-drag-region {
-    -webkit-app-region: no-drag;
-  }
 }

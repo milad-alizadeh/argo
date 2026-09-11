@@ -2,7 +2,7 @@
 // inset into its leading edge by the 84px inset (ADR-0038).
 import type { ReactNode } from 'react'
 
-export function ChromeBar({ subject, children }: { subject: string; children: ReactNode }) {
+export function ChromeBar({ subject, children }: { subject: string; children?: ReactNode }) {
   return (
     <header
       data-component="ChromeBar"
