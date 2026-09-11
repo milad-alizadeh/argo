@@ -358,14 +358,91 @@ function HarnessLogo({ harness, className = 'size-(--size-icon-control)' }: { ha
 
 const PROJECTS: ProjectKey[] = ['argo', 'fresco', 'posthog']
 
-function ConciergeOrb({ compact = false }: { compact?: boolean }) {
+function ConciergeOrb() {
   return (
     <span
       aria-hidden="true"
-      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full ${compact ? 'size-7' : 'size-11'}`}
+      className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full"
     >
       <span className="absolute inset-[12%] rounded-full bg-[radial-gradient(circle_at_35%_30%,var(--background),transparent_35%),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
     </span>
+  )
+}
+
+function RosterConcierge() {
+  const [microphoneMuted, setMicrophoneMuted] = useState(false)
+  const [speakerMuted, setSpeakerMuted] = useState(false)
+  const mutedControlClass = 'relative after:absolute after:h-px after:w-4 after:rotate-45 after:bg-current'
+
+  return (
+    <div className="shrink-0 border-t p-3">
+      <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-2">
+        <a
+          href="#/concierge"
+          aria-label="Open Concierge chat"
+          className="relative shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          <ConciergeOrb />
+          <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">
+            2
+          </span>
+        </a>
+        <div className="min-w-0 flex-1">
+          <a href="#/concierge" className="block min-w-0 leading-tight">
+            <span className="block truncate text-(length:--text-control) text-muted-foreground">
+              “Keep the composer fixed and make the feed richer.”
+            </span>
+            <span className="mt-0.5 block truncate text-(length:--text-control) font-medium text-foreground">
+              I’m updating the prototype now.
+            </span>
+          </a>
+          <TooltipProvider>
+            <div className="mt-1.5 flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className={microphoneMuted ? mutedControlClass : undefined}
+                      aria-pressed={microphoneMuted}
+                      aria-label={microphoneMuted ? 'Unmute Concierge microphone' : 'Mute Concierge microphone'}
+                      onClick={() => setMicrophoneMuted(!microphoneMuted)}
+                    />
+                  }
+                >
+                  {microphoneMuted ? <MicOff /> : <Mic />}
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {microphoneMuted ? 'Unmute microphone' : 'Mute microphone'}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className={speakerMuted ? mutedControlClass : undefined}
+                      aria-pressed={speakerMuted}
+                      aria-label={speakerMuted ? 'Unmute Concierge sound' : 'Mute Concierge sound'}
+                      onClick={() => setSpeakerMuted(!speakerMuted)}
+                    />
+                  }
+                >
+                  {speakerMuted ? <VolumeX /> : <Volume2 />}
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {speakerMuted ? 'Unmute sound' : 'Mute sound'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -425,77 +502,12 @@ function PrototypeChrome({
   currentProject: ProjectKey
   onProjectChange: (project: ProjectKey) => void
 }) {
-  const [microphoneMuted, setMicrophoneMuted] = useState(false)
-  const [speakerMuted, setSpeakerMuted] = useState(false)
-
   return (
     <header className="flex h-11 shrink-0 items-center bg-muted/50 px-3 pl-16">
       <ProjectManager
         currentProject={currentProject}
         onProjectChange={onProjectChange}
       />
-      <div className="ml-auto flex items-center gap-1">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-pressed={microphoneMuted}
-                  aria-label={microphoneMuted ? 'Unmute Concierge microphone' : 'Mute Concierge microphone'}
-                  onClick={() => setMicrophoneMuted(!microphoneMuted)}
-                />
-              }
-            >
-              {microphoneMuted ? <MicOff /> : <Mic />}
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {microphoneMuted ? 'Unmute microphone' : 'Mute microphone'}
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-pressed={speakerMuted}
-                  aria-label={speakerMuted ? 'Unmute Concierge sound' : 'Mute Concierge sound'}
-                  onClick={() => setSpeakerMuted(!speakerMuted)}
-                />
-              }
-            >
-              {speakerMuted ? <VolumeX /> : <Volume2 />}
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {speakerMuted ? 'Unmute sound' : 'Mute sound'}
-            </TooltipContent>
-          </Tooltip>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 px-2"
-            aria-label="Open Concierge chat"
-            render={<a href="#/concierge" />}
-          >
-            <span className="min-w-0 max-w-72 text-right leading-tight">
-              <span className="block truncate text-(length:--text-control) text-muted-foreground">
-                “Keep the composer fixed and make the feed richer.”
-              </span>
-              <span className="block truncate text-(length:--text-control) font-medium text-foreground">
-                I’m updating the prototype now.
-              </span>
-            </span>
-            <span className="relative shrink-0">
-              <ConciergeOrb compact />
-              <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">2</span>
-            </span>
-          </Button>
-        </TooltipProvider>
-      </div>
     </header>
   )
 }
@@ -689,6 +701,7 @@ function PrototypeSessionRoster({
           ))}
         </div>
       </div>
+      <RosterConcierge />
     </aside>
   )
 }
