@@ -744,7 +744,7 @@ function PrototypeSessionRoster({
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border bg-background">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-background">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="text-sm font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
@@ -2042,7 +2042,7 @@ export function ComposerPrototype() {
         />
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border bg-background"
+          className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border/60 bg-background"
         >
         <ResizablePanel
           id="session-roster"
@@ -2068,7 +2068,7 @@ export function ComposerPrototype() {
             />
           </div>
         </ResizablePanel>
-        <ResizableHandle className="z-30" />
+        <ResizableHandle className="z-30 bg-border/60" />
         <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
         <main
           className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
@@ -2209,7 +2209,7 @@ export function ComposerPrototype() {
           </div>
           </div>
           </ResizablePanel>
-          <ResizableHandle className="z-30" />
+          <ResizableHandle className="z-30 bg-border/60" />
           <ResizablePanel
             id="session-inspector"
             panelRef={sessionInspectorPanel}
