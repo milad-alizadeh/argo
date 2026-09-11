@@ -925,7 +925,20 @@ function SessionWorkSidebar({
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-end border-b border-border/60 bg-sidebar px-3">
+      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-between border-b border-border/60 bg-sidebar px-3">
+        {evidence ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-start type-label"
+            onClick={onShowActivity}
+          >
+            <ArrowLeft />
+            Session activity
+          </Button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -947,17 +960,6 @@ function SessionWorkSidebar({
       </div>
       {evidence ? (
         <div className="flex min-h-0 flex-1 flex-col bg-sidebar">
-          <div className="flex h-11 shrink-0 items-center border-b border-border/60 bg-sidebar px-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-start type-label"
-              onClick={onShowActivity}
-            >
-              <ArrowLeft />
-              Session activity
-            </Button>
-          </div>
           <div className="min-h-0 flex-1">
             <FeedEvidencePrototype evidence={evidence} />
           </div>
