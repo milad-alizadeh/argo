@@ -615,6 +615,12 @@ const PULL_REQUEST_STYLES: Record<PrototypeSession['pullRequest']['state'], stri
   merged: 'text-violet-600 dark:text-violet-400',
 }
 
+const PULL_REQUEST_STATE_LABELS: Record<PrototypeSession['pullRequest']['state'], string> = {
+  open: 'Open',
+  draft: 'Draft',
+  merged: 'Merged',
+}
+
 const formatSessionTokens = (tokens: number) => `${Math.round(tokens / 1000)}k tokens`
 
 function sessionPlanStepTone(session: PrototypeSession, step: number) {
@@ -658,11 +664,24 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
       }`}
     >
       <span className="flex items-start gap-2">
-        <span className="relative flex h-4 shrink-0 items-center">
-          <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
-          <span
-            className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-sidebar ${STATUS_STYLES[session.status]}`}
-          />
+        <span className="flex w-4 shrink-0 flex-col items-center gap-0.5">
+          <span className="relative flex h-5 items-center">
+            <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
+            <span
+              className={`absolute -right-0.5 bottom-0 size-1.5 rounded-full ring-2 ring-sidebar ${STATUS_STYLES[session.status]}`}
+            />
+          </span>
+          {session.subagents > 0 ? (
+            <span
+              className="flex flex-col items-center gap-0.5"
+              role="img"
+              aria-label={`${session.subagents} running subagents`}
+            >
+              {Array.from({ length: Math.min(session.subagents, 5) }, (_, index) => (
+                <span key={index} className="size-0.75 rounded-full bg-emerald-500" />
+              ))}
+            </span>
+          ) : null}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-(length:--text-body) leading-5 font-medium text-foreground">
@@ -680,15 +699,11 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
               </span>
               <span
                 className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
+                title={`${PULL_REQUEST_STATE_LABELS[session.pullRequest.state]} pull request #${session.pullRequest.number}`}
               >
                 <GitFork />#{session.pullRequest.number}
                 <span className="sr-only"> {session.pullRequest.state}</span>
               </span>
-              {session.subagents > 0 ? (
-                <span className="inline-flex items-center gap-1">
-                  <Bot />{session.subagents}
-                </span>
-              ) : null}
             </span>
           </span>
         </span>
@@ -709,7 +724,12 @@ function PrototypeSessionRoster({
   return (
     <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-sidebar">
       <div className="flex h-14 shrink-0 items-center px-3">
-        <h1 className="text-sm font-medium">Sessions</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-sm font-medium">Sessions</h1>
+          <p className="mt-1 truncate text-(length:--text-control) text-muted-foreground">
+            {sessions.length} Sessions
+          </p>
+        </div>
         <div className="ml-auto flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
