@@ -1,11 +1,11 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 const TRANSITION_DURATION_MS = 240
 const TRANSITION_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 
 type ImageBounds = Pick<DOMRect, 'height' | 'left' | 'top' | 'width'>
 type TransitionElements = {
-  backdrop: HTMLDivElement
+  backdrop: HTMLButtonElement
   controls: HTMLDivElement | null
   preview: HTMLImageElement
 }
@@ -71,8 +71,8 @@ async function closeToSource(
 export function useImageLightboxTransition() {
   const [open, setOpen] = useState(false)
   const sourceRef = useRef<HTMLImageElement>(null)
-  const previewRef = useRef<HTMLImageElement>(null)
-  const backdropRef = useRef<HTMLDivElement>(null)
+  const previewElementRef = useRef<HTMLImageElement>(null)
+  const backdropRef = useRef<HTMLButtonElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const sourceBoundsRef = useRef<ImageBounds | null>(null)
   const destinationBoundsRef = useRef<ImageBounds | null>(null)
@@ -82,7 +82,7 @@ export function useImageLightboxTransition() {
   }, [])
   const getElements = useCallback(() => {
     const backdrop = backdropRef.current
-    const preview = previewRef.current
+    const preview = previewElementRef.current
     return backdrop && preview ? { backdrop, controls: controlsRef.current, preview } : null
   }, [])
   const close = useCallback(async () => {
@@ -96,12 +96,16 @@ export function useImageLightboxTransition() {
     setOpen(false)
     closingRef.current = false
   }, [getElements])
-  useLayoutEffect(() => {
-    if (!open || prefersReducedMotion()) return
-    const elements = getElements()
-    const source = sourceBoundsRef.current
-    if (elements && source) destinationBoundsRef.current = openFromSource(elements, source)
-  }, [getElements, open])
+  const mountPreview = useCallback(
+    (preview: HTMLImageElement | null) => {
+      previewElementRef.current = preview
+      if (!preview || !open || prefersReducedMotion()) return
+      const elements = getElements()
+      const source = sourceBoundsRef.current
+      if (elements && source) destinationBoundsRef.current = openFromSource(elements, source)
+    },
+    [getElements, open],
+  )
   const onOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) return void close()
@@ -117,7 +121,7 @@ export function useImageLightboxTransition() {
     controlsRef,
     onOpenChange,
     open,
-    previewRef,
+    previewRef: mountPreview,
     sourceRef,
   }
 }

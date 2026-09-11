@@ -25,7 +25,14 @@ function LightboxContent({
     >
       <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
       <DialogDescription className="sr-only">Full-size image preview</DialogDescription>
-      <div ref={transition.backdropRef} className="absolute inset-0 bg-black/60 backdrop-blur-lg" />
+      <button
+        ref={transition.backdropRef}
+        type="button"
+        tabIndex={-1}
+        aria-label="Close image preview backdrop"
+        className="absolute inset-0 border-0 bg-black/60 p-0 backdrop-blur-lg"
+        onClick={transition.close}
+      />
       <div
         ref={transition.controlsRef}
         className="absolute top-4 right-4 z-20 flex items-center gap-2"
