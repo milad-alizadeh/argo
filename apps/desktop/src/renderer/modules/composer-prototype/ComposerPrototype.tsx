@@ -688,7 +688,7 @@ function PrototypeSessionRoster({
           <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-(length:--text-control)">⌘K</span>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         <div className="space-y-1 pt-1">
           {sessions.map((session) => (
             <SessionRosterRow key={session.id} session={session} />
