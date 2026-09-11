@@ -2,10 +2,12 @@ import {
   ArrowDown,
   ArrowDownLeft,
   ArrowDownRight,
+  Code2,
   Expand,
   Maximize,
   Minus,
   Plus,
+  Workflow,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
@@ -52,12 +54,12 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
       <figcaption className="flex items-center justify-between border-b px-3 py-2 text-control">
         <span className="font-medium">From draft to Feed</span>
         <Button
-          size="xs"
+          size="icon-xs"
           variant="ghost"
-          className="text-control"
+          aria-label={source ? 'Show rendered diagram' : 'Show diagram source'}
           onClick={() => setSource(!source)}
         >
-          {source ? 'Diagram' : 'Source'}
+          {source ? <Workflow /> : <Code2 />}
         </Button>
       </figcaption>
       <div className="relative h-80">
