@@ -6,6 +6,7 @@ import {
   Bot,
   Check,
   ChevronDown,
+  CircleCheck,
   CircleGauge,
   CircleHelp,
   Command,
@@ -982,9 +983,9 @@ function SessionWorkSidebar({
           </button>
           <div className="mt-3">
             <CollapsibleText
-              content={<p className="text-muted-foreground">Finished background work</p>}
+              content={<p className="type-meta text-muted-foreground">Finished background work</p>}
               contentVariant="plain"
-              icon={Check}
+              icon={CircleCheck}
               title="6 finished"
             />
           </div>
