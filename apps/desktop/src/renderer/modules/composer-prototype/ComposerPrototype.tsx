@@ -449,7 +449,7 @@ function PrototypeChrome({
           </span>
           <span className="relative shrink-0">
             <ConciergeOrb compact />
-            <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+            <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">2</span>
           </span>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-72 gap-3 p-3">
