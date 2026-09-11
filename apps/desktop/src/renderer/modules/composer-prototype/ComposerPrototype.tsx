@@ -941,7 +941,7 @@ function SessionWorkSidebar({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <h3 className="mb-2 text-(length:--text-control) font-semibold">Background Agents · 5</h3>
+          <h3 className="mb-2 translate-y-2 text-(length:--text-control) font-semibold">Background Agents · 5</h3>
           <div className="space-y-1">
             {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
               <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-muted">
