@@ -1,9 +1,10 @@
-import { Check, Copy, FileCode2 } from 'lucide-react'
+import { Check, Copy } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Button } from '@/renderer/components/ui/button'
 import { Marker, MarkerContent } from '@/renderer/components/ui/marker'
 import { Message, MessageContent, MessageHeader } from '@/renderer/components/ui/message'
+import { CodeLanguageIcon, codeLanguageLabel, detectCodeLanguage } from './CodeLanguageIcon'
 
 export function FeedBoundary({ children }: { children: ReactNode }) {
   return (
@@ -124,16 +125,18 @@ export function HighlightedCode({ source }: { source: string }) {
 }
 
 export function FeedCode({ source, language }: { source: string; language?: string }) {
+  const detectedLanguage = detectCodeLanguage(source, language)
+  const languageLabel = codeLanguageLabel(detectedLanguage)
   return (
     <figure className="min-w-0 overflow-hidden rounded-lg border bg-card">
       <figcaption className="flex items-center justify-between border-b px-3 py-1.5 text-control text-muted-foreground">
         <span
           role="img"
           className="grid size-6 place-items-center rounded-md bg-sky-500/10 text-sky-700 dark:text-sky-300"
-          aria-label={language ? `${language} file` : 'Code file'}
-          title={language ? `${language} file` : undefined}
+          aria-label={`${languageLabel} file`}
+          title={`${languageLabel} file`}
         >
-          <FileCode2 className="!size-(--size-icon-inline)" />
+          <CodeLanguageIcon language={detectedLanguage} />
         </span>
         <CopyFeedContent text={source} />
       </figcaption>
