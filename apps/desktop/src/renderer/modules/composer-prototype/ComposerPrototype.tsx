@@ -457,7 +457,10 @@ function PrototypeChrome({
             <PopoverTitle className="flex items-center gap-2 text-xs">
               Concierge
               <span className="ml-auto inline-flex items-center gap-1 text-(length:--text-control) font-normal text-muted-foreground">
-                <span className="size-1.5 rounded-full bg-emerald-500" />Listening
+                <span
+                  className={`size-1.5 rounded-full ${microphoneMuted ? 'bg-muted-foreground' : 'bg-emerald-500'}`}
+                />
+                {microphoneMuted ? 'Mic muted' : 'Listening'}
               </span>
             </PopoverTitle>
             <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
