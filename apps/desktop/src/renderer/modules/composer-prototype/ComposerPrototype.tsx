@@ -498,6 +498,25 @@ function ProjectManager({
   )
 }
 
+function PrototypeChrome({
+  currentProject,
+  onProjectChange,
+}: {
+  currentProject: ProjectKey
+  onProjectChange: (project: ProjectKey) => void
+}) {
+  return (
+    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background pr-3 pl-(--inset-traffic-lights)">
+      <div className="no-drag-region">
+        <ProjectManager
+          currentProject={currentProject}
+          onProjectChange={onProjectChange}
+        />
+      </div>
+    </header>
+  )
+}
+
 const RAIL_ITEMS = [
   { label: 'Sessions', icon: <Bot />, active: true },
   { label: 'Tickets', icon: <Ticket />, active: false },
@@ -691,23 +710,15 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
 
 function PrototypeSessionRoster({
   currentProject,
-  onProjectChange,
   onCollapse,
 }: {
   currentProject: ProjectKey
-  onProjectChange: (project: ProjectKey) => void
   onCollapse: () => void
 }) {
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
-      <div className="flex h-14 shrink-0 items-center border-b border-border/60 px-3">
-        <ProjectManager
-          currentProject={currentProject}
-          onProjectChange={onProjectChange}
-        />
-      </div>
       <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
@@ -2006,7 +2017,12 @@ export function ComposerPrototype() {
 
   return (
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
-      <div className="flex h-full min-h-0 overflow-hidden">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <PrototypeChrome
+          currentProject={currentProject}
+          onProjectChange={setCurrentProject}
+        />
+        <div className="flex min-h-0 flex-1 overflow-hidden">
         <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <div className="min-h-0 min-w-0 flex-1 pr-0.75 pb-1">
         <ResizablePanelGroup
@@ -2032,7 +2048,6 @@ export function ComposerPrototype() {
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
-              onProjectChange={setCurrentProject}
               onCollapse={() => setSessionRosterVisible(false)}
             />
           </div>
@@ -2210,6 +2225,7 @@ export function ComposerPrototype() {
         </ResizablePanel>
         </ResizablePanelGroup>
         </div>
+      </div>
       </div>
     </div>
   )
