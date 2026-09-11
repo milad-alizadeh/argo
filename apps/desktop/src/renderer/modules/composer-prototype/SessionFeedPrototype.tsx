@@ -1,7 +1,6 @@
-import { GitFork, Sparkles } from 'lucide-react'
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
+import { BrainIcon, GitFork, Sparkles } from 'lucide-react'
+import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './feed/evidence'
-import { FeedDisclosure } from './feed/FeedDisclosure'
 import { FeedMarkdown } from './feed/FeedEvidenceBody'
 import { FeedAdditionalStates } from './feed/FeedHistory'
 import { FeedAttachedImage } from './feed/FeedImages'
@@ -16,16 +15,15 @@ export { FeedEvidencePrototype } from './feed/FeedEvidencePrototype'
 function FeedSkillInvocation() {
   const evidence = FEED_EVIDENCE.skill
   return (
-    <FeedDisclosure
+    <CollapsibleText
       icon={Sparkles}
-      label={
+      title={
         <>
           Skill invoked <span className="font-medium text-foreground">{evidence.title}</span>
         </>
       }
-    >
-      <FeedMarkdown source={evidence.source} />
-    </FeedDisclosure>
+      content={<FeedMarkdown source={evidence.source} />}
+    />
   )
 }
 
@@ -52,17 +50,17 @@ export function SessionFeedPrototype({
           same time.
         </p>
         <FeedSkillInvocation />
-        <Reasoning defaultOpen={false} className="mb-0">
-          <ReasoningTrigger
-            className="text-(length:--text-control)"
-            getThinkingMessage={() => 'Reasoning'}
-          />
-          <ReasoningContent className="text-(length:--text-body) leading-relaxed">
-            {
-              'The roster provides context for switching Sessions. Results can use the existing sidebar, so the conversation keeps a stable reading width. The approved composer already establishes the bottom edge.'
-            }
-          </ReasoningContent>
-        </Reasoning>
+        <CollapsibleText
+          icon={BrainIcon}
+          title="Reasoning"
+          content={
+            <p className="text-(length:--text-body) leading-relaxed text-muted-foreground">
+              The roster provides context for switching Sessions. Results can use the existing
+              sidebar, so the conversation keeps a stable reading width. The approved composer
+              already establishes the bottom edge.
+            </p>
+          }
+        />
         <div className="flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
           <GitFork className="!size-(--size-icon-inline)" />
           <span>Delegated layout review and feed coverage</span>

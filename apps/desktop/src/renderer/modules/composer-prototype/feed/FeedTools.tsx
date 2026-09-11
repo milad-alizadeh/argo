@@ -1,8 +1,8 @@
 import { Check, FilePenLine, Search, SquareTerminal, TerminalIcon, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { TaskItem } from '@/components/ai-elements/task'
+import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
-import { FeedDisclosure } from './FeedDisclosure'
 
 type ToolRow = {
   label: string
@@ -96,15 +96,17 @@ function ToolGroup({
   activeEvidenceId: string | null
 }) {
   return (
-    <FeedDisclosure icon={TerminalIcon} label={title}>
-      {sections.flatMap((section) =>
+    <CollapsibleText
+      icon={TerminalIcon}
+      title={title}
+      content={sections.flatMap((section) =>
         section.rows.map((row) => (
           <TaskItem key={row.label} className="text-(length:--text-control)">
             <FeedToolLine row={row} onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
           </TaskItem>
         )),
       )}
-    </FeedDisclosure>
+    />
   )
 }
 

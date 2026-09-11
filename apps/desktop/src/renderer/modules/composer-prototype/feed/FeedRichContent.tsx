@@ -1,7 +1,7 @@
 import { NotebookPen } from 'lucide-react'
+import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import { COMPOSER_CODE, FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
 import { FeedDiagram } from './FeedDiagram'
-import { FeedDisclosure } from './FeedDisclosure'
 import { FeedEvidenceLink } from './FeedEvidenceLink'
 import { FeedImages } from './FeedImages'
 import { FeedCode, FeedTurn } from './FeedPrimitives'
@@ -40,41 +40,45 @@ export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
           <li>Tool results open beside the conversation.</li>
         </ul>
       </div>
-      <FeedDisclosure icon={NotebookPen} label="Review notes">
-        <div className="space-y-3 text-body leading-relaxed">
-          <p>
-            The old <s>wrapping attachment grid</s> is now a <strong>single tray</strong>. The draft
-            stays <em>editable</em> throughout.
-          </p>
-          <ol className="list-decimal space-y-1 pl-5">
-            <li>Attach one image.</li>
-            <li>Add nine more files.</li>
-            <li>Scroll the tray, then send the Turn.</li>
-          </ol>
-          <ul className="space-y-1">
-            <li>
-              <input
-                aria-label="Draft restored"
-                type="checkbox"
-                checked
-                readOnly
-                className="mr-2 accent-primary"
-              />
-              Draft restored
-            </li>
-            <li>
-              <input
-                aria-label="Narrow layout review"
-                type="checkbox"
-                checked={false}
-                readOnly
-                className="mr-2 accent-primary"
-              />
-              Narrow layout review
-            </li>
-          </ul>
-        </div>
-      </FeedDisclosure>
+      <CollapsibleText
+        icon={NotebookPen}
+        title="Review notes"
+        content={
+          <div className="space-y-3 text-body leading-relaxed">
+            <p>
+              The old <s>wrapping attachment grid</s> is now a <strong>single tray</strong>. The
+              draft stays <em>editable</em> throughout.
+            </p>
+            <ol className="list-decimal space-y-1 pl-5">
+              <li>Attach one image.</li>
+              <li>Add nine more files.</li>
+              <li>Scroll the tray, then send the Turn.</li>
+            </ol>
+            <ul className="space-y-1">
+              <li>
+                <input
+                  aria-label="Draft restored"
+                  type="checkbox"
+                  checked
+                  readOnly
+                  className="mr-2 accent-primary"
+                />
+                Draft restored
+              </li>
+              <li>
+                <input
+                  aria-label="Narrow layout review"
+                  type="checkbox"
+                  checked={false}
+                  readOnly
+                  className="mr-2 accent-primary"
+                />
+                Narrow layout review
+              </li>
+            </ul>
+          </div>
+        }
+      />
     </FeedTurn>
   )
 }
