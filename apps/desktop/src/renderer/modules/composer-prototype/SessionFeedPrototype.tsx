@@ -26,7 +26,7 @@ function FeedSkillInvocation({
   return (
     <Button
       variant="outline"
-      className={`h-8 w-fit max-w-full justify-start gap-1.5 px-2 text-(length:--text-control) font-normal ${FEED_DISCLOSURE_SURFACE_CLASS} ${active ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+      className={`h-8 w-fit max-w-full justify-start gap-1.5 px-2 text-(length:--text-control) font-normal ${FEED_DISCLOSURE_SURFACE_CLASS} ${active ? 'bg-surface-inset text-foreground' : 'text-muted-foreground'}`}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
       onClick={() => onOpen(evidence)}

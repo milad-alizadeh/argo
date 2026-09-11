@@ -384,7 +384,7 @@ function RosterConcierge() {
 
   return (
     <div className="h-(--size-bottom-status) shrink-0 p-3">
-      <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-2">
+      <div className="flex items-start gap-3 rounded-lg bg-surface-inset p-2">
         <a
           href="#/concierge"
           aria-label="Open Concierge chat"
@@ -544,7 +544,7 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-1 text-(length:--text-control) leading-none text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
+        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-1 text-(length:--text-control) leading-none text-muted-foreground hover:bg-surface-panel hover:text-foreground" />}
       >
         <span className="grid size-6 place-items-center">
           <Settings />
@@ -554,7 +554,7 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>Account</DropdownMenuLabel>
         <DropdownMenuItem className="gap-2 py-2">
-          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-background text-[10px] font-semibold">MA</span>
+          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-surface-raised text-[10px] font-semibold">MA</span>
           <span className="min-w-0">
             <span className="block truncate text-xs font-medium">milad</span>
             <span className="block text-[10px] text-muted-foreground">Account settings</span>
@@ -608,8 +608,8 @@ function PrototypeRail({
               aria-current={item.active ? 'page' : undefined}
               className={`grid size-9 place-items-center rounded-lg transition-colors ${
                 item.active
-                  ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
-                  : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
+                  ? 'bg-surface-raised text-foreground shadow-sm ring-1 ring-border/70'
+                  : 'text-muted-foreground hover:bg-surface-panel hover:text-foreground'
               }`}
             >
               {item.icon}
@@ -685,8 +685,8 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
       aria-current={selected ? 'page' : undefined}
       className={`group w-full rounded-lg px-2 py-2 text-left transition-colors ${
         selected
-          ? 'bg-sidebar-shell text-foreground'
-          : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+          ? 'bg-surface-shell text-foreground'
+          : 'text-muted-foreground hover:bg-surface-inset hover:text-foreground'
       }`}
     >
       <span className="flex items-start gap-2">
@@ -750,7 +750,7 @@ function PrototypeSessionRoster({
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-sidebar">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-surface-panel">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="px-2 text-sm font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
@@ -825,7 +825,7 @@ function PrototypeSessionHeader({
   onOpenSidebar: () => void
 }) {
   return (
-    <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-3 border-b border-border/60 bg-background px-4">
+    <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-3 border-b border-border/60 bg-surface-canvas px-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -857,7 +857,7 @@ function PrototypeSessionHeader({
       </div>
       <TooltipProvider>
         <div
-          className="ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30"
+          className="ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-surface-inset"
         >
           <HeaderSignal
             icon={<GitPullRequestCreate />}
@@ -902,8 +902,8 @@ function SessionWorkSidebar({
   onCollapse: () => void
 }) {
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-end border-b border-border/60 bg-sidebar px-3">
+    <aside className="flex h-full min-h-0 w-full flex-col bg-surface-panel">
+      <div className="flex h-(--size-chrome-bar) shrink-0 items-center justify-end border-b border-border/60 bg-surface-panel px-3">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -924,7 +924,7 @@ function SessionWorkSidebar({
         </div>
       </div>
       {evidence ? (
-        <div className="flex min-h-0 flex-1 flex-col bg-sidebar">
+        <div className="flex min-h-0 flex-1 flex-col bg-surface-panel">
           <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
             <Button
               variant="ghost"
@@ -945,7 +945,7 @@ function SessionWorkSidebar({
           <h3 className="mb-2 translate-y-2 text-(length:--text-control) font-semibold">Background Agents · 5</h3>
           <div className="space-y-1">
             {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
-              <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-muted">
+              <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-surface-inset">
                 <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
                 <span className="truncate text-(length:--text-body) font-medium">{label}</span>
                 <span className="col-start-2 text-(length:--text-control) text-muted-foreground">
@@ -956,7 +956,7 @@ function SessionWorkSidebar({
           </div>
           <div className="my-3 h-px bg-border/60" />
           <h3 className="mb-2 text-(length:--text-control) font-semibold">Shell · 1</h3>
-          <button type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg bg-muted/60 p-2 text-left">
+          <button type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg bg-surface-inset p-2 text-left">
             <span className="size-2 rounded-full border border-emerald-500" />
             <span className="truncate font-mono text-(length:--text-control)">bun run dev</span>
             <span className="col-start-2 mt-0.5 text-(length:--text-control) text-muted-foreground">
@@ -1055,7 +1055,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] overflow-hidden p-0">
         <div className="border-b p-2">
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Harness">
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-inset p-1" role="tablist" aria-label="Harness">
             {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => {
               const active = state.harness === harness
               return (
@@ -1066,7 +1066,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
                   aria-selected={active}
                   onClick={() => setState(selectHarness(state, harness))}
                   className={`flex h-8 items-center justify-center gap-2 rounded-md px-3 text-xs font-medium transition-colors ${
-                    active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    active ? 'bg-surface-raised text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <IconLabel icon={<HarnessLogo harness={harness} className="size-3.5" />}>{HARNESSES[harness].label}</IconLabel>
@@ -1090,7 +1090,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
                     aria-selected={active}
                     onClick={() => setState({ ...state, model })}
                     className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors ${
-                      active ? 'bg-foreground text-background' : 'hover:bg-muted'
+                      active ? 'bg-foreground text-background' : 'hover:bg-surface-inset'
                     }`}
                   >
                     <span className="min-w-0">
@@ -1253,7 +1253,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
               <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border py-1 pr-9 pl-2" size="xs">
-                <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
+                <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-surface-inset">
                   {isImage ? (
                     <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
                   ) : (
@@ -1283,7 +1283,7 @@ function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (v
   if (suggestions.length === 0) return null
   const isCommand = draft.match(/(^|\s)\/[^\s]*$/)
   return (
-    <div className="absolute bottom-full left-0 z-40 mb-2 w-[30rem] overflow-hidden rounded-xl border bg-background shadow-xl">
+    <div className="absolute bottom-full left-0 z-40 mb-2 w-[30rem] overflow-hidden rounded-xl border bg-surface-raised shadow-xl">
       <div className="flex items-center border-b px-3 py-2">
         <span className="text-[11px] font-medium text-muted-foreground">{isCommand ? 'Skills and commands' : 'Files, folders, and skills'}</span>
         <span className="ml-auto text-[10px] text-muted-foreground">Enter to insert</span>
@@ -1297,9 +1297,9 @@ function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (v
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => onSelect(insertComposerSuggestion(draft, suggestion))}
-              className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left ${index === 0 ? 'bg-muted' : 'hover:bg-muted/70'}`}
+              className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left ${index === 0 ? 'bg-surface-inset' : 'hover:bg-surface-inset'}`}
             >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-background"><SuggestionIcon className="size-3.5" /></span>
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-surface-raised"><SuggestionIcon className="size-3.5" /></span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2 text-xs font-medium">
                   {suggestion.label}
@@ -1407,18 +1407,18 @@ function ContextPopover({
             </div>
             <span className={`text-(length:--text-body) font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
           </div>
-          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+          <div className="relative h-2 overflow-hidden rounded-full bg-surface-inset">
             <div
               className={`absolute inset-y-0 left-0 ${meterFill}`}
               style={{ width: `${percentage}%` }}
             />
-            <div className="absolute inset-y-0 w-px bg-background/80" style={{ left: `${smartZonePercentage}%` }} />
+            <div className="absolute inset-y-0 w-px bg-surface-raised" style={{ left: `${smartZonePercentage}%` }} />
           </div>
           <div className="flex justify-between text-(length:--text-body) text-muted-foreground">
             <span>Working target · {formatTokenCount(smartZoneTokens)}</span>
             <span>Current · {formatTokenCount(used)}</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 p-3 text-(length:--text-body) leading-relaxed">
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-surface-inset p-3 text-(length:--text-body) leading-relaxed">
             <div>
               <div className="font-semibold text-foreground">Smart Zone · 0–20%</div>
               <p className="mt-1 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
@@ -1510,7 +1510,7 @@ function ContextSurface({
 
   if (layout === 'footer') {
     return (
-      <div className="flex items-center gap-3 border-t bg-muted/10 px-3 py-2.5">
+      <div className="flex items-center gap-3 border-t bg-surface-panel px-3 py-2.5">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
           <div className="flex items-center gap-1 text-xs font-semibold">
@@ -1520,7 +1520,7 @@ function ContextSurface({
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
-          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+          <div className="relative h-2 overflow-hidden rounded-full bg-surface-inset">
             <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
@@ -1539,7 +1539,7 @@ function ContextSurface({
 
   if (layout === 'attached') {
     return (
-      <div className="flex select-none items-center gap-2 rounded-b-xl border bg-background px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[50rem]:gap-3 @[50rem]:px-4">
+      <div className="flex select-none items-center gap-2 rounded-b-xl border bg-surface-raised px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[50rem]:gap-3 @[50rem]:px-4">
         <div className="shrink-0 border-r border-border/60 pr-2 @[50rem]:pr-4"><UsagePopover state={state} /></div>
         <div className="shrink-0 @[50rem]:hidden">
           <ContextPopover state={state} appearance="progress" meterStyle="grayscale" />
@@ -1554,7 +1554,7 @@ function ContextSurface({
               render={
                 <button
                   type="button"
-                  className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
+                  className="relative block h-2 w-full overflow-hidden rounded-full bg-surface-inset"
                   aria-label={contextStateDescription}
                 >
                   <span className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} style={{ width: `${percentage}%` }} />
@@ -1590,7 +1590,7 @@ function ContextSurface({
 
   if (layout === 'inline') {
     return (
-      <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-background p-3">
+      <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-surface-panel p-3">
         <div className="flex items-center gap-2">
         <CircleGauge className={`size-4 ${zone.text}`} />
           <span className="flex items-center gap-1 text-xs font-semibold">
@@ -1602,7 +1602,7 @@ function ContextSurface({
         <div className="mt-3 text-lg font-semibold tabular-nums">
           {used} <span className="text-xs font-normal text-muted-foreground">/ 200k total</span>
         </div>
-        <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-muted">
+        <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-surface-inset">
           <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
           <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
         </div>
@@ -1616,7 +1616,7 @@ function ContextSurface({
   }
 
   return (
-    <div className="mb-2 rounded-xl border bg-background px-4 py-3 shadow-sm">
+    <div className="mb-2 rounded-xl border bg-surface-raised px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
@@ -1627,7 +1627,7 @@ function ContextSurface({
           <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-24 flex-1">
-          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+          <div className="relative h-2 overflow-hidden rounded-full bg-surface-inset">
             <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
@@ -1686,9 +1686,9 @@ function QueuePreview({
   const stacked = layout === 'integrated' || layout === 'floating' || layout === 'attached-stack'
   if (stacked) {
     const shell = {
-      integrated: 'border-b bg-background',
-      floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-background shadow-sm',
-      'attached-stack': 'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border border-b-0 bg-background/90 pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
+      integrated: 'border-b bg-surface-raised',
+      floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-surface-raised shadow-sm',
+      'attached-stack': 'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border border-b-0 bg-surface-raised pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
       attached: '',
       inline: '',
     }[layout]
@@ -1737,9 +1737,9 @@ function QueuePreview({
     )
   }
   const shell = {
-    attached: 'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-muted/40 px-3 pb-4 pt-2.5 shadow-sm',
-    inline: 'mr-72 flex border-b bg-muted/20 px-3 py-2',
-    floating: 'mb-2 ml-auto w-3/4 rounded-lg border bg-background px-3 py-2 shadow-sm',
+    attached: 'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-surface-inset px-3 pb-4 pt-2.5 shadow-sm',
+    inline: 'mr-72 flex border-b bg-surface-inset px-3 py-2',
+    floating: 'mb-2 ml-auto w-3/4 rounded-lg border bg-surface-raised px-3 py-2 shadow-sm',
     integrated: '',
   }[layout]
   return (
@@ -1770,7 +1770,7 @@ function TaskPlanPopover() {
   ] as const
   return (
     <Popover>
-      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full bg-background/90 px-2.5 text-xs font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
+      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full bg-surface-raised px-2.5 text-xs font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
         <IconLabel icon={(
           <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
             <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
@@ -1787,7 +1787,7 @@ function TaskPlanPopover() {
         <Progress value={60} className="h-1.5" />
         <div className="grid gap-1">
           {steps.map((step, index) => (
-            <div key={step.label} className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 text-xs ${step.status === 'current' ? 'bg-muted font-medium' : ''}`}>
+            <div key={step.label} className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 text-xs ${step.status === 'current' ? 'bg-surface-inset font-medium' : ''}`}>
               <span className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full text-[10px] ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
                 {step.status === 'current' ? <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40" /> : null}
                 {step.status === 'done' ? <Check className="size-3" /> : index + 1}
@@ -2045,11 +2045,11 @@ export function ComposerPrototype() {
   }
 
   return (
-    <div className="h-dvh min-h-0 overflow-hidden bg-background">
+    <div className="h-dvh min-h-0 overflow-hidden bg-surface-canvas">
       <div className="flex h-full min-h-0 overflow-hidden">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border/60 bg-background"
+          className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border/60 bg-surface-canvas"
         >
         <ResizablePanel
           id="session-roster"
@@ -2063,7 +2063,7 @@ export function ComposerPrototype() {
           onResize={(size) => handleSessionRosterResize(size.inPixels)}
           className="h-full min-h-0 overflow-hidden"
         >
-          <div className="flex h-full min-h-0 w-full bg-sidebar-shell">
+          <div className="flex h-full min-h-0 w-full bg-surface-shell">
             <PrototypeRail
               theme={theme}
               onThemeChange={setTheme}
@@ -2084,7 +2084,7 @@ export function ComposerPrototype() {
         <ResizableHandle className="z-30 bg-border/60" />
         <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
         <main
-          className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+          className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-canvas"
           data-prototype="composer"
           onPointerDownCapture={() => setKeyboardFocus(false)}
           onKeyDownCapture={(event) => {
@@ -2145,7 +2145,7 @@ export function ComposerPrototype() {
               onOpenEvidence={openFeedEvidence}
             />
           </div>
-          <div className="relative isolate shrink-0 bg-background px-4 pt-6 pb-8">
+          <div className="relative isolate shrink-0 bg-surface-canvas px-4 pt-6 pb-8">
             <div className="pointer-events-none absolute inset-x-4 bottom-full z-0 -mb-6">
               <div className={`pointer-events-auto relative z-20 mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}>
                 <div className="mx-auto w-full">
@@ -2165,7 +2165,7 @@ export function ComposerPrototype() {
                 }}
               >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className={`relative z-20 overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10 dark:bg-background ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
+          <InputGroup className={`relative z-20 overflow-hidden rounded-xl bg-surface-raised shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
             <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">
@@ -2189,7 +2189,7 @@ export function ComposerPrototype() {
                 }}
               />
             </div>
-            <InputGroupAddon align="block-end" className="gap-1 bg-background px-2 py-2 @[36rem]:gap-2 @[36rem]:px-4">
+            <InputGroupAddon align="block-end" className="gap-1 bg-surface-raised px-2 py-2 @[36rem]:gap-2 @[36rem]:px-4">
               <AddContextMenu state={state} setState={setState} />
               <RunSetupMenu state={state} setState={setState} />
               <div className="ml-auto flex items-center gap-1">

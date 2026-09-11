@@ -13,7 +13,7 @@ import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/mark
 import { SessionDisclosure } from '../SessionDisclosure'
 import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
 
-export const FEED_DISCLOSURE_SURFACE_CLASS = 'bg-card transition-colors hover:bg-muted'
+export const FEED_DISCLOSURE_SURFACE_CLASS = 'bg-surface-raised transition-colors hover:bg-surface-inset'
 
 type ToolRow = {
   label: string
@@ -86,7 +86,7 @@ export function FeedToolLine({
       onClick={() => onOpen(evidence)}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
-      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-(length:--text-control) font-normal ${active ? 'bg-muted text-foreground' : ''}`}
+      className={`h-auto w-full justify-start gap-2 px-2 py-2 text-(length:--text-control) font-normal ${active ? 'bg-surface-inset text-foreground' : ''}`}
     >
       <row.icon className="!size-(--size-icon-inline) text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>

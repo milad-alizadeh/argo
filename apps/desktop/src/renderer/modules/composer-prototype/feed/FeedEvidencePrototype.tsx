@@ -5,7 +5,7 @@ import { EvidenceBody } from './FeedEvidenceBody'
 function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
   return (
     <section data-evidence-id={evidence.id} className="min-h-[45%] border-b border-border/60">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-surface-panel px-4 py-3">
         <p className="break-words text-control leading-relaxed text-muted-foreground">
           {evidence.detail}
         </p>
@@ -34,7 +34,7 @@ export function FeedEvidencePrototype({ evidence }: { evidence: FeedPrototypeEvi
 
   return (
     <section
-      className="flex h-full min-h-0 w-full flex-col bg-sidebar"
+      className="flex h-full min-h-0 w-full flex-col bg-surface-panel"
       aria-label="Command and file inspector"
       data-component="FeedEvidence"
     >

@@ -36,7 +36,7 @@ export function FeedPrompt({
         <MessageHeader className="text-control">
           You{submitted ? ' · Sending to Session…' : ''}
         </MessageHeader>
-        <Bubble variant="muted" className="max-w-full sm:max-w-4/5">
+        <Bubble variant="muted" className="max-w-full bg-surface-inset sm:max-w-4/5">
           <BubbleContent className="text-body">{children}</BubbleContent>
         </Bubble>
       </MessageContent>
@@ -129,7 +129,7 @@ export function FeedCode({ source, language }: { source: string; language?: stri
   const detectedLanguage = detectCodeLanguage(source, language)
   const languageLabel = codeLanguageLabel(detectedLanguage)
   return (
-    <figure className={`min-w-0 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
+    <figure className={`min-w-0 overflow-hidden border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}>
       <figcaption className="flex items-center justify-between border-b px-3 py-1.5 text-control text-muted-foreground">
         <span
           role="img"
@@ -141,7 +141,7 @@ export function FeedCode({ source, language }: { source: string; language?: stri
         </span>
         <CopyFeedContent text={source} />
       </figcaption>
-      <pre className="overflow-x-auto p-4 font-mono text-control leading-relaxed">
+      <pre className="overflow-x-auto bg-surface-inset p-4 font-mono text-control leading-relaxed">
         <HighlightedCode source={source} />
       </pre>
     </figure>
