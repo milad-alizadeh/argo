@@ -10,6 +10,14 @@ export const shouldCollapseSessionPane = (paneWidth: number, previousPaneWidth: 
 export const shouldFullscreenSessionInspector = (feedWidth: number, previousFeedWidth: number) =>
   reachedSnapEdge(feedWidth, previousFeedWidth)
 
+export const shouldDeferSessionInspectorCollapse = ({
+  visible,
+  fullscreen,
+}: {
+  visible: boolean
+  fullscreen: boolean
+}) => !visible && fullscreen
+
 export const restoreWidthAfterFullscreenSnap = ({
   currentRestoreWidth,
   feedWidthAtSnap,

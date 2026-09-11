@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import {
   restoreWidthAfterFullscreenSnap,
   shouldCollapseSessionPane,
+  shouldDeferSessionInspectorCollapse,
   shouldFullscreenSessionInspector,
   shouldRememberSessionInspectorWidth,
 } from './sessionPaneResize'
@@ -28,6 +29,12 @@ test('dragging the roster to its minimum snaps it closed in the same gesture', (
 
 test('dragging the feed to its minimum snaps the inspector fullscreen in the same gesture', () => {
   assert.equal(shouldFullscreenSessionInspector(216, 224), true)
+})
+
+test('closing a fullscreen inspector defers collapse until the split panel remounts', () => {
+  assert.equal(shouldDeferSessionInspectorCollapse({ visible: false, fullscreen: true }), true)
+  assert.equal(shouldDeferSessionInspectorCollapse({ visible: false, fullscreen: false }), false)
+  assert.equal(shouldDeferSessionInspectorCollapse({ visible: true, fullscreen: true }), false)
 })
 
 test('dragging away from an edge does not snap either pane', () => {
