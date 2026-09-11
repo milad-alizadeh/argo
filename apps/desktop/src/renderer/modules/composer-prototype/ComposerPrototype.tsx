@@ -675,9 +675,9 @@ function PrototypeSessionRoster({
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-sidebar">
-      <div className="flex h-14 shrink-0 items-start px-3 pt-1.5">
+      <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
-        <div className="mt-1.5 ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
           </Button>
