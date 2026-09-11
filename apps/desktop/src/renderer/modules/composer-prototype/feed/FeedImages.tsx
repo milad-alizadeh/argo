@@ -20,7 +20,7 @@ function LightboxContent({
   return (
     <DialogContent
       showCloseButton={false}
-      overlayClassName="bg-transparent backdrop-blur-none data-open:animate-none data-closed:animate-none"
+      overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none! data-open:animate-none data-closed:animate-none"
       className="!inset-0 !h-dvh !w-dvw !max-w-none !translate-x-0 !translate-y-0 place-items-center rounded-none bg-transparent p-6 ring-0 duration-0 data-open:animate-none data-closed:animate-none sm:!max-w-none"
     >
       <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
