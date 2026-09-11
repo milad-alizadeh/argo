@@ -2029,7 +2029,7 @@ export function ComposerPrototype() {
                 placeholder="Direct the next move…"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                className="!min-h-0 flex-1 !px-0 !py-0 text-sm leading-6 selection:bg-muted-foreground/25 selection:text-foreground"
+                className="!min-h-0 flex-1 !px-0 !py-0 text-left text-sm leading-6 selection:bg-muted-foreground/25 selection:text-foreground"
                 onKeyDown={(event) => {
                   const suggestions = composerSuggestions(draft)
                   if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
