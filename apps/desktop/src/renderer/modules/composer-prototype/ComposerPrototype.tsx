@@ -702,7 +702,7 @@ function PrototypeSessionRoster({
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
-      <div className="flex h-11 shrink-0 items-center px-3">
+      <div className="flex h-14 shrink-0 items-center border-b border-border/60 px-3">
         <ProjectManager
           currentProject={currentProject}
           onProjectChange={onProjectChange}
@@ -778,10 +778,12 @@ function PrototypeSessionHeader({
   showRoster,
   showSidebar,
   onOpenRoster,
+  onOpenSidebar,
 }: {
   showRoster: boolean
   showSidebar: boolean
   onOpenRoster: () => void
+  onOpenSidebar: () => void
 }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
@@ -825,7 +827,7 @@ function PrototypeSessionHeader({
       </div>
       <TooltipProvider>
         <div
-          className={`ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 ${showSidebar ? '' : 'mr-10'}`}
+          className="ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30"
         >
           <HeaderSignal
             icon={<GitPullRequestCreate />}
@@ -841,20 +843,53 @@ function PrototypeSessionHeader({
           />
         </div>
       </TooltipProvider>
+      {!showSidebar ? (
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          aria-label="Open Session inspector"
+          onClick={onOpenSidebar}
+        >
+          <PanelRight />
+        </Button>
+      ) : null}
     </header>
   )
 }
 
 function SessionWorkSidebar({
   evidence,
+  fullscreen,
   onShowActivity,
+  onToggleFullscreen,
+  onCollapse,
 }: {
   evidence: FeedPrototypeEvidence | null
+  fullscreen: boolean
   onShowActivity: () => void
+  onToggleFullscreen: () => void
+  onCollapse: () => void
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="h-14 shrink-0 border-b border-border/60 bg-sidebar" aria-hidden="true" />
+      <div className="flex h-14 shrink-0 items-center justify-end gap-1 border-b border-border/60 bg-sidebar px-3">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={fullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+          onClick={onToggleFullscreen}
+        >
+          {fullscreen ? <Minimize2 /> : <Expand />}
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          aria-label="Collapse Session inspector"
+          onClick={onCollapse}
+        >
+          <PanelRight />
+        </Button>
+      </div>
       {evidence ? (
         <div className="flex min-h-0 flex-1 flex-col bg-sidebar">
           <div className="flex h-11 shrink-0 items-center border-b border-border/60 px-2">
@@ -2036,26 +2071,6 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
           `}</style>
-          {showSessionSidebar ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="pointer-events-auto absolute top-3 right-12 z-50"
-              aria-label={sessionSidebarFullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
-              onClick={toggleSessionSidebarFullscreen}
-            >
-              {sessionSidebarFullscreen ? <Minimize2 /> : <Expand />}
-            </Button>
-          ) : null}
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            className="pointer-events-auto absolute top-3 right-3 z-50"
-            aria-label={showSessionSidebar ? 'Collapse Session inspector' : 'Open Session inspector'}
-            onClick={() => setSessionSidebarVisible(!showSessionSidebar)}
-          >
-            <PanelRight />
-          </Button>
           <ResizablePanelGroup
             orientation="horizontal"
             className="min-h-0 flex-1"
@@ -2077,6 +2092,7 @@ export function ComposerPrototype() {
             showRoster={showSessionRoster}
             showSidebar={showSessionSidebar}
             onOpenRoster={() => setSessionRosterVisible(true)}
+            onOpenSidebar={() => setSessionSidebarVisible(true)}
           />
           <div className="min-h-0 flex-1">
             <Transcript
@@ -2182,7 +2198,10 @@ export function ComposerPrototype() {
             >
                 <SessionWorkSidebar
                   evidence={feedEvidence}
+                  fullscreen={sessionSidebarFullscreen}
                   onShowActivity={showSessionActivity}
+                  onToggleFullscreen={toggleSessionSidebarFullscreen}
+                  onCollapse={() => setSessionSidebarVisible(false)}
                 />
             </div>
           </ResizablePanel>
