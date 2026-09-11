@@ -14,7 +14,7 @@ test('a collapsed pane prevents interaction with clipped content', () => {
 
 test('feed and sidebar preserve their readable minimum widths', () => {
   assert.equal(SESSION_FEED_MIN_WIDTH, 360)
-  assert.equal(SESSION_ROSTER_MIN_WIDTH, 300)
+  assert.equal(SESSION_ROSTER_MIN_WIDTH, 336)
   assert.equal(SESSION_INSPECTOR_MIN_WIDTH, 240)
-  assert.equal(SESSION_ROSTER_COLLAPSE_MEDIA, '(max-width: 61.25rem)')
+  assert.equal(SESSION_ROSTER_COLLAPSE_MEDIA, '(max-width: 63.5rem)')
 })
