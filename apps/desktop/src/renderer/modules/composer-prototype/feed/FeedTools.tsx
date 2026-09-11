@@ -19,8 +19,11 @@ type ToolRow = {
   label: string
   evidence: keyof typeof FEED_EVIDENCE
   icon: ComponentType<{ className?: string }>
-  detail?: string
+  detail?: ToolRowDetail
 }
+type ToolRowDetail =
+  | { kind: 'text'; value: string }
+  | { added: string; kind: 'diff'; removed: string }
 type ToolSection = {
   title: string
   rows: ToolRow[]
@@ -31,17 +34,41 @@ const COMMANDS: ToolRow[] = [
     label: 'Searched ContextBar and AttachmentTray',
     evidence: 'search',
     icon: Search,
-    detail: '3 matches',
+    detail: { kind: 'text', value: '3 matches' },
   },
-  { label: 'Ran bun test composer', evidence: 'tests', icon: SquareTerminal, detail: '3 passed' },
+  {
+    label: 'Ran bun test composer',
+    evidence: 'tests',
+    icon: SquareTerminal,
+    detail: { kind: 'text', value: '3 passed' },
+  },
 ]
 const CREATED_FILES: ToolRow[] = [
   { label: 'Created AttachmentTray.tsx', evidence: 'createdAttachmentTray', icon: FilePenLine },
   { label: 'Created ContextBar.tsx', evidence: 'createdContextBar', icon: FilePenLine },
 ]
 const EDITED_FILES: ToolRow[] = [
-  { label: 'Edited Composer.tsx', evidence: 'diff', icon: FilePenLine, detail: '+2 −1' },
+  {
+    label: 'Edited Composer.tsx',
+    evidence: 'diff',
+    icon: FilePenLine,
+    detail: { added: '+2', kind: 'diff', removed: '−1' },
+  },
 ]
+
+function ToolRowDetail({ detail }: { detail: ToolRowDetail }) {
+  switch (detail.kind) {
+    case 'text':
+      return <span className="shrink-0 text-muted-foreground">{detail.value}</span>
+    case 'diff':
+      return (
+        <span className="flex shrink-0 items-center gap-1">
+          <span className="text-emerald-600 dark:text-emerald-400">{detail.added}</span>
+          <span className="text-destructive">{detail.removed}</span>
+        </span>
+      )
+  }
+}
 
 export function FeedToolLine({
   row,
@@ -64,7 +91,7 @@ export function FeedToolLine({
     >
       <row.icon className="!size-(--size-icon-inline) text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
-      {row.detail && <span className="ml-auto shrink-0 text-muted-foreground">{row.detail}</span>}
+      {row.detail && <ToolRowDetail detail={row.detail} />}
       <PanelRightOpen className="ml-auto !size-(--size-icon-inline) shrink-0 text-muted-foreground" />
     </Button>
   )
