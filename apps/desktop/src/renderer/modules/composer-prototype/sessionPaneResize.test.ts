@@ -4,7 +4,8 @@ import {
   nextPaneContentWidth,
   paneContentVisibilityClass,
   SESSION_FEED_MIN_WIDTH,
-  SESSION_SIDEBAR_MIN_WIDTH,
+  SESSION_INSPECTOR_MIN_WIDTH,
+  SESSION_ROSTER_MIN_WIDTH,
 } from './sessionPaneResize'
 
 test('pane content follows the handle after reversing a collapse drag', () => {
@@ -24,5 +25,6 @@ test('a snapped pane keeps its fixed-width content visible until clipping closes
 
 test('feed and sidebar preserve their readable minimum widths', () => {
   assert.equal(SESSION_FEED_MIN_WIDTH, 360)
-  assert.equal(SESSION_SIDEBAR_MIN_WIDTH, 216)
+  assert.equal(SESSION_ROSTER_MIN_WIDTH, 300)
+  assert.equal(SESSION_INSPECTOR_MIN_WIDTH, 240)
 })
