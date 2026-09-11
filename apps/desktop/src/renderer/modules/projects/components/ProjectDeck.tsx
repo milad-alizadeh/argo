@@ -94,8 +94,21 @@ const SHAPES: Record<DeckScreen, { frame: string; pane: string }> = {
 }
 
 function deckScreen(destination: Destination, cockpit: Cockpit): DeckScreen {
-  if (cockpit.status !== 'selected') return 'gate'
-  return destination === 'Sessions' ? 'sessions' : 'prose'
+  switch (destination) {
+    case 'Sessions':
+      return 'sessions'
+    case 'Tickets':
+    case 'Atlas':
+    case 'Code':
+      switch (cockpit.status) {
+        case 'selected':
+          return 'prose'
+        case 'loading':
+        case 'empty':
+        case 'refused':
+          return 'gate'
+      }
+  }
 }
 
 function DeckPane({
