@@ -17,7 +17,6 @@ import {
   FileCheck2,
   Folder,
   FolderGit2,
-  FolderKanban,
   GitBranch,
   GitFork,
   GitPullRequestCreate,
@@ -382,7 +381,7 @@ function ProjectManager({
           />
         }
       >
-        <FolderKanban />
+        <Folder />
         <span className="truncate font-medium">{currentProject}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -394,7 +393,7 @@ function ProjectManager({
               key={item}
               onClick={() => onProjectChange(item)}
             >
-              <FolderKanban />
+              <Folder />
               <span className="flex-1">{item}</span>
               {currentProject === item ? <Check /> : null}
             </DropdownMenuItem>
