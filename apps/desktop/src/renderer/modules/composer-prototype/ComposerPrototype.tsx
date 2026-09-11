@@ -822,7 +822,7 @@ function PrototypeSessionHeader({
   onOpenSidebar: () => void
 }) {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
+    <header className="flex h-(--size-chrome-bar) shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -909,7 +909,7 @@ function SessionWorkSidebar({
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="flex h-14 shrink-0 items-center border-b border-border/60 bg-sidebar px-3">
+      <div className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-3">
         {!evidence ? (
           <>
             <h3 className="min-w-0 flex-1 truncate text-(length:--text-control) font-semibold">Running under this Session</h3>
