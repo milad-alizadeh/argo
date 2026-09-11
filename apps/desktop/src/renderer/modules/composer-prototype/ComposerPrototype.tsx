@@ -1897,7 +1897,7 @@ export function ComposerPrototype() {
         <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <ResizablePanelGroup
           orientation="horizontal"
-          className="mr-0.75 mb-0.75 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-background"
+          className="mr-0.75 mb-1 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
