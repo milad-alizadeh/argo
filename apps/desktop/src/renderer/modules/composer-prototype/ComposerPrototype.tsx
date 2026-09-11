@@ -538,21 +538,14 @@ const RAIL_ITEMS = [
 function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
     <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <DropdownMenuTrigger
-              render={<button type="button" aria-label="Settings" className="group flex w-16 flex-col items-center gap-1 text-[10px] leading-none text-muted-foreground hover:text-foreground" />}
-            >
-              <span className="grid size-8 place-items-center rounded-lg group-hover:bg-background/70">
-                <Settings />
-              </span>
-              <span>Settings</span>
-            </DropdownMenuTrigger>
-          }
-        />
-        <TooltipContent side="right">Settings</TooltipContent>
-      </Tooltip>
+      <DropdownMenuTrigger
+        render={<button type="button" aria-label="Settings" className="group flex w-16 flex-col items-center gap-1 text-[10px] leading-none text-muted-foreground hover:text-foreground" />}
+      >
+        <span className="grid size-8 place-items-center rounded-lg group-hover:bg-background/70">
+          <Settings />
+        </span>
+        <span>Settings</span>
+      </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>Account</DropdownMenuLabel>
         <DropdownMenuItem className="gap-2 py-2">
@@ -600,48 +593,36 @@ function PrototypeRail({
           </div>
         ) : null}
       </div>
-      <TooltipProvider>
-        <div className="flex flex-col items-center gap-2 pt-3">
-          {RAIL_ITEMS.map((item) => (
-            <div key={item.label} className="flex flex-col items-center gap-1 text-[10px] leading-none">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      type="button"
-                      aria-label={item.label}
-                      aria-current={item.active ? 'page' : undefined}
-                      className={`grid size-9 place-items-center rounded-lg transition-colors ${
-                        item.active
-                          ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
-                          : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
-                      }`}
-                    />
-                  }
-                >
-                  {item.icon}
-                </TooltipTrigger>
-                <TooltipContent side="right">{item.label}</TooltipContent>
-              </Tooltip>
-              <span className={item.active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-                {item.label}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-auto flex flex-col items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger render={<button type="button" aria-label="Archive" className="group flex w-16 flex-col items-center gap-1 text-[10px] leading-none text-muted-foreground hover:text-foreground" />}>
-              <span className="grid size-8 place-items-center rounded-lg group-hover:bg-background/70">
-                <Archive />
-              </span>
-              <span>Archive</span>
-            </TooltipTrigger>
-            <TooltipContent side="right">Archive</TooltipContent>
-          </Tooltip>
-          <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
-        </div>
-      </TooltipProvider>
+      <div className="flex flex-col items-center gap-2 pt-3">
+        {RAIL_ITEMS.map((item) => (
+          <div key={item.label} className="flex flex-col items-center gap-1 text-[10px] leading-none">
+            <button
+              type="button"
+              aria-label={item.label}
+              aria-current={item.active ? 'page' : undefined}
+              className={`grid size-9 place-items-center rounded-lg transition-colors ${
+                item.active
+                  ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
+                  : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
+              }`}
+            >
+              {item.icon}
+            </button>
+            <span className={item.active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-auto flex flex-col items-center gap-1">
+        <button type="button" aria-label="Archive" className="group flex w-16 flex-col items-center gap-1 text-[10px] leading-none text-muted-foreground hover:text-foreground">
+          <span className="grid size-8 place-items-center rounded-lg group-hover:bg-background/70">
+            <Archive />
+          </span>
+          <span>Archive</span>
+        </button>
+        <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
+      </div>
     </nav>
   )
 }
@@ -817,22 +798,15 @@ function HeaderSignal({
   onClick: () => void
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <button
-            type="button"
-            aria-label={value}
-            className={`flex h-8 w-8 min-w-0 items-center justify-center gap-1.5 px-0 text-(length:--text-control) leading-none font-medium hover:bg-accent/70 focus-visible:bg-accent @[36rem]:w-auto @[36rem]:justify-start @[36rem]:px-2.5 ${tone}`}
-            onClick={onClick}
-          />
-        }
-      >
-        <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
-        <span className="hidden truncate @[36rem]:inline">{value}</span>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">{value}</TooltipContent>
-    </Tooltip>
+    <button
+      type="button"
+      aria-label={value}
+      className={`flex h-8 w-8 min-w-0 items-center justify-center gap-1.5 px-0 text-(length:--text-control) leading-none font-medium hover:bg-accent/70 focus-visible:bg-accent @[36rem]:w-auto @[36rem]:justify-start @[36rem]:px-2.5 ${tone}`}
+      onClick={onClick}
+    >
+      <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
+      <span className="hidden truncate @[36rem]:inline">{value}</span>
+    </button>
   )
 }
 
