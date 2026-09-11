@@ -1,11 +1,15 @@
-export const SESSION_PANE_MIN_WIDTH = 216
-export const SESSION_PANE_SNAP_OFFSET = 24
-export const SESSION_PANE_SNAP_WIDTH = SESSION_PANE_MIN_WIDTH - SESSION_PANE_SNAP_OFFSET
+export const SESSION_FEED_MIN_WIDTH = 360
+export const SESSION_SIDEBAR_MIN_WIDTH = 216
+export const SESSION_PANE_SNAP_RESISTANCE = 80
+export const SESSION_FEED_SNAP_WIDTH = SESSION_FEED_MIN_WIDTH - SESSION_PANE_SNAP_RESISTANCE
+export const SESSION_SIDEBAR_SNAP_WIDTH = SESSION_SIDEBAR_MIN_WIDTH - SESSION_PANE_SNAP_RESISTANCE
 
 export const paneContentVisibilityClass = (visible: boolean) => visible ? '' : 'pointer-events-none'
 
-export const shouldSnapSessionPane = (width: number, previousWidth: number) =>
-  width > 0 && width <= SESSION_PANE_SNAP_WIDTH && width < previousWidth
+export const shouldSnapSessionPane = (width: number, previousWidth: number, minimumWidth: number) =>
+  width > 0
+  && width <= minimumWidth - SESSION_PANE_SNAP_RESISTANCE
+  && width < previousWidth
 
 export const shouldDeferSessionInspectorCollapse = ({
   visible,
@@ -23,8 +27,8 @@ export const restoreWidthAfterFullscreenSnap = ({
   currentRestoreWidth: number
   feedWidthAtSnap: number
   inspectorWidthAtSnap: number
-}) => inspectorWidthAtSnap > SESSION_PANE_MIN_WIDTH
-  ? feedWidthAtSnap + inspectorWidthAtSnap - SESSION_PANE_MIN_WIDTH
+}) => inspectorWidthAtSnap > SESSION_SIDEBAR_MIN_WIDTH
+  ? feedWidthAtSnap + inspectorWidthAtSnap - SESSION_FEED_MIN_WIDTH
   : currentRestoreWidth
 
 export const shouldRememberSessionInspectorWidth = ({
@@ -37,5 +41,5 @@ export const shouldRememberSessionInspectorWidth = ({
   isUserInteraction: boolean
 }) =>
   isUserInteraction
-  && feedWidth > SESSION_PANE_SNAP_WIDTH
-  && inspectorWidth > SESSION_PANE_SNAP_WIDTH
+  && feedWidth > SESSION_FEED_SNAP_WIDTH
+  && inspectorWidth > SESSION_SIDEBAR_SNAP_WIDTH
