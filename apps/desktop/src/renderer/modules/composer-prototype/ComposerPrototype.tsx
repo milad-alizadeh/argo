@@ -876,6 +876,7 @@ function PrototypeSessionHeader({
         <Button
           variant="secondary"
           size="icon-sm"
+          className="translate-x-px"
           aria-label="Open Session inspector"
           onClick={onOpenSidebar}
         >
