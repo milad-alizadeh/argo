@@ -40,12 +40,6 @@ const CONCIERGE_QUESTION = {
 
 const PERMISSION_COMMAND =
   'bun install --frozen-lockfile && bun run typecheck && bun run test --filter composer'
-type PermissionDecision = 'pending' | 'allowed' | 'all' | 'denied'
-const PERMISSION_DECISION_LABELS: Record<Exclude<PermissionDecision, 'pending'>, string> = {
-  allowed: 'Allowed this command',
-  all: 'Allowed all commands',
-  denied: 'Denied this command',
-}
 
 export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   const [selection, setSelection] = useState('roster')
@@ -119,14 +113,8 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
 }
 
 export function FeedPermission() {
-  const [decision, setDecision] = useState<PermissionDecision>('pending')
-  if (decision !== 'pending')
-    return (
-      <div className="flex items-center gap-2 text-control text-muted-foreground">
-        <ShieldQuestion className="!size-(--size-icon-inline)" />
-        {PERMISSION_DECISION_LABELS[decision]}
-      </div>
-    )
+  const [resolved, setResolved] = useState(false)
+  if (resolved) return null
   return (
     <section
       className={`space-y-2 border bg-surface-raised px-3 py-2.5 shadow-lg shadow-foreground/5 backdrop-blur-sm ${FEED_CARD_RADIUS_CLASS}`}
@@ -148,13 +136,13 @@ export function FeedPermission() {
         <code>{PERMISSION_COMMAND}</code>
       </pre>
       <div className="flex justify-end gap-1">
-        <Button variant="outline" className="text-control" onClick={() => setDecision('denied')}>
+        <Button variant="outline" className="text-control" onClick={() => setResolved(true)}>
           Deny
         </Button>
         <div className="inline-flex overflow-hidden rounded-lg">
           <Button
             className="rounded-r-none bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80"
-            onClick={() => setDecision('allowed')}
+            onClick={() => setResolved(true)}
           >
             Allow
           </Button>
@@ -171,7 +159,7 @@ export function FeedPermission() {
               <ChevronDown />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="w-36">
-              <DropdownMenuItem className="text-control" onClick={() => setDecision('all')}>
+              <DropdownMenuItem className="text-control" onClick={() => setResolved(true)}>
                 Allow all
               </DropdownMenuItem>
             </DropdownMenuContent>
