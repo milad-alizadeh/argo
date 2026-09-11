@@ -508,7 +508,7 @@ function PrototypeProjectHeader({
   onProjectChange: (project: ProjectKey) => void
 }) {
   return (
-    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-3">
+    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center bg-sidebar px-3">
       <div className="no-drag-region">
         <ProjectManager
           currentProject={currentProject}
@@ -533,9 +533,11 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
         <TooltipTrigger
           render={
             <DropdownMenuTrigger
-              render={<button type="button" aria-label="Settings" className="flex w-20 flex-col items-center gap-1 rounded-xl py-2 text-(length:--text-control) text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
+              render={<button type="button" aria-label="Settings" className="group flex w-20 flex-col items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground" />}
             >
-              <Settings />
+              <span className="grid size-10 place-items-center rounded-xl group-hover:bg-background/70">
+                <Settings />
+              </span>
               <span>Settings</span>
             </DropdownMenuTrigger>
           }
@@ -578,7 +580,7 @@ function PrototypeRail({
 
   return (
     <nav aria-label="Main navigation" className="flex min-h-0 w-28 shrink-0 flex-col items-center bg-sidebar pb-3 [&_svg]:size-(--size-icon-control)">
-      <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0 border-b border-border/60">
+      <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0">
         {!showsNativeTrafficLights ? (
           <div
             aria-hidden="true"
@@ -600,34 +602,40 @@ function PrototypeRail({
         </Button>
       </div>
       <TooltipProvider>
-        <div className="flex flex-col items-center gap-1 pt-2">
+        <div className="flex flex-col items-center gap-3 pt-3">
           {RAIL_ITEMS.map((item) => (
-            <Tooltip key={item.label}>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    aria-label={item.label}
-                    aria-current={item.active ? 'page' : undefined}
-                    className={`flex w-20 flex-col items-center gap-1 rounded-xl py-2 text-(length:--text-control) transition-colors ${
-                      item.active
-                        ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
-                        : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
-                    }`}
-                  />
-                }
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.label}</TooltipContent>
-            </Tooltip>
+            <div key={item.label} className="flex flex-col items-center gap-1 text-(length:--text-control)">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label={item.label}
+                      aria-current={item.active ? 'page' : undefined}
+                      className={`grid size-11 place-items-center rounded-xl transition-colors ${
+                        item.active
+                          ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
+                          : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
+                      }`}
+                    />
+                  }
+                >
+                  {item.icon}
+                </TooltipTrigger>
+                <TooltipContent side="right">{item.label}</TooltipContent>
+              </Tooltip>
+              <span className={item.active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                {item.label}
+              </span>
+            </div>
           ))}
         </div>
         <div className="mt-auto flex flex-col items-center gap-1">
           <Tooltip>
-            <TooltipTrigger render={<button type="button" aria-label="Archive" className="flex w-20 flex-col items-center gap-1 rounded-xl py-2 text-(length:--text-control) text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
-              <Archive />
+            <TooltipTrigger render={<button type="button" aria-label="Archive" className="group flex w-20 flex-col items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground" />}>
+              <span className="grid size-10 place-items-center rounded-xl group-hover:bg-background/70">
+                <Archive />
+              </span>
               <span>Archive</span>
             </TooltipTrigger>
             <TooltipContent side="right">Archive</TooltipContent>
@@ -2052,7 +2060,7 @@ export function ComposerPrototype() {
         <div className="min-h-0 min-w-0 flex-1">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 overflow-hidden rounded-tl-xl border border-border bg-background"
+          className="min-h-0 min-w-0 overflow-hidden rounded-tl-xl border-r border-b border-l border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
