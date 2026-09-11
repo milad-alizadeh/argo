@@ -931,23 +931,31 @@ function SessionWorkSidebar({
 }) {
   return (
     <aside className="flex h-full min-h-0 w-full flex-col bg-sidebar">
-      <div className="flex h-14 shrink-0 items-center justify-end gap-1 border-b border-border/60 bg-sidebar px-3">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={fullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
-          onClick={onToggleFullscreen}
-        >
-          {fullscreen ? <Minimize2 /> : <Expand />}
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label="Collapse Session inspector"
-          onClick={onCollapse}
-        >
-          <PanelRight />
-        </Button>
+      <div className="flex h-14 shrink-0 items-center border-b border-border/60 bg-sidebar px-3">
+        {!evidence ? (
+          <>
+            <h3 className="min-w-0 flex-1 truncate text-(length:--text-control) font-semibold">Running under this Session</h3>
+            <span className="mr-2 shrink-0 text-(length:--text-control) text-muted-foreground">4 live</span>
+          </>
+        ) : <div className="flex-1" />}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={fullscreen ? 'Restore Session sidebar' : 'Expand Session sidebar'}
+            onClick={onToggleFullscreen}
+          >
+            {fullscreen ? <Minimize2 /> : <Expand />}
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            aria-label="Collapse Session inspector"
+            onClick={onCollapse}
+          >
+            <PanelRight />
+          </Button>
+        </div>
       </div>
       {evidence ? (
         <div className="flex min-h-0 flex-1 flex-col bg-sidebar">
@@ -968,10 +976,6 @@ function SessionWorkSidebar({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-(length:--text-control) font-semibold">Running under this Session</h3>
-            <span className="text-(length:--text-control) text-muted-foreground">4 live</span>
-          </div>
           <div className="space-y-1">
             {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
               <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-muted">
