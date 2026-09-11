@@ -634,10 +634,7 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           </span>
           <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
             <span className="min-w-0 flex-1 truncate">{session.activity}</span>
-            <span
-              className="inline-flex shrink-0 items-center gap-1 tabular-nums [&_svg]:size-(--size-icon-metadata)"
-            >
-              <CircleGauge />
+            <span className="shrink-0 tabular-nums">
               {formatSessionTokens(session.nonCachedTokens)}
               <span className="sr-only"> excluding cache</span>
             </span>
