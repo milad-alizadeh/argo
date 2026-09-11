@@ -375,7 +375,7 @@ function RosterConcierge() {
   const mutedControlClass = 'relative after:absolute after:h-px after:w-4 after:rotate-45 after:bg-current'
 
   return (
-    <div className="shrink-0 border-t p-3">
+    <div className="shrink-0 p-3">
       <div className="flex items-start gap-3 rounded-lg bg-muted/40 p-2">
         <a
           href="#/concierge"
