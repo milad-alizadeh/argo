@@ -2,13 +2,62 @@ import { Download, Expand, ImageOff, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
 } from '@/renderer/components/ui/dialog'
 import { FEED_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
+import { useImageLightboxTransition } from './imageLightboxTransition'
+
+function LightboxContent({
+  evidence,
+  transition,
+}: {
+  evidence: FeedPrototypeEvidence
+  transition: ReturnType<typeof useImageLightboxTransition>
+}) {
+  return (
+    <DialogContent
+      showCloseButton={false}
+      overlayClassName="bg-transparent backdrop-blur-none data-open:animate-none data-closed:animate-none"
+      className="!inset-0 !h-dvh !w-dvw !max-w-none !translate-x-0 !translate-y-0 place-items-center rounded-none bg-transparent p-6 ring-0 duration-0 data-open:animate-none data-closed:animate-none sm:!max-w-none"
+    >
+      <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
+      <DialogDescription className="sr-only">Full-size image preview</DialogDescription>
+      <div ref={transition.backdropRef} className="absolute inset-0 bg-black/60 backdrop-blur-lg" />
+      <div
+        ref={transition.controlsRef}
+        className="absolute top-4 right-4 z-20 flex items-center gap-2"
+      >
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          aria-label={`Download ${evidence.title}`}
+          render={<a href={evidence.source} download={evidence.title} />}
+        >
+          <Download />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          aria-label="Close image preview"
+          onClick={transition.close}
+        >
+          <X />
+        </Button>
+      </div>
+      <img
+        ref={transition.previewRef}
+        src={evidence.source}
+        width={1280}
+        height={852}
+        alt="Two people reviewing work on a laptop"
+        className="relative z-10 max-h-[calc(100dvh-6rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-contain will-change-transform"
+      />
+    </DialogContent>
+  )
+}
 
 function ImageLightbox({
   evidence,
@@ -17,11 +66,14 @@ function ImageLightbox({
   evidence: FeedPrototypeEvidence
   compact?: boolean
 }) {
+  const transition = useImageLightboxTransition()
+
   return (
-    <Dialog>
+    <Dialog open={transition.open} onOpenChange={transition.onOpenChange}>
       <DialogTrigger
         render={
           <button
+            ref={transition.triggerRef}
             type="button"
             className={
               compact
@@ -29,6 +81,7 @@ function ImageLightbox({
                 : 'group relative h-full shrink-0 overflow-hidden rounded-lg border bg-card'
             }
             aria-label={`Open ${evidence.title} in lightbox`}
+            onPointerDown={transition.captureSourceBounds}
           />
         }
       >
@@ -52,33 +105,7 @@ function ImageLightbox({
           <Expand className="!size-(--size-icon-inline)" />
         </span>
       </DialogTrigger>
-      <DialogContent
-        showCloseButton={false}
-        className="!inset-0 !h-dvh !w-dvw !max-w-none !translate-x-0 !translate-y-0 place-items-center rounded-none bg-black/60 p-6 ring-0 backdrop-blur-lg sm:!max-w-none"
-      >
-        <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
-        <DialogDescription className="sr-only">Full-size image preview</DialogDescription>
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            aria-label={`Download ${evidence.title}`}
-            render={<a href={evidence.source} download={evidence.title} />}
-          >
-            <Download />
-          </Button>
-          <DialogClose render={<Button variant="secondary" size="icon-sm" aria-label="Close image preview" />}>
-            <X />
-          </DialogClose>
-        </div>
-        <img
-          src={evidence.source}
-          width={1280}
-          height={852}
-          alt="Two people reviewing work on a laptop"
-          className="max-h-[calc(100dvh-6rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-contain"
-        />
-      </DialogContent>
+      <LightboxContent evidence={evidence} transition={transition} />
     </Dialog>
   )
 }
