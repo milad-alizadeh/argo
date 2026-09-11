@@ -17,7 +17,7 @@ import {
   FileCheck2,
   Folder,
   FolderGit2,
-  GitBranch,
+  GitCompareArrows,
   GitFork,
   GitPullRequestCreate,
   GripVertical,
@@ -752,14 +752,17 @@ function PrototypeSessionHeader({
       ) : null}
       <div className="min-w-0">
         <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
-        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="mt-1 flex min-w-0 items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
           <span className="inline-flex shrink-0 items-center gap-1.5 font-medium">
             <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
             Running
           </span>
-          <GitBranch />
-          <span className="truncate">argo/#1258-composer-prototype</span>
-          <span>·</span>
+          <span className="h-3 w-px shrink-0 bg-border" aria-hidden="true" />
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <GitCompareArrows className="shrink-0" />
+            <span className="truncate">argo/#1258-composer-prototype</span>
+          </span>
+          <span className="h-3 w-px shrink-0 bg-border" aria-hidden="true" />
           <a
             href="https://github.com/milad-alizadeh/argo/issues/1258"
             target="_blank"
