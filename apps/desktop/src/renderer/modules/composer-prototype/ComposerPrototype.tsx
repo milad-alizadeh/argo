@@ -1361,7 +1361,7 @@ function ContextPopover({
       <Button
         variant="ghost"
         size="sm"
-        className={`gap-1.5 px-2 text-xs font-medium ${zone.text}`}
+        className="gap-1.5 px-2 text-xs font-medium text-foreground"
         aria-label={`Context ${formatTokenCount(used)} of ${formatTokenCount(context.total)}, ${percentage}%`}
       />
     ),
@@ -1377,12 +1377,12 @@ function ContextPopover({
     details: <Info className="size-4" />,
     progress: (
       <>
-        <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
+        <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
         </svg>
-        <span className="tabular-nums">
-          Context {(used / 1000).toFixed(0)}k / {(context.total / 1000).toFixed(0)}k · {percentage}%
+        <span>
+          Context <span className="tabular-nums text-muted-foreground">{(used / 1000).toFixed(0)}k / {(context.total / 1000).toFixed(0)}k · {percentage}%</span>
         </span>
       </>
     ),
