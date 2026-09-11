@@ -30,7 +30,7 @@ function LightboxContent({
         type="button"
         tabIndex={-1}
         aria-label="Close image preview backdrop"
-        className="absolute inset-0 border-0 bg-black/60 p-0 backdrop-blur-lg"
+        className="absolute inset-0 border-0 bg-black/60 p-0 will-change-[opacity]"
         onClick={transition.close}
       />
       <div
