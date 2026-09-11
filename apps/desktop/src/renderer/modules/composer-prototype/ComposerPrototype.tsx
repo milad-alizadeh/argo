@@ -633,7 +633,7 @@ function sessionPlanStepTone(session: PrototypeSession, step: number) {
 
 function SessionPlanBar({ session }: { session: PrototypeSession }) {
   const plan = session.plan
-  if (!plan) return <span className="h-1 w-16 shrink-0" aria-hidden="true" />
+  if (!plan) return null
   const steps = Array.from({ length: plan.total }, (_, index) => index)
   return (
     <span
@@ -690,16 +690,13 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
             <span className="min-w-0 flex-1 truncate">{session.activity}</span>
           </span>
-          <span className="mt-1 grid grid-cols-[2rem_4rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
+          <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="shrink-0 tabular-nums">{session.updated}</span>
-            <SessionPlanBar session={session} />
             {session.ticket ? (
               <span className="inline-flex items-center gap-1">
                 <Ticket />#{session.ticket}
               </span>
-            ) : (
-              <span aria-hidden="true" />
-            )}
+            ) : null}
             {session.pullRequest ? (
               <span
                 className={`inline-flex items-center gap-1 ${PULL_REQUEST_STYLES[session.pullRequest.state]}`}
@@ -708,9 +705,9 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
                 <GitFork />#{session.pullRequest.number}
                 <span className="sr-only"> {session.pullRequest.state}</span>
               </span>
-            ) : (
-              <span aria-hidden="true" />
-            )}
+            ) : null}
+            <span className="min-w-0 flex-1" aria-hidden="true" />
+            <SessionPlanBar session={session} />
           </span>
         </span>
       </span>
