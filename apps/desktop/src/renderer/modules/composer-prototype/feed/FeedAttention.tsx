@@ -1,7 +1,6 @@
-import { Check, ChevronDown, FileWarning, ShieldQuestion } from 'lucide-react'
+import { Check, ChevronDown, FileWarning, ShieldQuestion, ShieldX } from 'lucide-react'
 import { useState } from 'react'
 import { CollapsibleText } from '@/renderer/components/CollapsibleText'
-import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -71,7 +70,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
         <QuestionnaireTitle className="type-heading">
           Where should Concierge subtitles appear?
         </QuestionnaireTitle>
-        <QuestionnaireDescription className="type-meta">
+        <QuestionnaireDescription className="type-body">
           {readOnly
             ? 'Reply in the CLI. This Session is read-only.'
             : 'Choose a placement or write another answer.'}
@@ -87,7 +86,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
               onChange={() => setSelection(choice.value)}
             >
               <span className="type-heading font-medium">{choice.label}</span>
-              <QuestionnaireChoiceDescription className="type-meta">
+              <QuestionnaireChoiceDescription className="type-body">
                 {choice.detail}
               </QuestionnaireChoiceDescription>
             </QuestionnaireChoice>
@@ -193,12 +192,12 @@ export function FeedUnreadable() {
 
 export function FeedExpiredPermission() {
   return (
-    <Alert variant="destructive" className={FEED_CARD_RADIUS_CLASS}>
-      <ShieldQuestion className="!size-(--size-icon-control)" />
-      <AlertTitle className="type-label">Permission expired</AlertTitle>
-      <AlertDescription className="type-meta">
-        The command was denied because no answer arrived.
-      </AlertDescription>
-    </Alert>
+    <div role="alert" className="flex items-center gap-2 py-1 type-body text-destructive">
+      <ShieldX className="!size-(--size-icon-inline) shrink-0" />
+      <p>
+        <span className="font-medium">Permission expired</span>
+        <span className="text-destructive"> The command was denied because no answer arrived.</span>
+      </p>
+    </div>
   )
 }

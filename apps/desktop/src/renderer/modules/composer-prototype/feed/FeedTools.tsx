@@ -47,10 +47,10 @@ const EDITED_FILES: ToolRow[] = [
 function ToolRowDetail({ detail }: { detail: ToolRowDetail }) {
   switch (detail.kind) {
     case 'text':
-      return <span className="shrink-0 text-muted-foreground">{detail.value}</span>
+      return <span className="shrink-0 type-meta text-muted-foreground">{detail.value}</span>
     case 'diff':
       return (
-        <span className="flex shrink-0 items-center gap-1">
+        <span className="flex shrink-0 items-center gap-1 type-meta">
           <span className="text-emerald-600 dark:text-emerald-400">{detail.added}</span>
           <span className="text-destructive">{detail.removed}</span>
         </span>
@@ -75,10 +75,10 @@ export function FeedToolLine({
       onClick={() => onOpen(evidence)}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
-      className={`flex w-full items-center gap-2 text-left type-meta text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
+      className={`flex w-full items-center gap-2 text-left text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
     >
       <row.icon className="!size-(--size-icon-inline) shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">{row.label}</span>
+      <span className="min-w-0 truncate type-body">{row.label}</span>
       {row.detail && <ToolRowDetail detail={row.detail} />}
     </button>
   )
@@ -101,7 +101,7 @@ function ToolGroup({
       title={title}
       content={sections.flatMap((section) =>
         section.rows.map((row) => (
-          <TaskItem key={row.label} className="type-meta">
+          <TaskItem key={row.label}>
             <FeedToolLine row={row} onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
           </TaskItem>
         )),
