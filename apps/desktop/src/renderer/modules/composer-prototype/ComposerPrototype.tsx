@@ -51,6 +51,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
+import { CollapsibleText } from '@/renderer/components/CollapsibleText'
 import {
   Attachment,
   AttachmentAction,
@@ -116,7 +117,6 @@ import {
   type FeedPrototypeEvidence,
   SessionFeedPrototype,
 } from './SessionFeedPrototype'
-import { SessionDisclosure } from './SessionDisclosure'
 import {
   paneContentVisibilityClass,
   SESSION_FEED_MIN_WIDTH,
@@ -384,7 +384,7 @@ function RosterConcierge() {
 
   return (
     <div className="h-(--size-bottom-status) shrink-0 p-3">
-      <div className="flex items-start gap-3 rounded-lg bg-surface-inset p-2">
+      <div className="flex items-start gap-3 rounded-lg p-2">
         <a
           href="#/concierge"
           aria-label="Open Concierge chat"
@@ -794,11 +794,14 @@ function PrototypeSessionRoster({
             {sessions.map((session) => (
               <SessionRosterRow key={session.id} session={session} />
             ))}
-            <SessionDisclosure icon={<Archive />} label="Archive" separated>
-              <p className="px-7 py-2 type-meta text-muted-foreground">
-                No archived Sessions
-              </p>
-            </SessionDisclosure>
+            <div className="border-t pt-2">
+              <CollapsibleText
+                content={<p className="text-muted-foreground">No archived Sessions</p>}
+                contentVariant="plain"
+                icon={Archive}
+                title="Archive"
+              />
+            </div>
           </div>
         </div>
         <RosterConcierge />
@@ -960,30 +963,31 @@ function SessionWorkSidebar({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <h3 className="mb-2 translate-y-2 type-label font-semibold">Background Agents · 5</h3>
+          <h3 className="mb-2 type-heading font-semibold">Background Agents · 5</h3>
           <div className="space-y-1">
-            {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
-              <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-surface-inset">
+            {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label) => (
+              <button key={label} type="button" className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left type-meta text-muted-foreground transition-colors hover:text-foreground">
                 <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="truncate type-heading font-medium">{label}</span>
-                <span className="col-start-2 type-meta text-muted-foreground">
-                  Subagent {index + 1} · running
-                </span>
+                <span className="sr-only">Running</span>
+                <span className="min-w-0 flex-1 truncate">{label}</span>
               </button>
             ))}
           </div>
           <div className="my-3 h-px bg-border/60" />
-          <h3 className="mb-2 type-label font-semibold">Shell · 1</h3>
-          <button type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg bg-surface-inset p-2 text-left">
+          <h3 className="mb-2 type-heading font-semibold">Shell · 1</h3>
+          <button type="button" className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left type-meta text-muted-foreground transition-colors hover:text-foreground">
             <span className="size-2 rounded-full border border-emerald-500" />
-            <span className="truncate font-mono type-code">bun run dev</span>
-            <span className="col-start-2 mt-0.5 type-meta text-muted-foreground">
-              Vite · port 5191
-            </span>
+            <span className="sr-only">Running</span>
+            <span className="min-w-0 flex-1 truncate font-mono">bun run dev</span>
           </button>
-          <button type="button" className="mt-3 flex items-center gap-1 type-meta text-muted-foreground hover:text-foreground">
-            <ChevronDown /> 6 finished
-          </button>
+          <div className="mt-3">
+            <CollapsibleText
+              content={<p className="text-muted-foreground">Finished background work</p>}
+              contentVariant="plain"
+              icon={Check}
+              title="6 finished"
+            />
+          </div>
         </div>
       )}
     </aside>

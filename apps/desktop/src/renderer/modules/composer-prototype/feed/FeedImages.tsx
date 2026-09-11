@@ -1,4 +1,4 @@
-import { Download, Expand, ImageOff, X } from 'lucide-react'
+import { Download, ImageOff, X } from 'lucide-react'
 import { Button } from '@/renderer/components/ui/button'
 import {
   Dialog,
@@ -84,7 +84,7 @@ function ImageLightbox({
             type="button"
             className={
               compact
-                ? 'mt-3 flex cursor-pointer items-center gap-2 rounded-md border bg-surface-raised p-1.5 text-left type-meta'
+                ? `size-(--size-feed-attachment-preview) shrink-0 cursor-pointer overflow-hidden ${FEED_CARD_RADIUS_CLASS}`
                 : `relative h-full shrink-0 cursor-pointer overflow-hidden border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`
             }
             aria-label={`Open ${evidence.title} in lightbox`}
@@ -99,15 +99,9 @@ function ImageLightbox({
           height={213}
           alt="Two people reviewing work on a laptop"
           className={
-            compact ? '!size-10 rounded-sm object-cover' : '!h-full !w-auto max-w-none object-cover'
+            compact ? '!size-full object-cover' : '!h-full !w-auto max-w-none object-cover'
           }
         />
-        {compact ? <span className="min-w-0 flex-1 text-left">{evidence.title}</span> : null}
-        {compact ? (
-          <span className="ml-2 text-muted-foreground">
-            <Expand className="!size-(--size-icon-inline)" />
-          </span>
-        ) : null}
       </DialogTrigger>
       <LightboxContent evidence={evidence} transition={transition} />
     </Dialog>

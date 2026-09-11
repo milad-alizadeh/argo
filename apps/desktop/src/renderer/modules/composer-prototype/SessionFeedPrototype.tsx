@@ -37,12 +37,11 @@ export function SessionFeedPrototype({
   return (
     <div className="min-w-0 space-y-6 type-body" data-component="SessionFeedPrototype">
       <FeedBoundary>Today · 10:42</FeedBoundary>
-      <FeedPrompt>
+      <FeedPrompt attachment={<FeedAttachedImage />}>
         <p>
           Bring the composer into the Session. Keep the roster, subagents and their shell visible,
           and use this image to check attachments.
         </p>
-        <FeedAttachedImage />
       </FeedPrompt>
       <FeedTurn>
         <p className="type-prose">

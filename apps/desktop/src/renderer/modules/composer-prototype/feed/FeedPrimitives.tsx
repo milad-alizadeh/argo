@@ -31,18 +31,22 @@ export function FeedTurn({ children }: { children: ReactNode }) {
 }
 
 export function FeedPrompt({
+  attachment,
   children,
   submitted = false,
 }: {
+  attachment?: ReactNode
   children: ReactNode
   submitted?: boolean
 }) {
   return (
     <Message align="end" className="type-body">
       <MessageContent>
-        <MessageHeader className="type-meta">
-          You{submitted ? ' · Sending to Session…' : ''}
-        </MessageHeader>
+        <span className="sr-only">You</span>
+        {submitted ? (
+          <MessageHeader className="type-meta">Sending to Session…</MessageHeader>
+        ) : null}
+        {attachment}
         <Bubble variant="muted" className="max-w-full sm:max-w-4/5">
           <BubbleContent className="type-prose">{children}</BubbleContent>
         </Bubble>
