@@ -355,7 +355,7 @@ function ConciergeOrb({ compact = false }: { compact?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-foreground ${compact ? 'size-7' : 'size-11'}`}
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full ${compact ? 'size-7' : 'size-11'}`}
     >
       <span className="absolute inset-[12%] rounded-full bg-[radial-gradient(circle_at_35%_30%,var(--background),transparent_35%),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
     </span>
@@ -1850,7 +1850,7 @@ export function ComposerPrototype() {
         <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <ResizablePanelGroup
           orientation="horizontal"
-          className="mb-0.75 ml-0.75 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-background"
+          className="mr-0.75 mb-0.75 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
