@@ -718,14 +718,22 @@ function HeaderSignal({
   onClick: () => void
 }) {
   return (
-    <button
-      type="button"
-      className={`flex min-w-0 items-center gap-1.5 px-2.5 py-2 text-(length:--text-control) leading-none font-medium hover:bg-accent/70 focus-visible:bg-accent ${tone}`}
-      onClick={onClick}
-    >
-      <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
-      <span className="truncate">{value}</span>
-    </button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label={value}
+            className={`flex h-8 w-8 min-w-0 items-center justify-center gap-1.5 px-0 text-(length:--text-control) leading-none font-medium hover:bg-accent/70 focus-visible:bg-accent @[36rem]:w-auto @[36rem]:justify-start @[36rem]:px-2.5 ${tone}`}
+            onClick={onClick}
+          />
+        }
+      >
+        <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
+        <span className="hidden truncate @[36rem]:inline">{value}</span>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{value}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -750,7 +758,7 @@ function PrototypeSessionHeader({
           <PanelLeft />
         </Button>
       ) : null}
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
         <div className="mt-1 flex min-w-0 items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
           <span className="inline-flex shrink-0 items-center gap-1.5 font-medium">
@@ -773,22 +781,24 @@ function PrototypeSessionHeader({
           </a>
         </div>
       </div>
-      <div
-        className={`ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 ${showSidebar ? '' : 'mr-10'}`}
-      >
-        <HeaderSignal
-          icon={<GitPullRequestCreate />}
-          value="Create PR"
-          tone="text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
-          onClick={() => undefined}
-        />
-        <HeaderSignal
-          icon={<MessageSquareCode />}
-          value="Not reviewed"
-          tone="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-          onClick={() => undefined}
-        />
-      </div>
+      <TooltipProvider>
+        <div
+          className={`ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/30 ${showSidebar ? '' : 'mr-10'}`}
+        >
+          <HeaderSignal
+            icon={<GitPullRequestCreate />}
+            value="Create PR"
+            tone="text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+            onClick={() => undefined}
+          />
+          <HeaderSignal
+            icon={<MessageSquareCode />}
+            value="Not reviewed"
+            tone="text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            onClick={() => undefined}
+          />
+        </div>
+      </TooltipProvider>
     </header>
   )
 }
