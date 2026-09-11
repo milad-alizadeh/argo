@@ -1988,7 +1988,7 @@ export function ComposerPrototype() {
             if (previousSize?.inPixels !== undefined && previousSize.inPixels > 0)
               handleSessionRosterResize(size.inPixels, previousSize.inPixels)
           }}
-          className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionRoster ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          className={`h-full min-h-0 overflow-hidden ${showSessionRoster ? '' : 'pointer-events-none'}`}
         >
           <div
             aria-hidden={!showSessionRoster}
@@ -2003,7 +2003,7 @@ export function ComposerPrototype() {
         </ResizablePanel>
         <ResizableHandle
           disabled={!showSessionRoster}
-          className={`z-30 motion-safe:transition-opacity motion-safe:duration-200 ${showSessionRoster ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          className={`z-30 ${showSessionRoster ? '' : 'pointer-events-none'}`}
         />
         <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
         <main
@@ -2187,7 +2187,7 @@ export function ComposerPrototype() {
           </ResizablePanel>
           <ResizableHandle
             disabled={!showSessionSidebar}
-            className={`z-30 motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+            className={`z-30 ${showSessionSidebar ? '' : 'pointer-events-none'}`}
           />
           <ResizablePanel
             id="session-inspector"
