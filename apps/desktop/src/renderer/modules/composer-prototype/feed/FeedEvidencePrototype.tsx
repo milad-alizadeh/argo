@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { FEED_INSPECTOR_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 import { EvidenceBody } from './FeedEvidenceBody'
 
@@ -27,26 +27,23 @@ export function FeedEvidencePrototype({
   const [activeId, setActiveId] = useState(evidence.id)
   const scrollArea = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setActiveId(evidence.id)
     onActiveEvidenceChange(evidence.id)
-    const target = scrollArea.current?.querySelector<HTMLElement>(
-      `[data-evidence-id="${evidence.id}"]`,
-    )
-    if (scrollArea.current && target) {
-      const scrollTop = scrollArea.current.scrollTop
-      const scrollAreaTop = scrollArea.current.getBoundingClientRect().top
-      const targetTop = target.getBoundingClientRect().top
-      scrollArea.current.scrollTop = scrollTop + targetTop - scrollAreaTop
-    }
+    const area = scrollArea.current
+    const target = area?.querySelector<HTMLElement>(`[data-evidence-id="${evidence.id}"]`)
+    if (!area || !target) return
+    const frame = window.requestAnimationFrame(() => {
+      area.scrollTop = target.offsetTop
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [evidence, onActiveEvidenceChange])
 
   const selectVisibleEvidence = () => {
     if (!scrollArea.current) return
     let visibleId = items[0]?.id ?? evidence.id
-    const scrollAreaTop = scrollArea.current.getBoundingClientRect().top
     for (const section of scrollArea.current.querySelectorAll<HTMLElement>('[data-evidence-id]')) {
-      if (section.getBoundingClientRect().top <= scrollAreaTop + 48)
+      if (section.offsetTop <= scrollArea.current.scrollTop + 1)
         visibleId = section.dataset.evidenceId ?? visibleId
     }
     if (visibleId !== activeId) {
@@ -64,7 +61,7 @@ export function FeedEvidencePrototype({
       <div
         ref={scrollArea}
         onScroll={selectVisibleEvidence}
-        className="min-h-0 flex-1 overflow-y-auto"
+        className="relative min-h-0 flex-1 overflow-y-auto [overflow-anchor:none]"
       >
         {items.map((item) => (
           <InspectorSection key={item.id} evidence={item} />
