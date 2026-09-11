@@ -769,7 +769,7 @@ function PrototypeSessionRoster({
         onProjectChange={onProjectChange}
         onCollapse={onCollapse}
       />
-      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-sidebar">
+      <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-background">
         <div className="flex h-14 shrink-0 items-center px-3">
           <h1 className="px-2 type-heading font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">

@@ -20,7 +20,7 @@ export function SessionRoster({
   const { t } = useTranslation()
 
   return (
-    <aside className="flex min-h-0 flex-col border-r border-border bg-sidebar">
+    <aside className="flex min-h-0 flex-col border-r border-border bg-background">
       <header className="border-b border-border px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-mono type-heading font-semibold tracking-wide">{t('title')}</h1>
