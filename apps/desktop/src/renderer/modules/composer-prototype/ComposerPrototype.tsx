@@ -119,6 +119,7 @@ import {
   SessionFeedPrototype,
 } from './SessionFeedPrototype'
 import {
+  paneContentVisibilityClass,
   restoreWidthAfterFullscreenSnap,
   SESSION_PANE_MIN_WIDTH,
   SESSION_PANE_SNAP_WIDTH,
@@ -2208,7 +2209,7 @@ export function ComposerPrototype() {
               if (previousSize?.inPixels !== undefined && previousSize.inPixels > 0)
                 handleSessionSidebarResize(size.inPixels, previousSize.inPixels)
             }}
-            className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionSidebar ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+            className={`h-full min-h-0 overflow-hidden ${paneContentVisibilityClass(showSessionSidebar)}`}
           >
             <div
               aria-hidden={!showSessionSidebar}
