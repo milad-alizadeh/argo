@@ -362,7 +362,7 @@ function ConciergeOrb() {
   return (
     <span
       aria-hidden="true"
-      className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-full"
+      className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))]"
     >
       <span className="absolute inset-[12%] rounded-full bg-[radial-gradient(circle_at_35%_30%,var(--background),transparent_35%),conic-gradient(from_40deg,var(--muted-foreground),var(--background),var(--foreground),var(--muted-foreground))] opacity-90" />
     </span>
