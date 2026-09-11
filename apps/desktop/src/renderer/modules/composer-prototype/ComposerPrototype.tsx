@@ -577,18 +577,16 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
 function PrototypeRail({
   theme,
   onThemeChange,
-  sessionRosterVisible,
 }: {
   theme: ThemeMode
   onThemeChange: (theme: ThemeMode) => void
-  sessionRosterVisible: boolean
 }) {
   const showsNativeTrafficLights = typeof window.argo?.versions?.electron === 'string'
 
   return (
     <nav
       aria-label="Main navigation"
-      className={`flex min-h-0 shrink-0 flex-col items-center bg-sidebar pb-3 [&_svg]:size-(--size-icon-control) ${sessionRosterVisible ? 'w-18' : 'w-22'}`}
+      className="flex min-h-0 w-22 shrink-0 flex-col items-center bg-sidebar pb-3 [&_svg]:size-(--size-icon-control)"
     >
       <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0">
         {!showsNativeTrafficLights ? (
@@ -2078,7 +2076,6 @@ export function ComposerPrototype() {
         <PrototypeRail
           theme={theme}
           onThemeChange={setTheme}
-          sessionRosterVisible={showSessionRoster}
         />
         <ResizablePanelGroup
           orientation="horizontal"
