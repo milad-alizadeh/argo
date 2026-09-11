@@ -1,9 +1,7 @@
 import {
-  BookOpen,
   Check,
   ChevronRight,
   FilePenLine,
-  Globe,
   LoaderCircle,
   PanelRightOpen,
   Search,
@@ -21,20 +19,26 @@ type ToolRow = {
   icon: ComponentType<{ className?: string }>
   detail?: string
 }
-const READS: ToolRow[] = [
+type ToolSection = {
+  title: string
+  rows: ToolRow[]
+}
+
+const COMMANDS: ToolRow[] = [
   {
     label: 'Searched ContextBar and AttachmentTray',
     evidence: 'search',
     icon: Search,
     detail: '3 matches',
   },
-  { label: 'Read Composer.tsx', evidence: 'source', icon: BookOpen },
-  { label: 'Fetched the migration contract', evidence: 'fetched', icon: Globe },
-]
-const WORK: ToolRow[] = [
-  { label: 'Edited Composer.tsx', evidence: 'diff', icon: FilePenLine, detail: '+2 −1' },
   { label: 'Ran bun test composer', evidence: 'tests', icon: SquareTerminal, detail: '3 passed' },
-  { label: 'Called github.get_issue', evidence: 'mcp', icon: Wrench },
+]
+const CREATED_FILES: ToolRow[] = [
+  { label: 'Created AttachmentTray.tsx', evidence: 'createdAttachmentTray', icon: FilePenLine },
+  { label: 'Created ContextBar.tsx', evidence: 'createdContextBar', icon: FilePenLine },
+]
+const EDITED_FILES: ToolRow[] = [
+  { label: 'Edited Composer.tsx', evidence: 'diff', icon: FilePenLine, detail: '+2 −1' },
 ]
 
 export function FeedToolLine({
@@ -66,14 +70,12 @@ export function FeedToolLine({
 
 function ToolGroup({
   title,
-  activity,
-  rows,
+  sections,
   onOpen,
   activeEvidenceId,
 }: {
   title: string
-  activity: string
-  rows: ToolRow[]
+  sections: ToolSection[]
   onOpen: FeedEvidenceAction
   activeEvidenceId: string | null
 }) {
@@ -81,17 +83,25 @@ function ToolGroup({
     <details className="group rounded-lg border bg-card open:pb-1">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-control">
         <ChevronRight className="!size-(--size-icon-inline) text-muted-foreground group-open:rotate-90" />
-        <span className="text-(length:--text-body) font-medium">{title}</span>
-        <span className="ml-auto text-muted-foreground">{activity}</span>
+        <span className="min-w-0 text-(length:--text-body) font-medium">{title}</span>
       </summary>
-      <div className="mx-2 border-t pt-1">
-        {rows.map((row) => (
-          <FeedToolLine
-            key={row.label}
-            row={row}
-            onOpen={onOpen}
-            activeEvidenceId={activeEvidenceId}
-          />
+      <div className="mx-2 space-y-1 border-t pt-1">
+        {sections.map((section) => (
+          <div key={section.title}>
+            {sections.length > 1 ? (
+              <p className="px-2 pt-2 text-(length:--text-control) font-medium text-muted-foreground">
+                {section.title}
+              </p>
+            ) : null}
+            {section.rows.map((row) => (
+              <FeedToolLine
+                key={row.label}
+                row={row}
+                onOpen={onOpen}
+                activeEvidenceId={activeEvidenceId}
+              />
+            ))}
+          </div>
         ))}
       </div>
     </details>
@@ -107,9 +117,12 @@ export function FeedToolGroups({
 }) {
   return (
     <ToolGroup
-      title="Searched, edited and verified the Session"
-      activity="6 tool calls"
-      rows={[...READS, ...WORK]}
+      title="Ran 2 commands · Created 2 files · Edited 1 file"
+      sections={[
+        { title: 'Ran 2 commands', rows: COMMANDS },
+        { title: 'Created 2 files', rows: CREATED_FILES },
+        { title: 'Edited 1 file', rows: EDITED_FILES },
+      ]}
       onOpen={onOpen}
       activeEvidenceId={activeEvidenceId}
     />
@@ -152,9 +165,8 @@ export function FeedMutationExamples({
   return (
     <div className="space-y-2">
       <ToolGroup
-        title="Changed files and checked the preview"
-        activity="Ran 2 commands"
-        rows={mutations}
+        title="Ran 2 commands · Changed 3 files"
+        sections={[{ title: 'Activity', rows: mutations }]}
         onOpen={onOpen}
         activeEvidenceId={activeEvidenceId}
       />

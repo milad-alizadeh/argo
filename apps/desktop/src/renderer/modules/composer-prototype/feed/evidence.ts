@@ -101,6 +101,15 @@ export const FEED_EVIDENCE = {
     detail: 'Recorded file creation · AttachmentTray.tsx',
     status: 'succeeded',
   },
+  createdContextBar: {
+    id: 'created-context-bar',
+    title: 'ContextBar.tsx',
+    kind: 'diff',
+    source:
+      '@@ New context bar @@\n+ export function ContextBar({ context }) {\n+   return <div className="flex items-center gap-2">{context.map(renderContext)}</div>\n+ }',
+    detail: 'Recorded file creation · ContextBar.tsx',
+    status: 'succeeded',
+  },
   movedQueue: {
     id: 'moved-queue',
     title: 'queue.ts',
@@ -161,6 +170,7 @@ export const FEED_INSPECTOR_EVIDENCE: FeedPrototypeEvidence[] = [
   FEED_EVIDENCE.tests,
   FEED_EVIDENCE.mcp,
   FEED_EVIDENCE.createdAttachmentTray,
+  FEED_EVIDENCE.createdContextBar,
   FEED_EVIDENCE.movedQueue,
   FEED_EVIDENCE.deletedDraft,
   FEED_EVIDENCE.unclassified,

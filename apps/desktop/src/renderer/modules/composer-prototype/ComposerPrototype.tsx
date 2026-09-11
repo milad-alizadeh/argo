@@ -123,7 +123,8 @@ import {
   nextPaneContentWidth,
   paneContentVisibilityClass,
   SESSION_FEED_MIN_WIDTH,
-  SESSION_SIDEBAR_MIN_WIDTH,
+  SESSION_INSPECTOR_MIN_WIDTH,
+  SESSION_ROSTER_MIN_WIDTH,
 } from './sessionPaneResize'
 
 type HarnessKey = 'codex' | 'claude'
@@ -1766,7 +1767,7 @@ export function ComposerPrototype() {
   const handleSessionRosterResize = (rosterWidth: number) => {
     setShowSessionRoster(rosterWidth > 0)
     setSessionRosterContentWidth((previousWidth) =>
-      nextPaneContentWidth(rosterWidth, previousWidth, SESSION_SIDEBAR_MIN_WIDTH))
+      nextPaneContentWidth(rosterWidth, previousWidth, SESSION_ROSTER_MIN_WIDTH))
   }
 
   const toggleSessionSidebarFullscreen = () => {
@@ -1781,7 +1782,7 @@ export function ComposerPrototype() {
   const handleSessionSidebarResize = (sidebarWidth: number) => {
     setShowSessionSidebar(sidebarWidth > 0)
     setSessionInspectorContentWidth((previousWidth) =>
-      nextPaneContentWidth(sidebarWidth, previousWidth, SESSION_SIDEBAR_MIN_WIDTH))
+      nextPaneContentWidth(sidebarWidth, previousWidth, SESSION_INSPECTOR_MIN_WIDTH))
   }
 
   const openFeedEvidence = (evidence: FeedPrototypeEvidence) => {
@@ -1861,8 +1862,8 @@ export function ComposerPrototype() {
           panelRef={sessionRosterPanel}
           collapsible
           collapsedSize={0}
-          defaultSize={280}
-          minSize={SESSION_SIDEBAR_MIN_WIDTH}
+          defaultSize={SESSION_ROSTER_MIN_WIDTH}
+          minSize={SESSION_ROSTER_MIN_WIDTH}
           maxSize={400}
           groupResizeBehavior="preserve-pixel-size"
           onResize={(size) => handleSessionRosterResize(size.inPixels)}
@@ -2052,7 +2053,7 @@ export function ComposerPrototype() {
             collapsible
             collapsedSize={0}
             defaultSize={248}
-            minSize={SESSION_SIDEBAR_MIN_WIDTH}
+            minSize={SESSION_INSPECTOR_MIN_WIDTH}
             maxSize="100%"
             groupResizeBehavior="preserve-pixel-size"
             onResize={(size) => handleSessionSidebarResize(size.inPixels)}
