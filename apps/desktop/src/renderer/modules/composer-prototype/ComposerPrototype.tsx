@@ -702,13 +702,15 @@ function PrototypeSessionRoster({
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
+      <div className="flex h-11 shrink-0 items-center px-3">
+        <ProjectManager
+          currentProject={currentProject}
+          onProjectChange={onProjectChange}
+        />
+      </div>
       <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
-          <ProjectManager
-            currentProject={currentProject}
-            onProjectChange={onProjectChange}
-          />
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
           </Button>
