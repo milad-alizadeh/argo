@@ -73,7 +73,6 @@ function ImageLightbox({
       <DialogTrigger
         render={
           <button
-            ref={transition.triggerRef}
             type="button"
             className={
               compact
@@ -86,6 +85,7 @@ function ImageLightbox({
         }
       >
         <img
+          ref={transition.sourceRef}
           src={evidence.source}
           width={320}
           height={213}

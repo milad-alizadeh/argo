@@ -70,7 +70,7 @@ async function closeToSource(
 
 export function useImageLightboxTransition() {
   const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const sourceRef = useRef<HTMLImageElement>(null)
   const previewRef = useRef<HTMLImageElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
@@ -78,7 +78,7 @@ export function useImageLightboxTransition() {
   const destinationBoundsRef = useRef<ImageBounds | null>(null)
   const closingRef = useRef(false)
   const captureSourceBounds = useCallback(() => {
-    sourceBoundsRef.current = triggerRef.current?.getBoundingClientRect() ?? null
+    sourceBoundsRef.current = sourceRef.current?.getBoundingClientRect() ?? null
   }, [])
   const getElements = useCallback(() => {
     const backdrop = backdropRef.current
@@ -88,7 +88,7 @@ export function useImageLightboxTransition() {
   const close = useCallback(async () => {
     if (closingRef.current) return
     const elements = getElements()
-    const source = triggerRef.current?.getBoundingClientRect() ?? sourceBoundsRef.current
+    const source = sourceRef.current?.getBoundingClientRect() ?? sourceBoundsRef.current
     const destination = destinationBoundsRef.current
     if (!elements || !source || !destination || prefersReducedMotion()) return setOpen(false)
     closingRef.current = true
@@ -118,6 +118,6 @@ export function useImageLightboxTransition() {
     onOpenChange,
     open,
     previewRef,
-    triggerRef,
+    sourceRef,
   }
 }
