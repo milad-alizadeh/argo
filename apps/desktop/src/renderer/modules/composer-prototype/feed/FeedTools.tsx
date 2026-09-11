@@ -75,7 +75,7 @@ export function FeedToolLine({
       onClick={() => onOpen(evidence)}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
-      className={`flex w-full items-center gap-2 py-2 text-left text-(length:--text-control) text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
+      className={`flex w-full items-center gap-2 text-left text-(length:--text-control) text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
     >
       <row.icon className="!size-(--size-icon-inline) shrink-0 text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
