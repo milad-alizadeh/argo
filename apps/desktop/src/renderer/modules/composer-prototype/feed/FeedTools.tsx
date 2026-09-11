@@ -13,6 +13,8 @@ import { Button } from '@/renderer/components/ui/button'
 import { Marker, MarkerContent, MarkerIcon } from '@/renderer/components/ui/marker'
 import { FEED_EVIDENCE, type FeedEvidenceAction, type FeedPrototypeEvidence } from './evidence'
 
+export const FEED_DISCLOSURE_SURFACE_CLASS = 'bg-card transition-colors hover:bg-muted'
+
 type ToolRow = {
   label: string
   evidence: keyof typeof FEED_EVIDENCE
@@ -80,10 +82,12 @@ function ToolGroup({
   activeEvidenceId: string | null
 }) {
   return (
-    <details className="group rounded-lg border bg-card open:pb-1">
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-control">
-        <ChevronRight className="!size-(--size-icon-inline) text-muted-foreground group-open:rotate-90" />
+    <details className="group rounded-lg border open:pb-1">
+      <summary
+        className={`flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2.5 text-control ${FEED_DISCLOSURE_SURFACE_CLASS}`}
+      >
         <span className="min-w-0 text-(length:--text-body) font-medium">{title}</span>
+        <ChevronRight className="!size-(--size-icon-inline) shrink-0 text-muted-foreground group-open:rotate-90" />
       </summary>
       <div className="mx-2 space-y-1 border-t pt-1">
         {sections.map((section) => (
