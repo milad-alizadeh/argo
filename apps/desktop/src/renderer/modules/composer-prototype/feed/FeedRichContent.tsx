@@ -1,5 +1,7 @@
+import { NotebookPen } from 'lucide-react'
 import { COMPOSER_CODE, FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
 import { FeedDiagram } from './FeedDiagram'
+import { FeedDisclosure } from './FeedDisclosure'
 import { FeedEvidenceLink } from './FeedEvidenceLink'
 import { FeedImages } from './FeedImages'
 import { FeedCode, FeedTurn } from './FeedPrimitives'
@@ -38,9 +40,8 @@ export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
           <li>Tool results open beside the conversation.</li>
         </ul>
       </div>
-      <details className="text-control">
-        <summary className="cursor-pointer text-muted-foreground">Review notes</summary>
-        <div className="space-y-3 pt-3 text-body leading-relaxed">
+      <FeedDisclosure icon={NotebookPen} label="Review notes">
+        <div className="space-y-3 text-body leading-relaxed">
           <p>
             The old <s>wrapping attachment grid</s> is now a <strong>single tray</strong>. The draft
             stays <em>editable</em> throughout.
@@ -73,7 +74,7 @@ export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
             </li>
           </ul>
         </div>
-      </details>
+      </FeedDisclosure>
     </FeedTurn>
   )
 }

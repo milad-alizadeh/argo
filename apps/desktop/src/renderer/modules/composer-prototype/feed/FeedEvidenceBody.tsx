@@ -27,7 +27,7 @@ function DiffLine({ line }: { line: string }) {
   return <span className={`block min-w-fit ${tone}`}>{line || ' '}</span>
 }
 
-function RenderedMarkdown({ source }: { source: string }) {
+export function FeedMarkdown({ source }: { source: string }) {
   return (
     <div className="space-y-4 text-body leading-relaxed">
       {source.split('\n\n').map((block) => {
@@ -87,7 +87,7 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
         </pre>
       )
     case 'document':
-      return <RenderedMarkdown source={evidence.source} />
+      return <FeedMarkdown source={evidence.source} />
     case 'code':
       return <FeedCode source={evidence.source} />
     case 'output':

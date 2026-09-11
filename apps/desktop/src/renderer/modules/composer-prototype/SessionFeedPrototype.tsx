@@ -1,39 +1,31 @@
-import { ChevronRight, GitFork, Sparkles } from 'lucide-react'
+import { GitFork, Sparkles } from 'lucide-react'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
-import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './feed/evidence'
+import { FeedDisclosure } from './feed/FeedDisclosure'
+import { FeedMarkdown } from './feed/FeedEvidenceBody'
 import { FeedAdditionalStates } from './feed/FeedHistory'
 import { FeedAttachedImage } from './feed/FeedImages'
 import { FeedPendingCall } from './feed/FeedPendingCall'
 import { FeedBoundary, FeedPrompt, FeedTurn } from './feed/FeedPrimitives'
 import { FeedRichContent } from './feed/FeedRichContent'
-import { FEED_DISCLOSURE_SURFACE_CLASS, FeedToolGroups } from './feed/FeedTools'
+import { FeedToolGroups } from './feed/FeedTools'
 
 export type { FeedPrototypeEvidence } from './feed/evidence'
 export { FeedEvidencePrototype } from './feed/FeedEvidencePrototype'
 
-function FeedSkillInvocation({
-  onOpen,
-  activeEvidenceId,
-}: {
-  onOpen: FeedEvidenceAction
-  activeEvidenceId: string | null
-}) {
+function FeedSkillInvocation() {
   const evidence = FEED_EVIDENCE.skill
-  const active = activeEvidenceId === evidence.id
   return (
-    <Button
-      variant="outline"
-      className={`h-8 w-fit max-w-full justify-start gap-1.5 px-2 text-(length:--text-control) font-normal ${FEED_DISCLOSURE_SURFACE_CLASS} ${active ? 'bg-surface-inset text-foreground' : 'text-muted-foreground'}`}
-      aria-current={active ? 'location' : undefined}
-      data-feed-evidence-id={evidence.id}
-      onClick={() => onOpen(evidence)}
+    <FeedDisclosure
+      icon={Sparkles}
+      label={
+        <>
+          Skill invoked <span className="font-medium text-foreground">{evidence.title}</span>
+        </>
+      }
     >
-      <Sparkles className="!size-(--size-icon-inline)" />
-      <span className="shrink-0">Skill invoked</span>
-      <span className="min-w-0 truncate font-medium text-foreground">{evidence.title}</span>
-      <ChevronRight className="!size-(--size-icon-inline) shrink-0" />
-    </Button>
+      <FeedMarkdown source={evidence.source} />
+    </FeedDisclosure>
   )
 }
 
@@ -59,7 +51,7 @@ export function SessionFeedPrototype({
           I’ll connect the composer to the surrounding Session and check the rich content at the
           same time.
         </p>
-        <FeedSkillInvocation onOpen={onOpenEvidence} activeEvidenceId={activeEvidenceId} />
+        <FeedSkillInvocation />
         <Reasoning defaultOpen={false} className="mb-0">
           <ReasoningTrigger
             className="text-(length:--text-control)"

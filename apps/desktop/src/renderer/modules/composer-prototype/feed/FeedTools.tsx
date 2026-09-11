@@ -1,11 +1,9 @@
 import { Check, FilePenLine, PanelRightOpen, Search, SquareTerminal, Wrench } from 'lucide-react'
 import type { ComponentType } from 'react'
-import { Task, TaskContent, TaskItem, TaskTrigger } from '@/components/ai-elements/task'
+import { TaskItem } from '@/components/ai-elements/task'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction } from './evidence'
-
-export const FEED_DISCLOSURE_SURFACE_CLASS =
-  '!bg-surface-raised transition-colors hover:!bg-surface-inset'
+import { FeedDisclosure } from './FeedDisclosure'
 
 type ToolRow = {
   label: string
@@ -100,21 +98,15 @@ function ToolGroup({
   activeEvidenceId: string | null
 }) {
   return (
-    <Task defaultOpen={false} className="mb-0">
-      <TaskTrigger
-        title={title}
-        className="w-full rounded-lg px-2 py-2 text-(length:--text-control) hover:bg-surface-inset [&>div]:text-(length:--text-control)"
-      />
-      <TaskContent className="[&>div]:mt-2 [&>div]:space-y-1">
-        {sections.flatMap((section) =>
-          section.rows.map((row) => (
-            <TaskItem key={row.label} className="text-(length:--text-control)">
-              <FeedToolLine row={row} onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
-            </TaskItem>
-          )),
-        )}
-      </TaskContent>
-    </Task>
+    <FeedDisclosure icon={SquareTerminal} label={title}>
+      {sections.flatMap((section) =>
+        section.rows.map((row) => (
+          <TaskItem key={row.label} className="text-(length:--text-control)">
+            <FeedToolLine row={row} onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
+          </TaskItem>
+        )),
+      )}
+    </FeedDisclosure>
   )
 }
 
