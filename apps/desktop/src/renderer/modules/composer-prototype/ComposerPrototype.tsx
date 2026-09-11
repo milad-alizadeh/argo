@@ -1731,6 +1731,7 @@ export function ComposerPrototype() {
   const sessionInspectorElement = useRef<HTMLDivElement>(null)
   const sessionInspectorRestoreSize = useRef(248)
   const sessionInspectorCollapsePending = useRef(false)
+  const sessionInspectorCollapseAfterMount = useRef(false)
   const sessionInspectorResizeAnimation = useRef(false)
   const sidebarAnimationTimer = useRef<number | null>(null)
   const [sessionInspectorContentWidth, setSessionInspectorContentWidth] = useState(248)
@@ -1806,18 +1807,26 @@ export function ComposerPrototype() {
   }
 
   const setSessionSidebarVisible = (visible: boolean) => {
+    const wasFullscreen = sessionSidebarFullscreenState.current
     sessionSidebarVisibleState.current = visible
-    animateSessionInspector(() => {
-      if (visible) {
+    if (visible) {
+      animateSessionInspector(() => {
         setSessionInspectorContentWidth(sessionInspectorRestoreSize.current)
         sessionInspectorPanel.current?.resize(sessionInspectorRestoreSize.current)
-      }
-      else sessionInspectorPanel.current?.collapse()
-    })
+      })
+    } else if (wasFullscreen) sessionInspectorCollapseAfterMount.current = true
+    else animateSessionInspector(() => sessionInspectorPanel.current?.collapse())
     sessionSidebarFullscreenState.current = false
     setSessionSidebarFullscreen(false)
     setShowSessionSidebar(visible)
   }
+
+  useEffect(() => {
+    if (sessionSidebarFullscreen || showSessionSidebar || !sessionInspectorCollapseAfterMount.current)
+      return
+    sessionInspectorCollapseAfterMount.current = false
+    animateSessionInspector(() => sessionInspectorPanel.current?.collapse())
+  }, [sessionSidebarFullscreen, showSessionSidebar])
 
   const setSessionRosterVisible = (visible: boolean) => {
     animateSessionRoster(() => {
