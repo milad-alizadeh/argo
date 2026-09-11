@@ -1895,9 +1895,10 @@ export function ComposerPrototype() {
         />
       <div className="flex min-h-0 flex-1">
         <PrototypeRail theme={theme} onThemeChange={setTheme} />
+        <div className="min-h-0 min-w-0 flex-1 pr-0.75 pb-1">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="mr-0.75 mb-1 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-background"
+          className="min-h-0 min-w-0 overflow-hidden rounded-xl border border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
@@ -2117,6 +2118,7 @@ export function ComposerPrototype() {
         </main>
         </ResizablePanel>
         </ResizablePanelGroup>
+        </div>
       </div>
       </div>
     </div>
