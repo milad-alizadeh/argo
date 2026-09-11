@@ -2060,7 +2060,7 @@ export function ComposerPrototype() {
         <div className="min-h-0 min-w-0 flex-1">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 overflow-hidden rounded-tl-xl border-r border-b border-l border-border bg-background"
+          className="min-h-0 min-w-0 overflow-hidden rounded-tl-xl border-r border-b border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
