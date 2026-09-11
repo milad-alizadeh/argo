@@ -1721,7 +1721,6 @@ export function ComposerPrototype() {
   const sessionRosterPanel = usePanelRef()
   const sessionRosterElement = useRef<HTMLDivElement>(null)
   const sessionRosterRestoreSize = useRef(280)
-  const sessionRosterCollapsePending = useRef(false)
   const sessionRosterResizeAnimation = useRef(false)
   const rosterAnimationTimer = useRef<number | null>(null)
   const [sessionRosterContentWidth, setSessionRosterContentWidth] = useState(280)
@@ -1833,8 +1832,8 @@ export function ComposerPrototype() {
   const handleSessionRosterResize = (rosterWidth: number, previousRosterWidth: number) => {
     if (!showSessionRoster) return
     if (shouldCollapseSessionPane(rosterWidth, previousRosterWidth)) {
-      sessionRosterCollapsePending.current = true
       setShowSessionRoster(false)
+      animateSessionRoster(() => sessionRosterPanel.current?.collapse())
       return
     }
     if (rosterWidth > 0 && !sessionRosterResizeAnimation.current)
@@ -1842,11 +1841,6 @@ export function ComposerPrototype() {
   }
 
   const rememberCompletedSessionRosterSplit = (isUserInteraction: boolean) => {
-    if (sessionRosterCollapsePending.current) {
-      sessionRosterCollapsePending.current = false
-      animateSessionRoster(() => sessionRosterPanel.current?.collapse())
-      return
-    }
     if (!showSessionRoster || !isUserInteraction) return
     const rosterWidth = sessionRosterPanel.current?.getSize().inPixels ?? 0
     if (rosterWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE) return
