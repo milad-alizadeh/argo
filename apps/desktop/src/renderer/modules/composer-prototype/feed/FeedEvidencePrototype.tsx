@@ -1,35 +1,28 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { FEED_INSPECTOR_EVIDENCE, type FeedPrototypeEvidence } from './evidence'
 import { EvidenceBody } from './FeedEvidenceBody'
 
 function InspectorSection({ evidence }: { evidence: FeedPrototypeEvidence }) {
   return (
     <section data-evidence-id={evidence.id} className="min-h-[45%] border-b border-border/60">
-      <div className="space-y-4 p-4">
+      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
         <p className="break-words text-control leading-relaxed text-muted-foreground">
           {evidence.detail}
         </p>
+      </header>
+      <div className="p-4">
         <EvidenceBody evidence={evidence} />
       </div>
     </section>
   )
 }
 
-export function FeedEvidencePrototype({
-  evidence,
-  onActiveEvidenceChange,
-}: {
-  evidence: FeedPrototypeEvidence
-  onActiveEvidenceChange: (evidenceId: string) => void
-}) {
+export function FeedEvidencePrototype({ evidence }: { evidence: FeedPrototypeEvidence }) {
   const showsToolSequence = FEED_INSPECTOR_EVIDENCE.some((item) => item.id === evidence.id)
   const items = showsToolSequence ? FEED_INSPECTOR_EVIDENCE : [evidence]
-  const [activeId, setActiveId] = useState(evidence.id)
   const scrollArea = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
-    setActiveId(evidence.id)
-    onActiveEvidenceChange(evidence.id)
     const area = scrollArea.current
     const target = area?.querySelector<HTMLElement>(`[data-evidence-id="${evidence.id}"]`)
     if (!area || !target) return
@@ -37,20 +30,7 @@ export function FeedEvidencePrototype({
       area.scrollTop = target.offsetTop
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [evidence, onActiveEvidenceChange])
-
-  const selectVisibleEvidence = () => {
-    if (!scrollArea.current) return
-    let visibleId = items[0]?.id ?? evidence.id
-    for (const section of scrollArea.current.querySelectorAll<HTMLElement>('[data-evidence-id]')) {
-      if (section.offsetTop <= scrollArea.current.scrollTop + 1)
-        visibleId = section.dataset.evidenceId ?? visibleId
-    }
-    if (visibleId !== activeId) {
-      setActiveId(visibleId)
-      onActiveEvidenceChange(visibleId)
-    }
-  }
+  }, [evidence])
 
   return (
     <section
@@ -60,7 +40,6 @@ export function FeedEvidencePrototype({
     >
       <div
         ref={scrollArea}
-        onScroll={selectVisibleEvidence}
         className="relative min-h-0 flex-1 overflow-y-auto [overflow-anchor:none]"
       >
         {items.map((item) => (
