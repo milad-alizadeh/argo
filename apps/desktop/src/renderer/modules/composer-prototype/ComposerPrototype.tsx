@@ -2049,10 +2049,10 @@ export function ComposerPrototype() {
           onThemeChange={setTheme}
           onToggleRoster={() => setSessionRosterVisible(!showSessionRoster)}
         />
-        <div className="min-h-0 min-w-0 flex-1 pr-0.75 pb-1">
+        <div className="min-h-0 min-w-0 flex-1">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 overflow-hidden rounded-r-xl border border-border bg-background"
+          className="min-h-0 min-w-0 overflow-hidden rounded-tl-xl border border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
