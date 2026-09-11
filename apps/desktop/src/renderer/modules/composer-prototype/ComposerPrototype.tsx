@@ -1250,25 +1250,48 @@ function ContextPopover({
     { label: 'Memory files', value: '6k', percentage: 5 },
     { label: 'Skills', value: '3k', percentage: 3 },
   ]
+  const trigger = {
+    compact: (
+      <InputGroupButton
+        variant="secondary"
+        className="h-auto gap-2 px-2.5 py-1.5 text-foreground"
+      />
+    ),
+    details: (
+      <Button variant="ghost" size="icon" className="size-7" aria-label="Context details" />
+    ),
+    progress: (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 px-2 text-xs font-medium"
+        aria-label={`Context ${percentage}%`}
+      />
+    ),
+  }[appearance]
+  const triggerContent = {
+    compact: (
+      <>
+        <Layers3 className="size-4" />
+        <span className="text-xs font-semibold">{contextStatus}</span>
+        <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
+      </>
+    ),
+    details: <Info className="size-4" />,
+    progress: (
+      <>
+        <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
+          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
+          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
+        </svg>
+        <span>Context</span>
+      </>
+    ),
+  }[appearance]
   return (
     <Popover>
-      <PopoverTrigger
-        render={appearance === 'compact'
-          ? <InputGroupButton variant="secondary" className="h-auto gap-2 px-2.5 py-1.5 text-foreground" />
-          : <Button variant="ghost" size="icon" className="size-7" aria-label={appearance === 'progress' ? `Context ${percentage}%` : 'Context details'} />}
-      >
-        {appearance === 'compact' ? (
-          <>
-            <Layers3 className="size-4" />
-            <span className="text-xs font-semibold">{contextStatus}</span>
-            <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
-          </>
-        ) : appearance === 'progress' ? (
-          <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
-            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
-            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
-          </svg>
-        ) : <Info className="size-4" />}
+      <PopoverTrigger render={trigger}>
+        {triggerContent}
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
         <PopoverHeader className="gap-1">
@@ -1417,7 +1440,7 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-2 rounded-b-xl border bg-background px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[36rem]:gap-3 @[36rem]:px-4">
-        <div className="shrink-0 @[36rem]:border-r @[36rem]:border-border/60 @[36rem]:pr-4"><UsagePopover state={state} collapseAtNarrow /></div>
+        <div className="shrink-0 border-r border-border/60 pr-2 @[36rem]:pr-4"><UsagePopover state={state} /></div>
         <div className="shrink-0 @[36rem]:hidden">
           <ContextPopover state={state} appearance="progress" meterStyle="grayscale" />
         </div>
@@ -1662,7 +1685,7 @@ function TaskPlanPopover() {
   )
 }
 
-function UsagePopover({ state, collapseAtNarrow = false }: { state: ComposerState; collapseAtNarrow?: boolean }) {
+function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
   const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
   const primaryUsagePercentage = state.usagePreview === 'high' ? 94 : primaryUsage.percentage
@@ -1671,7 +1694,7 @@ function UsagePopover({ state, collapseAtNarrow = false }: { state: ComposerStat
     <Popover>
       <PopoverTrigger render={<Button variant="ghost" size="sm" className={`shrink-0 gap-1.5 px-2 text-xs font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} aria-label={`Usage ${primaryUsagePercentage}%`} />}>
         <CircleGauge />
-        <span className={collapseAtNarrow ? 'hidden items-center gap-1 @[36rem]:inline-flex' : 'inline-flex items-center gap-1'}>
+        <span className="inline-flex items-center gap-1">
           Usage <span className={`tabular-nums ${usageAlert ? 'text-red-600' : 'text-muted-foreground'}`}>{primaryUsagePercentage}%</span>
         </span>
       </PopoverTrigger>
