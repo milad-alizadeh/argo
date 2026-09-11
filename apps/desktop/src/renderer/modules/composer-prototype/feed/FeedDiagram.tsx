@@ -10,7 +10,6 @@ import {
   Workflow,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Alert, AlertDescription, AlertTitle } from '@/renderer/components/ui/alert'
 import { Button } from '@/renderer/components/ui/button'
 import { FEED_EVIDENCE, type FeedEvidenceAction, MERMAID_SOURCE } from './evidence'
 import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
@@ -140,12 +139,15 @@ export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
           </pre>
         )}
         {!loading && (
-          <Alert variant="destructive" className="absolute right-3 bottom-3 left-3 w-auto">
-            <AlertTitle className="type-meta">The diagram source is incomplete</AlertTitle>
-            <AlertDescription className="type-meta">
+          <div
+            className="absolute right-3 bottom-3 left-3 rounded-lg border border-destructive/30 bg-card px-3 py-2 text-destructive"
+            role="alert"
+          >
+            <p className="type-meta font-medium">The diagram source is incomplete</p>
+            <p className="type-meta">
               The original source remains available above.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </div>
         )}
       </div>
     </figure>
