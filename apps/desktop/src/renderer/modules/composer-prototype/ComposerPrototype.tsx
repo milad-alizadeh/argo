@@ -27,6 +27,7 @@ import {
   ListTodo,
   Map as MapIcon,
   Mic,
+  MicOff,
   Minimize2,
   Monitor,
   Moon,
@@ -44,6 +45,8 @@ import {
   Ticket,
   Trash2,
   Unlock,
+  Volume2,
+  VolumeX,
   WandSparkles,
   X,
 } from 'lucide-react'
@@ -261,7 +264,6 @@ type PrototypeSession = {
 }
 
 type ThemeMode = 'system' | 'light' | 'dark'
-type ConciergePlacement = 'header' | 'off'
 type ProjectKey = 'argo' | 'fresco' | 'posthog'
 
 const PROTOTYPE_SESSIONS: PrototypeSession[] = [
@@ -413,66 +415,84 @@ function ProjectManager({
 function PrototypeChrome({
   currentProject,
   onProjectChange,
-  concierge,
-  onConciergeChange,
 }: {
   currentProject: ProjectKey
   onProjectChange: (project: ProjectKey) => void
-  concierge: ConciergePlacement
-  onConciergeChange: (placement: ConciergePlacement) => void
 }) {
+  const [microphoneMuted, setMicrophoneMuted] = useState(false)
+  const [speakerMuted, setSpeakerMuted] = useState(false)
+
   return (
     <header className="flex h-11 shrink-0 items-center bg-muted/50 px-3 pl-[4.5rem]">
       <ProjectManager
         currentProject={currentProject}
         onProjectChange={onProjectChange}
       />
-      {concierge === 'header' ? (
-        <Popover>
-          <PopoverTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto gap-2 px-2"
-                aria-label="Open Concierge chat"
-              />
-            }
-          >
-            <span className="min-w-0 max-w-72 text-right leading-tight">
-              <span className="block truncate text-(length:--text-control) text-muted-foreground">
-                “Keep the composer fixed and make the feed richer.”
-              </span>
-              <span className="block truncate text-(length:--text-control) font-medium text-foreground">
-                I’m updating the prototype now.
-              </span>
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto gap-2 px-2"
+              aria-label="Open Concierge chat"
+            />
+          }
+        >
+          <span className="min-w-0 max-w-72 text-right leading-tight">
+            <span className="block truncate text-(length:--text-control) text-muted-foreground">
+              “Keep the composer fixed and make the feed richer.”
             </span>
-            <span className="relative shrink-0">
-              <ConciergeOrb compact />
-              <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+            <span className="block truncate text-(length:--text-control) font-medium text-foreground">
+              I’m updating the prototype now.
             </span>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-72 gap-3 p-3">
-            <PopoverHeader>
-              <PopoverTitle className="flex items-center gap-2 text-xs">
-                Concierge
-                <span className="ml-auto inline-flex items-center gap-1 text-(length:--text-control) font-normal text-muted-foreground">
-                  <span className="size-1.5 rounded-full bg-emerald-500" />Listening
-                </span>
-              </PopoverTitle>
-              <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
-            </PopoverHeader>
-            <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-(length:--text-body) leading-relaxed">
-              <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
-              <p>I’m updating the prototype now.</p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" className="flex-1">Open chat</Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => onConciergeChange('off')}>Hide</Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-      ) : null}
+          </span>
+          <span className="relative shrink-0">
+            <ConciergeOrb compact />
+            <span className="absolute -top-0.5 -right-0.5 grid size-3.5 place-items-center rounded-full bg-destructive text-[8px] text-destructive-foreground">2</span>
+          </span>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-72 gap-3 p-3">
+          <PopoverHeader>
+            <PopoverTitle className="flex items-center gap-2 text-xs">
+              Concierge
+              <span className="ml-auto inline-flex items-center gap-1 text-(length:--text-control) font-normal text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-emerald-500" />Listening
+              </span>
+            </PopoverTitle>
+            <PopoverDescription>Available across Projects and Sessions.</PopoverDescription>
+          </PopoverHeader>
+          <div className="space-y-1 rounded-lg bg-muted/60 p-2 text-(length:--text-body) leading-relaxed">
+            <p className="text-muted-foreground">You: “Keep the composer fixed and make the feed richer.”</p>
+            <p>I’m updating the prototype now.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={microphoneMuted ? 'secondary' : 'outline'}
+              size="sm"
+              aria-pressed={microphoneMuted}
+              onClick={() => setMicrophoneMuted(!microphoneMuted)}
+            >
+              {microphoneMuted ? <MicOff /> : <Mic />}
+              {microphoneMuted ? 'Mic muted' : 'Mute mic'}
+            </Button>
+            <Button
+              type="button"
+              variant={speakerMuted ? 'secondary' : 'outline'}
+              size="sm"
+              aria-pressed={speakerMuted}
+              onClick={() => setSpeakerMuted(!speakerMuted)}
+            >
+              {speakerMuted ? <VolumeX /> : <Volume2 />}
+              {speakerMuted ? 'Sound muted' : 'Mute sound'}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" className="flex-1">Open chat</Button>
+          </div>
+        </PopoverContent>
+      </Popover>
     </header>
   )
 }
@@ -484,7 +504,7 @@ const RAIL_ITEMS = [
   { label: 'Files', icon: <FolderGit2 />, active: false },
 ]
 
-function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
+function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<button type="button" aria-label="Settings" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
@@ -506,18 +526,12 @@ function SettingsMenu({ theme, onThemeChange, concierge, onConciergeChange }: { 
           <DropdownMenuRadioItem value="light"><Sun />Light</DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark"><Moon />Dark</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Concierge</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={concierge} onValueChange={(value) => onConciergeChange(value as ConciergePlacement)}>
-          <DropdownMenuRadioItem value="header">Top bar</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="off">Off</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void; concierge: ConciergePlacement; onConciergeChange: (placement: ConciergePlacement) => void }) {
+function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
   return (
     <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center bg-muted/50 pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
       <div className="flex flex-col gap-3">
@@ -550,7 +564,7 @@ function PrototypeRail({ theme, onThemeChange, concierge, onConciergeChange }: {
           </TooltipTrigger>
           <TooltipContent side="right">Archive</TooltipContent>
         </Tooltip>
-        <SettingsMenu theme={theme} onThemeChange={onThemeChange} concierge={concierge} onConciergeChange={onConciergeChange} />
+        <SettingsMenu theme={theme} onThemeChange={onThemeChange} />
       </div>
     </nav>
   )
@@ -1707,15 +1721,9 @@ function initialTheme(): ThemeMode {
   return theme === 'light' || theme === 'dark' ? theme : 'system'
 }
 
-function initialConcierge(): ConciergePlacement {
-  const concierge = new URLSearchParams(window.location.search).get('concierge')
-  return concierge === 'off' ? 'off' : 'header'
-}
-
 export function ComposerPrototype() {
   const [currentProject, setCurrentProject] = useState<ProjectKey>('argo')
   const [theme, setTheme] = useState<ThemeMode>(initialTheme)
-  const [concierge, setConcierge] = useState<ConciergePlacement>(initialConcierge)
   const [showSessionRoster, setShowSessionRoster] = useState(true)
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [sessionSidebarFullscreen, setSessionSidebarFullscreen] = useState(false)
@@ -1974,11 +1982,9 @@ export function ComposerPrototype() {
         <PrototypeChrome
           currentProject={currentProject}
           onProjectChange={setCurrentProject}
-          concierge={concierge}
-          onConciergeChange={setConcierge}
         />
       <div className="flex min-h-0 flex-1">
-        <PrototypeRail theme={theme} onThemeChange={setTheme} concierge={concierge} onConciergeChange={setConcierge} />
+        <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <ResizablePanelGroup
           orientation="horizontal"
           className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background"
