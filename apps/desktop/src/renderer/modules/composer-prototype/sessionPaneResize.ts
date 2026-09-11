@@ -1,14 +1,9 @@
 export const SESSION_PANE_MIN_WIDTH = 216
-export const SESSION_PANE_SNAP_TOLERANCE = 24
+export const SESSION_PANE_SNAP_OFFSET = 24
+export const SESSION_PANE_SNAP_WIDTH = SESSION_PANE_MIN_WIDTH - SESSION_PANE_SNAP_OFFSET
 
-const reachedSnapEdge = (width: number, previousWidth: number) =>
-  width <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE && width < previousWidth
-
-export const shouldCollapseSessionPane = (paneWidth: number, previousPaneWidth: number) =>
-  paneWidth > 0 && reachedSnapEdge(paneWidth, previousPaneWidth)
-
-export const shouldFullscreenSessionInspector = (feedWidth: number, previousFeedWidth: number) =>
-  reachedSnapEdge(feedWidth, previousFeedWidth)
+export const shouldSnapSessionPane = (width: number, previousWidth: number) =>
+  width > 0 && width <= SESSION_PANE_SNAP_WIDTH && width < previousWidth
 
 export const shouldDeferSessionInspectorCollapse = ({
   visible,
@@ -40,5 +35,5 @@ export const shouldRememberSessionInspectorWidth = ({
   isUserInteraction: boolean
 }) =>
   isUserInteraction
-  && feedWidth > SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE
-  && inspectorWidth > SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE
+  && feedWidth > SESSION_PANE_SNAP_WIDTH
+  && inspectorWidth > SESSION_PANE_SNAP_WIDTH
