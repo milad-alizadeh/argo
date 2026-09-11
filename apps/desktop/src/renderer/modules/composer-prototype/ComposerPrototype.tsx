@@ -1534,8 +1534,14 @@ function QueuePreview({
           <div
             key={queuedMessage.id}
             draggable
-            onDragStart={(event) => event.dataTransfer.setData('text/plain', queuedMessage.id)}
-            onDragOver={(event) => event.preventDefault()}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData('text/plain', queuedMessage.id)
+            }}
+            onDragOver={(event) => {
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+            }}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
             className={`flex h-11 cursor-grab items-center gap-2 overflow-hidden px-4 active:cursor-grabbing ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
           >
