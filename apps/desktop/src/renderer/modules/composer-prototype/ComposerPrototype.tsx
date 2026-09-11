@@ -764,10 +764,8 @@ function PrototypeSessionHeader({
           </span>
           <span className="h-3 w-px shrink-0 bg-border" aria-hidden="true" />
           <a
-            href="https://github.com/milad-alizadeh/argo/issues/1258"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex shrink-0 items-center gap-1 hover:text-foreground hover:underline"
+            href="#/tickets/1258"
+            className="-my-1 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
           >
             <Ticket />#1258
           </a>
