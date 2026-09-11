@@ -60,7 +60,7 @@ function LightboxContent({
         width={1280}
         height={852}
         alt="Two people reviewing work on a laptop"
-        className="relative z-10 max-h-[calc(100dvh-6rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-contain will-change-transform"
+        className="relative z-10 max-h-[calc(100dvh-6rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-cover"
       />
     </DialogContent>
   )

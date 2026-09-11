@@ -20,41 +20,47 @@ export function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-function transitionFromBounds(source: ImageBounds, destination: ImageBounds) {
-  const sourceCenterX = source.left + source.width / 2
-  const sourceCenterY = source.top + source.height / 2
-  const destinationCenterX = destination.left + destination.width / 2
-  const destinationCenterY = destination.top + destination.height / 2
-  return `translate(${sourceCenterX - destinationCenterX}px, ${sourceCenterY - destinationCenterY}px) scale(${source.width / destination.width}, ${source.height / destination.height})`
+function boundsKeyframe(bounds: ImageBounds) {
+  return {
+    height: `${bounds.height}px`,
+    left: `${bounds.left}px`,
+    top: `${bounds.top}px`,
+    width: `${bounds.width}px`,
+  }
 }
 
 export function openFromSource(elements: TransitionElements, source: ImageBounds) {
   const destination = elements.preview.getBoundingClientRect()
   const options = { duration: TRANSITION_DURATION_MS, easing: TRANSITION_EASING }
-  elements.preview.animate(
-    [{ transform: transitionFromBounds(source, destination) }, { transform: 'none' }],
-    options,
-  )
+  Object.assign(elements.preview.style, {
+    ...boundsKeyframe(destination),
+    maxHeight: 'none',
+    maxWidth: 'none',
+    position: 'fixed',
+  })
+  elements.preview.animate([boundsKeyframe(source), boundsKeyframe(destination)], options)
   elements.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], options)
   elements.controls?.animate([{ opacity: 0 }, { opacity: 1 }], options)
   return destination
 }
 
-export async function closeToSource(
-  elements: TransitionElements,
-  source: ImageBounds,
-  destination: ImageBounds,
-) {
+export async function closeToSource(elements: TransitionElements, source: ImageBounds) {
   const options: KeyframeAnimationOptions = {
     duration: TRANSITION_DURATION_MS,
     easing: TRANSITION_EASING,
     fill: 'forwards',
   }
+  const previewStyle = window.getComputedStyle(elements.preview)
   const animations = [
     elements.preview.animate(
       [
-        { transform: window.getComputedStyle(elements.preview).transform },
-        { transform: transitionFromBounds(source, destination) },
+        {
+          height: previewStyle.height,
+          left: previewStyle.left,
+          top: previewStyle.top,
+          width: previewStyle.width,
+        },
+        boundsKeyframe(source),
       ],
       options,
     ),
