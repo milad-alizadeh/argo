@@ -1990,7 +1990,7 @@ export function ComposerPrototype() {
         <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background"
+          className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border/70 bg-background"
           onLayoutChanged={(_layout, metadata) =>
             rememberCompletedSessionRosterSplit(metadata.isUserInteraction)
           }
