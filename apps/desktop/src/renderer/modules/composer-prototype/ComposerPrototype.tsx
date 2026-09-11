@@ -30,7 +30,8 @@ import {
   Minimize2,
   Monitor,
   Moon,
-  PanelLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelRight,
   PanelRightClose,
   Paperclip,
@@ -499,27 +500,15 @@ function ProjectManager({
   )
 }
 
-function PrototypeChrome({
+function PrototypeProjectHeader({
   currentProject,
   onProjectChange,
 }: {
   currentProject: ProjectKey
   onProjectChange: (project: ProjectKey) => void
 }) {
-  const showsNativeTrafficLights = typeof window.argo?.versions?.electron === 'string'
-
   return (
-    <header className="drag-region relative flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background pr-3 pl-(--inset-traffic-lights)">
-      {!showsNativeTrafficLights ? (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-(--inset-traffic-light-control) left-(--inset-traffic-light-control) flex gap-2"
-        >
-          <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-close ring-1 ring-black/10" />
-          <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-minimize ring-1 ring-black/10" />
-          <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-zoom ring-1 ring-black/10" />
-        </div>
-      ) : null}
+    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-3">
       <div className="no-drag-region">
         <ProjectManager
           currentProject={currentProject}
@@ -544,9 +533,10 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
         <TooltipTrigger
           render={
             <DropdownMenuTrigger
-              render={<button type="button" aria-label="Settings" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
+              render={<button type="button" aria-label="Settings" className="flex w-20 flex-col items-center gap-1 rounded-xl py-2 text-(length:--text-control) text-muted-foreground hover:bg-background/70 hover:text-foreground" />}
             >
               <Settings />
+              <span>Settings</span>
             </DropdownMenuTrigger>
           }
         />
@@ -573,11 +563,44 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
   )
 }
 
-function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
+function PrototypeRail({
+  theme,
+  showRoster,
+  onThemeChange,
+  onToggleRoster,
+}: {
+  theme: ThemeMode
+  showRoster: boolean
+  onThemeChange: (theme: ThemeMode) => void
+  onToggleRoster: () => void
+}) {
+  const showsNativeTrafficLights = typeof window.argo?.versions?.electron === 'string'
+
   return (
-    <nav aria-label="Main navigation" className="flex min-h-0 w-[3.75rem] shrink-0 flex-col items-center pb-4 max-md:hidden [&_svg]:size-(--size-icon-control)">
+    <nav aria-label="Main navigation" className="flex min-h-0 w-28 shrink-0 flex-col items-center bg-sidebar pb-3 [&_svg]:size-(--size-icon-control)">
+      <div className="drag-region relative h-(--size-chrome-bar) w-full shrink-0 border-b border-border/60">
+        {!showsNativeTrafficLights ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-(--inset-traffic-light-control) left-(--inset-traffic-light-control) flex gap-2"
+          >
+            <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-close ring-1 ring-black/10" />
+            <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-minimize ring-1 ring-black/10" />
+            <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-zoom ring-1 ring-black/10" />
+          </div>
+        ) : null}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="no-drag-region absolute top-3 right-1"
+          aria-label={showRoster ? 'Collapse Sessions sidebar' : 'Open Sessions sidebar'}
+          onClick={onToggleRoster}
+        >
+          {showRoster ? <PanelLeftClose /> : <PanelLeftOpen />}
+        </Button>
+      </div>
       <TooltipProvider>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col items-center gap-1 pt-2">
           {RAIL_ITEMS.map((item) => (
             <Tooltip key={item.label}>
               <TooltipTrigger
@@ -586,7 +609,7 @@ function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChan
                     type="button"
                     aria-label={item.label}
                     aria-current={item.active ? 'page' : undefined}
-                    className={`grid size-9 place-items-center rounded-lg transition-colors ${
+                    className={`flex w-20 flex-col items-center gap-1 rounded-xl py-2 text-(length:--text-control) transition-colors ${
                       item.active
                         ? 'bg-card text-foreground shadow-sm ring-1 ring-border/70'
                         : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
@@ -595,15 +618,17 @@ function PrototypeRail({ theme, onThemeChange }: { theme: ThemeMode; onThemeChan
                 }
               >
                 {item.icon}
+                <span>{item.label}</span>
               </TooltipTrigger>
               <TooltipContent side="right">{item.label}</TooltipContent>
             </Tooltip>
           ))}
         </div>
-        <div className="mt-auto flex flex-col gap-3">
+        <div className="mt-auto flex flex-col items-center gap-1">
           <Tooltip>
-            <TooltipTrigger render={<button type="button" aria-label="Archive" className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
+            <TooltipTrigger render={<button type="button" aria-label="Archive" className="flex w-20 flex-col items-center gap-1 rounded-xl py-2 text-(length:--text-control) text-muted-foreground hover:bg-background/70 hover:text-foreground" />}>
               <Archive />
+              <span>Archive</span>
             </TooltipTrigger>
             <TooltipContent side="right">Archive</TooltipContent>
           </Tooltip>
@@ -723,15 +748,19 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
 
 function PrototypeSessionRoster({
   currentProject,
-  onCollapse,
+  onProjectChange,
 }: {
   currentProject: ProjectKey
-  onCollapse: () => void
+  onProjectChange: (project: ProjectKey) => void
 }) {
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
     <aside className="flex h-full min-h-0 w-full min-w-84 flex-col bg-sidebar">
+      <PrototypeProjectHeader
+        currentProject={currentProject}
+        onProjectChange={onProjectChange}
+      />
       <div className="flex h-14 shrink-0 items-center px-3">
         <h1 className="text-sm font-medium">Sessions</h1>
         <div className="ml-auto flex items-center gap-1">
@@ -750,9 +779,6 @@ function PrototypeSessionRoster({
               <TooltipContent side="bottom">Find a Session · ⌘K</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button variant="ghost" size="icon-sm" aria-label="Collapse Sessions sidebar" onClick={onCollapse}>
-            <PanelLeft />
-          </Button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
@@ -799,28 +825,14 @@ function HeaderSignal({
 }
 
 function PrototypeSessionHeader({
-  showRoster,
   showSidebar,
-  onOpenRoster,
   onOpenSidebar,
 }: {
-  showRoster: boolean
   showSidebar: boolean
-  onOpenRoster: () => void
   onOpenSidebar: () => void
 }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
-      {!showRoster ? (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Open Sessions sidebar"
-          onClick={onOpenRoster}
-        >
-          <PanelLeft />
-        </Button>
-      ) : null}
       <div className="min-w-0 flex-1 overflow-hidden">
         <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
         <div className="mt-1 flex min-w-0 items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
@@ -2030,17 +2042,17 @@ export function ComposerPrototype() {
 
   return (
     <div className="h-dvh min-h-0 overflow-hidden bg-muted/50">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <PrototypeChrome
-          currentProject={currentProject}
-          onProjectChange={setCurrentProject}
+      <div className="flex h-full min-h-0 overflow-hidden">
+        <PrototypeRail
+          theme={theme}
+          showRoster={showSessionRoster}
+          onThemeChange={setTheme}
+          onToggleRoster={() => setSessionRosterVisible(!showSessionRoster)}
         />
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-        <PrototypeRail theme={theme} onThemeChange={setTheme} />
         <div className="min-h-0 min-w-0 flex-1 pr-0.75 pb-1">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 overflow-hidden rounded-xl border border-border bg-background"
+          className="min-h-0 min-w-0 overflow-hidden rounded-r-xl border border-border bg-background"
         >
         <ResizablePanel
           id="session-roster"
@@ -2061,7 +2073,7 @@ export function ComposerPrototype() {
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
-              onCollapse={() => setSessionRosterVisible(false)}
+              onProjectChange={setCurrentProject}
             />
           </div>
         </ResizablePanel>
@@ -2117,9 +2129,7 @@ export function ComposerPrototype() {
             style={{ minWidth: SESSION_FEED_MIN_WIDTH, contain: 'inline-size' }}
           >
           <PrototypeSessionHeader
-            showRoster={showSessionRoster}
             showSidebar={showSessionSidebar}
-            onOpenRoster={() => setSessionRosterVisible(true)}
             onOpenSidebar={() => setSessionSidebarVisible(true)}
           />
           <div className="min-h-0 flex-1">
@@ -2238,7 +2248,6 @@ export function ComposerPrototype() {
         </ResizablePanel>
         </ResizablePanelGroup>
         </div>
-      </div>
       </div>
     </div>
   )
