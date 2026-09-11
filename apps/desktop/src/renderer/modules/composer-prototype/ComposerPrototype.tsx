@@ -827,6 +827,7 @@ function PrototypeSessionHeader({
         <Button
           variant="ghost"
           size="icon-sm"
+          className="-ml-1.25"
           aria-label="Open Sessions sidebar"
           onClick={onOpenRoster}
         >
