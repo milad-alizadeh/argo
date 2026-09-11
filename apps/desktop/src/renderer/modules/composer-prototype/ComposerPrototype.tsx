@@ -154,6 +154,8 @@ type StateProps = {
   setState: (state: ComposerState) => void
 }
 
+const SECONDARY_COMPOSER_WIDTH = 'w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]'
+
 function IconLabel({ icon, children, className = '' }: { icon: ReactNode; children: ReactNode; className?: string }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium leading-none [&>img]:!size-4 [&>img]:shrink-0 [&>svg]:!size-4 [&>svg]:shrink-0 ${className}`}>
@@ -2144,12 +2146,12 @@ export function ComposerPrototype() {
           </div>
           <div className="relative shrink-0 bg-background px-4 pt-6 pb-8">
             <div className="pointer-events-none absolute inset-x-4 bottom-full z-20 -mb-6">
-              <div className="pointer-events-auto mx-auto mb-2 w-full max-w-4xl">
+              <div className={`pointer-events-auto mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}>
                 <div className="mx-auto w-full">
                   <FeedPermission />
                 </div>
               </div>
-              <div className="composer-queue-stack pointer-events-auto mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
+              <div className={`composer-queue-stack pointer-events-auto mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}>
                 <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
               </div>
             </div>
@@ -2215,7 +2217,7 @@ export function ComposerPrototype() {
           </InputGroup>
               </form>
             </AnimatedHeight>
-            <div className="relative z-0 mx-auto -mt-2 w-full max-w-4xl [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
+            <div className={`relative z-0 mx-auto -mt-2 ${SECONDARY_COMPOSER_WIDTH} [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}>
               <ContextSurface state={state} layout="attached" />
             </div>
           </div>
