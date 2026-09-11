@@ -506,8 +506,20 @@ function PrototypeChrome({
   currentProject: ProjectKey
   onProjectChange: (project: ProjectKey) => void
 }) {
+  const showsNativeTrafficLights = typeof window.argo?.versions?.electron === 'string'
+
   return (
-    <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background pr-3 pl-(--inset-traffic-lights)">
+    <header className="drag-region relative flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background pr-3 pl-(--inset-traffic-lights)">
+      {!showsNativeTrafficLights ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-(--inset-traffic-light-control) left-(--inset-traffic-light-control) flex gap-2"
+        >
+          <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-close ring-1 ring-black/10" />
+          <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-minimize ring-1 ring-black/10" />
+          <span className="size-(--size-traffic-light) rounded-full bg-traffic-light-zoom ring-1 ring-black/10" />
+        </div>
+      ) : null}
       <div className="no-drag-region">
         <ProjectManager
           currentProject={currentProject}
