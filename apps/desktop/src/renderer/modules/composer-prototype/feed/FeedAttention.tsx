@@ -39,10 +39,10 @@ const CONCIERGE_QUESTION = {
 
 const PERMISSION_COMMAND =
   'bun install --frozen-lockfile && bun run typecheck && bun run test --filter composer'
-type PermissionDecision = 'pending' | 'allowed' | 'similar' | 'denied'
+type PermissionDecision = 'pending' | 'allowed' | 'all' | 'denied'
 const PERMISSION_DECISION_LABELS: Record<Exclude<PermissionDecision, 'pending'>, string> = {
   allowed: 'Allowed this command',
-  similar: 'Allowed similar commands',
+  all: 'Allowed all commands',
   denied: 'Denied this command',
 }
 
@@ -150,24 +150,32 @@ export function FeedPermission() {
         <Button variant="outline" className="text-control" onClick={() => setDecision('denied')}>
           Deny
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button className="gap-1 bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80" />
-            }
+        <div className="inline-flex overflow-hidden rounded-lg">
+          <Button
+            className="rounded-r-none bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80"
+            onClick={() => setDecision('allowed')}
           >
             Allow
-            <ChevronDown />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-48">
-            <DropdownMenuItem className="text-control" onClick={() => setDecision('allowed')}>
-              Allow this command
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-control" onClick={() => setDecision('similar')}>
-              Allow similar commands
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  size="icon"
+                  aria-label="More allow options"
+                  className="rounded-l-none border-l border-background/20 bg-foreground text-background hover:bg-foreground/80"
+                />
+              }
+            >
+              <ChevronDown />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="w-36">
+              <DropdownMenuItem className="text-control" onClick={() => setDecision('all')}>
+                Allow all
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </section>
   )
