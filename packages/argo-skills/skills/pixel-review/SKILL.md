@@ -14,8 +14,9 @@ Read the diff and the ticket. Name every affected visual state, the implementati
 its HEAD commit, and the design ticket number or branch. This is a state map, not evidence: do
 not render, select, or pass screenshots to the reviewer.
 
-If nothing renderable changed, say so and stop. If the design ticket is unknown, report visual
-verification unavailable to the caller, for `/ship` to carry into the PR body, and stop.
+If nothing renderable changed, say so and stop. If the design ticket is unknown, or it does not
+cover every affected state, report visual verification unavailable to the caller, for `/ship` to
+carry into the PR body, and stop.
 
 Done when the reviewer can reproduce each changed state from the state map and immutable commit.
 
@@ -28,7 +29,8 @@ reviewer, not the implementer, gets the artifacts.
 
 The reviewer reads `docs/design-stack.md`, resolves the design ticket, and creates its own temp
 directory. The state map is a lead, not a limit: the reviewer derives the final state set from
-the ticket and design before it captures anything. It then does all of this itself:
+the ticket and design before it captures anything. Each final state needs an approved reference;
+a related prototype does not cover an undesigned state. It then does all of this itself:
 
 1. Fetches the design branch and renders its page at each affected state. It reads the page from
    `FETCH_HEAD`, not a local branch name. If the branch was reaped, it obtains the state renders
