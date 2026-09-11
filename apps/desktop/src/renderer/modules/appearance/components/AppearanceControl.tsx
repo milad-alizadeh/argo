@@ -6,7 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from '../../../components/ui/toggle-grou
 const LABELS: Record<Appearance, string> = { system: 'System', light: 'Light', dark: 'Dark' }
 
 const OPTION =
-  'h-6 rounded-[calc(var(--radius-md)-2px)] px-2.5 text-control text-muted-foreground hover:bg-transparent aria-pressed:bg-card aria-pressed:text-foreground'
+  'h-6 rounded-[calc(var(--radius-md)-2px)] px-2.5 type-label text-muted-foreground hover:bg-transparent aria-pressed:bg-card aria-pressed:text-foreground'
 
 export function AppearanceControl({
   appearance,

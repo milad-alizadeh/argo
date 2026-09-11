@@ -161,9 +161,9 @@ const SECONDARY_COMPOSER_WIDTH = 'w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem
 
 function IconLabel({ icon, children, className = '' }: { icon: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium leading-none [&>img]:!size-4 [&>img]:shrink-0 [&>svg]:!size-4 [&>svg]:shrink-0 ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 type-label font-medium [&>img]:!size-4 [&>img]:shrink-0 [&>svg]:!size-4 [&>svg]:shrink-0 ${className}`}>
       {icon}
-      <span className="leading-none">{children}</span>
+      <span>{children}</span>
     </span>
   )
 }
@@ -391,16 +391,16 @@ function RosterConcierge() {
           className="relative mt-2 -ml-2 shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <ConciergeOrb />
-          <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive text-(length:--text-control) leading-none text-destructive-foreground">
+          <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-destructive type-meta text-destructive-foreground">
             2
           </span>
         </a>
         <div className="ml-2 min-w-0 flex-1">
           <a href="#/concierge" className="block min-w-0 leading-tight">
-            <span className="block truncate text-(length:--text-control) text-muted-foreground">
+            <span className="block truncate type-meta text-muted-foreground">
               “Keep the composer fixed and make the feed richer.”
             </span>
-            <span className="mt-0.5 block truncate text-(length:--text-control) font-medium text-foreground">
+            <span className="mt-0.5 block truncate type-label font-medium text-foreground">
               I’m updating the prototype now.
             </span>
           </a>
@@ -468,7 +468,7 @@ function ProjectManager({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 px-2"
+            className="gap-1.5 px-2 type-label"
             aria-label={`Current Project: ${currentProject}`}
           />
         }
@@ -544,7 +544,7 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-1 text-(length:--text-control) leading-none text-muted-foreground hover:bg-surface-panel hover:text-foreground" />}
+        render={<button type="button" aria-label="Settings" className="group flex h-9 items-center gap-1.5 rounded-lg px-1 type-label text-muted-foreground hover:bg-surface-panel hover:text-foreground" />}
       >
         <span className="grid size-6 place-items-center">
           <Settings />
@@ -554,10 +554,10 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>Account</DropdownMenuLabel>
         <DropdownMenuItem className="gap-2 py-2">
-          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-surface-raised text-[10px] font-semibold">MA</span>
+          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-surface-raised type-meta font-semibold">MA</span>
           <span className="min-w-0">
-            <span className="block truncate text-xs font-medium">milad</span>
-            <span className="block text-[10px] text-muted-foreground">Account settings</span>
+            <span className="block truncate type-label font-medium">milad</span>
+            <span className="block type-meta text-muted-foreground">Account settings</span>
           </span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -601,7 +601,7 @@ function PrototypeRail({
       </div>
       <div className="-mt-px flex flex-col items-center gap-2">
         {RAIL_ITEMS.map((item) => (
-          <div key={item.label} className="flex flex-col items-center gap-1 text-[10px] leading-none">
+          <div key={item.label} className="flex flex-col items-center gap-1 type-label">
             <button
               type="button"
               aria-label={item.label}
@@ -697,13 +697,13 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-(length:--text-body) leading-5 font-medium text-foreground">
+          <span className="block truncate type-heading font-medium text-foreground">
             {session.title}
           </span>
-          <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
+          <span className="mt-0.5 flex items-center gap-2 type-meta text-muted-foreground">
             <span className="min-w-0 flex-1 truncate">{session.activity}</span>
           </span>
-          <span className="mt-1 flex items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
+          <span className="mt-1 flex items-center gap-2 type-meta text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
             <span className="shrink-0 tabular-nums">{session.updated}</span>
             <SessionPlanBar session={session} />
             {session.ticket ? (
@@ -752,7 +752,7 @@ function PrototypeSessionRoster({
       />
       <div className="-mt-px flex min-h-0 flex-1 flex-col rounded-tl-xl border-t border-l border-border/60 bg-surface-panel">
         <div className="flex h-14 shrink-0 items-center px-3">
-          <h1 className="px-2 text-sm font-medium">Sessions</h1>
+          <h1 className="px-2 type-heading font-medium">Sessions</h1>
           <div className="ml-auto flex items-center gap-1">
             <Button variant="ghost" size="icon-sm" aria-label="New Session">
               <Plus />
@@ -777,7 +777,7 @@ function PrototypeSessionRoster({
               <SessionRosterRow key={session.id} session={session} />
             ))}
             <SessionDisclosure icon={<Archive />} label="Archive" separated>
-              <p className="px-7 py-2 text-(length:--text-control) text-muted-foreground">
+              <p className="px-7 py-2 type-meta text-muted-foreground">
                 No archived Sessions
               </p>
             </SessionDisclosure>
@@ -804,7 +804,7 @@ function HeaderSignal({
     <button
       type="button"
       aria-label={value}
-      className={`flex h-8 w-8 min-w-0 items-center justify-center gap-1.5 px-0 text-(length:--text-control) leading-none font-medium hover:bg-accent/70 focus-visible:bg-accent @[36rem]:w-auto @[36rem]:justify-start @[36rem]:px-2.5 ${tone}`}
+      className={`flex h-8 w-8 min-w-0 items-center justify-center gap-1.5 px-0 type-label font-medium hover:bg-accent/70 focus-visible:bg-accent @[36rem]:w-auto @[36rem]:justify-start @[36rem]:px-2.5 ${tone}`}
       onClick={onClick}
     >
       <span className="shrink-0 [&_svg]:size-(--size-icon-inline)">{icon}</span>
@@ -838,8 +838,8 @@ function PrototypeSessionHeader({
         </Button>
       ) : null}
       <div className="min-w-0 flex-1 overflow-hidden">
-        <h2 className="truncate text-sm font-medium">Continue Session design from composer</h2>
-        <div className="mt-1 flex min-w-0 items-center gap-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
+        <h2 className="truncate type-heading font-medium">Continue Session design from composer</h2>
+        <div className="mt-1 flex min-w-0 items-center gap-2 type-meta text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
           <span className="inline-flex min-w-0 items-center gap-1">
             <GitCompareArrows className="shrink-0" />
             <span className="truncate">argo/#1258-composer-prototype</span>
@@ -929,7 +929,7 @@ function SessionWorkSidebar({
             <Button
               variant="ghost"
               size="sm"
-              className="justify-start"
+              className="justify-start type-label"
               onClick={onShowActivity}
             >
               <ArrowLeft />
@@ -942,28 +942,28 @@ function SessionWorkSidebar({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <h3 className="mb-2 translate-y-2 text-(length:--text-control) font-semibold">Background Agents · 5</h3>
+          <h3 className="mb-2 translate-y-2 type-label font-semibold">Background Agents · 5</h3>
           <div className="space-y-1">
             {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label, index) => (
               <button key={label} type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg p-2 text-left hover:bg-surface-inset">
                 <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="truncate text-(length:--text-body) font-medium">{label}</span>
-                <span className="col-start-2 text-(length:--text-control) text-muted-foreground">
+                <span className="truncate type-heading font-medium">{label}</span>
+                <span className="col-start-2 type-meta text-muted-foreground">
                   Subagent {index + 1} · running
                 </span>
               </button>
             ))}
           </div>
           <div className="my-3 h-px bg-border/60" />
-          <h3 className="mb-2 text-(length:--text-control) font-semibold">Shell · 1</h3>
+          <h3 className="mb-2 type-label font-semibold">Shell · 1</h3>
           <button type="button" className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 rounded-lg bg-surface-inset p-2 text-left">
             <span className="size-2 rounded-full border border-emerald-500" />
-            <span className="truncate font-mono text-(length:--text-control)">bun run dev</span>
-            <span className="col-start-2 mt-0.5 text-(length:--text-control) text-muted-foreground">
+            <span className="truncate font-mono type-code">bun run dev</span>
+            <span className="col-start-2 mt-0.5 type-meta text-muted-foreground">
               Vite · port 5191
             </span>
           </button>
-          <button type="button" className="mt-3 flex items-center gap-1 text-(length:--text-control) text-muted-foreground hover:text-foreground">
+          <button type="button" className="mt-3 flex items-center gap-1 type-meta text-muted-foreground hover:text-foreground">
             <ChevronDown /> 6 finished
           </button>
         </div>
@@ -1041,7 +1041,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="max-w-80 shrink-0 text-xs font-medium text-foreground" aria-label="Choose run setup" />}
+        render={<InputGroupButton variant="ghost" className="max-w-80 shrink-0 type-label font-medium text-foreground" aria-label="Choose run setup" />}
       >
         <HarnessLogo harness={state.harness} className="size-3.5" />
         <span className="hidden items-center gap-1.5 @[36rem]:inline-flex">
@@ -1065,7 +1065,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setState(selectHarness(state, harness))}
-                  className={`flex h-8 items-center justify-center gap-2 rounded-md px-3 text-xs font-medium transition-colors ${
+                  className={`flex h-8 items-center justify-center gap-2 rounded-md px-3 type-label font-medium transition-colors ${
                     active ? 'bg-surface-raised text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -1078,7 +1078,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
 
         <div>
           <div className="p-2.5">
-            <div className="px-1 pb-1.5 text-[11px] font-medium text-muted-foreground">Model</div>
+            <div className="px-1 pb-1.5 type-meta font-medium text-muted-foreground">Model</div>
             <div className="space-y-0.5" role="listbox" aria-label="Model">
               {definition.models.map((model) => {
                 const active = state.model === model
@@ -1094,8 +1094,8 @@ function RunSetupMenu({ state, setState }: StateProps) {
                     }`}
                   >
                     <span className="min-w-0">
-                      <span className="block text-[13px] font-medium">{model}</span>
-                      <span className={`mt-0.5 block text-[11px] leading-4 ${active ? 'text-background/65' : 'text-muted-foreground'}`}>
+                      <span className="block type-heading font-medium">{model}</span>
+                      <span className={`mt-0.5 block type-meta ${active ? 'text-background/65' : 'text-muted-foreground'}`}>
                         {MODEL_DESCRIPTIONS[state.harness][model]}
                       </span>
                     </span>
@@ -1108,8 +1108,8 @@ function RunSetupMenu({ state, setState }: StateProps) {
 
           <div className="border-t p-2.5">
             <div className="flex items-center">
-              <div className="text-xs font-medium text-muted-foreground">Effort</div>
-              <span className="ml-auto text-[10px] text-muted-foreground">
+              <div className="type-label font-medium text-muted-foreground">Effort</div>
+              <span className="ml-auto type-meta text-muted-foreground">
                 More effort trades speed for deeper reasoning.
               </span>
             </div>
@@ -1129,7 +1129,7 @@ function RunSetupMenu({ state, setState }: StateProps) {
               }}
               className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-[-5px] [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground"
             />
-            <div className="relative mt-2 h-4 text-[10px] text-muted-foreground">
+            <div className="relative mt-2 h-4 type-meta text-muted-foreground">
               {definition.efforts.map((effort, index) => (
                 <span
                   key={effort}
@@ -1166,7 +1166,7 @@ function PermissionMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="shrink-0 text-xs font-medium text-foreground" aria-label="Choose permission mode" />}
+        render={<InputGroupButton variant="ghost" className="shrink-0 type-label font-medium text-foreground" aria-label="Choose permission mode" />}
       >
         <PermissionIcon harness={state.harness} permission={state.permission} />
         <span className="hidden @[36rem]:inline">{state.permission}</span>
@@ -1174,7 +1174,7 @@ function PermissionMenu({ state, setState }: StateProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-medium text-muted-foreground">{definition.label} permissions</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-2 py-1.5 type-meta font-medium text-muted-foreground">{definition.label} permissions</DropdownMenuLabel>
           {definition.permissions.map((permission) => (
             <DropdownMenuItem
               key={permission.label}
@@ -1183,8 +1183,8 @@ function PermissionMenu({ state, setState }: StateProps) {
             >
               <PermissionIcon harness={state.harness} permission={permission.label} className="mt-0.5 size-3.5" />
               <span className="grid gap-0.5">
-                <span className="text-[13px] font-medium">{permission.label}</span>
-                <span className="text-[11px] leading-4 text-muted-foreground">{permission.detail}</span>
+                <span className="type-heading font-medium">{permission.label}</span>
+                <span className="type-meta text-muted-foreground">{permission.detail}</span>
               </span>
               <SelectionMark active={state.permission === permission.label} />
             </DropdownMenuItem>
@@ -1261,8 +1261,8 @@ function ReferenceStrip({ state, setState }: StateProps) {
                   )}
                 </AttachmentMedia>
                 <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">
-                  <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap">{fileTitle(reference)}</AttachmentTitle>
-                  <AttachmentDescription>{fileType(reference)}</AttachmentDescription>
+                  <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label">{fileTitle(reference)}</AttachmentTitle>
+                  <AttachmentDescription className="type-meta">{fileType(reference)}</AttachmentDescription>
                 </AttachmentContent>
                 <AttachmentActions className="absolute top-0 right-0">
                   <AttachmentAction aria-label={`Remove ${reference}`} onClick={remove}>
@@ -1285,8 +1285,8 @@ function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (v
   return (
     <div className="absolute bottom-full left-0 z-40 mb-2 w-[30rem] overflow-hidden rounded-xl border bg-surface-raised shadow-xl">
       <div className="flex items-center border-b px-3 py-2">
-        <span className="text-[11px] font-medium text-muted-foreground">{isCommand ? 'Skills and commands' : 'Files, folders, and skills'}</span>
-        <span className="ml-auto text-[10px] text-muted-foreground">Enter to insert</span>
+        <span className="type-meta font-medium text-muted-foreground">{isCommand ? 'Skills and commands' : 'Files, folders, and skills'}</span>
+        <span className="ml-auto type-meta text-muted-foreground">Enter to insert</span>
       </div>
       <div className="p-1.5">
         {suggestions.map((suggestion, index) => {
@@ -1301,13 +1301,13 @@ function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (v
             >
               <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-surface-raised"><SuggestionIcon className="size-3.5" /></span>
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 text-xs font-medium">
+                <span className="flex items-center gap-2 type-label font-medium">
                   {suggestion.label}
-                  {suggestion.frequent ? <span className="rounded-full bg-foreground px-1.5 py-0.5 text-[9px] font-medium text-background">Most used</span> : null}
+                  {suggestion.frequent ? <span className="rounded-full bg-foreground px-1.5 py-0.5 type-label font-medium text-background">Most used</span> : null}
                 </span>
-                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{suggestion.detail}</span>
+                <span className="mt-0.5 block truncate type-meta text-muted-foreground">{suggestion.detail}</span>
               </span>
-              <span className="text-[10px] capitalize text-muted-foreground">{suggestion.kind}</span>
+              <span className="type-meta capitalize text-muted-foreground">{suggestion.kind}</span>
             </button>
           )
         })}
@@ -1362,7 +1362,7 @@ function ContextPopover({
       <Button
         variant="ghost"
         size="sm"
-        className="gap-1.5 px-2 text-xs font-medium text-foreground"
+        className="gap-1.5 px-2 type-label font-medium text-foreground"
         aria-label={`Context ${formatTokenCount(used)} of ${formatTokenCount(context.total)}, ${percentage}%`}
       />
     ),
@@ -1371,8 +1371,8 @@ function ContextPopover({
     compact: (
       <>
         <Layers3 className="size-4" />
-        <span className="text-xs font-semibold">{contextStatus}</span>
-        <span className="text-xs tabular-nums text-muted-foreground">{percentage}%</span>
+        <span className="type-label font-semibold">{contextStatus}</span>
+        <span className="type-meta tabular-nums text-muted-foreground">{percentage}%</span>
       </>
     ),
     details: <Info className="size-4" />,
@@ -1396,16 +1396,16 @@ function ContextPopover({
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>
-          <PopoverDescription className="text-(length:--text-body) leading-relaxed">
+          <PopoverDescription className="type-prose">
             The working memory for the next response: instructions, tools, files, and conversation. As it fills, new information competes with older details.
           </PopoverDescription>
         </PopoverHeader>
         <div className="grid gap-2.5">
           <div className="flex items-baseline justify-between gap-3">
-            <div className="text-xl font-semibold tabular-nums">
-              {(used / 1000).toFixed(0)}k <span className="text-(length:--text-body) font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k tokens</span>
+            <div className="type-title font-semibold tabular-nums">
+              {(used / 1000).toFixed(0)}k <span className="type-body font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k tokens</span>
             </div>
-            <span className={`text-(length:--text-body) font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
+            <span className={`type-heading font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
           </div>
           <div className="relative h-2 overflow-hidden rounded-full bg-surface-inset">
             <div
@@ -1414,11 +1414,11 @@ function ContextPopover({
             />
             <div className="absolute inset-y-0 w-px bg-surface-raised" style={{ left: `${smartZonePercentage}%` }} />
           </div>
-          <div className="flex justify-between text-(length:--text-body) text-muted-foreground">
+          <div className="flex justify-between type-body text-muted-foreground">
             <span>Working target · {formatTokenCount(smartZoneTokens)}</span>
             <span>Current · {formatTokenCount(used)}</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 rounded-lg bg-surface-inset p-3 text-(length:--text-body) leading-relaxed">
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-surface-inset p-3 type-prose">
             <div>
               <div className="font-semibold text-foreground">Smart Zone · 0–20%</div>
               <p className="mt-1 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
@@ -1428,12 +1428,12 @@ function ContextPopover({
               <p className="mt-1 text-muted-foreground">History still fits, but noise and stale decisions weaken attention.</p>
             </div>
           </div>
-          <p className="text-(length:--text-body) leading-relaxed text-muted-foreground">
+          <p className="type-prose text-muted-foreground">
             At this level, older context can compete with the current task. Compact before starting another substantial phase.
           </p>
         </div>
         {state.harness === 'claude' ? (
-          <details className="group text-(length:--text-body)">
+          <details className="group type-body">
             <summary className="cursor-pointer font-medium">Loaded context</summary>
             <div className="mt-2 grid gap-2">
               {claudeComposition.map((item) => (
@@ -1447,7 +1447,7 @@ function ContextPopover({
           </details>
         ) : null}
         <div className="grid gap-2.5 border-t pt-3">
-          <div className="flex items-center justify-between gap-3 text-(length:--text-body)">
+          <div className="flex items-center justify-between gap-3 type-body">
             <span className="font-semibold">Auto-compact</span>
             <span className="text-muted-foreground">At {autoCompactThresholdPercentage}% of total</span>
           </div>
@@ -1465,7 +1465,7 @@ function ContextPopover({
             aria-label="Auto-compact threshold"
             className="h-1.5 w-full cursor-pointer accent-foreground"
           />
-          <label className="flex items-center justify-between gap-3 text-(length:--text-body) text-muted-foreground">
+          <label className="flex items-center justify-between gap-3 type-body text-muted-foreground">
             <span>Threshold</span>
             <span className="flex w-40 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-foreground">
                 <input
@@ -1513,11 +1513,11 @@ function ContextSurface({
       <div className="flex items-center gap-3 border-t bg-surface-panel px-3 py-2.5">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
-          <div className="flex items-center gap-1 text-xs font-semibold">
+          <div className="flex items-center gap-1 type-label font-semibold">
             Context · {status}
             <ContextPopover state={state} appearance="details" />
           </div>
-          <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
+          <div className="type-meta text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-surface-inset">
@@ -1525,7 +1525,7 @@ function ContextSurface({
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
-        <div className="shrink-0 text-xs tabular-nums">
+        <div className="shrink-0 type-meta tabular-nums">
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
@@ -1566,7 +1566,7 @@ function ContextSurface({
           </Tooltip>
         </div>
         </TooltipProvider>
-        <div className="hidden shrink-0 items-center gap-1 text-xs tabular-nums @[50rem]:flex">
+        <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[50rem]:flex">
           <span className="font-medium text-foreground">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
@@ -1593,20 +1593,20 @@ function ContextSurface({
       <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-surface-panel p-3">
         <div className="flex items-center gap-2">
         <CircleGauge className={`size-4 ${zone.text}`} />
-          <span className="flex items-center gap-1 text-xs font-semibold">
+          <span className="flex items-center gap-1 type-label font-semibold">
             Context
             <ContextPopover state={state} appearance="details" />
           </span>
-          <span className="ml-auto text-xs tabular-nums">{percentage}% used</span>
+          <span className="ml-auto type-meta tabular-nums">{percentage}% used</span>
         </div>
-        <div className="mt-3 text-lg font-semibold tabular-nums">
-          {used} <span className="text-xs font-normal text-muted-foreground">/ 200k total</span>
+        <div className="mt-3 type-title font-semibold tabular-nums">
+          {used} <span className="type-meta font-normal text-muted-foreground">/ 200k total</span>
         </div>
         <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-surface-inset">
           <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
           <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
         </div>
-        <div className="mt-1.5 text-[10px] text-muted-foreground">Smart Zone ~20%</div>
+        <div className="mt-1.5 type-meta text-muted-foreground">Smart Zone ~20%</div>
         <div className="mt-auto flex items-center gap-1">
           <Button variant="secondary" size="sm" className="px-2"><Minimize2 />Compact</Button>
           <Button variant="outline" size="sm" className="px-2"><GitFork />Handoff</Button>
@@ -1620,11 +1620,11 @@ function ContextSurface({
       <div className="flex items-center gap-3">
         <CircleGauge className={`size-4 shrink-0 ${zone.text}`} />
         <div className="shrink-0">
-          <div className="flex items-center gap-1 text-xs font-semibold">
+          <div className="flex items-center gap-1 type-label font-semibold">
             Context · {status}
             <ContextPopover state={state} appearance="details" />
           </div>
-          <div className="text-[10px] text-muted-foreground">Smart Zone ~20%</div>
+          <div className="type-meta text-muted-foreground">Smart Zone ~20%</div>
         </div>
         <div className="min-w-24 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-surface-inset">
@@ -1632,7 +1632,7 @@ function ContextSurface({
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
-        <div className="shrink-0 text-right text-xs tabular-nums">
+        <div className="shrink-0 text-right type-meta tabular-nums">
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
@@ -1712,7 +1712,7 @@ function QueuePreview({
           >
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
             <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 flex-1 truncate text-xs">{queuedMessage.text}</span>
+            <span className="min-w-0 flex-1 truncate type-meta">{queuedMessage.text}</span>
             <Button
               type="button"
               variant="ghost"
@@ -1745,10 +1745,10 @@ function QueuePreview({
   return (
     <div className={`${shell} flex items-center gap-2`}>
       <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
-      <span className="shrink-0 rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">
+      <span className="shrink-0 rounded-full bg-foreground px-2 py-0.5 type-meta font-medium text-background">
         {messages.length} queued
       </span>
-      <span className="min-w-0 flex-1 truncate text-xs">{message.text}</span>
+      <span className="min-w-0 flex-1 truncate type-meta">{message.text}</span>
       <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
         <IconLabel icon={<Route />}>Steer</IconLabel>
       </Button>
@@ -1770,7 +1770,7 @@ function TaskPlanPopover() {
   ] as const
   return (
     <Popover>
-      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full !bg-surface-raised px-2.5 text-xs font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
+      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full !bg-surface-raised px-2.5 type-label font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
         <IconLabel icon={(
           <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
             <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
@@ -1787,8 +1787,8 @@ function TaskPlanPopover() {
         <Progress value={60} className="h-1.5" />
         <div className="grid gap-1">
           {steps.map((step, index) => (
-            <div key={step.label} className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 text-xs ${step.status === 'current' ? 'bg-surface-inset font-medium' : ''}`}>
-              <span className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full text-[10px] ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
+            <div key={step.label} className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 type-meta ${step.status === 'current' ? 'bg-surface-inset font-medium' : ''}`}>
+              <span className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full type-meta ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
                 {step.status === 'current' ? <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40" /> : null}
                 {step.status === 'done' ? <Check className="size-3" /> : index + 1}
               </span>
@@ -1808,7 +1808,7 @@ function UsagePopover({ state }: { state: ComposerState }) {
   const usageAlert = primaryUsagePercentage >= 90
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="sm" className={`shrink-0 gap-1.5 px-2 text-xs font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} aria-label={`Usage ${primaryUsagePercentage}%`} />}>
+      <PopoverTrigger render={<Button variant="ghost" size="sm" className={`shrink-0 gap-1.5 px-2 type-label font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} aria-label={`Usage ${primaryUsagePercentage}%`} />}>
         <CircleGauge />
         <span className="inline-flex items-center gap-1">
           Usage <span className={`tabular-nums ${usageAlert ? 'text-red-600' : 'text-muted-foreground'}`}>{primaryUsagePercentage}%</span>
@@ -1824,9 +1824,9 @@ function UsagePopover({ state }: { state: ComposerState }) {
           return (
             <div key={item.label} className="grid gap-1.5">
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium">{item.label}</span>
-                <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>
-                <span className="w-8 text-right text-xs tabular-nums">{percentage}%</span>
+                <span className="type-heading font-medium">{item.label}</span>
+                <span className="ml-auto type-meta text-muted-foreground">{item.detail}</span>
+                <span className="w-8 text-right type-meta tabular-nums">{percentage}%</span>
               </div>
               <Progress value={percentage} />
             </div>
@@ -1840,25 +1840,25 @@ function UsagePopover({ state }: { state: ComposerState }) {
 function TranscriptRow({ message }: { message: MessageRow }) {
   if (message.role === 'marker') {
     return (
-      <Marker variant="separator" className="text-(length:--text-control)">
+      <Marker variant="separator" className="type-meta">
         <MarkerContent>{message.text}</MarkerContent>
       </Marker>
     )
   }
   const isUser = message.role === 'user'
   return (
-    <Message align={isUser ? 'end' : 'start'} className="text-(length:--text-body)">
+    <Message align={isUser ? 'end' : 'start'} className="type-body">
       <MessageContent>
-        <MessageHeader className="text-(length:--text-control)">
+        <MessageHeader className="type-meta">
           {isUser ? 'You' : 'Argo'}
         </MessageHeader>
         <Bubble variant={isUser ? 'secondary' : 'ghost'} align={isUser ? 'end' : 'start'}>
-          <BubbleContent className="text-(length:--text-body) leading-relaxed">
+          <BubbleContent className="type-prose">
             {message.text}
           </BubbleContent>
         </Bubble>
         {!isUser && (
-          <MessageFooter className="text-(length:--text-control)">
+          <MessageFooter className="type-meta">
             Read from Session · now
           </MessageFooter>
         )}
@@ -2174,7 +2174,7 @@ export function ComposerPrototype() {
                 placeholder="Direct the next move…"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                className="!min-h-0 flex-1 !px-0 !py-0 text-left text-sm leading-6"
+                className="!min-h-0 flex-1 !px-0 !py-0 text-left type-prose"
                 onKeyDown={(event) => {
                   const suggestions = composerSuggestions(draft)
                   if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {

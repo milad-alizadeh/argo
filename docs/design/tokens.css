@@ -27,6 +27,7 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-shell: oklch(0.955 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
@@ -61,6 +62,7 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-shell: oklch(0.175 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
@@ -71,16 +73,30 @@
 
 :root {
   --font-heading: var(--font-sans);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --text-title: 20px;
-  --text-body: 13px;
-  --text-control: 12px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-title: var(--text-xl, 1.25rem);
+  --text-title--line-height: var(--text-xl--line-height, 1.75rem);
+  --text-heading: var(--text-sm, 0.875rem);
+  --text-heading--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-body: var(--text-sm, 0.875rem);
+  --text-body--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-prose: var(--text-sm, 0.875rem);
+  --text-prose--line-height: var(--leading-6, 1.5rem);
+  --text-label: var(--text-xs, 0.75rem);
+  --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-meta: var(--text-xs, 0.75rem);
+  --text-meta--line-height: var(--text-xs--line-height, 1rem);
+  --text-code: var(--text-xs, 0.75rem);
+  --text-code--line-height: var(--leading-5, 1.25rem);
   --size-chrome-bar: 52px;
+  --size-bottom-status: 106px;
   --size-sidebar: 240px;
   --size-deck: 640px;
   --size-icon-metadata: 12px;
   --size-icon-inline: 14px;
   --size-icon-control: 16px;
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
   --inset-traffic-lights: 84px;
   --radius-xs: calc(var(--radius) * 0.3);
   --radius-sm: calc(var(--radius) * 0.6);

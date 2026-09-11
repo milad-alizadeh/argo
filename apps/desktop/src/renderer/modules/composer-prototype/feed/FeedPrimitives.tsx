@@ -15,7 +15,7 @@ import { CodeLanguageIcon, codeLanguageLabel, detectCodeLanguage } from './CodeL
 
 export function FeedBoundary({ children }: { children: ReactNode }) {
   return (
-    <Marker variant="separator" className="py-2 text-control">
+    <Marker variant="separator" className="py-2 type-meta">
       <MarkerContent>{children}</MarkerContent>
     </Marker>
   )
@@ -23,7 +23,7 @@ export function FeedBoundary({ children }: { children: ReactNode }) {
 
 export function FeedTurn({ children }: { children: ReactNode }) {
   return (
-    <Message className="text-body">
+    <Message className="type-body">
       <MessageContent className="gap-4">{children}</MessageContent>
     </Message>
   )
@@ -37,13 +37,13 @@ export function FeedPrompt({
   submitted?: boolean
 }) {
   return (
-    <Message align="end" className="text-body">
+    <Message align="end" className="type-body">
       <MessageContent>
-        <MessageHeader className="text-control">
+        <MessageHeader className="type-meta">
           You{submitted ? ' · Sending to Session…' : ''}
         </MessageHeader>
         <Bubble variant="muted" className="max-w-full bg-surface-inset sm:max-w-4/5">
-          <BubbleContent className="text-body">{children}</BubbleContent>
+          <BubbleContent className="type-prose">{children}</BubbleContent>
         </Bubble>
       </MessageContent>
     </Message>
@@ -59,9 +59,9 @@ export function FeedCode({ source, language }: { source: string; language?: stri
     <CodeBlock
       code={source}
       language={highlightedLanguage}
-      className="min-w-0 bg-surface-raised [&_code]:!text-(length:--text-control) [&_pre]:!text-(length:--text-control)"
+      className="type-code-content min-w-0 bg-surface-raised"
     >
-      <CodeBlockHeader className="bg-surface-inset text-control">
+      <CodeBlockHeader className="bg-surface-inset type-meta">
         <CodeBlockTitle>
           <span role="img" aria-label={`${languageLabel} file`}>
             <CodeLanguageIcon language={detectedLanguage} />

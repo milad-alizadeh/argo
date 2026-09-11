@@ -19,22 +19,24 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
   return (
     <div
       role="img"
-      className="flex min-w-64 flex-col items-center justify-center gap-2 p-6 text-control"
+      className="flex min-w-64 flex-col items-center justify-center gap-2 p-6 type-meta"
       style={{ transform: `scale(${scale / 100})` }}
       aria-label="Draft and attachments go to the Session driver, which routes to Claude through a PTY or Codex through JSON-RPC. Both return activity to the Feed."
     >
       <div className="rounded-lg border bg-surface-raised px-4 py-2">Draft + attachments</div>
       <ArrowDown className="!size-(--size-icon-inline) text-muted-foreground" />
-      <div className="rounded-lg border bg-surface-raised px-4 py-2 font-medium">Session driver</div>
+      <div className="rounded-lg border bg-surface-raised px-4 py-2 font-medium">
+        Session driver
+      </div>
       <div className="flex w-full justify-evenly text-muted-foreground">
         <ArrowDownLeft className="!size-(--size-icon-inline)" />
         <ArrowDownRight className="!size-(--size-icon-inline)" />
       </div>
       <div className="flex w-full justify-center gap-4">
-          <div className="rounded-lg border bg-surface-raised px-3 py-2">
+        <div className="rounded-lg border bg-surface-raised px-3 py-2">
           Claude <span className="text-muted-foreground">PTY</span>
         </div>
-          <div className="rounded-lg border bg-surface-raised px-3 py-2">
+        <div className="rounded-lg border bg-surface-raised px-3 py-2">
           Codex <span className="text-muted-foreground">JSON-RPC</span>
         </div>
       </div>
@@ -55,7 +57,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
       className={`overflow-hidden border border-border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}
       data-component="FeedMermaid"
     >
-      <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 text-control">
+      <figcaption className="flex items-center justify-between border-b border-border/60 px-3 py-2 type-label">
         <span className="font-medium">From draft to Feed</span>
         <Button
           size="icon-xs"
@@ -69,12 +71,12 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
       <div className="relative h-80">
         <div className="h-full overflow-auto pb-10">
           {source ? (
-            <pre className="p-4 font-mono text-control leading-relaxed">{MERMAID_SOURCE}</pre>
+            <pre className="p-4 font-mono type-code">{MERMAID_SOURCE}</pre>
           ) : (
             <DiagramDrawing scale={scale} />
           )}
         </div>
-        <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border bg-surface-raised p-1 text-control">
+        <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border bg-surface-raised p-1 type-meta">
           <Button
             size="icon-xs"
             variant="ghost"
@@ -116,20 +118,22 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
 
 export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
   return (
-    <figure className={`overflow-hidden border border-border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}>
-      <figcaption className="border-b border-border/60 px-3 py-2 text-control">
+    <figure
+      className={`overflow-hidden border border-border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}
+    >
+      <figcaption className="border-b border-border/60 px-3 py-2 type-label">
         Mermaid · {loading ? 'Loading' : 'Could not render'}
       </figcaption>
       <div className="relative h-80 overflow-hidden">
         {loading ? (
           <div
-            className="flex h-full items-center justify-center text-control text-muted-foreground"
+            className="flex h-full items-center justify-center type-meta text-muted-foreground"
             role="status"
           >
             Preparing diagram…
           </div>
         ) : (
-          <pre className="h-full overflow-auto p-4 pb-28 font-mono text-control">
+          <pre className="h-full overflow-auto p-4 pb-28 font-mono type-code">
             {
               'flowchart LR\n  Draft --> Session[\n  Session --> Feed\n\nExpected a closing bracket after "Session".'
             }
@@ -137,8 +141,8 @@ export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
         )}
         {!loading && (
           <Alert variant="destructive" className="absolute right-3 bottom-3 left-3 w-auto">
-            <AlertTitle className="text-control">The diagram source is incomplete</AlertTitle>
-            <AlertDescription className="text-control">
+            <AlertTitle className="type-meta">The diagram source is incomplete</AlertTitle>
+            <AlertDescription className="type-meta">
               The original source remains available above.
             </AlertDescription>
           </Alert>

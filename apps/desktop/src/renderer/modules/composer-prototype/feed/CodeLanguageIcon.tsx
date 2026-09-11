@@ -35,13 +35,13 @@ export function CodeLanguageIcon({ language }: { language: CodeLanguage }) {
   switch (language) {
     case 'typescript':
       return (
-        <span className="grid size-5 place-items-end rounded-sm bg-sky-600 pr-0.5 pb-0.5 text-[8px] leading-none font-bold tracking-tighter text-white">
+        <span className="grid size-5 place-items-center rounded-sm bg-sky-600 type-meta font-bold tracking-tighter text-white">
           TS
         </span>
       )
     case 'go':
       return (
-        <span className="-skew-x-6 text-[9px] leading-none font-black tracking-tighter text-cyan-600 dark:text-cyan-400">
+        <span className="-skew-x-6 type-meta font-black tracking-tighter text-cyan-600 dark:text-cyan-400">
           GO
         </span>
       )

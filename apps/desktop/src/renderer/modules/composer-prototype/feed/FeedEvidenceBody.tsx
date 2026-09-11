@@ -1,5 +1,11 @@
 import { FileCode2, FileText, ImageIcon, SquareTerminal, Workflow } from 'lucide-react'
-import { Terminal } from '@/components/ai-elements/terminal'
+import {
+  Terminal,
+  TerminalContent,
+  TerminalCopyButton,
+  TerminalHeader,
+  TerminalTitle,
+} from '@/components/ai-elements/terminal'
 import type { FeedPrototypeEvidence } from './evidence'
 import { DiagramDrawing } from './FeedDiagram'
 import { FeedCode } from './FeedPrimitives'
@@ -29,18 +35,18 @@ function DiffLine({ line }: { line: string }) {
 
 export function FeedMarkdown({ source }: { source: string }) {
   return (
-    <div className="space-y-4 text-body leading-relaxed">
+    <div className="space-y-4 type-prose">
       {source.split('\n\n').map((block) => {
         if (block.startsWith('# ')) {
           return (
-            <h2 key={block} className="text-(length:--text-body) font-semibold">
+            <h2 key={block} className="type-heading font-semibold">
               {block.slice(2)}
             </h2>
           )
         }
         if (block.startsWith('## ')) {
           return (
-            <h3 key={block} className="text-body font-semibold">
+            <h3 key={block} className="type-heading font-semibold">
               {block.slice(3)}
             </h3>
           )
@@ -80,7 +86,7 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
       )
     case 'diff':
       return (
-        <pre className="overflow-x-auto font-mono text-control leading-relaxed">
+        <pre className="overflow-x-auto font-mono type-code">
           {evidence.source.split('\n').map((line) => (
             <DiffLine key={line} line={line} />
           ))}
@@ -92,11 +98,13 @@ export function EvidenceBody({ evidence }: { evidence: FeedPrototypeEvidence }) 
       return <FeedCode source={evidence.source} />
     case 'output':
       return (
-        <Terminal
-          output={evidence.source}
-          className="[&_*]:text-(length:--text-control)"
-          aria-label={evidence.title}
-        />
+        <Terminal output={evidence.source} aria-label={evidence.title}>
+          <TerminalHeader>
+            <TerminalTitle className="type-meta" />
+            <TerminalCopyButton />
+          </TerminalHeader>
+          <TerminalContent className="type-code" />
+        </Terminal>
       )
   }
 }

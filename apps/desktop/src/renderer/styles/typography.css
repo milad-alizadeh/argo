@@ -1,0 +1,39 @@
+@layer utilities {
+  /* Repeating the role class gives an explicit Argo composition seam precedence over a shadcn
+     default while leaving the generated component and Tailwind scale unchanged. */
+  .type-title.type-title {
+    font-size: var(--text-title);
+    line-height: var(--text-title--line-height);
+  }
+
+  .type-heading.type-heading {
+    font-size: var(--text-heading);
+    line-height: var(--text-heading--line-height);
+  }
+
+  .type-body.type-body {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  .type-prose.type-prose {
+    font-size: var(--text-prose);
+    line-height: var(--text-prose--line-height);
+  }
+
+  .type-label.type-label {
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+  }
+
+  .type-meta.type-meta {
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+  }
+
+  .type-code.type-code,
+  .type-code-content :is(code, pre) {
+    font-size: var(--text-code);
+    line-height: var(--text-code--line-height);
+  }
+}

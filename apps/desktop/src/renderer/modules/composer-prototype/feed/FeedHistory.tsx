@@ -22,7 +22,7 @@ export function FeedHistory({
       <FeedBoundary>Model changed to Sonnet · Effort high</FeedBoundary>
       <FeedMutationExamples onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
       <FeedBoundary>Interrupted</FeedBoundary>
-      <div className="flex items-center gap-2 text-control text-muted-foreground">
+      <div className="flex items-center gap-2 type-meta text-muted-foreground">
         <CircleAlert className="!size-(--size-icon-inline)" />
         The process started, but has not produced output.
       </div>
@@ -30,7 +30,7 @@ export function FeedHistory({
       <FeedBoundary>Agent reported: Ready for review</FeedBoundary>
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-2 py-2 text-control text-muted-foreground hover:text-foreground"
+        className="flex w-full items-center justify-center gap-2 py-2 type-meta text-muted-foreground hover:text-foreground"
         onClick={() =>
           onOpen({
             id: 'handoff',

@@ -3,7 +3,7 @@
 import { Button } from '../../../components/ui/button'
 
 const ROW =
-  'w-full justify-start gap-2 rounded-md px-2 text-body text-muted-foreground aria-[current=page]:bg-muted aria-[current=page]:text-foreground'
+  'w-full justify-start gap-2 rounded-md px-2 type-label text-muted-foreground aria-[current=page]:bg-muted aria-[current=page]:text-foreground'
 
 export function NavigationRow({
   label,

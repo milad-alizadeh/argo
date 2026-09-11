@@ -10,7 +10,7 @@ import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
 export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
   return (
     <FeedTurn>
-      <p className="text-body leading-relaxed">
+      <p className="type-prose">
         The composer stays one surface. The image tray scrolls horizontally, while the message field
         and run controls keep their width. I checked the layout against{' '}
         <FeedEvidenceLink evidence={FEED_EVIDENCE.fetched} onOpen={onOpen}>
@@ -19,20 +19,20 @@ export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
         .
       </p>
       <FeedCode source={COMPOSER_CODE} />
-      <p className="text-body leading-relaxed">
+      <p className="type-prose">
         The two Session drivers share the same composer. Their transport remains separate:
       </p>
       <FeedDiagram onOpen={onOpen} />
       <FeedResultsTable />
-      <p className="text-body leading-relaxed">
+      <p className="type-prose">
         Here is the attached reference beside the current file. The gallery keeps one row height
         while each image retains its own proportions.
       </p>
       <FeedImages />
-      <blockquote className="border-l-2 pl-4 text-body leading-relaxed text-muted-foreground">
+      <blockquote className="border-l-2 pl-4 type-prose text-muted-foreground">
         “Keep the active Session and its work visible while composing.”
       </blockquote>
-      <div className="space-y-2 text-body leading-relaxed">
+      <div className="space-y-2 type-prose">
         <h3 className="font-medium">What changed</h3>
         <ul className="list-disc space-y-1 pl-5">
           <li>Attachments stay in a single, scrollable row.</li>
@@ -44,7 +44,7 @@ export function FeedRichContent({ onOpen }: { onOpen: FeedEvidenceAction }) {
         icon={NotebookPen}
         title="Review notes"
         content={
-          <div className="space-y-3 text-body leading-relaxed">
+          <div className="space-y-3 type-prose">
             <p>
               The old <s>wrapping attachment grid</s> is now a <strong>single tray</strong>. The
               draft stays <em>editable</em> throughout.
@@ -91,7 +91,7 @@ function FeedResultsTable() {
   ]
   return (
     <div className={`overflow-x-auto border ${FEED_CARD_RADIUS_CLASS}`}>
-      <table className="w-full text-left text-control">
+      <table className="w-full text-left type-body">
         <caption className="sr-only">Composer layout checks</caption>
         <thead className="bg-surface-inset">
           <tr>

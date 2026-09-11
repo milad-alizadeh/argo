@@ -19,7 +19,7 @@ export function CollapsibleText({
 }) {
   return (
     <Collapsible defaultOpen={defaultOpen} className="mb-0">
-      <CollapsibleTrigger className="group flex w-full items-center gap-2 py-1 text-(length:--text-control) text-muted-foreground transition-colors hover:text-foreground">
+      <CollapsibleTrigger className="group flex w-full items-center gap-2 py-1 type-label text-muted-foreground transition-colors hover:text-foreground">
         <Icon className="!size-(--size-icon-inline) shrink-0" />
         <span className="min-w-0 truncate">{title}</span>
         <ChevronDownIcon className="!size-(--size-icon-inline) shrink-0 transition-transform group-data-panel-open:rotate-180" />

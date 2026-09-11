@@ -14,7 +14,7 @@ export function SessionDisclosure({
 }) {
   return (
     <details className={`group/disclosure ${separated ? 'border-t pt-2' : ''}`}>
-      <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg px-2 text-(length:--text-control) font-medium text-muted-foreground hover:bg-surface-inset hover:text-foreground [&::-webkit-details-marker]:hidden [&>svg]:size-(--size-icon-metadata)">
+      <summary className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg px-2 type-label font-medium text-muted-foreground hover:bg-surface-inset hover:text-foreground [&::-webkit-details-marker]:hidden [&>svg]:size-(--size-icon-metadata)">
         {icon}
         <span className="min-w-0 truncate">{label}</span>
         <ChevronDown className="ml-auto shrink-0 transition-transform group-open/disclosure:rotate-180" />

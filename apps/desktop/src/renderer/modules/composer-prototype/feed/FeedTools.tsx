@@ -75,7 +75,7 @@ export function FeedToolLine({
       onClick={() => onOpen(evidence)}
       aria-current={active ? 'location' : undefined}
       data-feed-evidence-id={evidence.id}
-      className={`flex w-full items-center gap-2 text-left text-(length:--text-control) text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
+      className={`flex w-full items-center gap-2 text-left type-meta text-muted-foreground transition-colors hover:text-foreground ${active ? 'text-foreground' : ''}`}
     >
       <row.icon className="!size-(--size-icon-inline) shrink-0 text-muted-foreground" />
       <span className="min-w-0 truncate">{row.label}</span>
@@ -101,7 +101,7 @@ function ToolGroup({
       title={title}
       content={sections.flatMap((section) =>
         section.rows.map((row) => (
-          <TaskItem key={row.label} className="text-(length:--text-control)">
+          <TaskItem key={row.label} className="type-meta">
             <FeedToolLine row={row} onOpen={onOpen} activeEvidenceId={activeEvidenceId} />
           </TaskItem>
         )),
@@ -153,7 +153,7 @@ export function FeedMutationExamples({
         onOpen={onOpen}
         activeEvidenceId={activeEvidenceId}
       />
-      <div className="flex items-center gap-2 px-2 py-2 text-control text-muted-foreground">
+      <div className="flex items-center gap-2 px-2 py-2 type-meta text-muted-foreground">
         <Check className="!size-(--size-icon-inline)" />
         Returned from layout review<span className="ml-auto">38s</span>
       </div>

@@ -47,7 +47,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
   const [submitted, setSubmitted] = useState(false)
   if (submitted)
     return (
-      <div className="flex items-center gap-2 text-control text-muted-foreground">
+      <div className="flex items-center gap-2 type-meta text-muted-foreground">
         <Check className="!size-(--size-icon-inline)" />
         Answered:{' '}
         {answer || CONCIERGE_QUESTION.choices.find((choice) => choice.value === selection)?.label}
@@ -63,14 +63,14 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
         setSubmitted(true)
       }}
     >
-      <p className="text-(length:--text-control) text-muted-foreground">
+      <p className="type-meta text-muted-foreground">
         {readOnly ? 'Question in external Session' : 'Your input is needed'}
       </p>
       <QuestionnaireItem name={CONCIERGE_QUESTION.name} required={CONCIERGE_QUESTION.required}>
-        <QuestionnaireTitle className="text-(length:--text-body)">
+        <QuestionnaireTitle className="type-heading">
           Where should Concierge subtitles appear?
         </QuestionnaireTitle>
-        <QuestionnaireDescription className="text-(length:--text-control)">
+        <QuestionnaireDescription className="type-meta">
           {readOnly
             ? 'Reply in the CLI. This Session is read-only.'
             : 'Choose a placement or write another answer.'}
@@ -80,13 +80,13 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
             <QuestionnaireChoice
               key={choice.value}
               value={choice.value}
-              className="min-h-10 py-2 text-(length:--text-body)"
+              className="min-h-10 py-2 type-body"
               disabled={readOnly}
               checked={selection === choice.value}
               onChange={() => setSelection(choice.value)}
             >
-              <span className="font-medium">{choice.label}</span>
-              <QuestionnaireChoiceDescription className="text-(length:--text-control)">
+              <span className="type-heading font-medium">{choice.label}</span>
+              <QuestionnaireChoiceDescription className="type-meta">
                 {choice.detail}
               </QuestionnaireChoiceDescription>
             </QuestionnaireChoice>
@@ -96,14 +96,14 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
             placeholder="Or write another answer…"
             value={answer}
             disabled={readOnly}
-            className="min-h-10 text-(length:--text-body) md:text-(length:--text-body)"
+            className="min-h-10 type-body"
             onChange={(event) => setAnswer(event.target.value)}
           />
         </QuestionnaireChoices>
       </QuestionnaireItem>
       {readOnly ? null : (
         <div className="flex justify-end">
-          <QuestionnaireSubmit className="bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80">
+          <QuestionnaireSubmit className="bg-foreground type-label text-background hover:bg-foreground/80">
             Send answer
           </QuestionnaireSubmit>
         </div>
@@ -124,24 +124,24 @@ export function FeedPermission() {
       <div className="flex items-start gap-2">
         <ShieldQuestion className="mt-0.5 !size-(--size-icon-control)" />
         <div className="min-w-0 flex-1">
-          <h3 id="feed-permission-title" className="text-(length:--text-body) font-medium">
+          <h3 id="feed-permission-title" className="type-heading font-medium">
             Allow this command?
           </h3>
-          <p className="text-(length:--text-control) text-muted-foreground">
+          <p className="type-meta text-muted-foreground">
             Installs Project dependencies, runs local checks, and may access the network.
           </p>
         </div>
       </div>
-      <pre className="max-h-20 overflow-auto rounded-md bg-surface-inset px-3 py-2 font-mono text-(length:--text-control) leading-relaxed">
+      <pre className="max-h-20 overflow-auto rounded-md bg-surface-inset px-3 py-2 font-mono type-code">
         <code>{PERMISSION_COMMAND}</code>
       </pre>
       <div className="flex justify-end gap-1">
-        <Button variant="outline" className="text-control" onClick={() => setResolved(true)}>
+        <Button variant="outline" className="type-label" onClick={() => setResolved(true)}>
           Deny
         </Button>
         <div className="inline-flex overflow-hidden rounded-lg">
           <Button
-            className="rounded-r-none bg-foreground text-(length:--text-control) text-background hover:bg-foreground/80"
+            className="rounded-r-none bg-foreground type-label text-background hover:bg-foreground/80"
             onClick={() => setResolved(true)}
           >
             Allow
@@ -159,7 +159,7 @@ export function FeedPermission() {
               <ChevronDown />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="w-36">
-              <DropdownMenuItem className="text-control" onClick={() => setResolved(true)}>
+              <DropdownMenuItem className="type-label" onClick={() => setResolved(true)}>
                 Allow all
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -173,12 +173,12 @@ export function FeedPermission() {
 export function FeedUnreadable() {
   return (
     <details className={`group border bg-surface-raised ${FEED_CARD_RADIUS_CLASS}`}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-control">
+      <summary className="flex cursor-pointer list-none items-center gap-2 p-3 type-label">
         <ChevronRight className="!size-(--size-icon-inline) group-open:rotate-90" />2 records could
         not be read
         <span className="ml-auto text-muted-foreground">View source</span>
       </summary>
-      <pre className="max-h-40 overflow-auto border-t p-3 font-mono text-control">
+      <pre className="max-h-40 overflow-auto border-t p-3 font-mono type-code">
         {
           '{"type":"assistant","message":\n[record ends unexpectedly]\n\nThe next readable record continues below.'
         }
@@ -191,8 +191,8 @@ export function FeedExpiredPermission() {
   return (
     <Alert variant="destructive" className={FEED_CARD_RADIUS_CLASS}>
       <ShieldQuestion className="!size-(--size-icon-control)" />
-      <AlertTitle className="text-control">Permission expired</AlertTitle>
-      <AlertDescription className="text-control">
+      <AlertTitle className="type-label">Permission expired</AlertTitle>
+      <AlertDescription className="type-meta">
         The command was denied because no answer arrived.
       </AlertDescription>
     </Alert>

@@ -35,7 +35,7 @@ export function SessionFeedPrototype({
   activeEvidenceId: string | null
 }) {
   return (
-    <div className="min-w-0 space-y-6 text-body" data-component="SessionFeedPrototype">
+    <div className="min-w-0 space-y-6 type-body" data-component="SessionFeedPrototype">
       <FeedBoundary>Today · 10:42</FeedBoundary>
       <FeedPrompt>
         <p>
@@ -45,7 +45,7 @@ export function SessionFeedPrototype({
         <FeedAttachedImage />
       </FeedPrompt>
       <FeedTurn>
-        <p className="leading-relaxed">
+        <p className="type-prose">
           I’ll connect the composer to the surrounding Session and check the rich content at the
           same time.
         </p>
@@ -54,14 +54,14 @@ export function SessionFeedPrototype({
           icon={BrainIcon}
           title="Reasoning"
           content={
-            <p className="text-(length:--text-body) leading-relaxed text-muted-foreground">
+            <p className="type-prose text-muted-foreground">
               The roster provides context for switching Sessions. Results can use the existing
               sidebar, so the conversation keeps a stable reading width. The approved composer
               already establishes the bottom edge.
             </p>
           }
         />
-        <div className="flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
+        <div className="flex items-center gap-2 type-meta text-muted-foreground">
           <GitFork className="!size-(--size-icon-inline)" />
           <span>Delegated layout review and feed coverage</span>
           <span className="ml-auto">2 subagents</span>
@@ -77,7 +77,7 @@ export function SessionFeedPrototype({
         That looks right. Check ten attachments and keep the message field at the same width.
       </FeedPrompt>
       <FeedTurn>
-        <p className="leading-relaxed">
+        <p className="type-prose">
           I’m checking the stress state now. The layout review is still running in the sidebar.
         </p>
         <FeedPendingCall />
