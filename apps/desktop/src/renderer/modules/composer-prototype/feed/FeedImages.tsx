@@ -1,6 +1,8 @@
-import { Expand, ImageOff } from 'lucide-react'
+import { Download, Expand, ImageOff, X } from 'lucide-react'
+import { Button } from '@/renderer/components/ui/button'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -50,15 +52,31 @@ function ImageLightbox({
           <Expand className="!size-(--size-icon-inline)" />
         </span>
       </DialogTrigger>
-      <DialogContent className="w-fit max-w-[calc(100dvw-3rem)] bg-black/95 p-2 ring-white/15 sm:max-w-[calc(100dvw-3rem)]">
+      <DialogContent
+        showCloseButton={false}
+        className="!inset-0 !h-dvh !w-dvw !max-w-none !translate-x-0 !translate-y-0 place-items-center rounded-none bg-black/60 p-6 ring-0 backdrop-blur-lg sm:!max-w-none"
+      >
         <DialogTitle className="sr-only">{evidence.title}</DialogTitle>
         <DialogDescription className="sr-only">Full-size image preview</DialogDescription>
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            aria-label={`Download ${evidence.title}`}
+            render={<a href={evidence.source} download={evidence.title} />}
+          >
+            <Download />
+          </Button>
+          <DialogClose render={<Button variant="secondary" size="icon-sm" aria-label="Close image preview" />}>
+            <X />
+          </DialogClose>
+        </div>
         <img
           src={evidence.source}
           width={1280}
           height={852}
           alt="Two people reviewing work on a laptop"
-          className="max-h-[calc(100dvh-4rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-contain"
+          className="max-h-[calc(100dvh-6rem)] max-w-[calc(100dvw-4rem)] rounded-lg object-contain"
         />
       </DialogContent>
     </Dialog>
