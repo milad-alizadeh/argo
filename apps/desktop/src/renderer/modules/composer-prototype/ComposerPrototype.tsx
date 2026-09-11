@@ -6,7 +6,6 @@ import {
   Bot,
   Check,
   ChevronDown,
-  ChevronRight,
   CircleDot,
   CircleGauge,
   CircleHelp,
@@ -51,7 +50,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 import {
   Attachment,
@@ -119,10 +118,10 @@ import {
   SessionFeedPrototype,
 } from './SessionFeedPrototype'
 import {
-  nextPaneContentWidth,
   paneContentVisibilityClass,
   SESSION_FEED_MIN_WIDTH,
   SESSION_INSPECTOR_MIN_WIDTH,
+  SESSION_ROSTER_COLLAPSE_MEDIA,
   SESSION_ROSTER_MIN_WIDTH,
 } from './sessionPaneResize'
 
@@ -626,11 +625,11 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
         <span className="relative flex h-4 shrink-0 items-center">
           <HarnessLogo harness={session.harness} className="size-(--size-icon-inline)" />
           <span
-            className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-card ${STATUS_STYLES[session.status]}`}
+            className={`absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2 ring-sidebar ${STATUS_STYLES[session.status]}`}
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-(length:--text-body) font-medium text-foreground">
+          <span className="block truncate text-(length:--text-body) leading-5 font-medium text-foreground">
             {session.title}
           </span>
           <span className="mt-0.5 flex items-center gap-2 text-(length:--text-control) text-muted-foreground">
@@ -675,10 +674,10 @@ function PrototypeSessionRoster({
   const sessions = PROTOTYPE_SESSIONS.filter((session) => session.project === currentProject)
 
   return (
-    <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-card">
-      <div className="flex h-12 shrink-0 items-center px-3">
-        <h1 className="text-sm font-semibold">Sessions</h1>
-        <div className="ml-auto flex items-center gap-1">
+    <aside className="flex h-full min-h-0 w-full min-w-56 flex-col bg-sidebar">
+      <div className="flex h-14 shrink-0 items-start px-3 pt-1.5">
+        <h1 className="text-sm font-medium">Sessions</h1>
+        <div className="mt-1.5 ml-auto flex items-center gap-1">
           <Button variant="ghost" size="icon-sm" aria-label="New Session">
             <Plus />
           </Button>
@@ -688,10 +687,10 @@ function PrototypeSessionRoster({
         </div>
       </div>
       <div className="px-3 pt-2 pb-1.5">
-        <div className="flex h-7 items-center gap-2 rounded-md border border-border/60 bg-background px-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-inline)">
+        <div className="flex h-7 items-center gap-2 rounded-md border border-input bg-background px-2 text-(length:--text-control) text-muted-foreground [&_svg]:size-(--size-icon-inline)">
           <Search />
           <span>Find a Session</span>
-          <span className="ml-auto rounded border border-border/60 px-1.5 py-0.5 text-(length:--text-control)">⌘K</span>
+          <span className="ml-auto inline-flex h-5 items-center rounded border border-border/60 px-1.5 text-(length:--text-control)">⌘K</span>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
@@ -747,7 +746,7 @@ function PrototypeSessionHeader({
   onOpenRoster: () => void
 }) {
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-background pr-3 pl-4">
       {!showRoster ? (
         <Button
           variant="ghost"
@@ -765,12 +764,12 @@ function PrototypeSessionHeader({
             <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
             Running
           </span>
-          <span className="h-3 w-px shrink-0 bg-border" aria-hidden="true" />
+          <span className="h-3 w-px shrink-0 bg-border/60" aria-hidden="true" />
           <span className="inline-flex min-w-0 items-center gap-1">
             <GitCompareArrows className="shrink-0" />
             <span className="truncate">argo/#1258-composer-prototype</span>
           </span>
-          <span className="h-3 w-px shrink-0 bg-border" aria-hidden="true" />
+          <span className="h-3 w-px shrink-0 bg-border/60" aria-hidden="true" />
           <a
             href="https://github.com/milad-alizadeh/argo/issues/1258"
             target="_blank"
@@ -1154,7 +1153,7 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border/60 py-1 pr-9 pl-2" size="xs">
+              <Attachment key={reference} className="relative h-16 w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border py-1 pr-9 pl-2" size="xs">
                 <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
                     <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
@@ -1439,16 +1438,16 @@ function ContextSurface({
 
   if (layout === 'attached') {
     return (
-      <div className="flex select-none items-center gap-2 rounded-b-xl border bg-background px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[36rem]:gap-3 @[36rem]:px-4">
-        <div className="shrink-0 border-r border-border/60 pr-2 @[36rem]:pr-4"><UsagePopover state={state} /></div>
-        <div className="shrink-0 @[36rem]:hidden">
+      <div className="flex select-none items-center gap-2 rounded-b-xl border bg-background px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[50rem]:gap-3 @[50rem]:px-4">
+        <div className="shrink-0 border-r border-border/60 pr-2 @[50rem]:pr-4"><UsagePopover state={state} /></div>
+        <div className="shrink-0 @[50rem]:hidden">
           <ContextPopover state={state} appearance="progress" meterStyle="grayscale" />
         </div>
-        <div className="hidden @[36rem]:block">
+        <div className="hidden @[50rem]:block">
           <IconLabel icon={<Layers3 />} className={contextAlert ? 'text-red-600' : 'text-foreground'}>Context</IconLabel>
         </div>
         <TooltipProvider>
-        <div className="relative hidden min-w-28 flex-1 @[36rem]:block">
+        <div className="relative hidden min-w-28 flex-1 @[50rem]:block">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -1466,13 +1465,13 @@ function ContextSurface({
           </Tooltip>
         </div>
         </TooltipProvider>
-        <div className="hidden shrink-0 items-center gap-1 text-xs tabular-nums @[36rem]:flex">
+        <div className="hidden shrink-0 items-center gap-1 text-xs tabular-nums @[50rem]:flex">
           <span className="font-medium text-foreground">{used}</span>
           <span className="text-muted-foreground"> / 200k</span>
           <span className="font-medium">· {percentage}%</span>
           <ContextPopover state={state} appearance="details" meterStyle="grayscale" />
         </div>
-        <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[36rem]:flex">
+        <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[50rem]:flex">
           <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
           <Button variant="outline" size="sm"><IconLabel icon={<GitFork />}>Handoff</IconLabel></Button>
         </div>
@@ -1538,7 +1537,7 @@ function ContextSurface({
 function AnimatedHeight({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 mx-auto w-full max-w-4xl">
-      <div className="relative z-10 rounded-2xl [&>*]:!border-border/60 [&_button]:!font-normal [&_span]:!font-normal">
+      <div className="relative z-10 rounded-2xl [&_button]:!font-normal [&_span]:!font-normal">
         {children}
       </div>
     </div>
@@ -1798,10 +1797,8 @@ export function ComposerPrototype() {
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [sessionSidebarFullscreen, setSessionSidebarFullscreen] = useState(false)
   const sessionRosterPanel = usePanelRef()
-  const [sessionRosterContentWidth, setSessionRosterContentWidth] = useState(280)
   const sessionConversationPanel = usePanelRef()
   const sessionInspectorPanel = usePanelRef()
-  const [sessionInspectorContentWidth, setSessionInspectorContentWidth] = useState(248)
   const [state, setState] = useState<ComposerState>({
     harness: 'codex',
     model: HARNESSES.codex.models[0] ?? '',
@@ -1841,10 +1838,21 @@ export function ComposerPrototype() {
     setShowSessionRoster(visible)
   }
 
+  useEffect(() => {
+    const compactLayout = window.matchMedia(SESSION_ROSTER_COLLAPSE_MEDIA)
+    const collapseRoster = ({ matches }: MediaQueryListEvent | MediaQueryList) => {
+      if (matches) {
+        sessionRosterPanel.current?.collapse()
+        setShowSessionRoster(false)
+      }
+    }
+    collapseRoster(compactLayout)
+    compactLayout.addEventListener('change', collapseRoster)
+    return () => compactLayout.removeEventListener('change', collapseRoster)
+  }, [sessionRosterPanel.current?.collapse])
+
   const handleSessionRosterResize = (rosterWidth: number) => {
     setShowSessionRoster(rosterWidth > 0)
-    setSessionRosterContentWidth((previousWidth) =>
-      nextPaneContentWidth(rosterWidth, previousWidth, SESSION_ROSTER_MIN_WIDTH))
   }
 
   const toggleSessionSidebarFullscreen = () => {
@@ -1858,8 +1866,6 @@ export function ComposerPrototype() {
 
   const handleSessionSidebarResize = (sidebarWidth: number) => {
     setShowSessionSidebar(sidebarWidth > 0)
-    setSessionInspectorContentWidth((previousWidth) =>
-      nextPaneContentWidth(sidebarWidth, previousWidth, SESSION_INSPECTOR_MIN_WIDTH))
   }
 
   const openFeedEvidence = (evidence: FeedPrototypeEvidence) => {
@@ -1949,8 +1955,8 @@ export function ComposerPrototype() {
         >
           <div
             aria-hidden={!showSessionRoster}
-            className="h-full min-h-0 shrink-0"
-            style={{ width: sessionRosterContentWidth, contain: 'inline-size' }}
+            className="h-full min-h-0 w-full"
+            style={{ contain: 'inline-size' }}
           >
             <PrototypeSessionRoster
               currentProject={currentProject}
@@ -1969,12 +1975,6 @@ export function ComposerPrototype() {
           }}
         >
           <style>{`
-        main svg,
-        main img {
-          inline-size: 1rem !important;
-          block-size: 1rem !important;
-          flex: none;
-        }
         @keyframes composer-queue-enter {
           from { height: 0; }
           to { height: 44px; }
@@ -2053,22 +2053,22 @@ export function ComposerPrototype() {
                 <FeedPermission />
               </div>
             </div>
-            <div className="composer-queue-stack mx-auto w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+            <div className="composer-queue-stack mx-auto w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
           <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
             </div>
             <AnimatedHeight>
               <form
-                className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!border-border/60 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&>*]:focus-within:!border-border/60 [&>*]:focus-within:!outline-none [&>*]:focus-within:!ring-0 [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none [&_textarea]:focus-visible:!ring-0"
+                className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none"
                 onSubmit={(event) => {
                   event.preventDefault()
                   send()
                 }}
               >
           <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className={`relative z-20 overflow-hidden rounded-xl border bg-background shadow-xl shadow-foreground/10 focus-within:!border-border focus-within:!ring-0 dark:bg-background ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
+          <InputGroup className={`relative z-20 overflow-hidden rounded-xl bg-background shadow-xl shadow-foreground/10 dark:bg-background ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : ''}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
-            <div className="flex min-h-20 items-start px-4 py-3 pr-28">
+            <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">
               <InputGroupTextarea
                 aria-label="Message"
                 placeholder="Direct the next move…"
@@ -2118,7 +2118,7 @@ export function ComposerPrototype() {
           </InputGroup>
               </form>
             </AnimatedHeight>
-            <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!border-border/60 [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal [&_svg]:!size-4">
+            <div className="relative z-0 mx-auto -mt-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal">
               <ContextSurface state={state} layout="attached" />
             </div>
           </div>
@@ -2139,8 +2139,8 @@ export function ComposerPrototype() {
           >
             <div
               aria-hidden={!showSessionSidebar}
-              className="h-full min-h-0 shrink-0"
-              style={{ width: sessionInspectorContentWidth, contain: 'inline-size' }}
+              className="h-full min-h-0 w-full"
+              style={{ contain: 'inline-size' }}
             >
                 <SessionWorkSidebar
                   evidence={feedEvidence}
