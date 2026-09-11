@@ -117,7 +117,8 @@ import {
 import {
   restoreWidthAfterFullscreenSnap,
   SESSION_PANE_MIN_WIDTH,
-  shouldCloseSessionInspector,
+  SESSION_PANE_SNAP_TOLERANCE,
+  shouldCollapseSessionPane,
   shouldFullscreenSessionInspector,
   shouldRememberSessionInspectorWidth,
 } from './sessionPaneResize'
@@ -1718,7 +1719,12 @@ export function ComposerPrototype() {
   const [showSessionSidebar, setShowSessionSidebar] = useState(true)
   const [sessionSidebarFullscreen, setSessionSidebarFullscreen] = useState(false)
   const sessionRosterPanel = usePanelRef()
+  const sessionRosterElement = useRef<HTMLDivElement>(null)
   const sessionRosterRestoreSize = useRef(280)
+  const sessionRosterCollapsePending = useRef(false)
+  const sessionRosterResizeAnimation = useRef(false)
+  const rosterAnimationTimer = useRef<number | null>(null)
+  const [sessionRosterContentWidth, setSessionRosterContentWidth] = useState(280)
   const sessionConversationPanel = usePanelRef()
   const sessionInspectorPanel = usePanelRef()
   const sessionSidebarVisibleState = useRef(true)
@@ -1760,6 +1766,8 @@ export function ComposerPrototype() {
     () => () => {
       if (sidebarAnimationTimer.current !== null)
         window.clearTimeout(sidebarAnimationTimer.current)
+      if (rosterAnimationTimer.current !== null)
+        window.clearTimeout(rosterAnimationTimer.current)
     },
     [],
   )
@@ -1770,15 +1778,32 @@ export function ComposerPrototype() {
     if (sidebarAnimationTimer.current !== null)
       window.clearTimeout(sidebarAnimationTimer.current)
     sessionInspectorResizeAnimation.current = true
-    if (!reduceMotion) panelElement?.classList.add('session-inspector-transition')
+    if (!reduceMotion) panelElement?.classList.add('session-pane-transition')
     resize()
     if (!reduceMotion) {
       sidebarAnimationTimer.current = window.setTimeout(() => {
-        panelElement?.classList.remove('session-inspector-transition')
+        panelElement?.classList.remove('session-pane-transition')
         sessionInspectorResizeAnimation.current = false
         sidebarAnimationTimer.current = null
       }, 240)
     } else sessionInspectorResizeAnimation.current = false
+  }
+
+  const animateSessionRoster = (resize: () => void) => {
+    const panelElement = sessionRosterElement.current
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (rosterAnimationTimer.current !== null)
+      window.clearTimeout(rosterAnimationTimer.current)
+    sessionRosterResizeAnimation.current = true
+    if (!reduceMotion) panelElement?.classList.add('session-pane-transition')
+    resize()
+    if (!reduceMotion) {
+      rosterAnimationTimer.current = window.setTimeout(() => {
+        panelElement?.classList.remove('session-pane-transition')
+        sessionRosterResizeAnimation.current = false
+        rosterAnimationTimer.current = null
+      }, 240)
+    } else sessionRosterResizeAnimation.current = false
   }
 
   const setSessionSidebarVisible = (visible: boolean) => {
@@ -1796,12 +1821,37 @@ export function ComposerPrototype() {
   }
 
   const setSessionRosterVisible = (visible: boolean) => {
-    if (visible) sessionRosterPanel.current?.resize(sessionRosterRestoreSize.current)
-    else {
-      sessionRosterRestoreSize.current = sessionRosterPanel.current?.getSize().inPixels ?? sessionRosterRestoreSize.current
-      sessionRosterPanel.current?.collapse()
-    }
+    animateSessionRoster(() => {
+      if (visible) {
+        setSessionRosterContentWidth(sessionRosterRestoreSize.current)
+        sessionRosterPanel.current?.resize(sessionRosterRestoreSize.current)
+      } else sessionRosterPanel.current?.collapse()
+    })
     setShowSessionRoster(visible)
+  }
+
+  const handleSessionRosterResize = (rosterWidth: number, previousRosterWidth: number) => {
+    if (!showSessionRoster) return
+    if (shouldCollapseSessionPane(rosterWidth, previousRosterWidth)) {
+      sessionRosterCollapsePending.current = true
+      setShowSessionRoster(false)
+      return
+    }
+    if (rosterWidth > 0 && !sessionRosterResizeAnimation.current)
+      setSessionRosterContentWidth(rosterWidth)
+  }
+
+  const rememberCompletedSessionRosterSplit = (isUserInteraction: boolean) => {
+    if (sessionRosterCollapsePending.current) {
+      sessionRosterCollapsePending.current = false
+      animateSessionRoster(() => sessionRosterPanel.current?.collapse())
+      return
+    }
+    if (!showSessionRoster || !isUserInteraction) return
+    const rosterWidth = sessionRosterPanel.current?.getSize().inPixels ?? 0
+    if (rosterWidth <= SESSION_PANE_MIN_WIDTH + SESSION_PANE_SNAP_TOLERANCE) return
+    sessionRosterRestoreSize.current = rosterWidth
+    setSessionRosterContentWidth(rosterWidth)
   }
 
   const toggleSessionSidebarFullscreen = () => {
@@ -1828,7 +1878,7 @@ export function ComposerPrototype() {
 
   const handleSessionSidebarResize = (sidebarWidth: number, previousSidebarWidth: number) => {
     if (sessionSidebarFullscreenState.current || !sessionSidebarVisibleState.current) return
-    if (shouldCloseSessionInspector(sidebarWidth, previousSidebarWidth)) {
+    if (shouldCollapseSessionPane(sidebarWidth, previousSidebarWidth)) {
       sessionInspectorCollapsePending.current = true
       sessionSidebarVisibleState.current = false
       sessionSidebarFullscreenState.current = false
@@ -1927,25 +1977,36 @@ export function ComposerPrototype() {
         <ResizablePanelGroup
           orientation="horizontal"
           className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-xl border-t border-l border-border/70 bg-background"
+          onLayoutChanged={(_layout, metadata) =>
+            rememberCompletedSessionRosterSplit(metadata.isUserInteraction)
+          }
         >
         <ResizablePanel
           id="session-roster"
           panelRef={sessionRosterPanel}
+          elementRef={sessionRosterElement}
           collapsible
           collapsedSize={0}
           defaultSize={280}
-          minSize={224}
+          minSize={SESSION_PANE_MIN_WIDTH}
           maxSize={400}
           groupResizeBehavior="preserve-pixel-size"
-          onResize={(size) => {
-            if (size.inPixels > 0) sessionRosterRestoreSize.current = size.inPixels
+          onResize={(size, _id, previousSize) => {
+            if (previousSize?.inPixels !== undefined && previousSize.inPixels > 0)
+              handleSessionRosterResize(size.inPixels, previousSize.inPixels)
           }}
-          className="h-full min-h-0 overflow-hidden"
+          className={`h-full min-h-0 overflow-hidden motion-safe:transition-opacity motion-safe:duration-200 ${showSessionRoster ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         >
-          <PrototypeSessionRoster
-            currentProject={currentProject}
-            onCollapse={() => setSessionRosterVisible(false)}
-          />
+          <div
+            aria-hidden={!showSessionRoster}
+            className="h-full min-h-0 shrink-0"
+            style={{ width: sessionRosterContentWidth }}
+          >
+            <PrototypeSessionRoster
+              currentProject={currentProject}
+              onCollapse={() => setSessionRosterVisible(false)}
+            />
+          </div>
         </ResizablePanel>
         <ResizableHandle
           disabled={!showSessionRoster}
@@ -1989,7 +2050,7 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(3) { z-index: 8; }
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
-        .session-inspector-transition {
+        .session-pane-transition {
           transition: flex-basis 220ms cubic-bezier(.2,.8,.2,1), flex-grow 220ms cubic-bezier(.2,.8,.2,1);
         }
           `}</style>
