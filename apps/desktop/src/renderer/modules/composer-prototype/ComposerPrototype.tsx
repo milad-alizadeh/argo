@@ -63,6 +63,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
+import { Badge } from '@/renderer/components/ui/badge'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -222,31 +223,125 @@ type ComposerSuggestion = {
   label: string
   value: string
   detail: string
-  kind: 'skill' | 'command' | 'file' | 'folder'
+  kind: 'skill' | 'plugin' | 'command' | 'file' | 'folder'
   frequent?: boolean
 }
 
+type ComposerChipKind = 'filepath' | 'plugin' | 'skill'
+
+type ComposerChip = {
+  kind: ComposerChipKind
+  label: string
+  text: string
+}
+
+type ComposerChipMatch = ComposerChip & { start: number; end: number }
+
+const COMPOSER_CHIPS: ComposerChip[] = [
+  { kind: 'skill', label: 'Grill Me', text: '/grill-me' },
+  { kind: 'skill', label: 'Implement', text: '/implement' },
+  { kind: 'skill', label: 'Prototype', text: '/prototype' },
+  { kind: 'plugin', label: 'GitHub', text: '@github' },
+  {
+    kind: 'filepath',
+    label: 'ComposerPrototype.tsx',
+    text: 'apps/desktop/src/renderer/modules/composer-prototype/ComposerPrototype.tsx',
+  },
+]
+
+const COMPOSER_CHIP_BY_TEXT = new Map(COMPOSER_CHIPS.map((chip) => [chip.text, chip]))
+
+function composerChip(text: string): ComposerChip {
+  const chip = COMPOSER_CHIP_BY_TEXT.get(text)
+  if (!chip) throw new Error(`No composer chip exists for ${text}`)
+  return chip
+}
+
+function composerSuggestion(text: string, detail: string, frequent = false): ComposerSuggestion {
+  const chip = composerChip(text)
+  return {
+    label: chip.label,
+    value: chip.text,
+    detail,
+    kind: chip.kind === 'filepath' ? 'file' : chip.kind,
+    frequent,
+  }
+}
+
 const SLASH_SUGGESTIONS: ComposerSuggestion[] = [
-  { label: 'Grill Me', value: '/grill-me', detail: 'Pressure-test the brief before building', kind: 'skill', frequent: true },
-  { label: 'Implement', value: '/implement', detail: 'Build an approved ticket', kind: 'skill', frequent: true },
+  composerSuggestion('/grill-me', 'Pressure-test the brief before building', true),
+  composerSuggestion('/implement', 'Build an approved ticket', true),
   { label: 'Fast', value: '/fast', detail: 'Prefer speed and lighter reasoning', kind: 'command', frequent: true },
-  { label: 'Prototype', value: '/prototype', detail: 'Explore a throwaway interface direction', kind: 'skill' },
+  composerSuggestion('/prototype', 'Explore a throwaway interface direction'),
   { label: 'Compact', value: '/compact', detail: 'Compress the current task context', kind: 'command' },
 ]
 
 const MENTION_SUGGESTIONS: ComposerSuggestion[] = [
-  { label: 'ComposerPrototype.tsx', value: '@ComposerPrototype.tsx', detail: 'Recently edited file', kind: 'file', frequent: true },
-  { label: 'apps/desktop', value: '@apps/desktop', detail: 'Current project folder', kind: 'folder', frequent: true },
-  { label: '$frontend-design', value: '@$frontend-design', detail: 'Frequently used skill', kind: 'skill', frequent: true },
-  { label: 'AGENTS.md', value: '@AGENTS.md', detail: 'Repository instructions', kind: 'file' },
+  composerSuggestion('@github', 'Connected plugin', true),
+  composerSuggestion('apps/desktop/src/renderer/modules/composer-prototype/ComposerPrototype.tsx', 'Recently edited file', true),
+  { label: 'apps/desktop', value: 'apps/desktop', detail: 'Current project folder', kind: 'folder', frequent: true },
+  { label: 'AGENTS.md', value: 'AGENTS.md', detail: 'Repository instructions', kind: 'file' },
 ]
 
-function composerSuggestions(draft: string) {
+const IMPLEMENT_CHIP = composerChip('/implement')
+const PROTOTYPE_CHIP = composerChip('/prototype')
+const GITHUB_CHIP = composerChip('@github')
+const COMPOSER_PROTOTYPE_CHIP = composerChip('apps/desktop/src/renderer/modules/composer-prototype/ComposerPrototype.tsx')
+const CHIP_DRAFT = `${IMPLEMENT_CHIP.text} composer chips with ${GITHUB_CHIP.text} and ${COMPOSER_PROTOTYPE_CHIP.text}`
+const RESTORED_CHIP_DRAFT = `${PROTOTYPE_CHIP.text} the restored draft with ${GITHUB_CHIP.text} and ${COMPOSER_PROTOTYPE_CHIP.text}`
+
+function hasTokenBoundaries(draft: string, start: number, end: number) {
+  return (start === 0 || /\s/.test(draft[start - 1] ?? '')) && (end === draft.length || /\s/.test(draft[end] ?? ''))
+}
+
+function recognizedComposerChips(draft: string, availableChips: ComposerChip[]): ComposerChipMatch[] {
+  return availableChips.flatMap((chip) => {
+    const matches: ComposerChipMatch[] = []
+    let start = draft.indexOf(chip.text)
+    while (start >= 0) {
+      const end = start + chip.text.length
+      const isCommand = chip.text.startsWith('/')
+      const isRecognized =
+        hasTokenBoundaries(draft, start, end) && (!isCommand || start === 0)
+      if (isRecognized) matches.push({ ...chip, start, end })
+      start = draft.indexOf(chip.text, end)
+    }
+    return matches
+  }).sort((left, right) => left.start - right.start)
+}
+
+function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availableChips: ComposerChip[] }) {
+  const chips = recognizedComposerChips(draft, availableChips)
+  let cursor = 0
+
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words text-foreground type-prose">
+      {chips.flatMap((chip) => {
+        const text = draft.slice(cursor, chip.start)
+        cursor = chip.end
+        return [
+          <span key={`text-${chip.start}`}>{text}</span>,
+          <Badge key={`chip-${chip.start}`} variant="outline" className="mx-0.5 align-text-bottom text-foreground type-label">
+            {chip.label}
+          </Badge>,
+        ]
+      })}
+      <span>{draft.slice(cursor)}</span>
+    </div>
+  )
+}
+
+function composerSuggestions(draft: string, availableChips: ComposerChip[]) {
   const match = draft.match(/(^|\s)([/@])([^\s]*)$/)
   if (!match) return []
+  if (match[2] === '/' && match.index !== 0) return []
   const query = (match[3] ?? '').toLowerCase()
   const source = match[2] === '/' ? SLASH_SUGGESTIONS : MENTION_SUGGESTIONS
-  return source.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query))
+  return source.filter((item) => {
+    const chip = COMPOSER_CHIP_BY_TEXT.get(item.value)
+    const isAvailable = !chip || availableChips.includes(chip)
+    return isAvailable && `${item.label} ${item.detail}`.toLowerCase().includes(query)
+  })
 }
 
 function insertComposerSuggestion(draft: string, suggestion: ComposerSuggestion) {
@@ -1051,10 +1146,6 @@ function AddContextMenu({ state, setState }: StateProps) {
             <Folder />Folder reference
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => add('/prototype')}>
-          <Command />Command
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -1236,11 +1327,20 @@ function imageSource(reference: string) {
   return reference === 'workspace.jpg' ? '/prototype-assets/workspace.jpg' : `/${reference}`
 }
 
+const DEFAULT_ATTACHMENTS = ['workspace.jpg', 'notes.md']
+const ATTACHMENT_STRESS_REFERENCES = ['queue.ts', 'context.tsx', 'permissions.ts', 'models.json', 'layout.css', 'tokens.ts', 'README.md']
+
 function initialAttachments() {
   if (new URLSearchParams(window.location.search).get('test') !== 'attachments-10') {
-    return ['workspace.jpg', 'ComposerPrototype.tsx']
+    return DEFAULT_ATTACHMENTS
   }
-  return ['workspace.jpg', 'ComposerPrototype.tsx', 'queue.ts', 'context.tsx', 'permissions.ts', 'models.json', 'notes.md', 'layout.css', 'tokens.ts', 'README.md']
+  return [...DEFAULT_ATTACHMENTS, ...ATTACHMENT_STRESS_REFERENCES]
+}
+
+function initialDraft() {
+  return new URLSearchParams(window.location.search).get('chip-state') === 'restored'
+    ? RESTORED_CHIP_DRAFT
+    : CHIP_DRAFT
 }
 
 function ReferenceStrip({ state, setState }: StateProps) {
@@ -1303,8 +1403,16 @@ function ReferenceStrip({ state, setState }: StateProps) {
   )
 }
 
-function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (value: string) => void }) {
-  const suggestions = composerSuggestions(draft)
+function ComposerAutocomplete({
+  draft,
+  availableChips,
+  onSelect,
+}: {
+  draft: string
+  availableChips: ComposerChip[]
+  onSelect: (value: string) => void
+}) {
+  const suggestions = composerSuggestions(draft, availableChips)
   if (suggestions.length === 0) return null
   const isCommand = draft.match(/(^|\s)\/[^\s]*$/)
   return (
@@ -1953,7 +2061,8 @@ export function ComposerPrototype() {
   const [messages, setMessages] = useState<MessageRow[]>([])
   const [feedEvidence, setFeedEvidence] = useState<FeedPrototypeEvidence | null>(null)
   const [activeFeedEvidenceId, setActiveFeedEvidenceId] = useState<string | null>(null)
-  const [draft, setDraft] = useState('')
+  const [draft, setDraft] = useState(initialDraft)
+  const [availableComposerChips, setAvailableComposerChips] = useState(COMPOSER_CHIPS)
   const [isListening, setIsListening] = useState(false)
   const [keyboardFocus, setKeyboardFocus] = useState(false)
   const [queuedMessages, setQueuedMessages] = useState<QueuedMessage[]>([
@@ -2187,30 +2296,51 @@ export function ComposerPrototype() {
                   send()
                 }}
               >
-          <ComposerAutocomplete draft={draft} onSelect={setDraft} />
+          <ComposerAutocomplete draft={draft} availableChips={availableComposerChips} onSelect={setDraft} />
           <InputGroup className={`relative z-20 overflow-hidden rounded-xl !bg-card shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : '[&:has(textarea:focus-visible)]:!border-input [&:has(textarea:focus-visible)]:!ring-0'}`}>
             <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
             <ReferenceStrip state={state} setState={setState} />
-            <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">
-              <InputGroupTextarea
-                aria-label="Message"
-                placeholder="Direct the next move…"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                className="!min-h-0 flex-1 !px-0 !py-0 text-left type-prose"
-                onKeyDown={(event) => {
-                  const suggestions = composerSuggestions(draft)
-                  if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
-                    event.preventDefault()
-                    setDraft(insertComposerSuggestion(draft, suggestions[0]))
-                    return
-                  }
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault()
-                    send()
-                  }
-                }}
-              />
+            <div className="relative flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">
+              <div className="relative min-w-0 flex-1">
+                <ComposerDraftOverlay draft={draft} availableChips={availableComposerChips} />
+                <InputGroupTextarea
+                  aria-label="Message"
+                  placeholder="Direct the next move…"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  className="relative z-10 !min-h-0 !px-0 !py-0 text-left text-transparent caret-foreground type-prose"
+                  onKeyDown={(event) => {
+                    const suggestions = composerSuggestions(draft, availableComposerChips)
+                    if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
+                      event.preventDefault()
+                      setDraft(insertComposerSuggestion(draft, suggestions[0]))
+                      return
+                    }
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault()
+                      send()
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 border-t px-4 py-2 type-meta text-muted-foreground">
+              <span>Chips are ordinary draft text.</span>
+              <Button type="button" variant="ghost" size="sm" className="ml-auto h-6 px-2 type-meta" onClick={() => setDraft(RESTORED_CHIP_DRAFT)}>
+                Restore draft
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 type-meta"
+                onClick={() => setAvailableComposerChips((chips) => chips.filter((chip) => chip.text !== GITHUB_CHIP.text))}
+              >
+                Remove plugin
+              </Button>
+              <Button type="button" variant="ghost" size="sm" className="h-6 px-2 type-meta" onClick={() => setDraft('')}>
+                Clear text
+              </Button>
             </div>
             <InputGroupAddon align="block-end" className="gap-1 bg-card px-2 py-2 @[36rem]:gap-2 @[36rem]:px-4">
               <AddContextMenu state={state} setState={setState} />
