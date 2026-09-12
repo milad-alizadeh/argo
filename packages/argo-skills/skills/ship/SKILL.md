@@ -76,7 +76,7 @@ Nothing here is a reason to stop.
   fails to build. For UI work, look at the affected states; unit tests do not show you a screen.
 - **Screens.** If the diff changes how a screen looks, the PR body names every changed state and
   says where the reviewer sees each one: a hosted component story, or the project's render
-  command. `pixel-review` hands you exactly that list. An agent publishes no PNG; the project's
+  command. `interface-review` hands you the coverage, findings, and any unavailable checks. An agent publishes no PNG; the project's
   screenshot method is what it records, and where it records none, say so once and move on.
 - **Leftovers.** `git grep` the changed files for `.only`, debug prints, commented-out code and
   a TODO with no ticket number. The changed files carry none of them by the time you push.
