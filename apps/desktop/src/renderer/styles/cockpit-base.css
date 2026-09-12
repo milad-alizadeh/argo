@@ -1,0 +1,29 @@
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* The one root ring (#1785). A shadcn component sets `outline-none` and draws its own from the
+     same `--ring`, and a utility layer beats this base rule, so the two never stack. Everything
+     shadcn does not draw lands here rather than showing no keyboard cursor at all. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* A frameless window is dragged by the page, and the appearance control inside the band is not
+     part of the handle. `titleBarStyle: 'hiddenInset'` in src/main.ts is the other half. */
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  .no-drag-region {
+    -webkit-app-region: no-drag;
+  }
+}

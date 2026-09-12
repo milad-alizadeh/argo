@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -21,14 +22,16 @@ type SessionsScreenViewProps = {
   feedFailure: string | null
   onSelect: (sessionId: SessionId) => void
   onReread: () => void
+  projectHeader?: ReactNode
 }
 
 // The Roster's width in pixels, from the approved layout (`roster-row-signals-prototype.html` ·
 // ArgoLayout `sidebar-w`). A drag moves it between the two bounds. The pane keeps its pixel width
 // when the window changes size, so a wider window widens the Feed and not the list of Sessions.
 const ROSTER = { defaultSize: 320, minSize: 240, maxSize: 480 }
-// The approved Session inspector begins at its readable width and may grow beside the Feed.
-const INSPECTOR = { defaultSize: 248, minSize: 240, maxSize: '100%' }
+// The inspector's width, from the same layout. Its chips are one line each, so it can go narrower
+// than the Roster before a label stops saying anything.
+const RAIL = { defaultSize: 220, minSize: 160, maxSize: 360 }
 // Narrower than this and a Feed row is a column of single words.
 const FEED_MIN = 320
 
@@ -40,8 +43,13 @@ export function SessionsScreenView({
   feedFailure,
   onSelect,
   onReread,
+  projectHeader,
 }: SessionsScreenViewProps) {
   const selected = sessions.find((session) => session.id === selectedSessionId) ?? null
+  // The rail is for the work running under the selected Session, so a Session running none of it
+  // gives its whole deck body to the Feed rather than keeping an empty column beside it.
+  const working =
+    selected !== null && (selected.delegations.length > 0 || selected.shell.length > 0)
   const composerAvailability = deriveComposerAvailability(selected)
 
   return (
@@ -54,47 +62,42 @@ export function SessionsScreenView({
     <main className="h-full min-h-0 bg-background">
       <ResizablePanelGroup id="sessions" orientation="horizontal">
         <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="roster" {...ROSTER}>
-          <SessionRoster
-            failure={failure}
-            onReread={onReread}
-            onSelect={onSelect}
-            selectedSessionId={selectedSessionId}
-            sessions={sessions}
-          />
+          <div className="flex h-full min-h-0 flex-col">
+            {projectHeader}
+            <SessionRoster
+              failure={failure}
+              onReread={onReread}
+              onSelect={onSelect}
+              selectedSessionId={selectedSessionId}
+              sessions={sessions}
+            />
+          </div>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel id="deck" minSize={INSPECTOR.minSize + FEED_MIN}>
-          <ResizablePanelGroup id="session-workspace" orientation="horizontal">
-            <ResizablePanel id="feed" minSize={FEED_MIN}>
-              <div className="flex h-full min-h-0 flex-col bg-background">
-                <SessionDeckHead session={selected} />
-                <div className="min-h-0 flex-1">
-                  <SessionFeed
-                    failure={feedFailure}
-                    feed={feed}
-                    sessionId={selectedSessionId}
-                    selected={selectedSessionId !== null}
-                  />
-                </div>
-                {composerAvailability === null ? null : (
-                  <ComposerUnavailable availability={composerAvailability} />
-                )}
-              </div>
-            </ResizablePanel>
-            <ResizableHandle />
-            <ResizablePanel
-              groupResizeBehavior="preserve-pixel-size"
-              id="session-inspector"
-              {...INSPECTOR}
-            >
-              {selected === null ? (
-                <aside className="h-full bg-sidebar" />
-              ) : (
-                <AgentsRail session={selected} />
-              )}
-            </ResizablePanel>
-          </ResizablePanelGroup>
+        <ResizablePanel id="deck" minSize={FEED_MIN}>
+          <div className="flex h-full min-h-0 flex-col">
+            <SessionDeckHead session={selected} />
+            <div className="min-h-0 flex-1">
+              <SessionFeed
+                failure={feedFailure}
+                feed={feed}
+                sessionId={selectedSessionId}
+                selected={selectedSessionId !== null}
+              />
+            </div>
+            {composerAvailability === null ? null : (
+              <ComposerUnavailable availability={composerAvailability} />
+            )}
+          </div>
         </ResizablePanel>
+        {working ? (
+          <>
+            <ResizableHandle />
+            <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="inspector" {...RAIL}>
+              <AgentsRail session={selected} />
+            </ResizablePanel>
+          </>
+        ) : null}
       </ResizablePanelGroup>
     </main>
   )
