@@ -167,7 +167,10 @@ goes there.
 
 **A component is reviewed in Storybook, and a screen is reviewed by running a render command.**
 Vercel owns Storybook preview deployments. Its project configuration and credentials stay outside
-this repository. The local commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
+this repository. When a preview finishes, `storybook-links.yml` writes every story that renders a
+file the PR changed, linked to that commit's preview, between the `storybook-links` markers in the
+PR body (#1953): that section is CI's, and the rest of the body is the author's. The local
+commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
 
 **Every capture is disposable**: a temp dir, looked at, deleted. No gate takes a screenshot and no
 ref holds one, because a PNG in a git object carries no version.
