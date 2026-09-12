@@ -7,9 +7,12 @@ import { CockpitShell } from './CockpitShell'
 const meta: Meta<typeof CockpitShell> = {
   title: 'Cockpit/Shell',
   component: CockpitShell,
+  parameters: {
+    layout: 'fullscreen',
+  },
   decorators: [
     (Story) => (
-      <div className="h-[560px] w-[960px]">
+      <div className="h-dvh w-full">
         <Story />
       </div>
     ),
@@ -25,8 +28,11 @@ const args = {
   children: <main aria-label="Cockpit content" />,
 }
 
-export const SidebarControls: Story = {
+export const SidebarControls: Story = { args }
+
+export const ShellInteractions: Story = {
   args,
+  tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const sidebar = canvas.getByLabelText('Cockpit sidebar')
@@ -58,7 +64,19 @@ export const SidebarControls: Story = {
     await expect(sidebar.getBoundingClientRect().width).toBe(0)
     await expect(canvas.getByLabelText('Main navigation')).toBeInTheDocument()
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Open cockpit sidebar' }))
-    await expect(sidebar.getBoundingClientRect().width).toBeGreaterThan(0)
+    await userEvent.click(canvas.getByRole('button', { name: 'Open Sessions sidebar' }))
+    await expect(sidebar.getBoundingClientRect().width).toBe(initialSidebarWidth)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
+    await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute('aria-current', 'page')
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Atlas' }))
+    await expect(canvas.getByRole('button', { name: 'Atlas' })).toHaveAttribute('aria-current', 'page')
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Files' }))
+    await expect(canvas.getByRole('button', { name: 'Atlas' })).toHaveAttribute('aria-current', 'page')
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Sessions' }))
+    await expect(canvas.getByRole('button', { name: 'Sessions' })).toHaveAttribute('aria-current', 'page')
   },
 }

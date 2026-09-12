@@ -35,6 +35,9 @@
   --size-traffic-light: 12px;
   --inset-traffic-light-control: 18px;
   --size-navigation-rail: 88px;
+  --size-session-inspector: 248px;
+  --size-session-inspector-min: 240px;
+  --size-session-workspace-min: 360px;
   --size-sidebar: 240px;
   --size-deck: 640px;
   --inset-traffic-lights: 84px;

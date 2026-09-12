@@ -35,11 +35,21 @@ export function CockpitShell({ rail, sidebar, children }: CockpitShellProps) {
   }
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden bg-background">
+    <div className="relative flex h-full min-h-0 overflow-hidden bg-background">
       <aside className="w-(--size-navigation-rail) shrink-0 border-r border-border/60">
         {rail ?? <CockpitNavigationRail />}
       </aside>
-      <ResizablePanelGroup orientation="horizontal" className="min-w-0 flex-1">
+      <ResizablePanelGroup orientation="horizontal" className="relative min-w-0 flex-1">
+        <div className="absolute top-0 left-3 z-10 flex h-(--size-chrome-bar) items-center">
+          <Button
+            aria-label={isSidebarCollapsed ? 'Open Sessions sidebar' : 'Collapse Sessions sidebar'}
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+          >
+            <PanelLeftIcon />
+          </Button>
+        </div>
         <ResizablePanel
           id="cockpit-sidebar"
           collapsible
@@ -52,21 +62,9 @@ export function CockpitShell({ rail, sidebar, children }: CockpitShellProps) {
         >
           <aside className="h-full overflow-hidden bg-sidebar">{sidebar}</aside>
         </ResizablePanel>
-        <ResizableHandle className="bg-border/60" />
+        <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
         <ResizablePanel id="cockpit-content" minSize={360}>
           <div className="relative h-full min-w-0 overflow-hidden bg-background">
-            {isSidebarCollapsed ? (
-              <div className="absolute top-3 left-3 z-10">
-              <Button
-                aria-label="Open cockpit sidebar"
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-              >
-                <PanelLeftIcon />
-              </Button>
-              </div>
-            ) : null}
             {children}
           </div>
         </ResizablePanel>

@@ -5,7 +5,7 @@ import { AtlasSidebar } from '../../atlas/components/AtlasSidebar'
 import { AtlasPage } from '../../atlas/pages/AtlasPage'
 import { SessionsSidebar } from '../../sessions/components/SessionsSidebar'
 import { SessionsPage } from '../../sessions/pages/SessionsPage'
-import { SessionRoute } from '../../sessions/screens/SessionRoute'
+import { SessionScreenView } from '../../sessions/screens/SessionScreenView'
 import { TicketsSidebar } from '../../tickets/components/TicketsSidebar'
 import { TicketsPage } from '../../tickets/pages/TicketsPage'
 import { CockpitShell } from '../components/CockpitShell'
@@ -48,7 +48,7 @@ export const cockpitRouter = createHashRouter([
         element: <SessionsPage />,
         children: [
           { index: true, element: null },
-          { path: ':sessionId', element: <SessionRoute /> },
+          { path: ':sessionId', element: <SessionScreenView /> },
         ],
       },
       {
