@@ -13,6 +13,12 @@
       "skillPath": "packages/argo-skills/skills/audit-agent-docs/SKILL.md",
       "computedHash": "2b196ab4abb01151e3132b9736ab50adf717e00f4dd34cb6e994afd9823560af"
     },
+    "brandkit": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/brandkit/SKILL.md",
+      "computedHash": "b63012f3c3d21197e0185d3e9cc7ec40c589fb10e0b5a32a561739de31aa3f20"
+    },
     "claude-handoff": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -192,6 +198,18 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/triage/SKILL.md",
       "computedHash": "b954d74c219c805bf353d6642251a713c9b2e9cfdb11babfe588bcfe7dfd16d5"
+    },
+    "visual-exploration": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/visual-exploration/SKILL.md",
+      "computedHash": "b1f4f60b60ec2c3b114841b4e6264cebc41b45d96d350bbf28b6b757892c3b24"
+    },
+    "visual-foundation": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/visual-foundation/SKILL.md",
+      "computedHash": "3a2c45f38f4aaba3cbb5737d704c6a0777e45a1bedab37f537adaeea075ac7e6"
     },
     "wait-what": {
       "source": "mattpocock/skills",
