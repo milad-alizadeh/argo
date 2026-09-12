@@ -63,7 +63,6 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
-import { Badge } from '@/renderer/components/ui/badge'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -113,6 +112,7 @@ import {
   ResizablePanelGroup,
 } from '@/renderer/components/ui/resizable'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
+import { ComposerChip, type ComposerChipDefinition } from './ComposerChip'
 import { FeedPermission } from './feed/FeedAttention'
 import {
   FeedEvidencePrototype,
@@ -227,17 +227,9 @@ type ComposerSuggestion = {
   frequent?: boolean
 }
 
-type ComposerChipKind = 'filepath' | 'plugin' | 'skill'
+type ComposerChipMatch = ComposerChipDefinition & { start: number; end: number }
 
-type ComposerChip = {
-  kind: ComposerChipKind
-  label: string
-  text: string
-}
-
-type ComposerChipMatch = ComposerChip & { start: number; end: number }
-
-const COMPOSER_CHIPS: ComposerChip[] = [
+const COMPOSER_CHIPS: ComposerChipDefinition[] = [
   { kind: 'skill', label: 'Grill Me', text: '/grill-me' },
   { kind: 'skill', label: 'Implement', text: '/implement' },
   { kind: 'skill', label: 'Prototype', text: '/prototype' },
@@ -251,7 +243,7 @@ const COMPOSER_CHIPS: ComposerChip[] = [
 
 const COMPOSER_CHIP_BY_TEXT = new Map(COMPOSER_CHIPS.map((chip) => [chip.text, chip]))
 
-function composerChip(text: string): ComposerChip {
+function composerChip(text: string): ComposerChipDefinition {
   const chip = COMPOSER_CHIP_BY_TEXT.get(text)
   if (!chip) throw new Error(`No composer chip exists for ${text}`)
   return chip
@@ -294,7 +286,7 @@ function hasTokenBoundaries(draft: string, start: number, end: number) {
   return (start === 0 || /\s/.test(draft[start - 1] ?? '')) && (end === draft.length || /\s/.test(draft[end] ?? ''))
 }
 
-function recognizedComposerChips(draft: string, availableChips: ComposerChip[]): ComposerChipMatch[] {
+function recognizedComposerChips(draft: string, availableChips: ComposerChipDefinition[]): ComposerChipMatch[] {
   return availableChips.flatMap((chip) => {
     const matches: ComposerChipMatch[] = []
     let start = draft.indexOf(chip.text)
@@ -310,7 +302,7 @@ function recognizedComposerChips(draft: string, availableChips: ComposerChip[]):
   }).sort((left, right) => left.start - right.start)
 }
 
-function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availableChips: ComposerChip[] }) {
+function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availableChips: ComposerChipDefinition[] }) {
   const chips = recognizedComposerChips(draft, availableChips)
   let cursor = 0
 
@@ -321,9 +313,7 @@ function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availa
         cursor = chip.end
         return [
           <span key={`text-${chip.start}`}>{text}</span>,
-          <Badge key={`chip-${chip.start}`} variant="outline" className="mx-0.5 align-text-bottom text-foreground type-label">
-            {chip.label}
-          </Badge>,
+          <ComposerChip key={`chip-${chip.start}`} chip={chip} />,
         ]
       })}
       <span>{draft.slice(cursor)}</span>
@@ -331,7 +321,7 @@ function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availa
   )
 }
 
-function composerSuggestions(draft: string, availableChips: ComposerChip[]) {
+function composerSuggestions(draft: string, availableChips: ComposerChipDefinition[]) {
   const match = draft.match(/(^|\s)([/@])([^\s]*)$/)
   if (!match) return []
   if (match[2] === '/' && match.index !== 0) return []
@@ -1409,7 +1399,7 @@ function ComposerAutocomplete({
   onSelect,
 }: {
   draft: string
-  availableChips: ComposerChip[]
+  availableChips: ComposerChipDefinition[]
   onSelect: (value: string) => void
 }) {
   const suggestions = composerSuggestions(draft, availableChips)
