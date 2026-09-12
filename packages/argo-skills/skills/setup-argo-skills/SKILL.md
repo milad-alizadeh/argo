@@ -195,9 +195,8 @@ recommendation, then ask one grouped multi-select question with the recommendati
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Design infra and the token values | `setup-design-infra` | project has UI | 2 |
-| Always-on task tracking | this skill, below | always | 3 |
-| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
+| Always-on task tracking | this skill, below | always | 2 |
+| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 3 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -207,7 +206,7 @@ Done when the user has answered the one question.
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
 
-Five sections are not skills. Each is a file in `templates/`, appended to the project doc that
+The following sections are templates, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
 any section of the same heading in place.
 
@@ -232,8 +231,19 @@ than invent one; where no tracker is detected, skip the section.
 
 Done when the installed Labels section has zero hits for `{{`.
 
+### Connect interface review
+
+When the project has UI and `interface-review` is installed, read `templates/ui-workflow.md`.
+Install its `UI work` section in `docs/agents/code-review.md`, replacing that section on repeat runs.
+Preserve the document's other sections. Create the document if it is absent.
+Add a pointer in `AGENTS.md` to read that section for UI work.
+Update `CLAUDE.md` only when it carries independent instructions rather than importing `AGENTS.md`.
+
+Keep the installed review and implementation skills unchanged.
+Done when UI work reaches the third review axis and non-UI work retains the existing route.
+
 ## Phase 4: report
 
 Skills installed or updated (lock delta), infra installed per piece, anything deferred with
-the reason, and how to re-run any single piece (`/setup-<piece>`). If design infra was
-installed, the next step is `/prototype` on the first screen.
+the reason, and how to re-run each selected skill by its actual name.
+For UI work, point to the installed section in `docs/agents/code-review.md`.

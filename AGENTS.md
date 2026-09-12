@@ -150,17 +150,15 @@ that trap turns on, and the add/sweep workflow are `packages/argo-skills/README.
 
 ## Design work
 
-**A design is a ticket and a throwaway branch, and neither outlives the screen.** The
-measurements, the frozen component names and the state renders are the body of the **design
-ticket**; its explorable page is the only content of `design/#<N>-<screen>`, a branch named for
-that ticket and reaped by `bun run worktrees:gc` once it closes. **Nothing lands on `main`**, so
-there is no third copy to drift from the other two, and a ticket whose branch is gone is still
-the whole spec.
+For UI work, read `docs/agents/code-review.md` for the third review axis, `interface-review`.
+The implementation ticket records selected decisions and their reasons.
 
-A UI ticket whose screen has a design ticket is built with `design-to-code`.
+Existing design tickets remain optional specification inputs.
+Their `design/#<N>-<screen>` branches remain readable until cleanup removes them after ticket closure.
+New UI work needs no separate design ticket or permanent design page.
 
 `docs/design-stack.md` is the stack: the token contract, the `docs/design/` kit, where components
-live, and the render commands. Every design skill reads it rather than guessing a framework.
+live, and the render commands. Interface review reads it rather than guessing the stack.
 
 **`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
 goes there.
@@ -202,8 +200,8 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
   A new variant of an existing kind is one new file plus one registration line.
 - **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`; a helper is born
   beside its only caller and hoists on the third.
-- **Tokens by name.** Every colour, spacing, radius, duration and type size is a named token
-  from the design package, never an inline literal or hex.
+- **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
+  Resolve experimental values into those tokens before review.
 - **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
   Delete dead code on sight.
 
