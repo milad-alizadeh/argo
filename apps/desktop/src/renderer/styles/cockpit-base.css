@@ -2,6 +2,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body,
+  #root {
+    @apply size-full;
+  }
   body {
     @apply bg-background text-foreground;
   }

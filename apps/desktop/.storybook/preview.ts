@@ -12,6 +12,25 @@ host.argo = { ...host.argo, zoomFactor: () => 1 }
 const preview: Preview = {
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
+    viewport: {
+      options: {
+        desktop: {
+          name: 'Desktop 1200',
+          styles: { width: '1200px', height: '800px' },
+          type: 'desktop',
+        },
+        narrow: {
+          name: 'Desktop 900',
+          styles: { width: '900px', height: '800px' },
+          type: 'desktop',
+        },
+        compact: {
+          name: 'Desktop 680',
+          styles: { width: '680px', height: '800px' },
+          type: 'desktop',
+        },
+      },
+    },
   },
 }
 

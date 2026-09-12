@@ -19,7 +19,6 @@
     "build": "turbo run build --filter=@argo/desktop",
     "build:storybook": "turbo run build:storybook",
     "design:tokens": "node scripts/design-token-mirror.mjs",
-    "render:design": "electron apps/desktop/scripts/render-design-page.mjs",
     "dev": "turbo run dev",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
@@ -31,6 +30,7 @@
     "quality:types": "turbo run typecheck && bun run typecheck:codex-transport",
     "storybook": "turbo run storybook",
     "test": "turbo run test && bun run test:codex-transport",
+    "test:storybook": "bun run --cwd apps/desktop test:storybook",
     "test:codex-transport": "node --test prototypes/codex-transport/channel.test.ts",
     "test:hooks": "node --test 'hooks/*.test.mjs'",
     "typecheck:codex-transport": "tsc --noEmit -p prototypes/codex-transport/tsconfig.json",
@@ -49,7 +49,7 @@
     "node-pty"
   ],
   "dependencies": {
-    "@lexical/react": "^0.50.0",
-    "lexical": "^0.50.0"
+    "ansi-to-react": "^6.2.6",
+    "shiki": "^4.4.3"
   }
 }

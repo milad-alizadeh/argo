@@ -43,6 +43,11 @@ Write `outline: none` only in a rule that draws a replacement ring in the same d
 block. A control that removes the outline and draws nothing is a keyboard cursor that vanished,
 and nothing reports it.
 
+## Rendered UI tests
+
+For rendered UI work, use a Storybook `play` function as the TDD seam. The function operates the
+story through visible controls and asserts the resulting screen behavior.
+
 ## Shortcuts (#1786)
 
 One table: `src/core/commands/shortcuts.ts`. Every chord in the app is an entry there, and every
