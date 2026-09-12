@@ -94,6 +94,10 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
+      - name: Install Chromium for Storybook interaction tests
+        if: ${{ !cancelled() }}
+        run: bunx playwright install --with-deps chromium
+
       - name: Storybook interaction tests
         if: ${{ !cancelled() }}
         run: bun run test:storybook
