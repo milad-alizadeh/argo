@@ -1,0 +1,54 @@
+@import "./typography.css";
+
+@theme inline {
+  --text-session-heading: var(--text-sm, 0.875rem);
+  --text-prose: var(--text-sm, 0.875rem);
+  --text-label: var(--text-xs, 0.75rem);
+  /* Session roles retain the approved prototype's scale without changing existing text utilities. */
+  --text-session-title: var(--text-xl, 1.25rem);
+  --text-session-body: var(--text-sm, 0.875rem);
+  --text-session-meta: var(--text-xs, 0.75rem);
+  --text-session-code: var(--text-xs, 0.75rem);
+  --duration-standard: var(--duration-layout);
+  --transition-duration-standard: var(--duration-standard);
+  --size-bottom-status: 106px;
+  --size-icon-metadata: var(--size-icon-meta);
+  --size-icon-inline: 14px;
+  --size-feed-attachment-preview: 80px;
+  --spacing-composer-attachment-gutter: var(--spacing-shell-gutter);
+  --size-composer-attachment: var(--size-attachment-card);
+  --size-composer-reference-strip: calc(
+    var(--size-composer-attachment) +
+    2 *
+    var(--spacing-composer-attachment-gutter)
+  );
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
+  --color-traffic-light-close: #ff5f57;
+  --color-traffic-light-minimize: #febc2e;
+  --color-traffic-light-zoom: #28c840;
+}
+
+:root {
+  --text-session-title--line-height: var(--text-xl--line-height, 1.75rem);
+  --text-session-heading--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-session-body--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-prose--line-height: var(--leading-6, 1.5rem);
+  --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-meta--line-height: var(--text-xs--line-height, 1rem);
+  --text-code--line-height: var(--leading-5, 1.25rem);
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-label-weight: 500;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-label-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
+}
