@@ -1,25 +1,48 @@
 import assert from 'node:assert/strict'
-import { openSession } from './session-roster-cases'
 
-// The shipped Session page owns one selection across its Roster, header, Feed, composer slot and
-// inspector. This proof reads that one visible slice after the real adapters project the fixtures.
+const INSPECTOR_WIDTH = 248
+
+// The shell comes before Session data. This proof reads the shipped route so its geometry and pane
+// controls cannot be green because an old Roster or Feed happened to render.
 export async function proveSessionShell(page) {
-  const pageState = '[data-component="SessionPage"]'
-  await page.waitForSelector(`${pageState}[data-state="unselected"]`)
-  await openSession(page, 'Pick the ink', 'askPending')
-  await page.waitForSelector(`${pageState}[data-state="read-only"]`)
+  await page.evaluate(() => {
+    window.location.hash = '#/sessions'
+  })
+  await page.waitForSelector('[data-component="SessionShell"]')
 
-  const selected = await page.evaluate(() => ({
-    roster: document.querySelector('[data-component="SessionListItem"][aria-current="true"]')
-      ?.textContent,
-    header: document.querySelector('[data-component="SessionDeckHead"] h1')?.textContent,
-    feed: document.querySelector('.feed__viewport')?.getAttribute('data-session'),
-    composer: document.querySelector('[data-component="ComposerDock"]') !== null,
-    inspector: document.querySelector('[data-component="SessionInspector"]') !== null,
-  }))
-  assert.equal(selected.roster?.includes('Pick the ink'), true)
-  assert.equal(selected.header, 'Pick the ink')
-  assert.equal(selected.feed, 'askPending')
-  assert.equal(selected.composer, true)
-  assert.equal(selected.inspector, false)
+  const inspector = page.locator('aside[aria-label="Session inspector"]')
+  const workspace = page.locator('section[aria-label="Session workspace"]')
+  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)
+  await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ===
+      0,
+  )
+  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), 0)
+  await page.getByRole('button', { name: 'Open Session inspector' }).click()
+  await page.waitForFunction(
+    (inspectorWidth) =>
+      Math.round(
+        document.querySelector('[aria-label="Session inspector"]')?.getBoundingClientRect().width ??
+          0,
+      ) === inspectorWidth,
+    INSPECTOR_WIDTH,
+    { timeout: 10_000 },
+  )
+  assert.equal(Math.round((await inspector.boundingBox())?.width ?? 0), INSPECTOR_WIDTH)
+  await page.getByRole('button', { name: 'Expand Session sidebar' }).click()
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[aria-label="Session workspace"]')?.getBoundingClientRect().width ===
+      0,
+  )
+  assert.equal(Math.round((await workspace.boundingBox())?.width ?? 0), 0)
+  await page.getByRole('button', { name: 'Restore Session sidebar' }).click()
+  await page.waitForFunction(
+    () =>
+      (document.querySelector('[aria-label="Session workspace"]')?.getBoundingClientRect().width ??
+        0) > 0,
+  )
+  assert.ok((await workspace.boundingBox())?.width)
 }

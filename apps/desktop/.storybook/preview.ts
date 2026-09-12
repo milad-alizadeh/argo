@@ -7,9 +7,70 @@ import '../src/renderer/styles/globals.css'
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
 // the zoom a story is drawn at.
 const host = window as unknown as { argo?: Record<string, unknown> }
-host.argo = { ...host.argo, zoomFactor: () => 1 }
+host.argo = {
+  ...host.argo,
+  getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
+  setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
+  onAppearanceChanged: () => () => {},
+  onCommand: () => () => {},
+  listProjects: () =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.listed',
+      requestId: 'storybook-projects',
+      projects: [
+        { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
+        { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
+      ],
+      selectedId: 'storybook-project',
+    }),
+  openProject: () =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.opened',
+      requestId: 'storybook-project',
+      project: { id: 'storybook-project', name: 'argo' },
+    }),
+  registerProject: () =>
+    Promise.resolve({
+      version: 1,
+      type: 'project.listed',
+      requestId: 'storybook-projects',
+      projects: [
+        { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
+        { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
+      ],
+      selectedId: 'storybook-project',
+    }),
+  zoomFactor: () => 1,
+}
 
 const preview: Preview = {
+  decorators: [
+    (Story, context) => {
+      const dark = context.globals.theme === 'dark'
+      host.argo = {
+        ...host.argo,
+        getAppearance: () => Promise.resolve({ appearance: dark ? 'dark' : 'light', dark }),
+      }
+      document.documentElement.classList.toggle('dark', dark)
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+      return Story()
+    },
+  ],
+  globalTypes: {
+    theme: {
+      defaultValue: 'dark',
+      description: 'Cockpit appearance',
+      toolbar: {
+        icon: 'paintbrush',
+        items: [
+          { value: 'light', title: 'Light' },
+          { value: 'dark', title: 'Dark' },
+        ],
+      },
+    },
+  },
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
     viewport: {

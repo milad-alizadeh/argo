@@ -11,6 +11,7 @@ const config: StorybookConfig = {
     plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
     resolve: {
       ...viteConfig.resolve,
+      dedupe: ['react', 'react-dom'],
       alias: {
         '@': path.resolve(import.meta.dirname, '../src'),
       },

@@ -14,6 +14,7 @@ export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 export type Cockpit = {
   status: CockpitStatus
   project: ProjectSummary | null
+  projects: readonly ProjectSummary[]
   message: string | null
   code: ProjectErrorCode | null
   busy: boolean
@@ -21,9 +22,9 @@ export type Cockpit = {
 
 // One action, because what opening a Project means depends on the screen: with a refused Project
 // on it, the folder the person picks is that Project's new home rather than a new Project.
-export type ProjectActions = { open: () => void }
+export type ProjectActions = { open: () => void; select: (projectId: string) => void }
 
-const IDLE = { project: null, message: null, code: null, busy: false } as const
+const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
 const LOADING: Cockpit = { status: 'loading', ...IDLE }
 const EMPTY: Cockpit = { status: 'empty', ...IDLE }
 
@@ -38,13 +39,20 @@ async function settle(reply: ProjectListReply, previous: Cockpit): Promise<Cockp
   if (reply.type === 'project.cancelled') return { ...previous, busy: false }
   if (reply.type === 'project.error') return refuse(previous, reply)
   const project = reply.projects.find((candidate) => candidate.id === reply.selectedId)
-  if (!project) return EMPTY
+  if (!project) return { ...EMPTY, projects: reply.projects }
   const opened = await window.argo.openProject(openRequest(project.id))
   if (opened.type === 'project.error') {
     const { message, code } = opened
-    return { status: 'refused', project, message, code, busy: false }
+    return { status: 'refused', project, projects: reply.projects, message, code, busy: false }
   }
-  return { status: 'selected', project, message: null, code: null, busy: false }
+  return {
+    status: 'selected',
+    project,
+    projects: reply.projects,
+    message: null,
+    code: null,
+    busy: false,
+  }
 }
 
 export function useProjects(): [Cockpit, ProjectActions] {
@@ -90,5 +98,15 @@ export function useProjects(): [Cockpit, ProjectActions] {
     void run(() => window.argo.registerProject(registerRequest()))
   }, [run])
 
-  return [cockpit, useMemo(() => ({ open }), [open])]
+  const select = useCallback(
+    (projectId: string) => {
+      void run(async () => {
+        const reply = await window.argo.listProjects(listRequest())
+        return reply.type === 'project.listed' ? { ...reply, selectedId: projectId } : reply
+      })
+    },
+    [run],
+  )
+
+  return [cockpit, useMemo(() => ({ open, select }), [open, select])]
 }

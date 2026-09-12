@@ -1,20 +1,20 @@
-import { Bot, FolderGit2, Map as MapIcon, Settings, Ticket } from 'lucide-react'
+import { Bot, Map as MapIcon, Settings, Ticket } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
 
-type NavigationDestination = 'Sessions' | 'Tickets' | 'Atlas' | 'Files'
+import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/core/commands/shortcuts'
 
-const navigationItems: { destination: NavigationDestination; icon: typeof Bot }[] = [
-  { destination: 'Sessions', icon: Bot },
-  { destination: 'Tickets', icon: Ticket },
-  { destination: 'Atlas', icon: MapIcon },
-  { destination: 'Files', icon: FolderGit2 },
-]
+const navigationIcons: Record<Destination, typeof Bot> = {
+  Sessions: Bot,
+  Tickets: Ticket,
+  Atlas: MapIcon,
+}
 
-function destinationFromHash(): NavigationDestination {
-  const destination = window.location.hash.split('/')[1]
-  if (destination === 'tickets') return 'Tickets'
-  if (destination === 'atlas') return 'Atlas'
-  return 'Sessions'
+function destinationFromHash(): Destination {
+  return (
+    DESTINATIONS.find(
+      (destination) => window.location.hash === `#${DESTINATION_PATHS[destination]}`,
+    ) ?? 'Sessions'
+  )
 }
 
 export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
@@ -26,11 +26,6 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
     return () => window.removeEventListener('hashchange', updateDestination)
   }, [])
 
-  const navigate = (nextDestination: NavigationDestination) => {
-    if (nextDestination === 'Files') return
-    window.location.hash = `/${nextDestination.toLowerCase()}`
-  }
-
   return (
     <nav
       aria-label="Main navigation"
@@ -38,7 +33,8 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
     >
       <div className="drag-region h-(--size-chrome-bar) w-full shrink-0" />
       <div className="-mt-px flex flex-col items-center gap-2">
-        {navigationItems.map(({ destination: itemDestination, icon: Icon }) => {
+        {DESTINATIONS.map((itemDestination) => {
+          const Icon = navigationIcons[itemDestination]
           const active = destination === itemDestination
           return (
             <button
@@ -47,7 +43,9 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               aria-current={active ? 'page' : undefined}
               aria-label={itemDestination}
               className="group flex flex-col items-center gap-1 type-label"
-              onClick={() => navigate(itemDestination)}
+              onClick={() => {
+                window.location.hash = DESTINATION_PATHS[itemDestination]
+              }}
             >
               <span
                 className={`grid size-9 place-items-center rounded-lg transition-colors ${
