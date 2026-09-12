@@ -70,7 +70,9 @@ export async function proveReaderMotion({ page, fixture, outerRevision, visibleR
     assert.notEqual(duringMotion, motion.before)
     const chosen = await viewportAnchor(page)
     await motion.stop()
-    await page.waitForTimeout(200)
+    await page.waitForFunction((revision) => {
+      return document.querySelector('.feed__viewport')?.dataset.readingRevision !== revision
+    }, visibleRevision)
     const afterMotion = await offsetOf(page, chosen.anchor)
     assert.equal(Math.abs(afterMotion - chosen.offset) <= 1, true)
     return { anchor: chosen.anchor, motion: afterMotion - chosen.offset, offset: chosen.offset }
