@@ -4,7 +4,8 @@
 //
 //   bun run render:design -- <page.html> <output-dir> <state>...
 //
-// A state names the page's own URL fragment, optionally with `:light` for the light appearance.
+// A state names the page's own URL fragment, optionally with `@<width>` for a narrower window and
+// `:light` for the light appearance: `narrow@900:light`.
 // Electron runs this file itself and captures through `webContents.capturePage()`, rather than a
 // driver attaching from outside: `playwright-core`'s Electron launcher waits on a handshake that
 // a one-window script never completes.
@@ -33,13 +34,23 @@ function openWindow() {
 }
 
 async function capture(window, pageURL, state) {
-  const [fragment, appearance = 'dark'] = state.split(':')
+  const [target, appearance = 'dark'] = state.split(':')
+  const [fragment, width = String(VIEWPORT.width)] = target.split('@')
+  if (!/^\d+$/.test(width))
+    throw new Error(`${state}: the width after @ must be a number of pixels`)
+  window.setContentSize(Number(width), VIEWPORT.height)
   await window.loadURL(`${pageURL}${appearance === 'light' ? '?light' : ''}#${fragment}`)
   // Web fonts change every measurement on the page, so a capture taken before they land renders a
   // different design.
   await window.webContents.executeJavaScript('document.fonts.ready.then(() => true)')
+  // A fragment-only load is a same-document navigation: capturePage returns the last composited
+  // frame, which is still the previous state until the next one paints.
+  await window.webContents.executeJavaScript(
+    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))',
+  )
   const image = await window.webContents.capturePage()
-  const name = `${fragment}-${appearance}.png`
+  const size = width === String(VIEWPORT.width) ? '' : `-${width}`
+  const name = `${fragment}${size}-${appearance}.png`
   await writeFile(path.join(outputDirectory, name), image.toPNG())
   return name
 }
