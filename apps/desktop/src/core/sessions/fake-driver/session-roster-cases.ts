@@ -88,7 +88,7 @@ async function readPlaces(page, count) {
     const place = await page.waitForFunction((at) => {
       const button = document.querySelectorAll('nav[aria-label="Sessions"] button')[at]
       const name = button?.querySelector('.roster__name')?.textContent
-      const head = document.querySelector('.deck__head h2')?.textContent
+      const head = document.querySelector('[data-component="SessionDeckHead"] h1')?.textContent
       if (button?.getAttribute('aria-current') !== 'true' || name !== head) return null
       // An object and not the bare text: a Session with no place reads '', and a falsy return is
       // what keeps the wait waiting.

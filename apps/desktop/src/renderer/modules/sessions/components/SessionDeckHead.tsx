@@ -1,40 +1,62 @@
-import { useTranslation } from 'react-i18next'
+import { GitBranchIcon, GitPullRequestIcon, PanelLeftIcon, PanelRightIcon } from 'lucide-react'
 
 import type { Session } from '../types'
 
-// The deck head (`roster-row-signals-prototype.html` · deck-head): the chosen Session named as the
-// Roster names it, and at the trailing edge where it runs. The design keeps a row to what the
-// Session is doing, so the working directory and the branch are said here, once, for the one
-// Session the reader opened. Both are DERIVED, and the one Argo cannot establish is drawn as
-// absent rather than as a plausible value (CONTEXT.md L1 · degrade down).
-export function SessionDeckHead({ session }: { session: Session | null }) {
-  const { t } = useTranslation()
-
+export function SessionDeckHead({
+  session,
+  showInspectorToggle,
+  onShowRoster,
+  onShowInspector,
+}: {
+  session: Session | null
+  showInspectorToggle: boolean
+  onShowRoster: () => void
+  onShowInspector: () => void
+}) {
   return (
-    <header className="deck__head flex h-(--size-pane-head) flex-none items-center gap-snug border-b px-6">
-      {session === null ? null : (
-        <>
-          <h2 className="min-w-0 truncate text-body font-semibold text-ink">
-            {session.title?.text ?? session.id}
-          </h2>
-          <span className="flex-1" />
-          <span className="flex min-w-0 max-w-[45%] flex-none items-center gap-tight font-mono text-meta text-faint">
-            {session.cwd === null ? (
-              <span className="roster__place--absent truncate">{t('facts.placeUnknown')}</span>
-            ) : (
-              // A path is truncated from its START, because its tail is the part that tells two
-              // worktrees apart. `direction: rtl` puts the ellipsis there, and the bidi rule stops
-              // it also moving the leading slash to the end and drawing a path that is not the path.
-              <span className="roster__place truncate [direction:rtl] [unicode-bidi:plaintext]">
-                {session.cwd}
-              </span>
-            )}
-            {session.branch === null ? null : (
-              <span className="roster__branch flex-none">{session.branch}</span>
-            )}
-          </span>
-        </>
-      )}
+    <header className="session-page__deck-head" data-component="SessionDeckHead">
+      <button
+        aria-label="Show Sessions"
+        className="session-page__icon-button session-page__roster-toggle"
+        data-component="RosterToggle"
+        onClick={onShowRoster}
+        type="button"
+      >
+        <PanelLeftIcon aria-hidden="true" />
+      </button>
+      {session === null ? <span className="flex-1" /> : <SessionIdentity session={session} />}
+      {showInspectorToggle && session !== null ? (
+        <button
+          aria-label="Show inspector"
+          className="session-page__icon-button"
+          data-component="InspectorToggle"
+          onClick={onShowInspector}
+          type="button"
+        >
+          <PanelRightIcon aria-hidden="true" />
+        </button>
+      ) : null}
     </header>
+  )
+}
+
+function SessionIdentity({ session }: { session: Session }) {
+  return (
+    <div className="session-page__identity">
+      <h1>{session.title?.text ?? session.id}</h1>
+      <div className="session-page__facts">
+        {session.branch === null ? null : (
+          <span>
+            <GitBranchIcon aria-hidden="true" />
+            {session.branch}
+          </span>
+        )}
+        {session.pullRequest === null ? null : (
+          <a href={session.pullRequest.url} rel="noreferrer" target="_blank">
+            <GitPullRequestIcon aria-hidden="true" />#{session.pullRequest.number}
+          </a>
+        )}
+      </div>
+    </div>
   )
 }

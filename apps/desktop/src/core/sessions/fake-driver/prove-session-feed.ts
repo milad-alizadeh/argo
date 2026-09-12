@@ -54,6 +54,7 @@ import {
   proveReread,
   proveRoster,
 } from './session-roster-cases'
+import { proveSessionShell } from './session-shell-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
 const SESSION_VIEWPORT = { width: 1440, height: 860 }
@@ -95,6 +96,7 @@ try {
   await ran(['discovery', 'retired-id', 'missing-session'], () => proveContract(page))
   await openSessionsScreen(page)
   const roster = await ran(['roster-focus', 'archive-section'], () => proveRoster(page))
+  await ran(['session-shell'], () => proveSessionShell(page))
   const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
   await capture(page, application, 'roster-and-feed.png')
   const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>

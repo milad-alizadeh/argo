@@ -9,7 +9,7 @@ type DeckProps = {
   destination: Destination
   cockpit: Cockpit
   actions: ProjectActions
-  projectHeader?: ReactNode
+  projectName?: string
 }
 
 // The names the design ticket froze, so a state render is found by the name the design shows. The
@@ -40,8 +40,9 @@ const GATE = {
 // containing block of anything positioned inside it, so a visually hidden label cannot escape a
 // pane's scroll box and make the whole window scroll.
 const SCREEN = {
-  frame: 'relative grid min-h-0 grid-cols-1 overflow-hidden bg-background',
-  pane: 'min-h-0 min-w-0',
+  frame:
+    'relative grid min-h-0 grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden bg-background',
+  pane: 'h-full min-h-0 min-w-0',
 }
 
 const PROSE = {
@@ -73,7 +74,7 @@ function SurfacePane({ destination }: { destination: Destination }) {
 // One `<main>` and one state element for every screen the deck can be, at the same place in the
 // tree. A live driver watches that element for the busy window a press opens and closes, and an
 // element replaced between the press and the reply is an observer attached to a detached node.
-export function ProjectDeck({ destination, cockpit, actions, projectHeader }: DeckProps) {
+export function ProjectDeck({ destination, cockpit, actions, projectName }: DeckProps) {
   const screen = deckScreen(destination, cockpit)
   const shape = SHAPES[screen]
   return (
@@ -84,7 +85,7 @@ export function ProjectDeck({ destination, cockpit, actions, projectHeader }: De
           destination={destination}
           cockpit={cockpit}
           onOpen={actions.open}
-          projectHeader={projectHeader}
+          projectName={projectName}
         />
       </div>
     </main>
@@ -122,15 +123,15 @@ function DeckPane({
   destination,
   cockpit,
   onOpen,
-  projectHeader,
+  projectName,
 }: {
   screen: DeckScreen
   destination: Destination
   cockpit: Cockpit
   onOpen: () => void
-  projectHeader?: ReactNode
+  projectName?: string
 }) {
   if (screen === 'gate') return gatePane(cockpit, onOpen)
-  if (screen === 'sessions') return <SessionsScreen projectHeader={projectHeader} />
+  if (screen === 'sessions') return <SessionsScreen projectName={projectName ?? ''} />
   return <SurfacePane destination={destination} />
 }

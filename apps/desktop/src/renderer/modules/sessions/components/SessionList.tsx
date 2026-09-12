@@ -65,7 +65,12 @@ export function SessionList({ sessions, selectedSessionId, label, onSelect }: Se
 
   return (
     <nav aria-label={label ?? t('navigationLabel')}>
-      <ul className="roster__list flex flex-col gap-px px-2 pb-2" onKeyDown={move} ref={list}>
+      <ul
+        className="roster__list flex flex-col gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)"
+        data-component="SessionList"
+        onKeyDown={move}
+        ref={list}
+      >
         {sessions.map((session) => (
           <li key={session.id}>
             <SessionListItem

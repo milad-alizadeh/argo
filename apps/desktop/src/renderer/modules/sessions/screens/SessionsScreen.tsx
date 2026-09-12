@@ -1,32 +1,22 @@
-import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import { SessionsEmptyState } from '../components/SessionsEmptyState'
 import { useSessions } from '../hooks/useSessions'
 import { useSessionsStore } from '../state/useSessionsStore'
-import { SessionsScreenView } from './SessionsScreenView'
+import { SessionPage } from './SessionPage'
 
-export function SessionsScreen({ projectHeader }: { projectHeader?: ReactNode }) {
-  const { t } = useTranslation()
+export function SessionsScreen({ projectName }: { projectName: string }) {
   const selectedSessionId = useSessionsStore((state) => state.selectedSessionId)
   const selectSession = useSessionsStore((state) => state.selectSession)
   const { feed, feedError, roster, rosterError, reread } = useSessions(selectedSessionId)
 
-  // A pass that failed replaces nothing. The reading on hand is older than the reader asked for
-  // and the Roster head says so, but a Roster and a Feed they can still read beat an error page
-  // whose only way back — the button that asks for another pass — is on the page it replaced. So
-  // the only state that stands alone is having no reading at all.
-  if (roster === null) return <SessionsEmptyState title={rosterError ?? t('loading')} />
-
   return (
-    <SessionsScreenView
+    <SessionPage
       feed={feed}
       failure={rosterError}
       onReread={reread}
       onSelect={selectSession}
-      projectHeader={projectHeader}
+      projectName={projectName}
       selectedSessionId={selectedSessionId}
-      sessions={roster.sessions}
+      sessions={roster?.sessions ?? []}
+      loading={roster === null && rosterError === null}
       feedFailure={feedError}
     />
   )

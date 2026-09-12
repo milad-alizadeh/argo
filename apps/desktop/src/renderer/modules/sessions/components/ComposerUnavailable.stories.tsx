@@ -11,7 +11,6 @@ const meta: Meta<typeof ComposerUnavailable> = {
 export default meta
 type Story = StoryObj<typeof ComposerUnavailable>
 
-export const Observed: Story = { args: { availability: 'observed' } }
 export const ReadOnly: Story = { args: { availability: 'read-only' } }
 export const Orphaned: Story = { args: { availability: 'orphaned' } }
 export const Ended: Story = { args: { availability: 'ended' } }

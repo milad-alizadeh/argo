@@ -6,7 +6,8 @@ import { readKeptSessionLimit } from '../feed/kept-documents'
 import type { SessionFeed as SessionFeedData, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
 import { FeedEmpty } from './FeedEmpty'
-import { SessionActivityIndicator } from './SessionActivityIndicator'
+import { FeedError } from './FeedError'
+import { FeedLoading } from './FeedLoading'
 
 type SessionFeedProps = {
   /** The reading for the selected Session, or null while there is nothing settled to draw. */
@@ -18,19 +19,38 @@ type SessionFeedProps = {
   selected: boolean
   /** Why the selected Session's history could not be read, when it could not. */
   failure: string | null
+  loading: boolean
+  emptyReason: 'no-sessions' | null
+  onReread: () => void
 }
 
 // What stands in the Feed's place while no settled history can be drawn. A read or a measure pass
 // in progress and a read that failed are one status Marker in the first row's place; nothing
 // selected is an empty pane.
-function Standing({ selected, failure }: Omit<SessionFeedProps, 'feed' | 'sessionId'>) {
+function Standing({
+  selected,
+  failure,
+  loading,
+  emptyReason,
+  onReread,
+}: Omit<SessionFeedProps, 'feed' | 'sessionId'>) {
   const { t } = useTranslation()
-  if (failure !== null) return <SessionActivityIndicator busy={false} label={failure} />
+  if (failure !== null) return <FeedError failure={failure} onReread={onReread} />
+  if (loading) return <FeedLoading label={t('loading')} />
+  if (emptyReason !== null) return <FeedEmpty reason={emptyReason} />
   if (!selected) return <FeedEmpty reason="unselected" />
-  return <SessionActivityIndicator busy label={t('reading')} />
+  return <FeedLoading label={t('reading')} />
 }
 
-export function SessionFeed({ feed, sessionId, selected, failure }: SessionFeedProps) {
+export function SessionFeed({
+  feed,
+  sessionId,
+  selected,
+  failure,
+  loading,
+  emptyReason,
+  onReread,
+}: SessionFeedProps) {
   const { t } = useTranslation()
   const [keptDocumentLimit] = useState(() => readKeptSessionLimit(window.localStorage))
   const [documents, setDocuments] = useState<Map<SessionId, SessionFeedData>>(new Map())
@@ -78,7 +98,15 @@ export function SessionFeed({ feed, sessionId, selected, failure }: SessionFeedP
       {ordered.map(([id, document]) => (
         <FeedDocument active={id === sessionId} feed={document} key={id} />
       ))}
-      {current === null ? <Standing failure={failure} selected={selected} /> : null}
+      {current === null ? (
+        <Standing
+          emptyReason={emptyReason}
+          failure={failure}
+          loading={loading}
+          onReread={onReread}
+          selected={selected}
+        />
+      ) : null}
     </section>
   )
 }

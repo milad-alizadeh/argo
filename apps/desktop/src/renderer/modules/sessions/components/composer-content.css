@@ -1,0 +1,67 @@
+.session-page__composer-queue {
+  position: relative;
+  z-index: 0;
+  width: calc(100% - var(--spacing-shell-section));
+  margin-bottom: calc(var(--spacing-shell-item) * -1);
+  padding-bottom: var(--spacing-shell-item);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-start-start-radius: var(--radius-xl);
+  border-start-end-radius: var(--radius-xl);
+  background: var(--card);
+}
+
+.session-page__queued-message {
+  display: flex;
+  height: var(--size-queue-row);
+  align-items: center;
+  gap: var(--spacing-shell-item);
+  padding-inline: var(--spacing-shell-inset) var(--spacing-shell-item);
+}
+
+.session-page__queued-message + .session-page__queued-message {
+  border-top: 1px solid var(--border);
+}
+
+.session-page__attachment-tray {
+  display: flex;
+  height: var(--size-attachment-tray);
+  gap: var(--spacing-shell-gutter);
+  margin-inline-end: calc(var(--size-control) * 3);
+  padding: var(--spacing-shell-item) var(--spacing-shell-gutter) 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, black 85%, transparent);
+}
+
+.session-page__attachment {
+  display: flex;
+  width: calc(var(--size-attachment-card) * 2.5);
+  height: var(--size-attachment-card);
+  flex: none;
+  align-items: center;
+  gap: var(--spacing-shell-item);
+  padding: var(--spacing-shell-tight);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--muted-foreground);
+  font-size: var(--text-control);
+}
+
+.session-page__attachment b {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.session-page__attachment-thumb {
+  display: grid;
+  width: var(--size-attachment-thumbnail);
+  height: var(--size-attachment-thumbnail);
+  flex: none;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--muted);
+}
+.session-page__attachment-thumb svg {
+  width: var(--size-icon-control);
+  height: var(--size-icon-control);
+}

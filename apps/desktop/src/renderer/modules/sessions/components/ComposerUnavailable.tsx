@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next'
 
 import type { Session } from '../types'
 
-export const COMPOSER_AVAILABILITIES = ['observed', 'read-only', 'orphaned', 'ended'] as const
+export const COMPOSER_AVAILABILITIES = ['read-only', 'orphaned', 'ended'] as const
 
 export type ComposerAvailability = (typeof COMPOSER_AVAILABILITIES)[number]
 
-const availabilityByPosture: Record<Session['posture'], ComposerAvailability> = {
-  managed: 'observed',
+const availabilityByPosture: Record<Session['posture'], ComposerAvailability | null> = {
+  managed: null,
   external: 'read-only',
   orphaned: 'orphaned',
 }
@@ -26,7 +26,7 @@ export function ComposerUnavailable({ availability }: { availability: ComposerAv
   return (
     <section
       aria-label={t('composer.unavailable.label')}
-      className="flex h-(--size-composer-unavailable) flex-none items-center gap-tight border-t bg-sidebar px-wide text-body text-quiet"
+      className="flex h-(--size-composer-unavailable) flex-none items-center gap-(--spacing-shell-item) rounded-(--radius-xl) border bg-card px-(--spacing-shell-inset) text-body text-quiet"
       data-component="ComposerUnavailable"
       data-state={availability}
     >

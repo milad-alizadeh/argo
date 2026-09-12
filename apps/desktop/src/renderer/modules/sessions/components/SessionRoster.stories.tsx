@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
+import '../screens/session-page.css'
 import { SessionRoster } from './SessionRoster'
 import { archivedSessionStory, sessionsStory } from './stories.fixtures'
 
@@ -7,11 +8,18 @@ const meta: Meta<typeof SessionRoster> = {
   title: 'Sessions/SessionRoster',
   component: SessionRoster,
   tags: ['autodocs'],
-  args: { onSelect: () => undefined, onReread: () => undefined, failure: null },
+  args: {
+    onCollapse: () => undefined,
+    onSelect: () => undefined,
+    onReread: () => undefined,
+    projectName: 'argo',
+    failure: null,
+    loading: false,
+  },
   // The pane takes its height from the surface it is given, so a story gives it one.
   decorators: [
     (Story) => (
-      <div className="h-[560px] w-[320px]">
+      <div className="h-[560px] w-(--size-session-roster)">
         <Story />
       </div>
     ),

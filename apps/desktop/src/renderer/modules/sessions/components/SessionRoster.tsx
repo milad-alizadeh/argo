@@ -1,17 +1,22 @@
-import { RefreshCwIcon } from 'lucide-react'
+import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { Session, SessionId } from '../types'
 
 import { ArchivedSessions } from './ArchivedSessions'
+import { RosterBar } from './RosterBar'
+import { RosterNotice } from './RosterNotice'
+import { RosterSkeleton } from './RosterSkeleton'
 import { SessionList } from './SessionList'
-import { SessionsEmptyState } from './SessionsEmptyState'
 
 type SessionRosterProps = {
   sessions: readonly Session[]
   selectedSessionId: SessionId | null
   /** The last pass's failure, if it had one. The rows below it are the older pass's. */
   failure: string | null
+  loading: boolean
+  projectName: string
+  onCollapse: () => void
   onSelect: (sessionId: SessionId) => void
   onReread: () => void
 }
@@ -20,6 +25,9 @@ export function SessionRoster({
   sessions,
   selectedSessionId,
   failure,
+  loading,
+  projectName,
+  onCollapse,
   onSelect,
   onReread,
 }: SessionRosterProps) {
@@ -29,6 +37,13 @@ export function SessionRoster({
   // in the section below (`sessions/archive.ts`).
   const live = sessions.filter((session) => !session.archived)
   const archived = sessions.filter((session) => session.archived)
+  const list = sessionList({
+    loading,
+    live,
+    selectedSessionId,
+    onSelect,
+    label: t('navigationLabel'),
+  })
 
   return (
     // The Roster pane (`roster-row-signals-prototype.html` · sidebar): a head the same height as
@@ -36,39 +51,28 @@ export function SessionRoster({
     // with the deck is the resize handle, so it draws no border of its own. Its ground is
     // shadcn's sidebar surface, like the deck's is shadcn's background, so both panes follow the
     // appearance the reader chose.
-    <aside className="flex h-full min-h-0 flex-col bg-sidebar">
-      <header className="flex h-(--size-pane-head) flex-none items-center gap-2 px-snug">
-        <h1 className="flex-1 text-eyebrow font-semibold uppercase tracking-[0.6px] text-faint">
-          {t('title')}
-        </h1>
-        {/* Nothing watches the transcripts, so this reading is as old as the pass that made it
-            and the reader is given the way to take another. It sits in the head because that is
-            where what is true of the whole list belongs; the words are on the button for a
-            screen reader rather than in the pane. */}
-        <button
-          aria-label={t('readAgain')}
-          className="cockpit__reread flex-none rounded-(--radius-row) p-1 text-faint hover:bg-sidebar-accent hover:text-ink"
-          onClick={onReread}
-          type="button"
-        >
-          <RefreshCwIcon className="size-[13px]" />
+    <aside
+      aria-label={t('navigationLabel')}
+      className="flex h-full min-h-0 flex-col bg-card"
+      data-component="SessionRoster"
+    >
+      <RosterBar onCollapse={onCollapse} projectName={projectName} />
+      <header
+        className="flex flex-none items-center gap-(--spacing-shell-tight) p-(--spacing-shell-gutter) pl-(--spacing-shell-inset)"
+        data-component="SessionRosterHead"
+      >
+        <h2 className="flex-1 text-heading font-medium text-foreground">{t('title')}</h2>
+        <button aria-label={t('newSession')} className="session-page__icon-button" type="button">
+          <PlusIcon aria-hidden="true" />
+        </button>
+        <button aria-label={t('findSession')} className="session-page__icon-button" type="button">
+          <SearchIcon aria-hidden="true" />
         </button>
       </header>
-      {failure === null ? null : (
-        <p className="cockpit__failed flex-none px-snug pb-2 text-meta text-warn">{failure}</p>
-      )}
+      {failure === null ? null : <RosterNotice failure={failure} onReread={onReread} />}
       {/* Positioned, so the visually hidden status words on its rows scroll and clip with the
           list rather than lining up against the window and making the page scroll. */}
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {live.length === 0 ? (
-          <SessionsEmptyState
-            description={t('empty.roster.description')}
-            title={t('empty.roster.title')}
-          />
-        ) : (
-          <SessionList onSelect={onSelect} selectedSessionId={selectedSessionId} sessions={live} />
-        )}
-      </div>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">{list}</div>
       <ArchivedSessions
         onSelect={onSelect}
         selectedSessionId={selectedSessionId}
@@ -76,4 +80,30 @@ export function SessionRoster({
       />
     </aside>
   )
+}
+
+function sessionList({
+  loading,
+  live,
+  selectedSessionId,
+  onSelect,
+  label,
+}: {
+  loading: boolean
+  live: readonly Session[]
+  selectedSessionId: SessionId | null
+  onSelect: (sessionId: SessionId) => void
+  label: string
+}) {
+  if (loading) {
+    return (
+      <div aria-busy="true" aria-label={label} data-component="SessionList" role="listbox">
+        <RosterSkeleton />
+      </div>
+    )
+  }
+  if (live.length === 0) {
+    return <div aria-label={label} data-component="SessionList" role="listbox" />
+  }
+  return <SessionList onSelect={onSelect} selectedSessionId={selectedSessionId} sessions={live} />
 }

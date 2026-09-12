@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
+
+import '../screens/session-page.css'
 import { SessionDeckHead } from './SessionDeckHead'
 import { partialSessionStory, workingSessionStory } from './stories.fixtures'
 
@@ -6,6 +8,11 @@ const meta: Meta<typeof SessionDeckHead> = {
   title: 'Sessions/SessionDeckHead',
   component: SessionDeckHead,
   tags: ['autodocs'],
+  args: {
+    onShowInspector: () => undefined,
+    onShowRoster: () => undefined,
+    showInspectorToggle: false,
+  },
 }
 
 export default meta

@@ -68,6 +68,7 @@ export function SessionListItem({
       // Session is one Argo does not own the terminal of, and it is ghosted whole.
       className={`roster__row flex w-full items-start gap-2 rounded-(--radius-row) px-2 py-[7px] text-left leading-[1.45] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-[posture=external]:opacity-[0.58] ${selected ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent/50'}`}
       aria-current={selected}
+      data-component="SessionListItem"
       data-posture={session.posture}
       tabIndex={focusable ? 0 : -1}
       onFocus={() => onFocus(session.id)}

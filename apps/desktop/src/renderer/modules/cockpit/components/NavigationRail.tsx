@@ -2,9 +2,7 @@
 // the workspace separate (ADR-0038).
 import { BotIcon, Code2Icon, MapIcon, TicketIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
-import type { Appearance } from '@/core/appearance/appearance'
 import { DESTINATIONS, type Destination } from '@/core/commands/shortcuts'
-import { AppearanceControl } from '../../appearance/components/AppearanceControl'
 
 const ICONS: Record<Destination, ComponentType<{ className?: string }>> = {
   Sessions: BotIcon,
@@ -14,14 +12,10 @@ const ICONS: Record<Destination, ComponentType<{ className?: string }>> = {
 }
 
 export function NavigationRail({
-  appearance,
   destination,
-  onAppearanceChange,
   onNavigate,
 }: {
-  appearance: Appearance
   destination: Destination
-  onAppearanceChange: (appearance: Appearance) => void
   onNavigate: (destination: Destination) => void
 }) {
   return (
@@ -54,9 +48,6 @@ export function NavigationRail({
             </button>
           )
         })}
-      </div>
-      <div className="mt-auto flex h-(--size-chrome-bar) items-center justify-center">
-        <AppearanceControl appearance={appearance} compact onChange={onAppearanceChange} />
       </div>
     </nav>
   )

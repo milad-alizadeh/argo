@@ -39,19 +39,9 @@ export function CockpitSurface({
     open,
     sessions,
   })
-  const projectHeader = sessions ? <ChromeBar subject={subject(cockpit)} /> : undefined
   return (
     <CockpitShell
-      rail={
-        open ? (
-          <NavigationRail
-            appearance={appearance}
-            destination={destination}
-            onAppearanceChange={chooseAppearance}
-            onNavigate={navigate}
-          />
-        ) : undefined
-      }
+      rail={open ? <NavigationRail destination={destination} onNavigate={navigate} /> : undefined}
       roster={
         open && !sessions ? <Sidebar destination={destination} onNavigate={navigate} /> : undefined
       }
@@ -63,7 +53,7 @@ export function CockpitSurface({
           actions={actions}
           cockpit={cockpit}
           destination={destination}
-          projectHeader={projectHeader}
+          projectName={sessions ? cockpit.project?.name : undefined}
         />
       }
       inspector={open && !sessions ? <SessionInspector /> : undefined}
