@@ -21,8 +21,8 @@
     "includes": [
       "**",
       "!docs",
-      "!apps/desktop/src/renderer/modules/composer-prototype/**",
-      "!apps/desktop/public/prototype-assets/**",
+      "!apps/desktop/src/renderer/modules/composer-prototype",
+      "!apps/desktop/public/prototype-assets",
       "!**/*.xcodeproj",
       "!**/*.xcassets",
       "!**/ArgoEngine/Companion/Plugin",

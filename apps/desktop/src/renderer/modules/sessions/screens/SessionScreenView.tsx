@@ -19,9 +19,8 @@ export function SessionScreenView() {
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
   const [inspectorExpanded, setInspectorExpanded] = useState(false)
 
-  const synchronizeInspectorCollapsed = () => {
+  const synchronizeInspectorCollapsed = () =>
     setInspectorCollapsed(inspectorPanelRef.current?.isCollapsed() ?? false)
-  }
 
   const toggleInspector = () => {
     if (inspectorCollapsed) {
@@ -32,8 +31,7 @@ export function SessionScreenView() {
   }
 
   const toggleInspectorExpanded = () => {
-    if (inspectorExpanded) workspacePanelRef.current?.expand()
-    else workspacePanelRef.current?.collapse()
+    workspacePanelRef.current?.[inspectorExpanded ? 'expand' : 'collapse']()
     setInspectorExpanded(!inspectorExpanded)
   }
 
@@ -72,10 +70,7 @@ export function SessionScreenView() {
           minSize={workspaceMinWidth}
         >
           <div className="flex h-full min-h-0 flex-col">
-            <header
-              aria-label="Session header"
-              className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-3"
-            >
+            <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background px-3">
               <span className="flex-1" />
             </header>
             <section aria-label="Session feed" className="min-h-0 flex-1" />

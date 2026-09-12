@@ -1,9 +1,9 @@
-import { mergeProps } from '@base-ui/react/merge-props'
-import { useRender } from '@base-ui/react/use-render'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
 import type * as React from 'react'
 
+import { AttachmentGroup } from '@/renderer/components/ui/attachment-group'
+import { AttachmentTrigger } from '@/renderer/components/ui/attachment-trigger'
 import { Button } from '@/renderer/components/ui/button'
 
 const attachmentVariants = cva(
@@ -142,41 +142,6 @@ function AttachmentAction({
       variant={variant ?? 'ghost'}
       size={size}
       className={cn(className)}
-      {...props}
-    />
-  )
-}
-
-function AttachmentTrigger({
-  className,
-  render,
-  type,
-  ...props
-}: useRender.ComponentProps<'button'>) {
-  return useRender({
-    defaultTagName: 'button',
-    props: mergeProps<'button'>(
-      {
-        type: render ? type : (type ?? 'button'),
-        className: cn('absolute inset-0 z-10 outline-none', className),
-      },
-      props,
-    ),
-    render,
-    state: {
-      slot: 'attachment-trigger',
-    },
-  })
-}
-
-function AttachmentGroup({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="attachment-group"
-      className={cn(
-        'flex min-w-0 scroll-fade-x snap-x snap-mandatory scroll-px-1 scrollbar-none gap-3 overflow-x-auto overscroll-x-contain py-1 *:data-[slot=attachment]:flex-none *:data-[slot=attachment]:snap-start',
-        className,
-      )}
       {...props}
     />
   )

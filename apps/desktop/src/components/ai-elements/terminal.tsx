@@ -1,6 +1,6 @@
 import Ansi from 'ansi-to-react'
 import { CheckIcon, CopyIcon, TerminalIcon } from 'lucide-react'
-import React, {
+import {
   createContext,
   type HTMLAttributes,
   useCallback,

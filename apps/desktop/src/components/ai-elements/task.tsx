@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDownIcon, SearchIcon } from 'lucide-react'
-import React, { type ComponentProps } from 'react'
+import type { ComponentProps } from 'react'
 import {
   Collapsible,
   CollapsibleContent,
