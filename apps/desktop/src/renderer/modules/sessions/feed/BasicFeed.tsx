@@ -1,0 +1,107 @@
+import { useEffect, useState } from 'react'
+import { sessionFailureState } from '../sessionFailureState'
+import type { SessionError, SessionFeed, SessionId } from '../types'
+import { FeedDocument } from './FeedDocument'
+import { readKeptSessionLimit } from './kept-documents'
+
+import './feed.css'
+
+function Standing({ failure, selected }: { failure: SessionError | null; selected: boolean }) {
+  if (failure !== null)
+    return (
+      <section
+        className="grid h-full place-items-center p-6"
+        data-state={sessionFailureState(failure)}
+        role="alert"
+      >
+        {sessionFailureState(failure) === 'unavailable'
+          ? 'This Session is unavailable.'
+          : "Argo cannot read this Session's history."}
+        <span className="text-sm text-muted-foreground">{failure.message}</span>
+      </section>
+    )
+  if (!selected)
+    return (
+      <section
+        className="grid h-full place-items-center text-sm text-muted-foreground"
+        data-state="unselected"
+      >
+        No Session selected
+      </section>
+    )
+  return (
+    <section
+      className="grid h-full place-items-center text-sm text-muted-foreground"
+      data-state="loading"
+      role="status"
+    >
+      Reading this Session
+    </section>
+  )
+}
+
+export function BasicFeed({
+  feed,
+  failure,
+  selectedSessionId,
+}: {
+  feed: SessionFeed | null
+  failure: SessionError | null
+  selectedSessionId: SessionId | null
+}) {
+  const [keptDocumentLimit] = useState(() => readKeptSessionLimit(window.localStorage))
+  const [documents, setDocuments] = useState<Map<SessionId, SessionFeed>>(new Map())
+
+  useEffect(() => {
+    if (feed === null) return
+    setDocuments((previous) => {
+      const held = previous.get(feed.sessionId)
+      if (held?.revision === feed.revision) return previous
+      const next = new Map(previous)
+      next.delete(feed.sessionId)
+      next.set(feed.sessionId, feed)
+      while (next.size > keptDocumentLimit) {
+        const oldest = next.keys().next().value
+        if (oldest === undefined) break
+        next.delete(oldest)
+      }
+      return next
+    })
+  }, [feed, keptDocumentLimit])
+
+  useEffect(() => {
+    if (selectedSessionId === null) return
+    setDocuments((previous) => {
+      const document = previous.get(selectedSessionId)
+      if (document === undefined) return previous
+      const next = new Map(previous)
+      next.delete(selectedSessionId)
+      next.set(selectedSessionId, document)
+      return next
+    })
+  }, [selectedSessionId])
+
+  const current = selectedSessionId === null ? null : (documents.get(selectedSessionId) ?? null)
+  const ordered =
+    current === null
+      ? [...documents.entries()]
+      : [
+          [current.sessionId, current] as const,
+          ...[...documents.entries()].filter(([id]) => id !== current.sessionId),
+        ]
+
+  return (
+    <section aria-label="Session Feed" className="feed">
+      {ordered.map(([id, document]) => (
+        <FeedDocument
+          active={failure === null && id === selectedSessionId}
+          feed={document}
+          key={id}
+        />
+      ))}
+      {failure !== null || current === null ? (
+        <Standing failure={failure} selected={selectedSessionId !== null} />
+      ) : null}
+    </section>
+  )
+}

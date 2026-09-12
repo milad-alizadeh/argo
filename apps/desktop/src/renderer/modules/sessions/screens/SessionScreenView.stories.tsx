@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { MemoryRouter } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { CockpitShell } from '../../cockpit/components/CockpitShell'
@@ -14,9 +15,11 @@ const meta: Meta<typeof SessionScreenView> = {
   decorators: [
     (Story) => (
       <div className="h-dvh w-full">
-        <CockpitShell sidebar={<SessionsSidebar />}>
-          <Story />
-        </CockpitShell>
+        <MemoryRouter>
+          <CockpitShell sidebar={<SessionsSidebar />}>
+            <Story />
+          </CockpitShell>
+        </MemoryRouter>
       </div>
     ),
   ],

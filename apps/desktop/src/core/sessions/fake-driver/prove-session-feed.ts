@@ -19,7 +19,12 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
-import { prepare } from './session-feed-fixture'
+import { appendProse, prepare, streamProse } from './session-feed-fixture'
+import { proveLiveFeed } from './session-live-feed-cases'
+import {
+  provePackagedReread,
+  provePackagedRosterSelection,
+} from './session-roster-interaction-cases'
 import { proveSessionShell } from './session-shell-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
@@ -60,6 +65,15 @@ try {
     return reading
   }
   await ran(['session-shell'], () => proveSessionShell(page))
+  await ran(['session-roster-selection'], () => provePackagedRosterSelection(page))
+  await ran(['session-feed-reader-anchor'], () =>
+    proveLiveFeed(page, {
+      transcripts: fixture.claudeTranscripts,
+      append: appendProse,
+      stream: streamProse,
+    }),
+  )
+  await ran(['session-roster-reread'], () => provePackagedReread(page, fixture.claudeTranscripts))
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
