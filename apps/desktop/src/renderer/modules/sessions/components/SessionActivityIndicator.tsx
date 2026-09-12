@@ -32,7 +32,7 @@ export function SessionActivityIndicator({ label, busy }: { label: string; busy:
               <CircleAlertIcon />
             </MarkerIcon>
           )}
-          <MarkerContent data-link-probe="1953">{label}</MarkerContent>
+          <MarkerContent>{label}</MarkerContent>
         </Marker>
       </div>
     </div>
