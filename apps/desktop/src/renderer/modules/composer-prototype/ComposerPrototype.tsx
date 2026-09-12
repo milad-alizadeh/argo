@@ -14,6 +14,7 @@ import {
   Expand,
   File,
   FileCheck2,
+  FileCode2,
   Folder,
   FolderGit2,
   GitCompareArrows,
@@ -63,6 +64,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/renderer/components/ui/attachment'
+import { Badge } from '@/renderer/components/ui/badge'
 import { Bubble, BubbleContent } from '@/renderer/components/ui/bubble'
 import { Button } from '@/renderer/components/ui/button'
 import {
@@ -112,7 +114,6 @@ import {
   ResizablePanelGroup,
 } from '@/renderer/components/ui/resizable'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
-import { ComposerChip, type ComposerChipDefinition } from './ComposerChip'
 import { FeedPermission } from './feed/FeedAttention'
 import {
   FeedEvidencePrototype,
@@ -227,6 +228,12 @@ type ComposerSuggestion = {
   frequent?: boolean
 }
 
+type ComposerChipDefinition = {
+  kind: 'filepath' | 'plugin' | 'skill'
+  label: string
+  text: string
+}
+
 type ComposerChipMatch = ComposerChipDefinition & { start: number; end: number }
 
 const COMPOSER_CHIPS: ComposerChipDefinition[] = [
@@ -313,7 +320,15 @@ function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availa
         cursor = chip.end
         return [
           <span key={`text-${chip.start}`}>{text}</span>,
-          <ComposerChip key={`chip-${chip.start}`} chip={chip} />,
+          <Badge
+            key={`chip-${chip.start}`}
+            variant="outline"
+            className="mx-0.5 align-text-bottom text-foreground type-label"
+            data-composer-text={chip.text}
+          >
+            {chip.kind === 'filepath' ? <FileCode2 className="!size-(--size-icon-inline)" /> : null}
+            {chip.label}
+          </Badge>,
         ]
       })}
       <span>{draft.slice(cursor)}</span>
