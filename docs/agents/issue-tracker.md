@@ -16,10 +16,9 @@ report is no exception.
   create-time one.
 - **One kind label when the kind is clear**: `bug` for behaviour that is broken, `enhancement`
   for behaviour that is new, `documentation` for docs, designs and ADRs.
-- **`stale` is the one label added after create**, and only on a design ticket: it says the app
-  changed that screen without going through `prototype-to-design`. Whoever re-bases the design
-  removes it in the same change, so a `stale` label that outlives its re-base blocks every build
-  ticket against that design (`design-to-code`, step 1).
+- **Legacy design tickets can carry `stale`.** Before using one as an exact reference, compare it with the current task and app.
+  Record the current decisions on the implementation ticket.
+  A stale reference does not block ordinary implementation or objective interface review.
 
 You know which triage label fits at the moment you write the body, so the create call is where it
 goes. An issue that lands unlabelled falls into `/triage`'s never-triaged bucket, and a person
@@ -41,9 +40,9 @@ image reaches GitHub one of two ways:
 - **A person drags the file into the body on github.com.** GitHub hosts it on its own CDN, dated
   and outside the repository. This is the route for a bug report's screenshot and for a design
   ticket's state renders, and it is the only route that puts a PNG in a body. Ask for it.
-- **An agent writes a link.** For a component, the Storybook story on the site
-  `.github/workflows/storybook-pages.yml` publishes; otherwise the render command and the state
-  names, so a reader draws it themselves.
+- **An agent records the route.** For a component, name the Storybook story. A PR gets its preview
+  links from CI (#1953); elsewhere, write the local Storybook command. For a screen, write the
+  render command and the state names so that a reader can draw it.
 
 An agent's own screenshots are **disposable**: a temp dir, judged, deleted. A PNG in a git object
 has no version, so a later reader cannot tell whether it shows the code beside it or the code it

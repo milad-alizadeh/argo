@@ -147,16 +147,16 @@ jobs:
 
       # Again, against the signed app. The `postPackage` hook ran before anything signed, and a
       # re-signature can invalidate what the package proved.
-      - name: Assert the signed app
+      - name: Test signed app contents
         working-directory: apps/desktop
-        run: bun run assert:packaged out/Argo-darwin-arm64/Argo.app
+        run: bun run test:packaged-contents out/Argo-darwin-arm64/Argo.app
 
       # The #1749 acceptance boundary inside the shipped, signed binary. `--json` writes the
       # outcomes for the verdict to read, so a failing run reaches it as a failing assertion rather
       # than as a missing one.
-      - name: Run the signed app
+      - name: Test the signed app
         working-directory: apps/desktop
-        run: node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package --json out/packaged-pty-acceptance.json
+        run: bun run test:packaged-pty --arch arm64 --skip-package --json out/packaged-pty-acceptance.json
 
       # Forge's makers write into a tree whose shape is theirs, not ours. Gathering the two
       # artifacts into one directory first means the verdict, the attestation and the upload cannot

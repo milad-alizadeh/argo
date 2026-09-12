@@ -1,23 +1,23 @@
 @layer utilities {
-  /* Repeating the role class gives an explicit Argo composition seam precedence over a shadcn
-     default while leaving the generated component and Tailwind scale unchanged. */
+  /* Repeating the role class gives Argo composition precedence over generated shadcn defaults. */
   .type-title.type-title {
-    font-size: var(--text-title);
-    line-height: var(--text-title--line-height);
+    font-size: var(--text-session-title);
+    line-height: var(--text-session-title--line-height);
     font-weight: var(--text-title-weight);
     letter-spacing: var(--text-title-tracking);
   }
 
   .type-heading.type-heading {
-    font-size: var(--text-heading);
-    line-height: var(--text-heading--line-height);
+    font-size: var(--text-session-heading);
+    line-height: var(--text-session-heading--line-height);
     font-weight: var(--text-heading-weight);
     letter-spacing: var(--text-heading-tracking);
   }
 
+  /* Session body text follows the root font scale; the existing text-body utility remains fixed. */
   .type-body.type-body {
-    font-size: var(--text-body);
-    line-height: var(--text-body--line-height);
+    font-size: var(--text-session-body);
+    line-height: var(--text-session-body--line-height);
     font-weight: var(--text-body-weight);
     letter-spacing: var(--text-body-tracking);
   }
@@ -36,8 +36,9 @@
     letter-spacing: var(--text-label-tracking);
   }
 
+  /* The approved Session metadata is 12px; the existing text-meta utility remains 11px. */
   .type-meta.type-meta {
-    font-size: var(--text-meta);
+    font-size: var(--text-session-meta);
     line-height: var(--text-meta--line-height);
     font-weight: var(--text-meta-weight);
     letter-spacing: var(--text-meta-tracking);
@@ -45,7 +46,7 @@
 
   .type-code.type-code,
   .type-code-content :is(code, pre) {
-    font-size: var(--text-code);
+    font-size: var(--text-session-code);
     line-height: var(--text-code--line-height);
     font-weight: var(--text-code-weight);
     letter-spacing: var(--text-code-tracking);

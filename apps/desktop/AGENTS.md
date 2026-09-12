@@ -7,10 +7,9 @@ What no linter checks about `apps/desktop`. The surfaces themselves are
 
 `docs/design-stack.md` names the token contract, and these are the rules for writing to it.
 
-- A visual constant is reached by name. The contract is the only place a raw value lives, and a
-  measurement at a call site is what `scripts/check-design-tokens.sh` reports.
-- A value the contract does not hold yet is added there first, and then read by name. Promoting a
-  component to shared comes after that, never with the value still inline.
+- Production visual constants use shared tokens or intentional named component-local tokens beside their owner.
+- Exploration can use easy-to-find local values when the existing roles cannot express a direction.
+  Resolve them into production tokens before review.
 - A token is named for its role, not its value, with one small role set per family. `--text-body`
   survives a change of size; `--text-13` does not.
 - Every string the reader sees takes a typography role.

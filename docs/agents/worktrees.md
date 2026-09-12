@@ -120,6 +120,11 @@ harness** — `EnterWorktree` cannot, and is refused if it tries (above):
 git worktree add -b 'argo/#<N>-<slug>' .claude/worktrees/ticket-<N>-<slug>
 ```
 
+After an agent's command succeeds, the worktree hook copies `.agents/skills/` and
+`.claude/skills/` from the primary checkout into the new tree. Git omits these ignored installed
+files from a linked checkout, so the copy makes the skill bundle independent of the commit that
+the new tree checks out.
+
 Then enter the tree it made: in **Claude Code**, `EnterWorktree` with
 `path: ".claude/worktrees/ticket-<N>-<slug>"`, which the tool documents as the way into a tree
 "you just created with `git worktree add`"; in **other harnesses**, `cd` into it. Both names are

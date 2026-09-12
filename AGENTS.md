@@ -9,7 +9,7 @@ Everything here is a fact about this repository. Process belongs to the skill th
 ## Where things are written down
 
 - **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A
-  screenshot reaches a body only when a person drags it in; an agent writes a Storybook link
+  screenshot reaches a body only when a person drags it in; an agent records the Storybook route
   instead, and keeps its own captures in a temp dir. Every issue is
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
@@ -56,18 +56,16 @@ Before code review, read `docs/agents/code-review.md` for repository references 
 husky and lint-staged out. `.github/workflows/ci.yml` names every
 step it runs on Linux and `bun run quality` is the local subset; read the step list there, never
 a copy of it. `quality` is wider than biome, so biome alone leaves a typecheck or a duplication
-breach for CI. A `macos-26` job packages `apps/desktop`, asserts the packaged `node-pty` and runs
-the shipped app (#1769) when the PR touches `apps/desktop`, the root manifest, the lockfile or
-`.github/`.
+breach for CI. A `macos-26` job packages and tests `apps/desktop` (#1769) when the PR touches
+`apps/desktop`, the root manifest, the lockfile or `.github/`.
 
 When a gate fires, fix it or ratchet it in `biome.jsonc`: **never suppress inline, never raise a
 global cap.** Both configs fail open when commented, so no gate is proved by exit code alone.
 
-**Node is pinned to `.node-version` exactly**, and `scripts/node-version-gate.mjs` refuses any
-other from the root `preinstall` and from `bun run quality:node` (#1800). After switching Node,
-delete `node_modules` and reinstall: `node-pty` is a native addon bound to the ABI. A workflow
-reaches the pin through `node-version-file: .node-version`, and nothing checks that it does, so a
-literal version hard-coded into one is caught by review or not at all.
+**Node 24 is the minimum**, declared in the root `package.json` `engines` and checked by nothing
+(#1951). CI installs the version in `.node-version` through `node-version-file:`, the one place
+it is written. After switching Node's major version, delete `node_modules` and reinstall:
+`node-pty` is a native addon bound to the ABI.
 
 **A desktop release publishes only on a passing verdict** (#1807, ADR-0036). `release.yml` is
 `workflow_dispatch` only, signs and notarizes, writes one `release-verdict.json` naming the SHA-256
@@ -133,7 +131,7 @@ expensive fan-out. Name the model and the reason when you report the dispatch.
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hooks, projected per-harness.
+`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hook behaviours, projected per-harness.
 **Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json`
 and `.codex/hooks.json`; never hand-edit those blocks. The hooks carry no convention of their own:
 this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`,
@@ -152,29 +150,27 @@ that trap turns on, and the add/sweep workflow are `packages/argo-skills/README.
 
 ## Design work
 
-**A design is a ticket and a throwaway branch, and neither outlives the screen.** The
-measurements, the frozen component names and the state renders are the body of the **design
-ticket**; its explorable page is the only content of `design/#<N>-<screen>`, a branch named for
-that ticket and reaped by `bun run worktrees:gc` once it closes. **Nothing lands on `main`**, so
-there is no third copy to drift from the other two, and a ticket whose branch is gone is still
-the whole spec.
+For UI work, read `docs/agents/code-review.md` for the third review axis, `interface-review`.
+The implementation ticket records selected decisions and their reasons.
 
-A UI ticket whose screen has a design ticket is built with `design-to-code`.
+Existing design tickets remain optional specification inputs.
+Their `design/#<N>-<screen>` branches remain readable until cleanup removes them after ticket closure.
+New UI work needs no separate design ticket or permanent design page.
 
 `docs/design-stack.md` is the stack: the token contract, the `docs/design/` kit, where components
-live, and the render commands. Every design skill reads it rather than guessing a framework.
+live, and the render commands. Interface review reads it rather than guessing the stack.
 
 **`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
 goes there.
 
 ## Visual verification
 
-**A component is reviewed on the Storybook site, and a screen is reviewed by running a render
-command.** The site is built from `main` by `.github/workflows/storybook-pages.yml` and served at
-`https://milad-alizadeh.github.io/argo/`; `ci.yml`'s `storybook` job rebuilds it on every pull
-request as the gate and comments the stories that pull request touches (#1910). The render
-commands are `docs/design-stack.md`'s last rows, and `apps/desktop/README.md` says what each
-writes.
+**A component is reviewed in Storybook, and a screen is reviewed by running a render command.**
+Vercel owns Storybook preview deployments. Its project configuration and credentials stay outside
+this repository. When a preview finishes, `storybook-links.yml` writes every story that renders a
+file the PR changed, linked to that commit's preview, between the `storybook-links` markers in the
+PR body (#1953): that section is CI's, and the rest of the body is the author's. The local
+commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
 
 **Every capture is disposable**: a temp dir, looked at, deleted. No gate takes a screenshot and no
 ref holds one, because a PNG in a git object carries no version.
@@ -207,8 +203,8 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
   A new variant of an existing kind is one new file plus one registration line.
 - **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`; a helper is born
   beside its only caller and hoists on the third.
-- **Tokens by name.** Every colour, spacing, radius, duration and type size is a named token
-  from the design package, never an inline literal or hex.
+- **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
+  Resolve experimental values into those tokens before review.
 - **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
   Delete dead code on sight.
 

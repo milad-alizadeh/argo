@@ -47,7 +47,7 @@ answer is a human's or an agent's, every time.
 Install a subset with `--skill`:
 
 ```bash
-npx skills@latest add milad-alizadeh/argo --skill design-to-code,ship
+npx skills@latest add milad-alizadeh/argo --skill interface-review ship
 ```
 
 Entries the target project locked itself are kept, so a subset install into a non-empty project
@@ -142,6 +142,8 @@ inside it, pushing to `main`, then adding the name to the lock.
   the code, in a context that never saw it written. Splits the node into claims, resolves
   every anchor, settles each relation at a call site, and marks each `true`, `false` or
   `cannot tell`. It reports and never edits.
+- [`interface-review`](skills/interface-review/SKILL.md) reviews accessibility, interaction,
+  required states, and consistency with the project's tokens and components in the live UI.
 
 ### Provenance
 

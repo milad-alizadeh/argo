@@ -1,19 +1,20 @@
 #!/usr/bin/env node
-// PreToolUse(Edit|Write|NotebookEdit|Bash|EnterWorktree) guardrail: the worktree discipline, whole.
+// The worktree discipline at PreToolUse(Edit|Write|NotebookEdit|Bash|EnterWorktree) and
+// PostToolUse(Bash): guard the location and name before creation, then carry installed skills.
 //
-// One hook, two moments, because they are one rule read from two ends and a session that trips
-// the first usually trips the second in its next call:
+// One hook script, three moments, because a tree is not ready until all three agree:
 //
 //   - WHERE the work happens. Every agent change to this repo must run in a worktree, never the
 //     shared main checkout — a write, and the commit that lands it. `decideEdit()` below.
 //   - WHICH worktree it is. A tree is named at creation, the one moment the name is still free
 //     to change. `decideName()`, in worktree-names.mjs, which this file imports.
+//   - WHAT skills it sees. Git omits ignored installed skills from a linked checkout, so the
+//     PostToolUse event copies the primary checkout's current bundle after creation.
 //
-// They were two hooks and two `hooks.json` entries until they were merged, which is why the two
+// WHERE and WHICH were two hooks and two `hooks.json` entries until they were merged, so the two
 // decisions stay two pure functions rather than one: they answer different questions and share
-// only the plumbing. The naming half sits in its own file for length alone, and is not a second
-// hook: there is one entry, on the union of the two old matchers, and one command the projection
-// invokes. The dispatcher is `decide()`, and it asks the naming question first, because a badly
+// only the plumbing. The naming half sits in its own file for length alone. The dispatcher is
+// `decide()`, and it asks the naming question first, because a badly
 // named `git worktree add` is the more actionable complaint of the two when both would fire.
 //
 // Two things the WHERE half once let through, and no longer does (#1276):
@@ -29,7 +30,8 @@
 // rather than break (#901). `EnterWorktree` cannot reach the convention by any input, so only
 // its `path:` passes (#1684).
 //
-// Gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT injected for markerless harnesses
+// Both event registrations are gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT injected
+// for markerless harnesses
 // like Codex) so it never touches the human's own workflow. Both decide() functions are pure
 // path and string logic (no fs, no git); resolveRoots() is the only part that reads the disk.
 // The stdin/stdout plumbing is shared with the other hooks in hook-io.mjs. Env-neutral by
@@ -49,6 +51,7 @@ import {
 import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mjs'
 import { CURRENT_DIRECTORY, writeTargets } from './shell-writes.mjs'
 import { configureNaming, decideName } from './worktree-names.mjs'
+import { copySkillsAfterWorktreeAdd } from './worktree-skills.mjs'
 
 // ---------------------------------------------------------------------------------------------
 // WHERE: every agent change runs in a worktree.
@@ -210,11 +213,16 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // project that configures no `branchPrefix` gets no branch-name judgement at all.
     const config = readWorktreeGuard(projectDir)
     configureNaming(config)
+    const isAgent = underAgent()
+    if ((payload.hook_event_name ?? payload.hookEventName) === 'PostToolUse') {
+      if (isAgent) copySkillsAfterWorktreeAdd({ ...toolCall(payload), cwd })
+      return ALLOW
+    }
     return decide({
       ...toolCall(payload),
       cwd,
       projectDir,
-      isAgent: underAgent(),
+      isAgent,
       roots: resolveRoots(config),
     })
   })
