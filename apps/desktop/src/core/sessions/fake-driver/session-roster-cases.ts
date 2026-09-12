@@ -11,7 +11,7 @@ export async function proveContract(page) {
   const list = await page.evaluate((value) => window.argo.listSessions(value), listing)
   assert.equal(list.type, 'session.listed')
   assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 10, read: 10 })
-  // Eight Sessions from ten files, discovered without one registered Project.
+  // Seven Sessions from ten files: the damaged transcript is read but has no Message record.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
     'askPending',
     'externalBasic',
@@ -20,7 +20,6 @@ export async function proveContract(page) {
     'resumeParent',
     'rollout-codexParent',
     'strandedResume',
-    'unparseableBody',
   ])
   // The archive flag is the desktop app's own, read out of its store and joined on the CLI
   // Session id. Only the Session that store names is archived.
