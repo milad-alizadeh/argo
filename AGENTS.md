@@ -131,7 +131,7 @@ expensive fan-out. Name the model and the reason when you report the dispatch.
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hooks, projected per-harness.
+`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hook behaviours, projected per-harness.
 **Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json`
 and `.codex/hooks.json`; never hand-edit those blocks. The hooks carry no convention of their own:
 this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`,
