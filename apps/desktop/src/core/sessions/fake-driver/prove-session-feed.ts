@@ -97,7 +97,6 @@ try {
   const roster = await ran(['roster-focus', 'archive-section'], () => proveRoster(page))
   const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
   await capture(page, application, 'roster-and-feed.png')
-  await capture(page, application, 'damaged-session.png')
   const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>
     proveFirstOpen(page),
   )
