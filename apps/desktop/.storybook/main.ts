@@ -11,17 +11,21 @@ const base = process.env.STORYBOOK_BASE ?? '/'
 const config: StorybookConfig = {
   stories: ['../src/renderer/**/*.stories.@(ts|tsx|js|jsx)'],
   framework: { name: '@storybook/react-vite', options: {} },
-  viteFinal: async (viteConfig) => ({
-    ...viteConfig,
-    base,
-    plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
-    resolve: {
-      ...viteConfig.resolve,
-      alias: {
-        '@': path.resolve(import.meta.dirname, '../src'),
+  viteFinal: async (viteConfig) => {
+    const aliases = viteConfig.resolve?.alias
+
+    return {
+      ...viteConfig,
+      base,
+      plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
+      resolve: {
+        ...viteConfig.resolve,
+        alias: Array.isArray(aliases)
+          ? [...aliases, { find: '@', replacement: path.resolve(import.meta.dirname, '../src') }]
+          : { ...aliases, '@': path.resolve(import.meta.dirname, '../src') },
       },
-    },
-  }),
+    }
+  },
 }
 
 export default config

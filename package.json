@@ -16,7 +16,6 @@
     "build": "turbo run build --filter=@argo/desktop",
     "build:storybook": "turbo run build:storybook",
     "design:tokens": "node scripts/design-token-mirror.mjs",
-    "render:design": "electron apps/desktop/scripts/render-design-page.mjs",
     "dev": "turbo run dev",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
@@ -48,7 +47,7 @@
     "node-pty"
   ],
   "dependencies": {
-    "@lexical/react": "^0.50.0",
-    "lexical": "^0.50.0"
+    "ansi-to-react": "^6.2.6",
+    "shiki": "^4.4.3"
   }
 }

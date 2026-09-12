@@ -110,12 +110,8 @@ export async function proveNoMislabelledFeed(page) {
 // height, laid out by Blink rather than by the pass (ADR-0033). The Session opened here is opened
 // for the FIRST time in this run, so a real measure pass stands between the choice and the draw
 // and the window is frames wide rather than instants; a Session already measured answers from the
-// cache inside one flush and leaves nothing to sample.
-//
-// What this gates, measured rather than assumed: two guards hold the window shut — the renderer's
-// `shown`, which keeps rows and the chosen id travelling together, and `useSettledFeed`'s own
-// `settledHere`. Removing either alone leaves the proof green, and removing both turns this case
-// red. It is the pair that is asserted here, not one of them.
+// cache and leaves nothing to sample. This gates the `shown` contract and `useSettledFeed`'s own
+// `settledHere` together.
 export async function proveNoUnmeasuredRow(page) {
   await openSession(page, 'Pick the ink', 'askPending')
   const watching = watchFrames(page, 'resumeParent')
