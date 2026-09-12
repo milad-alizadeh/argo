@@ -1,19 +1,22 @@
 import { requestIdentifier } from '../../boundary'
 import {
+  type ClaudeSessionStartReply,
+  type ClaudeSessionStartRequest,
   type SessionFeedReply,
   type SessionFeedRequest,
   type SessionListReply,
   type SessionListRequest,
   sessionError,
 } from './contract'
-import { isSessionFeedReply, isSessionListReply } from './replies'
+import { isClaudeSessionStartReply, isSessionFeedReply, isSessionListReply } from './replies'
 
 export type SessionClient = {
+  startClaudeSession(request: ClaudeSessionStartRequest): Promise<ClaudeSessionStartReply>
   listSessions(request: SessionListRequest): Promise<SessionListReply>
   readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
 }
 
-type Invoke = (channel: 'list' | 'feed', request: unknown) => Promise<unknown>
+type Invoke = (channel: 'list' | 'feed' | 'startClaude', request: unknown) => Promise<unknown>
 
 // A reply that is not the shape asked for, or answers a different request, is refused rather
 // than drawn. `connection-lost` is the one failure the renderer cannot see any other way.
@@ -32,12 +35,21 @@ async function ask<Reply>(
   return reply
 }
 
-function answersRequest(reply: SessionListReply | SessionFeedReply, requestId: string | null) {
+function answersRequest(reply: { requestId: string | null }, requestId: string | null) {
   return reply.requestId === requestId
 }
 
 export function createSessionClient(invoke: Invoke): SessionClient {
   return {
+    async startClaudeSession(request) {
+      const requestId = requestIdentifier(request)
+      const reply = await ask(
+        () => invoke('startClaude', request),
+        isClaudeSessionStartReply,
+        requestId,
+      )
+      return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
+    },
     async listSessions(request) {
       const requestId = requestIdentifier(request)
       const reply = await ask(() => invoke('list', request), isSessionListReply, requestId)

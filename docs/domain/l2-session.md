@@ -36,6 +36,10 @@
 - **Transcript file** — the *physical* per-file CLI record (owned by the CLI). One Session
   stitches one or more. Never itself called a "Session."
 
+  A Transcript file with no Message records is not a Session and produces no Roster row. It still
+  counts as a file the discovery pass found and read, and joins a Session on the next pass once the
+  CLI writes its first Message.
+
   **A relocation opens one** (#735). `EnterWorktree` closes the file and opens a fresh one under
   the worktree's own project directory, sharing no `uuid`, `requestId`, `messageId` or `promptId`
   with what came before. The only shared key is the snake_case `session_id` every message-bearing

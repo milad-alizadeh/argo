@@ -3,6 +3,8 @@
 // anything from outside: once, into a shape, before anything draws them.
 import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import {
+  type ClaudeSessionStartReply,
+  isClaudeSessionStarted,
   isSessionError,
   type SessionFeedReply,
   type SessionListReply,
@@ -70,13 +72,35 @@ export function isSessionFeedReply(value: unknown): value is SessionFeedReply {
   if (!isRecord(value) || value.version !== 1) return false
   if (value.type === 'session.feed.read') {
     return (
-      hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'chainId', 'rows']) &&
+      hasKeys(value, [
+        'version',
+        'type',
+        'requestId',
+        'sessionId',
+        'chainId',
+        'revision',
+        'rows',
+      ]) &&
       isIdentifier(value.requestId) &&
       isIdentifier(value.sessionId) &&
       isIdentifier(value.chainId) &&
+      typeof value.revision === 'string' &&
       Array.isArray(value.rows) &&
       value.rows.every(isFeedRow)
     )
   }
+  if (value.type === 'session.feed.unchanged') {
+    return (
+      hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'chainId', 'revision']) &&
+      isIdentifier(value.requestId) &&
+      isIdentifier(value.sessionId) &&
+      isIdentifier(value.chainId) &&
+      typeof value.revision === 'string'
+    )
+  }
   return value.type === 'session.error' && isSessionError(value)
+}
+
+export function isClaudeSessionStartReply(value: unknown): value is ClaudeSessionStartReply {
+  return isClaudeSessionStarted(value) || (isRecord(value) && isSessionError(value))
 }

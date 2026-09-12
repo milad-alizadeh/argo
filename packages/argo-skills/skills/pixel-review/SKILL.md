@@ -8,58 +8,51 @@ description: Judge a UI change by its pixels against the design ticket, in a fre
 Applies when the working diff touches anything rendered: components, styles, isolated-state
 cases, web source. If nothing renderable changed, say so and stop.
 
-## 1. Render the affected states
+## 1. Name the scope
 
-Resolution order, first hit wins:
+Read the diff and the ticket. Name every affected visual state, the implementation worktree path,
+its HEAD commit, and the design ticket number or branch. This is a state map, not evidence: do
+not render, select, or pass screenshots to the reviewer.
 
-1. **Project-declared**: the render command in `docs/design-stack.md`, or a "Visual
-   verification" section in the project doc that spells out how to render states.
-2. **Storybook** (`.storybook/` exists): build it and screenshot each story of every
-   component the diff touched.
-3. **The design's page**: the design ticket's branch holds it. Read it out without a checkout
-   and screenshot the `file://` URL:
+If nothing renderable changed, say so and stop. If the design ticket is unknown, or it does not
+cover every affected state, report visual verification unavailable to the caller, for `/ship` to
+carry into the PR body, and stop.
 
-   ```sh
-   git fetch origin 'design/#<N>-<screen>'
-   git show FETCH_HEAD:design.html > "$TMPDIR/<screen>.html"
-   ```
+Done when the reviewer can reproduce each changed state from the state map and immutable commit.
 
-   `FETCH_HEAD`, not the branch name: fetching one branch writes no local head, so the branch
-   name resolves to nothing and the failure reads exactly like a reaped branch. The page is
-   self-contained, so that one file is the whole design.
+## 2. Give the reviewer custody of the evidence
 
-   A branch that is gone means the screen shipped and its page was reaped. Judge against the
-   state renders on the design ticket, which are the spec, and move on.
-4. **Dev server**: a `dev`/`start` script; launch it and navigate to the screens the ticket
-   names.
-5. **Nothing renderable found**: report "visual verification unavailable" to the caller, for
-   `/ship` to carry into the PR body, and stop.
+Hand the review to a fresh context that never saw the implementation reasoning or its renders
+(Claude Code: a separate agent via the `Agent` tool; other harnesses: a new session). Give it
+only the ticket's acceptance criteria, or the user's spec, verbatim, and the state map. The
+reviewer, not the implementer, gets the artifacts.
 
-Use `scripts/screenshot-states.mjs` if the project has it; otherwise drive headless Chromium
-inline with a fixed viewport and animations disabled.
+The reviewer reads `docs/design-stack.md`, resolves the design ticket, and creates its own temp
+directory. The state map is a lead, not a limit: the reviewer derives the final state set from
+the ticket and design before it captures anything. Each final state needs an approved reference;
+a related prototype does not cover an undesigned state. It then does all of this itself:
 
-Every render is **disposable**: it lives in a temp dir, it is judged in step 2, and step 4 deletes
-it. A picture that outlives the review has no version, so a later reader cannot tell whether it
-shows the code beside it or the code it replaced.
+1. Fetches the design branch and renders its page at each affected state. It reads the page from
+   `FETCH_HEAD`, not a local branch name. If the branch was reaped, it obtains the state renders
+   from the design ticket instead.
+2. Renders the project's foundations specimen when the stack names one.
+3. Runs the project-declared shipped-screen capture in the implementation worktree. If there is
+   none, it builds Storybook or runs the project's development server and captures each state.
+4. Records an evidence manifest: design ticket and source commit, design-render paths,
+   foundations-render path when present, product-capture paths, and the state mapping.
 
-Done when there is one PNG per affected state, named after the state, in a temp dir.
+The reviewer compares those artifacts control by control. It answers one question: do the
+shipped pixels satisfy this spec? Its verdict is pass or fail, with findings that name the
+product screenshot, the reference screenshot, what differs, and the spec line it violates.
 
-## 2. Judge with fresh eyes
-
-Hand the judging to a fresh context that never saw the render or your reasoning (Claude
-Code: a separate agent via the `Agent` tool; other harnesses: a new session seeded with only
-the inputs below). Its only inputs:
-
-- the ticket's acceptance criteria, or the user's spec, verbatim;
-- the design ticket's state renders and the foundations specimen, if the project has them;
-- the screenshots.
-
-The judge answers one question, do these pixels satisfy this spec, and returns pass/fail
-plus findings, each naming the screenshot, what is wrong, and which spec line it violates.
+An artifact the reviewer cannot resolve makes visual verification unavailable. It is never a
+pass, and the reviewer states which artifact is missing and why. A supplied artifact can help
+the reviewer find a command, but it is not evidence until the reviewer regenerated or independently
+resolved it.
 
 If you cannot reach any fresh context, stop here and say so. One Claude Code case: agents
-running inside a `Workflow` have no `Agent` tool, so the orchestrator runs the judge as its
-own stage.
+running inside a `Workflow` have no `Agent` tool, so the orchestrator runs the reviewer as its
+own stage. Done when the reviewer returns the manifest and a pass, fail, or unavailable verdict.
 
 ## 3. Fix loop
 

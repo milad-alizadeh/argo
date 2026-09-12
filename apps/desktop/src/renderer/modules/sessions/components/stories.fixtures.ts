@@ -154,5 +154,6 @@ export const feedStory: SessionFeed = {
   requestId: 'feed-story',
   sessionId: 'prose',
   chainId: 'prose',
+  revision: 'feed-story',
   rows: [...feedRowsStory],
 }

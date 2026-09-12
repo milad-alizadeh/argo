@@ -85,7 +85,7 @@ describe('the root command surface', () => {
   test('routes the release build through one uncached desktop task', () => {
     expect(root().scripts.build).toBe('turbo run build --filter=@argo/desktop')
     expect(turbo().tasks.build).toEqual({ cache: false, outputs: ['out/**'] })
-    expect(desktop().scripts.build).toBe('bun run prove:pty --arch arm64')
+    expect(desktop().scripts.build).toBe('bun run test:packaged-pty --arch arm64')
   })
 
   // Forge holds the terminal for the life of the app, and so does the Storybook server, so
@@ -128,7 +128,7 @@ describe('what turbo caches', () => {
   // is a claim that the work need not happen, and no earlier machine's green run is evidence that
   // THIS machine's artifact starts, so the one task whose whole point is execution stays uncached.
   // The two persistent servers are uncached for the ordinary reason: they never finish.
-  test('caches every task except the release proof and the two servers', () => {
+  test('caches every task except the packaged test and the two servers', () => {
     expect(cached('build')).toBe(false)
     expect(cached('dev')).toBe(false)
     expect(cached('storybook')).toBe(false)
@@ -141,7 +141,7 @@ describe('what turbo caches', () => {
   // the ROOT manifest — are invisible to the hash of the task that runs them. Without the root
   // `package.json` in `globalDependencies`, renaming a root script would be judged by a cache
   // entry that never saw the rename, and `bun run test` would report a pass for the old names.
-  // `.node-version` is here because every task shells through the version gate first, and
+  // `.node-version` is here because CI installs the Node every task runs on from it, and
   // `turbo.json` because the assertions in this very block read it: turbo folds in only the
   // running task's own resolved definition, so an edit to `tasks.dev` is otherwise unhashed.
   test('hashes the files that decide a task without being read by it', () => {
@@ -157,13 +157,6 @@ describe('what turbo caches', () => {
     expect(turbo().tasks['build:storybook'].inputs).toContain('src/core/**')
   })
 
-  // `.storybook/main.ts` reads `STORYBOOK_BASE` into every asset URL. Turbo's strict env mode hands
-  // a task only the variables it declares, and hashes only those, so an undeclared base is dropped
-  // from the build and a root-based site can be restored for a `/argo/` one.
-  test('passes and hashes the base the site is served from', () => {
-    expect(turbo().tasks['build:storybook'].env).toContain('STORYBOOK_BASE')
-  })
-
   // `tsc --noEmit` and `bun test` write nothing, and a task with no declared outputs is a task
   // whose cache entry turbo cannot describe. The empty array is the statement, not an omission.
   test('says out loud that the verdict tasks emit nothing', () => {
@@ -171,10 +164,10 @@ describe('what turbo caches', () => {
     expect(turbo().tasks.test.outputs).toEqual([])
   })
 
-  // `build` is the release proof, so a `^build` edge puts a fifteen-minute package and a
+  // `build` is the packaged PTY test, so a `^build` edge puts a fifteen-minute package and a
   // 600-cycle app run in front of whatever declared it. Such an edge is inert only while nothing
   // depends on `@argo/desktop`; this refuses it instead of relying on that.
-  test('keeps the release proof out of every other task graph', () => {
+  test('keeps the packaged PTY test out of every other task graph', () => {
     for (const [name, task] of Object.entries(turbo().tasks))
       expect(task.dependsOn ?? [], `${name} depends on the release build`).not.toContain('^build')
   })

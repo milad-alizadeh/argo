@@ -1,22 +1,31 @@
 {
   "navigationLabel": "Sessions",
   "title": "Sessions",
-  "subtitle": "CLI terminal activity",
+  "subtitle": "CLI messages",
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "reading": "Reading this Session",
   "feedLabel": "Session Feed",
   "historyLabel": "Session history",
+  "composer": {
+    "unavailable": {
+      "label": "Session input",
+      "observed": "Read-only. Session input is not available in this build.",
+      "read-only": "Read-only. Argo did not start this Session.",
+      "orphaned": "This Session is disconnected.",
+      "ended": "This Session ended. There is nothing left to send."
+    }
+  },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
   "archived": "Archived",
   "empty": {
     "unselected": {
       "title": "No Session selected",
-      "description": "Select a Session on the left to read its history."
+      "description": "Select a Session on the left to read its messages."
     },
     "blank": {
-      "title": "Nothing said yet",
-      "description": "This Session has a transcript, and there is nothing in it to show."
+      "title": "No messages",
+      "description": "This Session has no messages to show."
     },
     "roster": {
       "title": "No Sessions on this machine",

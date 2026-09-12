@@ -10,6 +10,13 @@
       "agentGated": true
     },
     {
+      "event": "post-tool",
+      "matcher": "Bash",
+      "$comment": "After an accepted git worktree add succeeds, copy the primary checkout's installed skills into the new tree. Git does not carry ignored .agents/skills or .claude/skills into a linked checkout, so a Session started there would otherwise see no project bundle or whatever stale copy that path already held. The pre-tool half still owns validation; this post-tool half runs only after success, when the destination exists.",
+      "command": "node \"$(git rev-parse --show-toplevel)/hooks/worktree-guard.mjs\"",
+      "agentGated": true
+    },
+    {
       "$comment": "PR ownership: `/ship` is the only skill that pushes a work branch or opens a pull request (#1669). A PreToolUse hook cannot tell which skill is running - Claude Code's payload carries no field naming the active skill and no environment variable does either - so this cannot deny \"unless the skill is ship\". It denies the action outright and takes an explicit opt-out instead: a command carrying the `ARGO_SHIP=1` environment prefix is allowed through, and `ship/SKILL.md` writes that prefix into the commands it tells the agent to run. The marker is part of the command line, so what claimed the exemption is visible in the transcript. Three shapes are allowed unmarked, none of them a work branch: a push that deletes a ref, a push targeting a ref outside refs/heads/ (the PNG evidence ref), and a push to a branch under one of `worktreeGuard.publishBranches` (the design page, which joins to no ticket and which `/ship` has no step for).",
       "event": "pre-tool",
       "matcher": "Bash",

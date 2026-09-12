@@ -1,6 +1,4 @@
-// The generated mirror is only true while somebody re-runs the generator. This is what makes a
-// token added to the contract and never mirrored a failing suite rather than a design page that
-// silently resolves it to nothing.
+// The generated mirror must track every token contract change.
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -47,4 +45,10 @@ test('the mirror includes imported Session tokens in declaration order', () => {
   assert.ok(mirror.indexOf('--color-traffic-light-close') < mirror.indexOf('--background:'))
   assert.equal(mirror.includes('@import'), false)
   assert.equal(mirror.includes('@theme'), false)
+})
+
+test('the Sessions inks retain their dark root and light override', () => {
+  const mirror = mirrorContract(readContract(contractPath))
+  assert.equal(mirror.includes('--color-ink: #f2f4f6;'), true)
+  assert.equal(mirror.includes(':root:not(.dark) {\n  --color-ink: var(--foreground);'), true)
 })

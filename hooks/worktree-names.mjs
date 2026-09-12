@@ -1,8 +1,7 @@
 // WHICH worktree the work runs in: a tree is named at creation, the one moment the name is still
 // free to change. The other half of the same rule, WHERE the work runs, is worktree-guard.mjs,
-// and that file is the hook. This one is a module it imports, not a second hook: there is one
-// hooks.json entry, on the union of the two matchers, and one command the projection invokes.
-// The split across two files is a file-length one and carries no behaviour of its own.
+// and that file is the hook. This one is a module it imports, not a second hook. The split across
+// two files is a file-length one and carries no behaviour of its own.
 //
 // Nothing about editing inside an existing tree is guarded here, so a tree already named
 // off-convention drains rather than breaks (#901). `EnterWorktree` cannot reach the convention by
@@ -126,7 +125,7 @@ function checkPair(dir, branch) {
  * The arguments of a git invocation, or null when the segment is not one. Only a segment that
  * *starts* with git is a command: `grep "git worktree add" docs/` is a mention, not a creation.
  */
-function gitArgs(tokens) {
+export function gitArgs(tokens) {
   const { name, args } = invocation(tokens)
   return name === 'git' ? afterGitOptions(args) : null
 }
@@ -135,7 +134,7 @@ const branchFlag = (token) =>
   (token.startsWith('-b') || token.startsWith('-B')) && token.length > 2 ? token.slice(2) : null
 
 /** Positional path and explicit branch of a `git worktree add`, or null. */
-function parseWorktreeAdd(args) {
+export function parseWorktreeAdd(args) {
   if (args[0] !== 'worktree' || args[1] !== 'add') return null
   let branch
   const positionals = []

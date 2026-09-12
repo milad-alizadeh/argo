@@ -21,8 +21,12 @@ export async function proveFirstOpen(page) {
       fromTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop,
       userSelect: getComputedStyle(prose).userSelect,
       selected: window.getSelection().toString(),
-      measureMs: Number(document.querySelector('.feed').dataset.measureMs),
-      settleMs: Number(document.querySelector('.feed').dataset.settleMs),
+      measureMs: Number(
+        document.querySelector('.feed__document[data-active="true"]').dataset.measureMs,
+      ),
+      settleMs: Number(
+        document.querySelector('.feed__document[data-active="true"]').dataset.settleMs,
+      ),
     }
   })
   assert.equal(reading.session, 'prose')
@@ -90,15 +94,14 @@ function watchFrames(page, target) {
 // have been read already, so this is the fast switch: the reply and the reading are both on hand
 // and the whole thing lands in one flush.
 export async function proveNoMislabelledFeed(page) {
+  await openSession(page, 'read this file', 'prose')
   await openSession(page, 'Pick the ink', 'askPending')
-  const watching = watchFrames(page, 'unparseableBody')
-  await page.click('button:has-text("unparseableBody")')
+  const watching = watchFrames(page, 'prose')
+  await page.click('button:has-text("read this file")')
   const samples = await watching
   assert.equal(samples.length > 0, true)
   assert.deepEqual(
-    samples.filter(
-      (sample) => (sample.session === 'unparseableBody') !== sample.row.startsWith('unreadable:'),
-    ),
+    samples.filter((sample) => (sample.session === 'prose') !== sample.row.startsWith('p-')),
     [],
   )
 }

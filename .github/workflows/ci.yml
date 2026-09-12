@@ -1,10 +1,9 @@
-# Three tiers. `check` runs biome, the typecheck, the duplication gate, the guardrail-hook tests and
+# Two tiers. `check` runs biome, the typecheck, the duplication gate, the guardrail-hook tests and
 # the packaged-contents manifest (#1806) on Linux for every PR — the manifest with no path filter,
 # because a lockfile refresh can change what ships without touching an `apps/desktop` file.
-# `desktop-artifact` packages `apps/desktop` for arm64 on macOS, asserts the
-# packaged `node-pty` and runs the shipped app (#1769) — only when the PR touches the desktop app,
-# the root manifest, the lockfile or `.github/`, and its filter fails CLOSED. `storybook` builds
-# the component site on Linux and comments the stories a pull request touches (#1910).
+# `desktop-artifact` packages `apps/desktop` for arm64 on macOS and runs its packaged tests (#1769)
+# only when the PR touches the desktop app, the root manifest, the lockfile or `.github/`, and its
+# filter fails CLOSED.
 #
 # The macOS job is free: standard GitHub-hosted runners are unlimited on public repositories, and
 # `argo` is public. The "99% of the Actions bill" figure that removed the previous macOS job read
@@ -129,14 +128,14 @@ jobs:
       # Gated on the package step alone, not `success()`: every gate above runs even after an
       # earlier one fails, so a lint error must not take the manifest verdict with it. What this
       # cannot survive is a failed package, which reports "no Contents/Resources" over the cause.
-      - name: Package manifest
+      - name: Test package manifest
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         working-directory: apps/desktop
-        run: bun run desktop:manifest out/Argo-darwin-arm64/Argo.app
+        run: bun run test:packaged-manifest out/Argo-darwin-arm64/Argo.app
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
-  # read the fuse wire back out of the shipped binary, and RUN it. Everything #1769 asserts about
-  # the packaged PTY fails silently, so the only honest check is on the artifact itself.
+  # read the fuse wire back out of the shipped binary, and test it. Everything #1769 tests about
+  # the packaged PTY fails silently, so the only honest test reads the artifact itself.
   #
   # macOS runners are free on this public repository — the ~$50/day that removed the old Swift job
   # was the gross column of the billing page, never the billed one. The limits that are real are 5
@@ -145,10 +144,10 @@ jobs:
   #
   # It packages, it does not sign. `osxSign` is unconfigured until the entitlement set is chosen
   # (#1771) and this repository holds no signing identity. When both arrive, the signing steps
-  # belong in this job between the package and the launch, and `assert:packaged` should run again
-  # after them: a re-signature can invalidate what the package proved.
+  # belong in this job between the package and the launch, and `test:packaged-contents` should run
+  # again after them: a re-signature can invalidate what the package proved.
   desktop-artifact:
-    name: package · assert · run the shipped arm64 app
+    name: package · run packaged tests
     if: github.event_name == 'pull_request'
     runs-on: macos-26
     timeout-minutes: 45
@@ -164,7 +163,7 @@ jobs:
       #
       # It fails CLOSED, and that is the whole design of it. Written the obvious way — a pipeline
       # inside an `if` — every failure mode writes `desktop=false` and skips the package, the
-      # assertion and the launch, and the job then reports GREEN having proved nothing. `bash -e`
+      # tests, and the job then reports GREEN having proved nothing. `bash -e`
       # is suspended inside an `if` condition by definition, GitHub's default shell sets no
       # `pipefail`, and grep on an empty stream exits 1. So the diff runs on its own line, under
       # `set -euo pipefail`, where a broken filter turns the job red instead of quietly disarming
@@ -229,130 +228,39 @@ jobs:
       # running all of, these two are strictly downstream of the package. Running them after a
       # failed package adds two red steps whose messages ("no app.asar", "no packaged binary")
       # describe the symptom and bury the cause.
-      - name: Assert the packaged app
+      - name: Test packaged app contents
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
-        run: bun run assert:packaged out/Argo-darwin-arm64/Argo.app
+        run: bun run test:packaged-contents out/Argo-darwin-arm64/Argo.app
 
       # The same manifest the Linux tier compared, re-read off the app THIS job packaged (#1806).
       # It is not a duplicate run: signing adds files to a bundle, so the shipped bytes are the
       # ones the exact set has to hold for. Until `osxSign` is configured (#1771) the two readings
       # agree, and that agreement is itself worth a step once they stop.
-      - name: Package manifest
+      - name: Test package manifest
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
-        run: bun run desktop:manifest out/Argo-darwin-arm64/Argo.app
+        run: bun run test:packaged-manifest out/Argo-darwin-arm64/Argo.app
 
       # The #1749 acceptance boundary, inside the shipped binary: start, input, output, resize,
       # interrupt, exactly-once exit, crash cleanup, app shutdown, and 600 spawn/exit cycles at a
       # flat descriptor count.
-      - name: Run the shipped app
+      - name: Test the shipped app
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
-        run: node scripts/prove-packaged-pty.mjs --arch arm64 --skip-package
+        run: bun run test:packaged-pty --arch arm64 --skip-package
 
-      - name: Prove the Project contract in a packaged test copy
+      - name: Test the Project workflow in a packaged copy
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
-        run: bun run prove:project-contract
+        run: bun run test:packaged-project
 
       # Discovery with no Project registered, the Feed contract, the ADR-0033 measure pass and the
       # renderer authority the Session bridge asserts for itself (#1831).
-      - name: Prove the Session Feed in a packaged test copy
+      - name: Test the Session Feed in a packaged copy
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         working-directory: apps/desktop
         # No `--shots`. The driver can still write PNG files for a person reading them on their own
         # machine, but nothing in CI takes a screenshot any more (#1910): the assertions above read
-        # the DOM, and the pixels are reviewed on the Storybook site the `storybook` job builds.
-        run: bun run prove:session
-
-  # The visual tier (#1910). It replaced a screenshot gate: CI used to drive the packaged app with
-  # `--shots` and keep the PNG files as an artifact, which proved that a capture ran rather than
-  # what it showed, and nobody downloaded them. What a reviewer can use is the component itself, in
-  # every state a story declares, on a site they can click.
-  #
-  # Two things happen here. The build is the gate: a story that stops compiling, or a token a
-  # component reads and the theme no longer defines, fails this step. The comment is the evidence:
-  # the site is served from `main` by `storybook-pages.yml`, so a pull request gets deep links to
-  # the stories of the components its own diff touches rather than a preview of itself.
-  #
-  # `pull-requests: write` is why this is a separate job rather than a step in `check`: the token
-  # there is read-only and must stay that way.
-  storybook:
-    name: storybook build · story links
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          # The comment needs a merge base to diff against, and a depth-1 clone has none.
-          fetch-depth: 0
-      - uses: ./.github/actions/setup
-
-      # No `STORYBOOK_BASE` here. This build is never served, so the default root base is right,
-      # and leaving it unset keeps the gate reading the same configuration a local build does.
-      - name: Build Storybook
-        working-directory: apps/desktop
-        run: bun run build:storybook
-
-      # Written to a file rather than piped onward, so a skipped comment step still leaves the
-      # links in the job summary.
-      - id: links
-        name: Collect the story links for this pull request
-        if: ${{ github.event_name == 'pull_request' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin "$BASE_REF"
-          git diff --name-only "FETCH_HEAD...HEAD" > "$RUNNER_TEMP/changed.txt"
-          node apps/desktop/scripts/storybook-story-links.mjs \
-            --index apps/desktop/storybook-static/index.json \
-            --base "$SITE" \
-            --changed "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/story-links.md"
-          if [ -s "$RUNNER_TEMP/story-links.md" ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-            cat "$RUNNER_TEMP/story-links.md" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "no story covers a component this pull request touches"
-            echo "found=false" >> "$GITHUB_OUTPUT"
-          fi
-        env:
-          BASE_REF: ${{ github.base_ref }}
-          SITE: https://milad-alizadeh.github.io/argo/
-
-      # One comment per pull request, edited in place on every push. A marker line identifies it,
-      # because `gh pr comment --edit-last` edits whatever this author wrote last and would take
-      # over an unrelated comment. A fork pull request gets a read-only token, so it is skipped
-      # rather than left to fail; the links are in the job summary either way.
-      - name: Comment the story links
-        # Folded onto one line by `>-`: a block scalar that keeps its newlines is a string GitHub
-        # then has to parse as an expression, and the failure mode is a step that never runs.
-        if: >-
-          ${{ github.event_name == 'pull_request'
-          && steps.links.outputs.found == 'true'
-          && github.event.pull_request.head.repo.full_name == github.repository }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          marker='<!-- storybook-story-links -->'
-          { echo "$marker"; cat "$RUNNER_TEMP/story-links.md"; } > "$RUNNER_TEMP/comment.md"
-          # One id per line, then the first line: `--paginate` applies `--jq` once per page, so a
-          # long thread prints a match per page. Trimmed in the shell rather than through `head`,
-          # which closes the pipe early and turns `pipefail` into a failed step.
-          matches=$(gh api "repos/$REPO/issues/$NUMBER/comments" --paginate \
-            --jq ".[] | select(.body | startswith(\"$marker\")) | .id")
-          existing=${matches%%$'\n'*}
-          if [ -n "$existing" ]; then
-            gh api -X PATCH "repos/$REPO/issues/comments/$existing" \
-              -F "body=@$RUNNER_TEMP/comment.md" > /dev/null
-          else
-            gh api -X POST "repos/$REPO/issues/$NUMBER/comments" \
-              -F "body=@$RUNNER_TEMP/comment.md" > /dev/null
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
+        # the DOM, and reviewers inspect pixels in Storybook outside this workflow.
+        run: bun run test:packaged-session

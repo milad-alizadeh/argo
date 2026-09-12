@@ -8,7 +8,6 @@
       "outputs": ["out/**"]
     },
     "build:storybook": {
-      "env": ["STORYBOOK_BASE"],
       "inputs": [
         ".storybook/**",
         "src/renderer/**",

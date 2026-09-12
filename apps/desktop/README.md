@@ -17,12 +17,9 @@ Run the app against the dev server with `bun run dev` from the repository root. 
 
 - Design stack: `docs/design-stack.md`
 - Design rules: `apps/desktop/AGENTS.md`
-- Components, live: <https://milad-alizadeh.github.io/argo/>, built from `main` by
-  `.github/workflows/storybook-pages.yml`. `?path=/story/<component>--<state>` links one state.
 - Components, locally: `bun run storybook` from the repository root
 - Build the site: `bun run build:storybook` from the repository root, output
-  `apps/desktop/storybook-static`. Set `STORYBOOK_BASE=/argo/` only when the output will be
-  served from that path.
+  `apps/desktop/storybook-static`
 - Render one PNG: `cd apps/desktop && bun run design:render`
 
 Every PNG these commands write is disposable. Look at it and delete it: no gate reads one and no
@@ -30,7 +27,7 @@ ref holds one ([#1910](https://github.com/milad-alizadeh/argo/issues/1910)).
 
 ## Build a local release
 
-On an Apple silicon Mac, use the pinned Node version. Then run these commands from the repository
+On an Apple silicon Mac, use Node 24 or newer. Then run these commands from the repository
 root:
 
 ```sh
@@ -74,18 +71,14 @@ against fixture trees.
 binary and then runs it:
 
 ```sh
-bun run package --arch arm64                       # the postPackage hook asserts on its own
-bun run assert:packaged out/Argo-darwin-arm64/Argo.app   # the same checks, standalone
-bun run prove:pty --arch arm64                     # package, then launch and run acceptance
-bun run prove:pty --arch arm64 --skip-package
-bun run prove:pty --arch arm64 --skip-endurance
+bun run package --arch arm64                              # the postPackage hook asserts on its own
+bun run test:packaged-contents out/Argo-darwin-arm64/Argo.app
+bun run test:packaged-pty --arch arm64                    # package, then run the acceptance test
+bun run test:packaged-pty --arch arm64 --skip-package
+bun run test:packaged-pty --arch arm64 --skip-endurance
 ```
 
-Through the script, never `node scripts/prove-packaged-pty.mjs` directly: the script carries the
-Node-pin gate (#1777), and the bare `node` invocation packages with Forge on whatever Node you
-happen to be on.
-
-`assert:packaged` is the same code `forge package` runs in its `postPackage` hook, so packaging
+`test:packaged-contents` is the same code `forge package` runs in its `postPackage` hook, so packaging
 already refuses an app whose `node-pty` is absent, packed inside the asar, or stripped of its
 `spawn-helper` exec bit. Running it standalone is the form a downloaded release artifact would be
 checked in, and it keeps the checks honest if the hook is ever detached from the config.
@@ -99,8 +92,8 @@ descriptor count.
 Only arm64 is proved. [#1745](https://github.com/milad-alizadeh/argo/issues/1745) ships arm64
 alone. A local package does not use Developer ID signing. The release workflow supplies the
 identity and applies the entitlement set that [#1771](https://github.com/milad-alizadeh/argo/issues/1771)
-chose. It runs `assert:packaged` again after signing because a new signature can invalidate the
-package proof.
+chose. It runs `test:packaged-contents` again after signing because a new signature can invalidate
+the packaged test.
 
 ### node-pty is pinned to the `beta` line, and it is the endurance check that pins it
 
@@ -131,27 +124,17 @@ CLI can no longer be handed one. Nothing in Argo does that today.
 
 ## Two things will bite you
 
-**Node is pinned exactly, and the pin is enforced.** The root `.node-version` is the single place
-the version is written, and `scripts/node-version-gate.mjs` refuses any other version, including a
-newer patch. It runs at root `preinstall`, so a wrong Node fails `bun install`, and before every
-command here that reaches Electron or Forge. `bun run quality` runs it first, and CI reads the same
-file through `node-version-file:`.
+**Node 24 is the minimum, and nothing checks it.** The root `package.json` declares it in
+`engines` ([#1951](https://github.com/milad-alizadeh/argo/issues/1951)). Below it, Electron 44's
+installer dies with `ERR_REQUIRE_ESM`, a message that says nothing about your Node. CI runs the
+version in the root `.node-version`, read through `node-version-file:`.
 
-Do not read that failed install as "nothing happened": bun runs the root `preinstall` *after* it
-has linked `node_modules` and built the native dependencies, so on the wrong Node `node-pty` is
-already compiled against the wrong ABI. **Delete `node_modules` and install again** once you are
-on the pinned version.
+`node-pty` is compiled against one Node ABI, and the ABI changes with the major version. **Delete
+`node_modules` and install again** after you switch Node's major version.
 
-The reason it is a gate rather than a note: Electron 44 declares `engines.node >= 22.12.0` and
-means it, its installer is CommonJS and requires an ESM-only `@electron/get`, and on an older Node
-it dies with `ERR_REQUIRE_ESM` — a message that says nothing about your Node. The exactness is
-[#1751](https://github.com/milad-alizadeh/argo/issues/1751)'s decision and
-[#1777](https://github.com/milad-alizadeh/argo/issues/1777) wired it.
-
-**Your version manager probably will not apply the pin for you.** nvm reads `.nvmrc` and has no
-`.node-version` fallback at all. `fnm` reads `.node-version` but installs nothing, so it needs an
-`fnm install` first. `asdf` reads it only with `legacy_version_file = yes` in `~/.asdfrc`, and
-ignores the file by default. Switch by hand, from this directory:
+To match CI, install the `.node-version` version. nvm reads `.nvmrc` and has no `.node-version`
+fallback at all. `fnm` reads `.node-version` but installs nothing, so it needs an `fnm install`
+first. Switch by hand, from this directory:
 
 ```sh
 nvm install "$(cat ../../.node-version)" && nvm use "$(cat ../../.node-version)"
@@ -165,11 +148,8 @@ all. Install it explicitly afterwards, **from the repo root**:
 bun run install:electron
 ```
 
-That is `node_modules/electron/install.js` behind the Node-pin gate. Run the installer directly
-and you get the one failure the pin exists for — `ERR_REQUIRE_ESM`, out of a CommonJS installer
-requiring an ESM-only `@electron/get`, saying nothing about your Node. The script is also why the
-path is not spelled here: bun hoists Electron to the root, and this package has no `node_modules`
-of its own.
+That is `node_modules/electron/install.js`, run from the root because bun hoists Electron there
+and this package has no `node_modules` of its own.
 
 Do **not** use `npx install-electron --no`. It deletes `node_modules/electron` first, and npx's
 own `--no` flag then refuses to reinstall it, so you end up with nothing and need
@@ -260,24 +240,25 @@ The renderer is the cockpit shell: a chrome band, a sidebar of five destinations
 [`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
 [`apps/desktop/AGENTS.md`](AGENTS.md).
 
-## Portable integration proof
+## Portable integration tests
 
-The Project-opening contract and its proof are recorded in
+The Project-opening contract and its packaged test are recorded in
 [`docs/portable-integration-contracts.md`](../../docs/portable-integration-contracts.md).
-The proof crosses the packaged renderer, preload, and main process with isolated storage.
+The test crosses the packaged renderer, preload, and main process with isolated storage.
 It does not import Swift data.
 
-Package arm64 first; all three commands run the copy, never the app you have installed.
+Package arm64 first. All four commands run the copy, never the app you have installed.
 
 | Command | What it produces |
 | --- | --- |
-| `bun run prove:project-contract` | The verdict for the Project workflow, naming every case, as JSON. |
+| `bun run test:packaged-project` | The verdict for the Project workflow, naming every case, as JSON. |
+| `bun run test:packaged-session` | The verdict for the Session Feed, naming every case, as JSON. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 
-The proof keeps its window hidden. The other two show it, because Chromium throttles a hidden
-window and both a capture and a frame reading taken from one measure the throttle. None of the
-three holds the real keyboard or the real mouse.
+The packaged tests keep their windows hidden. The other two commands show it because Chromium
+throttles a hidden window. A capture and a frame reading from a hidden window measure the throttle.
+None of the four commands holds the real keyboard or the real mouse.
 
 ## Performance evidence
 

@@ -3,7 +3,13 @@ import { test } from 'node:test'
 import { createSessionClient } from '@/core/sessions/client.ts'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
-const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: 'session-a' }
+const feed = {
+  version: 1,
+  type: 'session.feed',
+  requestId: 'feed-1',
+  sessionId: 'session-a',
+  revision: null,
+}
 
 const listed = {
   version: 1,
@@ -20,6 +26,7 @@ const read = {
   requestId: 'feed-1',
   sessionId: 'session-a',
   chainId: 'session-a',
+  revision: '1:row',
   rows: [{ shape: 'unreadable', id: 'unreadable:0:0' }],
 }
 
@@ -78,4 +85,27 @@ test('passes an error reply through as itself', async () => {
     message: 'Argo cannot access these Sessions.',
   }
   assert.deepEqual(await clientReturning(error).listSessions(listing), error)
+})
+
+test('starts a managed Claude Session through the named Session action', async () => {
+  const request = {
+    version: 1,
+    type: 'session.claude.start',
+    requestId: 'start-1',
+    cwd: '/projects/argo',
+    prompt: 'Inspect the failing test.',
+  }
+  const reply = {
+    version: 1,
+    type: 'session.claude.started',
+    requestId: 'start-1',
+    sessionId: 'managed-1',
+  }
+  const client = createSessionClient(async (operation, received) => {
+    assert.equal(operation, 'startClaude')
+    assert.deepEqual(received, request)
+    return reply
+  })
+
+  assert.deepEqual(await client.startClaudeSession(request), reply)
 })

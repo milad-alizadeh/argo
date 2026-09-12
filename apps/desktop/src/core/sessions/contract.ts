@@ -5,11 +5,30 @@ import type { SessionFeedRow, SessionRosterRow } from './models'
 
 export const SESSION_LIST_CHANNEL = 'argo:session:list'
 export const SESSION_FEED_CHANNEL = 'argo:session:feed'
+export const SESSION_CLAUDE_START_CHANNEL = 'argo:session:claude:start'
 
 export type SessionListRequest = { version: 1; type: 'session.list'; requestId: string }
 export type SessionFeedRequest = {
   version: 1
   type: 'session.feed'
+  requestId: string
+  sessionId: string
+  // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
+  // a reloaded or evicted deck without rows to draw.
+  revision: string | null
+}
+
+export type ClaudeSessionStartRequest = {
+  version: 1
+  type: 'session.claude.start'
+  requestId: string
+  cwd: string
+  prompt: string
+}
+
+export type ClaudeSessionStarted = {
+  version: 1
+  type: 'session.claude.started'
   requestId: string
   sessionId: string
 }
@@ -36,7 +55,21 @@ export type SessionFeedRead = {
   // the id asked for (CONTEXT.md L2 · retired id). The renderer keys on the id it asked for; this
   // is here so a caller can tell that the two differ, and it is what the proofs assert against.
   chainId: string
+  // A main-process token for the exact projected document this reply carries. A different
+  // revision must be measured before its rows enter the viewport, even when ids stay the same.
+  revision: string
   rows: SessionFeedRow[]
+}
+
+// The selected chain's file stamps did not move, so the main process returns this compact reply
+// instead of copying an unchanged whole document over IPC on every observation pass.
+export type SessionFeedUnchanged = {
+  version: 1
+  type: 'session.feed.unchanged'
+  requestId: string
+  sessionId: string
+  chainId: string
+  revision: string
 }
 
 export const SESSION_ERRORS = {
@@ -48,6 +81,8 @@ export const SESSION_ERRORS = {
   'internal-error': 'Argo could not read these Sessions.',
   'invalid-response': 'Argo received an invalid Session response.',
   'connection-lost': 'The connection to Argo was lost.',
+  'cli-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',
+  'launch-failed': 'Argo could not start Claude Code.',
 } as const
 
 export type SessionErrorCode = keyof typeof SESSION_ERRORS
@@ -60,7 +95,8 @@ export type SessionError = {
 }
 
 export type SessionListReply = SessionsListed | SessionError
-export type SessionFeedReply = SessionFeedRead | SessionError
+export type SessionFeedReply = SessionFeedRead | SessionFeedUnchanged | SessionError
+export type ClaudeSessionStartReply = ClaudeSessionStarted | SessionError
 
 export function sessionError(code: SessionErrorCode, requestId: string | null): SessionError {
   return { version: 1, type: 'session.error', requestId, code, message: SESSION_ERRORS[code] }
@@ -79,9 +115,35 @@ export function isSessionListRequest(value: unknown): value is SessionListReques
 export function isSessionFeedRequest(value: unknown): value is SessionFeedRequest {
   return (
     isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'sessionId']) &&
+    hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'revision']) &&
     value.version === 1 &&
     value.type === 'session.feed' &&
+    isIdentifier(value.requestId) &&
+    isIdentifier(value.sessionId) &&
+    (value.revision === null || typeof value.revision === 'string')
+  )
+}
+
+export function isClaudeSessionStartRequest(value: unknown): value is ClaudeSessionStartRequest {
+  return (
+    isRecord(value) &&
+    hasKeys(value, ['version', 'type', 'requestId', 'cwd', 'prompt']) &&
+    value.version === 1 &&
+    value.type === 'session.claude.start' &&
+    isIdentifier(value.requestId) &&
+    typeof value.cwd === 'string' &&
+    value.cwd.length > 0 &&
+    typeof value.prompt === 'string' &&
+    value.prompt.trim().length > 0
+  )
+}
+
+export function isClaudeSessionStarted(value: unknown): value is ClaudeSessionStarted {
+  return (
+    isRecord(value) &&
+    hasKeys(value, ['version', 'type', 'requestId', 'sessionId']) &&
+    value.version === 1 &&
+    value.type === 'session.claude.started' &&
     isIdentifier(value.requestId) &&
     isIdentifier(value.sessionId)
   )

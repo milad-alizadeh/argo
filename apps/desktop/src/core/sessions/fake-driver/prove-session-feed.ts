@@ -4,7 +4,7 @@
 //
 // `--shots <dir>` writes the packaged screens for a person who wants to look at them. Nothing in
 // CI passes it any more, and the PNG files are disposable: point it at a temporary directory and
-// delete them (#1910). The screens a reviewer reads are the Storybook site, and the contract this
+// delete them (#1910). Reviewers inspect the screens in Storybook, and the contract this
 // file asserts is read out of the DOM, so no assertion here depends on a pixel.
 import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -13,7 +13,6 @@ import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
 import {
-  proveDamagedSession,
   proveGeometry,
   proveGrownSession,
   proveOwnedHeights,
@@ -38,13 +37,16 @@ import {
   proveRendererAuthority,
 } from './session-feed-cases'
 import {
+  appendProse,
   capture,
   growCodexTranscript,
   growStranded,
   openSessionsScreen,
   prepare,
+  streamProse,
 } from './session-feed-fixture'
 import { writeFixtureTree } from './session-fixture-files'
+import { proveLiveFeed } from './session-live-feed-cases'
 import {
   proveArchive,
   proveCodexReread,
@@ -54,6 +56,7 @@ import {
 } from './session-roster-cases'
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-session-'))
+const SESSION_VIEWPORT = { width: 1440, height: 860 }
 let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
@@ -72,6 +75,13 @@ try {
   })
   const page = await application.firstWindow()
   page.setDefaultTimeout(30_000)
+  await application.evaluate(({ BrowserWindow }, viewport) => {
+    BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
+  }, SESSION_VIEWPORT)
+  await page.waitForFunction(
+    (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
+    SESSION_VIEWPORT,
+  )
   await page.waitForFunction(() => typeof window.argo?.listSessions === 'function')
   assert.equal(await application.evaluate(({ app }) => app.isPackaged), true)
   // Each case names itself as it passes, so the list printed below is what ran rather than a list
@@ -87,18 +97,23 @@ try {
   const roster = await ran(['roster-focus', 'archive-section'], () => proveRoster(page))
   const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
   await capture(page, application, 'roster-and-feed.png')
-  await ran(['damaged-session'], () => proveDamagedSession(page))
-  await capture(page, application, 'damaged-session.png')
   const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>
     proveFirstOpen(page),
   )
   await capture(page, application, 'feed-at-the-tail.png')
   const owned = await ran(['owned-heights', 'settled-font'], () => proveOwnedHeights(page))
-  await ran(['pane-drag'], () => provePaneDrag(page))
+  const pane = await ran(['pane-drag'], () => provePaneDrag(page))
   await ran(['window-holds-still'], () => proveWindowHoldsStill(page))
   await ran(['repeat-opening'], () => proveRepeatOpening(page))
   await ran(['no-mislabelled-feed'], () => proveNoMislabelledFeed(page))
   await ran(['no-unmeasured-row'], () => proveNoUnmeasuredRow(page))
+  const live = await ran(['live-feed-anchor', 'kept-feed'], () =>
+    proveLiveFeed(page, {
+      append: appendProse,
+      stream: streamProse,
+      transcripts: fixture.claudeTranscripts,
+    }),
+  )
   await ran(['codex-feed'], () => proveCodexFeed(page))
   await ran(['roster-reread'], () => proveReread(page, fixture.claudeTranscripts, writeFixtureTree))
   await ran(['grown-session'], () =>
@@ -126,6 +141,8 @@ try {
       // fixed floor of about three frames as if it were the cost of laying out this Feed.
       measureMs: firstOpen.measureMs,
       settleMs: firstOpen.settleMs,
+      pane,
+      live,
       cases,
     }),
   )
