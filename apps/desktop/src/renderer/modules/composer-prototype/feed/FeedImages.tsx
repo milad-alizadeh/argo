@@ -119,9 +119,7 @@ export function FeedImages() {
 
 export function FeedMissingImage() {
   return (
-    <figure
-      className={`aspect-4/3 w-52 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}
-    >
+    <figure className={`aspect-4/3 w-52 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-card text-muted-foreground">
         <ImageOff className="!size-(--size-icon-control)" />
         <p className="type-meta">Image unavailable</p>

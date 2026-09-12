@@ -1,5 +1,5 @@
-import { memo, useEffect, useState } from 'react'
 import { Bot, FolderGit2, Map as MapIcon, Settings, Ticket } from 'lucide-react'
+import { memo, useEffect, useState } from 'react'
 
 type NavigationDestination = 'Sessions' | 'Tickets' | 'Atlas' | 'Files'
 
@@ -66,7 +66,11 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
         })}
       </div>
       <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center pb-1">
-        <button type="button" aria-label="Settings" className="group flex flex-col items-center gap-1 type-label">
+        <button
+          type="button"
+          aria-label="Settings"
+          className="group flex flex-col items-center gap-1 type-label"
+        >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Settings />
           </span>

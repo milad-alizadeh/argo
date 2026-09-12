@@ -40,7 +40,9 @@ export const SidebarInteractions: Story = {
     )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Sessions sidebar' }))
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open Sessions sidebar' })).toBeInTheDocument())
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Sessions sidebar' })).toBeInTheDocument(),
+    )
     await expect(inspector.getBoundingClientRect().width).toBeCloseTo(
       Math.max(initialInspectorWidth, inspectorMinimumWidth),
       0,
@@ -73,7 +75,9 @@ export const InspectorInteractions: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
     await expect(sessionsSidebar.getBoundingClientRect().width).toBeGreaterThan(0)
 
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument())
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument(),
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Open Session inspector' }))
     await expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeInTheDocument()
   },
@@ -91,9 +95,7 @@ export const WorkspaceInteractions: Story = {
 
     await userEvent.click(canvas.getByRole('button', { name: 'Restore Session sidebar' }))
     await waitFor(() =>
-      expect(
-        canvas.getByRole('button', { name: 'Expand Session sidebar' }),
-      ).toBeInTheDocument(),
+      expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeInTheDocument(),
     )
   },
 }

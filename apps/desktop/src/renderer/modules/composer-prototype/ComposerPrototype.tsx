@@ -111,7 +111,12 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/renderer/components/ui/resizable'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/renderer/components/ui/tooltip'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/renderer/components/ui/tooltip'
 import { FeedPermission } from './feed/FeedAttention'
 import {
   FeedEvidencePrototype,
@@ -160,9 +165,19 @@ type StateProps = {
 
 const SECONDARY_COMPOSER_WIDTH = 'w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)]'
 
-function IconLabel({ icon, children, className = '' }: { icon: ReactNode; children: ReactNode; className?: string }) {
+function IconLabel({
+  icon,
+  children,
+  className = '',
+}: {
+  icon: ReactNode
+  children: ReactNode
+  className?: string
+}) {
   return (
-    <span className={`inline-flex items-center gap-1.5 type-label font-medium [&>img]:!size-4 [&>img]:shrink-0 [&>svg]:!size-4 [&>svg]:shrink-0 ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 type-label font-medium [&>img]:!size-4 [&>img]:shrink-0 [&>svg]:!size-4 [&>svg]:shrink-0 ${className}`}
+    >
       {icon}
       <span>{children}</span>
     </span>
@@ -227,17 +242,63 @@ type ComposerSuggestion = {
 }
 
 const SLASH_SUGGESTIONS: ComposerSuggestion[] = [
-  { label: 'Grill Me', value: '/grill-me', detail: 'Pressure-test the brief before building', kind: 'skill', frequent: true },
-  { label: 'Implement', value: '/implement', detail: 'Build an approved ticket', kind: 'skill', frequent: true },
-  { label: 'Fast', value: '/fast', detail: 'Prefer speed and lighter reasoning', kind: 'command', frequent: true },
-  { label: 'Prototype', value: '/prototype', detail: 'Explore a throwaway interface direction', kind: 'skill' },
-  { label: 'Compact', value: '/compact', detail: 'Compress the current task context', kind: 'command' },
+  {
+    label: 'Grill Me',
+    value: '/grill-me',
+    detail: 'Pressure-test the brief before building',
+    kind: 'skill',
+    frequent: true,
+  },
+  {
+    label: 'Implement',
+    value: '/implement',
+    detail: 'Build an approved ticket',
+    kind: 'skill',
+    frequent: true,
+  },
+  {
+    label: 'Fast',
+    value: '/fast',
+    detail: 'Prefer speed and lighter reasoning',
+    kind: 'command',
+    frequent: true,
+  },
+  {
+    label: 'Prototype',
+    value: '/prototype',
+    detail: 'Explore a throwaway interface direction',
+    kind: 'skill',
+  },
+  {
+    label: 'Compact',
+    value: '/compact',
+    detail: 'Compress the current task context',
+    kind: 'command',
+  },
 ]
 
 const MENTION_SUGGESTIONS: ComposerSuggestion[] = [
-  { label: 'ComposerPrototype.tsx', value: '@ComposerPrototype.tsx', detail: 'Recently edited file', kind: 'file', frequent: true },
-  { label: 'apps/desktop', value: '@apps/desktop', detail: 'Current project folder', kind: 'folder', frequent: true },
-  { label: '$frontend-design', value: '@$frontend-design', detail: 'Frequently used skill', kind: 'skill', frequent: true },
+  {
+    label: 'ComposerPrototype.tsx',
+    value: '@ComposerPrototype.tsx',
+    detail: 'Recently edited file',
+    kind: 'file',
+    frequent: true,
+  },
+  {
+    label: 'apps/desktop',
+    value: '@apps/desktop',
+    detail: 'Current project folder',
+    kind: 'folder',
+    frequent: true,
+  },
+  {
+    label: '$frontend-design',
+    value: '@$frontend-design',
+    detail: 'Frequently used skill',
+    kind: 'skill',
+    frequent: true,
+  },
   { label: 'AGENTS.md', value: '@AGENTS.md', detail: 'Repository instructions', kind: 'file' },
 ]
 
@@ -356,8 +417,15 @@ const PROTOTYPE_SESSIONS: PrototypeSession[] = [
   },
 ]
 
-function HarnessLogo({ harness, className = 'size-(--size-icon-control)' }: { harness: HarnessKey; className?: string }) {
-  const source = harness === 'codex' ? '/prototype-assets/openai-mono.svg' : '/prototype-assets/claude-mono.svg'
+function HarnessLogo({
+  harness,
+  className = 'size-(--size-icon-control)',
+}: {
+  harness: HarnessKey
+  className?: string
+}) {
+  const source =
+    harness === 'codex' ? '/prototype-assets/openai-mono.svg' : '/prototype-assets/claude-mono.svg'
   return (
     <span className={`relative inline-flex shrink-0 ${className}`}>
       <img src={source} alt="" className="size-full object-contain dark:invert" />
@@ -381,7 +449,8 @@ function ConciergeOrb() {
 function RosterConcierge() {
   const [microphoneMuted, setMicrophoneMuted] = useState(false)
   const [speakerMuted, setSpeakerMuted] = useState(false)
-  const mutedControlClass = 'relative after:absolute after:h-px after:w-4 after:rotate-45 after:bg-current'
+  const mutedControlClass =
+    'relative after:absolute after:h-px after:w-4 after:rotate-45 after:bg-current'
 
   return (
     <div className="h-(--size-bottom-status) shrink-0 p-3">
@@ -416,7 +485,11 @@ function RosterConcierge() {
                       size="icon-sm"
                       className={microphoneMuted ? mutedControlClass : undefined}
                       aria-pressed={microphoneMuted}
-                      aria-label={microphoneMuted ? 'Unmute Concierge microphone' : 'Mute Concierge microphone'}
+                      aria-label={
+                        microphoneMuted
+                          ? 'Unmute Concierge microphone'
+                          : 'Mute Concierge microphone'
+                      }
                       onClick={() => setMicrophoneMuted(!microphoneMuted)}
                     />
                   }
@@ -482,10 +555,7 @@ function ProjectManager({
         <DropdownMenuGroup>
           <DropdownMenuLabel>Switch Project</DropdownMenuLabel>
           {PROJECTS.map((item) => (
-            <DropdownMenuItem
-              key={item}
-              onClick={() => onProjectChange(item)}
-            >
+            <DropdownMenuItem key={item} onClick={() => onProjectChange(item)}>
               <Folder />
               <span className="flex-1">{item}</span>
               {currentProject === item ? <Check /> : null}
@@ -494,10 +564,12 @@ function ProjectManager({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <Settings />Project settings…
+          <Settings />
+          Project settings…
         </DropdownMenuItem>
         <DropdownMenuItem>
-          <Plus />Add Project…
+          <Plus />
+          Add Project…
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -525,10 +597,7 @@ function PrototypeProjectHeader({
         <PanelLeft />
       </Button>
       <div className="no-drag-region ml-auto">
-        <ProjectManager
-          currentProject={currentProject}
-          onProjectChange={onProjectChange}
-        />
+        <ProjectManager currentProject={currentProject} onProjectChange={onProjectChange} />
       </div>
     </header>
   )
@@ -570,18 +639,28 @@ function NavigationIcon({
   )
 }
 
-function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChange: (theme: ThemeMode) => void }) {
+function SettingsMenu({
+  theme,
+  onThemeChange,
+}: {
+  theme: ThemeMode
+  onThemeChange: (theme: ThemeMode) => void
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<button type="button" aria-label="Settings" className={NAVIGATION_ICON_BUTTON_CLASS} />}
+        render={
+          <button type="button" aria-label="Settings" className={NAVIGATION_ICON_BUTTON_CLASS} />
+        }
       >
         <NavigationIcon icon={<Settings />} label="Settings" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>Account</DropdownMenuLabel>
         <DropdownMenuItem className="gap-2 py-2">
-          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-card type-meta font-semibold">MA</span>
+          <span className="grid size-7 place-items-center rounded-md border border-border/60 bg-card type-meta font-semibold">
+            MA
+          </span>
           <span className="min-w-0">
             <span className="block truncate type-label font-medium">milad</span>
             <span className="block type-meta text-muted-foreground">Account settings</span>
@@ -589,10 +668,22 @@ function SettingsMenu({ theme, onThemeChange }: { theme: ThemeMode; onThemeChang
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={theme} onValueChange={(value) => onThemeChange(value as ThemeMode)}>
-          <DropdownMenuRadioItem value="system"><Monitor />System</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="light"><Sun />Light</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="dark"><Moon />Dark</DropdownMenuRadioItem>
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(value) => onThemeChange(value as ThemeMode)}
+        >
+          <DropdownMenuRadioItem value="system">
+            <Monitor />
+            System
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="light">
+            <Sun />
+            Light
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark">
+            <Moon />
+            Dark
+          </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -740,8 +831,12 @@ function SessionRosterRow({ session }: { session: PrototypeSession }) {
               </span>
             ) : null}
             {session.subagents > 0 ? (
-              <span className="inline-flex items-center gap-1" title={`${session.subagents} subagents`}>
-                <Bot />{session.subagents}
+              <span
+                className="inline-flex items-center gap-1"
+                title={`${session.subagents} subagents`}
+              >
+                <Bot />
+                {session.subagents}
               </span>
             ) : null}
           </span>
@@ -779,9 +874,7 @@ function PrototypeSessionRoster({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
-                  render={
-                    <Button variant="ghost" size="icon-sm" aria-label="Find a Session" />
-                  }
+                  render={<Button variant="ghost" size="icon-sm" aria-label="Find a Session" />}
                 >
                   <Search />
                 </TooltipTrigger>
@@ -873,14 +966,13 @@ function PrototypeSessionHeader({
             rel="noreferrer"
             className="-my-1 inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
           >
-            <Ticket />#1258
+            <Ticket />
+            #1258
           </a>
         </div>
       </div>
       <TooltipProvider>
-        <div
-          className="ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted"
-        >
+        <div className="ml-auto flex shrink-0 divide-x divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted">
           <HeaderSignal
             icon={<GitPullRequestCreate />}
             value="Create PR"
@@ -968,17 +1060,26 @@ function SessionWorkSidebar({
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           <h3 className="mb-2 type-heading font-semibold">Background Agents · 5</h3>
           <div className="space-y-1">
-            {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map((label) => (
-              <button key={label} type="button" className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left type-meta text-muted-foreground transition-colors hover:text-foreground">
-                <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="sr-only">Running</span>
-                <span className="min-w-0 flex-1 truncate">{label}</span>
-              </button>
-            ))}
+            {['Design feed variations', 'Audit macOS feed states', 'Map shadcn components'].map(
+              (label) => (
+                <button
+                  key={label}
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left type-meta text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                  <span className="sr-only">Running</span>
+                  <span className="min-w-0 flex-1 truncate">{label}</span>
+                </button>
+              ),
+            )}
           </div>
           <div className="my-3 h-px bg-border/60" />
           <h3 className="mb-2 type-heading font-semibold">Shell · 1</h3>
-          <button type="button" className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left type-meta text-muted-foreground transition-colors hover:text-foreground">
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left type-meta text-muted-foreground transition-colors hover:text-foreground"
+          >
             <span className="size-2 rounded-full border border-emerald-500" />
             <span className="sr-only">Running</span>
             <span className="min-w-0 flex-1 truncate font-mono">bun run dev</span>
@@ -1003,12 +1104,30 @@ function contextPercentage(state: ComposerState) {
 
 function contextZone(percentage: number) {
   if (percentage <= 20) {
-    return { label: 'Smart Zone', badge: 'bg-emerald-600 text-white', fill: 'bg-emerald-500', text: 'text-emerald-600', dot: 'bg-emerald-500' }
+    return {
+      label: 'Smart Zone',
+      badge: 'bg-emerald-600 text-white',
+      fill: 'bg-emerald-500',
+      text: 'text-emerald-600',
+      dot: 'bg-emerald-500',
+    }
   }
   if (percentage <= 40) {
-    return { label: 'Nearing Dumb Zone', badge: 'bg-amber-400 text-amber-950', fill: 'bg-amber-400', text: 'text-amber-600', dot: 'bg-amber-400' }
+    return {
+      label: 'Nearing Dumb Zone',
+      badge: 'bg-amber-400 text-amber-950',
+      fill: 'bg-amber-400',
+      text: 'text-amber-600',
+      dot: 'bg-amber-400',
+    }
   }
-  return { label: 'Dumb Zone', badge: 'bg-red-600 text-white', fill: 'bg-red-500', text: 'text-red-600', dot: 'bg-red-500' }
+  return {
+    label: 'Dumb Zone',
+    badge: 'bg-red-600 text-white',
+    fill: 'bg-red-500',
+    text: 'text-red-600',
+    dot: 'bg-red-500',
+  }
 }
 
 function selectHarness(state: ComposerState, harness: HarnessKey): ComposerState {
@@ -1042,18 +1161,22 @@ function AddContextMenu({ state, setState }: StateProps) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Add context</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => add('workspace.jpg')}>
-            <Paperclip />Attachment
+            <Paperclip />
+            Attachment
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => add('ComposerPrototype.tsx')}>
-            <File />File reference
+            <File />
+            File reference
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => add('apps/desktop')}>
-            <Folder />Folder reference
+            <Folder />
+            Folder reference
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => add('/prototype')}>
-          <Command />Command
+          <Command />
+          Command
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -1066,7 +1189,13 @@ function RunSetupMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="max-w-80 shrink-0 type-label font-medium text-foreground" aria-label="Choose run setup" />}
+        render={
+          <InputGroupButton
+            variant="ghost"
+            className="max-w-80 shrink-0 type-label font-medium text-foreground"
+            aria-label="Choose run setup"
+          />
+        }
       >
         <HarnessLogo harness={state.harness} className="size-3.5" />
         <span className="hidden items-center gap-1.5 @[36rem]:inline-flex">
@@ -1080,7 +1209,11 @@ function RunSetupMenu({ state, setState }: StateProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] overflow-hidden p-0">
         <div className="border-b p-2">
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Harness">
+          <div
+            className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+            role="tablist"
+            aria-label="Harness"
+          >
             {(Object.keys(HARNESSES) as HarnessKey[]).map((harness) => {
               const active = state.harness === harness
               return (
@@ -1091,10 +1224,14 @@ function RunSetupMenu({ state, setState }: StateProps) {
                   aria-selected={active}
                   onClick={() => setState(selectHarness(state, harness))}
                   className={`flex h-8 items-center justify-center gap-2 rounded-md px-3 type-label font-medium transition-colors ${
-                    active ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    active
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <IconLabel icon={<HarnessLogo harness={harness} className="size-3.5" />}>{HARNESSES[harness].label}</IconLabel>
+                  <IconLabel icon={<HarnessLogo harness={harness} className="size-3.5" />}>
+                    {HARNESSES[harness].label}
+                  </IconLabel>
                 </button>
               )
             })}
@@ -1120,7 +1257,9 @@ function RunSetupMenu({ state, setState }: StateProps) {
                   >
                     <span className="min-w-0">
                       <span className="block type-heading font-medium">{model}</span>
-                      <span className={`mt-0.5 block type-meta ${active ? 'text-background/65' : 'text-muted-foreground'}`}>
+                      <span
+                        className={`mt-0.5 block type-meta ${active ? 'text-background/65' : 'text-muted-foreground'}`}
+                      >
                         {MODEL_DESCRIPTIONS[state.harness][model]}
                       </span>
                     </span>
@@ -1161,7 +1300,12 @@ function RunSetupMenu({ state, setState }: StateProps) {
                   className={`absolute whitespace-nowrap ${state.effort === effort ? 'font-semibold text-foreground' : ''}`}
                   style={{
                     left: `${(index / Math.max(1, definition.efforts.length - 1)) * 100}%`,
-                    transform: index === 0 ? 'none' : index === definition.efforts.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)',
+                    transform:
+                      index === 0
+                        ? 'none'
+                        : index === definition.efforts.length - 1
+                          ? 'translateX(-100%)'
+                          : 'translateX(-50%)',
                   }}
                 >
                   {effort}
@@ -1180,8 +1324,18 @@ const PERMISSION_ICONS: Record<HarnessKey, (typeof ShieldCheck)[]> = {
   claude: [WandSparkles, Hand, FileCheck2, ListTodo, ShieldAlert],
 }
 
-function PermissionIcon({ harness, permission, className }: { harness: HarnessKey; permission: string; className?: string }) {
-  const permissionIndex = HARNESSES[harness].permissions.findIndex((item) => item.label === permission)
+function PermissionIcon({
+  harness,
+  permission,
+  className,
+}: {
+  harness: HarnessKey
+  permission: string
+  className?: string
+}) {
+  const permissionIndex = HARNESSES[harness].permissions.findIndex(
+    (item) => item.label === permission,
+  )
   const Icon = PERMISSION_ICONS[harness][permissionIndex] ?? ShieldCheck
   return <Icon className={className} />
 }
@@ -1191,7 +1345,13 @@ function PermissionMenu({ state, setState }: StateProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<InputGroupButton variant="ghost" className="shrink-0 type-label font-medium text-foreground" aria-label="Choose permission mode" />}
+        render={
+          <InputGroupButton
+            variant="ghost"
+            className="shrink-0 type-label font-medium text-foreground"
+            aria-label="Choose permission mode"
+          />
+        }
       >
         <PermissionIcon harness={state.harness} permission={state.permission} />
         <span className="hidden @[36rem]:inline">{state.permission}</span>
@@ -1199,14 +1359,20 @@ function PermissionMenu({ state, setState }: StateProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-[23rem] p-1.5">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2 py-1.5 type-meta font-medium text-muted-foreground">{definition.label} permissions</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-2 py-1.5 type-meta font-medium text-muted-foreground">
+            {definition.label} permissions
+          </DropdownMenuLabel>
           {definition.permissions.map((permission) => (
             <DropdownMenuItem
               key={permission.label}
               className="items-start rounded-md px-2 py-1.5"
               onClick={() => setState({ ...state, permission: permission.label })}
             >
-              <PermissionIcon harness={state.harness} permission={permission.label} className="mt-0.5 size-3.5" />
+              <PermissionIcon
+                harness={state.harness}
+                permission={permission.label}
+                className="mt-0.5 size-3.5"
+              />
               <span className="grid gap-0.5">
                 <span className="type-heading font-medium">{permission.label}</span>
                 <span className="type-meta text-muted-foreground">{permission.detail}</span>
@@ -1240,11 +1406,24 @@ function initialAttachments() {
   if (new URLSearchParams(window.location.search).get('test') !== 'attachments-10') {
     return ['workspace.jpg', 'ComposerPrototype.tsx']
   }
-  return ['workspace.jpg', 'ComposerPrototype.tsx', 'queue.ts', 'context.tsx', 'permissions.ts', 'models.json', 'notes.md', 'layout.css', 'tokens.ts', 'README.md']
+  return [
+    'workspace.jpg',
+    'ComposerPrototype.tsx',
+    'queue.ts',
+    'context.tsx',
+    'permissions.ts',
+    'models.json',
+    'notes.md',
+    'layout.css',
+    'tokens.ts',
+    'README.md',
+  ]
 }
 
 function ReferenceStrip({ state, setState }: StateProps) {
-  const [renderedAttachments, setRenderedAttachments] = useState(() => state.attachments.filter((reference) => !reference.startsWith('$')))
+  const [renderedAttachments, setRenderedAttachments] = useState(() =>
+    state.attachments.filter((reference) => !reference.startsWith('$')),
+  )
   const [expanded, setExpanded] = useState(renderedAttachments.length > 0)
 
   useEffect(() => {
@@ -1265,7 +1444,9 @@ function ReferenceStrip({ state, setState }: StateProps) {
   }, [state.attachments])
 
   return (
-    <div className={`w-full overflow-hidden transition-[height] duration-standard ease-emphasized will-change-[height] ${expanded ? 'h-(--size-composer-reference-strip)' : 'h-0'}`}>
+    <div
+      className={`w-full overflow-hidden transition-[height] duration-standard ease-emphasized will-change-[height] ${expanded ? 'h-(--size-composer-reference-strip)' : 'h-0'}`}
+    >
       <div>
         <AttachmentGroup className="w-[42rem] max-w-[calc(100%-9rem)] flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) select-none p-(--spacing-composer-attachment-gutter)">
           {renderedAttachments.map((reference) => {
@@ -1277,17 +1458,29 @@ function ReferenceStrip({ state, setState }: StateProps) {
 
             const isImage = /\.(avif|gif|jpe?g|png|webp)$/i.test(reference)
             return (
-              <Attachment key={reference} className="relative h-(--size-composer-attachment) w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border py-1 pr-9 pl-2" size="xs">
+              <Attachment
+                key={reference}
+                className="relative h-(--size-composer-attachment) w-fit min-w-40 max-w-56 shrink-0 items-start select-none border-border py-1 pr-9 pl-2"
+                size="xs"
+              >
                 <AttachmentMedia className="relative !size-14 overflow-hidden rounded-lg bg-muted">
                   {isImage ? (
-                    <img alt="" className="absolute inset-0 !size-full object-cover" src={imageSource(reference)} />
+                    <img
+                      alt=""
+                      className="absolute inset-0 !size-full object-cover"
+                      src={imageSource(reference)}
+                    />
                   ) : (
                     <File className="size-6" />
                   )}
                 </AttachmentMedia>
                 <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">
-                  <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label">{fileTitle(reference)}</AttachmentTitle>
-                  <AttachmentDescription className="type-meta">{fileType(reference)}</AttachmentDescription>
+                  <AttachmentTitle className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-label">
+                    {fileTitle(reference)}
+                  </AttachmentTitle>
+                  <AttachmentDescription className="type-meta">
+                    {fileType(reference)}
+                  </AttachmentDescription>
                 </AttachmentContent>
                 <AttachmentActions className="absolute top-0 right-0">
                   <AttachmentAction aria-label={`Remove ${reference}`} onClick={remove}>
@@ -1303,19 +1496,34 @@ function ReferenceStrip({ state, setState }: StateProps) {
   )
 }
 
-function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (value: string) => void }) {
+function ComposerAutocomplete({
+  draft,
+  onSelect,
+}: {
+  draft: string
+  onSelect: (value: string) => void
+}) {
   const suggestions = composerSuggestions(draft)
   if (suggestions.length === 0) return null
   const isCommand = draft.match(/(^|\s)\/[^\s]*$/)
   return (
     <div className="absolute bottom-full left-0 z-40 mb-2 w-[30rem] overflow-hidden rounded-xl border bg-card shadow-xl">
       <div className="flex items-center border-b px-3 py-2">
-        <span className="type-meta font-medium text-muted-foreground">{isCommand ? 'Skills and commands' : 'Files, folders, and skills'}</span>
+        <span className="type-meta font-medium text-muted-foreground">
+          {isCommand ? 'Skills and commands' : 'Files, folders, and skills'}
+        </span>
         <span className="ml-auto type-meta text-muted-foreground">Enter to insert</span>
       </div>
       <div className="p-1.5">
         {suggestions.map((suggestion, index) => {
-          const SuggestionIcon = suggestion.kind === 'file' ? File : suggestion.kind === 'folder' ? Folder : suggestion.kind === 'command' ? Command : WandSparkles
+          const SuggestionIcon =
+            suggestion.kind === 'file'
+              ? File
+              : suggestion.kind === 'folder'
+                ? Folder
+                : suggestion.kind === 'command'
+                  ? Command
+                  : WandSparkles
           return (
             <button
               key={suggestion.value}
@@ -1324,13 +1532,21 @@ function ComposerAutocomplete({ draft, onSelect }: { draft: string; onSelect: (v
               onClick={() => onSelect(insertComposerSuggestion(draft, suggestion))}
               className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left ${index === 0 ? 'bg-muted' : 'hover:bg-muted'}`}
             >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-card"><SuggestionIcon className="size-3.5" /></span>
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-card">
+                <SuggestionIcon className="size-3.5" />
+              </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2 type-label font-medium">
                   {suggestion.label}
-                  {suggestion.frequent ? <span className="rounded-full bg-foreground px-1.5 py-0.5 type-label font-medium text-background">Most used</span> : null}
+                  {suggestion.frequent ? (
+                    <span className="rounded-full bg-foreground px-1.5 py-0.5 type-label font-medium text-background">
+                      Most used
+                    </span>
+                  ) : null}
                 </span>
-                <span className="mt-0.5 block truncate type-meta text-muted-foreground">{suggestion.detail}</span>
+                <span className="mt-0.5 block truncate type-meta text-muted-foreground">
+                  {suggestion.detail}
+                </span>
               </span>
               <span className="type-meta capitalize text-muted-foreground">{suggestion.kind}</span>
             </button>
@@ -1351,19 +1567,26 @@ function ContextPopover({
   meterStyle?: 'solid' | 'gradient' | 'grayscale'
 }) {
   const context = HARNESSES[state.harness].context
-  const [autoCompactThresholdTokens, setAutoCompactThresholdTokens] = useState(Math.round(context.total * 0.8))
-  const [autoCompactThresholdInput, setAutoCompactThresholdInput] = useState(String(Math.round(context.total * 0.8)))
+  const [autoCompactThresholdTokens, setAutoCompactThresholdTokens] = useState(
+    Math.round(context.total * 0.8),
+  )
+  const [autoCompactThresholdInput, setAutoCompactThresholdInput] = useState(
+    String(Math.round(context.total * 0.8)),
+  )
   const percentage = contextPercentage(state)
   const smartZonePercentage = 20
-  const smartZoneTokens = Math.round(context.total * smartZonePercentage / 100)
-  const autoCompactThresholdPercentage = Math.round(autoCompactThresholdTokens / context.total * 100)
+  const smartZoneTokens = Math.round((context.total * smartZonePercentage) / 100)
+  const autoCompactThresholdPercentage = Math.round(
+    (autoCompactThresholdTokens / context.total) * 100,
+  )
   const formatTokenCount = (tokens: number) => `${Math.round(tokens / 1000)}k tokens`
   const zone = contextZone(percentage)
   const contextStatus = zone.label
-  const used = Math.round(context.total * percentage / 100)
+  const used = Math.round((context.total * percentage) / 100)
   const meterFill = {
     solid: zone.fill,
-    gradient: 'bg-[linear-gradient(90deg,var(--color-emerald-500),var(--color-amber-400),var(--color-red-500))]',
+    gradient:
+      'bg-[linear-gradient(90deg,var(--color-emerald-500),var(--color-amber-400),var(--color-red-500))]',
     grayscale: 'bg-foreground/70',
   }[meterStyle]
   const claudeComposition = [
@@ -1380,9 +1603,7 @@ function ContextPopover({
         className="h-auto gap-2 px-2.5 py-1.5 text-foreground"
       />
     ),
-    details: (
-      <Button variant="ghost" size="icon" className="size-7" aria-label="Context details" />
-    ),
+    details: <Button variant="ghost" size="icon" className="size-7" aria-label="Context details" />,
     progress: (
       <Button
         variant="ghost"
@@ -1404,40 +1625,68 @@ function ContextPopover({
     progress: (
       <>
         <svg viewBox="0 0 20 20" className={`-rotate-90 ${zone.text}`} aria-hidden="true">
-          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
-          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray={`${percentage} 100`} />
+          <circle
+            cx="10"
+            cy="10"
+            r="7"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.2"
+            strokeWidth="2.5"
+          />
+          <circle
+            cx="10"
+            cy="10"
+            r="7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            pathLength="100"
+            strokeDasharray={`${percentage} 100`}
+          />
         </svg>
         <span>
-          Context <span className="tabular-nums text-muted-foreground">{(used / 1000).toFixed(0)}k / {(context.total / 1000).toFixed(0)}k · {percentage}%</span>
+          Context{' '}
+          <span className="tabular-nums text-muted-foreground">
+            {(used / 1000).toFixed(0)}k / {(context.total / 1000).toFixed(0)}k · {percentage}%
+          </span>
         </span>
       </>
     ),
   }[appearance]
   return (
     <Popover>
-      <PopoverTrigger render={trigger}>
-        {triggerContent}
-      </PopoverTrigger>
+      <PopoverTrigger render={trigger}>{triggerContent}</PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-[26rem] gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>Context window</PopoverTitle>
           <PopoverDescription className="type-prose">
-            The working memory for the next response: instructions, tools, files, and conversation. As it fills, new information competes with older details.
+            The working memory for the next response: instructions, tools, files, and conversation.
+            As it fills, new information competes with older details.
           </PopoverDescription>
         </PopoverHeader>
         <div className="grid gap-2.5">
           <div className="flex items-baseline justify-between gap-3">
             <div className="type-title font-semibold tabular-nums">
-              {(used / 1000).toFixed(0)}k <span className="type-body font-normal text-muted-foreground">/ {(context.total / 1000).toFixed(0)}k tokens</span>
+              {(used / 1000).toFixed(0)}k{' '}
+              <span className="type-body font-normal text-muted-foreground">
+                / {(context.total / 1000).toFixed(0)}k tokens
+              </span>
             </div>
-            <span className={`type-heading font-medium ${zone.text}`}>{percentage}% used · {contextStatus}</span>
+            <span className={`type-heading font-medium ${zone.text}`}>
+              {percentage}% used · {contextStatus}
+            </span>
           </div>
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
             <div
               className={`absolute inset-y-0 left-0 ${meterFill}`}
               style={{ width: `${percentage}%` }}
             />
-            <div className="absolute inset-y-0 w-px bg-card" style={{ left: `${smartZonePercentage}%` }} />
+            <div
+              className="absolute inset-y-0 w-px bg-card"
+              style={{ left: `${smartZonePercentage}%` }}
+            />
           </div>
           <div className="flex justify-between type-body text-muted-foreground">
             <span>Working target · {formatTokenCount(smartZoneTokens)}</span>
@@ -1446,15 +1695,20 @@ function ContextPopover({
           <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted p-3 type-prose">
             <div>
               <div className="font-semibold text-foreground">Smart Zone · 0–20%</div>
-              <p className="mt-1 text-muted-foreground">Focused context. Instructions and recent decisions remain easy to weigh.</p>
+              <p className="mt-1 text-muted-foreground">
+                Focused context. Instructions and recent decisions remain easy to weigh.
+              </p>
             </div>
             <div>
               <div className="font-semibold text-foreground">Dumb Zone · 40%+</div>
-              <p className="mt-1 text-muted-foreground">History still fits, but noise and stale decisions weaken attention.</p>
+              <p className="mt-1 text-muted-foreground">
+                History still fits, but noise and stale decisions weaken attention.
+              </p>
             </div>
           </div>
           <p className="type-prose text-muted-foreground">
-            At this level, older context can compete with the current task. Compact before starting another substantial phase.
+            At this level, older context can compete with the current task. Compact before starting
+            another substantial phase.
           </p>
         </div>
         {state.harness === 'claude' ? (
@@ -1462,7 +1716,10 @@ function ContextPopover({
             <summary className="cursor-pointer font-medium">Loaded context</summary>
             <div className="mt-2 grid gap-2">
               {claudeComposition.map((item) => (
-                <div key={item.label} className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2">
+                <div
+                  key={item.label}
+                  className="grid grid-cols-[6.5rem_1fr_2rem] items-center gap-2"
+                >
                   <span className="text-muted-foreground">{item.label}</span>
                   <Progress value={item.percentage} className="h-1.5" />
                   <span className="text-right tabular-nums">{item.value}</span>
@@ -1474,7 +1731,9 @@ function ContextPopover({
         <div className="grid gap-2.5 border-t pt-3">
           <div className="flex items-center justify-between gap-3 type-body">
             <span className="font-semibold">Auto-compact</span>
-            <span className="text-muted-foreground">At {autoCompactThresholdPercentage}% of total</span>
+            <span className="text-muted-foreground">
+              At {autoCompactThresholdPercentage}% of total
+            </span>
           </div>
           <input
             type="range"
@@ -1483,7 +1742,7 @@ function ContextPopover({
             step="5"
             value={autoCompactThresholdPercentage}
             onChange={(event) => {
-              const tokens = Math.round(context.total * Number(event.target.value) / 100)
+              const tokens = Math.round((context.total * Number(event.target.value)) / 100)
               setAutoCompactThresholdTokens(tokens)
               setAutoCompactThresholdInput(String(tokens))
             }}
@@ -1493,21 +1752,27 @@ function ContextPopover({
           <label className="flex items-center justify-between gap-3 type-body text-muted-foreground">
             <span>Threshold</span>
             <span className="flex w-40 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-foreground">
-                <input
-                  type="number"
-                  min={Math.round(context.total * 0.4)}
-                  max={Math.round(context.total * 0.95)}
-                  step="1000"
-                  value={autoCompactThresholdInput}
-                  onChange={(event) => setAutoCompactThresholdInput(event.target.value)}
-                  onBlur={() => {
-                    const tokens = Math.min(Math.round(context.total * 0.95), Math.max(Math.round(context.total * 0.4), Number(autoCompactThresholdInput) || autoCompactThresholdTokens))
-                    setAutoCompactThresholdTokens(tokens)
-                    setAutoCompactThresholdInput(String(tokens))
-                  }}
-                  className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
-                />
-                <span className="shrink-0 text-muted-foreground">tokens</span>
+              <input
+                type="number"
+                min={Math.round(context.total * 0.4)}
+                max={Math.round(context.total * 0.95)}
+                step="1000"
+                value={autoCompactThresholdInput}
+                onChange={(event) => setAutoCompactThresholdInput(event.target.value)}
+                onBlur={() => {
+                  const tokens = Math.min(
+                    Math.round(context.total * 0.95),
+                    Math.max(
+                      Math.round(context.total * 0.4),
+                      Number(autoCompactThresholdInput) || autoCompactThresholdTokens,
+                    ),
+                  )
+                  setAutoCompactThresholdTokens(tokens)
+                  setAutoCompactThresholdInput(String(tokens))
+                }}
+                className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
+              />
+              <span className="shrink-0 text-muted-foreground">tokens</span>
             </span>
           </label>
         </div>
@@ -1525,7 +1790,7 @@ function ContextSurface({
 }) {
   const context = HARNESSES[state.harness].context
   const percentage = contextPercentage(state)
-  const used = `${(context.total * percentage / 100 / 1000).toFixed(0)}k`
+  const used = `${((context.total * percentage) / 100 / 1000).toFixed(0)}k`
   const zone = contextZone(percentage)
   const status = zone.label
   const contextAlert = state.contextPreview === 'dumb'
@@ -1546,7 +1811,10 @@ function ContextSurface({
         </div>
         <div className="min-w-28 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
+            <div
+              className={`absolute inset-y-0 left-0 ${zone.fill}`}
+              style={{ width: `${percentage}%` }}
+            />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
@@ -1555,8 +1823,14 @@ function ContextSurface({
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
         <div className="ml-1 flex shrink-0 items-center gap-1 border-l pl-3">
-          <Button variant="secondary" size="sm"><Minimize2 />Compact</Button>
-          <Button variant="outline" size="sm"><GitFork />Handoff</Button>
+          <Button variant="secondary" size="sm">
+            <Minimize2 />
+            Compact
+          </Button>
+          <Button variant="outline" size="sm">
+            <GitFork />
+            Handoff
+          </Button>
         </div>
       </div>
     )
@@ -1565,31 +1839,46 @@ function ContextSurface({
   if (layout === 'attached') {
     return (
       <div className="flex select-none items-center gap-2 rounded-b-xl border bg-card px-3 pb-2 pt-4 shadow-lg shadow-foreground/10 @[50rem]:gap-3 @[50rem]:px-4">
-        <div className="shrink-0 border-r border-border/60 pr-2 @[50rem]:pr-4"><UsagePopover state={state} /></div>
+        <div className="shrink-0 border-r border-border/60 pr-2 @[50rem]:pr-4">
+          <UsagePopover state={state} />
+        </div>
         <div className="shrink-0 @[50rem]:hidden">
           <ContextPopover state={state} appearance="progress" meterStyle="grayscale" />
         </div>
         <div className="hidden @[50rem]:block">
-          <IconLabel icon={<Layers3 />} className={contextAlert ? 'text-red-600' : 'text-foreground'}>Context</IconLabel>
+          <IconLabel
+            icon={<Layers3 />}
+            className={contextAlert ? 'text-red-600' : 'text-foreground'}
+          >
+            Context
+          </IconLabel>
         </div>
         <TooltipProvider>
-        <div className="relative hidden min-w-28 flex-1 @[50rem]:block">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <button
-                  type="button"
-                  className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
-                  aria-label={contextStateDescription}
-                >
-                  <span className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`} style={{ width: `${percentage}%` }} />
-                  <span className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
-                </button>
-              }
-            />
-            <TooltipContent className="max-w-none whitespace-nowrap">{contextStateDescription}</TooltipContent>
-          </Tooltip>
-        </div>
+          <div className="relative hidden min-w-28 flex-1 @[50rem]:block">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
+                    aria-label={contextStateDescription}
+                  >
+                    <span
+                      className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                    <span
+                      className="absolute inset-y-[-2px] w-0.5 bg-foreground"
+                      style={{ left: '20%' }}
+                    />
+                  </button>
+                }
+              />
+              <TooltipContent className="max-w-none whitespace-nowrap">
+                {contextStateDescription}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </TooltipProvider>
         <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[50rem]:flex">
           <span className="font-medium text-foreground">{used}</span>
@@ -1606,8 +1895,12 @@ function ContextSurface({
           </Button>
         </div>
         <div className="ml-1 hidden shrink-0 items-center gap-1 border-l border-border/60 pl-4 @[50rem]:flex">
-          <Button variant="secondary" size="sm"><IconLabel icon={<Minimize2 />}>Compact</IconLabel></Button>
-          <Button variant="outline" size="sm"><IconLabel icon={<GitFork />}>Handoff</IconLabel></Button>
+          <Button variant="secondary" size="sm">
+            <IconLabel icon={<Minimize2 />}>Compact</IconLabel>
+          </Button>
+          <Button variant="outline" size="sm">
+            <IconLabel icon={<GitFork />}>Handoff</IconLabel>
+          </Button>
         </div>
       </div>
     )
@@ -1617,7 +1910,7 @@ function ContextSurface({
     return (
       <aside className="absolute bottom-11 right-0 top-0 z-10 flex w-72 flex-col border-l bg-sidebar p-3">
         <div className="flex items-center gap-2">
-        <CircleGauge className={`size-4 ${zone.text}`} />
+          <CircleGauge className={`size-4 ${zone.text}`} />
           <span className="flex items-center gap-1 type-label font-semibold">
             Context
             <ContextPopover state={state} appearance="details" />
@@ -1628,13 +1921,25 @@ function ContextSurface({
           {used} <span className="type-meta font-normal text-muted-foreground">/ 200k total</span>
         </div>
         <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
-          <div className="absolute inset-y-0 border-x border-foreground bg-foreground/10" style={{ left: '62.5%', width: '12.5%' }} />
+          <div
+            className={`absolute inset-y-0 left-0 ${zone.fill}`}
+            style={{ width: `${percentage}%` }}
+          />
+          <div
+            className="absolute inset-y-0 border-x border-foreground bg-foreground/10"
+            style={{ left: '62.5%', width: '12.5%' }}
+          />
         </div>
         <div className="mt-1.5 type-meta text-muted-foreground">Smart Zone ~20%</div>
         <div className="mt-auto flex items-center gap-1">
-          <Button variant="secondary" size="sm" className="px-2"><Minimize2 />Compact</Button>
-          <Button variant="outline" size="sm" className="px-2"><GitFork />Handoff</Button>
+          <Button variant="secondary" size="sm" className="px-2">
+            <Minimize2 />
+            Compact
+          </Button>
+          <Button variant="outline" size="sm" className="px-2">
+            <GitFork />
+            Handoff
+          </Button>
         </div>
       </aside>
     )
@@ -1653,7 +1958,10 @@ function ContextSurface({
         </div>
         <div className="min-w-24 flex-1">
           <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-            <div className={`absolute inset-y-0 left-0 ${zone.fill}`} style={{ width: `${percentage}%` }} />
+            <div
+              className={`absolute inset-y-0 left-0 ${zone.fill}`}
+              style={{ width: `${percentage}%` }}
+            />
             <div className="absolute inset-y-[-2px] w-0.5 bg-foreground" style={{ left: '20%' }} />
           </div>
         </div>
@@ -1661,8 +1969,14 @@ function ContextSurface({
           <span className="font-semibold">{used}</span>
           <span className="text-muted-foreground"> / 200k total</span>
         </div>
-        <Button variant="secondary" size="sm"><Minimize2 />Compact</Button>
-        <Button variant="outline" size="sm"><GitFork />Handoff</Button>
+        <Button variant="secondary" size="sm">
+          <Minimize2 />
+          Compact
+        </Button>
+        <Button variant="outline" size="sm">
+          <GitFork />
+          Handoff
+        </Button>
       </div>
     </div>
   )
@@ -1713,56 +2027,72 @@ function QueuePreview({
     const shell = {
       integrated: 'border-b bg-card',
       floating: 'mb-2 ml-auto w-3/4 overflow-hidden rounded-lg border bg-card shadow-sm',
-      'attached-stack': 'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border border-b-0 bg-card pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
+      'attached-stack':
+        'relative z-0 mx-auto -mb-2 w-full overflow-hidden rounded-t-xl border border-b-0 bg-card pb-2 shadow-lg shadow-foreground/10 backdrop-blur-sm',
       attached: '',
       inline: '',
     }[layout]
     return (
       <div className={shell}>
         <div className="divide-y divide-border/60">
-        {messages.map((queuedMessage) => (
-          <div
-            key={queuedMessage.id}
-            draggable
-            onDragStart={(event) => {
-              event.dataTransfer.effectAllowed = 'move'
-              event.dataTransfer.setData('text/plain', queuedMessage.id)
-            }}
-            onDragOver={(event) => {
-              event.preventDefault()
-              event.dataTransfer.dropEffect = 'move'
-            }}
-            onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)}
-            className={`flex h-11 cursor-grab items-center gap-1 overflow-hidden px-2 active:cursor-grabbing @[36rem]:gap-2 @[36rem]:px-4 ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift' : ''}`}
-          >
-            <GripVertical className="size-4 shrink-0 text-muted-foreground" />
-            <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 flex-1 truncate type-body">{queuedMessage.text}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="size-7 px-0 @[36rem]:w-auto @[36rem]:px-2.5"
-              aria-label={`Steer queued message: ${queuedMessage.text}`}
-              onClick={() => animatePop(queuedMessage, () => onSteer(queuedMessage))}
+          {messages.map((queuedMessage) => (
+            <div
+              key={queuedMessage.id}
+              draggable
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData('text/plain', queuedMessage.id)
+              }}
+              onDragOver={(event) => {
+                event.preventDefault()
+                event.dataTransfer.dropEffect = 'move'
+              }}
+              onDrop={(event) =>
+                onReorder(event.dataTransfer.getData('text/plain'), queuedMessage.id)
+              }
+              className={`flex h-11 cursor-grab items-center gap-1 overflow-hidden px-2 active:cursor-grabbing @[36rem]:gap-2 @[36rem]:px-4 ${exitingMessageId === queuedMessage.id ? 'composer-queue-exit' : isAdding ? (queuedMessage.id === latestQueuedId ? 'composer-queue-enter' : 'composer-queue-lift') : ''}`}
             >
-              <Route className="size-3.5" />
-              <span className="hidden @[36rem]:inline">Steer</span>
-            </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove queued message: ${queuedMessage.text}`} onClick={() => animatePop(queuedMessage, () => onRemove(queuedMessage.id))}>
-              <Trash2 className="size-3.5" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon-sm" aria-label={`Edit queued message: ${queuedMessage.text}`} onClick={() => onEdit(queuedMessage)}>
-              <Pencil className="size-3.5" />
-            </Button>
-          </div>
-        ))}
+              <GripVertical className="size-4 shrink-0 text-muted-foreground" />
+              <CornerDownRight className="size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1 truncate type-body">{queuedMessage.text}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="size-7 px-0 @[36rem]:w-auto @[36rem]:px-2.5"
+                aria-label={`Steer queued message: ${queuedMessage.text}`}
+                onClick={() => animatePop(queuedMessage, () => onSteer(queuedMessage))}
+              >
+                <Route className="size-3.5" />
+                <span className="hidden @[36rem]:inline">Steer</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Remove queued message: ${queuedMessage.text}`}
+                onClick={() => animatePop(queuedMessage, () => onRemove(queuedMessage.id))}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Edit queued message: ${queuedMessage.text}`}
+                onClick={() => onEdit(queuedMessage)}
+              >
+                <Pencil className="size-3.5" />
+              </Button>
+            </div>
+          ))}
         </div>
       </div>
     )
   }
   const shell = {
-    attached: 'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-muted px-3 pb-4 pt-2.5 shadow-sm',
+    attached:
+      'relative z-0 mx-auto -mb-2 w-[calc(100%-1.5rem)] max-w-[calc(56rem-1.5rem)] rounded-t-xl border bg-muted px-3 pb-4 pt-2.5 shadow-sm',
     inline: 'mr-72 flex border-b bg-muted px-3 py-2',
     floating: 'mb-2 ml-auto w-3/4 rounded-lg border bg-card px-3 py-2 shadow-sm',
     integrated: '',
@@ -1777,10 +2107,24 @@ function QueuePreview({
       <Button type="button" variant="ghost" size="sm" onClick={() => onSteer(message)}>
         <IconLabel icon={<Route />}>Steer</IconLabel>
       </Button>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove queued message" onClick={() => onRemove(message.id)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Remove queued message"
+        onClick={() => onRemove(message.id)}
+      >
         <Trash2 className="size-3.5" />
       </Button>
-      <Button type="button" variant="ghost" size="icon-sm" aria-label="Edit queued message" onClick={() => onEdit(message)}><Pencil className="size-3.5" /></Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Edit queued message"
+        onClick={() => onEdit(message)}
+      >
+        <Pencil className="size-3.5" />
+      </Button>
     </div>
   )
 }
@@ -1795,13 +2139,43 @@ function TaskPlanPopover() {
   ] as const
   return (
     <Popover>
-      <PopoverTrigger render={<Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]" aria-label="Open task plan" />}>
-        <IconLabel icon={(
-          <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
-            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="2.5" />
-            <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="60 100" />
-          </svg>
-        )}>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-label font-medium shadow-[0_2px_6px_-3px_rgba(0,0,0,0.16)]"
+            aria-label="Open task plan"
+          />
+        }
+      >
+        <IconLabel
+          icon={
+            <svg viewBox="0 0 20 20" className="-rotate-90" aria-hidden="true">
+              <circle
+                cx="10"
+                cy="10"
+                r="7"
+                fill="none"
+                stroke="currentColor"
+                strokeOpacity="0.18"
+                strokeWidth="2.5"
+              />
+              <circle
+                cx="10"
+                cy="10"
+                r="7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                pathLength="100"
+                strokeDasharray="60 100"
+              />
+            </svg>
+          }
+        >
           <span className="hidden @[36rem]:inline">Step&nbsp;</span>3/5
         </IconLabel>
       </PopoverTrigger>
@@ -1812,12 +2186,21 @@ function TaskPlanPopover() {
         <Progress value={60} className="h-1.5" />
         <div className="grid gap-1">
           {steps.map((step, index) => (
-            <div key={step.label} className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 type-meta ${step.status === 'current' ? 'bg-muted font-medium' : ''}`}>
-              <span className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full type-meta ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}>
-                {step.status === 'current' ? <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40" /> : null}
+            <div
+              key={step.label}
+              className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 type-meta ${step.status === 'current' ? 'bg-muted font-medium' : ''}`}
+            >
+              <span
+                className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full type-meta ${step.status === 'done' ? 'bg-foreground text-background' : step.status === 'current' ? 'border border-foreground' : 'border text-muted-foreground'}`}
+              >
+                {step.status === 'current' ? (
+                  <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40" />
+                ) : null}
                 {step.status === 'done' ? <Check className="size-3" /> : index + 1}
               </span>
-              <span className={step.status === 'upcoming' ? 'text-muted-foreground' : ''}>{step.label}</span>
+              <span className={step.status === 'upcoming' ? 'text-muted-foreground' : ''}>
+                {step.label}
+              </span>
             </div>
           ))}
         </div>
@@ -1828,15 +2211,29 @@ function TaskPlanPopover() {
 
 function UsagePopover({ state }: { state: ComposerState }) {
   const definition = HARNESSES[state.harness]
-  const primaryUsage = definition.usage.reduce((highest, item) => item.percentage > highest.percentage ? item : highest)
+  const primaryUsage = definition.usage.reduce((highest, item) =>
+    item.percentage > highest.percentage ? item : highest,
+  )
   const primaryUsagePercentage = state.usagePreview === 'high' ? 94 : primaryUsage.percentage
   const usageAlert = primaryUsagePercentage >= 90
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="sm" className={`shrink-0 gap-1.5 px-2 type-label font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`} aria-label={`Usage ${primaryUsagePercentage}%`} />}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`shrink-0 gap-1.5 px-2 type-label font-medium ${usageAlert ? 'text-red-600' : 'text-foreground'}`}
+            aria-label={`Usage ${primaryUsagePercentage}%`}
+          />
+        }
+      >
         <CircleGauge />
         <span className="inline-flex items-center gap-1">
-          Usage <span className={`tabular-nums ${usageAlert ? 'text-red-600' : 'text-muted-foreground'}`}>{primaryUsagePercentage}%</span>
+          Usage{' '}
+          <span className={`tabular-nums ${usageAlert ? 'text-red-600' : 'text-muted-foreground'}`}>
+            {primaryUsagePercentage}%
+          </span>
         </span>
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
@@ -1874,19 +2271,11 @@ function TranscriptRow({ message }: { message: MessageRow }) {
   return (
     <Message align={isUser ? 'end' : 'start'} className="type-body">
       <MessageContent>
-        <MessageHeader className="type-meta">
-          {isUser ? 'You' : 'Argo'}
-        </MessageHeader>
+        <MessageHeader className="type-meta">{isUser ? 'You' : 'Argo'}</MessageHeader>
         <Bubble variant={isUser ? 'secondary' : 'ghost'} align={isUser ? 'end' : 'start'}>
-          <BubbleContent className="type-prose">
-            {message.text}
-          </BubbleContent>
+          <BubbleContent className="type-prose">{message.text}</BubbleContent>
         </Bubble>
-        {!isUser && (
-          <MessageFooter className="type-meta">
-            Read from Session · now
-          </MessageFooter>
-        )}
+        {!isUser && <MessageFooter className="type-meta">Read from Session · now</MessageFooter>}
       </MessageContent>
     </Message>
   )
@@ -1965,7 +2354,10 @@ export function ComposerPrototype() {
 
   useEffect(() => {
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && systemDark))
+    document.documentElement.classList.toggle(
+      'dark',
+      theme === 'dark' || (theme === 'system' && systemDark),
+    )
   }, [theme])
 
   const setSessionSidebarVisible = (visible: boolean) => {
@@ -2076,45 +2468,46 @@ export function ComposerPrototype() {
           orientation="horizontal"
           className="min-h-0 min-w-0 flex-1 overflow-hidden border-r border-b border-border/60 bg-background"
         >
-        <ResizablePanel
-          id="session-roster"
-          panelRef={sessionRosterPanel}
-          collapsible
-          collapsedSize={SESSION_NAVIGATION_RAIL_WIDTH}
-          defaultSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MIN_WIDTH}
-          minSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MIN_WIDTH}
-          maxSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MAX_WIDTH}
-          groupResizeBehavior="preserve-pixel-size"
-          onResize={(size) => handleSessionRosterResize(size.inPixels)}
-          className="h-full min-h-0 overflow-hidden"
-        >
-          <div className="flex h-full min-h-0 w-full bg-sidebar">
-            <PrototypeRail
-              theme={theme}
-              onThemeChange={setTheme}
-            />
-            <div
-              aria-hidden={!showSessionRoster}
-              className={`h-full min-h-0 min-w-84 flex-1 ${paneContentVisibilityClass(showSessionRoster)}`}
-              style={{ contain: 'inline-size' }}
-            >
-              <PrototypeSessionRoster
-                currentProject={currentProject}
-                onProjectChange={setCurrentProject}
-                onCollapse={() => setSessionRosterVisible(false)}
-              />
+          <ResizablePanel
+            id="session-roster"
+            panelRef={sessionRosterPanel}
+            collapsible
+            collapsedSize={SESSION_NAVIGATION_RAIL_WIDTH}
+            defaultSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MIN_WIDTH}
+            minSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MIN_WIDTH}
+            maxSize={SESSION_NAVIGATION_RAIL_WIDTH + SESSION_ROSTER_MAX_WIDTH}
+            groupResizeBehavior="preserve-pixel-size"
+            onResize={(size) => handleSessionRosterResize(size.inPixels)}
+            className="h-full min-h-0 overflow-hidden"
+          >
+            <div className="flex h-full min-h-0 w-full bg-sidebar">
+              <PrototypeRail theme={theme} onThemeChange={setTheme} />
+              <div
+                aria-hidden={!showSessionRoster}
+                className={`h-full min-h-0 min-w-84 flex-1 ${paneContentVisibilityClass(showSessionRoster)}`}
+                style={{ contain: 'inline-size' }}
+              >
+                <PrototypeSessionRoster
+                  currentProject={currentProject}
+                  onProjectChange={setCurrentProject}
+                  onCollapse={() => setSessionRosterVisible(false)}
+                />
+              </div>
             </div>
-          </div>
-        </ResizablePanel>
-        <ResizableHandle className="z-30 bg-border/60" />
-        <ResizablePanel id="session-workspace" minSize={560} className="h-full min-h-0 overflow-hidden">
-        <main
-          className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
-          data-prototype="composer"
-          onPointerDownCapture={() => setKeyboardFocus(false)}
-          onKeyDownCapture={() => setKeyboardFocus(true)}
-        >
-          <style>{`
+          </ResizablePanel>
+          <ResizableHandle className="z-30 bg-border/60" />
+          <ResizablePanel
+            id="session-workspace"
+            minSize={560}
+            className="h-full min-h-0 overflow-hidden"
+          >
+            <main
+              className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+              data-prototype="composer"
+              onPointerDownCapture={() => setKeyboardFocus(false)}
+              onKeyDownCapture={() => setKeyboardFocus(true)}
+            >
+              <style>{`
         @keyframes composer-queue-enter {
           from { height: 0; }
           to { height: 44px; }
@@ -2138,145 +2531,164 @@ export function ComposerPrototype() {
         .composer-queue-stack [draggable='true']:nth-child(4) { z-index: 7; }
         .composer-queue-stack [draggable='true']:nth-child(5) { z-index: 6; }
           `}</style>
-          <ResizablePanelGroup
-            orientation="horizontal"
-            className="min-h-0 flex-1"
-          >
-          <ResizablePanel
-            id="session-conversation"
-            panelRef={sessionConversationPanel}
-            collapsible
-            collapsedSize={0}
-            minSize={SESSION_FEED_MIN_WIDTH}
-            onResize={(size) => handleSessionConversationResize(size.inPixels)}
-            className="flex h-full min-h-0 overflow-hidden"
-          >
-          <div
-            className="@container flex min-h-0 flex-1 flex-col"
-            style={{ minWidth: SESSION_FEED_MIN_WIDTH, contain: 'inline-size' }}
-          >
-          <PrototypeSessionHeader
-            showRoster={showSessionRoster}
-            showSidebar={showSessionSidebar}
-            onOpenRoster={() => setSessionRosterVisible(true)}
-            onOpenSidebar={() => setSessionSidebarVisible(true)}
-          />
-          <div className="min-h-0 flex-1">
-            <Transcript
-              messages={messages}
-              activeEvidenceId={activeFeedEvidenceId}
-              onOpenEvidence={openFeedEvidence}
-            />
-          </div>
-          <div className="relative isolate shrink-0 bg-background px-4 pt-6 pb-8">
-            <div className="pointer-events-none absolute inset-x-4 bottom-full z-0 -mb-6">
-              <div className={`pointer-events-auto relative z-20 mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}>
-                <div className="mx-auto w-full">
-                  <FeedPermission />
-                </div>
-              </div>
-              <div className={`composer-queue-stack pointer-events-auto relative z-0 mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}>
-                <QueuePreview messages={queuedMessages} layout="attached-stack" onSteer={steerQueuedMessage} onRemove={removeQueuedMessage} onEdit={editQueuedMessage} onReorder={reorderQueuedMessage} latestQueuedId={latestQueuedId} isAdding={isQueueAnimating} />
-              </div>
-            </div>
-            <AnimatedHeight>
-              <form
-                className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  send()
-                }}
-              >
-          <ComposerAutocomplete draft={draft} onSelect={setDraft} />
-          <InputGroup className={`relative z-20 overflow-hidden rounded-xl !bg-card shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : '[&:has(textarea:focus-visible)]:!border-input [&:has(textarea:focus-visible)]:!ring-0'}`}>
-            <div className="absolute top-4 right-4 z-20"><TaskPlanPopover /></div>
-            <ReferenceStrip state={state} setState={setState} />
-            <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">
-              <InputGroupTextarea
-                aria-label="Message"
-                placeholder="Direct the next move…"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                className="!min-h-0 flex-1 !px-0 !py-0 text-left type-prose"
-                onKeyDown={(event) => {
-                  const suggestions = composerSuggestions(draft)
-                  if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
-                    event.preventDefault()
-                    setDraft(insertComposerSuggestion(draft, suggestions[0]))
-                    return
-                  }
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault()
-                    send()
-                  }
-                }}
-              />
-            </div>
-            <InputGroupAddon align="block-end" className="gap-1 bg-card px-2 py-2 @[36rem]:gap-2 @[36rem]:px-4">
-              <AddContextMenu state={state} setState={setState} />
-              <RunSetupMenu state={state} setState={setState} />
-              <div className="ml-auto flex items-center gap-1">
-                <PermissionMenu state={state} setState={setState} />
-                <InputGroupButton
-                  size="icon-sm"
-                  variant={isListening ? 'secondary' : 'ghost'}
-                  className="text-foreground"
-                  aria-label={isListening ? 'Stop listening' : 'Use microphone'}
-                  onClick={() => setIsListening(!isListening)}
+              <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
+                <ResizablePanel
+                  id="session-conversation"
+                  panelRef={sessionConversationPanel}
+                  collapsible
+                  collapsedSize={0}
+                  minSize={SESSION_FEED_MIN_WIDTH}
+                  onResize={(size) => handleSessionConversationResize(size.inPixels)}
+                  className="flex h-full min-h-0 overflow-hidden"
                 >
-                  <Mic />
-                </InputGroupButton>
-                <InputGroupButton
-                  type="submit"
-                  size="icon-sm"
-                  variant="default"
-                  aria-label="Send message"
-                  aria-disabled={draft.trim().length === 0}
-                  className={`shrink-0 rounded-full ${draft.trim().length === 0 ? 'opacity-50' : ''}`}
+                  <div
+                    className="@container flex min-h-0 flex-1 flex-col"
+                    style={{ minWidth: SESSION_FEED_MIN_WIDTH, contain: 'inline-size' }}
+                  >
+                    <PrototypeSessionHeader
+                      showRoster={showSessionRoster}
+                      showSidebar={showSessionSidebar}
+                      onOpenRoster={() => setSessionRosterVisible(true)}
+                      onOpenSidebar={() => setSessionSidebarVisible(true)}
+                    />
+                    <div className="min-h-0 flex-1">
+                      <Transcript
+                        messages={messages}
+                        activeEvidenceId={activeFeedEvidenceId}
+                        onOpenEvidence={openFeedEvidence}
+                      />
+                    </div>
+                    <div className="relative isolate shrink-0 bg-background px-4 pt-6 pb-8">
+                      <div className="pointer-events-none absolute inset-x-4 bottom-full z-0 -mb-6">
+                        <div
+                          className={`pointer-events-auto relative z-20 mx-auto mb-2 ${SECONDARY_COMPOSER_WIDTH}`}
+                        >
+                          <div className="mx-auto w-full">
+                            <FeedPermission />
+                          </div>
+                        </div>
+                        <div
+                          className={`composer-queue-stack pointer-events-auto relative z-0 mx-auto ${SECONDARY_COMPOSER_WIDTH} [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}
+                        >
+                          <QueuePreview
+                            messages={queuedMessages}
+                            layout="attached-stack"
+                            onSteer={steerQueuedMessage}
+                            onRemove={removeQueuedMessage}
+                            onEdit={editQueuedMessage}
+                            onReorder={reorderQueuedMessage}
+                            latestQueuedId={latestQueuedId}
+                            isAdding={isQueueAnimating}
+                          />
+                        </div>
+                      </div>
+                      <AnimatedHeight>
+                        <form
+                          className="relative z-10 mx-auto w-full max-w-4xl [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_textarea]:focus:!outline-none [&_textarea]:focus-visible:!outline-none"
+                          onSubmit={(event) => {
+                            event.preventDefault()
+                            send()
+                          }}
+                        >
+                          <ComposerAutocomplete draft={draft} onSelect={setDraft} />
+                          <InputGroup
+                            className={`relative z-20 overflow-hidden rounded-xl !bg-card shadow-xl shadow-foreground/10 ${keyboardFocus ? '[&:has(textarea:focus)]:!border-ring [&:has(textarea:focus)]:!ring-[3px] [&:has(textarea:focus)]:!ring-ring/50' : '[&:has(textarea:focus-visible)]:!border-input [&:has(textarea:focus-visible)]:!ring-0'}`}
+                          >
+                            <div className="absolute top-4 right-4 z-20">
+                              <TaskPlanPopover />
+                            </div>
+                            <ReferenceStrip state={state} setState={setState} />
+                            <div className="flex min-h-20 w-full min-w-0 items-start px-4 py-3 pr-28">
+                              <InputGroupTextarea
+                                aria-label="Message"
+                                placeholder="Direct the next move…"
+                                value={draft}
+                                onChange={(event) => setDraft(event.target.value)}
+                                className="!min-h-0 flex-1 !px-0 !py-0 text-left type-prose"
+                                onKeyDown={(event) => {
+                                  const suggestions = composerSuggestions(draft)
+                                  if (event.key === 'Enter' && !event.shiftKey && suggestions[0]) {
+                                    event.preventDefault()
+                                    setDraft(insertComposerSuggestion(draft, suggestions[0]))
+                                    return
+                                  }
+                                  if (event.key === 'Enter' && !event.shiftKey) {
+                                    event.preventDefault()
+                                    send()
+                                  }
+                                }}
+                              />
+                            </div>
+                            <InputGroupAddon
+                              align="block-end"
+                              className="gap-1 bg-card px-2 py-2 @[36rem]:gap-2 @[36rem]:px-4"
+                            >
+                              <AddContextMenu state={state} setState={setState} />
+                              <RunSetupMenu state={state} setState={setState} />
+                              <div className="ml-auto flex items-center gap-1">
+                                <PermissionMenu state={state} setState={setState} />
+                                <InputGroupButton
+                                  size="icon-sm"
+                                  variant={isListening ? 'secondary' : 'ghost'}
+                                  className="text-foreground"
+                                  aria-label={isListening ? 'Stop listening' : 'Use microphone'}
+                                  onClick={() => setIsListening(!isListening)}
+                                >
+                                  <Mic />
+                                </InputGroupButton>
+                                <InputGroupButton
+                                  type="submit"
+                                  size="icon-sm"
+                                  variant="default"
+                                  aria-label="Send message"
+                                  aria-disabled={draft.trim().length === 0}
+                                  className={`shrink-0 rounded-full ${draft.trim().length === 0 ? 'opacity-50' : ''}`}
+                                >
+                                  <ArrowUp />
+                                </InputGroupButton>
+                              </div>
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </form>
+                      </AnimatedHeight>
+                      <div
+                        className={`relative z-0 mx-auto -mt-2 ${SECONDARY_COMPOSER_WIDTH} [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}
+                      >
+                        <ContextSurface state={state} layout="attached" />
+                      </div>
+                    </div>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle className="z-30 bg-border/60" />
+                <ResizablePanel
+                  id="session-inspector"
+                  panelRef={sessionInspectorPanel}
+                  collapsible
+                  collapsedSize={0}
+                  defaultSize={248}
+                  minSize={SESSION_INSPECTOR_MIN_WIDTH}
+                  maxSize="100%"
+                  groupResizeBehavior="preserve-pixel-size"
+                  onResize={(size) => handleSessionSidebarResize(size.inPixels)}
+                  className={`h-full min-h-0 overflow-hidden ${paneContentVisibilityClass(showSessionSidebar)}`}
                 >
-                  <ArrowUp />
-                </InputGroupButton>
-              </div>
-            </InputGroupAddon>
-          </InputGroup>
-              </form>
-            </AnimatedHeight>
-            <div className={`relative z-0 mx-auto -mt-2 ${SECONDARY_COMPOSER_WIDTH} [&>*]:!px-4 [&>*]:!shadow-[0_10px_32px_-16px_rgba(0,0,0,0.3)] [&_button]:!font-normal [&_span]:!font-normal`}>
-              <ContextSurface state={state} layout="attached" />
-            </div>
-          </div>
-          </div>
+                  <div
+                    aria-hidden={!showSessionSidebar}
+                    className="h-full min-h-0 w-full"
+                    style={{ contain: 'inline-size' }}
+                  >
+                    <SessionWorkSidebar
+                      evidence={feedEvidence}
+                      fullscreen={sessionSidebarFullscreen}
+                      onShowActivity={showSessionActivity}
+                      onToggleFullscreen={toggleSessionSidebarFullscreen}
+                      onCollapse={() => setSessionSidebarVisible(false)}
+                    />
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </main>
           </ResizablePanel>
-          <ResizableHandle className="z-30 bg-border/60" />
-          <ResizablePanel
-            id="session-inspector"
-            panelRef={sessionInspectorPanel}
-            collapsible
-            collapsedSize={0}
-            defaultSize={248}
-            minSize={SESSION_INSPECTOR_MIN_WIDTH}
-            maxSize="100%"
-            groupResizeBehavior="preserve-pixel-size"
-            onResize={(size) => handleSessionSidebarResize(size.inPixels)}
-            className={`h-full min-h-0 overflow-hidden ${paneContentVisibilityClass(showSessionSidebar)}`}
-          >
-            <div
-              aria-hidden={!showSessionSidebar}
-              className="h-full min-h-0 w-full"
-              style={{ contain: 'inline-size' }}
-            >
-                <SessionWorkSidebar
-                  evidence={feedEvidence}
-                  fullscreen={sessionSidebarFullscreen}
-                  onShowActivity={showSessionActivity}
-                  onToggleFullscreen={toggleSessionSidebarFullscreen}
-                  onCollapse={() => setSessionSidebarVisible(false)}
-                />
-            </div>
-          </ResizablePanel>
-          </ResizablePanelGroup>
-        </main>
-        </ResizablePanel>
         </ResizablePanelGroup>
       </div>
     </div>

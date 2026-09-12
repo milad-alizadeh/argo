@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Navigate, Outlet, createHashRouter, useMatches } from 'react-router'
+import { createHashRouter, Navigate, Outlet, useMatches } from 'react-router'
 
 import { AtlasSidebar } from '../../atlas/components/AtlasSidebar'
 import { AtlasPage } from '../../atlas/pages/AtlasPage'
@@ -26,7 +26,8 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
 
 function CockpitRouteLayout() {
   const sidebar = useMatches().reduce<ReactNode | null>(
-    (currentSidebar, match) => (isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar),
+    (currentSidebar, match) =>
+      isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
     null,
   )
 

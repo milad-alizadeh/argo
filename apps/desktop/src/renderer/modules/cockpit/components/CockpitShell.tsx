@@ -1,14 +1,14 @@
-import { useState, type ReactNode } from 'react'
 import { PanelLeftIcon } from 'lucide-react'
+import { type ReactNode, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { Button } from '../../../components/ui/button'
-import { sizeFromToken } from '../../../components/ui/size-from-token'
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '../../../components/ui/resizable'
+import { sizeFromToken } from '../../../components/ui/size-from-token'
 import { CockpitNavigationRail } from './CockpitNavigationRail'
 
 type CockpitShellProps = {
@@ -72,9 +72,7 @@ export function CockpitShell({ rail, sidebar, children }: CockpitShellProps) {
         </ResizablePanel>
         <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
         <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
-          <div className="relative h-full min-w-0 overflow-hidden bg-background">
-            {children}
-          </div>
+          <div className="relative h-full min-w-0 overflow-hidden bg-background">{children}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

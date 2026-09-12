@@ -1,10 +1,14 @@
-import { useState } from 'react'
 import { Expand, Minimize2, PanelRight } from 'lucide-react'
+import { useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { Button } from '../../../components/ui/button'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '../../../components/ui/resizable'
 import { sizeFromToken } from '../../../components/ui/size-from-token'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../../components/ui/resizable'
 
 export function SessionScreenView() {
   const inspectorPanelRef = usePanelRef()
@@ -35,7 +39,7 @@ export function SessionScreenView() {
 
   return (
     <main className="relative h-full min-h-0 overflow-hidden bg-background">
-        <div className="absolute top-0 right-3 z-10 flex h-(--size-chrome-bar) items-center gap-1">
+      <div className="absolute top-0 right-3 z-10 flex h-(--size-chrome-bar) items-center gap-1">
         {inspectorCollapsed ? null : (
           <Button
             aria-label={inspectorExpanded ? 'Restore Session sidebar' : 'Expand Session sidebar'}

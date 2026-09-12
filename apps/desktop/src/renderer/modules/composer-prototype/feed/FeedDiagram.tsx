@@ -24,9 +24,7 @@ export function DiagramDrawing({ scale = 100 }: { scale?: number }) {
     >
       <div className="rounded-lg border bg-card px-4 py-2">Draft + attachments</div>
       <ArrowDown className="!size-(--size-icon-inline) text-muted-foreground" />
-      <div className="rounded-lg border bg-card px-4 py-2 font-medium">
-        Session driver
-      </div>
+      <div className="rounded-lg border bg-card px-4 py-2 font-medium">Session driver</div>
       <div className="flex w-full justify-evenly text-muted-foreground">
         <ArrowDownLeft className="!size-(--size-icon-inline)" />
         <ArrowDownRight className="!size-(--size-icon-inline)" />
@@ -117,9 +115,7 @@ export function FeedDiagram({ onOpen }: { onOpen: FeedEvidenceAction }) {
 
 export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
   return (
-    <figure
-      className={`overflow-hidden border border-border bg-card ${FEED_CARD_RADIUS_CLASS}`}
-    >
+    <figure className={`overflow-hidden border border-border bg-card ${FEED_CARD_RADIUS_CLASS}`}>
       <figcaption className="border-b border-border/60 px-3 py-2 type-label">
         Mermaid · {loading ? 'Loading' : 'Could not render'}
       </figcaption>
@@ -144,9 +140,7 @@ export function FeedDiagramState({ loading = false }: { loading?: boolean }) {
             role="alert"
           >
             <p className="type-meta font-medium">The diagram source is incomplete</p>
-            <p className="type-meta">
-              The original source remains available above.
-            </p>
+            <p className="type-meta">The original source remains available above.</p>
           </div>
         )}
       </div>
