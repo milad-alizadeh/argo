@@ -101,9 +101,7 @@ export async function proveNoMislabelledFeed(page) {
   const samples = await watching
   assert.equal(samples.length > 0, true)
   assert.deepEqual(
-    samples.filter(
-      (sample) => (sample.session === 'prose') !== sample.row.startsWith('unreadable:'),
-    ),
+    samples.filter((sample) => (sample.session === 'prose') !== sample.row.startsWith('p-')),
     [],
   )
 }
