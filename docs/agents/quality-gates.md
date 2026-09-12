@@ -79,10 +79,10 @@ inside a worktree changes nothing a pull request can carry. It is also interacti
 no dry run, so a `skills-lock.json` edit is proved only by installing it by hand and reading what
 appeared. **Treat a manifest change as unverified until someone has done that.**
 
-**The packaged acceptance test needs a Mac and several minutes.** `apps/desktop/scripts/prove-packaged-pty.mjs`
-runs in the `desktop-artifact` job on `macos-26`, behind a path filter that fails closed. What it
-cannot cover is signing: a re-signature can invalidate what the package proved, so
-`assert:packaged` has to run again after `osxSign` is wired to the chosen entitlement set.
+**The packaged tests need a Mac and several minutes.** The `desktop-artifact` job runs them on
+`macos-26`, behind a path filter that fails closed. They cannot cover signing: a re-signature can
+invalidate what packaging tested, so `test:packaged-contents` has to run again after `osxSign` is
+wired to the chosen entitlement set.
 
 ## The Node version (#1951)
 
@@ -150,4 +150,3 @@ Prove a config change by effect, one of:
 1. Check the **analysed file count** still excludes the ignored paths.
 2. Plant a throwaway clone pair inside an ignored path and another outside; confirm only the
    outside pair is reported.
-

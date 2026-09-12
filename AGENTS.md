@@ -9,7 +9,7 @@ Everything here is a fact about this repository. Process belongs to the skill th
 ## Where things are written down
 
 - **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. A
-  screenshot reaches a body only when a person drags it in; an agent writes a Storybook link
+  screenshot reaches a body only when a person drags it in; an agent records the Storybook route
   instead, and keeps its own captures in a temp dir. Every issue is
   labelled in the `gh issue create` call and never afterwards, and each label string equals its
   role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
@@ -56,9 +56,8 @@ Before code review, read `docs/agents/code-review.md` for repository references 
 husky and lint-staged out. `.github/workflows/ci.yml` names every
 step it runs on Linux and `bun run quality` is the local subset; read the step list there, never
 a copy of it. `quality` is wider than biome, so biome alone leaves a typecheck or a duplication
-breach for CI. A `macos-26` job packages `apps/desktop`, asserts the packaged `node-pty` and runs
-the shipped app (#1769) when the PR touches `apps/desktop`, the root manifest, the lockfile or
-`.github/`.
+breach for CI. A `macos-26` job packages and tests `apps/desktop` (#1769) when the PR touches
+`apps/desktop`, the root manifest, the lockfile or `.github/`.
 
 When a gate fires, fix it or ratchet it in `biome.jsonc`: **never suppress inline, never raise a
 global cap.** Both configs fail open when commented, so no gate is proved by exit code alone.
@@ -168,12 +167,9 @@ goes there.
 
 ## Visual verification
 
-**A component is reviewed on the Storybook site, and a screen is reviewed by running a render
-command.** The site is built from `main` by `.github/workflows/storybook-pages.yml` and served at
-`https://milad-alizadeh.github.io/argo/`; `ci.yml`'s `storybook` job rebuilds it on every pull
-request as the gate and comments the stories that pull request touches (#1910). The render
-commands are `docs/design-stack.md`'s last rows, and `apps/desktop/README.md` says what each
-writes.
+**A component is reviewed in Storybook, and a screen is reviewed by running a render command.**
+Vercel owns Storybook preview deployments. Its project configuration and credentials stay outside
+this repository. The local commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
 
 **Every capture is disposable**: a temp dir, looked at, deleted. No gate takes a screenshot and no
 ref holds one, because a PNG in a git object carries no version.

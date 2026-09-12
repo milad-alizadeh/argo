@@ -68,8 +68,8 @@ export async function proveReaderMotion({ page, fixture, outerRevision, visibleR
       () => document.querySelector('.feed__viewport')?.scrollTop,
     )
     assert.notEqual(duringMotion, motion.before)
-    const chosen = await viewportAnchor(page)
     await motion.stop()
+    const chosen = await viewportAnchor(page)
     await page.waitForFunction((revision) => {
       return document.querySelector('.feed__viewport')?.dataset.readingRevision !== revision
     }, visibleRevision)
