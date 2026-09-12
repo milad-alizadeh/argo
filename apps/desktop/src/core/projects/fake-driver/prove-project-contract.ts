@@ -61,6 +61,7 @@ async function prove(application, fixture) {
         'registerProject',
         'relocateProject',
         'setAppearance',
+        'startClaudeSession',
         'versions',
         'zoomFactor',
       ],

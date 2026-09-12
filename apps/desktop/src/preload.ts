@@ -8,9 +8,17 @@ import { COMMAND_CHANNEL } from './core/commands/shortcuts'
 import { createProjectClient } from './core/projects/client'
 import { PROJECT_CHANNEL } from './core/projects/contract'
 import { createSessionClient } from './core/sessions/client'
-import { SESSION_FEED_CHANNEL, SESSION_LIST_CHANNEL } from './core/sessions/contract'
+import {
+  SESSION_CLAUDE_START_CHANNEL,
+  SESSION_FEED_CHANNEL,
+  SESSION_LIST_CHANNEL,
+} from './core/sessions/contract'
 
-const SESSION_CHANNELS = { list: SESSION_LIST_CHANNEL, feed: SESSION_FEED_CHANNEL }
+const SESSION_CHANNELS = {
+  list: SESSION_LIST_CHANNEL,
+  feed: SESSION_FEED_CHANNEL,
+  startClaude: SESSION_CLAUDE_START_CHANNEL,
+}
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
