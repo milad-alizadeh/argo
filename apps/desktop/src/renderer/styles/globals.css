@@ -2,6 +2,8 @@
 @import "../tokens.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./session-tokens.css";
+@import "./typography.css";
 
 @custom-variant dark (&:is(.dark *));
 

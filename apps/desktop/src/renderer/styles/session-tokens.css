@@ -1,0 +1,54 @@
+@theme inline {
+  --text-heading: var(--text-sm, 0.875rem);
+  --text-prose: var(--text-sm, 0.875rem);
+  --text-label: var(--text-xs, 0.75rem);
+  /* Session roles retain the approved prototype's scale without changing existing text utilities. */
+  --text-session-title: var(--text-xl, 1.25rem);
+  --text-session-body: var(--text-sm, 0.875rem);
+  --text-session-meta: var(--text-xs, 0.75rem);
+  --text-session-code: var(--text-xs, 0.75rem);
+  --duration-standard: 300ms;
+  --transition-duration-standard: var(--duration-standard);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --size-bottom-status: 106px;
+  --size-icon-metadata: 12px;
+  --size-icon-inline: 14px;
+  --size-icon-control: 16px;
+  --size-feed-attachment-preview: 80px;
+  --spacing-composer-attachment-gutter: 12px;
+  --size-composer-attachment: 64px;
+  --size-composer-reference-strip: calc(
+    var(--size-composer-attachment) +
+    2 *
+    var(--spacing-composer-attachment-gutter)
+  );
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
+  --color-traffic-light-close: #ff5f57;
+  --color-traffic-light-minimize: #febc2e;
+  --color-traffic-light-zoom: #28c840;
+}
+
+:root {
+  --text-title--line-height: var(--text-xl--line-height, 1.75rem);
+  --text-heading--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-body--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-prose--line-height: var(--leading-6, 1.5rem);
+  --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-meta--line-height: var(--text-xs--line-height, 1rem);
+  --text-code--line-height: var(--leading-5, 1.25rem);
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-label-weight: 500;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-label-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
+}
