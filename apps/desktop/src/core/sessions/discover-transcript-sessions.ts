@@ -27,22 +27,29 @@ type TranscriptDiscoverySource = {
   parse: TranscriptParser
 }
 
-export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
+function holdsMessage(file: TranscriptFile): boolean {
+  return file.records.some((record) => record.kind === 'message')
+}
+
+async function readFile(
+  source: TranscriptDiscoverySource,
+  file: TranscriptPath,
+): Promise<TranscriptFile | null> {
+  try {
+    return readTranscriptFile(file.path, {
+      fileName: file.name,
+      lines: await readTranscriptLines(file.path),
+      parse: source.parse,
+    })
+  } catch {
+    return null
+  }
+}
+
+function createTranscriptSummariser(source: TranscriptDiscoverySource) {
   const summaries = new Map<string, { writtenAt: number; file: TranscriptFile }>()
 
-  async function readFile(file: TranscriptPath): Promise<TranscriptFile | null> {
-    try {
-      return readTranscriptFile(file.path, {
-        fileName: file.name,
-        lines: await readTranscriptLines(file.path),
-        parse: source.parse,
-      })
-    } catch {
-      return null
-    }
-  }
-
-  async function summarise(root: string) {
+  return async function summarise(root: string) {
     const found = await source.transcriptPaths(root)
     const candidates: Candidate[] = await Promise.all(
       found.map(async (file) => ({
@@ -60,7 +67,7 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
         files.push(held.file)
         continue
       }
-      const read = await readFile(candidate)
+      const read = await readFile(source, candidate)
       if (read === null) {
         unreadable += 1
         continue
@@ -73,10 +80,16 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     for (const path of summaries.keys()) if (!reached.has(path)) summaries.delete(path)
     return { found, files, unreadable }
   }
+}
+
+export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
+  const summarise = createTranscriptSummariser(source)
 
   async function discoverSessions(root: string): Promise<TranscriptDiscovery> {
     const { found, files, unreadable } = await summarise(root)
-    const rows = stitchChains(files).map((chain) => projectRosterRow(chain, source.cli))
+    const rows = stitchChains(files.filter(holdsMessage)).map((chain) =>
+      projectRosterRow(chain, source.cli),
+    )
     rows.sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
     return { rows, filesFound: found.length, filesRead: files.length, filesUnreadable: unreadable }
   }
@@ -88,7 +101,9 @@ export function createTranscriptDiscoverer(source: TranscriptDiscoverySource) {
     )
     if (chain === undefined) return null
     const read = await Promise.all(
-      chain.files.map((file) => readFile({ path: file.path, name: `${file.sessionId}.jsonl` })),
+      chain.files.map((file) =>
+        readFile(source, { path: file.path, name: `${file.sessionId}.jsonl` }),
+      ),
     )
     return { ...chain, files: read.filter((file): file is TranscriptFile => file !== null) }
   }
