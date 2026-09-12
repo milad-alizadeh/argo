@@ -12,7 +12,7 @@ function ComposerChipSpecimen({ chip }: { chip: ComposerChipDefinition }) {
   return (
     <Badge
       variant="outline"
-      className="mx-0.5 align-text-bottom text-foreground type-label"
+      className="align-middle text-foreground type-label"
       data-composer-text={chip.text}
     >
       {chip.kind === 'filepath' ? <FileCode2 className="!size-(--size-icon-inline)" /> : null}
