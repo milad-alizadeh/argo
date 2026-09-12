@@ -21,8 +21,12 @@ export async function proveFirstOpen(page) {
       fromTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop,
       userSelect: getComputedStyle(prose).userSelect,
       selected: window.getSelection().toString(),
-      measureMs: Number(document.querySelector('.feed').dataset.measureMs),
-      settleMs: Number(document.querySelector('.feed').dataset.settleMs),
+      measureMs: Number(
+        document.querySelector('.feed__document[data-active="true"]').dataset.measureMs,
+      ),
+      settleMs: Number(
+        document.querySelector('.feed__document[data-active="true"]').dataset.settleMs,
+      ),
     }
   })
   assert.equal(reading.session, 'prose')

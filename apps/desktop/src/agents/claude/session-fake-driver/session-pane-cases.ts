@@ -13,6 +13,30 @@ async function widths(page) {
   }))
 }
 
+async function fixedRow(page) {
+  return page.evaluate(() => {
+    const viewport = document.querySelector('.feed__viewport')
+    viewport.scrollTop = viewport.scrollHeight / 2
+    viewport.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: -1 }))
+    const row = [...viewport.querySelectorAll('[data-feed-row]')].find(
+      (candidate) =>
+        candidate.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top,
+    )
+    return {
+      id: row.dataset.feedRow,
+      offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
+    }
+  })
+}
+
+async function offsetOf(page, id) {
+  return page.evaluate((anchor) => {
+    const viewport = document.querySelector('.feed__viewport')
+    const row = viewport.querySelector(`[data-feed-row="${anchor}"]`)
+    return row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
+  }, id)
+}
+
 // Pressed at the handle's centre and moved in steps, so the library sees a drag rather than a
 // jump, then released.
 async function drag(page, by) {
@@ -43,6 +67,7 @@ async function settledAt(page, width) {
 export async function provePaneDrag(page) {
   const before = await widths(page)
   assert.equal(Math.abs(before.shown - before.measured) < 1, true)
+  const anchor = await fixedRow(page)
 
   await drag(page, DRAG)
   await page.waitForFunction(
@@ -52,11 +77,17 @@ export async function provePaneDrag(page) {
   const dragged = await widths(page)
   assert.equal(Math.round(dragged.roster - before.roster), DRAG)
   await settledAt(page, before.measured - DRAG)
+  const rewrapped = await offsetOf(page, anchor.id)
+  assert.equal(Math.abs(rewrapped - anchor.offset) <= 1, true)
 
   // Put the handle back, so no later case reads a Feed at a width it did not ask for.
   await drag(page, -DRAG)
   await settledAt(page, before.measured)
-  return { rosterWidth: before.roster, draggedTo: dragged.roster }
+  return {
+    rosterWidth: before.roster,
+    draggedTo: dragged.roster,
+    viewportMotion: rewrapped - anchor.offset,
+  }
 }
 
 // A pane scrolls inside itself and never moves the window. Two things escaped before: anything wider

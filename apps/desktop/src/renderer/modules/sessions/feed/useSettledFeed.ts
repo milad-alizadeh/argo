@@ -1,7 +1,7 @@
-import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import { type MutableRefObject, type RefObject, useEffect, useRef, useState } from 'react'
 
 import type { SessionFeedRow } from '../types'
-import { createHeightStore, digestOfRows, type Reading } from './heights'
+import { createHeightStore, type Reading } from './heights'
 import { containerReading, settleReading } from './measure'
 
 // One store for the launch, shared by every deck. Heights stay for every Session opened this
@@ -10,24 +10,39 @@ const heights = createHeightStore()
 
 export type Settled = {
   reading: Reading
+  rows: readonly SessionFeedRow[]
   heights: Map<string, number>
   measuredMs: number
   settledMs: number
 }
 
+type SettledFeedOptions = {
+  active: boolean
+  sessionId: string | null
+  revision: string | null
+  rows: readonly SessionFeedRow[]
+}
+
 // Rule 6: the Feed stays at its old width, clipped, for the length of a drag, and one pass runs
 // at drag end. This is that "drag end" — a width that has stopped moving.
 const RESIZE_SETTLE_MS = 180
+const GEOMETRY_REFRESH_MS = 500
 
 // The column is what a drag resizes, so it is what the observer watches. The width the pass keys
 // on is read elsewhere, off the container the rows are actually laid out in.
-function useSettledWidth(column: RefObject<HTMLElement | null>) {
+function useSettledWidth(
+  active: boolean,
+  activeRef: MutableRefObject<boolean>,
+  column: RefObject<HTMLElement | null>,
+) {
   const [width, setWidth] = useState<number | null>(null)
   useEffect(() => {
+    if (!active) return
     const element = column.current
     if (element === null) return
     let timer: number | undefined
     const observer = new ResizeObserver(() => {
+      if (!activeRef.current) return
       window.clearTimeout(timer)
       timer = window.setTimeout(
         () => setWidth(element.getBoundingClientRect().width),
@@ -40,57 +55,108 @@ function useSettledWidth(column: RefObject<HTMLElement | null>) {
       window.clearTimeout(timer)
       observer.disconnect()
     }
-  }, [column])
+  }, [active, activeRef, column])
   return width
+}
+
+// A font load or Electron zoom change can leave the CSS width alone while changing every prose
+// height. Watch those other two invalidators only while this visible deck may read layout.
+type Geometry = Pick<Reading, 'font' | 'zoom'>
+
+function useGeometry(
+  active: boolean,
+  activeRef: MutableRefObject<boolean>,
+  measured: RefObject<HTMLElement | null>,
+) {
+  const [geometry, setGeometry] = useState<Geometry | null>(null)
+  useEffect(() => {
+    if (!active) {
+      setGeometry(null)
+      return
+    }
+    const container = measured.current
+    if (container === null) return
+    if (!activeRef.current) return
+    let current = geometryOf(container)
+    setGeometry(current)
+    const reread = () => {
+      if (!activeRef.current) return
+      const next = geometryOf(container)
+      if (geometryKey(next) === geometryKey(current)) return
+      current = next
+      setGeometry(next)
+    }
+    document.fonts.addEventListener('loadingdone', reread)
+    const timer = window.setInterval(reread, GEOMETRY_REFRESH_MS)
+    return () => {
+      document.fonts.removeEventListener('loadingdone', reread)
+      window.clearInterval(timer)
+    }
+  }, [active, activeRef, measured])
+  return geometry
 }
 
 // Nothing is drawn until this returns a reading. A cached one returns on the same tick, which is
 // the kept-deck case; anything else runs one pass behind the activity indicator.
-export function useSettledFeed(sessionId: string | null, rows: readonly SessionFeedRow[]) {
+export function useSettledFeed({ active, sessionId, revision, rows }: SettledFeedOptions) {
   const column = useRef<HTMLDivElement>(null)
   const measured = useRef<HTMLDivElement>(null)
+  const activeRef = useRef(active)
+  activeRef.current = active
   const [settled, setSettled] = useState<Settled | null>(null)
-  const width = useSettledWidth(column)
-  const rowsDigest = useMemo(() => digestOfRows(rows.map((row) => row.id)), [rows])
+  const width = useSettledWidth(active, activeRef, column)
+  const geometry = useGeometry(active, activeRef, measured)
 
   useEffect(() => {
     const container = measured.current
-    if (sessionId === null || container === null || width === null) return
-    const reading: Reading = { sessionId, rowsDigest, ...containerReading(container) }
+    if (
+      !active ||
+      sessionId === null ||
+      revision === null ||
+      container === null ||
+      width === null ||
+      geometry === null
+    ) {
+      return
+    }
+    const reading: Reading = {
+      sessionId,
+      revision,
+      width: containerReading(container).width,
+      ...geometry,
+    }
     const cached = heights.read(reading)
     if (cached !== null) {
       // Nothing was measured and nothing was waited for, and both numbers say so.
-      setSettled({ reading, heights: cached, measuredMs: 0, settledMs: 0 })
+      setSettled({ reading, rows, heights: cached, measuredMs: 0, settledMs: 0 })
       return
     }
-    setSettled(null)
+    // A live update leaves the previously settled document in place until the new one is ready.
+    // A different Session has no shared rows, so it returns to the standing state instead.
+    setSettled((previous) => (previous?.reading.sessionId === sessionId ? previous : null))
     let live = true
-    void settleReading(container).then((pass) => {
-      if (!live) return
+    void settleReading(container, () => live && activeRef.current).then((pass) => {
+      if (!live || pass === null) return
       heights.write(reading, pass.heights)
-      setSettled({ reading, ...pass })
+      setSettled({ reading, rows, ...pass })
     })
     return () => {
       live = false
     }
-  }, [sessionId, rowsDigest, width])
+  }, [active, sessionId, revision, rows, width, geometry])
 
-  // The reading on hand is handed back only while it is a reading OF what is about to be drawn.
-  // This effect is passive, so a render carrying a new Session — or the same Session grown by a
-  // turn — commits before the pass for it has started, and the previous reading holds a height for
-  // none of those rows.
-  //
-  // Measured: with the caller's own gate in place (the screen's `shown`, which keeps rows and the
-  // chosen id travelling together) React flushes this effect before the next paint, so removing
-  // the line below turns no frame of the packaged proof red on its own. It is this module's
-  // invariant rather than the caller's — never hand back a reading of another document, whoever is
-  // asking — and `no-unmeasured-row` samples the pair.
-  const settledHere =
-    settled !== null &&
-    settled.reading.sessionId === sessionId &&
-    settled.reading.rowsDigest === rowsDigest
-      ? settled
-      : null
+  // Never hand back another Session's document. A newer revision of this Session is deliberately
+  // allowed to keep the older settled document visible while its complete replacement measures.
+  const settledHere = settled !== null && settled.reading.sessionId === sessionId ? settled : null
 
   return { column, measured, settled: settledHere }
+}
+
+function geometryOf(container: HTMLElement): Geometry {
+  const reading = containerReading(container)
+  return { font: reading.font, zoom: reading.zoom }
+}
+
+function geometryKey(geometry: Geometry) {
+  return JSON.stringify(geometry)
 }
