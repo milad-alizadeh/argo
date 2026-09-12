@@ -69,6 +69,7 @@
   --duration-standard: var(--duration-layout);
   --transition-duration-standard: var(--duration-standard);
   --size-bottom-status: 106px;
+  --size-icon-meta: 14px;
   --size-icon-metadata: var(--size-icon-meta);
   --size-icon-inline: 14px;
   --size-feed-attachment-preview: 80px;
