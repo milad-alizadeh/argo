@@ -70,12 +70,30 @@ export function isSessionFeedReply(value: unknown): value is SessionFeedReply {
   if (!isRecord(value) || value.version !== 1) return false
   if (value.type === 'session.feed.read') {
     return (
-      hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'chainId', 'rows']) &&
+      hasKeys(value, [
+        'version',
+        'type',
+        'requestId',
+        'sessionId',
+        'chainId',
+        'revision',
+        'rows',
+      ]) &&
       isIdentifier(value.requestId) &&
       isIdentifier(value.sessionId) &&
       isIdentifier(value.chainId) &&
+      typeof value.revision === 'string' &&
       Array.isArray(value.rows) &&
       value.rows.every(isFeedRow)
+    )
+  }
+  if (value.type === 'session.feed.unchanged') {
+    return (
+      hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'chainId', 'revision']) &&
+      isIdentifier(value.requestId) &&
+      isIdentifier(value.sessionId) &&
+      isIdentifier(value.chainId) &&
+      typeof value.revision === 'string'
     )
   }
   return value.type === 'session.error' && isSessionError(value)

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SessionFeed, SessionId, SessionsListed } from '../types'
 
 let nextRequest = 0
+const FEED_REFRESH_MS = 500
 function requestId(name: string): string {
   nextRequest += 1
   return `${name}-${nextRequest}`
@@ -45,26 +46,39 @@ function useRoster() {
 function useFeed(sessionId: SessionId | null) {
   const [feed, setFeed] = useState<SessionFeed | null>(null)
   const [feedError, setFeedError] = useState<string | null>(null)
+  const revisions = useRef(new Map<SessionId, string>())
 
   useEffect(() => {
     if (sessionId === null) return
     let live = true
+    let timer: number | null = null
+    // The first read needs rows because its prior revision can outlive an evicted kept document.
+    revisions.current.delete(sessionId)
     setFeed(null)
     setFeedError(null)
-    void window.argo
-      .readSessionFeed({
-        version: 1,
-        type: 'session.feed',
-        requestId: requestId('feed'),
-        sessionId,
-      })
-      .then((reply) => {
+    const read = async () => {
+      try {
+        const reply = await window.argo.readSessionFeed({
+          version: 1,
+          type: 'session.feed',
+          requestId: requestId('feed'),
+          sessionId,
+          revision: revisions.current.get(sessionId) ?? null,
+        })
         if (!live) return
         if (reply.type === 'session.error') setFeedError(reply.message)
-        else setFeed(reply)
-      })
+        else if (reply.type === 'session.feed.read') {
+          revisions.current.set(reply.sessionId, reply.revision)
+          setFeed(reply)
+        }
+      } finally {
+        if (live) timer = window.setTimeout(() => void read(), FEED_REFRESH_MS)
+      }
+    }
+    void read()
     return () => {
       live = false
+      if (timer !== null) window.clearTimeout(timer)
     }
   }, [sessionId])
 

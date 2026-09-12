@@ -308,8 +308,13 @@ jobs:
           set -euo pipefail
           git fetch --no-tags origin "$BASE_REF"
           git diff --name-only "FETCH_HEAD...HEAD" > "$RUNNER_TEMP/changed.txt"
+          # Pages deploys main only. Read its manifest so a new PR story is described without a
+          # link until the deployment contains it; links to existing stories remain useful now.
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 1 \
+            "$SITE/index.json" > "$RUNNER_TEMP/deployed-storybook-index.json"
           node apps/desktop/scripts/storybook-story-links.mjs \
             --index apps/desktop/storybook-static/index.json \
+            --deployed-index "$RUNNER_TEMP/deployed-storybook-index.json" \
             --base "$SITE" \
             --changed "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/story-links.md"
           if [ -s "$RUNNER_TEMP/story-links.md" ]; then

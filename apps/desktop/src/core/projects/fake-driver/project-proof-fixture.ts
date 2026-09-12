@@ -1,16 +1,13 @@
 // The packaged copy this proof runs, and the isolated application data it runs against. The copy
 // carries the production fuse profile with one fuse flipped, so the run reads a shipped app whose
 // only difference from the download is the inspector it is driven through.
-import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
-import { cp, mkdir, realpath, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { FuseV1Options, FuseVersion, flipFuses, pathToFuseFile } from '@electron/fuses'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
-import { PRODUCTION_FUSE_PROFILE, readFuseWire } from '../../../../scripts/fuse-profile.mjs'
-import { packagedApp } from '../../../../scripts/packaged-app.mjs'
+import { appExecutable, packagedTestCopy } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
 
 const run = promisify(execFile)
@@ -22,26 +19,7 @@ export async function repository(folder) {
 }
 
 async function copyApplication(root) {
-  const application = path.join(root, 'Argo.app')
-  await cp(packagedApp('arm64'), application, { recursive: true, verbatimSymlinks: true })
-  const copiedRoot = await realpath(application)
-  assert.equal(
-    (await realpath(pathToFuseFile(application))).startsWith(`${copiedRoot}${path.sep}`),
-    true,
-  )
-  await flipFuses(application, {
-    version: FuseVersion.V1,
-    ...PRODUCTION_FUSE_PROFILE,
-    [FuseV1Options.EnableNodeCliInspectArguments]: true,
-    resetAdHocDarwinSignature: true,
-    strictlyRequireAllFuses: true,
-  })
-  const changedFuses = (await readFuseWire(application)).filter((fuse) => !fuse.matches)
-  assert.deepEqual(
-    changedFuses.map((fuse) => fuse.fuse),
-    ['EnableNodeCliInspectArguments'],
-  )
-  return application
+  return packagedTestCopy(root)
 }
 
 // A folder with no git root in it. The chooser can be answered with one, so the app has to turn it
@@ -83,12 +61,8 @@ export async function prepare(root) {
 // call to this, which is the only honest way to prove what survives one.
 export function launch(fixture) {
   return electron.launch({
-    executablePath: path.join(fixture.application, 'Contents', 'MacOS', 'Argo'),
+    executablePath: appExecutable(fixture.application),
     env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
     timeout: 30_000,
   })
-}
-
-export function readProduction() {
-  return readFuseWire(packagedApp('arm64'))
 }

@@ -4,6 +4,13 @@ import type { TranscriptRecord } from './transcript'
 
 export { UNREADABLE_ROW, unreadableRowHeight }
 
+// The renderer measures a complete projected document, so the revision includes every visible
+// field rather than only row ids: a streaming writer can extend a row it already opened. This is
+// the exact projection, not a hash: skipped layout can never reuse a collision's geometry.
+export function feedProjection(rows: readonly SessionFeedRow[]): string {
+  return JSON.stringify(rows)
+}
+
 function rowsOfRecord(record: TranscriptRecord, position: string): SessionFeedRow[] {
   if (record.kind === 'unreadable') return [{ shape: 'unreadable', id: `unreadable:${position}` }]
   if (record.kind === 'compaction')
