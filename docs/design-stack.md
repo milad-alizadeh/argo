@@ -13,7 +13,7 @@ archive.
   Change values in the contract and regenerate this file.
   The generator follows local CSS imports and preserves token declarations, including colors, in source order.
 - **Session UI source** — `ComposerPrototype.tsx` and its local subtree at commit
-  `602bcce21d33d9d122fe3d2ae9bfaef33de1eb3c` on `design/#1846-composer-chip-appearance`.
+  `602bcce21d33d9d122fe3d2ae9bfaef33de1eb3c` on `argo/#1258-session-prototype-source`.
   The entry file is `apps/desktop/src/renderer/modules/composer-prototype/ComposerPrototype.tsx`.
   Agents use this React prototype for the approved Session components and states.
 - **Components live in** — `apps/desktop/src/renderer/components/ui/`, written by the shadcn CLI
