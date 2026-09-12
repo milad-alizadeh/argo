@@ -19,7 +19,7 @@ const INK = {
 // The state's own mark: the leading column's dot on a row, and the running dot on a rail chip.
 export function SessionStateDot({ status }: { status: SessionStatusValue }) {
   return (
-    <span data-link-probe="1953-second"
+    <span
       aria-hidden="true"
       className="size-(--size-state-dot) flex-none rounded-full data-[ink=attention]:bg-warn data-[ink=idle]:bg-idle data-[ink=running]:bg-active data-[ink=running]:shadow-state-glow data-[ink=unknown]:shadow-state-outline"
       data-ink={INK[status]}
