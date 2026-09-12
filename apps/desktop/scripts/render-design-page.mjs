@@ -45,9 +45,14 @@ async function capture(window, pageURL, state) {
   await window.webContents.executeJavaScript('document.fonts.ready.then(() => true)')
   // A fragment-only load is a same-document navigation: capturePage returns the last composited
   // frame, which is still the previous state until the next one paints.
-  await window.webContents.executeJavaScript(
-    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))',
-  )
+  const nextPaint =
+    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))'
+  await window.webContents.executeJavaScript(nextPaint)
+  // A width change can start a transition, a pane sliding shut, that the capture would catch half
+  // done. A looping animation, a spinner, never finishes, so only the finite ones are waited on.
+  await window.webContents.executeJavaScript(`Promise.all(document.getAnimations()
+    .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+    .map((animation) => animation.finished)).then(() => ${nextPaint})`)
   const image = await window.webContents.capturePage()
   const size = width === String(VIEWPORT.width) ? '' : `-${width}`
   const name = `${fragment}${size}-${appearance}.png`
