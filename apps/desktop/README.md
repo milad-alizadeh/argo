@@ -17,12 +17,9 @@ Run the app against the dev server with `bun run dev` from the repository root. 
 
 - Design stack: `docs/design-stack.md`
 - Design rules: `apps/desktop/AGENTS.md`
-- Components, live: <https://milad-alizadeh.github.io/argo/>, built from `main` by
-  `.github/workflows/storybook-pages.yml`. `?path=/story/<component>--<state>` links one state.
 - Components, locally: `bun run storybook` from the repository root
 - Build the site: `bun run build:storybook` from the repository root, output
-  `apps/desktop/storybook-static`. Set `STORYBOOK_BASE=/argo/` only when the output will be
-  served from that path.
+  `apps/desktop/storybook-static`
 - Render one PNG: `cd apps/desktop && bun run design:render`
 
 Every PNG these commands write is disposable. Look at it and delete it: no gate reads one and no
@@ -74,18 +71,14 @@ against fixture trees.
 binary and then runs it:
 
 ```sh
-bun run package --arch arm64                       # the postPackage hook asserts on its own
-bun run assert:packaged out/Argo-darwin-arm64/Argo.app   # the same checks, standalone
-bun run prove:pty --arch arm64                     # package, then launch and run acceptance
-bun run prove:pty --arch arm64 --skip-package
-bun run prove:pty --arch arm64 --skip-endurance
+bun run package --arch arm64                              # the postPackage hook asserts on its own
+bun run test:packaged-contents out/Argo-darwin-arm64/Argo.app
+bun run test:packaged-pty --arch arm64                    # package, then run the acceptance test
+bun run test:packaged-pty --arch arm64 --skip-package
+bun run test:packaged-pty --arch arm64 --skip-endurance
 ```
 
-Through the script, never `node scripts/prove-packaged-pty.mjs` directly: the script carries the
-Node-pin gate (#1777), and the bare `node` invocation packages with Forge on whatever Node you
-happen to be on.
-
-`assert:packaged` is the same code `forge package` runs in its `postPackage` hook, so packaging
+`test:packaged-contents` is the same code `forge package` runs in its `postPackage` hook, so packaging
 already refuses an app whose `node-pty` is absent, packed inside the asar, or stripped of its
 `spawn-helper` exec bit. Running it standalone is the form a downloaded release artifact would be
 checked in, and it keeps the checks honest if the hook is ever detached from the config.
@@ -99,8 +92,8 @@ descriptor count.
 Only arm64 is proved. [#1745](https://github.com/milad-alizadeh/argo/issues/1745) ships arm64
 alone. A local package does not use Developer ID signing. The release workflow supplies the
 identity and applies the entitlement set that [#1771](https://github.com/milad-alizadeh/argo/issues/1771)
-chose. It runs `assert:packaged` again after signing because a new signature can invalidate the
-package proof.
+chose. It runs `test:packaged-contents` again after signing because a new signature can invalidate
+the packaged test.
 
 ### node-pty is pinned to the `beta` line, and it is the endurance check that pins it
 
@@ -247,24 +240,25 @@ The renderer is the cockpit shell: a chrome band, a sidebar of five destinations
 [`docs/design-stack.md`](../../docs/design-stack.md), and the prose no linter checks is
 [`apps/desktop/AGENTS.md`](AGENTS.md).
 
-## Portable integration proof
+## Portable integration tests
 
-The Project-opening contract and its proof are recorded in
+The Project-opening contract and its packaged test are recorded in
 [`docs/portable-integration-contracts.md`](../../docs/portable-integration-contracts.md).
-The proof crosses the packaged renderer, preload, and main process with isolated storage.
+The test crosses the packaged renderer, preload, and main process with isolated storage.
 It does not import Swift data.
 
-Package arm64 first; all three commands run the copy, never the app you have installed.
+Package arm64 first. All four commands run the copy, never the app you have installed.
 
 | Command | What it produces |
 | --- | --- |
-| `bun run prove:project-contract` | The verdict for the Project workflow, naming every case, as JSON. |
+| `bun run test:packaged-project` | The verdict for the Project workflow, naming every case, as JSON. |
+| `bun run test:packaged-session` | The verdict for the Session Feed, naming every case, as JSON. |
 | `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
 
-The proof keeps its window hidden. The other two show it, because Chromium throttles a hidden
-window and both a capture and a frame reading taken from one measure the throttle. None of the
-three holds the real keyboard or the real mouse.
+The packaged tests keep their windows hidden. The other two commands show it because Chromium
+throttles a hidden window. A capture and a frame reading from a hidden window measure the throttle.
+None of the four commands holds the real keyboard or the real mouse.
 
 ## Performance evidence
 

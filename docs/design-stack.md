@@ -23,10 +23,8 @@ archive.
   the deck and the packaged capture drives the app into each one, which is the only way to see
   the real preload, the real main process and the real window. A new component state costs a
   story; a new screen state costs a name on that attribute and one step in the capture driver.
-- **Browse the components** — `https://milad-alizadeh.github.io/argo/`, built from `main` by
-  `.github/workflows/storybook-pages.yml`. A story id is stable, so
-  `?path=/story/<component>--<state>` is a durable link to one state.
-  `cd apps/desktop && bun run storybook` serves the same thing from the working tree.
+- **Browse the components** — `cd apps/desktop && bun run storybook` serves the stories from the
+  working tree. Vercel owns pull request preview deployments outside this repository.
 - **Render a state** — a design page: `bun run render:design -- <page.html> <out-dir> <state>…`,
   where a state is the page's URL fragment, `@<width>` narrows the 1200 by 800 window, and `:light`
   selects the light appearance. The shipped screen: `bun run capture:cockpit`, output
@@ -34,7 +32,7 @@ archive.
 
 **Every PNG either command writes is disposable.** Look at it and delete it. No gate reads one and
 no ref holds one (#1910): the reviewable artifact is the story, and the machine-checkable one is
-the DOM assertion the packaged proofs make.
+the DOM assertion in the packaged tests.
 
 Both renderers show the window: Chromium throttles a hidden one and the capture comes back
 unpainted. Neither takes the real keyboard or the real mouse.

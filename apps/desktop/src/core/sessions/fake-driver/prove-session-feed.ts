@@ -4,7 +4,7 @@
 //
 // `--shots <dir>` writes the packaged screens for a person who wants to look at them. Nothing in
 // CI passes it any more, and the PNG files are disposable: point it at a temporary directory and
-// delete them (#1910). The screens a reviewer reads are the Storybook site, and the contract this
+// delete them (#1910). Reviewers inspect the screens in Storybook, and the contract this
 // file asserts is read out of the DOM, so no assertion here depends on a pixel.
 import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
