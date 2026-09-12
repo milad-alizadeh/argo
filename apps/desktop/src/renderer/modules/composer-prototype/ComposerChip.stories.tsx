@@ -12,7 +12,7 @@ function ComposerChipSpecimen({ chip }: { chip: ComposerChipDefinition }) {
   return (
     <Badge
       variant="outline"
-      className="align-middle text-foreground type-label"
+      className="align-middle !py-0 text-foreground type-body"
       data-composer-text={chip.text}
     >
       {chip.kind === 'filepath' ? <FileCode2 className="!size-(--size-icon-inline)" /> : null}
@@ -41,8 +41,11 @@ type Story = StoryObj<typeof ComposerChipSpecimen>
 
 export const AllKinds: Story = {
   render: () => (
-    <div className="max-w-xl text-foreground type-prose">
-      <ComposerChipSpecimen chip={SKILL_CHIP} /> composer chips with <ComposerChipSpecimen chip={PLUGIN_CHIP} /> and{' '}
+    <div className="flex max-w-xl flex-wrap items-center gap-1 text-foreground type-prose">
+      <ComposerChipSpecimen chip={SKILL_CHIP} />
+      <span>composer chips with</span>
+      <ComposerChipSpecimen chip={PLUGIN_CHIP} />
+      <span>and</span>
       <ComposerChipSpecimen chip={FILE_CHIP} />
     </div>
   ),

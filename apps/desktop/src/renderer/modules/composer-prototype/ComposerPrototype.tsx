@@ -323,7 +323,7 @@ function ComposerDraftOverlay({ draft, availableChips }: { draft: string; availa
           <Badge
             key={`chip-${chip.start}`}
             variant="outline"
-            className="align-middle text-foreground type-label"
+            className="align-middle !py-0 text-foreground type-body"
             data-composer-text={chip.text}
           >
             {chip.kind === 'filepath' ? <FileCode2 className="!size-(--size-icon-inline)" /> : null}
