@@ -1,0 +1,150 @@
+# Writes the stories a pull request changed into its body, linked to the Vercel preview of its own
+# commit (#1953). Vercel deploys the `argo-storybook` project on every push and reports it as a
+# GitHub deployment, and that deployment's success is what starts this.
+#
+# The preview sits behind Vercel login, so the story list cannot be read off it. The job builds
+# Storybook from the same commit for its `index.json` and its import graph: a story id comes from
+# the title and export name, so the local build and the deployed one agree.
+#
+# Two events, because either can come first. A push that is already deployed when the pull request
+# opens has no later `deployment_status`, so `opened` and `reopened` look the deployment up instead.
+#
+# GitHub starts a `deployment_status` workflow only when this file is on the default branch.
+name: storybook-links
+
+on:
+  deployment_status:
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+
+env:
+  PREVIEW_ENVIRONMENT: Preview – argo-storybook
+
+jobs:
+  links:
+    name: story links in the pull request body
+    # `pending` and `in_progress` statuses also start this workflow; only a finished deploy has a URL.
+    if: ${{ github.event_name == 'pull_request' || github.event.deployment_status.state == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: read
+      pull-requests: write
+    steps:
+      # A fork is never edited. Its pull request token is read-only, and a fork commit is never
+      # the head of a same-repository pull request, which is all the deployment lookup accepts.
+      - id: target
+        name: Find the pull request and its preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$EVENT" in
+            deployment_status)
+              if [ "$DEPLOYED_ENVIRONMENT" != "$PREVIEW_ENVIRONMENT" ]; then
+                echo "deployment is $DEPLOYED_ENVIRONMENT, not the Storybook preview"
+                exit 0
+              fi
+              sha=$DEPLOYED_SHA
+              preview=$DEPLOYED_URL
+              number=$(gh api "repos/$REPO/commits/$sha/pulls" --jq "[.[] | select(.state == \"open\"
+                and .head.sha == \"$sha\" and .head.repo.full_name == \"$REPO\")][0].number // empty")
+              ;;
+            pull_request)
+              if [ "$HEAD_REPOSITORY" != "$REPO" ]; then
+                echo "pull request from a fork"
+                exit 0
+              fi
+              sha=$HEAD_SHA
+              number=$NUMBER
+              preview=
+              deployment=$(gh api -X GET "repos/$REPO/deployments" -f sha="$sha" \
+                -f environment="$PREVIEW_ENVIRONMENT" --jq '.[0].id // empty')
+              if [ -n "$deployment" ]; then
+                preview=$(gh api "repos/$REPO/deployments/$deployment/statuses" \
+                  --jq '[.[] | select(.state == "success")][0].environment_url // empty')
+              fi
+              ;;
+          esac
+          if [ -z "$number" ] || [ -z "$preview" ]; then
+            echo "no open pull request with a finished Storybook preview at $sha"
+            exit 0
+          fi
+          {
+            echo "sha=$sha"
+            echo "number=$number"
+            echo "preview=$preview"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          DEPLOYED_ENVIRONMENT: ${{ github.event.deployment.environment }}
+          DEPLOYED_SHA: ${{ github.event.deployment.sha }}
+          DEPLOYED_URL: ${{ github.event.deployment_status.environment_url }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          NUMBER: ${{ github.event.pull_request.number }}
+
+      # Every step from here runs the pull request's own code, and the last one does so holding a
+      # token that can edit the pull request, which is why the step above admits same-repository
+      # branches only. No stored credentials, so the install and build steps never hold that token.
+      - uses: actions/checkout@v5
+        if: ${{ steps.target.outputs.number }}
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        if: ${{ steps.target.outputs.number }}
+
+      # `--stats-json` writes `preview-stats.json`, which names every module's importers, and fails
+      # when its directory does not exist yet.
+      - name: Build Storybook
+        if: ${{ steps.target.outputs.number }}
+        working-directory: apps/desktop
+        run: |
+          mkdir -p "$RUNNER_TEMP/storybook-stats"
+          bun run build:storybook --stats-json "$RUNNER_TEMP/storybook-stats"
+
+      # Skipped when the pull request moved on while this ran: the newer commit's own deploy
+      # writes its links, and an older run finishing last must not overwrite them.
+      - name: Write the story links into the pull request body
+        if: ${{ steps.target.outputs.number }}
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/pulls/$NUMBER/files" --paginate --jq '.[].filename' \
+            > "$RUNNER_TEMP/changed.txt"
+          bun src/storybook/story-links.ts section --index storybook-static/index.json \
+            --stats "$RUNNER_TEMP/storybook-stats/preview-stats.json" --base "$PREVIEW" \
+            --sha "$SHA" --changed "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/section.md"
+          if [ -s "$RUNNER_TEMP/section.md" ]; then
+            cat "$RUNNER_TEMP/section.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no story renders a file this pull request changed"
+          fi
+          head=$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.head.sha')
+          if [ "$head" != "$SHA" ]; then
+            echo "pull request #$NUMBER moved on to $head"
+            exit 0
+          fi
+          # `--jq` ends a string with a newline the body never had, and `$(...)` strips it.
+          printf '%s' "$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.body // ""')" \
+            > "$RUNNER_TEMP/body.md"
+          bun src/storybook/story-links.ts body --body "$RUNNER_TEMP/body.md" \
+            --section "$RUNNER_TEMP/section.md" > "$RUNNER_TEMP/next.md"
+          if cmp -s "$RUNNER_TEMP/body.md" "$RUNNER_TEMP/next.md"; then
+            echo "pull request body already current"
+          else
+            gh api -X PATCH "repos/$REPO/pulls/$NUMBER" -F "body=@$RUNNER_TEMP/next.md" > /dev/null
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ steps.target.outputs.number }}
+          SHA: ${{ steps.target.outputs.sha }}
+          PREVIEW: ${{ steps.target.outputs.preview }}
