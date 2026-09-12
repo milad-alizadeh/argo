@@ -1,8 +1,7 @@
 import { CheckIcon, CopyIcon } from 'lucide-react'
-import {
+import React, {
   type ComponentProps,
   type CSSProperties,
-  createContext,
   type HTMLAttributes,
   useCallback,
   useContext,
@@ -18,7 +17,7 @@ const highlighter = createHighlighter({
   themes: ['github-dark', 'github-light'],
 })
 
-const CodeBlockContext = createContext('')
+const CodeBlockContext = React.createContext('')
 
 function HighlightedCode({ code, language }: { code: string; language: BundledLanguage }) {
   const [lines, setLines] = useState<ThemedToken[][]>()

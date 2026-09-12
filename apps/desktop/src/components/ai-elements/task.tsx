@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDownIcon, SearchIcon } from 'lucide-react'
-import type { ComponentProps } from 'react'
+import React, { type ComponentProps } from 'react'
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,15 +12,17 @@ import { cn } from '@/renderer/lib/utils'
 export type TaskItemFileProps = ComponentProps<'div'>
 
 export const TaskItemFile = ({ children, className, ...props }: TaskItemFileProps) => (
-  <div
-    className={cn(
-      'inline-flex items-center gap-1 rounded-md border bg-secondary px-1.5 py-0.5 text-foreground text-xs',
-      className,
-    )}
-    {...props}
-  >
-    {children}
-  </div>
+  <React.Fragment>
+    <div
+      className={cn(
+        'inline-flex items-center gap-1 rounded-md border bg-secondary px-1.5 py-0.5 text-foreground text-xs',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  </React.Fragment>
 )
 
 export type TaskItemProps = ComponentProps<'div'>

@@ -67,6 +67,7 @@ export function SessionScreenView() {
           panelRef={workspacePanelRef}
           collapsible
           collapsedSize={0}
+          groupResizeBehavior="preserve-relative-size"
           minSize={workspaceMinWidth}
         >
           <div className="flex h-full min-h-0 flex-col">

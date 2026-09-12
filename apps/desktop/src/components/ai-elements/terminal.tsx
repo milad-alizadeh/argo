@@ -1,7 +1,6 @@
 import Ansi from 'ansi-to-react'
 import { CheckIcon, CopyIcon, TerminalIcon } from 'lucide-react'
-import {
-  createContext,
+import React, {
   type HTMLAttributes,
   useCallback,
   useContext,
@@ -17,7 +16,7 @@ type TerminalContextValue = {
   output: string
 }
 
-const TerminalContext = createContext<TerminalContextValue>({
+const TerminalContext = React.createContext<TerminalContextValue>({
   autoScroll: true,
   isStreaming: false,
   output: '',

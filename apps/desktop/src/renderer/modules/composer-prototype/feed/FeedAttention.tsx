@@ -141,7 +141,8 @@ export function FeedPermission() {
         </Button>
         <div className="inline-flex overflow-hidden rounded-lg">
           <Button
-            className="rounded-r-none border-r-0 bg-foreground type-label text-background hover:bg-foreground/80"
+            variant="default"
+            className="rounded-r-none border-r-0 type-label"
             onClick={() => setResolved(true)}
           >
             Allow
@@ -150,9 +151,10 @@ export function FeedPermission() {
             <DropdownMenuTrigger
               render={
                 <Button
+                  variant="default"
                   size="icon"
                   aria-label="More allow options"
-                  className="rounded-l-none border-l border-background/20 bg-foreground text-background hover:bg-foreground/80"
+                  className="rounded-l-none border-l border-primary-foreground/20"
                 />
               }
             >
