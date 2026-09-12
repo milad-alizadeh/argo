@@ -18,8 +18,11 @@ on:
 permissions:
   contents: read
 
+# Vercel names the GitHub environment `Preview – <project>` only while several projects share the
+# repository, and plain `Preview` otherwise, so the project is read off the commit URL instead,
+# which Vercel builds as `<project>-<hash>-<scope>.vercel.app`.
 env:
-  PREVIEW_ENVIRONMENT: Preview – argo-storybook
+  STORYBOOK_PROJECT: argo-storybook
 
 jobs:
   links:
@@ -40,10 +43,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          storybook() { [[ "$1" == "https://$STORYBOOK_PROJECT-"* ]]; }
           case "$EVENT" in
             deployment_status)
-              if [ "$DEPLOYED_ENVIRONMENT" != "$PREVIEW_ENVIRONMENT" ]; then
-                echo "deployment is $DEPLOYED_ENVIRONMENT, not the Storybook preview"
+              if [[ "$DEPLOYED_ENVIRONMENT" != Preview* ]] || ! storybook "$DEPLOYED_URL"; then
+                echo "$DEPLOYED_ENVIRONMENT deployment at $DEPLOYED_URL is not the Storybook preview"
                 exit 0
               fi
               sha=$DEPLOYED_SHA
@@ -59,12 +63,15 @@ jobs:
               sha=$HEAD_SHA
               number=$NUMBER
               preview=
-              deployment=$(gh api -X GET "repos/$REPO/deployments" -f sha="$sha" \
-                -f environment="$PREVIEW_ENVIRONMENT" --jq '.[0].id // empty')
-              if [ -n "$deployment" ]; then
-                preview=$(gh api "repos/$REPO/deployments/$deployment/statuses" \
+              for deployment in $(gh api -X GET "repos/$REPO/deployments" -f sha="$sha" \
+                --jq '.[] | select(.environment | startswith("Preview")) | .id'); do
+                url=$(gh api "repos/$REPO/deployments/$deployment/statuses" \
                   --jq '[.[] | select(.state == "success")][0].environment_url // empty')
-              fi
+                if storybook "$url"; then
+                  preview=$url
+                  break
+                fi
+              done
               ;;
           esac
           if [ -z "$number" ] || [ -z "$preview" ]; then
