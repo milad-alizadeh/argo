@@ -1,7 +1,7 @@
 {
   "navigationLabel": "Sessions",
   "title": "Sessions",
-  "subtitle": "CLI terminal activity",
+  "subtitle": "CLI messages",
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "reading": "Reading this Session",
@@ -21,11 +21,11 @@
   "empty": {
     "unselected": {
       "title": "No Session selected",
-      "description": "Select a Session on the left to read its history."
+      "description": "Select a Session on the left to read its messages."
     },
     "blank": {
-      "title": "Nothing said yet",
-      "description": "This Session has a transcript, and there is nothing in it to show."
+      "title": "No messages",
+      "description": "This Session has no messages to show."
     },
     "roster": {
       "title": "No Sessions on this machine",

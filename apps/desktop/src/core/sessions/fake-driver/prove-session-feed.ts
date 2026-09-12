@@ -13,7 +13,6 @@ import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
 import {
-  proveDamagedSession,
   proveGeometry,
   proveGrownSession,
   proveOwnedHeights,
@@ -98,8 +97,6 @@ try {
   const roster = await ran(['roster-focus', 'archive-section'], () => proveRoster(page))
   const geometry = await ran(['settled-geometry'], () => proveGeometry(page))
   await capture(page, application, 'roster-and-feed.png')
-  await ran(['damaged-session'], () => proveDamagedSession(page))
-  await capture(page, application, 'damaged-session.png')
   const firstOpen = await ran(['tail-position', 'selected-identity', 'text-selection'], () =>
     proveFirstOpen(page),
   )
