@@ -2,22 +2,46 @@
 @import "../tokens.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./typography.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "Cascadia Mono", Menlo, monospace;
   /* The cockpit's own scale, frozen by the shell design (#1896). Every one of these is reached by
      name from a component; a measurement written at a call site is the thing this block prevents. */
-  --text-title: 20px;
-  --text-body: 13px;
-  --text-control: 12px;
+  --text-title: var(--text-xl, 1.25rem);
+  --text-title--line-height: var(--text-xl--line-height, 1.75rem);
+  --text-heading: var(--text-sm, 0.875rem);
+  --text-heading--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-body: var(--text-sm, 0.875rem);
+  --text-body--line-height: var(--text-sm--line-height, 1.25rem);
+  --text-prose: var(--text-sm, 0.875rem);
+  --text-prose--line-height: var(--leading-6, 1.5rem);
+  --text-control: var(--text-xs, 0.75rem);
+  --text-label: var(--text-xs, 0.75rem);
+  --text-label--line-height: var(--text-xs--line-height, 1rem);
+  --text-meta: var(--text-xs, 0.75rem);
+  --text-meta--line-height: var(--text-xs--line-height, 1rem);
+  --text-code: var(--text-xs, 0.75rem);
+  --text-code--line-height: var(--leading-5, 1.25rem);
   --size-chrome-bar: 52px;
+  --size-bottom-status: 106px;
+  --size-icon-metadata: 12px;
+  --size-icon-inline: 14px;
+  --size-icon-control: 16px;
+  --size-traffic-light: 12px;
+  --inset-traffic-light-control: 18px;
+  --size-navigation-rail: 88px;
   --size-sidebar: 240px;
   --size-deck: 640px;
   --inset-traffic-lights: 84px;
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-traffic-light-close: #ff5f57;
+  --color-traffic-light-minimize: #febc2e;
+  --color-traffic-light-zoom: #28c840;
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
@@ -59,6 +83,20 @@
 }
 
 :root {
+  --text-title-weight: 500;
+  --text-heading-weight: 500;
+  --text-body-weight: 400;
+  --text-prose-weight: 400;
+  --text-label-weight: 500;
+  --text-meta-weight: 400;
+  --text-code-weight: 400;
+  --text-title-tracking: normal;
+  --text-heading-tracking: normal;
+  --text-body-tracking: normal;
+  --text-prose-tracking: normal;
+  --text-label-tracking: normal;
+  --text-meta-tracking: normal;
+  --text-code-tracking: normal;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -133,6 +171,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
   }
   html {
     @apply font-sans;
