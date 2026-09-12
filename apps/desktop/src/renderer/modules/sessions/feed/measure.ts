@@ -40,11 +40,13 @@ const WARM_FRAMES = 3
 // what the reader waits, and it carries the warm frames and the font wait as well — a floor of
 // roughly three frames that is there whether the Session holds six rows or six hundred. Timing
 // them together reports the floor as if it were the layout.
-export async function settleReading(container: HTMLElement) {
+export async function settleReading(container: HTMLElement, canRead: () => boolean) {
   const opened = performance.now()
   for (let frame = 0; frame < WARM_FRAMES; frame += 1) await nextFrame()
+  if (!canRead()) return null
   // A face arriving after the pass moves a settled paragraph (ADR-0035), so the pass waits.
   await document.fonts.ready
+  if (!canRead()) return null
   const started = performance.now()
   const heights = readRowHeights(container)
   const finished = performance.now()

@@ -60,6 +60,9 @@
   /* The height of a pane head, the Roster's and the Feed's alike, so the two heads meet on one
      line across the handle between them. */
   --size-pane-head: 46px;
+  /* The unavailable-composer notice takes the composer's reserved place without offering a
+     field that cannot send a Turn. */
+  --size-composer-unavailable: 48px;
   /* The state dot sits on the title's optical centre: half of what the title's line box has left
      over once the dot is in it. Derived, never nudged, so it follows the type scale. */
   --size-state-dot: 6px;

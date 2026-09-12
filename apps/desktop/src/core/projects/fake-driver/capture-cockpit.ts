@@ -11,7 +11,6 @@ import { mkdir, mkdtemp, realpath, rename, rm, writeFile } from 'node:fs/promise
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { desktopRoot } from '../../../../scripts/packaged-app.mjs'
 import {
   chooseThen,
   clickMenuItem,
@@ -26,7 +25,7 @@ const VIEWPORT = { width: 1200, height: 800 }
 const APPEARANCES = ['light', 'dark']
 
 const outputDirectory = path.resolve(
-  process.argv[2] ?? path.join(desktopRoot, 'out', 'cockpit-captures'),
+  process.argv[2] ?? path.join(process.cwd(), 'out', 'cockpit-captures'),
 )
 
 // The class lands one render before the pixels do: every token in the sheet is a colour under a

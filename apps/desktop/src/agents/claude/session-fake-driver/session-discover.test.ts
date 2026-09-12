@@ -3,12 +3,18 @@ import { appendFile, chmod, mkdtemp, rm, utimes } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { listSessions, readFeed } from '../sessions/read-sessions.ts'
+import { createClaudeSessionReader, listSessions, readFeed } from '../sessions/read-sessions.ts'
 import { writeArchiveStore, writeFixtureTree } from './session-fixture-files'
 import { fixtureRoot } from './session-fixtures'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
-const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: 'resumeParent' }
+const feed = {
+  version: 1,
+  type: 'session.feed',
+  requestId: 'feed-1',
+  sessionId: 'resumeParent',
+  revision: null,
+}
 
 test('discovers Sessions with no Project registration and states what it read', async (context) => {
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
@@ -58,6 +64,28 @@ test('reads a Feed for a whole Session, keyed by the Session that answered', asy
   assert.equal(reply.type, 'session.feed.read')
   assert.equal(reply.chainId, 'resumeParent')
   assert.equal(reply.rows.length, 4)
+})
+
+// A transcript can change while its Session is selected. The main-process reply names the whole
+// projected document it read, so the renderer can measure a new reading before it reaches the
+// scroller instead of treating new rows as an unmeasured DOM mutation.
+test('changes the Feed revision when a transcript grows', async (context) => {
+  const root = await fixtureRoot(context, ['externalBasic'])
+  const request = { ...feed, sessionId: 'externalBasic' }
+  const reader = createClaudeSessionReader({ transcripts: root })
+  const first = await reader.readSessionFeed(request)
+  const unchanged = await reader.readSessionFeed({
+    ...request,
+    requestId: 'feed-unchanged',
+    revision: first.revision,
+  })
+  assert.equal(unchanged.type, 'session.feed.unchanged')
+  const file = path.join(root, 'project-one', 'externalBasic.jsonl')
+  await appendFile(file, LATER_TURN)
+  const second = await reader.readSessionFeed(request)
+  assert.equal(first.type, 'session.feed.read')
+  assert.equal(second.type, 'session.feed.read')
+  assert.notEqual(second.revision, first.revision)
 })
 
 // A retired id follows the chain that took it rather than reading as a Session that ended, and
