@@ -3,9 +3,9 @@
 // anything from outside: once, into a shape, before anything draws them.
 import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import {
+  type ClaudeSessionStartReply,
   isClaudeSessionStarted,
   isSessionError,
-  type ClaudeSessionStartReply,
   type SessionFeedReply,
   type SessionListReply,
   type SessionsListed,
