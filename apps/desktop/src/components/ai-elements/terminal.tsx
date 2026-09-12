@@ -1,12 +1,6 @@
 import Ansi from 'ansi-to-react'
 import { CheckIcon, CopyIcon, TerminalIcon } from 'lucide-react'
-import React, {
-  type HTMLAttributes,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react'
+import React, { type HTMLAttributes, useCallback, useContext, useMemo, useState } from 'react'
 import { Button } from '@/renderer/components/ui/button'
 import { cn } from '@/renderer/lib/utils'
 
