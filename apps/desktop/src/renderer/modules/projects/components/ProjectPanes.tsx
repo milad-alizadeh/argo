@@ -53,10 +53,12 @@ function Refusal({ children }: { children: ReactNode }) {
 export function EmptyPane({
   message,
   busy,
+  onImport,
   onOpen,
 }: {
   message: string | null
   busy: boolean
+  onImport: () => void
   onOpen: () => void
 }) {
   return (
@@ -74,6 +76,9 @@ export function EmptyPane({
       <EmptyContent>
         <DeckButton onClick={onOpen} disabled={busy}>
           Open Project…
+        </DeckButton>
+        <DeckButton onClick={onImport} disabled={busy} outline>
+          Import existing Projects
         </DeckButton>
       </EmptyContent>
     </Empty>

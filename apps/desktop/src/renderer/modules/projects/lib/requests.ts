@@ -1,10 +1,12 @@
 // Every request the cockpit sends. The identifier is minted here and nowhere else, so a reply that
 // answers a different request is caught by the client rather than by a component.
 import type { ProjectOpenRequest } from '@/core/projects/contract'
-import type {
-  ProjectListRequest,
-  ProjectRegisterRequest,
-  ProjectRelocateRequest,
+import {
+  PROJECT_IMPORT_ACTION,
+  type ProjectImportRequest,
+  type ProjectListRequest,
+  type ProjectRegisterRequest,
+  type ProjectRelocateRequest,
 } from '@/core/projects/messages'
 
 const nextId = (): string => `request-${crypto.randomUUID()}`
@@ -33,4 +35,10 @@ export const relocateRequest = (projectId: string): ProjectRelocateRequest => ({
   type: 'project.relocate',
   requestId: nextId(),
   projectId,
+})
+
+export const importRequest = (): ProjectImportRequest => ({
+  version: 1,
+  type: PROJECT_IMPORT_ACTION,
+  requestId: nextId(),
 })

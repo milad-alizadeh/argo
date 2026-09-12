@@ -9,7 +9,9 @@ import {
 } from './contract'
 import {
   isProjectCancelled,
+  isProjectImported,
   isProjectListed,
+  type ProjectImportRequest,
   type ProjectListReply,
   type ProjectListRequest,
   type ProjectRegisterRequest,
@@ -21,10 +23,16 @@ export type ProjectClient = {
   listProjects(request: ProjectListRequest): Promise<ProjectListReply>
   registerProject(request: ProjectRegisterRequest): Promise<ProjectListReply>
   relocateProject(request: ProjectRelocateRequest): Promise<ProjectListReply>
+  importProjects(request: ProjectImportRequest): Promise<ProjectListReply>
 }
 
 function isProjectListReply(value: unknown): value is ProjectListReply {
-  return isProjectListed(value) || isProjectCancelled(value) || isProjectErrorMessage(value)
+  return (
+    isProjectListed(value) ||
+    isProjectImported(value) ||
+    isProjectCancelled(value) ||
+    isProjectErrorMessage(value)
+  )
 }
 
 export function createProjectClient(invoke: (request: unknown) => Promise<unknown>): ProjectClient {
@@ -59,5 +67,6 @@ export function createProjectClient(invoke: (request: unknown) => Promise<unknow
     listProjects: (request) => send(request, isProjectListReply),
     registerProject: (request) => send(request, isProjectListReply),
     relocateProject: (request) => send(request, isProjectListReply),
+    importProjects: (request) => send(request, isProjectListReply),
   }
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   DESTINATIONS,
+  IMPORT_PROJECTS_COMMAND,
   matchesChord,
   menuAccelerators,
   menuTemplate,
@@ -52,6 +53,14 @@ test('registration is reachable from the menu', () => {
       chord: 'CmdOrCtrl+O',
       scope: 'menu',
     },
+  )
+})
+
+test('import is reachable from the menu', () => {
+  const found = SHORTCUTS.find((entry) => entry.command === IMPORT_PROJECTS_COMMAND)
+  assert.deepEqual(
+    { chord: found?.chord, scope: found?.scope },
+    { chord: 'CmdOrCtrl+Shift+I', scope: 'menu' },
   )
 })
 

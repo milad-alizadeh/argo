@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   DESTINATIONS,
   type Destination,
+  IMPORT_PROJECTS_COMMAND,
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
 } from '../core/commands/shortcuts'
@@ -43,6 +44,10 @@ export function App() {
       (command: string) => {
         if (command === REGISTER_PROJECT_COMMAND) {
           actions.open()
+          return
+        }
+        if (command === IMPORT_PROJECTS_COMMAND) {
+          actions.import()
           return
         }
         const chosen = DESTINATIONS.find((candidate) => navigateCommand(candidate) === command)

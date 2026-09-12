@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
@@ -10,6 +10,7 @@ import {
   packagedTestCopy,
 } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
+import { proveProjectImport } from './prove-project-import'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 
@@ -17,19 +18,31 @@ async function prepare(root) {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
   const projectPath = path.join(userData, 'example')
-  await mkdir(path.join(userData, 'portable-v1'), { recursive: true })
+  await mkdir(userData, { recursive: true })
   await mkdir(projectPath)
-  const registryPath = path.join(userData, 'portable-v1', 'projects.json')
+  const sourceRegistryPath = path.join(userData, 'projects.json')
   await writeFile(
-    registryPath,
+    sourceRegistryPath,
     JSON.stringify({
-      version: 1,
       projects: [
-        { id: 'project-1', path: projectPath, bindings: [{ token: 'must-stay-private' }] },
+        {
+          id: 'project-1',
+          path: projectPath,
+          bindings: [{ port: 'ticket', accountID: 'github:1', scope: 'milad/argo' }],
+        },
       ],
+      activeProjectId: 'project-1',
     }),
   )
-  return { application, userData, projectPath, registryPath }
+  return { application, userData, projectPath, sourceRegistryPath }
+}
+
+async function launch(fixture) {
+  return electron.launch({
+    executablePath: appExecutable(fixture.application),
+    env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
+    timeout: 30_000,
+  })
 }
 
 async function prove(application, fixture) {
@@ -52,6 +65,7 @@ async function prove(application, fixture) {
       process: 'undefined',
       methods: [
         'getAppearance',
+        'importProjects',
         'listProjects',
         'listSessions',
         'onAppearanceChanged',
@@ -67,6 +81,7 @@ async function prove(application, fixture) {
     },
   )
   const invoke = (value) => page.evaluate((message) => window.argo.openProject(message), value)
+  await proveProjectImport({ application, page, fixture, invoke, request })
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
   assert.deepEqual(await invoke(request), {
     version: 1,
@@ -87,20 +102,15 @@ async function prove(application, fixture) {
   })
   await page.waitForFunction(() => typeof window.argo?.openProject === 'function')
   assert.equal((await invoke(request)).code, 'access-denied')
+  return application
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
 let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 try {
   const fixture = await prepare(root)
-  const before = await readFile(fixture.registryPath, 'utf8')
-  application = await electron.launch({
-    executablePath: appExecutable(fixture.application),
-    env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: fixture.userData, [ACCEPTANCE_ENV]: '0' },
-    timeout: 30_000,
-  })
-  await prove(application, fixture)
-  assert.equal(await readFile(fixture.registryPath, 'utf8'), before)
+  application = await launch(fixture)
+  application = await prove(application, fixture)
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({
@@ -110,6 +120,10 @@ try {
       profile: 'test',
       cases: [
         'success',
+        'Project-import',
+        'repeat-import',
+        'changed-path-needs-attention',
+        'visible-import-refusal',
         'missing-project',
         'denied-access',
         'invalid-request',

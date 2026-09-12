@@ -1,12 +1,13 @@
-// The three actions #1828 adds to the version 1 Project contract, beside the `project.open` that
-// #1825 settled. Version 1 gains actions and never changes a message it already defines, so a
-// `project.open` exchange is byte-identical to the one the accepted proof asserts.
+// Project actions extend the #1825 contract without changing a `project.open` exchange.
 import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import { isAction, type ProjectError } from './contract'
 
 // A Project as the cockpit draws it: the stable ID, the folder name, and the path, which is a
 // mutable attribute of the identity rather than the identity itself (CONTEXT.md · Project).
 export type ProjectSummary = { id: string; name: string; path: string }
+
+export const PROJECT_IMPORT_ACTION = 'project.import' as const
+export const PENDING_IMPORT_CATEGORIES = ['Accounts'] as const
 
 export type ProjectListRequest = { version: 1; type: 'project.list'; requestId: string }
 export type ProjectRegisterRequest = { version: 1; type: 'project.register'; requestId: string }
@@ -15,6 +16,11 @@ export type ProjectRelocateRequest = {
   type: 'project.relocate'
   requestId: string
   projectId: string
+}
+export type ProjectImportRequest = {
+  version: 1
+  type: typeof PROJECT_IMPORT_ACTION
+  requestId: string
 }
 
 // Every action that can change the known set answers with the whole set, so the renderer never
@@ -30,7 +36,13 @@ export type ProjectListed = {
 // The person dismissed the folder chooser. Nothing was read and nothing was written.
 export type ProjectCancelled = { version: 1; type: 'project.cancelled'; requestId: string }
 
-export type ProjectListReply = ProjectListed | ProjectCancelled | ProjectError
+export type ProjectImported = Omit<ProjectListed, 'type'> & {
+  type: 'project.imported'
+  importedCount: number
+  pendingCategories: typeof PENDING_IMPORT_CATEGORIES
+}
+
+export type ProjectListReply = ProjectListed | ProjectCancelled | ProjectImported | ProjectError
 
 export function isProjectListRequest(value: unknown): value is ProjectListRequest {
   return isAction(value, 'project.list')
@@ -42,6 +54,10 @@ export function isProjectRegisterRequest(value: unknown): value is ProjectRegist
 
 export function isProjectRelocateRequest(value: unknown): value is ProjectRelocateRequest {
   return isAction(value, 'project.relocate', ['projectId'])
+}
+
+export function isProjectImportRequest(value: unknown): value is ProjectImportRequest {
+  return isAction(value, PROJECT_IMPORT_ACTION)
 }
 
 function isProjectSummary(value: unknown): value is ProjectSummary {
@@ -66,6 +82,30 @@ export function isProjectListed(value: unknown): value is ProjectListed {
     Array.isArray(value.projects) &&
     value.projects.every(isProjectSummary) &&
     isSelection(value.selectedId, value.projects)
+  )
+}
+
+export function isProjectImported(value: unknown): value is ProjectImported {
+  if (!isRecord(value)) return false
+  const { importedCount, pendingCategories, ...listing } = value
+  return (
+    hasKeys(value, [
+      'version',
+      'type',
+      'requestId',
+      'projects',
+      'selectedId',
+      'importedCount',
+      'pendingCategories',
+    ]) &&
+    value.type === 'project.imported' &&
+    typeof importedCount === 'number' &&
+    Number.isInteger(importedCount) &&
+    importedCount >= 0 &&
+    Array.isArray(pendingCategories) &&
+    pendingCategories.length === 1 &&
+    pendingCategories[0] === PENDING_IMPORT_CATEGORIES[0] &&
+    isProjectListed({ ...listing, type: 'project.listed' })
   )
 }
 

@@ -49,14 +49,14 @@ const PROSE = {
   pane: 'flex max-w-[var(--size-deck)] flex-col items-start gap-2',
 }
 
-function gatePane(cockpit: Cockpit, onOpen: () => void): ReactNode {
+function gatePane(cockpit: Cockpit, onOpen: () => void, onImport: () => void): ReactNode {
   const { status, project, message, busy } = cockpit
   // The first listing draws nothing rather than an empty state it is about to replace.
   if (status === 'loading') return null
   if (status === 'refused' && project && message) {
     return <RefusedPane project={project} message={message} busy={busy} onOpen={onOpen} />
   }
-  return <EmptyPane message={message} busy={busy} onOpen={onOpen} />
+  return <EmptyPane message={message} busy={busy} onImport={onImport} onOpen={onOpen} />
 }
 
 // Every destination is reachable and says so. Code is a placeholder in this slice and is drawn the
@@ -83,6 +83,7 @@ export function ProjectDeck({ destination, cockpit, actions, projectHeader }: De
           screen={screen}
           destination={destination}
           cockpit={cockpit}
+          onImport={actions.import}
           onOpen={actions.open}
           projectHeader={projectHeader}
         />
@@ -121,16 +122,18 @@ function DeckPane({
   screen,
   destination,
   cockpit,
+  onImport,
   onOpen,
   projectHeader,
 }: {
   screen: DeckScreen
   destination: Destination
   cockpit: Cockpit
+  onImport: () => void
   onOpen: () => void
   projectHeader?: ReactNode
 }) {
-  if (screen === 'gate') return gatePane(cockpit, onOpen)
+  if (screen === 'gate') return gatePane(cockpit, onOpen, onImport)
   if (screen === 'sessions') return <SessionsScreen projectHeader={projectHeader} />
   return <SurfacePane destination={destination} />
 }

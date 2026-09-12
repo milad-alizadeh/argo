@@ -33,6 +33,9 @@ export const PROJECT_ERRORS = {
   'already-registered': 'Another Project is already registered at that folder.',
   'git-unavailable': 'Argo cannot run git on this computer.',
   'storage-not-written': 'Argo could not save the Project registry.',
+  'import-source-missing': 'Argo found no existing Projects to import.',
+  'import-source-unavailable': 'Argo cannot read the existing Project registry.',
+  'import-needs-attention': 'Argo needs your decision before it imports these Projects.',
 } as const
 
 export type ProjectErrorCode = keyof typeof PROJECT_ERRORS

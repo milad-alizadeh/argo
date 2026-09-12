@@ -4,7 +4,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type ProjectError, type ProjectErrorCode, projectError } from '@/core/projects/contract'
 import type { ProjectListReply, ProjectSummary } from '@/core/projects/messages'
-import { listRequest, openRequest, registerRequest, relocateRequest } from '../lib/requests'
+import {
+  importRequest,
+  listRequest,
+  openRequest,
+  registerRequest,
+  relocateRequest,
+} from '../lib/requests'
 
 export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
@@ -21,11 +27,15 @@ export type Cockpit = {
 
 // One action, because what opening a Project means depends on the screen: with a refused Project
 // on it, the folder the person picks is that Project's new home rather than a new Project.
-export type ProjectActions = { open: () => void }
+export type ProjectActions = { open: () => void; import: () => void }
 
 const IDLE = { project: null, message: null, code: null, busy: false } as const
 const LOADING: Cockpit = { status: 'loading', ...IDLE }
 const EMPTY: Cockpit = { status: 'empty', ...IDLE }
+
+function importNotice(categories: readonly string[]): string {
+  return `Projects imported. ${categories.join(' and ')} are still waiting to be imported.`
+}
 
 function refuse(previous: Cockpit, reply: ProjectError): Cockpit {
   const status = previous.status === 'loading' ? 'empty' : previous.status
@@ -44,7 +54,8 @@ async function settle(reply: ProjectListReply, previous: Cockpit): Promise<Cockp
     const { message, code } = opened
     return { status: 'refused', project, message, code, busy: false }
   }
-  return { status: 'selected', project, message: null, code: null, busy: false }
+  const message = reply.type === 'project.imported' ? importNotice(reply.pendingCategories) : null
+  return { status: 'selected', project, message, code: null, busy: false }
 }
 
 export function useProjects(): [Cockpit, ProjectActions] {
@@ -90,5 +101,9 @@ export function useProjects(): [Cockpit, ProjectActions] {
     void run(() => window.argo.registerProject(registerRequest()))
   }, [run])
 
-  return [cockpit, useMemo(() => ({ open }), [open])]
+  const importExisting = useCallback(() => {
+    void run(() => window.argo.importProjects(importRequest()))
+  }, [run])
+
+  return [cockpit, useMemo(() => ({ open, import: importExisting }), [importExisting, open])]
 }

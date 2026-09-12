@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createProjectClient } from './client'
+import { PENDING_IMPORT_CATEGORIES, PROJECT_IMPORT_ACTION } from './messages'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 const opened = {
@@ -70,6 +71,20 @@ const invalidResponse = {
 test('passes a well formed listing through untouched', async () => {
   const client = createProjectClient(async () => listed)
   assert.deepEqual(await client.listProjects(listRequest), listed)
+})
+
+test('passes a well formed Project import through untouched', async () => {
+  const imported = {
+    ...listed,
+    type: 'project.imported',
+    importedCount: 1,
+    pendingCategories: PENDING_IMPORT_CATEGORIES,
+  }
+  const client = createProjectClient(async () => imported)
+  assert.deepEqual(
+    await client.importProjects({ version: 1, type: PROJECT_IMPORT_ACTION, requestId: 'list-1' }),
+    imported,
+  )
 })
 
 test('refuses a listing that is malformed or answers another request', async () => {

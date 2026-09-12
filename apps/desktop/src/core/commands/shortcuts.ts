@@ -1,3 +1,5 @@
+import { PROJECT_IMPORT_ACTION } from '../projects/messages'
+
 // One shortcut table for the whole app (#1786). Every chord is an entry here and every entry says
 // where it fires, because a chord written in the menu and again on an element drifts silently.
 // `shortcuts.test.mjs` proves the table holds no chord twice and that the built menu takes every
@@ -11,6 +13,7 @@ export const DESTINATIONS = ['Sessions', 'Tickets', 'Atlas', 'Code'] as const
 export type Destination = (typeof DESTINATIONS)[number]
 
 export const REGISTER_PROJECT_COMMAND = 'project.register'
+export const IMPORT_PROJECTS_COMMAND = PROJECT_IMPORT_ACTION
 
 // Moving focus down the Roster. These are chords on one element rather than on the window: they
 // fire only while a row holds focus, so a reader typing anywhere else keeps their arrow keys.
@@ -35,6 +38,12 @@ export const SHORTCUTS: readonly Shortcut[] = [
     command: REGISTER_PROJECT_COMMAND,
     label: 'Open Project…',
     chord: 'CmdOrCtrl+O',
+    scope: 'menu',
+  },
+  {
+    command: IMPORT_PROJECTS_COMMAND,
+    label: 'Import existing Projects',
+    chord: 'CmdOrCtrl+Shift+I',
     scope: 'menu',
   },
   ...DESTINATIONS.map((destination, index) => ({
@@ -71,12 +80,20 @@ export function menuTemplate(): MenuEntry[] {
     { role: 'appMenu' },
     {
       label: 'File',
-      submenu: [{ label: open.label, accelerator: open.chord, command: open.command }],
+      submenu: [
+        { label: open.label, accelerator: open.chord, command: open.command },
+        importProjectsMenuEntry(),
+      ],
     },
     { role: 'editMenu' },
     { role: 'viewMenu' },
     { role: 'windowMenu' },
   ]
+}
+
+function importProjectsMenuEntry(): MenuEntry {
+  const imported = shortcut(IMPORT_PROJECTS_COMMAND)
+  return { label: imported.label, accelerator: imported.chord, command: imported.command }
 }
 
 export function menuAccelerators(entries: MenuEntry[]): string[] {

@@ -3,9 +3,13 @@ import { type BrowserWindow, dialog } from 'electron'
 import { isRecord, requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { PROJECT_CHANNEL, projectError } from './contract'
+import { importProjects, type ProjectImportStore } from './import-projects'
 import { listProjects } from './list-projects'
+import { PROJECT_IMPORT_ACTION } from './messages'
 import { openProject } from './open-project'
 import { type ProjectStore, registerProject, relocateProject } from './register-project'
+
+type BridgeStore = ProjectStore & ProjectImportStore
 
 // The folder chooser is the main process's authority and is never handed to the renderer, which
 // asks for the action by name and receives the resulting registry (docs/portable-integration-contracts.md).
@@ -21,31 +25,32 @@ async function chooseFolder(window: BrowserWindow): Promise<string | null> {
 
 // A lookup keyed by the action, so an unknown one falls off the end as `invalid-request` rather
 // than reaching a handler.
-const ACTIONS = {
-  'project.open': (request: unknown, store: ProjectStore) =>
-    openProject(request, store.registryPath),
-  'project.list': (request: unknown, store: ProjectStore) =>
-    listProjects(request, store.registryPath),
+const ACTIONS: Record<string, (request: unknown, store: BridgeStore) => unknown> = {
+  'project.open': (request, store) => openProject(request, store.registryPath),
+  'project.list': (request, store) => listProjects(request, store.registryPath),
   'project.register': registerProject,
   'project.relocate': relocateProject,
-} as const
+  [PROJECT_IMPORT_ACTION]: importProjects,
+}
 
-function route(request: unknown, store: ProjectStore) {
+function route(request: unknown, store: BridgeStore) {
   const action = isRecord(request) ? request.type : undefined
-  if (typeof action !== 'string' || !Object.hasOwn(ACTIONS, action)) {
+  const handler = typeof action === 'string' ? ACTIONS[action] : undefined
+  if (!handler) {
     // A `project.open` carrying an unsupported version still reaches its own handler, which is
     // where `unsupported-version` is decided.
     return projectError('invalid-request', requestIdentifier(request))
   }
-  return ACTIONS[action as keyof typeof ACTIONS](request, store)
+  return handler(request, store)
 }
 
 export function attachProjectBridge(
   window: BrowserWindow,
   storage: { userData: string; rendererURL: string },
 ): void {
-  const store: ProjectStore = {
+  const store: BridgeStore = {
     registryPath: path.join(storage.userData, 'portable-v1', 'projects.json'),
+    sourceRegistryPath: path.join(storage.userData, 'projects.json'),
     chooseFolder: () => chooseFolder(window),
   }
   window.webContents.ipc.handle(PROJECT_CHANNEL, (event, request: unknown) => {
