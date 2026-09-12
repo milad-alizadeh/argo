@@ -63,11 +63,10 @@ the shipped app (#1769) when the PR touches `apps/desktop`, the root manifest, t
 When a gate fires, fix it or ratchet it in `biome.jsonc`: **never suppress inline, never raise a
 global cap.** Both configs fail open when commented, so no gate is proved by exit code alone.
 
-**Node is pinned to `.node-version` exactly**, and `scripts/node-version-gate.mjs` refuses any
-other from the root `preinstall` and from `bun run quality:node` (#1800). After switching Node,
-delete `node_modules` and reinstall: `node-pty` is a native addon bound to the ABI. A workflow
-reaches the pin through `node-version-file: .node-version`, and nothing checks that it does, so a
-literal version hard-coded into one is caught by review or not at all.
+**Node 24 is the minimum**, declared in the root `package.json` `engines` and checked by nothing
+(#1951). CI installs the version in `.node-version` through `node-version-file:`, the one place
+it is written. After switching Node's major version, delete `node_modules` and reinstall:
+`node-pty` is a native addon bound to the ABI.
 
 **A desktop release publishes only on a passing verdict** (#1807, ADR-0036). `release.yml` is
 `workflow_dispatch` only, signs and notarizes, writes one `release-verdict.json` naming the SHA-256

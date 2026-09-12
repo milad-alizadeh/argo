@@ -12,7 +12,7 @@ lookup that goes stale between the day a step is added and the day someone notic
 this section came to promise "four steps" over a list of three, and to describe a `quality` that
 had grown a typecheck.
 
-Three properties of the wiring are not readable off those files:
+Two properties of the wiring are not readable off those files:
 
 - **Each of biome and jscpd reads a different amount of the tree.** Biome reads one file at a
   time and cannot see a clone spanning two, so biome alone leaves a duplication breach for CI.
@@ -22,9 +22,6 @@ Three properties of the wiring are not readable off those files:
   a script #1828 deleted, so every commit failed on it and every session passed `--no-verify`,
   which skipped the lint it did carry as well. A staged-files subset of a check CI runs over the
   whole tree buys nothing and costs a gate that fails open the moment one flag is typed.
-- **CI never runs `quality:node`.** The pin reaches CI through `node-version-file:` and the root
-  `preinstall`, so a mismatch fails the install rather than a gate, and the failure names the
-  install rather than the Node.
 
 ## What no config confesses
 
@@ -87,74 +84,21 @@ runs in the `desktop-artifact` job on `macos-26`, behind a path filter that fail
 cannot cover is signing: a re-signature can invalidate what the package proved, so
 `assert:packaged` has to run again after `osxSign` is wired to the chosen entitlement set.
 
-## The Node pin, and why it is a `preinstall` (#1777)
+## The Node version (#1951)
 
-`.node-version` at the root pins Node **exactly**, and `scripts/node-version-gate.mjs` is what
-refuses anything else. It is not that file's only reader — `actions/setup-node` reads it too, via
-`node-version-file: .node-version` in the shared setup action, which is how CI installs the pin
-instead of agreeing with it by coincidence. *Single source* means one place it is **written**.
+The root `package.json` sets the minimum in `engines.node` (`>=24`), and nothing enforces it: no
+script checks the running Node. Below 24, Electron 44's installer dies with `ERR_REQUIRE_ESM`,
+which names no version.
 
-The callers: root `preinstall`, `quality:node` as `quality`'s first step, `install:electron`, and
-every `apps/desktop` command that reaches Electron or Forge.
+`.node-version` is the one place CI's Node is written. The shared setup action reads it through
+`node-version-file: .node-version`, so a literal `node-version:` in a workflow is a second copy,
+caught by review or not at all.
 
-`preinstall` is the load-bearing one, and it is the only lifecycle hook bun runs at the root at
-all. It makes a wrong Node a failed `bun install` rather than a failure further along that says
-nothing about the Node — Electron 44's installer is CommonJS requiring an ESM-only
-`@electron/get`, so an older Node gets `ERR_REQUIRE_ESM` and no clue.
+`node-pty` is a native addon built against one Node ABI, and the ABI changes with the major
+version. After switching Node's major version, delete `node_modules` and install again.
 
-**`preinstall` does not run before the install, whatever its name says.** Measured on bun 1.3.13:
-a dependency's own `postinstall` fires about 40ms *before* the root `preinstall`, `Saved lockfile`
-is already printed, and `node_modules` is fully linked when the gate finally speaks. So the gate
-buys a non-zero exit, not an install that never happened, and the difference is not academic —
-`node-pty`'s `install` script (`node scripts/prebuild.js || node-gyp rebuild`) has by then
-compiled it against the wrong Node's ABI. **After switching Node, delete `node_modules` and
-install again.** A second install that goes green over that tree proves nothing about it.
-
-Three shapes get past the hook entirely, all of them knowingly accepted:
-
-- `bun install --ignore-scripts` skips every lifecycle script there is.
-- `bun pm trust <pkg>` runs that dependency's `install`/`postinstall` — the node-pty native build
-  among them — with no root lifecycle at all.
-  `docs/research/2026-09-08-packaged-electron-toolchain-proof.md` recommends exactly that command,
-  so this is a real path rather than a theoretical one.
-- Any command run as `node …` directly rather than through its `package.json` script. That is why
-  the acceptance test is documented as `bun run prove:pty` (in `apps/desktop`) and the Electron
-  installer as `bun run install:electron`: the bare `node` spellings of both reach Forge and
-  `@electron/get` ungated, and no manifest check can see a command that is only in a README.
-
-Four traps worth holding. **Nothing tests any of them** — `scripts/node-version-gate.mjs` has no
-suite, and neither does the wiring — so each is a thing to check by hand or in review:
-
-- **Never let Bun run the gate.** Bun's `process.versions.node` is a compatibility number, not the
-  machine's Node: bun 1.3.13 reports 24.3.0 where `node -v` says v22.10.0. So a Bun-run gate
-  answers a question nobody asked, and while it usually refuses by accident — the compat number is
-  not the pin — pin the repo to 24.3.0 and it exits 0 on a machine with no Node at all. #1751
-  records the Forge commands being run by hand on exactly 24.3.0, so that is a shape, not a
-  hypothetical.
-- **A missing `.node-version` is a refusal, not a skip.** Deleting the pin reads as "no pin" to
-  every tool that consumes it, and that is the fail-open shape this file exists for.
-- **Launching the gate is not gating.** `node …gate.mjs || true` and `node …gate.mjs ; next` both
-  run it and carry on past its refusal. Reading a script for the invocation alone is not enough:
-  check both ends, that the gate is the first command and that what follows it is `&&` or nothing.
-- **The version is written in exactly one place**, and what to check is *shape*, not the current
-  value. No `engines.node` in any workspace manifest, no `.nvmrc`, `.tool-versions` or
-  `mise.toml`, no `volta` block — `actions/setup-node` prefers volta's version over
-  `node-version-file`, so that one would outrank the pin on CI — and no hard-coded `node-version:`
-  in any workflow or composite action. **Grepping for the pinned string cannot hold this rule**,
-  because the duplicate that bites is the one forgotten when the pin *moves*, and a forgotten copy
-  holds the old value while the grep hunts the new one. Grep for the *shape* instead: the key
-  names above, wherever they appear.
-
-The exactness is deliberate: a newer patch does not pass until the repository updates the file.
-A range's failure mode is "works on my machine, at a patch nobody else has", which is what the
-pin closes.
-
-**nvm does not read `.node-version`** — it reads `.nvmrc`, and has no fallback. `fnm` reads
-`.node-version`, but installs nothing, so it needs `fnm install` first. `asdf` reads it **only**
-with `legacy_version_file = yes` in `~/.asdfrc`; by default it ignores the file entirely. So on
-nvm and on a default asdf the pin is enforced but not applied, and switching is manual:
-`nvm install "$(cat .node-version)" && nvm use "$(cat .node-version)"`. Adding a `.nvmrc` to fix
-that would break the single-source rule above, which is why this is documented rather than solved.
+nvm reads `.nvmrc` and not `.node-version`, so to run CI's version locally name it:
+`nvm install "$(cat .node-version)" && nvm use "$(cat .node-version)"`.
 
 ## Where an exemption goes
 

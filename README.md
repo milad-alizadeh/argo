@@ -47,17 +47,16 @@ record.
 
 ## Dev
 
-**Node is pinned exactly**, in the root `.node-version`, and `bun install` fails on any other
-version — including a newer patch, naming the version required, the version you are on, and where
-the pin lives. Install that version *first*: bun runs the check after it has already linked
-`node_modules`, so a wrong Node leaves a half-built tree that needs deleting rather than no tree
-at all. nvm reads `.nvmrc` rather than `.node-version`, so name the version explicitly:
+**Use Node 24 or newer.** The root `package.json` declares it in `engines`, and CI runs the
+version in `.node-version`. nvm reads `.nvmrc` rather than `.node-version`, so to match CI, name
+the version explicitly:
 
 ```bash
 nvm install "$(cat .node-version)" && nvm use "$(cat .node-version)"
 ```
 
-Why it is enforced rather than suggested, and the traps around it:
+After you switch Node's major version, delete `node_modules` and install again: `node-pty` is a
+native addon built for one Node ABI. More in
 [`docs/agents/quality-gates.md`](docs/agents/quality-gates.md).
 
 ```bash

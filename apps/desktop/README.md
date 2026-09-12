@@ -30,7 +30,7 @@ ref holds one ([#1910](https://github.com/milad-alizadeh/argo/issues/1910)).
 
 ## Build a local release
 
-On an Apple silicon Mac, use the pinned Node version. Then run these commands from the repository
+On an Apple silicon Mac, use Node 24 or newer. Then run these commands from the repository
 root:
 
 ```sh
@@ -131,27 +131,17 @@ CLI can no longer be handed one. Nothing in Argo does that today.
 
 ## Two things will bite you
 
-**Node is pinned exactly, and the pin is enforced.** The root `.node-version` is the single place
-the version is written, and `scripts/node-version-gate.mjs` refuses any other version, including a
-newer patch. It runs at root `preinstall`, so a wrong Node fails `bun install`, and before every
-command here that reaches Electron or Forge. `bun run quality` runs it first, and CI reads the same
-file through `node-version-file:`.
+**Node 24 is the minimum, and nothing checks it.** The root `package.json` declares it in
+`engines` ([#1951](https://github.com/milad-alizadeh/argo/issues/1951)). Below it, Electron 44's
+installer dies with `ERR_REQUIRE_ESM`, a message that says nothing about your Node. CI runs the
+version in the root `.node-version`, read through `node-version-file:`.
 
-Do not read that failed install as "nothing happened": bun runs the root `preinstall` *after* it
-has linked `node_modules` and built the native dependencies, so on the wrong Node `node-pty` is
-already compiled against the wrong ABI. **Delete `node_modules` and install again** once you are
-on the pinned version.
+`node-pty` is compiled against one Node ABI, and the ABI changes with the major version. **Delete
+`node_modules` and install again** after you switch Node's major version.
 
-The reason it is a gate rather than a note: Electron 44 declares `engines.node >= 22.12.0` and
-means it, its installer is CommonJS and requires an ESM-only `@electron/get`, and on an older Node
-it dies with `ERR_REQUIRE_ESM` — a message that says nothing about your Node. The exactness is
-[#1751](https://github.com/milad-alizadeh/argo/issues/1751)'s decision and
-[#1777](https://github.com/milad-alizadeh/argo/issues/1777) wired it.
-
-**Your version manager probably will not apply the pin for you.** nvm reads `.nvmrc` and has no
-`.node-version` fallback at all. `fnm` reads `.node-version` but installs nothing, so it needs an
-`fnm install` first. `asdf` reads it only with `legacy_version_file = yes` in `~/.asdfrc`, and
-ignores the file by default. Switch by hand, from this directory:
+To match CI, install the `.node-version` version. nvm reads `.nvmrc` and has no `.node-version`
+fallback at all. `fnm` reads `.node-version` but installs nothing, so it needs an `fnm install`
+first. Switch by hand, from this directory:
 
 ```sh
 nvm install "$(cat ../../.node-version)" && nvm use "$(cat ../../.node-version)"
@@ -165,11 +155,8 @@ all. Install it explicitly afterwards, **from the repo root**:
 bun run install:electron
 ```
 
-That is `node_modules/electron/install.js` behind the Node-pin gate. Run the installer directly
-and you get the one failure the pin exists for — `ERR_REQUIRE_ESM`, out of a CommonJS installer
-requiring an ESM-only `@electron/get`, saying nothing about your Node. The script is also why the
-path is not spelled here: bun hoists Electron to the root, and this package has no `node_modules`
-of its own.
+That is `node_modules/electron/install.js`, run from the root because bun hoists Electron there
+and this package has no `node_modules` of its own.
 
 Do **not** use `npx install-electron --no`. It deletes `node_modules/electron` first, and npx's
 own `--no` flag then refuses to reinstall it, so you end up with nothing and need
