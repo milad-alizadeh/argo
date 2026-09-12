@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import type { SessionChain } from './chains'
@@ -38,11 +40,14 @@ function readFailure(error: unknown) {
 type FeedReadOptions = {
   source: TranscriptSessionSource
   feeds: Map<string, HeldFeed>
-  revisions: { next: number }
   value: SessionFeedRequest
 }
 
-async function readFeed({ source, feeds, revisions, value }: FeedReadOptions) {
+function feedRevision(chainId: string, stamps: string) {
+  return createHash('sha256').update(JSON.stringify({ chainId, stamps })).digest('hex')
+}
+
+async function readFeed({ source, feeds, value }: FeedReadOptions) {
   const held = feeds.get(value.sessionId)
   const cached = await cachedReply(value, held)
   if (cached !== null) {
@@ -53,7 +58,7 @@ async function readFeed({ source, feeds, revisions, value }: FeedReadOptions) {
   if (stable === null) return sessionError('missing-session', value.requestId)
   const { chain, stamps } = stable
   const rows = source.projectFeed(chain)
-  const revision = `feed-${++revisions.next}`
+  const revision = feedRevision(chain.id, stamps)
   const next = {
     chainId: chain.id,
     paths: chain.files.map((file) => file.path),
@@ -67,7 +72,6 @@ async function readFeed({ source, feeds, revisions, value }: FeedReadOptions) {
 
 export function createTranscriptSessionReader(source: TranscriptSessionSource): SessionReader {
   const feeds = new Map<string, HeldFeed>()
-  const revisions = { next: 0 }
   return {
     async listSessions(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
@@ -91,7 +95,7 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
       if (versionFailure(value)) return sessionError('unsupported-version', null)
       if (!isSessionFeedRequest(value)) return sessionError('invalid-request', null)
       try {
-        return await readFeed({ source, feeds, revisions, value })
+        return await readFeed({ source, feeds, value })
       } catch (error) {
         return sessionError(readFailure(error), value.requestId)
       }

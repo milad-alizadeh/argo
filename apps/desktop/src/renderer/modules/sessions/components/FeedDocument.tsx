@@ -9,9 +9,8 @@ import { SessionFeedRow as SessionFeedRowView } from './SessionFeedRow'
 
 type FeedDocumentProps = { active: boolean; feed: SessionFeed }
 
-// A kept document stays mounted, with its own scroller, while another Session is chosen. The
-// primitive therefore retains its tail/fixed-row state; `content-visibility` hides paint without
-// destroying the DOM boxes a later return needs (ADR-0033 rule 4).
+// A kept document stays mounted, with its own scroller, while another Session is chosen.
+// `content-visibility` hides paint without destroying its DOM boxes (ADR-0033 rule 4).
 export function FeedDocument({ active, feed }: FeedDocumentProps) {
   const { column, measured, settled } = useSettledFeed({
     active,
@@ -38,7 +37,7 @@ export function FeedDocument({ active, feed }: FeedDocumentProps) {
         </div>
         {ready && settled.rows.length === 0 ? <FeedEmpty reason="blank" /> : null}
         {ready && settled.rows.length > 0 ? (
-          <ShownFeed rows={settled.rows} settled={settled} />
+          <ShownFeed active={active} rows={settled.rows} settled={settled} />
         ) : null}
       </div>
     </div>
@@ -48,18 +47,22 @@ export function FeedDocument({ active, feed }: FeedDocumentProps) {
 // Every shown row takes the precise height Blink read in the measurement pass. The document stays
 // at that width until a settled replacement arrives, so a resize clips instead of rewrapping rows
 // against measurements taken at another width (ADR-0033 rule 6).
-function ShownFeed({ rows, settled }: { rows: readonly SessionFeedRow[]; settled: Settled }) {
+function ShownFeed({ active, rows, settled }: Omit<AnchoredFeedProps, 'historyLabel'>) {
   const { t } = useTranslation()
-  return <AnchoredFeed historyLabel={t('historyLabel')} rows={rows} settled={settled} />
+  return (
+    <AnchoredFeed active={active} historyLabel={t('historyLabel')} rows={rows} settled={settled} />
+  )
 }
 
 type AnchoredFeedProps = {
+  active: boolean
   historyLabel: string
   rows: readonly SessionFeedRow[]
   settled: Settled
 }
 
 type Anchor = { element: HTMLElement; offset: number; atTail: boolean }
+type Snapshot = { anchor?: Anchor; scrollTop?: number }
 
 type AnchoredFeedState = Pick<AnchoredFeedProps, 'rows' | 'settled'>
 
@@ -70,16 +73,20 @@ const SCROLLING_SETTLE_MS = 180
 // corresponding scroll offset after Blink lays out the replacement.
 class AnchoredFeed extends Component<AnchoredFeedProps> {
   viewport = createRef<HTMLDivElement>()
+  heldScrollTop: number | null = null
   scrolling = false
   scrollingTimer: number | null = null
   state: AnchoredFeedState = { rows: this.props.rows, settled: this.props.settled }
 
   getSnapshotBeforeUpdate(
-    _previous: AnchoredFeedProps,
+    previousProps: AnchoredFeedProps,
     previous: AnchoredFeedState,
-  ): Anchor | null {
-    if (readingKey(previous.settled) === readingKey(this.state.settled)) return null
+  ): Snapshot | null {
     const viewport = this.viewport.current
+    if (previousProps.active && !this.props.active && viewport !== null) {
+      return { scrollTop: viewport.scrollTop }
+    }
+    if (readingKey(previous.settled) === readingKey(this.state.settled)) return null
     if (viewport === null) return null
     const row = [...viewport.querySelectorAll<HTMLElement>('[data-feed-row]')].find(
       (candidate) =>
@@ -87,24 +94,34 @@ class AnchoredFeed extends Component<AnchoredFeedProps> {
     )
     if (row === undefined) return null
     return {
-      element: row,
-      offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
-      atTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 1,
+      anchor: {
+        element: row,
+        offset: row.getBoundingClientRect().top - viewport.getBoundingClientRect().top,
+        atTail: viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 1,
+      },
     }
   }
 
   componentDidUpdate(
     previous: AnchoredFeedProps,
     _state: AnchoredFeedState,
-    anchor: Anchor | null,
+    snapshot: Snapshot | null,
   ) {
+    if (snapshot?.scrollTop !== undefined) {
+      this.heldScrollTop = snapshot.scrollTop
+      return
+    }
+    if (!previous.active && this.props.active && this.heldScrollTop !== null) {
+      const viewport = this.viewport.current
+      if (viewport !== null) viewport.scrollTop = this.heldScrollTop
+    }
     if (readingKey(previous.settled) !== readingKey(this.props.settled)) {
       // A reader's motion wins. The settled replacement waits off-screen until the motion ends,
       // then starts with a fresh snapshot rather than applying this now-stale anchor.
       if (!this.scrolling) this.setState({ rows: this.props.rows, settled: this.props.settled })
       return
     }
-    if (anchor !== null) this.restore(anchor)
+    if (snapshot?.anchor !== undefined) this.restore(snapshot.anchor)
   }
 
   componentWillUnmount() {

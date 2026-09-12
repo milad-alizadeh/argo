@@ -75,29 +75,37 @@ export function SessionsScreenView({
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel id="deck" minSize={FEED_MIN}>
-          <div className="flex h-full min-h-0 flex-col">
-            <SessionDeckHead session={selected} />
-            <div className="min-h-0 flex-1">
-              <SessionFeed
-                failure={feedFailure}
-                feed={feed}
-                sessionId={selectedSessionId}
-                selected={selectedSessionId !== null}
-              />
-            </div>
-            {composerAvailability === null ? null : (
-              <ComposerUnavailable availability={composerAvailability} />
-            )}
-          </div>
-        </ResizablePanel>
-        {working ? (
-          <>
-            <ResizableHandle />
-            <ResizablePanel groupResizeBehavior="preserve-pixel-size" id="inspector" {...RAIL}>
-              <AgentsRail session={selected} />
+          <ResizablePanelGroup id="session-workspace" orientation="horizontal">
+            <ResizablePanel id="feed" minSize={FEED_MIN}>
+              <div className="flex h-full min-h-0 flex-col">
+                <SessionDeckHead session={selected} />
+                <div className="min-h-0 flex-1">
+                  <SessionFeed
+                    failure={feedFailure}
+                    feed={feed}
+                    sessionId={selectedSessionId}
+                    selected={selectedSessionId !== null}
+                  />
+                </div>
+                {composerAvailability === null ? null : (
+                  <ComposerUnavailable availability={composerAvailability} />
+                )}
+              </div>
             </ResizablePanel>
-          </>
-        ) : null}
+            {working ? (
+              <>
+                <ResizableHandle />
+                <ResizablePanel
+                  groupResizeBehavior="preserve-pixel-size"
+                  id="session-inspector"
+                  {...RAIL}
+                >
+                  <AgentsRail session={selected} />
+                </ResizablePanel>
+              </>
+            ) : null}
+          </ResizablePanelGroup>
+        </ResizablePanel>
       </ResizablePanelGroup>
     </main>
   )
