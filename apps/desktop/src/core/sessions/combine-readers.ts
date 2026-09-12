@@ -32,6 +32,8 @@ function combineLists(replies: SessionListReply[]): SessionListReply {
 function combineFeeds(replies: SessionFeedReply[]): SessionFeedReply {
   const feed = replies.find((reply) => reply.type === 'session.feed.read')
   if (feed !== undefined) return feed
+  const unchanged = replies.find((reply) => reply.type === 'session.feed.unchanged')
+  if (unchanged !== undefined) return unchanged
   return (
     replies.find((reply) => reply.type === 'session.error' && reply.code !== 'missing-session') ??
     replies[0] ??
@@ -39,9 +41,23 @@ function combineFeeds(replies: SessionFeedReply[]): SessionFeedReply {
   )
 }
 
+function ownerFor(request: unknown, owners: Map<string, SessionReader>): SessionReader | undefined {
+  if (typeof request !== 'object' || request === null || !('sessionId' in request)) return undefined
+  return typeof request.sessionId === 'string' ? owners.get(request.sessionId) : undefined
+}
+
+function ownerOfReply(
+  readers: SessionReader[],
+  replies: unknown[],
+  reply: SessionFeedReply,
+): SessionReader | undefined {
+  return readers.find((_reader, index) => replies[index] === reply)
+}
+
 // A Session id is owned by the CLI that wrote its transcript. The combined reader asks each
 // registered adapter and returns that adapter's feed; listing aggregates their independent sweeps.
 export function combineSessionReaders(readers: SessionReader[]): SessionReader {
+  const feedOwners = new Map<string, SessionReader>()
   return {
     async listSessions(request) {
       const replies = await Promise.all(readers.map((reader) => reader.listSessions(request)))
@@ -50,10 +66,17 @@ export function combineSessionReaders(readers: SessionReader[]): SessionReader {
       return combineLists(parsed)
     },
     async readSessionFeed(request) {
+      const knownOwner = ownerFor(request, feedOwners)
+      if (knownOwner !== undefined) return knownOwner.readSessionFeed(request)
       const replies = await Promise.all(readers.map((reader) => reader.readSessionFeed(request)))
       const parsed = replies.filter(isSessionFeedReply)
       if (parsed.length !== readers.length) return sessionError('invalid-response', null)
-      return combineFeeds(parsed)
+      const reply = combineFeeds(parsed)
+      if (reply.type === 'session.feed.read') {
+        const owner = ownerOfReply(readers, replies, reply)
+        if (owner !== undefined) feedOwners.set(reply.sessionId, owner)
+      }
+      return reply
     },
   }
 }

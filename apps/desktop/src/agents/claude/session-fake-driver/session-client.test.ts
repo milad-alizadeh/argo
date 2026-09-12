@@ -3,7 +3,13 @@ import { test } from 'node:test'
 import { createSessionClient } from '@/core/sessions/client.ts'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1' }
-const feed = { version: 1, type: 'session.feed', requestId: 'feed-1', sessionId: 'session-a' }
+const feed = {
+  version: 1,
+  type: 'session.feed',
+  requestId: 'feed-1',
+  sessionId: 'session-a',
+  revision: null,
+}
 
 const listed = {
   version: 1,
@@ -20,6 +26,7 @@ const read = {
   requestId: 'feed-1',
   sessionId: 'session-a',
   chainId: 'session-a',
+  revision: '1:row',
   rows: [{ shape: 'unreadable', id: 'unreadable:0:0' }],
 }
 

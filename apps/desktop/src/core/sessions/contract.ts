@@ -13,6 +13,9 @@ export type SessionFeedRequest = {
   type: 'session.feed'
   requestId: string
   sessionId: string
+  // The document the renderer already holds, if any. This keeps an unchanged reply from leaving
+  // a reloaded or evicted deck without rows to draw.
+  revision: string | null
 }
 
 export type ClaudeSessionStartRequest = {
@@ -52,7 +55,21 @@ export type SessionFeedRead = {
   // the id asked for (CONTEXT.md L2 · retired id). The renderer keys on the id it asked for; this
   // is here so a caller can tell that the two differ, and it is what the proofs assert against.
   chainId: string
+  // A main-process token for the exact projected document this reply carries. A different
+  // revision must be measured before its rows enter the viewport, even when ids stay the same.
+  revision: string
   rows: SessionFeedRow[]
+}
+
+// The selected chain's file stamps did not move, so the main process returns this compact reply
+// instead of copying an unchanged whole document over IPC on every observation pass.
+export type SessionFeedUnchanged = {
+  version: 1
+  type: 'session.feed.unchanged'
+  requestId: string
+  sessionId: string
+  chainId: string
+  revision: string
 }
 
 export const SESSION_ERRORS = {
@@ -78,7 +95,7 @@ export type SessionError = {
 }
 
 export type SessionListReply = SessionsListed | SessionError
-export type SessionFeedReply = SessionFeedRead | SessionError
+export type SessionFeedReply = SessionFeedRead | SessionFeedUnchanged | SessionError
 export type ClaudeSessionStartReply = ClaudeSessionStarted | SessionError
 
 export function sessionError(code: SessionErrorCode, requestId: string | null): SessionError {
@@ -98,11 +115,12 @@ export function isSessionListRequest(value: unknown): value is SessionListReques
 export function isSessionFeedRequest(value: unknown): value is SessionFeedRequest {
   return (
     isRecord(value) &&
-    hasKeys(value, ['version', 'type', 'requestId', 'sessionId']) &&
+    hasKeys(value, ['version', 'type', 'requestId', 'sessionId', 'revision']) &&
     value.version === 1 &&
     value.type === 'session.feed' &&
     isIdentifier(value.requestId) &&
-    isIdentifier(value.sessionId)
+    isIdentifier(value.sessionId) &&
+    (value.revision === null || typeof value.revision === 'string')
   )
 }
 
