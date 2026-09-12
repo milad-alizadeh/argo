@@ -12,20 +12,36 @@
   /* The cockpit's own scale, frozen by the shell design (#1896). Every one of these is reached by
      name from a component; a measurement written at a call site is the thing this block prevents. */
   --text-title: 20px;
+  --text-title--line-height: 24px;
   --text-heading: 14px;
-  --text-body: 13px;
+  --text-heading--line-height: 20px;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
   --text-control: 12px;
+  --text-control--line-height: 16px;
   --size-chrome-bar: 52px;
   --size-navigation-rail: 88px;
   --size-navigation-item: 36px;
   --size-navigation-control: 28px;
   --size-icon-control: 16px;
+  --size-icon-meta: 12px;
+  --size-control: 32px;
   --size-session-roster: 336px;
   --size-session-inspector: 240px;
   --spacing-shell-tight: 4px;
+  --spacing-shell-icon: 6px;
   --spacing-shell-item: 8px;
   --spacing-shell-gutter: 12px;
   --spacing-shell-inset: 16px;
+  --spacing-shell-section: 24px;
+  --spacing-shell-region: 32px;
+  /* One surface shadow for the composer assembly, one for a control that floats on it (#1258). */
+  --shadow-surface: 0 10px 32px -16px rgb(0 0 0 / 0.3);
+  --shadow-control: 0 2px 6px -3px rgb(0 0 0 / 0.16);
+  --duration-control: 150ms;
+  --duration-layout: 300ms;
+  --duration-attention: 400ms;
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
   --size-sidebar: 240px;
   --size-deck: 640px;
   --inset-traffic-lights: 84px;

@@ -1,19 +1,22 @@
 <!doctype html>
 <!-- A design speaks only tokens (var(--token)) and names every region with data-component;
      repeated shapes are kit.js render functions. Rules: apps/desktop/AGENTS.md -->
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <title>DESIGN — screen name</title>
-    <link rel="stylesheet" href="../../node_modules/@fontsource-variable/geist/index.css" />
     <link rel="stylesheet" href="./tokens.css" />
+    <script>
+      // `render:design` asks for the light appearance with `?light`; the app puts `.dark` on the root.
+      if (location.search === '?light') document.documentElement.classList.remove('dark')
+    </script>
     <style>
       /* Page-local layout only. Colour, radius and type come from the mirrored contract. */
       body {
         margin: 0;
         background: var(--background);
         color: var(--foreground);
-        font-family: 'Geist Variable', system-ui, sans-serif;
+        font-family: var(--font-sans);
       }
       [data-component='ExamplePanel'] {
         background: var(--card);
@@ -28,7 +31,7 @@
       }
     </style>
   </head>
-  <body class="dark">
+  <body>
     <main data-component="ExampleScreen">
       <section data-component="ExamplePanel">
         <h2>Section label</h2>

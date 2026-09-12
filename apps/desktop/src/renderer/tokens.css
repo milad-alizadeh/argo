@@ -63,6 +63,16 @@
   /* The unavailable-composer notice takes the composer's reserved place without offering a
      field that cannot send a Turn. */
   --size-composer-unavailable: 48px;
+  /* The Session page's panes and composer assembly (#1937). The Feed and the composer share one
+     reading column, and the Roster widens no further than its maximum. */
+  --size-session-roster-max: 460px;
+  --size-session-feed-min: 360px;
+  --size-session-column: 896px;
+  --size-queue-row: 44px;
+  --size-composer-field: 80px;
+  --size-attachment-thumbnail: 56px;
+  --size-attachment-card: 64px;
+  --size-attachment-tray: 72px;
   /* The state dot sits on the title's optical centre: half of what the title's line box has left
      over once the dot is in it. Derived, never nudged, so it follows the type scale. */
   --size-state-dot: 6px;
