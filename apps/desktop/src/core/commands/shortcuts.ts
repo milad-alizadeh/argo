@@ -4,11 +4,15 @@
 // accelerator from it.
 
 // The working surfaces of the cockpit, in sidebar order. The Project is not one of them: it is the
-// window's subject, and the surfaces are what a reader does inside it. Code is a placeholder in
-// this slice and stays in the table, because a destination that is not reachable is a destination
-// nobody notices is missing.
-export const DESTINATIONS = ['Sessions', 'Tickets', 'Atlas', 'Code'] as const
+// window's subject, and the surfaces are what a reader does inside it.
+export const DESTINATIONS = ['Sessions', 'Tickets', 'Atlas'] as const
 export type Destination = (typeof DESTINATIONS)[number]
+
+export const DESTINATION_PATHS: Record<Destination, string> = {
+  Sessions: '/sessions',
+  Tickets: '/tickets',
+  Atlas: '/atlas',
+}
 
 export const REGISTER_PROJECT_COMMAND = 'project.register'
 
