@@ -19,21 +19,23 @@ test('a docs entry is not a story', () => {
 })
 
 test('a malformed manifest is rejected with its source', () => {
-  assert.throws(() => parseStories('{', 'built index'), /built index: invalid JSON/)
-  assert.throws(
-    () =>
-      parseStories(
-        JSON.stringify({ entries: { broken: { type: 'story', id: 'broken' } } }),
-        'built index',
-      ),
-    /built index: story entry broken is missing id, name, title, or importPath/,
-  )
+  const cases: [string, RegExp][] = [
+    ['{', /built index: invalid JSON/],
+    [
+      JSON.stringify({ entries: { broken: { type: 'story', id: 'broken' } } }),
+      /built index: story entry broken is missing id, name, title, or importPath/,
+    ],
+  ]
+  for (const [text, error] of cases) assert.throws(() => parseStories(text, 'built index'), error)
 })
 
 test('a malformed import graph is rejected with its source', () => {
-  assert.throws(() => parseImporters('{}', 'built stats'), /built stats: expected an object/)
-  assert.throws(
-    () => parseImporters(JSON.stringify({ modules: [{ id: 'a', reasons: [{}] }] }), 'built stats'),
-    /built stats: module a has a reason without a moduleName/,
-  )
+  const cases: [string, RegExp][] = [
+    ['{}', /built stats: expected an object/],
+    [
+      JSON.stringify({ modules: [{ id: 'a', reasons: [{}] }] }),
+      /built stats: module a has a reason without a moduleName/,
+    ],
+  ]
+  for (const [text, error] of cases) assert.throws(() => parseImporters(text, 'built stats'), error)
 })

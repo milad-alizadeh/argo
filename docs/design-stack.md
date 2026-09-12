@@ -24,8 +24,7 @@ archive.
   the real preload, the real main process and the real window. A new component state costs a
   story; a new screen state costs a name on that attribute and one step in the capture driver.
 - **Browse the components** — `cd apps/desktop && bun run storybook` serves the stories from the
-  working tree. Vercel owns pull request preview deployments outside this repository, and
-  `storybook-links.yml` links every story that renders a changed file in the pull request body.
+  working tree. Vercel owns pull request preview deployments outside this repository.
 - **Render a state** — a design page: `bun run render:design -- <page.html> <out-dir> <state>…`,
   where a state is the page's URL fragment, `@<width>` narrows the 1200 by 800 window, and `:light`
   selects the light appearance. The shipped screen: `bun run capture:cockpit`, output

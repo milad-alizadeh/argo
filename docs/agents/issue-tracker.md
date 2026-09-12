@@ -41,9 +41,9 @@ image reaches GitHub one of two ways:
 - **A person drags the file into the body on github.com.** GitHub hosts it on its own CDN, dated
   and outside the repository. This is the route for a bug report's screenshot and for a design
   ticket's state renders, and it is the only route that puts a PNG in a body. Ask for it.
-- **An agent records the route.** For a component, name the Storybook story. In a PR, CI adds the
-  preview link to the body's Storybook section (#1953); elsewhere, write the local Storybook
-  command. For a screen, write the render command and the state names so that a reader can draw it.
+- **An agent records the route.** For a component, name the Storybook story. A PR gets its preview
+  links from CI (#1953); elsewhere, write the local Storybook command. For a screen, write the
+  render command and the state names so that a reader can draw it.
 
 An agent's own screenshots are **disposable**: a temp dir, judged, deleted. A PNG in a git object
 has no version, so a later reader cannot tell whether it shows the code beside it or the code it

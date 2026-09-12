@@ -1,5 +1,6 @@
-// What `storybook build` writes that the story links read: `index.json`, and the
-// `preview-stats.json` that `--stats-json` adds.
+import { posix } from 'node:path'
+
+// Every path is relative to the Storybook root, as `storybook build` writes it, without the `./`.
 export type Story = { id: string; name: string; title: string; importPath: string }
 
 // Each module mapped to the modules that import it. A module only ever seen as an importer, such as
@@ -25,12 +26,6 @@ function parseJson(text: string, source: string): unknown {
   }
 }
 
-// Module ids and `importPath` are relative to the Storybook root, and a changed path to the
-// repository root, so every path is compared by its tail.
-export function normalize(filePath: string): string {
-  return filePath.replace(/\\/g, '/').replace(/^(?:\.\.?\/)+/, '')
-}
-
 // A docs entry shares the manifest with the stories and is dropped here, so nothing links it.
 export function parseStories(text: string, source: string): Story[] {
   const value = parseJson(text, source)
@@ -47,7 +42,7 @@ export function parseStories(text: string, source: string): Story[] {
       throw new Error(`${source}: story entry ${key} is missing id, name, title, or importPath`)
     }
     const { id, name, title, importPath } = entry
-    stories.push({ id, name, title, importPath })
+    stories.push({ id, name, title, importPath: posix.normalize(importPath) })
   }
   return stories
 }
@@ -61,7 +56,7 @@ function parseModule(node: unknown, source: string): { id: string; importers: st
   if (!names.every((name): name is string => typeof name === 'string')) {
     throw new Error(`${source}: module ${node.id} has a reason without a moduleName`)
   }
-  return { id: normalize(node.id), importers: names.map(normalize) }
+  return { id: posix.normalize(node.id), importers: names.map((name) => posix.normalize(name)) }
 }
 
 export function parseImporters(text: string, source: string): Importers {

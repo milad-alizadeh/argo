@@ -1,15 +1,13 @@
 # Writes the stories a pull request changed into its body, linked to the Vercel preview of its own
-# commit (#1953). Vercel deploys the `argo-storybook` project on every push and reports it as a
-# GitHub deployment, and that deployment's success is what starts this.
-#
-# The preview sits behind Vercel login, so the story list cannot be read off it. The job builds
-# Storybook from the same commit for its `index.json` and its import graph: a story id comes from
-# the title and export name, so the local build and the deployed one agree.
+# commit (#1953). The preview sits behind Vercel login, so the job builds Storybook from the same
+# commit for its `index.json` and its import graph.
 #
 # Two events, because either can come first. A push that is already deployed when the pull request
 # opens has no later `deployment_status`, so `opened` and `reopened` look the deployment up instead.
 #
-# GitHub starts a `deployment_status` workflow only when this file is on the default branch.
+# A `deployment_status` run uses this file as it is at the deployed commit, so a fork's deploy would
+# run the fork's own copy with this repository's token. Vercel's Git fork protection holds a fork's
+# deploy until a team member authorizes it, and it is the guard: keep it on.
 name: storybook-links
 
 on:
@@ -109,8 +107,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/storybook-stats"
           bun run build:storybook --stats-json "$RUNNER_TEMP/storybook-stats"
 
-      # Skipped when the pull request moved on while this ran: the newer commit's own deploy
-      # writes its links, and an older run finishing last must not overwrite them.
+      # When the pull request moved on while this ran, only the edit is skipped: the newer commit's
+      # deploy writes its own links, and an older run finishing last must not overwrite them.
       - name: Write the story links into the pull request body
         if: ${{ steps.target.outputs.number }}
         working-directory: apps/desktop
@@ -120,21 +118,22 @@ jobs:
           gh api "repos/$REPO/pulls/$NUMBER/files" --paginate --jq '.[].filename' \
             > "$RUNNER_TEMP/changed.txt"
           bun src/storybook/story-links.ts section --index storybook-static/index.json \
-            --stats "$RUNNER_TEMP/storybook-stats/preview-stats.json" --base "$PREVIEW" \
-            --sha "$SHA" --changed "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/section.md"
+            --stats "$RUNNER_TEMP/storybook-stats/preview-stats.json" --root apps/desktop \
+            --changed "$RUNNER_TEMP/changed.txt" --preview "$PREVIEW" --sha "$SHA" \
+            > "$RUNNER_TEMP/section.md"
           if [ -s "$RUNNER_TEMP/section.md" ]; then
             cat "$RUNNER_TEMP/section.md" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "no story renders a file this pull request changed"
           fi
-          head=$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.head.sha')
+          gh api "repos/$REPO/pulls/$NUMBER" > "$RUNNER_TEMP/pull-request.json"
+          head=$(jq -r '.head.sha' "$RUNNER_TEMP/pull-request.json")
           if [ "$head" != "$SHA" ]; then
             echo "pull request #$NUMBER moved on to $head"
             exit 0
           fi
-          # `--jq` ends a string with a newline the body never had, and `$(...)` strips it.
-          printf '%s' "$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.body // ""')" \
-            > "$RUNNER_TEMP/body.md"
+          # `-j` writes the body byte for byte, without the newline `-r` would add.
+          jq -j '.body // ""' "$RUNNER_TEMP/pull-request.json" > "$RUNNER_TEMP/body.md"
           bun src/storybook/story-links.ts body --body "$RUNNER_TEMP/body.md" \
             --section "$RUNNER_TEMP/section.md" > "$RUNNER_TEMP/next.md"
           if cmp -s "$RUNNER_TEMP/body.md" "$RUNNER_TEMP/next.md"; then
