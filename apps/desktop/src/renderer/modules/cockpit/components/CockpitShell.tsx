@@ -3,6 +3,7 @@ import { PanelLeftIcon } from 'lucide-react'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { Button } from '../../../components/ui/button'
+import { sizeFromToken } from '../../../components/ui/size-from-token'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -10,9 +11,6 @@ import {
 } from '../../../components/ui/resizable'
 import { CockpitNavigationRail } from './CockpitNavigationRail'
 
-const COCKPIT_SIDEBAR_DEFAULT_WIDTH = 336
-const COCKPIT_SIDEBAR_MIN_WIDTH = 336
-const COCKPIT_SIDEBAR_MAX_WIDTH = 460
 type CockpitShellProps = {
   rail?: ReactNode
   sidebar: ReactNode
@@ -21,17 +19,24 @@ type CockpitShellProps = {
 
 export function CockpitShell({ rail, sidebar, children }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
+  const sidebarDefaultWidth = sizeFromToken('--size-cockpit-sidebar-default')
+  const sidebarMaximumWidth = sizeFromToken('--size-cockpit-sidebar-max')
+  const contentMinimumWidth = sizeFromToken('--size-cockpit-content-min')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  const synchronizeSidebarCollapsed = () => {
+    setIsSidebarCollapsed(sidebarPanelRef.current?.isCollapsed() ?? false)
+  }
 
   const toggleSidebar = () => {
     if (isSidebarCollapsed) {
-      sidebarPanelRef.current?.resize(COCKPIT_SIDEBAR_DEFAULT_WIDTH)
-      setIsSidebarCollapsed(false)
+      sidebarPanelRef.current?.resize(sidebarDefaultWidth)
+      synchronizeSidebarCollapsed()
       return
     }
 
     sidebarPanelRef.current?.collapse()
-    setIsSidebarCollapsed(true)
+    synchronizeSidebarCollapsed()
   }
 
   return (
@@ -39,7 +44,11 @@ export function CockpitShell({ rail, sidebar, children }: CockpitShellProps) {
       <aside className="w-(--size-navigation-rail) shrink-0 border-r border-border/60">
         {rail ?? <CockpitNavigationRail />}
       </aside>
-      <ResizablePanelGroup orientation="horizontal" className="relative min-w-0 flex-1">
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="relative min-w-0 flex-1"
+        onLayoutChanged={synchronizeSidebarCollapsed}
+      >
         <div className="absolute top-0 left-3 z-10 flex h-(--size-chrome-bar) items-center">
           <Button
             aria-label={isSidebarCollapsed ? 'Open Sessions sidebar' : 'Collapse Sessions sidebar'}
@@ -54,16 +63,15 @@ export function CockpitShell({ rail, sidebar, children }: CockpitShellProps) {
           id="cockpit-sidebar"
           collapsible
           collapsedSize={0}
-          defaultSize={COCKPIT_SIDEBAR_DEFAULT_WIDTH}
-          minSize={COCKPIT_SIDEBAR_MIN_WIDTH}
-          maxSize={COCKPIT_SIDEBAR_MAX_WIDTH}
+          defaultSize={sidebarDefaultWidth}
+          minSize={sidebarDefaultWidth}
+          maxSize={sidebarMaximumWidth}
           panelRef={sidebarPanelRef}
-          onResize={(size) => setIsSidebarCollapsed(size.inPixels === 0)}
         >
           <aside className="h-full overflow-hidden bg-sidebar">{sidebar}</aside>
         </ResizablePanel>
         <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
-        <ResizablePanel id="cockpit-content" minSize={360}>
+        <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
           <div className="relative h-full min-w-0 overflow-hidden bg-background">
             {children}
           </div>

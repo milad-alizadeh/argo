@@ -27,8 +27,34 @@ type Story = StoryObj<typeof SessionScreenView>
 
 export const Overview: Story = {}
 
-export const OverviewInteractions: Story = {
-  tags: ['!dev', '!autodocs'],
+export const SidebarInteractions: Story = {
+  tags: ['!autodocs'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const inspector = canvas.getByLabelText('Session inspector')
+    const initialInspectorRectangle = inspector.getBoundingClientRect()
+    const initialInspectorWidth = initialInspectorRectangle.width
+    const initialInspectorRight = initialInspectorRectangle.right
+    const inspectorMinimumWidth = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--size-session-inspector-min'),
+    )
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Sessions sidebar' }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open Sessions sidebar' })).toBeInTheDocument())
+    await expect(inspector.getBoundingClientRect().width).toBeCloseTo(
+      Math.max(initialInspectorWidth, inspectorMinimumWidth),
+      0,
+    )
+    await expect(inspector.getBoundingClientRect().right).toBeCloseTo(initialInspectorRight, 0)
+    await userEvent.click(canvas.getByRole('button', { name: 'Open Sessions sidebar' }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Collapse Sessions sidebar' })).toBeInTheDocument(),
+    )
+  },
+}
+
+export const InspectorInteractions: Story = {
+  tags: ['!autodocs'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const inspector = canvas.getByLabelText('Session inspector')
@@ -50,7 +76,13 @@ export const OverviewInteractions: Story = {
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument())
     await userEvent.click(canvas.getByRole('button', { name: 'Open Session inspector' }))
     await expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeInTheDocument()
+  },
+}
 
+export const WorkspaceInteractions: Story = {
+  tags: ['!autodocs'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
     const workspace = canvas.getByLabelText('Session feed').parentElement
     if (workspace === null) throw new Error('The Session workspace must render its feed boundary.')
 
@@ -63,11 +95,5 @@ export const OverviewInteractions: Story = {
         canvas.getByRole('button', { name: 'Expand Session sidebar' }),
       ).toBeInTheDocument(),
     )
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument())
-    await userEvent.click(canvas.getByRole('button', { name: 'Open Session inspector' }))
-    await expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeInTheDocument()
   },
 }

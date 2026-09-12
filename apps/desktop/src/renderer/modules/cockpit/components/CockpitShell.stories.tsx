@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { CockpitNavigationRail } from './CockpitNavigationRail'
 import { CockpitShell } from './CockpitShell'
@@ -30,9 +30,9 @@ const args = {
 
 export const SidebarControls: Story = { args }
 
-export const ShellInteractions: Story = {
+export const SidebarInteractions: Story = {
   args,
-  tags: ['!dev', '!autodocs'],
+  tags: ['!autodocs'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const sidebar = canvas.getByLabelText('Cockpit sidebar')
@@ -64,9 +64,17 @@ export const ShellInteractions: Story = {
     await expect(sidebar.getBoundingClientRect().width).toBe(0)
     await expect(canvas.getByLabelText('Main navigation')).toBeInTheDocument()
 
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open Sessions sidebar' })).toBeInTheDocument())
     await userEvent.click(canvas.getByRole('button', { name: 'Open Sessions sidebar' }))
     await expect(sidebar.getBoundingClientRect().width).toBe(initialSidebarWidth)
+  },
+}
 
+export const NavigationInteractions: Story = {
+  args,
+  tags: ['!autodocs'],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
     await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute('aria-current', 'page')
 

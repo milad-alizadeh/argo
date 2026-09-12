@@ -3,11 +3,8 @@ import { Expand, Minimize2, PanelRight } from 'lucide-react'
 import { usePanelRef } from 'react-resizable-panels'
 
 import { Button } from '../../../components/ui/button'
+import { sizeFromToken } from '../../../components/ui/size-from-token'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../../components/ui/resizable'
-
-function sizeFromToken(token: string) {
-  return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(token))
-}
 
 export function SessionScreenView() {
   const inspectorPanelRef = usePanelRef()
@@ -18,12 +15,16 @@ export function SessionScreenView() {
   const [inspectorCollapsed, setInspectorCollapsed] = useState(false)
   const [inspectorExpanded, setInspectorExpanded] = useState(false)
 
+  const synchronizeInspectorCollapsed = () => {
+    setInspectorCollapsed(inspectorPanelRef.current?.isCollapsed() ?? false)
+  }
+
   const toggleInspector = () => {
     if (inspectorCollapsed) {
       inspectorPanelRef.current?.expand()
       inspectorPanelRef.current?.resize(inspectorDefaultWidth)
     } else inspectorPanelRef.current?.collapse()
-    setInspectorCollapsed((isCollapsed) => !isCollapsed)
+    synchronizeInspectorCollapsed()
   }
 
   const toggleInspectorExpanded = () => {
@@ -54,7 +55,11 @@ export function SessionScreenView() {
           <PanelRight />
         </Button>
       </div>
-      <ResizablePanelGroup orientation="horizontal" className="h-full">
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="h-full"
+        onLayoutChanged={synchronizeInspectorCollapsed}
+      >
         <ResizablePanel
           id="session-workspace"
           panelRef={workspacePanelRef}
@@ -79,9 +84,9 @@ export function SessionScreenView() {
           collapsible
           collapsedSize={0}
           defaultSize={inspectorDefaultWidth}
+          groupResizeBehavior="preserve-pixel-size"
           minSize={inspectorMinWidth}
           panelRef={inspectorPanelRef}
-          onResize={(size) => setInspectorCollapsed(size.inPixels === 0)}
         >
           <aside aria-label="Session inspector" className="flex h-full min-h-0 flex-col bg-sidebar">
             <header className="h-(--size-chrome-bar) border-b border-border/60 bg-sidebar" />
