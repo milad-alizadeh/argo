@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 // Code, so one map serves both; a future harness that renames events overrides here.
 const EVENT_MAP = {
   'pre-tool': 'PreToolUse',
+  'post-tool': 'PostToolUse',
   'user-prompt-submit': 'UserPromptSubmit',
   'session-end': 'SessionEnd',
 }
