@@ -79,3 +79,26 @@ test('passes an error reply through as itself', async () => {
   }
   assert.deepEqual(await clientReturning(error).listSessions(listing), error)
 })
+
+test('starts a managed Claude Session through the named Session action', async () => {
+  const request = {
+    version: 1,
+    type: 'session.claude.start',
+    requestId: 'start-1',
+    cwd: '/projects/argo',
+    prompt: 'Inspect the failing test.',
+  }
+  const reply = {
+    version: 1,
+    type: 'session.claude.started',
+    requestId: 'start-1',
+    sessionId: 'managed-1',
+  }
+  const client = createSessionClient(async (operation, received) => {
+    assert.equal(operation, 'startClaude')
+    assert.deepEqual(received, request)
+    return reply
+  })
+
+  assert.deepEqual(await client.startClaudeSession(request), reply)
+})

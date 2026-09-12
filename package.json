@@ -45,5 +45,9 @@
     "fs-xattr",
     "macos-alias",
     "node-pty"
-  ]
+  ],
+  "dependencies": {
+    "@lexical/react": "^0.50.0",
+    "lexical": "^0.50.0"
+  }
 }

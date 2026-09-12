@@ -3,7 +3,9 @@
 // anything from outside: once, into a shape, before anything draws them.
 import { hasKeys, isIdentifier, isRecord } from '../../boundary'
 import {
+  isClaudeSessionStarted,
   isSessionError,
+  type ClaudeSessionStartReply,
   type SessionFeedReply,
   type SessionListReply,
   type SessionsListed,
@@ -79,4 +81,8 @@ export function isSessionFeedReply(value: unknown): value is SessionFeedReply {
     )
   }
   return value.type === 'session.error' && isSessionError(value)
+}
+
+export function isClaudeSessionStartReply(value: unknown): value is ClaudeSessionStartReply {
+  return isClaudeSessionStarted(value) || (isRecord(value) && isSessionError(value))
 }
