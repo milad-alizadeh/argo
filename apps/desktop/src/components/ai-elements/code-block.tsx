@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon } from 'lucide-react'
-import {
+import React, {
   type ComponentProps,
   type CSSProperties,
   createContext,
