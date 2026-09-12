@@ -141,7 +141,7 @@ describe('what turbo caches', () => {
   // the ROOT manifest — are invisible to the hash of the task that runs them. Without the root
   // `package.json` in `globalDependencies`, renaming a root script would be judged by a cache
   // entry that never saw the rename, and `bun run test` would report a pass for the old names.
-  // `.node-version` is here because every task shells through the version gate first, and
+  // `.node-version` is here because CI installs the Node every task runs on from it, and
   // `turbo.json` because the assertions in this very block read it: turbo folds in only the
   // running task's own resolved definition, so an edit to `tasks.dev` is otherwise unhashed.
   test('hashes the files that decide a task without being read by it', () => {
