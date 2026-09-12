@@ -13733,7 +13733,5 @@
     "node_modules/node-pty/prebuilds/darwin-x64/spawn-helper",
     "node_modules/node-pty/typings/node-pty.d.ts"
   ],
-  "extraResources": [
-    "electron.icns"
-  ]
+  "extraResources": ["electron.icns"]
 }
