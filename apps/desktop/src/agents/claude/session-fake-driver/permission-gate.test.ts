@@ -54,7 +54,7 @@ test('holds the request Claude writes to the shipped hook and answers the hook w
   hook.stdout.on('data', (chunk: string) => {
     output += chunk
   })
-  const exited = new Promise((resolve) => hook.once('exit', resolve))
+  const exited = new Promise((resolve) => hook.once('close', resolve))
   hook.stdin.end('{"tool_name":"Bash","tool_input":{"command":"bun test"}}\n')
 
   let permission = gate.pending(sessionId)
