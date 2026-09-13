@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router'
 import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
+import { Skeleton } from '../../../components/ui/skeleton'
 import { useSessions } from '../hooks/useSessions'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionId, SessionsListed } from '../types'
@@ -30,6 +31,19 @@ const rosterFailureHeadings: Record<ReturnType<typeof sessionFailureState>, stri
 
 function rosterFailureHeading(failure: SessionError) {
   return rosterFailureHeadings[sessionFailureState(failure)]
+}
+
+function RosterLoading() {
+  return (
+    <div aria-label="Reading Sessions" className="space-y-4 px-5 py-4" role="status">
+      {[0, 1, 2].map((index) => (
+        <div key={index}>
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="mt-2 h-3 w-1/3" />
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export type SessionsSidebarContentProps = {
@@ -117,11 +131,7 @@ export function SessionsSidebarContent({
           <AlertDescription>{rosterError.message}</AlertDescription>
         </Alert>
       ) : null}
-      {roster === null && rosterError === null ? (
-        <p className="p-4 text-sm text-muted-foreground" role="status">
-          Argo is reading this machine's Sessions.
-        </p>
-      ) : null}
+      {roster === null && rosterError === null ? <RosterLoading /> : null}
       {roster !== null && visible.length === 0 ? (
         <Empty className="flex-none border-0 px-4 py-8">
           <EmptyHeader>

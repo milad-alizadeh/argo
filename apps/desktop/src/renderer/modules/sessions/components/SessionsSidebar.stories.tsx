@@ -122,7 +122,14 @@ export const Discovered: Story = {
   },
 }
 
-export const Loading: Story = { args: { roster: null } }
+export const Loading: Story = {
+  args: { roster: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
+    await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(6)
+  },
+}
 export const Empty: Story = {
   args: { roster: { ...listed, sessions: [] } },
   play: async ({ canvasElement }) => {
