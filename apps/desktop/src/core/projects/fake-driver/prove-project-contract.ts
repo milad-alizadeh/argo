@@ -34,6 +34,7 @@ const SURFACE = [
   'decideClaudePermission',
   'getAppearance',
   'interruptClaudeSession',
+  'interruptCodexSession',
   'listProjects',
   'listSessions',
   'onAppearanceChanged',
@@ -44,8 +45,10 @@ const SURFACE = [
   'registerProject',
   'relocateProject',
   'sendClaudeSession',
+  'sendCodexSession',
   'setAppearance',
   'startClaudeSession',
+  'startCodexSession',
   'versions',
   'zoomFactor',
 ]
