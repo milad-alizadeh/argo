@@ -22,13 +22,15 @@ const toolCallSchema = z.strictObject({
   evidence: toolEvidenceSchema,
 })
 
+const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
+
 export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
-  toolCallSchema.extend({ shape: z.literal('tool') }),
+  toolRowSchema,
   z.strictObject({
     shape: z.literal('tool-group'),
     id: identifierSchema,
     label: z.string(),
-    calls: z.array(toolCallSchema),
+    calls: z.array(toolRowSchema),
   }),
   z.strictObject({
     shape: z.literal('prose'),

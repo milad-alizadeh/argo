@@ -153,6 +153,7 @@ const toolFeed = {
       label: 'Ran 1 command · Edited 1 file',
       calls: [
         {
+          shape: 'tool' as const,
           id: 'one',
           kind: 'command' as const,
           label: 'Ran bun test composer',
@@ -161,6 +162,7 @@ const toolFeed = {
           evidence: { kind: 'output' as const, title: 'bun test composer', source: '3 pass' },
         },
         {
+          shape: 'tool' as const,
           id: 'two',
           kind: 'edited' as const,
           label: 'Edited Composer.tsx',
