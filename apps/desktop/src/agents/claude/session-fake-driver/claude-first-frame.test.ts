@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { test } from 'node:test'
 
 import { createClaudeSessionDriver } from '../drive/claude-session-driver.ts'
 import { FIRST_FRAME_TIMEOUT_MS } from '../drive/first-frame.ts'
 import { createOwnershipLedger } from '../drive/ownership-ledger.ts'
+import type { ClaudePermissionGate } from '../drive/permission-gate.ts'
 import {
   ledgerFile,
   OPENING,
@@ -12,6 +16,19 @@ import {
   STARTED_AT,
   settle,
 } from './claude-driver-launch.ts'
+
+// A gate that never raises a Permission, for a test with nothing to say about Permission behavior.
+function fakePermissionGate(): ClaudePermissionGate {
+  return {
+    open: () => ({
+      hook: { event: 'PreToolUse', file: 'permission-hook.sh', script: '' },
+      close: () => {},
+    }),
+    pending: () => null,
+    decide: () => false,
+    close: () => {},
+  }
+}
 
 const FIRST_FRAME = '\u001b[?2026h\u001b[?25l> \u001b[?25h\u001b[?2026l'
 const turn = (prompt: string) => ({ prompt, setup: OPENING })
@@ -44,6 +61,8 @@ function fakeClaude(file: string) {
         exit = listener
       },
     }),
+    gate: fakePermissionGate(),
+    pluginRoot: mkdtempSync(path.join(os.tmpdir(), 'argo-claude-plugins-')),
   })
   const fire = (due: (delay: number) => boolean) => {
     const firing = timers.filter((timer) => due(timer.delay))
