@@ -21,7 +21,8 @@ async function connected(context: TestContext) {
   return cockpit
 }
 
-test('a Connection is accepted only after GitHub shows the Account the repository', async (context) => {
+// Beside the connectable repository: one the Account cannot see, and one with Issues turned off.
+async function withUnreadable(context: TestContext) {
   const cockpit = await connected(context)
   cockpit.github.addRepository({ fullName: 'octo/secret', visibleTo: [], issues: [] })
   cockpit.github.addRepository({
@@ -30,6 +31,11 @@ test('a Connection is accepted only after GitHub shows the Account the repositor
     issues: [],
     hasIssues: false,
   })
+  return cockpit
+}
+
+test('a Connection is accepted only after GitHub shows the Account the repository', async (context) => {
+  const cockpit = await withUnreadable(context)
   for (const [scope, code] of [
     ['octo/secret', 'repository-not-visible'],
     ['octo/quiet', 'issues-disabled'],
@@ -45,6 +51,25 @@ test('a Connection is accepted only after GitHub shows the Account the repositor
     scope: 'Octo/Hello',
     state: 'ready',
   })
+})
+
+test('an Account offers only the repositories it can see that source Tickets', async (context) => {
+  const cockpit = await withUnreadable(context)
+  cockpit.github.addRepository({ fullName: 'Hubot/Arm', visibleTo: [OCTOCAT.id], issues: [] })
+  const reply = await cockpit.ticket('ticket.discover', { accountId: ACCOUNT })
+  assert.equal(reply.type, 'ticket.discovered')
+  assert.deepEqual(reply.scopes, ['Hubot/Arm', 'Octo/Hello'])
+})
+
+test('an Account GitHub refuses offers no repositories and is marked revoked', async (context) => {
+  const cockpit = await connected(context)
+  cockpit.github.revoke('octocat')
+  assert.equal(
+    (await cockpit.ticket('ticket.discover', { accountId: ACCOUNT })).code,
+    'account-revoked',
+  )
+  const accounts = (await cockpit.account('account.list')).accounts as { state: string }[]
+  assert.equal(accounts[0]?.state, 'revoked')
 })
 
 test('a connected Project lists its open Tickets with hierarchy and dependencies, after a restart too', async (context) => {

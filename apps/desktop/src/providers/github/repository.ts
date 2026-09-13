@@ -3,7 +3,7 @@
 // apart (ADR-0018).
 import { isRecord } from '../../boundary'
 import type { GitHubEndpoints } from './endpoints'
-import { failed, type GitHubFailure, get } from './http'
+import { failed, type GitHubFailure, type GitHubRead, get, getAll } from './http'
 
 export type RepositoryCheck =
   | { ok: true; fullName: string }
@@ -32,4 +32,23 @@ export async function checkRepository(
   // same as one nobody has filed anything in.
   if (repository.has_issues !== true) return { ok: false, failure: 'issues-disabled' }
   return { ok: true, fullName: repository.full_name }
+}
+
+// Every repository the Account holds read access to, by owner, collaboration or organization,
+// in GitHub's `full_name` order. One with Issues off is left out: connecting it is refused.
+export async function listRepositories(
+  endpoints: GitHubEndpoints,
+  token: string,
+): Promise<GitHubRead<string[]>> {
+  const reply = await getAll(`${endpoints.api}/user/repos`, token)
+  if (!reply.ok) return reply
+  const scopes = reply.value.flatMap((repository) =>
+    isRecord(repository) &&
+    typeof repository.full_name === 'string' &&
+    isRepositoryScope(repository.full_name) &&
+    repository.has_issues === true
+      ? [repository.full_name]
+      : [],
+  )
+  return { ok: true, value: scopes }
 }

@@ -19,18 +19,22 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Field, FieldError, FieldGroup, FieldLabel } from '../../../components/ui/field'
-import { Input } from '../../../components/ui/input'
+import { Field, FieldGroup, FieldLabel } from '../../../components/ui/field'
 import { NativeSelect, NativeSelectOption } from '../../../components/ui/native-select'
 import type { ContractFailure } from '../../../lib/query-client'
+import { offered, type RepositoryDiscovery, RepositoryField } from './RepositoryField'
 
 export type ConnectTarget = { accountId: string; scope: string }
 
 export type ConnectRepositoryFormProps = {
   projectName: string
   accounts: readonly AccountSummary[]
+  // The connected Account whose repositories are offered, or null when none is connected.
+  accountId: string | null
+  repositories: RepositoryDiscovery
   pending: boolean
   error: ContractFailure | null
+  onSelectAccount: (accountId: string) => void
   onConnectRepository: (target: ConnectTarget) => void
   onConnectAccount: () => void
 }
@@ -58,29 +62,25 @@ function NoAccount({ onConnectAccount }: { onConnectAccount: () => void }) {
 export function ConnectRepositoryForm({
   projectName,
   accounts,
+  accountId,
+  repositories,
   pending,
   error,
+  onSelectAccount,
   onConnectRepository,
   onConnectAccount,
 }: ConnectRepositoryFormProps) {
-  const connected = accounts.filter((account) => account.state === 'connected')
-  const [accountId, setAccountId] = useState(connected[0]?.id ?? '')
-  const [scope, setScope] = useState('')
+  const [scope, setScope] = useState<string | null>(null)
   const [missingScope, setMissingScope] = useState(false)
-  if (connected.length === 0) return <NoAccount onConnectAccount={onConnectAccount} />
-  const chosen = connected.some((account) => account.id === accountId)
-    ? accountId
-    : connected[0]?.id
+  const connected = accounts.filter((account) => account.state === 'connected')
+  const chosen = connected.find((account) => account.id === accountId)
+  if (!chosen) return <NoAccount onConnectAccount={onConnectAccount} />
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const trimmedScope = scope.trim()
-    if (trimmedScope === '') {
-      setMissingScope(true)
-      return
-    }
-    setMissingScope(false)
-    if (chosen) onConnectRepository({ accountId: chosen, scope: trimmedScope })
+    setMissingScope(scope === null)
+    if (scope !== null) onConnectRepository({ accountId: chosen.id, scope })
   }
+  const problem = error?.message ?? (missingScope ? 'Choose a repository.' : null)
   return (
     <div className="grid h-full place-items-center p-(--spacing-shell-region)">
       <Card className="w-full max-w-md">
@@ -100,8 +100,11 @@ export function ConnectRepositoryForm({
                 <NativeSelect
                   className="w-full"
                   id="connect-account"
-                  onChange={(event) => setAccountId(event.target.value)}
-                  value={chosen}
+                  onChange={(event) => {
+                    setScope(null)
+                    onSelectAccount(event.target.value)
+                  }}
+                  value={chosen.id}
                 >
                   {connected.map((account) => (
                     <NativeSelectOption key={account.id} value={account.id}>
@@ -110,31 +113,21 @@ export function ConnectRepositoryForm({
                   ))}
                 </NativeSelect>
               </Field>
-              <Field data-invalid={error || missingScope ? true : undefined}>
-                <FieldLabel htmlFor="connect-scope">Repository</FieldLabel>
-                <Input
-                  aria-describedby={error || missingScope ? 'connect-scope-error' : undefined}
-                  aria-invalid={error || missingScope ? true : undefined}
-                  autoComplete="off"
-                  id="connect-scope"
-                  onChange={(event) => {
-                    setScope(event.target.value)
-                    if (missingScope) setMissingScope(false)
-                  }}
-                  placeholder="owner/name"
-                  spellCheck={false}
-                  value={scope}
-                />
-                {error || missingScope ? (
-                  <FieldError id="connect-scope-error">
-                    {error?.message ?? 'Enter the GitHub repository as owner/name.'}
-                  </FieldError>
-                ) : null}
-              </Field>
+              <RepositoryField
+                login={chosen.login}
+                onChange={(next) => {
+                  setScope(next)
+                  setMissingScope(false)
+                }}
+                pending={pending}
+                problem={problem}
+                repositories={repositories}
+                scope={scope}
+              />
             </FieldGroup>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button disabled={pending} type="submit">
+            <Button disabled={pending || offered(repositories).length === 0} type="submit">
               {pending ? 'Checking the repository…' : 'Connect repository'}
             </Button>
           </CardFooter>
