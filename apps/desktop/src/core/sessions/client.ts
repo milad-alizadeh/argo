@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import {
   type ClaudeSessionInterruptReply,
   type ClaudeSessionPermissionDecisionReply,
@@ -33,12 +34,15 @@ export type SessionClient = {
 }
 
 type Invoke = (operation: keyof typeof SESSION_OPERATIONS, request: unknown) => Promise<unknown>
+type ReplySchema<Reply> = {
+  safeParse(value: unknown, options?: { jitless?: boolean }): { success: boolean; data?: Reply }
+}
 
 // A reply that is not the shape asked for, or answers a different request, is refused rather
 // than drawn. `connection-lost` is the one failure the renderer cannot see any other way.
 async function ask<Reply>(
   invoke: () => Promise<unknown>,
-  schema: { safeParse(value: unknown): { success: boolean; data?: Reply } },
+  schema: ReplySchema<Reply>,
   requestId: string | null,
 ) {
   let reply: unknown
@@ -47,7 +51,7 @@ async function ask<Reply>(
   } catch {
     return sessionError('connection-lost', requestId)
   }
-  const parsed = schema.safeParse(reply)
+  const parsed = schema.safeParse(reply, { jitless: true })
   if (!parsed.success) return sessionError('invalid-response', requestId)
   return parsed.data as Reply
 }
@@ -73,7 +77,7 @@ export function createSessionClient(invoke: Invoke): SessionClient {
     ),
     listSessions: () => clientRequest(invoke, 'list', sessionListReplySchema)(undefined),
     async readSessionFeed(request) {
-      const requestId = crypto.randomUUID()
+      const requestId = randomUUID()
       const message = { ...request, version: 1, type: SESSION_OPERATIONS.feed.name, requestId }
       const reply = await ask(() => invoke('feed', message), sessionFeedReplySchema, requestId)
       if (!answersRequest(reply, requestId)) return sessionError('invalid-response', requestId)
@@ -90,10 +94,10 @@ export function createSessionClient(invoke: Invoke): SessionClient {
 function clientRequest<Request, Reply extends { requestId: string | null }>(
   invoke: Invoke,
   operation: Parameters<Invoke>[0],
-  schema: { safeParse(value: unknown): { success: boolean; data?: Reply } },
+  schema: ReplySchema<Reply>,
 ) {
   return async (request: Request) => {
-    const requestId = crypto.randomUUID()
+    const requestId = randomUUID()
     const message = { ...request, version: 1, type: SESSION_OPERATIONS[operation].name, requestId }
     const reply = await ask(() => invoke(operation, message), schema, requestId)
     return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
