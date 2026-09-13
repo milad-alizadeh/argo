@@ -9,6 +9,9 @@ import {
   type ClaudeSessionStarter,
   startClaudeSession,
 } from '../../agents/claude/drive/start-session'
+import type { CodexSessionDriver } from '../../agents/codex/drive/codex-session-driver'
+import { driveCodexSession } from '../../agents/codex/drive/drive-session'
+import { type CodexSessionStarter, startCodexSession } from '../../agents/codex/drive/start-session'
 import { requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 import { sessionError } from './contract'
@@ -25,6 +28,8 @@ export function attachSessionBridge(
   window: BrowserWindow,
   storage: {
     driver: ClaudeSessionDriver
+    codexDriver: CodexSessionDriver
+    codexStarter: CodexSessionStarter
     reader: SessionReader
     starter: ClaudeSessionStarter
     rendererURL: string
@@ -46,6 +51,9 @@ export function attachSessionBridge(
     interruptClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
     readClaudePermission: (request: unknown) => readClaudePermission(request, storage.driver),
     decideClaudePermission: (request: unknown) => decideClaudePermission(request, storage.driver),
+    startCodex: (request: unknown) => startCodexSession(request, storage.codexStarter),
+    sendCodex: (request: unknown) => driveCodexSession(request, storage.codexDriver),
+    interruptCodex: (request: unknown) => driveCodexSession(request, storage.codexDriver),
   } satisfies Record<
     keyof typeof SESSION_OPERATIONS,
     (request: unknown) => Promise<unknown> | unknown
