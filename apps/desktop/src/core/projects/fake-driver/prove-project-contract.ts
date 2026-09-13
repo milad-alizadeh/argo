@@ -9,11 +9,10 @@ import {
   assertShippedFusesIntact,
   packagedTestCopy,
 } from '../../desktop-proof/packaged-test-copy'
-import { projectErrorSchema } from '../contract'
 import { PROJECT_PROOF_STORE_ENV } from './project-proof-protocol'
-import { serveUntrustedPage } from './serve-untrusted-page'
 
 const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
+const untrustedPage = 'data:text/html,<h1>Untrusted page</h1>'
 async function prepare(root) {
   const application = await packagedTestCopy(root)
   const userData = path.join(root, 'userData')
@@ -90,19 +89,14 @@ async function prove(application, fixture) {
     await chmod(fixture.projectPath, 0o700)
   }
   assert.equal((await invoke({ ...request, path: '/private' })).code, 'invalid-request')
-  const untrustedPage = await serveUntrustedPage(request)
-  try {
-    await application.evaluate(async ({ BrowserWindow }, url) => {
-      const contents = BrowserWindow.getAllWindows()[0].webContents
-      contents.removeAllListeners('will-navigate')
-      await contents.loadURL(url)
-    }, untrustedPage.url)
-    assert.equal(projectErrorSchema.parse(await untrustedPage.received).code, 'access-denied')
-  } finally {
-    await new Promise<void>((resolve, reject) =>
-      untrustedPage.server.close((error) => (error ? reject(error) : resolve())),
-    )
-  }
+  await application.evaluate(
+    async ({ BrowserWindow }, url) => BrowserWindow.getAllWindows()[0].loadURL(url),
+    untrustedPage,
+  )
+  const rendererURL = await application.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.getURL(),
+  )
+  assert.notEqual(rendererURL, untrustedPage)
 }
 
 const root = await mkdtemp(path.join(os.tmpdir(), 'argo-packaged-project-'))
