@@ -13,6 +13,39 @@ import { UsagePopover } from './UsagePopover'
 const CONTEXT_CAPACITY_TOKENS = 200_000
 const WORKING_TARGET_PERCENTAGE = 20
 
+function ContextMeter({ contextAlert, percentage }: { contextAlert: boolean; percentage: number }) {
+  const description = contextAlert
+    ? 'Dumb zone. Context is crowded and performance may degrade.'
+    : 'Context has capacity. Performance should remain stable.'
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span className="relative hidden min-w-28 flex-1 @[40rem]:block">
+              <button
+                aria-label={description}
+                className="relative block h-2 w-full overflow-hidden rounded-full bg-muted"
+                type="button"
+              >
+                <span
+                  className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`}
+                  style={{ width: `${percentage}%` }}
+                />
+                <span
+                  className="absolute inset-y-[-2px] w-0.5 bg-foreground"
+                  style={{ left: `${WORKING_TARGET_PERCENTAGE}%` }}
+                />
+              </button>
+            </span>
+          }
+        />
+        <TooltipContent>{description}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
 export function SessionContextBar({
   contextTokens,
   harness,
@@ -49,31 +82,7 @@ export function SessionContextBar({
         <Layers3 className="size-(--size-icon-inline)" />
         Context
       </div>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <span className="relative hidden min-w-28 flex-1 @[40rem]:block">
-                <span className="block h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <span
-                    className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                  <span
-                    className="absolute inset-y-[-2px] w-0.5 bg-foreground"
-                    style={{ left: `${WORKING_TARGET_PERCENTAGE}%` }}
-                  />
-                </span>
-              </span>
-            }
-          />
-          <TooltipContent>
-            {contextAlert
-              ? 'Dumb zone. Context is crowded and performance may degrade.'
-              : 'Context has capacity. Performance should remain stable.'}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <ContextMeter contextAlert={contextAlert} percentage={percentage} />
       <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
         <span className="font-medium text-foreground">{usedTokenSummary}</span>
         <span className="text-muted-foreground"> / 200k</span>
