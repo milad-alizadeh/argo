@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import { FeedCode } from './FeedCode'
 import { FEED_CARD_RADIUS_CLASS } from './feedSurface'
+import { mermaidThemeVariables } from './mermaidTheme'
 
 // `useAppearance` puts `.dark` on the root element; a diagram redraws when it changes.
 function subscribeToAppearance(onChange: () => void) {
@@ -20,8 +21,11 @@ async function drawDiagram(id: string, source: string, dark: boolean) {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
-    theme: dark ? 'dark' : 'default',
-    fontFamily: getComputedStyle(document.body).fontFamily,
+    theme: 'base',
+    look: 'neo',
+    themeVariables: mermaidThemeVariables(dark),
+    // A `[box]` node is a bare rect, which the theme's radius never reaches.
+    themeCSS: '.node rect { rx: 6px; ry: 6px; }',
   })
   if (!(await mermaid.parse(source, { suppressErrors: true }))) return null
   return (await mermaid.render(id, source)).svg
