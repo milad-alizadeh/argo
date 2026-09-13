@@ -1,6 +1,7 @@
 import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
+import { Button } from '../../../components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -8,7 +9,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
-import { Button } from '../../../components/ui/button'
 import { Spinner } from '../../../components/ui/spinner'
 import { type Backlog, backlogRows, count } from '../lib/backlog'
 import { TicketRow } from './TicketRow'
@@ -47,18 +47,25 @@ function NextPage({ backlog }: { backlog: Backlog }) {
     return () => observer.disconnect()
   }, [hasMore, loadingMore, loadMoreError])
   if (!hasMore) return null
-  return (
-    <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
-      {loadMoreError ? (
-        <div aria-live="polite" className="flex items-center gap-(--spacing-shell-item) type-meta" role="alert">
+  if (loadMoreError) {
+    return (
+      <li className="flex justify-center py-(--spacing-shell-item)">
+        <div
+          aria-live="polite"
+          className="flex items-center gap-(--spacing-shell-item) type-meta"
+          role="alert"
+        >
           <span>{loadMoreError}</span>
           <Button onClick={onRetryLoadMore} size="xs" variant="outline">
             Try again
           </Button>
         </div>
-      ) : loadingMore ? (
-        <Spinner aria-label="Reading more Tickets" className="text-faint" />
-      ) : null}
+      </li>
+    )
+  }
+  return (
+    <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
+      {loadingMore ? <Spinner aria-label="Reading more Tickets" className="text-faint" /> : null}
     </li>
   )
 }
