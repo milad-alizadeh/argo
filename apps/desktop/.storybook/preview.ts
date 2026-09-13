@@ -1,7 +1,11 @@
 import type { Preview } from '@storybook/react'
+import { createElement } from 'react'
 
 import '../src/renderer/i18n/config'
+import { AppQueryProvider } from '../src/renderer/app-query-provider'
 import '../src/renderer/styles/globals.css'
+import { subscribeToStorybookCommands } from './storybook-commands'
+import { storybookProjectBridge } from './storybook-projects'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
@@ -33,7 +37,7 @@ host.argo = {
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
-  onCommand: () => () => {},
+  onCommand: subscribeToStorybookCommands,
   listSessions: () =>
     Promise.resolve({
       version: 1,
@@ -56,35 +60,15 @@ host.argo = {
         { shape: 'prose', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
       ],
     }),
-  listProjects: () =>
+  readClaudePermission: (request: { requestId: string; sessionId: string }) =>
     Promise.resolve({
       version: 1,
-      type: 'project.listed',
-      requestId: 'storybook-projects',
-      projects: [
-        { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
-        { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
-      ],
-      selectedId: 'storybook-project',
+      type: 'session.claude.permission.read',
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      permission: null,
     }),
-  openProject: () =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.opened',
-      requestId: 'storybook-project',
-      project: { id: 'storybook-project', name: 'argo' },
-    }),
-  registerProject: () =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.listed',
-      requestId: 'storybook-projects',
-      projects: [
-        { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
-        { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
-      ],
-      selectedId: 'storybook-project',
-    }),
+  ...storybookProjectBridge,
   zoomFactor: () => 1,
 }
 
@@ -98,7 +82,7 @@ const preview: Preview = {
       }
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-      return Story()
+      return createElement(AppQueryProvider, null, Story())
     },
   ],
   globalTypes: {

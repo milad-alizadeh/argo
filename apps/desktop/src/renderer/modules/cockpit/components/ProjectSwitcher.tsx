@@ -1,5 +1,6 @@
 import { Check, ChevronDown, FolderGit2, Plus } from 'lucide-react'
 
+import { REGISTER_PROJECT_COMMAND } from '@/core/commands/shortcuts'
 import { Button } from '../../../components/ui/button'
 import {
   DropdownMenu,
@@ -11,9 +12,13 @@ import {
   DropdownMenuTrigger,
 } from '../../../components/ui/dropdown-menu'
 import { useProjects } from '../../projects/hooks/useProjects'
+import { useCommands } from '../hooks/useCommands'
 
 export function ProjectSwitcher() {
   const [cockpit, actions] = useProjects()
+  useCommands((command) => {
+    if (command === REGISTER_PROJECT_COMMAND) actions.open()
+  })
   const projectName = cockpit.project?.name ?? 'Select project'
 
   return (
