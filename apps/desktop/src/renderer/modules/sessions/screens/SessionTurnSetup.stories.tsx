@@ -137,7 +137,20 @@ export const RefusedChoiceReverts: Story = {
       { timeout: 3000 },
     )
     await expect(trigger).toHaveTextContent('Claude Code·Opus 5·High')
+    await expectSameWidthAsComposer(canvasElement)
   },
+}
+
+// The message spans exactly the composer card's content column, never wider.
+async function expectSameWidthAsComposer(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const alert = canvas.getByRole('alert').getBoundingClientRect()
+  const form = canvas.getByLabelText('Message').closest('form')
+  if (form === null) throw new Error('The composer has no form.')
+  const style = getComputedStyle(form)
+  const box = form.getBoundingClientRect()
+  await expect(alert.left).toBeCloseTo(box.left + Number.parseFloat(style.paddingLeft))
+  await expect(alert.right).toBeCloseTo(box.right - Number.parseFloat(style.paddingRight))
 }
 
 const accepted = withBridge({ model: 'claude-opus-5', effort: 'max', mode: 'default' })

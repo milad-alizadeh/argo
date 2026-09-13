@@ -2,6 +2,7 @@ import type { SessionRosterRow } from '@/core/sessions/models'
 import { Alert, AlertDescription } from '../../../components/ui/alert'
 import type { HarnessControl } from '../harness/harnesses'
 import { ClaudePermissionPrompt } from './ClaudePermissionPrompt'
+import { COMPOSER_COLUMN } from './ComposerForm'
 import { SessionComposer } from './SessionComposer'
 
 type SessionScreenDetailsProps = {
@@ -49,9 +50,11 @@ export function SessionFacts({ session }: Pick<SessionScreenDetailsProps, 'sessi
 
 function Failure({ message }: { message: string }) {
   return (
-    <Alert className="mx-auto mt-3 max-w-4xl" variant="destructive">
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
+    <div className={`${COMPOSER_COLUMN} mt-3`}>
+      <Alert variant="destructive">
+        <AlertDescription>{message}</AlertDescription>
+      </Alert>
+    </div>
   )
 }
 

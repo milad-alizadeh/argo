@@ -12,6 +12,10 @@ import { ComposerEditor } from './SessionComposerEditor'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
+// The column the composer card sits in; a message about the composer shares it, so it is never wider.
+export const COMPOSER_COLUMN =
+  'mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter)'
+
 export function ComposerForm({
   draft,
   editorRef,
@@ -45,7 +49,7 @@ export function ComposerForm({
 }) {
   return (
     <form
-      className="mx-auto w-full max-w-(--size-session-column) px-(--spacing-shell-gutter) pt-(--spacing-shell-section) pb-(--spacing-shell-region)"
+      className={`${COMPOSER_COLUMN} pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
