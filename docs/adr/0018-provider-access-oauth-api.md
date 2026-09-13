@@ -6,7 +6,22 @@ Status: accepted (#182) · 2026-07-22 · GitHub's grant settled (#367) · 2026-0
 > and the **Work Item provider** port is the **Ticket provider**. The wording here is left as it
 > was written; `docs/domain/rationale.md` → L1 carries why the word changed.
 **amended: a provider has N accounts** (#414) · 2026-08-10 · Linear's grant settled (#371) ·
-2026-08-28
+2026-08-28 · Linear's refresh built (#1849) · 2026-09-13
+
+> **Linear's refresh is built** (#1849), and it replaces the "Refresh itself is not built"
+> sentence in the amendment below. #1849 makes refresh a requirement, so the trigger that
+> amendment names is no longer the gate.
+>
+> Main renews a Linear grant before a read when the grant is within 5 minutes of its expiry.
+> If Linear refuses an access token before its expiry, main renews the grant one time and
+> tries the read again. Linear rotates the refresh token on each renewal, and main stores the
+> new pair through `safeStorage`. The renderer never receives either token.
+>
+> A renewal that Linear refuses marks only that Account as expired. Every Connection that
+> names the Account shows `account-expired`, and other Accounts stay connected. A person
+> reconnects the Account to continue. A revocation in Linear also reads as expired, because
+> Argo cannot tell a refused renewal from a revoked grant. If Argo cannot reach Linear, or
+> Linear limits the requests, the Account stays connected and the read fails with that reason.
 
 > **Linear's grant is authorization code + PKCE with a loopback redirect** — the second of the
 > two options the Decision below leaves per-provider, and it is *not* GitHub's. Linear serves no

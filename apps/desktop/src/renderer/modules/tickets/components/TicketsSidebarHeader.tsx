@@ -1,5 +1,5 @@
 import { Plus, Search, X } from 'lucide-react'
-import { TICKET_QUERY_LIMIT } from '@/core/tickets/contract'
+import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/core/tickets/contract'
 import { Button } from '../../../components/ui/button'
 import {
   InputGroup,
@@ -7,10 +7,10 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from '../../../components/ui/input-group'
-import { newTicketURL } from '../lib/github-links'
+import { SOURCE_PRESENTATION } from '../lib/sources'
 import { useTicketSearch } from '../state/useTicketSearch'
 
-// GitHub answers the search, so the field only holds the words; the backlog reads the settled query.
+// The provider answers the search, so the field only holds the words; the backlog reads the settled query.
 function TicketSearchField() {
   const { query, setOpen, setQuery } = useTicketSearch()
   return (
@@ -43,29 +43,39 @@ function TicketSearchField() {
   )
 }
 
-// A new Ticket is written on GitHub until Argo can write one (#1850).
-export function TicketsSidebarHeader({ scope }: { scope: string | null }) {
+// A new Ticket is written on the provider's own page until Argo can write one (#1850, #1851).
+function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
+  const page = connection && SOURCE_PRESENTATION[connection.provider].newTicketURL
+  if (!connection) {
+    return (
+      <Button aria-label="New Ticket" disabled size="icon-sm" variant="ghost">
+        <Plus />
+      </Button>
+    )
+  }
+  if (!page) return null
+  return (
+    <Button
+      aria-label="New Ticket"
+      nativeButton={false}
+      render={<a href={page(connection.scope)} rel="noreferrer" target="_blank" />}
+      size="icon-sm"
+      variant="ghost"
+    >
+      <Plus />
+    </Button>
+  )
+}
+
+export function TicketsSidebarHeader({ connection }: { connection: ConnectionSummary | null }) {
   const { open, setOpen } = useTicketSearch()
+  const scope = connection?.scope ?? null
   return (
     <>
       <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-inset)">
         <h2 className="type-heading flex-1">Tickets</h2>
         <div className="flex items-center gap-(--spacing-shell-tight)">
-          {scope === null ? (
-            <Button aria-label="New Ticket" disabled size="icon-sm" variant="ghost">
-              <Plus />
-            </Button>
-          ) : (
-            <Button
-              aria-label="New Ticket"
-              nativeButton={false}
-              render={<a href={newTicketURL(scope)} rel="noreferrer" target="_blank" />}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <Plus />
-            </Button>
-          )}
+          <NewTicket connection={connection} />
           <Button
             aria-label="Find a Ticket"
             aria-pressed={open}

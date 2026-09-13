@@ -15,14 +15,10 @@ import type {
   TicketConnected,
   TicketConnectedReply,
   TicketListed,
+  TicketScope,
 } from '@/core/tickets/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '../../../lib/query-client'
-import {
-  connectRepositoryRequest,
-  discoverRequest,
-  listRequest,
-  projectRequest,
-} from '../lib/requests'
+import { connectSourceRequest, discoverRequest, listRequest, projectRequest } from '../lib/requests'
 
 const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
 // The prefix without a query names every listing of the Project, searches included.
@@ -31,11 +27,11 @@ const listKey = (projectId: string | null, query?: string) =>
     ? [...QUERY_KEYS.tickets, projectId, 'list']
     : [...QUERY_KEYS.tickets, projectId, 'list', query]
 
-export type TicketPages = InfiniteData<TicketListed, number>
+export type TicketPages = InfiniteData<TicketListed, string | null>
 
-// A refused or unreadable grant is an Account fact, so the Account listing and this Connection's
+// An expired, refused or unreadable grant is an Account fact, so the Account listing and this Connection's
 // summary are both stale.
-const ACCOUNT_FAILURES = new Set(['account-revoked', 'grant-unreadable'])
+const ACCOUNT_FAILURES = new Set(['account-expired', 'account-revoked', 'grant-unreadable'])
 
 function onRefused(client: QueryClient, projectId: string, failure: ContractFailure): void {
   if (!ACCOUNT_FAILURES.has(failure.code)) return
@@ -63,7 +59,7 @@ export function useTicketList(
 ) {
   const client = useQueryClient()
   const ready = projectId !== null && connection?.state === 'ready'
-  return useInfiniteQuery<TicketListed, ContractFailure, TicketPages, QueryKey, number>({
+  return useInfiniteQuery<TicketListed, ContractFailure, TicketPages, QueryKey, string | null>({
     queryKey: listKey(projectId, query),
     queryFn: ready
       ? ({ pageParam }) =>
@@ -74,21 +70,21 @@ export function useTicketList(
             },
           )
       : skipToken,
-    initialPageParam: 1,
-    getNextPageParam: (last) => last.nextPage ?? undefined,
+    initialPageParam: null,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
     placeholderData: keepPreviousData,
   })
 }
 
-// The repositories an Account could connect this Project to, read only while the form is open.
-export function useRepositories(projectId: string | null, accountId: string | null) {
+// The sources an Account could connect this Project to, read only while the form is open.
+export function useSources(projectId: string | null, accountId: string | null) {
   const client = useQueryClient()
-  return useQuery<string[], ContractFailure>({
-    queryKey: [...QUERY_KEYS.tickets, projectId, 'repositories', accountId],
+  return useQuery<TicketScope[], ContractFailure>({
+    queryKey: [...QUERY_KEYS.tickets, projectId, 'sources', accountId],
     queryFn:
       projectId && accountId
         ? () =>
-            settle(window.argo.discoverRepositories(discoverRequest(projectId, accountId))).then(
+            settle(window.argo.discoverSources(discoverRequest(projectId, accountId))).then(
               (reply) => reply.scopes,
               (failure: ContractFailure) => {
                 onRefused(client, projectId, failure)
@@ -117,12 +113,12 @@ function useConnectionAction<Input extends { projectId: string }>(
 
 export type ConnectInput = { projectId: string; accountId: string; scope: string }
 
-export const useConnectRepository = () =>
+export const useConnectSource = () =>
   useConnectionAction(({ projectId, ...target }: ConnectInput) =>
-    window.argo.connectRepository(connectRepositoryRequest(projectId, target)),
+    window.argo.connectSource(connectSourceRequest(projectId, target)),
   )
 
-export const useDisconnectRepository = () =>
+export const useDisconnectSource = () =>
   useConnectionAction(({ projectId }: { projectId: string }) =>
-    window.argo.disconnectRepository(projectRequest('ticket.disconnect', projectId)),
+    window.argo.disconnectSource(projectRequest('ticket.disconnect', projectId)),
   )

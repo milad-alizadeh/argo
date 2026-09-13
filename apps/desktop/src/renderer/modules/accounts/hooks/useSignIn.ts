@@ -1,20 +1,22 @@
-// One GitHub device-flow sign-in as the screen sees it: ask for a code, show it, open GitHub when
-// the person asks, and wait for the grant. The device code and the grant stay in the main process.
+// One sign-in as the screen sees it: GitHub's device code shown and entered on GitHub, or Linear's
+// consent page opened in the browser, then the wait for the grant. The grant stays in main.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { AccountChallenge, AccountConnected } from '@/core/accounts/contract'
+import type { AccountChallenge, AccountConnected, Provider } from '@/core/accounts/contract'
 import { type ContractFailure, settle } from '../../../lib/query-client'
 import { accountAction } from '../lib/requests'
 import { storeListing } from './useAccounts'
 
-export type SignInPhase = 'idle' | 'requesting' | 'code' | 'connected'
+export type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'
 
 export type SignIn = {
   phase: SignInPhase
+  // The provider being signed in to, while a sign-in is asked for or waited on.
+  provider: Provider | null
   challenge: AccountChallenge | null
   connected: AccountConnected | null
   error: ContractFailure | null
-  start: () => void
-  openGitHub: () => void
+  start: (provider: Provider) => void
+  openProvider: () => void
   cancel: () => void
 }
 
@@ -24,12 +26,17 @@ export function useSignIn(): SignIn {
     mutationFn: () => settle(window.argo.awaitAccount(accountAction('account.await'))),
     onSuccess: (reply) => storeListing(client, reply),
   })
-  const connect = useMutation<AccountChallenge, ContractFailure>({
-    mutationFn: () => settle(window.argo.connectAccount(accountAction('account.connect'))),
-    onSuccess: () => wait.mutate(),
-  })
   const verify = useMutation<AccountChallenge, ContractFailure>({
     mutationFn: () => settle(window.argo.verifyAccount(accountAction('account.verify'))),
+  })
+  // Linear has no code to show first, so its consent page opens as soon as it is asked for.
+  const connect = useMutation<AccountChallenge, ContractFailure, Provider>({
+    mutationFn: (provider) =>
+      settle(window.argo.connectAccount({ ...accountAction('account.connect'), provider })),
+    onSuccess: (challenge) => {
+      wait.mutate()
+      if (challenge.provider === 'linear') verify.mutate()
+    },
   })
   // A reset observer ignores the abandoned wait's late `sign-in-cancelled` reply.
   const clear = () => {
@@ -41,22 +48,25 @@ export function useSignIn(): SignIn {
 
   function phase(): SignInPhase {
     if (connect.isPending) return 'requesting'
-    if (challenge) return 'code'
+    if (challenge) return 'waiting'
     return wait.isSuccess ? 'connected' : 'idle'
   }
 
   return {
     phase: phase(),
+    provider: connect.isPending || challenge ? (connect.variables ?? null) : null,
     challenge,
     connected: wait.data ?? null,
     error: connect.error ?? wait.error ?? verify.error ?? null,
-    start: () => {
+    start: (provider) => {
       clear()
-      connect.mutate()
+      connect.mutate(provider)
     },
     // A clipboard that refuses leaves the code on screen, which is all the person needs.
-    openGitHub: () => {
-      if (challenge) void navigator.clipboard.writeText(challenge.userCode).catch(() => undefined)
+    openProvider: () => {
+      if (challenge?.provider === 'github') {
+        void navigator.clipboard.writeText(challenge.userCode).catch(() => undefined)
+      }
       verify.mutate()
     },
     cancel: () => {

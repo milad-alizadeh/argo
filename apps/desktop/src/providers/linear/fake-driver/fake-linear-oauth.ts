@@ -1,0 +1,86 @@
+// Linear's OAuth as the fake answers it: a consent page that sends the browser back to the loopback,
+// and a token endpoint that checks the PKCE verifier and rotates the refresh token on every renewal.
+import { createHash } from 'node:crypto'
+import type { FakeLinearUser } from './fake-linear'
+import { bodyOf, type FakeLinearState, type Route, reply } from './fake-linear-state'
+
+function redirect(response: Parameters<Route>[2], target: URL) {
+  response.writeHead(302, { Location: target.href })
+  response.end()
+}
+
+export const authorize: Route = (state, request, response) => {
+  const url = new URL(request.url ?? '/', state.origin)
+  const params = url.searchParams
+  const redirectUri = params.get('redirect_uri') ?? ''
+  const challenge = params.get('code_challenge') ?? ''
+  if (
+    !URL.canParse(redirectUri) ||
+    !params.get('client_id') ||
+    params.get('response_type') !== 'code' ||
+    params.get('code_challenge_method') !== 'S256' ||
+    challenge === ''
+  ) {
+    return reply(response, 400, { error: 'invalid_request' })
+  }
+  const answer = state.signIn
+  if (answer === 'held') {
+    response.writeHead(200, { 'Content-Type': 'text/html' })
+    return response.end('<h1>Authorize Argo</h1>')
+  }
+  const target = new URL(redirectUri)
+  target.searchParams.set('state', params.get('state') ?? '')
+  if (answer === 'declined') {
+    target.searchParams.set('error', 'access_denied')
+    return redirect(response, target)
+  }
+  state.serial += 1
+  const code = `code-${state.serial}`
+  state.codes.set(code, { user: answer, challenge, redirectUri })
+  target.searchParams.set('code', code)
+  redirect(response, target)
+}
+
+function issue(state: FakeLinearState, user: FakeLinearUser, response: Parameters<Route>[2]) {
+  state.serial += 1
+  const accessToken = `linear-access-${state.serial}`
+  const refreshToken = `linear-refresh-${state.serial}`
+  state.access.set(accessToken, { user, expiresAt: Date.now() + state.lifetime * 1000 })
+  state.refresh.set(refreshToken, { user })
+  reply(response, 200, {
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: state.lifetime,
+    scope: 'read write',
+    refresh_token: refreshToken,
+  })
+}
+
+const refused = (response: Parameters<Route>[2]) =>
+  reply(response, 400, { error: 'invalid_grant', error_description: 'Refused' })
+
+const verifies = (verifier: string, challenge: string) =>
+  createHash('sha256').update(verifier).digest('base64url') === challenge
+
+export const token: Route = async (state, request, response) => {
+  if (state.outage === 'down') return reply(response, 503, { error: 'unavailable' })
+  const form = new URLSearchParams(await bodyOf(request))
+  if (!form.get('client_id')) return refused(response)
+  if (form.get('grant_type') === 'refresh_token') {
+    const presented = form.get('refresh_token') ?? ''
+    const grant = state.refresh.get(presented)
+    state.refresh.delete(presented)
+    return grant ? issue(state, grant.user, response) : refused(response)
+  }
+  const code = state.codes.get(form.get('code') ?? '')
+  state.codes.delete(form.get('code') ?? '')
+  if (
+    form.get('grant_type') !== 'authorization_code' ||
+    !code ||
+    code.redirectUri !== form.get('redirect_uri') ||
+    !verifies(form.get('code_verifier') ?? '', code.challenge)
+  ) {
+    return refused(response)
+  }
+  issue(state, code.user, response)
+}

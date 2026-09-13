@@ -2,6 +2,7 @@
 // `safeStorage` and kept in an app-owned file (#1763). No native keychain module, and the old Swift
 // keychain items are neither read nor deleted.
 import { isRecord } from '../../boundary'
+import type { Grant } from '../../providers/grant'
 import { readDocument, writeDocument } from '../storage/portable-file'
 
 // Electron's `safeStorage`, reduced to what the store calls, so the store runs without Electron.
@@ -11,7 +12,7 @@ export type Cipher = {
   decrypt(data: Buffer): string
 }
 
-export type StoredGrant = { accessToken: string; scopes: string[] }
+export type StoredGrant = Grant
 
 export type GrantRead =
   | { ok: true; grant: StoredGrant }
@@ -31,6 +32,14 @@ async function readSealed(grantsPath: string): Promise<Sealed | null> {
   return Object.fromEntries(entries.filter(([, sealed]) => typeof sealed === 'string')) as Sealed
 }
 
+// A grant written before renewal existed, or by a provider without it, carries none.
+function renewalOf(value: unknown): Grant['renewal'] {
+  if (!isRecord(value) || typeof value.refreshToken !== 'string' || !value.refreshToken) return null
+  return typeof value.expiresAt === 'number' && Number.isFinite(value.expiresAt)
+    ? { refreshToken: value.refreshToken, expiresAt: value.expiresAt }
+    : null
+}
+
 function unseal(cipher: Cipher, sealed: string): StoredGrant | null {
   try {
     const grant: unknown = JSON.parse(cipher.decrypt(Buffer.from(sealed, 'base64')))
@@ -38,7 +47,7 @@ function unseal(cipher: Cipher, sealed: string): StoredGrant | null {
     const scopes = Array.isArray(grant.scopes)
       ? grant.scopes.filter((s) => typeof s === 'string')
       : []
-    return { accessToken: grant.accessToken, scopes }
+    return { accessToken: grant.accessToken, scopes, renewal: renewalOf(grant.renewal) }
   } catch {
     return null
   }

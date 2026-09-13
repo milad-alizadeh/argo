@@ -2,32 +2,33 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/core/tickets/contract'
-import { ConnectRepositoryForm, type ConnectRepositoryFormProps } from './ConnectRepositoryForm'
-import { octocat } from './ticket-fixtures'
+import { ConnectSourceForm, type ConnectSourceFormProps } from './ConnectSourceForm'
+import { ada, octocat } from './ticket-fixtures'
 
 const hubot = { ...octocat, id: 'github:1', login: 'hubot' }
+const repository = (scope: string) => ({ scope, label: scope })
 
-const meta: Meta<typeof ConnectRepositoryForm> = {
-  title: 'Tickets/Connect Repository Form',
-  component: ConnectRepositoryForm,
+const meta: Meta<typeof ConnectSourceForm> = {
+  title: 'Tickets/Connect Source Form',
+  component: ConnectSourceForm,
   args: {
     projectName: 'argo',
     accounts: [octocat, { ...hubot, state: 'revoked' }],
     accountId: octocat.id,
-    repositories: {
+    sources: {
       state: 'listed',
-      scopes: ['hubot/arm', 'octocat/hello-world', 'octocat/spoon-knife'],
+      scopes: ['hubot/arm', 'octocat/hello-world', 'octocat/spoon-knife'].map(repository),
     },
     pending: false,
     error: null,
     onSelectAccount: fn(),
-    onConnectRepository: fn(),
+    onConnectSource: fn(),
     onConnectAccount: fn(),
-  } satisfies ConnectRepositoryFormProps,
+  } satisfies ConnectSourceFormProps,
 }
 
 export default meta
-type Story = StoryObj<typeof ConnectRepositoryForm>
+type Story = StoryObj<typeof ConnectSourceForm>
 
 // The option list opens in a portal, outside the story's canvas.
 const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body)
@@ -42,10 +43,10 @@ export const ConnectRepository: Story = {
     const canvas = within(canvasElement)
     const submit = canvas.getByRole('button', { name: 'Connect repository' })
     // A revoked Account cannot validate a repository, so it is not offered.
-    await expect(canvas.getByRole('combobox', { name: 'GitHub Account' })).toHaveTextContent(
-      'octocat',
+    await expect(canvas.getByRole('combobox', { name: 'Account' })).toHaveTextContent(
+      'GitHub · octocat',
     )
-    await expect(canvas.queryByRole('option', { name: 'hubot' })).toBeNull()
+    await expect(canvas.queryByRole('option', { name: 'GitHub · hubot' })).toBeNull()
     await userEvent.click(submit)
     const repository = canvas.getByRole('combobox', { name: 'Repository' })
     await expect(repository).toHaveAccessibleDescription('Choose a repository.')
@@ -57,7 +58,7 @@ export const ConnectRepository: Story = {
     await userEvent.click(page(canvasElement).getByRole('option', { name: 'octocat/hello-world' }))
     await expect(repository).toHaveValue('octocat/hello-world')
     await userEvent.click(submit)
-    await expect(args.onConnectRepository).toHaveBeenCalledWith({
+    await expect(args.onConnectSource).toHaveBeenCalledWith({
       accountId: 'github:583231',
       scope: 'octocat/hello-world',
     })
@@ -90,7 +91,10 @@ export const SwitchAccount: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connect repository' }))
-    await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'GitHub Account' }), 'hubot')
+    await userEvent.selectOptions(
+      canvas.getByRole('combobox', { name: 'Account' }),
+      'GitHub · hubot',
+    )
     await expect(args.onSelectAccount).toHaveBeenCalledWith('github:1')
     const repository = canvas.getByRole('combobox', { name: 'Repository' })
     await expect(repository).not.toHaveAttribute('aria-invalid')
@@ -99,7 +103,7 @@ export const SwitchAccount: Story = {
 }
 
 export const ReadingRepositories: Story = {
-  args: { repositories: { state: 'loading' } },
+  args: { sources: { state: 'loading' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const repository = canvas.getByRole('combobox', { name: 'Repository' })
@@ -112,7 +116,7 @@ export const ReadingRepositories: Story = {
 }
 
 export const NoRepositories: Story = {
-  args: { repositories: { state: 'listed', scopes: [] } },
+  args: { sources: { state: 'listed', scopes: [] } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const repository = canvas.getByRole('combobox', { name: 'Repository' })
@@ -126,7 +130,7 @@ export const NoRepositories: Story = {
 
 export const RepositoriesUnreadable: Story = {
   args: {
-    repositories: { state: 'failed', message: 'Argo cannot reach GitHub.', onRetry: fn() },
+    sources: { state: 'failed', message: 'Argo cannot reach GitHub.', onRetry: fn() },
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -134,9 +138,9 @@ export const RepositoriesUnreadable: Story = {
     await expect(repository).toBeDisabled()
     await expect(repository).toHaveAccessibleDescription('Argo cannot reach GitHub.')
     await userEvent.click(canvas.getByRole('button', { name: 'Read repositories again' }))
-    const { repositories } = args
-    if (repositories.state !== 'failed') throw new Error('The story reads a failed discovery')
-    await expect(repositories.onRetry).toHaveBeenCalled()
+    const { sources } = args
+    if (sources.state !== 'failed') throw new Error('The story reads a failed discovery')
+    await expect(sources.onRetry).toHaveBeenCalled()
   },
 }
 
@@ -164,8 +168,32 @@ export const NoAccount: Story = {
   args: { accounts: [{ ...octocat, state: 'revoked' }] },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Connect GitHub to read Tickets')).toBeInTheDocument()
-    await userEvent.click(canvas.getByRole('button', { name: 'Connect GitHub' }))
+    await expect(canvas.getByText('Connect an Account to read Tickets')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Connect an Account' }))
     await expect(args.onConnectAccount).toHaveBeenCalled()
+  },
+}
+
+// A Linear Account offers its teams by name and connects the team's id.
+export const ConnectTeam: Story = {
+  args: {
+    accounts: [octocat, ada],
+    accountId: ada.id,
+    sources: { state: 'listed', scopes: [{ scope: 'team-engine', label: 'Engine' }] },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('heading', { name: 'Connect argo to a team' })).toBeVisible()
+    await expect(canvas.getByText(/open Linear issues/)).toBeVisible()
+    const team = canvas.getByRole('combobox', { name: 'Team' })
+    await userEvent.type(team, 'eng')
+    await expect(optionNames(canvasElement)).toEqual(['Engine'])
+    await userEvent.click(page(canvasElement).getByRole('option', { name: 'Engine' }))
+    await expect(team).toHaveValue('Engine')
+    await userEvent.click(canvas.getByRole('button', { name: 'Connect team' }))
+    await expect(args.onConnectSource).toHaveBeenCalledWith({
+      accountId: 'linear:user-ada',
+      scope: 'team-engine',
+    })
   },
 }

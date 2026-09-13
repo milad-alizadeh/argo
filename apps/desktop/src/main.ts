@@ -27,12 +27,7 @@ import {
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from './core/sessions/proof-protocol'
 import { attachTicketBridge } from './core/tickets/bridge'
-import { GITHUB_PROOF_ORIGIN_ENV } from './core/tickets/fake-driver/ticket-proof-protocol'
-import {
-  GITHUB_ENDPOINTS,
-  type GitHubEndpoints,
-  proofEndpoints,
-} from './providers/github/endpoints'
+import { providerEndpoints } from './providers/endpoints'
 
 // Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
@@ -56,16 +51,6 @@ const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
 const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
-
-// The Ticket proof (#1848) points GitHub at a fake on a loopback port. Only a proof run may, and
-// a value that is not a loopback origin stops the launch rather than reaching the real GitHub.
-function githubEndpoints(): GitHubEndpoints {
-  const origin = process.env[GITHUB_PROOF_ORIGIN_ENV]
-  if (!PROOF_ENABLED || origin === undefined) return GITHUB_ENDPOINTS
-  const endpoints = proofEndpoints(origin)
-  if (!endpoints) throw new Error(`${GITHUB_PROOF_ORIGIN_ENV} is not a loopback origin`)
-  return endpoints
-}
 
 function claudeTranscriptsRoot(): string {
   return (
@@ -123,7 +108,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
   attachAppearanceBridge(window, { userData, rendererURL })
   const access = createAccountAccess({
     userData,
-    endpoints: githubEndpoints(),
+    endpoints: providerEndpoints(PROOF_ENABLED),
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url),
   })

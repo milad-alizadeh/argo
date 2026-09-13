@@ -1,12 +1,13 @@
 // The Ticket proof's cases, each read off the screen of the packaged cockpit and then off the files
-// its main process wrote. GitHub is the fake; everything else is the shipped app.
+// its main process wrote. GitHub is the fake; everything else is the shipped app. Linear's are
+// `linear-proof-cases.ts`.
 import assert from 'node:assert/strict'
 import { HUBOT, OCTOCAT } from './ticket-proof-fixture'
 import {
   accountRow,
   accountsDialog,
   backlog,
-  backlogNumbers,
+  backlogKeys,
   openRoom,
   press,
   type Run,
@@ -18,12 +19,12 @@ const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
 export async function proveConnect(run: Run) {
   await openRoom(run.page, 'tickets')
-  const notice = run.page.getByRole('region', { name: 'GitHub sign-in notice' })
+  const notice = run.page.getByRole('region', { name: 'Sign-in notice' })
   await press(notice, 'Dismiss')
   await notice.waitFor({ state: 'detached' })
-  await run.page.getByText('Connect GitHub to read Tickets').waitFor()
+  await run.page.getByText('Connect an Account to read Tickets').waitFor()
   const start = { scope: accountsDialog(run.page), name: 'Connect a GitHub Account' }
-  await press(room(run), 'Connect GitHub')
+  await press(room(run), 'Connect an Account')
   assert.equal(await signIn(run, OCTOCAT, start), 'Connected octocat.')
   // The same GitHub identity signs in again as the one Account; another identity is another.
   assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
@@ -43,8 +44,8 @@ export async function proveConnect(run: Run) {
 }
 
 export async function proveConnectRepository(run: Run) {
-  const form = run.page.getByRole('form', { name: 'Connect a repository' })
-  await form.getByRole('combobox', { name: 'GitHub Account' }).selectOption({ label: 'octocat' })
+  const form = run.page.getByRole('form', { name: 'Connect a Ticket source' })
+  await form.getByRole('combobox', { name: 'Account' }).selectOption({ label: 'GitHub · octocat' })
   const scope = form.getByRole('combobox', { name: 'Repository' })
   // GitHub, not the form, decides what the Account can read, so a hidden repository is never offered.
   await scope.fill('octocat/secret')
@@ -63,7 +64,7 @@ export async function proveConnectRepository(run: Run) {
 
 export async function proveBacklog(run: Run) {
   // #609 sits under its parent; the closed #388 and the pull request #700 are not Tickets here.
-  assert.deepEqual(await backlogNumbers(run.page), ['#607', '#609', '#273'])
+  assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
   await backlog(run.page).getByText('All open · 3 Tickets').waitFor()
   await backlog(run.page).getByRole('button', { name: /^#607/ }).dispatchEvent('click')
   const detail = run.page.getByRole('article', { name: 'Ticket #607' })
@@ -81,10 +82,10 @@ export async function proveRestartAndFailure(run: Run) {
   await openRoom(run.page, 'tickets')
   const failure = room(run).getByRole('alert').filter({ hasText: 'Unable to read Tickets' })
   await failure.getByText('Argo cannot reach GitHub.').waitFor()
-  assert.equal(await run.page.getByRole('region', { name: 'GitHub sign-in notice' }).count(), 0)
+  assert.equal(await run.page.getByRole('region', { name: 'Sign-in notice' }).count(), 0)
   run.fixture.github.outage('none')
   await press(failure, 'Try again')
-  assert.deepEqual(await backlogNumbers(run.page), ['#607', '#609', '#273'])
+  assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
 }
 
 export async function proveRevoked(run: Run) {
@@ -105,7 +106,7 @@ export async function proveRevoked(run: Run) {
   const start = { scope: octocat, name: 'Reconnect' }
   assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
   await press(accountsDialog(run.page), 'Close')
-  assert.deepEqual(await backlogNumbers(run.page), ['#607', '#609', '#273'])
+  assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
 }
 
 export async function proveDisconnect(run: Run) {

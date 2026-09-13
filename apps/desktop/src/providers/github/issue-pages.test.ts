@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { TICKET_PAGE_SIZE } from '../../core/tickets/contract'
 import { github, OCTOCAT, signIn } from './harness'
-import { readTicketPage, searchQuery, TICKET_PAGE_SIZE } from './issues'
+import { readTicketPage, searchQuery } from './issues'
 
 test('a backlog reads one page at a time and names the next until it ends', async (context) => {
   const [fake, endpoints] = await github(context)
@@ -19,8 +20,8 @@ test('a backlog reads one page at a time and names the next until it ends', asyn
   const last = await readTicketPage(endpoints, token, { scope: 'octo/big', query: '', page: 2 })
   assert.ok(last.ok)
   assert.deepEqual(
-    last.value.tickets.map((ticket) => ticket.number),
-    [26, 27, 28, 29, 30],
+    last.value.tickets.map((ticket) => ticket.key),
+    ['#26', '#27', '#28', '#29', '#30'],
   )
   assert.equal(last.value.nextPage, null)
 })
@@ -45,8 +46,8 @@ test('a search is answered by GitHub, counted, and kept to open issues of this r
   })
   assert.ok(read.ok)
   assert.deepEqual(
-    read.value.tickets.map((ticket) => ticket.number),
-    [2],
+    read.value.tickets.map((ticket) => ticket.key),
+    ['#2'],
   )
   assert.equal(read.value.total, 1)
   assert.ok(fake.requests.includes('GET /search/issues'))
