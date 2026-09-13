@@ -46,21 +46,16 @@ guessing restores files the project never had.
 
 ### 2. First install
 
-Ask the **user** to run this from the project root, interactively:
+Run this from the project root:
 
 ```sh
-npx skills@latest add milad-alizadeh/argo
+npx skills@latest add milad-alizadeh/argo --agent claude-code codex --yes
 ```
 
-They answer two wizard questions. At "Which agents do you want to install to?" they pick
-`claude-code` plus at least one universal agent (`codex`, `cursor`). At "Installation method"
-they pick Symlink, the recommended one. That pairing is what makes the CLI build
-`.claude/skills/<name> -> ../../.agents/skills/<name>` itself.
-
-Interactive matters. The method question is asked only when the chosen agents span more than one
-skills directory: agents that all share one directory get copy mode silently and Claude Code gets
-nothing, and `--yes` suppresses the question the same way. So this run is interactive and spans
-both directories, or Claude Code ends up with no skills.
+It asks nothing. The skills land in `.agents/skills/`, and the CLI builds
+`.claude/skills/<name> -> ../../.agents/skills/<name>` for Claude Code. Keep `--agent`: without
+it, `--yes` installs for every agent the machine has. Add another agent to the list when the user
+uses one. Step 2 is done when `.claude/skills/` holds a symlink for every installed skill.
 
 ### 3. Repeat run, and update
 
@@ -71,8 +66,7 @@ npx skills update --project --yes
 ```
 
 It reads the installed agent set off disk (it prints, for example, `Updating for: Universal,
-Claude Code`), so `--yes` is safe here where it is not in step 2: a fresh non-interactive install
-drops Claude Code, an update cannot. It fetches the latest upstream content, not a pinned
+Claude Code`), so it needs no `--agent`. It fetches the latest upstream content, not a pinned
 revision. A lock entry may carry a `ref` field, Argo's entries carry none, so the default branch
 is what resolves. `computedHash` is drift detection, not a pin.
 
