@@ -2,6 +2,7 @@ import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } f
 import { type RefObject, useCallback, useRef, useState } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
+import type { SessionCli } from '../hooks/useSessionComposer'
 import { ComposerForm } from './ComposerForm'
 import './composer-content.css'
 import { usePendingTurns } from './usePendingTurns'
@@ -12,6 +13,7 @@ export type SessionComposerProps = {
   sessionId: string
   onSend: (text: string) => Promise<boolean>
   plan?: SessionPlan | null
+  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
 }
 
 function restorePendingTurn(
@@ -34,6 +36,7 @@ export function SessionComposer({
   sessionId,
   onSend,
   plan = null,
+  cliPicker,
 }: SessionComposerProps) {
   const [drafts, setDrafts] = useState(() => new Map<string, string>())
   const draft = drafts.get(sessionId) ?? ''
@@ -66,6 +69,7 @@ export function SessionComposer({
   }, [addPendingTurn, clearDraft, draft, isRunning, onSend])
   return (
     <ComposerForm
+      cliPicker={cliPicker}
       draft={draft}
       editorRef={editorRef}
       isRunning={isRunning}

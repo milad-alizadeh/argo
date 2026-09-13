@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 
 import { Button } from '../../../components/ui/button'
+import type { SessionCli } from '../hooks/useSessionComposer'
 import { SessionComposer } from './SessionComposer'
 
 const plan = {
@@ -125,6 +126,28 @@ function PendingSendStory() {
   )
 }
 
+function NewSessionCliStory() {
+  const [cli, setCli] = useState<SessionCli>('claude')
+  const [started, setStarted] = useState<string | null>(null)
+
+  return (
+    <div className="mx-auto max-w-4xl p-8">
+      <SessionComposer
+        cliPicker={{ cli, onChangeCli: setCli }}
+        onSend={async (text) => {
+          setStarted(`${cli}: ${text}`)
+          return true
+        }}
+        plan={null}
+        sessionId="new:project-one"
+      />
+      <output className="mt-4 block text-sm" data-testid="started-session">
+        {started}
+      </output>
+    </div>
+  )
+}
+
 const meta: Meta<typeof ComposerStory> = {
   title: 'Sessions/Composer',
   component: ComposerStory,
@@ -171,6 +194,42 @@ export const ManagedTurn: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Interrupt' }))
     await expect(composer).toHaveTextContent('Keep this draft while the Turn stops.')
     await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
+  },
+}
+
+export const NewSessionChoosesCli: Story = {
+  render: () => <NewSessionCliStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const claudeOption = canvas.getByRole('radio', { name: 'Claude Code' })
+    const codexOption = canvas.getByRole('radio', { name: 'Codex' })
+
+    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
+    await expect(claudeOption).toHaveAttribute('tabindex', '0')
+    await expect(codexOption).toHaveAttribute('tabindex', '-1')
+
+    await userEvent.click(codexOption)
+    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
+
+    // Arrow-key navigation per the WAI-ARIA radiogroup pattern: focus moves back to Claude Code,
+    // and moving selection also moves the roving tabIndex.
+    await expect(codexOption).toHaveFocus()
+    await userEvent.keyboard('{ArrowLeft}')
+    await expect(claudeOption).toHaveAttribute('aria-checked', 'true')
+    await expect(claudeOption).toHaveFocus()
+    await expect(claudeOption).toHaveAttribute('tabindex', '0')
+    await expect(codexOption).toHaveAttribute('tabindex', '-1')
+
+    await userEvent.keyboard('{End}')
+    await expect(codexOption).toHaveAttribute('aria-checked', 'true')
+    await expect(codexOption).toHaveFocus()
+
+    await userEvent.click(canvas.getByLabelText('Message'))
+    await userEvent.type(canvas.getByLabelText('Message'), 'Fix the flaky test.')
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByTestId('started-session')).toHaveTextContent(
+      'codex: Fix the flaky test.',
+    )
   },
 }
 

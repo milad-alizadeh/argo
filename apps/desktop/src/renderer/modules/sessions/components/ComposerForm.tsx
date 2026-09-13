@@ -9,6 +9,8 @@ import type { RefObject } from 'react'
 
 import { Button } from '../../../components/ui/button'
 import type { SessionPlan } from '@/core/sessions/models'
+import type { SessionCli } from '../hooks/useSessionComposer'
+import { ComposerCliToggle } from './ComposerCliToggle'
 import { PendingTurns } from './PendingTurns'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
@@ -48,7 +50,7 @@ function ComposerEditor({
           <ContentEditable
             aria-label="Message"
             aria-placeholder="Direct the next move…"
-            className="min-h-20 flex-1 whitespace-pre-wrap px-4 py-3 text-sm leading-6 outline-none"
+            className="min-h-20 flex-1 whitespace-pre-wrap px-4 py-3 pr-28 text-sm leading-6 outline-none"
             onKeyDown={(event) => {
               if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
               event.preventDefault()
@@ -82,6 +84,7 @@ function ComposerEditor({
 }
 
 export function ComposerForm({
+  cliPicker,
   draft,
   editorRef,
   isRunning,
@@ -95,6 +98,7 @@ export function ComposerForm({
   plan,
   sessionId,
 }: {
+  cliPicker?: { cli: SessionCli; onChangeCli: (cli: SessionCli) => void } | null
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   isRunning: boolean
@@ -116,6 +120,9 @@ export function ComposerForm({
         onSend()
       }}
     >
+      {cliPicker ? (
+        <ComposerCliToggle cli={cliPicker.cli} onChangeCli={cliPicker.onChangeCli} />
+      ) : null}
       <PendingTurns
         turns={pendingTurns}
         onEdit={onEdit}

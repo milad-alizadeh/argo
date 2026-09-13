@@ -4,6 +4,7 @@ import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mjs'
 import { createSystemClaudeSessionDriver } from './agents/claude/drive/system-claude-session-driver'
 import { createClaudeSessionReader } from './agents/claude/sessions/read-sessions'
+import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
@@ -96,6 +97,44 @@ function claudeArchiveRoot(): string {
   )
 }
 
+function attachBridges(window: BrowserWindow, userData: string, rendererURL: string) {
+  const claudeSessionDriver = createSystemClaudeSessionDriver(
+    path.join(userData, 'claude-permission-plugins'),
+  )
+  const codexSessionDriver = createSystemCodexSessionDriver()
+  attachProjectBridge(window, { userData, rendererURL })
+  attachSessionBridge(window, {
+    reader: combineSessionReaders([
+      createClaudeSessionReader({
+        transcripts: claudeTranscriptsRoot(),
+        archive: claudeArchiveRoot(),
+        managedSessions: claudeSessionDriver.roster,
+      }),
+      createCodexSessionReader(codexTranscriptsRoot(), {
+        managedSessions: codexSessionDriver.roster,
+      }),
+    ]),
+    driver: claudeSessionDriver,
+    starter: claudeSessionDriver,
+    codexDriver: codexSessionDriver,
+    codexStarter: codexSessionDriver,
+    rendererURL,
+  })
+  attachAppearanceBridge(window, { userData, rendererURL })
+  const access = createAccountAccess({
+    userData,
+    endpoints: githubEndpoints(),
+    cipher: safeStorageCipher,
+    openExternal: (url) => shell.openExternal(url),
+  })
+  attachAccountBridge(window, { access, rendererURL })
+  attachTicketBridge(window, { access, rendererURL })
+  app.once('before-quit', () => {
+    claudeSessionDriver.close()
+    codexSessionDriver.close()
+  })
+}
+
 function createWindow(): BrowserWindow {
   const userData = app.getPath('userData')
   const window = new BrowserWindow({
@@ -121,34 +160,8 @@ function createWindow(): BrowserWindow {
   const rendererPath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
   const rendererURL = MAIN_WINDOW_VITE_DEV_SERVER_URL || pathToFileURL(rendererPath).href
   attachWindowNavigation(window)
-  const claudeSessionDriver = createSystemClaudeSessionDriver(
-    path.join(userData, 'claude-permission-plugins'),
-  )
-  attachProjectBridge(window, { userData, rendererURL })
-  attachSessionBridge(window, {
-    reader: combineSessionReaders([
-      createClaudeSessionReader({
-        transcripts: claudeTranscriptsRoot(),
-        archive: claudeArchiveRoot(),
-        managedSessions: claudeSessionDriver.roster,
-      }),
-      createCodexSessionReader(codexTranscriptsRoot()),
-    ]),
-    driver: claudeSessionDriver,
-    starter: claudeSessionDriver,
-    rendererURL,
-  })
-  attachAppearanceBridge(window, { userData, rendererURL })
-  const access = createAccountAccess({
-    userData,
-    endpoints: githubEndpoints(),
-    cipher: safeStorageCipher,
-    openExternal: (url) => shell.openExternal(url),
-  })
-  attachAccountBridge(window, { access, rendererURL })
-  attachTicketBridge(window, { access, rendererURL })
+  attachBridges(window, userData, rendererURL)
   installMenu(window)
-  app.once('before-quit', () => claudeSessionDriver.close())
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
