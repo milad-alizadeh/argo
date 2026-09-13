@@ -5,9 +5,9 @@ import type { SessionReader } from './bridge'
 import type { SessionChain } from './chains'
 import {
   type SessionFeedRequest,
+  sessionError,
   sessionFeedRequestSchema,
   sessionListRequestSchema,
-  sessionError,
 } from './contract'
 import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
 import type { SessionFeedRow, SessionRosterRow } from './models'

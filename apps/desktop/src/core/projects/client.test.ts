@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createProjectClient } from './client'
 
-const request = { version: 1, type: 'project.open', requestId: 'open-1', projectId: 'project-1' }
 const opened = {
   version: 1,
   type: 'project.opened',
@@ -42,7 +41,6 @@ test('reports a lost application connection without exposing its exception', asy
   assert.equal(result.code, 'connection-lost')
 })
 
-const listRequest = { version: 1, type: 'project.list', requestId: 'list-1' }
 const listed = {
   version: 1,
   type: 'project.listed',

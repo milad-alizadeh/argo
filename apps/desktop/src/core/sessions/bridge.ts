@@ -11,7 +11,8 @@ import {
 } from '../../agents/claude/drive/start-session'
 import { requestIdentifier } from '../../boundary'
 import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
-import { SESSION_OPERATIONS, sessionError } from './contract'
+import { sessionError } from './contract'
+import { SESSION_OPERATIONS } from './operations'
 
 export type SessionReader = {
   listSessions(request: unknown): Promise<unknown>

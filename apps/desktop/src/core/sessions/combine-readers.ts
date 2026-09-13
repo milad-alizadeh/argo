@@ -4,8 +4,9 @@ import {
   type SessionListReply,
   type SessionsListed,
   sessionError,
+  sessionFeedReplySchema,
+  sessionListReplySchema,
 } from './contract'
-import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
 
 function listed(reply: SessionListReply): reply is SessionsListed {
   return reply.type === 'session.listed'

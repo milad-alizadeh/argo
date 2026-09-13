@@ -1,19 +1,19 @@
 import {
   type ClaudeSessionInterruptReply,
-  SESSION_OPERATIONS,
   type ClaudeSessionPermissionDecisionReply,
   type ClaudeSessionPermissionReply,
   type ClaudeSessionSendReply,
   type ClaudeSessionStartReply,
-  type SessionFeedReply,
-  type SessionListReply,
   claudeSessionPermissionReplySchema,
   claudeSessionSendReplySchema,
   claudeSessionStartReplySchema,
+  type SessionFeedReply,
+  type SessionListReply,
+  sessionError,
   sessionFeedReplySchema,
   sessionListReplySchema,
-  sessionError,
 } from './contract'
+import { SESSION_OPERATIONS } from './operations'
 
 export type SessionClient = {
   interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>

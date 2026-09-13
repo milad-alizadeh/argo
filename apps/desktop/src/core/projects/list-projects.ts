@@ -1,6 +1,6 @@
 // Restoring the cockpit on launch: the known set and the Project that was open when it last closed.
 import { projectError } from './contract'
-import { projectListRequestSchema, type ProjectListReply } from './messages'
+import { type ProjectListReply, projectListRequestSchema } from './messages'
 import { openRegistry } from './register-project'
 import { listed, readRegistry } from './registry'
 

@@ -4,9 +4,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type ProjectError, type ProjectErrorCode, projectError } from '@/core/projects/contract'
 import {
-  isProjectSummary,
   type ProjectListReply,
   type ProjectSummary,
+  projectSummarySchema,
 } from '@/core/projects/messages'
 
 const PROJECT_SELECTED_EVENT = 'argo:project-selected'
@@ -94,9 +94,11 @@ export function useProjects(): [Cockpit, ProjectActions] {
 
   useEffect(() => {
     const synchronizeSelectedProject = (event: Event) => {
-      if (!(event instanceof CustomEvent) || !isProjectSummary(event.detail)) return
+      if (!(event instanceof CustomEvent)) return
+      const parsed = projectSummarySchema.safeParse(event.detail)
+      if (!parsed.success) return
       setCockpit((current) => {
-        const project = event.detail
+        const project = parsed.data
         return {
           ...current,
           project,

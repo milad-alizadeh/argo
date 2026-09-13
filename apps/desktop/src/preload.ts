@@ -8,7 +8,7 @@ import { COMMAND_CHANNEL } from './core/commands/shortcuts'
 import { createProjectClient } from './core/projects/client'
 import { PROJECT_OPERATIONS } from './core/projects/operations'
 import { createSessionClient } from './core/sessions/client'
-import { SESSION_OPERATIONS } from './core/sessions/contract'
+import { SESSION_OPERATIONS } from './core/sessions/operations'
 
 // The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {

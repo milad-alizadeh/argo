@@ -18,6 +18,7 @@ function useRoster() {
   const [passes, setPasses] = useState(0)
 
   useEffect(() => {
+    void passes
     let live = true
     // A pass begins with no verdict on it. Leaving the last failure standing would report a fault
     // that this pass may be about to clear.

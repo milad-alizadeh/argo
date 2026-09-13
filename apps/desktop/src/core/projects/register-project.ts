@@ -2,9 +2,9 @@
 // and neither ever creates a second identity for a repository that already has one.
 import { type ProjectError, type ProjectErrorCode, projectError } from './contract'
 import {
+  type ProjectListReply,
   projectRegisterRequestSchema,
   projectRelocateRequestSchema,
-  type ProjectListReply,
 } from './messages'
 import {
   EMPTY_REGISTRY,

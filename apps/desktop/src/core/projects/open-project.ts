@@ -1,6 +1,6 @@
 import { opendir } from 'node:fs/promises'
 import { isRecord, requestIdentifier } from '../../boundary'
-import { projectOpenRequestSchema, type ProjectOpenReply, projectError } from './contract'
+import { type ProjectOpenReply, projectError, projectOpenRequestSchema } from './contract'
 import { readRegistry, toSummary } from './registry'
 
 // Opening reads storage that must already exist, so an absent registry is a storage failure here

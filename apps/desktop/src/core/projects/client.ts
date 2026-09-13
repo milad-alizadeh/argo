@@ -1,6 +1,6 @@
 import { requestIdentifier } from '../../boundary'
 import { type ProjectError, type ProjectOpenReply, projectError } from './contract'
-import { type ProjectListReply } from './messages'
+import type { ProjectListReply } from './messages'
 import { PROJECT_OPERATIONS } from './operations'
 
 export type ProjectClient = {

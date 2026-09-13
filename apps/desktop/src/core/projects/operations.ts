@@ -1,8 +1,8 @@
-import { projectErrorSchema, projectOpenRequestSchema, projectOpenedSchema } from './contract'
+import { projectErrorSchema, projectOpenedSchema, projectOpenRequestSchema } from './contract'
 import {
   projectCancelledSchema,
-  projectListRequestSchema,
   projectListedSchema,
+  projectListRequestSchema,
   projectRegisterRequestSchema,
   projectRelocateRequestSchema,
 } from './messages'
