@@ -38,6 +38,7 @@ export function TicketDeck({ backlog }: TicketDeckProps) {
         <div className="flex h-full min-h-0 flex-col">
           <TicketList
             backlog={backlog}
+            now={Date.now()}
             onSelect={setSelectedKey}
             selectedKey={selected?.key ?? null}
           />
