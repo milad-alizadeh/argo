@@ -144,9 +144,9 @@ the naming guard and the push guard both let it through.
 
 `skills-lock.json` is the bundle manifest and this repo's install record. **`skills add` only
 adds**, so renaming or deleting a skill means deleting the installed copy by hand, and editing
-one of Argo's own skills needs a push to `main` before a reinstall sees it. **The install is
-interactive and a `--yes` add leaves Claude Code with nothing**: the exact commands, the question
-that trap turns on, and the add/sweep workflow are `packages/argo-skills/README.md`.
+one of Argo's own skills needs a push to `main` before a reinstall sees it. **Name the agents on
+every add** (`--agent claude-code codex --yes`), or `--yes` installs for every agent the machine
+has: the exact commands and the add/sweep workflow are `packages/argo-skills/README.md`.
 
 ## Design work
 
