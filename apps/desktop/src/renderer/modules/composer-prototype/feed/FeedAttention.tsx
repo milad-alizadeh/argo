@@ -103,7 +103,7 @@ export function FeedQuestion({ readOnly = false }: { readOnly?: boolean }) {
       </QuestionnaireItem>
       {readOnly ? null : (
         <div className="flex justify-end">
-          <QuestionnaireSubmit className="bg-foreground type-label text-background hover:bg-foreground/80">
+          <QuestionnaireSubmit className="bg-primary type-label text-primary-foreground hover:bg-primary/80">
             Send answer
           </QuestionnaireSubmit>
         </div>
