@@ -49,7 +49,10 @@ export function useClaudeComposer({
           sessionId: selectedSessionId,
           prompt,
         })
-        if (reply.type !== 'session.error') return true
+        if (reply.type !== 'session.error') {
+          rereadSessions()
+          return true
+        }
         setFailure(reply.message)
         return false
       }

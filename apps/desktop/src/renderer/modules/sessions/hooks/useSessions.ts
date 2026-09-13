@@ -20,6 +20,7 @@ function useRoster() {
   useEffect(() => {
     void passes
     let live = true
+    let timer: number | null = null
     // A pass begins with no verdict on it. Leaving the last failure standing would report a fault
     // that this pass may be about to clear.
     setRosterError(null)
@@ -35,8 +36,12 @@ function useRoster() {
           setRosterError(reply)
         } else setRoster(reply)
       })
+      .finally(() => {
+        if (live) timer = window.setTimeout(() => setPasses((pass) => pass + 1), FEED_REFRESH_MS)
+      })
     return () => {
       live = false
+      if (timer !== null) window.clearTimeout(timer)
     }
   }, [passes])
 
