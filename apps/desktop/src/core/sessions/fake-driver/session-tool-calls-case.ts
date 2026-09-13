@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 
 export async function proveToolCalls(page) {
+  const roster = await page.evaluate(() => window.argo.listSessions())
+  assert.equal(roster.type, 'session.listed')
+  const session = roster.sessions.find(({ id }) => id === 'toolCalls')
+  assert.notEqual(session, undefined)
   const reply = await page.evaluate(() =>
     window.argo.readSessionFeed({ revision: null, sessionId: 'toolCalls' }),
   )

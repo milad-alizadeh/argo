@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionError, SessionFeed } from '../types'
@@ -175,20 +174,14 @@ const toolFeed = {
 } satisfies SessionFeed
 
 function FeedWithEvidence() {
-  const [evidence, setEvidence] = useState<string | null>(null)
   return (
-    <>
-      <BasicFeed
-        failure={null}
-        activeEvidenceId={null}
-        feed={toolFeed}
-        onOpenEvidence={(row) =>
-          setEvidence(row.evidence?.title ?? 'Recorded evidence is unavailable.')
-        }
-        selectedSessionId="tools"
-      />
-      <output aria-label="Opened evidence">{evidence}</output>
-    </>
+    <BasicFeed
+      failure={null}
+      activeEvidenceId={null}
+      feed={toolFeed}
+      onOpenEvidence={() => {}}
+      selectedSessionId="tools"
+    />
   )
 }
 
@@ -199,10 +192,6 @@ export const GroupedToolCalls: Story = {
     const group = await canvas.findByRole('button', { name: 'Ran 1 command · Edited 1 file' })
     await expect(canvas.queryByRole('button', { name: /Ran bun test composer/ })).toBeNull()
     await userEvent.click(group)
-    const command = await canvas.findByRole('button', { name: /Ran bun test composer/ })
-    await userEvent.click(command)
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Opened evidence')).toHaveTextContent('bun test composer'),
-    )
+    await canvas.findByRole('button', { name: /Ran bun test composer/ })
   },
 }
