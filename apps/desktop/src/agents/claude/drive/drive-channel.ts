@@ -1,5 +1,6 @@
 import { SESSION_ERRORS } from '@/core/sessions/session-error'
 import { claudeTurn } from './claude-turn'
+import { createLiveMessages, type LiveMessages } from './live-messages'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 
 type ClaudeProcess = {
@@ -16,13 +17,18 @@ export type DriverOptions = {
   mintSessionId: () => string
   schedule: (callback: () => void) => void
   spawn: (command: string, commandArguments: string[], options: SpawnOptions) => ClaudeProcess
-  prepare?: (sessionId: string) => { commandArguments: string[]; close: () => void }
+  // `record` takes each batch the Session's MessageDisplay hook delivers.
+  prepare?: (
+    sessionId: string,
+    record: (batch: unknown) => void,
+  ) => { commandArguments: string[]; close: () => void }
   ledger: OwnershipLedger
   resumeTarget: (sessionId: string) => Promise<ResumeTarget | null>
 }
 export type ManagedSession = {
   close: () => void
   cwd: string
+  messages: LiveMessages
   process: ClaudeProcess
   prompt: string
 }
@@ -56,7 +62,8 @@ function openChannel(
 ): ManagedSession {
   const executable = options.findExecutable()
   if (!executable) throw new ClaudeSessionDriverError('cli-unavailable')
-  const prepared = options.prepare?.(seed.sessionId)
+  const messages = createLiveMessages()
+  const prepared = options.prepare?.(seed.sessionId, messages.record)
   let process: ClaudeProcess
   try {
     process = options.spawn(
@@ -71,6 +78,7 @@ function openChannel(
   const session = {
     close: prepared?.close ?? (() => {}),
     cwd: seed.cwd,
+    messages,
     process,
     prompt: seed.prompt,
   }
@@ -121,6 +129,7 @@ export function channelActions(options: DriverOptions, sessions: Map<string, Man
       closed = true
     },
     write(session: ManagedSession, text: string) {
+      session.messages.retire()
       const turn = claudeTurn(text)
       session.process.write(turn.paste)
       options.schedule(() => session.process.write(turn.submit))

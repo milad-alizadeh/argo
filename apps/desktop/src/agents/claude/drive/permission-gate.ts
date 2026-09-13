@@ -1,48 +1,24 @@
-import { createHash } from 'node:crypto'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import net from 'node:net'
-import os from 'node:os'
-import path from 'node:path'
 import { z } from 'zod'
 import type { ClaudePermission } from '@/core/sessions/contract'
+import { type CompanionPart, createSocketFolder } from './companion-plugin'
 
 export type ClaudePermissionGate = {
-  open: (sessionId: string) => { pluginRoot: string; close: () => void }
+  open: (sessionId: string) => CompanionPart
   pending: (sessionId: string) => ClaudePermission | null
   decide: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
   close: () => void
 }
-
-const PLUGIN_MANIFEST = JSON.stringify({
-  name: 'argo-companion',
-  version: '1.0.0',
-  description: "Argo's companion permission channel.",
-})
-
-const HOOKS = JSON.stringify({
-  hooks: {
-    PreToolUse: [
-      {
-        matcher: 'Bash|Edit|Write|MultiEdit|NotebookEdit|WebFetch',
-        hooks: [
-          {
-            type: 'command',
-            command: '/bin/sh "__ARGO_PERMISSION_HOOK__"',
-            timeout: 86_400,
-          },
-        ],
-      },
-    ],
-  },
-})
 
 const HOOK = `#!/bin/sh
 deny() { printf '%s\\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"}}'; }
 hold=$(mktemp -d) || { deny; exit 1; }
 trap 'kill "$writer" "$dialler" 2>/dev/null; rm -rf "$hold"' EXIT
 mkfifo "$hold/request" || { deny; exit 1; }
+# A background list in a non-interactive sh reads /dev/null, so the request is kept on fd 3.
+exec 3<&0
 {
-  tr '\\n' ' '
+  tr '\\n' ' ' <&3
   printf '\\n'
   while kill -0 $$ 2>/dev/null; do sleep 1; done
 } > "$hold/request" &
@@ -82,14 +58,12 @@ function requestFrom(line: string, sessionId: string): ClaudePermission | null {
   }
 }
 
-// ADR-0024 requires the hook to live in a plugin, not a `--settings` file. Each managed Session
-// gets its own Unix socket and plugin directory, so a late answer cannot reach a different turn.
-export function createClaudePermissionGate(root: string): ClaudePermissionGate {
+// Each managed Session gets its own Unix socket, so a late answer cannot reach a different turn.
+export function createClaudePermissionGate(): ClaudePermissionGate {
   const waiting = new Map<string, { permission: ClaudePermission; socket: net.Socket }>()
-  // macOS caps a Unix socket path at 104 bytes and userData plus a UUID passes it (#1996).
-  const socketRoot = mkdtempSync(path.join(os.tmpdir(), 'argo-'))
+  const sockets = createSocketFolder('permission')
   return {
-    open: (sessionId) => openPermissionGate({ root, socketRoot }, sessionId, waiting),
+    open: (sessionId) => openPermissionGate(sockets.socketPath(sessionId), sessionId, waiting),
     pending(sessionId) {
       return waiting.get(sessionId)?.permission ?? null
     },
@@ -100,22 +74,15 @@ export function createClaudePermissionGate(root: string): ClaudePermissionGate {
       held.socket.end(decisionLine(decision))
       return true
     },
-    close() {
-      rmSync(socketRoot, { recursive: true, force: true })
-    },
+    close: sockets.close,
   }
 }
 
 function openPermissionGate(
-  roots: { root: string; socketRoot: string },
+  socketPath: string,
   sessionId: string,
   waiting: Map<string, { permission: ClaudePermission; socket: net.Socket }>,
-) {
-  const socketPath = path.join(
-    roots.socketRoot,
-    `${createHash('sha256').update(sessionId).digest('hex').slice(0, 16)}.sock`,
-  )
-  const pluginRoot = writePlugin(roots.root, sessionId, socketPath)
+): CompanionPart {
   const server = net.createServer((socket) => {
     let received = ''
     socket.setEncoding('utf8')
@@ -142,30 +109,18 @@ function openPermissionGate(
   server.on('error', (error) => console.error('Claude permission gate stopped listening', error))
   server.listen(socketPath)
   return {
-    pluginRoot,
+    hook: {
+      event: 'PreToolUse',
+      matcher: 'Bash|Edit|Write|MultiEdit|NotebookEdit|WebFetch',
+      timeout: 86_400,
+      file: 'permission-hook.sh',
+      script: HOOK.replace('__ARGO_PERMISSION_SOCKET__', socketPath),
+    },
     close() {
       const held = waiting.get(sessionId)
       if (held) held.socket.end(decisionLine('deny'))
       waiting.delete(sessionId)
       server.close()
-      rmSync(socketPath, { force: true })
-      rmSync(pluginRoot, { recursive: true, force: true })
     },
   }
-}
-
-function writePlugin(root: string, sessionId: string, socketPath: string) {
-  const pluginRoot = path.join(root, sessionId)
-  rmSync(pluginRoot, { recursive: true, force: true })
-  rmSync(socketPath, { force: true })
-  mkdirSync(path.join(pluginRoot, '.claude-plugin'), { recursive: true })
-  mkdirSync(path.join(pluginRoot, 'hooks'), { recursive: true })
-  const hookPath = path.join(pluginRoot, 'permission-hook.sh')
-  writeFileSync(path.join(pluginRoot, '.claude-plugin', 'plugin.json'), PLUGIN_MANIFEST)
-  writeFileSync(
-    path.join(pluginRoot, 'hooks', 'hooks.json'),
-    HOOKS.replace('__ARGO_PERMISSION_HOOK__', hookPath),
-  )
-  writeFileSync(hookPath, HOOK.replace('__ARGO_PERMISSION_SOCKET__', socketPath), { mode: 0o700 })
-  return pluginRoot
 }

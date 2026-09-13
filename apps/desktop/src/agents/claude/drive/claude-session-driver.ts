@@ -6,12 +6,14 @@ import {
   type DriverOptions,
   type ManagedSession,
 } from './drive-channel'
+import type { LiveMessage } from './live-messages'
 import { managedRow } from './managed-row'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string; prompt: string }) => string
   send: (sessionId: string, text: string) => Promise<void>
   interrupt: (sessionId: string) => void
+  liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
   orphans: () => ReadonlySet<string>
   pendingPermission: (sessionId: string) => ClaudePermission | null
@@ -42,8 +44,10 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
+      session.messages.retire()
       session.process.write(INTERRUPT)
     },
+    liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () => [...sessions.entries()].map(([id, session]) => managedRow(id, session)),
     orphans: options.ledger.orphans,
     pendingPermission: () => null,

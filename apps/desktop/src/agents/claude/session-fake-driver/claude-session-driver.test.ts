@@ -25,6 +25,27 @@ test('starts a named interactive Claude Session and sends the opening Turn', asy
   )
 })
 
+test('holds the text a Turn streams until Argo sends the next Turn or interrupts', async (context) => {
+  const { driver, display } = launch(await ledgerFile(context))
+  const sessionId = driver.start({ cwd: '/projects/argo', prompt: 'Write about ducks.' })
+  const batch = (turn: string, delta: string) =>
+    display(sessionId, { turn_id: turn, message_id: `${turn}-message`, index: 0, delta })
+
+  batch('turn-1', 'Ducks glide.')
+  const streamed = driver.liveMessages(sessionId)
+  await driver.send(sessionId, 'Now geese.')
+  const afterSend = driver.liveMessages(sessionId)
+  batch('turn-1', 'Late ducks.')
+  batch('turn-2', 'Geese honk.')
+  const next = driver.liveMessages(sessionId)
+  driver.interrupt(sessionId)
+
+  assert.deepEqual(streamed, [{ id: 'turn-1-message', text: 'Ducks glide.' }])
+  assert.deepEqual(afterSend, [])
+  assert.deepEqual(next, [{ id: 'turn-2-message', text: 'Geese honk.' }])
+  assert.deepEqual(driver.liveMessages(sessionId), [])
+})
+
 test('does not let the parent Claude Session suppress transcript persistence', async (context) => {
   const ledger = createOwnershipLedger({
     path: await ledgerFile(context),
