@@ -2,16 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SessionError, SessionFeed, SessionId, SessionsListed } from '../types'
 
-let nextRequest = 0
 const FEED_REFRESH_MS = 500
 const REREAD_EVENT = 'argo:sessions-reread'
 
 export function rereadSessions() {
   window.dispatchEvent(new Event(REREAD_EVENT))
-}
-function requestId(name: string): string {
-  nextRequest += 1
-  return `${name}-${nextRequest}`
 }
 
 // The Roster is a reading of files Argo does not own and cannot be told about: nothing here
@@ -31,7 +26,7 @@ function useRoster() {
       // The pass this request belongs to is part of its name, so a reply can be traced to the
       // asking rather than only to the surface that asked. What re-runs the effect is `passes` in
       // the dependency list, not this.
-      .listSessions({ version: 1, type: 'session.list', requestId: requestId(`list-${passes}`) })
+      .listSessions()
       .then((reply) => {
         if (!live) return
         if (reply.type === 'session.error') {
@@ -72,9 +67,6 @@ function useFeed(sessionId: SessionId | null) {
     const read = async () => {
       try {
         const reply = await window.argo.readSessionFeed({
-          version: 1,
-          type: 'session.feed',
-          requestId: requestId('feed'),
           sessionId,
           revision: revisions.current.get(sessionId) ?? null,
         })

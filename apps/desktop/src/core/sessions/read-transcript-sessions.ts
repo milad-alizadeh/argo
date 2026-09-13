@@ -4,9 +4,9 @@ import { isRecord } from '../../boundary'
 import type { SessionReader } from './bridge'
 import type { SessionChain } from './chains'
 import {
-  isSessionFeedRequest,
-  isSessionListRequest,
   type SessionFeedRequest,
+  sessionFeedRequestSchema,
+  sessionListRequestSchema,
   sessionError,
 } from './contract'
 import { cachedReply, feedReply, type HeldFeed, keepFeed, stableChain } from './feed-cache'
@@ -75,29 +75,31 @@ export function createTranscriptSessionReader(source: TranscriptSessionSource): 
   return {
     async listSessions(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
-      if (!isSessionListRequest(value)) return sessionError('invalid-request', null)
+      const parsed = sessionListRequestSchema.safeParse(value)
+      if (!parsed.success) return sessionError('invalid-request', null)
       try {
         const discovery = await source.discoverSessions()
         return {
           version: 1,
           type: 'session.listed',
-          requestId: value.requestId,
+          requestId: parsed.data.requestId,
           sessions: discovery.rows,
           filesFound: discovery.filesFound,
           filesRead: discovery.filesRead,
           filesUnreadable: discovery.filesUnreadable,
         }
       } catch (error) {
-        return sessionError(readFailure(error), value.requestId)
+        return sessionError(readFailure(error), parsed.data.requestId)
       }
     },
     async readSessionFeed(value) {
       if (versionFailure(value)) return sessionError('unsupported-version', null)
-      if (!isSessionFeedRequest(value)) return sessionError('invalid-request', null)
+      const parsed = sessionFeedRequestSchema.safeParse(value)
+      if (!parsed.success) return sessionError('invalid-request', null)
       try {
-        return await readFeed({ source, feeds, value })
+        return await readFeed({ source, feeds, value: parsed.data })
       } catch (error) {
-        return sessionError(readFailure(error), value.requestId)
+        return sessionError(readFailure(error), parsed.data.requestId)
       }
     },
   }

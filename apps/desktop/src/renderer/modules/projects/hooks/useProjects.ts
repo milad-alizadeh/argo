@@ -8,7 +8,6 @@ import {
   type ProjectListReply,
   type ProjectSummary,
 } from '@/core/projects/messages'
-import { listRequest, openRequest, registerRequest, relocateRequest } from '../lib/requests'
 
 const PROJECT_SELECTED_EVENT = 'argo:project-selected'
 
@@ -46,7 +45,7 @@ async function settle(reply: ProjectListReply, previous: Cockpit): Promise<Cockp
   if (reply.type === 'project.error') return refuse(previous, reply)
   const project = reply.projects.find((candidate) => candidate.id === reply.selectedId)
   if (!project) return { ...EMPTY, projects: reply.projects }
-  const opened = await window.argo.openProject(openRequest(project.id))
+  const opened = await window.argo.openProject({ projectId: project.id })
   if (opened.type === 'project.error') {
     const { message, code } = opened
     return { status: 'refused', project, projects: reply.projects, message, code, busy: false }
@@ -90,7 +89,7 @@ export function useProjects(): [Cockpit, ProjectActions] {
   }, [])
 
   useEffect(() => {
-    void run(() => window.argo.listProjects(listRequest()))
+    void run(() => window.argo.listProjects())
   }, [run])
 
   useEffect(() => {
@@ -116,16 +115,16 @@ export function useProjects(): [Cockpit, ProjectActions] {
   const open = useCallback(() => {
     const { status, project } = latest.current
     if (status === 'refused' && project) {
-      void run(() => window.argo.relocateProject(relocateRequest(project.id)))
+      void run(() => window.argo.relocateProject({ projectId: project.id }))
       return
     }
-    void run(() => window.argo.registerProject(registerRequest()))
+    void run(() => window.argo.registerProject())
   }, [run])
 
   const select = useCallback(
     (projectId: string) => {
       void run(async () => {
-        const reply = await window.argo.listProjects(listRequest())
+        const reply = await window.argo.listProjects()
         if (reply.type !== 'project.listed') return reply
         const project = reply.projects.find((candidate) => candidate.id === projectId)
         if (project)

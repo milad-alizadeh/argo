@@ -1,63 +1,84 @@
 import { requestIdentifier } from '../../boundary'
-import {
-  isProjectErrorMessage,
-  isProjectOpenReply,
-  type ProjectError,
-  type ProjectOpenReply,
-  type ProjectOpenRequest,
-  projectError,
-} from './contract'
-import {
-  isProjectCancelled,
-  isProjectListed,
-  type ProjectListReply,
-  type ProjectListRequest,
-  type ProjectRegisterRequest,
-  type ProjectRelocateRequest,
-} from './messages'
+import { type ProjectError, type ProjectOpenReply, projectError } from './contract'
+import { type ProjectListReply } from './messages'
+import { PROJECT_OPERATIONS } from './operations'
 
 export type ProjectClient = {
-  openProject(request: ProjectOpenRequest): Promise<ProjectOpenReply>
-  listProjects(request: ProjectListRequest): Promise<ProjectListReply>
-  registerProject(request: ProjectRegisterRequest): Promise<ProjectListReply>
-  relocateProject(request: ProjectRelocateRequest): Promise<ProjectListReply>
+  openProject(request: { projectId: string }): Promise<ProjectOpenReply>
+  listProjects(): Promise<ProjectListReply>
+  registerProject(): Promise<ProjectListReply>
+  relocateProject(request: { projectId: string }): Promise<ProjectListReply>
 }
 
-function isProjectListReply(value: unknown): value is ProjectListReply {
-  return isProjectListed(value) || isProjectCancelled(value) || isProjectErrorMessage(value)
-}
-
-export function createProjectClient(invoke: (request: unknown) => Promise<unknown>): ProjectClient {
+export function createProjectClient(
+  invoke: (operation: keyof typeof PROJECT_OPERATIONS, request: unknown) => Promise<unknown>,
+): ProjectClient {
   // One send for every action. It is the renderer's whole trust boundary: an unrecognised reply,
   // or one answering another request, becomes `invalid-response` rather than reaching a component.
   async function send<T extends { requestId: string | null }>(
     request: unknown,
-    accept: (reply: unknown) => reply is T,
+    operation: keyof typeof PROJECT_OPERATIONS,
+    schema: { safeParse(value: unknown): { success: boolean; data?: T } },
   ): Promise<T | ProjectError> {
     const requestId = requestIdentifier(request)
     let reply: unknown
     try {
-      reply = await invoke(request)
+      reply = await invoke(operation, request)
     } catch {
       return projectError('connection-lost', requestId)
     }
-    if (!accept(reply) || reply.requestId !== requestId) {
+    const parsed = schema.safeParse(reply)
+    if (!parsed.success || parsed.data?.requestId !== requestId) {
       return projectError('invalid-response', requestId)
     }
-    return reply
+    return parsed.data as T
   }
 
   return {
     async openProject(request) {
-      const reply = await send(request, isProjectOpenReply)
+      const message = {
+        ...request,
+        version: 1,
+        type: PROJECT_OPERATIONS.open.name,
+        requestId: crypto.randomUUID(),
+      }
+      const reply = await send(message, 'open', PROJECT_OPERATIONS.open.reply)
       // The identity is what was asked for, not merely a well formed one.
       if (reply.type === 'project.opened' && reply.project.id !== request.projectId) {
-        return projectError('invalid-response', requestIdentifier(request))
+        return projectError('invalid-response', requestIdentifier(message))
       }
       return reply
     },
-    listProjects: (request) => send(request, isProjectListReply),
-    registerProject: (request) => send(request, isProjectListReply),
-    relocateProject: (request) => send(request, isProjectListReply),
+    listProjects: () =>
+      send(
+        {
+          version: 1,
+          type: PROJECT_OPERATIONS.list.name,
+          requestId: crypto.randomUUID(),
+        },
+        'list',
+        PROJECT_OPERATIONS.list.reply,
+      ),
+    registerProject: () =>
+      send(
+        {
+          version: 1,
+          type: PROJECT_OPERATIONS.register.name,
+          requestId: crypto.randomUUID(),
+        },
+        'register',
+        PROJECT_OPERATIONS.register.reply,
+      ),
+    relocateProject: (request) =>
+      send(
+        {
+          ...request,
+          version: 1,
+          type: PROJECT_OPERATIONS.relocate.name,
+          requestId: crypto.randomUUID(),
+        },
+        'relocate',
+        PROJECT_OPERATIONS.relocate.reply,
+      ),
   }
 }

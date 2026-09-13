@@ -5,7 +5,7 @@ import {
   type SessionsListed,
   sessionError,
 } from './contract'
-import { isSessionFeedReply, isSessionListReply } from './replies'
+import { sessionFeedReplySchema, sessionListReplySchema } from './contract'
 
 function listed(reply: SessionListReply): reply is SessionsListed {
   return reply.type === 'session.listed'
@@ -61,7 +61,10 @@ export function combineSessionReaders(readers: SessionReader[]): SessionReader {
   return {
     async listSessions(request) {
       const replies = await Promise.all(readers.map((reader) => reader.listSessions(request)))
-      const parsed = replies.filter(isSessionListReply)
+      const parsed = replies.flatMap((reply) => {
+        const result = sessionListReplySchema.safeParse(reply)
+        return result.success ? [result.data] : []
+      })
       if (parsed.length !== readers.length) return sessionError('invalid-response', null)
       return combineLists(parsed)
     },
@@ -69,7 +72,10 @@ export function combineSessionReaders(readers: SessionReader[]): SessionReader {
       const knownOwner = ownerFor(request, feedOwners)
       if (knownOwner !== undefined) return knownOwner.readSessionFeed(request)
       const replies = await Promise.all(readers.map((reader) => reader.readSessionFeed(request)))
-      const parsed = replies.filter(isSessionFeedReply)
+      const parsed = replies.flatMap((reply) => {
+        const result = sessionFeedReplySchema.safeParse(reply)
+        return result.success ? [result.data] : []
+      })
       if (parsed.length !== readers.length) return sessionError('invalid-response', null)
       const reply = combineFeeds(parsed)
       if (reply.type === 'session.feed.read') {

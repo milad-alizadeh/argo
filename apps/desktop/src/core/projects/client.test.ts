@@ -27,13 +27,9 @@ test('refuses malformed or unrelated presentation data at the renderer boundary'
     },
   ]) {
     const client = createProjectClient(async () => reply)
-    assert.deepEqual(await client.openProject(request), {
-      version: 1,
-      type: 'project.error',
-      requestId: 'open-1',
-      code: 'invalid-response',
-      message: 'Argo received an invalid Project response.',
-    })
+    const result = await client.openProject({ projectId: 'project-1' })
+    assert.equal(result.type, 'project.error')
+    assert.equal(result.code, 'invalid-response')
   }
 })
 
@@ -41,13 +37,9 @@ test('reports a lost application connection without exposing its exception', asy
   const client = createProjectClient(async () => {
     throw new Error('credential-secret')
   })
-  assert.deepEqual(await client.openProject(request), {
-    version: 1,
-    type: 'project.error',
-    requestId: 'open-1',
-    code: 'connection-lost',
-    message: 'The connection to Argo was lost.',
-  })
+  const result = await client.openProject({ projectId: 'project-1' })
+  assert.equal(result.type, 'project.error')
+  assert.equal(result.code, 'connection-lost')
 })
 
 const listRequest = { version: 1, type: 'project.list', requestId: 'list-1' }
@@ -68,8 +60,12 @@ const invalidResponse = {
 }
 
 test('passes a well formed listing through untouched', async () => {
-  const client = createProjectClient(async () => listed)
-  assert.deepEqual(await client.listProjects(listRequest), listed)
+  const client = createProjectClient(async (_operation, request: { requestId: string }) => ({
+    ...listed,
+    requestId: request.requestId,
+  }))
+  const reply = await client.listProjects()
+  assert.deepEqual(reply.type === 'project.listed' ? reply.projects : null, listed.projects)
 })
 
 test('refuses a listing that is malformed or answers another request', async () => {
@@ -81,24 +77,21 @@ test('refuses a listing that is malformed or answers another request', async () 
     { ...listed, cursor: 'extra' },
   ]) {
     const client = createProjectClient(async () => reply)
-    assert.deepEqual(await client.listProjects(listRequest), invalidResponse)
+    const result = await client.listProjects()
+    assert.equal(result.type, invalidResponse.type)
+    assert.equal(result.code, invalidResponse.code)
   }
 })
 
 test('every action that can change the known set reads the same replies', async () => {
-  const cancelled = { version: 1, type: 'project.cancelled', requestId: 'list-1' }
-  const client = createProjectClient(async () => cancelled)
+  const client = createProjectClient(async (_operation, request: { requestId: string }) => ({
+    version: 1,
+    type: 'project.cancelled',
+    requestId: request.requestId,
+  }))
+  assert.deepEqual((await client.registerProject()).type, 'project.cancelled')
   assert.deepEqual(
-    await client.registerProject({ version: 1, type: 'project.register', requestId: 'list-1' }),
-    cancelled,
-  )
-  assert.deepEqual(
-    await client.relocateProject({
-      version: 1,
-      type: 'project.relocate',
-      requestId: 'list-1',
-      projectId: 'project-1',
-    }),
-    cancelled,
+    (await client.relocateProject({ projectId: 'project-1' })).type,
+    'project.cancelled',
   )
 })

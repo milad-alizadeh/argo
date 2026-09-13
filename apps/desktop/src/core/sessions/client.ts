@@ -1,64 +1,44 @@
-import { requestIdentifier } from '../../boundary'
 import {
   type ClaudeSessionInterruptReply,
-  type ClaudeSessionInterruptRequest,
+  SESSION_OPERATIONS,
   type ClaudeSessionPermissionDecisionReply,
-  type ClaudeSessionPermissionDecisionRequest,
   type ClaudeSessionPermissionReply,
-  type ClaudeSessionPermissionRequest,
   type ClaudeSessionSendReply,
-  type ClaudeSessionSendRequest,
   type ClaudeSessionStartReply,
-  type ClaudeSessionStartRequest,
   type SessionFeedReply,
-  type SessionFeedRequest,
   type SessionListReply,
-  type SessionListRequest,
+  claudeSessionPermissionReplySchema,
+  claudeSessionSendReplySchema,
+  claudeSessionStartReplySchema,
+  sessionFeedReplySchema,
+  sessionListReplySchema,
   sessionError,
 } from './contract'
-import {
-  isClaudeSessionInterruptReply,
-  isClaudeSessionPermissionDecisionReply,
-  isClaudeSessionPermissionReply,
-  isClaudeSessionSendReply,
-  isClaudeSessionStartReply,
-  isSessionFeedReply,
-  isSessionListReply,
-} from './replies'
 
 export type SessionClient = {
-  interruptClaudeSession(
-    request: ClaudeSessionInterruptRequest,
-  ): Promise<ClaudeSessionInterruptReply>
-  sendClaudeSession(request: ClaudeSessionSendRequest): Promise<ClaudeSessionSendReply>
-  startClaudeSession(request: ClaudeSessionStartRequest): Promise<ClaudeSessionStartReply>
-  readClaudePermission(
-    request: ClaudeSessionPermissionRequest,
-  ): Promise<ClaudeSessionPermissionReply>
-  decideClaudePermission(
-    request: ClaudeSessionPermissionDecisionRequest,
-  ): Promise<ClaudeSessionPermissionDecisionReply>
-  listSessions(request: SessionListRequest): Promise<SessionListReply>
-  readSessionFeed(request: SessionFeedRequest): Promise<SessionFeedReply>
+  interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>
+  sendClaudeSession(request: { sessionId: string; prompt: string }): Promise<ClaudeSessionSendReply>
+  startClaudeSession(request: { cwd: string; prompt: string }): Promise<ClaudeSessionStartReply>
+  readClaudePermission(request: { sessionId: string }): Promise<ClaudeSessionPermissionReply>
+  decideClaudePermission(request: {
+    sessionId: string
+    permissionId: string
+    decision: 'allow' | 'deny'
+  }): Promise<ClaudeSessionPermissionDecisionReply>
+  listSessions(): Promise<SessionListReply>
+  readSessionFeed(request: {
+    sessionId: string
+    revision: string | null
+  }): Promise<SessionFeedReply>
 }
 
-type Invoke = (
-  channel:
-    | 'list'
-    | 'feed'
-    | 'startClaude'
-    | 'sendClaude'
-    | 'interruptClaude'
-    | 'readClaudePermission'
-    | 'decideClaudePermission',
-  request: unknown,
-) => Promise<unknown>
+type Invoke = (operation: keyof typeof SESSION_OPERATIONS, request: unknown) => Promise<unknown>
 
 // A reply that is not the shape asked for, or answers a different request, is refused rather
 // than drawn. `connection-lost` is the one failure the renderer cannot see any other way.
 async function ask<Reply>(
   invoke: () => Promise<unknown>,
-  check: (value: unknown) => value is Reply,
+  schema: { safeParse(value: unknown): { success: boolean; data?: Reply } },
   requestId: string | null,
 ) {
   let reply: unknown
@@ -67,8 +47,9 @@ async function ask<Reply>(
   } catch {
     return sessionError('connection-lost', requestId)
   }
-  if (!check(reply)) return sessionError('invalid-response', requestId)
-  return reply
+  const parsed = schema.safeParse(reply)
+  if (!parsed.success) return sessionError('invalid-response', requestId)
+  return parsed.data as Reply
 }
 
 function answersRequest(reply: { requestId: string | null }, requestId: string | null) {
@@ -77,23 +58,24 @@ function answersRequest(reply: { requestId: string | null }, requestId: string |
 
 export function createSessionClient(invoke: Invoke): SessionClient {
   return {
-    interruptClaudeSession: clientRequest(invoke, 'interruptClaude', isClaudeSessionInterruptReply),
-    sendClaudeSession: clientRequest(invoke, 'sendClaude', isClaudeSessionSendReply),
-    startClaudeSession: clientRequest(invoke, 'startClaude', isClaudeSessionStartReply),
+    interruptClaudeSession: clientRequest(invoke, 'interruptClaude', claudeSessionSendReplySchema),
+    sendClaudeSession: clientRequest(invoke, 'sendClaude', claudeSessionSendReplySchema),
+    startClaudeSession: clientRequest(invoke, 'startClaude', claudeSessionStartReplySchema),
     readClaudePermission: clientRequest(
       invoke,
       'readClaudePermission',
-      isClaudeSessionPermissionReply,
+      claudeSessionPermissionReplySchema,
     ),
     decideClaudePermission: clientRequest(
       invoke,
       'decideClaudePermission',
-      isClaudeSessionPermissionDecisionReply,
+      claudeSessionSendReplySchema,
     ),
-    listSessions: clientRequest(invoke, 'list', isSessionListReply),
+    listSessions: () => clientRequest(invoke, 'list', sessionListReplySchema)(undefined),
     async readSessionFeed(request) {
-      const requestId = requestIdentifier(request)
-      const reply = await ask(() => invoke('feed', request), isSessionFeedReply, requestId)
+      const requestId = crypto.randomUUID()
+      const message = { ...request, version: 1, type: SESSION_OPERATIONS.feed.name, requestId }
+      const reply = await ask(() => invoke('feed', message), sessionFeedReplySchema, requestId)
       if (!answersRequest(reply, requestId)) return sessionError('invalid-response', requestId)
       // A Feed that answers for a different Session would draw one Session's history under
       // another's name, so the identity is checked and not assumed.
@@ -107,12 +89,13 @@ export function createSessionClient(invoke: Invoke): SessionClient {
 
 function clientRequest<Request, Reply extends { requestId: string | null }>(
   invoke: Invoke,
-  channel: Parameters<Invoke>[0],
-  check: (value: unknown) => value is Reply,
+  operation: Parameters<Invoke>[0],
+  schema: { safeParse(value: unknown): { success: boolean; data?: Reply } },
 ) {
   return async (request: Request) => {
-    const requestId = requestIdentifier(request)
-    const reply = await ask(() => invoke(channel, request), check, requestId)
+    const requestId = crypto.randomUUID()
+    const message = { ...request, version: 1, type: SESSION_OPERATIONS[operation].name, requestId }
+    const reply = await ask(() => invoke(operation, message), schema, requestId)
     return answersRequest(reply, requestId) ? reply : sessionError('invalid-response', requestId)
   }
 }
