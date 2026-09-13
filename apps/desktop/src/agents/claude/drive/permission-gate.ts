@@ -10,6 +10,7 @@ export type ClaudePermissionGate = {
   open: (sessionId: string) => { pluginRoot: string; close: () => void }
   pending: (sessionId: string) => ClaudePermission | null
   decide: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
+  close: () => void
 }
 
 const PLUGIN_MANIFEST = JSON.stringify({
@@ -98,6 +99,9 @@ export function createClaudePermissionGate(root: string): ClaudePermissionGate {
       waiting.delete(sessionId)
       held.socket.end(decisionLine(decision))
       return true
+    },
+    close() {
+      rmSync(sockets, { recursive: true, force: true })
     },
   }
 }

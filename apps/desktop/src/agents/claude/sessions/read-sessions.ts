@@ -17,15 +17,15 @@ export function createClaudeSessionReader(roots: {
   transcripts: string
   archive?: string
   managedSessions?: () => SessionRosterRow[]
-  ownedBefore?: (sessionId: string) => boolean
+  orphans?: () => ReadonlySet<string>
 }): SessionReader {
-  const ownedBefore = roots.ownedBefore ?? (() => false)
   return createTranscriptSessionReader({
     discoverSessions: async () => {
       const discovered = await discoverSessions(roots.transcripts, roots.archive)
-      // ADR-0026: a Session some Argo held reads orphaned until this window drives it again.
+      // ADR-0026: a Session an Argo held and no running window holds now reads orphaned.
+      const orphans = roots.orphans?.() ?? new Set()
       const graded = discovered.rows.map(
-        (row): SessionRosterRow => (ownedBefore(row.id) ? { ...row, posture: 'orphaned' } : row),
+        (row): SessionRosterRow => (orphans.has(row.id) ? { ...row, posture: 'orphaned' } : row),
       )
       return mergeManagedRoster({ ...discovered, rows: graded }, roots.managedSessions?.() ?? [])
     },

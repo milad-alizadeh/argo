@@ -13,7 +13,7 @@ export type ClaudeSessionDriver = {
   send: (sessionId: string, text: string) => Promise<void>
   interrupt: (sessionId: string) => void
   roster: () => SessionRosterRow[]
-  ownedBefore: (sessionId: string) => boolean
+  orphans: () => ReadonlySet<string>
   pendingPermission: (sessionId: string) => ClaudePermission | null
   decidePermission: (sessionId: string, permissionId: string, decision: 'allow' | 'deny') => boolean
   close: () => void
@@ -31,13 +31,13 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       const session = channel.open({
         sessionId,
         ...request,
-        chain: ['--session-id', sessionId],
+        sessionFlags: ['--session-id', sessionId],
       })
       channel.write(session, request.prompt)
       return sessionId
     },
     async send(sessionId, text) {
-      channel.write(await channel.find(sessionId, text), text)
+      channel.write(await channel.channelFor(sessionId, text), text)
     },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
@@ -45,10 +45,11 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       session.process.write(INTERRUPT)
     },
     roster: () => [...sessions.entries()].map(([id, session]) => managedRow(id, session)),
-    ownedBefore: (sessionId) => options.ledger.standing(sessionId) !== 'never-owned',
+    orphans: options.ledger.orphans,
     pendingPermission: () => null,
     decidePermission: () => false,
     close() {
+      channel.close()
       for (const [sessionId, session] of sessions) {
         session.process.kill?.()
         session.close()

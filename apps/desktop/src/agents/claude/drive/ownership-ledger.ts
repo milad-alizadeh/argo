@@ -20,6 +20,7 @@ export type OwnershipLedger = {
   bind: (sessionId: string) => void
   release: (sessionId: string) => void
   standing: (sessionId: string) => OwnershipStanding
+  orphans: () => ReadonlySet<string>
 }
 
 function readLedger(file: string): Ledger {
@@ -43,23 +44,33 @@ export function createOwnershipLedger(options: {
   const write = (sessionId: string, owner: Owner | null) => {
     mine[sessionId] = { owner }
     try {
-      writeFileSync(options.path, JSON.stringify({ ...readLedger(options.path), ...mine }))
+      writeFileSync(
+        options.path,
+        JSON.stringify({ ...readLedger(options.path), [sessionId]: { owner } }),
+      )
     } catch {
       // ADR-0026: grading stays right until quit, and the next launch reads this Session external.
     }
   }
-  const isMine = (owner: Owner) =>
-    owner.pid === options.owner.pid && owner.registry === options.owner.registry
+  // The file wins: another window may have resumed a Session this one let go.
+  const entries = (): Ledger => ({ ...mine, ...readLedger(options.path) })
+  const grade = (entry: Ledger[string] | undefined): OwnershipStanding => {
+    if (entry === undefined) return 'never-owned'
+    if (entry.owner === null) return 'orphaned'
+    if (entry.owner.pid === options.owner.pid && entry.owner.registry === options.owner.registry)
+      return 'held-here'
+    return options.isAlive(entry.owner.pid) ? 'held-elsewhere' : 'orphaned'
+  }
   return {
     bind: (sessionId) => write(sessionId, options.owner),
     release: (sessionId) => write(sessionId, null),
-    standing(sessionId) {
-      const entry = mine[sessionId] ?? readLedger(options.path)[sessionId]
-      if (entry === undefined) return 'never-owned'
-      if (entry.owner === null) return 'orphaned'
-      if (isMine(entry.owner)) return 'held-here'
-      return options.isAlive(entry.owner.pid) ? 'held-elsewhere' : 'orphaned'
-    },
+    standing: (sessionId) => grade(entries()[sessionId]),
+    orphans: () =>
+      new Set(
+        Object.entries(entries())
+          .filter(([, entry]) => grade(entry) === 'orphaned')
+          .map(([sessionId]) => sessionId),
+      ),
   }
 }
 

@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import net from 'node:net'
 import os from 'node:os'
@@ -37,5 +38,7 @@ test('holds a managed Claude permission until the selected Session answers it', 
   expect(gate.pending('session-one')).toBeNull()
 
   opened.close()
+  gate.close()
+  expect(existsSync(path.dirname(socketPath))).toBe(false)
   await rm(root, { recursive: true, force: true })
 })

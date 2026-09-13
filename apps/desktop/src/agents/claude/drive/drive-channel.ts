@@ -1,6 +1,6 @@
 import { SESSION_ERRORS } from '@/core/sessions/session-error'
 import { claudeTurn } from './claude-turn'
-import type { OwnershipLedger } from './ownership-ledger'
+import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 
 type ClaudeProcess = {
   write: (text: string) => void
@@ -27,7 +27,7 @@ export type ManagedSession = {
   prompt: string
 }
 // One spawn path with two seeds: a fresh Session names its transcript, a resume names its tip.
-type Seed = { sessionId: string; cwd: string; prompt: string; chain: string[] }
+type Seed = { sessionId: string; cwd: string; prompt: string; sessionFlags: string[] }
 
 type DriverErrorCode =
   | 'cli-unavailable'
@@ -61,7 +61,7 @@ function openChannel(
   try {
     process = options.spawn(
       executable,
-      [...seed.chain, '--permission-mode', 'manual', ...(prepared?.commandArguments ?? [])],
+      [...seed.sessionFlags, '--permission-mode', 'manual', ...(prepared?.commandArguments ?? [])],
       { cwd: seed.cwd, env: launchEnvironment() },
     )
   } catch {
@@ -86,37 +86,47 @@ function openChannel(
   return session
 }
 
+function refuseUnlessResumable(standing: OwnershipStanding) {
+  switch (standing) {
+    case 'never-owned':
+      throw new ClaudeSessionDriverError('not-resumable')
+    case 'held-elsewhere':
+      throw new ClaudeSessionDriverError('held-elsewhere')
+    case 'orphaned':
+    case 'held-here':
+      return
+  }
+}
+
 export function channelActions(options: DriverOptions, sessions: Map<string, ManagedSession>) {
   const resuming = new Map<string, Promise<ManagedSession>>()
+  let closed = false
   const open = (seed: Seed) => openChannel(options, sessions, seed)
 
   const resume = async (sessionId: string, prompt: string) => {
-    switch (options.ledger.standing(sessionId)) {
-      case 'never-owned':
-        throw new ClaudeSessionDriverError('not-resumable')
-      case 'held-elsewhere':
-        throw new ClaudeSessionDriverError('held-elsewhere')
-      case 'orphaned':
-      case 'held-here':
-        break
-    }
+    refuseUnlessResumable(options.ledger.standing(sessionId))
     const target = await options.resumeTarget(sessionId)
     if (target === null) throw new ClaudeSessionDriverError('missing-session')
+    if (closed) throw new ClaudeSessionDriverError('not-drivable')
     const live = sessions.get(sessionId)
     if (live) return live
-    return open({ sessionId, cwd: target.cwd, prompt, chain: ['--resume', target.tipId] })
+    // Another window may have resumed it while the transcript was read.
+    refuseUnlessResumable(options.ledger.standing(sessionId))
+    return open({ sessionId, cwd: target.cwd, prompt, sessionFlags: ['--resume', target.tipId] })
   }
 
   return {
     open,
+    close() {
+      closed = true
+    },
     write(session: ManagedSession, text: string) {
       const turn = claudeTurn(text)
       session.process.write(turn.paste)
       options.schedule(() => session.process.write(turn.submit))
     },
-    // ADR-0026 as amended by #1842: the next Turn is what reopens a channel, and two Turns sent
-    // inside one `claude` startup share the one agent it starts.
-    find(sessionId: string, prompt: string): Promise<ManagedSession> {
+    // ADR-0026 (#1842): the next Turn reopens a channel; Turns sent during one startup share it.
+    channelFor(sessionId: string, prompt: string): Promise<ManagedSession> {
       const live = sessions.get(sessionId)
       if (live) return Promise.resolve(live)
       const pending =

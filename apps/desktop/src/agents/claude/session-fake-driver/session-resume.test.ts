@@ -34,7 +34,7 @@ test('reads a Session Argo held before a restart as orphaned, and every other as
   const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
   const reader = createClaudeSessionReader({
     transcripts: root,
-    ownedBefore: (sessionId) => sessionId === 'resumeParent',
+    orphans: () => new Set(['resumeParent']),
   })
 
   const roster = await rosterOf(reader)
@@ -52,7 +52,7 @@ test('reads a Session this window drives as managed, not orphaned', async (conte
   const driven: SessionRosterRow = { ...row, posture: 'managed' }
   const reader = createClaudeSessionReader({
     transcripts: root,
-    ownedBefore: () => true,
+    orphans: () => new Set([row.id]),
     managedSessions: () => [driven],
   })
 

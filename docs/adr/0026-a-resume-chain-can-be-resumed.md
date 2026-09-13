@@ -99,7 +99,8 @@ flag) adopts nothing at all.
   this file existed.
 - **An open window whose owner is still running is another window's Session, and a resume is
   refused.** An open window whose owner is gone is the ordinary orphan — that Argo was killed
-  before it could close it — and resumes normally.
+  before it could close it — and resumes normally. Only that ordinary orphan reads `orphaned` in
+  the Roster, because a Session another window drives still has a live process.
 - **The ledger only grows.** One small entry per Session Argo has ever owned, and nothing prunes
   it: a transcript that has been deleted leaves its window behind. Left as is because the entry is
   a few dozen bytes and there is no honest signal that a Session is gone for good; if the file

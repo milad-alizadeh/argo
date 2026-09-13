@@ -100,6 +100,7 @@ export const ResumesOnSend: Story = {
 
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Interrupt' })).toBeVisible())
     await expect(composer.textContent).toBe('')
+    await expect(composer).toHaveFocus()
     await expect(canvas.queryByRole('alert')).toBeNull()
   },
 }
@@ -114,6 +115,7 @@ function refusedStory(code: SessionErrorCode): Story {
         expect(canvas.getByRole('alert')).toHaveTextContent(sessionError(code, null).message),
       )
       await expect(composer).toHaveTextContent('Carry on with the fix.')
+      await expect(composer).toHaveFocus()
       await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
     },
   }
@@ -121,4 +123,6 @@ function refusedStory(code: SessionErrorCode): Story {
 
 export const HeldByAnotherWindow = refusedStory('held-elsewhere')
 export const NeverStartedByArgo = refusedStory('not-resumable')
+export const TranscriptGone = refusedStory('missing-session')
+export const ClaudeCodeMissing = refusedStory('cli-unavailable')
 export const ClaudeFailsToStart = refusedStory('launch-failed')

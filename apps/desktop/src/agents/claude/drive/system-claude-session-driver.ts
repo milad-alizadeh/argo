@@ -82,5 +82,9 @@ export function createSystemClaudeSessionDriver(paths: {
         ),
     pendingPermission: gate.pending,
     decidePermission: gate.decide,
+    close() {
+      driver.close()
+      gate.close()
+    },
   }
 }

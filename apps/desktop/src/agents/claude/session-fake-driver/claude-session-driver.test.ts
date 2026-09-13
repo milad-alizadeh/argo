@@ -62,6 +62,5 @@ test('a Session Argo starts is still read as Argo’s after the app restarts', a
 
   const second = launch(file, { registry: 'window-b' })
 
-  assert.equal(second.driver.ownedBefore(sessionId), true)
-  assert.equal(second.driver.ownedBefore('someone-else'), false)
+  assert.deepEqual([...second.driver.orphans()], [sessionId])
 })

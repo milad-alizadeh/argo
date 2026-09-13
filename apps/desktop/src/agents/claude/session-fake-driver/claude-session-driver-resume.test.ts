@@ -55,6 +55,25 @@ test('a resumed Session whose process exits resumes again on the next Turn', asy
   assert.deepEqual(spawned[1]?.writes, PASTED('Second.'))
 })
 
+test('a window that closes while a resume reads its transcript starts no Claude for it', async (context) => {
+  const file = await ledgerFile(context)
+  ownedBeforeRestart(file, 'chain-root')
+  let found: (target: { cwd: string; tipId: string }) => void = () => {}
+  const { driver, spawned } = launch(file, {
+    resumeTarget: () =>
+      new Promise((resolve) => {
+        found = resolve
+      }),
+  })
+
+  const sent = driver.send('chain-root', 'Carry on.')
+  driver.close()
+  found({ cwd: '/projects/argo', tipId: 'chain-tip' })
+
+  await assert.rejects(sent)
+  assert.deepEqual(spawned, [])
+})
+
 const refusals: Array<{
   claim: string
   code: ClaudeSessionDriverError['code']

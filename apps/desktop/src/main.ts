@@ -7,6 +7,7 @@ import { createClaudeSessionReader } from './agents/claude/sessions/read-session
 import { claudeArchiveRoot, claudeTranscriptsRoot } from './agents/claude/sessions/roots'
 import { createSystemCodexSessionDriver } from './agents/codex/drive/system-codex-session-driver'
 import { createCodexSessionReader } from './agents/codex/sessions/read-sessions'
+import { codexTranscriptsRoot } from './agents/codex/sessions/roots'
 import { createAccountAccess } from './core/accounts/access'
 import { attachAccountBridge } from './core/accounts/bridge'
 import { safeStorageCipher } from './core/accounts/safe-storage'
@@ -22,10 +23,7 @@ import { PROJECT_PROOF_STORE_ENV } from './core/projects/fake-driver/project-pro
 import { attachWindowNavigation } from './core/security/window-navigation'
 import { attachSessionBridge } from './core/sessions/bridge'
 import { combineSessionReaders } from './core/sessions/combine-readers'
-import {
-  SESSION_CLAUDE_EXECUTABLE_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from './core/sessions/proof-protocol'
+import { SESSION_CLAUDE_EXECUTABLE_ENV } from './core/sessions/proof-protocol'
 import { attachTicketBridge } from './core/tickets/bridge'
 import { GITHUB_PROOF_ORIGIN_ENV } from './core/tickets/fake-driver/ticket-proof-protocol'
 import {
@@ -67,13 +65,6 @@ function githubEndpoints(): GitHubEndpoints {
   return endpoints
 }
 
-function codexTranscriptsRoot(): string {
-  return (
-    process.env[SESSION_CODEX_TRANSCRIPTS_ENV] ??
-    path.join(app.getPath('home'), '.codex', 'sessions')
-  )
-}
-
 function attachBridges(window: BrowserWindow, userData: string, rendererURL: string) {
   const home = app.getPath('home')
   const claudeSessionDriver = createSystemClaudeSessionDriver({
@@ -90,9 +81,9 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         transcripts: claudeTranscriptsRoot(home),
         archive: claudeArchiveRoot(home),
         managedSessions: claudeSessionDriver.roster,
-        ownedBefore: claudeSessionDriver.ownedBefore,
+        orphans: claudeSessionDriver.orphans,
       }),
-      createCodexSessionReader(codexTranscriptsRoot(), {
+      createCodexSessionReader(codexTranscriptsRoot(home), {
         managedSessions: codexSessionDriver.roster,
       }),
     ]),
