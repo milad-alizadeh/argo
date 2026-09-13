@@ -7,3 +7,6 @@ export const SESSION_CODEX_TRANSCRIPTS_ENV = 'ARGO_CODEX_TRANSCRIPTS'
 // that says which Sessions the reader archived. Same reason as the line above: a proof reads a
 // fixture store, never the reader's.
 export const SESSION_CLAUDE_ARCHIVE_ENV = 'ARGO_CLAUDE_ARCHIVE'
+
+// The `claude` a Session proof drives: a fake that writes transcripts, honoured only on a proof run.
+export const SESSION_CLAUDE_EXECUTABLE_ENV = 'ARGO_CLAUDE_EXECUTABLE'

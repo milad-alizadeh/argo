@@ -12,10 +12,15 @@ import os from 'node:os'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../../../scripts/acceptance-protocol.mjs'
+import {
+  provePackagedResume,
+  writeFakeClaude,
+} from '../../../agents/claude/session-fake-driver/session-resume-case'
 import { appExecutable, assertShippedFusesIntact } from '../../desktop-proof/packaged-test-copy'
 import { PROJECT_PROOF_STORE_ENV } from '../../projects/fake-driver/project-proof-protocol'
 import {
   SESSION_CLAUDE_ARCHIVE_ENV,
+  SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../proof-protocol'
@@ -42,6 +47,7 @@ let application: Awaited<ReturnType<typeof electron.launch>> | undefined
 const cases = []
 try {
   const fixture = await prepare(root)
+  const fakeClaude = await writeFakeClaude(root, fixture.claudeTranscripts)
   const launch = async () => {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
@@ -50,6 +56,7 @@ try {
         [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
         [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
         [SESSION_CLAUDE_ARCHIVE_ENV]: fixture.archive,
+        [SESSION_CLAUDE_EXECUTABLE_ENV]: fakeClaude,
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },
@@ -110,6 +117,14 @@ try {
       updateRoster: () => growCodexTranscript(fixture.codexTranscripts),
     }),
   )
+  // Last, because the Session it starts becomes the newest row and reorders the Roster.
+  await ran(['session-claude-resume'], async () => {
+    page = await provePackagedResume(page, {
+      project: fixture.project,
+      restart,
+      transcripts: fixture.claudeTranscripts,
+    })
+  })
   await assertShippedFusesIntact()
   console.log(
     JSON.stringify({

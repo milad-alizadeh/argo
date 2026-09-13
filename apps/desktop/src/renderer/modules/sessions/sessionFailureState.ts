@@ -4,7 +4,9 @@ export function sessionFailureState(failure: SessionError) {
   switch (failure.code) {
     case 'access-denied':
     case 'cli-unavailable':
+    case 'held-elsewhere':
     case 'missing-session':
+    case 'not-resumable':
     case 'transcripts-unavailable':
       return 'unavailable'
     case 'connection-lost':
