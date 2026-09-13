@@ -40,6 +40,7 @@ const meta: Meta<typeof BasicFeed> = {
     activeEvidenceId: null,
     feed,
     failure: null,
+    isRunning: false,
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
   },
@@ -224,6 +225,7 @@ function StreamingFeed() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
+          isRunning={false}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
         />

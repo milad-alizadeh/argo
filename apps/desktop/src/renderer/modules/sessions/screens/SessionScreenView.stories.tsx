@@ -129,6 +129,7 @@ function ReviewScreen() {
         feed={feed}
         feedError={null}
         inspector={<SessionFacts session={session} />}
+        isRunning={session.status === 'running'}
         onOpenEvidence={() => {}}
         selectedSessionId={selectedSessionId}
       />
