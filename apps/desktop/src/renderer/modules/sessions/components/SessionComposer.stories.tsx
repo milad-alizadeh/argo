@@ -128,12 +128,14 @@ function CompactingComposerStory() {
     <div className="mx-auto flex h-dvh w-full max-w-none flex-col p-8 [--size-session-column:72rem]">
       <div className="min-h-0 flex-1">
         <BasicFeed
+          activeEvidenceId={null}
           compactionPercentage={compacting ? 22 : null}
           compactionStartedAt={compacting ? '2026-09-13T22:01:00.000Z' : null}
           compactionTokens={compacting ? '10.1k tokens' : null}
           failure={null}
           feed={COMPACTION_FEED}
           onOpenEvidence={() => {}}
+          isRunning={compacting}
           selectedSessionId="compacting-session"
         />
       </div>

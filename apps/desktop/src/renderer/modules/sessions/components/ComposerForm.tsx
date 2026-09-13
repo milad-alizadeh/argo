@@ -77,7 +77,7 @@ export function ComposerForm({
         onReorder={onReorder}
       />
       <div
-        className={`@container relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-foreground/10${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}`}
       >
         <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
           <SessionPlanPopover plan={plan} />

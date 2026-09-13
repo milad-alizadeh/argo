@@ -19,9 +19,9 @@ type SessionShellProps = {
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
-  compactionStartedAt: string | null
-  compactionPercentage: number | null
-  compactionTokens: string | null
+  compactionStartedAt?: string | null
+  compactionPercentage?: number | null
+  compactionTokens?: string | null
   isRunning: boolean
   selectedSessionId: string | null
   activeEvidenceId: string | null
@@ -101,9 +101,9 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
-  compactionStartedAt,
-  compactionPercentage,
-  compactionTokens,
+  compactionStartedAt = null,
+  compactionPercentage = null,
+  compactionTokens = null,
   isRunning,
   selectedSessionId,
   activeEvidenceId,

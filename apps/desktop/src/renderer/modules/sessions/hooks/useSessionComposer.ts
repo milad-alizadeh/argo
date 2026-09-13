@@ -58,7 +58,8 @@ export function useSessionComposer({
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
-  const { compact, interrupt, send, start } = useMutationsFor(cli)
+  const { compact } = useClaudeSessionMutations()
+  const { interrupt, send, start } = useMutationsFor(cli)
   const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
   const { control, watchTurn } = useTurnSetup({
     cli,
