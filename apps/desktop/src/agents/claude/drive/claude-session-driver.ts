@@ -11,6 +11,8 @@ import {
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string
+  compact: (sessionId: string) => Promise<void>
+  completeCompaction: (sessionId: string, completedAt: string) => void
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
   roster: () => SessionRosterRow[]
@@ -21,6 +23,22 @@ export type ClaudeSessionDriver = {
 }
 
 const INTERRUPT = '\u001b'
+const COMPACT = '/compact'
+
+function clearCompaction(session: ManagedSession) {
+  session.compactionStartedAt = null
+  session.compactionPercentage = null
+  session.compactionTokens = null
+}
+
+function rosterRow(id: string, session: ManagedSession) {
+  return {
+    ...managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),
+    compactionStartedAt: session.compactionStartedAt,
+    compactionPercentage: session.compactionPercentage,
+    compactionTokens: session.compactionTokens,
+  }
+}
 
 export function createClaudeSessionDriver(options: DriverOptions): ClaudeSessionDriver {
   const sessions = new Map<string, ManagedSession>()
@@ -40,15 +58,33 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     async send(sessionId, turn) {
       await channel.write(await channel.channelFor(sessionId, turn), turn)
     },
+    async compact(sessionId) {
+      const session = sessions.get(sessionId)
+      if (!session) throw new ClaudeSessionDriverError('not-drivable')
+      session.compactionStartedAt = new Date().toISOString()
+      session.compactionPercentage = null
+      session.compactionTokens = null
+      try {
+        session.process.write(COMPACT)
+        session.process.write('\r')
+      } catch (error) {
+        clearCompaction(session)
+        throw error
+      }
+    },
+    completeCompaction(sessionId, completedAt) {
+      const session = sessions.get(sessionId)
+      if (!session || session.compactionStartedAt === null) return
+      if (Date.parse(completedAt) < Date.parse(session.compactionStartedAt)) return
+      clearCompaction(session)
+    },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
+      clearCompaction(session)
       session.process.write(INTERRUPT)
     },
-    roster: () =>
-      [...sessions.entries()].map(([id, session]) =>
-        managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),
-      ),
+    roster: () => [...sessions.entries()].map(([id, session]) => rosterRow(id, session)),
     orphans: options.ledger.orphans,
     pendingPermission: () => null,
     decidePermission: () => false,

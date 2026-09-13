@@ -10,6 +10,7 @@ import type { TurnSetup } from '../turn-setup/turn-setup'
 import { useTurnSetup } from '../turn-setup/useTurnSetup'
 import { useClaudeSessionMutations } from './useClaudeSessionMutations'
 import { useCodexSessionMutations } from './useCodexSessionMutations'
+import { useCompact, useInterrupt } from './useSessionActions'
 import type { useSessions } from './useSessions'
 
 const NO_ROWS: SessionRosterRow[] = []
@@ -40,8 +41,9 @@ function managedSessionIsRunning(
 // A CLI's own hook owns its IPC calls (ADR-0021); this is the one seam that picks between them,
 // so the composer it hands back never has to know which CLI it is driving.
 function useMutationsFor(cli: SessionCli) {
-  const mutationsByCli = { claude: useClaudeSessionMutations(), codex: useCodexSessionMutations() }
-  return mutationsByCli[cli]
+  const claude = useClaudeSessionMutations()
+  const codex = useCodexSessionMutations()
+  return { ...{ claude, codex }[cli], compact: claude.compact }
 }
 
 export function useSessionComposer({
@@ -56,7 +58,7 @@ export function useSessionComposer({
 } {
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
-  const { interrupt, send, start } = useMutationsFor(cli)
+  const { compact, interrupt, send, start } = useMutationsFor(cli)
   const composerKey = selectedSessionId ?? `new:${cockpit.project?.id ?? 'unselected'}`
   const { control, watchTurn } = useTurnSetup({
     cli,
@@ -65,7 +67,10 @@ export function useSessionComposer({
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: setFailure,
   })
-  const onInterrupt = useInterrupt(interrupt, selectedSessionId, setFailure)
+  const onInterrupt = useInterrupt({ interrupt, sessionId: selectedSessionId, setFailure })
+  const onCompact = useCompact({ compact, cli, sessionId: selectedSessionId, setFailure })
+  const isCompacting =
+    roster?.sessions.find(({ id }) => id === selectedSessionId)?.compactionStartedAt != null
   const onSend = useCallback(
     async (prompt: string, setup: TurnSetup | null) => {
       if (selectedSessionId !== null) {
@@ -104,33 +109,15 @@ export function useSessionComposer({
   return {
     failure: failure?.sessionId === selectedSessionId ? failure.message : null,
     props: {
-      isRunning: managedSessionIsRunning(roster, selectedSessionId),
+      isRunning: managedSessionIsRunning(roster, selectedSessionId) || isCompacting,
+      isCompacting,
+      onCompact: cli === 'claude' && selectedSessionId !== null ? onCompact : undefined,
       onInterrupt,
       onSend,
       sessionId: composerKey,
       setup: control,
     },
   }
-}
-
-function useInterrupt(
-  interrupt: ReturnType<typeof useMutationsFor>['interrupt'],
-  sessionId: string | null,
-  setFailure: (failure: Failure | null) => void,
-) {
-  return useCallback(async () => {
-    if (sessionId === null) return false
-    try {
-      await interrupt.mutateAsync(sessionId)
-      return true
-    } catch (error) {
-      setFailure({
-        sessionId,
-        message: messageFrom(error, 'Argo could not interrupt this Session.'),
-      })
-      return false
-    }
-  }, [interrupt, sessionId, setFailure])
 }
 
 async function sendMessage(

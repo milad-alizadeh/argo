@@ -9,12 +9,16 @@ import {
 } from '../../../components/ui/empty'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
+import { CompactionMarker } from './CompactionMarker'
 import { FeedMarkdown } from './content/FeedMarkdown'
 import { type Reveal, useRevealAnimation, useReveals } from './reveal'
 import { type Settled, useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
   active: boolean
+  compactionStartedAt: string | null
+  compactionPercentage: number | null
+  compactionTokens: string | null
   feed: SessionFeed
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
@@ -72,7 +76,14 @@ function feedRowContent(row: SessionFeedRow) {
 
 // A kept document remains mounted when another Session is selected, retaining that Session's
 // scroller state until the reader returns (#1834).
-export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps) {
+export function FeedDocument({
+  active,
+  compactionPercentage,
+  compactionStartedAt,
+  compactionTokens,
+  feed,
+  onOpenEvidence,
+}: FeedDocumentProps) {
   const { column, measured, settled } = useSettledFeed({
     active,
     sessionId: feed.sessionId,
@@ -108,6 +119,13 @@ export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps
           ))}
         </div>
         {content}
+        {compactionStartedAt === null ? null : (
+          <CompactionMarker
+            percentage={compactionPercentage}
+            startedAt={compactionStartedAt}
+            tokens={compactionTokens}
+          />
+        )}
       </div>
     </div>
   )

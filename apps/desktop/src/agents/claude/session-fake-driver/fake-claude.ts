@@ -41,11 +41,24 @@ function write(type: 'user' | 'assistant', message: Record<string, unknown>) {
   parentUuid = uuid
 }
 
+function compact() {
+  const uuid = randomUUID()
+  appendFileSync(
+    transcript,
+    `${JSON.stringify({ type: 'system', subtype: 'compact_boundary', uuid, timestamp: new Date().toISOString() })}\n`,
+  )
+}
+
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
 process.stdin.on('data', (chunk: string) => {
   pending += chunk
+  if (pending.includes('/compact\r')) {
+    pending = pending.replace('/compact\r', '')
+    process.stdout.write('Compacting conversation… (0m 00s · ↓ 10.1k tokens) 22%')
+    setTimeout(compact, 1_000)
+  }
   for (let turn = TURN.exec(pending); turn !== null; turn = TURN.exec(pending)) {
     pending = pending.slice(turn.index + turn[0].length)
     const text = turn[1] ?? ''

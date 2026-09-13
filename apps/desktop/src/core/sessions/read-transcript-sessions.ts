@@ -31,7 +31,15 @@ export function mergeManagedRoster(discovered: Discovery, managed: SessionRoster
   const managedById = new Map(managed.map((session) => [session.id, session]))
   const observed = discovered.rows.map((session) => {
     const held = managedById.get(session.id)
-    return held === undefined ? session : { ...session, posture: held.posture }
+    return held === undefined
+      ? session
+      : {
+          ...session,
+          posture: held.posture,
+          compactionStartedAt: held.compactionStartedAt,
+          compactionPercentage: held.compactionPercentage,
+          compactionTokens: held.compactionTokens,
+        }
   })
   const unobserved = managed.filter(
     (session) => !discovered.rows.some(({ id }) => id === session.id),

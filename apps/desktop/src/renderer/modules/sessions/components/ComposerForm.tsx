@@ -1,6 +1,6 @@
 import type { LexicalEditor } from 'lexical'
-import { ArrowUp } from 'lucide-react'
-import type { RefObject } from 'react'
+import { ArrowUp, Square } from 'lucide-react'
+import { type RefObject, useEffect, useRef } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
 import { Button } from '../../../components/ui/button'
@@ -9,6 +9,7 @@ import { ModeMenu } from './ModeMenu'
 import { PendingTurns } from './PendingTurns'
 import { RunSetupMenu, type TurnSetupControlProps } from './RunSetupMenu'
 import { ComposerEditor } from './SessionComposerEditor'
+import { SessionContextBar } from './SessionContextBar'
 import { SessionPlanPopover } from './SessionPlanPopover'
 import type { usePendingTurns } from './usePendingTurns'
 
@@ -19,7 +20,10 @@ export const COMPOSER_COLUMN =
 export function ComposerForm({
   draft,
   editorRef,
+  contextTokens,
   isRunning,
+  isCompacting,
+  onCompact,
   onChange,
   onEdit,
   onInterrupt,
@@ -34,7 +38,10 @@ export function ComposerForm({
 }: {
   draft: string
   editorRef: RefObject<LexicalEditor | null>
+  contextTokens: number | null | undefined
   isRunning: boolean
+  isCompacting: boolean
+  onCompact?: () => Promise<boolean>
   onChange: (text: string) => void
   onEdit: (turn: (typeof pendingTurns)[number]) => void
   onInterrupt?: () => Promise<boolean>
@@ -47,9 +54,17 @@ export function ComposerForm({
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
 }) {
+  const interruptRef = useRef<HTMLButtonElement>(null)
+  const wasCompacting = useRef(isCompacting)
+
+  useEffect(() => {
+    if (isCompacting && !wasCompacting.current) interruptRef.current?.focus()
+    wasCompacting.current = isCompacting
+  }, [isCompacting])
+
   return (
     <form
-      className={`${COMPOSER_COLUMN} pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
+      className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-shell-region)`}
       onSubmit={(event) => {
         event.preventDefault()
         onSend()
@@ -76,19 +91,19 @@ export function ComposerForm({
             onSend={onSend}
           />
         </div>
-        <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
+        <div className="flex items-center gap-1 pt-(--spacing-shell-item) pr-(--spacing-shell-item) pb-(--spacing-shell-gutter) pl-(--spacing-shell-item) @[36rem]:gap-2">
           {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
           <div className="ml-auto flex items-center gap-1">
             {setup ? <ModeMenu {...setup} /> : null}
             {isRunning ? (
               <Button
                 aria-label="Interrupt"
-                className="type-composer-control"
                 onClick={() => void onInterrupt?.()}
-                size="sm"
+                ref={interruptRef}
+                size="icon-sm"
                 type="button"
               >
-                Interrupt
+                <Square fill="currentColor" />
               </Button>
             ) : (
               <Button
@@ -103,6 +118,12 @@ export function ComposerForm({
           </div>
         </div>
       </div>
+      <SessionContextBar
+        contextTokens={contextTokens}
+        harness={harness?.cli}
+        isCompacting={isCompacting}
+        onCompact={onCompact}
+      />
     </form>
   )
 }

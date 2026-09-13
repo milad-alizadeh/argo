@@ -1,4 +1,5 @@
 import {
+  claudeSessionCompactRequestSchema,
   claudeSessionInterruptRequestSchema,
   claudeSessionPermissionDecisionRequestSchema,
   claudeSessionPermissionReplySchema,
@@ -47,6 +48,12 @@ export const SESSION_OPERATIONS = {
     name: 'session.claude.interrupt',
     channel: 'argo:session:claude:interrupt',
     request: claudeSessionInterruptRequestSchema,
+    reply: claudeSessionSendReplySchema,
+  },
+  compactClaude: {
+    name: 'session.claude.compact',
+    channel: 'argo:session:claude:compact',
+    request: claudeSessionCompactRequestSchema,
     reply: claudeSessionSendReplySchema,
   },
   readClaudePermission: {

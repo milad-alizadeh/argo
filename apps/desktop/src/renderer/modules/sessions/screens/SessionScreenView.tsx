@@ -18,6 +18,9 @@ type SessionShellProps = {
   inspector: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
+  compactionStartedAt?: string | null
+  compactionPercentage?: number | null
+  compactionTokens?: string | null
   selectedSessionId: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
@@ -50,6 +53,9 @@ export function SessionScreenView() {
     <SessionShell
       feed={feed}
       feedError={feedError}
+      compactionStartedAt={session?.compactionStartedAt ?? null}
+      compactionPercentage={session?.compactionPercentage ?? null}
+      compactionTokens={session?.compactionTokens ?? null}
       selectedSessionId={selectedSessionId}
       onOpenEvidence={setEvidence}
       composer={
@@ -82,6 +88,9 @@ export function SessionShell({
   inspector,
   feed,
   feedError,
+  compactionStartedAt = null,
+  compactionPercentage = null,
+  compactionTokens = null,
   selectedSessionId,
   onOpenEvidence,
 }: SessionShellProps) {
@@ -101,6 +110,9 @@ export function SessionShell({
             </header>
             <section aria-label="Session feed" className="min-h-0 flex-1">
               <BasicFeed
+                compactionStartedAt={compactionStartedAt}
+                compactionPercentage={compactionPercentage}
+                compactionTokens={compactionTokens}
                 feed={feed}
                 failure={feedError}
                 selectedSessionId={selectedSessionId}

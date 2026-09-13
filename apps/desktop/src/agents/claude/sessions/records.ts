@@ -11,12 +11,8 @@ import type {
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
 
-const HEADLESS_ENTRYPOINTS = ['sdk-cli']
-
 function readEntry(value: unknown): SessionEntry {
-  return typeof value === 'string' && HEADLESS_ENTRYPOINTS.includes(value)
-    ? 'headless'
-    : 'interactive'
+  return value === 'sdk-cli' ? 'headless' : 'interactive'
 }
 
 const INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/
@@ -85,9 +81,6 @@ function readUsage(value: unknown) {
 
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
-  // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
-  // names the Session, and plenty of real records carry no copy of it. Requiring one would drop a
-  // whole history as unreadable over a field nothing reads.
   if (typeof record.uuid !== 'string') return null
   const parsed: TranscriptMessage = {
     toolCalls: readToolCalls(message.content),
@@ -140,11 +133,12 @@ function readMark(record: Record<string, unknown>): TranscriptRecord | null {
     }
   }
   if (record.subtype === 'compact_boundary' && typeof record.uuid === 'string') {
-    return { kind: 'compaction', uuid: record.uuid }
+    return typeof record.timestamp === 'string'
+      ? { kind: 'compaction', uuid: record.uuid, timestamp: record.timestamp }
+      : { kind: 'compaction', uuid: record.uuid }
   }
   return null
 }
-
 export function parseTranscriptLine(line: string): TranscriptRecord | null {
   if (line.trim().length === 0) return null
   let value: unknown

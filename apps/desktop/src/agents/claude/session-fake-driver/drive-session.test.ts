@@ -75,6 +75,22 @@ test('interrupts only the selected managed Claude Session', async () => {
   assert.equal(reply.requestId, 'stop-1')
 })
 
+test('starts compaction only for the selected managed Claude Session', async () => {
+  const compacted: string[] = []
+  const reply = await driveClaudeSession(
+    { version: 1, type: 'session.claude.compact', requestId: 'compact-1', sessionId },
+    {
+      compact: async (receivedSessionId) => compacted.push(receivedSessionId),
+      interrupt: () => {},
+      send: async () => {},
+    },
+  )
+
+  assert.deepEqual(compacted, [sessionId])
+  assert.equal(reply.type, 'session.claude.accepted')
+  assert.equal(reply.requestId, 'compact-1')
+})
+
 for (const code of [
   'not-resumable',
   'held-elsewhere',

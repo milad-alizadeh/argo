@@ -2,6 +2,7 @@ import { requestIdentifier } from '@/boundary'
 import {
   type ClaudeSessionInterruptReply,
   type ClaudeSessionSendReply,
+  claudeSessionCompactRequestSchema,
   claudeSessionInterruptRequestSchema,
   claudeSessionSendRequestSchema,
   sessionError,
@@ -9,7 +10,7 @@ import {
 import type { ClaudeSessionDriver } from './claude-session-driver'
 import { ClaudeSessionDriverError } from './drive-channel'
 
-type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'interrupt' | 'send'>
+type ClaudeSessionDrive = Pick<ClaudeSessionDriver, 'compact' | 'interrupt' | 'send'>
 
 export async function driveClaudeSession(
   value: unknown,
@@ -26,6 +27,11 @@ export async function driveClaudeSession(
   if (interrupt.success) {
     const request = interrupt.data
     return accept(request, () => driver.interrupt(request.sessionId))
+  }
+  const compact = claudeSessionCompactRequestSchema.safeParse(value)
+  if (compact.success) {
+    const request = compact.data
+    return accept(request, () => driver.compact(request.sessionId))
   }
   return sessionError('invalid-request', requestIdentifier(value))
 }

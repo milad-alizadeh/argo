@@ -44,13 +44,9 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
       </PopoverTrigger>
       <PopoverContent align="start" side="top" className="w-[23rem] gap-0 overflow-hidden p-0">
-        {harness.onChange ? (
-          <HarnessTabs cli={harness.cli} onChange={harness.onChange}>
-            {body}
-          </HarnessTabs>
-        ) : (
-          body
-        )}
+        <HarnessTabs cli={harness.cli} onChange={harness.onChange}>
+          {body}
+        </HarnessTabs>
       </PopoverContent>
     </Popover>
   )

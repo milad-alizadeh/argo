@@ -11,7 +11,10 @@ import type { TurnSetupControlProps } from './RunSetupMenu'
 import { type PendingTurn, usePendingTurns } from './usePendingTurns'
 
 export type SessionComposerProps = {
+  contextTokens?: number | null
+  isCompacting?: boolean
   isRunning?: boolean
+  onCompact?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: (text: string, setup: TurnSetup | null) => Promise<boolean>
@@ -48,8 +51,26 @@ function restorePendingTurn(
   window.requestAnimationFrame(() => editorRef.current?.focus())
 }
 
+function restoreTurn({
+  turn,
+  editorRef,
+  onChange,
+  setup,
+}: {
+  turn: PendingTurn
+  editorRef: RefObject<LexicalEditor | null>
+  onChange: (text: string) => void
+  setup: TurnSetupControlProps | null
+}) {
+  restorePendingTurn(turn, editorRef, onChange)
+  restoreSetup(turn, setup)
+}
+
 export function SessionComposer({
+  contextTokens,
+  isCompacting = false,
   isRunning = false,
+  onCompact,
   onInterrupt,
   sessionId,
   onSend,
@@ -92,15 +113,15 @@ export function SessionComposer({
   }, [addPendingTurn, clearDraft, draft, isRunning, onSend, setup?.value])
   return (
     <ComposerForm
+      contextTokens={contextTokens}
       harness={harness}
       draft={draft}
       editorRef={editorRef}
+      isCompacting={isCompacting}
       isRunning={isRunning}
       onChange={changeDraft}
-      onEdit={(turn) => {
-        restorePendingTurn(turn, editorRef, changeDraft)
-        restoreSetup(turn, setup)
-      }}
+      onCompact={onCompact}
+      onEdit={(turn) => restoreTurn({ turn, editorRef, onChange: changeDraft, setup })}
       onInterrupt={onInterrupt}
       onRemove={removePendingTurn}
       onReorder={reorderPendingTurn}

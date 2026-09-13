@@ -3,15 +3,27 @@ import { useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { Button } from '../../../components/ui/button'
+import { BasicFeed } from '../feed/BasicFeed'
 import type { SessionCli } from '../harness/harnesses'
 import { useComposerStore } from '../state/useComposerStore'
 import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import type { SessionFeed } from '../types'
 import { SessionComposer } from './SessionComposer'
 
 const plan = {
   state: 'available' as const,
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
+
+const COMPACTION_FEED = {
+  version: 1,
+  type: 'session.feed.read',
+  requestId: 'storybook-compaction',
+  sessionId: 'compacting-session',
+  chainId: 'compacting-session',
+  revision: 'one',
+  rows: [{ shape: 'prose', id: 'prompt', role: 'user', text: 'Condense the Session.' }],
+} satisfies SessionFeed
 
 const RICH_FORMATTING_DRAFT = `# Release notes
 
@@ -102,6 +114,37 @@ function ManagedComposerStory() {
         onSend={async () => false}
         plan={null}
         sessionId="managed-session"
+      />
+    </div>
+  )
+}
+
+function CompactingComposerStory() {
+  const [compacting, setCompacting] = useState(false)
+
+  return (
+    <div className="mx-auto flex h-dvh w-full max-w-none flex-col p-8 [--size-session-column:72rem]">
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          compactionPercentage={compacting ? 22 : null}
+          compactionStartedAt={compacting ? '2026-09-13T22:01:00.000Z' : null}
+          compactionTokens={compacting ? '10.1k tokens' : null}
+          failure={null}
+          feed={COMPACTION_FEED}
+          onOpenEvidence={() => {}}
+          selectedSessionId="compacting-session"
+        />
+      </div>
+      <SessionComposer
+        contextTokens={148_000}
+        isCompacting={compacting}
+        isRunning={compacting}
+        onCompact={async () => {
+          setCompacting(true)
+          return true
+        }}
+        onSend={async () => true}
+        sessionId="compacting-session"
       />
     </div>
   )
@@ -281,6 +324,19 @@ export const PlainText: Story = {
       'Review the new Session shell.',
     )
     await expect(composer.textContent).toBe('')
+  },
+}
+
+export const CompactionStarts: Story = {
+  render: () => <CompactingComposerStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Compact context' }))
+    const interrupt = await canvas.findByRole('button', { name: 'Interrupt' })
+    await expect(interrupt).toHaveFocus()
+    await expect(canvas.getByText('Compacting conversation')).toBeVisible()
+    await expect(canvas.getByText('22%')).toBeVisible()
   },
 }
 

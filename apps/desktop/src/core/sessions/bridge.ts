@@ -49,6 +49,7 @@ export function attachSessionBridge(
     startClaude: (request: unknown) => startClaudeSession(request, storage.starter),
     sendClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
     interruptClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
+    compactClaude: (request: unknown) => driveClaudeSession(request, storage.driver),
     readClaudePermission: (request: unknown) => readClaudePermission(request, storage.driver),
     decideClaudePermission: (request: unknown) => decideClaudePermission(request, storage.driver),
     startCodex: (request: unknown) => startCodexSession(request, storage.codexStarter),

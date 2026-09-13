@@ -24,6 +24,7 @@ import { SESSION_OPERATIONS } from './operations'
 
 export type SessionClient = {
   interruptClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionInterruptReply>
+  compactClaudeSession(request: { sessionId: string }): Promise<ClaudeSessionSendReply>
   sendClaudeSession(request: {
     sessionId: string
     prompt: string
@@ -80,6 +81,7 @@ function answersRequest(reply: { requestId: string | null }, requestId: string |
 export function createSessionClient(invoke: Invoke): SessionClient {
   return {
     interruptClaudeSession: clientRequest(invoke, 'interruptClaude', claudeSessionSendReplySchema),
+    compactClaudeSession: clientRequest(invoke, 'compactClaude', claudeSessionSendReplySchema),
     sendClaudeSession: clientRequest(invoke, 'sendClaude', claudeSessionSendReplySchema),
     startClaudeSession: clientRequest(invoke, 'startClaude', claudeSessionStartReplySchema),
     readClaudePermission: clientRequest(

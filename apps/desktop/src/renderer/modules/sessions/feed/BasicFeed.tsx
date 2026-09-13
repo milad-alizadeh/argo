@@ -53,11 +53,17 @@ export function BasicFeed({
   feed,
   failure,
   selectedSessionId,
+  compactionStartedAt = null,
+  compactionPercentage = null,
+  compactionTokens = null,
   onOpenEvidence,
 }: {
   feed: SessionFeed | null
   failure: SessionError | null
   selectedSessionId: SessionId | null
+  compactionStartedAt?: string | null
+  compactionPercentage?: number | null
+  compactionTokens?: string | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }) {
   const [keptDocumentLimit] = useState(() => readKeptSessionLimit(window.localStorage))
@@ -106,6 +112,9 @@ export function BasicFeed({
       {ordered.map(([id, document]) => (
         <FeedDocument
           active={failure === null && id === selectedSessionId}
+          compactionStartedAt={id === selectedSessionId ? compactionStartedAt : null}
+          compactionPercentage={id === selectedSessionId ? compactionPercentage : null}
+          compactionTokens={id === selectedSessionId ? compactionTokens : null}
           feed={document}
           key={id}
           onOpenEvidence={onOpenEvidence}

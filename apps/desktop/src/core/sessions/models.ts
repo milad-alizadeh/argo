@@ -115,6 +115,11 @@ export const sessionRosterRowSchema = z.strictObject({
   archived: z.boolean(),
   contextTokens: countSchema.nullable().optional(),
   spentTokens: countSchema.nullable().optional(),
+  // A managed Claude Session is compacting only after Argo typed its `/compact` command. The
+  // transcript's compact boundary clears this DIRECT start rather than a timeout guessing at it.
+  compactionStartedAt: z.string().datetime().nullable().optional(),
+  compactionPercentage: z.number().int().min(0).max(100).nullable().optional(),
+  compactionTokens: z.string().nullable().optional(),
   setup: sessionSetupSchema,
 })
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>

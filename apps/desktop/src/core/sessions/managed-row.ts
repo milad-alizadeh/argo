@@ -27,6 +27,9 @@ export function managedRow(
     archived: false,
     contextTokens: null,
     spentTokens: null,
+    compactionStartedAt: null,
+    compactionPercentage: null,
+    compactionTokens: null,
     setup: session.setup,
   }
 }

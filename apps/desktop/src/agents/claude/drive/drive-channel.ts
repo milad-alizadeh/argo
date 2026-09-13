@@ -1,5 +1,5 @@
 import { SESSION_ERRORS } from '@/core/sessions/session-error'
-import { launchArguments } from './claude-setup'
+import { compactionProgress, launchArguments } from './claude-setup'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'
 import type { OwnershipLedger, OwnershipStanding } from './ownership-ledger'
 
@@ -24,6 +24,9 @@ export type DriverOptions = {
 }
 export type ManagedSession = TurnTarget & {
   close: () => void
+  compactionStartedAt: string | null
+  compactionPercentage: number | null
+  compactionTokens: string | null
   cwd: string
   process: ClaudeProcess
   prompt: string
@@ -77,6 +80,9 @@ function openChannel(
   const session: ManagedSession = {
     applied: seed.setup,
     close: prepared?.close ?? (() => {}),
+    compactionStartedAt: null,
+    compactionPercentage: null,
+    compactionTokens: null,
     cwd: seed.cwd,
     process,
     prompt: seed.prompt,
@@ -86,6 +92,11 @@ function openChannel(
   sessions.set(seed.sessionId, session)
   process.onData?.((data) => {
     session.screen = (session.screen + data).slice(-SCREEN_LIMIT)
+    if (session.compactionStartedAt === null) return
+    const progress = compactionProgress(session.screen)
+    if (progress === null) return
+    session.compactionPercentage = progress.percentage
+    session.compactionTokens = progress.tokens
   })
   options.ledger.bind(seed.sessionId)
   process.onExit?.(() => {
