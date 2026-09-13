@@ -1,5 +1,7 @@
 import type { ClaudePermission } from '@/core/sessions/contract'
+import { managedRow } from '@/core/sessions/managed-row'
 import type { SessionRosterRow } from '@/core/sessions/models'
+import type { ClaudeTurnRequest } from './deliver-turn'
 import {
   ClaudeSessionDriverError,
   channelActions,
@@ -7,11 +9,10 @@ import {
   type ManagedSession,
 } from './drive-channel'
 import type { LiveMessage } from './live-messages'
-import { managedRow } from './managed-row'
 
 export type ClaudeSessionDriver = {
-  start: (request: { cwd: string; prompt: string }) => string
-  send: (sessionId: string, text: string) => Promise<void>
+  start: (request: { cwd: string } & ClaudeTurnRequest) => string
+  send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
   liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
@@ -21,7 +22,6 @@ export type ClaudeSessionDriver = {
   close: () => void
 }
 
-export const SUBMIT_DELAY_MS = 150
 const INTERRUPT = '\u001b'
 
 export function createClaudeSessionDriver(options: DriverOptions): ClaudeSessionDriver {
@@ -35,11 +35,12 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
         ...request,
         sessionFlags: ['--session-id', sessionId],
       })
-      channel.write(session, request.prompt)
+      // The Session is reported running now; a failed opening Turn shows as its process ending.
+      channel.write(session, request).catch(() => {})
       return sessionId
     },
-    async send(sessionId, text) {
-      channel.write(await channel.channelFor(sessionId, text), text)
+    async send(sessionId, turn) {
+      await channel.write(await channel.channelFor(sessionId, turn), turn)
     },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
@@ -48,7 +49,10 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       session.process.write(INTERRUPT)
     },
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
-    roster: () => [...sessions.entries()].map(([id, session]) => managedRow(id, session)),
+    roster: () =>
+      [...sessions.entries()].map(([id, session]) =>
+        managedRow(id, { ...session, cli: 'claude', status: 'running', setup: session.applied }),
+      ),
     orphans: options.ledger.orphans,
     pendingPermission: () => null,
     decidePermission: () => false,

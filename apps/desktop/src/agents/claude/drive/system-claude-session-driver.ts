@@ -6,7 +6,7 @@ import * as pty from 'node-pty'
 
 import type { SessionRosterRow } from '@/core/sessions/models'
 import { claudeResumeTarget } from '../sessions/resume-target'
-import { createClaudeSessionDriver, SUBMIT_DELAY_MS } from './claude-session-driver'
+import { createClaudeSessionDriver } from './claude-session-driver'
 import { openCompanionPlugin } from './companion-plugin'
 import { createMessageDisplay } from './message-display'
 import { createOwnershipLedger, isProcessAlive } from './ownership-ledger'
@@ -59,8 +59,8 @@ export function createSystemClaudeSessionDriver(paths: {
       isAlive: isProcessAlive,
     }),
     resumeTarget: (sessionId) => claudeResumeTarget(paths.transcripts, sessionId),
-    schedule: (callback) => {
-      setTimeout(callback, SUBMIT_DELAY_MS)
+    schedule: (callback, milliseconds) => {
+      setTimeout(callback, milliseconds)
     },
     spawn: (command, commandArguments, options) =>
       pty.spawn(command, commandArguments, {

@@ -15,28 +15,28 @@ const TICKET_SPLIT = {
 
 // A selection that a new listing no longer holds falls back to nothing selected.
 export function TicketDeck({ backlog }: TicketDeckProps) {
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
-  const selected = backlog.tickets.find((ticket) => ticket.number === selectedNumber) ?? null
-  const listed = new Set(backlog.tickets.map((ticket) => ticket.number))
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
+  const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   return (
     <InspectorSplit
       inspector={
         <TicketDetail
           listed={listed}
-          onSelect={setSelectedNumber}
-          scope={backlog.scope}
+          onSelect={setSelectedKey}
+          provider={backlog.provider}
           ticket={selected}
         />
       }
       noun="Ticket"
-      reveal={selected?.number}
+      reveal={selected?.key}
       sizes={TICKET_SPLIT}
       workspace={
         <div className="flex h-full min-h-0 flex-col">
           <TicketList
             backlog={backlog}
-            onSelect={setSelectedNumber}
-            selectedNumber={selected?.number ?? null}
+            onSelect={setSelectedKey}
+            selectedKey={selected?.key ?? null}
           />
         </div>
       }

@@ -7,6 +7,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
+import type { ClaudeTurnSetup } from '@/core/sessions/contract'
 import { createSystemClaudeSessionDriver } from '../drive/system-claude-session-driver'
 import { createClaudeSessionReader } from '../sessions/read-sessions'
 import { claudeTranscriptsRoot } from '../sessions/roots'
@@ -15,6 +16,7 @@ type Row = { id: string; shape: string; role?: string; text?: string }
 type Reader = ReturnType<typeof createClaudeSessionReader>
 
 const PROMPT = 'Without using any tools, write twelve short numbered lines about ducks.'
+const SETUP: ClaudeTurnSetup = { model: 'haiku', effort: 'low', mode: 'manual' }
 
 async function replies(reader: Reader, sessionId: string) {
   const reply = (await reader.readSessionFeed({
@@ -40,11 +42,11 @@ const driver = createSystemClaudeSessionDriver({
 const overlaid = createClaudeSessionReader({ transcripts, liveMessages: driver.liveMessages })
 const recorded = createClaudeSessionReader({ transcripts })
 try {
-  const sessionId = driver.start({ cwd: process.cwd(), prompt: PROMPT })
+  const sessionId = driver.start({ cwd: process.cwd(), prompt: PROMPT, setup: SETUP })
   // claude 2.1.270 drops the Enter that `start` sends while its TUI is still drawing, leaving the
   // prompt in the input box; an empty Turn once it has settled submits it.
   await new Promise((resolve) => setTimeout(resolve, 10_000))
-  await driver.send(sessionId, '')
+  await driver.send(sessionId, { prompt: '', setup: SETUP })
   const drafts: string[] = []
   const deadline = Date.now() + 120_000
   while (Date.now() < deadline) {

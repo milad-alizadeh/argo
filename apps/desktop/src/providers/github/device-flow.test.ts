@@ -31,7 +31,10 @@ test('a granted device code yields the scopes GitHub granted and a stable numeri
   assert.ok(outcome.kind === 'granted')
   assert.deepEqual(outcome.grant.scopes, ['repo', 'read:project'])
   const identity = await readIdentity(endpoints, outcome.grant.accessToken)
-  assert.deepEqual(identity, { ok: true, value: { providerAccountId: '583231', login: 'octocat' } })
+  assert.deepEqual(identity, {
+    ok: true,
+    value: { providerAccountId: '583231', login: 'octocat', workspace: null },
+  })
 })
 
 test('a sign-in the person declines or lets expire ends as that outcome', async (context) => {

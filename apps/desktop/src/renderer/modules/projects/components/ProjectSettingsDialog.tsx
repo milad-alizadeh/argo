@@ -6,8 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../../components/ui/dialog'
-import { RepositorySettings } from '../../tickets/components/RepositorySettings'
-import { useConnection, useDisconnectRepository } from '../../tickets/hooks/useTickets'
+import { SourceSettings } from '../../tickets/components/SourceSettings'
+import { useConnection, useDisconnectSource } from '../../tickets/hooks/useTickets'
 
 type ProjectSettingsDialogProps = {
   project: ProjectSummary
@@ -20,7 +20,7 @@ const TICKETS_PATH = '#/tickets'
 
 export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSettingsDialogProps) {
   const connection = useConnection(project.id)
-  const disconnectRepository = useDisconnectRepository()
+  const disconnectSource = useDisconnectSource()
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
@@ -33,15 +33,15 @@ export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSe
             </span>
           </DialogDescription>
         </DialogHeader>
-        <RepositorySettings
+        <SourceSettings
           connection={connection.isPending ? undefined : (connection.data ?? null)}
-          disconnecting={disconnectRepository.isPending}
-          error={connection.error ?? disconnectRepository.error}
+          disconnecting={disconnectSource.isPending}
+          error={connection.error ?? disconnectSource.error}
           onConnect={() => {
             onOpenChange(false)
             window.location.hash = TICKETS_PATH
           }}
-          onDisconnect={() => disconnectRepository.mutate({ projectId: project.id })}
+          onDisconnect={() => disconnectSource.mutate({ projectId: project.id })}
         />
       </DialogContent>
     </Dialog>

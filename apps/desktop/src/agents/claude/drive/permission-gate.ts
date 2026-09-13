@@ -15,11 +15,10 @@ deny() { printf '%s\\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","pe
 hold=$(mktemp -d) || { deny; exit 1; }
 trap 'kill "$writer" "$dialler" 2>/dev/null; rm -rf "$hold"' EXIT
 mkfifo "$hold/request" || { deny; exit 1; }
-# A background list in a non-interactive sh reads /dev/null, so the request is kept on fd 3.
-exec 3<&0
+# sh gives a background job /dev/null as stdin, so the request is read before the fork (#2004).
+request=$(tr '\\n' ' ')
 {
-  tr '\\n' ' ' <&3
-  printf '\\n'
+  printf '%s\\n' "$request"
   while kill -0 $$ 2>/dev/null; do sleep 1; done
 } > "$hold/request" &
 writer=$!

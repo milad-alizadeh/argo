@@ -9,6 +9,7 @@ import {
   type AccountSummary,
   accountError,
 } from './contract'
+import { availableProviders } from './providers'
 import { type AccountRecord, type AccountRegistry, readAccounts, writeAccounts } from './registry'
 
 // Named field by field, so a field added to the stored record never reaches the renderer by
@@ -18,13 +19,14 @@ function summary(
   state: AccountState,
   connections: AccountConnection[],
 ): AccountSummary {
-  return { id: account.id, provider: 'github', login: account.login, state, connections }
+  const { id, provider, login, workspace } = account
+  return { id, provider, login, workspace, state, connections }
 }
 
 export async function listing(
   access: AccountAccess,
   registry: AccountRegistry,
-): Promise<Pick<AccountListed, 'accounts' | 'notice'>> {
+): Promise<Pick<AccountListed, 'accounts' | 'notice' | 'providers'>> {
   const [connections, names] = await Promise.all([
     readConnections(access.paths.connections),
     projectNames(access),
@@ -38,12 +40,16 @@ export async function listing(
         known.flatMap((connection) => {
           const projectName = names.get(connection.projectId)
           if (connection.accountId !== account.id || projectName === undefined) return []
-          return [{ projectId: connection.projectId, projectName, scope: connection.scope }]
+          return [{ projectId: connection.projectId, projectName, label: connection.label }]
         }),
       ),
     ),
   )
-  return { accounts, notice: !registry.noticeDismissed }
+  return {
+    accounts,
+    notice: !registry.noticeDismissed,
+    providers: availableProviders(access.endpoints),
+  }
 }
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const

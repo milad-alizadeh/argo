@@ -2,16 +2,18 @@
 // the provider's own stable id and never the login, which renames (ADR-0018).
 import { isIdentifier, isRecord } from '../../boundary'
 import { otherFields, readDocument, writeDocument } from '../storage/portable-file'
-import type { AccountState } from './contract'
+import { type AccountState, displayName, PROVIDERS, type Provider } from './contract'
 
 // What is written down about an Account. An unreadable grant is found on reading, never stored.
 type StoredState = Exclude<AccountState, 'unreadable'>
 
 export type AccountRecord = {
   id: string
-  provider: 'github'
+  provider: Provider
   providerAccountId: string
   login: string
+  // The Linear workspace the Account signed in to; null on GitHub.
+  workspace: string | null
   scopes: string[]
   state: StoredState
   [key: string]: unknown
@@ -30,16 +32,31 @@ export type AccountRegistryRead =
 const EMPTY: AccountRegistry = { accounts: [], noticeDismissed: false, other: {} }
 const OWNED = ['version', 'accounts', 'noticeDismissed']
 
-export const accountId = (providerAccountId: string) => `github:${providerAccountId}`
+export const accountId = (provider: Provider, providerAccountId: string) =>
+  `${provider}:${providerAccountId}`
+
+// The provider an Account ID names, read from its prefix, so a Connection whose Account is gone
+// still knows where it reads.
+export function providerOf(id: string): Provider | null {
+  const prefix = id.slice(0, id.indexOf(':'))
+  return PROVIDERS.find((provider) => provider === prefix) ?? null
+}
+
+const STORED_STATES = new Map<unknown, StoredState>([
+  ['expired', 'expired'],
+  ['revoked', 'revoked'],
+])
 
 function parseAccount(value: unknown, seen: Set<string>): AccountRecord {
+  const provider = isRecord(value) && typeof value.id === 'string' ? providerOf(value.id) : null
   if (
     !isRecord(value) ||
-    value.provider !== 'github' ||
+    !provider ||
+    value.provider !== provider ||
     !isIdentifier(value.providerAccountId) ||
-    value.id !== accountId(value.providerAccountId) ||
+    value.id !== accountId(provider, value.providerAccountId) ||
     seen.has(value.id) ||
-    !isIdentifier(value.login) ||
+    !displayName.safeParse(value.login).success ||
     !Array.isArray(value.scopes) ||
     !value.scopes.every((scope) => typeof scope === 'string')
   ) {
@@ -47,9 +64,11 @@ function parseAccount(value: unknown, seen: Set<string>): AccountRecord {
   }
   seen.add(value.id)
   // An unknown state is read as connected: the next provider call is what decides it.
-  const state = value.state === 'revoked' ? 'revoked' : 'connected'
-  const { providerAccountId, login, scopes } = value
-  return { ...value, id: value.id, provider: 'github', providerAccountId, login, scopes, state }
+  const state = STORED_STATES.get(value.state) ?? 'connected'
+  const { providerAccountId, scopes } = value
+  const login = String(value.login)
+  const workspace = typeof value.workspace === 'string' ? value.workspace : null
+  return { ...value, id: value.id, provider, providerAccountId, login, workspace, scopes, state }
 }
 
 function parseRegistry(document: unknown): AccountRegistry {

@@ -1,22 +1,27 @@
 import { useId, useRef, useState } from 'react'
 
-import type { AccountSummary } from '@/core/accounts/contract'
+import type { AccountState, AccountSummary } from '@/core/accounts/contract'
 import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import { useFocusRescue } from '../../../lib/focus-rescue'
+import { capitalized, PROVIDER_PRESENTATION } from '../lib/providers'
 
 const STATE_BADGES = {
   connected: { label: 'Connected', variant: 'secondary' },
+  expired: { label: 'Sign-in expired', variant: 'destructive' },
   revoked: { label: 'Access revoked', variant: 'destructive' },
   unreadable: { label: 'Sign-in unreadable', variant: 'destructive' },
 } as const
 
-const STATE_NOTES = {
+const STATE_NOTES: Record<AccountState, ((provider: string) => string) | null> = {
   connected: null,
-  revoked: 'GitHub no longer accepts this sign-in. Reconnect to read Tickets again.',
-  unreadable:
+  expired: (provider) =>
+    `The sign-in expired and ${provider} would not renew it. Reconnect to read Tickets again.`,
+  revoked: (provider) =>
+    `${provider} no longer accepts this sign-in. Reconnect to read Tickets again.`,
+  unreadable: () =>
     'Argo cannot open the stored sign-in on this computer. Reconnect to read Tickets again.',
-} as const
+}
 
 export type AccountRowProps = {
   account: AccountSummary
@@ -34,26 +39,28 @@ function Connections({ account }: { account: AccountSummary }) {
       </p>
     )
   }
+  const { scope } = PROVIDER_PRESENTATION[account.provider]
   return (
     <ul
-      aria-label={`Repositories for ${account.login}`}
+      aria-label={`${capitalized(scope.many)} for ${account.login}`}
       className="grid gap-(--spacing-shell-tight)"
     >
       {account.connections.map((connection) => (
         <li className="type-meta text-muted-foreground" key={connection.projectId}>
-          {connection.projectName} · <span className="font-mono">{connection.scope}</span>
+          {connection.projectName} · <span className="font-mono">{connection.label}</span>
         </li>
       ))}
     </ul>
   )
 }
 
-function disconnectQuestion({ login, connections }: AccountSummary): string {
+function disconnectQuestion({ login, connections, provider }: AccountSummary): string {
   if (connections.length === 0) return `Disconnect ${login}?`
+  const { scope } = PROVIDER_PRESENTATION[provider]
   const subject =
     connections.length === 1
-      ? 'Its repository stops'
-      : `Its ${connections.length} repositories stop`
+      ? `Its ${scope.one} stops`
+      : `Its ${connections.length} ${scope.many} stop`
   return `Disconnect ${login}? ${subject} reading Tickets until you connect it again.`
 }
 
@@ -93,15 +100,21 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
   // Asking lands on Keep, the harmless answer, and answering lands back on Disconnect….
   useFocusRescue(row, confirming)
   const badge = STATE_BADGES[account.state]
-  const note = STATE_NOTES[account.state]
+  const { name } = PROVIDER_PRESENTATION[account.provider]
+  const note = STATE_NOTES[account.state]?.(name) ?? null
   return (
     <li
-      aria-label={`GitHub Account ${account.login}`}
+      aria-label={`${name} Account ${account.login}`}
       ref={row}
       className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
     >
       <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
         <span className="type-body min-w-0 truncate font-medium">{account.login}</span>
+        {account.workspace ? (
+          <span className="type-meta min-w-0 truncate text-muted-foreground">
+            {account.workspace}
+          </span>
+        ) : null}
         <Badge variant={badge.variant}>{badge.label}</Badge>
         <span className="flex-1" />
         {confirming ? null : (
