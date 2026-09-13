@@ -36,7 +36,12 @@ export function SessionContextBar({
         <UsagePopover harness={harness ?? 'codex'} />
       </div>
       <div className="shrink-0 @[40rem]:hidden">
-        <ContextPopover compact percentage={percentage} usedTokens={usedTokens} />
+        <ContextPopover
+          compact
+          harness={harness ?? 'codex'}
+          percentage={percentage}
+          usedTokens={usedTokens}
+        />
       </div>
       <div
         className={`hidden shrink-0 items-center gap-1.5 type-label font-medium @[40rem]:flex ${contextAlert ? 'text-red-600' : 'text-foreground'}`}
@@ -73,7 +78,11 @@ export function SessionContextBar({
         <span className="font-medium text-foreground">{usedTokenSummary}</span>
         <span className="text-muted-foreground"> / 200k</span>
         <span className="font-medium">· {percentage}%</span>
-        <ContextPopover percentage={percentage} usedTokens={usedTokens} />
+        <ContextPopover
+          harness={harness ?? 'codex'}
+          percentage={percentage}
+          usedTokens={usedTokens}
+        />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 border-l border-border/60 pl-2 @[40rem]:hidden">
         <Button

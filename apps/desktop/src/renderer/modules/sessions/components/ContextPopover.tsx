@@ -10,6 +10,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '../../../components/ui/popover'
+import { ClaudeContextComposition } from './ClaudeContextComposition'
 
 function contextZone(percentage: number) {
   if (percentage <= 20) return { label: 'Smart Zone', text: 'text-emerald-600' }
@@ -17,7 +18,15 @@ function contextZone(percentage: number) {
   return { label: 'Dumb Zone', text: 'text-red-600' }
 }
 
-function ContextDetails({ percentage, usedTokens }: { percentage: number; usedTokens: number }) {
+function ContextDetails({
+  harness,
+  percentage,
+  usedTokens,
+}: {
+  harness: 'claude' | 'codex'
+  percentage: number
+  usedTokens: number
+}) {
   const [threshold, setThreshold] = useState(160_000)
   const zone = contextZone(percentage)
   return (
@@ -62,6 +71,7 @@ function ContextDetails({ percentage, usedTokens }: { percentage: number; usedTo
           another substantial phase.
         </p>
       </div>
+      {harness === 'claude' ? <ClaudeContextComposition /> : null}
       <div className="grid gap-2.5 border-t pt-3">
         <div className="flex items-center justify-between gap-3 type-body">
           <span className="font-semibold">Auto-compact</span>
@@ -102,10 +112,12 @@ function ContextDetails({ percentage, usedTokens }: { percentage: number; usedTo
 
 export function ContextPopover({
   compact = false,
+  harness = 'codex',
   percentage,
   usedTokens,
 }: {
   compact?: boolean
+  harness?: 'claude' | 'codex'
   percentage: number
   usedTokens: number
 }) {
@@ -165,7 +177,7 @@ export function ContextPopover({
             As it fills, new information competes with older details.
           </PopoverDescription>
         </PopoverHeader>
-        <ContextDetails percentage={percentage} usedTokens={usedTokens} />
+        <ContextDetails harness={harness} percentage={percentage} usedTokens={usedTokens} />
       </PopoverContent>
     </Popover>
   )
