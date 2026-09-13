@@ -53,12 +53,14 @@ export function BasicFeed({
   feed,
   activeEvidenceId,
   failure,
+  isRunning,
   selectedSessionId,
   onOpenEvidence,
 }: {
   feed: SessionFeed | null
   activeEvidenceId: string | null
   failure: SessionError | null
+  isRunning: boolean
   selectedSessionId: SessionId | null
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }) {
@@ -112,6 +114,7 @@ export function BasicFeed({
           feed={document}
           key={id}
           onOpenEvidence={onOpenEvidence}
+          isRunning={isRunning && id === selectedSessionId}
         />
       ))}
       {failure !== null || current === null ? (

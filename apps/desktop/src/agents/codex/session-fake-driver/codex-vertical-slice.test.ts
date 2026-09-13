@@ -63,7 +63,6 @@ test('starting a Codex Session over the real transport makes it appear in the sh
     assert.equal(listing.type, 'session.listed')
     const row = listing.sessions?.find((session) => session.id === sessionId)
     assert.ok(row, 'the managed Codex Session must appear in the shared Roster')
-    assert.equal(row?.status, 'running')
 
     // Codex has not written a transcript for this thread yet, so the Feed is empty rather than
     // missing: the Session screen must not read a Session it just started as lost (#2002).

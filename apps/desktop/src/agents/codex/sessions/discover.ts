@@ -17,7 +17,12 @@ async function directories(root: string): Promise<string[]> {
 async function transcriptPathsInDay(root: string) {
   return (await readdir(root, { withFileTypes: true }))
     .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
-    .map((entry) => ({ path: path.join(root, entry.name), name: entry.name }))
+    .map((entry) => ({ path: path.join(root, entry.name), name: sessionIdFileName(entry.name) }))
+}
+
+function sessionIdFileName(fileName: string) {
+  const sessionId = fileName.match(/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\.jsonl$/i)?.[1]
+  return sessionId === undefined ? fileName : `${sessionId}.jsonl`
 }
 
 async function transcriptPaths(root: string): Promise<{ path: string; name: string }[]> {

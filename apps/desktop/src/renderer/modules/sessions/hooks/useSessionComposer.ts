@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { SessionRosterRow } from '@/core/sessions/models'
 import type { Cockpit } from '../../projects/hooks/useProjects'
-import type { SessionComposerProps } from '../components/SessionComposer'
+import { COMPOSER_FOCUS_STATE, type SessionComposerProps } from '../components/SessionComposer'
 import { HARNESSES, type SessionCli } from '../harness/harnesses'
 import { invalidateSessionRoster } from '../session-queries'
 import type { TurnSetup } from '../turn-setup/turn-setup'
@@ -20,6 +20,7 @@ type Failure = { sessionId: string | null; message: string }
 type SessionComposerOptions = {
   cli: SessionCli
   cockpit: Cockpit
+  focusOnMount: boolean
   navigate: NavigateFunction
   roster: ReturnType<typeof useSessions>['roster']
   selectedSessionId: string | null
@@ -47,6 +48,7 @@ function useMutationsFor(cli: SessionCli) {
 export function useSessionComposer({
   cli,
   cockpit,
+  focusOnMount,
   navigate,
   roster,
   selectedSessionId,
@@ -89,7 +91,7 @@ export function useSessionComposer({
         setFailure(null)
         if (setup !== null) watchTurn(reply.sessionId, setup, null)
         await invalidateSessionRoster(queryClient)
-        navigate(`/sessions/${reply.sessionId}`)
+        navigate(`/sessions/${reply.sessionId}`, { state: COMPOSER_FOCUS_STATE })
         return true
       } catch (error) {
         setFailure({
@@ -105,6 +107,7 @@ export function useSessionComposer({
     failure: failure?.sessionId === selectedSessionId ? failure.message : null,
     props: {
       isRunning: managedSessionIsRunning(roster, selectedSessionId),
+      focusOnMount,
       onInterrupt,
       onSend,
       sessionId: composerKey,
