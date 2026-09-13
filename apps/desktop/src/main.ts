@@ -110,9 +110,7 @@ function attachBridges(window: BrowserWindow, userData: string, rendererURL: str
         archive: claudeArchiveRoot(),
         managedSessions: claudeSessionDriver.roster,
       }),
-      createCodexSessionReader(codexTranscriptsRoot(), {
-        managedSessions: codexSessionDriver.roster,
-      }),
+      createCodexSessionReader(codexTranscriptsRoot(), codexSessionDriver),
     ]),
     driver: claudeSessionDriver,
     starter: claudeSessionDriver,

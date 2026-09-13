@@ -1,4 +1,5 @@
 import { Inbox } from 'lucide-react'
+import { type ReactNode, useCallback, useRef } from 'react'
 import {
   Empty,
   EmptyDescription,
@@ -9,28 +10,31 @@ import {
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { FeedMarkdown } from './content/FeedMarkdown'
-import { useSettledFeed } from './useSettledFeed'
+import { type Reveal, useRevealAnimation, useReveals } from './reveal'
+import { type Settled, useSettledFeed } from './useSettledFeed'
 
 type FeedDocumentProps = {
   active: boolean
   feed: SessionFeed
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
+type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
 
 function FeedRow({
   row,
   height,
+  reveal,
   onOpenEvidence,
-}: {
-  row: SessionFeedRow
-  height?: number
-  onOpenEvidence: FeedDocumentProps['onOpenEvidence']
-}) {
+}: DrawnRowProps & { onOpenEvidence: FeedDocumentProps['onOpenEvidence'] }) {
+  const element = useRef<HTMLElement>(null)
+  useRevealAnimation(element, reveal)
   return (
     <article
       className={`feed-row feed-row--${row.shape}`}
       data-feed-row={row.id}
+      data-revealing={reveal === undefined ? undefined : true}
       data-role={'role' in row ? row.role : undefined}
+      ref={element}
       style={height === undefined ? undefined : { height: `${height}px` }}
     >
       {row.shape === 'tool' ? (
@@ -73,7 +77,18 @@ export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps
     revision: feed.revision,
     rows: feed.rows,
   })
-  const content = feedContent(settled, onOpenEvidence)
+  const revealsFor = useReveals()
+  const openEvidence = useRef(onOpenEvidence)
+  openEvidence.current = onOpenEvidence
+  // One component for the life of the deck: a new one each render would remount every row and
+  // replay its reveal.
+  const DrawnRow = useCallback(
+    (props: DrawnRowProps) => (
+      <FeedRow {...props} onOpenEvidence={(row) => openEvidence.current(row)} />
+    ),
+    [],
+  )
+  const content = feedContent(settled, DrawnRow, revealsFor)
 
   return (
     <div
@@ -98,7 +113,8 @@ export function FeedDocument({ active, feed, onOpenEvidence }: FeedDocumentProps
 
 function feedContent(
   settled: ReturnType<typeof useSettledFeed>['settled'],
-  onOpenEvidence: FeedDocumentProps['onOpenEvidence'],
+  DrawnRow: (props: DrawnRowProps) => ReactNode,
+  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>,
 ) {
   if (settled === null) return null
   if (settled.rows.length === 0)
@@ -117,7 +133,8 @@ function feedContent(
     <AnchoredFeed
       rows={settled.rows}
       settled={settled}
-      FeedRow={(props) => <FeedRow {...props} onOpenEvidence={onOpenEvidence} />}
+      FeedRow={DrawnRow}
+      revealsFor={revealsFor}
     />
   )
 }

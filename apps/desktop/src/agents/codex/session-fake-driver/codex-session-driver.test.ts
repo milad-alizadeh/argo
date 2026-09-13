@@ -122,3 +122,20 @@ test('marks a Session unknown once its Turn is reported failed', async () => {
     [{ id: sessionId, status: 'unknown' }],
   )
 })
+
+test('forgets the streamed messages of a Turn once the next Turn starts', async () => {
+  const channel = fakeChannel()
+  const driver = createCodexSessionDriver({
+    findExecutable: () => '/usr/local/bin/codex',
+    openChannel: () => channel,
+  })
+  const sessionId = await driver.start({ cwd: '/projects/argo', prompt: 'Write about ducks.' })
+  channel.notifications[0]?.({
+    method: 'item/agentMessage/delta',
+    params: { threadId: sessionId, turnId: 'turn-1', itemId: 'msg-1', delta: 'Ducks' },
+  } as never)
+  assert.deepEqual(driver.liveMessages(sessionId), [{ id: 'msg-1', text: 'Ducks' }])
+
+  await driver.send(sessionId, 'And geese?')
+  assert.deepEqual(driver.liveMessages(sessionId), [])
+})
