@@ -7,15 +7,17 @@ import type {
   FakeLinearUser,
 } from './fake-linear'
 
+// Who consented, and to which scopes, as Linear writes them back: space-separated.
+export type FakeConsent = { user: FakeLinearUser; scope: string }
 // A code the consent page issued, redeemable once by the verifier its challenge was made from.
-export type FakeCode = { user: FakeLinearUser; challenge: string; redirectUri: string }
+export type FakeCode = FakeConsent & { challenge: string; redirectUri: string }
 
 export type FakeLinearState = {
   origin: string
   signIn: FakeLinearSignIn
   codes: Map<string, FakeCode>
   access: Map<string, { user: FakeLinearUser; expiresAt: number }>
-  refresh: Map<string, { user: FakeLinearUser }>
+  refresh: Map<string, FakeConsent>
   teams: Map<string, FakeLinearTeam>
   outage: FakeLinearOutage
   lifetime: number

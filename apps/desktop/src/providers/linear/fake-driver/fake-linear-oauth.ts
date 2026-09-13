@@ -1,8 +1,13 @@
 // Linear's OAuth as the fake answers it: a consent page that sends the browser back to the loopback,
 // and a token endpoint that checks the PKCE verifier and rotates the refresh token on every renewal.
 import { createHash } from 'node:crypto'
-import type { FakeLinearUser } from './fake-linear'
-import { bodyOf, type FakeLinearState, type Route, reply } from './fake-linear-state'
+import {
+  bodyOf,
+  type FakeConsent,
+  type FakeLinearState,
+  type Route,
+  reply,
+} from './fake-linear-state'
 
 function redirect(response: Parameters<Route>[2], target: URL) {
   response.writeHead(302, { Location: target.href })
@@ -36,22 +41,26 @@ export const authorize: Route = (state, request, response) => {
   }
   state.serial += 1
   const code = `code-${state.serial}`
-  state.codes.set(code, { user: answer, challenge, redirectUri })
+  const scope = (params.get('scope') ?? '').split(',').join(' ')
+  state.codes.set(code, { user: answer, scope, challenge, redirectUri })
   target.searchParams.set('code', code)
   redirect(response, target)
 }
 
-function issue(state: FakeLinearState, user: FakeLinearUser, response: Parameters<Route>[2]) {
+function issue(state: FakeLinearState, consent: FakeConsent, response: Parameters<Route>[2]) {
   state.serial += 1
   const accessToken = `linear-access-${state.serial}`
   const refreshToken = `linear-refresh-${state.serial}`
-  state.access.set(accessToken, { user, expiresAt: Date.now() + state.lifetime * 1000 })
-  state.refresh.set(refreshToken, { user })
+  state.access.set(accessToken, {
+    user: consent.user,
+    expiresAt: Date.now() + state.lifetime * 1000,
+  })
+  state.refresh.set(refreshToken, { user: consent.user, scope: consent.scope })
   reply(response, 200, {
     access_token: accessToken,
     token_type: 'Bearer',
     expires_in: state.lifetime,
-    scope: 'read write',
+    scope: consent.scope,
     refresh_token: refreshToken,
   })
 }
@@ -70,7 +79,7 @@ export const token: Route = async (state, request, response) => {
     const presented = form.get('refresh_token') ?? ''
     const grant = state.refresh.get(presented)
     state.refresh.delete(presented)
-    return grant ? issue(state, grant.user, response) : refused(response)
+    return grant ? issue(state, grant, response) : refused(response)
   }
   const code = state.codes.get(form.get('code') ?? '')
   state.codes.delete(form.get('code') ?? '')
@@ -82,5 +91,5 @@ export const token: Route = async (state, request, response) => {
   ) {
     return refused(response)
   }
-  issue(state, code.user, response)
+  issue(state, code, response)
 }

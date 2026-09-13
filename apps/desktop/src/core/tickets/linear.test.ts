@@ -47,7 +47,7 @@ test('connecting Linear adds an Account keyed by the Linear user, in its workspa
   assert.equal(new URL(cockpit.opened[0] ?? '').pathname, '/oauth/authorize')
 })
 
-test('a team is bound only once Linear shows the Account it', async (context) => {
+test('a team is connected only when Linear shows it to the Account', async (context) => {
   const cockpit = await connected(context)
   const hidden = await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: HIDDEN.id })
   assert.equal(hidden.code, 'team-not-visible')

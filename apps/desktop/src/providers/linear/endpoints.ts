@@ -5,8 +5,8 @@ import { isLoopbackOrigin } from '../../boundary'
 // terms as GitHub's (ADR-0018).
 // Empty until the app is registered at Linear, a human act: until then no Linear sign-in is offered.
 export const LINEAR_CLIENT_ID = ''
-// `write` is asked for now so the Ticket writes of #1851 need no second consent.
-export const LINEAR_SCOPES = ['read', 'write']
+// Read only until the Ticket writes of #1851 need `write`.
+export const LINEAR_SCOPES = ['read']
 // A redirect URI is registered ahead of time, so the loopback port is fixed rather than free.
 export const LINEAR_REDIRECT_PORT = 51734
 

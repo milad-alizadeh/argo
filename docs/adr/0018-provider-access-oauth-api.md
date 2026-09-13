@@ -20,7 +20,8 @@ Status: accepted (#182) · 2026-07-22 · GitHub's grant settled (#367) · 2026-0
 > A renewal that Linear refuses marks only that Account as expired. Every Connection that
 > names the Account shows `account-expired`, and other Accounts stay connected. A person
 > reconnects the Account to continue. A revocation in Linear also reads as expired, because
-> Argo cannot tell a refused renewal from a revoked grant. If Argo cannot reach Linear, or
+> Argo cannot tell a refused renewal from a revoked grant. The Account reads as revoked only
+> when Linear refuses a token that it renewed a moment before. If Argo cannot reach Linear, or
 > Linear limits the requests, the Account stays connected and the read fails with that reason.
 
 > **Linear's grant is authorization code + PKCE with a loopback redirect** — the second of the
