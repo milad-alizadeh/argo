@@ -1,8 +1,65 @@
 import { GripVertical, Route } from 'lucide-react'
-import { useRef } from 'react'
+import { type RefObject, useEffect, useRef, useState } from 'react'
 
 import { PendingTurnActions } from './PendingTurnActions'
 import type { PendingTurn } from './usePendingTurns'
+
+function queuedMessageClassName(
+  id: string,
+  enteringTurnId: string | null,
+  exitingTurnId: string | null,
+) {
+  if (exitingTurnId === id) {
+    return 'session-page__queued-message cursor-grab active:cursor-grabbing session-page__queued-message--exit'
+  }
+  if (enteringTurnId === id) {
+    return 'session-page__queued-message cursor-grab active:cursor-grabbing session-page__queued-message--enter'
+  }
+  return 'session-page__queued-message cursor-grab active:cursor-grabbing'
+}
+
+function useQueueAnimations(
+  turns: PendingTurn[],
+  onRemove: (id: string) => void,
+  listRef: RefObject<HTMLUListElement | null>,
+) {
+  const knownTurnIdsRef = useRef(new Set(turns.map((turn) => turn.id)))
+  const exitTimerRef = useRef<number | null>(null)
+  const [enteringTurnId, setEnteringTurnId] = useState<string | null>(null)
+  const [exitingTurnId, setExitingTurnId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const enteringTurn = turns.find((turn) => !knownTurnIdsRef.current.has(turn.id))
+    knownTurnIdsRef.current = new Set(turns.map((turn) => turn.id))
+    if (!enteringTurn) return
+    setEnteringTurnId(enteringTurn.id)
+    const enterTimer = window.setTimeout(() => setEnteringTurnId(null), 340)
+    return () => window.clearTimeout(enterTimer)
+  }, [turns])
+
+  useEffect(
+    () => () => {
+      if (exitTimerRef.current !== null) window.clearTimeout(exitTimerRef.current)
+    },
+    [],
+  )
+
+  const removeTurn = (id: string) => {
+    if (exitingTurnId) return
+    setExitingTurnId(id)
+    exitTimerRef.current = window.setTimeout(() => {
+      onRemove(id)
+      setExitingTurnId(null)
+      window.requestAnimationFrame(() => {
+        const nextControl = listRef.current?.querySelector<HTMLButtonElement>('button')
+        if (nextControl) nextControl.focus()
+        else document.querySelector<HTMLButtonElement>('[aria-label="Message"]')?.focus()
+      })
+    }, 280)
+  }
+
+  return { enteringTurnId, exitingTurnId, removeTurn }
+}
 
 export function PendingTurns({
   turns,
@@ -16,15 +73,9 @@ export function PendingTurns({
   onReorder: (sourceId: string, targetId: string) => void
 }) {
   const listRef = useRef<HTMLUListElement>(null)
+  const { enteringTurnId, exitingTurnId, removeTurn } = useQueueAnimations(turns, onRemove, listRef)
+
   if (turns.length === 0) return null
-  const removeTurn = (id: string) => {
-    onRemove(id)
-    window.requestAnimationFrame(() => {
-      const nextControl = listRef.current?.querySelector<HTMLButtonElement>('button')
-      if (nextControl) nextControl.focus()
-      else document.querySelector<HTMLButtonElement>('[aria-label="Message"]')?.focus()
-    })
-  }
   return (
     <section aria-label="Pending Turns" className="session-page__composer-queue">
       <ul ref={listRef}>
@@ -32,7 +83,7 @@ export function PendingTurns({
           <li
             key={turn.id}
             draggable
-            className="session-page__queued-message cursor-grab active:cursor-grabbing"
+            className={queuedMessageClassName(turn.id, enteringTurnId, exitingTurnId)}
             onDragOver={(event) => event.preventDefault()}
             onDragStart={(event) => event.dataTransfer.setData('text/plain', turn.id)}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), turn.id)}

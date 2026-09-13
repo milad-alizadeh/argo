@@ -25,6 +25,36 @@
   border-top: 1px solid var(--border);
 }
 
+@keyframes session-page-queue-enter {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--size-queue-row);
+  }
+}
+
+@keyframes session-page-queue-exit {
+  from {
+    height: var(--size-queue-row);
+  }
+
+  to {
+    height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .session-page__queued-message--enter {
+    animation: session-page-queue-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .session-page__queued-message--exit {
+    animation: session-page-queue-exit 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
 .session-page__attachment-tray {
   display: flex;
   height: var(--size-attachment-tray);
