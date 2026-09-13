@@ -135,7 +135,17 @@ export const Empty: Story = {
 }
 export const Unavailable: Story = {
   args: { roster: null, rosterError: unavailable },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo cannot read these Sessions.')
+  },
 }
 export const ReadFailure: Story = {
   args: { roster: null, rosterError: readFailure },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo cannot read these Sessions.')
+  },
 }

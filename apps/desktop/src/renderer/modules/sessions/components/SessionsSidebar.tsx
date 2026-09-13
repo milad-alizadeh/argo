@@ -1,7 +1,8 @@
-import { Inbox, RefreshCw } from 'lucide-react'
+import { Inbox, RefreshCw, TriangleAlert } from 'lucide-react'
 import { type KeyboardEvent, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
 import { useSessions } from '../hooks/useSessions'
@@ -101,9 +102,11 @@ export function SessionsSidebarContent({
         </Button>
       </header>
       {rosterError ? (
-        <p className="px-4 py-3 text-sm text-destructive" role="alert">
-          {rosterError.message}
-        </p>
+        <Alert className="mx-3 mt-3" variant="destructive">
+          <TriangleAlert aria-hidden="true" />
+          <AlertTitle>Argo cannot read these Sessions.</AlertTitle>
+          <AlertDescription>{rosterError.message}</AlertDescription>
+        </Alert>
       ) : null}
       {roster === null && rosterError === null ? (
         <p className="p-4 text-sm text-muted-foreground" role="status">

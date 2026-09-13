@@ -80,5 +80,21 @@ export const Unselected: Story = {
     ).not.toBeNull()
   },
 }
-export const Unavailable: Story = { args: { feed: null, failure: unavailable } }
-export const ReadFailure: Story = { args: { feed: null, failure: readFailure } }
+export const Unavailable: Story = {
+  args: { feed: null, failure: unavailable },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
+    await expect(canvas.getByRole('alert')).toHaveTextContent('This Session is unavailable.')
+  },
+}
+export const ReadFailure: Story = {
+  args: { feed: null, failure: readFailure },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      "Argo cannot read this Session's history.",
+    )
+  },
+}

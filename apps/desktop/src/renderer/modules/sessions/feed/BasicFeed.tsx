@@ -1,5 +1,6 @@
-import { MessagesSquare } from 'lucide-react'
+import { MessagesSquare, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Alert, AlertDescription, AlertTitle } from '../../../components/ui/alert'
 import {
   Empty,
   EmptyDescription,
@@ -20,12 +21,16 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
       <section
         className="grid h-full place-items-center p-6"
         data-state={sessionFailureState(failure)}
-        role="alert"
       >
-        {sessionFailureState(failure) === 'unavailable'
-          ? 'This Session is unavailable.'
-          : "Argo cannot read this Session's history."}
-        <span className="text-sm text-muted-foreground">{failure.message}</span>
+        <Alert className="max-w-sm" variant="destructive">
+          <TriangleAlert aria-hidden="true" />
+          <AlertTitle>
+            {sessionFailureState(failure) === 'unavailable'
+              ? 'This Session is unavailable.'
+              : "Argo cannot read this Session's history."}
+          </AlertTitle>
+          <AlertDescription>{failure.message}</AlertDescription>
+        </Alert>
       </section>
     )
   if (!selected)
