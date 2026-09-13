@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  COMPOSER_SEND,
   DESTINATIONS,
   matchesChord,
+  matchesShortcut,
   menuAccelerators,
   menuTemplate,
   navigateCommand,
@@ -60,6 +62,11 @@ test('the Roster movement chords fire on one element', () => {
     const found = SHORTCUTS.find((entry) => entry.command === command)
     assert.equal(found?.scope, 'element')
   }
+})
+
+test('the composer sends only with Shift+Enter', () => {
+  assert.equal(matchesShortcut(COMPOSER_SEND, pressed('Enter')), false)
+  assert.equal(matchesShortcut(COMPOSER_SEND, pressed('Enter', { shift: true })), true)
 })
 
 test('a plain chord refuses a modifier', () => {

@@ -134,3 +134,18 @@ export const FormattedProse: Story = {
     }
   },
 }
+
+export const SentCommand: Story = {
+  args: {
+    feed: {
+      ...feed,
+      rows: [{ shape: 'prose', id: 'command', role: 'user', text: '/implement 1847' }],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('/implement')).toBeVisible())
+    await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
+    await expect(canvas.queryByText('command-message')).toBeNull()
+  },
+}

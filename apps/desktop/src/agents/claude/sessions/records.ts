@@ -7,6 +7,7 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/core/sessions/transcript'
+import { commandSource } from './command-source'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }
 export { SESSION_ENTRIES }
@@ -25,7 +26,7 @@ function readBlock(value: unknown): ContentBlock {
   if (isRecord(value) && value.type === 'text' && typeof value.text === 'string') {
     return INTERRUPTED.test(value.text)
       ? { shape: 'marker', marker: 'interrupted' }
-      : { shape: 'prose', text: value.text }
+      : { shape: 'prose', text: commandSource(value.text) }
   }
   if (isRecord(value) && value.type === 'thinking' && typeof value.thinking === 'string') {
     return { shape: 'thought', text: value.thinking }
@@ -35,7 +36,7 @@ function readBlock(value: unknown): ContentBlock {
 }
 
 function readBlocks(content: unknown): ContentBlock[] {
-  if (typeof content === 'string') return [{ shape: 'prose', text: content }]
+  if (typeof content === 'string') return [{ shape: 'prose', text: commandSource(content) }]
   if (!Array.isArray(content)) return []
   return content.map(readBlock)
 }

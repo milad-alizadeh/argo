@@ -6,6 +6,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '../../../components/ui/empty'
+import { SessionReferenceText } from '../components/SessionReference'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { FeedMarkdown } from './content/FeedMarkdown'
@@ -45,7 +46,11 @@ function FeedRow({
 }
 
 function PlainText({ text }: { text: string }) {
-  return <p className="whitespace-pre-wrap break-words">{text}</p>
+  return (
+    <p className="whitespace-pre-wrap break-words">
+      <SessionReferenceText text={text} />
+    </p>
+  )
 }
 
 function feedRowContent(row: SessionFeedRow) {

@@ -114,6 +114,20 @@ export const Discovered: Story = {
   },
 }
 
+export const CommandTitledSession: Story = {
+  args: {
+    roster: {
+      ...listed,
+      sessions: [{ ...session, title: { text: '/implement 1847', source: 'first-prompt' } }],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('/implement').closest('[data-slot="badge"]')).not.toBeNull()
+    await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
+  },
+}
+
 export const Loading: Story = {
   args: { roster: null },
   play: async ({ canvasElement }) => {

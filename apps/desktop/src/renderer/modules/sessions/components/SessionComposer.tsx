@@ -1,4 +1,9 @@
-import { $createParagraphNode, $createTextNode, $getRoot, type LexicalEditor } from 'lexical'
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  TRANSFORMERS,
+} from '@lexical/markdown'
+import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef, useState } from 'react'
 
 import type { SessionPlan } from '@/core/sessions/models'
@@ -22,11 +27,7 @@ function restorePendingTurn(
   onChange: (text: string) => void,
 ) {
   onChange(turn.text)
-  editorRef.current?.update(() =>
-    $getRoot()
-      .clear()
-      .append($createParagraphNode().append($createTextNode(turn.text))),
-  )
+  editorRef.current?.update(() => $convertFromMarkdownString(turn.text, TRANSFORMERS))
   window.requestAnimationFrame(() => editorRef.current?.focus())
 }
 
@@ -58,14 +59,16 @@ export function SessionComposer({
     [sessionId],
   )
   const send = useCallback(async () => {
-    if (!draft.trim()) return
+    const text =
+      editorRef.current?.getEditorState().read(() => $convertToMarkdownString(TRANSFORMERS)) ?? draft
+    if (!text.trim()) return
     if (isRunning) {
-      addPendingTurn(draft)
+      addPendingTurn(text)
       clearDraft()
       return
     }
     const editor = editorRef.current
-    if (await onSend(draft)) clearDraft(editor)
+    if (await onSend(text)) clearDraft(editor)
   }, [addPendingTurn, clearDraft, draft, isRunning, onSend])
   return (
     <ComposerForm

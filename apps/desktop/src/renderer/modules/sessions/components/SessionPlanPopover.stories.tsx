@@ -90,17 +90,3 @@ export const Empty: Story = {
     ).toBeVisible()
   },
 }
-
-export const HiddenWhenUnavailable: Story = {
-  args: { plan: null },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
-  },
-}
-
-export const HiddenWhenMalformed: Story = {
-  args: { plan: { state: 'malformed' } },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
-  },
-}

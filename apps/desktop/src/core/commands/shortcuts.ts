@@ -15,6 +15,7 @@ export const DESTINATION_PATHS: Record<Destination, string> = {
 }
 
 export const REGISTER_PROJECT_COMMAND = 'project.register'
+export const COMPOSER_SEND = 'composer.send'
 
 // Moving focus down the Roster. These are chords on one element rather than on the window: they
 // fire only while a row holds focus, so a reader typing anywhere else keeps their arrow keys.
@@ -51,6 +52,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { command: ROSTER_MOVES.previous, label: 'Previous Session', chord: 'ArrowUp', scope: 'element' },
   { command: ROSTER_MOVES.first, label: 'First Session', chord: 'Home', scope: 'element' },
   { command: ROSTER_MOVES.last, label: 'Last Session', chord: 'End', scope: 'element' },
+  { command: COMPOSER_SEND, label: 'Send message', chord: 'Shift+Enter', scope: 'element' },
 ]
 
 // The template is plain data so that the table's rule can be proved without Electron. `src/menu.ts`
@@ -112,4 +114,9 @@ export function matchesChord(chord: string, pressed: PressedKeys): boolean {
     modifiers.includes('Shift') === pressed.shift &&
     modifiers.includes('Alt') === pressed.alt
   )
+}
+
+export function matchesShortcut(command: string, pressed: PressedKeys): boolean {
+  const shortcut = SHORTCUTS.find((entry) => entry.command === command)
+  return shortcut !== undefined && matchesChord(shortcut.chord, pressed)
 }
