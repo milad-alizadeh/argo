@@ -84,8 +84,14 @@ export function PendingTurns({
             key={turn.id}
             draggable
             className={queuedMessageClassName(turn.id, enteringTurnId, exitingTurnId)}
-            onDragOver={(event) => event.preventDefault()}
-            onDragStart={(event) => event.dataTransfer.setData('text/plain', turn.id)}
+            onDragOver={(event) => {
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+            }}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData('text/plain', turn.id)
+            }}
             onDrop={(event) => onReorder(event.dataTransfer.getData('text/plain'), turn.id)}
           >
             <GripVertical aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
