@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
@@ -26,7 +26,7 @@ const readFailure = {
 } satisfies SessionError
 
 const meta: Meta<typeof BasicFeed> = {
-  title: 'Sessions/Basic Feed',
+  title: 'Sessions/Feed',
   component: BasicFeed,
   parameters: { layout: 'fullscreen' },
   decorators: [

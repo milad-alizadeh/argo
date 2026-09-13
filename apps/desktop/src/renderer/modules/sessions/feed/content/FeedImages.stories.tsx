@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import { roleColors } from './appearanceProbe'
 import { FeedGallery, FeedImage, FeedMissingImage, ImageLightbox } from './FeedImages'

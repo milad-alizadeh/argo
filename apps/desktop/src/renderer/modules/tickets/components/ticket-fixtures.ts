@@ -1,8 +1,8 @@
 // Tickets and Accounts the Tickets stories draw.
 import { fn } from 'storybook/test'
 
-import type { AccountSummary } from '@/core/accounts/contract'
-import type { Ticket } from '@/core/tickets/contract'
+import type { AccountSummary, Provider } from '@/core/accounts/contract'
+import type { ConnectionState, ConnectionSummary, Ticket } from '@/core/tickets/contract'
 import type { TicketsView } from '../hooks/useTicketsView'
 import type { Backlog } from '../lib/backlog'
 
@@ -92,6 +92,31 @@ export const ada: AccountSummary = {
   workspace: 'Analytical',
   state: 'connected',
   connections: [],
+}
+
+const CONNECTION_BY_PROVIDER: Record<Provider, Omit<ConnectionSummary, 'state'>> = {
+  github: {
+    accountId: octocat.id,
+    provider: 'github',
+    login: octocat.login,
+    scope: 'octocat/hello-world',
+    label: 'octocat/hello-world',
+  },
+  linear: {
+    accountId: ada.id,
+    provider: 'linear',
+    login: ada.login,
+    scope: 'team-engine',
+    label: 'Engine',
+  },
+}
+
+// A GitHub repository or Linear team Connection, for whichever Account it reads through.
+export function connection<State extends ConnectionState = 'ready'>(
+  provider: Provider,
+  state?: State,
+): ConnectionSummary & { state: State } {
+  return { ...CONNECTION_BY_PROVIDER[provider], state: (state ?? 'ready') as State }
 }
 
 export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({

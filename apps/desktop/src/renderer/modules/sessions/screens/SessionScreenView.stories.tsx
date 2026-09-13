@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
@@ -7,23 +7,19 @@ import { SessionComposer } from '../components/SessionComposer'
 import { SessionFacts } from '../components/SessionScreenDetails'
 import { SessionsSidebarContent } from '../components/SessionsSidebar'
 import { RICH_MARKDOWN } from '../feed/content/feedSamples'
+import { sessionRosterRow } from '../session-fixtures'
 import type { Session, SessionFeed } from '../types'
 import { SessionScreenView, SessionShell } from './SessionScreenView'
 
 const SESSION_ROSTER = [
-  {
+  sessionRosterRow({
     id: 'composer-review',
-    retiredIds: [],
-    cli: 'claude',
     posture: 'external',
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
     status: 'running',
-    entry: 'interactive',
     cwd: '/workspace/argo',
     branch: 'argo/#1846-composer',
     updatedAt: '2026-09-13T15:50:00Z',
-    unreadableLines: 0,
-    originUnread: false,
     turnStartedAt: '2026-09-13T15:42:00Z',
     activity: { tool: 'Bash', target: 'bun run quality' },
     plan: {
@@ -37,59 +33,33 @@ const SESSION_ROSTER = [
     delegations: [{ id: 'interface-review', label: 'Interface review', landed: false }],
     shell: [{ id: 'quality', command: 'bun run quality', background: false }],
     pullRequest: { number: 1846, url: 'https://example.com/pull/1846', repository: 'argo' },
-    archived: false,
     contextTokens: 54_000,
     spentTokens: 11_200,
-    setup: { model: null, effort: null, mode: null },
-  },
-  {
+  }),
+  sessionRosterRow({
     id: 'shortcut-review',
-    retiredIds: [],
     cli: 'codex',
     posture: 'managed',
     title: { text: 'Add Markdown typing shortcuts', source: 'summarised' },
     status: 'idle',
-    entry: 'interactive',
     cwd: '/workspace/argo',
     branch: 'argo/#1847-inline-references',
     updatedAt: '2026-09-13T15:28:00Z',
-    unreadableLines: 0,
-    originUnread: false,
-    turnStartedAt: null,
-    activity: null,
-    plan: null,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
     contextTokens: 21_000,
     spentTokens: 4_600,
-    setup: { model: null, effort: null, mode: null },
-  },
-  {
+  }),
+  sessionRosterRow({
     id: 'feed-review',
-    retiredIds: [],
-    cli: 'claude',
     posture: 'external',
     title: { text: 'Review transcript rendering', source: 'custom' },
     status: 'permission',
-    entry: 'interactive',
     cwd: '/workspace/argo',
-    branch: 'main',
     updatedAt: '2026-09-13T15:18:00Z',
-    unreadableLines: 0,
-    originUnread: false,
     turnStartedAt: '2026-09-13T15:15:00Z',
     activity: { tool: 'Read', target: 'FeedDocument.tsx' },
-    plan: null,
-    delegations: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
     contextTokens: 18_000,
     spentTokens: 2_900,
-    setup: { model: null, effort: null, mode: null },
-  },
+  }),
 ] satisfies Session[]
 
 function feedFor(sessionId: string) {
