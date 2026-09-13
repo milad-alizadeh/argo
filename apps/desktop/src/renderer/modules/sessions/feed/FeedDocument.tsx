@@ -1,3 +1,11 @@
+import { Inbox } from 'lucide-react'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '../../../components/ui/empty'
 import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { useSettledFeed } from './useSettledFeed'
@@ -67,7 +75,15 @@ function feedContent(settled: ReturnType<typeof useSettledFeed>['settled']) {
   if (settled === null) return null
   if (settled.rows.length === 0)
     return (
-      <p className="grid h-full place-items-center text-sm text-muted-foreground">No messages</p>
+      <Empty className="h-full border-0">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Inbox aria-hidden="true" />
+          </EmptyMedia>
+          <EmptyTitle>No messages</EmptyTitle>
+          <EmptyDescription>This Session has no messages to show.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   return <AnchoredFeed rows={settled.rows} settled={settled} FeedRow={FeedRow} />
 }

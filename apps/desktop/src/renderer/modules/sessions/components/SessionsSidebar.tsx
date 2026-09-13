@@ -1,8 +1,9 @@
-import { RefreshCw } from 'lucide-react'
+import { Inbox, RefreshCw } from 'lucide-react'
 import { type KeyboardEvent, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { Button } from '../../../components/ui/button'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '../../../components/ui/empty'
 import { useSessions } from '../hooks/useSessions'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionId, SessionsListed } from '../types'
@@ -110,9 +111,16 @@ export function SessionsSidebarContent({
         </p>
       ) : null}
       {roster !== null && visible.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">
-          {archived.length > 0 ? 'No active Sessions' : 'No Sessions on this machine'}
-        </p>
+        <Empty className="flex-none border-0 px-4 py-8">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Inbox aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle>
+              {archived.length > 0 ? 'No active Sessions' : 'No Sessions found'}
+            </EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto py-3">{rows(visible, 'Sessions')}</div>
       {archived.length > 0 ? (

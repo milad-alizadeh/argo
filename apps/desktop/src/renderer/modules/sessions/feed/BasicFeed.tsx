@@ -1,4 +1,12 @@
+import { MessagesSquare } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '../../../components/ui/empty'
 import { sessionFailureState } from '../sessionFailureState'
 import type { SessionError, SessionFeed, SessionId } from '../types'
 import { FeedDocument } from './FeedDocument'
@@ -22,12 +30,15 @@ function Standing({ failure, selected }: { failure: SessionError | null; selecte
     )
   if (!selected)
     return (
-      <section
-        className="grid h-full place-items-center text-sm text-muted-foreground"
-        data-state="unselected"
-      >
-        No Session selected
-      </section>
+      <Empty className="h-full border-0" data-state="unselected">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <MessagesSquare aria-hidden="true" />
+          </EmptyMedia>
+          <EmptyTitle>No Session selected</EmptyTitle>
+          <EmptyDescription>Choose a Session from the Roster to read its history.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   return (
     <section

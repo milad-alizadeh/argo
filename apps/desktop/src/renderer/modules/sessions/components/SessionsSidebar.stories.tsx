@@ -123,7 +123,16 @@ export const Discovered: Story = {
 }
 
 export const Loading: Story = { args: { roster: null } }
-export const Empty: Story = { args: { roster: { ...listed, sessions: [] } } }
+export const Empty: Story = {
+  args: { roster: { ...listed, sessions: [] } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('No Sessions found')).toBeInTheDocument()
+    await expect(
+      canvas.getByText('No Sessions found').closest('[data-slot="empty"]'),
+    ).not.toBeNull()
+  },
+}
 export const Unavailable: Story = {
   args: { roster: null, rosterError: unavailable },
 }

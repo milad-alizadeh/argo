@@ -59,6 +59,26 @@ export const Loaded: Story = {
   },
 }
 export const Loading: Story = { args: { feed: null, failure: null, selectedSessionId: 'prose' } }
-export const Empty: Story = { args: { feed: { ...feed, rows: [] }, failure: null } }
+export const Empty: Story = {
+  args: { feed: { ...feed, rows: [] }, failure: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('No messages')).toBeInTheDocument())
+    await expect(canvas.getByText('No messages').closest('[data-slot="empty"]')).not.toBeNull()
+    await expect(canvas.getByText('No messages').closest('[data-slot="empty"]')).toHaveTextContent(
+      'This Session has no messages to show.',
+    )
+  },
+}
+export const Unselected: Story = {
+  args: { feed: null, failure: null, selectedSessionId: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
+    await expect(
+      canvas.getByText('No Session selected').closest('[data-slot="empty"]'),
+    ).not.toBeNull()
+  },
+}
 export const Unavailable: Story = { args: { feed: null, failure: unavailable } }
 export const ReadFailure: Story = { args: { feed: null, failure: readFailure } }
