@@ -5,7 +5,7 @@ import type { useClaudeSessionMutations } from './useClaudeSessionMutations'
 
 type Failure = { sessionId: string | null; message: string }
 
-function messageFrom(error: unknown, fallback: string) {
+export function messageFrom(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
 

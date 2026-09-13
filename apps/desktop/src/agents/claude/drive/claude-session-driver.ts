@@ -23,20 +23,40 @@ export type ClaudeSessionDriver = {
 const INTERRUPT = '\u001b'
 const COMPACT = '/compact\r'
 
+function clearCompaction(session: ManagedSession) {
+  session.compactionStartedAt = null
+  session.compactionPercentage = null
+  session.compactionTokens = null
+}
+
+function closeSessions(options: DriverOptions, sessions: Map<string, ManagedSession>) {
+  for (const [sessionId, session] of sessions) {
+    session.ended = true
+    session.process.kill?.()
+    session.close()
+    options.ledger.release(sessionId)
+  }
+  sessions.clear()
+  options.gate.close()
+}
+
+function startSession(
+  options: DriverOptions,
+  channel: ReturnType<typeof channelActions>,
+  request: { cwd: string } & ClaudeTurnRequest,
+) {
+  const sessionId = options.mintSessionId()
+  const session = channel.open({ sessionId, ...request, sessionFlags: ['--session-id', sessionId] })
+  channel.write(session, request).catch(() => {})
+  return sessionId
+}
+
 export function createClaudeSessionDriver(options: DriverOptions): ClaudeSessionDriver {
   const sessions = new Map<string, ManagedSession>()
   const channel = channelActions(options, sessions)
   return {
     start(request) {
-      const sessionId = options.mintSessionId()
-      const session = channel.open({
-        sessionId,
-        ...request,
-        sessionFlags: ['--session-id', sessionId],
-      })
-      // The Session is reported running now; a failed opening Turn shows as its process ending.
-      channel.write(session, request).catch(() => {})
-      return sessionId
+      return startSession(options, channel, request)
     },
     async send(sessionId, turn) {
       await channel.write(await channel.channelFor(sessionId, turn), turn)
@@ -44,9 +64,8 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     async compact(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
+      clearCompaction(session)
       session.compactionStartedAt = options.now().toISOString()
-      session.compactionPercentage = null
-      session.compactionTokens = null
       session.process.write(COMPACT)
     },
     completeCompaction(sessionId, completedAt) {
@@ -57,17 +76,13 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
         completedAt < session.compactionStartedAt
       )
         return
-      session.compactionStartedAt = null
-      session.compactionPercentage = null
-      session.compactionTokens = null
+      clearCompaction(session)
     },
     interrupt(sessionId) {
       const session = sessions.get(sessionId)
       if (!session) throw new ClaudeSessionDriverError('not-drivable')
       session.messages.retire()
-      session.compactionStartedAt = null
-      session.compactionPercentage = null
-      session.compactionTokens = null
+      clearCompaction(session)
       session.process.write(INTERRUPT)
     },
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
@@ -86,14 +101,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
       options.gate.decide(sessionId, permissionId, decision),
     close() {
       channel.close()
-      for (const [sessionId, session] of sessions) {
-        session.ended = true
-        session.process.kill?.()
-        session.close()
-        options.ledger.release(sessionId)
-      }
-      sessions.clear()
-      options.gate.close()
+      closeSessions(options, sessions)
     },
   }
 }

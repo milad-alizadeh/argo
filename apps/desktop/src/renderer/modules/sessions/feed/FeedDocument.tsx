@@ -12,6 +12,7 @@ import type { SessionFeed, SessionFeedRow } from '../types'
 import { AnchoredFeed } from './AnchoredFeed'
 import { CompactionMarker } from './CompactionMarker'
 import { FeedRow } from './FeedRow'
+import { MeasuredRows } from './MeasuredRows'
 import { type Reveal, useReveals } from './reveal'
 import { type Settled, useSettledFeed } from './useSettledFeed'
 
@@ -26,6 +27,16 @@ type FeedDocumentProps = {
   onOpenEvidence: (row: Extract<SessionFeedRow, { shape: 'tool' }>) => void
 }
 type DrawnRowProps = { row: SessionFeedRow; height?: number; reveal?: Reveal }
+
+function compactionMarker(
+  startedAt: string | null,
+  percentage: number | null,
+  tokens: string | null,
+) {
+  return startedAt === null ? null : (
+    <CompactionMarker percentage={percentage} startedAt={startedAt} tokens={tokens} />
+  )
+}
 
 function useToolGroups() {
   const [openToolGroups, setOpenToolGroups] = useState<Set<string>>(new Set())
@@ -95,26 +106,16 @@ export function FeedDocument({
       inert={!active}
     >
       <div className="feed__column" ref={column}>
-        <div aria-hidden="true" className="feed__measured" ref={measured}>
-          {feed.rows.map((row) => (
-            <FeedRow
-              key={row.id}
-              activeEvidenceId={activeEvidenceId}
-              onOpenEvidence={onOpenEvidence}
-              onOpenToolGroup={openToolGroup.current}
-              openToolGroups={openToolGroups}
-              row={row}
-            />
-          ))}
-        </div>
+        <MeasuredRows
+          activeEvidenceId={activeEvidenceId}
+          feed={feed}
+          measured={measured}
+          onOpenEvidence={onOpenEvidence}
+          onOpenToolGroup={openToolGroup.current}
+          openToolGroups={openToolGroups}
+        />
         {content}
-        {compactionStartedAt === null ? null : (
-          <CompactionMarker
-            percentage={compactionPercentage}
-            startedAt={compactionStartedAt}
-            tokens={compactionTokens}
-          />
-        )}
+        {compactionMarker(compactionStartedAt, compactionPercentage, compactionTokens)}
       </div>
     </div>
   )
